@@ -28,16 +28,10 @@ interface WebsocketTransportArgs extends Partial<Config> {
   url: string;
   onError: OnError;
   createSocket?: (url: string) => ChannelWebSocket;
-  enableHeartbeat?: boolean;
 }
 
 export const HEARTBEAT_INTERVAL = 15000;
-export const HEARTBEAT_MAX_LATENCY = 5000;
-export const HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY;
 export const SERVER_CHANNEL_PATH = '/storybook-server-channel';
-
-// Late timer fires are not evidence of a dead server: queued pings may still be waiting.
-export const HEARTBEAT_STARVATION_SLACK = 1000;
 
 const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
 
@@ -52,65 +46,16 @@ export class WebsocketTransport implements ChannelTransport {
 
   private isClosed = false;
 
-  private pingTimeout: number | NodeJS.Timeout = 0;
-
-  private heartbeatPaused = false;
-
-  private enableHeartbeat = true;
-
-  private heartbeat(isGraceWindow = false) {
-    clearTimeout(this.pingTimeout);
-    if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
-      return;
-    }
-
-    const armedAt = Date.now();
-    this.pingTimeout = setTimeout(() => {
-      if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
-        return;
-      }
-
-      const firedLate = Date.now() - armedAt > HEARTBEAT_TIMEOUT + HEARTBEAT_STARVATION_SLACK;
-      if (firedLate && !isGraceWindow) {
-        this.heartbeat(true);
-        return;
-      }
-      this.socket.close(3008, 'timeout');
-    }, HEARTBEAT_TIMEOUT);
-  }
-
-  pauseHeartbeat() {
-    this.heartbeatPaused = true;
-    clearTimeout(this.pingTimeout);
-  }
-
-  resumeHeartbeat() {
-    this.heartbeatPaused = false;
-    if (this.isReady) {
-      this.heartbeat();
-    }
-  }
-
-  constructor({
-    url,
-    onError,
-    page,
-    createSocket,
-    enableHeartbeat = true,
-  }: WebsocketTransportArgs) {
-    this.enableHeartbeat = enableHeartbeat;
+  constructor({ url, onError, page, createSocket }: WebsocketTransportArgs) {
     // eslint-disable-next-line compat/compat
     this.socket = createSocket ? createSocket(url) : new WebSocket(url);
     this.socket.onopen = () => {
       this.isReady = true;
-      this.heartbeat();
       this.flush();
     };
     this.socket.onmessage = ({ data }: { data: any }) => {
       const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       invariant(this.handler, 'WebsocketTransport handler should be set');
-
-      this.heartbeat();
 
       if (event.type === 'ping') {
         // Pings are internal to the transport and have no channel listeners.
@@ -133,7 +78,6 @@ export class WebsocketTransport implements ChannelTransport {
         from: page || 'preview',
       });
       this.isClosed = true;
-      clearTimeout(this.pingTimeout);
     };
   }
 

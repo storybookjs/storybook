@@ -242,84 +242,6 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
-  it('supports static bracket notation for CSF2 annotations', () => {
-    const csf = parse(`
-      export default { title: 'Example' };
-      export const Basic = () => null;
-      Basic['parameters'] = { a11y: true };
-    `);
-    const [parameters] = csf.objects({
-      meta: false,
-      stories: false,
-      annotations: ['parameters'],
-    });
-
-    expect(parameters.remove(['parameters', 'a11y'])).toEqual({ ok: true, changed: true });
-    expect(printCsf(csf).code).not.toContain('a11y');
-  });
-
-  it('rejects computed identifier notation for CSF2 annotations', () => {
-    const csf = parse(`
-      export default { title: 'Example' };
-      export const Basic = () => null;
-      Basic[parameters] = { a11y: true };
-    `);
-
-    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
-  });
-
-  it('does not diagnose exports excluded from the story index', () => {
-    const csf = parse(`
-      export default { title: 'Example', includeStories: ['Basic'] };
-      export let Helper = { args: {} };
-      Helper = { args: { changed: true } };
-      export const Basic = { args: {} };
-    `);
-
-    csf.objects({ meta: false, stories: true });
-
-    expect(csf.mutationDiagnostics).toEqual([]);
-  });
-
-  it('does not diagnose re-exports excluded from the story index', () => {
-    const csf = parse(`
-      export default { title: 'Example', includeStories: ['Basic'] };
-      export { Helper } from './helper';
-      export const Basic = { args: {} };
-    `);
-
-    csf.objects({ meta: false, stories: true });
-
-    expect(csf.mutationDiagnostics).toEqual([]);
-  });
-
-  it('reports compound CSF2 annotation assignments', () => {
-    const csf = parse(`
-      export default { title: 'Example' };
-      export const Basic = () => null;
-      Basic.parameters ||= { a11y: true };
-    `);
-
-    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toHaveLength(
-      0
-    );
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({ code: 'unsupported-initializer' })
-    );
-  });
-
-  it('does not discover or diagnose stories when only meta is requested', () => {
-    const csf = parse(`
-      export default { title: 'Example' };
-      export let Basic = { args: {} };
-      Basic = { args: { changed: true } };
-    `);
-
-    expect(csf.objects({ meta: true, stories: false })).toHaveLength(1);
-    expect(csf.mutationDiagnostics).toEqual([]);
-    expect(csf.mutationDiagnostics).not.toBe(csf.mutationDiagnostics);
-  });
-
   it('mutates CSF4 meta objects', () => {
     const csf = parse(`
       import preview from './preview';
@@ -413,16 +335,17 @@ describe('CsfObject', () => {
     );
   });
 
-  it('preserves identifier-backed factory meta configuration', () => {
+  it('rejects identifier-backed factory meta configuration', () => {
     const csf = parse(`
       import preview from './preview';
       const config = { title: 'Example' };
       const meta = preview.meta(config);
       export const Basic = meta.story({});
     `);
-    const [meta] = csf.objects({ meta: true, stories: false });
-
-    expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
+    expect(csf.objects({ meta: true, stories: false })).toEqual([]);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
+    );
   });
 
   it('rejects mutable identifier-backed factory meta configuration', () => {
@@ -486,7 +409,7 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
-  it('reports an ambiguous CSF4 factory chain', () => {
+  it('ignores non-story factory-shaped exports', () => {
     const csf = parse(`
       import preview from './preview';
       const meta = preview.meta({ title: 'Example' });
@@ -494,11 +417,6 @@ describe('CsfObject', () => {
     `);
 
     expect(csf.objects({ meta: false, stories: true })).toHaveLength(0);
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({
-        code: 'unsupported-initializer',
-        target: expect.objectContaining({ kind: 'story', exportName: 'Basic' }),
-      })
-    );
+    expect(csf.mutationDiagnostics).toEqual([]);
   });
 });

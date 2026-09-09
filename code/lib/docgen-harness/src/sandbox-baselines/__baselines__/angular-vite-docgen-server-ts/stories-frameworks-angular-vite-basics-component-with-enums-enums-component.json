@@ -12,11 +12,7 @@
       },
       "type": {
         "name": "enum",
-        "value": [
-          "Type Alias 1",
-          "Type Alias 2",
-          "Type Alias 3"
-        ]
+        "value": ["Type Alias 1", "Type Alias 2", "Type Alias 3"]
       }
     },
     "enumAlias": {
@@ -80,11 +76,7 @@
       },
       "type": {
         "name": "enum",
-        "value": [
-          "PRIMARY",
-          "SECONDARY",
-          "TERTIARY"
-        ]
+        "value": ["PRIMARY", "SECONDARY", "TERTIARY"]
       }
     },
     "unionType": {
@@ -99,11 +91,7 @@
       },
       "type": {
         "name": "enum",
-        "value": [
-          "Union A",
-          "Union B",
-          "Union C"
-        ]
+        "value": ["Union A", "Union B", "Union C"]
       }
     }
   },

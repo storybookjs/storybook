@@ -30,10 +30,7 @@
       },
       "type": {
         "name": "enum",
-        "value": [
-          "Normal",
-          "High"
-        ]
+        "value": ["Normal", "High"]
       }
     },
     "anotherDefaultValue": {
@@ -115,10 +112,7 @@
       },
       "type": {
         "name": "enum",
-        "value": [
-          "primary",
-          "secondary"
-        ]
+        "value": ["primary", "secondary"]
       }
     },
     "buttonRef": {
@@ -345,12 +339,7 @@
       },
       "type": {
         "name": "enum",
-        "value": [
-          "small",
-          "medium",
-          "large",
-          "xlarge"
-        ]
+        "value": ["small", "medium", "large", "xlarge"]
       }
     },
     "someDataObject": {
@@ -423,18 +412,10 @@
   "description": "This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.\n\nIt supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,\nlike **bold**, _italic_, and `inline code`.> How you like dem apples?! It's never been easier to\ndocument all your components.",
   "id": "stories-frameworks-angular-vite-argtypes-doc-button",
   "jsDocTags": {
-    "code": [
-      "`ThingThing`"
-    ],
-    "html": [
-      "<span class=\"badge\">aaa</span>"
-    ],
-    "link": [
-      "[Example](http://example.com)"
-    ],
-    "string": [
-      "Hello world"
-    ]
+    "code": ["`ThingThing`"],
+    "html": ["<span class=\"badge\">aaa</span>"],
+    "link": ["[Example](http://example.com)"],
+    "string": ["Hello world"]
   },
   "name": "DocButtonComponent",
   "path": "./src/stories/frameworks/angular-vite/argTypes/doc-button/doc-button.stories.ts"

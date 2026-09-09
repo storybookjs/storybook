@@ -227,18 +227,7 @@ const factoryMetaConfigurationIsSafe = (csf: CsfFile): boolean => {
   if (!initializer || !t.isObjectExpression(unwrapExpression(initializer))) {
     return false;
   }
-  return !binding.referencePaths.some((reference) => {
-    let member = reference;
-    while (member.parentPath?.isMemberExpression() && member.key === 'object') {
-      member = member.parentPath;
-    }
-    const parent = member.parentPath;
-    return (
-      (parent?.isAssignmentExpression() && parent.node.left === member.node) ||
-      parent?.isUpdateExpression() ||
-      (parent?.isUnaryExpression() && parent.node.operator === 'delete')
-    );
-  });
+  return binding.referencePaths.every((reference) => unwrapExpression(argument) === reference.node);
 };
 
 const discoverMeta = (

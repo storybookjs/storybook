@@ -129,6 +129,21 @@ describe('CsfObject discovery', () => {
     ],
     ['a non-object binding', `const config = []`],
     ['an unresolved binding', ''],
+    [
+      'a direct mutating call',
+      `
+        const config = { title: 'Example' };
+        Object.assign(config, getOverrides());
+      `,
+    ],
+    [
+      'a mutable alias',
+      `
+        const config = { title: 'Example' };
+        const alias = config;
+        alias.title = 'Changed';
+      `,
+    ],
   ])('rejects identifier-backed factory meta configuration with %s', (_kind, config) => {
     const csf = parse(`
       import preview from './preview';

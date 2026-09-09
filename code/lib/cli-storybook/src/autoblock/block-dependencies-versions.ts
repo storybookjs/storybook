@@ -13,10 +13,6 @@ const minimalVersionsMap = {
   vite: '5.0.0',
 } as const;
 
-// Floors that only apply when another package is installed. The Vitest 4
-// floor is gated on @storybook/addon-vitest instead of living in
-// minimalVersionsMap, which would hard-block every Vitest < 4 project —
-// Storybook core itself does not require Vitest.
 const conditionalVersionsMap = {
   vitest: { gatedBy: '@storybook/addon-vitest', minimumVersion: '4.0.0' },
 } as const;

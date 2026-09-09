@@ -11,15 +11,9 @@ export default {
   },
 };
 
-export const Target = {
-  args: {
-    content: '<div><code id="content">This is the target story</code></div>',
-  },
-};
-
 export const Default = {
   play: () => {
-    const href = hrefToSync('hrefToSync', 'Target');
+    const href = hrefToSync('hrefToSync', 'Default');
     const content = document.querySelector('#content');
     if (content) {
       content.textContent = href;

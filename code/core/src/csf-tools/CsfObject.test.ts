@@ -319,6 +319,14 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toMatch(/Keep the configuration note\.\s+accessibility: true/);
   });
 
+  it('keeps a renamed field in its original position', () => {
+    const csf = parse(`export default { first: true, oldName: true, last: true };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.rename(['oldName'], 'newName')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toBe(`export default { first: true, newName: true, last: true };`);
+  });
+
   it('removes fields from CSF4 extended story objects', () => {
     const csf = parse(`
       import preview from './preview';

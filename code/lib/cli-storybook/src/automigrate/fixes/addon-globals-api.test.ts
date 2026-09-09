@@ -5,13 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { printCsf } from 'storybook/internal/csf-tools';
 
-// Import common to mock
 import { dedent } from 'ts-dedent';
 
-// Import FixResult type
 import { addonGlobalsApi, transformStoryFile } from './addon-globals-api.ts';
 
-// Mock fs/promises
 vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises.ts'));
 
 vi.mock(import('storybook/internal/babel'), async (actualImport) => {
@@ -28,13 +25,13 @@ vi.mock(import('storybook/internal/babel'), async (actualImport) => {
 const previewConfigPath = join('.storybook', 'preview.js');
 
 const check = async (previewContents: string) => {
-  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
+  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as never).__setMockFiles({
     [previewConfigPath]: previewContents,
   });
   return addonGlobalsApi.check({
-    packageManager: {} as any,
+    packageManager: {} as never,
     configDir: '',
-    mainConfig: {} as any,
+    mainConfig: {} as never,
     storybookVersion: '9.0.0', // Assume v9 for testing migrations
     previewConfigPath,
     storiesPaths: [],
@@ -42,25 +39,21 @@ const check = async (previewContents: string) => {
   });
 };
 
-// Helper to run the migration for preview file and capture transform function
 const runMigrationAndGetTransformFn = async (previewContents: string) => {
   const result = await check(previewContents);
   const mockWriteFile = vi.mocked(fsp.writeFile);
 
   let transformFn: (filePath: string, content: string) => string | null = () => null;
 
-  let transformOptions: any;
-
   if (result) {
     await addonGlobalsApi.run?.({
       result,
       dryRun: false,
       storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'], // Mock stories paths
-      packageManager: {} as any, // Add necessary mock properties
-    } as any);
+      packageManager: {} as never, // Add necessary mock properties
+    } as never);
 
     if (result) {
-      // Create a transform function that uses transformStoryFile + printCsf
       transformFn = (filePath: string, content: string) => {
         const transformed = transformStoryFile(content, {
           needsViewportMigration: result.needsViewportMigration,
@@ -70,20 +63,12 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
         });
         return transformed ? printCsf(transformed, {}).code : null;
       };
-      // Extract options passed to transformStoryFile from the closure
-      // This is a bit indirect, relying on the implementation detail
-      transformOptions = {
-        needsViewportMigration: result.needsViewportMigration,
-        needsBackgroundsMigration: result.needsBackgroundsMigration,
-        backgroundValues: result.backgroundsOptions?.values,
-      };
     }
   }
 
   return {
     previewFileContent: mockWriteFile.mock.calls[0]?.[1] as string | undefined,
     transformFn,
-    transformOptions,
     migrationResult: result,
   };
 };
@@ -922,7 +907,10 @@ describe('addon-globals-api', () => {
           parameters: {
             backgrounds: {
               options: {
-                gray: { name: 'Gray', value: '#CCC' }
+                gray: {
+                  name: 'Gray',
+                  value: '#CCC'
+                }
               }
             },
           },

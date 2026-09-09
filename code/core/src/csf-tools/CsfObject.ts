@@ -219,6 +219,17 @@ class CsfObjectEditor implements CsfObject {
       return this.failure('occupied-destination', to, destination.property);
     }
 
+    const sourceParent = sourcePath.slice(0, -1);
+    const destinationParent = destinationPath.slice(0, -1);
+    if (
+      sourceParent.length === destinationParent.length &&
+      sourceParent.every((part, index) => destinationParent[index] === part)
+    ) {
+      source.property.key = keyNode(destinationPath.at(-1)!);
+      source.property.computed = false;
+      return this.success();
+    }
+
     source.parent.properties.splice(source.parent.properties.indexOf(source.property), 1);
     source.property.key = keyNode(destinationPath.at(-1)!);
     source.property.computed = false;

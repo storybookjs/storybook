@@ -140,7 +140,6 @@ export interface GeneratorModule {
 export type CommandOptions = {
   packageManager: PackageManagerName;
   storybookVersionSpecifier?: string;
-  usePnp?: boolean;
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;

@@ -202,16 +202,13 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
         );
       }
 
-      // If disable exists, rename to disabled
-      if (backgroundsOptions?.disable === true) {
-        // Remove the old disable property
-        removeProperty(getFieldNode(['parameters', 'backgrounds']) as ObjectExpression, 'disable');
-
-        addProperty(
-          getFieldNode(['parameters', 'backgrounds']) as ObjectExpression,
-          'disabled',
-          t.booleanLiteral(true)
-        );
+      if (typeof backgroundsOptions?.disable === 'boolean') {
+        const backgrounds = getFieldNode(['parameters', 'backgrounds']) as ObjectExpression;
+        const disabled = getFieldNode(['parameters', 'backgrounds', 'disabled']);
+        removeProperty(backgrounds, 'disable');
+        if (!disabled) {
+          addProperty(backgrounds, 'disabled', t.booleanLiteral(backgroundsOptions.disable));
+        }
       }
     }
 
@@ -304,6 +301,9 @@ const migrateStoryGlobals = (
   const viewportGlobal = options.needsViewportMigration
     ? object.get(['globals', 'viewport', 'value'])
     : undefined;
+  const viewportRotated = options.needsViewportMigration
+    ? object.get(['globals', 'viewport', 'isRotated'])
+    : undefined;
   const backgroundValues = options.needsBackgroundsMigration
     ? object.get(['parameters', 'backgrounds', 'values'])
     : undefined;
@@ -334,20 +334,28 @@ const migrateStoryGlobals = (
   ) {
     if (!viewportGlobal) {
       object.set(['globals', 'viewport', 'value'], viewportDefault);
-      object.set(
-        ['globals', 'viewport', 'isRotated'],
-        t.booleanLiteral(
-          t.isStringLiteral(viewportOrientation) && viewportOrientation.value === 'portrait'
-        )
-      );
+      const orientationCanBeMigrated =
+        !viewportOrientation ||
+        (t.isStringLiteral(viewportOrientation) &&
+          (viewportOrientation.value === 'portrait' || viewportOrientation.value === 'landscape'));
+      if (!viewportRotated && orientationCanBeMigrated) {
+        object.set(
+          ['globals', 'viewport', 'isRotated'],
+          t.booleanLiteral(
+            t.isStringLiteral(viewportOrientation) && viewportOrientation.value === 'portrait'
+          )
+        );
+        object.remove(['parameters', 'viewport', 'defaultOrientation']);
+      }
     }
     object.remove(['parameters', 'viewport', 'defaultViewport']);
   }
-  if (canSetGlobals && viewportOrientation) {
-    object.remove(['parameters', 'viewport', 'defaultOrientation']);
-  }
-  if (t.isBooleanLiteral(viewportDisable) && !viewportDisabled) {
-    object.rename(['parameters', 'viewport', 'disable'], 'disabled');
+  if (t.isBooleanLiteral(viewportDisable)) {
+    if (viewportDisabled) {
+      object.remove(['parameters', 'viewport', 'disable']);
+    } else {
+      object.rename(['parameters', 'viewport', 'disable'], 'disabled');
+    }
   }
 
   if (t.isArrayExpression(backgroundValues) && !backgroundOptions) {
@@ -366,8 +374,12 @@ const migrateStoryGlobals = (
     }
     object.remove(['parameters', 'backgrounds', 'default']);
   }
-  if (t.isBooleanLiteral(backgroundDisable) && !backgroundDisabled) {
-    object.rename(['parameters', 'backgrounds', 'disable'], 'disabled');
+  if (t.isBooleanLiteral(backgroundDisable)) {
+    if (backgroundDisabled) {
+      object.remove(['parameters', 'backgrounds', 'disable']);
+    } else {
+      object.rename(['parameters', 'backgrounds', 'disable'], 'disabled');
+    }
   }
 
   removeEmptyObject(object, ['parameters', 'viewport']);

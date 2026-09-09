@@ -258,6 +258,41 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).not.toContain('a11y');
   });
 
+  it('rejects computed identifier notation for CSF2 annotations', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Basic = () => null;
+      Basic[parameters] = { a11y: true };
+    `);
+
+    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
+  });
+
+  it('does not diagnose exports excluded from the story index', () => {
+    const csf = parse(`
+      export default { title: 'Example', includeStories: ['Basic'] };
+      export let Helper = { args: {} };
+      Helper = { args: { changed: true } };
+      export const Basic = { args: {} };
+    `);
+
+    csf.objects({ meta: false, stories: true });
+
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('does not diagnose re-exports excluded from the story index', () => {
+    const csf = parse(`
+      export default { title: 'Example', includeStories: ['Basic'] };
+      export { Helper } from './helper';
+      export const Basic = { args: {} };
+    `);
+
+    csf.objects({ meta: false, stories: true });
+
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('reports compound CSF2 annotation assignments', () => {
     const csf = parse(`
       export default { title: 'Example' };
@@ -327,6 +362,22 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(`export default { first: true, newName: true, last: true };`);
   });
 
+  it('preserves a shorthand property value when renaming its key', () => {
+    const csf = parse(`const foo = true; export default { foo };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.rename(['foo'], 'bar')).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toContain('export default { bar: foo }');
+  });
+
+  it('preserves a shorthand property value when moving its key', () => {
+    const csf = parse(`const foo = true; export default { foo };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.move(['foo'], ['parameters', 'bar'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toMatch(/parameters: \{\s+bar: foo/);
+  });
+
   it('removes fields from CSF4 extended story objects', () => {
     const csf = parse(`
       import preview from './preview';
@@ -341,22 +392,86 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    ['meta without an argument', `const meta = preview.meta();`],
+    ['meta without an argument', `const meta = preview.meta();`, { kind: 'meta' }],
     [
       'identifier-backed story argument',
       `const meta = preview.meta({});\nconst config = { args: {} };\nexport const Basic = meta.story(config);`,
+      { kind: 'story', exportName: 'Basic', localName: 'Basic' },
     ],
     [
       'dynamic extend argument',
       `const meta = preview.meta({});\nconst Base = meta.story({});\nexport const Basic = Base.extend(makeConfig());`,
+      { kind: 'story', exportName: 'Basic', localName: 'Basic' },
     ],
-  ])('reports an unsupported CSF4 %s', (_kind, code) => {
+  ])('reports an unsupported CSF4 %s', (_kind, code, target) => {
     const csf = parse(`import preview from './preview';\n${code}`);
 
     csf.objects();
 
     expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({ code: 'unsupported-initializer' })
+      expect.objectContaining({ code: 'unsupported-initializer', target })
+    );
+  });
+
+  it('preserves identifier-backed factory meta configuration', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const config = { title: 'Example' };
+      const meta = preview.meta(config);
+      export const Basic = meta.story({});
+    `);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
+  });
+
+  it('rejects mutable identifier-backed factory meta configuration', () => {
+    const csf = parse(`
+      import preview from './preview';
+      let config = { title: 'Example' };
+      config = { title: 'Changed' };
+      const meta = preview.meta(config);
+      export const Basic = meta.story({});
+    `);
+
+    expect(csf.objects({ meta: true, stories: false })).toEqual([]);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
+    );
+  });
+
+  it('does not mutate unrelated factory-shaped receivers', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      const helper = { story: () => ({}) };
+      export const Basic = helper.story({ parameters: { a11y: { element: '#root' } } });
+    `);
+
+    expect(csf.objects({ meta: false, stories: true })).toEqual([]);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported-initializer',
+        target: { kind: 'story', exportName: 'Basic', localName: 'Basic' },
+      })
+    );
+  });
+
+  it('does not mutate factory receivers that have been reassigned', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      let Base = meta.story({});
+      Base = helper;
+      export const Basic = Base.extend({ parameters: { a11y: { element: '#root' } } });
+    `);
+
+    expect(csf.objects({ meta: false, stories: true })).toEqual([]);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported-initializer',
+        target: { kind: 'story', exportName: 'Basic', localName: 'Basic' },
+      })
     );
   });
 

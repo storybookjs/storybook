@@ -225,12 +225,14 @@ class CsfObjectEditor implements CsfObject {
       sourceParent.length === destinationParent.length &&
       sourceParent.every((part, index) => destinationParent[index] === part)
     ) {
+      source.property.shorthand = false;
       source.property.key = keyNode(destinationPath.at(-1)!);
       source.property.computed = false;
       return this.success();
     }
 
     source.parent.properties.splice(source.parent.properties.indexOf(source.property), 1);
+    source.property.shorthand = false;
     source.property.key = keyNode(destinationPath.at(-1)!);
     source.property.computed = false;
     this.insert(destinationPath, source.property);

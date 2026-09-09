@@ -878,7 +878,15 @@ export class CsfFile {
                     ? metaDeclarator.node.id.name
                     : callee.property.name;
                   const [argument] = node.arguments;
-                  const unwrappedArgument = argument && unwrapExpression(argument);
+                  const argumentBinding =
+                    argument && t.isIdentifier(argument)
+                      ? path.scope.getBinding(argument.name)
+                      : undefined;
+                  const argumentNode =
+                    argumentBinding?.constant && argumentBinding.path.isVariableDeclarator()
+                      ? argumentBinding.path.node.init
+                      : argument;
+                  const unwrappedArgument = argumentNode && unwrapExpression(argumentNode);
                   const metaNode = t.isObjectExpression(unwrappedArgument)
                     ? unwrappedArgument
                     : t.objectExpression([]);

@@ -8,6 +8,7 @@ import { useGlobals, useParameter } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { VISION_GLOBAL_KEY, VISION_SIMULATOR_PARAM_KEY } from '../constants.ts';
+import type { A11yParameters } from '../types.ts';
 import { filterDefs, filters } from '../visionSimulatorFilters.ts';
 
 const Hidden = styled.div({
@@ -36,7 +37,10 @@ const ColorIcon = styled.span<{ $filter: string }>(
 );
 
 export const VisionSimulator = () => {
-  const { disable } = useParameter<{ disable?: boolean }>(VISION_SIMULATOR_PARAM_KEY, {});
+  const { disable } = useParameter<NonNullable<A11yParameters['visionSimulator']>>(
+    VISION_SIMULATOR_PARAM_KEY,
+    {}
+  );
   const [globals, updateGlobals, storyGlobals] = useGlobals();
 
   if (disable) {

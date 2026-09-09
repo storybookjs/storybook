@@ -1,0 +1,26 @@
+{
+  "status": {
+    "description": "",
+    "name": "status",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": "Color {
+  Red = 'red'
+  Green = 'green'
+}",
+        "summary": ""red" | "green"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "raw": "Color.Red | Color.Green",
+      "required": true,
+      "value": [
+        "red",
+        "green",
+      ],
+    },
+  },
+}

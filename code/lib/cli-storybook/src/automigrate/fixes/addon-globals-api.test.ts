@@ -49,8 +49,8 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
     await addonGlobalsApi.run?.({
       result,
       dryRun: false,
-      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'], // Mock stories paths
-      packageManager: {} as never, // Add necessary mock properties
+      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'],
+      packageManager: {} as never,
     } as never);
 
     if (result) {
@@ -314,6 +314,22 @@ describe('addon-globals-api', () => {
           }
         }"
       `);
+    });
+
+    it('should remove deprecated backgrounds disable when disabled already exists', async () => {
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
+        export default {
+          parameters: {
+            backgrounds: {
+              disable: false,
+              disabled: true
+            }
+          }
+        }
+      `);
+
+      expect(previewFileContent).toContain('disabled: true');
+      expect(previewFileContent).not.toMatch(/\bdisable:/);
     });
 
     it('should migrate both viewport and backgrounds configurations', async () => {

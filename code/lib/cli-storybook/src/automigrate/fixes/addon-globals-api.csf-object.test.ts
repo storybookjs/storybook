@@ -81,4 +81,64 @@ describe('addon-globals-api story objects', () => {
 
     expect(transform(source)).toBeNull();
   });
+
+  it('keeps default orientation when it cannot write isRotated', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        globals: { viewport: { value: 'mobile' } },
+        parameters: { viewport: { defaultOrientation: 'portrait' } },
+      };
+    `;
+
+    expect(transform(source)).toBeNull();
+  });
+
+  it('keeps dynamic default orientation', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        parameters: { viewport: { defaultViewport: 'mobile', defaultOrientation: orientation } },
+      };
+    `;
+
+    expect(transform(source)).toContain('defaultOrientation: orientation');
+  });
+
+  it('preserves an existing rotation when adding a viewport value', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        globals: { viewport: { isRotated: true } },
+        parameters: { viewport: { defaultViewport: 'mobile', defaultOrientation: 'landscape' } },
+      };
+    `;
+
+    expect(transform(source)).toContain(`isRotated: true`);
+    expect(transform(source)).toContain(`defaultOrientation: 'landscape'`);
+  });
+
+  it('removes deprecated disable when disabled already exists', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        parameters: { backgrounds: { disable: true, disabled: false } },
+      };
+    `;
+
+    expect(transform(source)).toContain('disabled: false');
+    expect(transform(source)).not.toMatch(/\bdisable:/);
+  });
+
+  it('removes deprecated viewport disable when disabled already exists', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        parameters: { viewport: { disable: true, disabled: false } },
+      };
+    `;
+
+    expect(transform(source)).toContain('disabled: false');
+    expect(transform(source)).not.toMatch(/\bdisable:/);
+  });
 });

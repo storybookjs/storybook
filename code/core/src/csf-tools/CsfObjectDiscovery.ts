@@ -57,14 +57,17 @@ const addQualifiedBinding = (
   exportName: string,
   localName: string,
   bindings: Map<string, StoryBinding>,
-  report: ReportDiagnostic
+  report: ReportDiagnostic,
+  isStory: boolean
 ) => {
   const binding = candidate.scope.getBinding(localName);
   if (
     !binding?.constant ||
     (!binding.path.isVariableDeclarator() && !binding.path.isFunctionDeclaration())
   ) {
-    reportBindingFailure(exportName, localName, candidate.node, report);
+    if (isStory) {
+      reportBindingFailure(exportName, localName, candidate.node, report);
+    }
   } else {
     bindings.set(`${localName}:${exportName}`, {
       exportName,
@@ -77,26 +80,35 @@ const addQualifiedBinding = (
 const addDirectBindings = (
   statement: NodePath<t.ExportNamedDeclaration>,
   bindings: Map<string, StoryBinding>,
-  report: ReportDiagnostic
+  report: ReportDiagnostic,
+  csf: CsfFile
 ) => {
   const declaration = statement.get('declaration');
   if (declaration.isVariableDeclaration()) {
     for (const declarator of declaration.get('declarations')) {
       const id = declarator.get('id');
       if (id.isIdentifier()) {
-        addQualifiedBinding(id, id.node.name, id.node.name, bindings, report);
+        addQualifiedBinding(
+          id,
+          id.node.name,
+          id.node.name,
+          bindings,
+          report,
+          id.node.name in csf._stories
+        );
       }
     }
   } else if (declaration.isFunctionDeclaration() && declaration.node.id) {
     const name = declaration.node.id.name;
-    addQualifiedBinding(declaration, name, name, bindings, report);
+    addQualifiedBinding(declaration, name, name, bindings, report, name in csf._stories);
   }
 };
 
 const addAliasedBindings = (
   statement: NodePath<t.ExportNamedDeclaration>,
   bindings: Map<string, StoryBinding>,
-  report: ReportDiagnostic
+  report: ReportDiagnostic,
+  csf: CsfFile
 ) => {
   if (statement.node.source) {
     for (const specifier of statement.get('specifiers')) {
@@ -106,7 +118,7 @@ const addAliasedBindings = (
       const exportName = t.isIdentifier(specifier.node.exported)
         ? specifier.node.exported.name
         : specifier.node.exported.value;
-      if (exportName !== 'default') {
+      if (exportName !== 'default' && exportName in csf._stories) {
         report({
           code: 'unsupported-initializer',
           target: { kind: 'story', exportName, localName: specifier.node.local.name },
@@ -129,7 +141,14 @@ const addAliasedBindings = (
       continue;
     }
     const localName = specifier.node.local.name;
-    addQualifiedBinding(specifier, exportName, localName, bindings, report);
+    addQualifiedBinding(
+      specifier,
+      exportName,
+      localName,
+      bindings,
+      report,
+      exportName in csf._stories
+    );
   }
 };
 
@@ -156,8 +175,8 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
     if (!statement.isExportNamedDeclaration() || statement.node.exportKind === 'type') {
       continue;
     }
-    addDirectBindings(statement, bindings, report);
-    addAliasedBindings(statement, bindings, report);
+    addDirectBindings(statement, bindings, report, csf);
+    addAliasedBindings(statement, bindings, report, csf);
   }
   const candidates = [...bindings.values()].filter(
     (binding) => binding.exportName in csf._stories || factoryMember(initializer(binding))
@@ -173,6 +192,24 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
     }
   }
   return [...unique.values()];
+};
+
+const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): boolean => {
+  if (!isCsfFactoryCall(node)) {
+    return false;
+  }
+  const receiver = node.callee.object.name;
+  if (node.callee.property.name === 'story') {
+    return receiver === csf._metaVariableName;
+  }
+  if (seen.has(receiver)) {
+    return false;
+  }
+  seen.add(receiver);
+  const binding = csf._file.path.scope.getBinding(receiver);
+  const initializer =
+    binding?.constant && binding.path.isVariableDeclarator() ? binding.path.node.init : undefined;
+  return initializer ? isFactoryStory(csf, unwrapExpression(initializer), seen) : false;
 };
 
 const discoverMeta = (
@@ -224,7 +261,8 @@ const discoverStories = (
       const argumentNode =
         argument && t.isExpression(argument) ? unwrapExpression(argument) : undefined;
       if (
-        isCsfFactoryCall(node) &&
+        t.isCallExpression(node) &&
+        isFactoryStory(csf, node) &&
         node.arguments.length === 1 &&
         argumentNode &&
         t.isObjectExpression(argumentNode)
@@ -273,12 +311,13 @@ const annotationCandidate = (
   if (!object.isIdentifier()) {
     return undefined;
   }
-  const propertyName = property.isIdentifier()
-    ? property.node.name
-    : property.isStringLiteral()
-      ? property.node.value
-      : undefined;
-  if ((!left.node.computed && !property.isIdentifier()) || !propertyName) {
+  const propertyName =
+    !left.node.computed && property.isIdentifier()
+      ? property.node.name
+      : left.node.computed && property.isStringLiteral()
+        ? property.node.value
+        : undefined;
+  if (!propertyName) {
     return undefined;
   }
   const annotation =

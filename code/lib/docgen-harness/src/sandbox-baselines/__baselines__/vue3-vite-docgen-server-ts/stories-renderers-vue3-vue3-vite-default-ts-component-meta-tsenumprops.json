@@ -13,6 +13,7 @@
       "table": {
         "category": "props",
         "type": {
+          "detail": "Level {\n  Low = 0\n  High = 1\n}",
           "summary": "Level"
         }
       },
@@ -36,6 +37,7 @@
       "table": {
         "category": "props",
         "type": {
+          "detail": "Severity {\n  Info = 'info'\n  Warning = 'warning'\n  Error = 'error'\n}",
           "summary": "Severity"
         }
       },

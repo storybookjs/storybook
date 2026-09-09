@@ -34,11 +34,13 @@ export type CsfMutationResult =
   | { ok: true; changed: boolean }
   | { ok: false; changed: false; diagnostic: CsfMutationDiagnostic };
 
+export type CsfValue = t.Expression | string | number | boolean;
+
 export interface CsfObject {
   readonly target: CsfObjectTarget;
   readonly changed: boolean;
   get(path: readonly string[]): t.Expression | undefined;
-  set(path: readonly string[], value: t.Expression): CsfMutationResult;
+  set(path: readonly string[], value: CsfValue): CsfMutationResult;
   remove(path: readonly string[]): CsfMutationResult;
   rename(path: readonly string[], name: string): CsfMutationResult;
   move(from: readonly string[], to: readonly string[]): CsfMutationResult;
@@ -77,6 +79,19 @@ const keyNode = (name: string) =>
   t.isValidIdentifier(name) ? t.identifier(name) : t.stringLiteral(name);
 
 const unsafePath = (path: readonly string[]) => path.includes('__proto__');
+
+const expressionFor = (value: CsfValue): t.Expression => {
+  if (typeof value === 'string') {
+    return t.stringLiteral(value);
+  }
+  if (typeof value === 'number') {
+    return t.numericLiteral(value);
+  }
+  if (typeof value === 'boolean') {
+    return t.booleanLiteral(value);
+  }
+  return value;
+};
 
 const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLookup => {
   const matches: t.ObjectProperty[] = [];
@@ -134,7 +149,7 @@ class CsfObjectEditor implements CsfObject {
       : undefined;
   }
 
-  set(path: readonly string[], value: t.Expression): CsfMutationResult {
+  set(path: readonly string[], value: CsfValue): CsfMutationResult {
     const logicalPath = this.normalizePath(path);
     if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.root.node);
@@ -143,15 +158,16 @@ class CsfObjectEditor implements CsfObject {
     if (!inspected.ok) {
       return this.failure(inspected.code, path, inspected.node);
     }
+    const expression = expressionFor(value);
     if (inspected.property) {
-      if (inspected.property.value === value) {
+      if (inspected.property.value === expression) {
         return { ok: true, changed: false };
       }
-      inspected.property.value = t.cloneNode(value, true);
+      inspected.property.value = t.cloneNode(expression, true);
     } else {
       this.insert(
         logicalPath,
-        t.objectProperty(keyNode(logicalPath.at(-1)!), t.cloneNode(value, true))
+        t.objectProperty(keyNode(logicalPath.at(-1)!), t.cloneNode(expression, true))
       );
     }
     return this.success();

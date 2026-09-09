@@ -6,6 +6,7 @@ export type {
   CsfObject,
   CsfObjectOptions,
   CsfObjectTarget,
+  CsfValue,
 } from './CsfObject.ts';
 export * from './ConfigFile.ts';
 export * from './getStorySortParameter.ts';

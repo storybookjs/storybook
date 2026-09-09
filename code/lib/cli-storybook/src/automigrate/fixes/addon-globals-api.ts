@@ -341,9 +341,7 @@ const migrateStoryGlobals = (
       if (!viewportRotated && orientationCanBeMigrated) {
         object.set(
           ['globals', 'viewport', 'isRotated'],
-          t.booleanLiteral(
-            t.isStringLiteral(viewportOrientation) && viewportOrientation.value === 'portrait'
-          )
+          t.isStringLiteral(viewportOrientation) && viewportOrientation.value === 'portrait'
         );
         object.remove(['parameters', 'viewport', 'defaultOrientation']);
       }
@@ -369,7 +367,7 @@ const migrateStoryGlobals = (
     if (!backgroundGlobal) {
       object.set(
         ['globals', 'backgrounds', 'value'],
-        t.stringLiteral(getKeyFromName(options.backgroundsOptions?.values, backgroundDefault.value))
+        getKeyFromName(options.backgroundsOptions?.values, backgroundDefault.value)
       );
     }
     object.remove(['parameters', 'backgrounds', 'default']);

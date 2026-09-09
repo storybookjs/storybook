@@ -44,6 +44,26 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).not.toContain('Mutated');
   });
 
+  it('sets primitive values', () => {
+    const csf = parse(`export default {};`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.set(['title'], 'Example')).toEqual({ ok: true, changed: true });
+    expect(meta.set(['parameters', 'count'], 2)).toEqual({ ok: true, changed: true });
+    expect(meta.set(['parameters', 'enabled'], true)).toEqual({ ok: true, changed: true });
+
+    expect(printCsf(csf).code).toMatchInlineSnapshot(`
+      "export default {
+        title: "Example",
+
+        parameters: {
+          count: 2,
+          enabled: true
+        }
+      };"
+    `);
+  });
+
   it('discovers an identifier-backed aliased story once', () => {
     const csf = parse(`
       export default { title: 'Example' };

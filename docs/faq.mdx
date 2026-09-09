@@ -33,7 +33,7 @@ Storybook's [Next.js framework](./get-started/frameworks/nextjs.mdx) will read f
 
 ## How do I fix module resolution in special environments?
 
-In case you are using [Yarn Plug-n-Play](https://yarnpkg.com/features/pnp) or your project is set up within a mono repository environment, you might run into issues with module resolution similar to this when running Storybook:
+If your project is set up within a monorepo, or uses a package manager with a non-standard `node_modules` layout (such as pnpm), you might run into issues with module resolution similar to this when running Storybook:
 
 ```shell
 WARN   Failed to load preset: "@storybook/react-webpack5/preset"

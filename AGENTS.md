@@ -360,7 +360,7 @@ These usually start long-running development servers and are the wrong default f
 ## Repository skills
 
 - Canonical contributor skills live in `.agents/skills/`; `.claude/skills/` contains references to them.
-- Use [principle-encode-lessons-in-structure](.agents/skills/principle-encode-lessons-in-structure/SKILL.md) to turn recurring corrections into enforceable checks. Imported from [Cursor’s pstack plugin](https://github.com/cursor/plugins/blob/main/pstack/skills/principle-encode-lessons-in-structure/SKILL.md), with its MIT license preserved alongside the skill.
+- Use [principle-encode-lessons-in-structure](.agents/skills/principle-encode-lessons-in-structure/SKILL.md) to turn recurring corrections into enforceable checks.
 
 ## Code Authoring Principles
 

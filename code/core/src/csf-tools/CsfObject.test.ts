@@ -438,6 +438,17 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toMatch(/options: \{\s+gray: \{ name: 'Gray', value: '#CCC' \}/);
   });
 
+  it('removes an explicit field after a spread without removing the spread', () => {
+    const csf = parse(`export default { parameters: { ...base, componentSubtitle: 'Safe' } };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe('export default { parameters: {\n  ...base\n} };');
+  });
+
   it('rejects an occupied move destination without changing the source', () => {
     const source = `export default { parameters: { componentSubtitle: 'Old', docs: { subtitle: 'New' } } };`;
     const csf = parse(source);

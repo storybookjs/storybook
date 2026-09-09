@@ -1,5 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
+import { types as t } from 'storybook/internal/babel';
+
 import { loadCsf, printCsf } from './CsfFile.ts';
 
 const parse = (source: string) =>
@@ -24,6 +26,21 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toMatch(
       /docs: \{\s+\/\/ Keep this explanation with the subtitle\.\s+subtitle: 'Buttons'/
     );
+  });
+
+  it('does not expose mutable AST nodes through get or set', () => {
+    const csf = parse(`export default { title: 'Original' };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+    const value = meta.get(['title']);
+    const replacement = t.stringLiteral('Replacement');
+
+    if (t.isStringLiteral(value)) {
+      value.value = 'Mutated';
+    }
+    expect(meta.set(['title'], replacement)).toEqual({ ok: true, changed: true });
+    replacement.value = 'Mutated replacement';
+
+    expect(printCsf(csf).code).toBe(`export default { title: 'Replacement' };`);
   });
 
   it('discovers an identifier-backed aliased story once', () => {
@@ -109,22 +126,117 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
-  it('reports unsupported CSF factory candidates', () => {
+  it('rejects moving a field below itself without changing the source', () => {
+    const source = `export default { parameters: { docs: { source: true } } };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.move(['parameters', 'docs'], ['parameters', 'docs', 'subtitle'])).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'cyclic-move' },
+    });
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('rejects reassigned direct exports', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export let Basic = { args: { label: 'First' } };
+      Basic = { args: { label: 'Second' } };
+    `);
+
+    expect(csf.objects({ meta: false, stories: true })).toHaveLength(0);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'ambiguous-binding',
+        target: { kind: 'story', exportName: 'Basic', localName: 'Basic' },
+      })
+    );
+  });
+
+  it('reports re-exported story candidates', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export { Basic } from './Basic.stories';
+    `);
+
+    expect(csf.objects({ meta: false, stories: true })).toHaveLength(0);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported-initializer',
+        target: { kind: 'story', exportName: 'Basic', localName: 'Basic' },
+      })
+    );
+  });
+
+  it('mutates CSF4 meta objects', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ parameters: { componentSubtitle: 'Buttons' } });
+      export const Basic = meta.story({});
+    `);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(
+      meta.move(['parameters', 'componentSubtitle'], ['parameters', 'docs', 'subtitle'])
+    ).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).toContain(
+      `const meta = preview.meta({ parameters: { docs: { subtitle: 'Buttons' } } });`
+    );
+  });
+
+  it.each([
+    ['story', `export const Basic = meta.story({ parameters: { a11y: true } });`],
+    [
+      'extend',
+      `const Base = meta.story({});\nexport const Basic = Base.extend({ parameters: { a11y: true } });`,
+    ],
+  ])('mutates CSF4 %s objects', (_kind, story) => {
     const csf = parse(`
       import preview from './preview';
       const meta = preview.meta({ title: 'Example' });
-      export const Basic = meta.story({ args: {} });
+      ${story}
+    `);
+    const [basic] = csf.objects({ meta: false, stories: true });
+
+    expect(basic.remove(['parameters', 'a11y'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).not.toContain('a11y');
+  });
+
+  it.each([
+    ['meta without an argument', `const meta = preview.meta();`],
+    [
+      'identifier-backed story argument',
+      `const meta = preview.meta({});\nconst config = { args: {} };\nexport const Basic = meta.story(config);`,
+    ],
+    [
+      'dynamic extend argument',
+      `const meta = preview.meta({});\nconst Base = meta.story({});\nexport const Basic = Base.extend(makeConfig());`,
+    ],
+  ])('reports an unsupported CSF4 %s', (_kind, code) => {
+    const csf = parse(`import preview from './preview';\n${code}`);
+
+    csf.objects();
+
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'unsupported-initializer' })
+    );
+  });
+
+  it('reports an ambiguous CSF4 factory chain', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      export const Basic = getMeta().story({ args: {} });
     `);
 
-    expect(csf.objects()).toEqual([]);
-    expect(csf.mutationDiagnostics).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } }),
-        expect.objectContaining({
-          code: 'unsupported-initializer',
-          target: expect.objectContaining({ kind: 'story', exportName: 'Basic' }),
-        }),
-      ])
+    expect(csf.objects({ meta: false, stories: true })).toHaveLength(0);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported-initializer',
+        target: expect.objectContaining({ kind: 'story', exportName: 'Basic' }),
+      })
     );
   });
 });

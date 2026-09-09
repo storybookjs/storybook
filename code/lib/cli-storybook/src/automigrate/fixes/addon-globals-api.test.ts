@@ -870,6 +870,21 @@ describe('addon-globals-api', () => {
       `);
     });
 
+    it('should preserve empty parameters on an unchanged story', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+        export default {};
+        export const Migrated = { parameters: { viewport: { disable: true } } };
+        export const Unchanged = { parameters: {} };
+      `;
+
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "export default {};
+        export const Migrated = { parameters: { viewport: { disabled: true } } };
+        export const Unchanged = { parameters: {} };"
+      `);
+    });
+
     it('should transform defaultOrientation and disabled properties in viewport stories', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`

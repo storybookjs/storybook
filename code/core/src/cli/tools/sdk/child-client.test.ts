@@ -261,7 +261,7 @@ describe('spawnChildHost', () => {
     const report = {
       toolset: 'docs',
       tool: 'list',
-      event: 'tool:listAllDocumentation',
+      event: 'tool:docs_list',
       payload: { componentCount: 3 },
     };
     child.send.mockImplementation((message: { type: string; id?: string }) => {
@@ -294,7 +294,7 @@ describe('spawnChildHost', () => {
         {
           toolset: 'docs',
           tool: 'list',
-          event: 'tool:listAllDocumentation',
+          event: 'tool:docs_list',
           componentCount: 3,
           success: true,
           outcome: 'success',
@@ -346,7 +346,7 @@ describe('spawnChildHost', () => {
         expect.anything(),
       ],
     ]);
-    expect(vi.mocked(telemetry).mock.calls[0][1]).not.toHaveProperty('event');
+    expect(vi.mocked(telemetry).mock.calls[0][1]).not.toHaveProperty('componentCount');
   });
 
   it('sends a cancel envelope keyed by the call id when the signal aborts', async () => {

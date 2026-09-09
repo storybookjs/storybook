@@ -182,7 +182,6 @@ export const reviewToolset = defineToolset({
           data,
           markdown: formatReviewApplied(data, ctx),
           telemetry: {
-            event: 'tool:displayReview',
             payload: { collectionCount, storyCount, changedFileCount: review.changedFiles.length },
           },
         };

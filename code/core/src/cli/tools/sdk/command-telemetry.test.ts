@@ -87,7 +87,7 @@ describe('reportToolsCommandEvent', () => {
         report: {
           toolset: 'stories',
           tool: 'find-by-component',
-          event: 'tool:getStoriesByComponent',
+          event: 'tool:stories_findByComponent',
           payload: { componentCount: 2, success: 'not a record field' },
         },
         configDir: '/repo/.storybook',
@@ -99,7 +99,7 @@ describe('reportToolsCommandEvent', () => {
       {
         toolset: 'stories',
         tool: 'find-by-component',
-        event: 'tool:getStoriesByComponent',
+        event: 'tool:stories_findByComponent',
         componentCount: 2,
         success: true,
         outcome: 'success',

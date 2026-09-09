@@ -282,7 +282,7 @@ describe('usage reporting', () => {
     expect(report).toEqual({
       toolset: 'docs',
       tool: 'list',
-      event: 'tool:listAllDocumentation',
+      event: 'tool:docs_list',
       payload: {
         componentCount: 1,
         docsCount: 1,
@@ -298,7 +298,7 @@ describe('usage reporting', () => {
     expect(report).toEqual({
       toolset: 'docs',
       tool: 'show',
-      event: 'tool:getDocumentation',
+      event: 'tool:docs_show',
       payload: { componentId: 'button', found: true, resultTokenCount: expect.any(Number) },
     });
   });
@@ -315,7 +315,7 @@ describe('usage reporting', () => {
     expect(report).toEqual({
       toolset: 'docs',
       tool: 'show-story',
-      event: 'tool:getDocumentationForStory',
+      event: 'tool:docs_showStory',
       payload: {
         found: true,
         storyId: 'button--primary',

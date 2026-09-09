@@ -165,7 +165,6 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
 
   if (data.status === 'no-stories') {
     return {
-      event: 'tool:runStoryTests',
       payload: {
         runA11y: data.a11y,
         inputStoryCount,
@@ -183,7 +182,6 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
   }
 
   return {
-    event: 'tool:runStoryTests',
     payload: {
       runA11y: data.a11y,
       inputStoryCount,

@@ -151,11 +151,14 @@ Adapters resolve one toolset with `getToolset(id)` or take the whole set via
 consume them today.
 
 Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
-definition. A handler returns at most one usage report on its outcome, `telemetry: { event,
-payload }`, with the frozen analytics event name and its payload. `invokeToolsetMethod` — the
-one way every surface runs a method — names the report after the registration (`toolset`, and
-`tool` in CLI spelling). The CLI and SDK forward that report as their `tools-command` record and
-the MCP adapter as its `addon-mcp` event; no surface rewrites it. Third-party toolsets do not need to participate in Storybook's telemetry taxonomy.
+definition. A handler returns at most one usage report on its outcome, `telemetry: { payload }`.
+`invokeToolsetMethod` — the one way every surface runs a method — names the report after the
+registration: `toolset`, `tool` in CLI spelling, and the generated `event`
+(`tool:stories_findByComponent`). The CLI and SDK forward that report as their `tools-command`
+record. The MCP adapter forwards it as its `addon-mcp` event, but under the pre-toolset event name
+the addon keeps per tool (`tool:getStoriesByComponent`), so MCP usage data stays continuous across
+versions. Toolsets never name events themselves. Third-party toolsets do not need to participate in
+Storybook's telemetry taxonomy.
 
 Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
 channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the

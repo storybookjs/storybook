@@ -67,7 +67,7 @@ describe('review.create', () => {
     expect(outcome.telemetry).toEqual({
       toolset: 'review',
       tool: 'create',
-      event: 'tool:displayReview',
+      event: 'tool:review_create',
       payload: { collectionCount: 1, storyCount: 1, changedFileCount: 1 },
     });
   });

@@ -448,7 +448,7 @@ No story found for story ID "gone--story"`);
       expect(outcome.telemetry).toEqual({
         toolset: 'test',
         tool: 'run',
-        event: 'tool:runStoryTests',
+        event: 'tool:test_run',
         payload: {
           runA11y: true,
           inputStoryCount: 1,
@@ -472,7 +472,7 @@ No story found for story ID "gone--story"`);
       expect(outcome.telemetry).toEqual({
         toolset: 'test',
         tool: 'run',
-        event: 'tool:runStoryTests',
+        event: 'tool:test_run',
         payload: {
           runA11y: false,
           inputStoryCount: 1,

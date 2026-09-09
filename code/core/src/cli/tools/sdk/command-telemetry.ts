@@ -33,7 +33,7 @@ export type ToolsCommandTelemetryPayload = ToolsCommandDimensions & {
 /** The record as sent: the run's fields plus the handler's event name and payload, when it ran. */
 export type ToolsCommandTelemetryRecord = ToolsCommandTelemetryPayload & {
   event?: string;
-  [counter: string]: unknown;
+  [field: string]: unknown;
 };
 
 // Names are a fixed vocabulary of short identifiers; anything else is arbitrary agent input (a

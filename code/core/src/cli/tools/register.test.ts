@@ -139,7 +139,7 @@ describe('tools-command telemetry', () => {
         report: {
           toolset: 'stories',
           tool: 'changed',
-          event: 'tool:getChangedStories',
+          event: 'tool:stories_changed',
           payload: {
             storyCount: 4,
             newStoryCount: 1,
@@ -153,9 +153,9 @@ describe('tools-command telemetry', () => {
 
     expect(toolsCommandPayloads()).toEqual([
       {
-        event: 'tool:getChangedStories',
         toolset: 'stories',
         tool: 'changed',
+        event: 'tool:stories_changed',
         success: true,
         outcome: 'success',
         duration: expect.any(Number),
@@ -179,7 +179,7 @@ describe('tools-command telemetry', () => {
         report: {
           toolset: 'stories',
           tool: 'find-by-component',
-          event: 'tool:getStoriesByComponent',
+          event: 'tool:stories_findByComponent',
           payload: { componentCount: 1 },
         },
       })

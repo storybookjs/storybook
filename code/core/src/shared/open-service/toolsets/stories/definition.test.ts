@@ -202,7 +202,7 @@ describe('stories.preview', () => {
     expect(outcome.telemetry).toEqual({
       toolset: 'stories',
       tool: 'preview',
-      event: 'tool:previewStories',
+      event: 'tool:stories_preview',
       payload: { inputStoryCount: 2, outputStoryCount: 2 },
     });
   });
@@ -334,7 +334,7 @@ describe('stories.changed', () => {
     expect(outcome.telemetry).toEqual({
       toolset: 'stories',
       tool: 'changed',
-      event: 'tool:getChangedStories',
+      event: 'tool:stories_changed',
       payload: { storyCount: 1, newStoryCount: 1, modifiedStoryCount: 0, affectedStoryCount: 0 },
     });
   });
@@ -474,7 +474,7 @@ describe('stories.findByComponent', () => {
     expect(outcome.telemetry).toEqual({
       toolset: 'stories',
       tool: 'find-by-component',
-      event: 'tool:getStoriesByComponent',
+      event: 'tool:stories_findByComponent',
       payload: { componentCount: 2, matchedComponentCount: 1, totalMatchCount: 1, maxDistance: 3 },
     });
   });

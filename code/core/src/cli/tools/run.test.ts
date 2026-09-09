@@ -779,7 +779,7 @@ describe('usage report', () => {
     expect(result.report).toEqual({
       toolset: 'docs',
       tool: 'list',
-      event: 'tool:listAllDocumentation',
+      event: 'tool:docs_list',
       payload: expect.objectContaining({ componentCount: expect.any(Number) }),
     });
   });
@@ -789,9 +789,7 @@ describe('usage report', () => {
 
     const result = await run(['docs', 'list'], deps, { attach: true });
 
-    expect(result.report).toEqual(
-      expect.objectContaining({ toolset: 'docs', tool: 'list', event: 'tool:listAllDocumentation' })
-    );
+    expect(result.report).toEqual(expect.objectContaining({ toolset: 'docs', tool: 'list' }));
   });
 });
 

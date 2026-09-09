@@ -293,7 +293,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             data,
             markdown: formatPreviewStories(data, ctx, { reviewEnabled }),
             telemetry: {
-              event: 'tool:previewStories',
               payload: {
                 inputStoryCount: input.stories.length,
                 outputStoryCount: data.stories.length,
@@ -330,7 +329,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
                 data,
                 markdown: formatChangedStories(data, ctx, { reviewEnabled }),
                 telemetry: {
-                  event: 'tool:getChangedStories',
                   payload: {
                     storyCount: 0,
                     newStoryCount: 0,
@@ -362,7 +360,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             data,
             markdown: formatChangedStories(data, ctx, { reviewEnabled }),
             telemetry: {
-              event: 'tool:getChangedStories',
               payload: {
                 storyCount: data.stories.length,
                 newStoryCount: data.counts.new,
@@ -420,7 +417,6 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
             data,
             markdown: formatFindByComponent(data),
             telemetry: {
-              event: 'tool:getStoriesByComponent',
               payload: {
                 componentCount: input.componentPaths.length,
                 matchedComponentCount: input.componentPaths.length - unmatchedCount,

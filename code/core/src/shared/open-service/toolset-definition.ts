@@ -26,14 +26,12 @@ export type ToolsetCtx = {
 };
 
 /**
- * A handler's usage report: the analytics event name and the payload describing what the call
- * did, counts and flags alike. It travels on the outcome, so a handler reports at most once and in the same object as its
- * data; the surface that ran the method turns it into its own telemetry record.
- *
- * Event names (`tool:previewStories`, …) are a frozen cross-version contract: keep them aligned
- * with older Storybook releases even when wire tool names or toolset ids change.
+ * A handler's usage report: the payload describing what the call did, counts and flags alike. It
+ * travels on the outcome, so a handler reports at most once and in the same object as its data.
+ * The surface that ran the method turns it into its own telemetry record and names the event; a
+ * handler never names one.
  */
-export type ToolsetTelemetryReport = { event: string; payload: Record<string, unknown> };
+export type ToolsetTelemetryReport = { payload: Record<string, unknown> };
 
 /**
  * A method description, resolved per transport.
@@ -194,10 +192,15 @@ export function resolveToolsetDescription(
 }
 
 /**
- * A handler's report completed with the CLI spelling of the invoked names (`stories`,
- * `find-by-component`), taken from where the method is registered.
+ * A handler's report completed from where the method is registered: the CLI spelling of the
+ * invoked names (`stories`, `find-by-component`) and the generated event name
+ * (`tool:stories_findByComponent`).
  */
-export type ToolsetMethodReport = ToolsetTelemetryReport & { toolset: string; tool: string };
+export type ToolsetMethodReport = ToolsetTelemetryReport & {
+  toolset: string;
+  tool: string;
+  event: string;
+};
 
 // `any` for the same reason as {@link AnyToolsetOutcome}: surfaces dispatch over every method.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,6 +223,11 @@ export async function invokeToolsetMethod(
   }
   return {
     ...outcome,
-    telemetry: { ...telemetry, toolset: toolset.id, tool: toCliMethodName(methodName) },
+    telemetry: {
+      ...telemetry,
+      toolset: toolset.id,
+      tool: toCliMethodName(methodName),
+      event: `tool:${toolset.id}_${methodName}`,
+    },
   };
 }

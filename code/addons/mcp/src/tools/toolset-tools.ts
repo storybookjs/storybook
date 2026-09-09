@@ -40,6 +40,12 @@ export type McpToolsetGroup = keyof NonNullable<AddonContext['toolsets']>;
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
   method: ToolsetMethodId;
+  /**
+   * The `event` of this tool's `addon-mcp` record. These names predate the toolsets
+   * (`tool:getChangedStories`) and replace the generated `tool:stories_changed` on this surface
+   * only, so MCP usage data stays continuous across versions. The toolsets know nothing of them.
+   */
+  mcpEventName: string;
   /** Extra MCP-only tool metadata, e.g. the preview app resource. */
   extras?: Record<string, unknown>;
   /** Wraps the input schema before publishing it (used for friendlier validation errors). */
@@ -109,13 +115,14 @@ function buildContext(server: Server): ToolsetCtx {
 
 async function reportToolsetTelemetry(
   server: Server,
+  event: string,
   report: ToolsetMethodReport | undefined
 ): Promise<void> {
   if (!report || server.ctx.custom?.disableTelemetry) {
     return;
   }
-  const { event, payload, ...names } = report;
-  await collectTelemetry({ event, server, ...payload, ...names });
+  const { payload, toolset, tool } = report;
+  await collectTelemetry({ event, server, ...payload, toolset, tool });
 }
 
 /** Runs one toolset method and unwraps its outcome into an MCP tool result. */
@@ -130,7 +137,7 @@ export async function callToolsetMethod(
 
   try {
     const outcome = await invokeToolsetMethod(toolset, methodName, input, buildContext(server));
-    await reportToolsetTelemetry(server, outcome.telemetry);
+    await reportToolsetTelemetry(server, options.mcpEventName, outcome.telemetry);
     const structuredContent = await toStructuredContent(method.output, outcome.data);
     const blocks = Array.isArray(outcome.markdown) ? outcome.markdown : [outcome.markdown];
 

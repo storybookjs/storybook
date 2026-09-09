@@ -15,7 +15,7 @@ export const blocker = createBlocker({
     return {
       title: 'Create React App: support removed',
       message: dedent`
-        Storybook 11+ does not support Create React App projects.
+        Storybook 11+ does not automatically inherit Create React App's configurations.
 
         Migrate your project to, e.g., Vite (\`@storybook/react-vite\`) to keep using Storybook.
 

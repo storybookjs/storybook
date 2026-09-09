@@ -59,16 +59,14 @@ function resolveToolset(options: ToolsetToolOptions, server?: Server): AnyToolse
   if (options.resolveToolset) {
     return options.resolveToolset(server);
   }
-  const [toolsetId] = options.method.split('.');
-  return getToolset(toolsetId);
+  return getToolset(parseToolsetMethodId(options.method).toolsetId);
 }
 
 function resolveMethod(
   toolset: AnyToolsetDefinition,
   options: ToolsetToolOptions
 ): ToolsetMethod<any, AnyToolsetOutcome> {
-  const [, methodName] = options.method.split('.');
-  return toolset.methods[methodName];
+  return toolset.methods[parseToolsetMethodId(options.method).methodName];
 }
 
 /**
@@ -110,15 +108,6 @@ function buildContext(server: Server): ToolsetCtx {
   };
 }
 
-/**
- * Sends the method's usage report as the `addon-mcp` event.
- *
- * Backwards compatibility: `toolset` is the MCP grouping this tool is registered under (`dev`,
- * `docs`, `test`), not the report's own CLI toolset name, because every `addon-mcp` record since
- * the event exists classifies by that grouping and dashboards key on it. The report's `tool` is
- * left out for the same reason. Once the `X-MCP-Toolsets` header goes (Storybook 11), this can
- * forward the report's `toolset` and `tool` the way the CLI does.
- */
 async function reportToolsetTelemetry(
   server: Server,
   toolset: McpToolsetGroup,
@@ -127,6 +116,10 @@ async function reportToolsetTelemetry(
   if (!report || server.ctx.custom?.disableTelemetry) {
     return;
   }
+  // Backwards compatibility only: `toolset` is the MCP grouping the tool is registered under, not
+  // the report's CLI toolset name, and the report's `tool` is left out, because every `addon-mcp`
+  // record classifies by that grouping and dashboards key on it. Once the `X-MCP-Toolsets` header
+  // goes (Storybook 11), forward the report's `toolset` and `tool` the way the CLI does.
   await collectTelemetry({ event: report.event, server, ...report.counters, toolset });
 }
 
@@ -137,8 +130,8 @@ export async function callToolsetMethod(
   input: unknown
 ): Promise<StorybookAiToolCallResult> {
   const toolset = resolveToolset(options, server);
-  const method = resolveMethod(toolset, options);
   const { methodName } = parseToolsetMethodId(options.method);
+  const method = toolset.methods[methodName];
 
   try {
     const outcome = await invokeToolsetMethod(toolset, methodName, input, buildContext(server));

@@ -272,18 +272,12 @@ describe('docs.showStory in a composition', () => {
 });
 
 describe('usage reporting', () => {
-  /** Runs a method the way a transport does and returns the report on its outcome. */
-  async function run(
-    methodName: 'list' | 'show' | 'showStory',
-    input: unknown,
-    transport: 'cli' | 'mcp'
-  ) {
-    const ctx: ToolsetCtx = { transport, getService: () => ({}) as never };
-    return (await invokeToolsetMethod(toolset, methodName, input, ctx)).telemetry;
+  async function run(methodName: 'list' | 'show' | 'showStory', input: unknown) {
+    return (await invokeToolsetMethod(toolset, methodName, input, mcpCtx)).telemetry;
   }
 
-  it.each(['cli', 'mcp'] as const)('reports a listing on %s', async (transport) => {
-    const report = await run('list', { withStoryIds: false }, transport);
+  it('reports a listing', async () => {
+    const report = await run('list', { withStoryIds: false });
 
     expect(report).toEqual({
       toolset: 'docs',
@@ -298,8 +292,8 @@ describe('usage reporting', () => {
     });
   });
 
-  it.each(['cli', 'mcp'] as const)('reports a lookup on %s', async (transport) => {
-    const report = await run('show', { id: 'button' }, transport);
+  it('reports a lookup', async () => {
+    const report = await run('show', { id: 'button' });
 
     expect(report).toEqual({
       toolset: 'docs',
@@ -310,13 +304,13 @@ describe('usage reporting', () => {
   });
 
   it('reports a miss as not found', async () => {
-    const report = await run('show', { id: 'nope' }, 'mcp');
+    const report = await run('show', { id: 'nope' });
 
     expect(report?.counters).toMatchObject({ componentId: 'nope', found: false });
   });
 
-  it.each(['cli', 'mcp'] as const)('reports a story lookup by id on %s', async (transport) => {
-    const report = await run('showStory', { storyId: 'button--primary' }, transport);
+  it('reports a story lookup by id', async () => {
+    const report = await run('showStory', { storyId: 'button--primary' });
 
     expect(report).toEqual({
       toolset: 'docs',
@@ -332,7 +326,7 @@ describe('usage reporting', () => {
   });
 
   it('reports a story lookup by name with the resolved story id', async () => {
-    const report = await run('showStory', { componentId: 'button', storyName: 'Primary' }, 'mcp');
+    const report = await run('showStory', { componentId: 'button', storyName: 'Primary' });
 
     expect(report?.counters).toEqual({
       found: true,
@@ -343,7 +337,7 @@ describe('usage reporting', () => {
   });
 
   it('reports a missing story with the requested id', async () => {
-    const report = await run('showStory', { storyId: 'button--nope' }, 'mcp');
+    const report = await run('showStory', { storyId: 'button--nope' });
 
     expect(report?.counters).toMatchObject({
       found: false,
@@ -353,7 +347,7 @@ describe('usage reporting', () => {
   });
 
   it('reports a missing component without a story id', async () => {
-    const report = await run('showStory', { componentId: 'nope', storyName: 'Primary' }, 'mcp');
+    const report = await run('showStory', { componentId: 'nope', storyName: 'Primary' });
 
     expect(report?.counters).toMatchObject({ found: false, lookup: 'name' });
     expect(report?.counters.storyId).toBeUndefined();

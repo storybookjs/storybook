@@ -105,8 +105,8 @@ function fromToolset(
     ) => ToolEnabled;
   }
 ): AddonToolDefinition {
-  const { available, wrapEnabled, ...rest } = definition;
-  const options: ToolsetToolOptions = { ...definition.options, toolset: definition.toolset };
+  const { options: methodOptions, available, wrapEnabled, ...rest } = definition;
+  const options: ToolsetToolOptions = { ...methodOptions, toolset: definition.toolset };
   return {
     ...rest,
     // Read from the constant, not the registry: this array is built at import time, while toolsets

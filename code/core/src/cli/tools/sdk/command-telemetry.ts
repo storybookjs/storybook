@@ -30,6 +30,12 @@ export type ToolsCommandTelemetryPayload = ToolsCommandDimensions & {
   duration?: number;
 };
 
+/** The record as sent: the run's fields plus the handler's event name and counters, when it ran. */
+export type ToolsCommandTelemetryRecord = ToolsCommandTelemetryPayload & {
+  event?: string;
+  [counter: string]: unknown;
+};
+
 // Names are a fixed vocabulary of short identifiers; anything else is arbitrary agent input (a
 // typo'd path, a stray flag value) that must not be sent verbatim.
 export function sanitizeNamePart(part: string): string {
@@ -72,7 +78,7 @@ export async function reportToolsCommandEvent(
   options: { report?: ToolsetMethodReport; configDir?: string } = {}
 ): Promise<void> {
   const { report, configDir } = options;
-  const payload = report
+  const payload: ToolsCommandTelemetryRecord = report
     ? {
         ...report.counters,
         ...record,

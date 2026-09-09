@@ -10,7 +10,7 @@ import {
 } from './addon-a11y-parameters.ts';
 
 expect.addSnapshotSerializer({
-  serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
+  serialize: (val) => (typeof val === 'string' ? val : val.toString()),
   test: () => true,
 });
 
@@ -160,6 +160,58 @@ describe('a11yParameters', () => {
           }
         }
       `);
+    });
+
+    it('should transform CSF4 meta and story objects', () => {
+      const code = dedent`
+        import preview from './preview';
+
+        const meta = preview.meta({
+          parameters: { a11y: { element: '#meta' } },
+        });
+        export const Primary = meta.story({
+          parameters: { a11y: { element: '#story' } },
+        });
+      `;
+
+      expect(transformStories(code)).toMatchInlineSnapshot(`
+        import preview from './preview';
+
+        const meta = preview.meta({
+          parameters: { a11y: { context: '#meta' } },
+        });
+        export const Primary = meta.story({
+          parameters: { a11y: { context: '#story' } },
+        });
+      `);
+    });
+
+    it('should transform identifier-backed meta objects', () => {
+      const code = dedent`
+        const configuration = {
+          parameters: { a11y: { element: '#meta' } },
+        };
+        export default configuration;
+      `;
+
+      expect(transformStories(code)).toMatchInlineSnapshot(`
+        const configuration = {
+          parameters: { a11y: { context: '#meta' } },
+        };
+        export default configuration;
+      `);
+    });
+
+    it('should leave unsafe story objects unchanged', () => {
+      const code = dedent`
+        export default { title: 'Button' };
+        export const Primary = {
+          ...base,
+          parameters: { a11y: { element: '#root' } },
+        };
+      `;
+
+      expect(transformStories(code)).toBeNull();
     });
   });
 

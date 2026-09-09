@@ -214,16 +214,39 @@ const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): b
   return initializer ? isFactoryStory(csf, unwrapExpression(initializer), seen) : false;
 };
 
+const factoryMetaConfigurationIsSafe = (csf: CsfFile): boolean => {
+  const argument = csf._metaFactoryCall?.arguments[0];
+  if (!argument || !t.isIdentifier(argument)) {
+    return true;
+  }
+  const binding = csf._file.path.scope.getBinding(argument.name);
+  if (!binding?.constant || !binding.path.isVariableDeclarator()) {
+    return false;
+  }
+  const initializer = binding.path.node.init;
+  if (!initializer || !t.isObjectExpression(unwrapExpression(initializer))) {
+    return false;
+  }
+  return !binding.referencePaths.some((reference) => {
+    let member = reference;
+    while (member.parentPath?.isMemberExpression() && member.key === 'object') {
+      member = member.parentPath;
+    }
+    const parent = member.parentPath;
+    return (
+      (parent?.isAssignmentExpression() && parent.node.left === member.node) ||
+      parent?.isUpdateExpression() ||
+      (parent?.isUnaryExpression() && parent.node.operator === 'delete')
+    );
+  });
+};
+
 const discoverMeta = (
   csf: CsfFile,
   report: ReportDiagnostic,
   markChanged: MarkChanged
 ): CsfObject[] => {
-  if (
-    csf._metaIsFactory &&
-    csf._metaFactoryCall &&
-    t.isIdentifier(csf._metaFactoryCall.arguments[0])
-  ) {
+  if (csf._metaIsFactory && csf._metaFactoryCall && !factoryMetaConfigurationIsSafe(csf)) {
     report({
       code: 'unsupported-initializer',
       target: { kind: 'meta' },

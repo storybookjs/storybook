@@ -152,11 +152,6 @@ const addAliasedBindings = (
   }
 };
 
-const initializer = ({ declaration }: StoryBinding): t.Node | undefined =>
-  declaration.isVariableDeclarator()
-    ? (declaration.get('init').node ?? undefined)
-    : declaration.node;
-
 const factoryMember = (node: t.Node | undefined): 'story' | 'extend' | undefined => {
   const unwrapped = node && unwrapExpression(node);
   if (!unwrapped || !t.isCallExpression(unwrapped) || !t.isMemberExpression(unwrapped.callee)) {
@@ -178,9 +173,7 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
     addDirectBindings(statement, bindings, report, csf);
     addAliasedBindings(statement, bindings, report, csf);
   }
-  const candidates = [...bindings.values()].filter(
-    (binding) => binding.exportName in csf._stories || factoryMember(initializer(binding))
-  );
+  const candidates = [...bindings.values()].filter((binding) => binding.exportName in csf._stories);
   const unique = new Map<t.Node, StoryBinding>();
   for (const candidate of candidates) {
     const previous = unique.get(candidate.declaration.node);
@@ -200,7 +193,16 @@ const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): b
   }
   const receiver = node.callee.object.name;
   if (node.callee.property.name === 'story') {
-    return receiver === csf._metaVariableName;
+    if (receiver !== csf._metaVariableName || !csf._metaFactoryCall) {
+      return false;
+    }
+    const binding = csf._file.path.scope.getBinding(receiver);
+    return (
+      binding?.constant === true &&
+      binding.path.isVariableDeclarator() &&
+      t.isExpression(binding.path.node.init) &&
+      unwrapExpression(binding.path.node.init) === csf._metaFactoryCall
+    );
   }
   if (seen.has(receiver)) {
     return false;
@@ -217,6 +219,20 @@ const discoverMeta = (
   report: ReportDiagnostic,
   markChanged: MarkChanged
 ): CsfObject[] => {
+  if (
+    csf._metaIsFactory &&
+    csf._metaFactoryCall &&
+    t.isIdentifier(csf._metaFactoryCall.arguments[0])
+  ) {
+    report({
+      code: 'unsupported-initializer',
+      target: { kind: 'meta' },
+      path: [],
+      message: 'Cannot mutate CSF factory meta with an identifier-backed configuration',
+      ...(csf._metaFactoryCall.loc ? { loc: csf._metaFactoryCall.loc } : {}),
+    });
+    return [];
+  }
   const meta = metaObjectPath(csf);
   if (meta) {
     const binding = csf._metaVariableName
@@ -317,12 +333,26 @@ const annotationCandidate = (
       : left.node.computed && property.isStringLiteral()
         ? property.node.value
         : undefined;
+  const binding = bindings.get(object.node.name);
+  if (!propertyName && left.node.computed && binding && annotations.size > 0) {
+    const annotation = annotations.has('parameters') ? 'parameters' : 'story';
+    return {
+      target: {
+        kind: 'story-annotation',
+        exportName: binding.exportName,
+        localName: binding.localName,
+        annotation,
+      },
+      annotation,
+      node: property.node,
+      message: `Cannot mutate ${binding.localName} annotation because its computed name is not a static string literal`,
+    };
+  }
   if (!propertyName) {
     return undefined;
   }
   const annotation =
     propertyName === 'parameters' ? 'parameters' : propertyName === 'story' ? 'story' : undefined;
-  const binding = bindings.get(object.node.name);
   if (!annotation || !binding || !annotations.has(annotation)) {
     return undefined;
   }

@@ -220,25 +220,18 @@ const factoryMetaConfigurationIsSafe = (csf: CsfFile): boolean => {
     return true;
   }
   const binding = csf._file.path.scope.getBinding(argument.name);
-  if (!binding?.constant || !binding.path.isVariableDeclarator()) {
+  if (
+    !binding?.constant ||
+    !binding.path.isVariableDeclarator() ||
+    !binding.path.parentPath?.isVariableDeclaration({ kind: 'const' })
+  ) {
     return false;
   }
   const initializer = binding.path.node.init;
   if (!initializer || !t.isObjectExpression(unwrapExpression(initializer))) {
     return false;
   }
-  return !binding.referencePaths.some((reference) => {
-    let member = reference;
-    while (member.parentPath?.isMemberExpression() && member.key === 'object') {
-      member = member.parentPath;
-    }
-    const parent = member.parentPath;
-    return (
-      (parent?.isAssignmentExpression() && parent.node.left === member.node) ||
-      parent?.isUpdateExpression() ||
-      (parent?.isUnaryExpression() && parent.node.operator === 'delete')
-    );
-  });
+  return binding.referencePaths.length === 1 && binding.referencePaths[0].node === argument;
 };
 
 const discoverMeta = (
@@ -327,28 +320,28 @@ const discoverStories = (
     return root ? [createCsfObject(storyTarget(binding), root, [], report, markChanged)] : [];
   });
 
-const annotationCandidate = (
+const annotationCandidates = (
   csf: CsfFile,
   statement: NodePath<t.Statement>,
   bindings: Map<string, StoryBinding>,
   annotations: Set<'parameters' | 'story'>
-): AnnotationCandidate | undefined => {
+): AnnotationCandidate[] => {
   if (!statement.isExpressionStatement()) {
-    return undefined;
+    return [];
   }
   const expression = statement.get('expression');
   if (!expression.isAssignmentExpression()) {
-    return undefined;
+    return [];
   }
   const left = expression.get('left');
   const right = expression.get('right');
   if (!left.isMemberExpression() || !right.isExpression()) {
-    return undefined;
+    return [];
   }
   const object = left.get('object');
   const property = left.get('property');
   if (!object.isIdentifier()) {
-    return undefined;
+    return [];
   }
   const propertyName =
     !left.node.computed && property.isIdentifier()
@@ -358,8 +351,7 @@ const annotationCandidate = (
         : undefined;
   const binding = bindings.get(object.node.name);
   if (!propertyName && left.node.computed && binding && annotations.size > 0) {
-    const annotation = annotations.has('parameters') ? 'parameters' : 'story';
-    return {
+    return [...annotations].map((annotation) => ({
       target: {
         kind: 'story-annotation',
         exportName: binding.exportName,
@@ -369,36 +361,38 @@ const annotationCandidate = (
       annotation,
       node: property.node,
       message: `Cannot mutate ${binding.localName} annotation because its computed name is not a static string literal`,
-    };
+    }));
   }
   if (!propertyName) {
-    return undefined;
+    return [];
   }
   const annotation =
     propertyName === 'parameters' ? 'parameters' : propertyName === 'story' ? 'story' : undefined;
   if (!annotation || !binding || !annotations.has(annotation)) {
-    return undefined;
+    return [];
   }
   const rootNode = unwrapExpression(right.node);
-  return {
-    target: {
-      kind: 'story-annotation',
-      exportName: binding.exportName,
-      localName: binding.localName,
+  return [
+    {
+      target: {
+        kind: 'story-annotation',
+        exportName: binding.exportName,
+        localName: binding.localName,
+        annotation,
+      },
       annotation,
+      root:
+        expression.node.operator === '=' && t.isObjectExpression(rootNode)
+          ? pathForNode(csf._file.path, rootNode)
+          : undefined,
+      node: right.node,
+      ...(expression.node.operator === '='
+        ? {}
+        : {
+            message: `Cannot mutate ${binding.localName}.${annotation} because it uses ${expression.node.operator} assignment`,
+          }),
     },
-    annotation,
-    root:
-      expression.node.operator === '=' && t.isObjectExpression(rootNode)
-        ? pathForNode(csf._file.path, rootNode)
-        : undefined,
-    node: right.node,
-    ...(expression.node.operator === '='
-      ? {}
-      : {
-          message: `Cannot mutate ${binding.localName}.${annotation} because it uses ${expression.node.operator} assignment`,
-        }),
-  };
+  ];
 };
 
 const reportOrCreateAnnotation = (
@@ -444,8 +438,7 @@ const discoverAnnotations = (
   const bindings = new Map(storyBindings.map((binding) => [binding.localName, binding]));
   const candidates = new Map<string, AnnotationCandidate[]>();
   for (const statement of csf._file.path.get('body')) {
-    const candidate = annotationCandidate(csf, statement, bindings, annotations);
-    if (candidate) {
+    for (const candidate of annotationCandidates(csf, statement, bindings, annotations)) {
       const identity = `${candidate.target.localName}:${candidate.annotation}`;
       candidates.set(identity, [...(candidates.get(identity) ?? []), candidate]);
     }

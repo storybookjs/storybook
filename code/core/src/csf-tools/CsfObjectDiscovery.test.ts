@@ -44,6 +44,32 @@ describe('CsfObject discovery', () => {
     );
   });
 
+  it('rejects every requested annotation after a computed CSF2 write', () => {
+    const csf = parse(`
+      const key = getKey();
+      export default { title: 'Example' };
+      export const Basic = () => null;
+      Basic.story = { name: 'Basic' };
+      Basic[key] = { a11y: true };
+    `);
+
+    expect(
+      csf.objects({ meta: false, stories: false, annotations: ['parameters', 'story'] })
+    ).toEqual([]);
+    expect(csf.mutationDiagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'unsupported-initializer',
+          target: expect.objectContaining({ annotation: 'parameters' }),
+        }),
+        expect.objectContaining({
+          code: 'ambiguous-binding',
+          target: expect.objectContaining({ annotation: 'story' }),
+        }),
+      ])
+    );
+  });
+
   it('does not discover excluded CSF4 factory exports', () => {
     const csf = parse(`
       import preview from './preview';
@@ -127,6 +153,22 @@ describe('CsfObject discovery', () => {
         config.parameters = { componentSubtitle: 'new' };
       `,
     ],
+    [
+      'an aliased binding',
+      `
+        const config = { title: 'Example' };
+        const alias = config;
+        alias.title = 'Changed';
+      `,
+    ],
+    [
+      'an Object.assign call',
+      `
+        const config = { title: 'Example' };
+        Object.assign(config, { title: 'Changed' });
+      `,
+    ],
+    ['a non-const binding', `let config = { title: 'Example' }`],
     ['a non-object binding', `const config = []`],
     ['an unresolved binding', ''],
   ])('rejects identifier-backed factory meta configuration with %s', (_kind, config) => {

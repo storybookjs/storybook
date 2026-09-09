@@ -1,9 +1,11 @@
+import type { NodePath } from 'storybook/internal/babel';
 import { traverse, types as t } from 'storybook/internal/babel';
 import type { CsfFile, CsfObject } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import type { ObjectExpression } from '@babel/types';
-import type { Scope } from '@babel/traverse';
+
+type Scope = NodePath['scope'];
 
 import { getObjectProperty } from '../helpers/ast-utils.ts';
 import {

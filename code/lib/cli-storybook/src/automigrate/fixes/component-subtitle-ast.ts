@@ -1,7 +1,9 @@
+import type { NodePath } from 'storybook/internal/babel';
 import { traverse, types as t } from 'storybook/internal/babel';
 
 import type { Expression, ObjectExpression } from '@babel/types';
-import type { Scope } from '@babel/traverse';
+
+type Scope = NodePath['scope'];
 
 import {
   findSpreadProperty,

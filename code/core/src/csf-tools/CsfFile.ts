@@ -700,6 +700,7 @@ export class CsfFile {
                   : specifier.local;
 
                 if (exportName === 'default') {
+                  self._metaVariableName = localName;
                   let metaNode: t.ObjectExpression | undefined;
 
                   if (t.isObjectExpression(decl)) {
@@ -857,9 +858,13 @@ export class CsfFile {
                 if (isValidPreviewPath(configParent.source.value)) {
                   self._metaIsFactory = true;
                   self._metaFactoryCall = node;
-                  const metaDeclarator = path.findParent((p) =>
-                    p.isVariableDeclarator()
-                  ) as NodePath<t.VariableDeclarator>;
+                  const metaDeclarator = path.findParent((p) => p.isVariableDeclarator());
+
+                  if (!metaDeclarator?.isVariableDeclarator()) {
+                    self._metaVariableName = callee.property.name;
+                    self._parseMeta(t.objectExpression([]), self._ast.program);
+                    return;
+                  }
 
                   // find the name of the meta variable declaration
                   // e.g. const foo = preview.meta({ ... });

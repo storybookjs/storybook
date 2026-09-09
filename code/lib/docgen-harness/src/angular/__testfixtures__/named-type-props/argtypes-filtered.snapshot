@@ -1,0 +1,100 @@
+{
+  "config": {
+    "description": "
+",
+    "name": "config",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "{ collapsed: false }",
+      },
+      "type": {
+        "required": true,
+        "summary": "PanelConfig",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "id": {
+    "description": "
+",
+    "name": "id",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "sb-1",
+      },
+      "type": {
+        "required": true,
+        "summary": "ScalarId",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "status": {
+    "description": "
+",
+    "name": "status",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "Color.Green",
+      },
+      "type": {
+        "required": true,
+        "summary": "Color",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "red",
+        "green",
+      ],
+    },
+  },
+  "tree": {
+    "description": "
+",
+    "name": "tree",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "TreeNode",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "user": {
+    "description": "
+",
+    "name": "user",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "{ name: 'Ada Lovelace', age: 36 }",
+      },
+      "type": {
+        "required": true,
+        "summary": "User",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+}

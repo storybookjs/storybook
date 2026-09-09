@@ -1218,7 +1218,7 @@ describe('ConfigFile', () => {
         expect(config.getNameFromPath(['otherField'])).toEqual('foo');
       });
 
-      it(`supports pnp wrapped names`, () => {
+      it(`supports wrapped names`, () => {
         const source = dedent`
           import type { StorybookConfig } from '@storybook/react-webpack5';
 
@@ -1935,7 +1935,7 @@ describe('ConfigFile', () => {
       expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
-    it('removes a pnp-wrapped string entry', () => {
+    it('removes a wrapped string entry', () => {
       const source = dedent`
         export default {
           addons: ['a', getAbsolutePath('b'), 'c'],
@@ -1946,7 +1946,7 @@ describe('ConfigFile', () => {
       expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
-    it('removes a pnp-wrapped object entry', () => {
+    it('removes a wrapped object entry', () => {
       const source = dedent`
         export default {
           addons: ['a',  { name: getAbsolutePath('b'), options: {} }, 'c'],

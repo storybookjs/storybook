@@ -720,8 +720,7 @@ export abstract class JsPackageManager {
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
 
-  // TODO: Remove pnp compatibility code in SB11
-  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
+  /** Returns the installed version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
     const cacheKey = packageName;
 

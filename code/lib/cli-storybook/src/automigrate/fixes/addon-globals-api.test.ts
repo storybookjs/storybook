@@ -5,13 +5,10 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { printCsf } from 'storybook/internal/csf-tools';
 
-// Import common to mock
 import { dedent } from 'ts-dedent';
 
-// Import FixResult type
 import { addonGlobalsApi, transformStoryFile } from './addon-globals-api.ts';
 
-// Mock fs/promises
 vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises.ts'));
 
 vi.mock(import('storybook/internal/babel'), async (actualImport) => {
@@ -28,13 +25,13 @@ vi.mock(import('storybook/internal/babel'), async (actualImport) => {
 const previewConfigPath = join('.storybook', 'preview.js');
 
 const check = async (previewContents: string) => {
-  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
+  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as never).__setMockFiles({
     [previewConfigPath]: previewContents,
   });
   return addonGlobalsApi.check({
-    packageManager: {} as any,
+    packageManager: {} as never,
     configDir: '',
-    mainConfig: {} as any,
+    mainConfig: {} as never,
     storybookVersion: '9.0.0', // Assume v9 for testing migrations
     previewConfigPath,
     storiesPaths: [],
@@ -42,25 +39,21 @@ const check = async (previewContents: string) => {
   });
 };
 
-// Helper to run the migration for preview file and capture transform function
 const runMigrationAndGetTransformFn = async (previewContents: string) => {
   const result = await check(previewContents);
   const mockWriteFile = vi.mocked(fsp.writeFile);
 
   let transformFn: (filePath: string, content: string) => string | null = () => null;
 
-  let transformOptions: any;
-
   if (result) {
     await addonGlobalsApi.run?.({
       result,
       dryRun: false,
-      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'], // Mock stories paths
-      packageManager: {} as any, // Add necessary mock properties
-    } as any);
+      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'],
+      packageManager: {} as never,
+    } as never);
 
     if (result) {
-      // Create a transform function that uses transformStoryFile + printCsf
       transformFn = (filePath: string, content: string) => {
         const transformed = transformStoryFile(content, {
           needsViewportMigration: result.needsViewportMigration,
@@ -70,20 +63,12 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
         });
         return transformed ? printCsf(transformed, {}).code : null;
       };
-      // Extract options passed to transformStoryFile from the closure
-      // This is a bit indirect, relying on the implementation detail
-      transformOptions = {
-        needsViewportMigration: result.needsViewportMigration,
-        needsBackgroundsMigration: result.needsBackgroundsMigration,
-        backgroundValues: result.backgroundsOptions?.values,
-      };
     }
   }
 
   return {
     previewFileContent: mockWriteFile.mock.calls[0]?.[1] as string | undefined,
     transformFn,
-    transformOptions,
     migrationResult: result,
   };
 };
@@ -107,7 +92,8 @@ describe('addon-globals-api', () => {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' },
                 tablet: { name: 'Tablet', width: '768px', height: '1024px' }
               },
-              defaultViewport: 'mobile'
+              defaultViewport: 'mobile',
+              disable: true
             }
           }
         }
@@ -117,6 +103,7 @@ describe('addon-globals-api', () => {
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(false);
       expect(result?.viewportsOptions?.defaultViewport).toBe('mobile');
+      expect(result?.viewportsOptions?.disable).toBe(true);
     });
 
     it('should detect backgrounds configuration', async () => {
@@ -316,7 +303,6 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      // Verify the transformation results
       expect(previewFileContent).toMatchInlineSnapshot(`
         "export default {
           parameters: {
@@ -331,6 +317,22 @@ describe('addon-globals-api', () => {
       `);
     });
 
+    it('should remove deprecated backgrounds disable when disabled already exists', async () => {
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
+        export default {
+          parameters: {
+            backgrounds: {
+              disable: false,
+              disabled: true
+            }
+          }
+        }
+      `);
+
+      expect(previewFileContent).toContain('disabled: true');
+      expect(previewFileContent).not.toMatch(/\bdisable:/);
+    });
+
     it('should migrate both viewport and backgrounds configurations', async () => {
       const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
@@ -339,7 +341,8 @@ describe('addon-globals-api', () => {
               viewports: {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' }
               },
-              defaultViewport: 'mobile'
+              defaultViewport: 'mobile',
+              disable: true
             },
             backgrounds: {
               values: [
@@ -358,7 +361,9 @@ describe('addon-globals-api', () => {
       viewport: {
         options: {
           mobile: { name: 'Mobile', width: '320px', height: '568px' }
-        }
+        },
+
+        disabled: true
       },
       backgrounds: {
         options: {
@@ -400,7 +405,6 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      // Verify the transformation results
       expect(previewFileContent).toMatchInlineSnapshot(`
         "export default {
           parameters: {
@@ -543,7 +547,6 @@ describe('addon-globals-api', () => {
           };
         `;
 
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -568,7 +571,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -591,7 +593,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -614,7 +615,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -641,7 +641,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -673,7 +672,6 @@ describe('addon-globals-api', () => {
           export const Default = {};
         `;
 
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default {
@@ -726,7 +724,6 @@ describe('addon-globals-api', () => {
           } 
         };
       `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
 
@@ -806,6 +803,8 @@ describe('addon-globals-api', () => {
               }
             }
           };
+
+          export const Unchanged = { parameters: {} };
         `;
       expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
@@ -828,7 +827,9 @@ describe('addon-globals-api', () => {
               value: 'dark'
             }
           }
-        };"
+        };
+
+        export const Unchanged = { parameters: {} };"
       `);
     });
 

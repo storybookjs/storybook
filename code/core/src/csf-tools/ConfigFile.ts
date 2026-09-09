@@ -488,7 +488,7 @@ export class ConfigFile {
     return pathNames;
   }
 
-  _getPnpWrappedValue(node: t.Node) {
+  _getWrappedValue(node: t.Node) {
     if (t.isCallExpression(node)) {
       const arg = node.arguments[0];
       if (t.isStringLiteral(arg)) {
@@ -519,7 +519,7 @@ export class ConfigFile {
           if (t.isStringLiteral(prop.value)) {
             value = prop.value.value;
           } else {
-            value = this._getPnpWrappedValue(prop.value);
+            value = this._getWrappedValue(prop.value);
           }
         }
 
@@ -534,7 +534,7 @@ export class ConfigFile {
         }
       });
     } else if (t.isCallExpression(node)) {
-      value = this._getPnpWrappedValue(node);
+      value = this._getWrappedValue(node);
     }
 
     if (!value) {
@@ -647,7 +647,7 @@ export class ConfigFile {
           const name = this._getPresetValue(element, 'name');
           return name === value;
         }
-        return this._getPnpWrappedValue(element as t.Node) === value;
+        return this._getWrappedValue(element as t.Node) === value;
       });
       if (index >= 0) {
         current.elements.splice(index, 1);

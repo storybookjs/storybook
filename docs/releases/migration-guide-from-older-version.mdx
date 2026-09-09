@@ -145,6 +145,14 @@ The following packages have been consolidated and moved into an internal path to
 
 Addon authors may continue to use the internal packages, there is currently not yet any replacement.
 
+## Yarn PnP support removed
+
+Storybook 11 removes support for Yarn [Plug'n'Play](https://yarnpkg.com/features/pnp) (PnP), which was deprecated in Storybook 10:
+
+- The `--use-pnp` flag no longer exists on the `storybook init` and `create storybook` commands.
+- Storybook no longer bootstraps or scaffolds projects with Yarn PnP enabled. New projects always use the standard `node_modules` layout; if your project relies on Yarn PnP, switch your [`nodeLinker`](https://yarnpkg.com/features/linkers) setting to `node-modules`.
+- The `detectPnp` utility is no longer exported from `storybook/internal/cli`.
+
 ## Optional migrations
 
 In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 9 (but remain backwards compatible), or best practices that should help you be more productive in the future.

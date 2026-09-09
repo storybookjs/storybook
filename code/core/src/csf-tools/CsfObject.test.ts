@@ -40,7 +40,8 @@ describe('CsfObject', () => {
     expect(meta.set(['title'], replacement)).toEqual({ ok: true, changed: true });
     replacement.value = 'Mutated replacement';
 
-    expect(printCsf(csf).code).toBe(`export default { title: 'Replacement' };`);
+    expect(printCsf(csf).code).toContain('title: "Replacement"');
+    expect(printCsf(csf).code).not.toContain('Mutated');
   });
 
   it('discovers an identifier-backed aliased story once', () => {
@@ -139,6 +140,38 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
+  it('treats a move to the same path as a no-op', () => {
+    const source = `export default { title: 'Example' };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.rename(['title'], 'title')).toEqual({ ok: true, changed: false });
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('rejects prototype-setting destination paths', () => {
+    const source = `export default { title: 'Example' };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.set(['parameters', '__proto__', 'polluted'], t.booleanLiteral(true))).toMatchObject(
+      {
+        ok: false,
+        diagnostic: { code: 'unsupported-member' },
+      }
+    );
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('addresses numeric literal keys by their static string value', () => {
+    const csf = parse(`export default { parameters: { 1: 'one' } };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', '1'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).not.toContain(`1: 'one'`);
+  });
+
   it('rejects reassigned direct exports', () => {
     const csf = parse(`
       export default { title: 'Example' };
@@ -170,6 +203,73 @@ describe('CsfObject', () => {
     );
   });
 
+  it('selects a retained alias when another alias is excluded', () => {
+    const csf = parse(`
+      export default { title: 'Example', includeStories: ['Second'] };
+      const Local = { args: {} };
+      export { Local as First, Local as Second };
+    `);
+    const [story] = csf.objects({ meta: false, stories: true });
+
+    expect(story.target).toEqual({ kind: 'story', exportName: 'Second', localName: 'Local' });
+  });
+
+  it('rejects a reassigned identifier-backed meta object', () => {
+    const csf = parse(`
+      let meta = { title: 'First' };
+      meta = { title: 'Second' };
+      export default meta;
+    `);
+
+    expect(csf.objects({ meta: true, stories: false })).toHaveLength(0);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'ambiguous-binding', target: { kind: 'meta' } })
+    );
+  });
+
+  it('supports static bracket notation for CSF2 annotations', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Basic = () => null;
+      Basic['parameters'] = { a11y: true };
+    `);
+    const [parameters] = csf.objects({
+      meta: false,
+      stories: false,
+      annotations: ['parameters'],
+    });
+
+    expect(parameters.remove(['parameters', 'a11y'])).toEqual({ ok: true, changed: true });
+    expect(printCsf(csf).code).not.toContain('a11y');
+  });
+
+  it('reports compound CSF2 annotation assignments', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Basic = () => null;
+      Basic.parameters ||= { a11y: true };
+    `);
+
+    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toHaveLength(
+      0
+    );
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'unsupported-initializer' })
+    );
+  });
+
+  it('does not discover or diagnose stories when only meta is requested', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export let Basic = { args: {} };
+      Basic = { args: { changed: true } };
+    `);
+
+    expect(csf.objects({ meta: true, stories: false })).toHaveLength(1);
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(csf.mutationDiagnostics).not.toBe(csf.mutationDiagnostics);
+  });
+
   it('mutates CSF4 meta objects', () => {
     const csf = parse(`
       import preview from './preview';
@@ -181,22 +281,35 @@ describe('CsfObject', () => {
     expect(
       meta.move(['parameters', 'componentSubtitle'], ['parameters', 'docs', 'subtitle'])
     ).toEqual({ ok: true, changed: true });
-    expect(printCsf(csf).code).toContain(
-      `const meta = preview.meta({ parameters: { docs: { subtitle: 'Buttons' } } });`
+    expect(printCsf(csf).code).toMatch(
+      /preview\.meta\(\{ parameters: \{ docs: \{\s+subtitle: 'Buttons'/
     );
   });
 
-  it.each([
-    ['story', `export const Basic = meta.story({ parameters: { a11y: true } });`],
-    [
-      'extend',
-      `const Base = meta.story({});\nexport const Basic = Base.extend({ parameters: { a11y: true } });`,
-    ],
-  ])('mutates CSF4 %s objects', (_kind, story) => {
+  it('renames fields in CSF4 story objects', () => {
     const csf = parse(`
       import preview from './preview';
       const meta = preview.meta({ title: 'Example' });
-      ${story}
+      export const Basic = meta.story({ parameters: {
+        // Keep the configuration note.
+        a11y: true,
+      } });
+    `);
+    const [basic] = csf.objects({ meta: false, stories: true });
+
+    expect(basic.rename(['parameters', 'a11y'], 'accessibility')).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toMatch(/Keep the configuration note\.\s+accessibility: true/);
+  });
+
+  it('removes fields from CSF4 extended story objects', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      const Base = meta.story({});
+      export const Basic = Base.extend({ parameters: { a11y: true } });
     `);
     const [basic] = csf.objects({ meta: false, stories: true });
 

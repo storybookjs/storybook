@@ -9,6 +9,8 @@ import { VisionSimulator } from './VisionSimulator.tsx';
 const managerContext: any = {
   state: {},
   api: {
+    on: fn(),
+    off: fn(),
     getGlobals: fn(() => ({ vision: undefined })),
     updateGlobals: fn(),
     getStoryGlobals: fn(() => ({ vision: undefined })),
@@ -20,8 +22,16 @@ const meta = preview.meta({
   title: 'Vision Simulator',
   component: VisionSimulator,
   decorators: [
-    (Story: any) => (
-      <ManagerContext.Provider value={managerContext}>
+    (Story: any, context) => (
+      <ManagerContext.Provider
+        value={{
+          ...managerContext,
+          api: {
+            ...managerContext.api,
+            getCurrentParameter: (key: string) => context.parameters[key],
+          },
+        }}
+      >
         <Story />
       </ManagerContext.Provider>
     ),
@@ -53,5 +63,16 @@ export const Selection = meta.story({
     await expect(
       context.canvas.getByRole('button', { name: 'Vision filter Blurred vision' })
     ).toBeVisible();
+  },
+});
+
+export const Disabled = meta.story({
+  parameters: {
+    visionSimulator: {
+      disable: true,
+    },
+  },
+  play: async ({ canvas }) => {
+    await expect(canvas.queryByRole('button', { name: 'Vision filter' })).not.toBeInTheDocument();
   },
 });

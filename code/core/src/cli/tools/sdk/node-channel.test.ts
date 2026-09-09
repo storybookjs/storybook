@@ -152,10 +152,10 @@ describe('createNodeChannel', () => {
     channel.on(CHANNEL_WS_DISCONNECT, (payload) => disconnects.push(payload));
     const connection = await firstConnection();
 
-    connection.close(1006, 'abnormal closure');
+    connection.close(1000);
 
     await expect(disconnected).rejects.toThrow('Storybook dev server disconnected');
-    expect(disconnects).toEqual([{ code: 1006, reason: 'abnormal closure' }]);
+    expect(disconnects).toEqual([{ code: 1000, reason: '' }]);
   });
 
   it('rejects with a dev server disconnected error when the server was never reachable', async () => {

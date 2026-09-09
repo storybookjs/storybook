@@ -357,6 +357,11 @@ When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.ag
 
 These usually start long-running development servers and are the wrong default for agents.
 
+## Repository skills
+
+- Canonical contributor skills live in `.agents/skills/`; `.claude/skills/` contains references to them.
+- Use [principle-encode-lessons-in-structure](.agents/skills/principle-encode-lessons-in-structure/SKILL.md) to turn recurring corrections into enforceable checks.
+
 ## Code Authoring Principles
 
 These are recurring failure modes in agent-authored changes to this repo. Apply them when writing or reviewing code, not just when asked.

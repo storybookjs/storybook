@@ -12,7 +12,11 @@
       },
       "type": {
         "name": "enum",
-        "value": ["Type Alias 1", "Type Alias 2", "Type Alias 3"]
+        "value": [
+          "Type Alias 1",
+          "Type Alias 2",
+          "Type Alias 3"
+        ]
       }
     },
     "enumAlias": {
@@ -22,6 +26,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
+          "detail": "EnumAlias {\n  FIRST\n  SECOND\n  THIRD\n}",
           "summary": "EnumAlias"
         }
       },
@@ -37,6 +42,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
+          "detail": "EnumNumeric {\n  FIRST\n  SECOND\n  THIRD\n}",
           "summary": "EnumNumeric"
         }
       },
@@ -52,6 +58,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
+          "detail": "EnumNumericInitial {\n  UNO = 1\n  DOS\n  TRES\n}",
           "summary": "EnumNumericInitial"
         }
       },
@@ -67,12 +74,17 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
+          "detail": "EnumStringValues {\n  PRIMARY = 'PRIMARY'\n  SECONDARY = 'SECONDARY'\n  TERTIARY = 'TERTIARY'\n}",
           "summary": "EnumStringValues"
         }
       },
       "type": {
         "name": "enum",
-        "value": ["PRIMARY", "SECONDARY", "TERTIARY"]
+        "value": [
+          "PRIMARY",
+          "SECONDARY",
+          "TERTIARY"
+        ]
       }
     },
     "unionType": {
@@ -87,7 +99,11 @@
       },
       "type": {
         "name": "enum",
-        "value": ["Union A", "Union B", "Union C"]
+        "value": [
+          "Union A",
+          "Union B",
+          "Union C"
+        ]
       }
     }
   },

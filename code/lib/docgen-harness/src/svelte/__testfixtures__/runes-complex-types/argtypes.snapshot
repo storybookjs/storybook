@@ -1,0 +1,122 @@
+{
+  "config": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Required panel config.",
+    "name": "config",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "PanelConfig",
+      },
+    },
+    "type": {
+      "name": "PanelConfig",
+      "required": true,
+    },
+  },
+  "items": {
+    "control": {
+      "type": "array",
+    },
+    "description": "Item labels.",
+    "name": "items",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "string[]",
+      "required": false,
+    },
+  },
+  "lookup": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Lookup table.",
+    "name": "lookup",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Record<string, number>",
+      },
+    },
+    "type": {
+      "name": "Record<string, number>",
+      "required": false,
+    },
+  },
+  "pair": {
+    "control": {
+      "type": "array",
+    },
+    "description": "Numeric pair.",
+    "name": "pair",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "[number, number]",
+      },
+    },
+    "type": {
+      "name": "[number, number]",
+      "required": false,
+    },
+  },
+  "state": {
+    "control": {
+      "type": "intersection",
+    },
+    "description": "Partial state override.",
+    "name": "state",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Partial<PanelConfig> & { open: boolean; }",
+      },
+    },
+    "type": {
+      "name": "Partial<PanelConfig> & { open: boolean; }",
+      "required": false,
+    },
+  },
+  "when": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Activation time.",
+    "name": "when",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "Date",
+      "required": false,
+    },
+  },
+}

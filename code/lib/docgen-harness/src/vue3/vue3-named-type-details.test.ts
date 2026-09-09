@@ -1,0 +1,155 @@
+import { readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
+
+import ts from 'typescript';
+import { createCheckerByJson } from 'vue-component-meta';
+
+import {
+  CHECKER_OPTIONS,
+  collectComponentMetaSources,
+} from '../../../../renderers/vue3/src/docgen/component-meta.ts';
+import { createNamedTypeDetailResolver } from '../../../../renderers/vue3/src/docgen/named-type-detail.ts';
+import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
+import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
+
+/**
+ * Pins the docgen-server named-type expansion (storybookjs/storybook#13459) against a real
+ * vue-component-meta checker: the same collectComponentMetaSources + extractArgTypes pipeline
+ * the docgen worker runs, with a resolver built from the checker's underlying TS program.
+ * `table.type` is asserted strictly so the detail text format, the 20-line cap and the flat
+ * cases (absent detail key) are all pinned byte for byte.
+ */
+
+const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, CHECKER_OPTIONS);
+
+/** The committed-snapshot gates prove the argType exists; fail loudly if it ever drifts. */
+function tableTypeOf(
+  argTypes: StrictArgTypes,
+  name: string
+): NonNullable<NonNullable<StrictInputType['table']>['type']> {
+  const table = argTypes[name]?.table;
+  if (!table?.type) {
+    throw new Error(`argType "${name}" has no table.type`);
+  }
+  return table.type;
+}
+
+async function serverArgTypesFor(fixtureCase: string) {
+  const testDir = join(fixturesDir, fixtureCase);
+  const [sfcFile] = readdirSync(testDir).filter((file) => file.endsWith('.vue'));
+  const sfcPath = join(testDir, sfcFile);
+
+  const sources = await collectComponentMetaSources(checker, sfcPath, ts);
+  const meta = sources.find((source) => source.exportName === 'default');
+  expect(meta, `no default export found in ${fixtureCase}`).toBeDefined();
+
+  const resolver = createNamedTypeDetailResolver({
+    checker,
+    typescript: ts,
+    componentPath: sfcPath,
+  });
+  return { resolver, argTypes: extractArgTypes({ __docgenInfo: meta! }, resolver)! };
+}
+
+describe('vue3 docgen-server named-type details', () => {
+  let argTypes: Awaited<ReturnType<typeof serverArgTypesFor>>['argTypes'];
+
+  it('expands cross-file interfaces with their property lines', async () => {
+    ({ argTypes } = await serverArgTypesFor('named-type-details'));
+    // Member JSDoc ("The display name.") is deliberately not rendered: descriptions are only
+    // appended when already available in the payload, and member metadata is stripped there.
+    expect(tableTypeOf(argTypes, 'user')).toEqual({
+      summary: 'User',
+      detail: 'User {\n  name: string\n  age: number\n}',
+    });
+    // summary and sbType are untouched by the expansion
+    expect(argTypes.user.type).toEqual({ name: 'object', value: {}, required: true });
+  });
+
+  it('expands string TS enums to their member lines', () => {
+    expect(tableTypeOf(argTypes, 'color')).toEqual({
+      summary: 'Color',
+      detail: "Color {\n  Red = 'red'\n  Green = 'green'\n}",
+    });
+  });
+
+  it('expands numeric TS enums to their member lines', () => {
+    expect(tableTypeOf(argTypes, 'level')).toEqual({
+      summary: 'Level',
+      detail: 'Level {\n  Low = 0\n  High = 1\n}',
+    });
+  });
+
+  it('expands namespace-qualified references', () => {
+    expect(tableTypeOf(argTypes, 'namespaced')).toEqual({
+      summary: 'AppTypes.Nested',
+      detail: 'AppTypes.Nested {\n  key: string\n  count: number\n}',
+    });
+  });
+
+  it('caps member lines at 20 with an "… N more" summary', () => {
+    expect(tableTypeOf(argTypes, 'big')).toEqual({
+      summary: 'BigInterface',
+      detail: `BigInterface {\n${Array.from(
+        { length: 20 },
+        (_, i) => `  p${String(i).padStart(2, '0')}: string`
+      ).join('\n')}\n… 3 more\n}`,
+    });
+  });
+
+  it('stays flat for scalar aliases', () => {
+    // vue-component-meta normalizes the alias to its scalar before extraction, so the resolver
+    // never sees "ID" at all
+    expect(tableTypeOf(argTypes, 'scalarAlias')).toEqual({ summary: 'string' });
+  });
+
+  it('stays flat for literal-union aliases', () => {
+    expect(tableTypeOf(argTypes, 'shapes')).toEqual({ summary: 'Shapes' });
+  });
+
+  it('stays flat for index-signature-only aliases', () => {
+    expect(tableTypeOf(argTypes, 'dict')).toEqual({ summary: 'Dict' });
+  });
+
+  it('stays flat for inline object literals', () => {
+    expect(tableTypeOf(argTypes, 'inlined')).toEqual({ summary: '{ foo: string; bar: number; }' });
+  });
+
+  it('stays flat for types declared in node_modules', () => {
+    expect(tableTypeOf(argTypes, 'builtin')).toEqual({ summary: 'Date' });
+  });
+
+  it('expands mutually recursive object aliases one hop without hanging', () => {
+    // A pure alias-to-alias cycle is unrepresentable in valid TS (TS2456), so the cycle guard's
+    // residual value is defensive; the compiled cyclic graph must still resolve bounded output.
+    expect(tableTypeOf(argTypes, 'cyclic')).toEqual({
+      summary: 'AliasA',
+      detail: 'AliasA {\n  peer: AliasB\n}',
+    });
+  });
+
+  it('expands self-referential interfaces one hop', async () => {
+    ({ argTypes } = await serverArgTypesFor('recursive-type'));
+    expect(tableTypeOf(argTypes, 'node')).toEqual({
+      summary: 'TreeNode',
+      detail: 'TreeNode {\n  value: string\n  children: TreeNode[]\n}',
+    });
+  });
+
+  it('keeps the no-resolver extraction free of details', async () => {
+    const testDir = join(fixturesDir, 'named-type-details');
+    const sfcPath = join(testDir, 'NamedTypeDetails.vue');
+    const sources = await collectComponentMetaSources(checker, sfcPath, ts);
+    const meta = sources.find((source) => source.exportName === 'default')!;
+
+    const plainArgTypes = extractArgTypes({ __docgenInfo: meta })!;
+    for (const [name, argType] of Object.entries(plainArgTypes)) {
+      // the legacy client and Vite-plugin paths get exactly this shape
+      expect(argType.table?.type, name).not.toHaveProperty('detail');
+    }
+  });
+});

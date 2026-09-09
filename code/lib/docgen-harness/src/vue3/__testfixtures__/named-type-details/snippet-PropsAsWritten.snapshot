@@ -1,0 +1,23 @@
+<script lang="ts" setup>
+const big = {};
+
+const builtin = "1970-01-01T00:00:00.000Z";
+
+const cyclic = {
+  "peer": {
+    "peer": null
+  }
+};
+
+const dict = {"a":1};
+
+const inlined = {"foo":"foo","bar":1};
+
+const namespaced = {"key":"k","count":2};
+
+const user = {"name":"Ada","age":36};
+</script>
+
+<template>
+  <NamedTypeDetails :big="big" :builtin="builtin" color="red" :cyclic="cyclic" :dict="dict" :inlined="inlined" :level="1" :namespaced="namespaced" scalarAlias="abc-123" shapes="circle" :user="user" />
+</template>

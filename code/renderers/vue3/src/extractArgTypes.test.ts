@@ -9,6 +9,7 @@ import {
   extractArgTypes,
   extractFromVueComponentMeta,
 } from './extractArgTypes.ts';
+import type { VueDocgenInfoEntry } from './types.ts';
 
 vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();
@@ -32,6 +33,100 @@ describe('extractArgTypes', () => {
     (extractComponentProps as Mock).mockReturnValueOnce([] as any);
 
     expect(extractArgTypes({} as any)).toBeNull();
+  });
+
+  it('should pass the named-type resolver only to the vue-component-meta extraction', () => {
+    (hasDocgen as unknown as Mock).mockReturnValue(true);
+    const propMeta = {
+      name: 'user',
+      type: 'User | undefined',
+      required: false,
+      schema: { kind: 'object', type: 'User' },
+      description: '',
+      tags: [],
+    } as unknown as VueDocgenInfoEntry<'vue-component-meta', 'props'>;
+    (extractComponentProps as Mock).mockImplementation((_component: unknown, section: string) =>
+      section === 'props' ? [{ docgenInfo: propMeta }] : []
+    );
+    const resolveNamedTypeDetail = vi.fn(() => 'User {\n  name: string\n}');
+
+    const argTypes = extractArgTypes(
+      { __docgenInfo: { props: [propMeta], exposed: [] } } as any,
+      resolveNamedTypeDetail
+    );
+
+    expect(resolveNamedTypeDetail).toHaveBeenCalledWith('User');
+    expect(argTypes?.user?.table?.type).toEqual({
+      summary: 'User',
+      detail: 'User {\n  name: string\n}',
+    });
+  });
+
+  it('should not invoke the named-type resolver for the legacy vue-docgen-api extraction', () => {
+    (hasDocgen as unknown as Mock).mockReturnValue(true);
+    const doc = {
+      name: 'user',
+      type: { name: 'string' },
+      required: false,
+      description: '',
+    } as unknown as VueDocgenInfoEntry<'vue-docgen-api', 'props'>;
+    (extractComponentProps as Mock).mockImplementation((_component: unknown, section: string) =>
+      section === 'props' ? [{ docgenInfo: doc, propDef: { defaultValue: undefined } }] : []
+    );
+    const resolveNamedTypeDetail = vi.fn(() => 'should never be used');
+
+    const argTypes = extractArgTypes(
+      { __docgenInfo: { props: [doc] } } as any,
+      resolveNamedTypeDetail
+    );
+
+    expect(resolveNamedTypeDetail).not.toHaveBeenCalled();
+    expect(argTypes?.user?.table?.type).toEqual({ summary: 'string' });
+  });
+});
+
+describe('extractFromVueComponentMeta named-type detail', () => {
+  const propInfo = {
+    name: 'user',
+    type: 'User | undefined',
+    required: false,
+    schema: { kind: 'object', type: 'User' },
+    description: '',
+    tags: [],
+  } as unknown as VueDocgenInfoEntry<'vue-component-meta', 'props'>;
+
+  it('should emit the resolver text as table.type.detail alongside the summary', () => {
+    const argType = extractFromVueComponentMeta(
+      propInfo,
+      'props',
+      () => 'User {\n  name: string\n}'
+    );
+
+    expect(argType?.table?.type).toEqual({ summary: 'User', detail: 'User {\n  name: string\n}' });
+  });
+
+  it('should leave the detail key absent when the resolver returns undefined', () => {
+    const argType = extractFromVueComponentMeta(propInfo, 'props', () => undefined);
+
+    expect(argType?.table?.type).toEqual({ summary: 'User' });
+  });
+
+  it('should leave the table untouched when no resolver is injected (legacy path)', () => {
+    const argType = extractFromVueComponentMeta(propInfo, 'props');
+
+    expect(argType?.table?.type).toEqual({ summary: 'User' });
+  });
+
+  it('should never resolve details for events and other non-prop sections', () => {
+    const eventInfo = {
+      name: 'change',
+      type: 'User',
+    } as unknown as VueDocgenInfoEntry<'vue-component-meta', 'events'>;
+    const resolveNamedTypeDetail = vi.fn(() => 'should never be used');
+
+    extractFromVueComponentMeta(eventInfo, 'events', resolveNamedTypeDetail);
+
+    expect(resolveNamedTypeDetail).not.toHaveBeenCalled();
   });
 });
 

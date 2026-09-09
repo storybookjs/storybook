@@ -298,12 +298,6 @@ const migrateStoryGlobals = (
   const viewportDisabled = options.needsViewportMigration
     ? object.get(['parameters', 'viewport', 'disabled'])
     : undefined;
-  const viewportGlobal = options.needsViewportMigration
-    ? object.get(['globals', 'viewport', 'value'])
-    : undefined;
-  const viewportRotated = options.needsViewportMigration
-    ? object.get(['globals', 'viewport', 'isRotated'])
-    : undefined;
   const backgroundValues = options.needsBackgroundsMigration
     ? object.get(['parameters', 'backgrounds', 'values'])
     : undefined;
@@ -319,7 +313,20 @@ const migrateStoryGlobals = (
   const backgroundDisabled = options.needsBackgroundsMigration
     ? object.get(['parameters', 'backgrounds', 'disabled'])
     : undefined;
-  const backgroundGlobal = options.needsBackgroundsMigration
+
+  // The `globals` reads stay behind the fields that need them, so an unprovable value that no
+  // migration would write does not make the whole object unsafe.
+  const canSetGlobals = object.target.kind !== 'story-annotation';
+  const migratesViewportDefault =
+    canSetGlobals && (t.isStringLiteral(viewportDefault) || t.isMemberExpression(viewportDefault));
+  const viewportGlobal = migratesViewportDefault
+    ? object.get(['globals', 'viewport', 'value'])
+    : undefined;
+  const viewportRotated = migratesViewportDefault
+    ? object.get(['globals', 'viewport', 'isRotated'])
+    : undefined;
+  const migratesBackgroundDefault = canSetGlobals && t.isStringLiteral(backgroundDefault);
+  const backgroundGlobal = migratesBackgroundDefault
     ? object.get(['globals', 'backgrounds', 'value'])
     : undefined;
 
@@ -327,13 +334,11 @@ const migrateStoryGlobals = (
     return;
   }
 
-  const canSetGlobals = object.target.kind !== 'story-annotation';
-  if (
-    canSetGlobals &&
-    (t.isStringLiteral(viewportDefault) || t.isMemberExpression(viewportDefault))
-  ) {
-    if (!viewportGlobal) {
-      object.set(['globals', 'viewport', 'value'], viewportDefault);
+  if (migratesViewportDefault) {
+    if (viewportGlobal) {
+      object.remove(['parameters', 'viewport', 'defaultViewport']);
+    } else {
+      object.move(['parameters', 'viewport', 'defaultViewport'], ['globals', 'viewport', 'value']);
       const orientationCanBeMigrated =
         !viewportOrientation ||
         (t.isStringLiteral(viewportOrientation) &&
@@ -348,7 +353,6 @@ const migrateStoryGlobals = (
         object.remove(['parameters', 'viewport', 'defaultOrientation']);
       }
     }
-    object.remove(['parameters', 'viewport', 'defaultViewport']);
   }
   if (t.isBooleanLiteral(viewportDisable)) {
     if (viewportDisabled) {
@@ -359,13 +363,12 @@ const migrateStoryGlobals = (
   }
 
   if (t.isArrayExpression(backgroundValues) && !backgroundOptions) {
-    object.set(
-      ['parameters', 'backgrounds', 'options'],
-      transformValuesToOptions(backgroundValues)
+    object.transform(['parameters', 'backgrounds', 'values'], (values) =>
+      t.isArrayExpression(values) ? transformValuesToOptions(values) : undefined
     );
-    object.remove(['parameters', 'backgrounds', 'values']);
+    object.rename(['parameters', 'backgrounds', 'values'], 'options');
   }
-  if (canSetGlobals && t.isStringLiteral(backgroundDefault)) {
+  if (migratesBackgroundDefault) {
     if (!backgroundGlobal) {
       object.set(
         ['globals', 'backgrounds', 'value'],

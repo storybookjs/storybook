@@ -98,7 +98,7 @@ describe('CsfObject', () => {
   });
 
   it.each([
-    ['spread-field', `{ ...base, componentSubtitle: 'Unsafe' }`],
+    ['spread-field', `{ componentSubtitle: 'Unsafe', ...base }`],
     ['dynamic-key', `{ [field]: 'Unsafe', componentSubtitle: 'Unsafe' }`],
     ['duplicate-field', `{ componentSubtitle: 'One', componentSubtitle: 'Two' }`],
     ['unsupported-member', `{ get componentSubtitle() { return 'Unsafe' } }`],
@@ -114,6 +114,61 @@ describe('CsfObject', () => {
     });
     expect(csf.changed).toBe(false);
     expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('mutates a field that an earlier spread cannot shadow', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Primary = {
+        ...base,
+        parameters: { a11y: { element: '#root' } },
+      };
+    `);
+    const [primary] = csf.objects({ meta: false, stories: true });
+
+    expect(primary.rename(['parameters', 'a11y', 'element'], 'context')).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain(`context: '#root'`);
+  });
+
+  it('rejects a field that a spread could provide', () => {
+    const source = `export default { parameters: { ...base } };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'spread-field' },
+    });
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('keeps the original source of nodes reused by a transformed value', () => {
+    const csf = parse(`
+      export default {
+        parameters: {
+          backgrounds: { values: [{ name: 'Gray', value: '#CCC' }] },
+        },
+      };
+    `);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(
+      meta.transform(['parameters', 'backgrounds', 'values'], (values) =>
+        t.isArrayExpression(values) && t.isExpression(values.elements[0])
+          ? t.objectExpression([t.objectProperty(t.identifier('gray'), values.elements[0])])
+          : undefined
+      )
+    ).toEqual({ ok: true, changed: true });
+    expect(meta.rename(['parameters', 'backgrounds', 'values'], 'options')).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toMatch(/options: \{\s+gray: \{ name: 'Gray', value: '#CCC' \}/);
   });
 
   it('rejects an occupied move destination without changing the source', () => {

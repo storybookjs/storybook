@@ -321,6 +321,12 @@ export class CsfFile {
 
   _metaFactoryCall: t.CallExpression | undefined;
 
+  /**
+   * True when the CSF factory configuration could not be resolved to an object literal in this
+   * file, so `_metaNode` is a stand-in that is not part of the AST. Writes to it are discarded.
+   */
+  _metaNodeIsSynthetic: boolean | undefined;
+
   _storyStatements: Record<string, t.ExportNamedDeclaration | t.Expression> = {};
 
   _storyAnnotations: Record<string, Record<string, t.Node>> = {};
@@ -865,18 +871,13 @@ export class CsfFile {
                   self._metaFactoryCall = node;
                   const metaDeclarator = path.findParent((p) => p.isVariableDeclarator());
 
-                  if (!metaDeclarator?.isVariableDeclarator()) {
-                    self._metaVariableName = callee.property.name;
-                    self._parseMeta(t.objectExpression([]), self._ast.program);
-                    return;
-                  }
-
                   // find the name of the meta variable declaration
                   // e.g. const foo = preview.meta({ ... });
                   // otherwise fallback to meta
-                  self._metaVariableName = t.isIdentifier(metaDeclarator.node.id)
-                    ? metaDeclarator.node.id.name
-                    : callee.property.name;
+                  self._metaVariableName =
+                    metaDeclarator?.isVariableDeclarator() && t.isIdentifier(metaDeclarator.node.id)
+                      ? metaDeclarator.node.id.name
+                      : callee.property.name;
                   const [argument] = node.arguments;
                   const argumentBinding =
                     argument && t.isIdentifier(argument)
@@ -887,10 +888,12 @@ export class CsfFile {
                       ? argumentBinding.path.node.init
                       : argument;
                   const unwrappedArgument = argumentNode && unwrapExpression(argumentNode);
-                  const metaNode = t.isObjectExpression(unwrappedArgument)
-                    ? unwrappedArgument
-                    : t.objectExpression([]);
-                  self._parseMeta(metaNode, self._ast.program);
+                  if (t.isObjectExpression(unwrappedArgument)) {
+                    self._parseMeta(unwrappedArgument, self._ast.program);
+                  } else {
+                    self._metaNodeIsSynthetic = true;
+                    self._parseMeta(t.objectExpression([]), self._ast.program);
+                  }
                 } else if (rootObject.name === 'preview') {
                   // Only throw if the variable is named "preview" - this indicates
                   // the user is trying to use CSF Factories but with a wrong import path.

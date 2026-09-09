@@ -131,7 +131,7 @@ export const enrichCsfMeta = (csf: CsfFile, csfSource: CsfFile, options?: Enrich
   // docs: { description: { component: %%description%% } },
   if (description) {
     const metaNode = csf._metaNode;
-    if (metaNode && t.isObjectExpression(metaNode)) {
+    if (metaNode && !csf._metaNodeIsSynthetic && t.isObjectExpression(metaNode)) {
       addComponentDescription(
         metaNode,
         ['parameters', 'docs', 'description'],

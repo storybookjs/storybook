@@ -39,6 +39,16 @@ export interface CsfObject {
   readonly changed: boolean;
   get(path: readonly string[]): t.Expression | undefined;
   set(path: readonly string[], value: t.Expression): CsfMutationResult;
+  /**
+   * Replaces the value at `path` with the result of `derive`, which receives the value's live AST
+   * node. Nodes reused by the derived value keep their original source, so a value-transforming
+   * relocation prints as written instead of being pretty-printed. Returning `undefined` keeps the
+   * current value.
+   */
+  transform(
+    path: readonly string[],
+    derive: (value: t.Expression) => t.Expression | undefined
+  ): CsfMutationResult;
   remove(path: readonly string[]): CsfMutationResult;
   rename(path: readonly string[], name: string): CsfMutationResult;
   move(from: readonly string[], to: readonly string[]): CsfMutationResult;
@@ -80,10 +90,16 @@ const unsafePath = (path: readonly string[]) => path.includes('__proto__');
 
 const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLookup => {
   const matches: t.ObjectProperty[] = [];
+  let spread: t.SpreadElement | undefined;
+  let spreadAfterMatch: t.SpreadElement | undefined;
 
   for (const member of object.properties) {
     if (t.isSpreadElement(member)) {
-      return { ok: false, code: 'spread-field', node: member };
+      spread = member;
+      if (matches.length > 0) {
+        spreadAfterMatch = member;
+      }
+      continue;
     }
     const key = staticKey(member);
     if (key === undefined) {
@@ -100,6 +116,12 @@ const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLooku
 
   if (matches.length > 1) {
     return { ok: false, code: 'duplicate-field', node: matches[1] };
+  }
+  // A spread before an explicit property cannot shadow it, but a spread after it can, and a spread
+  // without any explicit property leaves both the value and its absence unproven.
+  const unproven = spreadAfterMatch ?? (matches.length === 0 ? spread : undefined);
+  if (unproven) {
+    return { ok: false, code: 'spread-field', node: unproven };
   }
   return { ok: true, property: matches[0] };
 };
@@ -154,6 +176,30 @@ class CsfObjectEditor implements CsfObject {
         t.objectProperty(keyNode(logicalPath.at(-1)!), t.cloneNode(value, true))
       );
     }
+    return this.success();
+  }
+
+  transform(
+    path: readonly string[],
+    derive: (value: t.Expression) => t.Expression | undefined
+  ): CsfMutationResult {
+    const logicalPath = this.normalizePath(path);
+    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
+      return this.failure('unsupported-member', path, this.root.node);
+    }
+    const inspected = this.inspect(logicalPath);
+    if (!inspected.ok) {
+      return this.failure(inspected.code, path, inspected.node);
+    }
+    const { property } = inspected;
+    if (!property || !t.isExpression(property.value)) {
+      return { ok: true, changed: false };
+    }
+    const derived = derive(property.value);
+    if (!derived || derived === property.value) {
+      return { ok: true, changed: false };
+    }
+    property.value = derived;
     return this.success();
   }
 

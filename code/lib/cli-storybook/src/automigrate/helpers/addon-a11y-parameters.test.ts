@@ -202,12 +202,30 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should leave unsafe story objects unchanged', () => {
+    it('should transform parameters an earlier spread cannot shadow', () => {
       const code = dedent`
         export default { title: 'Button' };
         export const Primary = {
           ...base,
           parameters: { a11y: { element: '#root' } },
+        };
+      `;
+
+      expect(transformStories(code)).toMatchInlineSnapshot(`
+        export default { title: 'Button' };
+        export const Primary = {
+          ...base,
+          parameters: { a11y: { context: '#root' } },
+        };
+      `);
+    });
+
+    it('should leave story objects with a shadowing spread unchanged', () => {
+      const code = dedent`
+        export default { title: 'Button' };
+        export const Primary = {
+          parameters: { a11y: { element: '#root' } },
+          ...base,
         };
       `;
 

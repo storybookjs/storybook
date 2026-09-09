@@ -62,12 +62,42 @@ describe('addon-globals-api story objects', () => {
       export const Primary = meta.story({
         globals: {
           viewport: {
-            value: "mobile",
+            value: 'mobile',
             isRotated: false
           }
         },
       });"
     `);
+  });
+
+  it('migrates parameters an earlier spread cannot shadow', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        ...base,
+        parameters: { backgrounds: { disable: true } },
+      };
+    `;
+
+    expect(transform(source)).toMatchInlineSnapshot(`
+      "export default { title: 'Button' };
+      export const Primary = {
+        ...base,
+        parameters: { backgrounds: { disabled: true } },
+      };"
+    `);
+  });
+
+  it('leaves story objects with a shadowing spread unchanged', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        parameters: { backgrounds: { disable: true } },
+        ...base,
+      };
+    `;
+
+    expect(transform(source)).toBeNull();
   });
 
   it('leaves unsafe story objects unchanged', () => {

@@ -100,11 +100,39 @@ describe('CsfObject discovery', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
-  it('rejects identifier-backed factory meta configurations with member writes', () => {
+  it('discovers an identifier-backed factory meta configuration', () => {
     const csf = parse(`
       import preview from './preview';
-      const config = { title: 'Example', parameters: { componentSubtitle: 'old' } };
-      config.parameters = { componentSubtitle: 'new' };
+      const config = { title: 'Example' };
+      const meta = preview.meta(config);
+      export const Basic = meta.story({});
+    `);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
+  });
+
+  it.each([
+    [
+      'a reassigned binding',
+      `
+        let config = { title: 'Example' };
+        config = { title: 'Changed' };
+      `,
+    ],
+    [
+      'a member-mutated binding',
+      `
+        const config = { title: 'Example', parameters: { componentSubtitle: 'old' } };
+        config.parameters = { componentSubtitle: 'new' };
+      `,
+    ],
+    ['a non-object binding', `const config = []`],
+    ['an unresolved binding', ''],
+  ])('rejects identifier-backed factory meta configuration with %s', (_kind, config) => {
+    const csf = parse(`
+      import preview from './preview';
+      ${config}
       const meta = preview.meta(config);
       export const Basic = meta.story({});
     `);

@@ -335,17 +335,16 @@ describe('CsfObject', () => {
     );
   });
 
-  it('rejects identifier-backed factory meta configuration', () => {
+  it('supports identifier-backed factory meta configuration', () => {
     const csf = parse(`
       import preview from './preview';
       const config = { title: 'Example' };
       const meta = preview.meta(config);
       export const Basic = meta.story({});
     `);
-    expect(csf.objects({ meta: true, stories: false })).toEqual([]);
-    expect(csf.mutationDiagnostics).toContainEqual(
-      expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
-    );
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
   });
 
   it('rejects mutable identifier-backed factory meta configuration', () => {

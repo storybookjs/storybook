@@ -385,8 +385,12 @@ const migrateStoryGlobals = (
     }
   }
 
-  removeEmptyObject(object, ['parameters', 'viewport']);
-  removeEmptyObject(object, ['parameters', 'backgrounds']);
+  if (options.needsViewportMigration) {
+    removeEmptyObject(object, ['parameters', 'viewport']);
+  }
+  if (options.needsBackgroundsMigration) {
+    removeEmptyObject(object, ['parameters', 'backgrounds']);
+  }
   removeEmptyObject(object, ['parameters']);
 };
 

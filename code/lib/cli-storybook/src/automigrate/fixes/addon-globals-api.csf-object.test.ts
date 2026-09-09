@@ -100,6 +100,24 @@ describe('addon-globals-api story objects', () => {
     expect(transform(source)).toBeNull();
   });
 
+  it('leaves an empty viewport parameter alone when only backgrounds migrate', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        parameters: { viewport: {} },
+      };
+    `;
+
+    expect(
+      transformStoryFile(source, {
+        needsViewportMigration: false,
+        needsBackgroundsMigration: true,
+        viewportsOptions: undefined,
+        backgroundsOptions: undefined,
+      })
+    ).toBeNull();
+  });
+
   it('leaves unsafe story objects unchanged', () => {
     const source = dedent`
       export default { title: 'Button' };

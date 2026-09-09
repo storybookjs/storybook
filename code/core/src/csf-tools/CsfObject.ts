@@ -42,8 +42,11 @@ export interface CsfObject {
   /**
    * Replaces the value at `path` with the result of `derive`, which receives the value's live AST
    * node. Nodes reused by the derived value keep their original source, so a value-transforming
-   * relocation prints as written instead of being pretty-printed. Returning `undefined` keeps the
-   * current value.
+   * relocation prints as written instead of being pretty-printed.
+   *
+   * `derive` must return a new node, or `undefined` to keep the current value. It must not mutate
+   * its argument or retain it beyond the call: a mutation made through the live node happens
+   * outside this editor, so it is reported by neither `changed` nor a diagnostic.
    */
   transform(
     path: readonly string[],
@@ -90,20 +93,20 @@ const unsafePath = (path: readonly string[]) => path.includes('__proto__');
 
 const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLookup => {
   const matches: t.ObjectProperty[] = [];
-  let spread: t.SpreadElement | undefined;
-  let spreadAfterMatch: t.SpreadElement | undefined;
+  let unknown: { code: CsfMutationDiagnosticCode; node: t.Node } | undefined;
+  let unknownAfterMatch: { code: CsfMutationDiagnosticCode; node: t.Node } | undefined;
 
   for (const member of object.properties) {
-    if (t.isSpreadElement(member)) {
-      spread = member;
+    const key = t.isSpreadElement(member) ? undefined : staticKey(member);
+    if (key === undefined) {
+      unknown = {
+        code: t.isSpreadElement(member) ? 'spread-field' : 'dynamic-key',
+        node: member,
+      };
       if (matches.length > 0) {
-        spreadAfterMatch = member;
+        unknownAfterMatch = unknown;
       }
       continue;
-    }
-    const key = staticKey(member);
-    if (key === undefined) {
-      return { ok: false, code: 'dynamic-key', node: member };
     }
     if (key !== name) {
       continue;
@@ -117,11 +120,12 @@ const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLooku
   if (matches.length > 1) {
     return { ok: false, code: 'duplicate-field', node: matches[1] };
   }
-  // A spread before an explicit property cannot shadow it, but a spread after it can, and a spread
-  // without any explicit property leaves both the value and its absence unproven.
-  const unproven = spreadAfterMatch ?? (matches.length === 0 ? spread : undefined);
+  // A member whose key is only known at runtime cannot shadow an explicit property declared after
+  // it, but it can shadow one declared before it, and with no explicit property at all it leaves
+  // both the value and its absence unproven.
+  const unproven = unknownAfterMatch ?? (matches.length === 0 ? unknown : undefined);
   if (unproven) {
-    return { ok: false, code: 'spread-field', node: unproven };
+    return { ok: false, code: unproven.code, node: unproven.node };
   }
   return { ok: true, property: matches[0] };
 };

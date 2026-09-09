@@ -99,7 +99,7 @@ describe('CsfObject', () => {
 
   it.each([
     ['spread-field', `{ componentSubtitle: 'Unsafe', ...base }`],
-    ['dynamic-key', `{ [field]: 'Unsafe', componentSubtitle: 'Unsafe' }`],
+    ['dynamic-key', `{ componentSubtitle: 'Unsafe', [field]: 'Unsafe' }`],
     ['duplicate-field', `{ componentSubtitle: 'One', componentSubtitle: 'Two' }`],
     ['unsupported-member', `{ get componentSubtitle() { return 'Unsafe' } }`],
   ])('rejects %s without changing the source', (code, parameters) => {
@@ -116,11 +116,14 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toBe(source);
   });
 
-  it('mutates a field that an earlier spread cannot shadow', () => {
+  it.each([
+    ['spread', `...base`],
+    ['computed key', `[field]: true`],
+  ])('mutates a field an earlier %s cannot shadow', (_kind, member) => {
     const csf = parse(`
       export default { title: 'Example' };
       export const Primary = {
-        ...base,
+        ${member},
         parameters: { a11y: { element: '#root' } },
       };
     `);
@@ -133,15 +136,18 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toContain(`context: '#root'`);
   });
 
-  it('rejects a field that a spread could provide', () => {
-    const source = `export default { parameters: { ...base } };`;
+  it.each([
+    ['spread-field', `...base`],
+    ['dynamic-key', `[field]: true`],
+  ])('rejects a field only %s could provide', (code, member) => {
+    const source = `export default { parameters: { ${member} } };`;
     const csf = parse(source);
     const [meta] = csf.objects({ meta: true, stories: false });
 
     expect(meta.remove(['parameters', 'componentSubtitle'])).toMatchObject({
       ok: false,
       changed: false,
-      diagnostic: { code: 'spread-field' },
+      diagnostic: { code },
     });
     expect(csf.changed).toBe(false);
     expect(printCsf(csf).code).toBe(source);

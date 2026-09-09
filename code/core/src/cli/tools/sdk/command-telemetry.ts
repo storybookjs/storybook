@@ -30,7 +30,7 @@ export type ToolsCommandTelemetryPayload = ToolsCommandDimensions & {
   duration?: number;
 };
 
-/** The record as sent: the run's fields plus the handler's event name and counters, when it ran. */
+/** The record as sent: the run's fields plus the handler's event name and payload, when it ran. */
 export type ToolsCommandTelemetryRecord = ToolsCommandTelemetryPayload & {
   event?: string;
   [counter: string]: unknown;
@@ -71,7 +71,7 @@ export function commandPartsFromRef(ref: string): { toolset: string; tool: strin
   }
 }
 
-// The record describes the run and wins over the handler's counters; the report names the method
+// The record describes the run and wins over the handler's payload; the report names the method
 // and wins over whatever the caller parsed, so a record always carries the registered spelling.
 export async function reportToolsCommandEvent(
   record: ToolsCommandTelemetryPayload,
@@ -80,7 +80,7 @@ export async function reportToolsCommandEvent(
   const { report, configDir } = options;
   const payload: ToolsCommandTelemetryRecord = report
     ? {
-        ...report.counters,
+        ...report.payload,
         ...record,
         event: report.event,
         toolset: report.toolset,

@@ -63,7 +63,7 @@ const echo = defineToolset({
         ok: true as const,
         data: {},
         markdown: '',
-        telemetry: { event: 'tool:count', counters: { itemCount: 2 } },
+        telemetry: { event: 'tool:count', payload: { itemCount: 2 } },
       }),
     },
     slow: {
@@ -574,7 +574,7 @@ describe('createTools', () => {
                   ok: true as const,
                   data: { origin: ctx.origin },
                   markdown: ctx.origin ?? '',
-                  telemetry: { event: 'tool:ping', counters: { pingCount: 1 } },
+                  telemetry: { event: 'tool:ping', payload: { pingCount: 1 } },
                 }),
               },
             },
@@ -591,7 +591,7 @@ describe('createTools', () => {
       toolset: 'probe',
       tool: 'ping',
       event: 'tool:ping',
-      counters: { pingCount: 1 },
+      payload: { pingCount: 1 },
     });
     expect(invocationPayloads()).toEqual([
       expect.objectContaining({ toolset: 'probe', tool: 'ping', event: 'tool:ping', pingCount: 1 }),

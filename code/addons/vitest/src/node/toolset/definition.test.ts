@@ -449,7 +449,7 @@ No story found for story ID "gone--story"`);
         toolset: 'test',
         tool: 'run',
         event: 'tool:runStoryTests',
-        counters: {
+        payload: {
           runA11y: true,
           inputStoryCount: 1,
           matchedStoryCount: 1,
@@ -473,7 +473,7 @@ No story found for story ID "gone--story"`);
         toolset: 'test',
         tool: 'run',
         event: 'tool:runStoryTests',
-        counters: {
+        payload: {
           runA11y: false,
           inputStoryCount: 1,
           matchedStoryCount: 0,

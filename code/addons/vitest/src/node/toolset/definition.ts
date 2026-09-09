@@ -166,7 +166,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
   if (data.status === 'no-stories') {
     return {
       event: 'tool:runStoryTests',
-      counters: {
+      payload: {
         runA11y: data.a11y,
         inputStoryCount,
         matchedStoryCount: 0,
@@ -184,7 +184,7 @@ function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryRepor
 
   return {
     event: 'tool:runStoryTests',
-    counters: {
+    payload: {
       runA11y: data.a11y,
       inputStoryCount,
       // A partially resolved selector list never reaches a run, so every input matched by this point.

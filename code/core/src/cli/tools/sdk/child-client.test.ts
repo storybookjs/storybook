@@ -262,7 +262,7 @@ describe('spawnChildHost', () => {
       toolset: 'docs',
       tool: 'list',
       event: 'tool:listAllDocumentation',
-      counters: { componentCount: 3 },
+      payload: { componentCount: 3 },
     };
     child.send.mockImplementation((message: { type: string; id?: string }) => {
       if (message.type === 'init') {

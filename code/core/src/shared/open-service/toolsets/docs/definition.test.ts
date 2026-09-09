@@ -283,7 +283,7 @@ describe('usage reporting', () => {
       toolset: 'docs',
       tool: 'list',
       event: 'tool:listAllDocumentation',
-      counters: {
+      payload: {
         componentCount: 1,
         docsCount: 1,
         resultTokenCount: expect.any(Number),
@@ -299,14 +299,14 @@ describe('usage reporting', () => {
       toolset: 'docs',
       tool: 'show',
       event: 'tool:getDocumentation',
-      counters: { componentId: 'button', found: true, resultTokenCount: expect.any(Number) },
+      payload: { componentId: 'button', found: true, resultTokenCount: expect.any(Number) },
     });
   });
 
   it('reports a miss as not found', async () => {
     const report = await run('show', { id: 'nope' });
 
-    expect(report?.counters).toMatchObject({ componentId: 'nope', found: false });
+    expect(report?.payload).toMatchObject({ componentId: 'nope', found: false });
   });
 
   it('reports a story lookup by id', async () => {
@@ -316,7 +316,7 @@ describe('usage reporting', () => {
       toolset: 'docs',
       tool: 'show-story',
       event: 'tool:getDocumentationForStory',
-      counters: {
+      payload: {
         found: true,
         storyId: 'button--primary',
         lookup: 'storyId',
@@ -328,7 +328,7 @@ describe('usage reporting', () => {
   it('reports a story lookup by name with the resolved story id', async () => {
     const report = await run('showStory', { componentId: 'button', storyName: 'Primary' });
 
-    expect(report?.counters).toEqual({
+    expect(report?.payload).toEqual({
       found: true,
       storyId: 'button--primary',
       lookup: 'name',
@@ -339,7 +339,7 @@ describe('usage reporting', () => {
   it('reports a missing story with the requested id', async () => {
     const report = await run('showStory', { storyId: 'button--nope' });
 
-    expect(report?.counters).toMatchObject({
+    expect(report?.payload).toMatchObject({
       found: false,
       storyId: 'button--nope',
       lookup: 'storyId',
@@ -349,7 +349,7 @@ describe('usage reporting', () => {
   it('reports a missing component without a story id', async () => {
     const report = await run('showStory', { componentId: 'nope', storyName: 'Primary' });
 
-    expect(report?.counters).toMatchObject({ found: false, lookup: 'name' });
-    expect(report?.counters.storyId).toBeUndefined();
+    expect(report?.payload).toMatchObject({ found: false, lookup: 'name' });
+    expect(report?.payload.storyId).toBeUndefined();
   });
 });

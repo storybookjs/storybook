@@ -68,7 +68,7 @@ describe('review.create', () => {
       toolset: 'review',
       tool: 'create',
       event: 'tool:displayReview',
-      counters: { collectionCount: 1, storyCount: 1, changedFileCount: 1 },
+      payload: { collectionCount: 1, storyCount: 1, changedFileCount: 1 },
     });
   });
 

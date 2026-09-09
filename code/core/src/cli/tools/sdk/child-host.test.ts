@@ -171,7 +171,7 @@ describe('runChildHost', () => {
       ok: true as const,
       data: { ran: true },
       markdown: 'ok',
-      telemetry: { event: 'tool:listAllDocumentation', counters: { componentCount: 3 } },
+      telemetry: { event: 'tool:listAllDocumentation', payload: { componentCount: 3 } },
     };
     call.mockResolvedValue(outcome);
     await runChildHost({

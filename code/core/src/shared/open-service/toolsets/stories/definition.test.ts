@@ -203,7 +203,7 @@ describe('stories.preview', () => {
       toolset: 'stories',
       tool: 'preview',
       event: 'tool:previewStories',
-      counters: { inputStoryCount: 2, outputStoryCount: 2 },
+      payload: { inputStoryCount: 2, outputStoryCount: 2 },
     });
   });
 
@@ -335,7 +335,7 @@ describe('stories.changed', () => {
       toolset: 'stories',
       tool: 'changed',
       event: 'tool:getChangedStories',
-      counters: { storyCount: 1, newStoryCount: 1, modifiedStoryCount: 0, affectedStoryCount: 0 },
+      payload: { storyCount: 1, newStoryCount: 1, modifiedStoryCount: 0, affectedStoryCount: 0 },
     });
   });
 
@@ -475,7 +475,7 @@ describe('stories.findByComponent', () => {
       toolset: 'stories',
       tool: 'find-by-component',
       event: 'tool:getStoriesByComponent',
-      counters: { componentCount: 2, matchedComponentCount: 1, totalMatchCount: 1, maxDistance: 3 },
+      payload: { componentCount: 2, matchedComponentCount: 1, totalMatchCount: 1, maxDistance: 3 },
     });
   });
 

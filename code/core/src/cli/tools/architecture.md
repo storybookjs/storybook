@@ -111,7 +111,7 @@ those methods run in the caller. `stories.preview` reads origin from the instanc
 
 The CLI and the SDK fire one `tools-command` record per invocation after a run; help lookups are
 excluded so they cannot skew success rates. The record is the handler's usage report — `toolset`
-and `tool` in CLI spelling, its legacy `event` name, and its counters, all returned on the outcome
+and `tool` in CLI spelling, its legacy `event` name, and its payload, all returned on the outcome
 by `invokeToolsetMethod` — plus `success`, `outcome`, `duration`, and the attach fields
 (`attachMode` among them). A child host's report rides inside the outcome that already crosses
 IPC. Command-level side effects run on the instance.

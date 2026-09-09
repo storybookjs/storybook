@@ -26,14 +26,14 @@ export type ToolsetCtx = {
 };
 
 /**
- * A handler's usage report: the analytics event name and the counters describing what the call
- * did. It travels on the outcome, so a handler reports at most once and in the same object as its
+ * A handler's usage report: the analytics event name and the payload describing what the call
+ * did, counts and flags alike. It travels on the outcome, so a handler reports at most once and in the same object as its
  * data; the surface that ran the method turns it into its own telemetry record.
  *
  * Event names (`tool:previewStories`, …) are a frozen cross-version contract: keep them aligned
  * with older Storybook releases even when wire tool names or toolset ids change.
  */
-export type ToolsetTelemetryReport = { event: string; counters: Record<string, unknown> };
+export type ToolsetTelemetryReport = { event: string; payload: Record<string, unknown> };
 
 /**
  * A method description, resolved per transport.

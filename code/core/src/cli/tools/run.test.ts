@@ -780,7 +780,7 @@ describe('usage report', () => {
       toolset: 'docs',
       tool: 'list',
       event: 'tool:listAllDocumentation',
-      counters: expect.objectContaining({ componentCount: expect.any(Number) }),
+      payload: expect.objectContaining({ componentCount: expect.any(Number) }),
     });
   });
 

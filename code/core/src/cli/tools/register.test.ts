@@ -140,7 +140,7 @@ describe('tools-command telemetry', () => {
           toolset: 'stories',
           tool: 'changed',
           event: 'tool:getChangedStories',
-          counters: {
+          payload: {
             storyCount: 4,
             newStoryCount: 1,
             modifiedStoryCount: 3,
@@ -180,7 +180,7 @@ describe('tools-command telemetry', () => {
           toolset: 'stories',
           tool: 'find-by-component',
           event: 'tool:getStoriesByComponent',
-          counters: { componentCount: 1 },
+          payload: { componentCount: 1 },
         },
       })
     );

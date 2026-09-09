@@ -376,7 +376,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
               ? {
                   telemetry: {
                     event: 'tool:listAllDocumentation',
-                    counters: {
+                    payload: {
                       componentCount: Object.keys(counted.componentManifest.components).length,
                       docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
                       resultTokenCount: estimateTokens(markdown),
@@ -403,7 +403,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           const telemetry = {
             event: 'tool:getDocumentation',
-            counters: {
+            payload: {
               componentId: id,
               found: data.entry !== undefined,
               resultTokenCount: estimateTokens(markdown),
@@ -447,7 +447,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           const telemetry = {
             event: 'tool:getDocumentationForStory',
-            counters: {
+            payload: {
               found: resolution.kind === 'found',
               storyId: resolution.kind === 'found' ? resolution.story.id : storyId,
               lookup: storyId !== undefined ? 'storyId' : 'name',

@@ -39,7 +39,7 @@ function registerStubStoriesToolset(
                 ok: true,
                 data: { stories, extraNotInContract: 'internal' },
                 markdown: stories.map((story) => story.previewUrl).join('\n'),
-                telemetry: { event: 'tool:previewStories', counters: { inputStoryCount: 1 } },
+                telemetry: { event: 'tool:previewStories', payload: { inputStoryCount: 1 } },
               };
             }),
         },

@@ -114,8 +114,8 @@ async function reportToolsetTelemetry(
   if (!report || server.ctx.custom?.disableTelemetry) {
     return;
   }
-  const { event, counters, ...names } = report;
-  await collectTelemetry({ event, server, ...counters, ...names });
+  const { event, payload, ...names } = report;
+  await collectTelemetry({ event, server, ...payload, ...names });
 }
 
 /** Runs one toolset method and unwraps its outcome into an MCP tool result. */

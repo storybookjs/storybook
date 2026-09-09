@@ -63,13 +63,13 @@ describe('server: command push', () => {
         serviceId: recordServiceId,
         state: expect.objectContaining({ a: { k: 'v' } }),
         version: 1,
-        clientId: expect.any(String),
+        runtimeId: expect.any(String),
       })
     );
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
-  it('advances the version on each subsequent command, keeping a stable clientId', async () => {
+  it('advances the version on each subsequent command, keeping a stable runtimeId', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -80,8 +80,8 @@ describe('server: command push', () => {
 
     const patches = channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
     expect(patches.map(([, p]) => (p as { version: number }).version)).toEqual([1, 2]);
-    expect((patches[1][1] as { clientId: string }).clientId).toBe(
-      (patches[0][1] as { clientId: string }).clientId
+    expect((patches[1][1] as { runtimeId: string }).runtimeId).toBe(
+      (patches[0][1] as { runtimeId: string }).runtimeId
     );
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: '2' });
   });
@@ -95,20 +95,20 @@ describe('server: sync-start initialization', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     // Server adopts a peer patch: this both populates state and advances the server's stamp to the
-    // peer's (version, clientId).
+    // peer's (version, runtimeId).
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: recordServiceId,
       state: { a: { k: 'v' } },
       version: 1,
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
 
     // A different peer comes online and asks for current state; the server answers with the snapshot
-    // it now holds, stamped with the version/clientId it adopted (not its own initial clientId).
+    // it now holds, stamped with the version/runtimeId it adopted (not its own initial runtimeId).
     channel.emitExternal(SERVICE_SYNC_START, {
       serviceId: recordServiceId,
-      clientId: 'peer-2',
+      runtimeId: 'peer-2',
     });
 
     expect(channel.emit).toHaveBeenCalledWith(
@@ -117,7 +117,7 @@ describe('server: sync-start initialization', () => {
         serviceId: recordServiceId,
         state: expect.objectContaining({ a: { k: 'v' } }),
         version: 1,
-        clientId: 'peer-1',
+        runtimeId: 'peer-1',
       })
     );
   });
@@ -130,7 +130,7 @@ describe('server: sync-start initialization', () => {
 
     channel.emitExternal(SERVICE_SYNC_START, {
       serviceId: 'some-other-service',
-      clientId: 'peer-2',
+      runtimeId: 'peer-2',
     });
 
     const replyCalls = channel.emit.mock.calls.filter(
@@ -151,7 +151,7 @@ describe('server: patch application', () => {
       serviceId: recordServiceId,
       state: { entry: { marker: 'set' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
@@ -167,13 +167,13 @@ describe('server: patch application', () => {
       serviceId: recordServiceId,
       state: { entry: { marker: 'new' } },
       version: 2,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: recordServiceId,
       state: { entry: { marker: 'stale' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'new' });
@@ -189,7 +189,7 @@ describe('server: patch application', () => {
       serviceId: 'some-other-service',
       state: { entry: { x: '1' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toBeNull();
@@ -204,8 +204,8 @@ describe('server: patch application', () => {
     const malformed: unknown[] = [
       null,
       {},
-      { serviceId: recordServiceId, state: { a: { k: 'v' } }, clientId: 'p' },
-      { serviceId: recordServiceId, state: 'nope', version: 1, clientId: 'p' },
+      { serviceId: recordServiceId, state: { a: { k: 'v' } }, runtimeId: 'p' },
+      { serviceId: recordServiceId, state: 'nope', version: 1, runtimeId: 'p' },
     ];
 
     for (const payload of malformed) {
@@ -227,7 +227,7 @@ describe('server: teardown via clearRegistry', () => {
       serviceId: recordServiceId,
       state: { entry: { marker: 'set' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
 
@@ -242,7 +242,7 @@ describe('server: teardown via clearRegistry', () => {
       serviceId: recordServiceId,
       state: { entry: { marker: 'after' } },
       version: 2,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
   });
@@ -272,7 +272,7 @@ describe('server: bootstrap on registration', () => {
       serviceId: recordServiceId,
       state: { a: { k: 'v' } },
       version: 3,
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
 
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
@@ -312,7 +312,7 @@ describe('server: relay role', () => {
       serviceId: recordServiceId,
       state: { entry: { marker: 'set' } },
       version: 1,
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
 
     const relays = patchEmits(channel);
@@ -322,7 +322,7 @@ describe('server: relay role', () => {
         serviceId: recordServiceId,
         state: expect.objectContaining({ entry: { marker: 'set' } }),
         version: 1,
-        clientId: 'peer-1',
+        runtimeId: 'peer-1',
       })
     );
   });
@@ -337,7 +337,7 @@ describe('server: relay role', () => {
       serviceId: recordServiceId,
       state: { entry: { marker: 'boot' } },
       version: 4,
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
 
     const relays = patchEmits(channel);
@@ -351,7 +351,7 @@ describe('server: relay role', () => {
 
     registerService(mutableRecordLookupServiceDef);
 
-    const base = { serviceId: recordServiceId, clientId: 'peer-1' };
+    const base = { serviceId: recordServiceId, runtimeId: 'peer-1' };
     channel.emitExternal(SERVICE_PATCHES, {
       ...base,
       state: { entry: { marker: 'new' } },

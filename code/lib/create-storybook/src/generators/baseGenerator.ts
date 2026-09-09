@@ -16,11 +16,7 @@ import {
   optionalEnvToBoolean,
 } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import {
-  SupportedBuilder,
-  SupportedFramework,
-  SupportedLanguage,
-} from 'storybook/internal/types';
+import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -28,6 +24,7 @@ import { dedent } from 'ts-dedent';
 import { AddonService } from '../services/index.ts';
 import { configureMain, configurePreview } from './configure.ts';
 import type { FrameworkOptions, GeneratorOptions } from './types.ts';
+import { resolveWebpack5AjvPackageToInstall } from './webpack5Ajv.ts';
 
 const defaultOptions = {
   extraPackages: [],
@@ -202,16 +199,20 @@ export async function baseGenerator(
         })
       : extraPackages;
 
+  // Hoisted ESLint ajv@6 breaks webpack's schema-utils → ajv-keywords (needs ajv@8).
+  // Install ajv@8 when missing; never overwrite a user-owned incompatible direct range.
+  // See: https://github.com/storybookjs/storybook/issues/36176
+  const webpack5AjvPackage = resolveWebpack5AjvPackageToInstall({
+    builder,
+    declaredAjvRange: packageJson.dependencies?.ajv ?? packageJson.devDependencies?.ajv,
+  });
+
   const allPackages = [
     'storybook',
     ...(installFrameworkPackages ? [frameworkPackage] : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
-    // npm may hoist ESLint's ajv@6 to the project root while webpack's
-    // schema-utils → ajv-keywords needs ajv@8 (`ajv/dist/compile/codegen`).
-    // Installing ajv@8 as a direct dependency keeps resolution compatible.
-    // See: https://github.com/storybookjs/storybook/issues/36176
-    ...(builder === SupportedBuilder.WEBPACK5 ? ['ajv@^8.17.1'] : []),
+    ...(webpack5AjvPackage ? [webpack5AjvPackage] : []),
   ].filter(Boolean);
 
   const packagesToInstall = [...new Set(allPackages)].filter(

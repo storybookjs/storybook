@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
 
+import { dedent } from 'ts-dedent';
+
 import { loadCsf, printCsf } from './CsfFile.ts';
 
 const parse = (source: string) =>
@@ -16,22 +18,31 @@ describe('CsfObject values', () => {
     expect(meta.set(['parameters', 'count'], 2)).toEqual({ ok: true, changed: true });
     expect(meta.set(['parameters', 'enabled'], true)).toEqual({ ok: true, changed: true });
 
-    expect(printCsf(csf).code).toMatchInlineSnapshot(`
-      "export default {
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
         title: "Example",
 
         parameters: {
           count: 2,
           enabled: true
         }
-      };"
+      };
     `);
   });
 
-  it('transforms a value while retaining the source nodes returned by the callback', () => {
-    const csf = parse(
-      `export default { parameters: { backgrounds: { values: [{ name: 'Gray', value: '#CCC' }] } } };`
-    );
+  it('preserves comments on source nodes returned by a transform callback', () => {
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          backgrounds: {
+            values: [
+              // Keep the original color description.
+              { name: 'Gray', value: '#CCC' },
+            ],
+          },
+        },
+      };
+    `);
     const [meta] = csf.objects({ meta: true, stories: false });
 
     expect(
@@ -46,7 +57,18 @@ describe('CsfObject values', () => {
       })
     ).toEqual({ ok: true, changed: true });
 
-    expect(printCsf(csf).code).toContain(`gray: { name: 'Gray', value: '#CCC' }`);
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        parameters: {
+          backgrounds: {
+            values: {
+              gray: // Keep the original color description.
+              { name: 'Gray', value: '#CCC' }
+            },
+          },
+        },
+      };
+    `);
   });
 
   it('keeps a transformed field when the callback returns undefined', () => {

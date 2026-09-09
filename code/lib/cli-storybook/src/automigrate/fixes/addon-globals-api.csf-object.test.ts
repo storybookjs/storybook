@@ -82,7 +82,7 @@ describe('addon-globals-api story objects', () => {
     expect(transform(source)).toBeNull();
   });
 
-  it('migrates an explicit in-place field after a spread', () => {
+  it('migrates an explicit property after a spread', () => {
     const source = dedent`
       export default { title: 'Button' };
       export const Primary = {
@@ -91,7 +91,13 @@ describe('addon-globals-api story objects', () => {
       };
     `;
 
-    expect(transform(source)).toContain(`backgrounds: { disabled: true }`);
+    expect(transform(source)).toBe(dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        ...base,
+        parameters: { backgrounds: { disabled: true } },
+      };
+    `);
   });
 
   it('keeps unrelated empty objects when their migration is disabled', () => {

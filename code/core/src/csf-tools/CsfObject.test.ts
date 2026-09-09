@@ -2,6 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
 
+import { dedent } from 'ts-dedent';
+
 import { loadCsf, printCsf } from './CsfFile.ts';
 
 const parse = (source: string) =>
@@ -117,20 +119,28 @@ describe('CsfObject', () => {
   });
 
   it('allows explicit properties after spreads and computed keys', () => {
-    const csf = parse(
-      `export default { parameters: { ...base, [field]: 'Earlier', componentSubtitle: 'Safe' } };`
-    );
+    const csf = parse(dedent`
+      export default {
+        parameters: {
+          ...base,
+          [field]: 'Earlier',
+          componentSubtitle: 'Safe',
+        },
+      };
+    `);
     const [meta] = csf.objects({ meta: true, stories: false });
 
     expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
       ok: true,
       changed: true,
     });
-    expect(printCsf(csf).code).toMatchInlineSnapshot(`
-      "export default { parameters: {
-        ...base,
-        [field]: 'Earlier'
-      } };"
+    expect(printCsf(csf).code).toBe(dedent`
+      export default {
+        parameters: {
+          ...base,
+          [field]: 'Earlier'
+        },
+      };
     `);
   });
 

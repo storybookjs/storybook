@@ -54,7 +54,7 @@ function makeServer(custom: Record<string, unknown> = {}) {
   } as any;
 }
 
-const previewOptions = { method: 'stories.preview', toolset: 'dev' } as const;
+const previewOptions = { method: 'stories.preview' } as const;
 
 describe('toolset-backed MCP tools', () => {
   beforeEach(() => {
@@ -143,11 +143,7 @@ describe('toolset-backed MCP tools', () => {
       }) as any
     );
 
-    const result = await callToolsetMethod(
-      makeServer(),
-      { method: 'stories.changed', toolset: 'dev' },
-      {}
-    );
+    const result = await callToolsetMethod(makeServer(), { method: 'stories.changed' }, {});
 
     expect(result.content).toEqual([{ type: 'text', text: 'no changes' }]);
     expect(result.structuredContent).toBeUndefined();
@@ -220,25 +216,19 @@ describe('toolset-backed MCP tools', () => {
     expect(vi.mocked(logger.error).mock.calls[0][0]).toContain('boom');
   });
 
-  it.each(['dev', 'docs', 'test'] as const)(
-    'reports the outcome with the MCP grouping %s in place of the report toolset and tool',
-    async (toolset) => {
-      registerStubStoriesToolset();
+  it('sends the report on the outcome as the addon-mcp event', async () => {
+    registerStubStoriesToolset();
 
-      await callToolsetMethod(
-        makeServer(),
-        { ...previewOptions, toolset },
-        { id: 'button--primary' }
-      );
+    await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
 
-      expect(collectTelemetry).toHaveBeenCalledWith({
-        event: 'tool:previewStories',
-        server: expect.anything(),
-        toolset,
-        inputStoryCount: 1,
-      });
-    }
-  );
+    expect(collectTelemetry).toHaveBeenCalledWith({
+      event: 'tool:previewStories',
+      server: expect.anything(),
+      toolset: 'stories',
+      tool: 'preview',
+      inputStoryCount: 1,
+    });
+  });
 
   it('emits no telemetry for an outcome without a report', async () => {
     registerStubStoriesToolset({

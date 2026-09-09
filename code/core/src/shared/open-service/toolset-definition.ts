@@ -205,8 +205,8 @@ export type InvokedToolsetOutcome = ToolsetOutcome<any, any, ToolsetMethodReport
 
 /**
  * Runs one method the way every surface does. The report is named after the registration, never
- * by the handler, so a method cannot report a toolset that disagrees with where it lives. The CLI
- * and SDK forward the report as is; the MCP adapter substitutes its own grouping for `toolset`.
+ * by the handler, so a method cannot report a toolset that disagrees with where it lives. Every
+ * surface forwards the report as is and adds only its own fields.
  */
 export async function invokeToolsetMethod(
   toolset: AnyToolsetDefinition,

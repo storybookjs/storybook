@@ -95,7 +95,7 @@ const createToolsetEnabled =
  */
 function fromToolset(
   definition: Omit<AddonToolDefinition, 'name' | 'getMetadata' | 'register'> & {
-    options: Omit<ToolsetToolOptions, 'toolset'>;
+    options: ToolsetToolOptions;
     available?: (context: AddonToolRegistryContext) => boolean;
     /** Narrows the tool further per request, on top of the toolset gate. */
     wrapEnabled?: (
@@ -105,8 +105,7 @@ function fromToolset(
     ) => ToolEnabled;
   }
 ): AddonToolDefinition {
-  const { options: methodOptions, available, wrapEnabled, ...rest } = definition;
-  const options: ToolsetToolOptions = { ...methodOptions, toolset: definition.toolset };
+  const { options, available, wrapEnabled, ...rest } = definition;
   return {
     ...rest,
     // Read from the constant, not the registry: this array is built at import time, while toolsets
@@ -148,8 +147,8 @@ function docsToolDefinition(
 ): AddonToolDefinition {
   const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions =>
     context.multiSource
-      ? { method, toolset: 'docs', resolveToolset: (server) => compositionDocsToolset(server) }
-      : { method, toolset: 'docs' };
+      ? { method, resolveToolset: (server) => compositionDocsToolset(server) }
+      : { method };
 
   return {
     name: toMcpToolName(method),

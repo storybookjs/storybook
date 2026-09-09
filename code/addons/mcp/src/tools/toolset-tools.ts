@@ -34,13 +34,12 @@ import type { StorybookAiToolCallResult } from './tool-registry.ts';
 type Server = McpServer<any, AddonContext>;
 type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 
-// The `addon-mcp` event's frozen `toolset` classifier.
+// The grouping behind the enable gate and the `X-MCP-Toolsets` header; not a telemetry field.
 export type McpToolsetGroup = keyof NonNullable<AddonContext['toolsets']>;
 
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
   method: ToolsetMethodId;
-  toolset: McpToolsetGroup;
   /** Extra MCP-only tool metadata, e.g. the preview app resource. */
   extras?: Record<string, unknown>;
   /** Wraps the input schema before publishing it (used for friendlier validation errors). */
@@ -110,17 +109,13 @@ function buildContext(server: Server): ToolsetCtx {
 
 async function reportToolsetTelemetry(
   server: Server,
-  toolset: McpToolsetGroup,
   report: ToolsetMethodReport | undefined
 ): Promise<void> {
   if (!report || server.ctx.custom?.disableTelemetry) {
     return;
   }
-  // Backwards compatibility only: `toolset` is the MCP grouping the tool is registered under, not
-  // the report's CLI toolset name, and the report's `tool` is left out, because every `addon-mcp`
-  // record classifies by that grouping and dashboards key on it. Once the `X-MCP-Toolsets` header
-  // goes (Storybook 11), forward the report's `toolset` and `tool` the way the CLI does.
-  await collectTelemetry({ event: report.event, server, ...report.counters, toolset });
+  const { event, counters, ...names } = report;
+  await collectTelemetry({ event, server, ...counters, ...names });
 }
 
 /** Runs one toolset method and unwraps its outcome into an MCP tool result. */
@@ -135,7 +130,7 @@ export async function callToolsetMethod(
 
   try {
     const outcome = await invokeToolsetMethod(toolset, methodName, input, buildContext(server));
-    await reportToolsetTelemetry(server, options.toolset, outcome.telemetry);
+    await reportToolsetTelemetry(server, outcome.telemetry);
     const structuredContent = await toStructuredContent(method.output, outcome.data);
     const blocks = Array.isArray(outcome.markdown) ? outcome.markdown : [outcome.markdown];
 

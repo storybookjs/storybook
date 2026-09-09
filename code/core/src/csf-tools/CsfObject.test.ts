@@ -227,6 +227,21 @@ describe('CsfObject', () => {
     );
   });
 
+  it('rejects a reassigned named-default meta object', () => {
+    const source = `
+      let meta = { title: 'First' };
+      meta = { title: 'Second' };
+      export { meta as default };
+    `;
+    const csf = parse(source);
+
+    expect(csf.objects({ meta: true, stories: false })).toHaveLength(0);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'ambiguous-binding', target: { kind: 'meta' } })
+    );
+    expect(printCsf(csf).code).toBe(source);
+  });
+
   it('supports static bracket notation for CSF2 annotations', () => {
     const csf = parse(`
       export default { title: 'Example' };
@@ -335,6 +350,17 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({ code: 'unsupported-initializer' })
     );
+  });
+
+  it('reports a standalone CSF4 meta call without changing the source', () => {
+    const source = `import preview from './preview';\npreview.meta();`;
+    const csf = parse(source);
+
+    expect(csf.objects({ meta: true, stories: false })).toHaveLength(0);
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({ code: 'unsupported-initializer', target: { kind: 'meta' } })
+    );
+    expect(printCsf(csf).code).toBe(source);
   });
 
   it('reports an ambiguous CSF4 factory chain', () => {

@@ -577,6 +577,14 @@ option exists in both places, keep the nested value because it was authoritative
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
 
+### Vite: `publicDir` is handled by Storybook's `staticDirs`
+
+In previous versions, Vite copied its `publicDir` (`public/` by default) into the output of `storybook build` after Storybook had written its own files. A `public/index.json` silently replaced Storybook's story index and broke the built Storybook, and files from `public/` overrode files from your `staticDirs`.
+
+Storybook now disables Vite's copy (`build.copyPublicDir`) and copies the `publicDir` itself, as if it were the first entry of `staticDirs`. Storybook's own output files are never replaced, and your `staticDirs` take precedence over `publicDir` when file names conflict, matching how `storybook dev` has always served them.
+
+Setting `publicDir: false` in your Vite config to work around the old behavior is no longer needed, but still respected.
+
 ### Vite: requires Vite 7.0 or higher
 
 Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:

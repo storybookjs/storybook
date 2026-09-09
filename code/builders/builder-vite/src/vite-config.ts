@@ -52,6 +52,23 @@ async function loadUserViteConfig(options: Options, type: PluginConfigType): Pro
   return loaded?.config ?? {};
 }
 
+// Mirrors Vite's own resolution: `publicDir` is relative to the root Storybook sets in
+// `commonConfig`, and `false` or an empty string disables it.
+export async function resolveVitePublicDir(
+  options: Options,
+  type: PluginConfigType
+): Promise<string | undefined> {
+  const { publicDir } = await loadUserViteConfig(options, type);
+
+  if (publicDir === false || publicDir === '') {
+    return undefined;
+  }
+
+  const resolved = resolve(options.configDir, '..', publicDir ?? 'public');
+
+  return existsSync(resolved) ? resolved : undefined;
+}
+
 // Vite config that is common to development and production mode
 export async function commonConfig(
   options: Options,

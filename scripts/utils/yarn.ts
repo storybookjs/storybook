@@ -143,8 +143,6 @@ export const configureYarn2ForVerdaccio = async ({
     `yarn config set npmRegistryServer "http://localhost:6001/"`,
     // Some required magic to be able to fetch deps from local registry
     `yarn config set unsafeHttpWhitelist "localhost"`,
-    // Disable fallback mode to make sure everything is required correctly
-    `yarn config set pnpFallbackMode none`,
     // We need to be able to update lockfile when bootstrapping the examples
     `yarn config set enableImmutableInstalls false`,
   ];

@@ -1,32 +1,57 @@
-import { describe, expect, it } from 'vitest';
+import assert from 'node:assert/strict';
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
-import { printConfig, printCsf } from 'storybook/internal/csf-tools';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { JsPackageManager } from 'storybook/internal/common';
+
+import { fs, vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import {
-  transformPreviewA11yParameters,
-  transformStoryA11yParameters,
-} from './addon-a11y-parameters.ts';
+import { addonA11yParameters } from './addon-a11y-parameters.ts';
+
+vi.mock('node:fs/promises', { spy: true });
 
 expect.addSnapshotSerializer({
   serialize: (val) => (typeof val === 'string' ? val : val.toString()),
   test: () => true,
 });
 
-const transformStories = (code: string) => {
-  const transformed = transformStoryA11yParameters(code);
-  return transformed ? printCsf(transformed).code : null;
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(readFile).mockImplementation(async (file) =>
+    (await fs.promises.readFile(file.toString(), 'utf8')).toString()
+  );
+  vi.mocked(writeFile).mockImplementation(async (file, data) => {
+    await fs.promises.writeFile(file.toString(), data.toString());
+  });
+});
+
+const migrate = async (code: string, kind: 'story' | 'preview') => {
+  const file = resolve(kind === 'story' ? 'Button.stories.tsx' : '.storybook/preview.ts');
+  vol.fromJSON({ [file]: code });
+
+  assert(addonA11yParameters.run);
+  await addonA11yParameters.run({
+    packageManager: vi.mocked(JsPackageManager.prototype),
+    result: {
+      storyFilesToUpdate: kind === 'story' ? [file] : [],
+      previewFileToUpdate: kind === 'preview' ? file : undefined,
+    },
+    mainConfigPath: resolve('.storybook/main.ts'),
+    mainConfig: { stories: [] },
+    configDir: resolve('.storybook'),
+    storybookVersion: '9.0.0',
+    storiesPaths: kind === 'story' ? [file] : [],
+  });
+
+  return fs.readFileSync(file, 'utf8');
 };
 
-const transformPreview = (code: string) => {
-  const transformed = transformPreviewA11yParameters(code);
-  return transformed ? printConfig(transformed).code : null;
-};
-
-describe('a11yParameters', () => {
-  describe('transformA11yParameters', () => {
-    it('should transform a11y element to context in story parameters', () => {
+describe('addon-a11y-parameters run', () => {
+  describe('stories', () => {
+    it('should transform a11y element to context in story parameters', async () => {
       const code = dedent`
         import { StoryObj } from '@storybook/react-vite';
         export default {
@@ -71,7 +96,7 @@ describe('a11yParameters', () => {
         };
       `;
 
-      const transformedCode = transformStories(code);
+      const transformedCode = await migrate(code, 'story');
 
       expect(transformedCode).toMatchInlineSnapshot(`
         import { StoryObj } from '@storybook/react-vite';
@@ -119,7 +144,7 @@ describe('a11yParameters', () => {
       expect(transformedCode).toContain("context: '#root'");
     });
 
-    it('should not transform if a11y element is not present', () => {
+    it('should not transform if a11y element is not present', async () => {
       const code = dedent`
         export default {
           title: 'Button'
@@ -133,10 +158,10 @@ describe('a11yParameters', () => {
         };
       `;
 
-      expect(transformStories(code)).toBeNull();
+      expect(await migrate(code, 'story')).toBe(code);
     });
 
-    it('should handle stories with CSF v2 parameter style', () => {
+    it('should handle stories with CSF v2 parameter style', async () => {
       const code = dedent`
         export default {
           title: 'Button'
@@ -149,7 +174,7 @@ describe('a11yParameters', () => {
         }
       `;
 
-      expect(transformStories(code)).toMatchInlineSnapshot(`
+      expect(await migrate(code, 'story')).toMatchInlineSnapshot(`
         export default {
           title: 'Button'
         };
@@ -162,7 +187,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should transform CSF4 meta and story objects', () => {
+    it('should transform CSF4 meta and story objects', async () => {
       const code = dedent`
         import preview from './preview';
 
@@ -174,7 +199,7 @@ describe('a11yParameters', () => {
         });
       `;
 
-      expect(transformStories(code)).toMatchInlineSnapshot(`
+      expect(await migrate(code, 'story')).toMatchInlineSnapshot(`
         import preview from './preview';
 
         const meta = preview.meta({
@@ -186,7 +211,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should transform identifier-backed meta objects', () => {
+    it('should transform identifier-backed meta objects', async () => {
       const code = dedent`
         const configuration = {
           parameters: { a11y: { element: '#meta' } },
@@ -194,7 +219,7 @@ describe('a11yParameters', () => {
         export default configuration;
       `;
 
-      expect(transformStories(code)).toMatchInlineSnapshot(`
+      expect(await migrate(code, 'story')).toMatchInlineSnapshot(`
         const configuration = {
           parameters: { a11y: { context: '#meta' } },
         };
@@ -202,7 +227,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should transform parameters an earlier spread cannot shadow', () => {
+    it('should transform parameters an earlier spread cannot shadow', async () => {
       const code = dedent`
         export default { title: 'Button' };
         export const Primary = {
@@ -211,7 +236,7 @@ describe('a11yParameters', () => {
         };
       `;
 
-      expect(transformStories(code)).toMatchInlineSnapshot(`
+      expect(await migrate(code, 'story')).toMatchInlineSnapshot(`
         export default { title: 'Button' };
         export const Primary = {
           ...base,
@@ -220,7 +245,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should leave story objects with a shadowing spread unchanged', () => {
+    it('should leave story objects with a shadowing spread unchanged', async () => {
       const code = dedent`
         export default { title: 'Button' };
         export const Primary = {
@@ -229,24 +254,28 @@ describe('a11yParameters', () => {
         };
       `;
 
-      expect(transformStories(code)).toBeNull();
+      expect(await migrate(code, 'story')).toBe(code);
     });
   });
 
-  describe('transformPreviewA11yParameters', () => {
-    it('transforms named parameters exports while preserving sibling fields', () => {
+  describe('preview', () => {
+    it('transforms named parameters exports while preserving sibling fields', async () => {
       expect(
-        transformPreview(`export const parameters = {
+        await migrate(
+          `export const parameters = {
           a11y: { config: {}, element: '#root', options: {} }
-        };`)
+        };`,
+          'preview'
+        )
       ).toContain(`a11y: { config: {}, context: '#root', options: {} }`);
     });
 
-    it('leaves dynamic a11y configuration unchanged', () => {
-      expect(transformPreview('export default { parameters: { a11y: createA11y() } };')).toBeNull();
+    it('leaves dynamic a11y configuration unchanged', async () => {
+      const code = 'export default { parameters: { a11y: createA11y() } };';
+      expect(await migrate(code, 'preview')).toBe(code);
     });
 
-    it('should transform a11y element to context in preview parameters', () => {
+    it('should transform a11y element to context in preview parameters', async () => {
       const code = dedent`
         const preview = {
           parameters: {
@@ -258,7 +287,7 @@ describe('a11yParameters', () => {
         export default preview;
       `;
 
-      expect(transformPreview(code)).toMatchInlineSnapshot(`
+      expect(await migrate(code, 'preview')).toMatchInlineSnapshot(`
         const preview = {
           parameters: {
             a11y: {
@@ -270,7 +299,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should not transform if a11y element is not present', () => {
+    it('should not transform if a11y element is not present', async () => {
       const code = dedent`
         const preview = {
           parameters: {},
@@ -278,7 +307,7 @@ describe('a11yParameters', () => {
         export default preview;
       `;
 
-      expect(transformPreview(code)).toBeNull();
+      expect(await migrate(code, 'preview')).toBe(code);
     });
   });
 });

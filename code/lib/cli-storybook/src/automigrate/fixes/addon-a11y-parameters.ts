@@ -1,15 +1,11 @@
 import { readFile } from 'node:fs/promises';
 
-import { writeConfig, writeCsf } from 'storybook/internal/csf-tools';
+import { loadConfig, loadCsf, writeConfig, writeCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import {
-  transformPreviewA11yParameters,
-  transformStoryA11yParameters,
-} from '../helpers/addon-a11y-parameters.ts';
 import type { Fix, RunOptions } from '../types.ts';
 
 interface A11yOptions {
@@ -76,9 +72,10 @@ export const addonA11yParameters: Fix<A11yOptions> = {
 
     if (previewFileToUpdate) {
       const content = await readFile(previewFileToUpdate, 'utf-8');
-      const code = transformPreviewA11yParameters(content);
+      const code = loadConfig(content, previewFileToUpdate).parse();
+      code.rename(['parameters', 'a11y', 'element'], 'context');
 
-      if (code) {
+      if (code.changed) {
         if (!dryRun) {
           try {
             await writeConfig(code, previewFileToUpdate);
@@ -99,9 +96,12 @@ export const addonA11yParameters: Fix<A11yOptions> = {
         limit(async () => {
           try {
             const content = await readFile(file, 'utf-8');
-            const code = transformStoryA11yParameters(content);
+            const code = loadCsf(content, { makeTitle: (title) => title || 'default' }).parse();
+            for (const object of code.objects({ annotations: ['parameters'] })) {
+              object.rename(['parameters', 'a11y', 'element'], 'context');
+            }
 
-            if (code) {
+            if (code.changed) {
               if (!dryRun) {
                 await writeCsf(code, file);
               } else {

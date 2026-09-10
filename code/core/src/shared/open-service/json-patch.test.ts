@@ -173,6 +173,16 @@ describe('applyJsonPatch', () => {
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
   });
 
+  it('drops $-prefixed keys from cloned values', () => {
+    const target: Record<string, unknown> = {};
+    applyJsonPatch(
+      target,
+      [{ op: 'add', path: '/obj', value: { safe: 1, $disabled: true, $ref: '#/defs/x' } }],
+      failOnUnexpectedMissingRemove
+    );
+    expect(target).toEqual({ obj: { safe: 1 } });
+  });
+
   it('rolls back earlier ops when a later op has a missing parent', () => {
     const target: Record<string, unknown> = { a: { x: 1 } };
 
@@ -285,4 +295,47 @@ describe('applyJsonPatch', () => {
       expect(structuredClone(backing)).toEqual(raw);
     }
   );
+});
+
+describe('applyJsonPatch on a live deepsignal store', () => {
+  it('replaces a payload that already has a $-prefixed argType without overflowing', () => {
+    const backing: Record<string, unknown> = {
+      components: {
+        'button-component': {
+          id: 'button-component',
+          argTypes: {
+            ariaLabel: { name: 'ariaLabel' },
+            $disabled: true,
+          },
+        },
+      },
+    };
+    const state = deepSignal(backing) as Record<string, unknown>;
+
+    expect(
+      applyJsonPatch(
+        state,
+        [
+          {
+            op: 'replace',
+            path: '/components/button-component',
+            value: {
+              id: 'button-component',
+              argTypes: {
+                ariaLabel: { name: 'ariaLabel' },
+                $disabled: true,
+                e2eDocgenHotUpdateProp: { name: 'e2eDocgenHotUpdateProp' },
+              },
+            },
+          },
+        ],
+        failOnUnexpectedMissingRemove
+      )
+    ).toEqual({ ok: true });
+
+    const components = state.components as Record<string, { argTypes: Record<string, unknown> }>;
+    expect(components['button-component'].argTypes.e2eDocgenHotUpdateProp).toEqual({
+      name: 'e2eDocgenHotUpdateProp',
+    });
+  });
 });

@@ -23,7 +23,7 @@ export function clonePlain(value: unknown): unknown {
   }
   const copy: Record<string, unknown> = {};
   for (const key of Object.keys(value as object)) {
-    if (FORBIDDEN_KEYS.has(key)) {
+    if (isReservedKey(key)) {
       continue;
     }
     copy[key] = clonePlain((value as Record<string, unknown>)[key]);

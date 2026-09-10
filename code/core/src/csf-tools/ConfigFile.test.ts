@@ -477,7 +477,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           export const core = {
             foo: 'bar',
-            builder: "webpack5"
+            builder: 'webpack5'
           };
         `);
       });
@@ -490,7 +490,7 @@ describe('ConfigFile', () => {
               export const core = { builder: 'webpack4' };
             `
           )
-        ).toMatchInlineSnapshot(`export const core = { builder: "webpack5" };`);
+        ).toMatchInlineSnapshot(`export const core = { builder: 'webpack5' };`);
       });
       it('found top-level scalar', () => {
         expect(
@@ -501,7 +501,7 @@ describe('ConfigFile', () => {
               export const foo = 'bar';
             `
           )
-        ).toMatchInlineSnapshot(`export const foo = "baz";`);
+        ).toMatchInlineSnapshot(`export const foo = 'baz';`);
       });
       it('found object', () => {
         expect(
@@ -514,7 +514,7 @@ describe('ConfigFile', () => {
           )
         ).toMatchInlineSnapshot(`
           export const core = { builder: {
-            name: "webpack5"
+            name: 'webpack5'
           } };
         `);
       });
@@ -529,7 +529,7 @@ describe('ConfigFile', () => {
             `
           )
         ).toMatchInlineSnapshot(`
-          const coreVar = { builder: "webpack5" };
+          const coreVar = { builder: 'webpack5' };
           export const core = coreVar;
         `);
       });
@@ -567,7 +567,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           module.exports = { core: {
             foo: 'bar',
-            builder: "webpack5"
+            builder: 'webpack5'
           }};
         `);
       });
@@ -580,7 +580,7 @@ describe('ConfigFile', () => {
               module.exports = { core: { builder: 'webpack4' } };
             `
           )
-        ).toMatchInlineSnapshot(`module.exports = { core: { builder: "webpack5" } };`);
+        ).toMatchInlineSnapshot(`module.exports = { core: { builder: 'webpack5' } };`);
       });
     });
 
@@ -616,7 +616,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           export default { core: {
             foo: 'bar',
-            builder: "webpack5"
+            builder: 'webpack5'
           }};
         `);
       });
@@ -629,7 +629,7 @@ describe('ConfigFile', () => {
               export default { core: { builder: 'webpack4' } };
             `
           )
-        ).toMatchInlineSnapshot(`export default { core: { builder: "webpack5" } };`);
+        ).toMatchInlineSnapshot(`export default { core: { builder: 'webpack5' } };`);
       });
     });
 
@@ -647,7 +647,7 @@ describe('ConfigFile', () => {
             export const stories = ['a', 'b', "c"]
 
             export const foo = {
-              bar: "baz"
+              bar: 'baz'
             };
           `);
       });
@@ -675,7 +675,7 @@ describe('ConfigFile', () => {
             `
           )
         ).toMatchInlineSnapshot(`
-          const core = { builder: "webpack5" };
+          const core = { builder: 'webpack5' };
           export { core };
         `);
       });
@@ -696,7 +696,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const parameters = {
             foo: 'bar',
-            a11y: "todo"
+            a11y: 'todo'
           };
           const preview = {
             parameters,
@@ -722,7 +722,7 @@ describe('ConfigFile', () => {
           const parameters = { foo: 'bar' };
           const preview = {
             parameters: {
-              a11y: "todo"
+              a11y: 'todo'
             },
           }
           export default preview;
@@ -749,7 +749,7 @@ describe('ConfigFile', () => {
             addons: [],
 
             core: {
-              builder: "webpack5"
+              builder: 'webpack5'
             }
           });
         `);
@@ -771,7 +771,7 @@ describe('ConfigFile', () => {
           export const foo = definePreview({
             core: {
               foo: 'bar',
-              builder: "webpack5"
+              builder: 'webpack5'
             },
           });
         `);
@@ -791,7 +791,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
-            core: { builder: "webpack5" },
+            core: { builder: 'webpack5' },
           });
         `);
       });
@@ -811,7 +811,7 @@ describe('ConfigFile', () => {
       ).toMatchInlineSnapshot(`
         export default {
           core: { builder: 'webpack5' },
-          addons: ["docs"]
+          addons: ['docs']
         };
       `);
     });
@@ -1149,7 +1149,7 @@ describe('ConfigFile', () => {
             export const stories = ['a', 'b', "c"]
 
             export const foo = {
-              bar: "baz"
+              bar: 'baz'
             };
           `);
       });

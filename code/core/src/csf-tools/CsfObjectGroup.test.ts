@@ -119,6 +119,19 @@ describe('CsfObject.group', () => {
     expect(printConfig(config).code).toBe(source);
   });
 
+  it('rejects relocating a template literal that embeds a call into an existing group', () => {
+    const source =
+      'export default { layout: { showPanel: readPanel() }, navSize: `${measure()}px` };';
+    const config = loadConfig(source).parse();
+
+    expect(config.group(['layout'], ['navSize'])).toMatchObject({
+      ok: false,
+      diagnostic: { code: 'evaluation-order' },
+    });
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
+
   it('ignores absent source fields, including in an object with a spread', () => {
     const source = 'export default { ...defaults, theme };';
     const config = loadConfig(source).parse();

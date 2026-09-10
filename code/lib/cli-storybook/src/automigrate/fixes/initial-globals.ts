@@ -25,7 +25,6 @@ export const initialGlobals: Fix<Options> = {
 
     const previewConfig = loadConfig((await readFile(previewConfigPath)).toString()).parse();
     const globals = previewConfig.get(['globals']);
-    assertConfigMutationSuccess(previewConfig);
 
     if (!globals) {
       return null;

@@ -26,7 +26,7 @@ type StoryBinding = {
 
 type AnnotationCandidate = {
   target: Extract<CsfObjectTarget, { kind: 'story-annotation' }>;
-  annotation: 'parameters' | 'story';
+  annotation: 'parameters';
   root?: NodePath<t.ObjectExpression>;
   node: t.Node;
   message?: string;
@@ -324,7 +324,7 @@ const annotationCandidates = (
   csf: CsfFile,
   statement: NodePath<t.Statement>,
   bindings: Map<string, StoryBinding>,
-  annotations: Set<'parameters' | 'story'>
+  annotations: Set<'parameters'>
 ): AnnotationCandidate[] => {
   if (!statement.isExpressionStatement()) {
     return [];
@@ -366,8 +366,7 @@ const annotationCandidates = (
   if (!propertyName) {
     return [];
   }
-  const annotation =
-    propertyName === 'parameters' ? 'parameters' : propertyName === 'story' ? 'story' : undefined;
+  const annotation = propertyName === 'parameters' ? 'parameters' : undefined;
   if (!annotation || !binding || !annotations.has(annotation)) {
     return [];
   }
@@ -431,7 +430,7 @@ const reportOrCreateAnnotation = (
 const discoverAnnotations = (
   csf: CsfFile,
   storyBindings: StoryBinding[],
-  annotations: Set<'parameters' | 'story'>,
+  annotations: Set<'parameters'>,
   report: ReportDiagnostic,
   markChanged: MarkChanged
 ): CsfObject[] => {

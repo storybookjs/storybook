@@ -246,6 +246,15 @@ describe('transformPreviewFile', () => {
     expect(output.match(/spyOn\(console, "log"\)/g)).toHaveLength(1);
   });
 
+  it('reports a named hook that the default export would shadow', async () => {
+    await expect(
+      transformPreviewFile(
+        'export default { parameters: {} }; export const beforeEach = async () => { await seed(); };',
+        '.storybook/preview.ts'
+      )
+    ).rejects.toThrow('beforeEach is exported separately from the default export');
+  });
+
   it('reports a hook it cannot transform instead of replacing it', async () => {
     await expect(
       transformPreviewFile(

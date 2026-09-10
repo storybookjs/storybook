@@ -44,27 +44,21 @@ describe('CsfObject discovery', () => {
     );
   });
 
-  it('rejects every requested annotation after a computed CSF2 write', () => {
+  it('rejects an annotation that is also written under a computed key', () => {
     const csf = parse(`
       const key = getKey();
       export default { title: 'Example' };
       export const Basic = () => null;
-      Basic.story = { name: 'Basic' };
-      Basic[key] = { a11y: true };
+      Basic.parameters = { a11y: true };
+      Basic[key] = { a11y: false };
     `);
 
-    expect(
-      csf.objects({ meta: false, stories: false, annotations: ['parameters', 'story'] })
-    ).toEqual([]);
+    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
     expect(csf.mutationDiagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: 'unsupported-initializer',
-          target: expect.objectContaining({ annotation: 'parameters' }),
-        }),
-        expect.objectContaining({
           code: 'ambiguous-binding',
-          target: expect.objectContaining({ annotation: 'story' }),
+          target: expect.objectContaining({ annotation: 'parameters' }),
         }),
       ])
     );

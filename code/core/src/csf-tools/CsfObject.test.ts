@@ -17,7 +17,6 @@ describe('CsfObject', () => {
     { expression: '-2.5', expected: -2.5 },
     { expression: '\`dark\`', expected: 'dark' },
     { expression: '("dark" as const) satisfies string', expected: 'dark' },
-    { expression: 'void 0', expected: undefined },
     { expression: '[1, ...[false, "dark"], null]', expected: [1, false, 'dark', null] },
     {
       expression: '{ ...{ enabled: false }, nested: { values: [1, "dark"] } }',
@@ -251,8 +250,6 @@ describe('CsfObject', () => {
     { value: 42 },
     { value: -2.5 },
     { value: -0 },
-    { value: Number.NaN },
-    { value: Number.POSITIVE_INFINITY },
     { value: true },
     { value: false },
     { value: 'todo' },

@@ -59,19 +59,17 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
         ...path,
         addon === 'viewport' ? 'defaultViewport' : 'default',
       ]);
-      const disable = previewConfig.get([...path, 'disable']);
-      const needsFormatMigration =
-        !hasOptions && (values !== undefined || defaultValue !== undefined);
-      return needsFormatMigration || t.isBooleanLiteral(disable);
+      return !hasOptions && (values !== undefined || defaultValue !== undefined);
     };
 
     const needsViewportMigration = checkAddonMigration('viewport');
     const needsBackgroundsMigration = checkAddonMigration('backgrounds');
-    assertConfigMutationSuccess(previewConfig);
 
     if (!needsViewportMigration && !needsBackgroundsMigration) {
       return null;
     }
+
+    assertConfigMutationSuccess(previewConfig);
 
     return {
       previewConfig,
@@ -220,8 +218,6 @@ const migrateAddonGlobals = (
       addon === 'viewport' && !isPreview
         ? object.get([...parameterPath, 'defaultOrientation'])
         : undefined;
-    const disable = object.get([...parameterPath, 'disable']);
-    const disabled = object.get([...parameterPath, 'disabled']);
     const valuesPath = [...parameterPath, addon === 'viewport' ? 'viewports' : 'values'];
     const values = addon === 'backgrounds' || isPreview ? object.get(valuesPath) : undefined;
     const hasOptions =
@@ -273,14 +269,6 @@ const migrateAddonGlobals = (
       } else if (t.isStringLiteral(defaultValue)) {
         object.set(globalPath, defaultValue.value.toLowerCase().replace(/\s+/g, '_'));
         object.remove(defaultPath);
-      }
-    }
-
-    if (t.isBooleanLiteral(disable)) {
-      if (disabled) {
-        object.remove([...parameterPath, 'disable']);
-      } else {
-        object.rename([...parameterPath, 'disable'], 'disabled');
       }
     }
   }

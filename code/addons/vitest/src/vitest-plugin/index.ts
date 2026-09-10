@@ -71,7 +71,7 @@ const extractTagsFromPreview = async (configDir: string) => {
   const previewConfig = await readConfig(previewConfigPath);
   const tags = previewConfig.getValue(['tags']) ?? [];
   if (
-    previewConfig.mutationDiagnostics.length > 0 ||
+    previewConfig.mutationDiagnostics.some(({ code }) => code === 'unsupported-value') ||
     !Array.isArray(tags) ||
     !tags.every((tag) => typeof tag === 'string')
   ) {

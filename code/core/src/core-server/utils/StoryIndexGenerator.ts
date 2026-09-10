@@ -891,7 +891,9 @@ export class StoryIndexGenerator {
         const projectAnnotations = loadConfig(previewCode).parse();
         const tags = projectAnnotations.getValue(['tags']) ?? [];
         invariant(
-          projectAnnotations.mutationDiagnostics.length === 0 &&
+          !projectAnnotations.mutationDiagnostics.some(
+            ({ code }) => code === 'unsupported-value'
+          ) &&
             Array.isArray(tags) &&
             tags.every((tag) => typeof tag === 'string'),
           'Preview tags must be a static array of strings'

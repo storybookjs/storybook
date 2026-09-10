@@ -110,7 +110,13 @@ export async function transformPreviewFile(source: string, filePath: string): Pr
   }
 
   const statements = callsToInject.map((call) => t.expressionStatement(call));
-  if (!previewConfig.get(['beforeEach'])) {
+  const beforeEachField = previewConfig.get(['beforeEach']);
+  if (!beforeEachField && Object.hasOwn(previewConfig._exportDecls, 'beforeEach')) {
+    throw new HandledError(
+      'Cannot add console spies because beforeEach is exported separately from the default export'
+    );
+  }
+  if (!beforeEachField) {
     previewConfig.set(
       ['beforeEach'],
       t.functionExpression(t.identifier('beforeEach'), [], t.blockStatement(statements))

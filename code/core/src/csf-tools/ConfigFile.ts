@@ -1429,7 +1429,7 @@ export const formatConfig = (config: ConfigFile): string => {
 };
 
 export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(config._ast, options);
+  return recast.print(config._ast, { quote: config._inferQuotes(), ...options });
 };
 
 export const readConfig = async (fileName: string) => {

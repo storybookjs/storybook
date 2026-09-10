@@ -11,7 +11,7 @@ export type CsfObjectTarget =
       kind: 'story-annotation';
       exportName: string;
       localName: string;
-      annotation: 'parameters' | 'story';
+      annotation: 'parameters';
     };
 
 export type CsfMutationDiagnosticCode =
@@ -181,7 +181,7 @@ export interface CsfObject {
 export interface CsfObjectOptions {
   meta?: boolean;
   stories?: boolean;
-  annotations?: readonly ('parameters' | 'story')[];
+  annotations?: readonly 'parameters'[];
 }
 
 const UNRESOLVED = Symbol('unresolved');
@@ -274,6 +274,9 @@ const propertyExpression = (
 
 const isEvaluationInert = (node: t.Node): boolean => {
   const value = unwrapExpression(node);
+  if (t.isTemplateLiteral(value)) {
+    return value.expressions.length === 0;
+  }
   if (t.isLiteral(value) || t.isFunctionExpression(value) || t.isArrowFunctionExpression(value)) {
     return true;
   }
@@ -684,40 +687,20 @@ class CsfObjectEditor implements CsfObject {
       return null;
     }
     if (t.isIdentifier(value)) {
-      switch (value.name) {
-        case 'undefined':
-          return undefined;
-        case 'NaN':
-          return Number.NaN;
-        case 'Infinity':
-          return Number.POSITIVE_INFINITY;
-        default:
-          return UNRESOLVED;
-      }
+      return value.name === 'undefined' ? undefined : UNRESOLVED;
     }
     if (t.isTemplateLiteral(value) && value.expressions.length === 0) {
       return value.quasis[0].value.cooked ?? UNRESOLVED;
     }
     if (t.isUnaryExpression(value)) {
       const argument = this.readValue(value.argument);
-      if (typeof argument === 'number') {
-        if (value.operator === '-') {
-          return -argument;
-        }
-        if (value.operator === '+') {
-          return argument;
-        }
+      if (typeof argument !== 'number') {
+        return UNRESOLVED;
       }
-      if (value.operator === 'void' && argument !== UNRESOLVED) {
-        return undefined;
+      if (value.operator === '-') {
+        return -argument;
       }
-      return UNRESOLVED;
-    }
-    // Babel represents NaN and infinities as numeric division when converting values to AST.
-    if (t.isBinaryExpression(value, { operator: '/' })) {
-      const left = this.readValue(value.left);
-      const right = this.readValue(value.right);
-      return typeof left === 'number' && typeof right === 'number' ? left / right : UNRESOLVED;
+      return value.operator === '+' ? argument : UNRESOLVED;
     }
     if (t.isArrayExpression(value)) {
       const elements: CsfValue[] = [];
@@ -782,7 +765,7 @@ class CsfObjectEditor implements CsfObject {
       visited.add(value);
       const reference = pathForNode(program, value);
       const binding = reference?.scope.getBinding(value.name);
-      if (!binding && reference && ['undefined', 'NaN', 'Infinity'].includes(value.name)) {
+      if (!binding && reference && value.name === 'undefined') {
         return value;
       }
       if (

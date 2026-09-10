@@ -50,6 +50,20 @@ describe('commonConfig', () => {
     expect(config.plugins).toBeDefined();
   });
 
+  it('should reuse a provided app config instead of loading the config file', async () => {
+    loadConfigFromFileMock.mockClear();
+    const appPlugin = { name: 'app-plugin' };
+
+    const config = await commonConfig(dummyOptions, 'development', {
+      plugins: [appPlugin],
+      build: { target: 'es2020', outDir: 'app-dist' },
+    });
+
+    expect(loadConfigFromFileMock).not.toHaveBeenCalled();
+    expect(config.plugins).toContain(appPlugin);
+    expect(config.build).toEqual({ target: 'es2020' });
+  });
+
   it('should pass configLoader option to loadConfigFromFile', async () => {
     const optionsWithConfigLoader: Options = {
       ...dummyOptions,

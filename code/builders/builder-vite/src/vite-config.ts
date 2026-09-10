@@ -36,7 +36,8 @@ const configEnvBuild: ConfigEnv = {
 // Vite config that is common to development and production mode
 export async function commonConfig(
   options: Options,
-  _type: PluginConfigType
+  _type: PluginConfigType,
+  appConfig?: ViteConfig
 ): Promise<ViteInlineConfig> {
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
   const { loadConfigFromFile, mergeConfig } = await import('vite');
@@ -48,15 +49,19 @@ export async function commonConfig(
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
   // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
-  const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
-    (await loadConfigFromFile(
-      configEnv,
-      viteConfigPath,
-      projectRoot,
-      undefined,
-      undefined,
-      configLoader
-    )) ?? {};
+  const { build: buildProperty = undefined, ...userConfig } =
+    appConfig ??
+    (
+      await loadConfigFromFile(
+        configEnv,
+        viteConfigPath,
+        projectRoot,
+        undefined,
+        undefined,
+        configLoader
+      )
+    )?.config ??
+    {};
 
   // Storybook's Vite config is assembled from self-contained plugins.
   // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),

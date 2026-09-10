@@ -32,6 +32,7 @@ const transform = async ({
   configDir = '.storybook',
   stories = [],
   previewLevelTags = [],
+  registerStorybookAfterEach = false,
 }) => {
   const transformed = await originalTransform({
     code,
@@ -40,6 +41,7 @@ const transform = async ({
     stories,
     tagsFilter,
     previewLevelTags,
+    registerStorybookAfterEach,
   });
   if (typeof transformed === 'string') {
     return { code: transformed, map: null };
@@ -49,6 +51,24 @@ const transform = async ({
 };
 
 describe('transformer', () => {
+  it('registers the Storybook afterEach hook in transformed story files', async () => {
+    const result = await transform({
+      code: `
+        export default {};
+        export const Story = {};
+      `,
+      registerStorybookAfterEach: true,
+    });
+
+    expect(result.code).toContain(
+      'import { test as _test, expect as _expect, afterEach as _afterEach } from "vitest";'
+    );
+    expect(result.code).toContain(
+      'import { afterEachStory as _afterEachStory } from "@storybook/addon-vitest/internal/setup-file";'
+    );
+    expect(result.code).toContain('_afterEach(_afterEachStory);');
+  });
+
   describe('CSF v1/v2/v3', () => {
     describe('default exports (meta)', () => {
       it('should add title to inline default export if not present', async () => {

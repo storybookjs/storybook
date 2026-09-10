@@ -220,6 +220,7 @@ class CsfObjectEditor implements CsfObject {
       return { ok: true, changed: false };
     }
     inspected.parent.properties.splice(inspected.parent.properties.indexOf(inspected.property), 1);
+    this.removeEmptyParents(logicalPath);
     return this.success();
   }
 
@@ -286,7 +287,22 @@ class CsfObjectEditor implements CsfObject {
     source.property.key = keyNode(destinationPath.at(-1)!);
     source.property.computed = false;
     this.insert(destinationPath, source.property);
+    this.removeEmptyParents(sourcePath);
     return this.success();
+  }
+
+  private removeEmptyParents(path: readonly string[]) {
+    for (let depth = path.length - 1; depth > 0; depth--) {
+      const ancestor = this.inspect(path.slice(0, depth));
+      if (!ancestor.ok || !ancestor.property || !ancestor.parent) {
+        return;
+      }
+      const value = unwrapExpression(ancestor.property.value);
+      if (!t.isObjectExpression(value) || value.properties.length > 0) {
+        return;
+      }
+      ancestor.parent.properties.splice(ancestor.parent.properties.indexOf(ancestor.property), 1);
+    }
   }
 
   private normalizePath(path: readonly string[]) {

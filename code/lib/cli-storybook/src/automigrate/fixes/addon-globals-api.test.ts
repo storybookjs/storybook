@@ -58,8 +58,6 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
         const transformed = transformStoryFile(content, {
           needsViewportMigration: result.needsViewportMigration,
           needsBackgroundsMigration: result.needsBackgroundsMigration,
-          viewportsOptions: result.viewportsOptions,
-          backgroundsOptions: result.backgroundsOptions,
         });
         return transformed ? printCsf(transformed, {}).code : null;
       };

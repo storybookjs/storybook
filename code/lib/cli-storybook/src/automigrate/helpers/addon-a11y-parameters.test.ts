@@ -234,6 +234,18 @@ describe('a11yParameters', () => {
   });
 
   describe('transformPreviewA11yParameters', () => {
+    it('transforms named parameters exports while preserving sibling fields', () => {
+      expect(
+        transformPreview(`export const parameters = {
+          a11y: { config: {}, element: '#root', options: {} }
+        };`)
+      ).toContain(`a11y: { config: {}, context: '#root', options: {} }`);
+    });
+
+    it('leaves dynamic a11y configuration unchanged', () => {
+      expect(transformPreview('export default { parameters: { a11y: createA11y() } };')).toBeNull();
+    });
+
     it('should transform a11y element to context in preview parameters', () => {
       const code = dedent`
         const preview = {

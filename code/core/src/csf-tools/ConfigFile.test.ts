@@ -35,6 +35,29 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  it.each([
+    `export default { parameters: { viewport: { disable: true } } };`,
+    `export default definePreview({ parameters: { viewport: { disable: true } } });`,
+    `export const parameters = { viewport: { disable: true } };`,
+    `export default {};`,
+  ])('keeps nested fields readable and removable after setting them in %s', (source) => {
+    const config = loadConfig(source).parse();
+
+    config.setFieldNode(['parameters', 'viewport', 'options'], t.objectExpression([]));
+    expect(config.getFieldValue(['parameters', 'viewport', 'options'])).toEqual({});
+    if (source.includes('disable: true')) {
+      expect(config.getFieldValue(['parameters', 'viewport', 'disable'])).toBe(true);
+    }
+    config.removeField(['parameters', 'viewport', 'disable']);
+    config.setFieldValue(['parameters', 'viewport', 'disabled'], true);
+
+    const reparsed = loadConfig(printConfig(config).code).parse();
+    expect(config.getFieldValue(['parameters'])).toEqual({
+      viewport: { options: {}, disabled: true },
+    });
+    expect(reparsed.getFieldValue(['parameters'])).toEqual(config.getFieldValue(['parameters']));
+  });
+
   describe('findNamedImportMethodCalls', () => {
     it('finds binding-safe method calls on aliased named imports', () => {
       const config = loadConfig(dedent`

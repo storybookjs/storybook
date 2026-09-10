@@ -399,7 +399,7 @@ export class ConfigFile {
 
       // Otherwise update the export object directly
       _updateExportNode(path, expr, this._exportsObject);
-      this._exports[path[0]] = expr;
+      this._parseExportsObject(this._exportsObject);
       return;
     }
 

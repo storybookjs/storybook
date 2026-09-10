@@ -8,6 +8,106 @@ const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
 
 describe('CsfObject', () => {
+  it.each([
+    `{ viewport: { defaultViewport: 'mobile' } }`,
+    `({ viewport: ({ defaultViewport: 'mobile' } as const) } satisfies Parameters)`,
+  ])('removes empty ancestors from %s', (parameters) => {
+    const csf = parse(`export default { parameters: ${parameters} };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'viewport', 'defaultViewport'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe('export default {};');
+    expect(meta.changed).toBe(true);
+    expect(csf.changed).toBe(true);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each(['docs: {}', '...base', '[field]: true'])(
+    'preserves the sibling %s when cleaning up empty parents',
+    (sibling) => {
+      const csf = parse(`export default {
+        parameters: { ${sibling}, viewport: { defaultViewport: 'mobile' } }
+      };`);
+      const [meta] = csf.objects({ meta: true, stories: false });
+
+      expect(meta.remove(['parameters', 'viewport', 'defaultViewport'])).toEqual({
+        ok: true,
+        changed: true,
+      });
+      const output = printCsf(csf).code;
+      expect(output).toContain('parameters:');
+      expect(output).toContain(sibling);
+      expect(output).not.toContain('viewport');
+      expect(csf.mutationDiagnostics).toEqual([]);
+    }
+  );
+
+  it.each([
+    ['globals', 'viewport', 'value'],
+    ['parameters', 'value'],
+    ['parameters', 'viewport', 'nested', 'value'],
+  ])('cleans up after moving to %j', (...destination) => {
+    const csf = parse(`export default {
+      parameters: { viewport: { defaultViewport: 'mobile' } }
+    };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.move(['parameters', 'viewport', 'defaultViewport'], destination)).toEqual({
+      ok: true,
+      changed: true,
+    });
+    const output = parse(printCsf(csf).code);
+    const [updated] = output.objects({ meta: true, stories: false });
+    expect(updated.get(destination)).toMatchObject({ type: 'StringLiteral', value: 'mobile' });
+    if (destination[0] === 'globals') {
+      expect(updated.get(['parameters'])).toBeUndefined();
+    } else if (destination.length === 2) {
+      expect(updated.get(['parameters', 'viewport'])).toBeUndefined();
+    }
+    expect(printCsf(csf).code).not.toContain('defaultViewport');
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('preserves empty objects when removing or moving a missing field', () => {
+    const source = 'export default { parameters: { viewport: {} } };';
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'viewport', 'missing'])).toEqual({
+      ok: true,
+      changed: false,
+    });
+    expect(meta.move(['parameters', 'viewport', 'missing'], ['globals', 'viewport'])).toEqual({
+      ok: true,
+      changed: false,
+    });
+    expect(printCsf(csf).code).toBe(source);
+    expect(csf.changed).toBe(false);
+  });
+
+  it('stops cleanup at a CSF2 annotation root', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Basic = () => null;
+      Basic.parameters = { viewport: { disable: true } };
+    `);
+    const [parameters] = csf.objects({
+      meta: false,
+      stories: false,
+      annotations: ['parameters'],
+    });
+
+    expect(parameters.remove(['parameters', 'viewport', 'disable'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain('Basic.parameters = {};');
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('moves a nested meta field and preserves its comments', () => {
     const csf = parse(`
       export default {

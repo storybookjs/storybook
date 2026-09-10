@@ -15,6 +15,7 @@ It can parse MDX into CSF.
 `{ meta, stories, annotations }` narrows what is discovered; meta and stories are included by default, annotations only when listed.
 
 Each editor reads and writes static property paths with `get`, `set`, `transform`, `remove`, `rename`, and `move`.
+Successful removals and moves recursively remove empty source parents, stopping at the editor's root object. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
 Nodes reused by `transform` keep their original source, so relocating a value prints it as written instead of pretty-printing it.
 Annotation editors take the same paths as their story counterparts, so `['parameters', 'a11y']` addresses `Story.parameters.a11y` and an inline `parameters.a11y` alike.
 

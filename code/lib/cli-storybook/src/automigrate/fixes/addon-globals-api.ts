@@ -86,19 +86,15 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
 
       const hasOptions = getFieldNode([...paramPath, 'options']) !== undefined;
 
-      // Define fields to check based on addon type
       const fieldsToCheck =
-        addonName === 'viewport'
-          ? ['viewports', 'defaultViewport', 'disable']
-          : ['values', 'default', 'disable'];
+        addonName === 'viewport' ? ['viewports', 'defaultViewport'] : ['values', 'default'];
 
-      // Check if any old format fields exist
       const hasOldFormat = fieldsToCheck.some(
         (field) => getFieldNode([...paramPath, field]) !== undefined
       );
-
-      // Only migrate if using old format and not already migrated
-      const needsMigration = hasOldFormat && !hasOptions;
+      const disable = getFieldValue([...paramPath, 'disable']);
+      const needsFormatMigration = hasOldFormat && !hasOptions;
+      const needsMigration = needsFormatMigration || typeof disable === 'boolean';
 
       // Collect relevant options from old format
       const options: {
@@ -110,7 +106,7 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
         disable?: boolean;
       } = {};
 
-      if (needsMigration) {
+      if (needsFormatMigration) {
         fieldsToCheck.forEach((field) => {
           const value =
             (addonName === 'viewport' && field === 'viewports') ||
@@ -124,6 +120,9 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
             options[optionKey] = value;
           }
         });
+      }
+      if (typeof disable === 'boolean') {
+        options.disable = disable;
       }
 
       return { needsMigration, options };
@@ -283,7 +282,7 @@ async function transformStoryFiles(
 
   return Promise.all(
     files.map((file) =>
-      limit(async () => {
+      limit(async (): Promise<StoryTransformResult> => {
         try {
           const content = await readFile(file, 'utf-8');
           const transformed = transformStoryFileResult(content, options);

@@ -19,9 +19,13 @@ describe('CsfObject', () => {
     `);
     const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(
-      meta.move(['parameters', 'componentSubtitle'], ['parameters', 'docs', 'subtitle'])
-    ).toEqual({ ok: true, changed: true });
+    expect(meta.move(['parameters', 'componentSubtitle'], ['parameters', 'docs', 'subtitle']))
+      .toMatchInlineSnapshot(`
+      {
+        "changed": true,
+        "ok": true,
+      }
+    `);
     expect(csf.changed).toBe(true);
     expect(printCsf(csf).code).toMatch(
       /docs: \{\s+\/\/ Keep this explanation with the subtitle\.\s+subtitle: 'Buttons'/

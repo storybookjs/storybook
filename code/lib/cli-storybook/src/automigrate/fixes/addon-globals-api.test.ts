@@ -187,7 +187,7 @@ describe('addon-globals-api', () => {
       expect(result?.backgroundsOptions?.default).toBe('Dark');
     });
 
-    it('should not detect configurations already using globals API', async () => {
+    it('should detect deprecated disable fields when options already exist', async () => {
       const result = await check(`
         export default {
           parameters: {
@@ -195,39 +195,38 @@ describe('addon-globals-api', () => {
               options: {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' },
                 tablet: { name: 'Tablet', width: '768px', height: '1024px' }
-              }
+              },
+              disable: true
             },
             backgrounds: {
               options: {
                 light: { name: 'Light', value: '#F8F8F8' },
                 dark: { name: 'Dark', value: '#333333' }
-              }
+              },
+              disable: false
             }
-          },
-          initialGlobals: {
-            viewport: { value: 'mobile', isRotated: false },
-            backgrounds: { value: 'dark' }
           }
         }
       `);
 
-      // Since there's no defaultViewport or default properties, it should return null (nothing to migrate)
-      expect(result?.needsViewportMigration).toBeFalsy();
-      expect(result?.needsBackgroundsMigration).toBeFalsy();
+      expect(result?.needsViewportMigration).toBe(true);
+      expect(result?.needsBackgroundsMigration).toBe(true);
+      expect(result?.viewportsOptions?.disable).toBe(true);
+      expect(result?.backgroundsOptions?.disable).toBe(false);
     });
   });
 
   describe('run - preview file', () => {
-    it('should migrate viewport configuration correctly', async () => {
+    it('should migrate viewport disable when options already exist', async () => {
       const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
             viewport: {
-              viewports: {
+              options: {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' },
                 tablet: { name: 'Tablet', width: '768px', height: '1024px' }
               },
-              defaultViewport: 'mobile'
+              disable: true
             }
           }
         }
@@ -240,17 +239,11 @@ describe('addon-globals-api', () => {
               options: {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' },
                 tablet: { name: 'Tablet', width: '768px', height: '1024px' }
-              }
-            }
-          },
-
-          initialGlobals: {
-            viewport: {
-              value: 'mobile',
-              isRotated: false
+              },
+              disabled: true
             }
           }
-        };"
+        }"
       `);
     });
 

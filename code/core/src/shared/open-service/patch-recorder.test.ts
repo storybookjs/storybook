@@ -244,6 +244,64 @@ describe('patch recorder', () => {
     expect(ops).toEqual([{ op: 'add', path: '/list', value: [1, 2] }]);
   });
 
+  it('skips assigning an array element to its current primitive value', () => {
+    const { ops, raw } = record({ list: [1, 2] }, (state) => {
+      state.list[0] = 1;
+    });
+
+    expect(ops).toEqual([]);
+    expect(raw.list).toEqual([1, 2]);
+  });
+
+  it('skips assigning length to itself', () => {
+    const { ops, raw } = record({ list: [1, 2] }, (state) => {
+      state.list.length = 2;
+    });
+
+    expect(ops).toEqual([]);
+    expect(raw.list).toEqual([1, 2]);
+  });
+
+  it('skips pop on an empty array', () => {
+    const { ops, raw } = record({ list: [] as number[] }, (state) => {
+      state.list.pop();
+    });
+
+    expect(ops).toEqual([]);
+    expect(raw.list).toEqual([]);
+  });
+
+  it('skips splice that inserts and deletes nothing', () => {
+    const { ops, raw } = record({ list: [1, 2] }, (state) => {
+      state.list.splice(0, 0);
+    });
+
+    expect(ops).toEqual([]);
+    expect(raw.list).toEqual([1, 2]);
+  });
+
+  it('skips delete of a missing array index', () => {
+    const { ops, raw } = record({ list: [1] }, (state) => {
+      delete (state.list as (number | undefined)[])[4];
+    });
+
+    expect(ops).toEqual([]);
+    expect(raw.list).toEqual([1]);
+  });
+
+  it('preserves draft identity so array lookups find the same item', () => {
+    const { ops, raw } = record({ items: [{ id: 1 }, { id: 2 }] }, (state) => {
+      expect(state.items[0]).toBe(state.items[0]);
+      expect(state.items.includes(state.items[0])).toBe(true);
+      expect(state.items.indexOf(state.items[0])).toBe(0);
+      const item = state.items[0];
+      state.items.splice(state.items.indexOf(item), 1);
+    });
+
+    expect(raw.items).toEqual([{ id: 2 }]);
+    expect(ops).toEqual([{ op: 'replace', path: '/items', value: [{ id: 2 }] }]);
+  });
+
   it('skips prototype-pollution keys', () => {
     const { ops, raw } = record({ safe: 0 }, (state) => {
       const payload = JSON.parse(
@@ -286,5 +344,35 @@ describe('patch recorder', () => {
     const { ops } = record({ n: 0 }, () => {});
 
     expect(ops).toEqual([]);
+  });
+
+  it('flushes the live value when another collector restores a deleted key', () => {
+    const state = deepSignal({ x: 1 } as { x?: number });
+    const removed = createPatchCollector();
+    const restored = createPatchCollector();
+    removed.record(state, (s) => {
+      delete s.x;
+    });
+    restored.record(state, (s) => {
+      s.x = 2;
+    });
+
+    expect(restored.flush()).toEqual([{ op: 'add', path: '/x', value: 2 }]);
+    expect(removed.flush()).toEqual([{ op: 'replace', path: '/x', value: 2 }]);
+  });
+
+  it('skips a remove that nets out after another collector restores the same primitive', () => {
+    const state = deepSignal({ x: 1 } as { x?: number });
+    const removed = createPatchCollector();
+    const restored = createPatchCollector();
+    removed.record(state, (s) => {
+      delete s.x;
+    });
+    restored.record(state, (s) => {
+      s.x = 1;
+    });
+
+    expect(restored.flush()).toEqual([{ op: 'add', path: '/x', value: 1 }]);
+    expect(removed.flush()).toEqual([]);
   });
 });

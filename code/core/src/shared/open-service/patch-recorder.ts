@@ -21,13 +21,10 @@ export type PatchCollector = {
   flush(): RecordedOp[];
 };
 
-type TouchKind = 'set' | 'remove';
-
 type Touch = {
   segments: string[];
   firstValue: unknown;
   existed: boolean;
-  kind: TouchKind;
 };
 
 type ArrayRoot = {
@@ -49,29 +46,6 @@ function isForbiddenKey(key: string): boolean {
 
 function peekProp(obj: object, key: string): unknown {
   return peek(obj as never, key as never);
-}
-
-function snapshotValue(value: unknown): unknown {
-  if (value === null || typeof value !== 'object') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    const copy = Array.from({ length: value.length });
-    for (let i = 0; i < value.length; i += 1) {
-      copy[i] = snapshotValue(peekProp(value, String(i)));
-    }
-    return copy;
-  }
-
-  const copy: Record<string, unknown> = {};
-  for (const key of Object.keys(value)) {
-    if (isForbiddenKey(key)) {
-      continue;
-    }
-    copy[key] = snapshotValue(peekProp(value, key));
-  }
-  return copy;
 }
 
 function cloneAssigned(value: unknown): unknown {
@@ -101,6 +75,13 @@ function isPrimitive(value: unknown): boolean {
   return value === null || typeof value !== 'object';
 }
 
+function firstTouchValue(existed: boolean, current: unknown): unknown {
+  if (!existed || !isPrimitive(current)) {
+    return undefined;
+  }
+  return current;
+}
+
 function readPath(root: object, segments: readonly string[]): { found: boolean; value: unknown } {
   let current: unknown = root;
 
@@ -122,40 +103,66 @@ function readPath(root: object, segments: readonly string[]): { found: boolean; 
 export function createPatchCollector(): PatchCollector {
   const touches = new Map<string, Touch>();
   const order: string[] = [];
+  const wrapperByTarget = new WeakMap<object, object>();
+  const targetByWrapper = new WeakMap<object, object>();
   let root: object | undefined;
 
   const note = (touch: Touch): void => {
     const pointer = toJsonPointer(touch.segments);
-    const existing = touches.get(pointer);
-    if (!existing) {
-      touches.set(pointer, touch);
-      order.push(pointer);
+    if (touches.has(pointer)) {
       return;
     }
-    existing.kind = touch.kind;
+    touches.set(pointer, touch);
+    order.push(pointer);
   };
 
-  const noteArray = (arrayRoot: ArrayRoot, kind: TouchKind): void => {
-    const pointer = toJsonPointer(arrayRoot.path);
-    const existing = touches.get(pointer);
-    if (!existing) {
-      touches.set(pointer, {
-        segments: arrayRoot.path,
-        firstValue: snapshotValue(arrayRoot.target),
-        existed: true,
-        kind,
-      });
-      order.push(pointer);
-      return;
+  const noteArray = (arrayRoot: ArrayRoot): void => {
+    note({
+      segments: arrayRoot.path,
+      firstValue: undefined,
+      existed: true,
+    });
+  };
+
+  const storedValue = (value: unknown): unknown => {
+    if (value === undefined) {
+      return undefined;
     }
-    existing.kind = kind;
+    if (value !== null && typeof value === 'object') {
+      const target = targetByWrapper.get(value);
+      if (target !== undefined) {
+        return target;
+      }
+      return cloneAssigned(value);
+    }
+    return value;
+  };
+
+  const isUnchangedAssignment = (inner: object, name: string, value: unknown): boolean => {
+    if (!hasOwn(inner, name)) {
+      return false;
+    }
+    const current = peekProp(inner, name);
+    if (Object.is(current, value)) {
+      return true;
+    }
+    if (value !== null && typeof value === 'object') {
+      const target = targetByWrapper.get(value);
+      return target !== undefined && Object.is(current, target);
+    }
+    return false;
   };
 
   const wrap = <T extends object>(target: T, path: string[], arrayRoot: ArrayRoot | null): T => {
+    const cached = wrapperByTarget.get(target);
+    if (cached) {
+      return cached as T;
+    }
+
     const effectiveArrayRoot: ArrayRoot | null =
       arrayRoot ?? (Array.isArray(target) ? { path, target } : null);
 
-    return new Proxy(target, {
+    const proxy = new Proxy(target, {
       get(inner, key) {
         if (typeof key === 'symbol') {
           return Reflect.get(inner, key);
@@ -181,25 +188,28 @@ export function createPatchCollector(): PatchCollector {
           return true;
         }
 
+        if (isUnchangedAssignment(inner, name, value)) {
+          return true;
+        }
+
         if (effectiveArrayRoot) {
-          noteArray(effectiveArrayRoot, 'set');
-          const stored = value === undefined ? undefined : cloneAssigned(value);
-          return Reflect.set(inner, name, stored);
+          noteArray(effectiveArrayRoot);
+          return Reflect.set(inner, name, storedValue(value));
         }
 
         const existed = hasOwn(inner, name);
-        const firstValue = existed ? snapshotValue(peekProp(inner, name)) : undefined;
+        const firstValue = firstTouchValue(existed, existed ? peekProp(inner, name) : undefined);
 
         if (value === undefined) {
           if (existed) {
-            note({ segments: path.concat(name), firstValue, existed, kind: 'remove' });
+            note({ segments: path.concat(name), firstValue, existed });
             return Reflect.deleteProperty(inner, name);
           }
           return true;
         }
 
-        note({ segments: path.concat(name), firstValue, existed, kind: 'set' });
-        return Reflect.set(inner, name, cloneAssigned(value));
+        note({ segments: path.concat(name), firstValue, existed });
+        return Reflect.set(inner, name, storedValue(value));
       },
 
       deleteProperty(inner, key) {
@@ -212,24 +222,27 @@ export function createPatchCollector(): PatchCollector {
           return true;
         }
 
-        if (effectiveArrayRoot) {
-          noteArray(effectiveArrayRoot, 'set');
-          return Reflect.deleteProperty(inner, name);
-        }
-
         if (!hasOwn(inner, name)) {
           return true;
         }
 
+        if (effectiveArrayRoot) {
+          noteArray(effectiveArrayRoot);
+          return Reflect.deleteProperty(inner, name);
+        }
+
         note({
           segments: path.concat(name),
-          firstValue: snapshotValue(peekProp(inner, name)),
+          firstValue: firstTouchValue(true, peekProp(inner, name)),
           existed: true,
-          kind: 'remove',
         });
         return Reflect.deleteProperty(inner, name);
       },
     }) as T;
+
+    wrapperByTarget.set(target, proxy);
+    targetByWrapper.set(proxy, target);
+    return proxy;
   };
 
   return {
@@ -264,36 +277,21 @@ export function createPatchCollector(): PatchCollector {
           continue;
         }
 
-        switch (touch.kind) {
-          case 'remove': {
-            if (touch.existed) {
-              ops.push({ op: 'remove', path: pointer });
-            }
-            break;
+        const { found, value } = readPath(root, touch.segments);
+        if (!found) {
+          if (touch.existed) {
+            ops.push({ op: 'remove', path: pointer });
           }
-          case 'set': {
-            const { found, value } = readPath(root, touch.segments);
-            if (!found) {
-              if (touch.existed) {
-                ops.push({ op: 'remove', path: pointer });
-              }
-              break;
-            }
-            if (isPrimitive(value) && Object.is(value, touch.firstValue)) {
-              break;
-            }
-            ops.push({
-              op: touch.existed ? 'replace' : 'add',
-              path: pointer,
-              value: cloneAssigned(value),
-            });
-            break;
-          }
-          default: {
-            touch.kind satisfies never;
-            break;
-          }
+          continue;
         }
+        if (isPrimitive(value) && Object.is(value, touch.firstValue)) {
+          continue;
+        }
+        ops.push({
+          op: touch.existed ? 'replace' : 'add',
+          path: pointer,
+          value: cloneAssigned(value),
+        });
       }
 
       touches.clear();

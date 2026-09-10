@@ -1,16 +1,87 @@
 import { afterEach, describe, expect, it } from 'vitest';
+import * as v from 'valibot';
 
 import { OpenServiceMissingChannelError } from '../../server-errors.ts';
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
+import { mutableRecordLookupServiceDef, noInputSchema, voidOutputSchema } from './fixtures.ts';
+import { defineService } from './service-definition.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
   SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
-import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
+
+type RecorderBroadcastState = { a: number; b: number; n: number };
+
+const recorderBroadcastServiceDef = defineService({
+  id: 'internal-fixture/recorder-broadcast',
+  description: 'Exercises no-op and nested-command broadcast recording.',
+  initialState: { a: 0, b: 0, n: 0 } satisfies RecorderBroadcastState,
+  queries: {
+    snapshot: {
+      description: 'Returns the full state.',
+      input: noInputSchema,
+      output: v.object({ a: v.number(), b: v.number(), n: v.number() }),
+      handler: (_input, ctx) => ({
+        a: ctx.self.state.a,
+        b: ctx.self.state.b,
+        n: ctx.self.state.n,
+      }),
+    },
+  },
+  commands: {
+    noop: {
+      description: 'Resolves without writing.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: () => undefined,
+    },
+    sameN: {
+      description: 'Writes n to its current value.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.n = state.n;
+        });
+      },
+    },
+    setB: {
+      description: 'Writes b.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.b = 2;
+        });
+      },
+    },
+    outer: {
+      description: 'Writes a then delegates to setB.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.a = 1;
+        });
+        await ctx.self.commands.setB();
+      },
+    },
+    setA: {
+      description: 'Writes a.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.a = 1;
+        });
+      },
+    },
+  },
+});
 
 const createMockChannel = createTestChannel;
 const installChannel = installTestChannel;
@@ -84,6 +155,45 @@ describe('server: command push', () => {
       (patches[0][1] as { runtimeId: string }).runtimeId
     );
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: '2' });
+  });
+
+  it('emits no sync frame and does not bump the stamp for a command that writes nothing', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(recorderBroadcastServiceDef);
+
+    await service.commands.noop();
+    await service.commands.sameN();
+
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES)).toHaveLength(0);
+
+    await service.commands.setA();
+
+    const patches = channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
+    expect(patches).toHaveLength(1);
+    expect((patches[0][1] as { version: number }).version).toBe(1);
+    expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 0, n: 0 });
+  });
+
+  it('emits exactly one frame per outer invocation including nested command writes', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(recorderBroadcastServiceDef);
+
+    await service.commands.outer();
+
+    const patches = channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
+    expect(patches).toHaveLength(1);
+    expect(patches[0][1]).toEqual(
+      expect.objectContaining({
+        serviceId: recorderBroadcastServiceDef.id,
+        state: expect.objectContaining({ a: 1, b: 2, n: 0 }),
+        version: 1,
+      })
+    );
+    expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 2, n: 0 });
   });
 });
 

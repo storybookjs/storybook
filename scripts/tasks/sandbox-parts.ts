@@ -1,5 +1,6 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
+import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
@@ -456,7 +457,7 @@ function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
 // Update the stories field to ensure that no TS files
 // that are linked from the renderer are picked up in non-TS projects
 function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
-  const stories = mainConfig.getFieldValue(['stories']) as string[];
+  const stories = mainConfig.getValue(['stories']) as string[];
 
   // If the project is a JS project, let's make sure any linked in TS stories from the
   // renderer inside src|stories are simply ignored.
@@ -475,7 +476,7 @@ function addStoriesEntry(
   disableDocs: boolean,
   skipMocking: boolean
 ) {
-  const stories = mainConfig.getFieldValue(['stories']) as string[];
+  const stories = mainConfig.getValue(['stories']) as string[];
 
   const basePattern = disableDocs
     ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
@@ -830,9 +831,8 @@ export const addStories: Task['run'] = async (
     });
   }
 
-  const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
-    (acc: string[], addon: any) => {
-      const name = typeof addon === 'string' ? addon : addon.name;
+  const mainAddons = (mainConfig.getNamesFromPath(['addons']) || []).reduce(
+    (acc: string[], name: string) => {
       const match = /@storybook\/addon-(.*)/.exec(name);
 
       if (!match) {
@@ -892,6 +892,10 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
+  const addonsToEdit = template.modifications?.editAddons
+    ? (mainConfig.getValue(['addons']) ?? [])
+    : [];
+  assert(Array.isArray(addonsToEdit), 'Expected addons to be an array');
   const configToAdd = {
     ...templateConfig,
     features: {
@@ -899,7 +903,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     },
     ...(template.modifications?.editAddons
       ? {
-          addons: template.modifications?.editAddons(mainConfig.getFieldValue(['addons']) || []),
+          addons: template.modifications?.editAddons(addonsToEdit),
         }
       : {}),
     core: {
@@ -942,7 +946,8 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
 
   // Simulate Storybook Lite
   if (disableDocs) {
-    const addons = mainConfig.getFieldValue(['addons']);
+    const addons = mainConfig.getValue(['addons']);
+    assert(Array.isArray(addons), 'Expected addons to be an array');
     const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
     mainConfig.set(['addons'], addonsNoDocs);
 
@@ -950,7 +955,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     mainConfig.set(['docs'], {});
     mainConfig.set(['typescript'], { reactDocgen: false });
 
-    let updatedStories = mainConfig.getFieldValue(['stories']) as string[];
+    let updatedStories = mainConfig.getValue(['stories']) as string[];
     updatedStories = updatedStories.filter((specifier) => !specifier.endsWith('.mdx'));
     mainConfig.set(['stories'], updatedStories);
   }
@@ -995,7 +1000,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   // wiring an opting-out user adds by hand.
   if (template.expected.framework === '@storybook/angular-vite') {
     const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
-    if (mainConfig.getFieldValue(['features', 'experimentalDocgenServer']) === false) {
+    if (mainConfig.getValue(['features', 'experimentalDocgenServer']) === false) {
       previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
       previewConfig.setImport('docJson', '../documentation.json');
       previewConfig._ast.program.body.push(

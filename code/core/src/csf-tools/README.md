@@ -14,7 +14,8 @@ It can parse MDX into CSF.
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta, each story export, and each CSF2 `Story.parameters` / `Story.story` annotation assignment.
 `{ meta, stories, annotations }` narrows what is discovered; meta and stories are included by default, annotations only when listed.
 
-Each editor reads and writes static property paths with `get`, `set`, `transform`, `remove`, `rename`, and `move`.
+Each editor reads and writes static property paths with `get`, `getValue`, `set`, `transform`, `remove`, `rename`, and `move`.
+`get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Missing fields return `undefined`. Values that cannot be resolved statically return `undefined` and add a mutation diagnostic; reads never return a partially decoded object.
 `set` accepts Babel expressions or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values. Values are copied into the AST; subsequent changes to the input do not affect the file. Top-level expression-shaped objects are interpreted as AST nodes.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
 Nested object paths can follow local constants used only by that object; shared or reassigned references remain untouched.
@@ -42,6 +43,6 @@ if (config.changed && config.mutationDiagnostics.length === 0) {
 }
 ```
 
-`ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` and `getFieldValue` reads reflect editor changes. Array and import helpers remain available; their edits are not tracked by `changed`. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
+`ConfigFile.changed` and `ConfigFile.mutationDiagnostics` track these editor operations. Existing `getFieldNode` reads reflect editor changes. Array and import helpers remain available; their edits are not tracked by `changed`. `writeConfig` rejects files with mutation diagnostics to avoid writing partial edits.
 
 Discovery rejects shared or reassigned bindings, unresolved re-exports, and conditional or repeated CommonJS assignments. Inline object methods and exported function declarations can be transformed as function expressions while retaining their declaration form. Path edits use the same spread, duplicate-key, occupied-destination, and dynamic-value checks as story edits. Unsupported input produces diagnostics without rewriting that input.

@@ -20,6 +20,6 @@ export async function readConfig({ fileName, cwd }: { fileName: string; cwd: str
 }
 
 export function addPreviewAnnotations(mainConfig: ConfigFile, paths: string[]) {
-  const config = mainConfig.getFieldValue(['previewAnnotations']) as string[];
+  const config = mainConfig.getValue(['previewAnnotations']) as string[];
   mainConfig.set(['previewAnnotations'], [...(config || []), ...paths.map(slash)]);
 }

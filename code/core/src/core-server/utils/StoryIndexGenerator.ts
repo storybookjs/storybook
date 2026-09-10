@@ -889,7 +889,14 @@ export class StoryIndexGenerator {
     if (previewCode) {
       try {
         const projectAnnotations = loadConfig(previewCode).parse();
-        projectTags = projectAnnotations.getFieldValue(['tags']) ?? [];
+        const tags = projectAnnotations.getValue(['tags']) ?? [];
+        invariant(
+          projectAnnotations.mutationDiagnostics.length === 0 &&
+            Array.isArray(tags) &&
+            tags.every((tag) => typeof tag === 'string'),
+          'Preview tags must be a static array of strings'
+        );
+        projectTags = tags;
       } catch (err) {
         once.warn(dedent`
           Unable to parse tags from project configuration. If defined, tags should be specified inline, e.g.

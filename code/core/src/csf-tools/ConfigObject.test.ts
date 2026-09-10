@@ -18,6 +18,29 @@ const configurations = [
 
 describe('ConfigFile mutations', () => {
   it.each([
+    'const tags = ["autodocs"]; export default { tags };',
+    'const tags = ["autodocs"]; module.exports = { tags };',
+    'const values = ["autodocs"]; export { values as tags };',
+  ])('reads literal values from %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.getValue(['tags'])).toEqual(['autodocs']);
+    expect(config.get(['tags'])).toBeDefined();
+    expect(config.changed).toBe(false);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each([
+    'import { tags } from "./shared"; export default { tags };',
+    'let tags = []; tags = other; export default { tags };',
+    'const tags = [tags]; export default { tags };',
+    'const undefined = "shadowed"; use(undefined); export default { value: undefined };',
+  ])('does not guess values from %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.getValue([source.includes('shadowed') ? 'value' : 'tags'])).toBeUndefined();
+    expect(config.mutationDiagnostics.length).toBeGreaterThan(0);
+  });
+
+  it.each([
     'export default { tags: [] };',
     'module.exports = { tags: [] };',
     'export const tags = [];',
@@ -32,8 +55,8 @@ describe('ConfigFile mutations', () => {
     config.set(['parameters', 'a11y', 'test'], 'error');
 
     const output = loadConfig(printConfig(config).code).parse();
-    expect(output.getFieldValue(['tags'])).toEqual(['autodocs']);
-    expect(output.getFieldValue(['parameters'])).toEqual({
+    expect(output.getValue(['tags'])).toEqual(['autodocs']);
+    expect(output.getValue(['parameters'])).toEqual({
       a11y: { test: 'error', enabled: false },
       levels: [0, false, 'dark'],
       retries: 2,
@@ -51,7 +74,7 @@ describe('ConfigFile mutations', () => {
       ok: true,
       changed: true,
     });
-    expect(config.getFieldValue(['parameters', 'a11y', 'context'])).toBe('#root');
+    expect(config.getValue(['parameters', 'a11y', 'context'])).toBe('#root');
     expect(object.move(['parameters', 'a11y', 'context'], ['globals', 'a11y'])).toEqual({
       ok: true,
       changed: true,
@@ -67,10 +90,10 @@ describe('ConfigFile mutations', () => {
     });
 
     const output = loadConfig(printConfig(config).code).parse();
-    expect(output.getFieldValue(['globals', 'a11y'])).toBe('#app');
-    expect(output.getFieldValue(['tags'])).toEqual(['autodocs']);
+    expect(output.getValue(['globals', 'a11y'])).toBe('#app');
+    expect(output.getValue(['tags'])).toEqual(['autodocs']);
     expect(output.getFieldNode(['parameters'])).toBeUndefined();
-    expect(config.getFieldValue(['globals', 'a11y'])).toBe('#app');
+    expect(config.getValue(['globals', 'a11y'])).toBe('#app');
     expect(object.changed).toBe(true);
     expect(config.changed).toBe(true);
     expect(config.mutationDiagnostics).toEqual([]);
@@ -260,7 +283,7 @@ describe('ConfigFile mutations', () => {
     const object = config;
 
     expect(object.rename(['oldName'], 'newName')).toEqual({ ok: true, changed: true });
-    expect(config.getFieldValue(['newName'])).toBe('value');
+    expect(config.getValue(['newName'])).toBe('value');
     expect(object.remove(['newName'])).toEqual({ ok: true, changed: true });
     expect(printConfig(config).code).toBe('export const sibling = true;');
   });
@@ -273,8 +296,8 @@ describe('ConfigFile mutations', () => {
     object.set(['parameters', 'a11y', 'context'], t.stringLiteral('#app'));
 
     const output = loadConfig(printConfig(config).code).parse();
-    expect(output.getFieldValue(['framework'])).toBe('@storybook/react-vite');
-    expect(output.getFieldValue(['parameters', 'a11y', 'context'])).toBe('#app');
+    expect(output.getValue(['framework'])).toBe('@storybook/react-vite');
+    expect(output.getValue(['parameters', 'a11y', 'context'])).toBe('#app');
   });
 
   it.each(['local', 'custom-field'])(
@@ -288,7 +311,7 @@ describe('ConfigFile mutations', () => {
 
       const output = printConfig(config).code;
       expect(output).toContain(`const local = 'keep'`);
-      expect(loadConfig(output).parse().getFieldValue([name])).toBe('updated');
+      expect(loadConfig(output).parse().getValue([name])).toBe('updated');
       expect(object.remove([name])).toEqual({ ok: true, changed: true });
       expect(loadConfig(printConfig(config).code).parse().getFieldNode([name])).toBeUndefined();
     }

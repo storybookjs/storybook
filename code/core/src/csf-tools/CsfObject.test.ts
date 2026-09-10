@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
 
@@ -10,6 +10,84 @@ const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
 
 describe('CsfObject', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    { expression: 'false', expected: false },
+    { expression: '-2.5', expected: -2.5 },
+    { expression: '\`dark\`', expected: 'dark' },
+    { expression: '("dark" as const) satisfies string', expected: 'dark' },
+    { expression: 'void 0', expected: undefined },
+    { expression: '[1, ...[false, "dark"], null]', expected: [1, false, 'dark', null] },
+    {
+      expression: '{ ...{ enabled: false }, nested: { values: [1, "dark"] } }',
+      expected: { enabled: false, nested: { values: [1, 'dark'] } },
+    },
+    { expression: '{ ["font-size"]: 12 }', expected: { 'font-size': 12 } },
+  ])('reads $expression without changing the file', ({ expression, expected }) => {
+    const source = `export default { parameters: ${expression} };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.getValue(['parameters'])).toEqual(expected);
+    expect(meta.getValue(['missing'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('reads local constant values through references', () => {
+    const csf = parse('const tags = ["autodocs"]; export default { tags };');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.getValue(['tags'])).toEqual(['autodocs']);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('returns fresh nested values on every read', () => {
+    const csf = parse('export default { parameters: { values: [{ enabled: true }] } };');
+    const [meta] = csf.objects({ stories: false });
+    const values = meta.getValue(['parameters', 'values']);
+    if (!Array.isArray(values)) {
+      throw new Error('Expected an array');
+    }
+    values[0].enabled = false;
+    values.push('new');
+    expect(meta.getValue(['parameters', 'values'])).toEqual([{ enabled: true }]);
+    expect(csf.changed).toBe(false);
+  });
+
+  it('reads an own __proto__ field without modifying the returned object prototype', () => {
+    const csf = parse('export default { parameters: { ["__proto__"]: { enabled: true } } };');
+    const [meta] = csf.objects({ stories: false });
+    const value = meta.getValue(['parameters']);
+    expect(value).toEqual(JSON.parse('{"__proto__":{"enabled":true}}'));
+    expect(Object.getPrototypeOf(value)).toBe(Object.prototype);
+  });
+
+  it.each([
+    'globalThis.csfReadProbe()',
+    '{ known: true, dynamic: globalThis.csfReadProbe() }',
+    '["known", globalThis.csfReadProbe()]',
+    '{ get enabled() { return globalThis.csfReadProbe(); } }',
+    'globalThis.csfReadProbe.value',
+    '() => globalThis.csfReadProbe()',
+  ])('reports an unresolved value without executing %s', (expression) => {
+    const probe = vi.fn();
+    vi.stubGlobal('csfReadProbe', probe);
+    const csf = parse(`export default { parameters: ${expression} };`);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.getValue(['parameters'])).toBeUndefined();
+    expect(probe).not.toHaveBeenCalled();
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported-value',
+        path: ['parameters'],
+      })
+    );
+    expect(csf.changed).toBe(false);
+  });
+
   it('edits a local object referenced by a story and cleans up the empty parent', () => {
     const csf = parse(
       `const a11y = { element: '#root' }; export default {}; export const Story = { parameters: { a11y } };`
@@ -192,8 +270,8 @@ describe('CsfObject', () => {
 
     expect(meta.set(['parameters', 'value'], value)).toEqual({ ok: true, changed: true });
     const output = loadConfig(printCsf(csf).code).parse();
-    expect(output.getFieldValue(['parameters', 'value'])).toEqual(value);
-    expect(output.getFieldValue(['parameters', 'existing'])).toBe(true);
+    expect(output.getValue(['parameters', 'value'])).toEqual(value);
+    expect(output.getValue(['parameters', 'existing'])).toBe(true);
     expect(meta.changed).toBe(true);
     expect(csf.mutationDiagnostics).toEqual([]);
   });

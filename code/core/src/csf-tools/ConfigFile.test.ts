@@ -13,7 +13,7 @@ expect.addSnapshotSerializer({
 
 const getField = (path: string[], source: string) => {
   const config = loadConfig(source).parse();
-  return config.getFieldValue(path);
+  return config.getValue(path);
 };
 
 const setField = (path: string[], value: any, source: string) => {
@@ -44,18 +44,18 @@ describe('ConfigFile', () => {
     const config = loadConfig(source).parse();
 
     config.set(['parameters', 'viewport', 'options'], {});
-    expect(config.getFieldValue(['parameters', 'viewport', 'options'])).toEqual({});
+    expect(config.getValue(['parameters', 'viewport', 'options'])).toEqual({});
     if (source.includes('disable: true')) {
-      expect(config.getFieldValue(['parameters', 'viewport', 'disable'])).toBe(true);
+      expect(config.getValue(['parameters', 'viewport', 'disable'])).toBe(true);
     }
     config.removeField(['parameters', 'viewport', 'disable']);
     config.set(['parameters', 'viewport', 'disabled'], true);
 
     const reparsed = loadConfig(printConfig(config).code).parse();
-    expect(config.getFieldValue(['parameters'])).toEqual({
+    expect(config.getValue(['parameters'])).toEqual({
       viewport: { options: {}, disabled: true },
     });
-    expect(reparsed.getFieldValue(['parameters'])).toEqual(config.getFieldValue(['parameters']));
+    expect(reparsed.getValue(['parameters'])).toEqual(config.getValue(['parameters']));
   });
 
   describe('findNamedImportMethodCalls', () => {
@@ -444,7 +444,7 @@ describe('ConfigFile', () => {
           }>();
         `;
         const config = loadConfig(source).parse();
-        expect(config.getFieldValue(['parameters', 'foo'])).toEqual('bar');
+        expect(config.getValue(['parameters', 'foo'])).toEqual('bar');
       });
     });
   });
@@ -1944,7 +1944,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a preset-style object entry', () => {
@@ -1955,7 +1955,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a wrapped string entry', () => {
@@ -1966,7 +1966,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a wrapped object entry', () => {
@@ -1977,7 +1977,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('throws when entry is missing', () => {

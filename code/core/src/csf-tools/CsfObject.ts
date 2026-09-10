@@ -19,6 +19,7 @@ export type CsfMutationDiagnosticCode =
   | 'duplicate-field'
   | 'spread-field'
   | 'dynamic-key'
+  | 'unsupported-value'
   | 'unsupported-member'
   | 'occupied-destination'
   | 'cyclic-move';
@@ -48,6 +49,8 @@ export interface CsfObject {
   readonly target: CsfObjectTarget;
   readonly changed: boolean;
   get(path: readonly string[]): t.Expression | undefined;
+  /** Read plain values without executing code. Unresolved values return undefined with a diagnostic. */
+  getValue(path: readonly string[]): CsfValue;
   /** Set a literal value or Babel expression. Expression-shaped objects are treated as AST nodes. */
   set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult;
   /**
@@ -73,6 +76,8 @@ export interface CsfObjectOptions {
   stories?: boolean;
   annotations?: readonly ('parameters' | 'story')[];
 }
+
+const UNRESOLVED = Symbol('unresolved');
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
@@ -176,6 +181,24 @@ class CsfObjectEditor implements CsfObject {
   }
 
   get(path: readonly string[]): t.Expression | undefined {
+    const value = this.getExpression(path);
+    return value ? t.cloneNode(value, true) : undefined;
+  }
+
+  getValue(path: readonly string[]): CsfValue {
+    const expression = this.getExpression(path);
+    if (!expression) {
+      return undefined;
+    }
+    const value = this.readValue(expression);
+    if (value === UNRESOLVED) {
+      this.failure('unsupported-value', path, expression);
+      return undefined;
+    }
+    return value;
+  }
+
+  private getExpression(path: readonly string[]): t.Expression | undefined {
     const logicalPath = this.normalizePath(path);
     if (!logicalPath) {
       return undefined;
@@ -185,8 +208,7 @@ class CsfObjectEditor implements CsfObject {
       this.failure(found.code, path, found.node);
       return undefined;
     }
-    const value = found.property && propertyExpression(found.property);
-    return value ? t.cloneNode(value, true) : undefined;
+    return found.property && propertyExpression(found.property);
   }
 
   set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult {
@@ -354,7 +376,7 @@ class CsfObjectEditor implements CsfObject {
       if (ancestor.ok === false || !t.isObjectProperty(ancestor.property) || !ancestor.parent) {
         return;
       }
-      const value = this.resolveObject(ancestor.property.value);
+      const value = this.resolveExpression(ancestor.property.value);
       if (!t.isObjectExpression(value) || value.properties.length > 0) {
         return;
       }
@@ -375,7 +397,103 @@ class CsfObjectEditor implements CsfObject {
     return path.slice(this.prefix.length);
   }
 
-  private resolveObject(node: t.Node): t.ObjectExpression | undefined {
+  private readValue(node: t.Node): CsfValue | typeof UNRESOLVED {
+    const value = this.resolveExpression(node);
+    if (t.isStringLiteral(value) || t.isNumericLiteral(value) || t.isBooleanLiteral(value)) {
+      return value.value;
+    }
+    if (t.isNullLiteral(value)) {
+      return null;
+    }
+    if (t.isIdentifier(value)) {
+      switch (value.name) {
+        case 'undefined':
+          return undefined;
+        case 'NaN':
+          return Number.NaN;
+        case 'Infinity':
+          return Number.POSITIVE_INFINITY;
+        default:
+          return UNRESOLVED;
+      }
+    }
+    if (t.isTemplateLiteral(value) && value.expressions.length === 0) {
+      return value.quasis[0].value.cooked ?? UNRESOLVED;
+    }
+    if (t.isUnaryExpression(value)) {
+      const argument = this.readValue(value.argument);
+      if (typeof argument === 'number') {
+        if (value.operator === '-') {
+          return -argument;
+        }
+        if (value.operator === '+') {
+          return argument;
+        }
+      }
+      if (value.operator === 'void' && argument !== UNRESOLVED) {
+        return undefined;
+      }
+      return UNRESOLVED;
+    }
+    // Babel represents NaN and infinities as numeric division when converting values to AST.
+    if (t.isBinaryExpression(value, { operator: '/' })) {
+      const left = this.readValue(value.left);
+      const right = this.readValue(value.right);
+      return typeof left === 'number' && typeof right === 'number' ? left / right : UNRESOLVED;
+    }
+    if (t.isArrayExpression(value)) {
+      const elements: CsfValue[] = [];
+      for (const element of value.elements) {
+        if (!element) {
+          elements.length++;
+          continue;
+        }
+        const item = this.readValue(t.isSpreadElement(element) ? element.argument : element);
+        if (item === UNRESOLVED) {
+          return UNRESOLVED;
+        }
+        if (t.isSpreadElement(element)) {
+          if (!Array.isArray(item)) {
+            return UNRESOLVED;
+          }
+          elements.push(...item);
+        } else {
+          elements.push(item);
+        }
+      }
+      return elements;
+    }
+    if (t.isObjectExpression(value)) {
+      const entries: [string, CsfValue][] = [];
+      for (const property of value.properties) {
+        if (t.isSpreadElement(property)) {
+          const spread = this.readValue(property.argument);
+          if (typeof spread !== 'object' || spread === null || Array.isArray(spread)) {
+            return UNRESOLVED;
+          }
+          entries.push(...Object.entries(spread));
+          continue;
+        }
+        const key = staticKey(property);
+        if (
+          !t.isObjectProperty(property) ||
+          key === undefined ||
+          (key === '__proto__' && !property.computed)
+        ) {
+          return UNRESOLVED;
+        }
+        const item = this.readValue(property.value);
+        if (item === UNRESOLVED) {
+          return UNRESOLVED;
+        }
+        entries.push([key, item]);
+      }
+      return Object.fromEntries(entries);
+    }
+    return UNRESOLVED;
+  }
+
+  private resolveExpression(node: t.Node): t.Node | undefined {
     const program = this.root.scope.getProgramParent().path;
     if (!program.isProgram()) {
       return undefined;
@@ -386,6 +504,9 @@ class CsfObjectEditor implements CsfObject {
       visited.add(value);
       const reference = pathForNode(program, value);
       const binding = reference?.scope.getBinding(value.name);
+      if (!binding && reference && ['undefined', 'NaN', 'Infinity'].includes(value.name)) {
+        return value;
+      }
       if (
         !binding?.constant ||
         binding.referencePaths.length !== 1 ||
@@ -397,7 +518,7 @@ class CsfObjectEditor implements CsfObject {
       }
       value = unwrapExpression(binding.path.node.init);
     }
-    return t.isObjectExpression(value) ? value : undefined;
+    return value;
   }
 
   private inspect(path: readonly string[]) {
@@ -418,7 +539,7 @@ class CsfObjectEditor implements CsfObject {
       if (!t.isObjectProperty(property)) {
         return { ok: false as const, code: 'unsupported-member' as const, node: property };
       }
-      const value = this.resolveObject(property.value);
+      const value = this.resolveExpression(property.value);
       if (!t.isObjectExpression(value)) {
         return { ok: false as const, code: 'unsupported-member' as const, node: property.value };
       }
@@ -441,7 +562,7 @@ class CsfObjectEditor implements CsfObject {
         object = child;
       } else {
         const value = t.isObjectProperty(lookup.property)
-          ? this.resolveObject(lookup.property.value)
+          ? this.resolveExpression(lookup.property.value)
           : undefined;
         if (!t.isObjectExpression(value)) {
           throw this.root.buildCodeFrameError('CsfObject mutation preflight was invalidated');

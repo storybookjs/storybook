@@ -7,6 +7,7 @@ import type {} from '@vitest/browser-playwright';
 
 import {
   DEFAULT_FILES_PATTERN,
+  HandledError,
   getInterpretedFile,
   normalizeStories,
   optionalEnvToBoolean,
@@ -68,7 +69,15 @@ const extractTagsFromPreview = async (configDir: string) => {
     return [];
   }
   const previewConfig = await readConfig(previewConfigPath);
-  return previewConfig.getFieldValue(['tags']) ?? [];
+  const tags = previewConfig.getValue(['tags']) ?? [];
+  if (
+    previewConfig.mutationDiagnostics.length > 0 ||
+    !Array.isArray(tags) ||
+    !tags.every((tag) => typeof tag === 'string')
+  ) {
+    throw new HandledError('Preview tags must be a static array of strings');
+  }
+  return tags;
 };
 
 const getStoryGlobsAndFiles = async (

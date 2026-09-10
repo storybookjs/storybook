@@ -139,6 +139,11 @@ export class ConfigFile implements CsfObject {
     return editor.ok ? editor.object.get(path) : undefined;
   }
 
+  getValue(path: readonly string[]): CsfValue {
+    const editor = this.editor();
+    return editor.ok ? editor.object.getValue(path) : undefined;
+  }
+
   set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult {
     return this.mutate((object) => object.set(path, value));
   }
@@ -417,26 +422,6 @@ export class ConfigFile implements CsfObject {
       return undefined;
     }
     return _getPathProperties(rest, exported);
-  }
-
-  getFieldValue<T = any>(path: string[]): T | undefined {
-    const node = this.getFieldNode(path);
-    if (node) {
-      const { code } = generate(node, {});
-
-      const value = (0, eval)(`(() => (${code}))()`);
-      return value;
-    }
-    return undefined;
-  }
-
-  getSafeFieldValue(path: string[]) {
-    try {
-      return this.getFieldValue(path);
-    } catch (e) {
-      //
-    }
-    return undefined;
   }
 
   /**

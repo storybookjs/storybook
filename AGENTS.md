@@ -89,8 +89,9 @@ Internal exports include:
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
 
 For AST mutations, use `CsfFile.objects()` for stories and `ConfigFile` directly for preview or main
-configuration. Both expose `get`, `set`, `transform`, `remove`, `rename`, and `move`, with automatic
+configuration. Both expose `get`, `getValue`, `set`, `transform`, `remove`, `rename`, and `move`, with automatic
 empty-parent cleanup. `set` accepts AST expressions and plain values, including nested arrays and objects.
+`getValue` reads plain values statically; unresolved expressions produce diagnostics without executing code.
 Use the file's `changed` and `mutationDiagnostics` to decide whether to write
 the result. Named variable and function exports in config files share one logical root for these operations.
 

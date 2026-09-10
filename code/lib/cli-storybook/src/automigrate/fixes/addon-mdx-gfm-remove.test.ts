@@ -34,7 +34,7 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
 
 // Mock ConfigFile type
 interface MockConfigFile {
-  getFieldValue: (path: string[]) => any;
+  getValue: (path: string[]) => any;
   appendValueToArray: (path: string[], value: any) => void;
   removeField: (path: string[]) => void;
   _ast: Record<string, unknown>;
@@ -116,7 +116,7 @@ describe('addon-mdx-gfm-remove migration', () => {
 
     it('detects mdx-gfm addon when present as string', async () => {
       const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-mdx-gfm']),
+        getValue: vi.fn().mockReturnValue(['@storybook/addon-mdx-gfm']),
         appendValueToArray: vi.fn(),
         removeField: vi.fn(),
         _ast: {},
@@ -140,7 +140,7 @@ describe('addon-mdx-gfm-remove migration', () => {
 
     it('detects mdx-gfm addon when present as object', async () => {
       const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue([{ name: '@storybook/addon-mdx-gfm' }]),
+        getValue: vi.fn().mockReturnValue([{ name: '@storybook/addon-mdx-gfm' }]),
         appendValueToArray: vi.fn(),
         removeField: vi.fn(),
         _ast: {},

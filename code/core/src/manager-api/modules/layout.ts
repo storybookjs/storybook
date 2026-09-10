@@ -12,7 +12,6 @@ import { global } from '@storybook/global';
 import { pick, toMerged } from 'es-toolkit/object';
 import { isEqual as deepEqual } from 'es-toolkit/predicate';
 import type { ThemeVars } from 'storybook/theming';
-import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
 
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
@@ -223,36 +222,14 @@ const getRecentVisibleSizes = (layoutState: API_Layout) => {
   };
 };
 
-/**
- * Merges layout options into the existing layout state and translates
- * `showNav` / `showPanel` booleans into the underlying size fields.
- *
- * Layout keys can be provided either at the top level (deprecated) or under
- * `options.layout` (preferred). Nested layout keys take precedence.
- *
- * Numeric sizes are merged in before applying show/hide flags, so
- * `recentVisibleSizes` is captured from the latest size values.
- */
 const applyLayoutOptions = (
   layoutState: API_Layout,
-  options: { layout?: Partial<API_Layout>; [key: string]: any },
+  options: Partial<API_Layout> | undefined,
   singleStory: boolean
 ) => {
-  const layoutKeys = Object.keys(layoutState);
-  const layoutAtTopLevel = pick(options, layoutKeys);
-
-  for (const key of Object.keys(layoutAtTopLevel)) {
-    deprecate(
-      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ layout: { ${key}: ... } })\` instead.`
-    );
-  }
-
-  const mergedLayoutOptions = toMerged(layoutAtTopLevel, options.layout || {});
-  const { showPanel, showNav } = mergedLayoutOptions;
-
-  // Safety net: drop any unknown keys that aren't part of API_Layout.
-  const typedLayoutKeys = layoutKeys as (keyof API_Layout)[];
-  const nextLayoutState = toMerged(layoutState, pick(mergedLayoutOptions, typedLayoutKeys));
+  const { showPanel, showNav } = options ?? {};
+  const layoutKeys = Object.keys(layoutState) as (keyof API_Layout)[];
+  const nextLayoutState = toMerged(layoutState, pick(options ?? {}, layoutKeys));
 
   // singleStory always hides the sidebar; otherwise honor showSidebar.
   if (showNav === false || singleStory) {
@@ -274,28 +251,9 @@ const applyLayoutOptions = (
   return nextLayoutState;
 };
 
-/**
- * Merges ui options into the existing ui state.
- *
- * Ui keys can be provided either at the top level (deprecated) or under
- * `options.ui` (preferred). Nested ui keys take precedence.
- *
- * Numeric sizes are merged in before applying show/hide flags, so
- * `recentVisibleSizes` is captured from the latest size values.
- */
-const applyUiOptions = (uiState: API_UI, options: { ui?: Partial<API_UI>; [key: string]: any }) => {
-  const uiKeys = Object.keys(uiState);
-  const uiAtTopLevel = pick(options, uiKeys);
-
-  for (const key of Object.keys(uiAtTopLevel)) {
-    deprecate(
-      `Calling \`setConfig({ ${key}: ... })\` is deprecated. Please call \`setConfig({ ui: { ${key}: ... } })\` instead.`
-    );
-  }
-
-  // Safety net: drop any unknown keys that aren't part of API_UI.
-  const typedUiKeys = uiKeys as (keyof API_UI)[];
-  return toMerged(uiState, pick(toMerged(uiAtTopLevel, options.ui || {}), typedUiKeys));
+const applyUiOptions = (uiState: API_UI, options: Partial<API_UI> | undefined) => {
+  const uiKeys = Object.keys(uiState) as (keyof API_UI)[];
+  return toMerged(uiState, pick(options ?? {}, uiKeys));
 };
 
 /**
@@ -577,12 +535,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
 
       return {
         ...defaultLayoutState,
-        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig, !!singleStory),
+        layout: applyLayoutOptions(defaultLayoutState.layout, userConfig.layout, !!singleStory),
         layoutCustomisations: {
           ...defaultLayoutState.layoutCustomisations,
           ...(layoutCustomisations ?? {}),
         },
-        ui: applyUiOptions(defaultLayoutState.ui, userConfig),
+        ui: applyUiOptions(defaultLayoutState.ui, userConfig.ui),
         selectedPanel: selectedPanel || defaultLayoutState.selectedPanel,
         theme: theme || defaultLayoutState.theme,
       };
@@ -647,9 +605,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         return;
       }
 
-      const updatedLayout = applyLayoutOptions(layout, options, !!singleStory);
+      const updatedLayout = applyLayoutOptions(layout, options.layout, !!singleStory);
 
-      const updatedUi = applyUiOptions(ui, options);
+      const updatedUi = applyUiOptions(ui, options.ui);
 
       const updatedTheme = {
         ...theme,

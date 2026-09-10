@@ -1,5 +1,5 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { type StoriesEntry, type StorybookConfigRaw } from 'storybook/internal/types';
+import { type StorybookConfigRaw } from 'storybook/internal/types';
 
 import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';
@@ -147,64 +147,6 @@ type BaseTemplates = Template & {
 };
 
 export const baseTemplates = {
-  'cra/default-js': {
-    name: 'Create React App Latest (Webpack | JavaScript)',
-    script: `
-      npx create-react-app {{beforeDir}} && cd {{beforeDir}} && \
-      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
-    `,
-    expected: {
-      // TODO: change this to @storybook/cra once that package is created
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: (config) => {
-        const stories = config.getFieldValue<Array<StoriesEntry>>(['stories']);
-        return {
-          features: {
-            experimentalTestSyntax: true,
-          },
-          stories: stories?.map((s) => {
-            if (typeof s === 'string') {
-              return s.replace(/\|(tsx?|ts)\b|\b(tsx?|ts)\|/g, '');
-            } else {
-              return s;
-            }
-          }),
-        };
-      },
-    },
-  },
-  'cra/default-ts': {
-    name: 'Create React App Latest (Webpack | TypeScript)',
-    script: `
-      npx create-react-app {{beforeDir}} --template typescript && cd {{beforeDir}} && \
-      jq '.browserslist.production[0] = ">0.9%"' package.json > tmp.json && mv tmp.json package.json
-    `,
-    // Re-enable once https://github.com/storybookjs/storybook/issues/19351 is fixed.
-    skipTasks: ['smoke-test', 'bench', 'vitest-integration'],
-    expected: {
-      // TODO: change this to @storybook/cra once that package is created
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-  },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
@@ -757,11 +699,7 @@ export const baseTemplates = {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
       // See `angular-vite/default-ts` for why Compodoc is listed here.
-      extraDependencies: [
-        '@angular/forms@^21.2.0',
-        '@angular/animations@^21.2.0',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^21.2.0', '@compodoc/compodoc'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -780,18 +718,13 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
-      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms. Match the `^22` major
+      // `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       // `@compodoc/compodoc` is no longer installed by `storybook init` for the Vite builder, but
       // the sandbox harness prepends its own `docs:json` Compodoc pass to every Angular sandbox
       // (see `sandbox-parts.ts`), so the sandboxes still have to carry the binary themselves.
-      extraDependencies: [
-        '@angular/forms@^22',
-        '@angular/animations@^22',
-        'typescript@^6',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^22', 'typescript@^6', '@compodoc/compodoc'],
       useCsfFactory: true,
       // `@storybook/angular-vite` turns the docgen server on by default, so guarding the browser
       // docgen path is now an explicit opt-out rather than the absence of a flag.
@@ -1204,8 +1137,6 @@ export const allTemplates: Record<TemplateKey, Template> = {
 };
 
 export const normal: TemplateKey[] = [
-  // TODO: Add this back once we resolve the React 19 issues
-  // 'cra/default-ts',
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'angular-vite/default-ts',
@@ -1250,8 +1181,6 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
-  // TODO: Add this back once we resolve the React 19 issues
-  // 'cra/default-js',
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
@@ -1279,22 +1208,16 @@ export const templatesByCadence = { normal, merged, daily };
 const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
 
 // Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
-// read without running the sandbox generator. Listed by name so a new function-form template throws
-// below instead of silently dropping out of docgen baseline coverage.
-const UNREADABLE_MAIN_CONFIG_TEMPLATES = new Set<string>(['cra/default-js']);
-
+// read without running the sandbox generator. A new function-form template throws below instead of
+// silently dropping out of docgen baseline coverage.
 const enablesDocgenServer = (key: string, template: Template): boolean => {
   const { mainConfig } = template.modifications ?? {};
   if (typeof mainConfig === 'function') {
-    if (!UNREADABLE_MAIN_CONFIG_TEMPLATES.has(key)) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error(
-        `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
-          `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen ` +
-          `baseline coverage, or add the key to UNREADABLE_MAIN_CONFIG_TEMPLATES to stay out of it.`
-      );
-    }
-    return false;
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(
+      `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
+        `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen baseline coverage.`
+    );
   }
   const features = mainConfig?.features;
   return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);

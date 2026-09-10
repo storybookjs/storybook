@@ -205,45 +205,55 @@ describe('bootTestRunner', () => {
     );
   });
 
-  describe('when a follower fails to become ready', () => {
-    let error: UniversalStoreFollowerTimeoutError;
+  describe.each(['storybook/status', 'storybook/test-provider'])(
+    'when %s fails to become ready',
+    (storeId) => {
+      let error: UniversalStoreFollowerTimeoutError;
 
-    beforeEach(() => {
-      error = new UniversalStoreFollowerTimeoutError('storybook/test-provider');
-      vi.mocked(internal_universalTestProviderStore.untilReady).mockRejectedValue(error);
-    });
-
-    it('should report a follower readiness rejection once and preserve the original error', async () => {
-      const originalError = {
-        name: error.name,
-        message: error.message,
-        stack: error.stack,
-        cause: undefined,
-      };
-      const onFatalError = vi.fn();
-      mockStore.subscribe('FATAL_ERROR', onFatalError);
-      const promise = runTestRunner({
-        channel: mockChannel,
-        store: mockStore,
-        options: mockOptions,
+      beforeEach(() => {
+        vi.resetModules();
+        error = new UniversalStoreFollowerTimeoutError(storeId);
+        const followerStore =
+          storeId === 'storybook/status'
+            ? internal_universalStatusStore
+            : internal_universalTestProviderStore;
+        vi.mocked(followerStore.untilReady).mockRejectedValue(error);
       });
-      const rejection = expect(promise).rejects.toEqual(originalError);
 
-      await import('./vitest.ts');
-      await rejection;
-      expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
-        {
-          type: 'FATAL_ERROR',
-          payload: {
-            message: 'Failed to synchronize stores in the test runner process',
-            error: originalError,
+      it('should report a follower readiness rejection once and preserve the original error', async () => {
+        const originalError = {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          cause: undefined,
+        };
+        const onFatalError = vi.fn();
+        mockStore.subscribe('FATAL_ERROR', onFatalError);
+        const promise = runTestRunner({
+          channel: mockChannel,
+          store: mockStore,
+          options: mockOptions,
+        });
+        const rejection = expect(promise).rejects.toEqual(originalError);
+
+        await import('./vitest.ts');
+        await rejection;
+        await vi.advanceTimersByTimeAsync(0);
+        expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+          {
+            type: 'FATAL_ERROR',
+            payload: {
+              message: 'Failed to synchronize stores in the test runner process',
+              error: originalError,
+            },
           },
-        },
-        expect.anything()
-      );
-      expect(process.exit).toHaveBeenCalledExactlyOnceWith(1);
-    });
-  });
+          expect.anything()
+        );
+        expect(process.exit).toHaveBeenCalledExactlyOnceWith(1);
+        expect(TestManager).not.toHaveBeenCalled();
+      });
+    }
+  );
 
   it('should report an uncaught error after the child is ready', async () => {
     const onFatalError = vi.fn();

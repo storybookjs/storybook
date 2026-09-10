@@ -1,10 +1,16 @@
 /**
  * Records the state paths a `setState` recipe touched, for the open-service sync wrapper.
  *
- * The wrapper opens one collector per outer command invocation and passes it into the runtime
- * command. Recipes write through a proxy over the live deepsignal state. At flush, each surviving
- * path is emitted once with its final value. Zero ops means the wrapper sends nothing and does not
- * bump the stamp.
+ * The wrapper opens one collector per outer command invocation. Recipes write through a proxy over
+ * the live deepsignal state. Flush emits one op per surviving path with its final value. Zero ops
+ * means no broadcast and no stamp bump.
+ *
+ * Output is [RFC 6902 JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902) with
+ * [RFC 6901 JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901) paths.
+ *
+ * This is produce-with-patches over a live mutable proxy, not Immer: no copy-on-write (O(touched
+ * paths), not O(container size)), arrays are atomic, and ops are standard JSON Patch rather than
+ * Immer's segment-array paths.
  */
 import { batch } from '@preact/signals-core';
 import { peek } from 'deepsignal/core';
@@ -40,10 +46,6 @@ function escapePointerSegment(segment: string): string {
   return segment.replaceAll('~', '~0').replaceAll('/', '~1');
 }
 
-function isForbiddenKey(key: string): boolean {
-  return FORBIDDEN_KEYS.has(key);
-}
-
 function peekProp(obj: object, key: string): unknown {
   return peek(obj as never, key as never);
 }
@@ -59,7 +61,7 @@ function cloneAssigned(value: unknown): unknown {
 
   const copy: Record<string, unknown> = {};
   for (const key of Object.keys(value as object)) {
-    if (isForbiddenKey(key)) {
+    if (FORBIDDEN_KEYS.has(key)) {
       continue;
     }
     copy[key] = cloneAssigned((value as Record<string, unknown>)[key]);
@@ -100,9 +102,16 @@ function readPath(root: object, segments: readonly string[]): { found: boolean; 
   return { found: true, value: current };
 }
 
+/**
+ * Opens a per-invocation collector that records `setState` recipes onto the live state.
+ *
+ * `record` runs the recipe through a recording proxy. `flush` returns the RFC 6902 ops for paths
+ * that still differ, or `[]` when the invocation was a no-op.
+ */
 export function createPatchCollector(): PatchCollector {
   const touches = new Map<string, Touch>();
   const order: string[] = [];
+  // One wrapper per target so draft identity (`draft.x === draft.x`, `indexOf`) matches deepsignal.
   const wrapperByTarget = new WeakMap<object, object>();
   const targetByWrapper = new WeakMap<object, object>();
   let root: object | undefined;
@@ -131,6 +140,7 @@ export function createPatchCollector(): PatchCollector {
     if (value !== null && typeof value === 'object') {
       const target = targetByWrapper.get(value);
       if (target !== undefined) {
+        // Assigning a draft shares the live object; external values are cloned.
         return target;
       }
       return cloneAssigned(value);
@@ -170,6 +180,7 @@ export function createPatchCollector(): PatchCollector {
 
         const value = Reflect.get(inner, key);
         if (typeof value === 'function') {
+          // Unbound, so array mutators (`push`, `splice`) go through this proxy's [[Set]].
           return value;
         }
         if (value !== null && typeof value === 'object') {
@@ -184,7 +195,7 @@ export function createPatchCollector(): PatchCollector {
         }
 
         const name = String(key);
-        if (name.startsWith('$') || isForbiddenKey(name)) {
+        if (name.startsWith('$') || FORBIDDEN_KEYS.has(name)) {
           return true;
         }
 
@@ -193,6 +204,7 @@ export function createPatchCollector(): PatchCollector {
         }
 
         if (effectiveArrayRoot) {
+          // Index and length writes collapse to one replace of the outermost array.
           noteArray(effectiveArrayRoot);
           return Reflect.set(inner, name, storedValue(value));
         }
@@ -218,7 +230,7 @@ export function createPatchCollector(): PatchCollector {
         }
 
         const name = String(key);
-        if (name.startsWith('$') || isForbiddenKey(name)) {
+        if (name.startsWith('$') || FORBIDDEN_KEYS.has(name)) {
           return true;
         }
 
@@ -267,6 +279,7 @@ export function createPatchCollector(): PatchCollector {
           continue;
         }
 
+        // `/a` covers `/a/b`; `/a` does not cover `/ab`.
         const hasTouchedAncestor = touch.segments.some((_, index) => {
           if (index === 0) {
             return false;
@@ -277,6 +290,7 @@ export function createPatchCollector(): PatchCollector {
           continue;
         }
 
+        // Final value comes from live state, so overlapping collectors cannot emit a stale remove.
         const { found, value } = readPath(root, touch.segments);
         if (!found) {
           if (touch.existed) {
@@ -284,6 +298,7 @@ export function createPatchCollector(): PatchCollector {
           }
           continue;
         }
+        // Same-value primitives (including net-out) are not ops; objects are never deep-compared.
         if (isPrimitive(value) && Object.is(value, touch.firstValue)) {
           continue;
         }

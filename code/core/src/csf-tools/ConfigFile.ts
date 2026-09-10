@@ -139,8 +139,10 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   readonly target = { kind: 'config' } as const;
-  #changed = false;
-  #mutationDiagnostics: CsfMutationDiagnostic[] = [];
+  // No member may be private: core resolves this class from both src and dist, and any private
+  // member makes the emitted class type nominal, so the two identities stop being assignable.
+  _changed = false;
+  _mutationDiagnostics: CsfMutationDiagnostic[] = [];
 
   /**
    * Report whether this editor has applied a mutation. Reads and no-op edits leave it unchanged.
@@ -154,7 +156,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get changed() {
-    return this.#changed;
+    return this._changed;
   }
 
   /**
@@ -170,7 +172,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
-    return [...this.#mutationDiagnostics];
+    return [...this._mutationDiagnostics];
   }
 
   /**
@@ -184,7 +186,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   get(path: readonly string[]): t.Expression | undefined {
-    const editor = this.editor();
+    const editor = this._editor();
     return editor.ok ? editor.object.get(path) : undefined;
   }
 
@@ -201,7 +203,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   getValue(path: readonly string[]): CsfValue {
-    const editor = this.editor();
+    const editor = this._editor();
     return editor.ok ? editor.object.getValue(path) : undefined;
   }
 
@@ -218,7 +220,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult {
-    return this.mutate((object) => object.set(path, value));
+    return this._mutate((object) => object.set(path, value));
   }
 
   /**
@@ -239,7 +241,7 @@ export class ConfigFile implements CsfObject {
     path: readonly string[],
     derive: (value: t.Expression) => t.Expression | undefined
   ): CsfMutationResult {
-    return this.mutate((object) => object.transform(path, derive));
+    return this._mutate((object) => object.transform(path, derive));
   }
 
   /**
@@ -254,7 +256,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   remove(path: readonly string[]): CsfMutationResult {
-    return this.mutate((object) => object.remove(path));
+    return this._mutate((object) => object.remove(path));
   }
 
   /**
@@ -269,7 +271,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   rename(path: readonly string[], name: string): CsfMutationResult {
-    return this.mutate((object) => object.rename(path, name));
+    return this._mutate((object) => object.rename(path, name));
   }
 
   /**
@@ -286,7 +288,7 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   move(from: readonly string[], to: readonly string[]): CsfMutationResult {
-    return this.mutate((object) => object.move(from, to));
+    return this._mutate((object) => object.move(from, to));
   }
 
   /**
@@ -302,29 +304,29 @@ export class ConfigFile implements CsfObject {
    * ```
    */
   group(path: readonly string[], names: readonly string[]): CsfMutationResult {
-    return this.mutate((object) => object.group(path, names));
+    return this._mutate((object) => object.group(path, names));
   }
 
-  private mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
-    const editor = this.editor();
+  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
+    const editor = this._editor();
     return editor.ok === true
       ? operation(editor.object)
       : { ok: false, changed: false, diagnostic: editor.diagnostic };
   }
 
-  private editor() {
+  _editor() {
     const editor = createConfigObject(
       this,
-      (diagnostic) => this.#mutationDiagnostics.push(diagnostic),
+      (diagnostic) => this._mutationDiagnostics.push(diagnostic),
       () => {
-        this.#changed = true;
+        this._changed = true;
         this._exports = {};
         this._exportDecls = {};
         this.parse();
       }
     );
     if (editor.ok === false) {
-      this.#mutationDiagnostics.push(editor.diagnostic);
+      this._mutationDiagnostics.push(editor.diagnostic);
     }
     return editor;
   }
@@ -911,9 +913,9 @@ export class ConfigFile implements CsfObject {
 
     const objects: CsfObject[] = [];
     const report = (diagnostic: CsfMutationDiagnostic) =>
-      this.#mutationDiagnostics.push(diagnostic);
+      this._mutationDiagnostics.push(diagnostic);
     const markChanged = () => {
-      this.#changed = true;
+      this._changed = true;
     };
 
     traverse(this._ast, {

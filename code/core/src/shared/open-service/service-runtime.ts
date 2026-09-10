@@ -66,6 +66,7 @@ import {
   OpenServiceInvalidStaticPathError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
+import type { PatchCollector } from './patch-recorder.ts';
 import {
   buildQueries,
   buildReactiveLoadQueries,
@@ -96,6 +97,8 @@ import type {
   ServiceInstance,
   ServiceRegistryApi,
 } from './types.ts';
+
+type RuntimeCommand = (input: unknown, collector?: PatchCollector) => Promise<unknown>;
 
 /**
  * Internal runtime object returned while a service instance is being assembled.
@@ -196,13 +199,13 @@ function createCommandSelf<TState>(state: TState): CommandSelf<TState> {
 function buildCommands<TState>(
   serviceId: ServiceId,
   commands: Commands<TState>,
-  createCommandCtx: () => CommandCtx<TState>
+  createCommandCtx: (collector?: PatchCollector) => CommandCtx<TState>
 ): Command {
   return Object.fromEntries(
     Object.entries(commands).map(([name, def]) => {
       return [
         name,
-        async (input: unknown) => {
+        async (input: unknown, collector?: PatchCollector) => {
           if (!def.handler) {
             throw new OpenServiceUnimplementedOperationError({
               kind: 'command',
@@ -217,7 +220,7 @@ function buildCommands<TState>(
             name,
             phase: 'input',
           });
-          const output = await def.handler(validatedInput, createCommandCtx());
+          const output = await def.handler(validatedInput, createCommandCtx(collector));
 
           return validateSchema(def.output, output, {
             kind: 'command',
@@ -306,8 +309,25 @@ export function createServiceRuntime<
   const getStateSnapshot = (): TState => structuredClone(rawState);
   const commandSelf = createCommandSelf(state);
   const { registryApi, staticLoader } = runtimeOptions;
-  const createCommandCtx = (): CommandCtx<TState> => ({
-    self: commandSelf,
+
+  const createInvocationSelf = (collector: PatchCollector): CommandSelf<TState> => ({
+    get state() {
+      return state;
+    },
+    setState(mutate) {
+      collector.record(state as object, mutate as (draft: object) => void);
+    },
+    queries: commandSelf.queries,
+    commands: Object.fromEntries(
+      Object.entries(commandSelf.commands).map(([name, cmd]) => [
+        name,
+        (input: unknown) => (cmd as RuntimeCommand)(input, collector),
+      ])
+    ) as CommandSelf<TState>['commands'],
+  });
+
+  const createCommandCtx = (collector?: PatchCollector): CommandCtx<TState> => ({
+    self: collector ? createInvocationSelf(collector) : commandSelf,
     getService: registryApi.getService,
   });
 

@@ -71,6 +71,7 @@ Internal tests and implementation code may import from the individual modules di
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
+- [patch-recorder.ts](./patch-recorder.ts): recording proxy over deepsignal state that captures the paths a `setState` recipe touched
 - [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, the runtime-wide delegated-mode flag, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
@@ -528,7 +529,10 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
 - Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
   (including not-yet-present record keys, which fire when the key is later added).
 - `setState((state) => …)` mutates the proxy **in place** inside a batch, so one command notifies
-  subscribers once, and only the fields it actually changed are invalidated.
+  subscribers once, and only the fields it actually changed are invalidated. When the command runs
+  through the channel broadcast wrapper, the recipe writes through a recording proxy that records
+  the paths it touched. A command that touches nothing emits no sync frame and does not bump the
+  stamp. Nested `ctx.self.commands.*` calls record into the same outer invocation.
 - The proxy is internal and does not escape:
   - Query/`.loaded()` results are the schema-validated value. For object and array schemas that
     rebuild a plain value, this also detaches the result from the proxy.
@@ -645,7 +649,7 @@ Creates a local `ServiceRuntime` from the service definition (identical across r
 
 1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
 2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
-3. **After each local command** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync.
+3. **After each local command that writes** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync. A command that touches nothing emits nothing.
 4. **On incoming patches** — applies the received state into the local runtime via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
 
 ### Loop prevention
@@ -990,6 +994,7 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 ## Testing Guidance
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
+- Touched-path recording belongs in [patch-recorder.test.ts](./patch-recorder.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
 - Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
@@ -1013,6 +1018,7 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../cli/tools/README.md) and [cli/tools/architecture.md](../../cli/tools/architecture.md).
 - If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
+- If you need to change how `setState` records touched paths, start in [patch-recorder.ts](./patch-recorder.ts).
 - If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).
 - If you need to change the React query hook, start in [use-service-query.ts](./use-service-query.ts).
 - If you need to change the React command hook, start in [use-service-command.ts](./use-service-command.ts).

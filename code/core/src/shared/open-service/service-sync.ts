@@ -11,8 +11,8 @@
  * ## 1. `isNewer` — last-write-wins ordering
  *
  * Each synced snapshot carries a `(version, clientId)` stamp. `version` is a logical clock for the
- * state lineage: a runtime bumps it on every local command and adopts the incoming value when it
- * accepts a peer's snapshot. Equal versions mean concurrent writes; the lexicographically greater
+ * state lineage: a runtime bumps it on every local command that writes and adopts the incoming value
+ * when it accepts a peer's snapshot. Equal versions mean concurrent writes; the lexicographically greater
  * `clientId` wins so every runtime independently converges on the same snapshot regardless of the
  * order events arrive in.
  *
@@ -37,7 +37,7 @@
 
 /** Per-service last-write-wins stamp carried alongside every synced snapshot. */
 export type SyncStamp = {
-  /** Logical clock for the state lineage. Bumped on every local command, adopted on accept. */
+  /** Logical clock for the state lineage. Bumped on every local command that writes, adopted on accept. */
   version: number;
   /** Id of the runtime that produced this version; the deterministic tiebreak for equal versions. */
   clientId: string;

@@ -12,8 +12,9 @@
  *   three halves below against one channel, installs the channel-routed command map on the runtime
  *   (so load bodies can invoke peer-implemented commands), and returns the command map callers
  *   expose plus a combined teardown.
- * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call, after it resolves,
- *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot.
+ * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call that touched
+ *   state, after it resolves, advances the last-write-wins stamp and broadcasts the full
+ *   post-mutation snapshot. A command that writes nothing emits nothing and does not bump the stamp.
  * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
  *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
  *   adopts so peers on its *other* transports converge; leaves keep `relay: false`.
@@ -33,6 +34,7 @@ import {
   OpenServiceRemoteCommandDisconnectedError,
   OpenServiceRemoteCommandUnhandledError,
 } from '../../server-errors.ts';
+import { createPatchCollector, type PatchCollector } from './patch-recorder.ts';
 import {
   SERVICE_COMMAND_ACK,
   SERVICE_COMMAND_ERROR,
@@ -64,8 +66,8 @@ import { deserializeError, serializeError } from './service-error-serialization.
 import type { SnapshotReconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
-/** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
-type RuntimeCommand = (input: unknown) => Promise<unknown>;
+/** A runtime command as seen by the transport layer: `(input, collector?) => Promise<result>`. */
+type RuntimeCommand = (input: unknown, collector?: PatchCollector) => Promise<unknown>;
 
 /**
  * Window for a requester to receive a `services:command-ack` before rejecting as unhandled.
@@ -108,13 +110,16 @@ interface RuntimeTransportContext {
 }
 
 /**
- * Wraps each command so a successful local call broadcasts the full post-mutation snapshot.
+ * Wraps each command so a successful local call that touched state broadcasts the post-mutation snapshot.
  *
- * After the wrapped command resolves we advance the stamp (making this runtime the new author) and
- * emit `services:patches`. Advancing BEFORE emitting is what makes the echo safe: the copy that
- * bounces back carries our just-advanced stamp and fails `isNewer`, so it is dropped instead of
- * re-applied. State adopted from peers flows through the reconciler's `setState`, never through these
- * wrappers, so an adopted snapshot never triggers a re-broadcast.
+ * The wrapper opens a per-invocation collector and passes it to the runtime command so `setState`
+ * records the paths the recipe (and nested `ctx.self.commands.*` calls) touched. After the command
+ * resolves, zero recorded paths means no stamp bump and no emit. Otherwise we advance the stamp
+ * (making this runtime the new author) and emit `services:patches`. Advancing BEFORE emitting is what
+ * makes the echo safe: the copy that bounces back carries our just-advanced stamp and fails
+ * `isNewer`, so it is dropped instead of re-applied. State adopted from peers flows through the
+ * reconciler's `setState`, never through these wrappers, so an adopted snapshot never triggers a
+ * re-broadcast.
  */
 export function wrapCommandsForBroadcast(
   commands: Record<string, RuntimeCommand>,
@@ -126,7 +131,13 @@ export function wrapCommandsForBroadcast(
     Object.entries(commands).map(([name, cmd]) => [
       name,
       async (input: unknown): Promise<unknown> => {
-        const result = await cmd(input);
+        const collector = createPatchCollector();
+        const result = await cmd(input, collector);
+        const ops = collector.flush();
+
+        if (ops.length === 0) {
+          return result;
+        }
 
         // A local command makes this runtime the new author: advance the stamp BEFORE emitting so the
         // broadcast bouncing back to us is recognized as not-newer (equal stamp) and dropped.

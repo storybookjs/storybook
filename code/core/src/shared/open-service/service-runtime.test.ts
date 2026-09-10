@@ -2,11 +2,6 @@ import { isEqual } from 'es-toolkit/predicate';
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineService } from './service-definition.ts';
-import { serviceRegistryApi } from './service-registry.ts';
-import { createServiceRuntime } from './service-runtime.ts';
-import { clearRegistry, registerService } from './server.ts';
-import type { QueryState } from './types.ts';
 import {
   type RebuiltValue,
   awaitedPreloadValueServiceDef,
@@ -15,7 +10,14 @@ import {
   fireAndForgetPreloadValueServiceDef,
   mutableRecordLookupServiceDef,
   rebuiltEqualValueOnLoadServiceDef,
+  voidOutputSchema,
 } from './fixtures.ts';
+import { createPatchCollector, type PatchCollector } from './patch-recorder.ts';
+import { defineService } from './service-definition.ts';
+import { serviceRegistryApi } from './service-registry.ts';
+import { createServiceRuntime } from './service-runtime.ts';
+import { clearRegistry, registerService } from './server.ts';
+import type { QueryState } from './types.ts';
 
 afterEach(() => {
   clearRegistry();
@@ -1597,6 +1599,101 @@ describe('service runtime', () => {
       });
 
       unsubscribe();
+    });
+  });
+
+  describe('per-invocation recording', () => {
+    type SlotState = { slots: Record<string, string> };
+    type CollectingCommand = (input: unknown, collector?: PatchCollector) => Promise<unknown>;
+
+    const wait = {
+      started: () => {},
+      gate: Promise.resolve() as Promise<void>,
+      release: () => {},
+    };
+
+    const overlappingSlotServiceDef = defineService({
+      id: 'internal-fixture/overlapping-slot-writes',
+      description: 'Writes one slot after an optional wait, for overlapping-invocation tests.',
+      initialState: { slots: {} } as SlotState,
+      queries: {},
+      commands: {
+        writeSlot: {
+          description: 'Writes one slot, optionally after a gate.',
+          input: v.object({
+            key: v.string(),
+            value: v.string(),
+            wait: v.boolean(),
+          }),
+          output: voidOutputSchema,
+          handler: async (input, ctx) => {
+            if (input.wait) {
+              wait.started();
+              await wait.gate;
+            }
+            ctx.self.setState((state) => {
+              state.slots[input.key] = input.value;
+            });
+          },
+        },
+        outer: {
+          description: 'Writes one slot then delegates to writeSlot.',
+          input: v.void(),
+          output: voidOutputSchema,
+          handler: async (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.slots.outer = 'o';
+            });
+            await ctx.self.commands.writeSlot({ key: 'inner', value: 'i', wait: false });
+          },
+        },
+      },
+    });
+
+    it('attributes overlapping async invocations to their own collectors', async () => {
+      wait.gate = new Promise<void>((resolve) => {
+        wait.release = resolve;
+      });
+      const startedPromise = new Promise<void>((resolve) => {
+        wait.started = resolve;
+      });
+
+      const runtime = createServiceRuntime(
+        overlappingSlotServiceDef,
+        { registryApi: serviceRegistryApi },
+        { slots: {} }
+      );
+      const writeSlot = runtime.commands.writeSlot as CollectingCommand;
+      const slowCollector = createPatchCollector();
+      const fastCollector = createPatchCollector();
+
+      const slow = writeSlot({ key: 'slow', value: 'S', wait: true }, slowCollector);
+      await startedPromise;
+      await writeSlot({ key: 'fast', value: 'F', wait: false }, fastCollector);
+
+      expect(fastCollector.flush()).toEqual([{ op: 'add', path: '/slots/fast', value: 'F' }]);
+
+      wait.release();
+      await slow;
+
+      expect(slowCollector.flush()).toEqual([{ op: 'add', path: '/slots/slow', value: 'S' }]);
+      expect(runtime.getStateSnapshot()).toEqual({ slots: { fast: 'F', slow: 'S' } });
+    });
+
+    it('records nested ctx.self.commands writes into the outer collector', async () => {
+      const runtime = createServiceRuntime(
+        overlappingSlotServiceDef,
+        { registryApi: serviceRegistryApi },
+        { slots: {} }
+      );
+      const collector = createPatchCollector();
+
+      await (runtime.commands.outer as CollectingCommand)(undefined, collector);
+
+      expect(collector.flush()).toEqual([
+        { op: 'add', path: '/slots/outer', value: 'o' },
+        { op: 'add', path: '/slots/inner', value: 'i' },
+      ]);
     });
   });
 });

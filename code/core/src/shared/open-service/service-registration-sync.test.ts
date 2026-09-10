@@ -341,9 +341,9 @@ describe('server: entry application', () => {
       { serviceId: recordServiceId, patch: [{ op: 'add', path: '/a', value: { k: 'v' } }] },
       {
         serviceId: recordServiceId,
-        stamp: { runtimeId: 'p', counter: 1 },
+        stamp: { runtimeId: 'p', counter: 0 },
         command: 'x',
-        patch: [],
+        patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
       },
     ];
 

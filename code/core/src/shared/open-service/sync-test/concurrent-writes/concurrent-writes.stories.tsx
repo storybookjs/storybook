@@ -127,7 +127,9 @@ export const ConcurrentWritesPlayFunction: Story = {
     await userEvent.click(write);
 
     await waitFor(() => {
-      expect(raw).toHaveTextContent(JSON.stringify({ 'play-slot': 'play-value' }));
+      expect(JSON.parse(raw.textContent ?? '{}')).toMatchObject({
+        'play-slot': 'play-value',
+      });
     });
   },
 };

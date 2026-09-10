@@ -121,7 +121,8 @@ describe('open-service sync wire: entry broadcast cost', () => {
     const leaf = connectLeafRuntime(leafChannel);
     disconnectLeaf = leaf.disconnect;
 
-    const cloneSpy = vi.spyOn(globalThis, 'structuredClone');
+    vi.spyOn(globalThis, 'structuredClone');
+    const cloneSpy = vi.mocked(globalThis.structuredClone);
 
     frames.length = 0;
     cloneSpy.mockClear();
@@ -145,7 +146,7 @@ describe('open-service sync wire: entry broadcast cost', () => {
     const lastTenMean = mean(authoredSizes.slice(-10));
     expect(lastTenMean).toBeLessThan(firstTenMean * 1.25);
 
-    expect(relayedFrames.length).toBeGreaterThanOrEqual(COMMAND_COUNT);
+    expect(relayedFrames).toHaveLength(COMMAND_COUNT);
     const relayedSizes = relayedFrames.map((frame) => frame.bytes);
     expect(mean(relayedSizes)).toBeLessThanOrEqual(mean(authoredSizes) * 1.25);
 

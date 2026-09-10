@@ -26,9 +26,9 @@ export interface StoryDoc {
   description?: string;
   summary?: string;
   /**
-   * Why the snippet is an incomplete example: what a static pass could not resolve, in the source
-   * text it was written as. A story that carries this still carries a `snippet`; an `error` means
-   * there is no snippet at all.
+   * What a static pass could not resolve, in the source text it was written as. Next to a
+   * `snippet` it marks the example as partial; on its own it says why no static snippet could be
+   * produced at all. An `error` means the provider itself failed.
    */
   warning?: string;
   error?: StoryDocsError;

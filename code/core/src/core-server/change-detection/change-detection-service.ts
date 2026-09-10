@@ -128,7 +128,7 @@ export class ChangeDetectionService {
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
   private unsubscribeModuleGraphStatus: (() => void) | undefined;
-  private unsubscribeModuleGraphRevision: (() => void) | undefined;
+  private unsubscribeFileActivity: (() => void) | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -242,7 +242,9 @@ export class ChangeDetectionService {
         }
       }
     );
-    this.unsubscribeModuleGraphRevision = moduleGraph.queries.graphRevision.subscribe(
+    // Watch file activity (not graphRevision): out-of-graph / path-mismatched edits still need a
+    // git rescan, while graphRevision stays in-graph-only for review staleness.
+    this.unsubscribeFileActivity = moduleGraph.queries.fileActivityRevision.subscribe(
       undefined,
       ({ data }) => {
         if ((data ?? 0) > 0) {
@@ -303,8 +305,8 @@ export class ChangeDetectionService {
     this.gitDiffProvider?.dispose();
     this.unsubscribeModuleGraphStatus?.();
     this.unsubscribeModuleGraphStatus = undefined;
-    this.unsubscribeModuleGraphRevision?.();
-    this.unsubscribeModuleGraphRevision = undefined;
+    this.unsubscribeFileActivity?.();
+    this.unsubscribeFileActivity = undefined;
   }
 
   private scheduleScan(delayMs: number): void {

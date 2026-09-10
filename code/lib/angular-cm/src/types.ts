@@ -4,6 +4,8 @@
  * The raw shape below stays close to Compodoc's JSON schema, while analyzer-owned fields use the
  * stronger contracts its successor pipeline needs. This package owns these types outright.
  */
+import type { ComponentJsDocInfo } from 'storybook/internal/component-meta';
+
 type Html = string;
 
 export interface Decorator {
@@ -203,4 +205,6 @@ export interface AngularComponentMetaResult {
   entry: AngularClassMeta;
   /** Every class in the file, for the extractor's alias and enum resolution. */
   json: MetadataJson;
+  /** Omitted when extraction reaches analyzer metadata without a class symbol. */
+  jsDocInfo?: ComponentJsDocInfo;
 }

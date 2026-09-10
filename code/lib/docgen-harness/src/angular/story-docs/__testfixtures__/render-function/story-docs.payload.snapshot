@@ -28,7 +28,7 @@ import { RenderFunctionComponent } from './render-function.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [RenderFunctionComponent],
-  template: `<sb-render-function [label]="'Plain'"></sb-render-function>`,
+  template: `<sb-render-function [label]="'Plain'" />`,
 })
 export class DemoComponent {}",
     },

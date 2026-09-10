@@ -13,7 +13,7 @@ import { NoSelectorComponent } from './no-selector.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [NgComponentOutlet],
-  template: `<ng-container *ngComponentOutlet="NoSelectorComponent"></ng-container>`,
+  template: `<ng-container *ngComponentOutlet="NoSelectorComponent" />`,
 })
 export class DemoComponent {
   protected readonly NoSelectorComponent = NoSelectorComponent;

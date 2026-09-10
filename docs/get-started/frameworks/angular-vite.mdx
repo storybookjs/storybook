@@ -324,6 +324,12 @@ Run the Storybook automigration command to update your project automatically:
 npx storybook automigrate
 ```
 
+<Callout variant="info">
+
+Two things the automigration cannot do for you: a `webpackFinal` hook has to be [rewritten as `viteFinal`](../../builders/vite.mdx#migrating-from-webpack), and direct `.md` imports need Vite's [`?raw` suffix](../../builders/vite.mdx#importing-markdown-files-as-strings).
+
+</Callout>
+
 ### Manual migration
 
 First, install the framework:
@@ -366,6 +372,10 @@ If your existing `angular.json` already declares Storybook architect targets, up
 If you would rather invoke Storybook directly, you can also remove the architect entries entirely and switch to `storybook dev` and `storybook build`.
 
 If your configuration contains a `webpackFinal` hook, you will need to [migrate it to `viteFinal`](../../builders/vite.mdx#migrating-from-webpack).
+
+Finally, if your stories or components import Markdown files directly, append Vite's `?raw` suffix to those imports.
+Webpack turned `.md` imports into strings for you; Vite needs to be told.
+See [Importing Markdown files as strings](../../builders/vite.mdx#importing-markdown-files-as-strings).
 
 ## Vitest integration
 

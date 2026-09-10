@@ -102,3 +102,11 @@ export const unresolvedWarning = (unresolved: readonly string[]): string | undef
     ? undefined
     : `Incomplete snippet: ${sources.map((source) => `\`${source}\``).join(', ')} could not be resolved statically.`;
 };
+
+/** {@link unresolvedWarning} for a story that gets no snippet at all instead of a partial one. */
+export const noSnippetWarning = (unresolved: readonly string[]): string | undefined => {
+  const sources = [...new Set(unresolved)];
+  return sources.length === 0
+    ? undefined
+    : `No static snippet: ${sources.map((source) => `\`${source}\``).join(', ')} could not be resolved statically.`;
+};

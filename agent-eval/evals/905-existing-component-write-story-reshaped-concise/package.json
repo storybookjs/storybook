@@ -1,7 +1,0 @@
-{
-  "name": "905-existing-component-write-story-reshaped-concise",
-  "type": "module",
-  "evals": {
-    "template": "reshaped-storybook"
-  }
-}

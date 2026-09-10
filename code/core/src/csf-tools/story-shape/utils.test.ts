@@ -4,9 +4,11 @@ import { recast, types as t } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
-import { loadCsf } from '../CsfFile.ts';
+import { babelParseFile, loadCsf } from '../CsfFile.ts';
 import type { RenderFunctionPath } from './render.ts';
 import {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
   keyOf,
   metaObjectPath,
   resolveIdentifierInit,
@@ -17,6 +19,23 @@ import {
 
 const parse = (code: string) => {
   return loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
+};
+
+const storyInitializer = (initializer: string): t.Node => {
+  let found: t.Expression | null | undefined;
+  babelParseFile({ code: `const A = ${initializer};` }).path.traverse({
+    VariableDeclarator(path) {
+      if (t.isIdentifier(path.node.id, { name: 'A' })) {
+        found = path.node.init;
+        path.stop();
+      }
+    },
+  });
+
+  if (!found) {
+    throw new Error('Expected declaration to have an initializer');
+  }
+  return found;
 };
 
 // Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
@@ -80,6 +99,95 @@ const renderFunctionPath = (code: string): RenderFunctionPath => {
 
   return found;
 };
+
+describe('isCanonicalCsf2BindCall', () => {
+  it('accepts only an identifier .bind call with no configuration', () => {
+    expect(
+      [
+        'Template.bind()',
+        'Template.bind({})',
+        "Template.bind({ role: 'button' })",
+        "Template['bind']({})",
+        'Template[bind]({})',
+        'makeStory({})',
+      ].map((initializer) => [initializer, isCanonicalCsf2BindCall(storyInitializer(initializer))])
+    ).toMatchInlineSnapshot(`
+      [
+        [
+          "Template.bind()",
+          true,
+        ],
+        [
+          "Template.bind({})",
+          true,
+        ],
+        [
+          "Template.bind({ role: 'button' })",
+          false,
+        ],
+        [
+          "Template['bind']({})",
+          false,
+        ],
+        [
+          "Template[bind]({})",
+          false,
+        ],
+        [
+          "makeStory({})",
+          false,
+        ],
+      ]
+    `);
+  });
+});
+
+describe('isCsfFactoryCall', () => {
+  it('accepts only static story and extend calls on an identifier receiver', () => {
+    expect(
+      [
+        'meta.story({})',
+        'Base.extend({})',
+        "meta['story']({})",
+        'meta[story]({})',
+        'getMeta().story({})',
+        'makeStory({})',
+        'Template.bind({})',
+      ].map((initializer) => [initializer, isCsfFactoryCall(storyInitializer(initializer))])
+    ).toMatchInlineSnapshot(`
+      [
+        [
+          "meta.story({})",
+          true,
+        ],
+        [
+          "Base.extend({})",
+          true,
+        ],
+        [
+          "meta['story']({})",
+          false,
+        ],
+        [
+          "meta[story]({})",
+          false,
+        ],
+        [
+          "getMeta().story({})",
+          false,
+        ],
+        [
+          "makeStory({})",
+          false,
+        ],
+        [
+          "Template.bind({})",
+          false,
+        ],
+      ]
+    `);
+  });
+});
 
 describe('keyOf', () => {
   it('returns literal object member keys and skips dynamic keys', () => {

@@ -23,8 +23,9 @@
  */
 import type ts from 'typescript';
 
+import { extractComponentJsDocInfo } from 'storybook/internal/component-meta';
+
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
-import { groupBy } from '../utils.ts';
 
 // ---------------------------------------------------------------------------
 // Output types — compatible with react-docgen-typescript's ComponentDoc shape
@@ -1371,25 +1372,6 @@ function computeDisplayName({
   return exportName;
 }
 
-function extractComponentJsDocTags(
-  typescript: typeof ts,
-  checker: ts.TypeChecker,
-  symbol: ts.Symbol
-): Record<string, string[]> | undefined {
-  const tags = symbol.getJsDocTags(checker);
-  if (tags.length === 0) {
-    return undefined;
-  }
-
-  const groupedTags = groupBy(tags, (tag) => tag.name);
-  return Object.fromEntries(
-    Object.entries(groupedTags).map(([name, grouped]) => [
-      name,
-      (grouped ?? []).map((tag) => typescript.displayPartsToString(tag.text ?? []).trim()),
-    ])
-  );
-}
-
 // ---------------------------------------------------------------------------
 // Props type → ComponentDoc serialization
 // ---------------------------------------------------------------------------
@@ -1560,14 +1542,15 @@ export function serializeComponentDoc(
     }) ??
     displayNameOverride;
 
-  const description = typescript.displayPartsToString(resolved.getDocumentationComment(checker));
-  const selectedJsDocTags = extractComponentJsDocTags(typescript, checker, resolved);
+  const resolvedJsDocInfo = extractComponentJsDocInfo(typescript, checker, resolved);
+  const description = resolvedJsDocInfo.description;
+  const selectedJsDocTags = resolvedJsDocInfo.jsDocTags;
   const exportResolved =
     exportSymbol && exportSymbol !== resolved
       ? resolveAliasedSymbol(typescript, checker, exportSymbol)
       : undefined;
   const exportJsDocTags = exportResolved
-    ? extractComponentJsDocTags(typescript, checker, exportResolved)
+    ? extractComponentJsDocInfo(typescript, checker, exportResolved).jsDocTags
     : undefined;
   const jsDocTags =
     selectedJsDocTags?.import || !exportJsDocTags?.import

@@ -51,6 +51,26 @@ it('builds a real payload through the TypeScript-backed analyzer', async () => {
 
   expect(payload?.error).toBeUndefined();
   expect(payload?.name).toBe('ButtonComponent');
+  expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
+    .toMatchInlineSnapshot(`
+      {
+        "description": "Renders with {@link IconButton } in prose.
+      Use together with",
+        "jsDocTags": {
+          "deprecated": [
+            "Use NewButton.",
+          ],
+          "example": [
+            "<sb-button label="Save">
+      Save
+      </sb-button>",
+          ],
+          "see": [
+            "ButtonGroup for accessibility.",
+          ],
+        },
+      }
+    `);
   expect(payload?.argTypes?.label).toMatchObject({
     name: 'label',
     table: { category: 'inputs' },

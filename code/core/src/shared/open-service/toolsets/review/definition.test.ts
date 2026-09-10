@@ -5,7 +5,11 @@ import {
   OpenServiceMissingOriginError,
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
-import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
+import {
+  invokeToolsetMethod,
+  resolveToolsetDescription,
+  type ToolsetCtx,
+} from '../../toolset-definition.ts';
 import { reviewToolset } from './definition.ts';
 
 const reviewUrl = 'http://localhost:6006/?path=/review/';
@@ -32,7 +36,9 @@ function createReview(
   overrides: Partial<v.InferInput<typeof reviewToolset.methods.create.input>> = {},
   ctx: ToolsetCtx = cliCtx
 ) {
-  return reviewToolset.methods.create.handler(
+  return invokeToolsetMethod(
+    reviewToolset,
+    'create',
     v.parse(reviewToolset.methods.create.input, { ...input, ...overrides }),
     ctx
   );
@@ -55,6 +61,17 @@ beforeEach(() => {
 });
 
 describe('review.create', () => {
+  it('reports what the published review contains', async () => {
+    const outcome = await createReview();
+
+    expect(outcome.telemetry).toEqual({
+      toolset: 'review',
+      tool: 'create',
+      event: 'tool:review_create',
+      payload: { collectionCount: 1, storyCount: 1, changedFileCount: 1 },
+    });
+  });
+
   it('publishes the review and returns its page URL plus what it contains', async () => {
     const outcome = await createReview();
 
@@ -147,15 +164,15 @@ This usually means the IDs were inferred from file paths or naming conventions r
   });
 
   describe('rendering', () => {
-    it('summarizes the review in one line for the CLI', async () => {
+    it('renders the same directive for the CLI as for MCP', async () => {
       const outcome = await createReview();
+      const mcpOutcome = await createReview({}, mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        `Review applied: 1 collection, 1 story. Open ${reviewUrl} to view it.`
-      );
+      expect(outcome.markdown).toContain(`Review applied: 1 collection, 1 story.`);
+      expect(outcome.markdown).toBe(mcpOutcome.markdown);
     });
 
-    it('pluralizes the CLI summary', async () => {
+    it('pluralizes the summary', async () => {
       const outcome = await createReview({
         collections: [
           { title: 'Primary', rationale: 'edited', storyIds: ['button--primary'] },
@@ -163,9 +180,7 @@ This usually means the IDs were inferred from file paths or naming conventions r
         ],
       });
 
-      expect(outcome.markdown).toBe(
-        `Review applied: 2 collections, 2 stories. Open ${reviewUrl} to view it.`
-      );
+      expect(outcome.markdown).toContain(`Review applied: 2 collections, 2 stories.`);
     });
 
     it('tells MCP to reuse the request-derived UI root, not the bare origin', async () => {

@@ -92,7 +92,9 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
       index: await storyIndexGenerator.getIndex(),
       ...selectCachedState(cachedState),
     },
-    leader: true,
+    leader:
+      process.env.VITEST_CHILD_PROCESS !== 'true' &&
+      process.env.STORYBOOK_ATTACHED_TOOLS !== 'true',
   });
   store.onStateChange((state, previousState) => {
     if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
@@ -182,6 +184,11 @@ export const wireTestRunResponder = async ({
   // The vitest child process loads this same Storybook configuration in-process; answering
   // requests from inside it could recursively boot another child.
   if (process.env.VITEST_CHILD_PROCESS === 'true') {
+    return;
+  }
+  // An attached tools host shares the instance's channel. Answering here would create a second
+  // UniversalStore leader for `storybook/test` and crash the running Storybook.
+  if (process.env.STORYBOOK_ATTACHED_TOOLS === 'true') {
     return;
   }
   // Without a channel there is no bus to answer on. In practice every configuration loader

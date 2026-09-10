@@ -1,7 +1,0 @@
-{
-  "name": "906-existing-component-edit-story-reshaped-concise",
-  "type": "module",
-  "evals": {
-    "template": "reshaped-storybook"
-  }
-}

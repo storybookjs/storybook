@@ -12,7 +12,7 @@ import { ImportAliasComponent as Alias } from './aliased.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [Alias],
-  template: `<sb-import-alias [heading]="'Aliased'"></sb-import-alias>`,
+  template: `<sb-import-alias [heading]="'Aliased'" />`,
 })
 export class DemoComponent {}",
     },

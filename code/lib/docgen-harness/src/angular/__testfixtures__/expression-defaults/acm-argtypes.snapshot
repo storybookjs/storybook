@@ -8,7 +8,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "number",
       },
     },
@@ -26,7 +25,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "EventEmitter",
       },
     },
@@ -44,7 +42,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "number",
       },
     },

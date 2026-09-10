@@ -43,6 +43,7 @@ export const createDocgenProvider = (): DocgenMiddleware =>
     extract: async (manager, input) => {
       const ours = await buildDocgenPayload(input, {
         getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
+        typescript: manager.typeScriptModule,
       });
       // Volar programs hold large type caches; check heap pressure after each extraction since Vue
       // has no batch surface to hang this on.

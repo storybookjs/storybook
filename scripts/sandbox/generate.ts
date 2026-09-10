@@ -38,6 +38,7 @@ import {
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
   setupYarn,
+  writeScaffoldNpmrc,
 } from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
@@ -268,22 +269,20 @@ const runGenerators = async (
 
           // We do the creation inside a temp dir to avoid yarn container problems
           createBaseDir = await temporaryDirectory();
-          if (!script.includes('pnp')) {
-            try {
-              await setupYarn({ cwd: createBaseDir });
-            } catch (error) {
-              const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
-              if (isCI) {
-                ghActions.error(dedent`${message}
-                  ${formatCommandError(error)}`);
-              } else {
-                console.error(message);
-                console.error(error);
-              }
-              throw new Error(message, {
-                cause: error,
-              });
+          try {
+            await setupYarn({ cwd: createBaseDir });
+          } catch (error) {
+            const message = `❌ Failed to setup yarn in template: ${name} (${dirName})`;
+            if (isCI) {
+              ghActions.error(dedent`${message}
+                ${formatCommandError(error)}`);
+            } else {
+              console.error(message);
+              console.error(error);
             }
+            throw new Error(message, {
+              cause: error,
+            });
           }
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
@@ -296,6 +295,14 @@ const runGenerators = async (
             YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
             NPM_CONFIG_MIN_RELEASE_AGE: String(BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS),
           };
+
+          const scaffoldCwd = script.includes('{{beforeDir}}') ? createBaseDir : createBeforeDir;
+          if (minAgeGateExemptions?.length) {
+            if (scaffoldCwd === createBeforeDir) {
+              await mkdir(createBeforeDir, { recursive: true });
+            }
+            await writeScaffoldNpmrc(scaffoldCwd, minAgeGateExemptions);
+          }
 
           // Some tools refuse to run inside an existing directory and replace the contents,
           // where as others are very picky about what directories can be called. So we need to

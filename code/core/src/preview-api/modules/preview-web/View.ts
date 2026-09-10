@@ -21,4 +21,7 @@ export interface View<TStorybookRoot> {
   showStory(): void;
 
   showStoryDuringRender(): void;
+
+  // Scroll an in-page anchor (e.g. a docs heading) into view. `hash` includes the leading `#`.
+  scrollToAnchor?(hash: string): void;
 }

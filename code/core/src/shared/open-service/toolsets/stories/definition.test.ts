@@ -13,7 +13,11 @@ import {
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
-import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
+import {
+  invokeToolsetMethod,
+  resolveToolsetDescription,
+  type ToolsetCtx,
+} from '../../toolset-definition.ts';
 import { createStoriesToolset, type StoriesToolset } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -52,14 +56,14 @@ const getIndex = vi.fn();
 const getChangedFiles = vi.fn();
 const getRepoRoot = vi.fn();
 const getStatuses = vi.fn();
-const getChangeDetectionReadiness = vi.fn();
 const graphStatus = vi.fn();
+const changeDetectionReadiness = vi.fn();
 const storiesForFiles = vi.fn();
-const telemetry = vi.fn();
 const cwd = vi.spyOn(process, 'cwd');
 const moduleGraph = {
   queries: {
     status: { loaded: graphStatus },
+    changeDetectionReadiness: { loaded: changeDetectionReadiness },
     storiesForFiles: { loaded: storiesForFiles },
   },
 };
@@ -80,7 +84,6 @@ function createToolset({ reviewEnabled = false } = {}): StoriesToolset {
     git,
     changeStatuses,
     reviewEnabled,
-    getChangeDetectionReadiness,
   });
 }
 
@@ -89,11 +92,16 @@ function runPreview(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.preview.handler(v.parse(target.methods.preview.input, { stories }), ctx);
+  return invokeToolsetMethod(
+    target,
+    'preview',
+    v.parse(target.methods.preview.input, { stories }),
+    ctx
+  );
 }
 
 function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
-  return target.methods.changed.handler(v.parse(target.methods.changed.input, {}), ctx);
+  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, {}), ctx);
 }
 
 function runFindByComponent(
@@ -101,7 +109,9 @@ function runFindByComponent(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.findByComponent.handler(
+  return invokeToolsetMethod(
+    target,
+    'findByComponent',
     v.parse(target.methods.findByComponent.input, input),
     ctx
   );
@@ -133,7 +143,6 @@ beforeEach(() => {
     transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
-    telemetry,
   };
   mcpCtx = { ...cliCtx, transport: 'mcp' };
   getIndex.mockResolvedValue(index);
@@ -143,7 +152,7 @@ beforeEach(() => {
   });
   getRepoRoot.mockResolvedValue(repoRoot);
   getStatuses.mockImplementation(() => statusesFixture);
-  getChangeDetectionReadiness.mockResolvedValue({ status: 'ready' });
+  changeDetectionReadiness.mockResolvedValue({ status: 'ready' });
   graphStatus.mockResolvedValue({ value: 'ready' });
   storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
     files.map((file) => graphMatchesByFile.get(file) ?? [])
@@ -188,22 +197,23 @@ describe('stories.preview', () => {
   });
 
   it('reports the story counts it resolved', async () => {
-    await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
+    const outcome = await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
 
-    expect(telemetry).toHaveBeenCalledWith('tool:previewStories', {
-      toolset: 'dev',
-      inputStoryCount: 2,
-      outputStoryCount: 2,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'preview',
+      event: 'tool:stories_preview',
+      payload: { inputStoryCount: 2, outputStoryCount: 2 },
     });
   });
 
   describe('rendering', () => {
-    it('lists titled entries for the CLI', async () => {
+    it('returns the same text blocks for the CLI as for MCP', async () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }]);
+      const mcpOutcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        ['# Story previews', '- Button - Primary', `  ${previewUrl}`].join('\n')
-      );
+      expect(outcome.markdown).toEqual([previewUrl]);
+      expect(outcome.markdown).toEqual(mcpOutcome.markdown);
     });
 
     it('returns one text block per URL for MCP', async () => {
@@ -252,6 +262,7 @@ describe('stories.changed', () => {
       unreachableFiles: [changedThemeFile],
     });
     expect(getStatuses).toHaveBeenCalledOnce();
+    expect(cliCtx.getService).toHaveBeenCalledTimes(2);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
   });
@@ -272,7 +283,7 @@ describe('stories.changed', () => {
   });
 
   it('rejects when change detection is not ready even if the graph is', async () => {
-    getChangeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'disabled' });
+    changeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'disabled' });
 
     const error = await runChanged().catch((reason: unknown) => reason);
 
@@ -295,7 +306,7 @@ describe('stories.changed', () => {
   it.each(['not a git repository', 'git is not available'] as const)(
     'degrades to "no changes detected" when change detection is unavailable because %s',
     async (reason) => {
-      getChangeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason });
+      changeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason });
 
       const outcome = await runChanged(mcpCtx);
 
@@ -318,32 +329,29 @@ describe('stories.changed', () => {
   it('reports the per-status counts', async () => {
     markChanged('button--primary', 'status-value:new');
 
-    await runChanged();
+    const outcome = await runChanged();
 
-    expect(telemetry).toHaveBeenCalledWith('tool:getChangedStories', {
-      toolset: 'dev',
-      storyCount: 1,
-      newStoryCount: 1,
-      modifiedStoryCount: 0,
-      affectedStoryCount: 0,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'changed',
+      event: 'tool:stories_changed',
+      payload: { storyCount: 1, newStoryCount: 1, modifiedStoryCount: 0, affectedStoryCount: 0 },
     });
   });
 
   describe('rendering', () => {
-    it('summarizes counts and unreachable files for the CLI', async () => {
+    // Byte parity holds outside the coverage hint, whose tool reference legitimately renders as
+    // the CLI command on one transport and the MCP tool name on the other (getToolName).
+    it('renders the same bucketed report for the CLI as for MCP', async () => {
       markChanged('button--primary', 'status-value:new');
+      markReachable(themePath);
       const outcome = await runChanged();
+      const mcpOutcome = await runChanged(mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        [
-          '# Changed stories',
-          'New: 1, modified: 0, affected: 0',
-          '- [new] Button - Primary',
-          '',
-          '## Unreachable files',
-          `- ${changedThemeFile}`,
-        ].join('\n')
+      expect(outcome.markdown).toContain(
+        'Detected 1 changed story (1 new, 0 modified, 0 related).'
       );
+      expect(outcome.markdown).toBe(mcpOutcome.markdown);
     });
 
     it('buckets stories by status for MCP', async () => {
@@ -461,29 +469,22 @@ describe('stories.findByComponent', () => {
   });
 
   it('reports how many of the requested components matched', async () => {
-    await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
+    const outcome = await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
 
-    expect(telemetry).toHaveBeenCalledWith('tool:getStoriesByComponent', {
-      toolset: 'dev',
-      componentCount: 2,
-      matchedComponentCount: 1,
-      totalMatchCount: 1,
-      maxDistance: 3,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'find-by-component',
+      event: 'tool:stories_findByComponent',
+      payload: { componentCount: 2, matchedComponentCount: 1, totalMatchCount: 1, maxDistance: 3 },
     });
   });
 
   describe('rendering', () => {
-    it('renders a headed section per component for the CLI', async () => {
+    it('renders the same distance buckets for the CLI as for MCP', async () => {
       const outcome = await runFindByComponent({ componentPaths: [componentPath] });
+      const mcpOutcome = await runFindByComponent({ componentPaths: [componentPath] }, mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        `# Stories by component
-## ${componentPath}
-${componentPath}:
-→ 1 story across 1 component, distances 1..1 (d1=1)
-distance 1:
-  - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
-      );
+      expect(outcome.markdown).toBe(mcpOutcome.markdown);
     });
 
     it('renders distance buckets without headings for MCP', async () => {

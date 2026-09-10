@@ -4,7 +4,7 @@ import type { MetaSource } from './component-meta.ts';
 /** The slice of a component's normalized `vue-component-meta` output the api description reads. */
 export type ApiDescriptionSource = Pick<
   MetaSource,
-  'displayName' | 'props' | 'events' | 'slots' | 'exposed'
+  'displayName' | 'typeParams' | 'props' | 'events' | 'slots' | 'exposed'
 >;
 
 type PropMeta = ApiDescriptionSource['props'][number];
@@ -44,6 +44,7 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
       ...section(
         'Models',
         `${typePrefix}Models`,
+        meta.typeParams,
         models.flatMap((model) => {
           const event = eventsByName.get(`update:${model.name}`);
           const description = model.description?.trim() ? model.description : event?.description;
@@ -62,6 +63,7 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
       ...section(
         'Props',
         `${typePrefix}Props`,
+        meta.typeParams,
         props.flatMap((prop) => propLine(prop))
       )
     );
@@ -72,6 +74,7 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
       ...section(
         'Events',
         `${typePrefix}Events`,
+        meta.typeParams,
         events.flatMap((event) => [
           ...docComment(event),
           `${memberKey(event.name)}: ${event.type};`,
@@ -85,6 +88,7 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
       ...section(
         'Slots',
         `${typePrefix}Slots`,
+        meta.typeParams,
         slots.flatMap((slot) => [...docComment(slot), `${memberKey(slot.name)}: ${slot.type};`]),
         'Each slot is typed with the props it passes to its content.'
       )
@@ -96,6 +100,7 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
       ...section(
         'Exposed',
         `${typePrefix}Exposed`,
+        meta.typeParams,
         exposed.flatMap((member) => [
           ...docComment(member),
           `${memberKey(member.name)}: ${member.type};`,
@@ -121,10 +126,9 @@ function modelBinding(propName: string): string {
 // declared types, so both reads stay guarded.
 function docComment(member: DocMember, defaultValue?: string): string[] {
   const description = member.description?.trim() ?? '';
-  const tagLines = (member.tags ?? []).map(
-    (tag) => `@${tag.name}${tag.text ? ` ${tag.text}` : ''}`
-  );
-  if (defaultValue !== undefined) {
+  const tags = member.tags ?? [];
+  const tagLines = tags.map((tag) => `@${tag.name}${tag.text ? ` ${tag.text}` : ''}`);
+  if (defaultValue !== undefined && !tags.some((tag) => tag.name === 'default')) {
     tagLines.push(`@default ${defaultValue}`);
   }
 
@@ -158,13 +162,20 @@ function propLine(prop: PropMeta, marker = ''): string[] {
   ];
 }
 
-function section(heading: string, typeName: string, lines: string[], intro?: string): string[] {
+function section(
+  heading: string,
+  typeName: string,
+  typeParams: string | undefined,
+  lines: string[],
+  intro?: string
+): string[] {
+  const aliasTypeParams = typeParams ? `<${typeParams}>` : '';
   return [
     `## ${heading}`,
     '',
     ...(intro ? [intro, ''] : []),
     '```',
-    `export type ${typeName} = {`,
+    `export type ${typeName}${aliasTypeParams} = {`,
     ...indent(lines.join('\n')).split('\n'),
     '}',
     '```',

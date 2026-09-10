@@ -4,6 +4,6 @@ import { JsdocTagsComponent } from './jsdoc-tags.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [JsdocTagsComponent],
-  template: `<sb-jsdoc-tags [text]="'Deployed'" [accent]="'seagreen'"></sb-jsdoc-tags>`,
+  template: `<sb-jsdoc-tags [text]="'Deployed'" [accent]="'seagreen'" />`,
 })
 export class DemoComponent {}

@@ -220,7 +220,6 @@ export type PackageJson = PackageJsonFromTypeFest & Record<string, any>;
 // TODO: This could be exported to the outside world and used in `options.ts` file of each `@storybook/APP`
 // like it's described in docs/api/new-frameworks.md
 export interface LoadOptions {
-  pnp?: boolean;
   packageJson?: PackageJson;
   outputDir?: string;
   configDir?: string;
@@ -598,6 +597,13 @@ export interface StorybookFeatures {
    * Enable asynchronous component rendering in React renderer
    */
   experimentalRSC?: boolean;
+
+  /**
+   * Adds docs story subheadings to the search index.
+   *
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalSearchDocsHeadings?: boolean;
 
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.

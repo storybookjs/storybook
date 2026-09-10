@@ -14,3 +14,8 @@ globalThis.STORYBOOK_SERVICES_PRESET_PROMISE = undefined;
 export async function applyServicesPresetOnce(presets: Presets): Promise<void> {
   return (globalThis.STORYBOOK_SERVICES_PRESET_PROMISE ??= presets.apply('services'));
 }
+
+/** Clears the one-shot so a later configuration load can apply the `services` preset again. */
+export function resetServicesPresetOnce(): void {
+  globalThis.STORYBOOK_SERVICES_PRESET_PROMISE = undefined;
+}

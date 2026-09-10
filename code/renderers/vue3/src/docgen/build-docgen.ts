@@ -9,19 +9,35 @@ import {
 } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
+import type ts from 'typescript';
+
 import { extractArgTypes } from '../extractArgTypes.ts';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
 
 import { buildApiDescription } from './api-description.ts';
 import { type MetaSource, collectComponentMetaSources } from './component-meta.ts';
+import { followReExport } from './follow-re-export.ts';
 import { type UnresolvedComponentReason, resolveMetaComponent } from './resolve-component.ts';
 
 type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
 
+const META_COMPONENT_NAME = /^[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)*$/;
+const NON_COMPONENT_NAMES = new Set([
+  'null',
+  'undefined',
+  'true',
+  'false',
+  'NaN',
+  'Infinity',
+  'this',
+  'import',
+]);
+
 export interface BuildDocgenContext {
   getChecker: (componentFilePath: string) => ComponentMetaChecker;
   resolvePath?: (importPath: string) => string;
+  typescript: typeof ts;
 }
 
 const UNRESOLVED_COMPONENT_ERRORS: Record<
@@ -36,6 +52,11 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
     name: 'No component import found',
     message: 'No component file found for the component declared in meta.component.',
   },
+  'unreadable-component-expression': {
+    name: 'No component found',
+    message:
+      'We could not follow meta.component to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.',
+  },
 };
 
 /**
@@ -43,6 +64,14 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
  */
 function componentNameFromTitle(title: string): string {
   return title.split('/').at(-1)!.replace(/\s+/g, '');
+}
+
+function getUsableComponentName(component: string | undefined): string | undefined {
+  const name = component?.trim();
+  if (!name || NON_COMPONENT_NAMES.has(name.split('.')[0]!) || !META_COMPONENT_NAME.test(name)) {
+    return undefined;
+  }
+  return name;
 }
 
 /**
@@ -99,7 +128,8 @@ export async function buildDocgenPayload(
     };
   }
 
-  const base = baseFor(csf._meta?.component ?? fallbackName);
+  const authoredComponentName = getUsableComponentName(csf._meta?.component);
+  const base = baseFor(authoredComponentName ?? fallbackName);
 
   const resolved = resolveMetaComponent(csf, storyPath);
   if ('reason' in resolved) {
@@ -116,29 +146,35 @@ export async function buildDocgenPayload(
   }
 
   const { component } = resolved;
-  const metaSources = await collectComponentMetaSources(
-    context.getChecker(component.path),
-    component.path
-  );
-  const componentMeta = metaSources.find((meta) => meta.exportName === component.exportName);
+  const checker = context.getChecker(component.path);
+  // Resolving the barrel first also means the event-description pass reads the declaring SFC rather
+  // than the index file, which has no component in it to read descriptions from.
+  const declared = followReExport(checker, component.path, component.exportName) ?? {
+    path: component.path,
+    exportName: component.exportName,
+  };
+  const metaSources = await collectComponentMetaSources(checker, declared.path, context.typescript);
+  const componentMeta = metaSources.find((meta) => meta.exportName === declared.exportName);
 
   if (!componentMeta) {
     return {
       ...base,
       error: {
         name: 'No docgen found',
-        message: `vue-component-meta extracted no component metadata for the "${component.exportName}" export of ${component.path}.`,
+        message: `vue-component-meta extracted no component metadata for the "${declared.exportName}" export of ${declared.path}.`,
       },
     };
   }
 
+  const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
   const { description, summary, jsDocTags } = extractComponentDescription(
-    extractDescription(csf._metaStatement) || undefined,
-    componentMeta.description
+    metaJsDoc,
+    componentMeta.description,
+    componentMeta.jsDocTags
   );
 
   return {
-    ...base,
+    ...baseFor((authoredComponentName ?? componentMeta.displayName) || fallbackName),
     description,
     summary,
     jsDocTags,

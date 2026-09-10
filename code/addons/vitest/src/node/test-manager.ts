@@ -1,3 +1,4 @@
+import type { TestError } from 'vitest';
 import type { TestResult, TestState } from 'vitest/node';
 
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
@@ -37,6 +38,27 @@ export type TestManagerOptions = {
   onReady?: () => void;
 };
 
+/** Matches the banner that vitest-plugin/setup-file.ts prepends to the message of failed stories. */
+const DEBUG_BANNER_RE =
+  /\n?(?:\x1B\[\d+m)?Click to debug the error directly in Storybook: [^\n]*\n+/g;
+
+/**
+ * `error.stack` holds the raw browser stack, pointing at the Vite URLs of Storybook's pre-bundled
+ * internals. Vitest replaces it with `error.stacks`: source-mapped frames with Storybook's
+ * instrumentation filtered out, matching what its own terminal output shows.
+ */
+function formatError(error: TestError): string {
+  if (!error.stacks?.length) {
+    return error.stack || error.message || '';
+  }
+  const message = (error.message ?? '').replace(DEBUG_BANNER_RE, '');
+  const frames = error.stacks.map(
+    ({ method, file, line, column }) =>
+      `    at ${method || '<anonymous>'} (${file}:${line}:${column})`
+  );
+  return [message, ...frames].join('\n');
+}
+
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
   pending: 'status-value:pending',
   passed: 'status-value:success',
@@ -67,6 +89,14 @@ export class TestManager {
     testResult: TestResult;
     reports?: Report[];
   }[] = [];
+
+  private runComponentTestStatuses: CurrentRun['componentTestStatuses'] = [];
+
+  private runA11yStatuses: CurrentRun['a11yStatuses'] = [];
+
+  private runReports: CurrentRun['reports'] = {};
+
+  private runA11yReports: CurrentRun['a11yReports'] = {};
 
   constructor(options: TestManagerOptions) {
     this.store = options.store;
@@ -142,6 +172,11 @@ export class TestManager {
     this.componentTestStatusStore.unset(storyIds);
     this.a11yStatusStore.unset(storyIds);
 
+    this.runComponentTestStatuses = [];
+    this.runA11yStatuses = [];
+    this.runReports = {};
+    this.runA11yReports = {};
+
     const runConfig = configOverride ?? this.store.getState().config;
 
     this.store.setState((s) => ({
@@ -158,7 +193,13 @@ export class TestManager {
       await callback();
       this.store.send({
         type: 'TEST_RUN_COMPLETED',
-        payload: this.store.getState().currentRun,
+        payload: {
+          ...this.store.getState().currentRun,
+          componentTestStatuses: this.runComponentTestStatuses,
+          a11yStatuses: this.runA11yStatuses,
+          a11yReports: this.runA11yReports,
+          reports: this.runReports,
+        },
       });
       if (this.store.getState().currentRun.unhandledErrors.length > 0) {
         throw new Error('Tests completed but there are unhandled errors');
@@ -208,13 +249,12 @@ export class TestManager {
    * This function:
    *
    * 1. Takes all batched test case results and clears the batch
-   * 2. Updates the store state with new test counts (component tests and a11y tests)
-   * 3. Adjusts the totalTestCount if more tests were run than initially anticipated
-   * 4. Creates status objects for component tests and updates the component test status store
-   * 5. Creates status objects for a11y tests (if any) and updates the a11y status store
+   * 2. Updates the status stores with the just-processed batch
+   * 3. Accumulates full-run statuses and reports locally so the per-flush store payload stays bounded
+   * 4. Updates the synced store with counts only
    *
-   * The throttling (500ms) is necessary as the channel would otherwise get overwhelmed with events,
-   * eventually causing the manager and dev server to lose connection.
+   * The throttling (500ms) still batches channel traffic. Full-run arrays stay off the synced store
+   * until run end, so a late flush cannot re-serialize the whole run.
    */
   throttledFlushTestCaseResults = throttle(() => {
     const testCaseResultsToFlush = this.batchedTestCaseResults;
@@ -225,7 +265,7 @@ export class TestManager {
       typeId: STATUS_TYPE_ID_COMPONENT_TEST,
       value: testStateToStatusValueMap[testResult.state],
       title: 'Component tests',
-      description: testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
+      description: testResult.errors?.map(formatError).join('\n') ?? '',
       sidebarContextMenu: false,
     }));
 
@@ -261,6 +301,15 @@ export class TestManager {
       this.a11yStatusStore.set(a11yStatuses);
     }
 
+    if (componentTestStatuses.length > 0) {
+      this.runComponentTestStatuses.push(...componentTestStatuses);
+    }
+    if (a11yStatuses.length > 0) {
+      this.runA11yStatuses.push(...a11yStatuses);
+    }
+    Object.assign(this.runReports, reportsByStoryId);
+    Object.assign(this.runA11yReports, a11yReportsByStoryId);
+
     this.store.setState((s) => {
       let { success: ctSuccess, error: ctError } = s.currentRun.componentTestCount;
       let { success: a11ySuccess, warning: a11yWarning, error: a11yError } = s.currentRun.a11yCount;
@@ -294,23 +343,6 @@ export class TestManager {
             warning: a11yWarning,
             error: a11yError,
           },
-          componentTestStatuses: s.currentRun.componentTestStatuses.concat(componentTestStatuses),
-          a11yStatuses: s.currentRun.a11yStatuses.concat(a11yStatuses),
-          /*
-            TODO: a11yReports is just here for backwards compatibility with older versions of addon-mcp.
-            They are also part of the more generic reports property, so we can remove this in a future major release when we can break compatibility.
-          */
-          a11yReports: {
-            ...s.currentRun.a11yReports,
-            ...a11yReportsByStoryId,
-          },
-          reports: {
-            ...s.currentRun.reports,
-            ...reportsByStoryId,
-          },
-          // in some cases successes and errors can exceed the anticipated totalTestCount
-          // e.g. when testing more tests than the stories we know about upfront
-          // in those cases, we set the totalTestCount to the sum of successes and errors
           totalTestCount:
             finishedTestCount > (s.currentRun.totalTestCount ?? 0)
               ? finishedTestCount

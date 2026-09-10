@@ -150,7 +150,7 @@ Additionally, adding our codebase as upstream ensures you can rebase against the
 ```shell
 git remote add upstream https://github.com/storybookjs/storybook.git
 git fetch upstream
-git branch --set-upstream-to upstream/main main
+git branch --set-upstream-to upstream/next next
 ```
 
 ### Running the local development environment 
@@ -173,22 +173,23 @@ If you want to make code changes to Storybook packages while running a sandbox, 
 
 1. In a second terminal, run `yarn build --watch <package-1> <package-2>` in the `code/` directory.
 
-For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run: 
+For example, to build the `@storybook/react`, `storybook` itself, `@storybook/builder-vite`, and `@storybook/addon-docs` packages, you would run:
 
-```shell 
-# Navigate to the code directory 
-cd path/to/your/storybook/fork/code 
+```shell
+# Navigate to the code directory
+cd path/to/your/storybook/fork/code
 
-# Build the specified packages in watch mode 
-yarn build --watch react core-server api addon-docs 
+# Build the specified packages in watch mode
+yarn build --watch react storybook builder-vite addon-docs
+```
 
 Most package names can be found after `@storybook/` in the published package.
 
 For instance, to build the `@storybook/react storybook @storybook/builder-vite @storybook/addon-docs` packages at the same time in watch mode:
 
-```shell 
+```shell
 cd code
-yarn build --watch react storybook builder-vite addon-docs 
+yarn build --watch react storybook builder-vite addon-docs
 ```
 
 2. If you are running the sandbox in ["linked"](https://yarnpkg.com/cli/link) mode (the default), you should see the changes reflected on a refresh (you may need to restart it if changing server packages) 

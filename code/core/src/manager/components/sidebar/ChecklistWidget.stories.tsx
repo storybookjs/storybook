@@ -1,7 +1,7 @@
 import type { PlayFunction } from 'storybook/internal/csf';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
@@ -49,8 +49,21 @@ const meta = preview.meta({
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
-const play: PlayFunction = async ({ step }) => {
+const play: PlayFunction = async ({ canvasElement, step }) => {
   await wait(3000);
+
+  await step('Verify the outline animation is finite', async () => {
+    const cardContent = canvasElement.querySelector('#storybook-checklist-widget');
+    await expect(cardContent).not.toBeNull();
+
+    const cardOutline = cardContent?.parentElement;
+    await expect(cardOutline).not.toBeNull();
+
+    const styles = window.getComputedStyle(cardOutline!, '::before');
+    await expect(styles.animationIterationCount).toBe('1, 1');
+    await expect(styles.animationFillMode).toBe('forwards, forwards');
+  });
+
   await step('Complete viewports task', () => {
     mockStore.setState({
       loaded: true,

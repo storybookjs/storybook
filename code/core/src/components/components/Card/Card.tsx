@@ -37,9 +37,9 @@ const getOpaqueBackground = (theme: StorybookTheme, color?: ThemeColor): string 
 
 const fadeInOut = keyframes({
   '0%': { opacity: 0 },
-  '5%': { opacity: 1 },
-  '25%': { opacity: 1 },
-  '30%': { opacity: 0 },
+  '10%': { opacity: 1 },
+  '80%': { opacity: 1 },
+  '100%': { opacity: 0 },
 });
 
 const spin = keyframes({
@@ -108,7 +108,7 @@ const CardOutline = styled.div<{
       width: '1000%',
       height: '200%',
       top: '-100%',
-      animation: `${slide} 10s infinite linear, ${fadeInOut} 60s infinite linear`,
+      animation: `${slide} 10s linear forwards, ${fadeInOut} 10s linear forwards`,
       // 13 stops: 6 hues twice plus the first hue again, so the hue pattern repeats at
       // exactly 50% of the gradient line.
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
@@ -118,6 +118,7 @@ const CardOutline = styled.div<{
         width: '100%',
         height: '100%',
         top: 0,
+        opacity: 0,
       },
     }),
 

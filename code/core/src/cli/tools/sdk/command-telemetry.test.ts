@@ -1,11 +1,15 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { telemetry } from 'storybook/internal/telemetry';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  commandNameFromRef,
+  commandPartsFromRef,
+  reportToolsCommandEvent,
   shouldReportSdkInvocation,
   toolsCommandDimensions,
-  wrapMethodTelemetry,
 } from './command-telemetry.ts';
+
+vi.mock('storybook/internal/telemetry', { spy: true });
 
 describe('toolsCommandDimensions', () => {
   it('uses resolvedMode for attachMode when a host exists', () => {
@@ -41,38 +45,106 @@ describe('toolsCommandDimensions', () => {
   });
 });
 
-describe('commandNameFromRef', () => {
-  it('turns a dotted method id into the CLI spelling', () => {
-    expect(commandNameFromRef('docs.list')).toBe('docs list');
-    expect(commandNameFromRef('stories.findByComponent')).toBe('stories find-by-component');
+describe('commandPartsFromRef', () => {
+  it('splits a dotted method id into the CLI spelling of both parts', () => {
+    expect(commandPartsFromRef('docs.list')).toEqual({ toolset: 'docs', tool: 'list' });
+    expect(commandPartsFromRef('stories.findByComponent')).toEqual({
+      toolset: 'stories',
+      tool: 'find-by-component',
+    });
   });
 
   it('collapses a malformed reference', () => {
-    expect(commandNameFromRef('not-a-ref')).toBe('(invalid)');
+    expect(commandPartsFromRef('not-a-ref')).toEqual({ toolset: '(invalid)', tool: '(invalid)' });
+  });
+
+  it('collapses a part that is not a name-shaped token', () => {
+    expect(commandPartsFromRef('my project.list')).toEqual({
+      toolset: '(invalid)',
+      tool: 'list',
+    });
   });
 });
 
-describe('wrapMethodTelemetry', () => {
-  it('merges host dimensions under the method payload', async () => {
-    const sink = vi.fn(async () => {});
-    const wrapped = wrapMethodTelemetry(sink, {
-      client: 'sdk',
+describe('reportToolsCommandEvent', () => {
+  beforeEach(() => {
+    vi.mocked(telemetry).mockReset();
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+  });
+
+  it('merges the report under the record and names the tool by the report', async () => {
+    await reportToolsCommandEvent(
+      {
+        toolset: 'stories',
+        tool: 'findByComponent',
+        success: true,
+        outcome: 'success',
+        client: 'cli',
+        requestedMode: 'auto',
+        attachMode: 'local',
+      },
+      {
+        report: {
+          toolset: 'stories',
+          tool: 'find-by-component',
+          event: 'tool:stories_findByComponent',
+          payload: { componentCount: 2, success: 'not a record field' },
+        },
+        configDir: '/repo/.storybook',
+      }
+    );
+
+    expect(telemetry).toHaveBeenCalledWith(
+      'tools-command',
+      {
+        toolset: 'stories',
+        tool: 'find-by-component',
+        event: 'tool:stories_findByComponent',
+        componentCount: 2,
+        success: true,
+        outcome: 'success',
+        client: 'cli',
+        requestedMode: 'auto',
+        attachMode: 'local',
+      },
+      { configDir: '/repo/.storybook' }
+    );
+  });
+
+  it('sends the record alone when the run produced no report', async () => {
+    await reportToolsCommandEvent({
+      success: false,
+      outcome: 'intercept',
+      client: 'cli',
       requestedMode: 'auto',
-      resolvedMode: 'attached',
-      attachMode: 'attached',
-      host: 'child',
+      attachMode: 'auto',
     });
 
-    await wrapped('tool:listAllDocumentation', { toolset: 'docs' });
+    expect(telemetry).toHaveBeenCalledWith(
+      'tools-command',
+      {
+        success: false,
+        outcome: 'intercept',
+        client: 'cli',
+        requestedMode: 'auto',
+        attachMode: 'auto',
+      },
+      { configDir: undefined }
+    );
+  });
 
-    expect(sink).toHaveBeenCalledWith('tool:listAllDocumentation', {
-      client: 'sdk',
-      requestedMode: 'auto',
-      resolvedMode: 'attached',
-      attachMode: 'attached',
-      host: 'child',
-      toolset: 'docs',
-    });
+  it('never lets a telemetry failure escape', async () => {
+    vi.mocked(telemetry).mockRejectedValue(new Error('offline'));
+
+    await expect(
+      reportToolsCommandEvent({
+        success: true,
+        outcome: 'success',
+        client: 'sdk',
+        requestedMode: 'local',
+        attachMode: 'local',
+      })
+    ).resolves.toBeUndefined();
   });
 });
 

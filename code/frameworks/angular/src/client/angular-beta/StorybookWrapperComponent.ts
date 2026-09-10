@@ -3,6 +3,7 @@ import {
   ChangeDetectorRef,
   Component,
   Inject,
+  isSignal,
   NgModule,
   ViewChild,
   ViewContainerRef,
@@ -18,7 +19,8 @@ import { PropertyExtractor } from './utils/PropertyExtractor.ts';
 
 const getNonInputsOutputsProps = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
-  props: ICollection = {}
+  props: ICollection = {},
+  target?: object
 ) => {
   const inputs = ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
@@ -26,7 +28,11 @@ const getNonInputsOutputsProps = (
   const outputs = ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
     .map((o) => o.templateName);
-  return Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k));
+  return Object.keys(props).filter(
+    (k) =>
+      ![...inputs, ...outputs].includes(k) &&
+      !isSignal(target === undefined ? undefined : Reflect.get(target, k))
+  );
 };
 
 /** Wraps the story template into a component */
@@ -105,7 +111,11 @@ export const createStorybookWrapperComponent = ({
       if (this.storyComponentElementRef) {
         const ngComponentInputsOutputs = getComponentInputsOutputs(storyComponent);
 
-        const initialOtherProps = getNonInputsOutputsProps(ngComponentInputsOutputs, initialProps);
+        const initialOtherProps = getNonInputsOutputsProps(
+          ngComponentInputsOutputs,
+          initialProps,
+          this.storyComponentElementRef
+        );
 
         // Initializes properties that are not Inputs | Outputs
         // Allows story props to override local component properties
@@ -122,7 +132,11 @@ export const createStorybookWrapperComponent = ({
           .pipe(
             skip(1),
             map((props) => {
-              const propsKeyToKeep = getNonInputsOutputsProps(ngComponentInputsOutputs, props);
+              const propsKeyToKeep = getNonInputsOutputsProps(
+                ngComponentInputsOutputs,
+                props,
+                this.storyComponentElementRef
+              );
               return propsKeyToKeep.reduce((acc, p) => ({ ...acc, [p]: props[p] }), {});
             })
           )

@@ -986,7 +986,7 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   await writeFile(join(storybookStaticDir, 'override.txt'), 'from storybook');
 
   const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
-  mainConfig.setFieldValue(['staticDirs'], [{ from: '../public', to: '/foo' }, './static']);
+  mainConfig.set(['staticDirs'], [{ from: '../public', to: '/foo' }, './static']);
   await writeConfig(mainConfig);
 };
 

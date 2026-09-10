@@ -3,6 +3,7 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 import { unwrapExpression } from './story-shape/index.ts';
 
 export type CsfObjectTarget =
+  | { kind: 'config' }
   | { kind: 'meta' }
   | { kind: 'story'; exportName: string; localName: string }
   | {
@@ -65,6 +66,7 @@ export interface CsfObjectOptions {
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
+type ObjectRoot = Pick<NodePath<t.ObjectExpression>, 'node' | 'buildCodeFrameError'>;
 
 type PropertyLookup =
   | { ok: true; property?: t.ObjectProperty }
@@ -135,7 +137,7 @@ class CsfObjectEditor implements CsfObject {
 
   constructor(
     readonly target: CsfObjectTarget,
-    private readonly root: NodePath<t.ObjectExpression>,
+    private readonly root: ObjectRoot,
     private readonly prefix: readonly string[],
     private readonly reportDiagnostic: ReportDiagnostic,
     private readonly markChanged: MarkChanged
@@ -382,7 +384,7 @@ class CsfObjectEditor implements CsfObject {
 
 export const createCsfObject = (
   target: CsfObjectTarget,
-  root: NodePath<t.ObjectExpression>,
+  root: ObjectRoot,
   prefix: readonly string[],
   report: ReportDiagnostic,
   markChanged: MarkChanged

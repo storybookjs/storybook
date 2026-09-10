@@ -13,6 +13,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType.ts';
+import { discoverConfigObjects } from './ConfigObject.ts';
+import type { CsfMutationDiagnostic, CsfObject } from './CsfObject.ts';
 
 export interface FindNamedImportMethodCallsOptions {
   importedName: string;
@@ -144,6 +146,30 @@ const _updateExportNode = (path: string[], expr: t.Expression, existing: t.Objec
 };
 
 export class ConfigFile {
+  #changed = false;
+  #mutationDiagnostics: CsfMutationDiagnostic[] = [];
+
+  get changed() {
+    return this.#changed;
+  }
+
+  get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
+    return [...this.#mutationDiagnostics];
+  }
+
+  objects(): readonly CsfObject[] {
+    return discoverConfigObjects(
+      this,
+      (diagnostic) => this.#mutationDiagnostics.push(diagnostic),
+      () => {
+        this.#changed = true;
+        this._exports = {};
+        this._exportDecls = {};
+        this.parse();
+      }
+    );
+  }
+
   _ast: t.File;
 
   _code: string;
@@ -263,15 +289,23 @@ export class ConfigFile {
               if (
                 t.isExportSpecifier(spec) &&
                 t.isIdentifier(spec.local) &&
-                t.isIdentifier(spec.exported)
+                (t.isIdentifier(spec.exported) || t.isStringLiteral(spec.exported))
               ) {
                 const { name: localName } = spec.local;
-                const { name: exportName } = spec.exported;
+                const exportName = t.isIdentifier(spec.exported)
+                  ? spec.exported.name
+                  : spec.exported.value;
 
                 const decl = _findVarDeclarator(localName, parent as t.Program) as any;
                 // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
                 if (decl) {
-                  self._exports[exportName] = self._resolveDeclaration(decl.init, parent);
+                  const value = self._resolveDeclaration(decl.init, parent);
+                  if (exportName === 'default' && t.isObjectExpression(value)) {
+                    self.hasDefaultExport = true;
+                    self._parseExportsObject(value);
+                    return;
+                  }
+                  self._exports[exportName] = value;
                   self._exportDecls[exportName] = decl;
                 }
               }

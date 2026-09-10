@@ -620,6 +620,8 @@ Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/n
 
 The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. If a story sets one of these values through `globals.vision`, remove that global or change it to one of the remaining supported values.
 
+The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, while the existing `achromatopsia` matrix also runs in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
+
 ## From version 10.5.x to 10.6.0
 
 ### Vue 3: `vue-docgen-api` is deprecated

@@ -258,9 +258,10 @@ export const serviceRegistryApi: ServiceRegistryApi = {
 /** Channel-sync options that depend on the entrypoint rather than the service definition. */
 export interface ServiceRegisterOptions {
   /**
-   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) re-broadcast every
-   * peer snapshot they adopt so peers on their *other* channel transports converge; leaves (a preview
-   * iframe) keep the default `false` — with a single transport there is nothing to forward.
+   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) forward every
+   * accepted `services:entry` and every bootstrap snapshot they adopt so peers on their *other*
+   * channel transports converge; leaves (a preview iframe) keep the default `false` — with a single
+   * transport there is nothing to forward.
    */
   relay?: boolean;
   /**
@@ -275,10 +276,11 @@ export interface ServiceRegisterOptions {
  * Registers one service definition in the realm-global registry and returns its runtime surface.
  *
  * Registration resolves any registration-time overrides, builds the runtime that query and command
- * callers use, wraps commands to broadcast their post-mutation state, and joins the cross-peer sync
- * protocol as a hub or leaf (`relay`). Each runtime must install the addons channel at its entry
- * boundary before calling this (builders, manager boot, server `services` preset, or Node import
- * bootstrap). Registration is idempotent by id: a repeated registration returns the existing runtime.
+ * callers use, wraps commands to emit `services:entry` for the paths they touched, and joins the
+ * cross-peer sync protocol as a hub or leaf (`relay`). Each runtime must install the addons channel
+ * at its entry boundary before calling this (builders, manager boot, server `services` preset, or
+ * Node import bootstrap). Registration is idempotent by id: a repeated registration returns the
+ * existing runtime.
  */
 export function registerService<
   TState,
@@ -315,9 +317,9 @@ export function registerService<
     structuredClone(resolvedDefinition.initialState)
   );
 
-  // Owns the per-service last-write-wins stamp and the adopt/advance logic. Adopting a peer snapshot
-  // goes through `commandSelf.setState` — not the wrapped commands below — which is how the broadcast
-  // loop is prevented.
+  // Owns the per-service stamp, Vector, and adopt/advance logic. Adopting an entry or a bootstrap
+  // snapshot goes through `commandSelf.setState` — not the wrapped commands below — which is how the
+  // broadcast loop is prevented.
   const reconciler = createSnapshotReconciler({
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),

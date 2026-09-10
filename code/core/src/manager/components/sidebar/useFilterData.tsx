@@ -9,6 +9,7 @@ import type {
 } from 'storybook/internal/types';
 
 import { BeakerIcon, DocumentIcon, PlayHollowIcon } from '@storybook/icons';
+import { global } from '@storybook/global';
 
 import { color } from 'storybook/theming';
 
@@ -51,9 +52,11 @@ export function useTagFilterEntries(indexJson: StoryIndex) {
   return useMemo(() => {
     const entries = Object.values(indexJson.entries);
 
+    const tagOptions = global.TAGS_OPTIONS ?? {};
+
     const userTagsCounts = entries.reduce<Record<Tag, number>>((acc, entry) => {
       entry.tags?.forEach((tag: Tag) => {
-        if (!BUILT_IN_TAGS.has(tag)) {
+        if (!BUILT_IN_TAGS.has(tag) && !tagOptions[tag]?.excludeFromFilterPanel) {
           acc[tag] = (acc[tag] || 0) + 1;
         }
       });

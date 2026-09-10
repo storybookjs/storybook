@@ -24,4 +24,11 @@ Type: `'include' | 'exclude'`
 
 Set the default filter selection state for a tag in the Storybook sidebar. If set to `include`, stories with this tag are selected as included. If set to `exclude`, stories with this tag are selected as excluded, and must be explicitly included by selecting the tag in the sidebar filter menu. If not set, the tag has no default selection.
 
+### `[tagName].excludeFromFilterPanel`
+
+Type: `boolean`
+
+Exclude a tag from the sidebar filter UI by setting this to `true`. Using a hidden tag with the built-in tag filter (for instance,
+via `addTagFilters`) is strongly discouraged as it will result in an inconsistent UI.
+
 ![Filtering by tags](../../_assets/writing-stories/tag-filter.png)

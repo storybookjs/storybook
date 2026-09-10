@@ -5,6 +5,7 @@ import {
   getProjectRoot,
   loadAllPresets,
   loadMainConfig,
+  normalizeBasePath,
   resolveAddonName,
   validateFrameworkName,
 } from 'storybook/internal/common';
@@ -39,6 +40,7 @@ export async function loadStorybook(
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.cacheKey = cacheKey;
+  options.basePath = normalizeBasePath(options.basePath);
 
   // Without a caller-supplied channel this is a transport-less local bus, as there is no dev
   // server to transport to.

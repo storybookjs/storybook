@@ -3,7 +3,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
 import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
-import { SERVICE_PATCHES } from '../../service-channel.ts';
+import { SERVICE_ENTRY } from '../../service-channel.ts';
 import { getService } from '../../service-registry.ts';
 import { clearRegistry } from '../../server.ts';
 import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
@@ -804,10 +804,13 @@ describe('module-graph open service', () => {
       return { storyFiles, fatIndex, fatIndexBytes: JSON.stringify(fatIndex).length };
     }
 
-    function servicePatches(channel: ReturnType<typeof createTestChannel>) {
+    function serviceEntries(channel: ReturnType<typeof createTestChannel>) {
       return channel.emit.mock.calls
-        .filter(([event]) => event === SERVICE_PATCHES)
-        .map(([, payload]) => payload as { serviceId: string; state: Record<string, unknown> });
+        .filter(([event]) => event === SERVICE_ENTRY)
+        .map(
+          ([, payload]) =>
+            payload as { serviceId: string; patch: Array<{ path: string; value?: unknown }> }
+        );
     }
 
     it('broadcasts only the slim hot snapshot on a bump-only update', async () => {
@@ -823,10 +826,10 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/story-0.stories.ts'],
       });
 
-      const patches = servicePatches(channel);
-      expect(patches.map((p) => p.serviceId)).toEqual(['core/module-graph']);
-      expect(patches[0].state).not.toHaveProperty('storiesByFile');
-      expect(JSON.stringify(patches[0].state).length).toBeLessThan(fatIndexBytes / 20);
+      const entries = serviceEntries(channel);
+      expect(entries.map((p) => p.serviceId)).toEqual(['core/module-graph']);
+      expect(entries[0].patch.some((op) => op.path === '/storiesByFile')).toBe(false);
+      expect(JSON.stringify(entries[0].patch).length).toBeLessThan(fatIndexBytes / 20);
       expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
       expect(
         moduleGraphIndex().queries.storiesForFiles.get({ files: ['./src/file-0.ts'] })
@@ -851,14 +854,16 @@ describe('module-graph open service', () => {
         bumpedStoryFiles: ['./src/story-0.stories.ts'],
       });
 
-      const patches = servicePatches(channel);
-      expect(patches.map((p) => p.serviceId)).toEqual([
+      const entries = serviceEntries(channel);
+      expect(entries.map((p) => p.serviceId)).toEqual([
         'core/module-graph-index',
         'core/module-graph',
       ]);
-      expect(patches[0].state).toHaveProperty('storiesByFile');
-      expect(patches[0].state.storiesByFile).toEqual(nextIndex);
-      expect(patches[1].state).not.toHaveProperty('storiesByFile');
+      const indexOp = entries[0].patch.find((op) => op.path === '/storiesByFile');
+      expect(indexOp).toEqual(
+        expect.objectContaining({ path: '/storiesByFile', value: nextIndex })
+      );
+      expect(entries[1].patch.some((op) => op.path === '/storiesByFile')).toBe(false);
       expect(
         moduleGraphIndex().queries.storiesForFiles.get({ files: ['./src/file-new.ts'] })
       ).toEqual([[{ storyFile: './src/story-0.stories.ts', depth: 2 }]]);

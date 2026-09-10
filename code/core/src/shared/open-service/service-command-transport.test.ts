@@ -22,7 +22,7 @@ import {
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
   SERVICE_COMMAND_UNHANDLED,
-  SERVICE_PATCHES,
+  SERVICE_ENTRY,
   type CommandErrorPayload,
   type CommandInvokePayload,
   type ServiceChannel,
@@ -309,7 +309,7 @@ describe('remote command responder (has local handler)', () => {
     );
 
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
-    expect(emittedCalls(channel, SERVICE_PATCHES).length).toBeGreaterThan(0);
+    expect(emittedCalls(channel, SERVICE_ENTRY).length).toBeGreaterThan(0);
   });
 
   it('replies with a serialized error (including the cause) when the handler throws', async () => {

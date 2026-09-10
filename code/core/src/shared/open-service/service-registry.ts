@@ -6,8 +6,8 @@
  * into the cross-peer sync protocol through the shared transport. The only thing that differs per
  * runtime is the `relay` role: the dev server and the manager are hubs (`relay: true`) that bridge
  * their other channel transports, while a preview is a leaf (`relay: false`) — a single transport has
- * nothing to forward. The handshake + patch-broadcast protocol lives in `service-transport.ts` and the
- * last-write-wins reconciliation in `service-sync.ts`; both transports drive them identically.
+ * nothing to forward. The handshake + entry protocol lives in `service-transport.ts` and the
+ * last-write-wins snapshot reconciliation in `service-sync.ts`; both transports drive them identically.
  *
  * The registry is anchored on a symbol-keyed `globalThis` slot so every module in one realm shares a
  * single registration map even if this file is reached through different import paths. Server (Node),
@@ -348,7 +348,7 @@ export function registerService<
   );
 
   // Wire the runtime to the channel end to end against the one channel captured above: broadcast-wrap
-  // commands, run the remote-command protocol, and attach the sync-start + patch listeners.
+  // commands, run the remote-command protocol, and attach the sync-start + entry listeners.
   const { commands, disconnect } = connectServiceToChannel({
     serviceId: definition.id,
     ownRuntimeId,

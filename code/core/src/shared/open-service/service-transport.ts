@@ -13,18 +13,18 @@
  *   (so load bodies can invoke peer-implemented commands), and returns the command map callers
  *   expose plus a combined teardown.
  * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call that touched
- *   state, after it resolves, advances the last-write-wins stamp and broadcasts the full
- *   post-mutation snapshot. A command that writes nothing emits nothing and does not bump the stamp.
- * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
- *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
- *   adopts so peers on its *other* transports converge; leaves keep `relay: false`.
+ *   state, after it resolves, stamps an RFC 6902 `services:entry` and emits it. A command that
+ *   writes nothing emits nothing and does not bump the stamp.
+ * - {@link connectRuntimeToChannel} attaches the sync-start initialization and entry listeners, emits
+ *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-emits every `services:entry`
+ *   it accepted and every bootstrap snapshot it adopted, forwarding the original payload object.
  * - {@link connectCommandTransport} bridges the gap where a command is only implemented in *some*
  *   runtimes (e.g. a handler supplied at server registration). A runtime without a local handler
  *   requests remote execution; a runtime that has one listens for those requests, runs the command,
  *   and replies. See its docs for the request/ack/result/error protocol.
  *
- * The merge and ordering rules themselves live in `service-sync.ts`; this module only moves snapshots
- * on and off the channel.
+ * The merge and ordering rules themselves live in `service-sync.ts`; this module only moves entries
+ * and bootstrap snapshots on and off the channel.
  */
 
 import * as v from 'valibot';
@@ -41,7 +41,7 @@ import {
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
   SERVICE_COMMAND_UNHANDLED,
-  SERVICE_PATCHES,
+  SERVICE_ENTRY,
   SERVICE_SYNC_START,
   SERVICE_SYNC_START_REPLY,
   type CommandAckPayload,
@@ -49,7 +49,7 @@ import {
   type CommandInvokePayload,
   type CommandResultPayload,
   type CommandUnhandledPayload,
-  type PatchesPayload,
+  type EntryPayload,
   type ServiceChannel,
   type SyncStartPayload,
   type SyncStartReplyPayload,
@@ -58,6 +58,7 @@ import {
   commandInvokeSchema,
   commandResultSchema,
   commandUnhandledSchema,
+  entrySchema,
   generateCallId,
   stampedSnapshotSchema,
   syncStartSchema,
@@ -110,22 +111,21 @@ interface RuntimeTransportContext {
 }
 
 /**
- * Wraps each command so a successful local call that touched state broadcasts the post-mutation snapshot.
+ * Wraps each command so a successful local call that touched state emits one `services:entry`.
  *
  * The wrapper opens a per-invocation collector and passes it to the runtime command so `setState`
  * records the paths the recipe (and nested `ctx.self.commands.*` calls) touched. After the command
- * resolves, zero recorded paths means no stamp bump and no emit. Otherwise we advance the stamp
- * (making this runtime the new author) and emit `services:patches`. Advancing BEFORE emitting is what
- * makes the echo safe: the copy that bounces back carries our just-advanced stamp and fails
- * `isNewer`, so it is dropped instead of re-applied. State adopted from peers flows through the
- * reconciler's `setState`, never through these wrappers, so an adopted snapshot never triggers a
- * re-broadcast.
+ * resolves, zero recorded paths means no stamp bump and no emit. Otherwise it stamps the entry and
+ * emits it. Advancing BEFORE emitting is what makes the echo safe: the copy that bounces back
+ * carries our just-recorded stamp and is dropped as a duplicate. State adopted from peers flows
+ * through the reconciler's `setState`, never through these wrappers, so an adopted entry never
+ * triggers a re-broadcast.
  */
 export function wrapCommandsForBroadcast(
   commands: Record<string, RuntimeCommand>,
   context: RuntimeTransportContext & { channel: ServiceChannel }
 ): Record<string, RuntimeCommand> {
-  const { serviceId, ownRuntimeId, reconciler, getSnapshot, channel } = context;
+  const { serviceId, ownRuntimeId, reconciler, channel } = context;
 
   return Object.fromEntries(
     Object.entries(commands).map(([name, cmd]) => [
@@ -139,17 +139,13 @@ export function wrapCommandsForBroadcast(
           return result;
         }
 
-        // A local command makes this runtime the new author: advance the stamp BEFORE emitting so the
-        // broadcast bouncing back to us is recognized as not-newer (equal stamp) and dropped.
         const stamp = reconciler.advanceLocal(ownRuntimeId);
-
-        channel.emit(SERVICE_PATCHES, {
+        channel.emit(SERVICE_ENTRY, {
           serviceId,
-          state: getSnapshot(),
-          version: stamp.version,
-          runtimeId: stamp.runtimeId,
-        } satisfies PatchesPayload);
-
+          stamp,
+          command: name,
+          patch: ops,
+        } satisfies EntryPayload);
         return result;
       },
     ])
@@ -162,11 +158,11 @@ export function wrapCommandsForBroadcast(
  * Wires three handlers and emits a bootstrap `services:sync-start` so a freshly-registered runtime
  * catches up to state authored before it joined:
  * - sync-start → reply with our current snapshot+stamp (ignoring our own request);
- * - sync-start-reply / patches → adopt iff strictly newer (and, on a relay hub, re-broadcast).
+ * - sync-start-reply → adopt iff strictly newer (and, on a relay hub, forward the original payload);
+ * - entry → apply by path unless duplicate (and, on a relay hub, forward the original payload).
  *
- * A `relay` hub re-emits every snapshot it adopts under the SAME adopted stamp, so peers reachable on
- * its *other* transports converge while the copy bouncing back fails `isNewer` and stops the loop.
- * Leaves (a preview iframe) keep `relay: false`: with a single transport there is nothing to forward.
+ * A `relay` hub re-emits every entry it accepted and every bootstrap snapshot it adopted, using the
+ * original payload object so unknown fields survive the hop. Leaves keep `relay: false`.
  */
 export function connectRuntimeToChannel(
   context: RuntimeTransportContext & { channel: ServiceChannel; relay: boolean }
@@ -180,33 +176,13 @@ export function connectRuntimeToChannel(
     } satisfies SyncStartPayload);
   };
 
-  // Relay hub only: forward an adopted snapshot to peers on our OTHER transports. We re-emit the
-  // canonical post-merge snapshot under the SAME adopted stamp, so the copy that bounces back fails
-  // `isNewer` and is dropped instead of looping.
-  const relayAdopted = (): void => {
-    channel.emit(SERVICE_PATCHES, {
+  const emitSyncStartReply = (): void => {
+    channel.emit(SERVICE_SYNC_START_REPLY, {
       serviceId,
       state: getSnapshot(),
       version: reconciler.stamp.version,
       runtimeId: reconciler.stamp.runtimeId,
-    } satisfies PatchesPayload);
-  };
-
-  const adoptPeerSnapshot = (snapshot: {
-    version: number;
-    runtimeId: string;
-    state: Record<string, unknown>;
-  }): boolean => {
-    const adopted = reconciler.tryAdopt(
-      { version: snapshot.version, runtimeId: snapshot.runtimeId },
-      snapshot.state
-    );
-
-    if (adopted && relay) {
-      relayAdopted();
-    }
-
-    return adopted;
+    } satisfies SyncStartReplyPayload);
   };
 
   // Reply to a peer's sync-start with our current snapshot+stamp (which may be one we adopted from yet
@@ -221,12 +197,7 @@ export function connectRuntimeToChannel(
       return;
     }
 
-    channel.emit(SERVICE_SYNC_START_REPLY, {
-      serviceId,
-      state: getSnapshot(),
-      version: reconciler.stamp.version,
-      runtimeId: reconciler.stamp.runtimeId,
-    } satisfies SyncStartReplyPayload);
+    emitSyncStartReply();
   };
 
   // Bootstrap from a peer's sync-start-reply. Version-gating (not a first-reply-only guard) is what
@@ -236,22 +207,38 @@ export function connectRuntimeToChannel(
     if (!snapshot.success || snapshot.output.serviceId !== serviceId) {
       return;
     }
-    adoptPeerSnapshot(snapshot.output);
+
+    const adopted = reconciler.tryAdopt(
+      { version: snapshot.output.version, runtimeId: snapshot.output.runtimeId },
+      snapshot.output.state
+    );
+
+    if (adopted && relay) {
+      channel.emit(SERVICE_SYNC_START_REPLY, payload);
+    }
   };
 
-  // Apply patches from peers. The version gate drops echoes of our own broadcast and any
-  // already-applied snapshot, so no explicit self-runtimeId check is needed here.
-  const onPatches = (payload: unknown): void => {
-    const snapshot = v.safeParse(stampedSnapshotSchema, payload);
-    if (!snapshot.success || snapshot.output.serviceId !== serviceId) {
+  const onEntry = (payload: unknown): void => {
+    const parsed = v.safeParse(entrySchema, payload);
+    if (!parsed.success || parsed.output.serviceId !== serviceId) {
       return;
     }
-    adoptPeerSnapshot(snapshot.output);
+
+    const accepted = reconciler.tryAdoptEntry({
+      serviceId: parsed.output.serviceId,
+      stamp: parsed.output.stamp,
+      command: parsed.output.command,
+      patch: parsed.output.patch,
+    });
+
+    if (accepted && relay) {
+      channel.emit(SERVICE_ENTRY, payload);
+    }
   };
 
   channel.on(SERVICE_SYNC_START, onSyncStart);
   channel.on(SERVICE_SYNC_START_REPLY, onSyncStartReply);
-  channel.on(SERVICE_PATCHES, onPatches);
+  channel.on(SERVICE_ENTRY, onEntry);
 
   // Ask any existing peer for the current state so we catch up to changes authored before we joined.
   emitSyncStart();
@@ -259,13 +246,13 @@ export function connectRuntimeToChannel(
   // A hub that already holds peer-adopted state (e.g. after a hot reload) pushes once so late
   // joiners on other transports can converge without waiting for another mutation.
   if (relay && reconciler.stamp.version > 0) {
-    relayAdopted();
+    emitSyncStartReply();
   }
 
   return (): void => {
     channel.off(SERVICE_SYNC_START, onSyncStart);
     channel.off(SERVICE_SYNC_START_REPLY, onSyncStartReply);
-    channel.off(SERVICE_PATCHES, onPatches);
+    channel.off(SERVICE_ENTRY, onEntry);
   };
 }
 
@@ -586,7 +573,7 @@ type ChannelConnectedRuntime = {
  * a single teardown.
  *
  * This is the one entry point `registerService` uses, so the three transport halves — command
- * broadcasting, the remote-command protocol, and the sync-start + patch listeners — are always
+ * broadcasting, the remote-command protocol, and the sync-start + entry listeners — are always
  * assembled together against the same `channel` and can never drift into using different channels.
  * The channel-routed command map is also installed on the runtime so load bodies invoke
  * peer-implemented commands remotely instead of throwing locally.
@@ -621,7 +608,7 @@ export function connectServiceToChannel(
     runtime,
   } = context;
 
-  // Wrap commands so a local mutation broadcasts its post-mutation snapshot. State adopted from peers
+  // Wrap commands so a local mutation emits a `services:entry`. State adopted from peers
   // flows through the reconciler's `setState`, never these wrappers, so it never re-broadcasts.
   const broadcastCommands = wrapCommandsForBroadcast(commands, {
     serviceId,

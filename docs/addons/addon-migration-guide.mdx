@@ -99,8 +99,7 @@ Change your CI to build and test your addon against this version and more recent
 The minimum supported TypeScript version is now 5. Update your TypeScript dependency and remove deprecated configuration from your `tsconfig.json`.
 
 ```diff title="tsconfig.json"
--    "target": "esnext", // Node 20 according to https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping#node-20
-+    "target": "esnext",
+     "target": "esnext",
      "allowJs": true,
      ...
      "lib": ["esnext", "dom", "dom.iterable"],
@@ -183,11 +182,6 @@ The `useThemeParameters` hook is removed in Storybook 11. You may instead direct
 
 You may load your own preview annotations in your local Storybook instance, to test that they work as intended:
 
-```diff title=".storybook/preview.ts"
-index 416ea7b..f6c6f19 100644
---- a/.storybook/preview.ts
-+++ b/.storybook/preview.ts
-@@ -1,17 +1,13 @@
 -import type { Preview } from '@storybook/react-vite';
 +import { definePreview } from '@storybook/react-vite';
 +import addonDocs from '@storybook/addon-docs';
@@ -206,7 +200,7 @@ index 416ea7b..f6c6f19 100644
 +});
 ```
 
-Change all your stories to use `preview.meta` and `meta.story` and check for any type errors that become visible with CSF Next's type safety.
+Change all your stories to use the [factory functions](https://storybook.js.org/docs/api/csf/csf-next) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF Next's type safety.
 
 
 ### NPM Trusted Publishing

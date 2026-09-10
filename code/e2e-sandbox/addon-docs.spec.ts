@@ -227,6 +227,12 @@ test.describe('addon-docs', () => {
     let expectedReactVersionRange = /^19/;
     if (templateName.includes('react-webpack/17') || templateName.includes('react-vite/17')) {
       expectedReactVersionRange = /^17/;
+    } else if (templateName.includes('react16')) {
+      expectedReactVersionRange = /^16/;
+    } else if (templateName.includes('preact-vite/default')) {
+      expectedReactVersionRange = /^16/;
+    } else if (templateName.includes('preact-vite/prerelease')) {
+      expectedReactVersionRange = /^18/;
     } else if (
       templateName.includes('internal/react18-webpack-babel') ||
       templateName.includes('preact-vite/default-js') ||

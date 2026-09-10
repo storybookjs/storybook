@@ -1,5 +1,6 @@
 import { angularSnippetGrammar } from './snippets-angular.ts';
 import { vueRepresentedNames } from './snippets-vue3.ts';
+import { webComponentsSnippetGrammar } from './snippets-web-components.ts';
 import type { Framework, SnippetGrammar, Violation } from './types.ts';
 
 export interface CompareSnippetInput {
@@ -28,6 +29,8 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
       return compareWithGrammar(angularSnippetGrammar, input);
     case 'vue3':
       return compareWithGrammar(vue3SnippetGrammar, input);
+    case 'web-components':
+      return compareWithGrammar(webComponentsSnippetGrammar, input);
     default: {
       // Adding a member to the Framework union fails compilation here until the new framework's
       // grammar exists.

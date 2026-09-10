@@ -12,9 +12,7 @@ export function transformStoryA11yParameters(code: string): CsfFile | null {
 
 export function transformPreviewA11yParameters(code: string): ConfigFile | null {
   const parsed = loadConfig(code).parse();
-  for (const object of parsed.objects()) {
-    object.rename(['parameters', 'a11y', 'element'], 'context');
-  }
+  parsed.rename(['parameters', 'a11y', 'element'], 'context');
 
   return parsed.changed ? parsed : null;
 }

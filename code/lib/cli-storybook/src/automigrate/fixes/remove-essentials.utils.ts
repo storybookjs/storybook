@@ -5,13 +5,10 @@ export function moveEssentialOptions(
   essentialsOptions: Record<string, any>
 ): (main: ConfigFile) => Promise<void> | void {
   return async (main) => {
-    const features = main.getFieldValue(['features']) || {};
-
     if (!dryRun) {
-      main.setFieldValue(['features'], {
-        ...features,
-        ...essentialsOptions,
-      });
+      for (const [name, value] of Object.entries(essentialsOptions)) {
+        main.set(['features', name], value);
+      }
     }
   };
 }

@@ -100,8 +100,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(false);
-      expect(result?.viewportsOptions?.defaultViewport).toBe('mobile');
-      expect(result?.viewportsOptions?.disable).toBe(true);
     });
 
     it('should detect backgrounds configuration', async () => {
@@ -123,7 +121,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(false);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.backgroundsOptions?.default).toBe('Light');
     });
 
     it('should detect both viewport and backgrounds configuration', async () => {
@@ -151,8 +148,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.viewportsOptions?.defaultViewport).toBe('tablet');
-      expect(result?.backgroundsOptions?.default).toBe('Dark');
     });
 
     it('should detect both viewport and backgrounds configuration with dynamic values', async () => {
@@ -181,8 +176,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.viewportsOptions?.defaultViewport).toBe('tablet');
-      expect(result?.backgroundsOptions?.default).toBe('Dark');
     });
 
     it('should detect deprecated disable fields when options already exist', async () => {
@@ -209,8 +202,6 @@ describe('addon-globals-api', () => {
 
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.viewportsOptions?.disable).toBe(true);
-      expect(result?.backgroundsOptions?.disable).toBe(false);
     });
   });
 

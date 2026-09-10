@@ -1,17 +1,16 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import type { types } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
 import type { Fix } from '../types.ts';
+import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 
 interface Options {
   previewConfig: ConfigFile;
   previewConfigPath: string;
-  globals: types.Expression;
 }
 
 /** Rename preview.js globals to initialGlobals */
@@ -25,13 +24,14 @@ export const initialGlobals: Fix<Options> = {
     }
 
     const previewConfig = loadConfig((await readFile(previewConfigPath)).toString()).parse();
-    const globals = previewConfig.getFieldNode(['globals']) as types.Expression;
+    const globals = previewConfig.get(['globals']);
+    assertConfigMutationSuccess(previewConfig);
 
     if (!globals) {
       return null;
     }
 
-    return { globals, previewConfig, previewConfigPath };
+    return { previewConfig, previewConfigPath };
   },
 
   prompt() {
@@ -39,8 +39,8 @@ export const initialGlobals: Fix<Options> = {
   },
 
   async run({ dryRun, result }) {
-    result.previewConfig.removeField(['globals']);
-    result.previewConfig.setFieldNode(['initialGlobals'], result.globals);
+    result.previewConfig.rename(['globals'], 'initialGlobals');
+    assertConfigMutationSuccess(result.previewConfig);
     if (!dryRun) {
       await writeFile(result.previewConfigPath, formatConfig(result.previewConfig));
     }

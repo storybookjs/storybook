@@ -12,6 +12,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
+import { assertConfigMutationSuccess } from './config-object.ts';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -119,6 +120,7 @@ export const updateMainConfig = async (
   try {
     const main = await readConfig(mainConfigPath);
     await callback(main);
+    assertConfigMutationSuccess(main);
     if (!dryRun) {
       await writeConfigFile(main);
     }

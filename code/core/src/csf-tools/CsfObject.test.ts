@@ -3,11 +3,48 @@ import { describe, expect, it } from 'vitest';
 import { types as t } from 'storybook/internal/babel';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
+import { loadConfig } from './ConfigFile.ts';
+import type { CsfValue } from './CsfObject.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
 
 describe('CsfObject', () => {
+  it('edits a local object referenced by a story and cleans up the empty parent', () => {
+    const csf = parse(
+      `const a11y = { element: '#root' }; export default {}; export const Story = { parameters: { a11y } };`
+    );
+    const [story] = csf.objects({ meta: false });
+
+    story.rename(['parameters', 'a11y', 'element'], 'context');
+    expect(story.get(['parameters', 'a11y', 'context'])).toMatchObject({ value: '#root' });
+    story.move(['parameters', 'a11y', 'context'], ['globals', 'a11y']);
+
+    const [updated] = parse(printCsf(csf).code).objects({ meta: false });
+    expect(updated.get(['parameters'])).toBeUndefined();
+    expect(updated.get(['globals', 'a11y'])).toMatchObject({ value: '#root' });
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('renames and transforms a story method without changing it to a property', () => {
+    const csf = parse('export default {}; export const Story = { play() { setup(); } };');
+    const [story] = csf.objects({ meta: false });
+    story.rename(['play'], 'beforeEach');
+    story.transform(['beforeEach'], (value) => {
+      if (!t.isFunctionExpression(value)) {
+        throw new Error('Expected a function expression');
+      }
+      return {
+        ...value,
+        body: t.blockStatement([...value.body.body, t.returnStatement(t.booleanLiteral(true))]),
+      };
+    });
+    expect(printCsf(csf).code).toContain('beforeEach()');
+    expect(printCsf(csf).code).toContain('return true;');
+    expect(story.get(['play'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it.each([
     `{ viewport: { defaultViewport: 'mobile' } }`,
     `({ viewport: ({ defaultViewport: 'mobile' } as const) } satisfies Parameters)`,
@@ -130,6 +167,51 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toMatch(
       /docs: \{\s+\/\/ Keep this explanation with the subtitle\.\s+subtitle: 'Buttons'/
     );
+  });
+
+  it.each([
+    { value: 42 },
+    { value: -2.5 },
+    { value: -0 },
+    { value: Number.NaN },
+    { value: Number.POSITIVE_INFINITY },
+    { value: true },
+    { value: false },
+    { value: 'todo' },
+    { value: '' },
+    { value: null },
+    { value: undefined },
+    { value: [] },
+    { value: [1, false, 'autodocs', null] },
+    { value: {} },
+    { value: { nested: { enabled: true, 'font-size': 12 }, levels: [0, ['dark', false]] } },
+    { value: { type: 'button', data: { type: 'Identifier', name: 'plainData' } } },
+  ] satisfies { value: CsfValue }[])('sets the literal value $value', ({ value }) => {
+    const csf = parse('export default { parameters: { existing: true } };');
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.set(['parameters', 'value'], value)).toEqual({ ok: true, changed: true });
+    const output = loadConfig(printCsf(csf).code).parse();
+    expect(output.getFieldValue(['parameters', 'value'])).toEqual(value);
+    expect(output.getFieldValue(['parameters', 'existing'])).toBe(true);
+    expect(meta.changed).toBe(true);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('copies nested literal inputs when setting story args', () => {
+    const csf = parse('export default {}; export const Story = { args: {} };');
+    const [story] = csf.objects({ meta: false });
+    const value = { appearance: { dark: true }, labels: ['original'] };
+
+    story.set(['args'], value);
+    value.appearance.dark = false;
+    value.labels.push('changed');
+
+    const [updated] = parse(printCsf(csf).code).objects({ meta: false });
+    expect(updated.get(['args', 'appearance', 'dark'])).toMatchObject({ value: true });
+    expect(updated.get(['args', 'labels'])).toMatchObject({
+      elements: [{ type: 'StringLiteral', value: 'original' }],
+    });
   });
 
   it('does not expose mutable AST nodes through get or set', () => {
@@ -447,6 +529,15 @@ describe('CsfObject', () => {
 
     expect(meta.rename(['oldName'], 'newName')).toEqual({ ok: true, changed: true });
     expect(printCsf(csf).code).toBe(`export default { first: true, newName: true, last: true };`);
+  });
+
+  it('replaces a shorthand property value', () => {
+    const csf = parse('const name = "old"; export default { name };');
+    const [meta] = csf.objects({ stories: false });
+    meta.set(['name'], t.stringLiteral('new'));
+
+    const [updated] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(updated.get(['name'])).toMatchObject({ type: 'StringLiteral', value: 'new' });
   });
 
   it('preserves a shorthand property value when renaming its key', () => {

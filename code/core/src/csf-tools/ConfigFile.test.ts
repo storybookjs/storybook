@@ -18,7 +18,7 @@ const getField = (path: string[], source: string) => {
 
 const setField = (path: string[], value: any, source: string) => {
   const config = loadConfig(source).parse();
-  config.setFieldValue(path, value);
+  expect(config.set(path, value)).toMatchObject({ ok: true });
   return printConfig(config).code;
 };
 
@@ -43,13 +43,13 @@ describe('ConfigFile', () => {
   ])('keeps nested fields readable and removable after setting them in %s', (source) => {
     const config = loadConfig(source).parse();
 
-    config.setFieldNode(['parameters', 'viewport', 'options'], t.objectExpression([]));
+    config.set(['parameters', 'viewport', 'options'], {});
     expect(config.getFieldValue(['parameters', 'viewport', 'options'])).toEqual({});
     if (source.includes('disable: true')) {
       expect(config.getFieldValue(['parameters', 'viewport', 'disable'])).toBe(true);
     }
     config.removeField(['parameters', 'viewport', 'disable']);
-    config.setFieldValue(['parameters', 'viewport', 'disabled'], true);
+    config.set(['parameters', 'viewport', 'disabled'], true);
 
     const reparsed = loadConfig(printConfig(config).code).parse();
     expect(config.getFieldValue(['parameters'])).toEqual({
@@ -449,7 +449,7 @@ describe('ConfigFile', () => {
     });
   });
 
-  describe('setField', () => {
+  describe('set', () => {
     describe('named exports', () => {
       it('missing export', () => {
         expect(
@@ -480,7 +480,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           export const core = {
             foo: 'bar',
-            builder: 'webpack5'
+            builder: "webpack5"
           };
         `);
       });
@@ -493,7 +493,7 @@ describe('ConfigFile', () => {
               export const core = { builder: 'webpack4' };
             `
           )
-        ).toMatchInlineSnapshot(`export const core = { builder: 'webpack5' };`);
+        ).toMatchInlineSnapshot(`export const core = { builder: "webpack5" };`);
       });
       it('found top-level scalar', () => {
         expect(
@@ -504,7 +504,7 @@ describe('ConfigFile', () => {
               export const foo = 'bar';
             `
           )
-        ).toMatchInlineSnapshot(`export const foo = 'baz';`);
+        ).toMatchInlineSnapshot(`export const foo = "baz";`);
       });
       it('found object', () => {
         expect(
@@ -517,7 +517,7 @@ describe('ConfigFile', () => {
           )
         ).toMatchInlineSnapshot(`
           export const core = { builder: {
-            name: 'webpack5'
+            name: "webpack5"
           } };
         `);
       });
@@ -532,7 +532,7 @@ describe('ConfigFile', () => {
             `
           )
         ).toMatchInlineSnapshot(`
-          const coreVar = { builder: 'webpack5' };
+          const coreVar = { builder: "webpack5" };
           export const core = coreVar;
         `);
       });
@@ -570,7 +570,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           module.exports = { core: {
             foo: 'bar',
-            builder: 'webpack5'
+            builder: "webpack5"
           }};
         `);
       });
@@ -583,7 +583,7 @@ describe('ConfigFile', () => {
               module.exports = { core: { builder: 'webpack4' } };
             `
           )
-        ).toMatchInlineSnapshot(`module.exports = { core: { builder: 'webpack5' } };`);
+        ).toMatchInlineSnapshot(`module.exports = { core: { builder: "webpack5" } };`);
       });
     });
 
@@ -619,7 +619,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           export default { core: {
             foo: 'bar',
-            builder: 'webpack5'
+            builder: "webpack5"
           }};
         `);
       });
@@ -632,7 +632,7 @@ describe('ConfigFile', () => {
               export default { core: { builder: 'webpack4' } };
             `
           )
-        ).toMatchInlineSnapshot(`export default { core: { builder: 'webpack5' } };`);
+        ).toMatchInlineSnapshot(`export default { core: { builder: "webpack5" } };`);
       });
     });
 
@@ -647,12 +647,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: "baz"
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -678,7 +678,7 @@ describe('ConfigFile', () => {
             `
           )
         ).toMatchInlineSnapshot(`
-          const core = { builder: 'webpack5' };
+          const core = { builder: "webpack5" };
           export { core };
         `);
       });
@@ -699,7 +699,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           const parameters = {
             foo: 'bar',
-            a11y: 'todo'
+            a11y: "todo"
           };
           const preview = {
             parameters,
@@ -725,7 +725,7 @@ describe('ConfigFile', () => {
           const parameters = { foo: 'bar' };
           const preview = {
             parameters: {
-              a11y: 'todo'
+              a11y: "todo"
             },
           }
           export default preview;
@@ -752,7 +752,7 @@ describe('ConfigFile', () => {
             addons: [],
 
             core: {
-              builder: 'webpack5'
+              builder: "webpack5"
             }
           });
         `);
@@ -774,7 +774,7 @@ describe('ConfigFile', () => {
           export const foo = definePreview({
             core: {
               foo: 'bar',
-              builder: 'webpack5'
+              builder: "webpack5"
             },
           });
         `);
@@ -794,7 +794,7 @@ describe('ConfigFile', () => {
         ).toMatchInlineSnapshot(`
           import { definePreview } from '@storybook/react-vite';
           export const foo = definePreview({
-            core: { builder: 'webpack5' },
+            core: { builder: "webpack5" },
           });
         `);
       });
@@ -814,7 +814,7 @@ describe('ConfigFile', () => {
       ).toMatchInlineSnapshot(`
         export default {
           core: { builder: 'webpack5' },
-          addons: ['docs']
+          addons: ["docs"]
         };
       `);
     });
@@ -1149,12 +1149,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: "baz"
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))

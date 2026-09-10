@@ -11,10 +11,11 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
+import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
-import { discoverConfigObjects } from './ConfigObject.ts';
-import type { CsfMutationDiagnostic, CsfObject } from './CsfObject.ts';
+import { createConfigObject } from './ConfigObject.ts';
+import type { CsfMutationDiagnostic, CsfMutationResult, CsfObject, CsfValue } from './CsfObject.ts';
 
 export interface FindNamedImportMethodCallsOptions {
   importedName: string;
@@ -120,32 +121,8 @@ const _findVarInitialization = (identifier: string, program: t.Program) => {
   return declarator?.init;
 };
 
-const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
-  if (path.length === 0) {
-    return value;
-  }
-  const [first, ...rest] = path;
-  const innerExpression = _makeObjectExpression(rest, value);
-  return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
-};
-
-const _updateExportNode = (path: string[], expr: t.Expression, existing: t.ObjectExpression) => {
-  const [first, ...rest] = path;
-  const existingField = (existing.properties as t.ObjectProperty[]).find(
-    (p) => propKey(p) === first
-  ) as t.ObjectProperty;
-  if (!existingField) {
-    existing.properties.push(
-      t.objectProperty(t.identifier(first), _makeObjectExpression(rest, expr))
-    );
-  } else if (t.isObjectExpression(existingField.value) && rest.length > 0) {
-    _updateExportNode(rest, expr, existingField.value);
-  } else {
-    existingField.value = _makeObjectExpression(rest, expr);
-  }
-};
-
-export class ConfigFile {
+export class ConfigFile implements CsfObject {
+  readonly target = { kind: 'config' } as const;
   #changed = false;
   #mutationDiagnostics: CsfMutationDiagnostic[] = [];
 
@@ -157,8 +134,43 @@ export class ConfigFile {
     return [...this.#mutationDiagnostics];
   }
 
-  objects(): readonly CsfObject[] {
-    return discoverConfigObjects(
+  get(path: readonly string[]): t.Expression | undefined {
+    const editor = this.editor();
+    return editor.ok ? editor.object.get(path) : undefined;
+  }
+
+  set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult {
+    return this.mutate((object) => object.set(path, value));
+  }
+
+  transform(
+    path: readonly string[],
+    derive: (value: t.Expression) => t.Expression | undefined
+  ): CsfMutationResult {
+    return this.mutate((object) => object.transform(path, derive));
+  }
+
+  remove(path: readonly string[]): CsfMutationResult {
+    return this.mutate((object) => object.remove(path));
+  }
+
+  rename(path: readonly string[], name: string): CsfMutationResult {
+    return this.mutate((object) => object.rename(path, name));
+  }
+
+  move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+    return this.mutate((object) => object.move(from, to));
+  }
+
+  private mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
+    const editor = this.editor();
+    return editor.ok === true
+      ? operation(editor.object)
+      : { ok: false, changed: false, diagnostic: editor.diagnostic };
+  }
+
+  private editor() {
+    const editor = createConfigObject(
       this,
       (diagnostic) => this.#mutationDiagnostics.push(diagnostic),
       () => {
@@ -168,6 +180,10 @@ export class ConfigFile {
         this.parse();
       }
     );
+    if (editor.ok === false) {
+      this.#mutationDiagnostics.push(editor.diagnostic);
+    }
+    return editor;
   }
 
   _ast: t.File;
@@ -282,6 +298,7 @@ export class ConfigFile {
             if (t.isIdentifier(decl.id)) {
               const { name: exportName } = decl.id;
               self._exportDecls[exportName] = decl;
+              self._exports[exportName] = t.toExpression(t.cloneNode(decl));
             }
           } else if (node.specifiers) {
             // export { X };
@@ -296,10 +313,19 @@ export class ConfigFile {
                   ? spec.exported.name
                   : spec.exported.value;
 
-                const decl = _findVarDeclarator(localName, parent as t.Program) as any;
+                const decl =
+                  _findVarDeclarator(localName, self._ast.program) ??
+                  self._ast.program.body.find(
+                    (statement): statement is t.FunctionDeclaration =>
+                      t.isFunctionDeclaration(statement) && statement.id?.name === localName
+                  );
                 // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
                 if (decl) {
-                  const value = self._resolveDeclaration(decl.init, parent);
+                  const value = t.isFunctionDeclaration(decl)
+                    ? t.toExpression(t.cloneNode(decl))
+                    : decl.init
+                      ? self._resolveDeclaration(decl.init, parent)
+                      : undefined;
                   if (exportName === 'default' && t.isObjectExpression(value)) {
                     self.hasDefaultExport = true;
                     self._parseExportsObject(value);
@@ -411,65 +437,6 @@ export class ConfigFile {
       //
     }
     return undefined;
-  }
-
-  setFieldNode(path: string[], expr: t.Expression) {
-    const [first, ...rest] = path;
-    const exportNode = this._exports[first];
-
-    // First check if we have a direct path in the exports
-    if (this._exportsObject) {
-      const properties = this._exportsObject.properties as t.ObjectProperty[];
-      const existingProp = properties.find((p) => propKey(p) === first);
-
-      // If the property exists and is an identifier, follow the reference
-      if (existingProp && t.isIdentifier(existingProp.value)) {
-        const varDecl = _findVarDeclarator(existingProp.value.name, this._ast.program);
-        if (varDecl && t.isObjectExpression(varDecl.init)) {
-          _updateExportNode(rest, expr, varDecl.init);
-          return;
-        }
-      }
-
-      // Otherwise update the export object directly
-      _updateExportNode(path, expr, this._exportsObject);
-      this._parseExportsObject(this._exportsObject);
-      return;
-    }
-
-    if (exportNode && t.isObjectExpression(exportNode) && rest.length > 0) {
-      _updateExportNode(rest, expr, exportNode);
-      return;
-    }
-
-    // If no direct path found, try variable declarations
-    const varDecl = _findVarDeclarator(first, this._ast.program);
-    if (varDecl && t.isObjectExpression(varDecl.init)) {
-      _updateExportNode(rest, expr, varDecl.init);
-      return;
-    }
-
-    if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
-      const decl = this._exportDecls[path[0]];
-      if (t.isVariableDeclarator(decl)) {
-        decl.init = _makeObjectExpression([], expr);
-      }
-    } else if (this.hasDefaultExport) {
-      // This means the main.js of the user has a default export that is not an object expression, therefore we can't change the AST.
-      throw new Error(
-        `Could not set the "${path.join(
-          '.'
-        )}" field as the default export is not an object in this file.`
-      );
-    } else {
-      // create a new named export and add it to the top level
-      const exportObj = _makeObjectExpression(rest, expr);
-      const newExport = t.exportNamedDeclaration(
-        t.variableDeclaration('const', [t.variableDeclarator(t.identifier(first), exportObj)])
-      );
-      this._exports[first] = exportObj;
-      this._ast.program.body.push(newExport);
-    }
   }
 
   /**
@@ -654,7 +621,7 @@ export class ConfigFile {
   appendNodeToArray(path: string[], node: t.Expression) {
     const current = this.getFieldNode(path);
     if (!current) {
-      this.setFieldNode(path, t.arrayExpression([node]));
+      this.set(path, t.arrayExpression([node]));
     } else if (t.isArrayExpression(current)) {
       current.elements.push(node);
     } else {
@@ -737,14 +704,6 @@ export class ConfigFile {
       valueNode = t.valueToNode(value);
     }
     return valueNode;
-  }
-
-  setFieldValue(path: string[], value: any) {
-    const valueNode = this.valueToNode(value);
-    if (!valueNode) {
-      throw new Error(`Unexpected value ${JSON.stringify(value)}`);
-    }
-    this.setFieldNode(path, valueNode);
   }
 
   getBodyDeclarations(): t.Statement[] {
@@ -1301,6 +1260,8 @@ export const readConfig = async (fileName: string) => {
 };
 
 export const writeConfig = async (config: ConfigFile, fileName?: string) => {
+  const [diagnostic] = config.mutationDiagnostics;
+  invariant(!diagnostic, diagnostic?.message);
   const fname = fileName || config.fileName;
 
   if (!fname) {

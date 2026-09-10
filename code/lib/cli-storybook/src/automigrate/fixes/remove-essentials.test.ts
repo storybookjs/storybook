@@ -1,7 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { JsPackageManager, removeAddon } from 'storybook/internal/common';
-import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
+import {
+  type ConfigFile,
+  formatConfig,
+  loadConfig,
+  readConfig,
+} from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
@@ -48,20 +53,7 @@ vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue(['/fake/project/root/src/stories/Button.stories.tsx']),
 }));
 
-// Mock ConfigFile type
-interface MockConfigFile {
-  getFieldValue: (path: string[]) => any;
-  setFieldValue: (path: string[], value: any) => void;
-  appendValueToArray: (path: string[], value: any) => void;
-  removeField: (path: string[]) => void;
-  _ast: Record<string, unknown>;
-  _code: string;
-  _exports: Record<string, unknown>;
-  _exportDecls: unknown[];
-}
-
-// Store mock configs by path
-const mockConfigs = new Map<string, MockConfigFile>();
+const mockConfigs = new Map<string, ConfigFile>();
 
 // Get reference to mocked readFile
 const readFileMock = vi.mocked(await import('node:fs/promises')).readFile;
@@ -147,22 +139,10 @@ describe('remove-essentials migration', () => {
     });
 
     it('detects essentials with docs disabled and core addons', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue([
-          {
-            name: '@storybook/addon-essentials',
-            options: { docs: false },
-          },
-          '@storybook/addon-actions',
-        ]),
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
+      const mockMain = loadConfig(`export default { addons: [
+        { name: '@storybook/addon-essentials', options: { docs: false } },
+        '@storybook/addon-actions',
+      ] };`).parse();
 
       mockConfigs.set('main.ts', mockMain);
       vi.mocked(await import('storybook/internal/common')).getAddonNames.mockReturnValue([
@@ -222,16 +202,9 @@ describe('remove-essentials migration', () => {
     });
 
     it('detects only core addons without essentials', async () => {
-      const mockMain: MockConfigFile = {
-        getFieldValue: vi.fn().mockReturnValue(['@storybook/addon-actions']),
-        setFieldValue: vi.fn(),
-        appendValueToArray: vi.fn(),
-        removeField: vi.fn(),
-        _ast: {},
-        _code: '',
-        _exports: {},
-        _exportDecls: [],
-      };
+      const mockMain = loadConfig(
+        "export default { addons: ['@storybook/addon-actions'] };"
+      ).parse();
 
       mockConfigs.set('main.ts', mockMain);
       vi.mocked(await import('storybook/internal/common')).getAddonNames.mockReturnValue([

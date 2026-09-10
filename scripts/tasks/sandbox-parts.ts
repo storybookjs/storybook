@@ -410,7 +410,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
       ],
     },
   })`;
-  mainConfig.setFieldNode(
+  mainConfig.set(
     ['webpackFinal'],
     // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
     babelParse(webpackFinalCode).program.body[0].expression
@@ -450,7 +450,7 @@ function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
     ${temporaryAliasWorkaround}
   })`;
   // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-  mainConfig.setFieldNode(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
+  mainConfig.set(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
 }
 
 // Update the stories field to ensure that no TS files
@@ -465,7 +465,7 @@ function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
     ? stories.map((specifier) => specifier.replace('|ts|tsx', ''))
     : stories;
 
-  mainConfig.setFieldValue(['stories'], [...updatedStories]);
+  mainConfig.set(['stories'], [...updatedStories]);
 }
 
 // Add a stories field entry for the passed symlink
@@ -492,7 +492,7 @@ function addStoriesEntry(
     files,
   };
 
-  mainConfig.setFieldValue(['stories'], [...stories, entry]);
+  mainConfig.set(['stories'], [...stories, entry]);
 }
 
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
@@ -636,7 +636,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   await writeFile(join(sandboxDir, configFile), fileContent);
   // Only run story tests which are tagged with 'vitest'
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
-  previewConfig.setFieldValue(['tags'], ['vitest']);
+  previewConfig.set(['tags'], ['vitest']);
   await writeConfig(previewConfig);
 }
 
@@ -909,7 +909,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     },
   };
 
-  Object.entries(configToAdd).forEach(([field, value]) => mainConfig.setFieldValue([field], value));
+  Object.entries(configToAdd).forEach(([field, value]) =>
+    mainConfig.set([field], t.valueToNode(value))
+  );
 
   const previewHeadCode = `
     (head) => \`
@@ -936,21 +938,21 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
       </style>
     \``;
   // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-  mainConfig.setFieldNode(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
+  mainConfig.set(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
 
   // Simulate Storybook Lite
   if (disableDocs) {
     const addons = mainConfig.getFieldValue(['addons']);
     const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
-    mainConfig.setFieldValue(['addons'], addonsNoDocs);
+    mainConfig.set(['addons'], addonsNoDocs);
 
     // remove the docs options so that docs tags are ignored
-    mainConfig.setFieldValue(['docs'], {});
-    mainConfig.setFieldValue(['typescript'], { reactDocgen: false });
+    mainConfig.set(['docs'], {});
+    mainConfig.set(['typescript'], { reactDocgen: false });
 
     let updatedStories = mainConfig.getFieldValue(['stories']) as string[];
     updatedStories = updatedStories.filter((specifier) => !specifier.endsWith('.mdx'));
-    mainConfig.setFieldValue(['stories'], updatedStories);
+    mainConfig.set(['stories'], updatedStories);
   }
 
   if (template.expected.builder === '@storybook/builder-vite') {
@@ -1020,7 +1022,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   }
 
   if (template.expected.builder.includes('vite')) {
-    previewConfig.setFieldValue(['tags'], ['vitest']);
+    previewConfig.set(['tags'], ['vitest']);
   }
 
   const isCoreRenderer =
@@ -1167,7 +1169,7 @@ async function prepareSvelteSandbox(cwd: string) {
 
   // Enable async components
   // see https://svelte.dev/docs/svelte/await-expressions
-  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+  svelteConfig.set(['compilerOptions', 'experimental', 'async'], true);
 
   await writeConfig(svelteConfig);
 }

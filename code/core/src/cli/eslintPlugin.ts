@@ -308,7 +308,7 @@ export async function configureEslintPlugin({
           return;
         }
 
-        eslint.setFieldValue(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
+        eslint.set(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
 
         await writeConfig(eslint);
       }

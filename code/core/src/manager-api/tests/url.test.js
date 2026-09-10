@@ -73,6 +73,28 @@ describe('initial state', () => {
       expect(layout).toMatchObject({ navSize: 0 });
     });
 
+    it('handles toolbar parameter, hidden', () => {
+      const navigate = vi.fn();
+      const location = { search: '?' + new URLSearchParams({ toolbar: '0' }).toString() };
+
+      const {
+        state: { layout },
+      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
+
+      expect(layout).toMatchObject({ showToolbar: false });
+    });
+
+    it('handles toolbar parameter, shown', () => {
+      const navigate = vi.fn();
+      const location = { search: '?' + new URLSearchParams({ toolbar: '1' }).toString() };
+
+      const {
+        state: { layout },
+      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
+
+      expect(layout).toMatchObject({ showToolbar: true });
+    });
+
     it('handles shortcuts parameter', () => {
       const navigate = vi.fn();
       const location = { search: '?' + new URLSearchParams({ shortcuts: '0' }).toString() };
@@ -133,6 +155,7 @@ describe('initial state', () => {
             shortcuts: '0',
             addonPanel: 'controls',
             tabs: '0',
+            toolbar: '0',
             path: '/story/button--primary',
             // genuinely custom params that must survive
             collection: '2',

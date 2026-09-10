@@ -17,11 +17,7 @@ import { babelParse, types as t, traverse } from '../../code/core/src/babel/inde
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
-import {
-  readConfig as csfReadConfig,
-  formatConfig,
-  writeConfig,
-} from '../../code/core/src/csf-tools/index.ts';
+import { readConfig as csfReadConfig, writeConfig } from '../../code/core/src/csf-tools/index.ts';
 
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
@@ -1040,27 +1036,23 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   }
 
   previewConfig.setImport(['sb'], 'storybook/test');
-  let config = formatConfig(previewConfig);
 
-  const mockBlock = [
-    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
-    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
-    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
-    "sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });",
-    "sb.mock(import('lodash-es'));",
-    "sb.mock(import('lodash-es/add'));",
-    "sb.mock(import('lodash-es/sum'));",
-    "sb.mock(import('uuid'));",
-    '',
-  ].join('\n');
+  const mockStatements = babelParse(`
+    sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');
+    sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });
+    sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');
+    sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });
+    sb.mock(import('lodash-es'));
+    sb.mock(import('lodash-es/add'));
+    sb.mock(import('lodash-es/sum'));
+    sb.mock(import('uuid'));
+  `).program.body;
 
-  // find last import statement and append sb.mock calls
-  config = config.replace(
-    'import { sb } from "storybook/test";',
-    `import { sb } from 'storybook/test';\n\n${mockBlock}`
-  );
+  const body = previewConfig._ast.program.body;
+  const lastImportIndex = body.findLastIndex((node) => t.isImportDeclaration(node));
+  body.splice(lastImportIndex + 1, 0, ...mockStatements);
 
-  await writeFile(previewConfig.fileName, config);
+  await writeConfig(previewConfig);
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {

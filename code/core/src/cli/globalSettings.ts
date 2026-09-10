@@ -71,6 +71,7 @@ const userSettingSchema = z.object({
  *
  * Only runs for the resolved default path. An explicit path passed to `globalSettings()` stays
  * isolated, and when `XDG_CONFIG_HOME` is unset the default already is the legacy path.
+ * TODO: Delete in Storybook 12
  */
 async function migrateLegacySettings(filePath: string) {
   const legacyPath = join(getLegacyStorybookConfigDir(), SETTINGS_FILE);

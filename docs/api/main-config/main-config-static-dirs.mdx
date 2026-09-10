@@ -14,7 +14,7 @@ Sets a list of directories of [static files](../../configure/integration/images-
 
 <Callout variant="info">
 
-When using Vite-based frameworks, additional directories may be copied to your build directory because of Vite's own [static asset handling](https://vite.dev/guide/assets#the-public-directory). You can set Vite's `publicDir` option to `false` to disable this behavior.
+When using Vite-based frameworks, the files in Vite's [`publicDir`](https://vite.dev/guide/assets#the-public-directory) are served and copied automatically, as if it were the first entry of `staticDirs`. Storybook's own files, such as `index.json`, and your `staticDirs` take precedence when file names conflict.
 
 </Callout>
 

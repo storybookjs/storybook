@@ -28,11 +28,9 @@ interface WebsocketTransportArgs extends Partial<Config> {
   url: string;
   onError: OnError;
   createSocket?: (url: string) => ChannelWebSocket;
-  enableHeartbeat?: boolean;
 }
 
 export const HEARTBEAT_INTERVAL = 15000;
-export const HEARTBEAT_MAX_LATENCY = 5000;
 export const SERVER_CHANNEL_PATH = '/storybook-server-channel';
 
 const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
@@ -48,55 +46,16 @@ export class WebsocketTransport implements ChannelTransport {
 
   private isClosed = false;
 
-  private pingTimeout: number | NodeJS.Timeout = 0;
-
-  private heartbeatPaused = false;
-
-  private enableHeartbeat = true;
-
-  private heartbeat() {
-    clearTimeout(this.pingTimeout);
-    if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
-      return;
-    }
-
-    this.pingTimeout = setTimeout(() => {
-      this.socket.close(3008, 'timeout');
-    }, HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY);
-  }
-
-  pauseHeartbeat() {
-    this.heartbeatPaused = true;
-    clearTimeout(this.pingTimeout);
-  }
-
-  resumeHeartbeat() {
-    this.heartbeatPaused = false;
-    if (this.isReady) {
-      this.heartbeat();
-    }
-  }
-
-  constructor({
-    url,
-    onError,
-    page,
-    createSocket,
-    enableHeartbeat = true,
-  }: WebsocketTransportArgs) {
-    this.enableHeartbeat = enableHeartbeat;
+  constructor({ url, onError, page, createSocket }: WebsocketTransportArgs) {
     // eslint-disable-next-line compat/compat
     this.socket = createSocket ? createSocket(url) : new WebSocket(url);
     this.socket.onopen = () => {
       this.isReady = true;
-      this.heartbeat();
       this.flush();
     };
     this.socket.onmessage = ({ data }: { data: any }) => {
       const event = typeof data === 'string' && isJSON(data) ? parse(data) : data;
       invariant(this.handler, 'WebsocketTransport handler should be set');
-
-      this.heartbeat();
 
       if (event.type === 'ping') {
         // Pings are internal to the transport and have no channel listeners.
@@ -119,7 +78,6 @@ export class WebsocketTransport implements ChannelTransport {
         from: page || 'preview',
       });
       this.isClosed = true;
-      clearTimeout(this.pingTimeout);
     };
   }
 

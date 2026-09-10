@@ -403,18 +403,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
           ],
 
-          // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          // TODO: Remove the check once we don't support Vitest 3 anymore
-          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
-            ? {
-                server: {
-                  deps: {
-                    inline: ['@storybook/addon-vitest'],
-                  },
-                },
-              }
-            : {}),
-
           browser: {
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(nonMutableInputConfig.test?.browser &&

@@ -6,7 +6,6 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 const ONBOARDING_PROJECT_TYPES: ProjectType[] = [
   ProjectType.REACT,
   ProjectType.TANSTACK_REACT,
-  ProjectType.REACT_SCRIPTS,
   ProjectType.REACT_NATIVE_WEB,
   ProjectType.NEXTJS,
   ProjectType.VUE3,

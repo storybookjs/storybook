@@ -72,13 +72,15 @@ Internal tests and implementation code may import from the individual modules di
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
 - [patch-recorder.ts](./patch-recorder.ts): recording proxy over deepsignal state that captures the paths a `setState` recipe touched
+- [plain-object.ts](./plain-object.ts): pollution-safe `hasOwn` / `isPlainObject` / `clonePlain` / `isReservedKey` shared by the recorder, apply-by-path, pointer schema, and snapshot merge
 - [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, the runtime-wide delegated-mode flag, and the shared registry API passed into runtimes — used identically by server, manager, and preview
-- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
+- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, RFC 6902 entry schemas, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
-- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
-- [service-sync.ts](./service-sync.ts): last-write-wins ordering, `applyStatePatch` structural state application, and the per-service snapshot reconciler
+- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to emit `services:entry`, wires the sync-start initialization + entry listeners (hub or leaf), and runs the remote-command-execution protocol
+- [json-patch.ts](./json-patch.ts): RFC 6902 apply-by-path used only by the reconciler (`add`/`replace` upsert, `remove` of missing is a no-op)
+- [service-sync.ts](./service-sync.ts): last-write-wins snapshot ordering, Vector + seen-stamp entry dedup, `applyStatePatch` for bootstrap/static snapshots, and the per-service reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
@@ -619,7 +621,7 @@ flowchart TD
 
 ## Client Architecture (Multi-Master)
 
-Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a sync-start initialization + patch-broadcast protocol.
+Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a sync-start initialization + `services:entry` protocol.
 
 ```text
 ┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
@@ -649,8 +651,8 @@ Creates a local `ServiceRuntime` from the service definition (identical across r
 
 1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
 2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
-3. **After each local command that writes** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync. A command that touches nothing emits nothing.
-4. **On incoming patches** — applies the received state into the local runtime via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
+3. **After each local command that writes** — emits `services:entry` `{ serviceId, stamp: { runtimeId, counter }, command, patch }` where `patch` is an RFC 6902 document of the paths that command touched. A command that touches nothing emits nothing.
+4. **On incoming entries** — applies the patch by path via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
 
 ### Loop prevention
 
@@ -658,16 +660,19 @@ Every channel event that names a writer carries a `runtimeId` generated per `reg
 Loop prevention is not a single self-id check:
 
 - `services:sync-start` is ignored when its `runtimeId` matches the listener's own, so a runtime does not reply to itself.
-- `services:patches` and `services:sync-start-reply` drop echoes through last-write-wins stamp ordering (`isNewer`). A relay may re-emit a patch under an adopted peer `runtimeId`; that copy is still dropped when the stamp is not strictly newer.
+- `services:entry` drops a stamp that was already seen, or whose `counter` is at or below that writer's Vector (the highest contiguous counter applied). A hub that accepted the entry forwards the original payload object in receipt order; duplicates and entries it could not apply are not forwarded. The server websocket transport still echoes the author's own entry back once as one small frame, which the Vector drops.
+- `services:sync-start-reply` drops echoes through last-write-wins stamp ordering (`isNewer`). A relay hub that adopts a bootstrap snapshot forwards the original reply payload.
 - Command replies correlate on `callId`, not on `runtimeId`.
 
 ### State application without re-broadcast
 
-Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
+Incoming state (from sync-start-reply or entries) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
 
-### `applyStatePatch`
+### `applyJsonPatch` and `applyStatePatch`
 
-Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `applyStatePatch` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer sync passes `false` so deletions propagate from full snapshots; static JSON loading passes `true` because each static file is a partial snapshot. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+Command entries apply through `applyJsonPatch` (in [json-patch.ts](./json-patch.ts)), which walks RFC 6901 pointers on the live state object. Documented deviations from RFC 6902: `add` and `replace` both upsert; `remove` of a missing key is a no-op with a debug log; a missing parent rolls the entry back inside its batch and warns, naming the service, stamp, path, and command. Incoming values are cloned. The schema accepts only `add` / `replace` / `remove` and rejects `move` / `copy` / `test`, malformed `~` escapes, `$`-prefixed segments (deepsignal-reserved), and the pointer segments `__proto__`, `constructor`, and `prototype`. The applier treats those same pointers as a missing parent so a schema bypass cannot throw or leave a partial apply. Unknown envelope fields are ignored.
+
+Bootstrap snapshots and static JSON still use `applyStatePatch` (in [service-sync.ts](./service-sync.ts)): it recursively merges plain-object values in place so subscriptions stay attached. Arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer snapshot replies pass `false` so deletions propagate; static JSON loading passes `true` because each static file is a partial snapshot. Static snapshot loading never touches the entry reconciler.
 
 ### State sync sequence
 
@@ -685,13 +690,13 @@ registerService()
 
 service.commands.foo()
   └─ local runtime mutates
-  └─ emit patches ─────────────────────────────────────────────►
-                                                  └─ apply state
+  └─ emit entry ───────────────────────────────────────────────►
+                                                  └─ apply patch
 ```
 
 ### Server participation
 
-The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to emit `services:entry`, responds to sync-starts, applies incoming entries by path, and forwards every accepted entry (original payload, receipt order) so peers on its other transports converge. A relay hub forwards, unchanged and in receipt order, every `services:entry` it accepts; duplicates and entries it could not apply are not forwarded. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
 ## Remote Command Execution
 
@@ -703,7 +708,7 @@ server context. The runtimes that lack the handler must still be able to invoke 
 `registerService` decides this **per command at registration time** by checking whether the resolved
 definition has a `handler`:
 
-- **Has a local handler** → the command runs locally and broadcasts its post-mutation state as usual
+- **Has a local handler** → the command runs locally and emits a `services:entry` as usual
   (the normal multi-master path), **and** the runtime listens for invoke requests so it can run the
   command on behalf of peers that cannot.
 - **No local handler** → the command becomes a **remote invoker**: calling it sends a request over
@@ -724,7 +729,7 @@ Every registered runtime plays **both** roles at once, decided per command:
   `services:command-ack` **immediately** (before running), then executes the command locally on a
   deferred macrotask — so an async channel flushes the ack before any handler work starts, keeping
   acks within the window regardless of how long a handler's synchronous fan-out runs. Execution
-  validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
+  validates input, mutates state, and emits a `services:entry` through the normal command
   wrappers so every peer converges — then it emits `services:command-result` or
   `services:command-error`.
 
@@ -768,15 +773,15 @@ service.commands.example(...)
                                                   └─ emit command-ack ──┐
   ◄───────────────────────────────────────────────────────────────────┘
                                                   └─ run command locally
-                                                       └─ mutate + emit patches ──►
-  ◄── apply patches (state converges) ───────────────────────────────────
+                                                       └─ mutate + emit entry ──►
+  ◄── apply entry (state converges) ─────────────────────────────────────
                                                   └─ emit command-result ──┐
   ◄───────────────────────────────────────────────────────────────────────┘
   └─ promise resolves with result
 ```
 
-State still flows through the normal patch-broadcast path, so the requester gets the new state via
-`services:patches` and the resolved value via `services:command-result` — two independent channels of
+State still flows through the normal entry path, so the requester gets the new state via
+`services:entry` and the resolved value via `services:command-result` — two independent channels of
 truth that both converge.
 
 ### Awaiting
@@ -812,7 +817,8 @@ across implementers would require electing a single executor per call, which thi
 ### Topology limits and timeouts
 
 Replies travel back over the same channel the invoke went out on, and command events are **not**
-relayed across a hub's other transports (unlike `services:patches`, which a relay hub re-broadcasts).
+relayed across a hub's other transports (unlike `services:entry`, which a relay hub re-emits when it
+accepted the entry).
 The manager is connected to both the dev server and the preview, so it can invoke a command implemented
 in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
 calls through the manager, or implement the command on a directly-connected peer.

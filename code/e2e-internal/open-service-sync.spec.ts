@@ -363,6 +363,61 @@ test.describe('open-service sync example', () => {
     });
   });
 
+  // TODO(SB-2051): writes here are sequential. Overlapping two-tab writes land with the ordered
+  // log; this check only proves both slots survive when written one after the other.
+  test('concurrent writes land sequentially in the panel and the story', async ({ page }) => {
+    await gotoOpenServiceStory(
+      page,
+      'core-shared-open-service-sync-test-concurrent-writes--concurrent-writes-sync'
+    );
+
+    const panelSlot = page.getByRole('textbox', {
+      name: 'Concurrent writes manager panel slot input',
+    });
+    const panelValue = page.getByRole('textbox', {
+      name: 'Concurrent writes manager panel value input',
+    });
+    const panelWrite = page.getByRole('button', { name: 'Concurrent writes manager panel write' });
+    const panelClear = page.getByRole('button', {
+      name: 'Concurrent writes manager panel clear slots',
+    });
+    const panelRaw = page.getByTestId('concurrent-writes-manager-panel-raw-service-state-slots');
+    const story = page.frameLocator('#storybook-preview-iframe');
+    const storySlot = story.getByRole('textbox', { name: 'Concurrent writes story slot input' });
+    const storyValue = story.getByRole('textbox', { name: 'Concurrent writes story value input' });
+    const storyWrite = story.getByRole('button', { name: 'Concurrent writes story write' });
+    const storyRaw = story.getByTestId('concurrent-writes-raw-service-state-slots');
+
+    await expect(panelSlot).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+    await expect(storySlot).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+
+    try {
+      await panelClear.click();
+      await expect(panelRaw).toHaveText('{}');
+      await expect(storyRaw).toHaveText('{}');
+
+      await panelSlot.fill('panel-slot');
+      await panelValue.fill('from-panel');
+      await panelWrite.click();
+
+      const afterPanel = JSON.stringify({ 'panel-slot': 'from-panel' });
+      await expect(panelRaw).toHaveText(afterPanel);
+      await expect(storyRaw).toHaveText(afterPanel);
+
+      await storySlot.fill('story-slot');
+      await storyValue.fill('from-story');
+      await storyWrite.click();
+
+      const afterBoth = JSON.stringify({ 'panel-slot': 'from-panel', 'story-slot': 'from-story' });
+      await expect(panelRaw).toHaveText(afterBoth);
+      await expect(storyRaw).toHaveText(afterBoth);
+    } finally {
+      await panelClear.click();
+      await expect(panelRaw).toHaveText('{}');
+      await expect(storyRaw).toHaveText('{}');
+    }
+  });
+
   test('static load reads prebuilt JSON and rejects unbacked commands in a static build', async ({
     page,
   }) => {

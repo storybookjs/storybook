@@ -23,7 +23,14 @@ type AsyncFunctionComponent<Props = never> = ((props: Props) => Promise<React.Re
   displayName?: string;
 };
 
-type CacheEntry = { props: unknown; promise: Promise<React.ReactNode> };
+type CacheEntry = { key: React.Key | null; props: unknown; promise: Promise<React.ReactNode> };
+
+/**
+ * Prop under which the JSX runtime forwards the element `key` to the wrapper. Same-source closures
+ * capturing different values compare equal (see `isStructurallyEqual`), so sibling instances need
+ * the key React requires for them anyway to get their own cache entry.
+ */
+const INSTANCE_KEY_PROP = '__storybookAsyncComponentKey';
 
 const MAX_ENTRIES_PER_COMPONENT = 50;
 const MAX_COMPARE_DEPTH = 50;
@@ -115,20 +122,23 @@ export const isStructurallyEqual = (a: unknown, b: unknown, depth = 0): boolean 
 
 export const getAsyncComponentPromise = <Props,>(
   type: AsyncFunctionComponent<Props>,
-  props: Props
+  props: Props,
+  key: React.Key | null = null
 ): Promise<React.ReactNode> => {
   let entries = promiseCache.get(type);
   if (!entries) {
     entries = [];
     promiseCache.set(type, entries);
   }
-  const cached = entries.find((entry) => isStructurallyEqual(entry.props, props));
+  const cached = entries.find(
+    (entry) => entry.key === key && isStructurallyEqual(entry.props, props)
+  );
   if (cached) {
     return cached.promise;
   }
 
   const promise = type(props);
-  entries.push({ props, promise });
+  entries.push({ key, props, promise });
   if (entries.length > MAX_ENTRIES_PER_COMPONENT) {
     entries.shift();
   }
@@ -148,11 +158,37 @@ export const wrapAsyncComponent = <T,>(type: T): T => {
 
   let wrapper = wrappers.get(type);
   if (!wrapper) {
-    const AsyncComponent: React.FunctionComponent<AnyProps> = (props) =>
-      use(getAsyncComponentPromise(type as AsyncFunctionComponent<AnyProps>, props));
+    const AsyncComponent: React.FunctionComponent<AnyProps> = ({
+      [INSTANCE_KEY_PROP]: key,
+      ...props
+    }) =>
+      use(
+        getAsyncComponentPromise(
+          type as AsyncFunctionComponent<AnyProps>,
+          props,
+          (key as React.Key | undefined) ?? null
+        )
+      );
     AsyncComponent.displayName = type.displayName ?? type.name ?? 'AsyncComponent';
     wrappers.set(type, AsyncComponent);
     wrapper = AsyncComponent;
   }
   return wrapper as unknown as T;
+};
+
+/**
+ * Prepares the arguments of a JSX runtime call (`jsx`, `jsxs`, `jsxDEV`): swaps an async component
+ * for its wrapper and forwards the element `key` so that keyed siblings are cached separately.
+ * Anything else is returned untouched.
+ */
+export const prepareAsyncElement = <Type, Props>(
+  type: Type,
+  props: Props,
+  key?: React.Key | null
+): { type: Type; props: Props } => {
+  const wrapped = wrapAsyncComponent(type);
+  if (wrapped === type || key == null) {
+    return { type: wrapped, props };
+  }
+  return { type: wrapped, props: { ...props, [INSTANCE_KEY_PROP]: key } };
 };

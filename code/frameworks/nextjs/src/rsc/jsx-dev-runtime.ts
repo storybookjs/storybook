@@ -1,6 +1,6 @@
 import * as ReactJSXDevRuntime from 'sb-original/react/jsx-dev-runtime';
 
-import { wrapAsyncComponent } from '@storybook/react/internal/rsc';
+import { prepareAsyncElement } from '@storybook/react/internal/rsc';
 
 /**
  * Drop-in replacement for `react/jsx-dev-runtime` that swaps async (server) components for a
@@ -9,5 +9,7 @@ import { wrapAsyncComponent } from '@storybook/react/internal/rsc';
 
 export const Fragment = ReactJSXDevRuntime.Fragment;
 
-export const jsxDEV: typeof ReactJSXDevRuntime.jsxDEV = (type, ...rest) =>
-  ReactJSXDevRuntime.jsxDEV(wrapAsyncComponent(type), ...rest);
+export const jsxDEV: typeof ReactJSXDevRuntime.jsxDEV = (type, props, key, ...rest) => {
+  const prepared = prepareAsyncElement(type, props, key);
+  return ReactJSXDevRuntime.jsxDEV(prepared.type, prepared.props, key, ...rest);
+};

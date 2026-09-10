@@ -1,33 +1,39 @@
 // @vitest-environment happy-dom
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as React from 'react';
 
-vi.mock('react', async (importOriginal) => {
-  const actual = await importOriginal<typeof React>();
-  return {
-    ...actual,
-    // Stand-in for React 19's `use()`: return the settled value of a promise, throw it otherwise.
-    use: vi.fn((promise: Promise<unknown> & { __value?: unknown; __settled?: boolean }) => {
-      if (promise.__settled) {
-        return promise.__value;
-      }
-      throw promise;
-    }),
-  };
-});
+// React 18 (used in this repo) does not export `use`, so the `{ spy: true }` form cannot provide
+// it: the factory only adds a bare mock, its behavior is configured in `beforeEach` below.
+vi.mock('react', async (importOriginal) => ({
+  ...(await importOriginal<typeof React>()),
+  use: vi.fn(),
+}));
 
 const {
   clearAsyncComponentCache,
   getAsyncComponentPromise,
   isAsyncFunctionComponent,
   isStructurallyEqual,
+  prepareAsyncElement,
   wrapAsyncComponent,
 } = await import('./async-component.tsx');
 const { render } = await import('../render.tsx');
 
-// React 18 types (used in this repo) don't know about `use`, see the mock above.
+type SettledPromise = Promise<unknown> & { __value?: unknown; __settled?: boolean };
+
+// React 18 types don't know about `use`, see the mock above.
 const use = vi.mocked((React as unknown as { use: (promise: Promise<unknown>) => unknown }).use);
+
+beforeEach(() => {
+  // Stand-in for React 19's `use()`: return the settled value of a promise, throw it otherwise.
+  use.mockImplementation((promise: SettledPromise) => {
+    if (promise.__settled) {
+      return promise.__value;
+    }
+    throw promise;
+  });
+});
 
 // Async components are not valid JSX element types for React 18 types.
 const asComponent = <Props,>(component: (props: Props) => Promise<React.ReactNode>) =>
@@ -132,6 +138,20 @@ describe('getAsyncComponentPromise', () => {
     expect(component).toHaveBeenCalledTimes(2);
   });
 
+  it('keeps keyed siblings apart even when their props only differ by captured values', () => {
+    const component = vi.fn(async ({ onSelect }: { onSelect: () => number }) => <>{onSelect()}</>);
+    const renderRows = () =>
+      [1, 2].map((row) => getAsyncComponentPromise(component, { onSelect: () => row }, row));
+
+    const [first, second] = renderRows();
+    expect(first).not.toBe(second);
+    expect(component).toHaveBeenCalledTimes(2);
+
+    // A retry re-creates the callbacks with the same source, but keeps the keys.
+    expect(renderRows()).toEqual([first, second]);
+    expect(component).toHaveBeenCalledTimes(2);
+  });
+
   it('is cleared by clearAsyncComponentCache', () => {
     const component = vi.fn(async () => null);
 
@@ -158,10 +178,6 @@ describe('getAsyncComponentPromise', () => {
 describe('wrapAsyncComponent', () => {
   beforeEach(() => {
     clearAsyncComponentCache();
-  });
-
-  afterEach(() => {
-    use.mockClear();
   });
 
   it('returns non-async types untouched', () => {
@@ -207,6 +223,38 @@ describe('wrapAsyncComponent', () => {
     expect(Wrapper({ label: 'a' })).toEqual(<span>a</span>);
     expect(runs).toBe(1);
     expect(use.mock.calls.map(([promise]) => promise)).toEqual([thrown, thrown]);
+  });
+});
+
+describe('prepareAsyncElement', () => {
+  it('swaps async types and forwards the key through a private prop', () => {
+    const Async = asComponent(async (_props: { label: string }) => null);
+    const prepared = prepareAsyncElement(Async, { label: 'a' }, 'row-1');
+
+    expect(prepared.type).toBe(wrapAsyncComponent(Async));
+    expect(prepared.props).toMatchObject({ label: 'a', __storybookAsyncComponentKey: 'row-1' });
+    expect(prepareAsyncElement(Async, { label: 'a' }, null).props).toEqual({ label: 'a' });
+  });
+
+  it('leaves everything else untouched', () => {
+    const Sync = () => null;
+    const props = { label: 'a' };
+
+    expect(prepareAsyncElement(Sync, props, 'key')).toEqual({ type: Sync, props });
+    expect(prepareAsyncElement('div', props, 'key')).toEqual({ type: 'div', props });
+  });
+
+  it('does not leak the key prop into the async component', async () => {
+    let received: unknown;
+    const Async = asComponent(async (props: { label: string }) => {
+      received = props;
+      return null;
+    });
+    const prepared = prepareAsyncElement(Async, { label: 'a' }, 'row-1');
+    const Wrapper = prepared.type as React.FunctionComponent<Record<string, unknown>>;
+
+    expect(() => Wrapper(prepared.props as Record<string, unknown>)).toThrow();
+    expect(received).toEqual({ label: 'a' });
   });
 });
 

@@ -1,7 +1,12 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import type { ConfigFile, CsfFile, CsfObject } from 'storybook/internal/csf-tools';
+import type {
+  ConfigFile,
+  CsfFile,
+  CsfMutationDiagnostic,
+  CsfObject,
+} from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig, loadCsf, writeCsf } from 'storybook/internal/csf-tools';
 
 import type { ArrayExpression, Expression, ObjectExpression } from '@babel/types';
@@ -39,6 +44,16 @@ type StoryGlobalsMigrationOptions = Pick<
   AddonGlobalsApiOptions,
   'needsViewportMigration' | 'needsBackgroundsMigration' | 'viewportsOptions' | 'backgroundsOptions'
 >;
+
+type StoryTransformResult =
+  | { ok: true; file: string; transformed: CsfFile | null }
+  | {
+      ok: false;
+      file: string;
+      failure:
+        | { kind: 'diagnostic'; diagnostic: CsfMutationDiagnostic }
+        | { kind: 'error'; message: string };
+    };
 
 /**
  * Migrate viewport and backgrounds addons to use the new globals API in Storybook 9
@@ -222,71 +237,95 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
       }
     }
 
-    // Write the updated config back to the file
-    if (!dryRun) {
-      await writeFile(result.previewConfigPath, formatConfig(previewConfig));
-    }
-
-    // Update stories
+    let storyResults: StoryTransformResult[] = [];
     if (needsViewportMigration || needsBackgroundsMigration) {
-      const errors = await transformStoryFiles(
-        storiesPaths,
-        {
-          needsViewportMigration,
-          needsBackgroundsMigration,
-          viewportsOptions,
-          backgroundsOptions,
-        },
-        dryRun
-      );
+      storyResults = await transformStoryFiles(storiesPaths, {
+        needsViewportMigration,
+        needsBackgroundsMigration,
+        viewportsOptions,
+        backgroundsOptions,
+      });
+      const failures = storyResults.filter((storyResult) => !storyResult.ok);
 
-      if (errors.length > 0) {
+      if (failures.length > 0) {
         // eslint-disable-next-line local-rules/no-uncategorized-errors
         throw new Error(
-          `Failed to process ${errors.length} files:\n${errors
-            .map(({ file, error }) => `- ${file}: ${error.message}`)
+          `Failed to process ${failures.length} files:\n${failures
+            .map(({ file, failure }) => {
+              const message =
+                failure.kind === 'diagnostic' ? failure.diagnostic.message : failure.message;
+              return `- ${file}:\n  - ${message}`;
+            })
             .join('\n')}`
         );
       }
     }
+
+    if (!dryRun) {
+      await writeFile(result.previewConfigPath, formatConfig(previewConfig));
+      await Promise.all(
+        storyResults.map((storyResult) =>
+          storyResult.ok && storyResult.transformed
+            ? writeCsf(storyResult.transformed, storyResult.file)
+            : undefined
+        )
+      );
+    }
   },
 };
 
-// Story transformation function
 async function transformStoryFiles(
   files: string[],
-  options: StoryGlobalsMigrationOptions,
-  dryRun: boolean
-): Promise<Array<{ file: string; error: Error }>> {
-  const errors: Array<{ file: string; error: Error }> = [];
+  options: StoryGlobalsMigrationOptions
+): Promise<StoryTransformResult[]> {
   const { default: pLimit } = await import('p-limit');
   const limit = pLimit(10);
 
-  await Promise.all(
+  return Promise.all(
     files.map((file) =>
       limit(async () => {
         try {
           const content = await readFile(file, 'utf-8');
-          const transformed = transformStoryFile(content, options);
+          const transformed = transformStoryFileResult(content, options);
 
-          if (transformed && !dryRun) {
-            await writeCsf(transformed, file);
+          if (!transformed.ok) {
+            return { ok: false, file, failure: transformed.failure };
           }
+
+          return { ok: true, file, transformed: transformed.transformed };
         } catch (error) {
-          errors.push({ file, error: error as Error });
+          return {
+            ok: false,
+            file,
+            failure: {
+              kind: 'error',
+              message: error instanceof Error ? error.message : String(error),
+            },
+          };
         }
       })
     )
   );
-
-  return errors;
 }
 
-// Transform a single story file
 export function transformStoryFile(
   source: string,
   options: StoryGlobalsMigrationOptions
 ): CsfFile | null {
+  const result = transformStoryFileResult(source, options);
+  if (!result.ok) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(result.failure.diagnostic.message);
+  }
+  return result.transformed;
+}
+
+function transformStoryFileResult(
+  source: string,
+  options: StoryGlobalsMigrationOptions
+):
+  | { ok: true; transformed: CsfFile | null }
+  | { ok: false; failure: { kind: 'diagnostic'; diagnostic: CsfMutationDiagnostic } } {
   const storyConfig = loadCsf(source, {
     makeTitle: (title?: string) => title || 'default',
   }).parse();
@@ -296,12 +335,12 @@ export function transformStoryFile(
     migrateStoryGlobals(storyConfig, object, options);
   }
 
-  if (storyConfig.mutationDiagnostics.length > 0) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    throw new Error(storyConfig.mutationDiagnostics.map(({ message }) => message).join('\n'));
+  const [diagnostic] = storyConfig.mutationDiagnostics;
+  if (diagnostic) {
+    return { ok: false, failure: { kind: 'diagnostic', diagnostic } };
   }
 
-  return storyConfig.changed ? storyConfig : null;
+  return { ok: true, transformed: storyConfig.changed ? storyConfig : null };
 }
 
 const migrateStoryGlobals = (

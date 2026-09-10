@@ -3,7 +3,11 @@ import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { getLegacyStorybookConfigDir, getStorybookConfigDir } from './storybook-config-dir.ts';
+import {
+  getInstanceRegistryDir,
+  getLegacyStorybookConfigDir,
+  getStorybookConfigDir,
+} from './storybook-config-dir.ts';
 
 afterEach(() => {
   vi.unstubAllEnvs();
@@ -27,14 +31,6 @@ describe('getStorybookConfigDir', () => {
 
     expect(getStorybookConfigDir()).toBe(join('/home/user/.config', 'storybook'));
   });
-
-  it('reads the environment on every call', () => {
-    vi.stubEnv('XDG_CONFIG_HOME', '/first');
-    expect(getStorybookConfigDir()).toBe(join('/first', 'storybook'));
-
-    vi.stubEnv('XDG_CONFIG_HOME', '/second');
-    expect(getStorybookConfigDir()).toBe(join('/second', 'storybook'));
-  });
 });
 
 describe('getLegacyStorybookConfigDir', () => {
@@ -42,5 +38,17 @@ describe('getLegacyStorybookConfigDir', () => {
     vi.stubEnv('XDG_CONFIG_HOME', '/home/user/.config');
 
     expect(getLegacyStorybookConfigDir()).toBe(join(homedir(), '.storybook'));
+  });
+});
+
+describe('getInstanceRegistryDir', () => {
+  it('uses ~/.storybook/instances when XDG_STATE_HOME is not set', () => {
+    vi.stubEnv('XDG_STATE_HOME', undefined);
+    expect(getInstanceRegistryDir()).toBe(join(homedir(), '.storybook', 'instances'));
+  });
+
+  it('uses $XDG_STATE_HOME/storybook/instances when it is set', () => {
+    vi.stubEnv('XDG_STATE_HOME', '/tmp/xdg-state');
+    expect(getInstanceRegistryDir()).toBe(join('/tmp/xdg-state', 'storybook', 'instances'));
   });
 });

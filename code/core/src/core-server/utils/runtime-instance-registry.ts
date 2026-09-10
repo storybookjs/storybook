@@ -9,7 +9,7 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
-import { getStorybookConfigDir } from '../../common/utils/storybook-config-dir.ts';
+import { getInstanceRegistryDir } from '../../common/utils/storybook-config-dir.ts';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
 import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
@@ -99,10 +99,6 @@ export type RuntimeInstanceRegistryCleanupDecision =
   | { action: 'remove' }
   | { action: 'check-pid'; pid: number };
 
-export function getDefaultRuntimeInstanceRegistryDir() {
-  return join(getStorybookConfigDir(), 'instances');
-}
-
 export function getStorybookBaseUrl(address: string) {
   const url = new URL(address);
   return `${url.origin}${url.pathname.replace(/\/$/, '')}`;
@@ -186,7 +182,7 @@ export function createRuntimeInstanceRecord({
 
 export async function writeRuntimeInstanceRecord(
   record: RuntimeInstanceRecord,
-  registryDir = getDefaultRuntimeInstanceRegistryDir()
+  registryDir = getInstanceRegistryDir()
 ) {
   await mkdir(registryDir, { recursive: true, mode: REGISTRY_DIR_MODE });
   // `mkdir` ignores `mode` for an existing dir and umask can clear bits, so modes are enforced.

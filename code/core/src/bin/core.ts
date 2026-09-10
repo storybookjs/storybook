@@ -22,6 +22,7 @@ import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { migrateLegacyStorybookDir } from '../common/utils/migrate-legacy-storybook-dir.ts';
 import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
@@ -79,6 +80,7 @@ const command = (name: string) =>
           logTracker.enableLogWriting();
         }
 
+        await migrateLegacyStorybookDir();
         await globalSettings();
       } catch (e) {
         logger.error('Error loading global settings:\n' + String(e));

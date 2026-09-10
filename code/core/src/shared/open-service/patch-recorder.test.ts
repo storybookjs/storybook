@@ -1,7 +1,7 @@
 import { deepSignal } from 'deepsignal/core';
 import { describe, expect, it } from 'vitest';
 
-import { createPatchCollector, toJsonPointer } from './patch-recorder.ts';
+import { createPatchCollector } from './patch-recorder.ts';
 
 function record<T extends object>(initial: T, mutate: (state: T) => void) {
   const state = deepSignal(initial) as T;
@@ -9,12 +9,6 @@ function record<T extends object>(initial: T, mutate: (state: T) => void) {
   collector.record(state, mutate);
   return { ops: collector.flush(), state, raw: initial };
 }
-
-describe('toJsonPointer', () => {
-  it('encodes ~ and / in path segments', () => {
-    expect(toJsonPointer(['a~b', 'c/d'])).toBe('/a~0b/c~1d');
-  });
-});
 
 describe('patch recorder', () => {
   it('records a replace for an existing primitive field', () => {

@@ -11,6 +11,7 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
+import { SupportedLanguage } from 'storybook/internal/types';
 import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
@@ -20,7 +21,6 @@ import {
   formatConfig,
   writeConfig,
 } from '../../code/core/src/csf-tools/index.ts';
-import { SupportedLanguage } from 'storybook/internal/types';
 
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
@@ -956,6 +956,30 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   if (template.expected.builder === '@storybook/builder-vite') {
     setSandboxViteFinal(mainConfig, key);
   }
+  await writeConfig(mainConfig);
+};
+
+export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
+  if (!isViteSandbox(key)) {
+    return;
+  }
+
+  logger.log('📝 Adding static dirs');
+  const publicDir = join(sandboxDir, 'public');
+  const storybookStaticDir = join(sandboxDir, '.storybook', 'static');
+  await mkdir(publicDir, { recursive: true });
+  await mkdir(storybookStaticDir, { recursive: true });
+
+  await writeFile(
+    join(publicDir, 'index.json'),
+    '{ "description": "index.json from Vite\'s public directory" }'
+  );
+  await writeFile(join(publicDir, 'from-public.txt'), "from Vite's public directory");
+  await writeFile(join(publicDir, 'override.txt'), "from Vite's public directory");
+  await writeFile(join(storybookStaticDir, 'override.txt'), 'from storybook');
+
+  const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
+  mainConfig.setFieldValue(['staticDirs'], [{ from: '../public', to: '/foo' }, './static']);
   await writeConfig(mainConfig);
 };
 

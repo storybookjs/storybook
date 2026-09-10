@@ -3,7 +3,7 @@
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
-  - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
+  - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
@@ -66,7 +66,7 @@
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
     - [Dropped support](#dropped-support)
-      - [Vite 5 and Vite 6](#vite-5-and-vite-6)
+      - [Vite 5 and Vite 6](#vite-requires-vite-63-or-higher)
       - [Vite 4](#vite-4)
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
@@ -577,9 +577,17 @@ option exists in both places, keep the nested value because it was authoritative
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
 
-### Vite: requires Vite 7.0 or higher
+### Vite: `publicDir` is handled by Storybook's `staticDirs`
 
-Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
+In previous versions, Vite copied its `publicDir` (`public/` by default) into the output of `storybook build` after Storybook had written its own files. A `public/index.json` silently replaced Storybook's story index and broke the built Storybook, and files from `public/` overrode files from your `staticDirs`.
+
+Storybook now disables Vite's copy (`build.copyPublicDir`) and copies the `publicDir` itself, as if it were the first entry of `staticDirs`. Storybook's own output files are never replaced, and your `staticDirs` take precedence over `publicDir` when file names conflict, matching how `storybook dev` has always served them.
+
+Setting `publicDir: false` in your Vite config to work around the old behavior is no longer needed, but still respected.
+
+### Vite: requires Vite 6.3 or higher
+
+Storybook 11.0 drops support for Vite 5. The minimum supported version is now Vite 6.3.0, and Vite 7 and 8 remain supported. This change affects all Vite-based frameworks and builders:
 
 - `@storybook/builder-vite`
 - `@storybook/react-vite`
@@ -594,26 +602,16 @@ Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported versio
 - `@storybook/tanstack-react`
 - `vite-plugin-storybook-nextjs`
 
-To upgrade:
+If you're using Vite 6, upgrade to Vite 6.3.0 or higher. If you're already on Vite 6.3.0 or higher, no Vite upgrade is needed.
 
-1. Update your project's Vite version to 7.0.0 or higher
-2. Update your Storybook configuration to use Vite 7:
-   ```js
-   // vite.config.js or vite.config.ts
-   export default {
-     // ... your other config
-     // Make sure you're using Vite 7 compatible plugins
-   };
-   ```
+If you're using framework-specific Vite plugins, ensure they are compatible with your Vite version:
 
-If you're using framework-specific Vite plugins, ensure they are compatible with Vite 7:
-
-- `@vitejs/plugin-react`
-- `@vitejs/plugin-vue`
-- `@sveltejs/vite-plugin-svelte`
+- `@vitejs/plugin-react`: the 4.7.0 release and the 5.x line support Vite 6
+- `@vitejs/plugin-vue`: pair Vite 6 with `@vitejs/plugin-vue` 6.x, which declares support for Vite 5, 6, 7, and 8
+- `@sveltejs/vite-plugin-svelte`: the 6.x line requires Vite 6.3.0 or higher
 - etc.
 
-For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
+For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
 ### Next.js: Require v15 and up
 

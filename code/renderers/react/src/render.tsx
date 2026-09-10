@@ -2,6 +2,7 @@ import React from 'react';
 
 import type { ArgsStoryFn } from 'storybook/internal/types';
 
+import { wrapAsyncComponent } from './rsc/async-component.tsx';
 import type { ReactRenderer } from './types.ts';
 
 export const render: ArgsStoryFn<ReactRenderer> = (args, context) => {
@@ -12,5 +13,10 @@ export const render: ArgsStoryFn<ReactRenderer> = (args, context) => {
     );
   }
 
-  return <Component {...args} />;
+  // JSX written in stories goes through the framework's JSX runtime, where async server
+  // components are swapped for a cached client component. This element is created with
+  // `React.createElement` instead, so it has to be handled here.
+  const Type = context.parameters?.react?.rsc ? wrapAsyncComponent(Component) : Component;
+
+  return <Type {...args} />;
 };

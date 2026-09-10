@@ -73,7 +73,7 @@ import {
   inFlightLoads,
   makeInFlightKey,
   makeLoadKey,
-  nextRuntimeId,
+  nextLoadScopeId,
   runLoadBody,
 } from './query-runtime.ts';
 import type { QueryRuntimeRefs, RuntimeQueryDefinition } from './query-runtime.ts';
@@ -401,11 +401,11 @@ export function createServiceRuntime<
     return routed as CommandSelf<TState>['commands'];
   };
 
-  const runtimeId = nextRuntimeId();
+  const loadScopeId = nextLoadScopeId();
 
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,
-    runtimeId,
+    loadScopeId,
     commandSelf,
     state,
     registryApi,
@@ -461,7 +461,7 @@ export function createServiceRuntime<
 
     const loadKey = makeLoadKey(def.id, queryName, validatedInput);
     const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
-    const inFlightKey = makeInFlightKey(runtimeId, loadKey);
+    const inFlightKey = makeInFlightKey(loadScopeId, loadKey);
 
     const promise = Promise.resolve()
       .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain))

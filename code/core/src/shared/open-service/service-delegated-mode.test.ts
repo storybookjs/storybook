@@ -143,19 +143,19 @@ describe('delegated command dispatch', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: mutableRecordLookupServiceDef.id,
       callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { a: { k: 'v' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: mutableRecordLookupServiceDef.id,
       callId,
       result: undefined,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBeUndefined();
@@ -182,7 +182,7 @@ describe('delegated command dispatch', () => {
       commandName: 'assignRecordField',
       input: { entryId: 'a', fieldKey: 'k', fieldValue: 'v' },
       callId: 'call-1',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -206,7 +206,6 @@ describe('delegated command dispatch', () => {
     channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
       serviceId: locallyImplementedServiceDef.id,
       callId,
-      clientId: 'instance',
     });
 
     const error = await promise.catch((caught: unknown) => caught);
@@ -282,19 +281,19 @@ describe('delegated thin loads', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: thinLoadServiceDef.id,
       callId: invoke.callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: thinLoadServiceDef.id,
       state: { components: { button: 'extracted-on-peer' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: thinLoadServiceDef.id,
       callId: invoke.callId,
       result: 'extracted-on-peer',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('extracted-on-peer');

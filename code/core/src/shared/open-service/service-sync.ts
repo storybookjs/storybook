@@ -10,10 +10,10 @@
  *
  * ## 1. `isNewer` — last-write-wins ordering
  *
- * Each synced snapshot carries a `(version, clientId)` stamp. `version` is a logical clock for the
+ * Each synced snapshot carries a `(version, runtimeId)` stamp. `version` is a logical clock for the
  * state lineage: a runtime bumps it on every local command that writes and adopts the incoming value
  * when it accepts a peer's snapshot. Equal versions mean concurrent writes; the lexicographically greater
- * `clientId` wins so every runtime independently converges on the same snapshot regardless of the
+ * `runtimeId` wins so every runtime independently converges on the same snapshot regardless of the
  * order events arrive in.
  *
  * Crucially, an *equal* stamp is **not** newer. That single fact is what makes the protocol
@@ -40,14 +40,14 @@ export type SyncStamp = {
   /** Logical clock for the state lineage. Bumped on every local command that writes, adopted on accept. */
   version: number;
   /** Id of the runtime that produced this version; the deterministic tiebreak for equal versions. */
-  clientId: string;
+  runtimeId: string;
 };
 
 /**
  * Returns whether `incoming` should replace `local` under last-write-wins ordering.
  *
  * Higher `version` always wins. At an equal version (concurrent writes) the lexicographically
- * greater `clientId` wins so every runtime picks the same winner. An equal stamp is **not** newer —
+ * greater `runtimeId` wins so every runtime picks the same winner. An equal stamp is **not** newer —
  * that is precisely what makes echoes and relayed re-broadcasts terminate rather than loop.
  */
 export function isNewer(incoming: SyncStamp, local: SyncStamp): boolean {
@@ -55,7 +55,7 @@ export function isNewer(incoming: SyncStamp, local: SyncStamp): boolean {
     return incoming.version > local.version;
   }
 
-  return incoming.clientId > local.clientId;
+  return incoming.runtimeId > local.runtimeId;
 }
 
 /** Keys never copied from an untrusted payload, to block prototype-pollution. */
@@ -135,10 +135,10 @@ export type SnapshotReconciler = {
   /** The current local stamp (read for sync-start-reply / broadcast envelopes). */
   readonly stamp: SyncStamp;
   /**
-   * Records a locally authored change: bumps `version` and re-stamps with `clientId`. Call this
+   * Records a locally authored change: bumps `version` and re-stamps with `runtimeId`. Call this
    * before broadcasting so the broadcast's own echo is recognized as not-newer and dropped.
    */
-  advanceLocal(clientId: string): SyncStamp;
+  advanceLocal(runtimeId: string): SyncStamp;
   /**
    * Adopts an incoming snapshot iff it is strictly newer (LWW). Returns whether it was adopted, so
    * relay hubs can re-broadcast only on a real advance.
@@ -152,7 +152,7 @@ export type SnapshotReconciler = {
  * @param setState - The runtime's batched in-place mutator (`commandSelf.setState`), adapted to a
  *   plain record. Adopting goes through this rather than the wrapped commands so it never triggers
  *   a re-broadcast.
- * @param initialStamp - Starting stamp, typically `{ version: 0, clientId: <own id> }`.
+ * @param initialStamp - Starting stamp, typically `{ version: 0, runtimeId: <own id> }`.
  */
 export function createSnapshotReconciler(options: {
   setState: (mutate: StateMutator) => void;
@@ -166,8 +166,8 @@ export function createSnapshotReconciler(options: {
       return localStamp;
     },
 
-    advanceLocal(clientId: string): SyncStamp {
-      localStamp = { version: localStamp.version + 1, clientId };
+    advanceLocal(runtimeId: string): SyncStamp {
+      localStamp = { version: localStamp.version + 1, runtimeId };
       return localStamp;
     },
 
@@ -176,7 +176,7 @@ export function createSnapshotReconciler(options: {
         return false;
       }
 
-      localStamp = { version: incoming.version, clientId: incoming.clientId };
+      localStamp = { version: incoming.version, runtimeId: incoming.runtimeId };
       setState((current) => applyStatePatch(current, state, { preserveMissingKeys: false }));
 
       return true;

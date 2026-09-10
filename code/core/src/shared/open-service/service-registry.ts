@@ -22,7 +22,7 @@ import {
   OpenServiceMissingServiceError,
   OpenServiceOperationNameCollisionError,
 } from '../../server-errors.ts';
-import { type ServiceChannel, generateClientId } from './service-channel.ts';
+import { type ServiceChannel, generateRuntimeId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
 import { connectServiceToChannel, connectUnknownServiceReporter } from './service-transport.ts';
@@ -304,7 +304,7 @@ export function registerService<
       ServiceRegistryApi;
   }
 
-  const ownClientId = generateClientId();
+  const ownRuntimeId = generateRuntimeId();
   const resolvedDefinition = applyRegistration(definition, registration);
 
   // The runtime mutates its state object in place, so give it a copy rather than the definition's
@@ -321,7 +321,7 @@ export function registerService<
   const reconciler = createSnapshotReconciler({
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
-    initialStamp: { version: 0, clientId: ownClientId },
+    initialStamp: { version: 0, runtimeId: ownRuntimeId },
   });
 
   const getSnapshot = (): Record<string, unknown> =>
@@ -351,7 +351,7 @@ export function registerService<
   // commands, run the remote-command protocol, and attach the sync-start + patch listeners.
   const { commands, disconnect } = connectServiceToChannel({
     serviceId: definition.id,
-    ownClientId,
+    ownRuntimeId,
     reconciler,
     getSnapshot,
     channel,

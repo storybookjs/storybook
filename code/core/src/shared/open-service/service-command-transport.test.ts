@@ -111,7 +111,7 @@ describe('remote command requester (no local handler)', () => {
       commandName: 'doThing',
       input: { value: 'hi' },
       callId: expect.any(String),
-      clientId: expect.any(String),
+      runtimeId: expect.any(String),
     });
 
     unregisterService(remoteOnlyServiceDef.id);
@@ -129,7 +129,7 @@ describe('remote command requester (no local handler)', () => {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'done',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('done');
@@ -146,7 +146,7 @@ describe('remote command requester (no local handler)', () => {
     channel.emitExternal(SERVICE_COMMAND_ERROR, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
       error: {
         __openServiceError__: true,
         name: 'OpenServiceValidationError',
@@ -174,7 +174,7 @@ describe('remote command requester (no local handler)', () => {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'first',
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
     // A later reply for the same call (a second implementer) must be ignored, not throw.
     expect(() =>
@@ -182,7 +182,7 @@ describe('remote command requester (no local handler)', () => {
         serviceId: remoteOnlyServiceDef.id,
         callId,
         result: 'second',
-        clientId: 'peer-2',
+        runtimeId: 'peer-2',
       })
     ).not.toThrow();
 
@@ -201,19 +201,19 @@ describe('remote command requester (no local handler)', () => {
       serviceId: 'some/other-service',
       callId,
       result: 'wrong-service',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: remoteOnlyServiceDef.id,
       callId: 'unknown-call',
       result: 'wrong-call',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'correct',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('correct');
@@ -248,7 +248,7 @@ describe('remote command requester (no local handler)', () => {
     channel.emitExternal(SERVICE_COMMAND_ACK, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await vi.advanceTimersByTimeAsync(REMOTE_COMMAND_ACK_TIMEOUT_MS);
@@ -257,7 +257,7 @@ describe('remote command requester (no local handler)', () => {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'done',
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBe('done');
@@ -288,7 +288,7 @@ describe('remote command responder (has local handler)', () => {
       commandName: 'assignRecordField',
       input: { entryId: 'a', fieldKey: 'k', fieldValue: 'v' },
       callId: 'call-1',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     // The ack is emitted synchronously on receipt, before the command runs.
@@ -297,7 +297,7 @@ describe('remote command responder (has local handler)', () => {
       expect.objectContaining({
         serviceId: mutableRecordLookupServiceDef.id,
         callId: 'call-1',
-        clientId: expect.any(String),
+        runtimeId: expect.any(String),
       })
     );
 
@@ -323,7 +323,7 @@ describe('remote command responder (has local handler)', () => {
       commandName: 'boom',
       input: {},
       callId: 'call-err',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await vi.waitFor(() => expect(emittedCalls(channel, SERVICE_COMMAND_ERROR)).toHaveLength(1));
@@ -348,7 +348,7 @@ describe('remote command responder (has local handler)', () => {
       commandName: 'doThing',
       input: { value: 'hi' },
       callId: 'call-unhandled',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -361,7 +361,6 @@ describe('remote command responder (has local handler)', () => {
         expect.objectContaining({
           serviceId: remoteOnlyServiceDef.id,
           callId: 'call-unhandled',
-          clientId: expect.any(String),
         }),
       ],
     ]);
@@ -401,7 +400,7 @@ describe('ack delivery with a busy responder', () => {
 
       const requester = connectCommandTransport({
         serviceId,
-        ownClientId: 'requester',
+        ownRuntimeId: 'requester',
         channel,
         localCommands: {},
         implementedCommandNames: new Set(),
@@ -410,7 +409,7 @@ describe('ack delivery with a busy responder', () => {
       });
       const responder = connectCommandTransport({
         serviceId,
-        ownClientId: 'responder',
+        ownRuntimeId: 'responder',
         channel,
         localCommands: {
           fanOut: async (input) => {
@@ -442,7 +441,7 @@ describe('command-unhandled reporting', () => {
 
     const requester = connectCommandTransport({
       serviceId,
-      ownClientId: 'requester',
+      ownRuntimeId: 'requester',
       channel,
       localCommands: {},
       implementedCommandNames: new Set(),
@@ -451,7 +450,7 @@ describe('command-unhandled reporting', () => {
     });
     const responder = connectCommandTransport({
       serviceId,
-      ownClientId: 'responder',
+      ownRuntimeId: 'responder',
       channel,
       localCommands: {},
       implementedCommandNames: new Set(),
@@ -480,7 +479,7 @@ describe('command-unhandled reporting', () => {
       commandName: 'doThing',
       input: { value: 'hi' },
       callId: 'call-mid-hmr',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toHaveLength(0);
@@ -497,13 +496,12 @@ describe('command-unhandled reporting', () => {
     channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
-      clientId: 'peer-without-handler',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
       result: 'done',
-      clientId: 'peer-with-handler',
+      runtimeId: 'peer-with-handler',
     });
 
     await expect(promise).resolves.toBe('done');
@@ -520,7 +518,7 @@ describe('command-unhandled reporting', () => {
       commandName: 'doThing',
       input: {},
       callId: 'call-unknown-service',
-      clientId: 'requester',
+      runtimeId: 'requester',
     });
 
     expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toEqual([
@@ -532,6 +530,7 @@ describe('command-unhandled reporting', () => {
         }),
       ],
     ]);
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)[0][1]).not.toHaveProperty('runtimeId');
   });
 });
 
@@ -568,7 +567,7 @@ describe('load bodies and command routing', () => {
       commandName: 'preloadValue',
       input: { entryId: 'entry-a' },
       callId: expect.any(String),
-      clientId: expect.any(String),
+      runtimeId: expect.any(String),
     });
 
     const { callId } = emittedCalls(
@@ -579,7 +578,7 @@ describe('load bodies and command routing', () => {
       serviceId: loadInvokesRemoteCommandServiceDef.id,
       callId,
       result: undefined,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await expect(promise).resolves.toBeNull();

@@ -83,31 +83,30 @@ const maximumSelectorsPerRule = 4000;
 
 const findWhereRanges = (selector: string): [number, number][] => {
   const ranges: [number, number][] = [];
-  let start = selector.indexOf(':where(');
+  const parentheses: (number | undefined)[] = [];
+  let quote: string | undefined;
 
-  while (start !== -1) {
-    let depth = 1;
-    let quote: string | undefined;
-
-    for (let index = start + ':where('.length; index < selector.length; index++) {
-      const character = selector[index];
-      if (character === '\\') {
-        index++;
-      } else if (quote) {
-        if (character === quote) {
-          quote = undefined;
-        }
-      } else if (character === '"' || character === "'") {
-        quote = character;
-      } else if (character === '(') {
-        depth++;
-      } else if (character === ')' && --depth === 0) {
+  for (let index = 0; index < selector.length; index++) {
+    const character = selector[index];
+    if (character === '\\') {
+      index++;
+    } else if (quote) {
+      if (character === quote) {
+        quote = undefined;
+      }
+    } else if (character === '"' || character === "'") {
+      quote = character;
+    } else if (selector.startsWith(':where(', index)) {
+      parentheses.push(index);
+      index += ':where('.length - 1;
+    } else if (character === '(') {
+      parentheses.push(undefined);
+    } else if (character === ')') {
+      const start = parentheses.pop();
+      if (start !== undefined) {
         ranges.push([start, index + 1]);
-        break;
       }
     }
-
-    start = selector.indexOf(':where(', start + ':where('.length);
   }
 
   return ranges;
@@ -197,10 +196,15 @@ const extractPseudoStates = (selector: string) => {
 
   // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
   withoutPseudoStates = withoutPseudoStates.replaceAll(/([\s(]),\s+|(,\s+)+(?=\))/g, '$1');
-  // Remove a vacuous `:where(*)` when another selector already provides the subject.
-  withoutPseudoStates = withoutPseudoStates.replaceAll(':where(*)', (match, offset, input) =>
-    offset > 0 && !selectorStartPattern.test(input[offset - 1]) ? '' : match
+  const vacuousWhereRanges = findWhereRanges(withoutPseudoStates).filter(
+    ([start, end]) =>
+      withoutPseudoStates.slice(start, end) === ':where(*)' &&
+      start > 0 &&
+      !selectorStartPattern.test(withoutPseudoStates[start - 1])
   );
+  for (const [start, end] of vacuousWhereRanges.reverse()) {
+    withoutPseudoStates = withoutPseudoStates.slice(0, start) + withoutPseudoStates.slice(end);
+  }
   withoutPseudoStates ||= '*';
 
   for (const state of nonZeroSpecificityStates) {

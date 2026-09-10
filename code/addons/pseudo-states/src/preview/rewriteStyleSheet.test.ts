@@ -223,6 +223,14 @@ describe('rewriteStyleSheet', () => {
     expect(selectors).not.toContain('.pseudo-focus-visible-all .textLink:where(*)');
   });
 
+  it('preserves literal ":where(*)" text inside quoted attribute values', () => {
+    const sheet = new Sheet('[data-label=":where(*)"] .item:hover { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain(
+      '.pseudo-hover-all [data-label=":where(*)"] .item'
+    );
+  });
+
   it('preserves the specificity of mixed pseudo-states inside and outside ":where"', () => {
     const sheet = new Sheet('.textLink:where(:focus-visible):hover { text-decoration: none }');
     rewriteStyleSheet(sheet as any);

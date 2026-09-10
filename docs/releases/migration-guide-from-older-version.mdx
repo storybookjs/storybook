@@ -36,7 +36,7 @@ The rest of this guide will help you upgrade successfully, either automatically 
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 
-If any of these new requirements or changes are blockers for your project, we recommend to continue using Storybook 8.x.
+If any of these new requirements or changes are blockers for your project, we recommend to continue using Storybook 9.x.
 
 You may wish to read the [full migration notes][full-migration-notes] before migrating. Or you can run the upgrade command below and we’ll try to take care of everything for you!
 
@@ -44,7 +44,7 @@ You may wish to read the [full migration notes][full-migration-notes] before mig
 
 To upgrade your Storybook, run the [upgrade](./upgrading.mdx) command in the root of your repository:
 
-<CodeSnippets path="storybook-upgrade.md" />
+<CodeSnippets path="storybook-upgrade-to-prior-major.md" />
 
 This will:
 
@@ -62,7 +62,7 @@ This will:
 
 To add Storybook to a project that isn’t currently using Storybook:
 
-<CodeSnippets path="create-command.md" copyEvent="CreateCommandCopy" />
+<CodeSnippets path="create-command-for-prior-major.md" />
 
 This will:
 
@@ -78,11 +78,7 @@ The automatic upgrade should get your Storybook into a working state. If you enc
 3. Check [the full migration notes][full-migration-notes], which contains an exhaustive list of noteworthy changes in Storybook 10. Many of these are already handled by automigrations when you upgrade, but not all are. It’s also possible that you’re experiencing a corner case that we’re not aware of.
 4. Search [Storybook issues on GitHub](https://github.com/storybookjs/storybook/issues). If you’re seeing a problem, there’s a good chance other people are too. If so, upvote the issue, try out any workarounds described in the comments, and comment back if you have useful info to contribute.
 5. If there’s no existing issue, you can [file one](https://github.com/storybookjs/storybook/issues/new/choose), ideally with a reproduction attached. We’ll be on top of Storybook 10 issues as we’re stabilizing the release.
-
-If you prefer to debug yourself, here are a few useful things you can do to help narrow down the problem:
-
-1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 9.x might not yet be compatible with 10.x, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 10, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
-2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `10.0.0-beta.56`, you could set the version to `10.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `9.1.x`). If it works, you could then try `10.0.0-beta.0`, then `10.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
+6. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with Storybook 9 might not yet be compatible with Storybook 10, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 10, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
 
 ## Optional migrations
 

@@ -52,7 +52,7 @@ describe('channel: sync-start initialization (leaf)', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-late': { marker: 'synced' } },
       version: 1,
-      clientId: 'manager-hub',
+      runtimeId: 'manager-hub',
     });
 
     expect(preview.queries.recordFields.get({ entryId: 'entry-late' })).toEqual({
@@ -76,14 +76,14 @@ describe('channel: sync-start initialization (leaf)', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-stale': { marker: 'v0' } },
       version: 0,
-      clientId: 'early-hub',
+      runtimeId: 'early-hub',
     });
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { 'entry-stale': { marker: 'v1' } },
       version: 1,
-      clientId: 'early-hub',
+      runtimeId: 'early-hub',
     });
 
     expect(preview.queries.recordFields.get({ entryId: 'entry-stale' })).toEqual({
@@ -113,7 +113,7 @@ describe('channel: patch broadcast (leaf)', () => {
 });
 
 describe('channel: last-write-wins convergence', () => {
-  it('converges on the higher clientId for concurrent (equal-version) writes', async () => {
+  it('converges on the higher runtimeId for concurrent (equal-version) writes', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -123,13 +123,13 @@ describe('channel: last-write-wins convergence', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'red' } },
       version: 1,
-      clientId: 'aaa',
+      runtimeId: 'aaa',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'blue' } },
       version: 1,
-      clientId: 'zzz',
+      runtimeId: 'zzz',
     });
 
     await vi.waitFor(() =>
@@ -147,20 +147,20 @@ describe('channel: last-write-wins convergence', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'blue' } },
       version: 1,
-      clientId: 'zzz',
+      runtimeId: 'zzz',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'red' } },
       version: 1,
-      clientId: 'aaa',
+      runtimeId: 'aaa',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
     expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' });
   });
 
-  it('a higher version wins even against a greater clientId', async () => {
+  it('a higher version wins even against a greater runtimeId', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -170,13 +170,13 @@ describe('channel: last-write-wins convergence', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'blue' } },
       version: 1,
-      clientId: 'zzz',
+      runtimeId: 'zzz',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'green' } },
       version: 2,
-      clientId: 'aaa',
+      runtimeId: 'aaa',
     });
 
     await vi.waitFor(() =>
@@ -194,13 +194,13 @@ describe('channel: last-write-wins convergence', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'green' } },
       version: 2,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'red' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -219,19 +219,19 @@ describe('channel: multi-peer sync-start bootstrap', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { v: '1' } },
       version: 1,
-      clientId: 'p1',
+      runtimeId: 'p1',
     });
     channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { v: '3' } },
       version: 3,
-      clientId: 'p3',
+      runtimeId: 'p3',
     });
     channel.emitExternal(SERVICE_SYNC_START_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { v: '2' } },
       version: 2,
-      clientId: 'p2',
+      runtimeId: 'p2',
     });
 
     await vi.waitFor(() =>
@@ -251,7 +251,7 @@ describe('channel: deletion propagation', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { a: { k: 'v' }, b: { k: 'w' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     await vi.waitFor(() =>
       expect(service.queries.recordFields.get({ entryId: 'b' })).toEqual({ k: 'w' })
@@ -261,7 +261,7 @@ describe('channel: deletion propagation', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { a: { k: 'v' } },
       version: 2,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     await vi.waitFor(() => expect(service.queries.recordFields.get({ entryId: 'b' })).toBeNull());
@@ -285,7 +285,7 @@ describe('channel: untrusted payloads', () => {
         serviceId: mutableRecordLookupServiceDef.id,
         state: hostileState,
         version: 1,
-        clientId: 'attacker',
+        runtimeId: 'attacker',
       })
     ).not.toThrow();
 
@@ -305,12 +305,12 @@ describe('channel: untrusted payloads', () => {
     const malformed: unknown[] = [
       null,
       {},
-      { serviceId: mutableRecordLookupServiceDef.id, state: { a: { k: 'v' } }, clientId: 'p' },
+      { serviceId: mutableRecordLookupServiceDef.id, state: { a: { k: 'v' } }, runtimeId: 'p' },
       {
         serviceId: mutableRecordLookupServiceDef.id,
         state: 'not-an-object',
         version: 1,
-        clientId: 'p',
+        runtimeId: 'p',
       },
     ];
 
@@ -339,7 +339,7 @@ describe('channel: relay role (leaf)', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { item: { color: 'red' } },
       version: 1,
-      clientId: 'peer-1',
+      runtimeId: 'peer-1',
     });
 
     expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'red' });
@@ -358,7 +358,7 @@ describe('channel: disconnect on unregister', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { entry: { marker: 'before' } },
       version: 1,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
     await vi.waitFor(() =>
       expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({
@@ -376,7 +376,7 @@ describe('channel: disconnect on unregister', () => {
       serviceId: mutableRecordLookupServiceDef.id,
       state: { entry: { marker: 'after' } },
       version: 2,
-      clientId: 'peer',
+      runtimeId: 'peer',
     });
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'before' });

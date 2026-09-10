@@ -650,7 +650,12 @@ Creates a local `ServiceRuntime` from the service definition (identical across r
 
 ### Loop prevention
 
-Every channel event carries the emitter's `clientId` (generated per `registerService` call). Listeners silently ignore events whose `clientId` matches their own, so peers never re-apply state they just emitted.
+Every channel event that names a writer carries a `runtimeId` generated per `registerService` call.
+Loop prevention is not a single self-id check:
+
+- `services:sync-start` is ignored when its `runtimeId` matches the listener's own, so a runtime does not reply to itself.
+- `services:patches` and `services:sync-start-reply` drop echoes through last-write-wins stamp ordering (`isNewer`). A relay may re-emit a patch under an adopted peer `runtimeId`; that copy is still dropped when the stamp is not strictly newer.
+- Command replies correlate on `callId`, not on `runtimeId`.
 
 ### State application without re-broadcast
 
@@ -731,14 +736,14 @@ several services routes them correctly.
 
 | Event | Direction | Payload |
 | ---------------------------- | -------------------------- | ----------------------------------------------------- |
-| `services:command-invoke`    | requester → implementers   | `{ serviceId, commandName, input, callId, clientId }` |
-| `services:command-ack`       | implementer → requester    | `{ serviceId, callId, clientId }`                     |
-| `services:command-result`    | implementer → requester    | `{ serviceId, callId, result, clientId }`             |
-| `services:command-error`     | implementer → requester    | `{ serviceId, callId, error, clientId }`              |
-| `services:command-unhandled` | non-implementer → requester | `{ serviceId, callId, clientId }`                     |
+| `services:command-invoke`    | requester → implementers   | `{ serviceId, commandName, input, callId, runtimeId }` |
+| `services:command-ack`       | implementer → requester    | `{ serviceId, callId, runtimeId }`                     |
+| `services:command-result`    | implementer → requester    | `{ serviceId, callId, result, runtimeId }`             |
+| `services:command-error`     | implementer → requester    | `{ serviceId, callId, error, runtimeId }`              |
+| `services:command-unhandled` | non-implementer → requester | `{ serviceId, callId }`                     |
 
 - `callId` is the per-invocation correlation id (see [Correlation and parallel calls](#correlation-and-parallel-calls)).
-- `clientId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
+- `runtimeId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
   responder on a reply.
 - `error` is a transport-safe serialization of the thrown value, including its full `cause` chain (and
   arrays such as the `.loaded()` drain's `cause.aggregated`) plus Storybook fields like
@@ -778,7 +783,7 @@ where the handler lives.
 
 ### Correlation and parallel calls
 
-`callId` is generated fresh (`generateClientId()`) for **every** call, so it is effectively a unique
+`callId` is generated fresh (`generateCallId()`) for **every** call, so it is effectively a unique
 execution id. This is what makes concurrent calls safe:
 
 - Two parallel calls — even with identical input — get two distinct `callId`s, two `pending` promise

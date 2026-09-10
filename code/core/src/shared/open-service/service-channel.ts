@@ -51,7 +51,7 @@ const stateSnapshotSchema = v.custom<Record<string, unknown>>(
 /** Sent by a newly-registered peer to initialize its state from any existing peer. */
 export const syncStartSchema = v.object({
   serviceId: v.string(),
-  clientId: v.string(),
+  runtimeId: v.string(),
 });
 export type SyncStartPayload = v.InferOutput<typeof syncStartSchema>;
 
@@ -65,7 +65,7 @@ export const stampedSnapshotSchema = v.object({
   serviceId: v.string(),
   state: stateSnapshotSchema,
   version: v.pipe(v.number(), v.safeInteger(), v.minValue(0)),
-  clientId: v.string(),
+  runtimeId: v.string(),
 });
 export type StampedSnapshotPayload = v.InferOutput<typeof stampedSnapshotSchema>;
 export type PatchesPayload = StampedSnapshotPayload;
@@ -83,7 +83,7 @@ export const commandInvokeSchema = v.object({
   commandName: v.string(),
   input: v.optional(v.unknown()),
   callId: v.string(),
-  clientId: v.string(),
+  runtimeId: v.string(),
 });
 export type CommandInvokePayload = v.InferOutput<typeof commandInvokeSchema>;
 
@@ -97,7 +97,7 @@ export type CommandInvokePayload = v.InferOutput<typeof commandInvokeSchema>;
 export const commandAckSchema = v.object({
   serviceId: v.string(),
   callId: v.string(),
-  clientId: v.string(),
+  runtimeId: v.string(),
 });
 export type CommandAckPayload = v.InferOutput<typeof commandAckSchema>;
 
@@ -109,7 +109,6 @@ export type CommandAckPayload = v.InferOutput<typeof commandAckSchema>;
 export const commandUnhandledSchema = v.object({
   serviceId: v.string(),
   callId: v.string(),
-  clientId: v.string(),
 });
 export type CommandUnhandledPayload = v.InferOutput<typeof commandUnhandledSchema>;
 
@@ -118,7 +117,7 @@ export const commandResultSchema = v.object({
   serviceId: v.string(),
   callId: v.string(),
   result: v.optional(v.unknown()),
-  clientId: v.string(),
+  runtimeId: v.string(),
 });
 export type CommandResultPayload = v.InferOutput<typeof commandResultSchema>;
 
@@ -133,17 +132,22 @@ export const commandErrorSchema = v.object({
   error: v.custom<SerializedError>(
     (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
   ),
-  clientId: v.string(),
+  runtimeId: v.string(),
 });
 export type CommandErrorPayload = v.InferOutput<typeof commandErrorSchema>;
 
 /**
- * Generates a unique id for one runtime instance (and for one remote-command `callId`).
+ * Unique id for one service registration.
  *
- * The id is identity-critical: it is the last-write-wins tiebreak for equal versions, the loop guard
- * that drops a peer's own echoes, and the correlation key matching command replies to their calls.
- * `nanoid` is used (over `Math.random`) so collisions cannot silently break that determinism.
+ * It is the last-write-wins tiebreak for equal versions and the loop guard that drops a runtime's
+ * own `services:sync-start`. `nanoid` is used (over `Math.random`) so collisions cannot silently
+ * break that determinism.
  */
-export function generateClientId(): string {
+export function generateRuntimeId(): string {
+  return nanoid();
+}
+
+/** Unique id for one remote-command invocation. Replies correlate on this, not on `runtimeId`. */
+export function generateCallId(): string {
   return nanoid();
 }

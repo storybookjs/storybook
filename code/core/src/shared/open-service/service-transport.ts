@@ -56,7 +56,7 @@ import {
   commandInvokeSchema,
   commandResultSchema,
   commandUnhandledSchema,
-  generateClientId,
+  generateCallId,
   stampedSnapshotSchema,
   syncStartSchema,
 } from './service-channel.ts';
@@ -100,7 +100,7 @@ interface RuntimeTransportContext {
   /** Id of the service these helpers act for; stamped on every emitted envelope. */
   serviceId: ServiceId;
   /** This runtime's stable id, used to drop its own bootstrap request and its own echoes. */
-  ownClientId: string;
+  ownRuntimeId: string;
   /** The reconciler owning this runtime's LWW stamp and its adopt/advance transitions. */
   reconciler: SnapshotReconciler;
   /** Reads the runtime's current live state at emit time. */
@@ -120,7 +120,7 @@ export function wrapCommandsForBroadcast(
   commands: Record<string, RuntimeCommand>,
   context: RuntimeTransportContext & { channel: ServiceChannel }
 ): Record<string, RuntimeCommand> {
-  const { serviceId, ownClientId, reconciler, getSnapshot, channel } = context;
+  const { serviceId, ownRuntimeId, reconciler, getSnapshot, channel } = context;
 
   return Object.fromEntries(
     Object.entries(commands).map(([name, cmd]) => [
@@ -130,13 +130,13 @@ export function wrapCommandsForBroadcast(
 
         // A local command makes this runtime the new author: advance the stamp BEFORE emitting so the
         // broadcast bouncing back to us is recognized as not-newer (equal stamp) and dropped.
-        const stamp = reconciler.advanceLocal(ownClientId);
+        const stamp = reconciler.advanceLocal(ownRuntimeId);
 
         channel.emit(SERVICE_PATCHES, {
           serviceId,
           state: getSnapshot(),
           version: stamp.version,
-          clientId: stamp.clientId,
+          runtimeId: stamp.runtimeId,
         } satisfies PatchesPayload);
 
         return result;
@@ -160,12 +160,12 @@ export function wrapCommandsForBroadcast(
 export function connectRuntimeToChannel(
   context: RuntimeTransportContext & { channel: ServiceChannel; relay: boolean }
 ): () => void {
-  const { serviceId, ownClientId, reconciler, getSnapshot, channel, relay } = context;
+  const { serviceId, ownRuntimeId, reconciler, getSnapshot, channel, relay } = context;
 
   const emitSyncStart = (): void => {
     channel.emit(SERVICE_SYNC_START, {
       serviceId,
-      clientId: ownClientId,
+      runtimeId: ownRuntimeId,
     } satisfies SyncStartPayload);
   };
 
@@ -177,17 +177,17 @@ export function connectRuntimeToChannel(
       serviceId,
       state: getSnapshot(),
       version: reconciler.stamp.version,
-      clientId: reconciler.stamp.clientId,
+      runtimeId: reconciler.stamp.runtimeId,
     } satisfies PatchesPayload);
   };
 
   const adoptPeerSnapshot = (snapshot: {
     version: number;
-    clientId: string;
+    runtimeId: string;
     state: Record<string, unknown>;
   }): boolean => {
     const adopted = reconciler.tryAdopt(
-      { version: snapshot.version, clientId: snapshot.clientId },
+      { version: snapshot.version, runtimeId: snapshot.runtimeId },
       snapshot.state
     );
 
@@ -199,13 +199,13 @@ export function connectRuntimeToChannel(
   };
 
   // Reply to a peer's sync-start with our current snapshot+stamp (which may be one we adopted from yet
-  // another peer, not necessarily our own clientId). Skip our own bootstrap request.
+  // another peer, not necessarily our own runtimeId). Skip our own bootstrap request.
   const onSyncStart = (payload: unknown): void => {
     const request = v.safeParse(syncStartSchema, payload);
     if (
       !request.success ||
       request.output.serviceId !== serviceId ||
-      request.output.clientId === ownClientId
+      request.output.runtimeId === ownRuntimeId
     ) {
       return;
     }
@@ -214,7 +214,7 @@ export function connectRuntimeToChannel(
       serviceId,
       state: getSnapshot(),
       version: reconciler.stamp.version,
-      clientId: reconciler.stamp.clientId,
+      runtimeId: reconciler.stamp.runtimeId,
     } satisfies SyncStartReplyPayload);
   };
 
@@ -229,7 +229,7 @@ export function connectRuntimeToChannel(
   };
 
   // Apply patches from peers. The version gate drops echoes of our own broadcast and any
-  // already-applied snapshot, so no explicit self-clientId check is needed here.
+  // already-applied snapshot, so no explicit self-runtimeId check is needed here.
   const onPatches = (payload: unknown): void => {
     const snapshot = v.safeParse(stampedSnapshotSchema, payload);
     if (!snapshot.success || snapshot.output.serviceId !== serviceId) {
@@ -316,7 +316,7 @@ export function connectCommandTransport(context: {
   /** Id of the service these commands belong to; stamped on every emitted envelope. */
   serviceId: ServiceId;
   /** This runtime's stable id, stamped on replies so peers know who answered. */
-  ownClientId: string;
+  ownRuntimeId: string;
   channel: ServiceChannel;
   /**
    * Broadcast-wrapped local commands keyed by name. Only entries in {@link implementedCommandNames}
@@ -332,7 +332,7 @@ export function connectCommandTransport(context: {
 }): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
   const {
     serviceId,
-    ownClientId,
+    ownRuntimeId,
     channel,
     localCommands,
     implementedCommandNames,
@@ -370,11 +370,10 @@ export function connectCommandTransport(context: {
       // A hosted service without this command's handler is a positive config-drift signal for a
       // delegated caller. A delegated runtime answers no invokes, and a runtime that requested a
       // command remotely must not report its own echo.
-      if (!delegated && invoke.clientId !== ownClientId) {
+      if (!delegated && invoke.runtimeId !== ownRuntimeId) {
         channel.emit(SERVICE_COMMAND_UNHANDLED, {
           serviceId,
           callId: invoke.callId,
-          clientId: ownClientId,
         } satisfies CommandUnhandledPayload);
       }
       return;
@@ -383,7 +382,7 @@ export function connectCommandTransport(context: {
     channel.emit(SERVICE_COMMAND_ACK, {
       serviceId,
       callId: invoke.callId,
-      clientId: ownClientId,
+      runtimeId: ownRuntimeId,
     } satisfies CommandAckPayload);
 
     // On an async channel the emitted ack still needs an event-loop turn to reach the wire, so the
@@ -401,7 +400,7 @@ export function connectCommandTransport(context: {
               serviceId,
               callId: invoke.callId,
               result,
-              clientId: ownClientId,
+              runtimeId: ownRuntimeId,
             } satisfies CommandResultPayload);
           },
           (error: unknown) => {
@@ -409,7 +408,7 @@ export function connectCommandTransport(context: {
               serviceId,
               callId: invoke.callId,
               error: serializeError(error),
-              clientId: ownClientId,
+              runtimeId: ownRuntimeId,
             } satisfies CommandErrorPayload);
           }
         );
@@ -472,7 +471,7 @@ export function connectCommandTransport(context: {
   channel.on(SERVICE_COMMAND_UNHANDLED, onUnhandled);
 
   const requestRemote = (commandName: string, input: unknown): Promise<unknown> => {
-    const callId = generateClientId();
+    const callId = generateCallId();
 
     return new Promise<unknown>((resolve, reject) => {
       // Reject if no peer acknowledges in time. See REMOTE_COMMAND_ACK_TIMEOUT_MS for the
@@ -495,7 +494,7 @@ export function connectCommandTransport(context: {
         commandName,
         input,
         callId,
-        clientId: ownClientId,
+        runtimeId: ownRuntimeId,
       } satisfies CommandInvokePayload);
     });
   };
@@ -544,7 +543,6 @@ export function connectUnknownServiceReporter(context: {
   isDelegated: () => boolean;
 }): () => void {
   const { channel, isServiceRegistered, isDelegated } = context;
-  const ownClientId = generateClientId();
 
   const onInvoke = (payload: unknown): void => {
     const parsed = v.safeParse(commandInvokeSchema, payload);
@@ -555,7 +553,6 @@ export function connectUnknownServiceReporter(context: {
     channel.emit(SERVICE_COMMAND_UNHANDLED, {
       serviceId: parsed.output.serviceId,
       callId: parsed.output.callId,
-      clientId: ownClientId,
     } satisfies CommandUnhandledPayload);
   };
 
@@ -601,7 +598,7 @@ export function connectServiceToChannel(
 ): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
   const {
     serviceId,
-    ownClientId,
+    ownRuntimeId,
     reconciler,
     getSnapshot,
     channel,
@@ -617,7 +614,7 @@ export function connectServiceToChannel(
   // flows through the reconciler's `setState`, never these wrappers, so it never re-broadcasts.
   const broadcastCommands = wrapCommandsForBroadcast(commands, {
     serviceId,
-    ownClientId,
+    ownRuntimeId,
     reconciler,
     getSnapshot,
     channel,
@@ -627,7 +624,7 @@ export function connectServiceToChannel(
   // does not, the returned command routes the call to a peer that implements it.
   const commandTransport = connectCommandTransport({
     serviceId,
-    ownClientId,
+    ownRuntimeId,
     channel,
     localCommands: broadcastCommands,
     implementedCommandNames,
@@ -637,7 +634,7 @@ export function connectServiceToChannel(
 
   const disconnectSync = connectRuntimeToChannel({
     serviceId,
-    ownClientId,
+    ownRuntimeId,
     reconciler,
     getSnapshot,
     channel,

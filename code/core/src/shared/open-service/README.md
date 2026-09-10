@@ -79,8 +79,9 @@ Internal tests and implementation code may import from the individual modules di
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
 - [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to emit `services:entry`, wires the sync-start initialization + entry listeners (hub or leaf), and runs the remote-command-execution protocol
-- [json-patch.ts](./json-patch.ts): RFC 6902 apply-by-path used only by the reconciler (`add`/`replace` upsert, `remove` of missing is a no-op)
-- [service-sync.ts](./service-sync.ts): last-write-wins snapshot ordering, Vector + seen-stamp entry dedup, `applyStatePatch` for bootstrap/static snapshots, and the per-service reconciler
+- [json-patch.ts](./json-patch.ts): RFC 6902 apply-by-path; inverses are reverse apply order (`add`/`replace` upsert, `remove` of missing is a no-op). `parentAfterChild` orders recorder ops only.
+- [service-sync.ts](./service-sync.ts): last-write-wins snapshot ordering, Lamport Clock, Vector, ordered Log with undo/redo, `applyStatePatch` for bootstrap/static snapshots, and the per-service reconciler
+- [sync-simulation.test.ts](./sync-simulation.test.ts): deterministic topology and fault simulation over real channels and service runtimes (`sync-simulation/`).
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
@@ -657,8 +658,28 @@ Creates a local `ServiceRuntime` from the service definition (identical across r
 
 1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
 2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
-3. **After each local command that writes** — emits `services:entry` `{ serviceId, stamp: { runtimeId, counter }, command, patch }` where `patch` is an RFC 6902 document of the paths that command touched. A command that touches nothing emits nothing.
-4. **On incoming entries** — applies the patch by path via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
+3. **After each local command that writes** — emits `services:entry` `{ serviceId, stamp: { seq, runtimeId, counter }, command, patch }` where `patch` is an RFC 6902 document of the paths that command touched. A command that touches nothing emits nothing.
+4. **On incoming entries** — places the entry in the ordered Log (duplicate / later / earlier / gap / beyond-window) via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
+
+### Replay contract
+
+A `setState` recipe runs exactly once, on the runtime that called the command, against that runtime's state at that moment. What peers receive is the values it wrote, never the recipe. Peers place those writes in the shared canonical order, so when two runtimes write the same path concurrently, the canonically later write is what every runtime ends up holding. Read-modify-write inside a recipe (`state.n += 1`) is therefore safe only while one runtime writes that path; under concurrent writers one increment is lost, by design.
+
+The two escape hatches: make the server the sole writer of that path, or derive the value from other state.
+
+### Glossary
+
+- **Entry** — one stamp plus the forward ops it recorded plus the inverse ops computed locally when applied here. Inverses never leave the runtime.
+- **Log** — applied entries in canonical order, bounded by the window. An adopted bootstrap snapshot retires the Log. Incoming `seq` at or below that snapshot's `version` is treated as already folded in.
+- **Vector** — per `runtimeId`, the highest contiguous `counter` applied.
+- **Clock** — the Lamport high-water mark. It moves on incoming stamps (including duplicates and echoes), on local authoring, and on every observed bootstrap stamp (including snapshots that lose last-write-wins). After an accepted entry, snapshot `version` is at least the Clock.
+- **Frontier** — `{ vector, clock }`. Bootstrap replies will carry this in a later PR; today they still use `(version, runtimeId)`. After an accepted entry, `version` is at least the Clock; a joiner raises its Clock from that `version`.
+
+Canonical order is ascending `seq`, then ascending `runtimeId` with plain string comparison. The canonical stamp string is `${seq}:${runtimeId}:${counter}`.
+
+### History window
+
+An entry is retained while it is younger than 15 seconds **or** among the newest 256, whichever keeps it longer. Eviction is lazy on append. There is no byte cap. Bounds are a runtime option with those defaults; peers never need to agree on the window. The Vector never evicts. An incoming entry that sorts before the oldest retained entry is dropped and warned.
 
 ### Loop prevention
 
@@ -666,7 +687,7 @@ Every channel event that names a writer carries a `runtimeId` generated per `reg
 Loop prevention is not a single self-id check:
 
 - `services:sync-start` is ignored when its `runtimeId` matches the listener's own, so a runtime does not reply to itself.
-- `services:entry` drops a stamp that was already seen, or whose `counter` is at or below that writer's Vector (the highest contiguous counter applied). A hub that accepted the entry forwards the original payload object in receipt order; duplicates and entries it could not apply are not forwarded. The server websocket transport still echoes the author's own entry back once as one small frame, which the Vector drops.
+- `services:entry` drops a stamp that is already in the Log, or whose `counter` is at or below that writer's Vector. A hub that appended the entry to its Log forwards the original payload object in receipt order; duplicates and entries it could not place are not forwarded. The server websocket transport still echoes the author's own entry back once as one small frame, which the Log drops.
 - `services:sync-start-reply` drops echoes through last-write-wins stamp ordering (`isNewer`). A relay hub that adopts a bootstrap snapshot forwards the original reply payload.
 - Command replies correlate on `callId`, not on `runtimeId`.
 
@@ -676,7 +697,7 @@ Incoming state (from sync-start-reply or entries) is applied via `serviceRuntime
 
 ### `applyJsonPatch` and `applyStatePatch`
 
-Command entries apply through `applyJsonPatch` (in [json-patch.ts](./json-patch.ts)), which walks RFC 6901 pointers on the live state object. Documented deviations from RFC 6902: `add` and `replace` both upsert; `remove` of a missing key is a no-op with a debug log; a missing parent rolls the entry back inside its batch and warns, naming the service, stamp, path, and command. Incoming values are cloned. The schema accepts only `add` / `replace` / `remove` and rejects `move` / `copy` / `test`, malformed `~` escapes, `$`-prefixed segments (deepsignal-reserved), and the pointer segments `__proto__`, `constructor`, and `prototype`. The applier treats those same pointers as a missing parent so a schema bypass cannot throw or leave a partial apply. Unknown envelope fields are ignored.
+Command entries apply through `applyJsonPatch` (in [json-patch.ts](./json-patch.ts)), which walks RFC 6901 pointers on the live state object. Documented deviations from RFC 6902: `add` and `replace` both upsert; `remove` of a missing key is a no-op with a debug log; a missing parent rolls the entry back inside its batch and warns, naming the service, stamp, path, and command. Incoming values are cloned. Successful inverses are reverse apply order so nested removes restore the parent before the child. The schema accepts only `add` / `replace` / `remove` and rejects `move` / `copy` / `test`, malformed `~` escapes, `$`-prefixed segments (deepsignal-reserved), and the pointer segments `__proto__`, `constructor`, and `prototype`. The applier treats those same pointers as a missing parent so a schema bypass cannot throw or leave a partial apply. Unknown envelope fields are ignored.
 
 Bootstrap snapshots and static JSON still use `applyStatePatch` (in [service-sync.ts](./service-sync.ts)): it recursively merges plain-object values in place so subscriptions stay attached. Arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer snapshot replies pass `false` so deletions propagate; static JSON loading passes `true` because each static file is a partial snapshot. Static snapshot loading never touches the entry reconciler.
 
@@ -702,7 +723,7 @@ service.commands.foo()
 
 ### Server participation
 
-The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to emit `services:entry`, responds to sync-starts, applies incoming entries by path, and forwards every accepted entry (original payload, receipt order) so peers on its other transports converge. A relay hub forwards, unchanged and in receipt order, every `services:entry` it accepts; duplicates and entries it could not apply are not forwarded. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to emit `services:entry`, responds to sync-starts, applies incoming entries by path, and forwards every accepted entry (original payload, receipt order) so peers on its other transports converge. A relay hub forwards, unchanged and in receipt order, every `services:entry` it appends to its own log; duplicates and entries it could not place are not forwarded. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
 ## Remote Command Execution
 

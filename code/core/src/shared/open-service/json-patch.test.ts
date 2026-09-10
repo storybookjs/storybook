@@ -104,7 +104,7 @@ describe('applyJsonPatch', () => {
     const target = copy(before);
     const operation = { op, path, value } as JsonPatchOperation;
 
-    expect(applyJsonPatch(target, [operation], failOnUnexpectedMissingRemove)).toEqual({
+    expect(applyJsonPatch(target, [operation], failOnUnexpectedMissingRemove)).toMatchObject({
       ok: true,
     });
     expect(target).toEqual(after);
@@ -114,7 +114,9 @@ describe('applyJsonPatch', () => {
     const target: Record<string, unknown> = { n: 1 };
     const onMissingRemove = vi.fn();
 
-    expect(applyJsonPatch(target, [{ op: 'remove', path: '/missing' }], onMissingRemove)).toEqual({
+    expect(
+      applyJsonPatch(target, [{ op: 'remove', path: '/missing' }], onMissingRemove)
+    ).toMatchObject({
       ok: true,
     });
     expect(onMissingRemove).toHaveBeenCalledWith('/missing');
@@ -126,7 +128,7 @@ describe('applyJsonPatch', () => {
 
     expect(
       applyJsonPatch(target, [{ op: 'remove', path: '/a/n' }], failOnUnexpectedMissingRemove)
-    ).toEqual({ ok: true });
+    ).toMatchObject({ ok: true });
     expect(target).toEqual({ a: { m: 2 }, keep: true });
   });
 
@@ -331,11 +333,87 @@ describe('applyJsonPatch on a live deepsignal store', () => {
         ],
         failOnUnexpectedMissingRemove
       )
-    ).toEqual({ ok: true });
+    ).toMatchObject({ ok: true });
 
     const components = state.components as Record<string, { argTypes: Record<string, unknown> }>;
     expect(components['button-component'].argTypes.e2eDocgenHotUpdateProp).toEqual({
       name: 'e2eDocgenHotUpdateProp',
+    });
+  });
+});
+
+describe('applyJsonPatch inverses', () => {
+  it('inverts add to remove and replace to replace with the previous value', () => {
+    const target: Record<string, unknown> = { n: 1 };
+
+    const result = applyJsonPatch(
+      target,
+      [
+        { op: 'replace', path: '/n', value: 2 },
+        { op: 'add', path: '/m', value: 3 },
+      ],
+      failOnUnexpectedMissingRemove
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      inverse: [
+        { op: 'remove', path: '/m' },
+        { op: 'replace', path: '/n', value: 1 },
+      ],
+    });
+  });
+
+  it('inverts nested removes so the parent is restored before the child', () => {
+    const target: Record<string, unknown> = { a: { b: 1 } };
+
+    const result = applyJsonPatch(
+      target,
+      [
+        { op: 'remove', path: '/a/b' },
+        { op: 'remove', path: '/a' },
+      ],
+      failOnUnexpectedMissingRemove
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      inverse: [
+        { op: 'add', path: '/a', value: {} },
+        { op: 'add', path: '/a/b', value: 1 },
+      ],
+    });
+    expect(target).toEqual({});
+    expect(
+      applyJsonPatch(target, result.ok ? result.inverse : [], failOnUnexpectedMissingRemove)
+    ).toEqual({
+      ok: true,
+      inverse: [
+        { op: 'remove', path: '/a/b' },
+        { op: 'remove', path: '/a' },
+      ],
+    });
+    expect(target).toEqual({ a: { b: 1 } });
+  });
+
+  it('orders inverse ops so children run before parents', () => {
+    const target: Record<string, unknown> = {};
+
+    const result = applyJsonPatch(
+      target,
+      [
+        { op: 'add', path: '/a', value: {} },
+        { op: 'add', path: '/a/b', value: 1 },
+      ],
+      failOnUnexpectedMissingRemove
+    );
+
+    expect(result).toEqual({
+      ok: true,
+      inverse: [
+        { op: 'remove', path: '/a/b' },
+        { op: 'remove', path: '/a' },
+      ],
     });
   });
 });

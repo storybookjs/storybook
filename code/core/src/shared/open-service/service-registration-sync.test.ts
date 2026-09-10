@@ -87,12 +87,12 @@ function peerEntry(
   patch: Array<
     { op: 'add' | 'replace'; path: string; value: unknown } | { op: 'remove'; path: string }
   >,
-  stamp: { runtimeId: string; counter: number },
+  stamp: { runtimeId: string; counter: number; seq?: number },
   extras: Record<string, unknown> = {}
 ) {
   return {
     serviceId,
-    stamp,
+    stamp: { seq: stamp.seq ?? stamp.counter, runtimeId: stamp.runtimeId, counter: stamp.counter },
     command: 'assignRecordField',
     patch,
     ...extras,

@@ -11,7 +11,7 @@ import {
 
 const validEntry = {
   serviceId: 'svc',
-  stamp: { runtimeId: 'writer', counter: 1 },
+  stamp: { seq: 1, runtimeId: 'writer', counter: 1 },
   command: 'setValue',
   patch: [{ op: 'replace' as const, path: '/n', value: 1 }],
 };
@@ -77,8 +77,16 @@ describe('entrySchema', () => {
   it('rejects an empty patch, counter 0, and a missing stamp', () => {
     expect(v.safeParse(entrySchema, { ...validEntry, patch: [] }).success).toBe(false);
     expect(
-      v.safeParse(entrySchema, { ...validEntry, stamp: { runtimeId: 'writer', counter: 0 } })
-        .success
+      v.safeParse(entrySchema, {
+        ...validEntry,
+        stamp: { seq: 1, runtimeId: 'writer', counter: 0 },
+      }).success
+    ).toBe(false);
+    expect(
+      v.safeParse(entrySchema, {
+        ...validEntry,
+        stamp: { seq: 0, runtimeId: 'writer', counter: 1 },
+      }).success
     ).toBe(false);
     expect(
       v.safeParse(entrySchema, { serviceId: 'svc', command: 'setValue', patch: validEntry.patch })

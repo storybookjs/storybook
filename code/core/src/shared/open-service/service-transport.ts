@@ -133,13 +133,17 @@ export function wrapCommandsForBroadcast(
       async (input: unknown): Promise<unknown> => {
         const collector = createPatchCollector();
         const result = await cmd(input, collector);
-        const ops = collector.flush();
+        const { ops, inverse } = collector.flushRecorded();
 
         if (ops.length === 0) {
           return result;
         }
 
-        const stamp = reconciler.advanceLocal(ownRuntimeId);
+        const stamp = reconciler.advanceLocal(ownRuntimeId, {
+          command: name,
+          patch: ops,
+          inverse,
+        });
         channel.emit(SERVICE_ENTRY, {
           serviceId,
           stamp,

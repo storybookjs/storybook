@@ -8,16 +8,31 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
-import {
-  SERVICE_PATCHES,
-  SERVICE_SYNC_START_REPLY,
-  SERVICE_SYNC_START,
-} from './service-channel.ts';
+import { SERVICE_ENTRY, SERVICE_SYNC_START_REPLY, SERVICE_SYNC_START } from './service-channel.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const createMockChannel = createTestChannel;
 const installChannel = installTestChannel;
+
+function peerEntry(
+  serviceId: string,
+  patch: Array<
+    { op: 'add' | 'replace'; path: string; value: unknown } | { op: 'remove'; path: string }
+  >,
+  stamp: { runtimeId: string; counter: number }
+) {
+  return {
+    serviceId,
+    stamp,
+    command: 'assignRecordField',
+    patch,
+  };
+}
+
+function entryEmits(channel: ReturnType<typeof createMockChannel>) {
+  return channel.emit.mock.calls.filter(([event]) => event === SERVICE_ENTRY);
+}
 
 afterEach(() => {
   clearRegistry();
@@ -64,7 +79,7 @@ describe('channel: sync-start initialization (leaf)', () => {
     );
   });
 
-  it('converges via patches when a sync-start-reply carried stale v0 state', async () => {
+  it('converges via entries when a sync-start-reply carried stale v0 state', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -79,12 +94,17 @@ describe('channel: sync-start initialization (leaf)', () => {
       runtimeId: 'early-hub',
     });
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { 'entry-stale': { marker: 'v1' } },
-      version: 1,
-      runtimeId: 'early-hub',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/entry-stale', value: { marker: 'v1' } }],
+        {
+          runtimeId: 'early-hub',
+          counter: 1,
+        }
+      )
+    );
 
     expect(preview.queries.recordFields.get({ entryId: 'entry-stale' })).toEqual({
       marker: 'v1',
@@ -92,8 +112,8 @@ describe('channel: sync-start initialization (leaf)', () => {
   });
 });
 
-describe('channel: patch broadcast (leaf)', () => {
-  it('does not re-apply its own patch echo (loop prevention)', async () => {
+describe('channel: entry broadcast (leaf)', () => {
+  it('does not re-apply its own entry echo (loop prevention)', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -112,96 +132,86 @@ describe('channel: patch broadcast (leaf)', () => {
   });
 });
 
-describe('channel: last-write-wins convergence', () => {
-  it('converges on the higher runtimeId for concurrent (equal-version) writes', async () => {
+describe('channel: entry apply', () => {
+  it('keeps writes to different keys from two writers', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'red' } },
-      version: 1,
-      runtimeId: 'aaa',
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/red', value: { color: 'red' } }],
+        { runtimeId: 'aaa', counter: 1 }
+      )
+    );
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/blue', value: { color: 'blue' } }],
+        { runtimeId: 'zzz', counter: 1 }
+      )
+    );
+
+    await vi.waitFor(() => {
+      expect(service.queries.recordFields.get({ entryId: 'red' })).toEqual({ color: 'red' });
+      expect(service.queries.recordFields.get({ entryId: 'blue' })).toEqual({ color: 'blue' });
     });
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'blue' } },
-      version: 1,
-      runtimeId: 'zzz',
-    });
+  });
+
+  it('applies same-path writes in arrival order', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(mutableRecordLookupServiceDef);
+
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/item', value: { color: 'red' } }],
+        { runtimeId: 'aaa', counter: 1 }
+      )
+    );
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'replace', path: '/item', value: { color: 'blue' } }],
+        { runtimeId: 'zzz', counter: 1 }
+      )
+    );
 
     await vi.waitFor(() =>
       expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' })
     );
   });
 
-  it('converges on the same winner regardless of arrival order', async () => {
+  it('drops a duplicate stamp after it was applied', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'blue' } },
-      version: 1,
-      runtimeId: 'zzz',
-    });
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'red' } },
-      version: 1,
-      runtimeId: 'aaa',
-    });
-
-    await new Promise<void>((resolve) => setTimeout(resolve, 10));
-    expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'blue' });
-  });
-
-  it('a higher version wins even against a greater runtimeId', async () => {
-    const channel = createMockChannel();
-    installChannel(channel);
-
-    const service = registerService(mutableRecordLookupServiceDef);
-
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'blue' } },
-      version: 1,
-      runtimeId: 'zzz',
-    });
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'green' } },
-      version: 2,
-      runtimeId: 'aaa',
-    });
-
-    await vi.waitFor(() =>
-      expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'green' })
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/item', value: { color: 'green' } }],
+        { runtimeId: 'peer', counter: 1 }
+      )
     );
-  });
-
-  it('drops a stale (lower-version) patch arriving after a newer one', async () => {
-    const channel = createMockChannel();
-    installChannel(channel);
-
-    const service = registerService(mutableRecordLookupServiceDef);
-
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'green' } },
-      version: 2,
-      runtimeId: 'peer',
-    });
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'red' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/item', value: { color: 'red' } }],
+        { runtimeId: 'peer', counter: 1 }
+      )
+    );
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
     expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'green' });
@@ -241,28 +251,34 @@ describe('channel: multi-peer sync-start bootstrap', () => {
 });
 
 describe('channel: deletion propagation', () => {
-  it('deletes keys that are absent from a newer snapshot', async () => {
+  it('deletes keys removed by a later entry', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { a: { k: 'v' }, b: { k: 'w' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [
+          { op: 'add', path: '/a', value: { k: 'v' } },
+          { op: 'add', path: '/b', value: { k: 'w' } },
+        ],
+        { runtimeId: 'peer', counter: 1 }
+      )
+    );
     await vi.waitFor(() =>
       expect(service.queries.recordFields.get({ entryId: 'b' })).toEqual({ k: 'w' })
     );
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { a: { k: 'v' } },
-      version: 2,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(mutableRecordLookupServiceDef.id, [{ op: 'remove', path: '/b' }], {
+        runtimeId: 'peer',
+        counter: 2,
+      })
+    );
 
     await vi.waitFor(() => expect(service.queries.recordFields.get({ entryId: 'b' })).toBeNull());
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
@@ -270,33 +286,31 @@ describe('channel: deletion propagation', () => {
 });
 
 describe('channel: untrusted payloads', () => {
-  it('does not pollute Object.prototype from a hostile snapshot', async () => {
+  it('rejects a hostile pointer path without mutating state', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    const hostileState = JSON.parse(
-      '{"good":{"k":"v"},"__proto__":{"polluted":"yes"},"constructor":{"polluted":"yes"}}'
-    );
-
     expect(() =>
-      channel.emitExternal(SERVICE_PATCHES, {
+      channel.emitExternal(SERVICE_ENTRY, {
         serviceId: mutableRecordLookupServiceDef.id,
-        state: hostileState,
-        version: 1,
-        runtimeId: 'attacker',
+        stamp: { runtimeId: 'attacker', counter: 1 },
+        command: 'assignRecordField',
+        patch: [
+          { op: 'add', path: '/good', value: { k: 'v' } },
+          { op: 'add', path: '/__proto__/polluted', value: 'yes' },
+        ],
       })
     ).not.toThrow();
 
-    await vi.waitFor(() =>
-      expect(service.queries.recordFields.get({ entryId: 'good' })).toEqual({ k: 'v' })
-    );
+    await new Promise<void>((resolve) => setTimeout(resolve, 10));
+    expect(service.queries.recordFields.get({ entryId: 'good' })).toBeNull();
     expect(({} as Record<string, unknown>).polluted).toBeUndefined();
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
   });
 
-  it('drops malformed sync-start-reply and patch payloads without mutating state', async () => {
+  it('drops malformed sync-start-reply and entry payloads without mutating state', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -315,7 +329,7 @@ describe('channel: untrusted payloads', () => {
     ];
 
     for (const payload of malformed) {
-      expect(() => channel.emitExternal(SERVICE_PATCHES, payload)).not.toThrow();
+      expect(() => channel.emitExternal(SERVICE_ENTRY, payload)).not.toThrow();
       expect(() => channel.emitExternal(SERVICE_SYNC_START_REPLY, payload)).not.toThrow();
     }
 
@@ -325,41 +339,41 @@ describe('channel: untrusted payloads', () => {
 });
 
 describe('channel: relay role (leaf)', () => {
-  function patchEmits(channel: ReturnType<typeof createMockChannel>) {
-    return channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
-  }
-
-  it('adopts a peer patch but never re-broadcasts it', () => {
+  it('adopts a peer entry but never re-broadcasts it', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { item: { color: 'red' } },
-      version: 1,
-      runtimeId: 'peer-1',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/item', value: { color: 'red' } }],
+        { runtimeId: 'peer-1', counter: 1 }
+      )
+    );
 
     expect(service.queries.recordFields.get({ entryId: 'item' })).toEqual({ color: 'red' });
-    expect(patchEmits(channel)).toHaveLength(0);
+    expect(entryEmits(channel)).toHaveLength(0);
   });
 });
 
 describe('channel: disconnect on unregister', () => {
-  it('detaches listeners and ignores later peer patches', async () => {
+  it('detaches listeners and ignores later peer entries', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { entry: { marker: 'before' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/entry', value: { marker: 'before' } }],
+        { runtimeId: 'peer', counter: 1 }
+      )
+    );
     await vi.waitFor(() =>
       expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({
         marker: 'before',
@@ -370,14 +384,16 @@ describe('channel: disconnect on unregister', () => {
 
     expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_ENTRY, expect.any(Function));
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: mutableRecordLookupServiceDef.id,
-      state: { entry: { marker: 'after' } },
-      version: 2,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(
+        mutableRecordLookupServiceDef.id,
+        [{ op: 'add', path: '/entry', value: { marker: 'after' } }],
+        { runtimeId: 'peer', counter: 2 }
+      )
+    );
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'before' });
   });

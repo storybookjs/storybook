@@ -13,7 +13,7 @@ import {
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
   SERVICE_COMMAND_UNHANDLED,
-  SERVICE_PATCHES,
+  SERVICE_ENTRY,
   type CommandInvokePayload,
 } from './service-channel.ts';
 import { defineService } from './service-definition.ts';
@@ -145,11 +145,11 @@ describe('delegated command dispatch', () => {
       callId,
       runtimeId: 'peer',
     });
-    channel.emitExternal(SERVICE_PATCHES, {
+    channel.emitExternal(SERVICE_ENTRY, {
       serviceId: mutableRecordLookupServiceDef.id,
-      state: { a: { k: 'v' } },
-      version: 1,
-      runtimeId: 'peer',
+      stamp: { runtimeId: 'peer', counter: 1 },
+      command: 'assignRecordField',
+      patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: mutableRecordLookupServiceDef.id,
@@ -283,11 +283,11 @@ describe('delegated thin loads', () => {
       callId: invoke.callId,
       runtimeId: 'peer',
     });
-    channel.emitExternal(SERVICE_PATCHES, {
+    channel.emitExternal(SERVICE_ENTRY, {
       serviceId: thinLoadServiceDef.id,
-      state: { components: { button: 'extracted-on-peer' } },
-      version: 1,
-      runtimeId: 'peer',
+      stamp: { runtimeId: 'peer', counter: 1 },
+      command: 'extractDocgen',
+      patch: [{ op: 'add', path: '/components/button', value: 'extracted-on-peer' }],
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: thinLoadServiceDef.id,

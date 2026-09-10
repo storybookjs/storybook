@@ -15,12 +15,10 @@
 import { batch } from '@preact/signals-core';
 import { peek } from 'deepsignal/core';
 
-const FORBIDDEN_KEYS = new Set(['__proto__', 'constructor', 'prototype']);
+import { clonePlain, hasOwn, isReservedKey } from './plain-object.ts';
+import { encodePointer, type JsonPatchOperation } from './service-channel.ts';
 
-export type RecordedOp =
-  | { op: 'add'; path: string; value: unknown }
-  | { op: 'replace'; path: string; value: unknown }
-  | { op: 'remove'; path: string };
+export type RecordedOp = JsonPatchOperation;
 
 export type PatchCollector = {
   record<T extends object>(state: T, mutate: (state: T) => void): void;
@@ -38,39 +36,8 @@ type ArrayRoot = {
   target: object;
 };
 
-export function toJsonPointer(segments: readonly string[]): string {
-  return `/${segments.map(escapePointerSegment).join('/')}`;
-}
-
-function escapePointerSegment(segment: string): string {
-  return segment.replaceAll('~', '~0').replaceAll('/', '~1');
-}
-
 function peekProp(obj: object, key: string): unknown {
   return peek(obj as never, key as never);
-}
-
-function cloneAssigned(value: unknown): unknown {
-  if (value === null || typeof value !== 'object') {
-    return value;
-  }
-
-  if (Array.isArray(value)) {
-    return value.map((entry) => cloneAssigned(entry));
-  }
-
-  const copy: Record<string, unknown> = {};
-  for (const key of Object.keys(value as object)) {
-    if (FORBIDDEN_KEYS.has(key)) {
-      continue;
-    }
-    copy[key] = cloneAssigned((value as Record<string, unknown>)[key]);
-  }
-  return copy;
-}
-
-function hasOwn(obj: object, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
 function isPrimitive(value: unknown): boolean {
@@ -117,7 +84,7 @@ export function createPatchCollector(): PatchCollector {
   let root: object | undefined;
 
   const note = (touch: Touch): void => {
-    const pointer = toJsonPointer(touch.segments);
+    const pointer = encodePointer(touch.segments);
     if (touches.has(pointer)) {
       return;
     }
@@ -143,7 +110,7 @@ export function createPatchCollector(): PatchCollector {
         // Assigning a draft shares the live object; external values are cloned.
         return target;
       }
-      return cloneAssigned(value);
+      return clonePlain(value);
     }
     return value;
   };
@@ -195,7 +162,7 @@ export function createPatchCollector(): PatchCollector {
         }
 
         const name = String(key);
-        if (name.startsWith('$') || FORBIDDEN_KEYS.has(name)) {
+        if (isReservedKey(name)) {
           return true;
         }
 
@@ -230,7 +197,7 @@ export function createPatchCollector(): PatchCollector {
         }
 
         const name = String(key);
-        if (name.startsWith('$') || FORBIDDEN_KEYS.has(name)) {
+        if (isReservedKey(name)) {
           return true;
         }
 
@@ -284,7 +251,7 @@ export function createPatchCollector(): PatchCollector {
           if (index === 0) {
             return false;
           }
-          return touched.has(toJsonPointer(touch.segments.slice(0, index)));
+          return touched.has(encodePointer(touch.segments.slice(0, index)));
         });
         if (hasTouchedAncestor) {
           continue;
@@ -305,7 +272,7 @@ export function createPatchCollector(): PatchCollector {
         ops.push({
           op: touch.existed ? 'replace' : 'add',
           path: pointer,
-          value: cloneAssigned(value),
+          value: clonePlain(value),
         });
       }
 

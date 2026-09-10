@@ -8,15 +8,19 @@ sidebar:
 We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 11.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 10.x to 11.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 10.0](../../../release-10-6/docs/addons/addon-migration-guide.mdx).
 
 <Callout variant="info">
-We also have a general [Storybook migration guide](../releases/migration-guide.mdx) that covers updates to your Storybook instance rather than your addon code.
+  We also have a general [Storybook migration guide](../releases/migration-guide.mdx) that covers
+  updates to your Storybook instance rather than your addon code.
 </Callout>
 
-<Callout variant="prompt" action={{
-  "label": "Copy prompt",
-  "event": "copy_addon_migration_prompt",
-  "copy": "In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using https://storybook.js.org/docs/11/addons/addon-migration-guide.md. Addon repositories usually contain a local Storybook instance. Migrate it using https://storybook.js.org/docs/11/releases/migration-guide.md. In case the local repository does not align well with the content of the migration guide, use the https://github.com/storybookjs/addon-kit repository as a reference implementation. Create a PR for the user to review."
-}}>
-Use this prompt with your AI assistant to migrate your addon.
+<Callout
+  variant="prompt"
+  action={{
+    label: 'Copy prompt',
+    event: 'copy_addon_migration_prompt',
+    copy: 'In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using https://storybook.js.org/docs/11/addons/addon-migration-guide.md. Addon repositories usually contain a local Storybook instance. Migrate it using https://storybook.js.org/docs/11/releases/migration-guide.md. In case the local repository does not align well with the content of the migration guide, use the https://github.com/storybookjs/addon-kit repository as a reference implementation. Create a PR for the user to review.',
+  }}
+>
+  Use this prompt with your AI assistant to migrate your addon.
 </Callout>
 
 ## Dependency updates
@@ -65,6 +69,7 @@ Here are the changes in version 11.0 that impact addon development.
 ### Minimum version bumps
 
 #### Node.js
+
 Storybook 11's minimum supported version is now 22.12. Update the types package in your `package.json` to `^22.12.0`.
 
 ```diff title="package.json"
@@ -85,17 +90,18 @@ Change your CI to build and test your addon against this version and more recent
 +        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
          with:
            fetch-depth: 0
- 
+
        - name: Install pnpm
 -        uses: pnpm/action-setup@v4
 +        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
- 
+
        - name: Use Node.js ${{ matrix.node-version }}
 -        uses: actions/setup-node@v4
 +        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0"
 ```
 
 #### TypeScript
+
 The minimum supported TypeScript version is now 5. Update your TypeScript dependency and remove deprecated configuration from your `tsconfig.json`.
 
 ```diff title="tsconfig.json"
@@ -145,6 +151,7 @@ export default definePreview({
 ### Addon API changes
 
 #### Tab UI type removed
+
 The `TAB` addon UI type has been removed. It was not possible for us to build an accessible keyboard navigation experience in the Storybook toolbar with tabs present in the toolbar.
 
 Addons may now only create `PANEL`, `TOOL` or `TOOLEXTRA` types. We recommend you replace any existing use of this type by a `PANEL`, or by a `TOOL` that opens a `Modal`.
@@ -182,26 +189,26 @@ The `useThemeParameters` hook is removed in Storybook 11. You may instead direct
 
 You may load your own preview annotations in your local Storybook instance, to test that they work as intended:
 
+```diff title=".storybook/preview.ts"
 -import type { Preview } from '@storybook/react-vite';
 +import { definePreview } from '@storybook/react-vite';
 +import addonDocs from '@storybook/addon-docs';
 +import yourOwnAddon from '../dist/index.js';
- 
+
 -const preview: Preview = {
 +const preview = definePreview({
 +  addons: [addonDocs(), yourOwnAddon()],
    parameters: {
-    ...
+     // ...
    },
    initialGlobals: {
-    ...
+     // ...
    },
 -};
 +});
 ```
 
 Change all your stories to use the [factory functions](https://storybook.js.org/docs/api/csf/csf-next) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF Next's type safety.
-
 
 ### NPM Trusted Publishing
 
@@ -225,7 +232,7 @@ We strongly recommend you use [NPM Trusted Publishing](https://docs.npmjs.com/tr
 +          node-version: 24.x
            cache: 'pnpm'
 +          registry-url: 'https://registry.npmjs.org'
- 
+
        - name: Install dependencies
 @@ -28,6 +28,5 @@ jobs:
        - name: Create Release
@@ -235,8 +242,6 @@ We strongly recommend you use [NPM Trusted Publishing](https://docs.npmjs.com/tr
          run: |
            pnpm run release
 ```
-
-
 
 ## 11.0.0 full migration guide
 

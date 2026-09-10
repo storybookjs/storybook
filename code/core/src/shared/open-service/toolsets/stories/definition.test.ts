@@ -13,7 +13,11 @@ import {
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from '../../../status-store/index.ts';
-import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
+import {
+  invokeToolsetMethod,
+  resolveToolsetDescription,
+  type ToolsetCtx,
+} from '../../toolset-definition.ts';
 import { createStoriesToolset, type StoriesToolset } from './definition.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -55,7 +59,6 @@ const getStatuses = vi.fn();
 const graphStatus = vi.fn();
 const changeDetectionReadiness = vi.fn();
 const storiesForFiles = vi.fn();
-const telemetry = vi.fn();
 const cwd = vi.spyOn(process, 'cwd');
 const moduleGraph = {
   queries: {
@@ -89,11 +92,16 @@ function runPreview(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.preview.handler(v.parse(target.methods.preview.input, { stories }), ctx);
+  return invokeToolsetMethod(
+    target,
+    'preview',
+    v.parse(target.methods.preview.input, { stories }),
+    ctx
+  );
 }
 
 function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
-  return target.methods.changed.handler(v.parse(target.methods.changed.input, {}), ctx);
+  return invokeToolsetMethod(target, 'changed', v.parse(target.methods.changed.input, {}), ctx);
 }
 
 function runFindByComponent(
@@ -101,7 +109,9 @@ function runFindByComponent(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.findByComponent.handler(
+  return invokeToolsetMethod(
+    target,
+    'findByComponent',
     v.parse(target.methods.findByComponent.input, input),
     ctx
   );
@@ -133,7 +143,6 @@ beforeEach(() => {
     transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
-    telemetry,
   };
   mcpCtx = { ...cliCtx, transport: 'mcp' };
   getIndex.mockResolvedValue(index);
@@ -188,12 +197,13 @@ describe('stories.preview', () => {
   });
 
   it('reports the story counts it resolved', async () => {
-    await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
+    const outcome = await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
 
-    expect(telemetry).toHaveBeenCalledWith('tool:previewStories', {
-      toolset: 'dev',
-      inputStoryCount: 2,
-      outputStoryCount: 2,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'preview',
+      event: 'tool:stories_preview',
+      payload: { inputStoryCount: 2, outputStoryCount: 2 },
     });
   });
 
@@ -319,14 +329,13 @@ describe('stories.changed', () => {
   it('reports the per-status counts', async () => {
     markChanged('button--primary', 'status-value:new');
 
-    await runChanged();
+    const outcome = await runChanged();
 
-    expect(telemetry).toHaveBeenCalledWith('tool:getChangedStories', {
-      toolset: 'dev',
-      storyCount: 1,
-      newStoryCount: 1,
-      modifiedStoryCount: 0,
-      affectedStoryCount: 0,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'changed',
+      event: 'tool:stories_changed',
+      payload: { storyCount: 1, newStoryCount: 1, modifiedStoryCount: 0, affectedStoryCount: 0 },
     });
   });
 
@@ -460,14 +469,13 @@ describe('stories.findByComponent', () => {
   });
 
   it('reports how many of the requested components matched', async () => {
-    await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
+    const outcome = await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
 
-    expect(telemetry).toHaveBeenCalledWith('tool:getStoriesByComponent', {
-      toolset: 'dev',
-      componentCount: 2,
-      matchedComponentCount: 1,
-      totalMatchCount: 1,
-      maxDistance: 3,
+    expect(outcome.telemetry).toEqual({
+      toolset: 'stories',
+      tool: 'find-by-component',
+      event: 'tool:stories_findByComponent',
+      payload: { componentCount: 2, matchedComponentCount: 1, totalMatchCount: 1, maxDistance: 3 },
     });
   });
 

@@ -347,14 +347,53 @@ export class CsfFile {
     mutationStates.set(this, { diagnostics: [], changed: false });
   }
 
+  /**
+   * Read diagnostics from object discovery, reads, and mutations. Check them before writing
+   * because a file can contain both successful edits and unsupported targets.
+   *
+   * @example
+   * ```ts
+   * const [story] = csf.objects({ meta: false });
+   * story.set(['args', 'old'], 1);
+   * story.set(['args', 'current'], 2);
+   * story.rename(['args', 'old'], 'current');
+   * csf.mutationDiagnostics.map(({ code }) => code); // ['occupied-destination']
+   * ```
+   */
   get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
     return [...mutationStates.get(this)!.diagnostics];
   }
 
+  /**
+   * Report whether any object editor has changed this story file.
+   *
+   * @example
+   * ```ts
+   * csf.changed; // false, before any edits
+   * const [story] = csf.objects({ meta: false });
+   * story.set(['args', 'disabled'], true);
+   * csf.changed; // true
+   * ```
+   */
   get changed() {
     return mutationStates.get(this)!.changed;
   }
 
+  /**
+   * Discover editors for the meta and stories. Include CSF2 annotation assignments explicitly
+   * with `annotations`; unsupported targets are skipped and reported in `mutationDiagnostics`.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf('export default {}; export const Primary = {};', {
+   *   makeTitle: () => 'Example',
+   * }).parse();
+   * const [story] = csf.objects({ meta: false });
+   * story.set(['args', 'disabled'], true);
+   * story.getValue(['args']); // { disabled: true }
+   * csf.changed; // true
+   * ```
+   */
   objects(options: CsfObjectOptions = {}): readonly CsfObject[] {
     const state = mutationStates.get(this)!;
     return discoverCsfObjects(

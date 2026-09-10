@@ -4,6 +4,7 @@ import { pathForNode, unwrapExpression } from './story-shape/index.ts';
 
 export type CsfObjectTarget =
   | { kind: 'config' }
+  | { kind: 'call-argument'; importedName: string; methodName: string }
   | { kind: 'meta' }
   | { kind: 'story'; exportName: string; localName: string }
   | {
@@ -22,7 +23,8 @@ export type CsfMutationDiagnosticCode =
   | 'unsupported-value'
   | 'unsupported-member'
   | 'occupied-destination'
-  | 'cyclic-move';
+  | 'cyclic-move'
+  | 'evaluation-order';
 
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
@@ -46,29 +48,134 @@ export type CsfValue =
   | { readonly [key: string]: CsfValue };
 
 export interface CsfObject {
+  /**
+   * Identify the config, meta, story, annotation, or call argument this editor represents.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default {};').parse();
+   * object.target; // { kind: 'config' }
+   * ```
+   */
   readonly target: CsfObjectTarget;
+  /**
+   * Report whether this editor has applied a mutation. Reads and no-op edits leave it unchanged.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default {};').parse();
+   * object.changed; // false
+   * object.set(['tags'], ['autodocs']);
+   * object.changed; // true
+   * ```
+   */
   readonly changed: boolean;
+  /**
+   * Read a copy of the Babel expression at a property path. Missing fields return `undefined`.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { tags: ['docs'] };").parse();
+   * object.get(['tags'])?.type; // 'ArrayExpression'
+   * object.get(['missing']); // undefined
+   * ```
+   */
   get(path: readonly string[]): t.Expression | undefined;
-  /** Read plain values without executing code. Unresolved values return undefined with a diagnostic. */
+  /**
+   * Read plain values without executing code. Missing fields return `undefined`; unresolved
+   * expressions also return `undefined` and add a mutation diagnostic.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { tags: ['docs'], enabled: true };").parse();
+   * object.getValue(['tags']); // ['docs']
+   * object.getValue(['enabled']); // true
+   * object.getValue(['missing']); // undefined
+   * ```
+   */
   getValue(path: readonly string[]): CsfValue;
-  /** Set a literal value or Babel expression. Expression-shaped objects are treated as AST nodes. */
+  /**
+   * Set a plain value or Babel expression, creating missing parents. Accepts nested arrays and
+   * objects; top-level expression-shaped objects are interpreted as AST nodes.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default {};').parse();
+   * object.set(['parameters', 'a11y'], { test: 'todo', enabled: true });
+   * // { ok: true, changed: true }
+   * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
+   * ```
+   */
   set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult;
   /**
-   * Replaces the value at `path` with the result of `derive`, which receives the value's live AST
-   * node. Nodes reused by the derived value keep their original source, so a value-transforming
-   * relocation prints as written instead of being pretty-printed.
+   * Replace a value using its live Babel expression. Reused nodes preserve their source formatting.
+   * Return a new node, or `undefined` to leave the value unchanged. Do not mutate or retain the input
+   * node: such changes bypass change tracking and diagnostics.
    *
-   * `derive` must return a new node, or `undefined` to keep the current value. It must not mutate
-   * its argument or retain it beyond the call: a mutation made through the live node happens
-   * outside this editor, so it is reported by neither `changed` nor a diagnostic.
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { tags: ['docs'] };").parse();
+   * object.transform(['tags'], (value) =>
+   *   t.arrayExpression([t.spreadElement(value), t.stringLiteral('autodocs')])
+   * ); // { ok: true, changed: true }
+   * object.getValue(['tags']); // ['docs', 'autodocs']
+   * ```
    */
   transform(
     path: readonly string[],
     derive: (value: t.Expression) => t.Expression | undefined
   ): CsfMutationResult;
+  /**
+   * Remove a property and recursively clean up empty parents. Missing fields are a no-op.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { parameters: { a11y: { disable: true } } };').parse();
+   * object.remove(['parameters', 'a11y', 'disable']); // { ok: true, changed: true }
+   * object.getValue(['parameters']); // undefined
+   * object.remove(['parameters']); // { ok: true, changed: false }
+   * ```
+   */
   remove(path: readonly string[]): CsfMutationResult;
+  /**
+   * Rename a property within its parent. An occupied destination produces a diagnostic
+   * and leaves the source unchanged.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { a11y: { element: '#root' } };").parse();
+   * object.rename(['a11y', 'element'], 'context'); // { ok: true, changed: true }
+   * object.getValue(['a11y']); // { context: '#root' }
+   * ```
+   */
   rename(path: readonly string[], name: string): CsfMutationResult;
+  /**
+   * Move a property to another path, creating missing destination parents and cleaning up
+   * empty source parents. Rejects occupied destinations. Use `group` when nesting siblings must
+   * preserve expression evaluation order.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { globals: { theme: 'dark' } };").parse();
+   * object.move(['globals'], ['initialGlobals']); // { ok: true, changed: true }
+   * object.getValue(['initialGlobals']); // { theme: 'dark' }
+   * object.getValue(['globals']); // undefined
+   * ```
+   */
   move(from: readonly string[], to: readonly string[]): CsfMutationResult;
+  /**
+   * Nest named sibling properties under a destination, retaining their source order. Rejects
+   * conflicts and relocations that could change evaluation order. Missing source fields are ignored.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { showNav: false, showPanel: true };').parse();
+   * object.group(['layout'], ['showNav', 'showPanel']); // { ok: true, changed: true }
+   * object.getValue(['layout']); // { showNav: false, showPanel: true }
+   * object.getValue(['showNav']); // undefined
+   * ```
+   */
+  group(path: readonly string[], names: readonly string[]): CsfMutationResult;
 }
 
 export interface CsfObjectOptions {
@@ -163,6 +270,31 @@ const propertyExpression = (
   value.returnType = property.returnType;
   value.typeParameters = property.typeParameters;
   return value;
+};
+
+const isEvaluationInert = (node: t.Node): boolean => {
+  const value = unwrapExpression(node);
+  if (t.isLiteral(value) || t.isFunctionExpression(value) || t.isArrowFunctionExpression(value)) {
+    return true;
+  }
+  if (t.isUnaryExpression(value)) {
+    return ['!', 'void', 'typeof'].includes(value.operator)
+      ? isEvaluationInert(value.argument)
+      : t.isNumericLiteral(unwrapExpression(value.argument));
+  }
+  if (t.isArrayExpression(value)) {
+    return value.elements.every((element) => element === null || isEvaluationInert(element));
+  }
+  if (t.isObjectExpression(value)) {
+    return value.properties.every(
+      (property) =>
+        t.isObjectProperty(property) &&
+        !property.computed &&
+        staticKey(property) !== undefined &&
+        isEvaluationInert(property.value)
+    );
+  }
+  return false;
 };
 
 class CsfObjectEditor implements CsfObject {
@@ -343,6 +475,152 @@ class CsfObjectEditor implements CsfObject {
     source.property.computed = false;
     this.insert(destinationPath, source.property);
     this.removeEmptyParents(sourcePath);
+    return this.success();
+  }
+
+  group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+    const logicalPath = this.normalizePath(path);
+    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath) || unsafePath(names)) {
+      return this.failure('unsupported-member', path, this.root.node);
+    }
+    const group = logicalPath.at(-1)!;
+    if (names.includes(group)) {
+      return this.failure('cyclic-move', path, this.root.node);
+    }
+    let parent = this.root.node;
+    if (logicalPath.length > 1) {
+      const inspected = this.inspect(logicalPath.slice(0, -1));
+      if (inspected.ok === false) {
+        return this.failure(inspected.code, path, inspected.node);
+      }
+      if (!inspected.property) {
+        return { ok: true, changed: false };
+      }
+      const value = t.isObjectProperty(inspected.property)
+        ? this.resolveExpression(inspected.property.value)
+        : undefined;
+      if (!t.isObjectExpression(value)) {
+        return this.failure('unsupported-member', path, inspected.property);
+      }
+      parent = value;
+    }
+    const moved = parent.properties.filter(
+      (property): property is t.ObjectProperty | t.ObjectMethod =>
+        !t.isSpreadElement(property) && names.includes(staticKey(property) ?? '')
+    );
+    if (moved.length === 0) {
+      return { ok: true, changed: false };
+    }
+    for (const property of parent.properties) {
+      if (t.isSpreadElement(property) || property.computed || staticKey(property) === undefined) {
+        return this.failure(
+          t.isSpreadElement(property) ? 'spread-field' : 'dynamic-key',
+          path,
+          property,
+          `the configuration contains ${t.isSpreadElement(property) ? 'a spread property' : 'a computed property'}`
+        );
+      }
+    }
+    const sourceNames = new Set<string>();
+    for (const property of moved) {
+      const name = staticKey(property)!;
+      if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+        return this.failure(
+          'unsupported-member',
+          path,
+          property,
+          `the top-level ${name} ${group} option is a method or accessor, not a movable value property`
+        );
+      }
+      if (sourceNames.has(name)) {
+        return this.failure('duplicate-field', path, property);
+      }
+      sourceNames.add(name);
+    }
+    const destination = lookupProperty(parent, group);
+    if (destination.ok === false) {
+      return this.failure(
+        destination.code,
+        path,
+        destination.node,
+        destination.code === 'duplicate-field'
+          ? `the configuration defines ${group} more than once`
+          : `the existing ${group} value is not an object literal`
+      );
+    }
+    if (destination.property) {
+      const existing = destination.property;
+      const value = t.isObjectProperty(existing) ? unwrapExpression(existing.value) : undefined;
+      if (!t.isObjectExpression(value)) {
+        return this.failure(
+          'unsupported-member',
+          path,
+          existing,
+          `the existing ${group} value is not an object literal`
+        );
+      }
+      for (const property of value.properties) {
+        if (t.isSpreadElement(property) || property.computed || staticKey(property) === undefined) {
+          return this.failure(
+            t.isSpreadElement(property) ? 'spread-field' : 'dynamic-key',
+            path,
+            property,
+            `the existing ${group} object contains ${t.isSpreadElement(property) ? 'a spread property' : 'a computed property'}`
+          );
+        }
+        if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+          return this.failure(
+            'unsupported-member',
+            path,
+            property,
+            `the existing ${group} object contains a method or accessor`
+          );
+        }
+      }
+      const existingNames = new Set(
+        value.properties.map((property) =>
+          t.isSpreadElement(property) ? undefined : staticKey(property)
+        )
+      );
+      for (const property of moved) {
+        const name = staticKey(property)!;
+        if (existingNames.has(name)) {
+          return this.failure(
+            'occupied-destination',
+            path,
+            property,
+            `the ${name} option exists at both top level and inside ${group}, where the nested value is authoritative`
+          );
+        }
+        if (!t.isObjectProperty(property) || !isEvaluationInert(property.value)) {
+          return this.failure(
+            'evaluation-order',
+            path,
+            property,
+            `the ${name} option has a ${t.isObjectProperty(property) ? unwrapExpression(property.value).type : 'non-expression'} value whose relocation into the existing ${group} object could change expression evaluation order`
+          );
+        }
+      }
+      value.properties.unshift(...moved);
+      const movedSet = new Set<t.ObjectMember | t.SpreadElement>(moved);
+      parent.properties = parent.properties.filter((property) => !movedSet.has(property));
+    } else {
+      const first = parent.properties.indexOf(moved[0]);
+      const last = parent.properties.indexOf(moved.at(-1)!);
+      if (last - first + 1 !== moved.length) {
+        return this.failure(
+          'evaluation-order',
+          path,
+          moved[1] ?? moved[0],
+          `the top-level ${group} options are not contiguous, so grouping them could change expression evaluation order`
+        );
+      }
+      parent.properties.splice(
+        first,
+        moved.length,
+        t.objectProperty(keyNode(group), t.objectExpression(moved))
+      );
+    }
     return this.success();
   }
 
@@ -573,12 +851,17 @@ class CsfObjectEditor implements CsfObject {
     object.properties.push(property);
   }
 
-  private failure(code: CsfMutationDiagnosticCode, path: readonly string[], node: t.Node) {
+  private failure(
+    code: CsfMutationDiagnosticCode,
+    path: readonly string[],
+    node: t.Node,
+    message = `Cannot mutate ${path.join('.')} because the target contains ${code.replaceAll('-', ' ')}`
+  ) {
     const diagnostic: CsfMutationDiagnostic = {
       code,
       target: this.target,
       path: [...path],
-      message: `Cannot mutate ${path.join('.')} because the target contains ${code.replaceAll('-', ' ')}`,
+      message,
       ...(node.loc ? { loc: node.loc } : {}),
     };
     this.reportDiagnostic(diagnostic);

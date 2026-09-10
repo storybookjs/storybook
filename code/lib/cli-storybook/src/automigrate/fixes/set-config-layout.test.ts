@@ -358,7 +358,7 @@ describe('transformSetConfigLayout', () => {
     `;
 
     expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 2: the configuration argument is not an object literal. Move top-level layout options into `layout` and `enableShortcuts` into `ui` manually. Keep nested values when an option exists in both places and retain expression evaluation order.'
+      'on line 2: the call argument is not an object literal. Move top-level layout options into `layout` and `enableShortcuts` into `ui` manually. Keep nested values when an option exists in both places and retain expression evaluation order.'
     );
   });
 

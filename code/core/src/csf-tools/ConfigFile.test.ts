@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint, types as t } from 'storybook/internal/babel';
+import { babelPrint } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
@@ -58,7 +58,7 @@ describe('ConfigFile', () => {
     expect(reparsed.getValue(['parameters'])).toEqual(config.getValue(['parameters']));
   });
 
-  describe('findNamedImportMethodCalls', () => {
+  describe('callArguments', () => {
     it('finds binding-safe method calls on aliased named imports', () => {
       const config = loadConfig(dedent`
         import { addons as managerAddons } from 'storybook/manager-api';
@@ -71,21 +71,21 @@ describe('ConfigFile', () => {
         }
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api', '@storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'managerAddons.setConfig({ showNav: false })',
-        "managerAddons['setConfig']({ showPanel: false })",
-      ]);
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
 
-      calls[0].arguments[0] = t.objectExpression([
-        t.objectProperty(t.identifier('layout'), t.objectExpression([])),
-      ]);
-      expect(printConfig(config).code).toContain('managerAddons.setConfig({\n  layout: {}\n})');
+      calls[0].group(['layout'], ['showNav']);
+      expect(config.changed).toBe(true);
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(printConfig(config).code).toContain('layout: {');
+      expect(calls[0].getValue(['layout', 'showNav'])).toBe(false);
     });
 
     it('ignores other modules and type-only imports', () => {
@@ -97,7 +97,7 @@ describe('ConfigFile', () => {
       `).parse();
 
       expect(
-        config.findNamedImportMethodCalls({
+        config.callArguments({
           importedName: 'addons',
           methodName: 'setConfig',
           moduleNames: ['storybook/manager-api'],
@@ -116,15 +116,14 @@ describe('ConfigFile', () => {
         }
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'managerAddons.setConfig({ showNav: false })',
-      ]);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
     });
 
     it('finds same-named imported bindings in different scopes', () => {
@@ -139,16 +138,15 @@ describe('ConfigFile', () => {
         }
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'addons.setConfig({ showNav: false })',
-        'addons.setConfig({ showPanel: false })',
-      ]);
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
     });
 
     it('ignores other bindings from the same CommonJS destructuring', () => {
@@ -159,15 +157,14 @@ describe('ConfigFile', () => {
         unrelated.setConfig({ showPanel: false });
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'addons.setConfig({ showNav: false })',
-      ]);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
     });
   });
 

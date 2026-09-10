@@ -88,7 +88,7 @@ describe('addon-globals-api story objects', () => {
     `);
   });
 
-  it('leaves story objects with a shadowing spread unchanged', () => {
+  it('reports story objects with a shadowing spread', () => {
     const source = dedent`
       export default { title: 'Button' };
       export const Primary = {
@@ -97,7 +97,9 @@ describe('addon-globals-api story objects', () => {
       };
     `;
 
-    expect(transform(source)).toBeNull();
+    expect(() => transform(source)).toThrow(
+      'Cannot mutate parameters.viewport.defaultViewport because the target contains spread field'
+    );
   });
 
   it('leaves an empty viewport parameter alone when only backgrounds migrate', () => {
@@ -118,7 +120,7 @@ describe('addon-globals-api story objects', () => {
     ).toBeNull();
   });
 
-  it('leaves unsafe story objects unchanged', () => {
+  it('reports unsafe story objects', () => {
     const source = dedent`
       export default { title: 'Button' };
       export const Primary = {
@@ -127,7 +129,9 @@ describe('addon-globals-api story objects', () => {
       };
     `;
 
-    expect(transform(source)).toBeNull();
+    expect(() => transform(source)).toThrow(
+      'Cannot mutate globals.backgrounds.value because the target contains spread field'
+    );
   });
 
   it('keeps default orientation when it cannot write isRotated', () => {

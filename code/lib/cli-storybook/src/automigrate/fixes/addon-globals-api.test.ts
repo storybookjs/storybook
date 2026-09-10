@@ -49,7 +49,7 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
     await addonGlobalsApi.run?.({
       result,
       dryRun: false,
-      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'],
+      storiesPaths: [],
       packageManager: {} as never,
     } as never);
 

@@ -229,7 +229,7 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
 
     // Update stories
     if (needsViewportMigration || needsBackgroundsMigration) {
-      await transformStoryFiles(
+      const errors = await transformStoryFiles(
         storiesPaths,
         {
           needsViewportMigration,
@@ -239,6 +239,15 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
         },
         dryRun
       );
+
+      if (errors.length > 0) {
+        // eslint-disable-next-line local-rules/no-uncategorized-errors
+        throw new Error(
+          `Failed to process ${errors.length} files:\n${errors
+            .map(({ file, error }) => `- ${file}: ${error.message}`)
+            .join('\n')}`
+        );
+      }
     }
   },
 };
@@ -285,6 +294,11 @@ export function transformStoryFile(
   const objects = storyConfig.objects({ annotations: ['parameters'] });
   for (const object of objects) {
     migrateStoryGlobals(storyConfig, object, options);
+  }
+
+  if (storyConfig.mutationDiagnostics.length > 0) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(storyConfig.mutationDiagnostics.map(({ message }) => message).join('\n'));
   }
 
   return storyConfig.changed ? storyConfig : null;

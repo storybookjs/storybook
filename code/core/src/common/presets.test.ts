@@ -1,6 +1,7 @@
 import path, { dirname, join, normalize, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
 
+import { join as patheJoin } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -41,11 +42,11 @@ const KNOWN_FILES = [
   '@storybook/addon-cool',
   '@storybook/addon-docs/preset',
   '@storybook/addon-essentials',
-  '@storybook/addon-knobs/manager',
-  '@storybook/addon-knobs/register',
-  '@storybook/addon-notes/register-panel',
-  '@storybook/preset-create-react-app',
-  '@storybook/preset-typescript',
+  '@storybook/addon-themes/manager',
+  '@storybook/addon-a11y/preview',
+  '@storybook/addon-links/manager',
+  '@storybook/preset-react-webpack',
+  '@storybook/preset-server-webpack',
   'addon-bar/preset.js',
   'addon-bar',
   'addon-baz/register.js',
@@ -460,8 +461,8 @@ describe('resolveAddonName', () => {
   });
 
   it('should resolve packages without metadata', () => {
-    expect(resolveAddonName({} as any, '@storybook/preset-create-react-app', {})).toEqual({
-      name: '@storybook/preset-create-react-app',
+    expect(resolveAddonName({} as any, '@storybook/preset-react-webpack', {})).toEqual({
+      name: '@storybook/preset-react-webpack',
       type: 'presets',
     });
   });
@@ -496,9 +497,9 @@ describe('resolveAddonName', () => {
       expect(resolveAddonName({} as any, addonDir, {})).toEqual({
         type: 'virtual',
         name: addonDir,
-        presets: [{ name: join(addonDir, 'lib', 'preset.js'), options: {} }],
-        managerEntries: [join(addonDir, 'lib', 'manager.js')],
-        previewAnnotations: [join(addonDir, 'lib', 'preview.js')],
+        presets: [{ name: patheJoin(addonDir, 'lib', 'preset.js'), options: {} }],
+        managerEntries: [patheJoin(addonDir, 'lib', 'manager.js')],
+        previewAnnotations: [patheJoin(addonDir, 'lib', 'preview.js')],
       });
     });
 
@@ -508,9 +509,9 @@ describe('resolveAddonName', () => {
       expect(resolveAddonName({} as any, addonDir, {})).toEqual({
         type: 'virtual',
         name: addonDir,
-        presets: [{ name: join(addonDir, 'preset.js'), options: {} }],
-        managerEntries: [join(addonDir, 'manager.js')],
-        previewAnnotations: [join(addonDir, 'preview.js')],
+        presets: [{ name: patheJoin(addonDir, 'preset.js'), options: {} }],
+        managerEntries: [patheJoin(addonDir, 'manager.js')],
+        previewAnnotations: [patheJoin(addonDir, 'preview.js')],
       });
     });
 
@@ -526,12 +527,12 @@ describe('loadPreset', () => {
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       switch (path) {
         case '@storybook/react':
-        case '@storybook/preset-typescript':
+        case '@storybook/preset-server-webpack':
         case '@storybook/addon-docs/preset':
         case 'addon-foo/register.js':
         case '@storybook/addon-cool':
         case 'addon-baz/register.js':
-        case '@storybook/addon-notes/register-panel':
+        case '@storybook/addon-links/manager':
           return {};
         case 'addon-bar':
           return {
@@ -550,7 +551,7 @@ describe('loadPreset', () => {
         // @ts-expect-error (invalid use)
         type: 'virtual',
         framework: '@storybook/react',
-        presets: ['@storybook/preset-typescript'],
+        presets: ['@storybook/preset-server-webpack'],
         addons: ['@storybook/addon-docs/preset'],
       },
       0,
@@ -559,7 +560,7 @@ describe('loadPreset', () => {
     expect(loaded).toMatchInlineSnapshot(`
       [
         {
-          "name": "@storybook/preset-typescript",
+          "name": "@storybook/preset-server-webpack",
           "options": {},
           "preset": {},
         },
@@ -576,7 +577,7 @@ describe('loadPreset', () => {
             "framework": "@storybook/react",
             "name": "",
             "presets": [
-              "@storybook/preset-typescript",
+              "@storybook/preset-server-webpack",
             ],
             "type": "virtual",
           },
@@ -595,13 +596,13 @@ describe('loadPreset', () => {
         name: '',
         // @ts-expect-error (invalid use)
         type: 'virtual',
-        presets: ['@storybook/preset-typescript'],
+        presets: ['@storybook/preset-server-webpack'],
         addons: [
           '@storybook/addon-docs/preset',
           'addon-foo/register.js',
           'addon-bar',
           'addon-baz/register.js',
-          '@storybook/addon-notes/register-panel',
+          '@storybook/addon-links/manager',
         ],
       },
       0,
@@ -609,7 +610,7 @@ describe('loadPreset', () => {
     );
     expect(loaded).toEqual([
       {
-        name: '@storybook/preset-typescript',
+        name: '@storybook/preset-server-webpack',
         options: {},
         preset: {},
       },
@@ -643,21 +644,21 @@ describe('loadPreset', () => {
         },
       },
       {
-        name: '@storybook/addon-notes/register-panel',
+        name: '@storybook/addon-links/manager',
         options: {},
         preset: {
-          managerEntries: [normalize('@storybook/addon-notes/register-panel')],
+          managerEntries: [normalize('@storybook/addon-links/manager')],
         },
       },
       {
         name: {
-          presets: ['@storybook/preset-typescript'],
+          presets: ['@storybook/preset-server-webpack'],
           addons: [
             '@storybook/addon-docs/preset',
             'addon-foo/register.js',
             'addon-bar',
             'addon-baz/register.js',
-            '@storybook/addon-notes/register-panel',
+            '@storybook/addon-links/manager',
           ],
           name: '',
           type: 'virtual',
@@ -675,7 +676,7 @@ describe('loadPreset', () => {
         // @ts-expect-error (invalid use)
         type: 'virtual',
         framework: '@storybook/react',
-        presets: ['@storybook/preset-typescript'],
+        presets: ['@storybook/preset-server-webpack'],
         addons: ['@storybook/addon-docs/preset', 'uninstalled-addon'],
       },
       0,
@@ -687,7 +688,7 @@ describe('loadPreset', () => {
     expect(loaded).toMatchInlineSnapshot(`
       [
         {
-          "name": "@storybook/preset-typescript",
+          "name": "@storybook/preset-server-webpack",
           "options": {},
           "preset": {},
         },
@@ -705,7 +706,7 @@ describe('loadPreset', () => {
             "framework": "@storybook/react",
             "name": "",
             "presets": [
-              "@storybook/preset-typescript",
+              "@storybook/preset-server-webpack",
             ],
             "type": "virtual",
           },
@@ -725,7 +726,7 @@ describe('loadPreset', () => {
         // @ts-expect-error (invalid use)
         type: 'virtual',
         framework: '@storybook/react',
-        presets: ['@storybook/preset-typescript'],
+        presets: ['@storybook/preset-server-webpack'],
         addons: ['@storybook/addon-docs', 'addon-bar'],
       },
       0,
@@ -742,7 +743,7 @@ describe('loadPreset', () => {
     expect(loaded).toMatchInlineSnapshot(`
       [
         {
-          "name": "@storybook/preset-typescript",
+          "name": "@storybook/preset-server-webpack",
           "options": {},
           "preset": {},
         },
@@ -765,7 +766,7 @@ describe('loadPreset', () => {
             "framework": "@storybook/react",
             "name": "",
             "presets": [
-              "@storybook/preset-typescript",
+              "@storybook/preset-server-webpack",
             ],
             "type": "virtual",
           },

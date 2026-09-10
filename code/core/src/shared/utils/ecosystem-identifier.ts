@@ -31,6 +31,7 @@ export const STYLING_PACKAGES = [
   '@emotion/*',
   'less',
   'styled-components',
+  '@stylexjs/*',
   'bootstrap',
   'goober',
   'stylus',

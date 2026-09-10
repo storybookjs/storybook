@@ -1,4 +1,5 @@
 import type { ProjectType } from 'storybook/internal/cli';
+import { getStorybookVersionSpecifierFromAncestry } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
@@ -8,11 +9,7 @@ import { VersionService } from './VersionService.ts';
 
 /** Service for tracking telemetry events during Storybook initialization */
 export class TelemetryService {
-  private versionService: VersionService;
-
-  constructor() {
-    this.versionService = new VersionService();
-  }
+  private versionService = new VersionService();
 
   /** Track a new user check step */
   async trackNewUserCheck(newUser: boolean): Promise<void> {
@@ -91,7 +88,7 @@ export class TelemetryService {
 
     try {
       const ancestry = getProcessAncestry();
-      versionSpecifier = this.versionService.getStorybookVersionFromAncestry(ancestry);
+      versionSpecifier = getStorybookVersionSpecifierFromAncestry(ancestry);
       cliIntegration = this.versionService.getCliIntegrationFromAncestry(ancestry);
     } catch {
       // Ignore errors getting ancestry

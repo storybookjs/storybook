@@ -27,8 +27,6 @@ import { StorybookReporter } from './reporter.ts';
 import type { TestManager } from './test-manager.ts';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
-const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
@@ -86,7 +84,6 @@ export class VitestManager {
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
 
     const configFiles = [
-      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
         `vitest.config.${ext}`,
         `vite.config.${ext}`,
@@ -97,7 +94,7 @@ export class VitestManager {
       last: getProjectRoot(),
     });
 
-    let vitestWorkspaceConfig: string | undefined;
+    let vitestConfigLocation: string | undefined;
     let firstVitestConfig: string | undefined;
 
     for (const location of potentialConfigFileLocations) {
@@ -110,12 +107,12 @@ export class VitestManager {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
-            vitestWorkspaceConfig = dirname(maybe);
+            vitestConfigLocation = dirname(maybe);
             break;
           }
         }
       }
-      if (vitestWorkspaceConfig) {
+      if (vitestConfigLocation) {
         break;
       }
     }
@@ -126,7 +123,7 @@ export class VitestManager {
 
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
+        root: vitestConfigLocation ?? vitestConfigFallbackLocation,
         configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,
@@ -211,12 +208,7 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    // @ts-expect-error `server` only exists in Vitest 3
-    this.vitest!.projects.forEach(({ browser, vite, server }) => {
-      if (server) {
-        const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
-      }
+    this.vitest!.projects.forEach(({ browser, vite }) => {
       if (vite) {
         const serverMods = vite.moduleGraph.getModulesByFile(filepath);
         serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));

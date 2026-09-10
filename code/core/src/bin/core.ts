@@ -251,7 +251,7 @@ const aiCommand = command('ai')
 aiCommand
   .command('setup')
   .description(
-    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills get setup`)'
+    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills setup`)'
   )
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(

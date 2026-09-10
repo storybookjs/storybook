@@ -8,6 +8,10 @@ import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
  *
  * Validates local command execution, remote command execution, static JSON loading, unhandled remote
  * commands in static builds, manager/preview sync, dev-server reload bootstrap, and cross-tab relay.
+ *
+ * The two-tab concurrent block sets retries to 0: a passing retry would hide a broken hold. Writes are
+ * forced concurrent by holding outbound `services:entry` frames, so a failure is a protocol bug, not
+ * a timing flake.
  */
 
 /** Internal Storybook UI (`code/.storybook`) — not a sandbox template. */
@@ -28,6 +32,107 @@ async function gotoOpenServiceStory(page: Page, storyPath: string) {
   await page.goto(`${storybookUrl}/?path=/story/${storyPath}`);
   await waitForPreviewReady(page);
   await openOpenServicePanel(page);
+}
+
+function readEntrySeq(message: string | Buffer): number | undefined {
+  const text = typeof message === 'string' ? message : message.toString('utf8');
+  try {
+    const event = JSON.parse(text) as {
+      type?: string;
+      args?: Array<{ stamp?: { seq?: number } }>;
+    };
+    if (event.type !== 'services:entry') {
+      return undefined;
+    }
+    const seq = event.args?.[0]?.stamp?.seq;
+    return typeof seq === 'number' ? seq : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+type EntryHold = {
+  arm: () => void;
+  release: () => void;
+  seqs: () => number[];
+};
+
+// Playwright sits between each tab's manager and the Storybook server websocket
+// (`storybook-server-channel`). Manager and preview in a tab talk over postMessage;
+// only the manager's socket carries `services:entry` to the hub.
+//
+// The hold queues those outbound entry frames instead of forwarding them. Local
+// apply and stamping still happen, so each tab authors `seq = clock + 1` without
+// seeing the other tab's write. Equal seq after both clicks is the proof the
+// writes were concurrent. If the hold leaked, the second author would usually
+// stamp seq 2.
+//
+// Register the route before `goto`: Playwright only wraps sockets opened after
+// `routeWebSocket`. Leave it idle until `arm()` so bootstrap and registration
+// traffic is not queued. Hold only frames that parse as `services:entry`;
+// everything else on this socket (`setCurrentStory`, `stories`, …) must pass or
+// the UI never loads. Incoming server→page frames are not held, so after
+// `release()` the hub can fan placed entries back immediately.
+async function holdOutboundEntries(page: Page): Promise<EntryHold> {
+  let holding = false;
+  const held: Array<{ send: (message: string | Buffer) => void; message: string | Buffer }> = [];
+
+  await page.routeWebSocket(/storybook-server-channel/, (ws) => {
+    const server = ws.connectToServer();
+    ws.onMessage((message) => {
+      if (holding && readEntrySeq(message) !== undefined) {
+        held.push({ send: (payload) => server.send(payload), message });
+        return;
+      }
+      server.send(message);
+    });
+  });
+
+  return {
+    arm: () => {
+      holding = true;
+      held.length = 0;
+    },
+    release: () => {
+      holding = false;
+      const pending = held.splice(0, held.length);
+      for (const item of pending) {
+        item.send(item.message);
+      }
+    },
+    seqs: () =>
+      held
+        .map((item) => readEntrySeq(item.message))
+        .filter((seq): seq is number => seq !== undefined),
+  };
+}
+
+function concurrentWritesControls(page: Page) {
+  const story = page.frameLocator('#storybook-preview-iframe');
+  return {
+    panelSlot: page.getByRole('textbox', {
+      name: 'Concurrent writes manager panel slot input',
+    }),
+    panelValue: page.getByRole('textbox', {
+      name: 'Concurrent writes manager panel value input',
+    }),
+    panelWrite: page.getByRole('button', { name: 'Concurrent writes manager panel write' }),
+    panelClear: page.getByRole('button', {
+      name: 'Concurrent writes manager panel clear slots',
+    }),
+    panelRaw: page.getByTestId('concurrent-writes-manager-panel-raw-service-state-slots'),
+    storyRaw: story.getByTestId('concurrent-writes-raw-service-state-slots'),
+  };
+}
+
+// Manager panel and preview iframe subscribe separately and can lag. Poll the
+// raw JSON text until it matches, rather than reading once after release.
+async function expectSlots(raw: ReturnType<Page['getByTestId']>, expected: Record<string, string>) {
+  await expect
+    .poll(async () => JSON.parse((await raw.textContent()) ?? '{}') as Record<string, string>, {
+      timeout: 10_000,
+    })
+    .toStrictEqual(expected);
 }
 
 test.describe('open-service sync example', () => {
@@ -363,8 +468,6 @@ test.describe('open-service sync example', () => {
     });
   });
 
-  // TODO(SB-2051): writes here are sequential. Overlapping two-tab writes land with the ordered
-  // log; this check only proves both slots survive when written one after the other.
   test('concurrent writes land sequentially in the panel and the story', async ({ page }) => {
     await gotoOpenServiceStory(
       page,
@@ -416,6 +519,141 @@ test.describe('open-service sync example', () => {
       await expect(panelRaw).toHaveText('{}');
       await expect(storyRaw).toHaveText('{}');
     }
+  });
+
+  // Forced-concurrency check for ordered-log placement. Without the websocket hold
+  // the hub is fast enough that tab B often observes tab A's write before B
+  // authors, so the test would only cover sequential seq 1 then 2. A passing
+  // retry can hide a broken hold (writes serialize by luck), so retries stay 0.
+  test.describe('two-tab concurrent writes', () => {
+    test.describe.configure({ retries: 0, mode: 'serial' });
+
+    test('keeps both keys and the same seq when two tabs write under a hold', async ({
+      page,
+      context,
+    }) => {
+      test.skip(
+        !runsAgainstDevServer,
+        'Cross-tab concurrency requires the dev-server relay channel.'
+      );
+
+      const otherPage = await context.newPage();
+      // Route before goto so the storybook-server-channel socket is proxied.
+      const firstHold = await holdOutboundEntries(page);
+      const secondHold = await holdOutboundEntries(otherPage);
+
+      try {
+        await gotoOpenServiceStory(
+          page,
+          'core-shared-open-service-sync-test-concurrent-writes--concurrent-writes-sync'
+        );
+        await gotoOpenServiceStory(
+          otherPage,
+          'core-shared-open-service-sync-test-concurrent-writes--concurrent-writes-sync'
+        );
+
+        const first = concurrentWritesControls(page);
+        const second = concurrentWritesControls(otherPage);
+
+        await expect(first.panelSlot).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+        await expect(second.panelSlot).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+
+        try {
+          await first.panelClear.click();
+          await expect(first.panelRaw).toHaveText('{}', { timeout: 10_000 });
+          await expect(second.panelRaw).toHaveText('{}', { timeout: 10_000 });
+
+          // Three rounds so one lucky delivery order does not pass the suite.
+          for (let round = 0; round < 3; round += 1) {
+            // Fresh keys: clear is a replicated command. Reusing a slot while a
+            // slow clear is in flight looks like a lost write.
+            const leftSlot = `left-${round}-${Date.now()}`;
+            const rightSlot = `right-${round}-${Date.now()}`;
+            const leftValue = `L${round}`;
+            const rightValue = `R${round}`;
+
+            firstHold.arm();
+            secondHold.arm();
+
+            await first.panelSlot.fill(leftSlot);
+            await first.panelValue.fill(leftValue);
+            await first.panelWrite.click();
+            await second.panelSlot.fill(rightSlot);
+            await second.panelValue.fill(rightValue);
+            await second.panelWrite.click();
+
+            // Compare seq while frames are still queued. After release the hub
+            // places both entries and fans them back; seqs() then goes empty.
+            await expect.poll(() => firstHold.seqs().length).toBe(1);
+            await expect.poll(() => secondHold.seqs().length).toBe(1);
+            expect(firstHold.seqs()[0], 'equal seq proves the writes were concurrent').toBe(
+              secondHold.seqs()[0]
+            );
+
+            firstHold.release();
+            secondHold.release();
+
+            const expected = { [leftSlot]: leftValue, [rightSlot]: rightValue };
+            // Manager panel and preview iframe on each tab are four subscribers.
+            await expectSlots(first.panelRaw, expected);
+            await expectSlots(first.storyRaw, expected);
+            await expectSlots(second.panelRaw, expected);
+            await expectSlots(second.storyRaw, expected);
+
+            await first.panelClear.click();
+            await expectSlots(first.panelRaw, {});
+            await expectSlots(second.panelRaw, {});
+          }
+
+          // Same key, same seq: last-write-wins. Either value is correct; all
+          // four surfaces must show the same one.
+          const sharedSlot = `shared-${Date.now()}`;
+          firstHold.arm();
+          secondHold.arm();
+          await first.panelSlot.fill(sharedSlot);
+          await first.panelValue.fill('alpha');
+          await first.panelWrite.click();
+          await second.panelSlot.fill(sharedSlot);
+          await second.panelValue.fill('beta');
+          await second.panelWrite.click();
+          await expect.poll(() => firstHold.seqs().length).toBe(1);
+          await expect.poll(() => secondHold.seqs().length).toBe(1);
+          expect(firstHold.seqs()[0]).toBe(secondHold.seqs()[0]);
+          firstHold.release();
+          secondHold.release();
+
+          await expect
+            .poll(
+              async () => {
+                const surfaces = [first.panelRaw, first.storyRaw, second.panelRaw, second.storyRaw];
+                const values: Array<string | undefined> = [];
+                for (const raw of surfaces) {
+                  const slots = JSON.parse((await raw.textContent()) ?? '{}') as Record<
+                    string,
+                    string
+                  >;
+                  values.push(slots[sharedSlot]);
+                }
+                if (values.some((value) => value !== values[0])) {
+                  return undefined;
+                }
+                return values[0];
+              },
+              { timeout: 10_000 }
+            )
+            .toMatch(/^(alpha|beta)$/);
+        } finally {
+          // A failure mid-hold leaves frames queued; drain them so the next
+          // test does not wait on a socket that never forwards.
+          firstHold.release();
+          secondHold.release();
+          await first.panelClear.click();
+          await expectSlots(first.panelRaw, {});
+        }
+      } finally {
+        await otherPage.close();
+      }
+    });
   });
 
   test('static load reads prebuilt JSON and rejects unbacked commands in a static build', async ({

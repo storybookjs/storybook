@@ -3,17 +3,24 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-export function replaceMarker(body: string, marker: string, replacement: string): string {
-  const pattern = new RegExp(
+function markerPattern(marker: string): RegExp {
+  return new RegExp(
     `(<!-- ${escapeRegExp(marker)} -->)(.*?)(<!-- ${escapeRegExp(marker)} -->)`,
     's'
   );
-  const matches = body.match(new RegExp(pattern.source, 'gs'));
-  if (matches?.length !== 1) {
-    throw new Error(`expected 1 ${marker} pair, found ${matches?.length ?? 0}`);
+}
+
+export function countMarkerPairs(body: string, marker: string): number {
+  return body.match(new RegExp(markerPattern(marker).source, 'gs'))?.length ?? 0;
+}
+
+export function replaceMarker(body: string, marker: string, replacement: string): string {
+  const count = countMarkerPairs(body, marker);
+  if (count !== 1) {
+    throw new Error(`expected 1 ${marker} pair, found ${count}`);
   }
   return body.replace(
-    pattern,
+    markerPattern(marker),
     (_match, open, _inner, close) => `${open}\n${replacement}\n${close}`
   );
 }

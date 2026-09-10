@@ -75,7 +75,7 @@ describe('compareArgTypes', () => {
 
   it('fails other-to-other when the value changes laterally', () => {
     const baseline = argTypes({
-      data: { name: 'data', type: { name: 'other', value: 'empty-enum' } },
+      data: { name: 'data', type: { name: 'other', value: 'TreeNode' } },
     });
     const candidate = argTypes({
       data: { name: 'data', type: { name: 'other', value: 'something-else' } },
@@ -454,6 +454,121 @@ describe('compareArgTypes', () => {
       expect(compareArgTypes(baseline, candidate)).toEqual([]);
     }
   });
+
+  it.each([
+    {
+      input: '{ name: "array" } -> { name: "array", value: { name: "string" } }',
+      output: 'passes',
+      baselineType: { name: 'array' } as never,
+      candidateType: { name: 'array', value: { name: 'string' } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "object" } -> { name: "object", value: { label: { name: "string" } } }',
+      output: 'passes',
+      baselineType: { name: 'object' } as never,
+      candidateType: { name: 'object', value: { label: { name: 'string' } } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "enum" } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum' } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "enum", value: {} } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum', value: {} } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "union" } -> { name: "union", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'union' } as never,
+      candidateType: { name: 'union', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "intersection" } -> { name: "intersection", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'intersection' } as never,
+      candidateType: { name: 'intersection', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "tuple" } -> { name: "tuple", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'tuple' } as never,
+      candidateType: { name: 'tuple', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: undefined } -> { name: "boolean" }',
+      output: 'passes',
+      baselineType: { name: undefined } as never,
+      candidateType: { name: 'boolean' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "PanelConfig" } -> { name: "object", value: { title: { name: "string" } } }',
+      output: 'passes',
+      baselineType: { name: 'PanelConfig' } as never,
+      candidateType: { name: 'object', value: { title: { name: 'string' } } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "Item[]" } -> { name: "array", value: { name: "string" } }',
+      output: 'passes',
+      baselineType: { name: 'Item[]' } as never,
+      candidateType: { name: 'array', value: { name: 'string' } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: `{ name: "'primary' | 'secondary' | 'ghost'" } -> populated union`,
+      output: 'passes',
+      baselineType: { name: "'primary' | 'secondary' | 'ghost'" } as never,
+      candidateType: {
+        name: 'union',
+        value: [
+          { name: 'literal', value: 'primary' },
+          { name: 'literal', value: 'secondary' },
+          { name: 'literal', value: 'ghost' },
+        ],
+      } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "other", value: "undefined" } -> { name: "other", value: "TreeNode" }',
+      output: 'passes',
+      baselineType: { name: 'other', value: 'undefined' } as never,
+      candidateType: { name: 'other', value: 'TreeNode' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "other" } -> { name: "string" }',
+      output: 'passes',
+      baselineType: { name: 'other' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "PanelConfig" } -> { name: "string" }',
+      output: 'type-fidelity violation',
+      baselineType: { name: 'PanelConfig' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [expect.objectContaining({ arg: 'data', kind: 'type-fidelity' })],
+    },
+  ])(
+    'compares loose Web Components sbTypes: $input => $output',
+    ({ baselineType, candidateType, expectedViolations }) => {
+      const baseline = argTypes({ data: { name: 'data', type: baselineType } });
+      const candidate = argTypes({ data: { name: 'data', type: candidateType } });
+      expect(compareArgTypes(baseline, candidate)).toEqual(expectedViolations);
+    }
+  );
 
   it('fails when an other stub naming a real type collapses to an unrelated scalar', () => {
     // Half the corpus is other-typed free text that still names something: TreeNode, ButtonSize,

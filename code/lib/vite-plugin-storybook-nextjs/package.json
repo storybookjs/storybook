@@ -91,9 +91,9 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
+    "next": "^15.0.0 || ^16.0.0",
     "storybook": "workspace:^",
-    "vite": "^7.0.0 || ^8.0.0"
+    "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },
   "publishConfig": {
     "access": "public"

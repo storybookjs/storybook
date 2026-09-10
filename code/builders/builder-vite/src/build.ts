@@ -25,6 +25,9 @@ export async function build(options: Options) {
     build: {
       outDir: options.outputDir,
       emptyOutDir: false, // do not clean before running Vite build - Storybook has already added assets in there!
+      // Storybook copies the public dir itself through the `staticDirs` preset so that its own
+      // output files and user `staticDirs` take precedence over public assets.
+      copyPublicDir: false,
       // TODO: Remove bundlerOptionsKey and use 'rolldownOptions' directly once support for Vite < 8 is dropped
       [bundlerOptionsKey]: {
         external: [/\.\/sb-common-assets\/.*\.woff2/],

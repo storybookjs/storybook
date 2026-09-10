@@ -206,7 +206,6 @@ describe('delegated command dispatch', () => {
     channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
       serviceId: locallyImplementedServiceDef.id,
       callId,
-      runtimeId: 'instance',
     });
 
     const error = await promise.catch((caught: unknown) => caught);

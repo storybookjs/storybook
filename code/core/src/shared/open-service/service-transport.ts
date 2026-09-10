@@ -56,7 +56,7 @@ import {
   commandInvokeSchema,
   commandResultSchema,
   commandUnhandledSchema,
-  generateRuntimeId,
+  generateCallId,
   stampedSnapshotSchema,
   syncStartSchema,
 } from './service-channel.ts';
@@ -374,7 +374,6 @@ export function connectCommandTransport(context: {
         channel.emit(SERVICE_COMMAND_UNHANDLED, {
           serviceId,
           callId: invoke.callId,
-          runtimeId: ownRuntimeId,
         } satisfies CommandUnhandledPayload);
       }
       return;
@@ -472,7 +471,7 @@ export function connectCommandTransport(context: {
   channel.on(SERVICE_COMMAND_UNHANDLED, onUnhandled);
 
   const requestRemote = (commandName: string, input: unknown): Promise<unknown> => {
-    const callId = generateRuntimeId();
+    const callId = generateCallId();
 
     return new Promise<unknown>((resolve, reject) => {
       // Reject if no peer acknowledges in time. See REMOTE_COMMAND_ACK_TIMEOUT_MS for the
@@ -544,7 +543,6 @@ export function connectUnknownServiceReporter(context: {
   isDelegated: () => boolean;
 }): () => void {
   const { channel, isServiceRegistered, isDelegated } = context;
-  const ownRuntimeId = generateRuntimeId();
 
   const onInvoke = (payload: unknown): void => {
     const parsed = v.safeParse(commandInvokeSchema, payload);
@@ -555,7 +553,6 @@ export function connectUnknownServiceReporter(context: {
     channel.emit(SERVICE_COMMAND_UNHANDLED, {
       serviceId: parsed.output.serviceId,
       callId: parsed.output.callId,
-      runtimeId: ownRuntimeId,
     } satisfies CommandUnhandledPayload);
   };
 

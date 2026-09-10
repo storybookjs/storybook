@@ -109,7 +109,6 @@ export type CommandAckPayload = v.InferOutput<typeof commandAckSchema>;
 export const commandUnhandledSchema = v.object({
   serviceId: v.string(),
   callId: v.string(),
-  runtimeId: v.string(),
 });
 export type CommandUnhandledPayload = v.InferOutput<typeof commandUnhandledSchema>;
 
@@ -138,12 +137,17 @@ export const commandErrorSchema = v.object({
 export type CommandErrorPayload = v.InferOutput<typeof commandErrorSchema>;
 
 /**
- * Generates a unique id for one runtime instance (and for one remote-command `callId`).
+ * Unique id for one service registration.
  *
- * The id is identity-critical: it is the last-write-wins tiebreak for equal versions, the loop guard
- * that drops a peer's own echoes, and the correlation key matching command replies to their calls.
- * `nanoid` is used (over `Math.random`) so collisions cannot silently break that determinism.
+ * It is the last-write-wins tiebreak for equal versions and the loop guard that drops a runtime's
+ * own `services:sync-start`. `nanoid` is used (over `Math.random`) so collisions cannot silently
+ * break that determinism.
  */
 export function generateRuntimeId(): string {
+  return nanoid();
+}
+
+/** Unique id for one remote-command invocation. Replies correlate on this, not on `runtimeId`. */
+export function generateCallId(): string {
   return nanoid();
 }

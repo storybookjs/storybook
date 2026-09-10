@@ -361,7 +361,6 @@ describe('remote command responder (has local handler)', () => {
         expect.objectContaining({
           serviceId: remoteOnlyServiceDef.id,
           callId: 'call-unhandled',
-          runtimeId: expect.any(String),
         }),
       ],
     ]);
@@ -497,7 +496,6 @@ describe('command-unhandled reporting', () => {
     channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
       serviceId: remoteOnlyServiceDef.id,
       callId,
-      runtimeId: 'peer-without-handler',
     });
     channel.emitExternal(SERVICE_COMMAND_RESULT, {
       serviceId: remoteOnlyServiceDef.id,
@@ -532,6 +530,7 @@ describe('command-unhandled reporting', () => {
         }),
       ],
     ]);
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)[0][1]).not.toHaveProperty('runtimeId');
   });
 });
 

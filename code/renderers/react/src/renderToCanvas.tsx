@@ -48,6 +48,10 @@ const Wrapper = FRAMEWORK_OPTIONS?.strictMode ? StrictMode : Fragment;
 const actQueue: (() => Promise<void>)[] = [];
 let isActing = false;
 
+// Tracks how many times each canvas element was force-remounted, so the story subtree below
+// can be given a fresh key per remount (see the forceRemount comment in renderToCanvas).
+const remountCounts = new WeakMap<ReactRenderer['canvasElement'], number>();
+
 const processActQueue = async () => {
   if (isActing || actQueue.length === 0) {
     return;
@@ -77,25 +81,36 @@ export async function renderToCanvas(
 
   const isPortableStory = storyContext.parameters.__isPortableStory;
 
+  // On forceRemount we need React to recreate the component instances for the story run
+  // (not the case when we change args or globals however), see:
+  // https://github.com/storybookjs/react-storybook/issues/81
+  // Instead of unmounting the whole root — which empties the document between two renders and
+  // makes the browser clamp the scroll position to 0 (#22057) — we give the story subtree a
+  // fresh key per remount, so React replaces it within a single commit.
+  if (forceRemount) {
+    if (isPortableStory) {
+      // Portable stories render without the keyed ErrorBoundary below, so a full unmount is
+      // still the way to guarantee fresh component instances.
+      unmountElement(canvasElement);
+    } else {
+      remountCounts.set(canvasElement, (remountCounts.get(canvasElement) ?? 0) + 1);
+    }
+  }
+
   const content = isPortableStory ? (
     <Story {...storyContext} />
   ) : (
-    <ErrorBoundary key={storyContext.id} showMain={showMain} showException={showException}>
+    <ErrorBoundary
+      key={`${storyContext.id}-${remountCounts.get(canvasElement) ?? 0}`}
+      showMain={showMain}
+      showException={showException}
+    >
       <Story {...storyContext} />
     </ErrorBoundary>
   );
 
   // For React 15, StrictMode & Fragment doesn't exists.
   const element = Wrapper ? <Wrapper>{content}</Wrapper> : content;
-
-  // In most cases, we need to unmount the existing set of components in the DOM node.
-  // Otherwise, React may not recreate instances for every story run.
-  // This could leads to issues like below:
-  // https://github.com/storybookjs/react-storybook/issues/81
-  // (This is not the case when we change args or globals to the story however)
-  if (forceRemount) {
-    unmountElement(canvasElement);
-  }
 
   // Disable act in docs, see:
   // https://github.com/storybookjs/storybook/issues/30356

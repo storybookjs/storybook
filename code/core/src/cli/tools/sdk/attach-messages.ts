@@ -1,18 +1,8 @@
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
-function quoteShellArg(value: string): string {
-  if (!/[\s'"$`\\]/.test(value)) {
-    return value;
-  }
-  return `'${value.replace(/'/g, `'\\''`)}'`;
-}
-
-function attachCommand(record: StorybookInstanceRecord): string {
-  return record.configDir
-    ? `npx storybook tools --attach --cwd ${quoteShellArg(record.cwd)} --config-dir ${quoteShellArg(record.configDir)}`
-    : `npx storybook tools --attach --cwd ${quoteShellArg(record.cwd)}`;
-}
+const RESTART_GUIDANCE =
+  'From your project directory, restart Storybook (for example `npx storybook dev`) and re-run this command from there.';
 
 export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   const lines = [
@@ -21,12 +11,11 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   if (records.length > 0) {
     lines.push(
       '',
-      'Running Storybook instances that did not match this project — target one with `cd <cwd>` or `--config-dir <dir>`:'
+      'Running Storybook instances that did not match this project — target one by re-running this command from its project directory, or with `--config-dir <dir>`:'
     );
     for (const record of records) {
       const configDir = record.configDir ? `; configDir \`${record.configDir}\`` : '';
       lines.push(`- ${record.url} (cwd \`${record.cwd}\`${configDir})`);
-      lines.push(`  cd ${quoteShellArg(record.cwd)} && ${attachCommand(record)}`);
     }
   }
   return lines.join('\n');
@@ -50,19 +39,33 @@ export function formatConnectionFailed(record: StorybookInstanceRecord): string 
   return `Could not connect to the Storybook at ${record.url}. The instance registry may be stale — if that Storybook is no longer running, start it again (for example \`npm run storybook\`) and retry.`;
 }
 
-export function formatCwdMismatch(processCwd: string, instanceCwd: string): string {
-  return `This process is running from ${processCwd}, but the Storybook instance is running from ${instanceCwd}. \`cd ${quoteShellArg(instanceCwd)}\` and retry, or pass \`--cwd ${quoteShellArg(instanceCwd)}\`.`;
+// Symmetric fact-only report: every path shown is a stored or compared fact, and no path appears
+// in executable-command position — an agent must not be able to paste an installation path into a
+// flag.
+export function formatInstallationMismatch({
+  callerPath,
+  callerVersion,
+  instancePath,
+  instanceVersion,
+  configDir,
+}: {
+  callerPath: string;
+  callerVersion: string;
+  instancePath: string;
+  instanceVersion?: string;
+  configDir?: string;
+}): string {
+  const instanceConfigDir = configDir ? `; config dir \`${configDir}\`` : '';
+  return [
+    'The running Storybook and this CLI are different `storybook` installations:',
+    `- running instance: \`${instancePath}\` (version ${instanceVersion ?? 'unknown'}${instanceConfigDir})`,
+    `- this CLI: \`${callerPath}\` (version ${callerVersion})`,
+    `They must be the same installation. ${RESTART_GUIDANCE}`,
+  ].join('\n');
 }
 
-export function formatVersionMismatch(callerVersion: string, instanceVersion: string): string {
-  return `This process is Storybook ${callerVersion}, but the running instance is ${instanceVersion}. Restart your Storybook so both sides match.`;
-}
-
-export function formatRestartRequired(
-  resolvedProjectVersion: string,
-  instanceVersion: string
-): string {
-  return `The Storybook package in this project is ${resolvedProjectVersion}, but the running instance is ${instanceVersion}. Restart your Storybook so both sides match.`;
+export function formatUnknownInstallation(): string {
+  return `Could not verify that the running Storybook and this CLI are the same \`storybook\` installation. ${RESTART_GUIDANCE}`;
 }
 
 export function formatAttachFallback(remediation: string): string {

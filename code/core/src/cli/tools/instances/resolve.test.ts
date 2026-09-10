@@ -1,7 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { mockNodePath } from '../test-support/mock-node-path.ts';
 import { resolveInstance, selectInstances } from './resolve.ts';
 import type { McpStatus, StorybookInstanceRecord } from './types.ts';
+
+vi.mock('node:path', { spy: true });
 
 let nextInstance = 0;
 
@@ -657,5 +660,82 @@ describe('selectInstances', () => {
     });
     const result = selectInstances([foo, bar], { cwd: '/Users/x/projects/other', port: 6006 });
     expect(result).toEqual({ kind: 'match', matches: [bar, foo] });
+  });
+});
+
+describe('Windows instance matching', () => {
+  beforeEach(() => {
+    mockNodePath('win32');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('matches a recorded C:/ cwd against lowercase drive-letter and separator variants', () => {
+    const r = record('C:/dev/temp/qa-10.6/cases/react-vite');
+    for (const cwd of [
+      'C:\\dev\\temp\\qa-10.6\\cases\\react-vite',
+      'C:/dev/temp/qa-10.6/cases/react-vite',
+      'c:\\dev\\temp\\qa-10.6\\cases\\react-vite',
+      'c:/dev/temp/qa-10.6/cases/react-vite',
+    ]) {
+      expect(resolveInstance([r], { cwd })).toEqual({
+        kind: 'instance',
+        record: r,
+        matches: [r],
+      });
+    }
+  });
+
+  it('matches configDir across Windows drive-letter case when cwds differ', () => {
+    const r = record('C:/repo', 'ready', { configDir: 'C:/repo/packages/ui/.storybook' });
+    const result = resolveInstance([r], {
+      cwd: 'c:/elsewhere',
+      configDir: 'c:\\repo\\packages\\ui\\.storybook',
+    });
+    expect(result).toEqual({ kind: 'instance', record: r, matches: [r] });
+  });
+
+  it('does not match a different Windows path', () => {
+    const r = record('C:/proj');
+    const result = resolveInstance([r], { cwd: 'C:/other' });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+      expect(result.records).toEqual([r]);
+    }
+  });
+
+  it('selects the Windows instance whose cwd matches ignoring drive-letter case', () => {
+    const r = record('C:/proj');
+    expect(selectInstances([r], { cwd: 'c:\\proj' })).toEqual({
+      kind: 'match',
+      matches: [r],
+    });
+  });
+});
+
+describe('POSIX instance matching', () => {
+  beforeEach(() => {
+    mockNodePath('posix');
+  });
+
+  afterEach(() => {
+    vi.restoreAllMocks();
+  });
+
+  it('keeps POSIX cwd compares byte-exact through resolveInstance', () => {
+    const r = record('/Users/x/foo');
+    expect(resolveInstance([r], { cwd: '/Users/x/foo' })).toEqual({
+      kind: 'instance',
+      record: r,
+      matches: [r],
+    });
+    const result = resolveInstance([r], { cwd: '/Users/x/Foo' });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('no-instance');
+    }
   });
 });

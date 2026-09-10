@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { page } from '@vitest/browser/context';
+import { page } from 'vitest/browser';
 import { INITIAL_VIEWPORTS } from 'storybook/viewport';
 
 import {
@@ -10,7 +10,7 @@ import {
   setViewport,
 } from './viewports.ts';
 
-vi.mock('@vitest/browser/context', () => ({
+vi.mock('vitest/browser', () => ({
   page: {
     viewport: vi.fn(),
   },

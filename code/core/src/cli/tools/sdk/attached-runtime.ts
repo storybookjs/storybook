@@ -1,7 +1,6 @@
-import { createRequire } from 'node:module';
 import { resolve } from 'node:path';
 
-import { versions } from 'storybook/internal/common';
+import { findStorybookPackageRoot, versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import {
@@ -18,21 +17,14 @@ import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatConnectionFailed,
-  formatCwdMismatch,
+  formatInstallationMismatch,
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
-  formatRestartRequired,
-  formatVersionMismatch,
+  formatUnknownInstallation,
 } from './attach-messages.ts';
-import {
-  AttachUnavailableError,
-  EnvironmentMismatchError,
-  SpawnFailedError,
-  ToolsRuntimeError,
-} from './errors.ts';
-import { resolveProjectStorybookVersion } from './resolve-project-storybook.ts';
-import { planAttachHost } from './spawn-plan.ts';
+import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
+import { checkInstallation } from './installation.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 
 export type AttachedInProcessResult = {
@@ -47,6 +39,8 @@ export type AttachedInProcessResult = {
 export type AttachedSpawnResult = {
   kind: 'spawn';
   record: StorybookInstanceRecord;
+  /** The instance's verified installation root the child host must be resolved from. */
+  storybookPath: string;
   /** Instances that also matched the target project but were not selected, best first. */
   siblings: StorybookInstanceRecord[];
 };
@@ -63,11 +57,9 @@ export type AttachRuntimeDeps = {
   getService?: ToolsetGetService;
   setDelegatedMode?: typeof setDelegatedMode;
   getRegisteredToolsets?: typeof getRegisteredToolsets;
-  cwd?: () => string;
   version?: string;
-  resolveBinPath?: () => string;
+  storybookPath?: () => string | undefined;
   isChildHost?: boolean;
-  resolveProjectVersion?: (cwd: string) => string | undefined;
   detectAgentName?: () => string | undefined;
 };
 
@@ -116,52 +108,26 @@ export async function bootstrapAttachedRuntime(
     });
   }
 
-  const processCwd = deps.cwd?.() ?? process.cwd();
-  const autoSpawn = options.autoSpawn ?? false;
-  const isChildHost = deps.isChildHost ?? process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
-  const resolvedProjectVersion = (deps.resolveProjectVersion ?? resolveProjectStorybookVersion)(
-    record.cwd
-  );
-  const plan = planAttachHost({
-    processCwd,
-    callerVersion,
-    record,
-    autoSpawn,
-    isChildHost,
-    resolvedProjectVersion,
-  });
-  const resolvedBinPath = (deps.resolveBinPath ?? resolveStorybookBinPath)();
-
-  switch (plan.action) {
-    case 'in-process':
-      break;
-    case 'spawn':
-      return { kind: 'spawn', record, siblings };
-    case 'throw-mismatch': {
-      const { fidelity } = plan;
-      throw new EnvironmentMismatchError({
-        instanceCwd: record.cwd,
-        resolvedBinPath,
-        reason:
-          fidelity.kind === 'cwd'
-            ? formatCwdMismatch(fidelity.processCwd, fidelity.instanceCwd)
-            : formatVersionMismatch(fidelity.callerVersion, fidelity.instanceVersion),
-      });
+  const callerStorybookPath = (deps.storybookPath ?? findStorybookPackageRoot)();
+  const installation = checkInstallation(record, callerStorybookPath);
+  if (!installation.ok) {
+    const autoSpawn = options.autoSpawn ?? false;
+    const isChildHost = deps.isChildHost ?? process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+    if (installation.reason === 'different-installation' && autoSpawn && !isChildHost) {
+      return { kind: 'spawn', record, storybookPath: installation.instancePath, siblings };
     }
-    case 'throw-restart':
-      throw new EnvironmentMismatchError({
-        instanceCwd: record.cwd,
-        resolvedBinPath,
-        reason: formatRestartRequired(plan.resolvedProjectVersion, plan.instanceVersion),
-      });
-    case 'throw-spawn-failed':
-      throw new SpawnFailedError({
-        reason: `Could not resolve the \`storybook\` package from ${record.cwd}. Install Storybook in that project, then retry.`,
-      });
-    default: {
-      const exhaustive: never = plan;
-      throw exhaustive;
-    }
+    throw new EnvironmentMismatchError({
+      reason:
+        installation.reason === 'different-installation'
+          ? formatInstallationMismatch({
+              callerPath: installation.callerPath,
+              callerVersion,
+              instancePath: installation.instancePath,
+              instanceVersion: record.storybookVersion,
+              configDir: record.configDir,
+            })
+          : formatUnknownInstallation(),
+    });
   }
 
   let connection: NodeChannelConnection | undefined;
@@ -232,14 +198,6 @@ async function resolveLoaders(deps: AttachRuntimeDeps): Promise<{
         })),
     getService: deps.getService ?? ((id, options) => core.getService(id as never, options)),
   };
-}
-
-function resolveStorybookBinPath(): string {
-  try {
-    return createRequire(import.meta.url).resolve('storybook/package.json');
-  } catch {
-    return process.execPath;
-  }
 }
 
 const ATTACH_HANDSHAKE_TIMEOUT_MS = 10_000;

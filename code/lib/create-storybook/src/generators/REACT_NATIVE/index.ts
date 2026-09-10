@@ -130,7 +130,9 @@ export default defineGeneratorModule({
       'storybook',
     ];
 
-    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve);
+    const versionedPackages = await packageManager.getVersionedPackages(packagesToResolve, {
+      storybookVersionSpecifier: context.storybookVersionSpecifier,
+    });
 
     const packages: string[] = [
       ...versionedPackages,

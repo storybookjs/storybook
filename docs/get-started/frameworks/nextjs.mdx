@@ -6,6 +6,12 @@ sidebar:
   title: Next.js (Webpack)
 ---
 
+<Callout variant="warning" icon="⚠️">
+
+**`@storybook/nextjs` is deprecated and will be removed in Storybook 12.** Migrate to [`@storybook/nextjs-vite`](./nextjs-vite.mdx) — the automigration is available via `storybook upgrade` (accept the fix) or `storybook migrate nextjs-to-nextjs-vite`. See the [migration instructions](./nextjs-vite.mdx#how-do-i-migrate-from-the-nextjs-webpack-5-addon) for details.
+
+</Callout>
+
 Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Next.js](https://nextjs.org/) applications using [Webpack 5](https://webpack.js.org/).
 
 <Callout variant="info">
@@ -36,7 +42,7 @@ You can then get started [writing stories](../whats-a-story.mdx), [running tests
   versions={[
     {
       name: 'Next.js',
-      range: '≥ 14.1',
+      range: '≥ 15',
       icon: '/images/logos/renderers/logo-nextjs.svg',
     },
     {

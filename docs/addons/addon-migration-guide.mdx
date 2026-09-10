@@ -214,6 +214,14 @@ Change all your stories to use `preview.meta` and `meta.story` and check for any
 We strongly recommend you use [NPM Trusted Publishing](https://docs.npmjs.com/trusted-publishers) to keep your users secure. You will first need to change your package settings on npmjs.com. Then, in the release workflow, ensure you use Node 24 (minimum supported version for Trusted Publishing) and that you no longer pass a NPM token:
 
 ```diff title=".github/workflows/release.yml"
+    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci') && github.repository != 'storybookjs/addon-kit'"
++    permissions:
++      contents: write
++      issues: write
++      pull-requests: write
++      id-token: write
+    steps:
+
 -      - name: Use Node.js 20.x
 -        uses: actions/setup-node@v4
 +      - name: Use Node.js 24.x
@@ -222,6 +230,7 @@ We strongly recommend you use [NPM Trusted Publishing](https://docs.npmjs.com/tr
 -          node-version: 20.x
 +          node-version: 24.x
            cache: 'pnpm'
++          registry-url: 'https://registry.npmjs.org'
  
        - name: Install dependencies
 @@ -28,6 +28,5 @@ jobs:
@@ -230,14 +239,14 @@ We strongly recommend you use [NPM Trusted Publishing](https://docs.npmjs.com/tr
            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 -          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
          run: |
-           pnpm run release"
+           pnpm run release
 ```
 
 
 
 ## 11.0.0 full migration guide
 
-For a full list of changes, please visit the [Migration.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-9x-to-1000) file.
+For a full list of changes, please visit the [Migration.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-10x-to-1100) file.
 
 ## Migration example
 

@@ -21,6 +21,7 @@ import {
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
+import { invokeToolsetMethod } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './sdk/catalog.ts';
 import {
@@ -127,10 +128,9 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
           issues: validation.issues,
         });
       }
-      return method.handler(validation.value, {
+      return invokeToolsetMethod(toolset, methodName, validation.value, {
         ...ctx,
         ...(options.origin ? { origin: options.origin } : {}),
-        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
       });
     },
     close: async () => {},
@@ -178,7 +178,6 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
       const callCtx: ToolsetCtx = {
         ...ctx,
         ...(options?.origin !== undefined ? { origin: options.origin } : {}),
-        ...(options?.telemetry ? { telemetry: options.telemetry } : {}),
       };
       const { toolsetId, methodName } = parseToolsetMethodId(ref);
       const toolset = local.runtime.toolsets.find((candidate) => candidate.id === toolsetId);
@@ -194,7 +193,7 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
           issues: validation.issues,
         });
       }
-      return method.handler(validation.value, callCtx);
+      return invokeToolsetMethod(toolset, methodName, validation.value, callCtx);
     },
   };
 }
@@ -216,34 +215,13 @@ describe('local tools', () => {
 
     // Parity claim: the CLI must print byte-for-byte what MCP clients receive. The MCP adapter
     // itself lives in addon-mcp (core tests cannot reach it); its own suite asserts it renders
-    // handler markdown verbatim as text blocks, so comparing against the handler's markdown under
-    // an MCP context is the same contract expressed from this side of the package boundary.
-    const mcpCtx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
-    const mcpOutcome = await getToolset('docs').methods.list.handler({}, mcpCtx);
+    // handler markdown verbatim as text blocks, so comparing against the handler's markdown is
+    // the same contract expressed from this side of the package boundary.
+    const mcpOutcome = await getToolset('docs').methods.list.handler({});
     expect(result.exitCode).toBe(0);
     expect(result.outcome).toEqual({ kind: 'success' });
     expect(result.output).toContain('Button');
     expect(result.output).toBe(mcpOutcome.markdown);
-  });
-
-  it('stamps tools-command dimensions onto per-method telemetry for a local host', async () => {
-    const methodTelemetry = vi.fn(async () => {});
-    const { deps } = makeDeps({ methodTelemetry });
-
-    const result = await run(['docs', 'list'], deps);
-
-    expect(result.outcome).toEqual({ kind: 'success' });
-    expect(methodTelemetry).toHaveBeenCalledWith(
-      'tool:listAllDocumentation',
-      expect.objectContaining({
-        toolset: 'docs',
-        client: 'cli',
-        requestedMode: 'local',
-        resolvedMode: 'local',
-        attachMode: 'local',
-        host: 'in-process',
-      })
-    );
   });
 
   it('round-trips the show-story --storyId flag through token parsing to the handler', async () => {
@@ -792,32 +770,26 @@ describe('outcome mapping', () => {
   });
 });
 
-describe('telemetry sink', () => {
-  it('forwards per-method events with the toolset’s telemetry group', async () => {
-    const methodTelemetry = vi.fn(async () => {});
-    const { deps } = makeDeps({ methodTelemetry });
+describe('usage report', () => {
+  it('carries the handler report out of a local run', async () => {
+    const { deps } = makeDeps();
 
-    await run(['docs', 'list'], deps);
+    const result = await run(['docs', 'list'], deps);
 
-    expect(methodTelemetry).toHaveBeenCalledWith(
-      'tool:listAllDocumentation',
-      expect.objectContaining({ toolset: 'docs' })
-    );
+    expect(result.report).toEqual({
+      toolset: 'docs',
+      tool: 'list',
+      event: 'tool:docs_list',
+      payload: expect.objectContaining({ componentCount: expect.any(Number) }),
+    });
   });
 
-  it('forwards per-method events on attached dispatch', async () => {
-    const methodTelemetry = vi.fn(async () => {});
-    const { deps } = makeDeps({
-      methodTelemetry,
-      createTools: vi.fn(async () => makeAttachedTools()),
-    });
+  it('carries the handler report out of an attached run', async () => {
+    const { deps } = makeDeps({ createTools: vi.fn(async () => makeAttachedTools()) });
 
-    await run(['docs', 'list'], deps, { attach: true });
+    const result = await run(['docs', 'list'], deps, { attach: true });
 
-    expect(methodTelemetry).toHaveBeenCalledWith(
-      'tool:listAllDocumentation',
-      expect.objectContaining({ toolset: 'docs' })
-    );
+    expect(result.report).toEqual(expect.objectContaining({ toolset: 'docs', tool: 'list' }));
   });
 });
 

@@ -1,3 +1,4 @@
+import { once } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useCallback, useEffect } from 'storybook/preview-api';
@@ -14,6 +15,12 @@ export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => 
     const existingFilters = document.body.style.filter.replaceAll(knownFiltersRegExp, '').trim();
 
     const visionFilter = filters[vision as keyof typeof filters]?.filter;
+    if (vision !== undefined && !visionFilter) {
+      once.warn(
+        `The vision simulation "${vision}" is not available. Remove or replace the "globals.vision" value. Available values: ${Object.keys(filters).join(', ')}.`
+      );
+    }
+
     if (visionFilter && document.body.classList.contains('sb-show-main')) {
       if (!existingFilters || existingFilters === 'none') {
         document.body.style.filter = visionFilter;

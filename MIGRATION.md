@@ -2192,11 +2192,13 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 `storybook migrate csf-2-to-3` still lifts a static `Story.story = { ... }` into a CSF 3 story object. It does not rewrite the dynamic cases above. The old `csf-hoist-story-annotations` codemod no longer ships.
 
-## From version 10.6.1 to 10.6.2
-
 ### Addon A11y: Removed anomaly vision simulations
 
 The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. If a story sets one of these values through `globals.vision`, remove that global or change it to one of the remaining supported values.
+
+The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, while the existing `achromatopsia` matrix also runs in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
+
+## From version 10.6.1 to 10.6.2
 
 ### `storybook dev` now blocks remote iframe embedding
 

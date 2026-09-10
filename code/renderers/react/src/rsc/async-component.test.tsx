@@ -81,6 +81,12 @@ describe('isStructurallyEqual', () => {
         () => 2
       )
     ).toBe(false);
+    expect(
+      isStructurallyEqual(
+        function a() {},
+        function b() {}
+      )
+    ).toBe(false);
   });
 
   it('compares React elements by type, key and props', () => {

@@ -72,8 +72,11 @@ export const isStructurallyEqual = (a: unknown, b: unknown, depth = 0): boolean 
     return false;
   }
   if (typeof a === 'function' && typeof b === 'function') {
-    // Inline callbacks are recreated on every render; compare by source instead.
-    return a.toString() === b.toString();
+    // Inline callbacks are recreated on every render, so identity would always miss the cache.
+    // Compare by source, name and arity instead. Closures capturing different values stay
+    // indistinguishable, which is acceptable: a real server component never receives functions
+    // from a client component.
+    return a.toString() === b.toString() && a.name === b.name && a.length === b.length;
   }
   if (typeof a !== 'object' || typeof b !== 'object' || a === null || b === null) {
     return false;

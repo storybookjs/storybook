@@ -11339,7 +11339,7 @@ __metadata:
     vite: "npm:^7.0.4"
   peerDependencies:
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -11636,7 +11636,7 @@ __metadata:
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -11703,7 +11703,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
@@ -11794,7 +11794,7 @@ __metadata:
   peerDependencies:
     preact: ">=10 || >= 11.0.0-0"
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -11906,7 +11906,7 @@ __metadata:
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -11931,7 +11931,7 @@ __metadata:
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
     typescript: ">= 4.9.x"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -12199,7 +12199,7 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -12235,7 +12235,7 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -12261,7 +12261,7 @@ __metadata:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     react-dom: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     "@tanstack/react-start":
       optional: true
@@ -12285,7 +12285,7 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     typescript: ">= 4.9.x"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -12328,7 +12328,7 @@ __metadata:
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 
@@ -38078,7 +38078,7 @@ __metadata:
   peerDependencies:
     next: ^15.0.0 || ^16.0.0
     storybook: "workspace:^"
-    vite: ^7.0.0 || ^8.0.0
+    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
 

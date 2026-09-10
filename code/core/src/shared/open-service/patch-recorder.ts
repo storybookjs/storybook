@@ -15,6 +15,7 @@
 import { batch } from '@preact/signals-core';
 import { peek } from 'deepsignal/core';
 
+import { parentAfterChild } from './json-patch.ts';
 import { clonePlain, hasOwn, isReservedKey } from './plain-object.ts';
 import { encodePointer, type JsonPatchOperation } from './service-channel.ts';
 
@@ -23,6 +24,7 @@ export type RecordedOp = JsonPatchOperation;
 export type PatchCollector = {
   record<T extends object>(state: T, mutate: (state: T) => void): void;
   flush(): RecordedOp[];
+  flushRecorded(): { ops: RecordedOp[]; inverse: RecordedOp[] };
 };
 
 type Touch = {
@@ -45,10 +47,10 @@ function isPrimitive(value: unknown): boolean {
 }
 
 function firstTouchValue(existed: boolean, current: unknown): unknown {
-  if (!existed || !isPrimitive(current)) {
+  if (!existed) {
     return undefined;
   }
-  return current;
+  return clonePlain(current);
 }
 
 function readPath(root: object, segments: readonly string[]): { found: boolean; value: unknown } {
@@ -77,25 +79,56 @@ function readPath(root: object, segments: readonly string[]): { found: boolean; 
  */
 export function createPatchCollector(): PatchCollector {
   const touches = new Map<string, Touch>();
+  const ancestorFirst = new Map<string, { firstValue: unknown; existed: boolean }>();
   const order: string[] = [];
   // One wrapper per target so draft identity (`draft.x === draft.x`, `indexOf`) matches deepsignal.
   const wrapperByTarget = new WeakMap<object, object>();
   const targetByWrapper = new WeakMap<object, object>();
   let root: object | undefined;
 
+  // Child mutations run first; a later ancestor touch must invert the pre-recipe subtree.
+  const captureAncestorSnapshots = (segments: readonly string[]): void => {
+    if (!root) {
+      return;
+    }
+    for (let index = 1; index < segments.length; index += 1) {
+      const ancestorSegments = segments.slice(0, index);
+      const pointer = encodePointer(ancestorSegments);
+      if (touches.has(pointer) || ancestorFirst.has(pointer)) {
+        continue;
+      }
+      const { found, value } = readPath(root, ancestorSegments);
+      ancestorFirst.set(pointer, {
+        firstValue: found ? clonePlain(value) : undefined,
+        existed: found,
+      });
+    }
+  };
+
   const note = (touch: Touch): void => {
+    captureAncestorSnapshots(touch.segments);
     const pointer = encodePointer(touch.segments);
     if (touches.has(pointer)) {
       return;
     }
-    touches.set(pointer, touch);
+    const shadow = ancestorFirst.get(pointer);
+    touches.set(
+      pointer,
+      shadow
+        ? { segments: touch.segments, firstValue: shadow.firstValue, existed: shadow.existed }
+        : touch
+    );
     order.push(pointer);
   };
 
   const noteArray = (arrayRoot: ArrayRoot): void => {
+    const pointer = encodePointer(arrayRoot.path);
+    if (touches.has(pointer)) {
+      return;
+    }
     note({
       segments: arrayRoot.path,
-      firstValue: undefined,
+      firstValue: clonePlain(arrayRoot.target),
       existed: true,
     });
   };
@@ -224,6 +257,64 @@ export function createPatchCollector(): PatchCollector {
     return proxy;
   };
 
+  const flushRecorded = (): { ops: RecordedOp[]; inverse: RecordedOp[] } => {
+    if (!root) {
+      return { ops: [], inverse: [] };
+    }
+
+    const touched = new Set(order);
+    const ops: RecordedOp[] = [];
+    const inverse: RecordedOp[] = [];
+
+    for (const pointer of order) {
+      const touch = touches.get(pointer);
+      if (!touch) {
+        continue;
+      }
+
+      // `/a` covers `/a/b`; `/a` does not cover `/ab`.
+      const hasTouchedAncestor = touch.segments.some((_, index) => {
+        if (index === 0) {
+          return false;
+        }
+        return touched.has(encodePointer(touch.segments.slice(0, index)));
+      });
+      if (hasTouchedAncestor) {
+        continue;
+      }
+
+      // Final value comes from live state, so overlapping collectors cannot emit a stale remove.
+      const { found, value } = readPath(root, touch.segments);
+      if (!found) {
+        if (touch.existed) {
+          ops.push({ op: 'remove', path: pointer });
+          inverse.push({ op: 'add', path: pointer, value: clonePlain(touch.firstValue) });
+        }
+        continue;
+      }
+      // Same-value primitives (including net-out) are not ops; objects are never deep-compared.
+      if (isPrimitive(value) && Object.is(value, touch.firstValue)) {
+        continue;
+      }
+      ops.push({
+        op: touch.existed ? 'replace' : 'add',
+        path: pointer,
+        value: clonePlain(value),
+      });
+      if (touch.existed) {
+        inverse.push({ op: 'replace', path: pointer, value: clonePlain(touch.firstValue) });
+      } else {
+        inverse.push({ op: 'remove', path: pointer });
+      }
+    }
+
+    touches.clear();
+    ancestorFirst.clear();
+    order.length = 0;
+    root = undefined;
+    return { ops, inverse: parentAfterChild(inverse) };
+  };
+
   return {
     record(state, mutate) {
       root = state;
@@ -233,53 +324,9 @@ export function createPatchCollector(): PatchCollector {
     },
 
     flush() {
-      if (!root) {
-        return [];
-      }
-
-      const touched = new Set(order);
-      const ops: RecordedOp[] = [];
-
-      for (const pointer of order) {
-        const touch = touches.get(pointer);
-        if (!touch) {
-          continue;
-        }
-
-        // `/a` covers `/a/b`; `/a` does not cover `/ab`.
-        const hasTouchedAncestor = touch.segments.some((_, index) => {
-          if (index === 0) {
-            return false;
-          }
-          return touched.has(encodePointer(touch.segments.slice(0, index)));
-        });
-        if (hasTouchedAncestor) {
-          continue;
-        }
-
-        // Final value comes from live state, so overlapping collectors cannot emit a stale remove.
-        const { found, value } = readPath(root, touch.segments);
-        if (!found) {
-          if (touch.existed) {
-            ops.push({ op: 'remove', path: pointer });
-          }
-          continue;
-        }
-        // Same-value primitives (including net-out) are not ops; objects are never deep-compared.
-        if (isPrimitive(value) && Object.is(value, touch.firstValue)) {
-          continue;
-        }
-        ops.push({
-          op: touch.existed ? 'replace' : 'add',
-          path: pointer,
-          value: clonePlain(value),
-        });
-      }
-
-      touches.clear();
-      order.length = 0;
-      root = undefined;
-      return ops;
+      return flushRecorded().ops;
     },
+
+    flushRecorded,
   };
 }

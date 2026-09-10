@@ -40,7 +40,7 @@ export const SERVICE_COMMAND_UNHANDLED = 'services:command-unhandled' as const;
  * - `state` must be a *plain* object: `v.record` accepts arrays, so a custom check rejects them
  *   (an array snapshot would corrupt the structural merge in `service-sync.ts`).
  * - `version` is a non-negative safe integer — the last-write-wins logical clock for bootstrap
- *   snapshots. Command broadcasts use `services:entry` and `{ runtimeId, counter }` instead.
+ *   snapshots. Command broadcasts use `services:entry` and `{ seq, runtimeId, counter }` instead.
  * - `input` / `result` are optional: a `void` command input or output serializes to `undefined`,
  *   which JSON / telejson transports drop entirely, so the key is legitimately absent on the wire.
  * - Unknown fields on `services:entry` are ignored so a later envelope field is not a protocol break.
@@ -97,14 +97,15 @@ export const jsonPatchOperationSchema = v.variant('op', [
 export type JsonPatchOperation = v.InferOutput<typeof jsonPatchOperationSchema>;
 
 export const entryStampSchema = v.object({
+  seq: v.pipe(nonNegativeSafeInteger, v.minValue(1)),
   runtimeId: v.string(),
   counter: v.pipe(nonNegativeSafeInteger, v.minValue(1)),
 });
 export type EntryStamp = v.InferOutput<typeof entryStampSchema>;
 
-/** Canonical key for the seen-stamp set. */
+/** Canonical log key and warning label: `seq:runtimeId:counter`. */
 export function entryStampKey(stamp: EntryStamp): string {
-  return `${stamp.runtimeId}:${stamp.counter}`;
+  return `${stamp.seq}:${stamp.runtimeId}:${stamp.counter}`;
 }
 
 /** `services:entry` — one per outer command invocation, never empty. */

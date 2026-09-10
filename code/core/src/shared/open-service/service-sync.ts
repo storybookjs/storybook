@@ -2,23 +2,33 @@
  * Shared sync primitives for the open-service multi-master protocol.
  *
  * Every runtime — server (Node), manager (top window), preview (iframe) — runs a full
- * `ServiceRuntime` and reconciles incoming state here. Command broadcasts apply RFC 6902 patches
- * by path and dedup with a per-writer Vector. Bootstrap still uses last-write-wins snapshot
- * replies. The transport that moves entries and snapshots lives in `service-transport.ts`.
+ * `ServiceRuntime` and reconciles incoming state here. Command broadcasts carry a Lamport stamp
+ * `{ seq, runtimeId, counter }` and an RFC 6902 patch. Each replica keeps an ordered Log, a
+ * per-writer Vector, and a Clock. Bootstrap still uses last-write-wins snapshot replies. The
+ * transport that moves entries and snapshots lives in `service-transport.ts`.
  *
  * ## 1. `isNewer` — last-write-wins ordering for bootstrap snapshots
  *
- * Each bootstrap snapshot carries a `(version, runtimeId)` stamp. `version` is a logical clock
- * bumped on every accepted local or remote change. Equal versions mean concurrent snapshot
- * replies; the lexicographically greater `runtimeId` wins. An *equal* stamp is **not** newer,
- * which drops snapshot echoes.
+ * Each bootstrap snapshot carries a `(version, runtimeId)` stamp. `version` stays at least the
+ * Lamport Clock after each accepted entry, so a joiner that raises its Clock from `version` cannot
+ * author a `seq` into retained history. Equal versions mean concurrent snapshot replies; the
+ * lexicographically greater `runtimeId` wins. An *equal* stamp is **not** newer, which drops
+ * snapshot echoes. The Clock still moves on every observed snapshot stamp, including those that
+ * lose last-write-wins.
  *
- * ## 2. Entries — Vector, seen stamps, apply by path
+ * ## 2. Entries — Clock, Vector, ordered Log
  *
- * Each `services:entry` carries `{ runtimeId, counter }`. A stamp already seen, or with a
- * counter at or below the Vector, is a duplicate and is dropped. Anything else is applied in
- * arrival order. The Vector stores, per writer, the highest *contiguous* counter applied. A gap
- * is applied but does not advance the Vector.
+ * Each `services:entry` carries `{ seq, runtimeId, counter }`. `seq` is the Lamport order key.
+ * One comparator orders the Log ascending on `seq`, then on `runtimeId` by plain string
+ * comparison. Incoming cases, in order: duplicate (in the Log, counter at or below the Vector, or
+ * `seq` at or below an adopted snapshot `version`) drops but still advances the Clock; later
+ * appends; earlier undoes newest-first, applies, and redoes from stored forward ops inside one
+ * `setState` batch; a gap still places but does not advance the Vector; beyond-window (sorts before
+ * the oldest retained entry) drops and warns. Adopting a bootstrap snapshot raises the Clock to at
+ * least that snapshot's `version`, so a late joiner's next `seq` is later than the peer's accepted
+ * history, and retires the Log so old inverses cannot replay across the new state. The Vector stays,
+ * so later echoes still drop. The Vector never evicts. Log eviction is lazy on append: an entry is
+ * retained while younger than 15 s or among the newest 256.
  *
  * ## 3. `applyStatePatch` — structural merge for snapshots
  *
@@ -35,9 +45,17 @@ import { applyJsonPatch } from './json-patch.ts';
 import { FORBIDDEN_KEYS, hasOwn, isPlainObject } from './plain-object.ts';
 import { entryStampKey, type EntryStamp, type JsonPatchOperation } from './service-channel.ts';
 
+export const DEFAULT_LOG_MAX_AGE_MS = 15_000;
+export const DEFAULT_LOG_MAX_ENTRIES = 256;
+
+export type LogWindow = {
+  maxAgeMs: number;
+  maxEntries: number;
+};
+
 /** Per-service last-write-wins stamp carried on bootstrap snapshot replies. */
 export type SyncStamp = {
-  /** Logical clock for the state lineage. Bumped on every accepted change, adopted on snapshot accept. */
+  /** Logical clock for the state lineage. At least the Lamport Clock after each accepted entry. */
   version: number;
   /** Id of the runtime that produced this version; the deterministic tiebreak for equal versions. */
   runtimeId: string;
@@ -56,6 +74,22 @@ export function isNewer(incoming: SyncStamp, local: SyncStamp): boolean {
   }
 
   return incoming.runtimeId > local.runtimeId;
+}
+
+/**
+ * Canonical entry order: ascending `seq`, then ascending `runtimeId` with plain string comparison.
+ *
+ * "Later in the log", "greater stamp", and "wins the path" coincide. Greater `runtimeId` is later,
+ * matching last-write-wins snapshot ties.
+ */
+export function compareStamps(left: EntryStamp, right: EntryStamp): number {
+  if (left.seq !== right.seq) {
+    return left.seq < right.seq ? -1 : 1;
+  }
+  if (left.runtimeId !== right.runtimeId) {
+    return left.runtimeId < right.runtimeId ? -1 : 1;
+  }
+  return 0;
 }
 
 /**
@@ -123,11 +157,28 @@ export type AdoptEntryInput = {
   patch: readonly JsonPatchOperation[];
 };
 
+export type AuthoredEntry = {
+  command: string;
+  patch: readonly JsonPatchOperation[];
+  inverse: readonly JsonPatchOperation[];
+};
+
+export type ReconcilerLogEntry = {
+  stamp: EntryStamp;
+  command: string;
+  patch: readonly JsonPatchOperation[];
+};
+
+type StoredLogEntry = ReconcilerLogEntry & {
+  inverse: JsonPatchOperation[];
+  appliedAt: number;
+};
+
 /**
  * The per-service reconciler shared by every runtime's channel integration.
  *
- * It owns the bootstrap snapshot stamp, the per-writer Vector, and the seen-stamp set. Local
- * commands call {@link SnapshotReconciler.advanceLocal} before emitting. Incoming entries go
+ * It owns the bootstrap snapshot stamp, the Clock, the per-writer Vector, and the ordered Log.
+ * Local commands call {@link SnapshotReconciler.advanceLocal} before emitting. Incoming entries go
  * through {@link SnapshotReconciler.tryAdoptEntry}. Incoming bootstrap snapshots go through
  * {@link SnapshotReconciler.tryAdopt}.
  */
@@ -135,19 +186,33 @@ export type SnapshotReconciler = {
   /** The current local snapshot stamp (read for sync-start-reply envelopes). */
   readonly stamp: SyncStamp;
   /**
-   * Records a locally authored change: bumps the snapshot version, increments this writer's
-   * counter, records the stamp as seen, and advances the Vector. Call this before emitting so
-   * the broadcast's own echo is recognized as a duplicate and dropped.
+   * Lamport high-water mark. Moves on incoming stamps (including duplicates), local authoring,
+   * observed bootstrap stamps (including LWW rejects), and adopted snapshot `version`.
    */
-  advanceLocal(runtimeId: string): EntryStamp;
+  readonly clock: number;
+  /** Per-writer highest contiguous counter applied. */
+  readonly vector: Readonly<Record<string, number>>;
+  /** Applied entries in canonical order, after window eviction. */
+  readonly log: readonly ReconcilerLogEntry[];
+  /** Whether this stamp is in the retained Log. */
+  has(stamp: EntryStamp): boolean;
   /**
-   * Adopts an incoming snapshot iff it is strictly newer (LWW). Returns whether it was adopted, so
-   * relay hubs can re-broadcast only on a real advance.
+   * Records a locally authored change: assigns `seq = clock + 1`, increments this writer's
+   * counter, appends to the Log with the supplied inverse, and advances the Clock. Call this
+   * before emitting so the broadcast's own echo is recognized as a duplicate and dropped.
+   */
+  advanceLocal(runtimeId: string, authored: AuthoredEntry): EntryStamp;
+  /**
+   * Adopts an incoming snapshot iff it is strictly newer (LWW). Always raises the Clock to at least
+   * `incoming.version`, including when the snapshot loses last-write-wins. An accepted snapshot
+   * retires the Log and ignores later arrivals with `seq` at or below that `version`. Returns
+   * whether state was adopted, so relay hubs can re-broadcast only on a real advance.
    */
   tryAdopt(incoming: SyncStamp, state: Record<string, unknown>): boolean;
   /**
-   * Applies an incoming entry iff it is not a duplicate. Returns whether it was accepted, so a
-   * hub forwards the original payload only then. A gap is accepted without advancing the Vector.
+   * Places an incoming entry into the Log. Returns whether it was accepted, so a hub forwards the
+   * original payload only then. Duplicates, entries at or below the last adopted snapshot `version`,
+   * and beyond-window entries return false; a gap is accepted without advancing the Vector.
    */
   tryAdoptEntry(incoming: AdoptEntryInput): boolean;
 };
@@ -163,27 +228,163 @@ export type SnapshotReconciler = {
 export function createSnapshotReconciler(options: {
   setState: (mutate: StateMutator) => void;
   initialStamp: SyncStamp;
+  window?: Partial<LogWindow>;
 }): SnapshotReconciler {
   const { setState, initialStamp } = options;
+  const window: LogWindow = {
+    maxAgeMs: options.window?.maxAgeMs ?? DEFAULT_LOG_MAX_AGE_MS,
+    maxEntries: options.window?.maxEntries ?? DEFAULT_LOG_MAX_ENTRIES,
+  };
   let localStamp = initialStamp;
+  let clock = 0;
+  let snapshotSeq = 0;
   const vector = new Map<string, number>();
-  const seen = new Set<string>();
+  const log: StoredLogEntry[] = [];
+  const logKeys = new Set<string>();
+  let truncated = false;
 
   const vectorOf = (runtimeId: string): number => vector.get(runtimeId) ?? 0;
 
-  // Remember a stamp we authored or applied. Advance this writer's vector only when the counter is
-  // contiguous, then absorb later stamps that already arrived as gaps. Bump the snapshot stamp so
-  // bootstrap replies stay newer.
-  const recordAccepted = (stamp: EntryStamp): void => {
-    seen.add(entryStampKey(stamp));
-    if (stamp.counter === vectorOf(stamp.runtimeId) + 1) {
-      let next = stamp.counter;
-      while (seen.has(entryStampKey({ runtimeId: stamp.runtimeId, counter: next + 1 }))) {
-        next += 1;
-      }
-      vector.set(stamp.runtimeId, next);
+  const hasStamp = (stamp: EntryStamp): boolean => logKeys.has(entryStampKey(stamp));
+
+  const silentMissingRemove = (): void => undefined;
+
+  const patchPaths = (patch: readonly JsonPatchOperation[]): string =>
+    patch.map((operation) => operation.path).join(',');
+
+  const applyOps = (
+    current: Record<string, unknown>,
+    patch: readonly JsonPatchOperation[],
+    onMissingRemove: (path: string) => void
+  ) => applyJsonPatch(current, patch, onMissingRemove);
+
+  const undoEntry = (
+    current: Record<string, unknown>,
+    entry: StoredLogEntry,
+    serviceId: string
+  ): void => {
+    const result = applyOps(current, entry.inverse, silentMissingRemove);
+    if (!result.ok) {
+      logger.warn(
+        `Open-service sync: undo failed. service=${serviceId} stamp=${entryStampKey(entry.stamp)} path=${result.path} command=${entry.command}`
+      );
     }
-    localStamp = { version: localStamp.version + 1, runtimeId: stamp.runtimeId };
+  };
+
+  const redoEntry = (
+    current: Record<string, unknown>,
+    entry: StoredLogEntry,
+    serviceId: string
+  ): void => {
+    const result = applyOps(current, entry.patch, silentMissingRemove);
+    if (!result.ok) {
+      logger.warn(
+        `Open-service sync: replay failed. service=${serviceId} stamp=${entryStampKey(entry.stamp)} path=${result.path} command=${entry.command}`
+      );
+      return;
+    }
+    entry.inverse = result.inverse;
+  };
+
+  // Inclusive of `index`: those entries sit after the incoming stamp and are replayed after it.
+  const undoToIndex = (
+    current: Record<string, unknown>,
+    index: number,
+    serviceId: string
+  ): StoredLogEntry[] => {
+    const undone: StoredLogEntry[] = [];
+    for (let cursor = log.length - 1; cursor >= index; cursor -= 1) {
+      const entry = log[cursor];
+      undoEntry(current, entry, serviceId);
+      undone.push(entry);
+    }
+    return undone;
+  };
+
+  const redoUndone = (
+    current: Record<string, unknown>,
+    undone: StoredLogEntry[],
+    serviceId: string
+  ): void => {
+    for (let cursor = undone.length - 1; cursor >= 0; cursor -= 1) {
+      redoEntry(current, undone[cursor], serviceId);
+    }
+  };
+
+  const insertIndexFor = (stamp: EntryStamp): number => {
+    let index = 0;
+    while (index < log.length && compareStamps(log[index].stamp, stamp) < 0) {
+      index += 1;
+    }
+    return index;
+  };
+
+  const tryAdvanceVector = (stamp: EntryStamp): void => {
+    if (stamp.counter !== vectorOf(stamp.runtimeId) + 1) {
+      return;
+    }
+    const counters = new Set<number>();
+    for (const entry of log) {
+      if (entry.stamp.runtimeId === stamp.runtimeId) {
+        counters.add(entry.stamp.counter);
+      }
+    }
+    let next = stamp.counter;
+    while (counters.has(next + 1)) {
+      next += 1;
+    }
+    vector.set(stamp.runtimeId, next);
+  };
+
+  const evict = (now: number): void => {
+    if (log.length === 0) {
+      return;
+    }
+    const minKeepIndex = Math.max(0, log.length - window.maxEntries);
+    const kept: StoredLogEntry[] = [];
+    for (let index = 0; index < log.length; index += 1) {
+      const entry = log[index];
+      const amongNewest = index >= minKeepIndex;
+      const young = now - entry.appliedAt < window.maxAgeMs;
+      if (amongNewest || young) {
+        kept.push(entry);
+      } else {
+        logKeys.delete(entryStampKey(entry.stamp));
+      }
+    }
+    if (kept.length === log.length) {
+      return;
+    }
+    truncated = true;
+    log.length = 0;
+    log.push(...kept);
+  };
+
+  const remember = (entry: StoredLogEntry, advanceVector: boolean): void => {
+    logKeys.add(entryStampKey(entry.stamp));
+    if (advanceVector) {
+      tryAdvanceVector(entry.stamp);
+    }
+    localStamp = {
+      version: Math.max(localStamp.version + 1, clock),
+      runtimeId: entry.stamp.runtimeId,
+    };
+    evict(entry.appliedAt);
+  };
+
+  const appendOrInsert = (entry: StoredLogEntry, index: number, advanceVector: boolean): void => {
+    if (index === log.length) {
+      log.push(entry);
+    } else {
+      log.splice(index, 0, entry);
+    }
+    remember(entry, advanceVector);
+  };
+
+  const advanceClock = (seq: number): void => {
+    if (seq > clock) {
+      clock = seq;
+    }
   };
 
   return {
@@ -191,18 +392,52 @@ export function createSnapshotReconciler(options: {
       return localStamp;
     },
 
-    advanceLocal(runtimeId: string): EntryStamp {
-      const stamp = { runtimeId, counter: vectorOf(runtimeId) + 1 };
-      recordAccepted(stamp);
+    get clock(): number {
+      return clock;
+    },
+
+    get vector(): Readonly<Record<string, number>> {
+      return Object.fromEntries(vector);
+    },
+
+    get log(): readonly ReconcilerLogEntry[] {
+      return log.map(({ stamp, command, patch }) => ({ stamp, command, patch }));
+    },
+
+    has(stamp: EntryStamp): boolean {
+      return hasStamp(stamp);
+    },
+
+    advanceLocal(runtimeId: string, authored: AuthoredEntry): EntryStamp {
+      const stamp: EntryStamp = {
+        seq: clock + 1,
+        runtimeId,
+        counter: vectorOf(runtimeId) + 1,
+      };
+      advanceClock(stamp.seq);
+      const now = Date.now();
+      const entry: StoredLogEntry = {
+        stamp,
+        command: authored.command,
+        patch: [...authored.patch],
+        inverse: [...authored.inverse],
+        appliedAt: now,
+      };
+      appendOrInsert(entry, log.length, true);
       return stamp;
     },
 
     tryAdopt(incoming: SyncStamp, state: Record<string, unknown>): boolean {
+      advanceClock(incoming.version);
       if (!isNewer(incoming, localStamp)) {
         return false;
       }
 
       localStamp = { version: incoming.version, runtimeId: incoming.runtimeId };
+      snapshotSeq = incoming.version;
+      logKeys.clear();
+      log.length = 0;
+      truncated = false;
       setState((current) => applyStatePatch(current, state, { preserveMissingKeys: false }));
 
       return true;
@@ -212,20 +447,55 @@ export function createSnapshotReconciler(options: {
       const { serviceId, stamp, command, patch } = incoming;
       const key = entryStampKey(stamp);
 
-      if (seen.has(key) || stamp.counter <= vectorOf(stamp.runtimeId)) {
+      advanceClock(stamp.seq);
+
+      if (
+        hasStamp(stamp) ||
+        stamp.counter <= vectorOf(stamp.runtimeId) ||
+        stamp.seq <= snapshotSeq
+      ) {
         return false;
       }
 
+      // log[0] is a window floor only after eviction; until then an earlier stamp inserts at 0.
+      if (truncated && log.length > 0 && compareStamps(stamp, log[0].stamp) < 0) {
+        logger.warn(
+          `Open-service sync: entry beyond the log window. service=${serviceId} stamps=${key},${entryStampKey(log[0].stamp)} paths=${patchPaths(patch)} command=${command}`
+        );
+        return false;
+      }
+
+      const gap = stamp.counter > vectorOf(stamp.runtimeId) + 1;
+      const index = insertIndexFor(stamp);
+      if (index < log.length && compareStamps(log[index].stamp, stamp) === 0) {
+        return false;
+      }
+
+      const now = Date.now();
       let failedPath: string | undefined;
+      let stored: StoredLogEntry | undefined;
+
       setState((current) => {
-        const result = applyJsonPatch(current, patch, (path) => {
+        const isLater = index === log.length;
+        const undone = isLater ? [] : undoToIndex(current, index, serviceId);
+        const result = applyOps(current, patch, (path) => {
           logger.debug(
             `Open-service sync: remove of missing key. service=${serviceId} stamp=${key} path=${path} command=${command}`
           );
         });
         if (!result.ok) {
           failedPath = result.path;
+          redoUndone(current, undone, serviceId);
+          return;
         }
+        stored = {
+          stamp,
+          command,
+          patch: [...patch],
+          inverse: result.inverse,
+          appliedAt: now,
+        };
+        redoUndone(current, undone, serviceId);
       });
 
       if (failedPath !== undefined) {
@@ -235,7 +505,11 @@ export function createSnapshotReconciler(options: {
         return false;
       }
 
-      recordAccepted(stamp);
+      if (!stored) {
+        return false;
+      }
+
+      appendOrInsert(stored, index, !gap);
       return true;
     },
   };

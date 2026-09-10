@@ -1,6 +1,7 @@
 import { deepSignal } from 'deepsignal/core';
 import { describe, expect, it } from 'vitest';
 
+import { applyJsonPatch } from './json-patch.ts';
 import { createPatchCollector } from './patch-recorder.ts';
 
 function record<T extends object>(initial: T, mutate: (state: T) => void) {
@@ -380,5 +381,44 @@ describe('patch recorder', () => {
 
     expect(restored.flush()).toEqual([{ op: 'add', path: '/x', value: 1 }]);
     expect(removed.flush()).toEqual([]);
+  });
+
+  it('computes inverses from first-touch values with children before parents', () => {
+    const state = deepSignal({ n: 0, child: { x: 1 } });
+    const collector = createPatchCollector();
+    collector.record(state, (s) => {
+      s.n = 1;
+      delete (s as { child?: { x: number } }).child;
+    });
+
+    expect(collector.flushRecorded()).toEqual({
+      ops: [
+        { op: 'replace', path: '/n', value: 1 },
+        { op: 'remove', path: '/child' },
+      ],
+      inverse: [
+        { op: 'replace', path: '/n', value: 0 },
+        { op: 'add', path: '/child', value: { x: 1 } },
+      ],
+    });
+  });
+
+  it('restores the pre-command ancestor subtree when a later ancestor delete subsumes a child delete', () => {
+    const state = deepSignal({ a: { b: { x: 0 } } });
+    const collector = createPatchCollector();
+    collector.record(state, (s) => {
+      delete (s.a as { b?: { x: number } }).b;
+      delete (s as { a?: { b?: { x: number } } }).a;
+    });
+
+    const recorded = collector.flushRecorded();
+    expect(recorded).toEqual({
+      ops: [{ op: 'remove', path: '/a' }],
+      inverse: [{ op: 'add', path: '/a', value: { b: { x: 0 } } }],
+    });
+
+    const restored: Record<string, unknown> = {};
+    expect(applyJsonPatch(restored, recorded.inverse, () => undefined).ok).toBe(true);
+    expect(restored).toEqual({ a: { b: { x: 0 } } });
   });
 });

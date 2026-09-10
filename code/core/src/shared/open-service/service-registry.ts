@@ -317,9 +317,9 @@ export function registerService<
     structuredClone(resolvedDefinition.initialState)
   );
 
-  // Owns the per-service stamp, Vector, and adopt/advance logic. Adopting an entry or a bootstrap
-  // snapshot goes through `commandSelf.setState` — not the wrapped commands below — which is how the
-  // broadcast loop is prevented.
+  // Owns the per-service stamp, Vector, Clock, ordered Log, and adopt/advance logic. Adopting an
+  // entry or a bootstrap snapshot goes through `commandSelf.setState` — not the wrapped commands
+  // below — which is how the broadcast loop is prevented.
   const reconciler = createSnapshotReconciler({
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),

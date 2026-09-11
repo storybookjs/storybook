@@ -1,0 +1,64 @@
+{
+  "components": [
+    {
+      "name": "ButtonComponent",
+      "type": "component",
+      "selector": "app-button",
+      "standalone": true,
+      "changeDetection": "ChangeDetectionStrategy.OnPush",
+      "description": "Primary UI component for user interaction.",
+      "rawdescription": "Primary UI component for user interaction.",
+      "inputsClass": [
+        {
+          "name": "label",
+          "type": "string",
+          "optional": true,
+          "defaultValue": "'Click me'",
+          "description": "Text displayed inside the button."
+        },
+        {
+          "name": "disabled",
+          "type": "boolean",
+          "optional": true,
+          "defaultValue": "false",
+          "description": "When true the button is non-interactive."
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "clicked",
+          "type": "EventEmitter<void>",
+          "optional": true,
+          "description": "Emitted when the user clicks the button."
+        }
+      ],
+      "propertiesClass": [],
+      "methodsClass": []
+    }
+  ],
+  "directives": [
+    {
+      "name": "LibBtnDirective",
+      "type": "directive",
+      "selector": "button[lib-btn], a[lib-btn]",
+      "standalone": true,
+      "description": "Attaches library button styling to any host element.",
+      "rawdescription": "Attaches library button styling to any host element.",
+      "inputsClass": [
+        {
+          "name": "variant",
+          "type": "\"primary\" | \"secondary\"",
+          "optional": true,
+          "defaultValue": "'primary'",
+          "description": "Visual variant of the button."
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": []
+    }
+  ],
+  "pipes": [],
+  "injectables": [],
+  "classes": []
+}

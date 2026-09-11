@@ -1,4 +1,7 @@
 import { findConfigFile } from 'storybook/internal/common';
+
+export { manifest as experimental_manifests } from './componentManifest/generator.ts';
+
 import {
   babelParser,
   extractMockCalls,

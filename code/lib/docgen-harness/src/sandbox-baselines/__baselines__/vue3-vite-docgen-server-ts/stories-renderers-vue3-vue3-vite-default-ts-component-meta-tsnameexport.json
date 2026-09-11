@@ -38,7 +38,11 @@
       "type": {
         "name": "enum",
         "required": false,
-        "value": ["small", "medium", "large"]
+        "value": [
+          "small",
+          "medium",
+          "large"
+        ]
       }
     }
   },

@@ -1,7 +1,7 @@
 import type { PlayFunction } from 'storybook/internal/csf';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { fn } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 
 import preview from '../../../../../.storybook/preview.tsx';
 import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
@@ -111,5 +111,30 @@ const withAiSetupState = {
 export const WithAiSetup = meta.story({
   beforeEach: async () => {
     mockStore.setState(withAiSetupState);
+  },
+});
+
+export const StableAcrossStateSyncs = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findAllByRole('listitem');
+    // Wait for the widget's animated mode and the initial enter transitions to settle.
+    await wait(3000);
+    const rows = [...canvasElement.querySelectorAll('li')];
+    await expect(rows.length).toBeGreaterThan(0);
+
+    mockStore.setState((state) => ({ ...state, items: { ...state.items } }));
+    let minOpacity = 1;
+    const start = performance.now();
+    while (performance.now() - start < 500) {
+      for (const row of rows) {
+        minOpacity = Math.min(minOpacity, parseFloat(getComputedStyle(row).opacity));
+      }
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+    }
+    await expect(minOpacity).toBe(1);
+    for (const row of rows) {
+      await expect(canvasElement.contains(row)).toBe(true);
+    }
   },
 });

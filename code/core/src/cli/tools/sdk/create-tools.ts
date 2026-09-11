@@ -4,12 +4,13 @@ import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { formatIssues } from '../../../shared/open-service/errors.ts';
-import type {
-  AnyToolsetDefinition,
-  AnyToolsetMethod,
-  AnyToolsetOutcome,
-  ToolsetCtx,
-  ToolsetTransport,
+import {
+  invokeToolsetMethod,
+  type AnyToolsetDefinition,
+  type AnyToolsetMethod,
+  type InvokedToolsetOutcome,
+  type ToolsetCtx,
+  type ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { projectPathsEqual } from '../instances/project-path.ts';
@@ -18,12 +19,7 @@ import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { toCatalogEntry } from './catalog.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
-import {
-  reportSdkAttachGate,
-  reportSdkInvocation,
-  resolveCallTelemetry,
-  toolsCommandDimensions,
-} from './command-telemetry.ts';
+import { reportSdkAttachGate, reportSdkInvocation } from './command-telemetry.ts';
 import {
   AttachUnavailableError,
   SpawnFailedError,
@@ -77,9 +73,11 @@ export type CreateToolsDeps = {
  * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
  * package resolved under that directory. It never changes `process.cwd()`.
  *
- * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
- * this process is not that instance's twin, attached mode defaults to spawning a child host from
- * the `storybook` package resolved under the instance directory.
+ * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. Two
+ * processes never attach across `storybook` installations: when this process is the instance's
+ * installation (compared by the package root each side derives from its own module location), it
+ * joins in-process; when it is a different installation, it spawns a child host from the
+ * installation the instance recorded and proxies through it.
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
  * is the expected auto path and stays silent. Unexpected gate failures carry `fallbackNotice`.
@@ -88,8 +86,9 @@ export type CreateToolsDeps = {
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
  *   declined.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
- * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
- *   declined, or when spawning cannot reconcile the running instance with the project package.
+ * @throws {EnvironmentMismatchError} When the instance record cannot prove which installation it
+ *   runs, or the installations differ and spawning is not allowed (`autoSpawn: false`, or this
+ *   process is already a child host).
  * @throws {SpawnFailedError} When a child host cannot be resolved or started.
  */
 export function createTools(
@@ -177,10 +176,12 @@ async function createAttachedTools(
     port: options.port,
   });
   if ('kind' in attached && attached.kind === 'spawn') {
-    // Pin the chosen instance's port so the child host re-resolves to that exact instance even
-    // when the registry changes between the parent's resolution and the child's.
+    // The child is the instance's own recorded installation, so it attaches as the twin the caller
+    // is not. Pin the chosen instance's port so it re-resolves to that exact instance even when
+    // the registry changes between the parent's resolution and the child's.
     return (deps.spawnChild ?? spawnChildHost)({
       cwd: attached.record.cwd,
+      installationPath: attached.storybookPath,
       options: {
         ...options,
         mode: 'attached',
@@ -373,11 +374,12 @@ function createToolsHost(args: {
     ref: string,
     input: Record<string, unknown>,
     options: ToolsCallOptions
-  ): Promise<AnyToolsetOutcome> => {
+  ): Promise<InvokedToolsetOutcome> => {
     options.signal?.throwIfAborted();
 
     const { toolsetId, methodName } = splitRef(ref);
-    const method = findMethod(findToolset(runtime, toolsetId), methodName);
+    const toolset = findToolset(runtime, toolsetId);
+    const method = findMethod(toolset, methodName);
 
     if (mode === 'local' && method.requiresDevServer) {
       throw new AttachUnavailableError({
@@ -398,21 +400,12 @@ function createToolsHost(args: {
 
     return raceAbort(
       options.signal,
-      method.handler(validation.value, {
+      invokeToolsetMethod(toolset, methodName, validation.value, {
         ...baseCtx,
         ...(options.origin !== undefined ? { origin: options.origin } : {}),
-        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
       })
     );
   };
-
-  const dimensions = toolsCommandDimensions({
-    clientInfo,
-    requestedMode,
-    resolvedMode: mode,
-    host,
-    fallbackReason: args.fallbackReason,
-  });
 
   return {
     mode,
@@ -438,21 +431,13 @@ function createToolsHost(args: {
       ref: string,
       input: Record<string, unknown> = {},
       options: ToolsCallOptions = {}
-    ): Promise<AnyToolsetOutcome> {
+    ): Promise<InvokedToolsetOutcome> {
       assertOpen();
-      const telemetry = resolveCallTelemetry(options, dimensions, {
-        clientInfo,
-        configDir: runtime.configDir,
-      });
-      const callOptions: ToolsCallOptions = {
-        ...options,
-        ...(telemetry ? { telemetry } : {}),
-      };
       const start = Date.now();
       try {
         const outcome = args.disconnected
-          ? await Promise.race([invoke(ref, input, callOptions), args.disconnected])
-          : await invoke(ref, input, callOptions);
+          ? await Promise.race([invoke(ref, input, options), args.disconnected])
+          : await invoke(ref, input, options);
         await reportSdkInvocation({
           ref,
           clientInfo,
@@ -461,6 +446,7 @@ function createToolsHost(args: {
           host,
           fallbackReason: args.fallbackReason,
           result: outcome,
+          report: outcome.telemetry,
           duration: Date.now() - start,
           configDir: runtime.configDir,
         });

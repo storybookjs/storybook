@@ -181,7 +181,7 @@ export function buildPortalStep(
 
 export function mswStep(
   projectInfo: ProjectInfo,
-  { configDir, mswInstall, packageManager, ts }: InstructionsContext
+  { configDir, mswInstall, packageManager, ts, tsx }: InstructionsContext
 ): { title: string; body: string } {
   const mswInit = getMswInitCommand(packageManager);
   const mswAddonAdd = packageManager.getPackageCommand([
@@ -189,6 +189,19 @@ export function mswStep(
     'add',
     'msw-storybook-addon@3',
   ]);
+  const previewWiring = projectInfo.hasCsfFactoryPreview
+    ? `import addonMsw from 'msw-storybook-addon';
+    import { mswHandlers } from './msw-handlers';
+
+    // Merge into the existing preview. Do not replace the file or the default export.
+    // - append addonMsw() to the existing addons array
+    // - call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)`
+    : `import { mswLoader } from 'msw-storybook-addon/csf3';
+    import { mswHandlers } from './msw-handlers';
+
+    // Merge into the existing preview. Do not replace the file or the default export.
+    // - append mswLoader() to the existing loaders array
+    // - call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)`;
   const csfNextNote = projectInfo.hasCsfFactoryPreview
     ? `
 
@@ -197,8 +210,10 @@ export function mswStep(
     : '';
 
   return {
-    title: 'MSW handlers (only what stories will hit)',
-    body: `Use \`msw-storybook-addon\`. Register it with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), then install its peer dependencies and generate the worker script:
+    title: 'Add MSW only when stories need it',
+    body: `Use this step only if the selected stories perform network or data fetching that requires deterministic mocks. If they do not, skip this entire step: do not install \`msw-storybook-addon\` or \`msw\`, generate a worker, create an empty handlers file, or add MSW wiring to the preview or main config.
+
+    When MSW is needed, register \`msw-storybook-addon\` with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), then install its peer dependencies and generate the worker script:
 
     \`\`\`bash
     ${mswAddonAdd}
@@ -221,6 +236,13 @@ ${csfNextNote}
         HttpResponse.json({ items: [{ id: 'p1', name: 'Example', price: 42 }] })
       ),
     ];
+    \`\`\`
+
+    Wire the handlers into the existing preview config:
+
+    \`\`\`${tsx}
+    // ${configDir}/preview.${tsx}
+    ${previewWiring}
     \`\`\`
 `,
   };

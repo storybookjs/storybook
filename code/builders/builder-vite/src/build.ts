@@ -57,6 +57,8 @@ export async function build(options: Options) {
         outDir: options.outputDir,
       },
     }),
+    // Our builds only touch the client environment. No need to change build
+    // config for other environments at the expense of third-party plugins.
     configEnvironment: (name) =>
       name === 'client'
         ? {

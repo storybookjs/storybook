@@ -87,14 +87,14 @@ export interface SubAPI {
    * @param event The event to handle.
    * @returns The matched shortcut action name, or undefined if no shortcut was matched.
    */
-  handleKeydownEvent(event: KeyboardEventLike): API_Action | undefined;
+  handleKeydownEvent(event: KeyboardEventLike): API_MatchableAction | undefined;
   /**
    * Handles a shortcut feature.
    *
    * @param feature The feature to handle.
    * @param event The event to handle.
    */
-  handleShortcutFeature(feature: API_Action, event: KeyboardEventLike): void;
+  handleShortcutFeature(feature: API_MatchableAction, event: KeyboardEventLike): void;
 }
 
 export type API_KeyCollection = string[];
@@ -128,6 +128,13 @@ export interface API_Shortcuts {
 }
 
 export type API_Action = keyof API_Shortcuts;
+
+/**
+ * A built-in shortcut action, or the id of a shortcut registered through `setAddonShortcut`
+ * (`` `${addon}-${actionName}` ``). `(string & {})` admits those addon ids while preserving
+ * autocompletion for the built-in names.
+ */
+export type API_MatchableAction = API_Action | (string & {});
 
 interface API_AddonShortcut {
   label: string;

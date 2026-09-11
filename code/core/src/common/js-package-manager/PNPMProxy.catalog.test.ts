@@ -101,6 +101,114 @@ describe('PNPMProxy catalogs', () => {
     });
   });
 
+  describe('addDependencies', () => {
+    it('updates an existing catalog entry without replacing its package.json reference', async () => {
+      const packageJson = {
+        dependencies: {},
+        devDependencies: {
+          '@storybook/vue3-vite': 'catalog:',
+          storybook: 'catalog:',
+        },
+      };
+      const writePackageJson = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+      vol.fromJSON({
+        [WORKSPACE_YAML]:
+          '# workspace\ncatalog:\n  "@storybook/vue3-vite": ^10.4.4 # framework\n  storybook: ^10.4.4 # core\n',
+      });
+
+      await pnpmProxy.addDependencies(
+        {
+          skipInstall: true,
+          type: 'devDependencies',
+          packageJsonInfo: {
+            packageJsonPath: '/root/project/package.json',
+            operationDir: '/root/project',
+            packageJson,
+          },
+        },
+        ['@storybook/vue3-vite@10.6.0-beta.0', 'storybook@10.6.0-beta.0']
+      );
+
+      expect(writePackageJson).toHaveBeenCalledWith(
+        {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/vue3-vite': 'catalog:',
+            storybook: 'catalog:',
+          },
+        },
+        '/root/project'
+      );
+      expect(writtenYaml()).toContain('"@storybook/vue3-vite": 10.6.0-beta.0 # framework');
+      expect(writtenYaml()).toContain('storybook: 10.6.0-beta.0 # core');
+    });
+
+    it('updates a named catalog and keeps the named catalog reference', async () => {
+      const packageJson = {
+        dependencies: { '@storybook/react': 'catalog:testing' },
+        devDependencies: {},
+      };
+      const writePackageJson = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+      vol.fromJSON({
+        [WORKSPACE_YAML]: 'catalogs:\n  testing:\n    "@storybook/react": ^10.4.4\n',
+      });
+
+      await pnpmProxy.addDependencies(
+        {
+          skipInstall: true,
+          type: 'dependencies',
+          packageJsonInfo: {
+            packageJsonPath: '/root/project/package.json',
+            operationDir: '/root/project',
+            packageJson,
+          },
+        },
+        ['@storybook/react@11.0.0']
+      );
+
+      expect(writePackageJson).toHaveBeenCalledWith(
+        {
+          dependencies: { '@storybook/react': 'catalog:testing' },
+          devDependencies: {},
+        },
+        '/root/project'
+      );
+      expect(writtenYaml()).toContain('"@storybook/react": 11.0.0');
+      expect(writtenYaml()).not.toContain('catalog:\n');
+    });
+
+    it('falls back to a direct pin when the catalog entry cannot be updated', async () => {
+      const packageJson = {
+        dependencies: { '@storybook/react': 'catalog:' },
+        devDependencies: {},
+      };
+      const writePackageJson = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+      vol.fromJSON({ [WORKSPACE_YAML]: 'catalog:\n  react: ^18.0.0\n' });
+
+      await pnpmProxy.addDependencies(
+        {
+          skipInstall: true,
+          type: 'dependencies',
+          packageJsonInfo: {
+            packageJsonPath: '/root/project/package.json',
+            operationDir: '/root/project',
+            packageJson,
+          },
+        },
+        ['@storybook/react@11.0.0']
+      );
+
+      expect(writePackageJson).toHaveBeenCalledWith(
+        {
+          dependencies: { '@storybook/react': '11.0.0' },
+          devDependencies: {},
+        },
+        '/root/project'
+      );
+      expect(writtenYaml()).toBe('catalog:\n  react: ^18.0.0\n');
+    });
+  });
+
   describe('applyVersionToRelatedPackages', () => {
     it('pins directly when the anchor is not declared through a catalog', () => {
       vi.spyOn(pnpmProxy, 'getAllDependencies').mockReturnValue({ vitest: '^3.2.0' });

@@ -26,6 +26,7 @@ const BASELINES = {
   basicPlainSnippet: 'runes-basic-props/plain-csf-snippet-Default.snapshot',
   callbacksSvelteSnippet: 'runes-callbacks/snippet-Default.snapshot',
   callbacksPlainSnippet: 'runes-callbacks/plain-csf-snippet-Default.snapshot',
+  argsInValueSnippet: 'runes-component-props-indexed/snippet-ArgsInValue.snapshot',
 } as const;
 
 const baseline = (key: keyof typeof BASELINES) =>
@@ -66,6 +67,11 @@ describe('legacy snippet gaps (red until a re-recorded baseline closes them)', (
   gapTest('spread args omit values equal to prop defaults', () => {
     expect(baseline('defaultSnippet')).not.toContain('count={0}');
     expect(baseline('defaultSnippet')).not.toContain('primary={false}');
+  });
+
+  gapTest('attribute string values keep args references literal', () => {
+    // The addon substitutes `args.x` references inside attribute string values too.
+    expect(baseline('argsInValueSnippet')).toContain('error="code args.open done"');
   });
 });
 

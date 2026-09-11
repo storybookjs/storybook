@@ -2,8 +2,13 @@
   "component": "Modal fixture component description.
 Captured from defineMeta comments.",
   "stories": {
+    "ArgsInValue": undefined,
+    "ArgsInsideSnippet": undefined,
     "ContentOnly": undefined,
     "Default": undefined,
+    "ExplicitTemplate": undefined,
+    "FooterAsAttribute": undefined,
+    "FooterFromArgs": undefined,
     "WithSnippets": "Modal story docs with snippet props.",
   },
 }

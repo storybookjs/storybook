@@ -1,0 +1,5 @@
+<Modal id="modal-args-inside" open error="Inline error">
+  {#snippet content()}
+    <p>{"Inline error"}</p>
+  {/snippet}
+</Modal>

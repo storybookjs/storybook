@@ -260,6 +260,11 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Legacy nullable unions drop `null`/`undefined` from the recorded type text, even when defaults such as `null` still record in `table.defaultValue.summary`.
 - `$$Props` helper interfaces and template-literal index signatures do not surface as rows; only matching `export let` declarations record.
 - Svelte CSF meta `render: template` stories record the root-level template source with substituted args; `defineMeta().argTypes` does not reach `extractArgTypes`, which records only component docgen output.
+- Svelte CSF snippet values inside `args` render as `{snippet}`.
+- Svelte CSF template attributes keep identifier values such as `footer={sharedFooter}` and drop the identifier's snippet definition.
+- Svelte CSF `template={modalTemplate}` records the referenced root-level snippet source with substituted args.
+- Svelte CSF nested snippet bodies substitute `args.x` references as JSON-stringified values, e.g. `{"Inline error"}`.
+- String arg values containing `args.` followed by an identifier are substituted as if they were references, e.g. `'code args.open done'` records as `code true done`; a reference right before the closing quote also swallows the quote and one resolving to a string nests quotes, so such recordings are kept out of the corpus.
 - Static Svelte CSF templates with no args parameter record their literal markup.
 
 ## Known legacy gaps (web-components)

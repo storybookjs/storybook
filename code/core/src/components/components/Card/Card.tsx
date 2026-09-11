@@ -52,13 +52,13 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-// Shifts by exactly one hue cycle (the gradient repeats its hues twice), so the loop wraps
-// seamlessly. Animating transform instead of background-position keeps the infinite shimmer
-// on the compositor — background-position forced a main-thread repaint on every frame for as
-// long as the card was mounted.
+// Half the layer's width plus half its height projects exactly one hue cycle onto the 45°
+// gradient axis, so the loop wraps seamlessly at any card size. Animating transform instead
+// of background-position keeps the infinite shimmer on the compositor — background-position
+// forced a main-thread repaint on every frame for as long as the card was mounted.
 const slide = keyframes({
   to: {
-    transform: 'translateX(-50%)',
+    transform: 'translate(-50%, 50%)',
   },
 });
 
@@ -104,15 +104,20 @@ const CardOutline = styled.div<{
     opacity: 1,
 
     ...(animation === 'rainbow' && {
+      // Oversized so the card stays covered throughout the diagonal slide.
       width: '1000%',
+      height: '200%',
+      top: '-100%',
       animation: `${slide} 10s infinite linear, ${fadeInOut} 60s infinite linear`,
-      // 13 stops: 6 hues twice plus the first hue again, so the second cycle starts at
-      // exactly 50% and the translateX(-50%) loop wraps without a seam.
+      // 13 stops: 6 hues twice plus the first hue again, so the hue pattern repeats at
+      // exactly 50% of the gradient line.
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
       willChange: 'transform, opacity',
       '@media (prefers-reduced-motion: reduce)': {
         animation: 'none',
         width: '100%',
+        height: '100%',
+        top: 0,
       },
     }),
 

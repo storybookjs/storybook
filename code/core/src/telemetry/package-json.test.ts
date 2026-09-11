@@ -8,6 +8,7 @@ import { getActualPackageJson, getActualPackageVersion } from './package-json.ts
 
 describe('getActualPackageJson', () => {
   let projectDir: string;
+  let workspaceDir: string;
 
   const addPackage = (name: string, packageJson: Record<string, unknown>) => {
     const packageDir = join(projectDir, 'node_modules', name);
@@ -17,12 +18,14 @@ describe('getActualPackageJson', () => {
 
   beforeEach(() => {
     projectDir = mkdtempSync(join(tmpdir(), 'sb-telemetry-package-json-'));
+    workspaceDir = mkdtempSync(join(tmpdir(), 'sb-telemetry-workspace-'));
     vi.spyOn(process, 'cwd').mockReturnValue(projectDir);
   });
 
   afterEach(() => {
     vi.restoreAllMocks();
     rmSync(projectDir, { recursive: true, force: true });
+    rmSync(workspaceDir, { recursive: true, force: true });
   });
 
   it('resolves the version installed for the project in the current working directory', async () => {
@@ -32,6 +35,21 @@ describe('getActualPackageJson', () => {
     await expect(getActualPackageVersion('react')).resolves.toEqual({
       name: 'react',
       version: '0.0.0-project',
+    });
+  });
+
+  it('resolves the version installed for an explicitly supplied project directory', async () => {
+    addPackage('react', { version: '0.0.0-project' });
+    const workspacePackageDir = join(workspaceDir, 'node_modules', 'react');
+    mkdirSync(workspacePackageDir, { recursive: true });
+    writeFileSync(
+      join(workspacePackageDir, 'package.json'),
+      JSON.stringify({ name: 'react', version: '0.0.0-workspace' })
+    );
+
+    await expect(getActualPackageVersion('react', workspaceDir)).resolves.toEqual({
+      name: 'react',
+      version: '0.0.0-workspace',
     });
   });
 

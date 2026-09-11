@@ -11,6 +11,7 @@ import {
   MIN_SUPPORTED_NODE_DESCRIPTION,
   formatMinVersion,
   isNodeVersionSupported,
+  parseNodeVersion,
 } from './node-version.ts';
 
 describe('node-version', () => {
@@ -77,6 +78,33 @@ describe('node-version', () => {
   describe('MIN_SUPPORTED_NODE_DESCRIPTION', () => {
     it('formats current minimums as human-readable string', () => {
       expect(MIN_SUPPORTED_NODE_DESCRIPTION).toBe('20.19+ or 22.12+');
+    });
+  });
+
+  describe('parseNodeVersion', () => {
+    it('parses a plain release version', () => {
+      expect(parseNodeVersion('24.19.0')).toEqual({ major: 24, minor: 19, patch: 0 });
+    });
+
+    it('strips prerelease segments so supported prerelease builds pass (issue #36143)', () => {
+      expect(parseNodeVersion('22.12.0-rc.1')).toEqual({ major: 22, minor: 12, patch: 0 });
+      expect(parseNodeVersion('20.19.0-nightly20240519abcdef')).toEqual({
+        major: 20,
+        minor: 19,
+        patch: 0,
+      });
+    });
+
+    it('strips build metadata', () => {
+      expect(parseNodeVersion('22.12.0+build.1')).toEqual({ major: 22, minor: 12, patch: 0 });
+    });
+
+    it('normalizes missing components to 0', () => {
+      expect(parseNodeVersion('22')).toEqual({ major: 22, minor: 0, patch: 0 });
+    });
+
+    it('treats unparseable segments as 0 instead of NaN', () => {
+      expect(parseNodeVersion('x.y.z')).toEqual({ major: 0, minor: 0, patch: 0 });
     });
   });
 });

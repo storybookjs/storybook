@@ -5,13 +5,15 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit/string';
 import { ManagerContext, useStorybookApi } from 'storybook/manager-api';
-import { expect, fn, screen, userEvent } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor } from 'storybook/test';
 
+import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
 import { MobileNavigation } from './MobileNavigation.tsx';
 
 const MockMenu = () => {
   const api = useStorybookApi();
+  const { setMobileAboutOpen } = useLayout();
   return (
     <div>
       menu
@@ -21,6 +23,9 @@ const MockMenu = () => {
         onClick={() => api.setMobileNavigation(false)}
       >
         close
+      </button>
+      <button type="button" aria-label="About Storybook" onClick={() => setMobileAboutOpen(true)}>
+        about
       </button>
     </div>
   );
@@ -91,6 +96,7 @@ const MockManagerProvider: FC<
   const value: any = useMemo(() => {
     const api = {
       getCurrentStoryData: fn(() => index.someStoryId),
+      getCurrentVersion: () => ({ version: '0.0.0' }),
       getShortcutKeys: () => ({ toggleNav: ['alt', 'S'] }),
       setMobileNavigation: (show: boolean) => setShowMobileNavigation(show),
       toggleNav: (nextState?: boolean) =>
@@ -104,7 +110,7 @@ const MockManagerProvider: FC<
       },
       api,
     };
-  }, [index, showMobileNavigation, exposeApi]);
+  }, [index, showMobileNavigation]);
 
   // Expose the live api for the shortcut story on commit, not during render.
   useEffect(() => {
@@ -250,6 +256,66 @@ export const PanelClosed: Story = {
 export const PanelDisabled: Story = {
   args: {
     showPanel: false,
+  },
+};
+
+// Closing the drawer while the about overlay is open must reset it, so the drawer reopens on the
+// menu rather than on the overlay (regression test).
+export const AboutResetOnReopen: Story = {
+  play: async (context) => {
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    await userEvent.click(await screen.findByLabelText('About Storybook'));
+    await screen.findByLabelText('Close about section');
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(screen.queryByLabelText('Close about section')).not.toBeInTheDocument()
+    );
+    // The reset is delayed until the drawer's exit transition is done.
+    await new Promise((resolve) => setTimeout(resolve, MOBILE_TRANSITION_DURATION + 50));
+
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    // waitFor, as the reopened drawer fades in and starts fully transparent
+    await waitFor(async () =>
+      expect(await screen.findByLabelText('Close navigation menu')).toBeVisible()
+    );
+    expect(screen.queryByLabelText('Close about section')).not.toBeInTheDocument();
+  },
+};
+
+// The about overlay covers the menu inside the drawer, so it must trap focus: without a trap,
+// tabbing keeps cycling through the obscured menu underneath. Every stop is asserted, so both
+// escaping the overlay and skipping an element fail the test (regression test).
+export const AboutFocusTrapped: Story = {
+  play: async (context) => {
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    await userEvent.click(await screen.findByLabelText('About Storybook'));
+
+    const backButton = await screen.findByLabelText('Close about section');
+    await waitFor(() => expect(backButton).toHaveFocus());
+
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Github' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Documentation' })).toHaveFocus();
+    // The package manager tabs are a single stop with a roving tabindex.
+    await userEvent.tab();
+    await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect(screen.getByRole('tab', { name: 'yarn' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('button', { name: 'Copy command' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Chromatic' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Storybook Community' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(backButton).toHaveFocus();
   },
 };
 

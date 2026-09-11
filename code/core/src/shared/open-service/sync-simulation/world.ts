@@ -1,5 +1,6 @@
 import { attachReplica, type Replica } from './replicas.ts';
 import { VirtualNetwork, type NodeId } from './network.ts';
+import type { LogWindow } from '../service-sync.ts';
 
 export type TopologyKind = 'dev-triangle' | 'production-fan' | 'two-tabs';
 
@@ -60,18 +61,47 @@ export type World = {
   network: VirtualNetwork;
   replicas: Replica[];
   replica: (id: NodeId) => Replica;
+  join: (id: NodeId, options?: { window?: Partial<LogWindow> }) => Replica;
   disconnect: () => void;
 };
 
-export function createWorld(topology: Topology): World {
+export function createWorld(
+  topology: Topology,
+  options?: { skip?: readonly NodeId[]; windows?: Partial<Record<NodeId, Partial<LogWindow>>> }
+): World {
+  const skipped = new Set(options?.skip ?? []);
+  const windows = options?.windows ?? {};
   const network = new VirtualNetwork(
     topology.nodes.map((node) => node.id),
     topology.edges
   );
-  const replicas = topology.nodes.map((node) =>
-    attachReplica({ network, id: node.id, relay: node.relay })
-  );
-  const byId = new Map(replicas.map((replica) => [replica.id, replica]));
+  const replicas: Replica[] = [];
+  const byId = new Map<NodeId, Replica>();
+
+  const join = (id: NodeId, extra?: { window?: Partial<LogWindow> }): Replica => {
+    if (byId.has(id)) {
+      throw new Error(`Replica ${id} is already joined`);
+    }
+    const node = topology.nodes.find((candidate) => candidate.id === id);
+    if (!node) {
+      throw new Error(`Unknown replica ${id}`);
+    }
+    const replica = attachReplica({
+      network,
+      id: node.id,
+      relay: node.relay,
+      window: extra?.window ?? windows[id],
+    });
+    replicas.push(replica);
+    byId.set(id, replica);
+    return replica;
+  };
+
+  for (const node of topology.nodes) {
+    if (!skipped.has(node.id)) {
+      join(node.id);
+    }
+  }
 
   return {
     topology,
@@ -84,6 +114,7 @@ export function createWorld(topology: Topology): World {
       }
       return replica;
     },
+    join,
     disconnect: () => {
       for (const replica of replicas) {
         replica.disconnect();

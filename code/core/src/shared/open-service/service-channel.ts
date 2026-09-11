@@ -23,8 +23,8 @@ import type { SerializedError } from './service-error-serialization.ts';
  */
 export type ServiceChannel = Pick<ChannelLike, 'on' | 'off' | 'emit'>;
 
-export const SERVICE_SYNC_START = 'services:sync-start' as const;
-export const SERVICE_SYNC_START_REPLY = 'services:sync-start-reply' as const;
+export const SERVICE_SYNC_REQUEST = 'services:sync-request' as const;
+export const SERVICE_SYNC_REPLY = 'services:sync-reply' as const;
 export const SERVICE_ENTRY = 'services:entry' as const;
 export const SERVICE_COMMAND_INVOKE = 'services:command-invoke' as const;
 export const SERVICE_COMMAND_ACK = 'services:command-ack' as const;
@@ -39,8 +39,8 @@ export const SERVICE_COMMAND_UNHANDLED = 'services:command-unhandled' as const;
  *
  * - `state` must be a *plain* object: `v.record` accepts arrays, so a custom check rejects them
  *   (an array snapshot would corrupt the structural merge in `service-sync.ts`).
- * - `version` is a non-negative safe integer — the last-write-wins logical clock for bootstrap
- *   snapshots. Command broadcasts use `services:entry` and `{ seq, runtimeId, counter }` instead.
+ * - `frontier` is `{ vector, clock }` — the per-writer contiguous counters plus the Lamport
+ *   high-water mark. Command broadcasts use `services:entry` and `{ seq, runtimeId, counter }`.
  * - `input` / `result` are optional: a `void` command input or output serializes to `undefined`,
  *   which JSON / telejson transports drop entirely, so the key is legitimately absent on the wire.
  * - Unknown fields on `services:entry` are ignored so a later envelope field is not a protocol break.
@@ -117,26 +117,30 @@ export const entrySchema = v.object({
 });
 export type EntryPayload = v.InferOutput<typeof entrySchema>;
 
-/** Sent by a newly-registered peer to initialize its state from any existing peer. */
-export const syncStartSchema = v.object({
+export const frontierSchema = v.object({
+  vector: v.record(v.string(), nonNegativeSafeInteger),
+  clock: nonNegativeSafeInteger,
+});
+export type SyncFrontier = v.InferOutput<typeof frontierSchema>;
+
+/** Sent by a runtime that wants a snapshot from any direct peer ahead of its frontier. */
+export const syncRequestSchema = v.object({
   serviceId: v.string(),
   runtimeId: v.string(),
+  frontier: frontierSchema,
 });
-export type SyncStartPayload = v.InferOutput<typeof syncStartSchema>;
+export type SyncRequestPayload = v.InferOutput<typeof syncRequestSchema>;
 
 /**
- * A full state snapshot stamped for last-write-wins ordering. Used by `services:sync-start-reply`
- * to bootstrap a freshly registered peer. Recipients apply it only when it is strictly newer than
- * their own (see `isNewer` in `service-sync.ts`). Command broadcasts use `services:entry` instead.
+ * Snapshot reply to `services:sync-request`. A replier emits this only when its vector dominates
+ * the requester's. Recipients install it with the Bayou rule in `service-sync.ts`.
  */
-export const stampedSnapshotSchema = v.object({
+export const syncReplySchema = v.object({
   serviceId: v.string(),
+  frontier: frontierSchema,
   state: stateSnapshotSchema,
-  version: nonNegativeSafeInteger,
-  runtimeId: v.string(),
 });
-export type StampedSnapshotPayload = v.InferOutput<typeof stampedSnapshotSchema>;
-export type SyncStartReplyPayload = StampedSnapshotPayload;
+export type SyncReplyPayload = v.InferOutput<typeof syncReplySchema>;
 
 /**
  * Sent by a runtime that wants a command executed but has no local handler for it.
@@ -206,9 +210,8 @@ export type CommandErrorPayload = v.InferOutput<typeof commandErrorSchema>;
 /**
  * Unique id for one service registration.
  *
- * It is the last-write-wins tiebreak for equal versions and the loop guard that drops a runtime's
- * own `services:sync-start`. `nanoid` is used (over `Math.random`) so collisions cannot silently
- * break that determinism.
+ * It is the loop guard that drops a runtime's own `services:sync-request`. `nanoid` is used (over
+ * `Math.random`) so collisions cannot silently break that determinism.
  */
 export function generateRuntimeId(): string {
   return nanoid();

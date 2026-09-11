@@ -15,16 +15,18 @@
  * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call that touched
  *   state, after it resolves, stamps an RFC 6902 `services:entry` and emits it. A command that
  *   writes nothing emits nothing and does not bump the stamp.
- * - {@link connectRuntimeToChannel} attaches the sync-start initialization and entry listeners, emits
- *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-emits every `services:entry`
- *   it accepted and every bootstrap snapshot it adopted, forwarding the original payload object.
+ * - {@link connectRuntimeToChannel} attaches the sync-request / sync-reply and entry listeners,
+ *   emits a bootstrap `services:sync-request`, and returns a teardown. A `relay` hub re-emits every
+ *   `services:entry` it accepted and every `services:sync-reply` it installed, forwarding the
+ *   original payload object. It never forwards a request.
  * - {@link connectCommandTransport} bridges the gap where a command is only implemented in *some*
  *   runtimes (e.g. a handler supplied at server registration). A runtime without a local handler
  *   requests remote execution; a runtime that has one listens for those requests, runs the command,
  *   and replies. See its docs for the request/ack/result/error protocol.
  *
  * The merge and ordering rules themselves live in `service-sync.ts`; this module only moves entries
- * and bootstrap snapshots on and off the channel.
+ * and snapshot replies on and off the channel. `getSnapshot()` runs only to answer a dominating
+ * request.
  */
 
 import * as v from 'valibot';
@@ -42,8 +44,8 @@ import {
   SERVICE_COMMAND_RESULT,
   SERVICE_COMMAND_UNHANDLED,
   SERVICE_ENTRY,
-  SERVICE_SYNC_START,
-  SERVICE_SYNC_START_REPLY,
+  SERVICE_SYNC_REPLY,
+  SERVICE_SYNC_REQUEST,
   type CommandAckPayload,
   type CommandErrorPayload,
   type CommandInvokePayload,
@@ -51,8 +53,8 @@ import {
   type CommandUnhandledPayload,
   type EntryPayload,
   type ServiceChannel,
-  type SyncStartPayload,
-  type SyncStartReplyPayload,
+  type SyncReplyPayload,
+  type SyncRequestPayload,
   commandAckSchema,
   commandErrorSchema,
   commandInvokeSchema,
@@ -60,11 +62,11 @@ import {
   commandUnhandledSchema,
   entrySchema,
   generateCallId,
-  stampedSnapshotSchema,
-  syncStartSchema,
+  syncReplySchema,
+  syncRequestSchema,
 } from './service-channel.ts';
 import { deserializeError, serializeError } from './service-error-serialization.ts';
-import type { SnapshotReconciler } from './service-sync.ts';
+import { vectorDominates, type SnapshotReconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input, collector?) => Promise<result>`. */
@@ -91,6 +93,9 @@ type RuntimeCommand = (input: unknown, collector?: PatchCollector) => Promise<un
  */
 export const REMOTE_COMMAND_ACK_TIMEOUT_MS = 300;
 
+/** A reply, or this much silence, clears the one outstanding `sync-request` per service. */
+export const SYNC_REQUEST_SILENCE_MS = 1000;
+
 type PendingRemoteCommand = {
   commandName: string;
   resolve: (value: unknown) => void;
@@ -104,7 +109,7 @@ interface RuntimeTransportContext {
   serviceId: ServiceId;
   /** This runtime's stable id, used to drop its own bootstrap request and its own echoes. */
   ownRuntimeId: string;
-  /** The reconciler owning this runtime's LWW stamp and its adopt/advance transitions. */
+  /** The reconciler owning this runtime's Log, Vector, Clock, and adopt/advance transitions. */
   reconciler: SnapshotReconciler;
   /** Reads the runtime's current live state at emit time. */
   getSnapshot: () => Record<string, unknown>;
@@ -159,40 +164,60 @@ export function wrapCommandsForBroadcast(
 /**
  * Attaches the channel listeners that keep one runtime in sync with its peers, and returns a teardown.
  *
- * Wires three handlers and emits a bootstrap `services:sync-start` so a freshly-registered runtime
+ * Wires three handlers and emits a bootstrap `services:sync-request` so a freshly-registered runtime
  * catches up to state authored before it joined:
- * - sync-start → reply with our current snapshot+stamp (ignoring our own request);
- * - sync-start-reply → adopt iff strictly newer (and, on a relay hub, forward the original payload);
- * - entry → apply by path unless duplicate (and, on a relay hub, forward the original payload).
+ * - sync-request → reply `{ frontier, state }` only when our vector dominates the requester's;
+ * - sync-reply → install iff dominating (and, on a relay hub, forward the original payload);
+ * - entry → place by the five-case rule (and, on a relay hub, forward when logged).
  *
- * A `relay` hub re-emits every entry it accepted and every bootstrap snapshot it adopted, using the
- * original payload object so unknown fields survive the hop. Leaves keep `relay: false`.
+ * A `relay` hub re-emits every entry it logged and every snapshot reply it installed, using the
+ * original payload object so unknown fields survive the hop. It never forwards a request. Leaves
+ * keep `relay: false`. At most one outstanding request per service; a reply or
+ * {@link SYNC_REQUEST_SILENCE_MS} of silence clears the flag. A gap, beyond-window, or
+ * missing-parent during that wait queues one more request, sent when the outstanding request
+ * clears, using the frontier at send time. A reply — installed or rejected — sends that queued
+ * request.
  */
 export function connectRuntimeToChannel(
   context: RuntimeTransportContext & { channel: ServiceChannel; relay: boolean }
 ): () => void {
   const { serviceId, ownRuntimeId, reconciler, getSnapshot, channel, relay } = context;
 
-  const emitSyncStart = (): void => {
-    channel.emit(SERVICE_SYNC_START, {
+  let requestOutstanding = false;
+  let repairQueued = false;
+  let silenceTimer: ReturnType<typeof setTimeout> | undefined;
+
+  const clearOutstandingRequest = (): void => {
+    requestOutstanding = false;
+    if (silenceTimer !== undefined) {
+      clearTimeout(silenceTimer);
+      silenceTimer = undefined;
+    }
+  };
+
+  const emitSyncRequest = (): void => {
+    if (requestOutstanding) {
+      repairQueued = true;
+      return;
+    }
+    requestOutstanding = true;
+    repairQueued = false;
+    channel.emit(SERVICE_SYNC_REQUEST, {
       serviceId,
       runtimeId: ownRuntimeId,
-    } satisfies SyncStartPayload);
+      frontier: reconciler.frontier,
+    } satisfies SyncRequestPayload);
+    silenceTimer = setTimeout(() => {
+      requestOutstanding = false;
+      silenceTimer = undefined;
+      if (repairQueued) {
+        emitSyncRequest();
+      }
+    }, SYNC_REQUEST_SILENCE_MS);
   };
 
-  const emitSyncStartReply = (): void => {
-    channel.emit(SERVICE_SYNC_START_REPLY, {
-      serviceId,
-      state: getSnapshot(),
-      version: reconciler.stamp.version,
-      runtimeId: reconciler.stamp.runtimeId,
-    } satisfies SyncStartReplyPayload);
-  };
-
-  // Reply to a peer's sync-start with our current snapshot+stamp (which may be one we adopted from yet
-  // another peer, not necessarily our own runtimeId). Skip our own bootstrap request.
-  const onSyncStart = (payload: unknown): void => {
-    const request = v.safeParse(syncStartSchema, payload);
+  const onSyncRequest = (payload: unknown): void => {
+    const request = v.safeParse(syncRequestSchema, payload);
     if (
       !request.success ||
       request.output.serviceId !== serviceId ||
@@ -201,24 +226,37 @@ export function connectRuntimeToChannel(
       return;
     }
 
-    emitSyncStartReply();
+    if (!vectorDominates(reconciler.vector, request.output.frontier.vector)) {
+      return;
+    }
+
+    channel.emit(SERVICE_SYNC_REPLY, {
+      serviceId,
+      frontier: reconciler.frontier,
+      state: getSnapshot(),
+    } satisfies SyncReplyPayload);
   };
 
-  // Bootstrap from a peer's sync-start-reply. Version-gating (not a first-reply-only guard) is what
-  // makes this converge when several peers reply: each reply is adopted only if strictly newer.
-  const onSyncStartReply = (payload: unknown): void => {
-    const snapshot = v.safeParse(stampedSnapshotSchema, payload);
+  const onSyncReply = (payload: unknown): void => {
+    const snapshot = v.safeParse(syncReplySchema, payload);
     if (!snapshot.success || snapshot.output.serviceId !== serviceId) {
       return;
     }
 
-    const adopted = reconciler.tryAdopt(
-      { version: snapshot.output.version, runtimeId: snapshot.output.runtimeId },
-      snapshot.output.state
+    const installed = reconciler.tryAdopt(
+      snapshot.output.frontier,
+      snapshot.output.state,
+      serviceId
     );
+    const queued = repairQueued;
+    clearOutstandingRequest();
 
-    if (adopted && relay) {
-      channel.emit(SERVICE_SYNC_START_REPLY, payload);
+    if (queued) {
+      emitSyncRequest();
+    }
+
+    if (installed && relay) {
+      channel.emit(SERVICE_SYNC_REPLY, payload);
     }
   };
 
@@ -228,35 +266,51 @@ export function connectRuntimeToChannel(
       return;
     }
 
-    const accepted = reconciler.tryAdoptEntry({
+    const outcome = reconciler.tryAdoptEntry({
       serviceId: parsed.output.serviceId,
       stamp: parsed.output.stamp,
       command: parsed.output.command,
       patch: parsed.output.patch,
     });
 
-    if (accepted && relay) {
-      channel.emit(SERVICE_ENTRY, payload);
+    switch (outcome) {
+      case 'accepted':
+        if (relay) {
+          channel.emit(SERVICE_ENTRY, payload);
+        }
+        break;
+      case 'gap':
+        if (relay) {
+          channel.emit(SERVICE_ENTRY, payload);
+        }
+        emitSyncRequest();
+        break;
+      case 'beyond-window':
+      case 'missing-parent':
+        emitSyncRequest();
+        break;
+      case 'duplicate':
+        break;
+      default: {
+        const exhaustive: never = outcome;
+        void exhaustive;
+        break;
+      }
     }
   };
 
-  channel.on(SERVICE_SYNC_START, onSyncStart);
-  channel.on(SERVICE_SYNC_START_REPLY, onSyncStartReply);
+  channel.on(SERVICE_SYNC_REQUEST, onSyncRequest);
+  channel.on(SERVICE_SYNC_REPLY, onSyncReply);
   channel.on(SERVICE_ENTRY, onEntry);
 
-  // Ask any existing peer for the current state so we catch up to changes authored before we joined.
-  emitSyncStart();
-
-  // A hub that already holds peer-adopted state (e.g. after a hot reload) pushes once so late
-  // joiners on other transports can converge without waiting for another mutation.
-  if (relay && reconciler.stamp.version > 0) {
-    emitSyncStartReply();
-  }
+  emitSyncRequest();
 
   return (): void => {
-    channel.off(SERVICE_SYNC_START, onSyncStart);
-    channel.off(SERVICE_SYNC_START_REPLY, onSyncStartReply);
+    channel.off(SERVICE_SYNC_REQUEST, onSyncRequest);
+    channel.off(SERVICE_SYNC_REPLY, onSyncReply);
     channel.off(SERVICE_ENTRY, onEntry);
+    repairQueued = false;
+    clearOutstandingRequest();
   };
 }
 
@@ -577,7 +631,7 @@ type ChannelConnectedRuntime = {
  * a single teardown.
  *
  * This is the one entry point `registerService` uses, so the three transport halves — command
- * broadcasting, the remote-command protocol, and the sync-start + entry listeners — are always
+ * broadcasting, the remote-command protocol, and the sync-request + entry listeners — are always
  * assembled together against the same `channel` and can never drift into using different channels.
  * The channel-routed command map is also installed on the runtime so load bodies invoke
  * peer-implemented commands remotely instead of throwing locally.

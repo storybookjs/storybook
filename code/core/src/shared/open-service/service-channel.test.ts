@@ -7,6 +7,8 @@ import {
   entrySchema,
   jsonPatchOperationSchema,
   jsonPointerSchema,
+  syncReplySchema,
+  syncRequestSchema,
 } from './service-channel.ts';
 
 const validEntry = {
@@ -92,5 +94,40 @@ describe('entrySchema', () => {
       v.safeParse(entrySchema, { serviceId: 'svc', command: 'setValue', patch: validEntry.patch })
         .success
     ).toBe(false);
+  });
+});
+
+describe('syncRequestSchema and syncReplySchema', () => {
+  const frontier = { vector: { writer: 2 }, clock: 3 };
+
+  it('accepts a frontier-shaped request and reply', () => {
+    expect(
+      v.safeParse(syncRequestSchema, {
+        serviceId: 'svc',
+        runtimeId: 'joiner',
+        frontier: { vector: {}, clock: 0 },
+      }).success
+    ).toBe(true);
+    expect(
+      v.safeParse(syncReplySchema, {
+        serviceId: 'svc',
+        frontier,
+        state: { n: 1 },
+      }).success
+    ).toBe(true);
+  });
+
+  it('rejects a negative clock, an array state, and a missing frontier', () => {
+    expect(
+      v.safeParse(syncRequestSchema, {
+        serviceId: 'svc',
+        runtimeId: 'joiner',
+        frontier: { vector: { a: 1 }, clock: -1 },
+      }).success
+    ).toBe(false);
+    expect(v.safeParse(syncReplySchema, { serviceId: 'svc', frontier, state: [1] }).success).toBe(
+      false
+    );
+    expect(v.safeParse(syncReplySchema, { serviceId: 'svc', state: { n: 1 } }).success).toBe(false);
   });
 });

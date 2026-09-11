@@ -1,12 +1,15 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
+import { logger } from 'storybook/internal/client-logger';
 
 import { OpenServiceMissingChannelError } from '../../server-errors.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 import { mutableRecordLookupServiceDef, noInputSchema, voidOutputSchema } from './fixtures.ts';
 import { defineService } from './service-definition.ts';
-import { SERVICE_ENTRY, SERVICE_SYNC_START_REPLY, SERVICE_SYNC_START } from './service-channel.ts';
+import { SERVICE_ENTRY, SERVICE_SYNC_REPLY, SERVICE_SYNC_REQUEST } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
+
+vi.mock('storybook/internal/client-logger', { spy: true });
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
 
@@ -106,6 +109,14 @@ function entryEmits(channel: ReturnType<typeof createMockChannel>) {
 afterEach(() => {
   clearRegistry();
   installChannel(null);
+  vi.useRealTimers();
+});
+
+beforeEach(() => {
+  vi.mocked(logger.warn).mockReset();
+  vi.mocked(logger.debug).mockReset();
+  vi.mocked(logger.warn).mockImplementation(() => undefined);
+  vi.mocked(logger.debug).mockImplementation(() => undefined);
 });
 
 // These tests exercise the server transport that `registerService` wires when a channel is present
@@ -119,8 +130,8 @@ describe('registerService: channel wiring', () => {
 
     registerService(mutableRecordLookupServiceDef);
 
-    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_REQUEST, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_REPLY, expect.any(Function));
     expect(channel.on).toHaveBeenCalledWith(SERVICE_ENTRY, expect.any(Function));
   });
 
@@ -218,14 +229,13 @@ describe('server: command push', () => {
   });
 });
 
-describe('server: sync-start initialization', () => {
-  it('replies to a sync-start with its current snapshot and stamp', () => {
+describe('server: sync-request initialization', () => {
+  it('replies to a sync-request only when its vector dominates', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    // Server adopts a peer entry: this both populates state and advances the server's snapshot stamp.
     channel.emitExternal(
       SERVICE_ENTRY,
       peerEntry(recordServiceId, [{ op: 'add', path: '/a', value: { k: 'v' } }], {
@@ -235,38 +245,53 @@ describe('server: sync-start initialization', () => {
     );
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
 
-    // A different peer comes online and asks for current state; the server answers with the snapshot
-    // it now holds, stamped with the version/runtimeId it adopted (not its own initial runtimeId).
-    channel.emitExternal(SERVICE_SYNC_START, {
+    channel.emitExternal(SERVICE_SYNC_REQUEST, {
       serviceId: recordServiceId,
       runtimeId: 'peer-2',
+      frontier: { vector: {}, clock: 0 },
     });
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_SYNC_START_REPLY,
+      SERVICE_SYNC_REPLY,
       expect.objectContaining({
         serviceId: recordServiceId,
         state: expect.objectContaining({ a: { k: 'v' } }),
-        version: 1,
-        runtimeId: 'peer-1',
+        frontier: expect.objectContaining({ vector: { 'peer-1': 1 } }),
       })
     );
   });
 
-  it('does not reply to a sync-start for a different service id', () => {
+  it('stays silent when its vector does not dominate the requester', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_SYNC_START, {
-      serviceId: 'some-other-service',
+    channel.emit.mockClear();
+    channel.emitExternal(SERVICE_SYNC_REQUEST, {
+      serviceId: recordServiceId,
       runtimeId: 'peer-2',
+      frontier: { vector: { ahead: 4 }, clock: 4 },
     });
 
-    const replyCalls = channel.emit.mock.calls.filter(
-      ([event]) => event === SERVICE_SYNC_START_REPLY
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY)).toHaveLength(
+      0
     );
+  });
+
+  it('does not reply to a sync-request for a different service id', () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    registerService(mutableRecordLookupServiceDef);
+
+    channel.emitExternal(SERVICE_SYNC_REQUEST, {
+      serviceId: 'some-other-service',
+      runtimeId: 'peer-2',
+      frontier: { vector: {}, clock: 0 },
+    });
+
+    const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY);
     expect(replyCalls).toHaveLength(0);
   });
 });
@@ -373,8 +398,8 @@ describe('server: teardown via clearRegistry', () => {
 
     clearRegistry();
 
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_REQUEST, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_REPLY, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(SERVICE_ENTRY, expect.any(Function));
 
     channel.emitExternal(
@@ -389,47 +414,44 @@ describe('server: teardown via clearRegistry', () => {
 });
 
 describe('server: bootstrap on registration', () => {
-  it('emits a sync-start so a freshly-registered server can catch up', () => {
+  it('emits a sync-request so a freshly-registered server can catch up', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_SYNC_START,
-      expect.objectContaining({ serviceId: recordServiceId })
+      SERVICE_SYNC_REQUEST,
+      expect.objectContaining({
+        serviceId: recordServiceId,
+        frontier: { vector: {}, clock: 0 },
+      })
     );
   });
 
-  it('adopts state from a sync-start-reply (a late/restarted server catches up)', () => {
+  it('adopts state from a dominating sync-reply (a late/restarted server catches up)', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    // A peer answers the server's bootstrap request with state authored while the server was down.
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: recordServiceId,
       state: { a: { k: 'v' } },
-      version: 3,
-      runtimeId: 'peer-1',
+      frontier: { vector: { 'peer-1': 3 }, clock: 3 },
     });
 
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
-  it('does not treat its own sync-start echo as incoming state', () => {
+  it('does not treat its own sync-request echo as incoming state', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    // The bootstrap sync-start echoes back through the shared bus; it must not reply to itself
-    // nor mutate state. With no peer to answer, state stays empty.
     expect(service.queries.recordFields.get({ entryId: 'a' })).toBeNull();
-    const replyCalls = channel.emit.mock.calls.filter(
-      ([event]) => event === SERVICE_SYNC_START_REPLY
-    );
+    const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY);
     expect(replyCalls).toHaveLength(0);
   });
 });
@@ -455,7 +477,7 @@ describe('server: relay role', () => {
     expect(relays[0][1]).toEqual(expect.objectContaining({ extra: 'keep-me' }));
   });
 
-  it('relays a bootstrap snapshot it adopts as the original sync-start-reply', () => {
+  it('relays a bootstrap snapshot it installs as the original sync-reply', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -464,14 +486,67 @@ describe('server: relay role', () => {
     const payload = {
       serviceId: recordServiceId,
       state: { entry: { marker: 'boot' } },
-      version: 4,
-      runtimeId: 'peer-1',
+      frontier: { vector: { 'peer-1': 4 }, clock: 4 },
     };
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, payload);
+    channel.emitExternal(SERVICE_SYNC_REPLY, payload);
 
-    const relays = channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_START_REPLY);
+    const relays = channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY);
     expect(relays).toHaveLength(1);
     expect(relays[0][1]).toBe(payload);
+  });
+
+  it('does not forward a rejected sync-reply', () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    registerService(mutableRecordLookupServiceDef);
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'local' } }], {
+        runtimeId: 'aaa',
+        counter: 1,
+      })
+    );
+    channel.emit.mockClear();
+
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
+      serviceId: recordServiceId,
+      state: { other: { marker: 'concurrent' } },
+      frontier: { vector: { zzz: 1 }, clock: 1 },
+    });
+
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY)).toHaveLength(
+      0
+    );
+  });
+
+  it('does not forward a sync-request', () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    registerService(mutableRecordLookupServiceDef);
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'set' } }], {
+        runtimeId: 'peer-1',
+        counter: 1,
+      })
+    );
+    channel.emit.mockClear();
+
+    const payload = {
+      serviceId: recordServiceId,
+      runtimeId: 'peer-2',
+      frontier: { vector: {}, clock: 0 },
+    };
+    channel.emitExternal(SERVICE_SYNC_REQUEST, payload);
+
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(0);
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY)).toHaveLength(
+      1
+    );
   });
 
   it('does not forward a duplicate entry', () => {
@@ -495,5 +570,119 @@ describe('server: relay role', () => {
     );
 
     expect(entryEmits(channel)).toHaveLength(1);
+  });
+});
+
+describe('server: repair requests', () => {
+  function clearBootstrapRequest(channel: ReturnType<typeof createMockChannel>) {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
+      serviceId: recordServiceId,
+      frontier: { vector: {}, clock: 0 },
+      state: {},
+    });
+    channel.emit.mockClear();
+  }
+
+  it('sends one sync-request on a gap and does not send a second while outstanding', () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    registerService(mutableRecordLookupServiceDef);
+    clearBootstrapRequest(channel);
+
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/a', value: { k: '1' } }], {
+        runtimeId: 'peer',
+        counter: 2,
+        seq: 2,
+      })
+    );
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/b', value: { k: '2' } }], {
+        runtimeId: 'peer',
+        counter: 3,
+        seq: 3,
+      })
+    );
+
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(1);
+  });
+
+  it('sends a sync-request on a missing parent', () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    registerService(mutableRecordLookupServiceDef);
+    clearBootstrapRequest(channel);
+
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/missing/y', value: 3 }], {
+        runtimeId: 'peer',
+        counter: 1,
+      })
+    );
+
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(1);
+  });
+
+  it('clears the outstanding request after 1 s of silence so a later gap can ask again', () => {
+    vi.useFakeTimers();
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    registerService(mutableRecordLookupServiceDef);
+    vi.advanceTimersByTime(1000);
+    channel.emit.mockClear();
+
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/a', value: { k: '1' } }], {
+        runtimeId: 'peer',
+        counter: 2,
+        seq: 2,
+      })
+    );
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(1);
+
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/b', value: { k: '2' } }], {
+        runtimeId: 'peer',
+        counter: 3,
+        seq: 3,
+      })
+    );
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(1);
+
+    vi.advanceTimersByTime(1000);
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(2);
+
+    vi.advanceTimersByTime(1000);
+    channel.emit.mockClear();
+
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/c', value: { k: '3' } }], {
+        runtimeId: 'peer',
+        counter: 5,
+        seq: 5,
+      })
+    );
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(1);
   });
 });

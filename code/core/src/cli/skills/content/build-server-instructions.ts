@@ -33,9 +33,9 @@ export type ServerInstructionsInputs = {
  * the workflow trigger must live in tool descriptions and tool results.
  *
  * Keyed on whether `review-create` is available in this Storybook setup.
- * When available, the guidance covers both paths: ending with a review section
- * after publishing, or falling back to preview URLs when no review was published
- * (e.g. non-visual refactors).
+ * When available, visually observable changes end with a review section.
+ * If a change has no visually observable impact, the agent says so instead
+ * of publishing a review or presenting preview URLs.
  */
 export function getFinalLinksGuidance(
   transport: SkillTransport,
@@ -43,7 +43,7 @@ export function getFinalLinksGuidance(
 ): string {
   const ref = getToolName({ transport });
   return reviewToolAvailable
-    ? `In your final user-facing response, show one set of links — never both. If you published a review with **${ref('review.create')}**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example \`## 👀 Review your changes\`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned \`reviewUrl\` (for example \`👉 [Open the Storybook review page](<reviewUrl>)\`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. A visually observable change is not finished until its review is published — never substitute preview URLs for the review. Only when there is no review because the change has no visually observable impact, say so plainly; include preview URLs only if the user asked to see specific stories.`
+    ? `In your final user-facing response, show one set of links — never both. If you published a review with **${ref('review.create')}**, finish your reply with a dedicated review section as the very last thing in the output: its own top-level heading on a line by itself (for example \`## 👀 Review your changes\`), then a one-line explanation that the review shows the handful of stories most relevant to this change and that, because it is AI-curated, results may be inaccurate or incomplete, then on the next line the review page as a markdown link prefixed with a 👉 so it is easy to spot, using the returned \`reviewUrl\` (for example \`👉 [Open the Storybook review page](<reviewUrl>)\`). Nothing should come after this section. Never also list the individual story or preview URLs. Avoid internal jargon like "collection" or "trigger" in anything the user reads — those are terms from this tooling, not words that mean anything to them; use plain language unless the user used the term first. A visually observable change is not finished until its review is published — never substitute preview URLs for the review. If the change has no visually observable impact, say so plainly instead of publishing a review.`
     : 'In your final user-facing response, include every returned preview URL so the user can verify the visual result, ordered consistently (changed-stories fallback first if relevant, then the specific preview URLs).';
 }
 
@@ -92,9 +92,8 @@ export function buildServerInstructions({
         : 'After editing anything that changes how the UI looks, identify the affected stories.';
     // Terse pointer only: the full link-presentation rule reaches the agent
     // through the get-storybook-story-instructions output (getFinalLinksGuidance)
-    // and the review-create and stories-preview tool results, which are
-    // never truncated.
-    const finalLinksStep = `End your final response with the review section from **${ref('review.create')}**'s result — never substitute preview URLs. **${ref('stories.preview')}** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.`;
+    // and the review-create tool result, which is never truncated.
+    const finalLinksStep = `End your final response with the review section from **${ref('review.create')}**'s result — never substitute preview URLs. If nothing visually changed, say so.`;
     sections.push(
       devInstructions
         .replaceAll('{{GET_STORYBOOK_STORY_INSTRUCTIONS}}', skillRef('write-story'))

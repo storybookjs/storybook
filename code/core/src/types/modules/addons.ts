@@ -40,9 +40,10 @@ export type Addons_ArgTypes<TArgs = Args> = {
 
 export type Addon_Comparator<T> = ((a: T, b: T) => boolean) | ((a: T, b: T) => number);
 export type Addon_StorySortMethod = 'configure' | 'alphabetical';
+export type Addon_StorySortOrder = (string | Addon_StorySortOrder)[];
 export interface Addon_StorySortObjectParameter {
   method?: Addon_StorySortMethod;
-  order?: any[];
+  order?: Addon_StorySortOrder;
   locales?: string;
   includeNames?: boolean;
 }
@@ -55,12 +56,12 @@ export type Addon_StorySortParameter = Addon_StorySortComparator | Addon_StorySo
 export type Addon_StorySortComparatorV7 = Addon_Comparator<IndexEntry>;
 export type Addon_StorySortParameterV7 =
   | Addon_StorySortComparatorV7
-  | Addon_StorySortObjectParameter;
+  | Addon_StorySortObjectParameter
+  | Addon_StorySortOrder;
 
 // TODO: remove all these types, they belong in the renderer and csf-package
 
 export interface Addon_OptionsParameter extends Object {
-  storySort?: Addon_StorySortParameter;
   theme?: {
     base: string;
     brandTitle?: string;
@@ -69,7 +70,6 @@ export interface Addon_OptionsParameter extends Object {
 }
 
 export interface Addon_OptionsParameterV7 extends Object {
-  storySort?: Addon_StorySortParameterV7;
   theme?: {
     base: string;
     brandTitle?: string;

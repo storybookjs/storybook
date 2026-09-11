@@ -18,6 +18,7 @@
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
+  - [`storySort` moved to main](#storysort-moved-to-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
@@ -858,6 +859,35 @@ export default config;
 ```
 
 Before adding a polyfill, check whether the import can be removed instead. Most browser code does not need Node.js built-ins, and `@storybook/nextjs-vite` does not polyfill them at all.
+
+### `storySort` moved to main
+
+The `parameters.options.storySort` preview configuration has been removed. Configure story sorting as a top-level field in `.storybook/main.js|ts` instead.
+
+Before:
+
+```ts
+// .storybook/preview.ts
+export default {
+  parameters: {
+    options: {
+      storySort: { order: ['Introduction', 'Components'] },
+    },
+  },
+};
+```
+
+After:
+
+```ts
+// .storybook/main.ts
+export default {
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  storySort: { order: ['Introduction', 'Components'] },
+};
+```
+
+Run `npx storybook automigrate story-sort-to-main` to move statically readable object and array configurations automatically, including local constants used only by that configuration. Comparator functions, imported values, and shared or reassigned variables require manual migration. Move those values and their dependencies to the top-level `storySort` field in main manually.
 
 ### Angular: requires Angular 21 or higher
 

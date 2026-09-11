@@ -18,6 +18,8 @@ const configurations = [
 
 describe('ConfigFile mutations', () => {
   it.each([
+    'let config; config = definePreview({ parameters: { legacy: true } }); module.exports = config;',
+    'export default {}; definePreview({ parameters: { legacy: true } });',
     'export const parameters = {}; export default { parameters: { legacy: true } };',
     'export default configure({ parameters: { legacy: true } });',
     'export default Object.assign({ parameters: { legacy: true } }, other);',

@@ -128,6 +128,20 @@ export function createConfigObject(
         }
         const statement = root.getStatementParent();
         if (
+          statement?.isExpressionStatement() &&
+          (!t.isAssignmentExpression(statement.node.expression) ||
+            !t.isMemberExpression(statement.node.expression.left) ||
+            !t.isIdentifier(statement.node.expression.left.object, { name: 'module' }) ||
+            !t.isIdentifier(statement.node.expression.left.property, { name: 'exports' }))
+        ) {
+          reject(
+            root.node,
+            'ambiguous-binding',
+            'Cannot mutate a config that is not directly exported'
+          );
+          return;
+        }
+        if (
           !statement?.parentPath.isProgram() &&
           !statement?.parentPath.isExportNamedDeclaration()
         ) {

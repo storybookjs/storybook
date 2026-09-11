@@ -2,8 +2,8 @@ import React from 'react';
 
 import { styled, typography } from 'storybook/theming';
 
-import type { Call } from '../../instrumenter/types';
-import { MethodCall, Node } from './MethodCall';
+import type { Call } from '../../instrumenter/types.ts';
+import { MethodCall, Node } from './MethodCall.tsx';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,

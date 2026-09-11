@@ -1,10 +1,21 @@
 import { logger } from 'storybook/internal/client-logger';
-import type { ArgTypesEnhancer, Renderer, SBType } from 'storybook/internal/types';
+import type {
+  Renderer,
+  SBType,
+  StoryContextForEnhancers,
+  StrictArgTypes,
+} from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
 import { dedent } from 'ts-dedent';
 
-import { combineParameters } from './parameters';
+import { combineParameters } from './parameters.ts';
+
+/** The fields {@link inferArgTypes} reads; the full enhancer context is structurally assignable. */
+export type InferArgTypesContext<TRenderer extends Renderer = Renderer> = Pick<
+  StoryContextForEnhancers<TRenderer>,
+  'id' | 'argTypes' | 'initialArgs'
+>;
 
 const inferType = (
   value: any,
@@ -64,17 +75,29 @@ const inferType = (
   return { name: 'object', value: {} };
 };
 
-export const inferArgTypes: ArgTypesEnhancer<Renderer> = (context) => {
+// Narrower param than `ArgTypesEnhancer` so it stays directly callable with a minimal context
+// (e.g. `mergeServiceArgTypes`), while a full enhancer context remains structurally assignable —
+// so it can still be registered in the `argTypesEnhancers` array.
+export const inferArgTypes: ((context: InferArgTypesContext) => StrictArgTypes) & {
+  secondPass?: boolean;
+} = (context) => {
   const { id, argTypes: userArgTypes = {}, initialArgs = {} } = context;
   const cache = new Map<any, SBType>();
-  const argTypes = mapValues(initialArgs, (arg, key) => ({
-    name: key,
-    type: inferType(arg, `${id}.${key}`, new Set(), cache),
-  }));
+  const argTypes = Object.fromEntries(
+    Object.entries(initialArgs)
+      .filter(([key]) => !userArgTypes[key]?.type)
+      .map(([key, arg]) => [
+        key,
+        {
+          name: key,
+          type: inferType(arg, `${id}.${key}`, new Set(), cache),
+        },
+      ])
+  );
   const userArgTypesNames = mapValues(userArgTypes, (argType, key) => ({
     name: key,
   }));
-  return combineParameters(argTypes, userArgTypesNames, userArgTypes);
+  return combineParameters(argTypes, userArgTypesNames, userArgTypes) as StrictArgTypes;
 };
 
 inferArgTypes.secondPass = true;

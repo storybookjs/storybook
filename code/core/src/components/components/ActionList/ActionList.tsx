@@ -4,8 +4,8 @@ import { darken, transparentize } from 'polished';
 import type { TransitionStatus } from 'react-transition-state';
 import { styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
-import { ToggleButton } from '../ToggleButton/ToggleButton';
+import { Button } from '../Button/Button.tsx';
+import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
 
 const ActionListItem = styled.li<{
   active?: boolean;
@@ -39,7 +39,7 @@ const ActionListItem = styled.li<{
       '--listbox-item-muted-color': 'var(--listbox-item-active-color)',
     },
 
-    '&:not(:hover, :has(:focus-visible)) svg + input': {
+    '&:not(:hover, :has(:focus-visible)) :not(input) + input': {
       position: 'absolute',
       opacity: 0,
     },

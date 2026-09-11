@@ -9,7 +9,7 @@ import { glob } from 'glob';
 import slash from 'slash';
 import { dedent } from 'ts-dedent';
 
-import { supportedExtensions } from './interpret-files';
+import { supportedExtensions } from './interpret-files.ts';
 
 export async function validateConfigurationFiles(configDir: string, cwd?: string) {
   const extensionsPattern = `{${Array.from(supportedExtensions).join(',')}}`;

@@ -4,12 +4,12 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../.storybook/preview';
-import { results } from '../results.mock';
-import { type EnhancedResults, RuleType } from '../types';
-import { A11YPanel } from './A11YPanel';
-import { A11yContext } from './A11yContext';
-import type { A11yContextStore } from './A11yContext';
+import preview from '../../../../.storybook/preview.tsx';
+import { results } from '../results.mock.ts';
+import { type EnhancedResults, RuleType } from '../types.ts';
+import { A11YPanel } from './A11YPanel.tsx';
+import { A11yContext } from './A11yContext.tsx';
+import type { A11yContextStore } from './A11yContext.tsx';
 
 const emptyResults: EnhancedResults = {
   passes: [],

@@ -2,7 +2,7 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { Drag } from './Drag';
+import { Drag } from './Drag.tsx';
 
 interface SidebarContainerProps {
   children: React.ReactNode;

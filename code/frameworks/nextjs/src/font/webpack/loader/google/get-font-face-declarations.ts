@@ -9,7 +9,7 @@ import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get
 import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js';
 import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 
-import type { LoaderOptions } from '../types';
+import type { LoaderOptions } from '../types.ts';
 
 const cssCache = new Map<string, string>();
 

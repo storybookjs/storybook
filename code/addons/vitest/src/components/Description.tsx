@@ -5,9 +5,9 @@ import type { TestProviderState } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
 
-import type { StoreState } from '../types';
-import { GlobalErrorContext } from './GlobalErrorModal';
-import { RelativeTime } from './RelativeTime';
+import type { StoreState } from '../types.ts';
+import { GlobalErrorContext } from './GlobalErrorModal.tsx';
+import { RelativeTime } from './RelativeTime.tsx';
 
 export const Wrapper = styled.div(({ theme }) => ({
   overflow: 'hidden',

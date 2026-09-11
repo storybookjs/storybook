@@ -1,4 +1,4 @@
-export * from './main';
-export * from './hooks';
-export * from './make-decorator';
-export * from './storybook-channel-mock';
+export * from './main.ts';
+export * from './hooks.ts';
+export * from './make-decorator.ts';
+export { mockChannel } from '../../../channels/mock-channel.ts';

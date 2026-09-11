@@ -7,8 +7,8 @@
 //------------------------------------------------------------------------------
 import { dedent } from 'ts-dedent';
 
-import rule from '../rules/await-interactions';
-import ruleTester from '../test-utils';
+import rule from '../rules/await-interactions.ts';
+import ruleTester from '../test-utils.ts';
 
 //------------------------------------------------------------------------------
 // Tests

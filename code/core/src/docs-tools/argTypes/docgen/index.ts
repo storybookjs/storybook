@@ -1,6 +1,6 @@
-export * from './types';
-export * from './utils';
+export * from './types.ts';
+export * from './utils/index.ts';
 
-export * from './extractDocgenProps';
+export * from './extractDocgenProps.ts';
 
-export * from './PropDef';
+export * from './PropDef.ts';

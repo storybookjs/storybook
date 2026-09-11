@@ -3,8 +3,8 @@ import React from 'react';
 
 import { Modal } from 'storybook/internal/components';
 
-import { MOBILE_TRANSITION_DURATION } from '../../../constants';
-import { MobileAbout } from '../about/MobileAbout';
+import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
+import { MobileAbout } from '../about/MobileAbout.tsx';
 
 interface MobileMenuDrawerProps {
   children: ReactNode;
@@ -24,7 +24,7 @@ export const MobileMenuDrawer: FC<MobileMenuDrawerProps> = ({
       ariaLabel="Menu"
       transitionDuration={MOBILE_TRANSITION_DURATION}
       variant="bottom-drawer"
-      height="80vh"
+      height="80dvh"
       id={id}
       open={isOpen}
       onOpenChange={onOpenChange}

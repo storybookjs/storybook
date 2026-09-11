@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 
-import { webpackIncludeRegexp } from './to-importFn';
+import { toImportFn, webpackIncludeRegexp } from './to-importFn.ts';
 
 const testCases: [string, string[], string[]][] = [
   [
@@ -211,5 +211,68 @@ describe('toImportFn - webpackIncludeRegexp', () => {
 
     expect(isNotMatchedForValidPaths).toEqual([]);
     expect(isMatchedForInvalidPaths).toEqual([]);
+  });
+});
+
+describe('toImportFn - generated code', () => {
+  const stories = [
+    normalizeStoriesEntry('../src/**/*.stories.tsx', {
+      configDir: '/Users/user/code/.storybook',
+      workingDir: '/Users/user/code/',
+    }),
+  ];
+
+  it('generates code with direct import when needPipelinedImport is false', () => {
+    const generated = toImportFn(stories, { needPipelinedImport: false });
+
+    // Should use identity pipeline (x) => x()
+    expect(generated).toContain('const pipeline = (x) => x();');
+    expect(generated).not.toContain('importPipeline');
+    expect(generated).toContain('const moduleExports = await pipeline(() => importers[i](path));');
+  });
+
+  it('generates code with identity pipeline when needPipelinedImport is omitted', () => {
+    const generated = toImportFn(stories);
+
+    // Should default to identity pipeline
+    expect(generated).toContain('const pipeline = (x) => x();');
+    expect(generated).not.toContain('importPipeline');
+  });
+
+  it('generates code with importPipeline when needPipelinedImport is true', () => {
+    const generated = toImportFn(stories, { needPipelinedImport: true });
+
+    // Should include the full importPipeline implementation
+    expect(generated).toContain('const importPipeline = ');
+    expect(generated).toContain('const pipeline = importPipeline();');
+    expect(generated).toContain('const moduleExports = await pipeline(() => importers[i](path));');
+  });
+
+  it('generated importFn loops through importers', () => {
+    const generated = toImportFn(stories);
+
+    expect(generated).toContain('export async function importFn(path)');
+    expect(generated).toContain('for (let i = 0; i < importers.length; i++)');
+    expect(generated).toContain('const moduleExports = await pipeline(() => importers[i](path));');
+    expect(generated).toContain('if (moduleExports)');
+    expect(generated).toContain('return moduleExports;');
+  });
+
+  it('generates multiple importers for multiple stories', () => {
+    const multipleStories = [
+      normalizeStoriesEntry('../src/**/*.stories.tsx', {
+        configDir: '/Users/user/code/.storybook',
+        workingDir: '/Users/user/code/',
+      }),
+      normalizeStoriesEntry('../components/**/*.stories.tsx', {
+        configDir: '/Users/user/code/.storybook',
+        workingDir: '/Users/user/code/',
+      }),
+    ];
+    const generated = toImportFn(multipleStories);
+
+    // Should have multiple async functions in the importers array
+    expect(generated).toContain('const importers = [');
+    expect(generated.match(/async \(path\) =>/g)?.length).toBe(2);
   });
 });

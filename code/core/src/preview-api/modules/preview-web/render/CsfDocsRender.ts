@@ -5,12 +5,13 @@ import type { CSFFile, PreparedStory } from 'storybook/internal/types';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { RenderContextCallbacks } from 'storybook/internal/types';
 
-import type { StoryStore } from '../../../store';
-import { DocsContext } from '../docs-context/DocsContext';
-import type { DocsContextProps } from '../docs-context/DocsContextProps';
-import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction';
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
+import { isMdxEntry } from '../../../../shared/utils/story-index-filters.ts';
+import type { StoryStore } from '../../../store.ts';
+import { DocsContext } from '../docs-context/DocsContext.ts';
+import type { DocsContextProps } from '../docs-context/DocsContextProps.ts';
+import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction.ts';
+import type { Render, RenderType } from './Render.ts';
+import { PREPARE_ABORTED } from './Render.ts';
 
 /**
  * A CsfDocsRender is a render of a docs entry that is rendered based on a CSF file.
@@ -110,6 +111,12 @@ export class CsfDocsRender<TRenderer extends Renderer> implements Render<TRender
     //  - When you create two CSF files that both reference the same title, they are combined into
     //    a single CSF docs entry with a `storiesImport` defined.
     this.csfFiles.forEach((csfFile) => docsContext.attachCSFFile(csfFile));
+
+    // Autodocs pages filter the CSF file's stories down to `autodocs`-tagged ones when picking
+    // the `<Primary />` story; a custom `docs.page` template on an autodocs entry does not change
+    // that (the entry is still not an MDX entry).
+    docsContext.filterByAutodocs = !isMdxEntry(this.entry);
+
     return docsContext;
   }
 

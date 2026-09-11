@@ -4,8 +4,8 @@ import { Separator } from 'storybook/internal/components';
 
 import { useGlobalTypes } from 'storybook/manager-api';
 
-import { normalizeArgType } from '../utils/normalize-toolbar-arg-type';
-import { ToolbarMenuSelect } from './ToolbarMenuSelect';
+import { normalizeArgType } from '../utils/normalize-toolbar-arg-type.ts';
+import { ToolbarMenuSelect } from './ToolbarMenuSelect.tsx';
 
 /** A smart component for handling manager-preview interactions. */
 export const ToolbarManager: FC = () => {

@@ -10,7 +10,7 @@ import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { babelParse, recast, types as t, traverse } from '../babel';
+import { babelParse, recast, types as t, traverse } from '../babel/index.ts';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -315,16 +315,15 @@ export async function configureEslintPlugin({
     }
   } else {
     logger.debug('No ESLint config file found, configuring in package.json instead');
-    const { packageJson } = packageManager.primaryPackageJson;
+    const { packageJson, operationDir } = packageManager.primaryPackageJson;
     const existingExtends = normalizeExtends(packageJson.eslintConfig?.extends).filter(Boolean);
 
-    packageManager.writePackageJson({
-      ...packageJson,
-      eslintConfig: {
-        ...packageJson.eslintConfig,
-        extends: [...existingExtends, 'plugin:storybook/recommended'],
-      },
-    });
+    packageJson.eslintConfig = {
+      ...packageJson.eslintConfig,
+      extends: [...existingExtends, 'plugin:storybook/recommended'],
+    };
+
+    packageManager.writePackageJson(packageJson, operationDir);
   }
 }
 

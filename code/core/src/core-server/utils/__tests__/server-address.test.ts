@@ -2,7 +2,7 @@ import os, { type NetworkInterfaceInfoIPv4 } from 'node:os';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { getServerAddresses } from '../server-address';
+import { getServerAddresses } from '../server-address.ts';
 
 const mockedNetworkAddress: NetworkInterfaceInfoIPv4 = {
   address: '192.168.0.5',

@@ -3,10 +3,10 @@ import type { Renderer } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { combineParameters } from '../parameters';
-import { composeBeforeAllHooks } from './beforeAll';
-import { normalizeArrays } from './normalizeArrays';
-import { composeStepRunners } from './stepRunners';
+import { combineParameters } from '../parameters.ts';
+import { composeBeforeAllHooks } from './beforeAll.ts';
+import { normalizeArrays } from './normalizeArrays.ts';
+import { composeStepRunners } from './stepRunners.ts';
 
 export function getField<TFieldType = any>(
   moduleExportList: ModuleExports[],

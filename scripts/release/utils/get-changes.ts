@@ -1,10 +1,10 @@
 import picocolors from 'picocolors';
 import semver from 'semver';
 
-import type { PullRequestInfo } from './get-github-info';
-import { getPullInfoFromCommit } from './get-github-info';
-import { getLatestTag, git } from './git-client';
-import { getUnpickedPRs } from './github-client';
+import type { PullRequestInfo } from './get-github-info.ts';
+import { getPullInfoFromCommit } from './get-github-info.ts';
+import { getLatestTag, git } from './git-client.ts';
+import { getUnpickedPRs } from './github-client.ts';
 
 export const RELEASED_LABELS = {
   'BREAKING CHANGE': '❗ Breaking Change',

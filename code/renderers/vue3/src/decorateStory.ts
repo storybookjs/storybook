@@ -4,7 +4,7 @@ import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 import type { Component, ComponentOptions, ConcreteComponent } from 'vue';
 import { h } from 'vue';
 
-import type { VueRenderer } from './types';
+import type { VueRenderer } from './types.ts';
 
 /*
   This normalizes a functional component into a render method in ComponentOptions.

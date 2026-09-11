@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import YAML from 'yaml';
 
-import { compileCsfModule } from '.';
+import { compileCsfModule } from './index.ts';
 
 async function generate(filePath: string) {
   const content = await readFile(filePath, { encoding: 'utf8' });

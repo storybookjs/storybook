@@ -1,5 +1,5 @@
-import merge from './lib/merge';
-import type { State } from './root';
+import merge from './lib/merge.ts';
+import type { State } from './root.tsx';
 
 interface Addition {
   [key: string]: any;

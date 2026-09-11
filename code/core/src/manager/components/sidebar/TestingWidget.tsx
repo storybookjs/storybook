@@ -21,9 +21,9 @@ import { ChevronSmallUpIcon, PlayAllHollowIcon, SweepIcon } from '@storybook/ico
 import { internal_fullTestProviderStore } from '#manager-stores';
 import { styled } from 'storybook/theming';
 
-import { useLandmark } from '../../hooks/useLandmark';
-import { Optional } from '../Optional/Optional';
-import { useDynamicFavicon } from './useDynamicFavicon';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { Optional } from '../Optional/Optional.tsx';
+import { useDynamicFavicon } from './useDynamicFavicon.ts';
 
 const DEFAULT_HEIGHT = 500;
 

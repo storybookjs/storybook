@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { Loader } from './Loader';
+import { Loader } from './Loader.tsx';
 
 const withBackground = (storyFn: any) => (
   <div

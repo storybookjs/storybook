@@ -7,7 +7,7 @@ import {
   getProjectSince,
   normalizeGitUrl,
   unhashedProjectId,
-} from './anonymous-id';
+} from './anonymous-id.ts';
 
 vi.mock(import('storybook/internal/common'), async (actualModule) => {
   const actual = await actualModule();
@@ -144,7 +144,7 @@ describe('getProjectSince', () => {
   it('returns undefined if git log output is empty', async () => {
     vi.mocked(executeCommandSync).mockReturnValue('');
 
-    const { getProjectSince: getProjSince } = await import('./anonymous-id');
+    const { getProjectSince: getProjSince } = await import('./anonymous-id.ts');
 
     expect(getProjSince()).toBeUndefined();
   });
@@ -154,7 +154,7 @@ describe('getProjectSince', () => {
       throw new Error('git not available');
     });
 
-    const { getProjectSince: getProjSince } = await import('./anonymous-id');
+    const { getProjectSince: getProjSince } = await import('./anonymous-id.ts');
 
     expect(getProjSince()).toBeUndefined();
   });
@@ -176,7 +176,7 @@ describe('getAnonymousProjectId', () => {
   });
 
   it('returns undefined when git command fails', async () => {
-    const { getAnonymousProjectId: getAnonId } = await import('./anonymous-id');
+    const { getAnonymousProjectId: getAnonId } = await import('./anonymous-id.ts');
 
     vi.mocked(executeCommandSync).mockImplementation(() => {
       throw new Error('git not available');

@@ -2,7 +2,7 @@ import type { API_Notification } from 'storybook/internal/types';
 
 import { partition } from 'es-toolkit/array';
 
-import type { ModuleFn } from '../lib/types';
+import type { ModuleFn } from '../lib/types.tsx';
 
 export interface SubState {
   notifications: API_Notification[];

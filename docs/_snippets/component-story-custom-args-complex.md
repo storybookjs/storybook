@@ -448,7 +448,7 @@ export const ExampleStory = {
         };
       },
       template:
-        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
+        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty" />',
     };
   },
   args: {
@@ -499,7 +499,7 @@ export const ExampleStory: Story = {
         };
       },
       template:
-        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
+        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty" />',
     };
   },
   args: {
@@ -720,7 +720,7 @@ export const ExampleStory = meta.story({
         };
       },
       template:
-        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
+        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty" />',
     };
   },
   args: {
@@ -770,7 +770,7 @@ export const ExampleStory = meta.story({
         };
       },
       template:
-        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty"/>',
+        '<YourComponent :propertyA="propertyA" :propertyB="propertyB" :someProperty="someProperty" />',
     };
   },
   args: {

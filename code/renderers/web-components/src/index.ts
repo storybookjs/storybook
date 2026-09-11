@@ -1,15 +1,15 @@
 import { global } from '@storybook/global';
 
-import './globals';
+import './globals.ts';
 
 const { window, EventSource } = global;
 
-export * from './public-types';
-export * from './framework-api';
-export * from './portable-stories';
-export * from './preview';
+export * from './public-types.ts';
+export * from './framework-api.ts';
+export * from './portable-stories.ts';
+export * from './preview.ts';
 
-export type { WebComponentsTypes } from './types';
+export type { WebComponentsTypes } from './types.ts';
 
 // TODO: disable HMR and do full page loads because of customElements.define
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment

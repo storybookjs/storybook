@@ -1,7 +1,7 @@
 import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
-import { withMargin, withReset } from '../lib/common';
+import { withMargin, withReset } from '../lib/common.tsx';
 
 export const Blockquote = styled.blockquote(({ theme }) => ({
   ...(withReset({ theme }) as CSSObject),

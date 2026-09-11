@@ -4,11 +4,13 @@ import { ToggleButton } from 'storybook/internal/components';
 
 import { RulerIcon } from '@storybook/icons';
 
-import { useGlobals, useStorybookApi } from 'storybook/manager-api';
+import { useGlobals, useParameter, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, TOOL_ID } from './constants';
+import { ADDON_ID, TOOL_ID } from './constants.ts';
+import type { MeasureParameters } from './types.ts';
 
 export const Tool = () => {
+  const isDisabled = useParameter<MeasureParameters['measure']>('measure')?.disable;
   const [globals, updateGlobals] = useGlobals();
   const { measureEnabled } = globals || {};
   const api = useStorybookApi();
@@ -22,6 +24,9 @@ export const Tool = () => {
   );
 
   useEffect(() => {
+    if (isDisabled) {
+      return;
+    }
     api.setAddonShortcut(ADDON_ID, {
       label: 'Toggle Measure',
       defaultShortcut: ['M'],
@@ -29,7 +34,11 @@ export const Tool = () => {
       showInMenu: false,
       action: toggleMeasure,
     });
-  }, [toggleMeasure, api]);
+  }, [toggleMeasure, api, isDisabled]);
+
+  if (isDisabled) {
+    return null;
+  }
 
   return (
     <ToggleButton

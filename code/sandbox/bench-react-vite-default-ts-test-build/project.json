@@ -13,12 +13,16 @@
   ],
   "targets": {
     "sandbox": {
-      "options": { "dir": "bench-react-vite-default-ts-test-build" }
+      "options": {
+        "dir": "bench-react-vite-default-ts-test-build"
+      }
     },
-    "prepare-sandbox": {},
     "dev": {},
-    "build": { "options": { "dir": "bench-react-vite-default-ts-test-build" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "bench-react-vite-default-ts-test-build"
+      }
+    },
     "chromatic": {},
     "serve": {}
   },

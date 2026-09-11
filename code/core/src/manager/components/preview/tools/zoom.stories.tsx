@@ -4,8 +4,8 @@ import type { StoryContext } from '@storybook/react-vite';
 
 import { expect, fireEvent, fn, screen, waitFor, within } from 'storybook/test';
 
-import preview from '../../../../../../.storybook/preview';
-import { Zoom } from './zoom';
+import preview from '../../../../../../.storybook/preview.tsx';
+import { Zoom } from './zoom.tsx';
 
 const openDialog = async (context: StoryContext<typeof Zoom>) => {
   const zoom = await context.canvas.findByRole('switch', { name: 'Change zoom level' });

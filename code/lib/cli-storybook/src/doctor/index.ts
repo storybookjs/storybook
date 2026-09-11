@@ -5,15 +5,15 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { getStorybookData } from '../automigrate/helpers/mainConfigFile';
-import { shortenPath } from '../util';
-import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings';
+import { getStorybookData } from '../automigrate/helpers/mainConfigFile.ts';
+import { shortenPath } from '../util.ts';
+import { getDuplicatedDepsWarnings } from './getDuplicatedDepsWarnings.ts';
 import {
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
-} from './getIncompatibleStorybookPackages';
-import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning';
-import { DiagnosticType as DiagType, DiagnosticStatus } from './types';
+} from './getIncompatibleStorybookPackages.ts';
+import { getMismatchingVersionsWarnings } from './getMismatchingVersionsWarning.ts';
+import { DiagnosticType as DiagType, DiagnosticStatus } from './types.ts';
 import type {
   DiagnosticResult,
   DiagnosticType,
@@ -21,7 +21,7 @@ import type {
   DoctorOptions,
   ProjectDoctorData,
   ProjectDoctorResults,
-} from './types';
+} from './types.ts';
 
 /** Collects deduplicated diagnostic results across multiple projects */
 export function collectDeduplicatedDiagnostics(

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { getBuilderPackageName, getFrameworkPackageName, getRendererName } from './mainConfigFile';
+import {
+  getBuilderPackageName,
+  getFrameworkPackageName,
+  getRendererName,
+} from './mainConfigFile.ts';
 
 describe('getBuilderPackageName', () => {
   it('should return null when mainConfig is undefined or null', () => {

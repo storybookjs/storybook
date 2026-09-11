@@ -1,36 +1,59 @@
-import { access, cp, rm } from 'node:fs/promises';
+import { accessSync } from 'node:fs';
+import { cp, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
 import dirSize from 'fast-folder-size';
 
-import { now, saveBench } from '../bench/utils';
-import type { Task, TaskKey } from '../task';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants';
+import { now, saveBench } from '../bench/utils.ts';
+import type { PassedOptionValues, Task, TaskKey, TemplateDetails } from '../task.ts';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
-const pathExists = async (path: string) => {
+const pathExists = (path: string) => {
   try {
-    await access(path);
+    accessSync(path);
     return true;
   } catch {
     return false;
   }
 };
 
+const sanitizeOptions = (details: TemplateDetails, options: PassedOptionValues) => {
+  if (options.link && !options.forceLink && details.template.inDevelopment) {
+    logger.log(
+      `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode... Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
+  if (options.link && !options.forceLink && details.template.preferNoLink) {
+    logger.log(
+      `The ${options.template} has preferNoLink property enabled. Defaulting to --no-link mode. Pass --force-link to use link mode anyway, but be aware the sandbox may partially or completely not work.`
+    );
+
+    options.link = false;
+  }
+};
+
 export const sandbox: Task = {
   description: 'Create the sandbox from a template',
-  dependsOn: ({ template, key }, { link }) => {
-    if ('inDevelopment' in template && template.inDevelopment) {
-      if (pathExists(join(SANDBOX_DIRECTORY, key))) {
+  dependsOn: (details, options) => {
+    // Must sanitize options here too to ensure we run the right prerequisite tasks.
+    sanitizeOptions(details, options);
+
+    if ('inDevelopment' in details.template && details.template.inDevelopment) {
+      if (pathExists(join(SANDBOX_DIRECTORY, details.key))) {
         return ['run-registry'];
       }
 
       return ['run-registry', 'generate'];
     }
 
-    if (link) {
+    if (options.link) {
       return ['compile'];
     }
 
@@ -57,13 +80,7 @@ export const sandbox: Task = {
     return isSelectedTaskAfterSandboxCreation && pathExists(sandboxDir);
   },
   async run(details, options) {
-    if (options.link && details.template.inDevelopment) {
-      logger.log(
-        `The ${options.template} has inDevelopment property enabled, therefore the sandbox for that template cannot be linked. Enabling --no-link mode..`
-      );
-
-      options.link = false;
-    }
+    sanitizeOptions(details, options);
 
     if (!(await this.ready(details, options))) {
       logger.info('🗑  Removing old sandbox dir');
@@ -75,6 +92,7 @@ export const sandbox: Task = {
       install,
       addGlobalMocks,
       addStories,
+      addStaticDirs,
       extendMain,
       extendPreview,
       init,
@@ -82,7 +100,7 @@ export const sandbox: Task = {
       setImportMap,
       setupVitest,
       runMigrations,
-    } = await import('./sandbox-parts');
+    } = await import('./sandbox-parts.ts');
 
     const extraDeps = [
       ...(details.template.modifications?.extraDependencies ?? []),
@@ -93,6 +111,12 @@ export const sandbox: Task = {
       '@types/lodash-es',
       '@types/aria-query',
       'uuid',
+    ];
+
+    const extraDevDeps = [
+      ...(details.template.modifications?.extraDevDependencies ?? []),
+      // Always installed regardless of the template.
+      '@storybook/test-runner@latest',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -160,32 +184,51 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
+      extraDevDeps,
+      removeDeps: details.template.modifications?.removeDependencies,
+      removeDevDeps: details.template.modifications?.removeDevDependencies,
+      resolutions: details.template.modifications?.resolutions,
     });
 
     await extendMain(details, options);
+    await addStaticDirs(details, options);
 
     await setImportMap(details.sandboxDir);
 
     const { JsPackageManagerFactory } =
-      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory');
+      await import('../../code/core/src/common/js-package-manager/JsPackageManagerFactory.ts');
 
     const packageManager = JsPackageManagerFactory.getPackageManager({}, details.sandboxDir);
 
     await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
     await packageManager.installDependencies();
 
+    // After sb init the kept before-storybook lockfile can leave nested copies
+    // of shared packages (notably react under @storybook/addon-docs). Collapse
+    // those before we cache/run the sandbox.
+    await exec(
+      'yarn dedupe',
+      { cwd: details.sandboxDir },
+      {
+        dryRun: options.dryRun,
+        debug: options.debug,
+        startMessage: '🧶 Deduplicating dependencies',
+        errorMessage: '🚨 yarn dedupe failed',
+      }
+    );
+
     await runMigrations(details, options);
 
     await extendPreview(details, options);
 
-    logger.info('✅ Moving sandbox to cache directory');
-    const sandboxDir = join(details.sandboxDir);
-    const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
-
     // For NX we move the sandbox to a directory that can be cached.
     // We remove node_modules to keep the remote cache small and fast
     // node_modules are already cached in the global yarn cache
-    if (process.env.NX_CLI_SET === 'true') {
+    if (isNxTaskExecution()) {
+      logger.info('✅ Moving sandbox to cache directory');
+      const sandboxDir = join(details.sandboxDir);
+      const cacheDir = join(ROOT_DIRECTORY, 'sandbox', details.key.replace('/', '-'));
+
       if (sandboxDir !== cacheDir) {
         logger.info(`✅ Removing cache directory ${cacheDir}`);
         await rm(cacheDir, { recursive: true, force: true });

@@ -4,9 +4,9 @@ import { logger } from 'storybook/internal/node-logger';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { add } from '../../add';
-import { updateMainConfig } from '../helpers/mainConfigFile';
-import type { Fix, RunOptions } from '../types';
+import { add } from '../../add.ts';
+import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import type { Fix, RunOptions } from '../types.ts';
 
 export interface StorysourceOptions {
   hasStorysource: boolean;

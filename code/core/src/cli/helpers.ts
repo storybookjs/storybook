@@ -20,7 +20,7 @@ import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
 
-import { getRendererDir } from './dirs';
+import { getRendererDir } from './dirs.ts';
 
 export function readFileAsJson(jsonPath: string, allowComments?: boolean) {
   const filePath = resolve(jsonPath);

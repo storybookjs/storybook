@@ -80,7 +80,7 @@ const preview: Preview = {
 export default preview;
 ```
 
-```tsx filename=".storybook/preview.ts|tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="ts" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
@@ -106,7 +106,7 @@ export default definePreview({
 
 <!-- JS snippets still needed while providing both CSF 3 & Next -->
 
-```jsx filename=".storybook/preview.js|jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
+```jsx filename=".storybook/preview.jsx" renderer="react" language="js" tabTitle="CSF Next 🧪"
 import * as React from 'react';
 
 // Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)

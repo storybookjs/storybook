@@ -1,0 +1,297 @@
+import * as v from 'valibot';
+import { describe, expectTypeOf, it } from 'vitest';
+
+import { defineService } from './index.ts';
+import { registerService } from './server.ts';
+
+type OpenServiceState = {
+  count: number;
+  valuesById: Record<string, string | undefined>;
+};
+
+const entryIdInputSchema = v.object({ entryId: v.string() });
+const incrementInputSchema = v.number();
+
+const openServiceDef = defineService({
+  id: 'internal-fixture/open-service-types',
+  initialState: {
+    count: 0,
+    valuesById: {} as Record<string, string | undefined>,
+  },
+  queries: {
+    count: {
+      input: v.undefined(),
+      output: v.number(),
+      handler: (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<undefined>();
+        expectTypeOf(ctx.self.state).toEqualTypeOf<OpenServiceState>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
+        // @ts-expect-error queries only receive a read-only self handle
+        ctx.self.setState(() => {});
+
+        expectTypeOf(ctx.self.queries.value.get).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(ctx.self.queries.value.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.queries.count.get).returns.toEqualTypeOf<number>();
+        // @ts-expect-error value requires an entryId object, not a number
+        ctx.self.queries.value.get(1);
+
+        return ctx.self.state.count;
+      },
+    },
+    value: {
+      input: entryIdInputSchema,
+      output: v.nullable(v.string()),
+      handler: (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        // @ts-expect-error query handlers do not receive commands on self
+        void ctx.self.commands;
+
+        return ctx.self.state.valuesById[input.entryId] ?? null;
+      },
+      load: async (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        expectTypeOf(ctx.self.commands.preloadValue).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(ctx.self.commands.preloadValue).returns.toEqualTypeOf<Promise<void>>();
+        await ctx.self.commands.preloadValue(input);
+
+        // `load` reads sibling queries with their inferred types too, synchronously via `.get()`
+        // or awaiting their own load via `.loaded()`.
+        expectTypeOf(ctx.self.queries.value.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.queries.count.get()).toEqualTypeOf<number>();
+        expectTypeOf(ctx.self.queries.value.loaded).parameter(0).toEqualTypeOf<{
+          entryId: string;
+        }>();
+        expectTypeOf(await ctx.self.queries.value.loaded(input)).toEqualTypeOf<string | null>();
+        expectTypeOf(await ctx.self.queries.count.loaded()).toEqualTypeOf<number>();
+        // @ts-expect-error value.loaded requires an entryId object, not a number
+        await ctx.self.queries.value.loaded(1);
+
+        // @ts-expect-error preloadValue requires an entryId object
+        await ctx.self.commands.preloadValue({ entryId: 1 });
+        // @ts-expect-error load contexts do not receive setState directly
+        ctx.self.setState(() => {});
+      },
+      staticPath: (input) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        return `${input.entryId}.json`;
+      },
+      staticInputs: () => [{ entryId: 'entry-a' }],
+    },
+  },
+  commands: {
+    increment: {
+      input: incrementInputSchema,
+      output: v.void(),
+      handler: (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<number>();
+        ctx.self.setState((state) => {
+          expectTypeOf(state).toEqualTypeOf<OpenServiceState>();
+          state.count += input;
+        });
+      },
+    },
+    preloadValue: {
+      input: entryIdInputSchema,
+      output: v.void(),
+      handler: async (input, ctx) => {
+        expectTypeOf(input).toEqualTypeOf<{ entryId: string }>();
+        ctx.self.setState((state) => {
+          expectTypeOf(state.valuesById[input.entryId]).toEqualTypeOf<string | undefined>();
+          state.valuesById[input.entryId] = 'ready';
+        });
+
+        // Command handlers also see sibling queries and commands with their inferred types.
+        expectTypeOf(ctx.self.queries.value.get).returns.toEqualTypeOf<string | null>();
+        expectTypeOf(ctx.self.commands.increment).parameter(0).toEqualTypeOf<number>();
+      },
+    },
+  },
+});
+
+const openService = registerService(openServiceDef);
+
+describe('open-service type inference', () => {
+  it('infers runtime query and command signatures from inline schemas', () => {
+    expectTypeOf(openService.queries.count.get).parameter(0).toEqualTypeOf<undefined>();
+    expectTypeOf(openService.queries.count.get).returns.toEqualTypeOf<number>();
+    expectTypeOf(openService.queries.count.loaded).returns.toEqualTypeOf<Promise<number>>();
+
+    const voidService = registerService(
+      defineService({
+        id: 'internal-fixture/void-query-types',
+        initialState: {},
+        queries: {
+          all: {
+            input: v.void(),
+            output: v.number(),
+            handler: () => 1,
+          },
+        },
+        commands: {},
+      })
+    );
+    expectTypeOf(voidService.queries.all.get).returns.toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.all.get()).toEqualTypeOf<number>();
+    expectTypeOf(voidService.queries.all.loaded()).toEqualTypeOf<Promise<number>>();
+
+    expectTypeOf(openService.queries.value.get).parameter(0).toEqualTypeOf<{
+      entryId: string;
+    }>();
+    expectTypeOf(openService.queries.value.get).returns.toEqualTypeOf<string | null>();
+    expectTypeOf(openService.queries.value.loaded).returns.toEqualTypeOf<Promise<string | null>>();
+
+    expectTypeOf(openService.commands.increment).parameter(0).toEqualTypeOf<number>();
+    expectTypeOf(openService.commands.increment).returns.toEqualTypeOf<Promise<void>>();
+
+    expectTypeOf(openService.commands.preloadValue).parameter(0).toEqualTypeOf<{
+      entryId: string;
+    }>();
+    expectTypeOf(openService.commands.preloadValue).returns.toEqualTypeOf<Promise<void>>();
+  });
+
+  it('rejects invalid runtime call signatures', () => {
+    // @ts-expect-error value requires an entryId string
+    openService.queries.value.get({});
+
+    // @ts-expect-error increment requires a numeric payload
+    openService.commands.increment(undefined);
+  });
+
+  it('rejects handlers that do not match the declared schemas', () => {
+    defineService({
+      id: 'internal-fixture/invalid-open-service-types',
+      initialState: {} as Record<string, never>,
+      queries: {
+        brokenValue: {
+          input: v.undefined(),
+          output: v.number(),
+          // @ts-expect-error query handler output must match the output schema input type
+          handler: () => 'wrong',
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects dependency-aware staticInputs on the definition layer', () => {
+    defineService({
+      id: 'internal-fixture/invalid-definition-static-inputs',
+      initialState: {} as OpenServiceState,
+      queries: {
+        value: {
+          input: entryIdInputSchema,
+          output: v.nullable(v.string()),
+          staticPath: () => 'value.json',
+          // @ts-expect-error definition staticInputs cannot depend on load context
+          staticInputs: (_ctx) => [{ entryId: 'entry-a' }],
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('accepts internal operations prefixed with _', () => {
+    defineService({
+      id: 'internal-fixture/valid-internal-naming',
+      initialState: {} as Record<string, never>,
+      queries: {
+        value: {
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+        _internalValue: {
+          internal: true,
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+      },
+      commands: {
+        _reset: {
+          internal: true,
+          input: v.undefined(),
+          output: v.void(),
+          handler: async () => {},
+        },
+      },
+    });
+  });
+
+  it('rejects internal: true without a _ prefix', () => {
+    defineService({
+      id: 'internal-fixture/invalid-internal-without-prefix',
+      initialState: {} as Record<string, never>,
+      queries: {
+        // @ts-expect-error internal operations must be prefixed with "_"
+        debugQuery: {
+          internal: true,
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('accepts both interface and type-alias object state', () => {
+    interface InterfaceState {
+      color: string;
+    }
+
+    // An `interface` (no implicit index signature) must still be a valid state shape.
+    defineService({
+      id: 'internal-fixture/interface-state',
+      initialState: { color: 'red' } as InterfaceState,
+      queries: {
+        color: {
+          input: v.void(),
+          output: v.string(),
+          handler: (_input, ctx) => {
+            expectTypeOf(ctx.self.state).toEqualTypeOf<InterfaceState>();
+            return ctx.self.state.color;
+          },
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects _ prefix without internal: true', () => {
+    defineService({
+      id: 'internal-fixture/invalid-prefix-without-internal',
+      initialState: {} as Record<string, never>,
+      queries: {
+        // @ts-expect-error operations prefixed with "_" must set internal: true
+        _debugQuery: {
+          input: v.undefined(),
+          output: v.number(),
+          handler: () => 0,
+        },
+      },
+      commands: {},
+    });
+  });
+
+  it('rejects non-object state (primitive, null, or array)', () => {
+    const base = { queries: {}, commands: {} } as const;
+
+    // @ts-expect-error state must be a plain object, not a number
+    defineService({ id: 'internal-fixture/number-state', initialState: 42, ...base });
+
+    // @ts-expect-error state must be a plain object, not a string
+    defineService({ id: 'internal-fixture/string-state', initialState: 'nope', ...base });
+
+    // @ts-expect-error state must be a plain object, not null
+    defineService({ id: 'internal-fixture/null-state', initialState: null, ...base });
+
+    // @ts-expect-error state must be a plain object, not an array
+    defineService({ id: 'internal-fixture/array-state', initialState: [1, 2, 3], ...base });
+  });
+});

@@ -10,7 +10,7 @@ import { SELECT_STORY } from 'storybook/internal/core-events';
 
 import { addons } from 'storybook/preview-api';
 
-import LinkTo from './link';
+import LinkTo from './link.tsx';
 
 vi.mock('storybook/preview-api');
 vi.mock('@storybook/global', () => ({

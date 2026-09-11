@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -35,11 +35,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./router.mock'],
         entryPoint: './src/export-mocks/router/index.ts',
-      },
-      {
-        exportEntries: ['./compatibility/draft-mode.compat'],
-        entryPoint: './src/compatibility/draft-mode.compat.ts',
-        dts: false,
       },
       {
         exportEntries: ['./next-image-loader-stub'],

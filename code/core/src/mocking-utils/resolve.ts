@@ -1,57 +1,37 @@
-import { readFileSync, realpathSync } from 'node:fs';
+import { realpathSync } from 'node:fs';
 import { createRequire } from 'node:module';
 
-import { dirname, isAbsolute, join, resolve } from 'pathe';
-import { exports as resolveExports } from 'resolve.exports';
+import { ResolverFactory } from 'oxc-resolver';
+import { dirname, isAbsolute, resolve } from 'pathe';
 
-import { isModuleDirectory } from './extract';
+import { userModuleExtensions } from '../shared/constants/extensions.ts';
+import { isModuleDirectory } from './extract.ts';
 
 const require = createRequire(import.meta.url);
 
 /**
- * Finds the package.json for a given module specifier.
- *
- * @param specifier The module specifier (e.g., 'uuid', 'lodash-es/add').
- * @param basedir The directory to start the search from.
- * @returns The path to the package.json and the package's contents.
+ * Browser-condition resolver used for `sb.mock()` external module resolution.
  */
-function findPackageJson(specifier: string, basedir: string): { path: string; data: any } {
-  const packageJsonPath = require.resolve(`${specifier}/package.json`, { paths: [basedir] });
-  return {
-    path: packageJsonPath,
-    data: JSON.parse(readFileSync(packageJsonPath, 'utf-8')),
-  };
-}
+const externalResolver = new ResolverFactory({
+  conditionNames: ['browser', 'import', 'module', 'default'],
+  mainFields: ['browser', 'module', 'main'],
+  aliasFields: [['browser']],
+  extensions: [...userModuleExtensions],
+});
 
 /**
- * Resolves an external module path to its absolute path. It considers the "exports" map in the
- * package.json file.
+ * Resolves an external module path to its absolute path, preferring browser-targeted entries via
+ * the `exports` map and the package.json `browser` field.
  *
  * @param path The raw module path from the `sb.mock()` call.
  * @param root The project's root directory.
  * @returns The absolute path to the module.
  */
 export function resolveExternalModule(path: string, root: string) {
-  // --- External Package Resolution ---
-  const parts = path.split('/');
-  // For scoped packages like `@foo/bar`, the package name is the first two parts.
-  const packageName = path.startsWith('@') ? `${parts[0]}/${parts[1]}` : parts[0];
-  const entry = `.${path.slice(packageName.length)}`; // e.g., './add' from 'lodash-es/add'
-
-  const { path: packageJsonPath, data: pkg } = findPackageJson(packageName, root);
-  const packageDir = dirname(packageJsonPath);
-
-  // 1. Try to resolve using the "exports" map.
-  if (pkg.exports) {
-    const result = resolveExports(pkg, entry, {
-      browser: true,
-    });
-
-    if (result) {
-      return join(packageDir, result[0]);
-    }
+  const result = externalResolver.sync(root, path);
+  if (result.path) {
+    return result.path;
   }
-
   return require.resolve(path, { paths: [root] });
 }
 
@@ -65,7 +45,7 @@ export function getIsExternal(path: string, importer: string) {
 
 /**
  * Resolves a mock path to its absolute path and checks for a `__mocks__` redirect. This function
- * uses `resolve.exports` to correctly handle modern ESM packages.
+ * resolves modern ESM packages via the `exports` map with browser-first conditions.
  *
  * @param path The raw module path from the `sb.mock()` call.
  * @param root The project's root directory.
@@ -138,9 +118,7 @@ export function getRealPath(path: string, preserveSymlinks: boolean): string {
  * @returns The resolved path
  */
 export function resolveWithExtensions(path: string, from: string) {
-  const extensions = ['.js', '.ts', '.tsx', '.mjs', '.cjs', '.svelte', '.vue'];
-
-  for (const extension of extensions) {
+  for (const extension of userModuleExtensions) {
     try {
       return require.resolve(path + extension, { paths: [from] });
     } catch (e) {

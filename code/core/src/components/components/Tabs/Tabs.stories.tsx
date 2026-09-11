@@ -10,8 +10,8 @@ import { action } from 'storybook/actions';
 import { expect, spyOn } from 'storybook/test';
 import { userEvent } from 'storybook/test';
 
-import { TabWrapper, Tabs, TabsState } from './Tabs';
-import type { ChildrenList } from './Tabs.helpers';
+import { TabWrapper, Tabs, TabsState } from './Tabs.tsx';
+import type { ChildrenList } from './Tabs.helpers.tsx';
 
 const colours = Array.from(new Array(15), (val, index) => index).map((i) =>
   Math.floor((1 / 15) * i * 16777215)

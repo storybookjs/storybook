@@ -7,7 +7,7 @@ import type {
   ChannelTransport,
   EventsKeyValue,
   Listener,
-} from './types';
+} from './types.ts';
 
 const isMulti = (args: ChannelArgs): args is ChannelArgsMulti => {
   // @ts-expect-error (we guard against this right here)
@@ -125,6 +125,13 @@ export class Channel implements ChannelLike {
 
   off(eventName: string, listener: Listener) {
     this.removeListener(eventName, listener);
+  }
+
+  /**
+   * Deliver an event to local listeners without sending it to this channel's transports.
+   */
+  receive(event: ChannelEvent) {
+    this.handleEvent(event);
   }
 
   private handleEvent(event: ChannelEvent) {

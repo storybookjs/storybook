@@ -1,8 +1,8 @@
 import { fileURLToPath } from 'node:url';
 
-import type { StorybookConfig } from './types';
+import type { StorybookConfig } from './types.ts';
 
-export * from './types';
+export * from './types.ts';
 
 export const webpack: StorybookConfig['webpack'] = (config) => {
   const rules = [

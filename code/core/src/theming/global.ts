@@ -1,6 +1,6 @@
 import memoize from 'memoizerific';
 
-import type { Background, Color, Typography } from './types';
+import type { Background, Color, Typography } from './types.ts';
 
 type Value = string | number;
 interface Return {
@@ -20,6 +20,19 @@ export const srOnlyStyles = {
   clip: 'rect(0, 0, 0, 0)',
   clipPath: 'inset(50%)',
   border: 0,
+};
+
+export const srOnlyUnsetStyles = {
+  position: 'unset' as const,
+  width: 'unset' as const,
+  height: 'unset' as const,
+  padding: 'unset' as const,
+  margin: 'unset' as const,
+  overflow: 'unset' as const,
+  whiteSpace: 'unset' as const,
+  clip: 'unset' as const,
+  clipPath: 'unset' as const,
+  border: 'unset' as const,
 };
 
 export const createReset = memoize(1)(

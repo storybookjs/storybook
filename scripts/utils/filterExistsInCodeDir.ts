@@ -1,7 +1,7 @@
 import { access } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
-import { CODE_DIRECTORY } from './constants';
+import { CODE_DIRECTORY } from './constants.ts';
 
 const pathExists = async (path: string) => {
   try {

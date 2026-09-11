@@ -2,7 +2,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fn, screen, userEvent, waitFor } from 'storybook/test';
 
-import { IntentSurvey } from './IntentSurvey';
+import { IntentSurvey } from './IntentSurvey.tsx';
 
 const meta = {
   component: IntentSurvey,

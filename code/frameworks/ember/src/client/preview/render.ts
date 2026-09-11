@@ -4,7 +4,7 @@ import { global } from '@storybook/global';
 
 import { dedent } from 'ts-dedent';
 
-import type { EmberRenderer, OptionsArgs } from './types';
+import type { EmberRenderer, OptionsArgs } from './types.ts';
 
 const { document } = global;
 

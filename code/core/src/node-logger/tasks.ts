@@ -1,9 +1,9 @@
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import { CLI_COLORS, log } from './logger';
-import { logTracker } from './logger/log-tracker';
-import { spinner } from './prompts/prompt-functions';
+import { CLI_COLORS, log } from './logger/index.ts';
+import { logTracker } from './logger/log-tracker.ts';
+import { spinner } from './prompts/prompt-functions.ts';
 
 type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
 

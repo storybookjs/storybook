@@ -5,13 +5,13 @@ import type { ReactPreview } from '@storybook/react';
 import { __definePreview } from '@storybook/react';
 import type { ReactTypes } from '@storybook/react';
 
-import * as nextPreview from './preview';
-import type { NextJsTypes } from './types';
+import * as nextPreview from './preview.tsx';
+import type { NextJsTypes } from './types.ts';
 
 export * from '@storybook/react';
-export * from './types';
+export * from './types.ts';
 // @ts-expect-error (double exports)
-export * from './portable-stories';
+export * from './portable-stories.ts';
 
 export function definePreview<Addons extends PreviewAddon<never>[]>(
   preview: { addons?: Addons } & ProjectAnnotations<ReactTypes & NextJsTypes & InferTypes<Addons>>

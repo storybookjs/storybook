@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseJsDoc } from './jsdocParser';
+import { parseJsDoc } from './jsdocParser.ts';
 
 describe('parseJsDoc', () => {
   it('should set includesJsDoc to false when the value is null', () => {

@@ -2,8 +2,8 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { bannerComment, containsDirnameUsage } from '../helpers/mainConfigFile';
-import { fixFauxEsmRequire } from './fix-faux-esm-require';
+import { bannerComment, containsDirnameUsage } from '../helpers/mainConfigFile.ts';
+import { fixFauxEsmRequire } from './fix-faux-esm-require.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs/promises')>()),

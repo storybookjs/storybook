@@ -5,7 +5,7 @@ import { dirname, join } from 'node:path';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { invariant } from '../common/utils/utils';
+import { invariant } from '../common/utils/utils.ts';
 
 const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
 
@@ -29,6 +29,7 @@ const userSettingSchema = z.object({
       items: z
         .object({
           accessibilityTests: statusValue,
+          aiSetup: statusValue,
           autodocs: statusValue,
           ciTests: statusValue,
           controls: statusValue,
@@ -44,6 +45,7 @@ const userSettingSchema = z.object({
           onboardingSurvey: statusValue,
           organizeStories: statusValue,
           publishStorybook: statusValue,
+          shareStorybook: statusValue,
           renderComponent: statusValue,
           runTests: statusValue,
           viewports: statusValue,

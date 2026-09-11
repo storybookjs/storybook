@@ -11,12 +11,12 @@ import {
   SupportedRenderer,
 } from 'storybook/internal/types';
 
-import { DependencyCollector } from '../dependency-collector';
-import { generatorRegistry } from '../generators/GeneratorRegistry';
-import { baseGenerator } from '../generators/baseGenerator';
-import { AddonService } from '../services';
-import type { FrameworkDetectionResult } from './FrameworkDetectionCommand';
-import { GeneratorExecutionCommand } from './GeneratorExecutionCommand';
+import { DependencyCollector } from '../dependency-collector.ts';
+import { generatorRegistry } from '../generators/GeneratorRegistry.ts';
+import { baseGenerator } from '../generators/baseGenerator.ts';
+import { AddonService } from '../services/index.ts';
+import type { FrameworkDetectionResult } from './FrameworkDetectionCommand.ts';
+import { GeneratorExecutionCommand } from './GeneratorExecutionCommand.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../generators/GeneratorRegistry', { spy: true });
@@ -140,7 +140,6 @@ describe('GeneratorExecutionCommand', () => {
         skipInstall: true,
         builder: SupportedBuilder.VITE,
         linkable: true,
-        usePnp: true,
         yes: true,
         packageManager: PackageManagerName.NPM,
       };
@@ -169,7 +168,6 @@ describe('GeneratorExecutionCommand', () => {
         expect.objectContaining({
           builder: SupportedBuilder.VITE,
           linkable: true,
-          pnp: true,
           yes: true,
           projectType: ProjectType.VUE3,
           features: expect.any(Set),

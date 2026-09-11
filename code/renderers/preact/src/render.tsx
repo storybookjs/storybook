@@ -4,7 +4,7 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 import * as preact from 'preact';
 import { dedent } from 'ts-dedent';
 
-import type { PreactRenderer, StoryFnPreactReturnType } from './types';
+import type { PreactRenderer, StoryFnPreactReturnType } from './types.ts';
 
 const { h } = preact;
 

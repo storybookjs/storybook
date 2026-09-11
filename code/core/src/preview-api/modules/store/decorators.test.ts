@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { Renderer, StoryContext } from 'storybook/internal/types';
 
-import { defaultDecorateStory } from './decorators';
+import { defaultDecorateStory } from './decorators.ts';
 
 function makeContext(input: Record<string, any> = {}): StoryContext<Renderer> {
   return {

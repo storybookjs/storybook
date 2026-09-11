@@ -1,11 +1,13 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store';
-import type { StatusTypeId } from './shared/status-store';
-import { StorybookError } from './storybook-error';
+import type { ValidationMeta } from './shared/open-service/errors.ts';
+import { formatIssues } from './shared/open-service/errors.ts';
+import type { ServiceId } from './shared/open-service/types.ts';
+import type { Status, StatusTypeId } from './shared/status-store/index.ts';
+import { StorybookError } from './storybook-error.ts';
 
-export { StorybookError } from './storybook-error';
+export { StorybookError } from './storybook-error.ts';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
@@ -152,6 +154,333 @@ export class InvalidStoriesEntryError extends StorybookError {
   }
 }
 
+export class OpenServiceValidationError extends StorybookError {
+  constructor(public data: ValidationMeta) {
+    super({
+      name: 'OpenServiceValidationError',
+      category: Category.CORE_COMMON,
+      code: 5,
+      message: `Invalid ${data.phase} for ${data.kind} "${data.serviceId}.${data.name}":\n${formatIssues(
+        data.issues
+      )}`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateRegistrationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceDuplicateRegistrationError',
+      category: Category.CORE_COMMON,
+      code: 6,
+      message: `A service with id "${data.serviceId}" is already registered.`,
+    });
+  }
+}
+
+export class OpenServiceMissingServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceMissingServiceError',
+      category: Category.CORE_COMMON,
+      code: 7,
+      message: `No registered service with id "${data.serviceId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceInternalServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceInternalServiceError',
+      category: Category.CORE_COMMON,
+      code: 19,
+      message: `Service "${data.serviceId}" is internal. Pass { internal: true } to getService() only if you intentionally depend on an unstable OSA surface. Internal services may change without notice.`,
+    });
+  }
+}
+
+export class OpenServiceUnimplementedOperationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
+    super({
+      name: 'OpenServiceUnimplementedOperationError',
+      category: Category.CORE_COMMON,
+      code: 8,
+      message: `${data.kind[0].toUpperCase()}${data.kind.slice(1)} "${data.serviceId}.${data.name}" is not implemented for this environment.`,
+    });
+  }
+}
+
+export class OpenServiceInvalidStaticPathError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; path: string }) {
+    super({
+      name: 'OpenServiceInvalidStaticPathError',
+      category: Category.CORE_COMMON,
+      code: 10,
+      message: `Invalid static path "${data.path}" for query "${data.serviceId}.${data.name}": use a relative path with forward slashes and no ".." segments.`,
+    });
+  }
+}
+
+export class OpenServiceAsyncSchemaError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: ServiceId;
+      name: string;
+      kind: 'query' | 'command';
+      phase: 'input' | 'output';
+    }
+  ) {
+    super({
+      name: 'OpenServiceAsyncSchemaError',
+      category: Category.CORE_COMMON,
+      code: 9,
+      message: `Async schema for ${data.kind} "${data.serviceId}.${data.name}" (${data.phase}): query input and output schemas must validate synchronously.`,
+    });
+  }
+}
+
+export class OpenServiceLoadedDrainExceededError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; iterations: number }) {
+    super({
+      name: 'OpenServiceLoadedDrainExceededError',
+      category: Category.CORE_COMMON,
+      code: 11,
+      message: `Query "${data.serviceId}.${data.name}".loaded(...) did not settle after ${data.iterations} drain iterations. Check for handlers that keep discovering new dependencies after every state change.`,
+    });
+  }
+}
+
+export class OpenServiceDocgenMissingComponentError extends StorybookError {
+  constructor(public data: { id: string }) {
+    super({
+      name: 'OpenServiceDocgenMissingComponentError',
+      category: Category.CORE_COMMON,
+      code: 12,
+      message: `No story or attached docs entry was found for component id "${data.id}". The docgen service can only return docs for components that are present in the story index.`,
+    });
+  }
+}
+
+export class OpenServiceMissingChannelError extends StorybookError {
+  constructor(public data: { serviceId?: ServiceId } = {}) {
+    super({
+      name: 'OpenServiceMissingChannelError',
+      category: Category.CORE_COMMON,
+      code: 13,
+      message: data.serviceId
+        ? `Cannot register service "${data.serviceId}": the Storybook addons channel is not installed in this runtime.`
+        : 'The Storybook addons channel is not installed in this runtime.',
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceRemoteCommandDisconnectedError',
+      category: Category.CORE_COMMON,
+      code: 14,
+      message: `Service "${data.serviceId}" was unregistered before a remote command resolved.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
+    super({
+      name: 'OpenServiceRemoteCommandUnhandledError',
+      category: Category.CORE_COMMON,
+      code: 15,
+      message: data.delegated
+        ? `The Storybook this runtime is attached to did not acknowledge remote command "${data.serviceId}.${data.commandName}" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
+    });
+  }
+}
+
+export class OpenServiceOperationNameCollisionError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+    super({
+      name: 'OpenServiceOperationNameCollisionError',
+      category: Category.CORE_COMMON,
+      code: 16,
+      message: `Service "${data.serviceId}" cannot register "${data.operationName}" as both a query and a command.`,
+    });
+  }
+}
+
+export class OpenServiceMissingOriginError extends StorybookError {
+  constructor(public data: { toolsetId: string; methodName: string }) {
+    super({
+      name: 'OpenServiceMissingOriginError',
+      category: Category.CORE_COMMON,
+      code: 17,
+      message: `Method "${data.toolsetId}.${data.methodName}" requires a Storybook server origin. Run it against a live Storybook so the adapter can provide ctx.origin.`,
+    });
+  }
+}
+
+/**
+ * Why a review was refused. The toolset renders this as the opening of a longer, coaching message,
+ * so it lives here rather than in both places — the two copies had already drifted apart once.
+ */
+export function describeUnknownStoryIds(unknownIds: string[]): string {
+  const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
+  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+}
+
+export class OpenServiceUnknownStoryIdsError extends StorybookError {
+  constructor(public data: { unknownIds: string[] }) {
+    const list = data.unknownIds.map((id) => `- ${id}`).join('\n');
+    super({
+      name: 'OpenServiceUnknownStoryIdsError',
+      category: Category.CORE_COMMON,
+      code: 18,
+      message: `${describeUnknownStoryIds(data.unknownIds)}\n${list}`,
+    });
+  }
+}
+
+// CORE_COMMON error code 20 was retired with the stateless core/docs OSA facade.
+export class OpenServiceTestRunTimeoutError extends StorybookError {
+  constructor(public data: { timeoutMs: number; requestId: string }) {
+    super({
+      name: 'OpenServiceTestRunTimeoutError',
+      category: Category.CORE_COMMON,
+      code: 21,
+      message: `Timed out after ${data.timeoutMs}ms waiting for addon-vitest response to test run "${data.requestId}". Ensure @storybook/addon-vitest is installed and responding.`,
+    });
+  }
+}
+
+export class OpenServiceServicesAppliedTwiceError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceServicesAppliedTwiceError',
+      category: Category.CORE_COMMON,
+      code: 22,
+      message: dedent`The "services" preset property was applied twice, but should only be applied once.
+        Multiple code paths applying it will cause service and toolset registration to fail.`,
+    });
+  }
+}
+
+export class OpenServiceMissingToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceMissingToolsetError',
+      category: Category.CORE_COMMON,
+      code: 23,
+      message: `No registered toolset with id "${data.toolsetId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceDuplicateToolsetError',
+      category: Category.CORE_COMMON,
+      code: 24,
+      message: `A toolset with id "${data.toolsetId}" is already registered. Each public toolset must be registered exactly once.`,
+    });
+  }
+}
+
+/**
+ * The story module graph cannot answer a query right now (still building, unsupported builder, or
+ * a build failure).
+ *
+ * Its `message` is written for the agent that triggered the lookup and names the recovery, which
+ * is what `agentFacing` declares: adapters surface it verbatim rather than wrapping it as an
+ * unexpected failure.
+ */
+export class OpenServiceModuleGraphUnavailableError extends StorybookError {
+  constructor(public data: { reason: string }) {
+    super({
+      name: 'OpenServiceModuleGraphUnavailableError',
+      category: Category.CORE_COMMON,
+      code: 25,
+      message: data.reason,
+      agentFacing: true,
+    });
+  }
+}
+
+/**
+ * A toolset method returned data its own published `outputSchema` rejects.
+ *
+ * Always a bug in the method: the schema is the contract adapters publish to their clients, so the
+ * mismatch is raised instead of quietly shipping unvalidated data.
+ */
+export class OpenServiceToolsetOutputMismatchError extends StorybookError {
+  constructor(public data: { issues: readonly unknown[] }) {
+    // Validation issues embed the rejected input, which can be large or circular — the diagnostic
+    // must never throw or balloon while reporting the real bug.
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(data.issues)?.slice(0, 2000) ?? String(data.issues);
+    } catch {
+      serialized = `${data.issues.length} issue(s) that could not be serialized`;
+    }
+    super({
+      name: 'OpenServiceToolsetOutputMismatchError',
+      category: Category.CORE_COMMON,
+      code: 26,
+      message: `Toolset output did not match its published output schema: ${serialized}`,
+    });
+  }
+}
+
+/** A toolset method id is not exactly `toolsetId.methodName` with non-empty parts. */
+export class OpenServiceInvalidToolsetMethodIdError extends StorybookError {
+  constructor(public data: { methodId: string }) {
+    super({
+      name: 'OpenServiceInvalidToolsetMethodIdError',
+      category: Category.CORE_COMMON,
+      code: 28,
+      message: `Invalid toolset method id "${data.methodId}". Expected exactly one separator: toolsetId.methodName.`,
+    });
+  }
+}
+
+/**
+ * Two toolset methods derive the same MCP tool name (or two methods in one toolset derive the same
+ * CLI method name).
+ */
+export class OpenServiceDuplicateToolNameError extends StorybookError {
+  constructor(
+    public data: {
+      derivedName: string;
+      first: string;
+      second: string;
+      transport: 'mcp' | 'cli';
+    }
+  ) {
+    super({
+      name: 'OpenServiceDuplicateToolNameError',
+      category: Category.CORE_COMMON,
+      code: 29,
+      message:
+        data.transport === 'mcp'
+          ? `Derived MCP tool name "${data.derivedName}" collides between "${data.first}" and "${data.second}". Rename one toolset id or method key.`
+          : `Derived CLI method name "${data.derivedName}" collides between "${data.first}" and "${data.second}" in the same toolset. Rename one method key.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({
@@ -253,6 +582,47 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
         You must use Angular builder to have an explicit configuration on the project used in angular.json.
         
         Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
+  }
+}
+
+export class AngularUnresolvedStyleError extends StorybookError {
+  constructor(public data: { stylePath: string; workspaceRoot: string; extensions: string[] }) {
+    super({
+      name: 'AngularUnresolvedStyleError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: dedent`
+        Cannot resolve the stylesheet '${data.stylePath}' from the Angular workspace root '${data.workspaceRoot}'.
+
+        No file matches it there, with or without a ${data.extensions.join(', ')} extension.
+
+        Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
+    });
+  }
+}
+
+export class AngularMissingStylePreprocessorError extends StorybookError {
+  constructor(public data: { stylePath: string; install: string; alternative?: string }) {
+    super({
+      name: 'AngularMissingStylePreprocessorError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 3,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: [
+        dedent`
+          Cannot compile '${data.stylePath}': the '${data.install}' package is not installed where Vite can load it.
+
+          Add it to your project:
+
+            npm install --save-dev ${data.install}
+
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
+        data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     });
   }
 }
@@ -438,6 +808,35 @@ export class StatusTypeIdMismatchError extends StorybookError {
   }
 }
 
+export class NoFreePortError extends StorybookError {
+  constructor(public data: { requestedPort?: number }) {
+    super({
+      name: 'NoFreePortError',
+      category: Category.CORE_SERVER,
+      // Note: 17 is taken by OxcParseError in ../oxc-parser/errors.ts
+      code: 18,
+      message: dedent`
+        Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
+        Your environment appears to block Storybook from listening on network ports.
+        If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
+    });
+  }
+}
+
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
+    });
+  }
+}
+
 export class GenerateNewProjectOnInitError extends StorybookError {
   constructor(
     public data: { error: unknown | Error; packageManager: string; projectType: string }
@@ -453,6 +852,50 @@ export class GenerateNewProjectOnInitError extends StorybookError {
         } project.
         
         ${data.error instanceof Error ? data.error.message : ''}`,
+    });
+  }
+}
+
+type MinimumReleaseAgeHandledErrorData =
+  | {
+      message: string;
+      cause?: unknown;
+    }
+  | {
+      packageManagerName: string;
+      minimumReleaseAgeConfigName: string;
+      minimumReleaseAgeConfigDocs: string;
+      minimumReleaseAgeExclusionsConfigName?: string;
+      minimumReleaseAgeExclusionsConfigDocs?: string;
+      failedPackage?: string | null;
+      cause?: unknown;
+    };
+
+function createMinimumReleaseAgeHandledErrorMessage(data: MinimumReleaseAgeHandledErrorData) {
+  if ('message' in data) {
+    return data.message;
+  }
+
+  const followUp = data.minimumReleaseAgeExclusionsConfigName
+    ? `To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to ${data.packageManagerName}'s ${data.minimumReleaseAgeExclusionsConfigName} setting.`
+    : 'To fix this, either wait for the configured age window to pass and rerun the command, or rerun Storybook with an older compatible release.';
+
+  return dedent`
+    ${data.packageManagerName} blocked package installation because your project uses ${data.minimumReleaseAgeConfigName}.
+    ${data.failedPackage ? `\nFailed package: ${data.failedPackage}\n` : ''}
+    ${followUp}
+  `;
+}
+
+export class MinimumReleaseAgeHandledError extends StorybookError {
+  constructor(public data: MinimumReleaseAgeHandledErrorData) {
+    super({
+      name: 'MinimumReleaseAgeHandledError',
+      category: Category.CLI,
+      isHandledError: true,
+      code: 2,
+      cause: data.cause,
+      message: createMinimumReleaseAgeHandledErrorMessage(data),
     });
   }
 }
@@ -577,6 +1020,17 @@ export class NoStatsForViteDevError extends StorybookError {
   }
 }
 
+export class ViteModuleGraphSubscriptionError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ViteModuleGraphSubscriptionError',
+      category: Category.BUILDER_VITE,
+      code: 2,
+      message: 'Vite module graph listeners must be registered before the builder starts.',
+    });
+  }
+}
+
 export class FindPackageVersionsError extends StorybookError {
   constructor(
     public data: { error: Error | unknown; packageName: string; packageManager: string }
@@ -662,6 +1116,191 @@ export class AutomigrateError extends StorybookError {
       message: dedent`
         An error occurred while running the automigrate command.
       `,
+    });
+  }
+}
+
+export type ExecaCommandErrorData = {
+  command: string;
+  args: string[];
+  exitCode?: number | string;
+  signal?: string;
+  logs: string;
+  packageManagerErrorCode?: string;
+};
+
+export function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
+  return [data.command, ...data.args].join(' ');
+}
+
+export function formatExecaFailureDetails(data: ExecaCommandErrorData) {
+  const trimmedLogs = data.logs.trim();
+
+  if (trimmedLogs) {
+    return trimmedLogs;
+  }
+
+  if (data.exitCode != null) {
+    return `Process exited with code ${data.exitCode}`;
+  }
+
+  if (data.signal) {
+    return `Process was killed with signal ${data.signal}`;
+  }
+
+  return 'No additional output was captured.';
+}
+
+function createExecaCommandFailedMessage(data: ExecaCommandErrorData) {
+  return dedent`
+    Command failed: ${formatExecaCommand(data)}
+
+    ${formatExecaFailureDetails(data)}`;
+}
+
+export class ExecaCommandFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'ExecaCommandFailedError',
+      category: Category.CLI,
+      code: 3,
+      cause: data.cause,
+      message: createExecaCommandFailedMessage(data),
+    });
+  }
+}
+
+export class PackageInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 10,
+      cause: data.cause,
+      message: dedent`
+        Failed to install dependencies using ${data.command}.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallDependencyConflictError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallDependencyConflictError',
+      category: Category.CLI_INIT,
+      code: 11,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because of a version conflict.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallMissingManifestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallMissingManifestError',
+      category: Category.CLI_INIT,
+      code: 12,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because no package.json was found in the current directory.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmIgnoredBuildsError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmIgnoredBuildsError',
+      category: Category.CLI_INIT,
+      code: 13,
+      cause: data.cause,
+      message: dedent`
+        pnpm blocked postinstall scripts for one or more packages.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmNoTtyModulesDirError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmNoTtyModulesDirError',
+      category: Category.CLI_INIT,
+      code: 14,
+      cause: data.cause,
+      message: dedent`
+        pnpm aborted while removing the modules directory because no TTY was available.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageManagerBinaryNotFoundError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageManagerBinaryNotFoundError',
+      category: Category.CLI_INIT,
+      code: 15,
+      cause: data.cause,
+      message: dedent`
+        Storybook could not find the "${data.command}" command on your PATH.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PlaywrightInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PlaywrightInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 16,
+      cause: data.cause,
+      message: dedent`
+        Failed to install Playwright browser binaries.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class NuxtModuleAddFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'NuxtModuleAddFailedError',
+      category: Category.CLI_INIT,
+      code: 17,
+      cause: data.cause,
+      message: dedent`
+        Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class AutomigrateAddonA11yTestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'AutomigrateAddonA11yTestError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 3,
+      cause: data.cause,
+      message: dedent`
+        Failed while running the addon-a11y-addon-test automigration.
+
+        ${formatExecaFailureDetails(data)}`,
     });
   }
 }

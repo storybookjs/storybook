@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAddonNames } from 'storybook/internal/common';
 
-import { removeAddonInteractions } from './remove-addon-interactions';
+import { removeAddonInteractions } from './remove-addon-interactions.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const mod = (await importOriginal()) as any;

@@ -1,23 +1,28 @@
 import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 
-import { CoreWebpackCompiler, SupportedFramework } from 'storybook/internal/types';
 import type {
   CoreCommon_StorybookInfo,
   PackageJson,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
+import {
+  CoreWebpackCompiler,
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedRenderer,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { JsPackageManager } from '../js-package-manager/JsPackageManager';
-import { frameworkToBuilder } from './framework';
-import { getAddonNames } from './get-addon-names';
-import { extractFrameworkPackageName } from './get-framework-name';
-import { extractRenderer } from './get-renderer-name';
-import { getStorybookConfiguration } from './get-storybook-configuration';
-import { loadMainConfig } from './load-main-config';
+import { RN_STORYBOOK_DIR } from '../../shared/constants/config-folder.ts';
+import { JsPackageManager } from '../js-package-manager/JsPackageManager.ts';
+import { frameworkToBuilder } from './framework.ts';
+import { getAddonNames } from './get-addon-names.ts';
+import { extractFrameworkPackageName } from './get-framework-name.ts';
+import { extractRenderer } from './get-renderer-name.ts';
+import { getStorybookConfiguration } from './get-storybook-configuration.ts';
+import { loadMainConfig } from './load-main-config.ts';
 
 export const rendererPackages: Record<string, SupportedRenderer> = {
   '@storybook/react': SupportedRenderer.REACT,
@@ -38,6 +43,7 @@ export const rendererPackages: Record<string, SupportedRenderer> = {
 
 export const frameworkPackages: Record<string, SupportedFramework> = {
   '@storybook/angular': SupportedFramework.ANGULAR,
+  '@storybook/angular-vite': SupportedFramework.ANGULAR_VITE,
   '@storybook/ember': SupportedFramework.EMBER,
   '@storybook/html-vite': SupportedFramework.HTML_VITE,
   '@storybook/nextjs': SupportedFramework.NEXTJS,
@@ -51,6 +57,7 @@ export const frameworkPackages: Record<string, SupportedFramework> = {
   '@storybook/nextjs-vite': SupportedFramework.NEXTJS_VITE,
   '@storybook/react-native-web-vite': SupportedFramework.REACT_NATIVE_WEB_VITE,
   '@storybook/web-components-vite': SupportedFramework.WEB_COMPONENTS_VITE,
+  '@storybook/tanstack-react': SupportedFramework.TANSTACK_REACT,
   // community (outside of monorepo)
   'storybook-framework-qwik': SupportedFramework.QWIK,
   'storybook-solidjs-vite': SupportedFramework.SOLID,
@@ -138,12 +145,17 @@ export const getConfigInfo = (configDir?: string) => {
 
 export const getStorybookInfo = async (
   configDir = '.storybook',
-  cwd?: string
+  cwd?: string,
+  { skipCache }: { skipCache?: boolean } = {}
 ): Promise<CoreCommon_StorybookInfo> => {
   const configInfo = getConfigInfo(configDir);
   const mainConfig = (await loadMainConfig({
     configDir: configInfo.configDir,
     cwd,
+    // When the main config may have been rewritten earlier in the same process (e.g. an
+    // automigration switching frameworks), callers must skip the module cache to read the
+    // current on-disk config instead of a stale, previously-evaluated version.
+    skipCache,
   })) as StorybookConfigRaw;
 
   invariant(mainConfig, `Unable to find or evaluate ${configInfo.mainConfigPath}`);
@@ -154,6 +166,27 @@ export const getStorybookInfo = async (
   const versionSpecifier = getStorybookVersionSpecifier(configDir);
 
   if (!frameworkField) {
+    /*
+      React Native on-device Storybook historically omitted `framework` from main.ts.
+      When the config lives in `.rnstorybook`, infer the framework so telemetry
+      `metadata.framework.name` is populated for existing projects (scoped to the
+      RN config dir to avoid mis-attributing web Storybooks in the same monorepo).
+    */
+    if (basename(configInfo.configDir) === RN_STORYBOOK_DIR) {
+      return {
+        ...configInfo,
+        versionSpecifier,
+        addons,
+        mainConfig,
+        frameworkPackage: '@storybook/react-native',
+        rendererPackage: '@storybook/react-native',
+        renderer: SupportedRenderer.REACT_NATIVE,
+        mainConfigPath: configInfo.mainConfigPath ?? undefined,
+        previewConfigPath: configInfo.previewConfigPath ?? undefined,
+        managerConfigPath: configInfo.managerConfigPath ?? undefined,
+      };
+    }
+
     return {
       ...configInfo,
       versionSpecifier,

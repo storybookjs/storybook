@@ -2,8 +2,8 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import type { API_Layout } from '../../../types';
-import { Drag } from './Drag';
+import type { API_Layout } from '../../../types/index.ts';
+import { Drag } from './Drag.tsx';
 
 interface PanelContainerProps {
   children: React.ReactNode;

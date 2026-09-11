@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { IndexingError, MultipleIndexingError } from '../IndexingError';
+import { IndexingError, MultipleIndexingError } from '../IndexingError.ts';
 
 it('formats single file errors', () => {
   const error = new IndexingError('parse error', ['./stories/File.stories.ts']);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { combineParameters } from './parameters';
+import { combineParameters } from './parameters.ts';
 
 describe('client-api.parameters', () => {
   it('merges different sets of parameters by key, preferencing last', () => {

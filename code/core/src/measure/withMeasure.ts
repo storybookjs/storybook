@@ -3,9 +3,9 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useEffect } from 'storybook/preview-api';
 
-import { destroy, init, rescale } from './box-model/canvas';
-import { drawSelectedElement } from './box-model/visualizer';
-import { deepElementFromPoint } from './util';
+import { destroy, init, rescale } from './box-model/canvas.ts';
+import { drawSelectedElement } from './box-model/visualizer.ts';
+import { deepElementFromPoint } from './util.ts';
 
 let nodeAtPointerRef;
 const pointer = { x: 0, y: 0 };
@@ -17,6 +17,7 @@ function findAndDrawElement(x: number, y: number) {
 
 export const withMeasure: DecoratorFunction = (StoryFn, context) => {
   const { measureEnabled } = context.globals || {};
+  const measureActive = measureEnabled && !context.parameters?.measure?.disable;
 
   useEffect(() => {
     if (typeof globalThis.document === 'undefined') {
@@ -52,7 +53,7 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
       });
     };
 
-    if (context.viewMode === 'story' && measureEnabled) {
+    if (context.viewMode === 'story' && measureActive) {
       globalThis.document.addEventListener('pointerover', onPointerOver);
       init();
       globalThis.window.addEventListener('resize', onResize);
@@ -64,7 +65,7 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
       globalThis.window.removeEventListener('resize', onResize);
       destroy();
     };
-  }, [measureEnabled, context.viewMode]);
+  }, [measureActive, context.viewMode]);
 
   return StoryFn();
 };

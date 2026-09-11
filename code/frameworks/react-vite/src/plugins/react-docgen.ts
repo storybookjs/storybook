@@ -1,11 +1,10 @@
 import { existsSync } from 'node:fs';
-import { relative, sep } from 'node:path';
+import { dirname, relative, sep } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
-import * as find from 'empathic/find';
 import MagicString from 'magic-string';
 import type { Documentation } from 'react-docgen';
 import {
@@ -18,12 +17,12 @@ import {
 import * as TsconfigPaths from 'tsconfig-paths';
 import type { PluginOption } from 'vite';
 
-import actualNameHandler from './docgen-handlers/actualNameHandler';
+import actualNameHandler from './docgen-handlers/actualNameHandler.ts';
 import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
-} from './docgen-resolver';
+} from './docgen-resolver.ts';
 
 type DocObj = Documentation & { actualName: string; definedInFile: string };
 
@@ -44,20 +43,6 @@ export async function reactDocgen({
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
 
-  const tsconfigPath = find.up('tsconfig.json', { cwd, last: getProjectRoot() });
-  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
-
-  let matchPath: TsconfigPaths.MatchPath | undefined;
-
-  if (tsconfig.resultType === 'success') {
-    logger.debug('Using tsconfig paths for react-docgen');
-    matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-      'browser',
-      'module',
-      'main',
-    ]);
-  }
-
   return {
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
@@ -67,6 +52,7 @@ export async function reactDocgen({
       }
 
       try {
+        const matchPath = createTsconfigMatchPath(id);
         const docgenResults = parse(src, {
           resolver: defaultResolver,
           handlers,
@@ -85,7 +71,7 @@ export async function reactDocgen({
 
         return {
           code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }),
+          map: s.generateMap({ hires: true, source: id }).toString(),
         };
       } catch (e: any) {
         // Ignore the error when react-docgen cannot find a react component
@@ -128,4 +114,33 @@ export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | unde
 
     throw new ReactDocgenResolveError(filename);
   });
+}
+
+const matchPathByTsconfigPath = new Map<string, TsconfigPaths.MatchPath>();
+
+function createTsconfigMatchPath(filePath: string) {
+  const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
+  if (!tsconfigPath) {
+    return undefined;
+  }
+
+  const cached = matchPathByTsconfigPath.get(tsconfigPath);
+  if (cached) {
+    return cached;
+  }
+
+  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
+
+  if (tsconfig.resultType !== 'success') {
+    return undefined;
+  }
+
+  logger.debug('Using tsconfig paths for react-docgen');
+  const matchPath = TsconfigPaths.createMatchPath(
+    getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+    tsconfig.paths,
+    ['browser', 'module', 'main']
+  );
+  matchPathByTsconfigPath.set(tsconfigPath, matchPath);
+  return matchPath;
 }

@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 
-import { Popover, type PopoverProps } from '../Popover/Popover';
+import { Popover, type PopoverProps } from '../Popover/Popover.tsx';
 
 export type TooltipProps = Omit<PopoverProps, 'onHide' | 'hideLabel'>;
 

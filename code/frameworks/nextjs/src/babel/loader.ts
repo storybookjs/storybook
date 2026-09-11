@@ -7,7 +7,7 @@ import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
 
-import { getNodeModulesExcludeRegex } from '../utils';
+import { getNodeModulesExcludeRegex } from '../utils.ts';
 
 export const configureBabelLoader = async (
   baseConfig: any,

@@ -61,15 +61,15 @@ If you didn't include the title in the story's default export, use this approach
 
 ### Primary
 
-<Story id="your-directory-button--primary"/>
+<Story id="your-directory-button--primary" />
 
 ### Secondary
 
-<Story id="your-directory-button--secondary"/>
+<Story id="your-directory-button--secondary" />
 
 ### Large
 
-<Story id="your-directory-button--large"/>
+<Story id="your-directory-button--large" />
 
 ### Small
 

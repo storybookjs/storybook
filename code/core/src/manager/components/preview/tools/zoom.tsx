@@ -9,8 +9,8 @@ import { UndoIcon, ZoomIcon } from '@storybook/icons';
 import { types, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { Shortcut } from '../../Shortcut';
-import { NumericInput } from '../NumericInput';
+import { Shortcut } from '../../Shortcut.tsx';
+import { NumericInput } from '../NumericInput.tsx';
 
 const ZOOM_LEVELS = [0.25, 0.5, 0.75, 0.9, 1, 1.1, 1.25, 1.5, 2, 3, 4, 8] as const;
 const INITIAL_ZOOM_LEVEL = 1;

@@ -12,12 +12,18 @@
     "vue3-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "vue3-vite-default-js" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "vue3-vite-default-js"
+      }
+    },
     "dev": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "vue3-vite-default-js" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "vue3-vite-default-js"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

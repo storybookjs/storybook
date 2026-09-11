@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { checkRef } from './get-storybook-refs';
+import { checkRef } from './get-storybook-refs.ts';
 
 describe('checkRef', () => {
   afterEach(() => vi.restoreAllMocks());
@@ -30,6 +30,13 @@ describe('checkRef', () => {
 
   it('returns false when fetch fails', async () => {
     vi.spyOn(global, 'fetch').mockRejectedValue(new Error('Network error'));
+    expect(await checkRef('https://chromatic.com')).toBe(false);
+  });
+
+  it('returns false when the JSON follow-up fetch fails after a 200 response', async () => {
+    vi.spyOn(global, 'fetch')
+      .mockResolvedValueOnce({ ok: true, status: 200 } as Response)
+      .mockRejectedValueOnce(new TypeError('fetch failed'));
     expect(await checkRef('https://chromatic.com')).toBe(false);
   });
 });

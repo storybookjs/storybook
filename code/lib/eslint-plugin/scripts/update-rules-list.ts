@@ -1,6 +1,6 @@
-import { emojiKey, updateRulesDocs, writeRulesListInReadme } from './utils/docs';
-import rules from './utils/rules';
-import { extendsCategories } from './utils/updates';
+import { emojiKey, updateRulesDocs, writeRulesListInReadme } from './utils/docs.ts';
+import rules from './utils/rules.ts';
+import { extendsCategories } from './utils/updates.ts';
 
 /*
 This script updates the rules table in `README.md`from rule's meta data.

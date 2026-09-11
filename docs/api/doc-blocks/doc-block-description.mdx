@@ -1,17 +1,14 @@
 ---
-title: 'Description'
+title: Description
 sidebar:
   order: 5
-  title: Description
 ---
 
 The `Description` block displays the description for a component, story, or meta, obtained from their respective JSDoc comments.
 
 ![Screenshot of Description block](../../_assets/api/doc-block-title-subtitle-description.png)
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Description } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -19,8 +16,6 @@ import * as ButtonStories from './Button.stories';
 
 <Description of={ButtonStories.Primary} />
 ```
-
-{/* prettier-ignore-end */}
 
 ## Description
 
@@ -66,27 +61,21 @@ This flow gives you powerful ways to override the description for each scenario.
 export const Button = () => <button>Click me</button>;
 ```
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="api-doc-block-description-example.md" />
 
-{/* prettier-ignore-end */}
-
 {/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Description } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
 <Meta of={ButtonStories} />
 
 {/* Shows the description for the default export (the meta).
-    If that didn't have any comments, it would show the 
-    comments from the component instead */}
+If that didn't have any comments, it would show the
+comments from the component instead */}
 <Description of={ButtonStories} />
 
 {/* Shows the description for the Primary export */}
 <Description of={ButtonStories.Primary} />
 ```
-
 {/* prettier-ignore-end */}

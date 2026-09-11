@@ -2,12 +2,12 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 
-import type { AnalysedPackage } from './getIncompatibleStorybookPackages';
+import type { AnalysedPackage } from './getIncompatibleStorybookPackages.ts';
 import {
   checkPackageCompatibility,
   getIncompatiblePackagesSummary,
   getIncompatibleStorybookPackages,
-} from './getIncompatibleStorybookPackages';
+} from './getIncompatibleStorybookPackages.ts';
 
 vi.mock('picocolors', () => {
   return {

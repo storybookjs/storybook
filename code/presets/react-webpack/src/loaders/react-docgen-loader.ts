@@ -1,7 +1,8 @@
-import { getProjectRoot } from 'storybook/internal/common';
+import { dirname } from 'node:path';
+
+import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import * as find from 'empathic/find';
 import MagicString from 'magic-string';
 import {
   ERROR_CODES,
@@ -19,7 +20,7 @@ import {
   RESOLVE_EXTENSIONS,
   ReactDocgenResolveError,
   defaultLookupModule,
-} from './docgen-resolver';
+} from './docgen-resolver.ts';
 
 const { getNameOrValue, isReactForwardRefCall } = utils;
 
@@ -67,9 +68,6 @@ const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
 const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
 const handlers = [...defaultHandlers, actualNameHandler];
 
-let tsconfigPathsInitialized = false;
-let matchPath: TsconfigPaths.MatchPath | undefined;
-
 export default async function reactDocgenLoader(
   this: LoaderContext<{ debug: boolean }>,
   source: string,
@@ -80,23 +78,8 @@ export default async function reactDocgenLoader(
   const options = this.getOptions() || {};
   const { debug = false } = options;
 
-  if (!tsconfigPathsInitialized) {
-    const tsconfigPath = find.up('tsconfig.json', { cwd: process.cwd(), last: getProjectRoot() });
-    const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
-
-    if (tsconfig.resultType === 'success') {
-      logger.debug('Using tsconfig paths for react-docgen');
-      matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-        'browser',
-        'module',
-        'main',
-      ]);
-    }
-
-    tsconfigPathsInitialized = true;
-  }
-
   try {
+    const matchPath = createTsconfigMatchPath(this.resourcePath);
     const docgenResults = parse(source, {
       filename: this.resourcePath,
       resolver: defaultResolver,
@@ -167,4 +150,33 @@ export function getReactDocgenImporter(matchingPath: TsconfigPaths.MatchPath | u
 
     throw new ReactDocgenResolveError(filename);
   });
+}
+
+const matchPathByTsconfigPath = new Map<string, TsconfigPaths.MatchPath>();
+
+function createTsconfigMatchPath(filePath: string) {
+  const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
+  if (!tsconfigPath) {
+    return undefined;
+  }
+
+  const cached = matchPathByTsconfigPath.get(tsconfigPath);
+  if (cached) {
+    return cached;
+  }
+
+  const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
+
+  if (tsconfig.resultType !== 'success') {
+    return undefined;
+  }
+
+  logger.debug('Using tsconfig paths for react-docgen');
+  const matchPath = TsconfigPaths.createMatchPath(
+    getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+    tsconfig.paths,
+    ['browser', 'module', 'main']
+  );
+  matchPathByTsconfigPath.set(tsconfigPath, matchPath);
+  return matchPath;
 }

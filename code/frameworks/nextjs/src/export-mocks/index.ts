@@ -1,1 +1,1 @@
-export { getPackageAliases } from './webpack';
+export { getPackageAliases } from './webpack.ts';

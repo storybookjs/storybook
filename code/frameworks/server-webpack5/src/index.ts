@@ -1,2 +1,2 @@
 export * from '@storybook/server';
-export * from './types';
+export * from './types.ts';

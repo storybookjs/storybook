@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
 
-import { importPipeline } from './importPipeline';
+import { importPipeline } from './importPipeline.ts';
 
 const createGate = (): [Promise<any | undefined>, (_?: any) => void] => {
   let openGate = (_?: any) => {};

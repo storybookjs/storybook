@@ -1,5 +1,5 @@
-import type { CategoryId } from '../../src/utils/constants';
-import type { TCategory } from './categories';
+import type { CategoryId } from '../../src/utils/constants.ts';
+import type { TCategory } from './categories.ts';
 
 export const extendsCategories: Partial<Record<CategoryId, string | null>> = {
   csf: null,

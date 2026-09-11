@@ -7,7 +7,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 interface EslintPluginRunOptions {
   eslintConfigFile: string;

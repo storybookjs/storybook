@@ -1,9 +1,9 @@
 import { logger } from 'storybook/internal/node-logger';
 
-import { extractArgTypes } from '../../extractArgTypes';
-import { type getReactDocgen, parseWithReactDocgen } from '../reactDocgen';
-import { cachedReadFileSync } from '../utils';
-import { type GetArgTypesDataOptions } from './utils';
+import { extractArgTypes } from '../../extractArgTypes.ts';
+import { type getReactDocgen, parseWithReactDocgen } from '../reactDocgen.ts';
+import { cachedReadFileSync } from '../utils.ts';
+import { type GetArgTypesDataOptions } from './utils.ts';
 
 /**
  * Extracts component name and React docgen data from a component file.

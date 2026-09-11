@@ -203,7 +203,7 @@ export const Basic: Story = {
   });
 </script>
 
-<Story name="Basic"/>
+<Story name="Basic" />
 ```
 
 ```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
@@ -248,7 +248,7 @@ export const Basic = {};
   });
 </script>
 
-<Story name="Basic"/>
+<Story name="Basic" />
 ```
 
 ```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"

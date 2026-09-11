@@ -90,7 +90,7 @@ Props tables are automatically inferred from your components and stories, but so
 
 Props tables are rendered from an internal data structure called `ArgTypes`. When you declare a story's `component` metadata, Docs automatically extracts `ArgTypes` based on the component's properties.
 
-You can can customize what's shown in the props table by [customizing the `ArgTypes` data](#customizing-argtypes). This is currently available for `DocsPage` and `<ArgsTable story="xxx">` construct, but not for the `<ArgsTable of={component} />` construct,
+You can customize what's shown in the props table by [customizing the `ArgTypes` data](#customizing-argtypes). This is currently available for `DocsPage` and `<ArgsTable story="xxx">` construct, but not for the `<ArgsTable of={component} />` construct,
 
 ### Customizing ArgTypes
 

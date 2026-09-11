@@ -6,11 +6,11 @@ import { sanitize } from 'storybook/internal/csf';
 import { styled } from 'storybook/theming';
 import useResizeObserver from 'use-resize-observer';
 
-import { PopoverProvider } from '../Popover/PopoverProvider';
-import { TooltipLinkList } from '../tooltip/TooltipLinkList';
-import type { Link } from '../tooltip/TooltipLinkList';
-import { TabButton } from './Button';
-import type { ChildrenListComplete } from './Tabs.helpers';
+import { PopoverProvider } from '../Popover/PopoverProvider.tsx';
+import { TooltipLinkList } from '../tooltip/TooltipLinkList.tsx';
+import type { Link } from '../tooltip/TooltipLinkList.tsx';
+import { TabButton } from './Button.tsx';
+import type { ChildrenListComplete } from './Tabs.helpers.tsx';
 
 const CollapseIcon = styled.span<{ isActive: boolean }>(({ theme, isActive }) => ({
   display: 'inline-block',

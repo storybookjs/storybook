@@ -5,8 +5,8 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 
 import * as api from 'storybook/manager-api';
 
-import { PANEL_ID } from './constants';
-import './manager';
+import { PANEL_ID } from './constants.ts';
+import './manager.tsx';
 
 vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked<api.API>(api as any);

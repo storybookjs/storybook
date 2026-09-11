@@ -3,7 +3,7 @@ import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
-import { stringifyProcessEnvs } from '../envs';
+import { stringifyProcessEnvs } from '../envs.ts';
 
 export interface StorybookRuntimePluginOptions {
   externals: Record<string, string>;

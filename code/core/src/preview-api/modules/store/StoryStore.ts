@@ -1,5 +1,4 @@
 import type { CleanupCallback } from 'storybook/internal/csf';
-import { getCoreAnnotations } from 'storybook/internal/csf';
 import {
   CalledExtractOnStoreError,
   MissingStoryFromCsfFileError,
@@ -23,25 +22,35 @@ import type {
 import { omitBy, pick } from 'es-toolkit/object';
 import memoize from 'memoizerific';
 
-import { HooksContext } from '../addons';
-import { ArgsStore } from './ArgsStore';
-import { GlobalsStore } from './GlobalsStore';
-import { StoryIndexStore } from './StoryIndexStore';
+import { HooksContext } from '../addons/index.ts';
+import { ArgsStore } from './ArgsStore.ts';
+import { GlobalsStore } from './GlobalsStore.ts';
+import { StoryIndexStore } from './StoryIndexStore.ts';
 import {
-  composeConfigs,
+  composeProjectAnnotationsWithCore,
   normalizeProjectAnnotations,
   prepareContext,
   prepareMeta,
   prepareStory,
   processCSFFile,
-} from './csf';
-import { ReporterAPI } from './reporter-api';
+} from './csf/index.ts';
+import { ReporterAPI } from './reporter-api.ts';
 
 export function picky<T extends Record<string, any>, K extends keyof T>(
   obj: T,
   keys: K[]
 ): Partial<Pick<T, K>> {
   return omitBy(pick(obj, keys), (v) => v === undefined);
+}
+
+/**
+ * Compose and normalize the project annotations for the store, prepending the core annotations via
+ * {@link composeProjectAnnotationsWithCore} (CSF4 previews are detected and not double-composed).
+ */
+function composeProjectAnnotations<TRenderer extends Renderer>(
+  projectAnnotations: ProjectAnnotations<TRenderer>
+): NormalizedProjectAnnotations<TRenderer> {
+  return normalizeProjectAnnotations(composeProjectAnnotationsWithCore([projectAnnotations]));
 }
 
 // TODO -- what are reasonable values for these?
@@ -78,9 +87,7 @@ export class StoryStore<TRenderer extends Renderer> {
   ) {
     this.storyIndex = new StoryIndexStore(storyIndex);
 
-    this.projectAnnotations = normalizeProjectAnnotations(
-      composeConfigs([...getCoreAnnotations(), projectAnnotations])
-    );
+    this.projectAnnotations = composeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = this.projectAnnotations;
 
     this.args = new ArgsStore();
@@ -98,6 +105,9 @@ export class StoryStore<TRenderer extends Renderer> {
 
   setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
     // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
+    // NOTE: unlike the constructor, this does not prepend the core annotations: the project
+    // annotations passed here (from `getProjectAnnotations()`) are only ever re-normalized, never
+    // re-composed with core, so there's no risk of doubling them on HMR updates.
     this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
     const { initialGlobals, globalTypes } = projectAnnotations;
     this.userGlobals.set({ globals: initialGlobals, globalTypes });

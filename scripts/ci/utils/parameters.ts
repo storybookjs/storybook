@@ -10,6 +10,12 @@ export const parameters = {
     description: 'The PR number',
     type: 'string',
   },
+  ghTrustedAuthor: {
+    default: 'false',
+    description:
+      'Whether the pipeline is allowed to persist to shared caches (team member PRs and push events only)',
+    type: 'string',
+  },
   workflow: {
     default: 'skipped',
     description: 'Which workflow to run',

@@ -7,14 +7,14 @@ import {
   type StoryIndexV3,
 } from 'storybook/internal/types';
 
-import type { State } from '../root';
-import { mockEntries } from '../tests/mockStoriesEntries';
+import type { State } from '../root.tsx';
+import { mockEntries } from '../tests/mockStoriesEntries.ts';
 import {
   transformStoryIndexToStoriesHash,
   transformStoryIndexV2toV3,
   transformStoryIndexV3toV4,
   transformStoryIndexV4toV5,
-} from './stories';
+} from './stories.ts';
 
 const baseV2: StoryIndexV2['stories'][0] = {
   id: '1',

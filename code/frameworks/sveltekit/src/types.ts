@@ -5,8 +5,8 @@ import type {
 
 import type { BuilderOptions, StorybookConfigVite } from '@storybook/builder-vite';
 
-import type { enhance } from './mocks/app/forms';
-import type { goto, invalidate, invalidateAll } from './mocks/app/navigation';
+import type { enhance } from './mocks/app/forms.ts';
+import type { goto, invalidate, invalidateAll } from './mocks/app/navigation.ts';
 
 type FrameworkName = CompatibleString<'@storybook/sveltekit'>;
 type BuilderName = CompatibleString<'@storybook/builder-vite'>;

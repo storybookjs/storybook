@@ -198,7 +198,7 @@ export const OneItem = {
       //👇 The args will now be passed down to the template
       return { args };
     },
-    template: '<List v-bind="args"><ListItem v-bind="args"/></List>',
+    template: '<List v-bind="args"><ListItem v-bind="args" /></List>',
   }),
 };
 ```
@@ -231,7 +231,7 @@ export const OneItem: Story = {
       //👇 The args will now be passed down to the template
       return { args };
     },
-    template: '<List v-bind="args"><ListItem v-bind="args"/></List>',
+    template: '<List v-bind="args"><ListItem v-bind="args" /></List>',
   }),
   args: {
     ...Unchecked.args,
@@ -264,7 +264,7 @@ export const OneItem = meta.story({
       //👇 The args will now be passed down to the template
       return { args };
     },
-    template: '<List v-bind="args"><ListItem v-bind="args"/></List>',
+    template: '<List v-bind="args"><ListItem v-bind="args" /></List>',
   }),
   args: {
     ...Unchecked.input.args,
@@ -299,7 +299,7 @@ export const OneItem = meta.story({
       //👇 The args will now be passed down to the template
       return { args };
     },
-    template: '<List v-bind="args"><ListItem v-bind="args"/></List>',
+    template: '<List v-bind="args"><ListItem v-bind="args" /></List>',
   }),
   args: {
     ...Unchecked.input.args,

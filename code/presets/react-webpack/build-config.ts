@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -6,11 +6,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['.'],
         entryPoint: './src/index.ts',
-      },
-      {
-        exportEntries: ['./preset-cra'],
-        entryPoint: './src/framework-preset-cra.ts',
-        dts: false,
       },
       {
         exportEntries: ['./preset-react-docs'],

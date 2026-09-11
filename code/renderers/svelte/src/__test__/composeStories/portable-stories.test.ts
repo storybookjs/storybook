@@ -6,9 +6,9 @@ import { afterEach, describe, expect, it } from 'vitest';
 // import '@testing-library/svelte/vitest';
 import { expectTypeOf } from 'expect-type';
 
-import type { Meta } from '../..';
-import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories';
-import * as stories from './Button.stories';
+import type { Meta } from '../../index.ts';
+import { composeStories, composeStory, setProjectAnnotations } from '../../portable-stories.ts';
+import * as stories from './Button.stories.ts';
 import type Button from './Button.svelte';
 
 setProjectAnnotations([]);

@@ -1,7 +1,7 @@
 import { generate, types as t } from 'storybook/internal/babel';
 import { type CsfEnricher } from 'storybook/internal/types';
 
-import type { CsfFile } from './CsfFile';
+import type { CsfFile } from './CsfFile.ts';
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { escapeForTemplate } from './safeString';
+import { escapeForTemplate } from './safeString.ts';
 
 describe('safeString', () => {
   describe('escapeForTemplate', () => {

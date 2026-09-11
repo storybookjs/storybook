@@ -1,5 +1,5 @@
-import { color, typography } from '../base';
-import type { ThemeVars } from '../types';
+import { color, typography } from '../base.ts';
+import type { ThemeVars } from '../types.ts';
 
 const theme: ThemeVars = {
   base: 'dark',

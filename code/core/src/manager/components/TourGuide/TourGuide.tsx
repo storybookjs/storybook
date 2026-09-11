@@ -8,8 +8,8 @@ import Joyride, { ACTIONS, type Step } from 'react-joyride';
 import { useTheme } from 'storybook/theming';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import { HighlightElement } from './HighlightElement';
-import { TourTooltip } from './TourTooltip';
+import { HighlightElement } from './HighlightElement.tsx';
+import { TourTooltip } from './TourTooltip.tsx';
 
 type StepDefinition = {
   key?: string;

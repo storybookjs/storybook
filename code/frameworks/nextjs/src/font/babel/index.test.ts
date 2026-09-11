@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 
 import { transform } from '@babel/core';
 
-import TransformFontImports from '.';
+import TransformFontImports from './index.ts';
 
 const example = `
 import { Inter, Lora as FontLora, Roboto } from 'next/font/google'

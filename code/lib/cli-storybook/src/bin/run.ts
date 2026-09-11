@@ -3,7 +3,6 @@ import {
   HandledError,
   JsPackageManagerFactory,
   PackageManagerName,
-  isCI,
   optionalEnvToBoolean,
   removeAddon as remove,
   versions,
@@ -12,19 +11,20 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import { Option, program } from 'commander';
+import { InvalidArgumentError, Option, program } from 'commander';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
 
 import { version } from '../../package.json';
-import { add } from '../add';
-import { doAutomigrate } from '../automigrate';
-import { doctor } from '../doctor';
-import { link } from '../link';
-import { migrate } from '../migrate';
-import { sandbox } from '../sandbox';
-import { type UpgradeOptions, upgrade } from '../upgrade';
+import { add } from '../add.ts';
+import { doAutomigrate } from '../automigrate/index.ts';
+import { resolveRequestedFeatures } from '../automigrate/fixes/experimental-features.ts';
+import { doctor } from '../doctor/index.ts';
+import { link } from '../link.ts';
+import { migrate } from '../migrate.ts';
+import { sandbox } from '../sandbox.ts';
+import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -98,21 +98,15 @@ command('init')
       Object.values(PackageManagerName)
     )
   )
-  // TODO: Remove in SB11
-  .option('--use-pnp', 'Enable PnP mode for Yarn 2+')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
   .option('-t --type <type>', 'Add Storybook for a specific project type')
   .option('-y --yes', 'Answer yes to all prompts')
   .option('-b --builder <webpack5 | vite>', 'Builder library')
   .option('-l --linkable', 'Prepare installation for link (contributor helper)')
-  .option(
-    '--dev',
-    'Launch the development server after completing initialization. Enabled by default (default: true)',
-    !isCI() && !optionalEnvToBoolean(process.env.IN_STORYBOOK_SANDBOX)
-  )
+  .option('--dev', 'Launch the development server after completing initialization')
   .option(
     '--no-dev',
-    'Complete the initialization of Storybook without launching the Storybook development server'
+    'Do not launch the Storybook development server after completing initialization (default)'
   );
 
 command('add <addon>')
@@ -133,9 +127,7 @@ command('add <addon>')
 
       await add(addonName, options);
 
-      if (!options.disableTelemetry) {
-        await telemetry('add', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('add', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure);
   });
@@ -161,9 +153,7 @@ command('remove <addon>')
         packageManager,
         skipInstall: options.skipInstall,
       });
-      if (!options.disableTelemetry) {
-        await telemetry('remove', { addon: addonName, source: 'cli' });
-      }
+      await telemetry('remove', { addon: addonName, source: 'cli' });
       logger.outro('Done!');
     }).catch(handleCommandFailure(options.logfile))
   );
@@ -176,9 +166,26 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .addOption(
+    new Option(
+      '--features <list>',
+      'Comma-separated list of experimental feature flags to enable during the upgrade'
+    ).argParser((value) => {
+      try {
+        resolveRequestedFeatures(value);
+      } catch (error) {
+        throw new InvalidArgumentError(error instanceof Error ? error.message : String(error));
+      }
+      return value;
+    })
+  )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
+  .option(
+    '--skip-automigrations',
+    'Skip running automigrations entirely (only update package versions and install)'
+  )
   .option(
     '-c, --config-dir <dir-name...>',
     'Directory(ies) where to load Storybook configurations from'

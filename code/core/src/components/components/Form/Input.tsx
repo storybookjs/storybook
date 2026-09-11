@@ -12,7 +12,7 @@ import {
   sizes,
   styles,
   validation,
-} from './styles';
+} from './styles.ts';
 
 const Wrapper = styled.div({
   position: 'relative',

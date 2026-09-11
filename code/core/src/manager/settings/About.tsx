@@ -7,7 +7,7 @@ import { DocumentIcon, GithubIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import { UpgradeBlock } from '../components/upgrade/UpgradeBlock';
+import { UpgradeBlock } from '../components/upgrade/UpgradeBlock.tsx';
 
 const Container = styled.div({
   display: 'flex',

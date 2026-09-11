@@ -1,7 +1,7 @@
 import type { ProjectType } from 'storybook/internal/cli';
 import { logger } from 'storybook/internal/node-logger';
 
-import type { GeneratorModule } from './types';
+import type { GeneratorModule } from './types.ts';
 
 /**
  * Registry for managing Storybook project generators

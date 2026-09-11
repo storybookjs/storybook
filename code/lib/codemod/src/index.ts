@@ -9,7 +9,7 @@ import { sync as spawnSync } from 'cross-spawn';
 import { normalize } from 'pathe';
 import { glob as tinyglobby } from 'tinyglobby';
 
-import { jscodeshiftToPrettierParser } from './lib/utils';
+import { jscodeshiftToPrettierParser } from './lib/utils.ts';
 
 const TRANSFORM_DIR = join(resolvePackageDir('@storybook/codemod'), 'dist', 'transforms');
 

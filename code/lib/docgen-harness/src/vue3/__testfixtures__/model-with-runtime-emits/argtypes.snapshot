@@ -1,0 +1,20 @@
+{
+  "blur": {
+    "control": {
+      "disable": true,
+    },
+    "description": undefined,
+    "name": "blur",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+}

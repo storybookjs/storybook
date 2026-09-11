@@ -1,5 +1,24 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
+  - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
+  - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
+  - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
+  - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [Create React App support removed](#create-react-app-support-removed)
+  - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+
+- [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
+  - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
+  - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
+  - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
+- [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
+  - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
+- [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
+  - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
+  - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
   - [API and Component Changes](#api-and-component-changes)
     - [Button Component API Changes](#button-component-api-changes)
@@ -47,6 +66,7 @@
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
     - [Dropped support](#dropped-support)
+      - [Vite 5 and Vite 6](#vite-requires-vite-63-or-higher)
       - [Vite 4](#vite-4)
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
@@ -519,6 +539,410 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### Top-level `setConfig` layout and UI options removed
+
+The deprecated top-level layout and UI options passed to `addons.setConfig` are no longer applied.
+Move layout options into `layout` and `enableShortcuts` into `ui`:
+
+```diff
+ addons.setConfig({
+-  showNav: false,
+-  panelPosition: 'right',
+-  enableShortcuts: false,
++  layout: {
++    showNav: false,
++    panelPosition: 'right',
++  },
++  ui: {
++    enableShortcuts: false,
++  },
+ });
+```
+
+Run the automigration to update `.storybook/manager.*`:
+
+```sh
+npx storybook automigrate set-config-layout
+```
+
+The automigration stops with manual instructions when a configuration containing an explicit
+legacy option cannot be transformed safely. This includes computed properties, spreads, conflicting
+top-level and nested values, and moves that could change expression evaluation order. When the same
+option exists in both places, keep the nested value because it was authoritative in Storybook 10.
+
+### Vitest Addon: requires Vitest 4.0 or higher
+
+The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
+
+### Vite: `publicDir` is handled by Storybook's `staticDirs`
+
+In previous versions, Vite copied its `publicDir` (`public/` by default) into the output of `storybook build` after Storybook had written its own files. A `public/index.json` silently replaced Storybook's story index and broke the built Storybook, and files from `public/` overrode files from your `staticDirs`.
+
+Storybook now disables Vite's copy (`build.copyPublicDir`) and copies the `publicDir` itself, as if it were the first entry of `staticDirs`. Storybook's own output files are never replaced, and your `staticDirs` take precedence over `publicDir` when file names conflict, matching how `storybook dev` has always served them.
+
+Setting `publicDir: false` in your Vite config to work around the old behavior is no longer needed, but still respected.
+
+### Vite: requires Vite 6.3 or higher
+
+Storybook 11.0 drops support for Vite 5. The minimum supported version is now Vite 6.3.0, and Vite 7 and 8 remain supported. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/sveltekit`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/nextjs-vite`
+- `@storybook/react-native-web-vite`
+- `@storybook/tanstack-react`
+- `vite-plugin-storybook-nextjs`
+
+If you're using Vite 6, upgrade to Vite 6.3.0 or higher. If you're already on Vite 6.3.0 or higher, no Vite upgrade is needed.
+
+If you're using framework-specific Vite plugins, ensure they are compatible with your Vite version:
+
+- `@vitejs/plugin-react`: the 4.7.0 release and the 5.x line support Vite 6
+- `@vitejs/plugin-vue`: pair Vite 6 with `@vitejs/plugin-vue` 6.x, which declares support for Vite 5, 6, 7, and 8
+- `@sveltejs/vite-plugin-svelte`: the 6.x line requires Vite 6.3.0 or higher
+- etc.
+
+For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
+
+### Next.js: Require v15 and up
+
+Storybook has dropped support for Next.js versions below 15. The minimum supported version is now Next.js 15.
+
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
+
+For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### Angular: requires Angular 21 or higher
+
+Storybook has dropped support for Angular versions 18-20. The minimum supported version is now Angular 21.
+
+If you're using an older version of Angular, you'll need to upgrade to Angular 21 or newer to use the latest version of Storybook.
+
+For help upgrading your Angular application, see the [Angular update guide](https://angular.dev/update-guide).
+
+Key changes:
+
+- All Angular packages in peerDependencies now require `>=21.0.0 < 23.0.0`
+- `@angular-devkit/architect` now requires `>=0.2100.0 < 0.2300.0`
+- The RxJS peer requirement accepts `^6.5.3 || ^7.4.0`, matching Angular 21's own range
+- Standalone components are always treated as the default in `@storybook/angular`
+
+### Next.js: `@storybook/nextjs` is deprecated
+
+The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
+
+Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+
+### Create React App support removed
+
+Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
+
+Migrating off Create React App is not a hard requirement. To keep using Storybook with a Create React App project, run it with the Vite-based `@storybook/react-vite` framework instead of the CRA preset. `storybook init` scaffolds that setup for you: if it cannot detect a builder, it asks you to choose one (Vite, Webpack 5, or Rsbuild). Because Create React App does not use Vite itself, additional Vite configuration may be necessary to make your application work in Storybook. For example, mirroring the loaders, aliases, and environment variables your components rely on. If you prefer to migrate your app off Create React App entirely, [Vite's guide](https://vite.dev/guide/) covers the steps.
+
+### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
+
+`@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
+
+## From version 10.5.x to 10.6.0
+
+### Vue 3: `vue-docgen-api` is deprecated
+
+`vue-docgen-api` is the docgen engine `@storybook/vue3-vite` uses to document props, events, slots and exposes. It is deprecated and will be removed in the next major version of Storybook, leaving [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) — the extractor maintained by the Vue team — as the only engine. It documents more of your components: `.ts`, `.tsx`, `.js` and `.jsx` components as well as SFCs, named exports next to default ones, and richer prop, event, slot and exposed types.
+
+`vue-docgen-api` is still the default, so Storybook logs the deprecation whenever it runs, including when you never set the `docgen` framework option.
+
+The path we recommend is server-side docgen, which becomes the default in Storybook 11. It runs `vue-component-meta` on the Storybook server instead of in the builder, and also feeds the component manifest that AI agents read:
+
+```ts
+// .storybook/main.ts
+features: { experimentalDocgenServer: true },
+```
+
+To stay on builder-side docgen for now, select the engine explicitly instead:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/vue3-vite',
+  options: {
+    docgen: 'vue-component-meta',
+  },
+},
+```
+
+If your main `tsconfig.json` only references other tsconfig files, such as `tsconfig.app.json`, point the engine at the one that resolves your components, or import aliases will not resolve:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/vue3-vite',
+  options: {
+    docgen: { plugin: 'vue-component-meta', tsconfig: 'tsconfig.app.json' },
+  },
+},
+```
+
+`docgen: true` is an alias for `vue-docgen-api` and is deprecated with it. `docgen: false`, which turns docgen off entirely, is unaffected and logs nothing.
+
+The two engines emit different `__docgenInfo` shapes. Storybook's own argTypes extraction handles both, but code of yours that reads `__docgenInfo` directly needs updating: the `expose` entries become `exposed`, and props, events and slots carry `vue-component-meta`'s type information. The `VueDocgenInfo` and `VueDocgenInfoEntry` types exported from `@storybook/vue3` are parameterized by engine (`VueDocgenInfo<'vue-component-meta'>`) to help with that.
+
+### Angular Vite: a new `propsTable` framework option
+
+`@storybook/angular-vite` now lets you choose which members the props table documents, through a `propsTable` framework option. It defaults to `'api'`, which leaves out TypeScript `private` properties and methods, ECMAScript private `#` members, and anything tagged `@internal`. No template can reach a `private` property or method, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API. Injected services such as `private readonly cdr = inject(ChangeDetectorRef)` are the common case.
+
+Declared inputs and outputs are always documented, whatever their TypeScript visibility. Angular only honors access modifiers on input bindings behind the opt-in `strictInputAccessModifiers` compiler flag and never checks them on output bindings, so even a `private` input or output is API a parent template can bind.
+
+`protected` members are documented. Angular templates have been able to bind them since Angular 14, so they are real API.
+
+The default only changes what you see when `features.experimentalDocgenServer` is on. With the Compodoc pipeline, which is still the default, Storybook cannot interpret Compodoc's visibility data reliably and the props table is unchanged.
+
+Set the option to `'all'` to document every member:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/angular-vite',
+  options: {
+    // 'all' documents every member.
+    // 'api' (the default) leaves out private and `#` properties and methods, and @internal members.
+    // 'inputs' documents the inputs section only.
+    propsTable: 'all',
+  },
+},
+```
+
+To drop a single member the default keeps, tag it `@ignore`.
+
+`features.angularFilterNonInputControls` is deprecated on `@storybook/angular-vite` and will be removed in Storybook 11: `true` maps to `propsTable: 'inputs'` and `false` to `propsTable: 'all'`. Setting both leaves `propsTable` in charge. `@storybook/angular` (webpack) is unaffected and keeps reading the feature.
+
+### MCP tool names follow toolset.method
+
+Storybook's MCP tools are now named from their toolset and method (`stories.preview` → `stories-preview`). Update agent prompts, skills, and hard-coded tool allowlists:
+
+| Previous name | New name |
+| --- | --- |
+| `preview-stories` | `stories-preview` |
+| `get-changed-stories` | `stories-changed` |
+| `get-stories-by-component` | `stories-find-by-component` |
+| `display-review` | `review-create` |
+| `run-story-tests` | `test-run` |
+| `list-all-documentation` | `docs-list` |
+| `get-documentation` | `docs-show` |
+| `get-documentation-for-story` | `docs-show-story` |
+
+`get-storybook-story-instructions` is unchanged (it is not backed by a toolset method).
+
+### Angular Vite defaults to server-side docgen
+
+`experimentalDocgenServer` moves component analysis out of the browser and onto the Storybook server, where each component is read from its TypeScript source once and the resulting inputs, outputs and descriptions are served to the Controls table, the Docs pages and the component manifest that AI agents read.
+
+`@storybook/angular-vite` now enables that feature by default. Angular metadata is extracted in process, so Compodoc no longer runs, `documentation.json` is no longer read, and Compodoc is no longer needed as a dependency.
+
+The `storybook automigrate` command removes the Compodoc setup that has no effect anymore: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` wiring in your preview config, the Compodoc options on the `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency.
+
+To keep using Compodoc, opt out and skip that automigration:
+
+```js
+// .storybook/main.js
+export default {
+  framework: '@storybook/angular-vite',
+  features: { experimentalDocgenServer: false },
+};
+```
+
+Opting out keeps the Compodoc setup an existing project already has.
+A project created after this change has none, because `storybook init` no longer sets Compodoc up for the Vite builder, so opting out there means installing `@compodoc/compodoc`, generating `documentation.json`, and handing it to Storybook yourself:
+
+```js
+// .storybook/preview.js
+import { setCompodocJson } from '@storybook/addon-docs/angular';
+
+import docJson from '../documentation.json';
+
+setCompodocJson(docJson);
+```
+
+Treat that opt-out as a migration aid rather than a long-term setting.
+`@storybook/angular-vite` is planned to be marked stable in Storybook 11, and `experimentalDocgenServer: false` is planned to be deprecated in the same release and removed in Storybook 12, together with the `compodoc` and `compodocArgs` framework options and the `setCompodocJson` wiring.
+
+The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
+
+The `compodoc` and `compodocArgs` options on the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas are deprecated.
+They are still accepted, so a workspace that still declares them in `angular.json` keeps building, and `ng run` now reports them as deprecated.
+Nothing reads them: Compodoc is configured through `framework.options` in your main config.
+
+### Angular Vite: tsconfig paths now take priority over `node_modules` in production builds too
+
+`@storybook/angular-vite` now sets Vite's `resolve.tsconfigPaths` to `true` by default.
+Previously `dev` only consulted your tsconfig's `compilerOptions.paths` when that flag was on, while `build` already fell back to `paths` whenever normal resolution failed.
+That asymmetry meant a workspace alias with no matching `node_modules` package could build successfully and then fail to serve in `dev`.
+Turning the flag on by default closes that gap, and matches how `tsc` already looks up the same paths - though only for module resolution, not for rewriting emitted import specifiers, which TypeScript never does.
+
+Beyond closing the dev gap, this also changes what `build` bundles for a specifier that resolves two different ways: through a `paths` entry in your tsconfig, and through an actual package of the same name in `node_modules`.
+That overlap is ordinary in an Nx or Yarn/npm workspace, and it is the one case worth checking after this upgrade - the dev-serving fix applies with no downside.
+For example, a root tsconfig mapping `"@org/ui": ["libs/ui/src/index.ts"]`, in a workspace that also has a `node_modules/@org/ui` entry (a workspace symlink, or an installed published copy of the same library).
+Before this change, `storybook build` bundled the compiled package from `node_modules`.
+After this change, it bundles the raw `libs/ui/src/index.ts` source instead, which goes through Analog's Angular transform under the app's compiler flags rather than the library's own.
+
+To keep the previous `build` behavior, opt out in your Vite config:
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        tsconfigPaths: false,
+      },
+    };
+  },
+};
+```
+
+### Experimental Playwright CT integration removed
+
+Storybook's experimental `@storybook/*/experimental-playwright` API (`createPlaywrightTest`) has been removed.
+
+This integration was built on Playwright's former `@playwright/experimental-ct-*` packages. Playwright has replaced that approach with [component testing in `@playwright/test`](https://playwright.dev/docs/test-components) — a story-gallery model where tests run against pages served by your own dev server, without a separate CT bundler or JSX-in-test marshalling.
+
+If you were using Storybook's Playwright CT bridge, migrate along Playwright's guide above. Storybook is a natural fit as that dev server — we're exploring that direction, but there's no documented integration yet; watch release notes for updates.
+
+The portable stories core (`composeStories`, `setProjectAnnotations`) remains available for the [Vitest addon](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon) and other supported testing paths.
+
+If needed, you can still view the [documentation for an older version](https://storybook.js.org/docs/9/api/portable-stories/portable-stories-playwright).
+
+### `@storybook/csf-plugin` removed
+
+The standalone `@storybook/csf-plugin` package has been removed. CSF source enrichment now lives inside `@storybook/addon-docs` and is registered from that addon's presets for Vite and Webpack.
+
+If you depended on `@storybook/csf-plugin` only through Storybook (the usual case), remove it from your `package.json` and keep configuring enrichment via addon-docs:
+
+```js
+// .storybook/main.js
+export default {
+  addons: [
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        csfPluginOptions: {
+          /* EnrichCsfOptions */
+        },
+      },
+    },
+  ],
+};
+```
+
+Direct imports of `@storybook/csf-plugin` in custom builders or standalone Vite/Webpack configs are no longer supported. There is no public replacement package — CSF enrichment is only registered through `@storybook/addon-docs` as shown above.
+
+## From version 10.4.0 to 10.5.0
+
+### ExternalDocs and ExternalDocsContainer are deprecated
+
+The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon-docs` are deprecated and will be removed in Storybook 11. These components allowed rendering Storybook docs pages outside of the Storybook UI, but the approach was never stabilized and is redundant with other embedding options.
+
+If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
+
+## From version 10.3.0 to 10.4.0
+
+### React Native: on-device addons moved to `deviceAddons`
+
+In Storybook 10.4, the React Native on-device Storybook config (`.rnstorybook/main.ts`) uses a dedicated `deviceAddons` key. All entries that used to live under `addons` in your React Native config must now be listed under `deviceAddons` instead.
+
+Listing them under `addons` caused `storybook extract` to fail because Storybook Core evaluates every entry in `addons` as a Node.js preset, which on-device addons are not.
+
+The automigration (`rn-ondevice-addons-to-device-addons`) handles this automatically by renaming the `addons` key to `deviceAddons`. It only acts on React Native main configs (detected by the `.rnstorybook` directory name or by a `framework` field of `@storybook/react-native`), and leaves any paired web `.storybook/main.ts` untouched.
+
+You can also migrate manually:
+
+```ts
+// Before (.rnstorybook/main.ts)
+export default {
+  addons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+
+// After (.rnstorybook/main.ts)
+export default {
+  deviceAddons: [
+    '@storybook/addon-ondevice-controls',
+    '@storybook/addon-ondevice-actions',
+  ],
+};
+```
+
+### TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`
+
+Projects using `@storybook/react-vite` together with `@tanstack/react-router` (or `@tanstack/react-start`) can migrate to the dedicated `@storybook/tanstack-react` framework. The new framework provides built-in TanStack Router and TanStack Query support: every story is automatically wrapped in a TanStack Router instance (in-memory history), so any manual decorator that creates a `RouterProvider`, `createRouter`, `createMemoryHistory` or `createRootRoute` is no longer needed and should be removed.
+
+To run the automigration:
+
+```sh
+npx storybook automigrate
+```
+
+The migration will:
+
+- Replace `@storybook/react-vite` with `@storybook/tanstack-react` in `package.json`.
+- Update the framework string in `.storybook/main.*` (works for both regular and CSF factories `defineMain` configs).
+- Update import sites that reference `@storybook/react-vite` (including CSF factories `definePreview` and `defineMain` from `@storybook/react-vite/node`).
+- Detect manual TanStack Router decorators in `.storybook/preview.*`, the rest of `.storybook/`, and any `*.stories.*` file. When a decorator is detected, the migration offers to copy a ready-to-paste AI prompt to your clipboard that walks an AI assistant through removing it.
+
+After running the automigration, remove any manual TanStack Router decorators (you can use the AI prompt offered by the CLI). For stories that need to render under a specific route, use the framework's `parameters.tanstack.router` API instead. With the CSF factories syntax:
+
+```ts
+// src/stories/Page.stories.ts
+import preview from '#.storybook/preview';
+import { Route } from './Page';
+
+const meta = preview.meta({
+  title: 'Example/Page',
+  parameters: {
+    tanstack: {
+      router: {
+        route: Route,
+      },
+    },
+  },
+});
+
+export const Default = meta.story();
+```
+
+Or with the CSF3 syntax — note that `Meta` and `StoryObj` should now be imported from `@storybook/tanstack-react` so they pick up the TanStack-aware parameter types:
+
+```ts
+import type { Meta, StoryObj } from '@storybook/tanstack-react';
+import { Route } from './Page';
+
+const meta = {
+  title: 'Example/Page',
+  parameters: {
+    tanstack: { router: { route: Route } },
+  },
+} satisfies Meta<typeof Route>;
+
+export default meta;
+export const Default: StoryObj<typeof meta> = {};
+```
+
+`parameters.tanstack.router` also accepts `path`, `params`, `query`, `routeOverrides`, and `useRouterContext` for finer-grained control. You can additionally register a project-wide default route by passing `route` to `definePreview` in `.storybook/preview.*`.
+
+See the [`@storybook/tanstack-react` framework documentation](https://storybook.js.org/docs/get-started/frameworks/tanstack-react) for the full list of features and APIs.
 
 ## From version 10.0.0 to 10.1.0
 
@@ -1070,6 +1494,7 @@ import * as previewAnnotations from './.storybook/preview';
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
 The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+
 
 #### Viewport/Backgrounds Addon synchronized configuration and `globals` usage
 

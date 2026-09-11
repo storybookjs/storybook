@@ -4,9 +4,9 @@ import { Popover, TooltipNote } from 'storybook/internal/components';
 
 import { expect, fn, screen } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers';
-import { TooltipProvider } from './TooltipProvider';
+import preview from '../../../../../.storybook/preview.tsx';
+import { OverlayTriggerDecorator, Trigger } from '../shared/overlayHelpers.tsx';
+import { TooltipProvider } from './TooltipProvider.tsx';
 
 const SampleTooltip = () => 'Lorem ipsum dolor sit';
 const SampleTooltipNote = () => <TooltipNote note="This note appears on hover and focus" />;

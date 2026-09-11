@@ -1,6 +1,6 @@
 import type { Args, StoryId, ViewMode } from 'storybook/internal/types';
 
-import type { StorySpecifier } from '../store/StoryIndexStore';
+import type { StorySpecifier } from '../store/StoryIndexStore.ts';
 
 export interface SelectionSpecifier {
   storySpecifier: StorySpecifier;

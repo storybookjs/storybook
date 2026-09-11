@@ -12,8 +12,8 @@ import type {
 
 import { dedent } from 'ts-dedent';
 
-import { normalizeArrays } from './normalizeArrays';
-import { normalizeInputTypes } from './normalizeInputTypes';
+import { normalizeArrays } from './normalizeArrays.ts';
+import { normalizeInputTypes } from './normalizeInputTypes.ts';
 
 const deprecatedStoryAnnotation = dedent`
 CSF .story annotations deprecated; annotate story functions directly:

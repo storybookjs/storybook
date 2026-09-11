@@ -1,4 +1,4 @@
-import { mkColor } from '../utils';
+import { mkColor } from '../utils.ts';
 
 interface ColorsHash {
   [key: string]: string;

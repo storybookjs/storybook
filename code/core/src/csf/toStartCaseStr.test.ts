@@ -1,6 +1,6 @@
 import { expect, test } from 'vitest';
 
-import { toStartCaseStr } from './toStartCaseStr';
+import { toStartCaseStr } from './toStartCaseStr.ts';
 
 test.each([
   ['snake_case', 'Snake Case'],

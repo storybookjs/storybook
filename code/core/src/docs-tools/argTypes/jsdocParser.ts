@@ -7,7 +7,7 @@ import {
   transform as transformJSDocType,
 } from 'jsdoc-type-pratt-parser';
 
-import type { JsDocParam, JsDocReturns } from './docgen';
+import type { JsDocParam, JsDocReturns } from './docgen/index.ts';
 
 export interface ExtractedJsDocParam extends JsDocParam {
   type?: any;

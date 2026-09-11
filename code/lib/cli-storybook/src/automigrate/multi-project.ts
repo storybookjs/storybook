@@ -3,13 +3,15 @@ import { CLI_COLORS, type TaskLogInstance, logger, prompt } from 'storybook/inte
 import { ErrorCollector, sanitizeError } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { UpgradeOptions } from '../upgrade';
-import { shortenPath } from '../util';
-import type { CollectProjectsSuccessResult } from '../util';
-import { allFixes } from './fixes';
-import { rnstorybookConfig } from './fixes/rnstorybook-config';
-import type { CheckOptions, Fix, FixId, RunOptions } from './types';
-import { FixStatus } from './types';
+import type { UpgradeOptions } from '../upgrade.ts';
+import { shortenPath } from '../util.ts';
+import type { CollectProjectsSuccessResult } from '../util.ts';
+import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
+import { allFixes } from './fixes/index.ts';
+import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
+import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
+import { FixStatus } from './types.ts';
+import { RN_STORYBOOK_DIR } from '../../../../core/src/shared/constants/config-folder.ts';
 
 export interface ProjectAutomigrationData {
   configDir: string;
@@ -41,6 +43,8 @@ export interface MultiProjectAutomigrationOptions {
   yes?: boolean;
   skipInstall?: boolean;
   taskLog: TaskLogInstance;
+  /** Fix ids the user asked for explicitly; forwarded to `check` as `requested`. */
+  requestedFixIds?: string[];
 }
 
 export interface MultiProjectRunAutomigrationOptions {
@@ -54,7 +58,7 @@ export interface MultiProjectRunAutomigrationOptions {
 export async function collectAutomigrationsAcrossProjects(
   options: MultiProjectAutomigrationOptions
 ): Promise<AutomigrationCheckResult[]> {
-  const { fixes, projects, taskLog } = options;
+  const { fixes, projects, taskLog, requestedFixIds } = options;
   const automigrationMap = new Map<FixId, AutomigrationCheckResult>();
 
   logger.debug(
@@ -107,6 +111,8 @@ export async function collectAutomigrationsAcrossProjects(
           configDir: project.configDir,
           mainConfig: project.mainConfig,
           storybookVersion: project.storybookVersion,
+          beforeVersion: project.beforeVersion,
+          requested: requestedFixIds?.includes(fix.id),
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
@@ -199,26 +205,33 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
-  options: { dryRun?: boolean; yes?: boolean }
+  options: { dryRun?: boolean; yes?: boolean; preselectedIds?: string[] }
 ): Promise<AutomigrationCheckResult[]> {
   if (automigrations.length === 0) {
     return [];
   }
 
-  if (options.dryRun) {
-    logger.log('Detected automigrations (dry run - no changes will be made):');
-    automigrations.forEach(({ fix, reports: list }) => {
+  const logSelection = (title: string, selection: AutomigrationCheckResult[]) => {
+    logger.log(title);
+    selection.forEach(({ fix, reports: list }) => {
       logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
     });
+  };
+
+  const preselectedIds = new Set(options.preselectedIds ?? []);
+
+  if (options.dryRun) {
+    logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
     return [];
   }
 
   if (options.yes) {
-    logger.log('Running all detected automigrations:');
-    automigrations.forEach(({ fix, reports: list }) => {
-      logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
-    });
-    return automigrations;
+    const selected = automigrations.filter(
+      ({ fix }) =>
+        preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
+    );
+    logSelection('Running all detected automigrations:', selected);
+    return selected;
   }
 
   // Create choices for multiselect prompt
@@ -238,7 +251,7 @@ export async function promptForAutomigrations(
       value: am.fix.id,
       label,
       hint: hint.join('\n'),
-      defaultSelected: am.fix.defaultSelected ?? true,
+      defaultSelected: preselectedIds.has(am.fix.id) || (am.fix.defaultSelected ?? true),
     };
   });
 
@@ -258,6 +271,14 @@ type ErrorMessage = string;
 export type AutomigrationResult = {
   automigrationStatuses: Record<FixId, FixStatus>;
   automigrationErrors: Record<FixId, ErrorMessage>;
+  /**
+   * Core addons whose postinstall configuration must run AFTER dependencies are installed. A fix
+   * that adds a core addon via `add(..., { skipPostinstall: true })` pushes the addon name here.
+   * Deferral is required because an addon's postinstall hook can only be resolved once the package
+   * is on disk, and the upgrade flow batches installs to the end of the run (after all projects'
+   * automigrations); it configures these addons afterwards (see `upgrade.ts`).
+   */
+  addonsToPostinstall?: string[];
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
@@ -338,6 +359,8 @@ export async function runAutomigrationsForProjects(
           };
     const fixResults: Record<FixId, FixStatus> = {};
     const fixFailures: Record<FixId, ErrorMessage> = {};
+    // Core addons added by fixes that must be configured after the upgrade installs dependencies.
+    const addonsToPostinstall: string[] = [];
 
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
@@ -379,6 +402,7 @@ export async function runAutomigrationsForProjects(
             storybookVersion: project.storybookVersion,
             storiesPaths: project.storiesPaths,
             yes,
+            addonsToPostinstall,
           };
 
           await fix.run(runOptions);
@@ -410,6 +434,7 @@ export async function runAutomigrationsForProjects(
     projectResults[configDir] = {
       automigrationStatuses: fixResults,
       automigrationErrors: fixFailures,
+      addonsToPostinstall,
     };
   }
 
@@ -423,6 +448,9 @@ export async function runAutomigrations(
   detectedAutomigrations: AutomigrationCheckResult[];
   automigrationResults: Record<string, AutomigrationResult>;
 }> {
+  const requestedFeatures = resolveRequestedFeatures(options.features);
+  const requestedFixIds = requestedFeatures.map(({ fixId }) => fixId);
+
   // Prepare project data for automigrations
   const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
     configDir: project.configDir,
@@ -443,6 +471,7 @@ export async function runAutomigrations(
         ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
         : `Detecting automigrations...`,
   });
+
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
@@ -451,6 +480,7 @@ export async function runAutomigrations(
     yes: options.yes,
     skipInstall: options.skipInstall,
     taskLog: detectingAutomigrationTask,
+    requestedFixIds,
   });
 
   // Filter out automigrations that should run
@@ -458,10 +488,24 @@ export async function runAutomigrations(
     am.reports.some((report) => report.status === 'check_succeeded')
   );
 
+  requestedFeatures
+    .filter(({ fixId }) => !successfulAutomigrations.some((am) => am.fix.id === fixId))
+    .forEach(({ name, fixId }) => {
+      const checkFailed = detectedAutomigrations
+        .find((am) => am.fix.id === fixId)
+        ?.reports.some((report) => report.status === 'check_failed');
+      logger.warn(
+        checkFailed
+          ? `Skipping --features ${name}: the '${fixId}' migration check failed. Run with --debug for details.`
+          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config, unsupported by your Storybook version, or missing a prerequisite.`
+      );
+    });
+
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(successfulAutomigrations, {
     dryRun: options.dryRun,
     yes: options.yes,
+    preselectedIds: requestedFixIds,
   });
   // Run selected automigrations for each project
   const automigrationResults = await runAutomigrationsForProjects(selectedAutomigrations, {
@@ -478,7 +522,7 @@ export async function runAutomigrations(
       const project = projects.find((p) => p.configDir === configDir);
       if (project) {
         const oldConfigDir = project.configDir;
-        project.configDir = project.configDir.replace('.storybook', '.rnstorybook');
+        project.configDir = project.configDir.replace('.storybook', RN_STORYBOOK_DIR);
         automigrationResults[project.configDir] = resultData;
         delete automigrationResults[oldConfigDir];
       }

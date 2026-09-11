@@ -4,16 +4,24 @@ import { groupBy } from 'storybook/internal/common';
 
 import type { ComponentDoc, PropItem } from 'react-docgen-typescript';
 
-import type { ComponentManifest, ComponentsManifest } from '../../../types';
+// Type-only import to reuse the source-of-truth react-component-meta manifest shape
+// without creating a runtime dependency from core to the React renderer package.
+import type { ComponentDoc as ReactComponentMetaDoc } from '../../../../../renderers/react/src/componentManifest/componentMeta/componentMetaExtractor.ts';
+import type {
+  ComponentManifest,
+  ComponentsManifest,
+  ComponentSubcomponentManifest,
+} from '../../../types/index.ts';
 
 /** Minimal docs entry type for rendering in the manifest debugger */
 interface DocsManifestEntry {
   id: string;
   name: string;
-  path: string;
-  title: string;
+  path?: string;
+  title?: string;
   content?: string;
   summary?: string;
+  mdx?: { $ref: string };
   error?: { name: string; message: string };
 }
 
@@ -23,15 +31,37 @@ export interface DocsManifest {
   docs: Record<string, DocsManifestEntry>;
 }
 
+interface ComponentManifestLikeWithDocgen extends ComponentSubcomponentManifest {
+  reactDocgen?: DocgenDoc;
+  reactDocgenTypescript?: RdtComponentDoc;
+  reactComponentMeta?: ReactComponentMetaDoc;
+}
+
+export type ComponentManifestStory = ComponentManifest['stories'][number];
+export type ComponentManifestStories =
+  | ComponentManifest['stories']
+  | Record<string, ComponentManifestStory>;
+
 /** Extended component manifest that may include docs from the docs addon */
-interface ComponentManifestWithDocs extends ComponentManifest {
+export interface ComponentManifestWithDocs
+  extends ComponentManifestLikeWithDocgen, Omit<ComponentManifest, 'stories' | 'subcomponents'> {
+  stories: ComponentManifestStories;
   docs?: Record<string, DocsManifestEntry>;
+  subcomponents?: Record<string, ComponentManifestLikeWithDocgen>;
+}
+
+export interface ComponentsManifestForRenderer extends Omit<ComponentsManifest, 'components'> {
+  components: Record<string, ComponentManifestWithDocs>;
+}
+
+function storyEntries(stories?: ComponentManifestStories): ComponentManifestStory[] {
+  return Array.isArray(stories) ? stories : Object.values(stories ?? {});
 }
 
 // AI generated manifests/components.html page
 // Only HTML/CSS no JS
 export function renderComponentsManifest(
-  manifest: ComponentsManifest | undefined,
+  manifest: ComponentsManifestForRenderer | undefined,
   docsManifest?: DocsManifest
 ) {
   const entries = Object.entries(manifest?.components ?? {}).sort((a, b) =>
@@ -50,10 +80,12 @@ export function renderComponentsManifest(
   const unattachedDocsWithError = docsAnalyses.filter((a) => a.hasError).length;
   const totals = {
     components: entries.length,
-    componentsWithPropTypeError: analyses.filter((a) => a.hasPropTypeError).length,
+    componentsWithApiError: analyses.filter((a) => a.hasApiError).length,
     infos: analyses.filter((a) => a.hasWarns).length,
     stories: analyses.reduce((sum, a) => sum + a.totalStories, 0),
     storyErrors: analyses.reduce((sum, a) => sum + a.storyErrors, 0),
+    storyWarnings: analyses.reduce((sum, a) => sum + a.storyWarnings, 0),
+    componentsWithoutApi: analyses.filter((a) => a.api.kind === 'none').length,
     docs: docsEntries.length + attachedDocs,
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
@@ -64,8 +96,8 @@ export function renderComponentsManifest(
   // Top filters (clickable), no <b> tags; 1px active ring lives in CSS via :target
   const allPill = `<a class="filter-pill all" data-k="all" href="#filter-all">All</a>`;
   const compErrorsPill =
-    totals.componentsWithPropTypeError > 0
-      ? `<a class="filter-pill err" data-k="errors" href="#filter-errors">${totals.componentsWithPropTypeError}/${totals.components} prop type ${plural(totals.componentsWithPropTypeError, 'error')}</a>`
+    totals.componentsWithApiError > 0
+      ? `<a class="filter-pill err" data-k="errors" href="#filter-errors">${totals.componentsWithApiError}/${totals.components} API ${plural(totals.componentsWithApiError, 'error')}</a>`
       : totals.components > 0
         ? `<span class="filter-pill ok" aria-disabled="true">${totals.components} components ok</span>`
         : '';
@@ -79,6 +111,14 @@ export function renderComponentsManifest(
       : totals.stories > 0
         ? `<span class="filter-pill ok" aria-disabled="true">${totals.stories} ${plural(totals.stories, 'story', 'stories')} ok</span>`
         : '';
+  const snippetWarningsPill =
+    totals.storyWarnings > 0
+      ? `<a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">${totals.storyWarnings}/${totals.stories} incomplete snippets</a>`
+      : '';
+  const noApiPill =
+    totals.componentsWithoutApi > 0
+      ? `<a class="filter-pill" data-k="no-api" href="#filter-no-api">${totals.componentsWithoutApi}/${totals.components} without API description</a>`
+      : '';
   const docsPill =
     totals.docs > 0
       ? totals.docsWithError > 0
@@ -86,7 +126,7 @@ export function renderComponentsManifest(
         : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, 'doc')} ok</a>`
       : '';
 
-  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
+  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`, key)).join('');
   const docsGrid = docsEntries.map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`)).join('');
 
   const errorGroups = Object.entries(
@@ -243,6 +283,8 @@ export function renderComponentsManifest(
       #filter-errors:target ~ header .filter-pill[data-k='errors'],
       #filter-infos:target ~ header .filter-pill[data-k='infos'],
       #filter-story-errors:target ~ header .filter-pill[data-k='story-errors'],
+      #filter-story-warnings:target ~ header .filter-pill[data-k='story-warnings'],
+      #filter-no-api:target ~ header .filter-pill[data-k='no-api'],
       #filter-doc-errors:target ~ header .filter-pill[data-k='docs'],
       #filter-docs:target ~ header .filter-pill[data-k='docs'] {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
@@ -254,6 +296,8 @@ export function renderComponentsManifest(
       #filter-errors,
       #filter-infos,
       #filter-story-errors,
+      #filter-story-warnings,
+      #filter-no-api,
       #filter-doc-errors,
       #filter-docs {
           display: none;
@@ -279,6 +323,14 @@ export function renderComponentsManifest(
           display: flex;
           flex-direction: column;
           gap: 10px;
+          /* Keep a deep-linked card clear of the sticky header when scrolled into view */
+          scroll-margin-top: 110px;
+      }
+
+      /* Highlight the card deep-linked via components.html#<manifest-id> */
+      .card:target {
+          box-shadow: 0 0 0 2px var(--info);
+          border-color: var(--info);
       }
 
       .head {
@@ -360,6 +412,16 @@ export function renderComponentsManifest(
           border-color: color-mix(in srgb, var(--err) 55%, var(--border));
       }
 
+      .snippet-warning {
+          margin-top: 8px;
+          padding: 8px 10px;
+          border-radius: 8px;
+          border: 1px solid color-mix(in srgb, var(--info) 45%, var(--border));
+          background: var(--info-bg);
+          color: #b3d9ff;
+          font-size: 12px;
+      }
+
       .as-toggle {
           cursor: pointer;
       }
@@ -369,6 +431,7 @@ export function renderComponentsManifest(
       .tg-info:checked + label.as-toggle,
       .tg-stories:checked + label.as-toggle,
       .tg-docs:checked + label.as-toggle,
+      .tg-subcomponents:checked + label.as-toggle,
       .tg-content:checked + label.as-toggle,
       .tg-props:checked + label.as-toggle {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
@@ -404,6 +467,11 @@ export function renderComponentsManifest(
           gap: 8px;
       }
 
+      .tg-subcomponents:checked ~ .panels .panel-subcomponents {
+          display: grid;
+          gap: 8px;
+      }
+
       .tg-content:checked ~ .panels .panel-content {
           display: grid;
           gap: 8px;
@@ -413,7 +481,7 @@ export function renderComponentsManifest(
           display: grid;
       }
 
-      /* Colored notes for prop type error + info */
+      /* Colored notes for API error + info */
       .note {
           padding: 12px;
           border: 1px solid var(--border);
@@ -569,6 +637,14 @@ export function renderComponentsManifest(
           display: none;
       }
 
+      #filter-story-warnings:target ~ main .card:not(.has-story-warning) {
+          display: none;
+      }
+
+      #filter-no-api:target ~ main .card:not(.missing-api) {
+          display: none;
+      }
+
       #filter-doc-errors:target ~ main .card:not(.has-doc-error) {
           display: none;
       }
@@ -626,6 +702,10 @@ export function renderComponentsManifest(
           display: grid;
       }
 
+      .card > .tg-subcomponents:checked ~ .panels .panel-subcomponents {
+          display: grid;
+      }
+
       .card > .tg-content:checked ~ .panels .panel-content {
           display: grid;
       }
@@ -635,6 +715,7 @@ export function renderComponentsManifest(
       .card > .tg-info:checked ~ .panels,
       .card > .tg-stories:checked ~ .panels,
       .card > .tg-docs:checked ~ .panels,
+      .card > .tg-subcomponents:checked ~ .panels,
       .card > .tg-content:checked ~ .panels,
       .card > .tg-props:checked ~ .panels {
           margin: 10px 0;
@@ -646,6 +727,7 @@ export function renderComponentsManifest(
           .card:has(.tg-info:checked) label[for$='-info'],
           .card:has(.tg-stories:checked) label[for$='-stories'],
           .card:has(.tg-docs:checked) label[for$='-docs'],
+          .card:has(.tg-subcomponents:checked) label[for$='-subcomponents'],
           .card:has(.tg-content:checked) label[for$='-content'],
           .card:has(.tg-props:checked) label[for$='-props'] {
               box-shadow: 0 0 0 1px currentColor;
@@ -690,12 +772,14 @@ export function renderComponentsManifest(
 <span id="filter-errors"></span>
 <span id="filter-infos"></span>
 <span id="filter-story-errors"></span>
+<span id="filter-story-warnings"></span>
+<span id="filter-no-api"></span>
 <span id="filter-doc-errors"></span>
 <span id="filter-docs"></span>
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary">${allPill}${compErrorsPill}${compInfosPill}${storiesPill}${docsPill}</div>
+    <div class="summary">${allPill}${compErrorsPill}${compInfosPill}${noApiPill}${storiesPill}${snippetWarningsPill}${docsPill}</div>
   </div>
 </header>
 <main>
@@ -732,7 +816,7 @@ export function renderComponentsManifest(
     }
     ${
       errorGroups.length
-        ? `<div class="error-groups" role="region" aria-label="Prop type error groups">${errorGroupsHTML}</div>`
+        ? `<div class="error-groups" role="region" aria-label="API error groups">${errorGroupsHTML}</div>`
         : ''
     }
     ${
@@ -755,14 +839,14 @@ export function renderComponentsManifest(
 }
 
 const esc = (s: unknown) =>
-  String(s ?? '').replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c] as string
-  );
+  String(s ?? '').replace(/[&<>"']/g, (c) => {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c] ?? c;
+  });
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function analyzeComponent(c: ComponentManifestWithDocs) {
-  const hasPropTypeError = !!c.error;
+  const api = resolveComponentApi(c);
+  const hasApiError = api.kind === 'error';
   const warns: string[] = [];
 
   if (!c.description?.trim()) {
@@ -775,8 +859,10 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
     );
   }
 
-  const totalStories = c.stories?.length ?? 0;
-  const storyErrors = (c.stories ?? []).filter((e) => !!e?.error).length;
+  const allStories = storyEntries(c.stories);
+  const totalStories = allStories.length;
+  const storyErrors = allStories.filter((e) => !!e?.error).length;
+  const storyWarnings = allStories.filter((e) => !!e?.warning).length;
   const storyOk = totalStories - storyErrors;
 
   // Analyze attached docs
@@ -785,15 +871,17 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
   const docsErrors = docsEntries.filter((d) => !!d?.error).length;
   const docsOk = totalDocs - docsErrors;
 
-  const hasAnyError = hasPropTypeError || storyErrors > 0 || docsErrors > 0; // for status dot (red if any errors)
+  const hasAnyError = hasApiError || storyErrors > 0 || docsErrors > 0; // for status dot (red if any errors)
 
   return {
-    hasPropTypeError,
+    api,
+    hasApiError,
     hasAnyError,
     hasWarns: warns.length > 0,
     warns,
     totalStories,
     storyErrors,
+    storyWarnings,
     storyOk,
     totalDocs,
     docsErrors,
@@ -845,7 +933,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ${contentBadge}
       </div>
     </div>
-    <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
+    <div class="meta" title="${esc(d.path ?? d.id)}">${d.path ? `${esc(d.id)} · ${esc(d.path)}` : esc(d.id)}</div>
     ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
@@ -879,12 +967,21 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 </article>`;
 }
 
-function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
+// `anchorId`, when set, renders a stable `id` on the card so `components.html#<anchorId>` deep-links
+// resolve. Only the primary grid passes it; the error-group section re-renders the same components,
+// so anchoring those too would create duplicate DOM ids.
+function renderComponentCard(
+  key: string,
+  c: ComponentManifestWithDocs,
+  id: string,
+  anchorId?: string
+) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
-  const allStories = c.stories ?? [];
+  const allStories = storyEntries(c.stories);
   const errorStories = allStories.filter((ex) => !!ex?.error);
   const okStories = allStories.filter((ex) => !ex?.error);
+  const subcomponentEntries = Object.entries(c.subcomponents ?? {});
 
   // Get attached docs entries
   const allDocs = c.docs ? Object.values(c.docs) : [];
@@ -896,9 +993,15 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')}`;
 
-  const componentErrorBadge = a.hasPropTypeError
-    ? `<label for="${slug}-err" class="badge err as-toggle">prop type error</label>`
-    : '';
+  const { api } = a;
+  const primaryBadge =
+    api.kind === 'error'
+      ? `<label for="${slug}-err" class="badge err as-toggle">API error</label>`
+      : api.kind === 'markdown'
+        ? `<label for="${slug}-props" class="badge ok as-toggle">API description</label>`
+        : api.kind === 'props'
+          ? `<label for="${slug}-props" class="badge ok as-toggle">${api.entries.length} ${plural(api.entries.length, 'prop type')}</label>`
+          : `<span class="badge">no API description</span>`;
 
   const infosBadge = a.hasWarns
     ? `<label for="${slug}-info" class="badge info as-toggle">${a.warns.length} ${plural(a.warns.length, 'info', 'infos')}</label>`
@@ -906,7 +1009,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 
   const storiesBadge =
     a.totalStories > 0
-      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? 'err' : 'ok'} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} ${plural(a.totalStories, 'story', 'stories')}`}</label>`
+      ? `<label for="${slug}-stories" class="badge ${a.storyErrors > 0 ? 'err' : 'ok'} as-toggle">${a.storyErrors > 0 ? `${a.storyErrors}/${a.totalStories} story errors` : `${a.totalStories} ${plural(a.totalStories, 'story', 'stories')}`}${a.storyWarnings > 0 ? ` · ${a.storyWarnings} incomplete` : ''}</label>`
       : '';
 
   const docsBadge =
@@ -914,51 +1017,37 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
       ? `<label for="${slug}-docs" class="badge ${a.docsErrors > 0 ? 'err' : 'ok'} as-toggle">${a.docsErrors > 0 ? `${a.docsErrors}/${a.totalDocs} doc errors` : `${a.totalDocs} ${plural(a.totalDocs, 'doc')}`}</label>`
       : '';
 
-  // Determine which docgen engine produced results (they are now mutually exclusive)
-  const reactDocgen =
-    !a.hasPropTypeError && 'reactDocgen' in c ? (c.reactDocgen as DocgenDoc) : undefined;
-  const reactDocgenTypescriptData =
-    !a.hasPropTypeError && 'reactDocgenTypescript' in c
-      ? (c.reactDocgenTypescript as RdtComponentDoc)
-      : undefined;
-
-  const parsedDocgen = reactDocgen ? parseReactDocgen(reactDocgen) : undefined;
-  const parsedReactDocgenTypescript = reactDocgenTypescriptData
-    ? parseReactDocgenTypescript(reactDocgenTypescriptData)
-    : undefined;
-
-  // Use whichever engine is active
-  const activeParsed = parsedDocgen ?? parsedReactDocgenTypescript;
-  const cardEngine = parsedDocgen
-    ? 'react-docgen'
-    : parsedReactDocgenTypescript
-      ? 'react-docgen-typescript'
-      : '';
-  const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
-  const propTypesBadge =
-    !a.hasPropTypeError && propEntries.length > 0
-      ? `<label for="${slug}-props" class="badge ok as-toggle">${propEntries.length} ${plural(propEntries.length, 'prop type')}</label>`
+  const subcomponentsBadge =
+    subcomponentEntries.length > 0
+      ? `<label for="${slug}-subcomponents" class="badge ok as-toggle">${subcomponentEntries.length} ${plural(subcomponentEntries.length, 'subcomponent')}</label>`
       : '';
 
-  const primaryBadge = componentErrorBadge || propTypesBadge;
-
-  const propsCode =
-    propEntries.length > 0
-      ? propEntries
-          .sort(([aName], [bName]) => aName.localeCompare(bName))
-          .map(([propName, info]) => {
-            const description = (info?.description ?? '').trim();
-            const t = (info?.type ?? 'any').trim();
-            const optional = info?.required ? '' : '?';
-            const defaultVal = (info?.defaultValue ?? '').trim();
-            const def = defaultVal ? ` = ${defaultVal}` : '';
-            const doc =
-              ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') +
-              '\n';
-            return `${description ? doc : ''}${propName}${optional}: ${t}${def}`;
-          })
-          .join('\n\n')
-      : '';
+  const apiPanel =
+    api.kind === 'markdown'
+      ? `
+        <div class="panel panel-props">
+          <div class="note ok">
+            <div class="row">
+              <span class="ex-name">API description</span>
+              ${c.renderer ? `<span class="badge ok">${esc(c.renderer)}</span>` : ''}
+            </div>
+            <pre><code>${esc(api.markdown)}</code></pre>
+          </div>
+        </div>`
+      : api.kind === 'props'
+        ? `
+        <div class="panel panel-props">
+          <div class="note ok">
+            <div class="row">
+              <span class="ex-name">Prop types <small>(${api.engine})</small></span>
+              <span class="badge ok">${api.entries.length} ${plural(api.entries.length, 'prop type')}</span>
+            </div>
+            <pre><code>Component: ${api.filePath ? esc(path.relative(process.cwd(), api.filePath)) : ''}${api.exportName ? '::' + esc(api.exportName) : ''}</code></pre>
+            <pre><code>Props:</code></pre>
+            <pre><code>${esc(renderPropsCode(api.entries))}</code></pre>
+          </div>
+        </div>`
+        : '';
 
   const tags =
     c.jsDocTags && typeof c.jsDocTags === 'object'
@@ -973,10 +1062,13 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 
   return `
 <article
+  ${anchorId ? `id="${esc(anchorId)}"` : ''}
   class="card 
-  ${a.hasPropTypeError ? 'has-error' : 'no-error'} 
-  ${a.hasWarns ? 'has-info' : 'no-info'} 
+  ${a.hasApiError ? 'has-error' : 'no-error'}
+  ${a.hasWarns ? 'has-info' : 'no-info'}
   ${a.storyErrors ? 'has-story-error' : 'no-story-error'}
+  ${a.storyWarnings ? 'has-story-warning' : 'no-story-warning'}
+  ${api.kind === 'none' ? 'missing-api' : ''}
   ${a.docsErrors ? 'has-doc-error' : 'no-doc-error'}"
   role="listitem"
   aria-label="${esc(c.name || key)}">
@@ -988,6 +1080,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         ${infosBadge}
         ${storiesBadge}
         ${docsBadge}
+        ${subcomponentsBadge}
       </div>
     </div>
     <div class="meta" title="${esc(c.path)}">${esc(c.id)} · ${esc(c.path)}</div>
@@ -997,18 +1090,19 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
   </div>
 
   <!-- ⬇️ Hidden toggles must be siblings BEFORE .panels -->
-  ${a.hasPropTypeError ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
+  ${api.kind === 'error' ? `<input id="${slug}-err" class="tg tg-err" type="checkbox" hidden />` : ''}
   ${a.hasWarns ? `<input id="${slug}-info" class="tg tg-info" type="checkbox" hidden />` : ''}
   ${a.totalStories > 0 ? `<input id="${slug}-stories" class="tg tg-stories" type="checkbox" hidden />` : ''}
   ${a.totalDocs > 0 ? `<input id="${slug}-docs" class="tg tg-docs" type="checkbox" hidden />` : ''}
-  ${!a.hasPropTypeError && propEntries.length > 0 ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ''}
+  ${subcomponentEntries.length > 0 ? `<input id="${slug}-subcomponents" class="tg tg-subcomponents" type="checkbox" hidden />` : ''}
+  ${apiPanel ? `<input id="${slug}-props" class="tg tg-props" type="checkbox" hidden />` : ''}
 
   <div class="panels">
     ${
-      a.hasPropTypeError
+      api.kind === 'error'
         ? `
         <div class="panel panel-err">
-          ${note('Prop type error', `<pre><code>${esc(c.error?.message || 'Unknown error')}</code></pre>`, 'err')}
+          ${note('API error', `<pre><code>${esc(api.message)}</code></pre>`, 'err')}
         </div>`
         : ''
     }
@@ -1020,49 +1114,24 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
         </div>`
         : ''
     }
-    ${
-      !a.hasPropTypeError && propEntries.length > 0
-        ? `
-        <div class="panel panel-props">
-          <div class="note ok">
-            <div class="row">
-              <span class="ex-name">Prop types <small>(${cardEngine})</small></span>
-              <span class="badge ok">${propEntries.length} ${plural(propEntries.length, 'prop type')}</span>
-            </div>
-            <pre><code>Component: ${
-              reactDocgen?.definedInFile
-                ? esc(path.relative(process.cwd(), reactDocgen.definedInFile))
-                : reactDocgenTypescriptData?.filePath
-                  ? esc(path.relative(process.cwd(), reactDocgenTypescriptData.filePath))
-                  : ''
-            }${
-              reactDocgen?.exportName
-                ? '::' + esc(reactDocgen.exportName)
-                : reactDocgenTypescriptData?.exportName
-                  ? '::' + esc(reactDocgenTypescriptData.exportName)
-                  : ''
-            }</code></pre>
-            <pre><code>Props:</code></pre>
-            <pre><code>${esc(propsCode)}</code></pre>
-          </div>
-        </div>`
-        : ''
-    }
+    ${apiPanel}
     ${
       a.totalStories > 0
         ? `
         <div class="panel panel-stories">
           ${errorStories
             .map(
-              (ex, j) => `
+              (ex) => `
             <div class="note err">
               <div class="row">
                 <span class="ex-name">${esc(ex.name)}</span>
                 <span class="badge err">story error</span>
+                ${ex?.warning ? `<span class="badge info">incomplete example</span>` : ''}
               </div>
               ${ex?.summary ? `<div class=\"hint\">Summary: ${esc(ex.summary)}</div>` : ''}
               ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
               ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
+              ${ex?.warning ? `<div class="snippet-warning">${esc(ex.warning)}</div>` : ''}
               ${ex?.error?.message ? `<pre><code>${esc(ex.error.message)}</code></pre>` : ''}
             </div>`
             )
@@ -1086,11 +1155,12 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
             <div class="note ok">
               <div class="row">
                 <span class="ex-name">${esc(ex.name)}</span>
-                <span class="badge ok">story ok</span>
+                <span class="badge ${ex?.warning ? 'info' : 'ok'}">${ex?.warning ? 'incomplete example' : 'story ok'}</span>
               </div>
               ${ex?.summary ? `<div>${esc(ex.summary)}</div>` : ''}
               ${ex?.description ? `<div class=\"hint\">${esc(ex.description)}</div>` : ''}
               ${ex?.snippet ? `<pre><code>${esc(ex.snippet)}</code></pre>` : ''}
+              ${ex?.warning ? `<div class="snippet-warning">${esc(ex.warning)}</div>` : ''}
             </div>`
             )
             .join('')}
@@ -1109,7 +1179,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge err">doc error</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
             </div>`
@@ -1123,10 +1193,22 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge ok">doc ok</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
             </div>`
+            )
+            .join('')}
+        </div>`
+        : ''
+    }
+    ${
+      subcomponentEntries.length > 0
+        ? `
+        <div class="panel panel-subcomponents">
+          ${subcomponentEntries
+            .map(([subcomponentName, subcomponent]) =>
+              renderSubcomponentNote(subcomponentName, subcomponent)
             )
             .join('')}
         </div>`
@@ -1148,6 +1230,136 @@ type ParsedDocgen = {
 };
 
 type RdtComponentDoc = ComponentDoc & { exportName?: string };
+type DocgenRenderData = {
+  parsed?: ParsedDocgen;
+  engine?: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+  filePath?: string;
+  exportName?: string;
+};
+
+const docgenRenderData = (component: ComponentManifestLikeWithDocgen): DocgenRenderData => {
+  if (component.reactDocgen) {
+    return {
+      parsed: parseReactDocgen(component.reactDocgen),
+      engine: 'react-docgen',
+      filePath: component.reactDocgen.definedInFile,
+      exportName: component.reactDocgen.exportName,
+    };
+  }
+
+  if (component.reactDocgenTypescript) {
+    return {
+      parsed: parseReactDocgenTypescript(component.reactDocgenTypescript),
+      engine: 'react-docgen-typescript',
+      filePath: component.reactDocgenTypescript.filePath,
+      exportName: component.reactDocgenTypescript.exportName,
+    };
+  }
+
+  if (component.reactComponentMeta) {
+    return {
+      parsed: parseReactComponentMeta(component.reactComponentMeta),
+      engine: 'react-component-meta',
+      filePath: component.reactComponentMeta.filePath,
+      exportName: component.reactComponentMeta.exportName,
+    };
+  }
+
+  return {};
+};
+
+type ComponentApi =
+  | { kind: 'error'; message: string }
+  | { kind: 'markdown'; markdown: string }
+  | ({ kind: 'props'; entries: [string, ParsedProp][] } & Omit<DocgenRenderData, 'parsed'>)
+  | { kind: 'none' };
+
+/**
+ * The component's API surface, as the one question this page exists to answer: is there an API
+ * description, and if not, did extraction fail or did the component simply bind nothing?
+ */
+function resolveComponentApi(component: ComponentManifestLikeWithDocgen): ComponentApi {
+  if (component.error) {
+    return { kind: 'error', message: component.error.message || 'Unknown error' };
+  }
+
+  const markdown = component.apiDescription?.trim();
+  if (markdown) {
+    return { kind: 'markdown', markdown };
+  }
+
+  const { parsed, ...source } = docgenRenderData(component);
+  const entries = Object.entries(parsed?.props ?? {}).sort(([a], [b]) => a.localeCompare(b));
+  return entries.length > 0 ? { kind: 'props', entries, ...source } : { kind: 'none' };
+}
+
+/** Renders the parsed React props as the pseudo-TypeScript block shown in the API panel. */
+function renderPropsCode(entries: [string, ParsedProp][]) {
+  return entries
+    .map(([propName, info]) => {
+      const description = (info?.description ?? '').trim();
+      const type = (info?.type ?? 'any').trim();
+      const optional = info?.required ? '' : '?';
+      const defaultValue = (info?.defaultValue ?? '').trim();
+      const fallback = defaultValue ? ` = ${defaultValue}` : '';
+      const doc =
+        ['/**', ...description.split('\n').map((line) => ` * ${line}`), ' */'].join('\n') + '\n';
+
+      return `${description ? doc : ''}${propName}${optional}: ${type}${fallback}`;
+    })
+    .join('\n\n');
+}
+
+function renderSubcomponentNote(
+  subcomponentName: string,
+  subcomponent: ComponentManifestLikeWithDocgen
+) {
+  const api = resolveComponentApi(subcomponent);
+  const tags =
+    subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'
+      ? Object.entries(subcomponent.jsDocTags)
+          .flatMap(([key, value]) =>
+            (Array.isArray(value) ? value : [value]).map(
+              (tagValue) => `<span class="chip">${esc(key)}: ${esc(tagValue)}</span>`
+            )
+          )
+          .join('')
+      : '';
+
+  const badgeLabel =
+    api.kind === 'error'
+      ? 'API error'
+      : api.kind === 'markdown'
+        ? 'API description'
+        : api.kind === 'props'
+          ? `${api.entries.length} ${plural(api.entries.length, 'prop type')}`
+          : 'no API description';
+
+  return `
+    <div class="note ${api.kind === 'error' ? 'err' : 'ok'}">
+      <div class="row">
+        <span class="ex-name">${esc(subcomponentName)}</span>
+        <span class="badge ${api.kind === 'error' ? 'err' : api.kind === 'none' ? '' : 'ok'}">
+          ${badgeLabel}
+        </span>
+      </div>
+      <div class="hint">${esc(subcomponent.path)}</div>
+      ${subcomponent.summary ? `<div>${esc(subcomponent.summary)}</div>` : ''}
+      ${subcomponent.description ? `<div class="hint">${esc(subcomponent.description)}</div>` : ''}
+      ${tags ? `<div class="kv">${tags}</div>` : ''}
+      ${subcomponent.import ? `<pre><code>${esc(subcomponent.import)}</code></pre>` : ''}
+      ${api.kind === 'error' ? `<pre><code>${esc(api.message)}</code></pre>` : ''}
+      ${api.kind === 'markdown' ? `<pre><code>${esc(api.markdown)}</code></pre>` : ''}
+      ${
+        api.kind === 'props'
+          ? `
+          <pre><code>Component: ${api.filePath ? esc(path.relative(process.cwd(), api.filePath)) : ''}${api.exportName ? '::' + esc(api.exportName) : ''}${api.engine ? ` (${esc(api.engine)})` : ''}</code></pre>
+          <pre><code>${esc(renderPropsCode(api.entries))}</code></pre>`
+          : ''
+      }
+    </div>
+  `;
+}
 
 const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): ParsedDocgen => {
   const props: Record<string, PropItem> = reactDocgenTypescript.props ?? {};
@@ -1168,6 +1380,23 @@ const parseReactDocgenTypescript = (reactDocgenTypescript: RdtComponentDoc): Par
   };
 };
 
+const parseReactComponentMeta = (reactComponentMeta: ReactComponentMetaDoc): ParsedDocgen => {
+  const props = reactComponentMeta.props ?? {};
+  return {
+    props: Object.fromEntries(
+      Object.entries(props).map(([propName, prop]) => [
+        propName,
+        {
+          description: prop.description,
+          type: prop.type?.raw ?? prop.type?.name,
+          defaultValue: prop.defaultValue?.value,
+          required: prop.required,
+        },
+      ])
+    ),
+  };
+};
+
 /** Shape of a react-docgen tsType node (recursive) */
 interface DocgenTsType {
   name?: string;
@@ -1178,7 +1407,10 @@ interface DocgenTsType {
   signature?: {
     arguments?: { name: string; type?: DocgenTsType }[];
     return?: DocgenTsType;
-    properties?: { key: string; value?: DocgenTsType & { required?: boolean } }[];
+    properties?: {
+      key: string;
+      value?: DocgenTsType & { required?: boolean };
+    }[];
   };
 }
 

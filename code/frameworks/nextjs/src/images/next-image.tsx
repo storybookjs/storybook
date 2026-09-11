@@ -8,8 +8,8 @@ import type * as _NextImage from 'next/image';
 // @ts-ignore import is aliased in webpack config
 import * as NextImageNamespace from 'sb-original/next/image';
 
-import { type ImageContext as ImageContextType } from '../image-context';
-import { defaultLoader } from './next-image-default-loader';
+import { type ImageContext as ImageContextType } from '../image-context.ts';
+import { defaultLoader } from './next-image-default-loader.tsx';
 
 const OriginalNextImage = NextImageNamespace.default;
 const { getImageProps: originalGetImageProps } = NextImageNamespace;

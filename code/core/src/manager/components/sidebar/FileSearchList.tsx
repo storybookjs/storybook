@@ -17,7 +17,7 @@ import type { VirtualItem } from '@tanstack/react-virtual';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { styled } from 'storybook/theming';
 
-import { useArrowKeyNavigation } from './FIleSearchList.utils';
+import { useArrowKeyNavigation } from './FIleSearchList.utils.tsx';
 import {
   DefaultExport,
   FileList,
@@ -37,8 +37,8 @@ import {
   FileListWrapper,
   NoResults,
   NoResultsDescription,
-} from './FileList';
-import { FileSearchListLoadingSkeleton } from './FileSearchListSkeleton';
+} from './FileList.tsx';
+import { FileSearchListLoadingSkeleton } from './FileSearchListSkeleton.tsx';
 
 export type SearchResult = NonNullable<FileComponentSearchResponsePayload['files']>[0];
 

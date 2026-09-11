@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { autoName } from '../autoName';
+import { autoName } from '../autoName.ts';
 
 it('pulls name from named MDX files', () => {
   expect(autoName('Conventions.mdx', 'Button.mdx', 'Docs')).toEqual('Conventions');

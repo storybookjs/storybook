@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/csf';
 
-import { run } from './a11yRunner';
-import { afterEach } from './preview';
-import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils';
+import { run } from './a11yRunner.ts';
+import { afterEach } from './preview.tsx';
+import { getIsVitestRunning, getIsVitestStandaloneRun } from './utils.ts';
 
 const mocks = vi.hoisted(() => {
   return {
@@ -14,8 +14,8 @@ const mocks = vi.hoisted(() => {
   };
 });
 
-vi.mock(import('./a11yRunner'));
-vi.mock(import('./utils'), async (importOriginal) => {
+vi.mock(import('./a11yRunner.ts'));
+vi.mock(import('./utils.ts'), async (importOriginal) => {
   const mod = await importOriginal(); // type is inferred
   return {
     ...mod,

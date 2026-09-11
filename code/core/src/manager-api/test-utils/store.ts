@@ -1,5 +1,5 @@
-import type { State } from '../root';
-import Store, { type Upstream } from '../store';
+import type { State } from '../root.tsx';
+import Store, { type Upstream } from '../store.ts';
 
 /** Store guaranteed not to read from storage, for testing purposes. */
 class InMemoryStore extends Store {

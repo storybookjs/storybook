@@ -2,8 +2,6 @@
 import { logger, pretty } from 'storybook/internal/client-logger';
 import * as EVENTS from 'storybook/internal/core-events';
 
-import { global } from '@storybook/global';
-
 import { isJSON, parse, stringify } from 'telejson';
 import invariant from 'tiny-invariant';
 
@@ -13,12 +11,14 @@ import type {
   ChannelHandler,
   ChannelTransport,
   Config,
-} from '../types';
-import { getEventSourceUrl } from './getEventSourceUrl';
+} from '../types.ts';
+import { getEventSourceUrl } from './getEventSourceUrl.ts';
 
-const { document, location } = global;
+const { document, location } = globalThis;
 
 export const KEY = 'storybook-channel';
+
+const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
 
 const defaultEventOptions = { maxDepth: 25 };
 
@@ -36,8 +36,8 @@ export class PostMessageTransport implements ChannelTransport {
   constructor(private readonly config: Config) {
     this.buffer = [];
 
-    if (typeof global?.addEventListener === 'function') {
-      global.addEventListener('message', this.handleEvent.bind(this), false);
+    if (typeof globalThis.addEventListener === 'function') {
+      globalThis.addEventListener('message', this.handleEvent.bind(this), false);
     }
 
     // Check whether the config.page parameter has a valid value
@@ -91,7 +91,7 @@ export class PostMessageTransport implements ChannelTransport {
 
     const stringifyOptions = {
       ...defaultEventOptions,
-      ...(global.CHANNEL_OPTIONS || {}),
+      ...CHANNEL_OPTIONS,
       ...eventOptions,
     };
 
@@ -156,8 +156,8 @@ export class PostMessageTransport implements ChannelTransport {
       return list?.length ? list : this.getCurrentFrames();
     }
 
-    if (global && global.parent && global.parent !== global.self) {
-      return [global.parent];
+    if (globalThis.parent && globalThis.parent !== globalThis.self) {
+      return [globalThis.parent];
     }
 
     return [];
@@ -170,8 +170,8 @@ export class PostMessageTransport implements ChannelTransport {
       );
       return list.flatMap((e) => (e.contentWindow ? [e.contentWindow] : []));
     }
-    if (global && global.parent) {
-      return [global.parent];
+    if (globalThis.parent) {
+      return [globalThis.parent];
     }
 
     return [];
@@ -184,8 +184,8 @@ export class PostMessageTransport implements ChannelTransport {
       );
       return list.flatMap((e) => (e.contentWindow ? [e.contentWindow] : []));
     }
-    if (global && global.parent) {
-      return [global.parent];
+    if (globalThis.parent) {
+      return [globalThis.parent];
     }
 
     return [];
@@ -195,7 +195,7 @@ export class PostMessageTransport implements ChannelTransport {
     try {
       const { data } = rawEvent;
       const { key, event, refId } =
-        typeof data === 'string' && isJSON(data) ? parse(data, global.CHANNEL_OPTIONS || {}) : data;
+        typeof data === 'string' && isJSON(data) ? parse(data, CHANNEL_OPTIONS) : data;
 
       if (key === KEY) {
         const pageString =
@@ -230,6 +230,14 @@ export class PostMessageTransport implements ChannelTransport {
         );
 
         invariant(this.handler, 'ChannelHandler should be set');
+
+        // Preview channel bootstraps after the iframe document loads. When the preview sends its
+        // first postMessage (e.g. open-service sync-start), flush any outbound events that
+        // were buffered while the iframe was not yet a postMessage target.
+        if (this.config.page === 'manager' && this.buffer.length) {
+          this.flush();
+        }
+
         this.handler(event);
       }
     } catch (error) {

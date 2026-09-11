@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
 
-import { ADDON_ID } from './constants';
+import { ADDON_ID } from './constants.ts';
 
 export const log = (message: any) => {
   logger.log(

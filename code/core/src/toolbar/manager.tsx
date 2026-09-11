@@ -2,8 +2,8 @@ import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import { ToolbarManager } from './components/ToolbarManager';
-import { TOOLBAR_ID } from './constants';
+import { ToolbarManager } from './components/ToolbarManager.tsx';
+import { TOOLBAR_ID } from './constants.ts';
 
 // Register the toolbar in the manager
 addons.register(TOOLBAR_ID, () =>

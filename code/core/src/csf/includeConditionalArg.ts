@@ -1,7 +1,7 @@
 /* @ts-expect-error (has no typings) */
 import { isEqual } from '@ngard/tiny-isequal';
 
-import type { Args, Conditional, Globals, InputType } from './story';
+import type { Args, Conditional, Globals, InputType } from './story.ts';
 
 const count = (vals: any[]) => vals.map((v) => typeof v !== 'undefined').filter(Boolean).length;
 

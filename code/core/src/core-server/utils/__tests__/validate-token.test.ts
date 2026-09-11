@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { isValidToken } from '../validate-token';
+import { isValidToken } from '../validate-token.ts';
 
 describe('isValidToken', () => {
   const validToken = 'test-token-123';

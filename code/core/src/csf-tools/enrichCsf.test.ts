@@ -2,9 +2,9 @@ import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { formatCsf, loadCsf } from './CsfFile';
-import type { EnrichCsfOptions } from './enrichCsf';
-import { enrichCsf, extractSource } from './enrichCsf';
+import { formatCsf, loadCsf } from './CsfFile.ts';
+import type { EnrichCsfOptions } from './enrichCsf.ts';
+import { enrichCsf, extractSource } from './enrichCsf.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => val.replace(/\\r\\n/gm, '\\n'),

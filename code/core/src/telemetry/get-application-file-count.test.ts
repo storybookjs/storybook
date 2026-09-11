@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { getApplicationFilesCountUncached } from './get-application-file-count';
+import { getApplicationFilesCountUncached } from './get-application-file-count.ts';
 
 const mocksDir = join(__dirname, '..', '__mocks__');
 

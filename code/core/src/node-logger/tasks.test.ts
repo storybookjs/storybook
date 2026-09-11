@@ -3,7 +3,7 @@ import { describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 
-import { executeTaskWithSpinner } from './tasks';
+import { executeTaskWithSpinner } from './tasks.ts';
 
 // Create a minimal fake ResultPromise
 const makeChild = (onStart?: (cp: Partial<ResultPromise>) => void): ResultPromise => {

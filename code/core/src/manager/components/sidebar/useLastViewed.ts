@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { debounce } from 'es-toolkit/function';
 import store from 'store2';
 
-import type { Selection, StoryRef } from './types';
+import type { Selection, StoryRef } from './types.ts';
 
 const save = debounce((value) => store.set('lastViewedStoryIds', value), 1000);
 
@@ -19,7 +19,7 @@ export const useLastViewed = (selection: Selection) => {
       return [];
     }
     return items;
-  }, [store]);
+  }, []);
 
   const lastViewedRef = useRef(initialLastViewedStoryIds);
 
@@ -27,7 +27,8 @@ export const useLastViewed = (selection: Selection) => {
     (story: StoryRef) => {
       const items = lastViewedRef.current;
       const index = items.findIndex(
-        ({ storyId, refId }) => storyId === story.storyId && refId === story.refId
+        ({ storyId, refId, anchor }) =>
+          storyId === story.storyId && refId === story.refId && anchor === story.anchor
       );
 
       if (index === 0) {

@@ -1,4 +1,4 @@
-import { StorybookIcon } from './StorybookIcon';
+import { StorybookIcon } from './StorybookIcon.tsx';
 
 export default {
   component: StorybookIcon,

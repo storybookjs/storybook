@@ -2,7 +2,7 @@ import { existsSync, readFileSync } from 'node:fs';
 
 import { join, resolve } from 'pathe';
 
-import { resolvePackageDir } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
 
 const interpolate = (string: string, data: Record<string, string> = {}) =>
   Object.entries(data).reduce((acc, [k, v]) => acc.replace(new RegExp(`%${k}%`, 'g'), v), string);

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { withoutVitePlugins } from './without-vite-plugins';
+import { withoutVitePlugins } from './without-vite-plugins.ts';
 
 describe('withoutVitePlugins', () => {
   describe('should remove', () => {

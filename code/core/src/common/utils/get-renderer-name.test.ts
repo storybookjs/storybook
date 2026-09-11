@@ -1,6 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
-import { extractRenderer } from './get-renderer-name';
+import { extractRenderer } from './get-renderer-name.ts';
 
 describe('get-renderer-name', () => {
   describe('extractProperRendererNameFromFramework', () => {

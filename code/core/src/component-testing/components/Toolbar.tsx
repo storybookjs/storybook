@@ -14,9 +14,9 @@ import {
 import { type API } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import { type ControlStates } from '../../instrumenter/types';
-import type { Controls } from './InteractionsPanel';
-import { type PlayStatus, StatusBadge } from './StatusBadge';
+import { type ControlStates } from '../../instrumenter/types.ts';
+import type { Controls } from './InteractionsPanel.tsx';
+import { type PlayStatus, StatusBadge } from './StatusBadge.tsx';
 
 const ToolbarWrapper = styled.div(({ theme }) => ({
   boxShadow: `${theme.appBorderColor} 0 -1px 0 0 inset`,
@@ -115,6 +115,8 @@ export const Toolbar: React.FC<ToolbarProps> = ({
   const buttonText = status === 'errored' ? 'Scroll to error' : 'Scroll to end';
   const theme = useTheme();
 
+  const preventFocusLoss = (e: React.PointerEvent) => e.preventDefault();
+
   return (
     <ToolbarWrapper>
       <SharedToolbar
@@ -125,7 +127,12 @@ export const Toolbar: React.FC<ToolbarProps> = ({
         <ControlsGroup>
           <StatusBadge status={status} />
 
-          <JumpToEndButton ariaLabel={false} onClick={onScrollToEnd} disabled={!onScrollToEnd}>
+          <JumpToEndButton
+            ariaLabel={false}
+            onClick={onScrollToEnd}
+            onPointerDown={preventFocusLoss}
+            disabled={!onScrollToEnd}
+          >
             {buttonText}
           </JumpToEndButton>
 
@@ -136,6 +143,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             variant="ghost"
             ariaLabel="Go to start"
             onClick={controls.start}
+            onPointerDown={preventFocusLoss}
             disabled={!controlStates.start}
           >
             <RewindIcon />
@@ -146,6 +154,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             variant="ghost"
             ariaLabel="Go back"
             onClick={controls.back}
+            onPointerDown={preventFocusLoss}
             disabled={!controlStates.back}
           >
             <PlayBackIcon />
@@ -156,6 +165,7 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             variant="ghost"
             ariaLabel="Go forward"
             onClick={controls.next}
+            onPointerDown={preventFocusLoss}
             disabled={!controlStates.next}
           >
             <PlayNextIcon />
@@ -166,12 +176,19 @@ export const Toolbar: React.FC<ToolbarProps> = ({
             variant="ghost"
             ariaLabel="Go to end"
             onClick={controls.end}
+            onPointerDown={preventFocusLoss}
             disabled={!controlStates.end}
           >
             <FastForwardIcon />
           </StyledIconButton>
 
-          <RerunButton padding="small" variant="ghost" ariaLabel="Rerun" onClick={controls.rerun}>
+          <RerunButton
+            padding="small"
+            variant="ghost"
+            ariaLabel="Rerun"
+            onClick={controls.rerun}
+            onPointerDown={preventFocusLoss}
+          >
             <SyncIcon />
           </RerunButton>
         </ControlsGroup>

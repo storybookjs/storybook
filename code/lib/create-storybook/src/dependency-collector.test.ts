@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { DependencyCollector } from './dependency-collector';
+import { DependencyCollector } from './dependency-collector.ts';
 
 describe('DependencyCollector', () => {
   let collector: DependencyCollector;

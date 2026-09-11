@@ -7,8 +7,8 @@ import { CollapseIcon, ExpandAltIcon, EyeCloseIcon, EyeIcon, SyncIcon } from '@s
 import type { Result } from 'axe-core';
 import { styled, useTheme } from 'storybook/theming';
 
-import type { RuleType } from '../types';
-import { useA11yContext } from './A11yContext';
+import type { RuleType } from '../types.ts';
+import { useA11yContext } from './A11yContext.tsx';
 
 const Container = styled.div({
   width: '100%',

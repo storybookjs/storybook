@@ -2,7 +2,7 @@ import React from 'react';
 
 import type { Meta } from '@storybook/react-vite';
 
-import { safeMetafileArg } from '../../../scripts/bench/safe-args';
+import { safeMetafileArg } from '../../../scripts/bench/safe-args.ts';
 
 // @ts-expect-error - TS doesn't know about import.meta.glob from Vite
 const allMetafiles = import.meta.glob('../../bench/esbuild-metafiles/**/*.json', {

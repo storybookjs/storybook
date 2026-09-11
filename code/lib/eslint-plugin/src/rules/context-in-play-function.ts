@@ -2,7 +2,7 @@
  * @file Pass a context object when invoking a play function
  * @author Yann Braga
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import {
   isArrowFunctionExpression,
@@ -13,9 +13,9 @@ import {
   isRestElement,
   isSpreadElement,
   isTSNonNullExpression,
-} from '../utils/ast';
-import { CategoryId } from '../utils/constants';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+} from '../utils/ast.ts';
+import { CategoryId } from '../utils/constants.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

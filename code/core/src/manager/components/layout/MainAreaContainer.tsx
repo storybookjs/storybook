@@ -4,8 +4,8 @@ import { Match } from 'storybook/internal/router';
 
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants';
-import { useLandmark } from '../../hooks/useLandmark';
+import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
+import { useLandmark } from '../../hooks/useLandmark.ts';
 
 interface PagesContainerProps {
   children: React.ReactNode;

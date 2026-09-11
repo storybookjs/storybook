@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Button, Toolbar as SharedToolbar } from 'storybook/internal/components';
 
-import { ShareAltIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
+import { ShareAltIcon, SyncIcon, ZoomIcon, ZoomOutIcon, ZoomResetIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
@@ -18,6 +18,10 @@ interface EjectProps {
   storyId?: string;
 }
 
+interface ReloadProps {
+  onReloadStory?: () => void;
+}
+
 interface BarProps {
   border?: boolean;
 }
@@ -26,7 +30,9 @@ interface LoadingProps {
   isLoading?: boolean;
 }
 
-export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps;
+export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
+
+export const TRAILING_INSET = 10;
 
 const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
@@ -53,13 +59,42 @@ const IconPlaceholder = styled.div(({ theme }) => ({
   animation: `${theme.animation.glow} 1.5s ease-in-out infinite`,
 }));
 
-export const Toolbar: FC<ToolbarProps> = ({ isLoading, storyId, zoom, resetZoom, ...rest }) => (
-  <AbsoluteBar innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }} {...rest}>
+export const Toolbar: FC<ToolbarProps> = ({
+  isLoading,
+  storyId,
+  zoom,
+  resetZoom,
+  onReloadStory,
+  ...rest
+}) => (
+  <AbsoluteBar
+    // The toolbar is absolutely positioned inside the preview container's 1px border, so it lands
+    // on the shared edge one pixel short of the inset the other two icons use.
+    innerStyle={{
+      gap: 4,
+      paddingInline: 7,
+      paddingInlineEnd: TRAILING_INSET - 1,
+      justifyContent: 'space-between',
+    }}
+    lang="en"
+    {...rest}
+  >
     <Wrapper key="left">
       {isLoading ? (
         [1, 2, 3].map((key) => <IconPlaceholder key={key} />)
       ) : (
         <>
+          {onReloadStory && (
+            <Button
+              padding="small"
+              variant="ghost"
+              key="reload"
+              onClick={onReloadStory}
+              ariaLabel="Reload story"
+            >
+              <SyncIcon />
+            </Button>
+          )}
           <Button
             padding="small"
             variant="ghost"

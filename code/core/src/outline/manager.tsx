@@ -2,8 +2,8 @@ import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import { OutlineSelector } from './OutlineSelector';
-import { ADDON_ID } from './constants';
+import { OutlineSelector } from './OutlineSelector.tsx';
+import { ADDON_ID } from './constants.ts';
 
 export default addons.register(ADDON_ID, () => {
   if (globalThis?.FEATURES?.outline) {

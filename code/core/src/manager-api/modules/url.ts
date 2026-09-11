@@ -15,9 +15,14 @@ import { dequal as deepEqual } from 'dequal';
 import { omit } from 'es-toolkit/object';
 import { stringify } from 'picoquery';
 
-import merge from '../lib/merge';
-import type { ModuleArgs, ModuleFn } from '../lib/types';
-import { DEFAULT_BOTTOM_PANEL_HEIGHT, DEFAULT_NAV_SIZE, DEFAULT_RIGHT_PANEL_WIDTH } from './layout';
+import merge from '../lib/merge.ts';
+import type { ModuleArgs, ModuleFn } from '../lib/types.tsx';
+import { buildNavigationUrl } from '../lib/url.ts';
+import {
+  DEFAULT_BOTTOM_PANEL_HEIGHT,
+  DEFAULT_NAV_SIZE,
+  DEFAULT_RIGHT_PANEL_WIDTH,
+} from './layout.ts';
 
 export interface SubState {
   customQueryParams: QueryParams;
@@ -52,6 +57,16 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
     .join(';');
 };
 
+// URL query params the manager consumes for layout/navigation. Everything else is a custom param
+// passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
+// identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
+const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPanel', 'tabs', 'path'];
+
+/** Single source of truth for the custom (non-layout) query params derived from the URL. */
+export const getCustomQueryParams = (
+  location: Parameters<typeof queryFromLocation>[0]
+): QueryParams => omit(queryFromLocation(location), LAYOUT_QUERY_PARAM_KEYS);
+
 // Initialize the state based on the URL.
 // NOTE:
 //   Although we don't change the URL when you change the state, we do support setting initial state
@@ -61,21 +76,12 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
 //     - nav: 0/1 -- show or hide the story list
 //
 //   We also support legacy URLs from storybook <5
-let prevParams: ReturnType<typeof queryFromLocation>;
+let prevParams: QueryParams;
 const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const {
-    full,
-    panel,
-    nav,
-    shortcuts,
-    addonPanel,
-    tabs,
-    path: queryPath,
-    ...otherParams // the rest gets passed to the iframe
-  } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -119,6 +125,7 @@ const initialUrlSupport = ({
   const selectedPanel = addonPanel || undefined;
 
   const storyId = storyIdFromUrl;
+  const otherParams = getCustomQueryParams(location);
   // Avoid returning a new object each time if no params actually changed.
   const customQueryParams = deepEqual(prevParams, otherParams) ? prevParams : otherParams;
   prevParams = customQueryParams;
@@ -128,6 +135,10 @@ const initialUrlSupport = ({
 
 export interface QueryParams {
   [key: string]: string | undefined;
+}
+
+interface QueryParamInput {
+  [key: string]: string | undefined | null;
 }
 
 /** SubAPI for managing URL navigation and state. */
@@ -154,6 +165,11 @@ export interface SubAPI {
    * @param {QueryParams} [options.queryParams] - Query params to add to the URL.
    * @param {string} [options.refId] - ID of the ref to get the URL for (for composed Storybooks)
    * @param {string} [options.viewMode] - The view mode to use, defaults to 'story'.
+   * @param {boolean} [options.embed] - Append `embed=true` so the preview broadcasts
+   *   content dimensions to an embedding parent via `iframe.resize` postMessage. Affects
+   *   `previewHref` only.
+   * @param {boolean} [options.freeze] - Append the `freeze=finished` preview contract so the
+   *   preview settles to a static end frame and blocks interaction. Affects `previewHref` only.
    * @returns {Object} Manager and preview hrefs for the story.
    */
   getStoryHrefs(
@@ -165,6 +181,8 @@ export interface SubAPI {
       queryParams?: QueryParams;
       refId?: string;
       viewMode?: API_ViewMode;
+      embed?: boolean;
+      freeze?: boolean;
     }
   ): { managerHref: string; previewHref: string };
   /**
@@ -201,7 +219,7 @@ export interface SubAPI {
    * @param {QueryParams} input - An object containing the query parameters to set.
    * @returns {void}
    */
-  setQueryParams: (input: QueryParams) => void;
+  setQueryParams: (input: QueryParamInput) => void;
   /**
    * Set the query parameters for the current URL & navigates.
    *
@@ -209,7 +227,7 @@ export interface SubAPI {
    * @param {NavigateOptions} options - Options for the navigation.
    * @returns {void}
    */
-  applyQueryParams: (input: QueryParams, options?: NavigateOptions) => void;
+  applyQueryParams: (input: QueryParamInput, options?: NavigateOptions) => void;
 }
 
 export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
@@ -217,15 +235,10 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
   const navigateTo = (
     path: string,
-    queryParams: Record<string, string> = {},
+    queryParams: Record<string, string | null | undefined> = {},
     options: NavigateOptions = {}
   ) => {
-    const params = Object.entries(queryParams)
-      .filter(([, v]) => v)
-      .sort(([a], [b]) => (a < b ? -1 : 1))
-      .map(([k, v]) => `${k}=${v}`);
-    const to = [path, ...params].join('&');
-    return navigate(to, options);
+    return navigate(buildNavigationUrl(path, queryParams), options);
   };
 
   const api: SubAPI = {
@@ -241,6 +254,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         queryParams = {},
         refId,
         viewMode = 'story',
+        embed = false,
+        freeze = false,
       } = options;
 
       if (refId && !refs[refId]) {
@@ -265,11 +280,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       let globalsParam = inheritGlobals
         ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
         : globals;
-      let customManagerParams = stringify(otherParams, {
+      const managerQueryParams = omit(otherParams, ['embed', 'freeze']);
+      const previewQueryParams = omit(otherParams, ['id', 'viewMode', 'embed', 'freeze']);
+
+      let customManagerParams = stringify(managerQueryParams, {
         nesting: true,
         nestingSyntax: 'js',
       });
-      let customPreviewParams = stringify(omit(otherParams, ['id', 'viewMode']), {
+      let customPreviewParams = stringify(previewQueryParams, {
         nesting: true,
         nestingSyntax: 'js',
       });
@@ -279,9 +297,12 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       customManagerParams = customManagerParams && `&${customManagerParams}`;
       customPreviewParams = customPreviewParams && `&${customPreviewParams}`;
 
+      const embedParam = embed ? '&embed=true' : '';
+      const freezeParam = freeze ? '&freeze=finished' : '';
+
       return {
         managerHref: `${managerBase}?path=/${viewMode}/${refId ? `${refId}_` : ''}${storyId}${argsParam}${globalsParam}${customManagerParams}`,
-        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}`,
+        previewHref: `${previewBase}?id=${storyId}&viewMode=${viewMode}${refParam}${argsParam}${refId ? '' : globalsParam}${customPreviewParams}${embedParam}${freezeParam}`,
       };
     },
     getQueryParam(key) {
@@ -292,7 +313,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const { location, path, customQueryParams, storyId, url, viewMode } = store.getState();
       return {
         path,
-        hash: location.hash ?? '',
+        hash: location?.hash ?? '',
         queryParams: customQueryParams,
         storyId,
         url,
@@ -301,16 +322,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     },
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
-      const queryParams: QueryParams = {};
-      const update = {
-        ...customQueryParams,
-        ...Object.entries(input).reduce((acc, [key, value]) => {
-          if (value !== null) {
-            acc[key] = value;
-          }
-          return acc;
-        }, queryParams),
-      };
+      const update: QueryParams = { ...customQueryParams };
+      for (const [key, value] of Object.entries(input)) {
+        if (value === null || value === undefined) {
+          delete update[key];
+        } else {
+          update[key] = value;
+        }
+      }
       if (!deepEqual(customQueryParams, update)) {
         store.setState({ customQueryParams: update });
         provider.channel?.emit(UPDATE_QUERY_PARAMS, update);
@@ -346,8 +365,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
 
     const { args, initialArgs } = currentStory;
     const argsString = buildArgsParam(initialArgs, args as Args);
-    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString }, { replace: true });
-    api.setQueryParams({ args: argsString });
+    navigateTo(`${path}${hash}`, { ...queryParams, args: argsString || null }, { replace: true });
+    api.setQueryParams({ args: argsString || null });
   };
 
   provider.channel?.on(SET_CURRENT_STORY, () => updateArgsParam());
@@ -370,8 +389,12 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   provider.channel?.on(GLOBALS_UPDATED, ({ userGlobals, initialGlobals }: any) => {
     const { path, hash = '', queryParams } = api.getUrlState();
     const globalsString = buildArgsParam(initialGlobals, merge(initialGlobals, userGlobals));
-    navigateTo(`${path}${hash}`, { ...queryParams, globals: globalsString }, { replace: true });
-    api.setQueryParams({ globals: globalsString });
+    navigateTo(
+      `${path}${hash}`,
+      { ...queryParams, globals: globalsString || null },
+      { replace: true }
+    );
+    api.setQueryParams({ globals: globalsString || null });
   });
 
   provider.channel?.on(NAVIGATE_URL, (url: string, options: NavigateOptions) => {
@@ -381,5 +404,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
   return {
     api,
     state: initialUrlSupport(moduleArgs),
+    init: () => {
+      store.registerPersistenceHandler('url', (_patch, serialize) => {
+        if (serialize) {
+          const params = serialize(store.getState());
+          api.applyQueryParams(params, { replace: true });
+        }
+      });
+    },
   };
 };

@@ -1,3 +1,3 @@
-export * from './defaultValue';
-export * from './string';
-export * from './docgenInfo';
+export * from './defaultValue.ts';
+export * from './string.ts';
+export * from './docgenInfo.ts';

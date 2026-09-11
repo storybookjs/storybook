@@ -116,7 +116,13 @@ async function loaderTransform(this: any, parentTrace: any, source?: string, inp
   // Transpiles the broken syntax to the closest non-broken modern syntax.
   // E.g. it won't transpile parameter destructuring in Safari
   // which would break how we detect if the mount context property is used in the play function.
-  programmaticOptions.env.bugfixes = true;
+  if (
+    !globalThis.FEATURES ||
+    !('babelRemoveBugfixes' in globalThis.FEATURES) ||
+    !globalThis.FEATURES.babelRemoveBugfixes
+  ) {
+    programmaticOptions.env.bugfixes = true;
+  }
 
   if (!programmaticOptions.inputSourceMap) {
     delete programmaticOptions.inputSourceMap;
@@ -163,9 +169,6 @@ export function pitch(this: any) {
     }
 
     if (
-      // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
-      // TODO: investigate swc file reading in PnP mode?
-      !process.versions.pnp &&
       !EXCLUDED_PATHS.test(this.resourcePath) &&
       this.loaders.length - 1 === this.loaderIndex &&
       isAbsolute(this.resourcePath) &&

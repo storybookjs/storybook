@@ -370,7 +370,7 @@ const ListTemplate = {
     template: `
       <List v-bind="args">
         <div v-for="item in items" :key="item.title">
-          <ListItem :item="item"/>
+          <ListItem :item="item" />
         </div>
       </List>
     `,
@@ -417,7 +417,7 @@ export const ListTemplate: Story = {
     template: `
       <List v-bind="args">
         <div v-for="item in items" :key="item.title">
-          <ListItem :item="item"/>
+          <ListItem :item="item" />
         </div>
       </List>
     `,
@@ -460,7 +460,7 @@ export const Empty = meta.story({
     template: `
       <List v-bind="args">
         <div v-for="item in items" :key="item.title">
-          <ListItem :item="item"/>
+          <ListItem :item="item" />
         </div>
       </List>
     `,
@@ -501,7 +501,7 @@ export const Empty = meta.story({
     template: `
       <List v-bind="args">
         <div v-for="item in items" :key="item.title">
-          <ListItem :item="item"/>
+          <ListItem :item="item" />
         </div>
       </List>
     `,

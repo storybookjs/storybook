@@ -6,10 +6,10 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { add } from '../../add';
-import type { CheckOptions, RunOptions } from '../types';
-import { removeEssentials } from './remove-essentials';
-import { moveEssentialOptions } from './remove-essentials.utils';
+import { add } from '../../add.ts';
+import type { CheckOptions, RunOptions } from '../types.ts';
+import { removeEssentials } from './remove-essentials.ts';
+import { moveEssentialOptions } from './remove-essentials.utils.ts';
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async () => {

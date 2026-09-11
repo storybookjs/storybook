@@ -6,8 +6,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, fireEvent, fn, within } from 'storybook/test';
 
-import { WithResults } from './FileSearchList.stories';
-import { FileSearchModal } from './FileSearchModal';
+import { WithResults } from './FileSearchList.stories.tsx';
+import { FileSearchModal } from './FileSearchModal.tsx';
 
 const meta = {
   component: FileSearchModal,

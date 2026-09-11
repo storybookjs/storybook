@@ -2,8 +2,8 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../../.storybook/preview';
-import { InteractiveTooltipWrapper } from './InteractiveTooltipWrapper';
+import preview from '../../../../../../.storybook/preview.tsx';
+import { InteractiveTooltipWrapper } from './InteractiveTooltipWrapper.tsx';
 
 const meta = preview.meta({
   id: 'interactive-tooltip-wrapper-component',

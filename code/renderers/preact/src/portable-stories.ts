@@ -8,8 +8,8 @@ import {
   setDefaultProjectAnnotations,
 } from 'storybook/preview-api';
 
-import * as INTERNAL_DEFAULT_PROJECT_ANNOTATIONS from './entry-preview';
-import type { PreactRenderer } from './types';
+import * as INTERNAL_DEFAULT_PROJECT_ANNOTATIONS from './entry-preview.ts';
+import type { PreactRenderer } from './types.ts';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

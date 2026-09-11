@@ -1,6 +1,6 @@
-import type { UniversalStore } from '../universal-store';
-import type { BaseEvent, StoreOptions } from '../universal-store/types';
-import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
+import type { UniversalStore } from '../universal-store/index.ts';
+import type { BaseEvent, StoreOptions } from '../universal-store/types.ts';
+import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager.ts';
 
 export const UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS: StoreOptions<TestProviderStateByProviderId> = {
   id: 'storybook/test-provider',

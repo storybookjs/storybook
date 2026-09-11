@@ -9,16 +9,19 @@ import {
 } from 'storybook/internal/core-server';
 import type { EventInfo, Options } from 'storybook/internal/types';
 
+import type { BuilderOptions } from '@storybook/builder-vite';
+
 import { normalize } from 'pathe';
 
-import { importMetaResolve } from '../../../../core/src/shared/utils/module';
+import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
-} from '../constants';
-import { log } from '../logger';
-import type { Store } from '../types';
+} from '../constants.ts';
+import { log } from '../logger.ts';
+import { errorToErrorLike } from '../utils.ts';
+import type { Store } from '../types.ts';
 
 const MAX_START_TIME = 30000;
 
@@ -29,11 +32,14 @@ const vitestModulePath = fileURLToPath(importMetaResolve('@storybook/addon-vites
 // Events that were triggered before Vitest was ready are queued up and resent once it's ready
 const eventQueue: { type: string; args?: any[] }[] = [];
 
+type UniversalStoreBridge = {
+  eventName: string;
+  subscribe: (listener: (event: any, eventInfo: EventInfo) => void) => () => void;
+};
+
 let child: null | ChildProcess;
 let ready = false;
-let unsubscribeStore: () => void;
-let unsubscribeStatusStore: () => void;
-let unsubscribeTestProviderStore: () => void;
+let unsubscribeBridges: Array<() => void> = [];
 
 const forwardUniversalStoreEvent =
   (storeEventName: string) => (event: any, eventInfo: EventInfo) => {
@@ -48,16 +54,35 @@ const bootTestRunner = async ({
   channel,
   store,
   options,
+  configLoader,
 }: {
   channel: Channel;
   store: Store;
   options: Options;
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
+  const universalStoreBridges: UniversalStoreBridge[] = [
+    {
+      eventName: STORE_CHANNEL_EVENT_NAME,
+      subscribe: (listener) => store.subscribe(listener),
+    },
+    {
+      eventName: STATUS_STORE_CHANNEL_EVENT_NAME,
+      subscribe: (listener) => internal_universalStatusStore.subscribe(listener),
+    },
+    {
+      eventName: TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+      subscribe: (listener) => internal_universalTestProviderStore.subscribe(listener),
+    },
+  ];
+  const bridgedEventNames = new Set(universalStoreBridges.map((bridge) => bridge.eventName));
+
   let stderr: string[] = [];
   const killChild = () => {
-    unsubscribeStore?.();
-    unsubscribeStatusStore?.();
-    unsubscribeTestProviderStore?.();
+    for (const unsubscribe of unsubscribeBridges) {
+      unsubscribe();
+    }
+    unsubscribeBridges = [];
     child?.kill();
     child = null;
   };
@@ -85,6 +110,7 @@ const bootTestRunner = async ({
             VITEST_CHILD_PROCESS: 'true',
             NODE_ENV: process.env.NODE_ENV ?? 'test',
             STORYBOOK_CONFIG_DIR: normalize(options.configDir),
+            STORYBOOK_CONFIG_LOADER: configLoader,
           },
           extendEnv: true,
         },
@@ -100,12 +126,8 @@ const bootTestRunner = async ({
         }
       });
 
-      unsubscribeStore = store.subscribe(forwardUniversalStoreEvent(STORE_CHANNEL_EVENT_NAME));
-      unsubscribeStatusStore = internal_universalStatusStore.subscribe(
-        forwardUniversalStoreEvent(STATUS_STORE_CHANNEL_EVENT_NAME)
-      );
-      unsubscribeTestProviderStore = internal_universalTestProviderStore.subscribe(
-        forwardUniversalStoreEvent(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME)
+      unsubscribeBridges = universalStoreBridges.map((bridge) =>
+        bridge.subscribe(forwardUniversalStoreEvent(bridge.eventName))
       );
 
       child.on('message', (event: any) => {
@@ -122,6 +144,10 @@ const bootTestRunner = async ({
             payload: event.payload,
           });
           reject();
+        } else if (bridgedEventNames.has(event.type)) {
+          // Give the event to local store listeners only. emit() would also send it to browsers,
+          // and the store leader already forwards that copy once.
+          channel.receive(event);
         } else {
           channel.emit(event.type, ...event.args);
         }
@@ -144,12 +170,7 @@ const bootTestRunner = async ({
       type: 'FATAL_ERROR',
       payload: {
         message: 'Failed to start test runner process',
-        error: {
-          message: error.message,
-          name: error.name,
-          stack: error.stack,
-          cause: error.cause,
-        },
+        error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
       },
     });
     eventQueue.length = 0;
@@ -163,19 +184,21 @@ export const runTestRunner = async ({
   initEvent,
   initArgs,
   options,
+  configLoader,
 }: {
   channel: Channel;
   store: Store;
   initEvent?: string;
   initArgs?: any[];
   options: Options;
+  configLoader?: BuilderOptions['configLoader'];
 }) => {
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
   if (!child) {
     ready = false;
-    await bootTestRunner({ channel, store, options });
+    await bootTestRunner({ channel, store, options, configLoader });
     ready = true;
   }
 };

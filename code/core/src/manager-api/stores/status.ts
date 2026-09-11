@@ -1,7 +1,7 @@
-import { createStatusStore } from '../../shared/status-store';
-import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store';
-import { UniversalStore } from '../../shared/universal-store';
-import { useUniversalStore } from '../../shared/universal-store/use-universal-store-manager';
+import { createStatusStore } from '../../shared/status-store/index.ts';
+import { UNIVERSAL_STATUS_STORE_OPTIONS } from '../../shared/status-store/index.ts';
+import { UniversalStore } from '../../shared/universal-store/index.ts';
+import { useUniversalStore } from '../../shared/universal-store/use-universal-store-manager.ts';
 
 const statusStore = createStatusStore({
   universalStatusStore: UniversalStore.create({

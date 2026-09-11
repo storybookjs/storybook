@@ -16,11 +16,11 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
-import * as webComponentsAnnotations from './entry-preview';
-import * as webComponentsDocsAnnotations from './entry-preview-docs';
-import { type WebComponentsTypes } from './types';
+import * as webComponentsAnnotations from './entry-preview.ts';
+import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
+import { type WebComponentsTypes } from './types.ts';
 
 /**
  * Creates a Web Components-specific preview configuration with CSF factories support.
@@ -53,7 +53,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 }
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<WebComponentsTypes & T, Decorators>>>
+  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<WebComponentsTypes & T, Decorators>>>
 >;
 
 type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
@@ -161,7 +161,7 @@ export interface WebComponentsMeta<
   T extends WebComponentsTypes,
   MetaInput extends ComponentAnnotations<T>,
 >
-  // @ts-expect-error WebComponentsMeta requires two type parameters, but Meta's constraints differ
+  /** @ts-expect-error WebComponentsMeta requires two type parameters, but Meta's constraints differ */
   extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.

@@ -1,10 +1,9 @@
 import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 
-import type { State } from '../../manager-api';
-import type { RenderData as RouterData } from '../../router/types';
-import type { ThemeVars } from '../../theming/types';
-import type { API_LayoutCustomisations, API_SidebarOptions } from './api';
-import type { API_HashEntry, API_StoryEntry } from './api-stories';
+import type { RenderData as RouterData } from '../../router/types.ts';
+import type { ThemeVars } from '../../theming/types.ts';
+import type { API_Layout, API_LayoutCustomisations, API_SidebarOptions, API_UI } from './api.ts';
+import type { API_HashEntry, API_StoryEntry } from './api-stories.ts';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -20,8 +19,8 @@ import type {
   StoryId,
   StoryKind,
   StoryName,
-} from './csf';
-import type { IndexEntry } from './indexer';
+} from './csf.ts';
+import type { IndexEntry } from './indexer.ts';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
@@ -447,6 +446,8 @@ export interface Addon_TestProviderType {
   id: string;
   render: () => ReactNode;
   sidebarContextMenu?: (options: { context: API_HashEntry }) => ReactNode;
+  /** Called when the user clears all statuses. The provider should clear its own status stores. */
+  clear?: () => void;
 }
 
 type Addon_TypeBaseNames = Exclude<
@@ -478,15 +479,13 @@ export interface Addon_ToolbarConfig {
 }
 export interface Addon_Config {
   theme?: ThemeVars;
-  layoutCustomisations?: {
-    showPanel?: API_LayoutCustomisations['showPanel'];
-    showSidebar?: API_LayoutCustomisations['showSidebar'];
-    showToolbar?: API_LayoutCustomisations['showToolbar'];
-  };
+  layout?: Partial<API_Layout>;
+  layoutCustomisations?: Partial<API_LayoutCustomisations>;
   toolbar?: {
     [id: string]: Addon_ToolbarConfig;
   };
   sidebar?: API_SidebarOptions;
+  ui?: Partial<API_UI>;
   [key: string]: any;
 }
 

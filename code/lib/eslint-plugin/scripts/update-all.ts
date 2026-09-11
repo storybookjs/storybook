@@ -1,6 +1,6 @@
 async function run() {
-  await import('./update-configs');
-  await import('./update-rules-list');
+  await import('./update-configs.ts');
+  await import('./update-rules-list.ts');
 }
 
 run().catch((error) => {

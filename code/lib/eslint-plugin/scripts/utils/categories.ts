@@ -1,6 +1,6 @@
-import { CategoryId } from '../../src/utils/constants';
-import type { TRules } from './rules';
-import rules from './rules';
+import { CategoryId } from '../../src/utils/constants.ts';
+import type { TRules } from './rules.ts';
+import rules from './rules.ts';
 
 type TCategoriesConfig = Record<string, { text: string; rules: TRules }>;
 

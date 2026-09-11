@@ -3,7 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils';
+import { addScopedAlias, isNextVersionGte, resolveNextConfig } from '../utils.ts';
 
 const isNext16orNewer = isNextVersionGte('16.0.0');
 
@@ -78,6 +78,11 @@ const setupRuntimeConfig = async (
   const newNextLinkBehavior = (nextConfig.experimental as any)?.newNextLinkBehavior;
 
   definePluginConfig['process.env.__NEXT_NEW_LINK_BEHAVIOR'] = newNextLinkBehavior;
+
+  // Consumed by the next/link mock to normalize hrefs the way the real <Link> does.
+  definePluginConfig['process.env.__NEXT_TRAILING_SLASH'] = nextConfig.trailingSlash;
+  definePluginConfig['process.env.__NEXT_MANUAL_TRAILING_SLASH'] =
+    nextConfig.skipTrailingSlashRedirect;
 
   // Load DefinePlugin with a dynamic import to ensure that Next.js can first
   // replace webpack with its own internal instance, and we get that here.

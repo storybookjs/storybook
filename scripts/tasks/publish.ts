@@ -2,8 +2,8 @@ import { access } from 'node:fs/promises';
 
 import { resolve } from 'path';
 
-import type { Task } from '../task';
-import { exec } from '../utils/exec';
+import type { Task } from '../task.ts';
+import { exec } from '../utils/exec.ts';
 
 const verdaccioCacheDir = resolve(__dirname, '../../.verdaccio-cache');
 

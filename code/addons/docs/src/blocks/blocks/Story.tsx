@@ -8,6 +8,7 @@ import type {
   Renderer,
   StoryId,
 } from 'storybook/internal/types';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 
 import { Story as PureStory, StorySkeleton } from '../components';
 import type { DocsContextProps } from './DocsContext';
@@ -62,7 +63,7 @@ export type StoryProps = StoryRefProps & StoryParameters;
 export const getStoryId = (props: StoryProps, context: DocsContextProps): StoryId => {
   const { of, meta } = props as StoryRefProps;
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   if (meta) {

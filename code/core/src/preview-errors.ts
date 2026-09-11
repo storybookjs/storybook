@@ -1,8 +1,8 @@
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store';
-import type { StatusTypeId } from './shared/status-store';
-import { StorybookError } from './storybook-error';
+import type { Status } from './shared/status-store/index.ts';
+import type { StatusTypeId } from './shared/status-store/index.ts';
+import { StorybookError } from './storybook-error.ts';
 
 /**
  * If you can't find a suitable category for your error, create one based on the package name/file
@@ -358,6 +358,17 @@ export class UnknownArgTypesError extends StorybookError {
         This type is either not supported or it is a bug in the docgen generation in Storybook.
         If you think this is a bug, please detail it as much as possible in the Github issue.
       `,
+    });
+  }
+}
+
+export class InvalidBlockOfPropError extends StorybookError {
+  constructor() {
+    super({
+      name: 'InvalidBlockOfPropError',
+      category: Category.BLOCKS,
+      code: 1,
+      message: 'Unexpected `of={undefined}`, did you mistype a CSF file reference?',
     });
   }
 }

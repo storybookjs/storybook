@@ -1,0 +1,91 @@
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { describe, expect, it } from 'vitest';
+
+import { parse } from 'vue-docgen-api';
+
+import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
+import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
+import { BASELINE_PATH } from './baseline-path.ts';
+
+if (BASELINE_PATH !== 'legacy') {
+  throw new Error(
+    'vue3-baselines.test.ts records the legacy vue-docgen-api path; update the recorder or baseline-path.ts'
+  );
+}
+
+const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+
+const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+
+type DocgenComponent = {
+  name?: string;
+  __name?: string;
+  __docgenInfo?: unknown;
+};
+
+describe('vue3 legacy baselines', () => {
+  it.each(fixtureCases)('%s', async (fixtureCase) => {
+    const testDir = join(fixturesDir, fixtureCase);
+    const sfcFiles = readdirSync(testDir).filter((file) => file.endsWith('.vue'));
+    expect(sfcFiles).toHaveLength(1);
+
+    const metaData = await parse(join(testDir, sfcFiles[0]));
+
+    const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
+    const { default: meta, ...stories } = storiesModule;
+
+    const component: DocgenComponent = meta.component;
+    component.__docgenInfo = Object.assign(
+      { displayName: component.name ?? component.__name },
+      JSON.parse(JSON.stringify(metaData))
+    );
+
+    const argTypes = extractArgTypes(component);
+    await recordArgTypesSnapshot({
+      path: join(testDir, 'argtypes.snapshot'),
+      label: `${fixtureCase}/argtypes.snapshot`,
+      candidate: argTypes!,
+    });
+
+    for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
+      const ctx = {
+        title: meta.title,
+        component,
+        args: { ...meta.args, ...story.args },
+      };
+      const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
+      const committedSnippet = existsSync(snippetPath)
+        ? readFileSync(snippetPath, 'utf8')
+        : undefined;
+      const snippet = generateSourceCode(ctx);
+      if (committedSnippet !== undefined) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'vue3',
+          baseline: committedSnippet,
+          candidate: snippet,
+        });
+      }
+      await expect(snippet).toMatchFileSnapshot(snippetPath);
+    }
+
+    // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a
+    // renamed or removed story export would silently leave its old snapshot on disk
+    // (and any red marker reading it would assert on stale content).
+    const snippetFilesOnDisk = readdirSync(testDir)
+      .filter((file) => file.startsWith('snippet-') && file.endsWith('.snapshot'))
+      .sort();
+    const expectedSnippetFiles = Object.keys(stories)
+      .map((exportName) => `snippet-${exportName}.snapshot`)
+      .sort();
+    expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+  });
+});

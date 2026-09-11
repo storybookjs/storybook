@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { RelativeTime } from './RelativeTime';
+import { RelativeTime } from './RelativeTime.tsx';
 
 const meta = {
   component: RelativeTime,

@@ -13,7 +13,7 @@ import {
   setDefaultProjectAnnotations,
 } from 'storybook/preview-api';
 
-import * as svelteKitAnnotations from './preview';
+import * as svelteKitAnnotations from './preview.ts';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

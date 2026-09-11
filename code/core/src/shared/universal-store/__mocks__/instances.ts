@@ -12,7 +12,7 @@ import { vi } from 'vitest';
 
 import invariant from 'tiny-invariant';
 
-import type { UniversalStore } from '..';
+import type { UniversalStore } from '../index.ts';
 
 class MockInstancesMap {
   environments = new Map<string, Map<string, UniversalStore<any, any>>>();

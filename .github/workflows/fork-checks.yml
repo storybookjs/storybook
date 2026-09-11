@@ -7,15 +7,20 @@ on:
 env:
   NODE_OPTIONS: '--max_old_space_size=4096'
 
+permissions: {}
+
 jobs:
   check:
     name: Core Type Checking
     if: github.repository_owner != 'storybookjs'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
@@ -25,22 +30,25 @@ jobs:
       - name: check
         run: yarn task --task check
 
-  prettier:
+  formatting:
     name: Core Formatting
     if: github.repository_owner != 'storybookjs'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
         with:
           install-code-deps: true
 
-      - name: prettier
-        run: cd code && yarn lint:prettier --check .
+      - name: oxfmt
+        run: cd code && yarn fmt:check
 
   test:
     strategy:
@@ -49,10 +57,13 @@ jobs:
     runs-on: ${{ matrix.os }}
     name: Core Unit Tests, ${{ matrix.os }}
     if: github.repository_owner != 'storybookjs'
+    permissions:
+      contents: read
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           fetch-depth: 2
+          persist-credentials: false
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install

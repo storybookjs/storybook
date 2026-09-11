@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 
-import { renderStorybookUI } from '..';
+import { renderStorybookUI } from '../index.tsx';
 
 describe('Main API', () => {
   it('should fail if provider is not extended from the base Provider', () => {

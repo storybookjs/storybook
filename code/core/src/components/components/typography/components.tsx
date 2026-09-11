@@ -10,29 +10,29 @@ import type {
 } from 'react';
 import React from 'react';
 
-import { nameSpaceClassNames } from './DocumentFormatting';
-import { ResetWrapper } from './ResetWrapper';
-import { A } from './elements/A';
-import { Blockquote } from './elements/Blockquote';
-import { Code } from './elements/Code';
-import { DL } from './elements/DL';
-import { Div } from './elements/Div';
-import { H1 } from './elements/H1';
-import { H2 } from './elements/H2';
-import { H3 } from './elements/H3';
-import { H4 } from './elements/H4';
-import { H5 } from './elements/H5';
-import { H6 } from './elements/H6';
-import { HR } from './elements/HR';
-import { Img } from './elements/Img';
-import { LI } from './elements/LI';
-import { OL } from './elements/OL';
-import { P } from './elements/P';
-import { Pre } from './elements/Pre';
-import { Span } from './elements/Span';
-import { TT } from './elements/TT';
-import { Table } from './elements/Table';
-import { UL } from './elements/UL';
+import { nameSpaceClassNames } from './DocumentFormatting.tsx';
+import { ResetWrapper } from './ResetWrapper.tsx';
+import { A } from './elements/A.tsx';
+import { Blockquote } from './elements/Blockquote.tsx';
+import { Code } from './elements/Code.tsx';
+import { DL } from './elements/DL.tsx';
+import { Div } from './elements/Div.tsx';
+import { H1 } from './elements/H1.tsx';
+import { H2 } from './elements/H2.tsx';
+import { H3 } from './elements/H3.tsx';
+import { H4 } from './elements/H4.tsx';
+import { H5 } from './elements/H5.tsx';
+import { H6 } from './elements/H6.tsx';
+import { HR } from './elements/HR.tsx';
+import { Img } from './elements/Img.tsx';
+import { LI } from './elements/LI.tsx';
+import { OL } from './elements/OL.tsx';
+import { P } from './elements/P.tsx';
+import { Pre } from './elements/Pre.tsx';
+import { Span } from './elements/Span.tsx';
+import { TT } from './elements/TT.tsx';
+import { Table } from './elements/Table.tsx';
+import { UL } from './elements/UL.tsx';
 
 export const components = {
   h1: (props: DetailedHTMLProps<HTMLAttributes<HTMLHeadingElement>, HTMLHeadingElement>) => (

@@ -17,10 +17,10 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList';
-import type { getStateType } from '../../utils/tree';
-import { useLayout } from '../layout/LayoutProvider';
-import type { RefType } from './types';
+import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import type { getStateType } from '../../utils/tree.ts';
+import { useLayout } from '../layout/LayoutProvider.tsx';
+import type { RefType } from './types.ts';
 
 const { document, window: globalWindow } = global;
 

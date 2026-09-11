@@ -383,7 +383,7 @@ import preview from '../.storybook/preview';
 
 type CustomArgs = { footer?: string };
 
-const meta = preview.type<{ args: CustomArgs }>()meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   title: 'Page',
   component: 'demo-page',
   render: ({ footer }) => html`

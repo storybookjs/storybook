@@ -6,7 +6,7 @@ import {
   setAppStateUpdated, // @ts-expect-error no declaration file for this JS module
 } from '@storybook/sveltekit/internal/mocks/app/state.svelte.js';
 
-import type { SvelteKitParameters } from './types';
+import type { SvelteKitParameters } from './types.ts';
 
 const svelteKitMocksDecorator: Decorator = (Story, ctx) => {
   const svelteKitParameters: SvelteKitParameters = ctx.parameters?.sveltekit_experimental ?? {};

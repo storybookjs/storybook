@@ -4,9 +4,9 @@ import { describe, it, expect } from 'vitest';
 import {
   computesTemplateFromComponent,
   computesTemplateSourceFromComponent,
-} from './ComputesTemplateFromComponent';
-import type { ISomeInterface } from './__testfixtures__/input.component';
-import { ButtonAccent, InputComponent } from './__testfixtures__/input.component';
+} from './ComputesTemplateFromComponent.ts';
+import type { ISomeInterface } from './__testfixtures__/input.component.ts';
+import { ButtonAccent, InputComponent } from './__testfixtures__/input.component.ts';
 
 describe('angular template decorator', () => {
   it('with props should generate tag with properties', () => {
@@ -47,7 +47,9 @@ describe('angular template decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `The content`,
+      template: `
+        The content
+      `,
     })
     class WithoutSelectorComponent {}
 
@@ -319,7 +321,9 @@ describe('angular source decorator', () => {
 
   describe('with component without selector', () => {
     @Component({
-      template: `The content`,
+      template: `
+        The content
+      `,
     })
     class WithoutSelectorComponent {}
 

@@ -15,6 +15,14 @@ describe('getControlId', () => {
   it('includes storyId when provided', () => {
     expect(getControlId('some-id', 'story--name')).toBe('control-story--name-some-id');
   });
+
+  it('includes controlsId when provided', () => {
+    expect(getControlId('some-id', undefined, 'r1')).toBe('control-r1-some-id');
+  });
+
+  it('includes both controlsId and storyId when provided', () => {
+    expect(getControlId('some-id', 'story--name', 'r1')).toBe('control-r1-story--name-some-id');
+  });
 });
 
 describe('getControlSetterButtonId', () => {
@@ -29,5 +37,15 @@ describe('getControlSetterButtonId', () => {
 
   it('includes storyId when provided', () => {
     expect(getControlSetterButtonId('some-id', 'story--name')).toBe('set-story--name-some-id');
+  });
+
+  it('includes controlsId when provided', () => {
+    expect(getControlSetterButtonId('some-id', undefined, 'r1')).toBe('set-r1-some-id');
+  });
+
+  it('includes both controlsId and storyId when provided', () => {
+    expect(getControlSetterButtonId('some-id', 'story--name', 'r1')).toBe(
+      'set-r1-story--name-some-id'
+    );
   });
 });

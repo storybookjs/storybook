@@ -20,9 +20,9 @@ import {
   setDefaultProjectAnnotations,
 } from 'storybook/preview-api';
 
-import * as svelteProjectAnnotations from './entry-preview';
-import type { Meta } from './public-types';
-import type { SvelteRenderer } from './types';
+import * as svelteProjectAnnotations from './entry-preview.ts';
+import type { Meta } from './public-types.ts';
+import type { SvelteRenderer } from './types.ts';
 
 type ComposedStory<TArgs extends Args = any> = ComposedStoryFn<SvelteRenderer, TArgs> & {
   Component: typeof PreviewRender;

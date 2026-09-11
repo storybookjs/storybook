@@ -1,7 +1,7 @@
 import { isEqual } from 'es-toolkit/predicate';
 import { useEffect, useState } from 'storybook/preview-api';
 
-import type { UniversalStore } from './index';
+import type { UniversalStore } from './index.ts';
 
 /**
  * A hook to use a UniversalStore in a rendered preview. This hook will react to changes in the

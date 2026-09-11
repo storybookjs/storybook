@@ -1,4 +1,4 @@
-import type { Middleware } from '../../types';
+import type { Middleware } from '../../types/index.ts';
 
 export function getAccessControlMiddleware(crossOriginIsolated: boolean): Middleware {
   return (req, res, next) => {

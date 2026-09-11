@@ -12,6 +12,7 @@ import type { Alias, Plugin } from 'vite';
 
 const escapeKeys = (key: string) => key.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 const defaultImportRegExp = 'import ([^*{}]+) from';
+const emptyImportRegExp = /^import(?:\s*\{\s*\}\s*from)?\s*['"][^'"]+['"]\s*;?$/;
 const replacementMap = new Map([
   ['import ', 'const '],
   ['import{', 'const {'],
@@ -55,6 +56,9 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   await init;
   const { mergeAlias } = await import('vite');
 
+  const globalsList = Object.keys(externals);
+  const globalsCodeFilter = new RegExp(globalsList.map(escapeKeys).join('|'));
+
   return {
     name: 'storybook:external-globals-plugin',
     enforce: 'post',
@@ -88,28 +92,29 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
       };
     },
     // Replace imports with variables destructured from global scope
-    async transform(code: string, id: string) {
-      const globalsList = Object.keys(externals);
-
-      if (globalsList.every((glob) => !code.includes(glob))) {
-        return undefined;
-      }
-
-      const [imports] = parse(code);
-      const src = new MagicString(code);
-      imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
-        const packageName = path;
-        if (packageName && globalsList.includes(packageName)) {
-          const importStatement = src.slice(startPosition, endPosition);
-          const transformedImport = rewriteImport(importStatement, externals, packageName);
-          src.update(startPosition, endPosition, transformedImport);
+    transform: {
+      filter: { code: globalsCodeFilter },
+      async handler(code: string, id: string) {
+        if (globalsList.every((glob) => !code.includes(glob))) {
+          return undefined;
         }
-      });
 
-      return {
-        code: src.toString(),
-        map: null,
-      };
+        const [imports] = parse(code);
+        const src = new MagicString(code);
+        imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
+          const packageName = path;
+          if (packageName && globalsList.includes(packageName)) {
+            const importStatement = src.slice(startPosition, endPosition);
+            const transformedImport = rewriteImport(importStatement, externals, packageName);
+            src.update(startPosition, endPosition, transformedImport);
+          }
+        });
+
+        return {
+          code: src.toString(),
+          map: null,
+        };
+      },
     },
   } satisfies Plugin;
 }
@@ -117,6 +122,15 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 function getDefaultImportReplacement(match: string) {
   const matched = match.match(defaultImportRegExp);
   return matched && `const {default: ${matched[1]}} =`;
+}
+
+function getEmptyImportReplacement(importStatement: string, globalReference: string) {
+  if (!emptyImportRegExp.test(importStatement.trim())) {
+    return undefined;
+  }
+
+  const statementTerminator = importStatement.trimEnd().endsWith(';') ? ';' : '';
+  return `void ${globalReference}${statementTerminator}`;
 }
 
 function getSearchRegExp(packageName: string) {
@@ -132,6 +146,12 @@ export function rewriteImport(
   globs: Record<string, string>,
   packageName: string
 ): string {
+  const emptyImportReplacement = getEmptyImportReplacement(importStatement, globs[packageName]);
+
+  if (emptyImportReplacement) {
+    return emptyImportReplacement;
+  }
+
   const search = getSearchRegExp(packageName);
   return importStatement.replace(
     search,

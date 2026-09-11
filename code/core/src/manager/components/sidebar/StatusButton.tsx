@@ -5,25 +5,14 @@ import { Button } from 'storybook/internal/components';
 import type { StatusValue } from 'storybook/internal/types';
 
 import type { Theme } from '@emotion/react';
-import { darken, lighten, transparentize } from 'polished';
+import { darken, lighten } from 'polished';
 import { styled } from 'storybook/theming';
 
-const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue }) => {
-  const defaultColor =
-    theme.base === 'light'
-      ? transparentize(0.3, theme.color.defaultText)
-      : transparentize(0.6, theme.color.defaultText);
+import { getStatus } from '../../utils/status.tsx';
 
-  return {
-    color: {
-      'status-value:pending': defaultColor,
-      'status-value:success': theme.color.positive,
-      'status-value:error': theme.color.negative,
-      'status-value:warning': theme.color.warning,
-      'status-value:unknown': defaultColor,
-    }[status],
-  };
-};
+const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue }) => ({
+  color: getStatus(theme, status).iconColor ?? undefined,
+});
 
 export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, {
   margin: 3,

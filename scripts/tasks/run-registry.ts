@@ -1,9 +1,9 @@
 import waitOn from 'wait-on';
 
-import type { Task } from '../task';
-import { CODE_DIRECTORY } from '../utils/constants';
-import { exec } from '../utils/exec';
-import { isPortUsed } from '../utils/port';
+import type { Task } from '../task.ts';
+import { CODE_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isPortUsed } from '../utils/port.ts';
 
 const REGISTRY_PORT = 6001;
 const VERDACCIO_PORT = 6002;

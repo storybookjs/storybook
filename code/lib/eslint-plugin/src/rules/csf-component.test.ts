@@ -7,8 +7,8 @@
 //------------------------------------------------------------------------------
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 
-import ruleTester from '../test-utils';
-import rule from './csf-component';
+import ruleTester from '../test-utils.ts';
+import rule from './csf-component.ts';
 
 //------------------------------------------------------------------------------
 // Tests

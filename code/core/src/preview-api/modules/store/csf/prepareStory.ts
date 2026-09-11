@@ -21,13 +21,13 @@ import type {
 import { global } from '@storybook/global';
 import { global as globalThis } from '@storybook/global';
 
-import { Tag } from '../../../../shared/constants/tags';
-import { applyHooks } from '../../addons';
-import { mountDestructured } from '../../preview-web/render/mount-utils';
-import { UNTARGETED, groupArgsByTarget } from '../args';
-import { defaultDecorateStory } from '../decorators';
-import { combineParameters } from '../parameters';
-import { normalizeArrays } from './normalizeArrays';
+import { Tag } from '../../../../shared/constants/tags.ts';
+import { applyHooks } from '../../addons/index.ts';
+import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
+import { UNTARGETED, groupArgsByTarget } from '../args.ts';
+import { defaultDecorateStory } from '../decorators.ts';
+import { combineParameters } from '../parameters.ts';
+import { normalizeArrays } from './normalizeArrays.ts';
 
 // Combine all the metadata about a story (both direct and inherited from the component/global scope)
 // into a "render-able" story function, with all decorators applied, parameters passed as context etc
@@ -265,11 +265,20 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     storyGlobals,
   };
 
-  contextForEnhancers.argTypes = argTypesEnhancers.reduce(
-    (accumulatedArgTypes, enhancer) =>
-      enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
-    contextForEnhancers.argTypes
-  );
+  contextForEnhancers.argTypes = argTypesEnhancers
+    .filter((enhancer) => {
+      // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
+      // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
+      if (global.FEATURES?.experimentalDocgenServer && enhancer.secondPass) {
+        return false;
+      }
+      return true;
+    })
+    .reduce(
+      (accumulatedArgTypes, enhancer) =>
+        enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
+      contextForEnhancers.argTypes
+    );
 
   const initialArgsBeforeEnhancers = { ...passedArgs };
 

@@ -1,7 +1,7 @@
 import type { API } from 'storybook/manager-api';
 
-import { TOOLBAR_ID } from '../constants';
-import type { ToolbarShortcutConfig } from '../types';
+import { TOOLBAR_ID } from '../constants.ts';
+import type { ToolbarShortcutConfig } from '../types.ts';
 
 interface Shortcuts {
   next: ToolbarShortcutConfig & { action: () => void };

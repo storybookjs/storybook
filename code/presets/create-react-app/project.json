@@ -1,9 +1,0 @@
-{
-  "name": "create-react-app",
-  "projectType": "library",
-  "targets": {
-    "compile": {},
-    "check": {}
-  },
-  "tags": ["library"]
-}

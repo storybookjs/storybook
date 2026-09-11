@@ -27,10 +27,9 @@ import type { JsonObject } from '@angular-devkit/core';
 import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
 
-import { errorSummary, printErrorDetails } from '../utils/error-handler';
-import { runCompodoc } from '../utils/run-compodoc';
-import type { StandaloneOptions } from '../utils/standalone-options';
-import { VERSION } from '@angular/core';
+import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
+import { runCompodoc } from '../utils/run-compodoc.ts';
+import type { StandaloneOptions } from '../utils/standalone-options.ts';
 import { Channel } from 'storybook/internal/channels';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -122,7 +121,8 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     previewUrl,
     sourceMap = false,
     preserveSymlinks = false,
-    experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
+    // Angular 21+ always supports zoneless; users still opt out via `experimentalZoneless: false`
+    experimentalZoneless = true,
   } = options;
 
   const packageJsonPath = pkg.up({ cwd: __dirname });

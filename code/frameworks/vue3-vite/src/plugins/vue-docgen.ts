@@ -1,8 +1,10 @@
 import MagicString from 'magic-string';
 import type { Plugin } from 'vite';
-import { parse } from 'vue-docgen-api';
 
-export async function vueDocgen(): Promise<Plugin> {
+import type { VueDocgenEngine } from './vue-component-meta.ts';
+
+export async function vueDocgen(engine: VueDocgenEngine): Promise<Plugin> {
+  const { parse } = await engine.vueDocgenApi();
   const { createFilter } = await import('vite');
 
   const include = /\.(vue)$/;
@@ -10,23 +12,27 @@ export async function vueDocgen(): Promise<Plugin> {
 
   return {
     name: 'storybook:vue-docgen-plugin',
-    async transform(src, id) {
-      if (!filter(id)) {
-        return undefined;
-      }
+    transform: {
+      order: 'post',
+      filter: { id: include },
+      async handler(src, id) {
+        if (!filter(id)) {
+          return undefined;
+        }
 
-      const metaData = await parse(id);
+        const metaData = await parse(id);
 
-      const s = new MagicString(src);
+        const s = new MagicString(src);
 
-      s.append(`;_sfc_main.__docgenInfo = Object.assign({
+        s.append(`;_sfc_main.__docgenInfo = Object.assign({
         displayName: _sfc_main.name ?? _sfc_main.__name
       }, ${JSON.stringify(metaData)});`);
 
-      return {
-        code: s.toString(),
-        map: s.generateMap({ hires: true, source: id }),
-      };
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true, source: id }).toString(),
+        };
+      },
     },
   };
 }

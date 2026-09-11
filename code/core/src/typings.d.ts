@@ -16,7 +16,15 @@ declare var STORYBOOK_FRAMEWORK:
 declare var STORYBOOK_RENDERER: import('./types/modules/renderers').SupportedRenderer | undefined;
 declare var STORYBOOK_HOOKS_CONTEXT: any;
 declare var STORYBOOK_CURRENT_TASK_LOG: undefined | null | Array<any>;
+declare var SB_TELEMETRY_STATE: 'enabled' | 'disabled' | undefined;
+declare var SB_TELEMETRY_QUEUE: Array<import('./telemetry').QueuedEvent>;
+declare var PAYLOAD_ERROR_HANDLER: import('./telemetry').PayloadErrorHandler | undefined;
 
+declare var STORYBOOK_LAST_EVENTS: Record<
+  import('./telemetry').EventType,
+  import('./telemetry').CacheEntry
+>;
+declare var STORYBOOK_SESSION_ID: string | undefined;
 declare var STORYBOOK_NETWORK_ADDRESS: string | undefined;
 declare var PREVIEW_URL: string | undefined;
 
@@ -35,8 +43,13 @@ declare var __STORYBOOK_VITEST_MOCKER__: any;
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
 declare module 'lazy-universal-dotenv';
-declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';
+// CLI-only entry with no "types" condition in package.json exports.
+declare module 'storybook/internal/bin/loader' {
+  type LoadHookSync = (url: string, context: any, nextLoad: any) => any;
+  const load: LoadHookSync;
+  export { load };
+}
 
 declare var STORIES: any;
 

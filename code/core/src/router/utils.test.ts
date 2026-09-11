@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { DEEPLY_EQUAL, buildArgsParam, deepDiff, getMatch, parsePath } from './utils';
+import { DEEPLY_EQUAL, buildArgsParam, deepDiff, getMatch, parsePath } from './utils.ts';
 
 vi.mock('storybook/internal/client-logger', () => ({
   once: { warn: vi.fn() },
@@ -81,6 +81,11 @@ describe('parsePath', () => {
       storyId: 'story--id',
       refId: 'refid',
     });
+  });
+
+  it('should parse review summary paths as viewMode review', () => {
+    expect(parsePath('/review/')).toMatchObject({ viewMode: 'review' });
+    expect(parsePath('/review')).toMatchObject({ viewMode: 'review' });
   });
 });
 

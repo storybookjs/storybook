@@ -17,8 +17,8 @@ const isEmptyRender = (element: Element) => {
 
 const afterEach: AfterEach = async ({ reporting, canvasElement, globals }) => {
   try {
-    // We only run this through ghost stories runs
-    if (!globals.ghostStories) {
+    // Render analysis runs during ghost stories and agent-mode vitest runs
+    if (!globals.renderAnalysis?.enabled) {
       return;
     }
 

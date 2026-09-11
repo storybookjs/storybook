@@ -1,5 +1,5 @@
-import { PARAM_KEY } from './constants';
-import { withPseudoState } from './preview/withPseudoState';
+import { PARAM_KEY } from './constants.ts';
+import { withPseudoState } from './preview/withPseudoState.ts';
 
 export const decorators = [withPseudoState];
 

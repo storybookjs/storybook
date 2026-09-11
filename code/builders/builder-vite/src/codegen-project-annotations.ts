@@ -6,7 +6,7 @@ import { genArrayFromRaw, genImport, genSafeVariableName } from 'knitwork';
 import { filename } from 'pathe/utils';
 import { dedent } from 'ts-dedent';
 
-import { processPreviewAnnotation } from './utils/process-preview-annotation';
+import { processPreviewAnnotation } from './utils/process-preview-annotation.ts';
 
 /** Generates the code for the `PROJECT_ANNOTATIONS_FILE` virtual module. */
 export async function generateProjectAnnotationsCode(options: Options, projectRoot: string) {
@@ -105,6 +105,11 @@ export function generateProjectAnnotationsCodeFromPreviews(options: {
   `.trim();
 }
 
+/** djb2 hash — http://www.cse.yorku.ca/~oz/hash.html */
 function hash(value: string) {
-  return value.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+  let acc = 5381;
+  for (let i = 0; i < value.length; i++) {
+    acc = ((acc << 5) + acc + value.charCodeAt(i)) >>> 0;
+  }
+  return acc;
 }

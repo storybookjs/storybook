@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { includeConditionalArg, testValue } from './includeConditionalArg';
-import type { Conditional } from './story';
+import { includeConditionalArg, testValue } from './includeConditionalArg.ts';
+import type { Conditional } from './story.ts';
 
 describe('testValue', () => {
   describe('truthy', () => {

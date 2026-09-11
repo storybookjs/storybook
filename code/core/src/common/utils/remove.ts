@@ -3,8 +3,8 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import type { JsPackageManager } from '../js-package-manager';
-import { getConfigInfo } from './get-storybook-info';
+import type { JsPackageManager } from '../js-package-manager/index.ts';
+import { getConfigInfo } from './get-storybook-info.ts';
 
 export type RemoveAddonOptions = {
   packageManager: JsPackageManager;

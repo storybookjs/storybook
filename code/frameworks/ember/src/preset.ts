@@ -3,7 +3,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import { getVirtualModules } from '@storybook/builder-webpack5';
 
-import type { StorybookConfig } from './types';
+import type { StorybookConfig } from './types.ts';
 
 export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/ember/server/framework-preset-babel-ember'),
@@ -40,14 +40,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   };
 };
 
-export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply('framework');
-
-  return {
-    ...config,
-    builder: {
-      name: import.meta.resolve('@storybook/builder-webpack5'),
-      options: typeof framework === 'string' ? {} : framework.options.builder || {},
-    },
-  };
+export const core: PresetProperty<'core'> = {
+  builder: import.meta.resolve('@storybook/builder-webpack5'),
 };

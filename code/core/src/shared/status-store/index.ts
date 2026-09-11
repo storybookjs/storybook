@@ -1,17 +1,61 @@
-import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors';
-import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors';
-import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors';
-import type { StoryId } from '../../types';
-import type { UniversalStore } from '../universal-store';
-import type { StoreOptions } from '../universal-store/types';
-import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager';
+import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors.ts';
+import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors.ts';
+import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors.ts';
+import type { StoryId } from '../../types/index.ts';
+import type { UniversalStore } from '../universal-store/index.ts';
+import type { StoreOptions } from '../universal-store/types.ts';
+import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager.ts';
 
 export type StatusValue =
   | 'status-value:pending'
   | 'status-value:success'
-  | 'status-value:error'
+  | 'status-value:new'
+  | 'status-value:modified'
+  | 'status-value:affected'
+  | 'status-value:reviewing'
   | 'status-value:warning'
+  | 'status-value:error'
   | 'status-value:unknown';
+
+const STATUS_VALUE_PREFIX = 'status-value:';
+
+export const STATUS_VALUES: StatusValue[] = [
+  'status-value:pending',
+  'status-value:success',
+  'status-value:new',
+  'status-value:modified',
+  'status-value:affected',
+  'status-value:reviewing',
+  'status-value:warning',
+  'status-value:error',
+  'status-value:unknown',
+];
+
+/** Converts a short name like "error" to `"status-value:error"`. Returns undefined if invalid. */
+export const toStatusValue = (shortName: string): StatusValue | undefined => {
+  if (shortName === 'related') return 'status-value:affected';
+  const candidate = `${STATUS_VALUE_PREFIX}${shortName}` as StatusValue;
+  return STATUS_VALUES.includes(candidate) ? candidate : undefined;
+};
+
+/** Extracts the short name from a StatusValue, e.g. `"status-value:error"` → `"error"`. */
+export const statusValueShortName = (value: StatusValue): string => {
+  if (value === 'status-value:affected') return 'related';
+  return value.slice(STATUS_VALUE_PREFIX.length);
+};
+
+export const statusValueDescription = (value: StatusValue): string =>
+  ({
+    'status-value:pending': 'Stories with pending status',
+    'status-value:success': 'Stories with passing tests',
+    'status-value:new': 'Newly added stories',
+    'status-value:modified': 'Stories closely linked to code changes',
+    'status-value:affected': 'Stories likely to be affected by code changes',
+    'status-value:reviewing': 'Stories included in the active review',
+    'status-value:warning': 'Stories with warnings',
+    'status-value:error': 'Stories with failing tests',
+    'status-value:unknown': 'Stories with unknown status',
+  })[value];
 
 export type StatusTypeId = string;
 export type StatusByTypeId = Record<StatusTypeId, Status>;
@@ -27,6 +71,19 @@ export interface Status {
   sidebarContextMenu?: boolean;
 }
 
+export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
+export const REVIEW_STATUS_TYPE_ID = 'storybook/review';
+
+/**
+ * Status types that are quality/meta signals rather than test results, so they're excluded from the
+ * aggregated test status that surfaces a story's most critical result. Both are excluded by the same
+ * mechanism wherever that aggregate is computed.
+ */
+export const NON_AGGREGATED_STATUS_TYPE_IDS: string[] = [
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
+];
+
 export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
   id: 'storybook/status',
   leader: true,
@@ -41,6 +98,18 @@ export type StatusStoreEvent = {
   type: typeof StatusStoreEventType.SELECT;
   payload: Status[];
 };
+
+export function countStatusesByValue(
+  allStatuses: StatusesByStoryIdAndTypeId
+): Record<StatusValue, number> {
+  const counts = {} as Record<StatusValue, number>;
+  for (const statusByTypeId of Object.values(allStatuses)) {
+    for (const status of Object.values(statusByTypeId)) {
+      counts[status.value] = (counts[status.value] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
 
 export type StatusStore = {
   getAll: () => StatusesByStoryIdAndTypeId;

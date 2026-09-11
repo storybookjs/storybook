@@ -8,7 +8,7 @@ import type {
 } from 'estree';
 import MagicString from 'magic-string';
 
-import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker';
+import { type Positioned, getArbitraryModuleIdentifier } from './esmWalker.ts';
 
 type ParseFn = (code: string) => Program;
 

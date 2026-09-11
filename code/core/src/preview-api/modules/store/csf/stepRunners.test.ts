@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { StepRunner, StoryContext } from 'storybook/internal/types';
 
-import { composeStepRunners } from './stepRunners';
+import { composeStepRunners } from './stepRunners.ts';
 
 describe('stepRunners', () => {
   it('composes each step runner', async () => {

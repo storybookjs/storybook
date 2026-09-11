@@ -1,5 +1,5 @@
-import { allTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates';
-import { type TemplateDetails, tasks } from '../../task';
+import { allTemplates } from '../../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { type TemplateDetails, tasks } from '../../task.ts';
 
 export function getPort(template: Pick<TemplateDetails, 'key' | 'selectedTask'>) {
   const templateIndex = Object.values(allTemplates).indexOf(allTemplates[template.key]);

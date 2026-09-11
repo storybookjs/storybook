@@ -1,9 +1,9 @@
-import './globals';
+import './globals.ts';
 
-export * from './public-types';
+export * from './public-types.ts';
 
-export * from './portable-stories';
+export * from './portable-stories.tsx';
 
-export * from './preview';
+export * from './preview.tsx';
 
-export type { ReactTypes } from './types';
+export type { ReactTypes } from './types.ts';

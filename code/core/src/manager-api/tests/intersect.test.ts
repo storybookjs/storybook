@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import intersect from '../lib/intersect';
+import intersect from '../lib/intersect.ts';
 
 describe('Manager API utilities - intersect', () => {
   it('returns identity when intersecting identity', () => {

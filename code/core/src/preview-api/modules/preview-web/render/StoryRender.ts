@@ -26,10 +26,10 @@ import type {
 
 import type { UserEventObject } from 'storybook/test';
 
-import type { StoryStore } from '../../store';
-import type { Render, RenderType } from './Render';
-import { PREPARE_ABORTED } from './Render';
-import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils';
+import type { StoryStore } from '../../store/index.ts';
+import type { Render, RenderType } from './Render.ts';
+import { PREPARE_ABORTED } from './Render.ts';
+import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
 
 const { AbortController } = globalThis;
 
@@ -466,7 +466,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
-  async teardown() {
+  async teardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean } = {}) {
     this.torndown = true;
     this.cancelRender();
 
@@ -480,7 +480,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // Note that there's a max of 5 nested timeouts before they're no longer "instant".
     for (let i = 0; i < 3; i += 1) {
       if (!this.isPending()) {
-        await this.teardownRender();
+        // When the same story is about to be re-rendered (e.g. after an HMR update), keep
+        // the current DOM mounted until the new render commits: unmounting it here collapses
+        // the document, which makes the browser clamp the scroll position to 0 (#22057).
+        if (!keepRenderedDom) {
+          await this.teardownRender();
+        }
         return;
       }
 

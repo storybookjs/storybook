@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 
-import { toRequireContext } from './to-require-context';
+import { toRequireContext } from './to-require-context.ts';
 
 const testCases = [
   {

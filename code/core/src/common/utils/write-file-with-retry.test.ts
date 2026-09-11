@@ -2,7 +2,7 @@ import fs from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { writeFileWithRetry } from './write-file-with-retry';
+import { writeFileWithRetry } from './write-file-with-retry.ts';
 
 vi.mock('node:fs/promises');
 

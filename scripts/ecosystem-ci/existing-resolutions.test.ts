@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import rootPkgJson from '../../package.json';
-import { EXISTING_RESOLUTIONS } from './existing-resolutions';
+import { EXISTING_RESOLUTIONS } from './existing-resolutions.js';
 
 /*
 If this test is failing for you, it means that you have changed the list of resolutions

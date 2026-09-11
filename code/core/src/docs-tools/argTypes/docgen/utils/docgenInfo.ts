@@ -1,5 +1,5 @@
-import type { Component } from '../../types';
-import { str } from './string';
+import type { Component } from '../../types.ts';
+import { str } from './string.ts';
 
 export function hasDocgen<T = any>(
   component: Component

@@ -17,7 +17,7 @@ import type { CoreConfig, Options } from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 
-import { sendTelemetryError } from '../withTelemetry';
+import { sendTelemetryError } from '../withTelemetry.ts';
 
 export type OptionsWithRequiredCache = Exclude<Options, 'cache'> & Required<Pick<Options, 'cache'>>;
 
@@ -33,11 +33,7 @@ export type WhatsNewResponse = {
 const WHATS_NEW_CACHE = 'whats-new-cache';
 const WHATS_NEW_URL = 'https://storybook.js.org/whats-new/v1';
 
-export function initializeWhatsNew(
-  channel: Channel,
-  options: OptionsWithRequiredCache,
-  coreOptions: CoreConfig
-) {
+export function initializeWhatsNew(channel: Channel, options: OptionsWithRequiredCache) {
   channel.on(SET_WHATS_NEW_CACHE, async (data: WhatsNewCache) => {
     const cache: WhatsNewCache = await options.cache.get(WHATS_NEW_CACHE).catch((e) => {
       logger.verbose(e);
@@ -80,7 +76,6 @@ export function initializeWhatsNew(
   channel.on(
     TOGGLE_WHATS_NEW_NOTIFICATIONS,
     async ({ disableWhatsNewNotifications }: { disableWhatsNewNotifications: boolean }) => {
-      const isTelemetryEnabled = coreOptions.disableTelemetry !== true;
       try {
         const mainPath = findConfigFile('main', options.configDir);
         invariant(mainPath, `unable to find Storybook main file in ${options.configDir}`);
@@ -93,39 +88,31 @@ export function initializeWhatsNew(
         }
         main.setFieldValue(['core', 'disableWhatsNewNotifications'], disableWhatsNewNotifications);
         await writeFile(mainPath, printConfig(main).code);
-        if (isTelemetryEnabled) {
-          await telemetry('core-config', { disableWhatsNewNotifications });
-        }
+        await telemetry('core-config', { disableWhatsNewNotifications });
       } catch (error) {
         invariant(error instanceof Error);
-        if (isTelemetryEnabled) {
-          await sendTelemetryError(error, 'core-config', {
-            cliOptions: options,
-            presetOptions: {
-              ...options,
-              corePresets: [],
-              overridePresets: [],
-            },
-            skipPrompt: true,
-          });
-        }
+        await sendTelemetryError(error, 'core-config', {
+          cliOptions: options,
+          presetOptions: {
+            ...options,
+            corePresets: [],
+            overridePresets: [],
+          },
+          skipPrompt: true,
+        });
       }
     }
   );
 
   channel.on(TELEMETRY_ERROR, async (error) => {
-    const isTelemetryEnabled = coreOptions.disableTelemetry !== true;
-
-    if (isTelemetryEnabled) {
-      await sendTelemetryError(error, 'browser', {
-        cliOptions: options,
-        presetOptions: {
-          ...options,
-          corePresets: [],
-          overridePresets: [],
-        },
-        skipPrompt: true,
-      });
-    }
+    await sendTelemetryError(error, 'browser', {
+      cliOptions: options,
+      presetOptions: {
+        ...options,
+        corePresets: [],
+        overridePresets: [],
+      },
+      skipPrompt: true,
+    });
   });
 }

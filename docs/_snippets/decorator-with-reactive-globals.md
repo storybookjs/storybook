@@ -7,7 +7,7 @@ export default {
       return {
         components: { story },
         setup() {
-          const greeting = computed(() => globals?.locale === 'en' ? 'Hello!' : '¡Hola!');
+          const greeting = computed(() => (globals?.locale === 'en' ? 'Hello!' : '¡Hola!'));
 
           return { greeting, globals };
         },
@@ -33,7 +33,7 @@ const preview: Preview = {
       return {
         components: { story },
         setup() {
-          const greeting = computed(() => globals?.locale === 'en' ? 'Hello!' : '¡Hola!');
+          const greeting = computed(() => (globals?.locale === 'en' ? 'Hello!' : '¡Hola!'));
 
           return { greeting, globals };
         },

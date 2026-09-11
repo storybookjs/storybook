@@ -20,8 +20,8 @@ import {
 } from 'storybook/preview-api';
 
 // ! ATTENTION: This needs to be a relative import so it gets prebundled. This is to avoid ESM issues in Nextjs + Jest setups
-import { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS as reactAnnotations } from '../../../renderers/react/src/portable-stories';
-import * as nextJsAnnotations from './preview';
+import { INTERNAL_DEFAULT_PROJECT_ANNOTATIONS as reactAnnotations } from '../../../renderers/react/src/portable-stories.tsx';
+import * as nextJsAnnotations from './preview.tsx';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

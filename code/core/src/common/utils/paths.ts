@@ -4,7 +4,7 @@ import * as find from 'empathic/find';
 import * as walk from 'empathic/walk';
 import { globSync } from 'tinyglobby';
 
-import { LOCK_FILES } from '../js-package-manager/constants';
+import { LOCK_FILES } from '../js-package-manager/constants.ts';
 
 let projectRoot: string | undefined;
 

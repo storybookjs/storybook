@@ -5,7 +5,7 @@ import { SELECT_STORY } from 'storybook/internal/core-events';
 
 import { addons } from 'storybook/preview-api';
 
-import { hrefTo, linkTo } from './utils';
+import { hrefTo, linkTo } from './utils.ts';
 
 vi.mock('storybook/preview-api');
 vi.mock('@storybook/global', () => ({

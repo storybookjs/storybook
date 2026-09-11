@@ -1,5 +1,5 @@
-import { ZoomElement } from './ZoomElement';
-import { ZoomIFrame } from './ZoomIFrame';
+import { ZoomElement } from './ZoomElement.tsx';
+import { ZoomIFrame } from './ZoomIFrame.tsx';
 
 export const Zoom = {
   Element: ZoomElement,

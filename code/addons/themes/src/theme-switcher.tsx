@@ -13,8 +13,8 @@ import {
   PARAM_KEY,
   THEME_SWITCHER_ID,
   THEMING_EVENTS,
-} from './constants';
-import type { ThemesParameters as Parameters, ThemeAddonState } from './types';
+} from './constants.ts';
+import type { ThemesParameters as Parameters, ThemeAddonState } from './types.ts';
 
 type ThemesParameters = NonNullable<Parameters['themes']>;
 

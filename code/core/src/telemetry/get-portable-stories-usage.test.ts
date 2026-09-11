@@ -2,7 +2,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { getPortableStoriesFileCountUncached } from './get-portable-stories-usage';
+import { getPortableStoriesFileCountUncached } from './get-portable-stories-usage.ts';
 
 const mocksDir = join(__dirname, '..', '__mocks__');
 

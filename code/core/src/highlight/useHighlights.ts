@@ -10,8 +10,8 @@ import {
   REMOVE_HIGHLIGHT,
   RESET_HIGHLIGHT,
   SCROLL_INTO_VIEW,
-} from './constants';
-import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types';
+} from './constants.ts';
+import type { Box, Highlight, HighlightOptions, RawHighlightOptions } from './types.ts';
 import {
   createElement,
   createIcon,
@@ -25,7 +25,7 @@ import {
   normalizeOptions,
   showPopover,
   useStore,
-} from './utils';
+} from './utils.ts';
 
 const menuId = 'storybook-highlights-menu';
 const rootId = 'storybook-highlights-root';

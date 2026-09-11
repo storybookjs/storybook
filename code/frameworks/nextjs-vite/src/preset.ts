@@ -1,5 +1,4 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
-import { createRequire } from 'node:module';
 import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -9,29 +8,15 @@ import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
 import semver from 'semver';
+import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
-import { normalizePostCssConfig } from './find-postcss-config';
-import type { FrameworkOptions } from './types';
-import { getNextjsVersion } from './utils';
+import { normalizePostCssConfig } from './find-postcss-config.ts';
+import type { FrameworkOptions } from './types.ts';
+import { getNextjsVersion } from './utils.ts';
 
-const require = createRequire(import.meta.url);
-
-// the ESM output of this package is broken, so I had to force it to use the CJS version it's shipping.
-const vitePluginStorybookNextjs = require('vite-plugin-storybook-nextjs');
-
-export const core: PresetProperty<'core'> = async (config, options) => {
-  const framework = await options.presets.apply('framework');
-
-  return {
-    ...config,
-    builder: {
-      name: fileURLToPath(import.meta.resolve('@storybook/builder-vite')),
-      options: {
-        ...(typeof framework === 'string' ? {} : framework.options.builder || {}),
-      },
-    },
-    renderer: fileURLToPath(import.meta.resolve('@storybook/react/preset')),
-  };
+export const core: PresetProperty<'core'> = {
+  builder: import.meta.resolve('@storybook/builder-vite'),
+  renderer: import.meta.resolve('@storybook/react/preset'),
 };
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry = []) => {
@@ -52,6 +37,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
 };
 
 export const optimizeViteDeps = [
+  '@storybook/nextjs-vite/link.mock',
   '@storybook/nextjs-vite/navigation.mock',
   '@storybook/nextjs-vite/router.mock',
   '@storybook/nextjs-vite > styled-jsx',

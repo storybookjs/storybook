@@ -258,7 +258,7 @@ export const WithAnImage = {
       //👇 Returns the content of the image object created above.
       return { image };
     },
-    template: `<img v-bind="image"/>`,
+    template: `<img v-bind="image" />`,
   }),
 };
 ```
@@ -288,7 +288,7 @@ export const WithAnImage: Story = {
       //👇 Returns the content of the image object created above.
       return { image };
     },
-    template: `<img v-bind="image"/>`,
+    template: `<img v-bind="image" />`,
   }),
 };
 ```
@@ -315,7 +315,7 @@ export const WithAnImage = meta.story({
       //👇 Returns the content of the image object created above.
       return { image };
     },
-    template: `<img v-bind="image"/>`,
+    template: `<img v-bind="image" />`,
   }),
 });
 ```
@@ -344,7 +344,7 @@ export const WithAnImage = meta.story({
       //👇 Returns the content of the image object created above.
       return { image };
     },
-    template: `<img v-bind="image"/>`,
+    template: `<img v-bind="image" />`,
   }),
 });
 ```

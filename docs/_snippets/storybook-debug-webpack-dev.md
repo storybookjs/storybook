@@ -1,7 +1,7 @@
-```shell renderer="common" language="js" packageManager="npm"
+```shell renderer="common" packageManager="npm"
 npm run storybook -- --debug-webpack
 ```
 
-```shell renderer="common" language="js" packageManager="yarn"
+```shell renderer="common" packageManager="yarn"
 yarn storybook --debug-webpack
 ```

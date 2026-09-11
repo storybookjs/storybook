@@ -6,15 +6,23 @@ import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import { loadCustomWebpackConfig } from '@storybook/core-webpack';
 
-import webpackModule from 'webpack';
 import type { Configuration } from 'webpack';
+import webpackModule from 'webpack';
 
-import { WebpackInjectMockerRuntimePlugin } from '../plugins/webpack-inject-mocker-runtime-plugin';
-import { WebpackMockPlugin } from '../plugins/webpack-mock-plugin';
-import { createDefaultWebpackConfig } from '../preview/base-webpack.config';
+import { WebpackInjectMockerRuntimePlugin } from '../plugins/webpack-inject-mocker-runtime-plugin.ts';
+import { WebpackMockPlugin } from '../plugins/webpack-mock-plugin.ts';
+import { createDefaultWebpackConfig } from '../preview/base-webpack.config.ts';
 
-export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<string, any> => {
-  return {
+export const swc: PresetProperty<'swc'> = (
+  config: Record<string, any>,
+  options: Options
+): Record<string, any> => {
+  const shouldRemoveBugfixes =
+    options.features &&
+    'babelRemoveBugfixes' in options.features &&
+    options.features.babelRemoveBugfixes;
+
+  const newConfig = {
     ...config,
     env: {
       ...(config?.env ?? {}),
@@ -23,12 +31,17 @@ export const swc: PresetProperty<'swc'> = (config: Record<string, any>): Record<
         safari: 15,
         firefox: 91,
       },
-      // Transpiles the broken syntax to the closest non-broken modern syntax.
-      // E.g. it won't transpile parameter destructuring in Safari
-      // which would break how we detect if the mount context property is used in the play function.
-      bugfixes: config?.env?.bugfixes ?? true,
     },
   };
+
+  // Transpiles the broken syntax to the closest non-broken modern syntax.
+  // E.g. it won't transpile parameter destructuring in Safari
+  // which would break how we detect if the mount context property is used in the play function.
+  if (!shouldRemoveBugfixes) {
+    newConfig.env.bugfixes = config?.env?.bugfixes ?? true;
+  }
+
+  return newConfig;
 };
 
 export async function webpackFinal(config: Configuration, options: Options) {

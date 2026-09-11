@@ -2,7 +2,7 @@ import type { LoaderFunction } from 'storybook/internal/types';
 
 import { onMockCall } from 'storybook/test';
 
-import { action } from './runtime';
+import { action } from './runtime/index.ts';
 
 let subscribed = false;
 
@@ -17,9 +17,8 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
     onMockCall((mock, args) => {
       const name = mock.getMockName();
 
-      // Default name provided by vi.fn(), which we don't want to log.
-      // TODO: Can be removed as soon as we drop Vitest 3 support
-      // https://main.vitest.dev/guide/migration.html#changes-to-mocking
+      // Default name provided by vi.fn() under storybook/test's pinned @vitest/spy@3.2.4,
+      // which we don't want to log. Vitest 4's own spy defaults to 'vi.fn()' instead.
       if (name === 'spy') {
         return;
       }
@@ -37,6 +36,7 @@ const logActionsWhenMockCalled: LoaderFunction = (context) => {
           'next/router::useRouter()',
           'next/navigation::useRouter()',
           'next/navigation::redirect',
+          'next/link::Link',
           'next/cache::',
           'next/headers::cookies().set',
           'next/headers::cookies().delete',

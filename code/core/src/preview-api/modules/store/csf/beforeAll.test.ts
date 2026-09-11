@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { composeBeforeAllHooks } from './beforeAll';
+import { composeBeforeAllHooks } from './beforeAll.ts';
 
 const calls: string[] = [];
 

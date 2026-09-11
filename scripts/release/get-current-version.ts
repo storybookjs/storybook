@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { setOutput } from '@actions/core';
 import picocolors from 'picocolors';
 
-import { esMain } from '../utils/esmain';
+import { esMain } from '../utils/esmain.ts';
 
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');

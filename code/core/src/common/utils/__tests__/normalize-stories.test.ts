@@ -9,7 +9,7 @@ import {
   getDirectoryFromWorkingDir,
   normalizeStories,
   normalizeStoriesEntry,
-} from '../normalize-stories';
+} from '../normalize-stories.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => JSON.stringify(val, null, 2),

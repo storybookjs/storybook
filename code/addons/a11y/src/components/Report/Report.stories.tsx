@@ -4,10 +4,10 @@ import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { results } from '../../results.mock';
-import { RuleType } from '../../types';
-import { Report } from './Report';
+import preview from '../../../../../.storybook/preview.tsx';
+import { results } from '../../results.mock.ts';
+import { RuleType } from '../../types.ts';
+import { Report } from './Report.tsx';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,

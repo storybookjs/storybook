@@ -1,11 +1,11 @@
-```shell renderer="common" language="js" packageManager="npm"
+```shell renderer="common" packageManager="npm"
 npx storybook add @storybook/addon-vitest
 ```
 
-```shell renderer="common" language="js" packageManager="pnpm"
+```shell renderer="common" packageManager="pnpm"
 pnpm exec storybook add @storybook/addon-vitest
 ```
 
-```shell renderer="common" language="js" packageManager="yarn"
+```shell renderer="common" packageManager="yarn"
 yarn exec storybook add @storybook/addon-vitest
 ```

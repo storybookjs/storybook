@@ -4,14 +4,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as pkg from 'empathic/package';
 
-import versions from '../versions';
-import { resolvePathInStorybookCache } from './resolve-path-in-sb-cache';
+import versions from '../versions.ts';
+import { resolvePathInStorybookCache } from './resolve-path-in-sb-cache.ts';
 
 vi.mock('empathic/package', () => ({
   cache: vi.fn(),
 }));
 
-vi.mock('../versions', () => ({
+vi.mock('../versions.ts', () => ({
   default: {
     storybook: '10.3.0-alpha.1',
   },

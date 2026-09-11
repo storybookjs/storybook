@@ -1,7 +1,7 @@
 /* eslint-disable depend/ban-dependencies */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { addonA11yParameters } from './addon-a11y-parameters';
+import { addonA11yParameters } from './addon-a11y-parameters.ts';
 
 // Mock dependencies
 vi.mock('node:fs/promises', () => ({

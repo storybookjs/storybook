@@ -1,9 +1,9 @@
-import type { DocgenInfo } from '../docgen/types';
-import type { FlowType } from './flow';
-import { convert as flowConvert } from './flow';
-import { convert as propTypesConvert } from './proptypes';
-import type { TSType } from './typescript';
-import { convert as tsConvert } from './typescript';
+import type { DocgenInfo } from '../docgen/types.ts';
+import type { FlowType } from './flow/index.ts';
+import { convert as flowConvert } from './flow/index.ts';
+import { convert as propTypesConvert } from './proptypes/index.ts';
+import type { TSType } from './typescript/index.ts';
+import { convert as tsConvert } from './typescript/index.ts';
 
 export const convert = (docgenInfo: DocgenInfo) => {
   const { type, tsType, flowType } = docgenInfo;

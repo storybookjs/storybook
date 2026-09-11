@@ -8,8 +8,8 @@ import type { TabListState } from '@react-stately/tabs';
 import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
-import type { useTabsState } from './TabsView';
+import { Button } from '../Button/Button.tsx';
+import type { useTabsState } from './TabsView.tsx';
 
 const StyledTabButton = styled.button<{
   isDisabled: boolean;

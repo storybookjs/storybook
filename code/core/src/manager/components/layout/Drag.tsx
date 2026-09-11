@@ -2,9 +2,9 @@ import React, { forwardRef } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import type { PopperPlacement } from '../../../components';
-import { TooltipNote } from '../../../components/components/tooltip/TooltipNote';
-import { TooltipProvider } from '../../../components/components/tooltip/TooltipProvider';
+import type { PopperPlacement } from '../../../components/index.ts';
+import { TooltipNote } from '../../../components/components/tooltip/TooltipNote.tsx';
+import { TooltipProvider } from '../../../components/components/tooltip/TooltipProvider.tsx';
 
 interface DragProps {
   /** Which side the drag handle sits on, relative to the content it resizes. Determines orientation. */

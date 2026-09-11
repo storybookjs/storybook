@@ -2,12 +2,13 @@
  * @file Meta should be followed by `satisfies Meta`
  * @author Tiger Oakes
  */
-import type { TSESLint, TSESTree } from '@typescript-eslint/utils';
-import { ASTUtils, AST_NODE_TYPES } from '@typescript-eslint/utils';
+import { AST_NODE_TYPES } from '@typescript-eslint/types';
+import type { TSESTree } from '@typescript-eslint/types';
+import type { TSESLint } from '@typescript-eslint/utils';
 
-import { getMetaObjectExpression } from '../utils';
-import { isTSSatisfiesExpression } from '../utils/ast';
-import { createStorybookRule } from '../utils/create-storybook-rule';
+import { getMetaObjectExpression } from '../utils/index.ts';
+import { ASTUtils, isTSSatisfiesExpression } from '../utils/ast.ts';
+import { createStorybookRule } from '../utils/create-storybook-rule.ts';
 
 //------------------------------------------------------------------------------
 // Rule Definition

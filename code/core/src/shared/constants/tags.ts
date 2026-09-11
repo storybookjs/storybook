@@ -1,4 +1,4 @@
-import type { API_PreparedIndexEntry } from '../../types';
+import type { API_PreparedIndexEntry } from '../../types/index.ts';
 
 /** System tags used throughout Storybook for categorizing and filtering stories and docs entries. */
 export const Tag = {

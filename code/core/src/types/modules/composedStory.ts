@@ -8,7 +8,7 @@ import type {
   Tag,
 } from 'storybook/internal/csf';
 
-import type { ReporterAPI } from '../../preview-api';
+import type { ReporterAPI } from '../../preview-api/index.ts';
 import type {
   AnnotatedStoryFn,
   Args,
@@ -16,7 +16,7 @@ import type {
   Parameters,
   StoryAnnotations,
   StoryAnnotationsOrFn,
-} from './csf';
+} from './csf.ts';
 
 // TODO -- I think the name "CSFExports" overlaps here a bit with the types in csfFile.ts
 // we might want to reconcile @yannbf

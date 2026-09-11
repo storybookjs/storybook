@@ -1,8 +1,8 @@
 import type { Listener } from 'storybook/internal/channels';
 import type { API_Provider } from 'storybook/internal/types';
 
-import type { ModuleFn } from '../lib/types';
-import type { API } from '../root';
+import type { ModuleFn } from '../lib/types.tsx';
+import type { API } from '../root.tsx';
 
 export interface SubAPI {
   /**

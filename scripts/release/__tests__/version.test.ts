@@ -6,10 +6,10 @@ import { describe, expect, it, vi } from 'vitest';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
-import type * as MockedFSPToExtra from '../../../code/__mocks__/fs/promises';
-import { run as version } from '../version';
+import type * as MockedFSPToExtra from '../../../code/__mocks__/fs/promises.ts';
+import { run as version } from '../version.ts';
 
-vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises.ts'));
 const fspExtra = fspImp as unknown as typeof MockedFSPToExtra;
 
 vi.mock('../../../code/core/src/common/src/versions', () => ({

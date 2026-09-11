@@ -6,7 +6,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { enrichCsf } from './enrichCsf';
+import { enrichCsf } from './enrichCsf.ts';
 
 vi.mock('my-preset', () => ({
   default: { experimental_enrichCsf: enrichCsf, features: { experimentalCodeExamples: true } },

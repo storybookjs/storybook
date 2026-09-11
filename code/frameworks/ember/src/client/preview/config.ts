@@ -1,10 +1,10 @@
 import { enhanceArgTypes } from 'storybook/internal/docs-tools';
 import type { ArgTypesEnhancer } from 'storybook/internal/types';
 
-import './globals';
-import { extractArgTypes, extractComponentDescription } from './jsondoc';
+import './globals.ts';
+import { extractArgTypes, extractComponentDescription } from './jsondoc.ts';
 
-export { renderToCanvas } from './render';
+export { renderToCanvas } from './render.ts';
 
 export const parameters = {
   renderer: 'ember',

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { hasVitePlugins } from './has-vite-plugins';
+import { hasVitePlugins } from './has-vite-plugins.ts';
 
 describe('hasVitePlugins', () => {
   describe('should return true for', () => {

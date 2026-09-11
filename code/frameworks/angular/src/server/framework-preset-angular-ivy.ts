@@ -4,8 +4,8 @@ import type { Preset } from 'storybook/internal/types';
 
 import type { Configuration } from 'webpack';
 
-import type { AngularOptions } from '../types';
-import type { PresetOptions } from './preset-options';
+import type { AngularOptions } from '../types.ts';
+import type { PresetOptions } from './preset-options.ts';
 import { createRequire } from 'node:module';
 
 const require = createRequire(import.meta.url);
@@ -24,7 +24,6 @@ const require = createRequire(import.meta.url);
  * @returns A Promise that resolves to the dynamically imported module.
  */
 function loadEsmModule<T>(modulePath: string): Promise<T> {
-  // eslint-disable-next-line @typescript-eslint/no-implied-eval
   return new Function('modulePath', `return import(modulePath);`)(modulePath) as Promise<T>;
 }
 

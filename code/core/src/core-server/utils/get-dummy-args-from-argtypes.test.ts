@@ -1,10 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { SBType } from '../../types';
+import type { SBType } from '../../types/index.ts';
 import {
   generateDummyArgsFromArgTypes,
   generateDummyValueFromSBType,
-} from './get-dummy-args-from-argtypes';
+} from './get-dummy-args-from-argtypes.ts';
 
 describe('new-story-docgen', () => {
   const MOCK_DATE = new Date('2025-01-01T00:00:00.000Z');

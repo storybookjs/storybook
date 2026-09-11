@@ -12,13 +12,19 @@
     "react-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "react-vite-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "react-vite-default-ts"
+      }
+    },
     "dev": {},
     "check-sandbox": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "react-vite-default-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "react-vite-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

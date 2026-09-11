@@ -1,5 +1,5 @@
-import type { PromptProvider } from './prompt-provider-base';
-import { ClackPromptProvider } from './prompt-provider-clack';
+import type { PromptProvider } from './prompt-provider-base.ts';
+import { ClackPromptProvider } from './prompt-provider-clack.ts';
 
 type PromptLibrary = 'clack';
 

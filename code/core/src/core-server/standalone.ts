@@ -1,6 +1,6 @@
-import { buildDevStandalone } from './build-dev';
-import { buildIndexStandalone } from './build-index';
-import { buildStaticStandalone } from './build-static';
+import { buildDevStandalone } from './build-dev.ts';
+import { buildIndexStandalone } from './build-index.ts';
+import { buildStaticStandalone } from './build-static.ts';
 
 async function build(options: any = {}, frameworkOptions: any = {}) {
   const { mode = 'dev' } = options;

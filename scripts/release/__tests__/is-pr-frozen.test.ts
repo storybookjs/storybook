@@ -5,16 +5,16 @@ import { describe, expect, it, vi } from 'vitest';
 
 import * as simpleGitImp from 'simple-git';
 
-import type * as MockedFSPExtra from '../../../code/__mocks__/fs/promises';
-import type * as MockedSimpleGit from '../../__mocks__/simple-git';
-import { CODE_DIRECTORY } from '../../utils/constants';
-import { run as isPrFrozen } from '../is-pr-frozen';
-import type { PullRequestInfo } from '../utils/get-github-info';
-import { getPullInfoFromCommit } from '../utils/get-github-info';
+import type * as MockedFSPExtra from '../../../code/__mocks__/fs/promises.ts';
+import type * as MockedSimpleGit from '../../__mocks__/simple-git.ts';
+import { CODE_DIRECTORY } from '../../utils/constants.ts';
+import { run as isPrFrozen } from '../is-pr-frozen.ts';
+import type { PullRequestInfo } from '../utils/get-github-info.ts';
+import { getPullInfoFromCommit } from '../utils/get-github-info.ts';
 
 vi.mock('../utils/get-github-info');
 vi.mock('simple-git');
-vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../code/__mocks__/fs/promises.ts'));
 const fsp = fspImp as unknown as typeof MockedFSPExtra;
 const simpleGit = simpleGitImp as unknown as typeof MockedSimpleGit;
 

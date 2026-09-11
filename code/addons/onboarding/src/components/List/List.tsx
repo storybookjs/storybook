@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { ListWrapper } from './List.styled';
+import { ListWrapper } from './List.styled.tsx';
 
 interface ListProps {
   children: React.ReactNode;

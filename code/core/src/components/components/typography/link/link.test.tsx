@@ -8,8 +8,8 @@ import React from 'react';
 
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import type { LinkProps } from './link';
-import { Link } from './link';
+import type { LinkProps } from './link.tsx';
+import { Link } from './link.tsx';
 
 function ThemedLink(props: LinkProps & AnchorHTMLAttributes<HTMLAnchorElement>) {
   return (

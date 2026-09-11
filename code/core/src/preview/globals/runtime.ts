@@ -10,7 +10,7 @@ import * as ACTIONS from 'storybook/actions';
 import * as PREVIEW_API from 'storybook/preview-api';
 import * as TEST from 'storybook/test';
 
-import type { globalsNameReferenceMap } from './globals';
+import type { globalsNameReferenceMap } from './globals.ts';
 
 // Here we map the name of a module to their VALUE in the global scope.
 export const globalsNameValueMap: Required<Record<keyof typeof globalsNameReferenceMap, any>> = {

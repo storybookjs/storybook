@@ -7,8 +7,8 @@
 //------------------------------------------------------------------------------
 import { dedent } from 'ts-dedent';
 
-import ruleTester from '../test-utils';
-import rule from './default-exports';
+import ruleTester from '../test-utils.ts';
+import rule from './default-exports.ts';
 
 //------------------------------------------------------------------------------
 // Tests

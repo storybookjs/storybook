@@ -5,7 +5,7 @@ import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
 import { readFileSync, writeFileSync } from 'fs';
 
-import { addonExperimentalTest } from './addon-experimental-test';
+import { addonExperimentalTest } from './addon-experimental-test.ts';
 
 // Mock filesystem and globby
 vi.mock('fs', async (importOriginal) => {
@@ -82,7 +82,7 @@ const checkAddonExperimentalTest = async ({
   files?: string[];
 }) => {
   // Mock the findFilesUp function
-  const { findFilesUp } = await import('../../util');
+  const { findFilesUp } = await import('../../util.ts');
   (findFilesUp as any).mockReturnValue(files);
 
   return addonExperimentalTest.check({

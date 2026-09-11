@@ -1,6 +1,6 @@
 import { cache } from 'storybook/internal/common';
 
-import type { EventType, TelemetryEvent } from './types';
+import type { EventType, TelemetryEvent } from './types.ts';
 
 interface UpgradeSummary {
   timestamp: number;
@@ -81,3 +81,35 @@ export const getPrecedingUpgrade = async (
     ? upgradeFields(lastUpgradeEvent)
     : undefined;
 };
+
+/**
+ * Returns true when the current session falls within the 2-hour window opened by the most recent
+ * occurrence of one of the given event types
+ *
+ * Used to gate telemetry that should only be captured during a single session window of a given event (e.g. init)
+ */
+export async function isWithinInitialSession(events: EventType | EventType[]): Promise<boolean> {
+  try {
+    const eventTypes = Array.isArray(events) ? events : [events];
+    const lastEvents = await getLastEvents();
+
+    const lastRelevantEvent = lastEvent(lastEvents, eventTypes);
+
+    if (!lastRelevantEvent) {
+      return false;
+    }
+
+    const { getSessionId } = await import('./session-id.ts');
+    const sessionId = await getSessionId();
+
+    // If the stored event carries a sessionId that differs from the current one the 2h window
+    // has expired and a new session was started.
+    if (lastRelevantEvent.body?.sessionId && lastRelevantEvent.body.sessionId !== sessionId) {
+      return false;
+    }
+
+    return true;
+  } catch {
+    return false;
+  }
+}

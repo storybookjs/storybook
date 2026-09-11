@@ -6,7 +6,7 @@ An experimental library to read, analyze, transform, and write CSF programmatica
 - Analyze - Extract its metadata & stories based on the Babel AST
 - Write - Write the AST back to a file
 
-It can can parse MDX into CSF.
+It can parse MDX into CSF.
 
 Coming soon:
 

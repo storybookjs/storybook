@@ -51,6 +51,14 @@ export abstract class StorybookError extends Error {
   readonly fromStorybook: true = true as const;
 
   /**
+   * Marks an error whose message is written for the agent that triggered the call and names its
+   * own recovery. Adapters surface such errors verbatim instead of wrapping them as unexpected
+   * failures. A property rather than a class list, so the trait travels with the instance across
+   * bundle copies where `instanceof` would misclassify.
+   */
+  public readonly agentFacing: boolean;
+
+  /**
    * Flag used to determine if the error is handled by us and should therefore not be shown to the
    * user.
    */
@@ -95,8 +103,11 @@ export abstract class StorybookError extends Error {
     category: string;
     code: number;
     message: string;
+    cause?: unknown;
     documentation?: boolean | string | string[];
     isHandledError?: boolean;
+    /** See {@link StorybookError.agentFacing}. Defaults to false. */
+    agentFacing?: boolean;
     name: string;
     /**
      * Optional array of sub-errors that are related to this error. When this error is sent to
@@ -104,11 +115,15 @@ export abstract class StorybookError extends Error {
      */
     subErrors?: StorybookError[];
   }) {
-    super(StorybookError.getFullMessage(props));
+    super(
+      StorybookError.getFullMessage(props),
+      props.cause === undefined ? undefined : { cause: props.cause }
+    );
     this.category = props.category;
     this.documentation = props.documentation ?? false;
     this.code = props.code;
     this.isHandledError = props.isHandledError ?? false;
+    this.agentFacing = props.agentFacing ?? false;
     this.name = props.name;
     this.subErrors = props.subErrors ?? [];
   }

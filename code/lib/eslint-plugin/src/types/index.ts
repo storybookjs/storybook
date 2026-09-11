@@ -1,6 +1,6 @@
 import type { TSESLint } from '@typescript-eslint/utils';
 
-import type { CategoryId } from '../utils/constants';
+import type { CategoryId } from '../utils/constants.ts';
 
 export type RuleModule = TSESLint.RuleModule<'', []> & {
   meta: { hasSuggestions?: boolean };

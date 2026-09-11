@@ -12,8 +12,8 @@ import {
   CSF3Primary,
   MountInPlayFunction,
   MountInPlayFunctionThrow,
-} from './Button.csf4.stories';
-import { CSF2Secondary, HooksStory } from './Button.csf4.stories';
+} from './Button.csf4.stories.tsx';
+import { CSF2Secondary, HooksStory } from './Button.csf4.stories.tsx';
 
 afterEach(() => {
   cleanup();

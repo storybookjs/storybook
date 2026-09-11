@@ -10,11 +10,11 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { initialState } from '../../../shared/checklist-store/checklistData.state';
-import { useMenu } from '../../container/Menu';
-import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
-import { LayoutProvider } from '../layout/LayoutProvider';
-import { type MenuList, SidebarMenu } from './Menu';
+import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
+import { useMenu } from '../../container/Menu.tsx';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
+import { LayoutProvider } from '../layout/LayoutProvider.tsx';
+import { type MenuList, SidebarMenu } from './Menu.tsx';
 
 const getAPIMocks = () => ({
   getShortcutKeys: fn()

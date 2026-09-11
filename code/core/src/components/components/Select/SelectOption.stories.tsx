@@ -4,9 +4,9 @@ import { TabletIcon } from '@storybook/icons';
 
 import { expect, fn, within } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { SelectOption } from './SelectOption';
-import { Listbox } from './helpers';
+import preview from '../../../../../.storybook/preview.tsx';
+import { SelectOption } from './SelectOption.tsx';
+import { Listbox } from './helpers.tsx';
 
 const meta = preview.meta({
   id: 'select-option-component',

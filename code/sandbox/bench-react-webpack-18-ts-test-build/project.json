@@ -12,11 +12,17 @@
     "react-webpack5"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "bench-react-webpack-18-ts-test-build" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "bench-react-webpack-18-ts-test-build"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "bench-react-webpack-18-ts-test-build" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "bench-react-webpack-18-ts-test-build"
+      }
+    },
     "chromatic": {},
     "serve": {}
   },

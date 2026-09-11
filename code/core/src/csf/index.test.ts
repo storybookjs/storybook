@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { combineTags, isExportStory, storyNameFromExport, toId } from './index';
+import { combineTags, isExportStory, storyNameFromExport, toId } from './index.ts';
 
 describe('toId', () => {
   const testCases: [string, string, string | undefined, string][] = [

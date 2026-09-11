@@ -5,8 +5,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import { CallStates } from '../../instrumenter/types';
-import { TestDiscrepancyMessage } from './TestDiscrepancyMessage';
+import { CallStates } from '../../instrumenter/types.ts';
+import { TestDiscrepancyMessage } from './TestDiscrepancyMessage.tsx';
 
 type Story = StoryObj<typeof TestDiscrepancyMessage>;
 const managerContext: any = {

@@ -16,7 +16,7 @@ import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
-import { resolvePackageDir } from '../../shared/utils/module';
+import { resolvePackageDir } from '../../shared/utils/module.ts';
 
 const cacheDir = resolvePathInStorybookCache('', 'ignored-sub').split('ignored-sub')[0];
 

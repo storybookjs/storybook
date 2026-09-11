@@ -3,7 +3,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-import { findVarInitialization } from './findVarInitialization';
+import { findVarInitialization } from './findVarInitialization.ts';
 
 const getValue = (obj: t.ObjectExpression, key: string) => {
   let value: t.Expression | undefined;

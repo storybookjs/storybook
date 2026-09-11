@@ -4,8 +4,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 
-import { List } from './List';
-import { ListItem } from './ListItem/ListItem';
+import { List } from './List.tsx';
+import { ListItem } from './ListItem/ListItem.tsx';
 
 const meta: Meta<typeof List> = {
   component: List,

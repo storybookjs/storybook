@@ -7,8 +7,8 @@ import type { RenderContext } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
-import { addons } from '../addons';
-import { PreviewWeb } from './PreviewWeb';
+import { addons } from '../addons/index.ts';
+import { PreviewWeb } from './PreviewWeb.tsx';
 import {
   componentOneExports,
   emitter,
@@ -18,8 +18,8 @@ import {
   storyIndex as mockStoryIndex,
   projectAnnotations,
   waitForRender,
-} from './PreviewWeb.mockdata';
-import { WebView } from './WebView';
+} from './PreviewWeb.mockdata.ts';
+import { WebView } from './WebView.ts';
 
 // PreviewWeb.test mocks out all rendering
 //   - ie. from`renderToCanvas()` (stories) or`ReactDOM.render()` (docs) in.
@@ -32,7 +32,7 @@ vi.mock('storybook/internal/channels', async (importOriginal) => {
   };
 });
 vi.mock('@storybook/addon-docs/blocks', async () => {
-  const { CodeOrSourceMdx } = await import('../../../../../addons/docs/src/blocks/blocks/mdx');
+  const { CodeOrSourceMdx } = await import('../../../../../addons/docs/src/blocks/blocks/mdx.tsx');
   return {
     Docs: vi.fn(() => 'Docs'),
     CodeOrSourceMdx: CodeOrSourceMdx,
@@ -108,7 +108,7 @@ beforeEach(() => {
 describe('PreviewWeb', { skip: true }, () => {
   describe('initial render', () => {
     it('renders story mode through the stack', async () => {
-      const { DocsRenderer } = await import('../../../../../addons/docs/src/index');
+      const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
       projectAnnotations.renderToCanvas.mockImplementationOnce(({ storyFn }: RenderContext<any>) =>
@@ -126,7 +126,7 @@ describe('PreviewWeb', { skip: true }, () => {
     });
 
     it('renders docs mode through docs page', async () => {
-      const { DocsRenderer } = await import('../../../../../addons/docs/src/index');
+      const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
       document.location.search = '?id=component-one--docs&viewMode=docs';
@@ -158,7 +158,7 @@ describe('PreviewWeb', { skip: true }, () => {
     }, 10_000);
 
     it('sends docs rendering exceptions to showException', async () => {
-      const { DocsRenderer } = await import('../../../../../addons/docs/src/index');
+      const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
       document.location.search = '?id=component-one--docs&viewMode=docs';
@@ -197,7 +197,7 @@ describe('PreviewWeb', { skip: true }, () => {
     };
 
     it('renders story mode through the updated stack', async () => {
-      const { DocsRenderer } = await import('../../../../../addons/docs/src/index');
+      const { DocsRenderer } = await import('../../../../../addons/docs/src/index.ts');
       projectAnnotations.parameters.docs.renderer = () => new DocsRenderer() as any;
 
       document.location.search = '?id=component-one--a';

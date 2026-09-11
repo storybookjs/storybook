@@ -1,4 +1,4 @@
-import storybookPlugin from '../../index';
+import storybookPlugin from '../../index.ts';
 
 /*
  * IMPORTANT!

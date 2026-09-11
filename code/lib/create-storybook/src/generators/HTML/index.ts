@@ -1,7 +1,7 @@
 import { ProjectType } from 'storybook/internal/cli';
 import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
-import { defineGeneratorModule } from '../modules/GeneratorModule';
+import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
 export default defineGeneratorModule({
   metadata: {

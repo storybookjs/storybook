@@ -4,7 +4,7 @@ import { genDynamicImport, genObjectFromRawEntries } from 'knitwork';
 import { join, normalize, relative } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { getUniqueImportPaths } from './utils/unique-import-paths';
+import { getUniqueImportPaths } from './utils/unique-import-paths.ts';
 
 /**
  * This function takes the story index and creates a mapping between the stories' relative paths to

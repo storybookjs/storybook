@@ -12,7 +12,7 @@ import nextJsLoadConfigModule from 'next/dist/server/config.js';
 import semver from 'semver';
 import type { Configuration as WebpackConfig } from 'webpack';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 
 export const configureRuntimeNextjsVersionResolution = (baseConfig: WebpackConfig): void => {
   baseConfig.plugins?.push(

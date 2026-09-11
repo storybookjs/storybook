@@ -1,0 +1,90 @@
+{
+  "argTypes": {
+    "elRef": {
+      "name": "elRef",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "ElementRef"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "elRefStr": {
+      "name": "elRefStr",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => string"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "injector": {
+      "name": "injector",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "Injector"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "isAllDeps": {
+      "name": "isAllDeps",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => boolean"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "testToken": {
+      "name": "testToken",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "title": {
+      "name": "title",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-provider-di-component",
+  "jsDocTags": {},
+  "name": "DiComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-provider/di.component.stories.ts"
+}

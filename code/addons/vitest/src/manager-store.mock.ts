@@ -12,7 +12,7 @@ import {
   STATUS_TYPE_ID_A11Y,
   STATUS_TYPE_ID_COMPONENT_TEST,
   storeOptions,
-} from './constants';
+} from './constants.ts';
 
 export const store = testUtils.mocked(new experimental_MockUniversalStore(storeOptions, testUtils));
 

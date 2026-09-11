@@ -4,8 +4,8 @@ import type { Decorator } from '@storybook/react-vite';
 
 import { actions as makeActions } from 'storybook/actions';
 
-import { defaultShortcuts } from './defaultShortcuts';
-import { ShortcutsScreen } from './shortcuts';
+import { defaultShortcuts } from './defaultShortcuts.tsx';
+import { ShortcutsScreen } from './shortcuts.tsx';
 
 const actions = makeActions(
   'setShortcut',

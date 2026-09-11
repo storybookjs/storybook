@@ -1,8 +1,7 @@
 ---
-title: 'TableOfContents'
+title: TableOfContents
 sidebar:
   order: 14
-  title: TableOfContents
 ---
 
 The `TableOfContents` block renders a table of contents for the current documentation page, allowing users to navigate between sections quickly. It appears as a fixed sidebar on the right side of the documentation page and is hidden on smaller screens (below 768px).
@@ -11,7 +10,7 @@ The table of contents is enabled and configured via the `docs.toc` [parameter](.
 
 <Callout variant="info">
 
-  For a step-by-step guide on enabling and customizing the table of contents, see the [Generate a table of contents](../../writing-docs/autodocs.mdx#generate-a-table-of-contents) section in the Autodocs documentation.
+For a step-by-step guide on enabling and customizing the table of contents, see the [Generate a table of contents](../../writing-docs/autodocs.mdx#generate-a-table-of-contents) section in the Autodocs documentation.
 
 </Callout>
 
@@ -19,19 +18,11 @@ The table of contents is enabled and configured via the `docs.toc` [parameter](.
 
 Enable the table of contents globally in your Storybook preview configuration:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-preview-enable-toc.md" />
-
-{/* prettier-ignore-end */}
 
 You can also enable or disable it for specific components in their stories file:
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="my-component-disable-toc.md" />
-
-{/* prettier-ignore-end */}
 
 ## `toc` parameter options
 
@@ -83,8 +74,4 @@ Type: `object`
 
 Provides additional configuration options passed directly to the underlying [`Tocbot`](https://tscanlin.github.io/tocbot/) library. These options are not guaranteed to remain available in future versions of Storybook.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="storybook-preview-custom-toc.md" />
-
-{/* prettier-ignore-end */}

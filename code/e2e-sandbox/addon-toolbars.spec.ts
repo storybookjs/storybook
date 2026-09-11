@@ -1,0 +1,37 @@
+import { expect, test } from '@playwright/test';
+import process from 'process';
+
+import { SbPage } from './util.ts';
+
+const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
+
+test.describe('addon-toolbars', () => {
+  test.beforeEach(async ({ page }) => {
+    await page.goto(storybookUrl);
+    await new SbPage(page, expect).waitUntilLoaded();
+  });
+
+  test('should have locale button in the toolbar', async ({ page }) => {
+    const sbPage = new SbPage(page, expect);
+
+    // Click on viewport button and select spanish
+    await sbPage.navigateToStory('core/toolbars/globals', 'basic');
+    await sbPage.selectToolbar('[aria-label^="Internationalization locale"]', 'text=/Español/');
+
+    // Check that spanish is selected
+    await expect(sbPage.previewRoot()).toContainText('Hola');
+  });
+
+  test('locale button should be disabled for story that overrides locale global', async ({
+    page,
+  }) => {
+    const sbPage = new SbPage(page, expect);
+
+    // Click on viewport button and select spanish
+    await sbPage.navigateToStory('core/toolbars/globals', 'override-locale');
+    await expect(sbPage.previewRoot()).toContainText('안녕하세요');
+
+    const button = sbPage.page.getByLabel('Internationalization locale');
+    await expect(button).toHaveAttribute('aria-disabled', 'true');
+  });
+});

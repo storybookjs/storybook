@@ -3,9 +3,9 @@ import React, { forwardRef, useRef, useState } from 'react';
 import { action } from 'storybook/actions';
 import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { Button } from '../Button/Button';
-import { Modal } from './Modal';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Button } from '../Button/Button.tsx';
+import { Modal } from './Modal.tsx';
 
 const SampleModalContent = () => (
   <Modal.Content>

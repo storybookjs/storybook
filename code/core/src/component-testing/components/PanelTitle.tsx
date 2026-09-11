@@ -4,10 +4,10 @@ import { Badge } from 'storybook/internal/components';
 
 import { useAddonState, useStorybookApi } from 'storybook/manager-api';
 
-import { CallStates } from '../../instrumenter/types';
-import { ADDON_ID, PANEL_ID } from '../constants';
-import type { PanelState } from './Panel';
-import { StatusIcon } from './StatusIcon';
+import { CallStates } from '../../instrumenter/types.ts';
+import { ADDON_ID, PANEL_ID } from '../constants.ts';
+import type { PanelState } from './Panel.tsx';
+import { StatusIcon } from './StatusIcon.tsx';
 
 export function PanelTitle() {
   const api = useStorybookApi();

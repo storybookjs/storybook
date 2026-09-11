@@ -9,8 +9,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages';
-import type { Fix } from '../types';
+import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages.ts';
+import type { Fix } from '../types.ts';
 
 type PackageMetadata = {
   packageName: string;

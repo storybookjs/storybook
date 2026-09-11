@@ -1,3 +1,3 @@
-import './globals';
+import './globals.ts';
 
-export * from './public-types';
+export * from './public-types.ts';

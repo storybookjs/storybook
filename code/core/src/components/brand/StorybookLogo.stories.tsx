@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { StorybookLogo } from './StorybookLogo';
+import { StorybookLogo } from './StorybookLogo.tsx';
 
 export default {
   component: StorybookLogo,

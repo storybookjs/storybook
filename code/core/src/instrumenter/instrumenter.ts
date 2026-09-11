@@ -11,8 +11,8 @@ import { global } from '@storybook/global';
 
 import { processError } from '@vitest/utils/error';
 
-import { EVENTS } from './EVENTS';
-import { addons } from './preview-api';
+import { EVENTS } from './EVENTS.ts';
+import { addons } from './preview-api.ts';
 import type {
   Call,
   CallRef,
@@ -22,8 +22,8 @@ import type {
   RenderPhase,
   State,
   SyncPayload,
-} from './types';
-import { CallStates } from './types';
+} from './types.ts';
+import { CallStates } from './types.ts';
 import './typings.d.ts';
 
 type PatchedObj<TObj extends Record<string, unknown>> = {

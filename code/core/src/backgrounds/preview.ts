@@ -1,13 +1,13 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import { PARAM_KEY } from './constants';
-import { withBackgroundAndGrid } from './decorator';
+import { PARAM_KEY } from './constants.ts';
+import { withBackgroundAndGrid } from './decorator.ts';
 import type {
   BackgroundTypes,
   BackgroundsGlobals,
   BackgroundsParameters,
   GlobalState,
-} from './types';
+} from './types.ts';
 
 const decorators = globalThis.FEATURES?.backgrounds ? [withBackgroundAndGrid] : [];
 

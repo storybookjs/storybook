@@ -4,7 +4,7 @@ import { StopAltIcon } from '@storybook/icons';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { ProgressSpinner } from './ProgressSpinner';
+import { ProgressSpinner } from './ProgressSpinner.tsx';
 
 const meta = {
   component: ProgressSpinner,

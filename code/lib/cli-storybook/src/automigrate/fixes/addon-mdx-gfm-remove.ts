@@ -1,6 +1,6 @@
 import { getAddonNames, removeAddon } from 'storybook/internal/common';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 type AddonMdxGfmOptions = true;
 

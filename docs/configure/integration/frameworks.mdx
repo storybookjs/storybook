@@ -1,5 +1,5 @@
 ---
-title: 'Framework support'
+title: Framework support
 sidebar:
   order: 1
   title: Frameworks
@@ -28,22 +28,18 @@ In addition to supporting the most popular frameworks in the industry, Storybook
 
 Every modern web application has unique requirements and relies on various tools and frameworks. By default, with Storybook, you get an out-of-the-box configuration generated to work with most frameworks. However, you can extend your existing configuration file (i.e., `./storybook/main.js|ts|cjs`) and provide additional options. Below is an abridged table with available options and examples of configuring Storybook for your framework.
 
-{/* prettier-ignore-start */}
-
 <CodeSnippets path="main-config-framework.md" />
 
-{/* prettier-ignore-end */}
+| Option           | Description                                                                                                                                                                                                                                                  | Framework |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | --------- |
+| `nextConfigPath` | Sets the default path for the NextJS configuration file<br />`framework: { name: '@storybook/nextjs', options: { nextConfigPath: '../next.config.js'} }`                                                                                                     | NextJS    |
+| `builder`        | Configures [Webpack 5](../../builders/webpack.mdx) builder options for NextJS<br /> `core: { builder: { name:'webpack5', options: { lazyCompilation: true} }}`                                                                                               | NextJS    |
+| `strictMode`     | Enables React's [strict mode](https://reactjs.org/docs/strict-mode.html)<br />`framework: { name: '@storybook/react-webpack5', options: { strictMode: false } }`                                                                                             | React     |
+| `legacyRootApi`  | Requires React 18. Toggles support for React's [legacy root API](https://reactjs.org/blog/2022/03/08/react-18-upgrade-guide.html#updates-to-client-rendering-apis)<br />`framework: { name: '@storybook/react-webpack5', options: { legacyRootApi: true } }` | React     |
+| `enableIvy`      | Enabled by default with Angular 9+. Replaces the default compiler with the [Ivy compiler](https://docs.angular.lat/guide/ivy)<br />`framework: { name: '@storybook/angular', options: { enableIvy: true } }`                                                 | Angular   |
+| `enableNgcc`     | Enabled by default with Angular 9+. Adds support for ngcc for backwards compatibility<br />`framework: { name: '@storybook/angular', options: { enableNgcc: false } }`                                                                                       | Angular   |
 
-| Option           | Description                                                                                                                                                                                                                                                      | Framework |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------- |
-| `nextConfigPath` | Sets the default path for the NextJS configuration file<br />`framework: { name: '@storybook/nextjs', options: { nextConfigPath: '../next.config.js'} }`                                                                                                         | NextJS    |
-| `builder`        | Configures [Webpack 5](../../builders/webpack.mdx) builder options for NextJS<br /> `core: { builder: { name:'webpack5', options: { lazyCompilation: true} }}`                                                                                                   | NextJS    |
-| `strictMode`     | Enables React's [strict mode](https://reactjs.org/docs/strict-mode.html)<br />`framework: { name: '@storybook/react-webpack5', options: { strictMode: false } }`                                                                                                 | React     |
-| `legacyRootApi`  | Requires React 18. Toggles support for React's [legacy root API](https://reactjs.org/blog/2022/03/08/react-18-upgrade-guide.html#updates-to-client-rendering-apis)<br />`framework: { name: '@storybook/react-webpack5', options: { legacyRootApi: true } }`     | React     |
-| `enableIvy`      | Enabled by default with Angular 9+. Replaces the default compiler with the [Ivy compiler](https://docs.angular.lat/guide/ivy)<br />`framework: { name: '@storybook/angular', options: { enableIvy: true } }`                                                     | Angular   |
-| `enableNgcc`     | Enabled by default with Angular 9+. Adds support for ngcc for backwards compatibility<br />`framework: { name: '@storybook/angular', options: { enableNgcc: false } }`                                                                                           | Angular   |
-
-***
+---
 
 ## Troubleshooting
 
@@ -65,7 +61,7 @@ We're deprecating support for several frameworks, including [Aurelia](https://gi
 
 ### Learn about configuring Storybook
 
-* [Theming](../user-interface/theming.mdx) to customize the look and feel of Storybook's UI
-* [CSS](../styling-and-css.mdx) to configure CSS support
-* [Images & assets](./images-and-assets.mdx) for static asset handling
-* [Environment variables](../environment-variables.mdx) to configure environment variables
+- [Theming](../user-interface/theming.mdx) to customize the look and feel of Storybook's UI
+- [CSS](../styling-and-css.mdx) to configure CSS support
+- [Images & assets](./images-and-assets.mdx) for static asset handling
+- [Environment variables](../environment-variables.mdx) to configure environment variables

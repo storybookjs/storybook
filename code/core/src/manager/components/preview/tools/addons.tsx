@@ -8,8 +8,7 @@ import { BottomBarIcon, SidebarAltIcon } from '@storybook/icons';
 import { Consumer, types } from 'storybook/manager-api';
 import type { Combo } from 'storybook/manager-api';
 
-import { focusableUIElements } from '../../../../manager-api/modules/layout';
-import { useRegionFocusAnimation } from '../../layout/useLandmarkIndicator';
+import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
 
 const SHOW_ADDON_PANEL_BUTTON_ID = 'storybook-show-addon-panel';
 
@@ -17,15 +16,12 @@ const menuMapper = ({ api, state }: Combo) => ({
   isVisible: api.getIsPanelShown(),
   singleStory: state.singleStory,
   panelPosition: state.layout.panelPosition,
-  showPanel: async (animateLandmark?: (e: HTMLElement | null) => void) => {
+  showPanel: async (forceFocus: boolean) => {
     api.togglePanel(true);
-    const success = await api.focusOnUIElement(focusableUIElements.addonPanel, {
-      forceFocus: true,
+    api.focusOnUIElement(focusableUIElements.addonPanel, {
+      forceFocus,
       poll: true,
     });
-    if (success) {
-      animateLandmark?.(document.getElementById(focusableUIElements.addonPanel));
-    }
   },
 });
 
@@ -35,8 +31,6 @@ export const addonsTool: Addon_BaseType = {
   type: types.TOOL,
   match: ({ viewMode, tabId }) => viewMode === 'story' && !tabId,
   render: () => {
-    const animateLandmark = useRegionFocusAnimation();
-
     return (
       <Consumer filter={menuMapper}>
         {({ isVisible, showPanel, singleStory, panelPosition }) =>
@@ -49,11 +43,11 @@ export const addonsTool: Addon_BaseType = {
                 ariaLabel="Show addon panel"
                 id={SHOW_ADDON_PANEL_BUTTON_ID}
                 key="addons"
-                onClick={() => showPanel()}
+                onClick={() => showPanel(false)}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' || e.key === ' ') {
                     e.preventDefault();
-                    showPanel(animateLandmark);
+                    showPanel(true);
                   }
                 }}
               >

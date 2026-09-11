@@ -1,7 +1,7 @@
 import type { SupportedRenderer } from 'storybook/internal/types';
 
-import { GenericParser } from './generic-parser';
-import type { Parser } from './types';
+import { GenericParser } from './generic-parser.ts';
+import type { Parser } from './types.ts';
 
 /**
  * Get the parser for a given renderer

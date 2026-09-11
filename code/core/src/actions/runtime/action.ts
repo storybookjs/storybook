@@ -6,9 +6,9 @@ import { global } from '@storybook/global';
 import type { PreviewWeb } from 'storybook/preview-api';
 import { addons } from 'storybook/preview-api';
 
-import { EVENT_ID } from '../constants';
-import type { ActionDisplay, ActionOptions, HandlerFunction } from '../models';
-import { config } from './configureActions';
+import { EVENT_ID } from '../constants.ts';
+import type { ActionDisplay, ActionOptions, HandlerFunction } from '../models/index.ts';
+import { config } from './configureActions.ts';
 
 type SyntheticEvent = any; // import('react').SyntheticEvent;
 const findProto = (obj: unknown, callback: (proto: any) => boolean): Function | null => {

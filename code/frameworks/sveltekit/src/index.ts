@@ -1,4 +1,4 @@
 export * from '@storybook/svelte';
-export * from './types';
+export * from './types.ts';
 // @ts-expect-error (double exports)
-export * from './portable-stories';
+export * from './portable-stories.ts';

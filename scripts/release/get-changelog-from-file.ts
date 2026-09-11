@@ -7,8 +7,8 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { esMain } from '../utils/esmain';
-import { getCurrentVersion } from './get-current-version';
+import { esMain } from '../utils/esmain.ts';
+import { getCurrentVersion } from './get-current-version.ts';
 
 program
   .name('get-changelog-from-file')

@@ -7,7 +7,7 @@ import AnsiToHtml from 'ansi-to-html';
 import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
-import type { View } from './View';
+import type { View } from './View.ts';
 
 const { document } = global;
 
@@ -67,33 +67,57 @@ export class WebView implements View<HTMLElement> {
   }
 
   // Get ready to render a story, returning the element to render to
-  prepareForStory(story: PreparedStory<any>) {
+  prepareForStory(
+    story: PreparedStory<any>,
+    { scrollReset = true }: { scrollReset?: boolean } = {}
+  ) {
     this.showStory();
     this.applyLayout(story.parameters.layout);
 
-    document.documentElement.scrollTop = 0;
-    document.documentElement.scrollLeft = 0;
+    // Only reset scroll when navigating to a new story or switching view modes, not on HMR
+    // re-renders. Without this guard, hot-reloading a story file while scrolled down on a
+    // tall story causes the page to jump back to the top.
+    if (scrollReset) {
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+    }
 
-    return this.storyRoot();
+    const storyRoot = this.storyRoot();
+    this.applyHtmlLang(storyRoot, story.parameters.htmlLang);
+
+    return storyRoot;
   }
 
   storyRoot(): HTMLElement {
     return document.getElementById('storybook-root')!;
   }
 
-  prepareForDocs() {
+  prepareForDocs({ scrollReset = true }: { scrollReset?: boolean } = {}) {
     this.showMain();
     this.showDocs();
     this.applyLayout('fullscreen');
 
-    document.documentElement.scrollTop = 0;
-    document.documentElement.scrollLeft = 0;
+    // Only reset scroll when navigating to a new docs page, not on HMR re-renders.
+    // Without this guard, hot-reloading a story file while scrolled down on a docs page
+    // causes the page to jump back to the top.
+
+    if (scrollReset) {
+      document.documentElement.scrollTop = 0;
+      document.documentElement.scrollLeft = 0;
+    }
 
     return this.docsRoot();
   }
 
   docsRoot(): HTMLElement {
     return document.getElementById('storybook-docs')!;
+  }
+
+  scrollToAnchor(hash: string) {
+    // getElementById instead of querySelector: anchor ids (e.g. story ids) may contain
+    // characters that are invalid in CSS selectors.
+    const element = document.getElementById(decodeURIComponent(hash.substring(1)));
+    element?.scrollIntoView({ behavior: 'smooth' });
   }
 
   applyLayout(layout: Layout = 'padded') {
@@ -110,6 +134,17 @@ export class WebView implements View<HTMLElement> {
     document.body.classList.remove(this.currentLayoutClass!);
     document.body.classList.add(layoutClass);
     this.currentLayoutClass = layoutClass;
+  }
+
+  /**
+   * Injects a BCP-47 lang attribute to the story root, or removes it if `lang` is null.
+   */
+  applyHtmlLang(element: HTMLElement, lang?: string) {
+    if (lang) {
+      element.setAttribute('lang', lang);
+    } else {
+      element.removeAttribute('lang');
+    }
   }
 
   checkIfLayoutExists(layout: keyof typeof layoutClassMap) {

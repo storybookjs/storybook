@@ -1,15 +1,16 @@
 import type { FC, PropsWithChildren } from 'react';
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 
 import type { Renderer } from 'storybook/internal/types';
 
 import type { ThemeVars } from 'storybook/theming';
-import { ThemeProvider, ensure as ensureTheme } from 'storybook/theming';
+import { ensure as ensureTheme, ThemeProvider } from 'storybook/theming';
 
 import { DocsPageWrapper } from '../components';
 import { TableOfContents } from '../components/TableOfContents';
 import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
+import { createDocsSlugger, DocsSluggerContext } from './DocsSluggerContext';
 import { SourceContainer } from './SourceContainer';
 import { scrollToElement } from './utils';
 
@@ -25,14 +26,20 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   theme,
   children,
 }) => {
+  const slugger = useMemo(() => createDocsSlugger(), []);
   let toc;
+  // Language of docs prose (descriptions, ArgTypes description cells, free MDX prose).
+  let lang;
 
   try {
     const meta = context.resolveOf('meta', ['meta']);
-    toc = meta.preparedMeta.parameters?.docs?.toc;
+    const metaParameters = meta.preparedMeta.parameters;
+    toc = metaParameters?.docs?.toc;
+    lang = metaParameters?.docs?.lang || 'en';
   } catch (err) {
     // No meta, falling back to project annotations
     toc = context?.projectAnnotations?.parameters?.docs?.toc;
+    lang = context?.projectAnnotations?.parameters?.docs?.lang || 'en';
   }
 
   useEffect(() => {
@@ -54,24 +61,27 @@ export const DocsContainer: FC<PropsWithChildren<DocsContainerProps>> = ({
   });
 
   return (
-    <DocsContext.Provider value={context}>
-      <SourceContainer channel={context.channel}>
-        <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
-          <DocsPageWrapper
-            toc={
-              toc ? (
-                <TableOfContents
-                  className="sbdocs sbdocs-toc--custom"
-                  channel={context.channel}
-                  {...toc}
-                />
-              ) : null
-            }
-          >
-            {children}
-          </DocsPageWrapper>
-        </ThemeProvider>
-      </SourceContainer>
-    </DocsContext.Provider>
+    <DocsSluggerContext.Provider value={slugger}>
+      <DocsContext.Provider value={context}>
+        <SourceContainer channel={context.channel}>
+          <ThemeProvider theme={ensureTheme(theme as ThemeVars)}>
+            <DocsPageWrapper
+              lang={lang}
+              toc={
+                toc ? (
+                  <TableOfContents
+                    className="sbdocs sbdocs-toc--custom"
+                    channel={context.channel}
+                    {...toc}
+                  />
+                ) : null
+              }
+            >
+              {children}
+            </DocsPageWrapper>
+          </ThemeProvider>
+        </SourceContainer>
+      </DocsContext.Provider>
+    </DocsSluggerContext.Provider>
   );
 };

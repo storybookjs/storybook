@@ -1,6 +1,6 @@
 import type { Args, ArgsEnhancer, Renderer } from 'storybook/internal/types';
 
-import { action } from './runtime/action';
+import { action } from './runtime/action.ts';
 
 // interface ActionsParameter {
 //   disable?: boolean;

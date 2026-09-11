@@ -1,0 +1,1 @@
+<button sb-harness-action [emphasis]="true"></button>

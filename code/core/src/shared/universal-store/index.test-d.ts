@@ -1,9 +1,9 @@
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { UniversalStore } from '.';
-import type { EventInfo, InternalEvent } from './types';
-import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager';
-import { useUniversalStore as useUniversalStorePreview } from './use-universal-store-preview';
+import { UniversalStore } from './index.ts';
+import type { EventInfo, InternalEvent } from './types.ts';
+import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager.ts';
+import { useUniversalStore as useUniversalStorePreview } from './use-universal-store-preview.ts';
 
 type State = { count: number; done: boolean };
 type IncrementEvent = {

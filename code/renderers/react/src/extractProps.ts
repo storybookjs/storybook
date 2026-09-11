@@ -5,9 +5,9 @@ import {
   hasDocgen,
 } from 'storybook/internal/docs-tools';
 
-import { isMemo } from './docs/lib/componentTypes';
-import { enhancePropTypesProps } from './docs/propTypes/handleProp';
-import { enhanceTypeScriptProps } from './docs/typeScript/handleProp';
+import { isMemo } from './docs/lib/componentTypes.ts';
+import { enhancePropTypesProps } from './docs/propTypes/handleProp.ts';
+import { enhanceTypeScriptProps } from './docs/typeScript/handleProp.ts';
 
 // FIXME
 type Component = any;

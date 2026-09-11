@@ -5,6 +5,7 @@ import { H3 } from 'storybook/internal/components';
 
 import type { HeadingProps } from './Heading';
 import { slugs } from './Heading';
+import { DocsSluggerContext } from './DocsSluggerContext';
 import { HeaderMdx } from './mdx';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -12,7 +13,8 @@ const SubheadingImpl: FC<PropsWithChildren<HeadingProps>> = ({ children, disable
   if (disableAnchor || typeof children !== 'string') {
     return <H3>{children}</H3>;
   }
-  const tagID = slugs.slug(children.toLowerCase());
+  const slugger = React.useContext(DocsSluggerContext) ?? slugs;
+  const tagID = slugger.slug(children.toLowerCase());
   return (
     <HeaderMdx as="h3" id={tagID}>
       {children}

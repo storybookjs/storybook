@@ -1,7 +1,7 @@
 /// <reference path="../typings.d.ts" />
 import type { FunctionInterpolation, Interpolation } from '@emotion/react';
 
-import type { StorybookTheme } from './types';
+import type { StorybookTheme } from './types.ts';
 
 export { default as styled } from '@emotion/styled';
 
@@ -27,18 +27,22 @@ export type {
   InterpolationEnhanced as Interpolation,
 };
 
-export * from './base';
-export * from './types';
+export * from './base.ts';
+export * from './types.ts';
 
 export { default as createCache } from '@emotion/cache';
 export { default as isPropValid } from '@emotion/is-prop-valid';
 
-export { createGlobal, createReset, srOnlyStyles } from './global';
-export * from './create';
-export * from './convert';
-export * from './ensure';
+export { createGlobal, createReset, srOnlyStyles, srOnlyUnsetStyles } from './global.ts';
+export * from './create.ts';
+export * from './convert.ts';
+export * from './ensure.ts';
 
-export { lightenColor as lighten, darkenColor as darken, getPreferredColorScheme } from './utils';
+export {
+  lightenColor as lighten,
+  darkenColor as darken,
+  getPreferredColorScheme,
+} from './utils.ts';
 
 export const ignoreSsrWarning =
   '/* emotion-disable-server-rendering-unsafe-selector-warning-please-do-not-use-this-the-warning-exists-for-a-reason */';

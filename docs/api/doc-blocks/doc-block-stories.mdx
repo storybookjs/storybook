@@ -1,17 +1,14 @@
 ---
-title: 'Stories'
+title: Stories
 sidebar:
   order: 11
-  title: Stories
 ---
 
 The `Stories` block renders the full collection of stories in a stories file.
 
 ![Screenshot of Stories block](../../_assets/api/doc-block-stories.png)
 
-{/* prettier-ignore-start */}
-
-```md title="ButtonDocs.mdx"
+```mdx title="ButtonDocs.mdx"
 import { Meta, Stories } from '@storybook/addon-docs/blocks';
 import * as ButtonStories from './Button.stories';
 
@@ -19,8 +16,6 @@ import * as ButtonStories from './Button.stories';
 
 <Stories />
 ```
-
-{/* prettier-ignore-end */}
 
 ## Stories
 
@@ -40,8 +35,8 @@ Determines if the collection of stories includes the primary (first) story.
 
 <Callout variant="info" icon="💡">
 
-  If a stories file contains only one story and `includePrimary={true}`, the `Stories` block will render nothing to avoid a potentially confusing situation.
-  
+Set `includePrimary={false}` to omit the primary story from the rendered collection. If the primary story is the only story in the file, the `Stories` block will render nothing.
+
 </Callout>
 
 ### `title`

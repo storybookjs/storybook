@@ -1,6 +1,6 @@
 import { dedent } from 'ts-dedent';
 
-import { getComponentVariableName } from '../get-component-variable-name';
+import { getComponentVariableName } from '../get-component-variable-name.ts';
 
 interface CsfFactoryTemplateData {
   /** The components file name without the extension */

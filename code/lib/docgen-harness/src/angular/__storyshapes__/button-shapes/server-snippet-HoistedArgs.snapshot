@@ -1,0 +1,21 @@
+import { Component } from '@angular/core';
+import { ShapeButtonComponent } from './shape-button.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ShapeButtonComponent],
+  template: `
+    <sb-shape-button
+        [label]="'Save'"
+        [loadingError]="loadingError"
+        [items]="items"
+        (clicked)="clicked($event)"
+    />`,
+})
+export class DemoComponent {
+  loadingError = new Error('Failed to load cards.');
+  items = Array.from({
+    length: 3,
+  }, (_, index) => index);
+  clicked(event: unknown) {}
+}

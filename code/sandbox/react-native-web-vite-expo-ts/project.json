@@ -12,11 +12,17 @@
     "react-native-web-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "react-native-web-vite-expo-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "react-native-web-vite-expo-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "react-native-web-vite-expo-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "react-native-web-vite-expo-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

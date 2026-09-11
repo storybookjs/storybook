@@ -6,7 +6,7 @@ import { normalizeStoriesEntry } from 'storybook/internal/common';
 
 import Watchpack from 'watchpack';
 
-import { watchStorySpecifiers } from './watch-story-specifiers';
+import { watchStorySpecifiers } from './watch-story-specifiers.ts';
 
 vi.mock('watchpack');
 

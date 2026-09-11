@@ -3,7 +3,7 @@
  * This file has been automatically generated,
  * in order to update its content, execute "yarn update-rules" or rebuild this package.
  */
-import config from './csf';
+import config from './csf.ts';
 
 export default [
   ...config,

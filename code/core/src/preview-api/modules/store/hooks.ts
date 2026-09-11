@@ -12,7 +12,7 @@ import {
   useRef,
   useState,
   useStoryContext,
-} from '../addons';
+} from '../addons/index.ts';
 
 export {
   HooksContext,

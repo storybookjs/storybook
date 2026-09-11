@@ -1,7 +1,9 @@
-/* eslint-disable react/destructuring-assignment */
-import React, { useContext } from 'react';
+/* oxlint-disable react-classic/destructuring-assignment */
+import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 
+import { FORCE_REMOUNT } from 'storybook/internal/core-events';
+import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
@@ -66,7 +68,7 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
   const sourceContext = useContext(SourceContext);
   const { of, source } = props;
   if ('of' in props && of === undefined) {
-    throw new Error('Unexpected `of={undefined}`, did you mistype a CSF file reference?');
+    throw new InvalidBlockOfPropError();
   }
 
   const { story } = useOf(of || 'story', ['story']);
@@ -82,6 +84,10 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
   // By default, stories will be iframed, but most frameworks support inline rendering and override that in a docs entry file
   const inline = props.story?.inline ?? story.parameters?.docs?.story?.inline ?? false;
 
+  const handleReloadStory = useCallback(() => {
+    docsContext.channel.emit(FORCE_REMOUNT, { storyId: story.id });
+  }, [docsContext.channel, story.id]);
+
   return (
     <PurePreview
       withSource={sourceState === 'none' ? undefined : sourceProps}
@@ -91,6 +97,7 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
       className={className}
       layout={layout}
       inline={inline}
+      onReloadStory={inline ? handleReloadStory : undefined}
     >
       <Story of={of || story.moduleExport} meta={props.meta} {...props.story} />
     </PurePreview>

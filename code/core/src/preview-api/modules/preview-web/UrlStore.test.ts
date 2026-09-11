@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore';
+import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
 
 const { history, document } = global;
 
@@ -22,6 +22,9 @@ describe('UrlStore', () => {
   describe('pathToId', () => {
     it('should parse valid ids', () => {
       expect(pathToId('/story/story--id')).toEqual('story--id');
+    });
+    it('should parse docs ids', () => {
+      expect(pathToId('/docs/story--id')).toEqual('story--id');
     });
     it('should error on invalid ids', () => {
       [null, '', '/whatever/story/story--id'].forEach((path: any) => {
@@ -89,6 +92,20 @@ describe('UrlStore', () => {
     it('should ignore unsupported viewModes', () => {
       document.location.search = '?id=about&viewMode=somethingelse';
       expect(getSelectionSpecifierFromPath()).toEqual(null);
+    });
+    it('should handle story paths', () => {
+      document.location.search = '?path=/story/story--id';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id',
+        viewMode: 'story',
+      });
+    });
+    it('should handle docs paths', () => {
+      document.location.search = '?path=/docs/story--id';
+      expect(getSelectionSpecifierFromPath()).toEqual({
+        storySpecifier: 'story--id',
+        viewMode: 'docs',
+      });
     });
     it('should handle id queries with *', () => {
       document.location.search = '?id=*';

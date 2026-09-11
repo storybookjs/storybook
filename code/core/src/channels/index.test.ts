@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { ChannelTransport, Listener } from '.';
-import { Channel, WebsocketTransport } from '.';
+import type { ChannelTransport, Listener } from './index.ts';
+import { Channel, WebsocketTransport } from './index.ts';
 
 const MockedWebsocket = vi.hoisted(() => {
   const ref = { current: undefined as unknown as InstanceType<typeof MyMockedWebsocket> };
@@ -30,12 +30,7 @@ const MockedWebsocket = vi.hoisted(() => {
   return { MyMockedWebsocket, ref };
 });
 
-vi.mock('@storybook/global', () => ({
-  global: {
-    ...global,
-    WebSocket: MockedWebsocket.MyMockedWebsocket,
-  },
-}));
+vi.stubGlobal('WebSocket', MockedWebsocket.MyMockedWebsocket);
 
 describe('Channel', () => {
   let transport: ChannelTransport;
@@ -148,7 +143,7 @@ describe('Channel', () => {
     });
 
     it('should use setImmediate if async is true', () => {
-      global.setImmediate = vi.fn(setImmediate);
+      globalThis.setImmediate = vi.fn(setImmediate);
 
       channel = new Channel({ async: true, transport });
       channel.addListener('event1', vi.fn());

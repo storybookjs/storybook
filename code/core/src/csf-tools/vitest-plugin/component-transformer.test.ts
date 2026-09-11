@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from 'vitest';
 
-import { componentTransform } from './component-transformer';
+import { componentTransform } from './component-transformer.ts';
 
 const transform = async ({
   code,

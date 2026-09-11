@@ -2,14 +2,14 @@
 import { act, renderHook } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { MockUniversalStore } from '../universal-store/mock';
-import { useUniversalStore } from '../universal-store/use-universal-store-manager';
+import { MockUniversalStore } from '../universal-store/mock.ts';
+import { useUniversalStore } from '../universal-store/use-universal-store-manager.ts';
 import {
   type TestProviderStateByProviderId,
   type TestProviderStoreEvent,
   createTestProviderStore,
-} from './index';
-import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from './index';
+} from './index.ts';
+import { UNIVERSAL_TEST_PROVIDER_STORE_OPTIONS } from './index.ts';
 
 const initialState: TestProviderStateByProviderId = {
   'provider-1': 'test-provider-state:running',

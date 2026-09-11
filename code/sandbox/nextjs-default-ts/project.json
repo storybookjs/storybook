@@ -12,11 +12,17 @@
     "nextjs"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "nextjs-default-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "nextjs-default-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "nextjs-default-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "nextjs-default-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests": {},

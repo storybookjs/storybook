@@ -3,7 +3,7 @@ import React from 'react';
 
 import { Modal } from 'storybook/internal/components';
 
-import { MOBILE_TRANSITION_DURATION } from '../../../constants';
+import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
 
 interface MobileAddonsDrawerProps {
   children: ReactNode;
@@ -23,7 +23,7 @@ export const MobileAddonsDrawer: FC<MobileAddonsDrawerProps> = ({
       ariaLabel="Addon panel"
       transitionDuration={MOBILE_TRANSITION_DURATION}
       variant="bottom-drawer"
-      height="42vh"
+      height="42dvh"
       id={id}
       open={isOpen}
       onOpenChange={onOpenChange}

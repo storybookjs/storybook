@@ -1,13 +1,13 @@
 import { relative } from 'node:path';
 
 import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common';
-import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import type { Options, StoriesEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle';
-import { posix } from './posix';
+import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
+import { posix } from './posix.ts';
 
 interface StoryIdData {
   storyFilePath: string;

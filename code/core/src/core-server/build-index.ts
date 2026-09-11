@@ -4,17 +4,18 @@ import { normalizeStories } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { BuilderOptions, CLIOptions, LoadOptions } from 'storybook/internal/types';
 
-import { loadStorybook } from './load';
-import { StoryIndexGenerator } from './utils/StoryIndexGenerator';
+import { loadStorybook } from './load.ts';
+import { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 
 export type BuildIndexOptions = CLIOptions & LoadOptions & BuilderOptions;
 
 export const buildIndex = async (options: BuildIndexOptions) => {
   const { presets } = await loadStorybook(options);
-  const [indexers, stories, docsOptions] = await Promise.all([
+  const [indexers, stories, docsOptions, features] = await Promise.all([
     presets.apply('experimental_indexers', []),
     presets.apply('stories', []),
     presets.apply('docs'),
+    presets.apply('features'),
   ]);
 
   const { configDir } = options;
@@ -30,6 +31,7 @@ export const buildIndex = async (options: BuildIndexOptions) => {
     indexers,
     docs: docsOptions,
     build: {},
+    features,
   });
 
   await generator.initialize();

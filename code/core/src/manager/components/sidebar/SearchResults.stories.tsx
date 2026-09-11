@@ -2,11 +2,11 @@ import React from 'react';
 
 import type { StoriesHash } from 'storybook/manager-api';
 
-import { searchItem } from '../../utils/tree';
-import { IconSymbols } from './IconSymbols';
-import { SearchResults } from './SearchResults';
-import { mockDataset } from './mockdata';
-import type { CombinedDataset, Refs, SearchItem } from './types';
+import { searchItem } from '../../utils/tree.ts';
+import { IconSymbols } from './IconSymbols.tsx';
+import { SearchResults } from './SearchResults.tsx';
+import { mockDataset } from './mockdata.ts';
+import type { CombinedDataset, Refs, SearchItem } from './types.ts';
 
 export default {
   component: SearchResults,

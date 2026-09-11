@@ -5,14 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
-import type { PackageJsonWithDepsAndDevDeps } from '../common';
-import type { JsPackageManager } from '../common/js-package-manager/JsPackageManager';
+import type { PackageJsonWithDepsAndDevDeps } from '../common/index.ts';
+import type { JsPackageManager } from '../common/js-package-manager/JsPackageManager.ts';
 import {
   configureEslintPlugin,
   extractEslintInfo,
   findEslintFile,
   normalizeExtends,
-} from './eslintPlugin';
+} from './eslintPlugin.ts';
 
 vi.mock('empathic/find', () => ({
   up: vi.fn(),

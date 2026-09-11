@@ -19,16 +19,14 @@ import path, { dirname, join, normalize, resolve } from 'pathe';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
-import { COVERAGE_DIRECTORY } from '../constants';
-import { log } from '../logger';
-import type { TriggerRunEvent } from '../types';
-import type { StorybookCoverageReporterOptions } from './coverage-reporter';
-import { StorybookReporter } from './reporter';
-import type { TestManager } from './test-manager';
+import { COVERAGE_DIRECTORY, STORYBOOK_TEST_PROVIDE_KEY } from '../constants.ts';
+import { log } from '../logger.ts';
+import type { TriggerRunEvent } from '../types.ts';
+import type { StorybookCoverageReporterOptions } from './coverage-reporter.ts';
+import { StorybookReporter } from './reporter.ts';
+import type { TestManager } from './test-manager.ts';
 
 const VITEST_CONFIG_FILE_EXTENSIONS = ['mts', 'mjs', 'cts', 'cjs', 'ts', 'tsx', 'js', 'jsx'];
-const VITEST_WORKSPACE_FILE_EXTENSION = ['ts', 'js', 'json'];
-
 // We have to tell Vitest that it runs as part of Storybook
 process.env.VITEST_STORYBOOK = 'true';
 
@@ -61,7 +59,7 @@ export class VitestManager {
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions<'v8'> | undefined,
+        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
       },
     ];
     const coverageOptions = (
@@ -86,7 +84,6 @@ export class VitestManager {
     const packageRoot = configDir ? dirname(resolve(configDir)) : undefined;
 
     const configFiles = [
-      ...VITEST_WORKSPACE_FILE_EXTENSION.map((ext) => `vitest.workspace.${ext}`),
       ...VITEST_CONFIG_FILE_EXTENSIONS.flatMap((ext) => [
         `vitest.config.${ext}`,
         `vite.config.${ext}`,
@@ -97,22 +94,25 @@ export class VitestManager {
       last: getProjectRoot(),
     });
 
-    let vitestWorkspaceConfig: string | undefined;
+    let vitestConfigLocation: string | undefined;
     let firstVitestConfig: string | undefined;
 
     for (const location of potentialConfigFileLocations) {
       for (const file of configFiles) {
-        const maybe = find.any([file], { cwd: location, last: getProjectRoot() });
+        const maybe = find.any([file], {
+          cwd: location,
+          last: getProjectRoot(),
+        });
         if (maybe && existsSync(maybe)) {
           firstVitestConfig ??= dirname(maybe);
           const content = readFileSync(maybe, 'utf8');
           if (content.includes('storybookTest') || content.includes('@storybook/addon-vitest')) {
-            vitestWorkspaceConfig = dirname(maybe);
+            vitestConfigLocation = dirname(maybe);
             break;
           }
         }
       }
-      if (vitestWorkspaceConfig) {
+      if (vitestConfigLocation) {
         break;
       }
     }
@@ -123,7 +123,8 @@ export class VitestManager {
 
     try {
       this.vitest = await createVitest('test', {
-        root: vitestWorkspaceConfig ?? vitestConfigFallbackLocation,
+        root: vitestConfigLocation ?? vitestConfigFallbackLocation,
+        configLoader: this.testManager.configLoader,
         watch: true,
         passWithNoTests: false,
         project: [projectName],
@@ -186,6 +187,11 @@ export class VitestManager {
       try {
         await this.runningPromise;
         await this.vitest?.close();
+        // Drop the closed instance before restarting. The coverage reporter options passed to
+        // createVitest reference this manager, and Vitest deep-clones its options — on Vite 6
+        // that traversal reaches the closed module runner's `import.meta.env` proxy (an own
+        // property of ModuleRunner there), whose get trap throws on any dynamic access.
+        this.vitest = null;
         await this.startVitest({ coverage });
         resolve();
       } catch (e) {
@@ -202,12 +208,7 @@ export class VitestManager {
   }
 
   private updateLastChanged(filepath: string) {
-    // @ts-expect-error `server` only exists in Vitest 3
-    this.vitest!.projects.forEach(({ browser, vite, server }) => {
-      if (server) {
-        const serverMods = server.moduleGraph.getModulesByFile(filepath);
-        serverMods?.forEach((mod: any) => server.moduleGraph.invalidateModule(mod));
-      }
+    this.vitest!.projects.forEach(({ browser, vite }) => {
       if (vite) {
         const serverMods = vite.moduleGraph.getModulesByFile(filepath);
         serverMods?.forEach((mod) => vite.moduleGraph.invalidateModule(mod));
@@ -363,10 +364,19 @@ export class VitestManager {
     return { filteredTestSpecifications, filteredStoryIds };
   }
 
+  private getCurrentRunConfig() {
+    return this.testManager.store.getState().currentRun.config;
+  }
+
+  private provideRunConfig() {
+    this.vitest?.provide(STORYBOOK_TEST_PROVIDE_KEY, this.getCurrentRunConfig());
+  }
+
   async runTests(runPayload: TriggerRunEvent['payload']) {
-    const { watching, config } = this.testManager.store.getState();
+    const { watching } = this.testManager.store.getState();
+    const runConfig = this.getCurrentRunConfig();
     const coverageShouldBeEnabled =
-      config.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
+      !!runConfig.coverage && !watching && (runPayload?.storyIds?.length ?? 0) === 0;
     const currentCoverage = this.vitest?.config.coverage?.enabled;
 
     if (!this.vitest) {
@@ -376,6 +386,8 @@ export class VitestManager {
     } else {
       await this.vitestRestartPromise;
     }
+
+    this.provideRunConfig();
 
     this.resetGlobalTestNamePattern();
 
@@ -519,6 +531,7 @@ export class VitestManager {
         }));
         await this.vitest!.cancelCurrentRun('keyboard-input');
         await this.runningPromise;
+        this.provideRunConfig();
         await this.vitest!.runTestSpecifications(filteredTestSpecifications, false);
       },
     });

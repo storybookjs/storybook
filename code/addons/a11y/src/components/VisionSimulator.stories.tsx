@@ -3,8 +3,8 @@ import type { PlayFunction, PlayFunctionContext } from 'storybook/internal/types
 import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, screen } from 'storybook/test';
 
-import preview from '../../../../.storybook/preview';
-import { VisionSimulator } from './VisionSimulator';
+import preview from '../../../../.storybook/preview.tsx';
+import { VisionSimulator } from './VisionSimulator.tsx';
 
 const managerContext: any = {
   state: {},

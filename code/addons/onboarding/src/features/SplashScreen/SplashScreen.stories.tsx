@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { SplashScreen } from './SplashScreen';
+import { SplashScreen } from './SplashScreen.tsx';
 
 const meta = {
   component: SplashScreen,

@@ -6,8 +6,8 @@ import { CrossIcon, ExpandIcon } from '@storybook/icons';
 
 import { fn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { TabsView } from './TabsView';
+import preview from '../../../../../.storybook/preview.tsx';
+import { TabsView } from './TabsView.tsx';
 
 const DEFAULT_TABS = [
   { id: 'tab1', title: 'Tab 1', children: () => <div>Content for Tab 1</div> },

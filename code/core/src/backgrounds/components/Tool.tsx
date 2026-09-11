@@ -6,9 +6,14 @@ import { CircleIcon, GridIcon, PhotoIcon } from '@storybook/icons';
 
 import { useGlobals, useParameter } from 'storybook/manager-api';
 
-import { PARAM_KEY as KEY } from '../constants';
-import { DEFAULT_BACKGROUNDS } from '../defaults';
-import type { Background, BackgroundMap, BackgroundsParameters, GlobalStateUpdate } from '../types';
+import { PARAM_KEY as KEY } from '../constants.ts';
+import { DEFAULT_BACKGROUNDS } from '../defaults.ts';
+import type {
+  Background,
+  BackgroundMap,
+  BackgroundsParameters,
+  GlobalStateUpdate,
+} from '../types.ts';
 
 export const BackgroundTool = memo(function BackgroundSelector() {
   const config = useParameter<BackgroundsParameters['backgrounds']>(KEY);

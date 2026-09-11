@@ -12,11 +12,11 @@ import type {
   StrictArgs,
 } from 'storybook/internal/types';
 
-import type { Constructor, RemoveIndexSignature, SetOptional, Simplify } from 'type-fest';
+import type { Constructor, OmitIndexSignature, SetOptional, Simplify } from 'type-fest';
 import type { FunctionalComponent, VNodeChild } from 'vue';
 import type { ComponentProps, ComponentSlots } from 'vue-component-type-helpers';
 
-import type { VueRenderer } from './types';
+import type { VueRenderer } from './types.ts';
 
 export type { Args, ArgTypes, Parameters, StrictArgs } from 'storybook/internal/types';
 export type { VueRenderer };
@@ -62,7 +62,7 @@ export type StoryObj<TMetaOrCmpOrArgs = Args> = TMetaOrCmpOrArgs extends {
     : never
   : StoryAnnotations<VueRenderer, ComponentPropsOrProps<TMetaOrCmpOrArgs>>;
 
-type ExtractSlots<C> = AllowNonFunctionSlots<Partial<RemoveIndexSignature<ComponentSlots<C>>>>;
+type ExtractSlots<C> = AllowNonFunctionSlots<Partial<OmitIndexSignature<ComponentSlots<C>>>>;
 
 type AllowNonFunctionSlots<Slots> = {
   [K in keyof Slots]: Slots[K] | VNodeChild;

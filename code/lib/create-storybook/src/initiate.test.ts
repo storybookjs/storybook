@@ -7,12 +7,10 @@
  */
 import { describe, expect, it, vi } from 'vitest';
 
-import { VersionService } from './services/VersionService';
+import { VersionService } from './services/VersionService.ts';
 
 // Create a version service instance for testing
 const versionService = new VersionService();
-const getStorybookVersionFromAncestry =
-  versionService.getStorybookVersionFromAncestry.bind(versionService);
 const getCliIntegrationFromAncestry =
   versionService.getCliIntegrationFromAncestry.bind(versionService);
 
@@ -20,70 +18,19 @@ vi.mock('storybook/internal/telemetry');
 
 vi.mock('storybook/internal/core-server', () => ({
   getServerPort: vi.fn().mockResolvedValue(6006),
+  withTelemetry: vi.fn(),
 }));
 
-describe('getStorybookVersionFromAncestry', () => {
-  it('possible storybook path', () => {
-    const ancestry = [{ command: 'node' }, { command: 'storybook@7.0.0' }, { command: 'npm' }];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBeUndefined();
-  });
-
-  it('create storybook', () => {
-    const ancestry = [
-      { command: 'node' },
-      { command: 'npm create storybook@7.0.0-alpha.3' },
-      { command: 'npm' },
-    ];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('7.0.0-alpha.3');
-  });
-
-  it('storybook init', () => {
-    const ancestry = [
-      { command: 'node' },
-      { command: 'npx storybook@7.0.0 init' },
-      { command: 'npm' },
-    ];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('7.0.0');
-  });
-
-  it('storybook init no version', () => {
-    const ancestry = [{ command: 'node' }, { command: 'npx storybook init' }, { command: 'npm' }];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBeUndefined();
-  });
-
-  it('create-storybook with latest', () => {
-    const ancestry = [
-      { command: 'node' },
-      { command: 'npx create-storybook@latest' },
-      { command: 'npm' },
-    ];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('latest');
-  });
-
-  it('foo-storybook with latest', () => {
-    const ancestry = [
-      { command: 'node' },
-      { command: 'npx foo-storybook@latest' },
-      { command: 'npm' },
-    ];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBeUndefined();
-  });
-
-  it('multiple matches', () => {
-    const ancestry = [
-      { command: 'node' },
-      { command: 'npx create-storybook@foo' },
-      { command: 'npm' },
-      { command: 'npx create-storybook@bar' },
-    ];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBe('bar');
-  });
-
-  it('returns undefined if no storybook version found', () => {
-    const ancestry = [{ command: 'node' }, { command: 'npm' }];
-    expect(getStorybookVersionFromAncestry(ancestry as any)).toBeUndefined();
-  });
-});
+vi.mock('storybook/internal/node-logger', () => ({
+  logTracker: {
+    writeToFile: vi.fn().mockResolvedValue('/tmp/debug-storybook.log'),
+  },
+  logger: {
+    error: vi.fn(),
+    log: vi.fn(),
+    outro: vi.fn(),
+  },
+}));
 
 describe('getCliIntegrationFromAncestry', () => {
   it('returns the CLI integration if nested calls', () => {

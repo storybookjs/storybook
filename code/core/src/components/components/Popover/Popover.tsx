@@ -4,7 +4,7 @@ import { CloseIcon } from '@storybook/icons';
 
 import { lighten, styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
+import { Button } from '../Button/Button.tsx';
 
 export interface PopoverProps extends HTMLAttributes<HTMLDivElement> {
   /** Content of the popover. */
@@ -48,6 +48,7 @@ const Wrapper = styled.div<{
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
           borderRadius: theme.appBorderRadius + 2,
+          fontFamily: theme.typography.fonts.base,
           fontSize: theme.typography.size.s1,
         }
       : {},

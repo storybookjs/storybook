@@ -3,10 +3,10 @@ import type { PlayFunction } from 'storybook/internal/csf';
 import { ManagerContext } from 'storybook/manager-api';
 import { fn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { initialState } from '../../../shared/checklist-store/checklistData.state';
-import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock';
-import { ChecklistWidget } from './ChecklistWidget';
+import preview from '../../../../../.storybook/preview.tsx';
+import { initialState } from '../../../shared/checklist-store/checklistData.state.ts';
+import { internal_universalChecklistStore as mockStore } from '../../manager-stores.mock.ts';
+import { ChecklistWidget } from './ChecklistWidget.tsx';
 
 const managerContext: any = {
   state: {},
@@ -93,4 +93,23 @@ export const Default = meta.story({
 export const Narrow = meta.story({
   decorators: [(Story) => <div style={{ width: 200, height: 250 }}>{Story()}</div>],
   play,
+});
+
+const withAiSetupState = {
+  loaded: true,
+  aiOptIn: true,
+  aiSetupRun: true,
+  widget: {},
+  items: {
+    ...initialState.items,
+    // aiSetup is intentionally left 'open' so it appears in the widget's task list
+    controls: { status: 'accepted' as const },
+    renderComponent: { status: 'done' as const },
+  },
+};
+
+export const WithAiSetup = meta.story({
+  beforeEach: async () => {
+    mockStore.setState(withAiSetupState);
+  },
 });

@@ -4,8 +4,8 @@ import React, { Fragment } from 'react';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 import type { Addon_WrapperType } from 'storybook/internal/types';
 
-import { IframeWrapper } from './utils/components';
-import type { ApplyWrappersProps } from './utils/types';
+import { IframeWrapper } from './utils/components.ts';
+import type { ApplyWrappersProps } from './utils/types.tsx';
 
 export const ApplyWrappers: FC<PropsWithChildren<ApplyWrappersProps>> = ({
   wrappers,

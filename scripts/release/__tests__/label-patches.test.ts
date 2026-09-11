@@ -3,10 +3,10 @@ import { beforeEach, expect, it, vi } from 'vitest';
 import ansiRegex from 'ansi-regex';
 import type { LogResult } from 'simple-git';
 
-import { run } from '../label-patches';
-import * as githubInfo_ from '../utils/get-github-info';
-import * as gitClient_ from '../utils/git-client';
-import * as github_ from '../utils/github-client';
+import { run } from '../label-patches.ts';
+import * as githubInfo_ from '../utils/get-github-info.ts';
+import * as gitClient_ from '../utils/git-client.ts';
+import * as github_ from '../utils/github-client.ts';
 
 vi.mock('uuid');
 vi.mock('../utils/get-github-info');
@@ -70,6 +70,23 @@ const pullInfoMock = {
   },
 };
 
+function expectAddPatchDoneLabelCalls(labelableIds: string[]) {
+  expect(github.githubGraphQlClient.mock.calls).toHaveLength(labelableIds.length);
+
+  for (const [index, labelableId] of labelableIds.entries()) {
+    const [mutation, variables] = github.githubGraphQlClient.mock.calls[index];
+
+    expect(mutation).toContain('addLabelsToLabelable');
+    expect(variables).toEqual({
+      input: {
+        clientMutationId: expect.any(String),
+        labelIds: ['pick-id'],
+        labelableId,
+      },
+    });
+  }
+}
+
 beforeEach(() => {
   gitClient.getLatestTag.mockResolvedValue('v7.2.1');
   gitClient.git.log.mockResolvedValue(gitLogMock);
@@ -107,28 +124,7 @@ it('should label the PR associated with cherry picks in the current branch', asy
   const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
 
   await run({});
-  expect(github.githubGraphQlClient.mock.calls).toMatchInlineSnapshot(`
-    [
-      [
-        "
-          mutation ($input: AddLabelsToLabelableInput!) {
-            addLabelsToLabelable(input: $input) {
-              clientMutationId
-            }
-          }
-        ",
-        {
-          "input": {
-            "clientMutationId": "7efda802-d7d1-5d76-97d6-cc16a9f3e357",
-            "labelIds": [
-              "pick-id",
-            ],
-            "labelableId": "pr_id",
-          },
-        },
-      ],
-    ]
-  `);
+  expectAddPatchDoneLabelCalls(['pr_id']);
 
   const stderrCalls = writeStderr.mock.calls
     .map(([text]) =>
@@ -167,46 +163,7 @@ it('should label all PRs when the --all flag is passed', async () => {
   const writeStderr = vi.spyOn(process.stderr, 'write').mockImplementation((() => {}) as any);
 
   await run({ all: true });
-  expect(github.githubGraphQlClient.mock.calls).toMatchInlineSnapshot(`
-    [
-      [
-        "
-          mutation ($input: AddLabelsToLabelableInput!) {
-            addLabelsToLabelable(input: $input) {
-              clientMutationId
-            }
-          }
-        ",
-        {
-          "input": {
-            "clientMutationId": "39cffd21-7933-56e4-9d9c-1afeda9d5906",
-            "labelIds": [
-              "pick-id",
-            ],
-            "labelableId": "some-id",
-          },
-        },
-      ],
-      [
-        "
-          mutation ($input: AddLabelsToLabelableInput!) {
-            addLabelsToLabelable(input: $input) {
-              clientMutationId
-            }
-          }
-        ",
-        {
-          "input": {
-            "clientMutationId": "cc31033b-5da7-5c9e-adf2-80a2963e19a8",
-            "labelIds": [
-              "pick-id",
-            ],
-            "labelableId": "other-id",
-          },
-        },
-      ],
-    ]
-  `);
+  expectAddPatchDoneLabelCalls(['some-id', 'other-id']);
 
   const stderrCalls = writeStderr.mock.calls
     .map(([text]) =>

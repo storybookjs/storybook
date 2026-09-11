@@ -6,7 +6,7 @@ import { getProjectRoot, getStoryId } from 'storybook/internal/common';
 import type { CreateNewStoryRequestPayload } from 'storybook/internal/core-events';
 import type { Options } from 'storybook/internal/types';
 
-import { getNewStoryFile } from './get-new-story-file';
+import { getNewStoryFile } from './get-new-story-file.ts';
 
 export interface GenerateStoryResult {
   success: boolean;

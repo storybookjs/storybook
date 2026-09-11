@@ -1,10 +1,13 @@
 import { JsPackageManagerFactory, versions } from 'storybook/internal/common';
 
-import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add';
+import type { PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 
 export default async function postinstall(options: PostinstallOptions) {
+  const useRemotePkg = options.useRemotePkg ?? !!options.skipInstall;
   const args = [
-    options.skipInstall ? `storybook@${versions.storybook}` : `storybook`,
+    // A versioned spec only resolves through the ephemeral runner; the local
+    // binary is invoked by bare name.
+    useRemotePkg ? `storybook@${versions.storybook}` : `storybook`,
     'automigrate',
     'addon-a11y-addon-test',
   ];
@@ -29,5 +32,12 @@ export default async function postinstall(options: PostinstallOptions) {
     configDir: options.configDir,
   });
 
-  await jsPackageManager.runPackageCommand({ args, useRemotePkg: !!options.skipInstall });
+  // stdin must not be left as an open pipe: the nested CLI (and the npm exec layers in between)
+  // never receive EOF on it and block forever, which freezes the outer upgrade/add command
+  // without any output. stdout/stderr stay piped so a failure still carries the child's output.
+  await jsPackageManager.runPackageCommand({
+    args,
+    stdio: ['ignore', 'pipe', 'pipe'],
+    useRemotePkg,
+  });
 }

@@ -1,5 +1,5 @@
-import { execCommandCountLines } from './exec-command-count-lines';
-import { runTelemetryOperation } from './run-telemetry-operation';
+import { execCommandCountLines } from './exec-command-count-lines.ts';
+import { runTelemetryOperation } from './run-telemetry-operation.ts';
 
 export const getPortableStoriesFileCountUncached = async (path?: string) => {
   try {

@@ -2,7 +2,7 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { useCallback, useEffect } from 'storybook/preview-api';
 
-import { filterDefs, filters } from './visionSimulatorFilters';
+import { filterDefs, filters } from './visionSimulatorFilters.ts';
 
 const knownFilters = Object.values(filters).map((f) => f.filter);
 const knownFiltersRegExp = new RegExp(`\\b(${knownFilters.join('|')})\\b`, 'g');

@@ -6,7 +6,7 @@ import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
-import type { Fix } from '../types';
+import type { Fix } from '../types.ts';
 
 interface Options {
   previewConfig: ConfigFile;

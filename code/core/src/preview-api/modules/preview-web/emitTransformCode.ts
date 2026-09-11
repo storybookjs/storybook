@@ -1,7 +1,7 @@
 import type { Args, StoryContext } from 'storybook/internal/csf';
 
-import { SNIPPET_RENDERED } from '../../../docs-tools';
-import { addons } from '../addons';
+import { SNIPPET_RENDERED } from '../../../docs-tools/index.ts';
+import { addons } from '../addons/index.ts';
 
 type ReducedStoryContext = Omit<
   StoryContext<any, Args>,
@@ -12,7 +12,11 @@ type Transformer =
   | ((code: string, storyContext: ReducedStoryContext) => string | Promise<string>)
   | undefined;
 
-export async function emitTransformCode(source: string | undefined, context: ReducedStoryContext) {
+export async function emitTransformCode(
+  source: string | undefined,
+  context: ReducedStoryContext,
+  warning?: string
+) {
   const transform = context.parameters?.docs?.source?.transform as Transformer;
   const { id, unmappedArgs } = context;
 
@@ -23,5 +27,6 @@ export async function emitTransformCode(source: string | undefined, context: Red
     id,
     source: result,
     args: unmappedArgs,
+    warning,
   });
 }

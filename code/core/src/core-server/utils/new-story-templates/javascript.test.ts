@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getJavaScriptTemplateForNewStoryFile } from './javascript';
+import { getJavaScriptTemplateForNewStoryFile } from './javascript.ts';
 
 describe('javascript', () => {
   it('should return a TypeScript template with a default import', async () => {

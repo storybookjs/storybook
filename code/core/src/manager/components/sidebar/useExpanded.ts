@@ -9,9 +9,9 @@ import { throttle } from 'es-toolkit/function';
 import type { StoriesHash } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
-import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import { getAncestorIds, getDescendantIds, isAncestor, scrollIntoView } from '../../utils/tree';
-import type { Highlight } from './types';
+import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
+import { getAncestorIds, getDescendantIds, isAncestor, scrollIntoView } from '../../utils/tree.ts';
+import type { Highlight } from './types.ts';
 
 const { document } = global;
 

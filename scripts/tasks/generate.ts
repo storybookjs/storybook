@@ -2,8 +2,8 @@ import { access, rm } from 'node:fs/promises';
 
 import { join } from 'path';
 
-import type { Task } from '../task';
-import { REPROS_DIRECTORY } from '../utils/constants';
+import type { Task } from '../task.ts';
+import { REPROS_DIRECTORY } from '../utils/constants.ts';
 
 const logger = console;
 
@@ -37,7 +37,7 @@ export const generate: Task = {
     }
 
     // This uses an async import as it depends on `lib/cli` which requires `code` to be installed.
-    const { generate: generateRepro } = await import('../sandbox/generate');
+    const { generate: generateRepro } = await import('../sandbox/generate.ts');
 
     await generateRepro({
       templates: [details.key],

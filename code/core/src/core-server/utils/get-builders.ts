@@ -1,10 +1,10 @@
 import { MissingBuilderError } from 'storybook/internal/server-errors';
 import type { Builder, Options } from 'storybook/internal/types';
 
-import { importModule } from '../../shared/utils/module';
+import { importModule } from '../../shared/utils/module.ts';
 
 export async function getManagerBuilder(): Promise<Builder<unknown>> {
-  return await import('../../builder-manager/index');
+  return await import('../../builder-manager/index.ts');
 }
 
 export async function getPreviewBuilder(resolvedPreviewBuilder: string): Promise<Builder<unknown>> {

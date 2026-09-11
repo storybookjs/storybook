@@ -5,8 +5,8 @@ import type { API_HashEntry } from 'storybook/internal/types';
 
 import { type API } from 'storybook/manager-api';
 
-import { useTestProvider } from '../use-test-provider-state';
-import { TestProviderRender } from './TestProviderRender';
+import { useTestProvider } from '../use-test-provider-state.ts';
+import { TestProviderRender } from './TestProviderRender.tsx';
 
 type SidebarContextMenuProps = {
   api: API;

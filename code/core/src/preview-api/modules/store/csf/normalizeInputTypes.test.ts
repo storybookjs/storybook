@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeInputType, normalizeInputTypes } from './normalizeInputTypes';
+import { normalizeInputType, normalizeInputTypes } from './normalizeInputTypes.ts';
 
 describe('normalizeInputType', () => {
   it('normalizes strict types and sets disable: false when type is present', () => {

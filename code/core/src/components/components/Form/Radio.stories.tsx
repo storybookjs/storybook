@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Radio as Component } from './Radio';
+import { Radio as Component } from './Radio.tsx';
 
 const meta = {
   component: Component,

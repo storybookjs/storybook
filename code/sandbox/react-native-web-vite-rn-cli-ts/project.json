@@ -12,11 +12,17 @@
     "react-native-web-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "react-native-web-vite-rn-cli-ts" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "react-native-web-vite-rn-cli-ts"
+      }
+    },
     "dev": {},
-    "build": { "options": { "dir": "react-native-web-vite-rn-cli-ts" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "react-native-web-vite-rn-cli-ts"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

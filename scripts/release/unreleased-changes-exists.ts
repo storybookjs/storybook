@@ -4,10 +4,10 @@ import { intersection } from 'es-toolkit/array';
 import picocolors from 'picocolors';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain';
-import { getCurrentVersion } from './get-current-version';
-import type { Change } from './utils/get-changes';
-import { RELEASED_LABELS, getChanges } from './utils/get-changes';
+import { esMain } from '../utils/esmain.ts';
+import { getCurrentVersion } from './get-current-version.ts';
+import type { Change } from './utils/get-changes.ts';
+import { RELEASED_LABELS, getChanges } from './utils/get-changes.ts';
 
 program
   .name('are-changes-unreleased')

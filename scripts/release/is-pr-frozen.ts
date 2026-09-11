@@ -5,9 +5,9 @@ import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
 
-import { esMain } from '../utils/esmain';
-import { getPullInfoFromCommit } from './utils/get-github-info';
-import { git } from './utils/git-client';
+import { esMain } from '../utils/esmain.ts';
+import { getPullInfoFromCommit } from './utils/get-github-info.ts';
+import { git } from './utils/git-client.ts';
 
 program
   .name('is-pr-frozen')

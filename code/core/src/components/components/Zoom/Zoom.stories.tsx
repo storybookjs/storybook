@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react';
 import React, { useEffect, useState } from 'react';
 
-import { Zoom } from './Zoom';
+import { Zoom } from './Zoom.tsx';
 
 export default {
   component: Zoom,

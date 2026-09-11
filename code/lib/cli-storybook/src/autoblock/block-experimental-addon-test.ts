@@ -1,7 +1,7 @@
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
-import { createBlocker } from './types';
+import { createBlocker } from './types.ts';
 
 export const blocker = createBlocker({
   id: 'experimentalAddonTestVitest',

@@ -6,12 +6,18 @@ import { SupportedBuilder, SupportedFramework } from 'storybook/internal/types';
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
 
+import { createPromptCancelOptions } from '../prompt-cancel.ts';
+import { TelemetryService } from './TelemetryService.ts';
+
 const viteConfigFiles = ['vite.config.ts', 'vite.config.js', 'vite.config.mjs'];
 const webpackConfigFiles = ['webpack.config.js'];
 const rsbuildConfigFiles = ['rsbuild.config.ts', 'rsbuild.config.js', 'rsbuild.config.mjs'];
 
 export class FrameworkDetectionService {
-  constructor(private jsPackageManager: JsPackageManager) {}
+  constructor(
+    private jsPackageManager: JsPackageManager,
+    private telemetryService = new TelemetryService()
+  ) {}
 
   detectFramework(renderer: SupportedRenderer, builder: SupportedBuilder): SupportedFramework {
     if (Object.values(SupportedFramework).includes(renderer as any)) {
@@ -64,15 +70,18 @@ export class FrameworkDetectionService {
       { label: 'Rsbuild', value: SupportedBuilder.RSBUILD },
     ];
 
-    return prompt.select({
-      message: dedent`
+    return prompt.select(
+      {
+        message: dedent`
       ${
         detectedBuilders.length > 1
           ? 'Multiple builders were detected in your project. Please select one:'
           : 'We were not able to detect the right builder for your project. Please select one:'
       }
       `,
-      options,
-    });
+        options,
+      },
+      createPromptCancelOptions(this.telemetryService, 'builder-selection')
+    );
   }
 }

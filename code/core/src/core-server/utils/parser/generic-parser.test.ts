@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { GenericParser } from './generic-parser';
+import { GenericParser } from './generic-parser.ts';
 
 const genericParser = new GenericParser();
 

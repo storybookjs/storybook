@@ -8,8 +8,8 @@ import type {
   NormalizedComponentAnnotations,
 } from 'storybook/internal/types';
 
-import { normalizeComponentAnnotations } from './normalizeComponentAnnotations';
-import { normalizeStory } from './normalizeStory';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
+import { normalizeStory } from './normalizeStory.ts';
 
 const checkGlobals = (parameters: Parameters) => {
   const { globals, globalTypes } = parameters;

@@ -17,7 +17,7 @@ import * as TEST from 'storybook/test';
 import * as THEMING from 'storybook/theming';
 import * as THEMINGCREATE from 'storybook/theming/create';
 
-import type { globalsNameReferenceMap } from './globals';
+import type { globalsNameReferenceMap } from './globals.ts';
 
 // Here we map the name of a module to their VALUE in the global scope.
 export const globalsNameValueMap: Required<Record<keyof typeof globalsNameReferenceMap, any>> = {

@@ -5,8 +5,8 @@ import { logger } from 'storybook/internal/node-logger';
 import type { BuilderContext } from '@angular-devkit/architect';
 import { logging } from '@angular-devkit/core';
 
-import { getBuilderOptions } from './framework-preset-angular-cli';
-import type { PresetOptions } from './preset-options';
+import { getBuilderOptions } from './framework-preset-angular-cli.ts';
+import type { PresetOptions } from './preset-options.ts';
 import { Channel } from 'storybook/internal/channels';
 
 // Mock all dependencies

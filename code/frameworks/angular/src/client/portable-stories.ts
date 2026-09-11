@@ -7,8 +7,8 @@ import type {
   NormalizedProjectAnnotations,
 } from 'storybook/internal/types';
 
-import * as INTERNAL_DEFAULT_PROJECT_ANNOTATIONS from './render';
-import type { AngularRenderer } from './types';
+import * as INTERNAL_DEFAULT_PROJECT_ANNOTATIONS from './render.ts';
+import type { AngularRenderer } from './types.ts';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

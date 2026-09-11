@@ -5,8 +5,8 @@ import { fn } from 'storybook/test';
 export * from 'next/dist/server/request/headers.js';
 
 // mock utilities/overrides (as of Next v14.2.0)
-export { headers } from './headers';
-export { cookies } from './cookies';
+export { headers } from './headers.ts';
+export { cookies } from './cookies.ts';
 
 // passthrough mocks - keep original implementation but allow for spying
 // In Next.js 14, draftMode is exported from 'next/dist/client/components/headers'

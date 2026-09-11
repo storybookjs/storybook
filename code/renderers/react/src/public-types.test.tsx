@@ -14,8 +14,8 @@ import { fn } from 'storybook/test';
 import type { Mock } from 'storybook/test';
 import type { SetOptional } from 'type-fest';
 
-import type { Decorator, Meta, StoryObj } from './public-types';
-import type { ReactRenderer } from './types';
+import type { Decorator, Meta, StoryObj } from './public-types.ts';
+import type { ReactRenderer } from './types.ts';
 
 type ReactStory<TArgs, TRequiredArgs> = StoryAnnotations<ReactRenderer, TArgs, TRequiredArgs>;
 

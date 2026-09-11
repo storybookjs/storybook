@@ -1,5 +1,5 @@
-import { combinedRulesMap } from './AccessibilityRuleMaps';
-import type { EnhancedResult } from './types';
+import { combinedRulesMap } from './AccessibilityRuleMaps.ts';
+import type { EnhancedResult } from './types.ts';
 
 export const getTitleForAxeResult = (axeResult: EnhancedResult): string =>
   combinedRulesMap[axeResult.id]?.title || axeResult.id;

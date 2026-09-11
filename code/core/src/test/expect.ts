@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-ts-comment */
+// TODO SB11: Upgrade @testing-library/jest-dom to v7+ across the monorepo.
 import * as matchers from '@testing-library/jest-dom/matchers';
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 
@@ -20,7 +21,7 @@ import {
 } from '@vitest/expect';
 import * as chai from 'chai';
 
-import type { PromisifyObject } from './utils';
+import type { PromisifyObject } from './utils.ts';
 
 type Matchers<T> = PromisifyObject<JestAssertion<T>> &
   TestingLibraryMatchers<ReturnType<ExpectStatic['stringContaining']>, Promise<void>>;

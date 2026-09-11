@@ -1,11 +1,11 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import { useLandmark } from '../../hooks/useLandmark';
-import { HighlightStyles } from './HighlightStyles';
-import { Ref } from './Refs';
-import type { CombinedDataset, Selection } from './types';
-import { useHighlighted } from './useHighlighted';
+import { useLandmark } from '../../hooks/useLandmark.ts';
+import { HighlightStyles } from './HighlightStyles.tsx';
+import { Ref } from './Refs.tsx';
+import type { CombinedDataset, Selection } from './types.ts';
+import { useHighlighted } from './useHighlighted.ts';
 
 export interface ExplorerProps {
   className?: string;

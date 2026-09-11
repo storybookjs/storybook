@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import { enhanceArgTypes } from './enhanceArgTypes';
+import { enhanceArgTypes } from './enhanceArgTypes.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => JSON.stringify(val, null, 2),

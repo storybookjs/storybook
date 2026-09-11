@@ -15,6 +15,8 @@ export function argsHash(args: Args): ArgsHash {
 export interface SourceItem {
   code: string;
   format?: SyntaxHighlighterFormatTypes;
+  /** Why `code` is an incomplete example, when it is one; see `StoryDoc.warning`. */
+  warning?: string;
 }
 
 export type StorySources = Record<StoryId, Record<ArgsHash, SourceItem>>;
@@ -31,6 +33,7 @@ type SnippetRenderedEvent = {
   source: string;
   args?: Args;
   format?: SyntaxHighlighterFormatTypes;
+  warning?: string;
 };
 
 export const UNKNOWN_ARGS_HASH = '--unknown--';
@@ -52,6 +55,7 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
         args = undefined,
         source,
         format,
+        warning = undefined,
       } = typeof idOrEvent === 'string'
         ? {
             id: idOrEvent,
@@ -75,7 +79,7 @@ export const SourceContainer: FC<PropsWithChildren<{ channel: DocsContextProps['
           ...current,
           [id]: {
             ...current[id],
-            [hash]: { code: source || '', format },
+            [hash]: { code: source || '', format, warning },
           },
         };
 

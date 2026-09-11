@@ -1,7 +1,3 @@
 if [ -z "$SKIP_STORYBOOK_GIT_HOOKS" ]; then
-  cd code
-  yarn lint-staged
-
-  cd ../scripts
   yarn lint-staged
 fi

@@ -8,8 +8,8 @@ import {
   setDefaultProjectAnnotations,
 } from 'storybook/preview-api';
 
-import * as webComponentsAnnotations from './entry-preview';
-import type { WebComponentsRenderer } from './types';
+import * as webComponentsAnnotations from './entry-preview.ts';
+import type { WebComponentsRenderer } from './types.ts';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

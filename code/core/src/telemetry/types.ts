@@ -2,9 +2,9 @@ import type { StorybookConfig, TypescriptOptions } from 'storybook/internal/type
 
 import type { DetectResult } from 'package-manager-detector';
 
-import type { AgentInfo } from './detect-agent';
-import type { KnownPackagesList } from './get-known-packages';
-import type { MonorepoType } from './get-monorepo-type';
+import type { MonorepoType } from '../shared/utils/get-monorepo-type.ts';
+import type { AgentInfo } from './detect-agent.ts';
+import type { KnownPackagesList } from './get-known-packages.ts';
 
 export type EventType =
   | 'boot'
@@ -43,8 +43,18 @@ export type EventType =
   | 'migrate'
   | 'preview-first-load'
   | 'doctor'
+  | 'review'
   | 'share'
-  | 'ghost-stories';
+  | 'ghost-stories'
+  | 'sidebar-filter'
+  | 'tools-command'
+  | 'skills-get'
+  | 'ai-command'
+  | 'ai-init-opt-in'
+  | 'ai-prompt-nudge'
+  | 'ai-setup'
+  | 'ai-setup-final-scoring'
+  | 'ai-setup-self-healing-scoring';
 export interface Dependency {
   version: string | undefined;
   versionSpecifier?: string;
@@ -73,7 +83,7 @@ export type StorybookMetadata = {
     type: DetectResult['name'];
     version: DetectResult['version'];
     agent: DetectResult['agent'];
-    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
+    nodeLinker: NodeLinker;
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;
@@ -88,8 +98,26 @@ export type StorybookMetadata = {
   hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;
+  /**
+   * Whether the project customizes webpack — through `webpackFinal` in the Storybook config, or
+   * (for Next.js projects) through the `webpack` option of `next.config.*`.
+   */
   hasCustomWebpack?: boolean;
+  /** Whether the Storybook config defines `viteFinal`. */
+  hasCustomVite?: boolean;
   hasCustomBabel?: boolean;
+  /**
+   * Whether a Next.js project's scripts opt into Turbopack via an explicit `--turbopack` /
+   * `--webpack` flag. `undefined` when no such flag is present (ambiguous from Next.js 16
+   * onwards, where Turbopack is the default) or when the project isn't using Next.js.
+   */
+  hasTurbopack?: boolean;
+  /**
+   * Whether the project has a Module Federation package installed (e.g. `@module-federation/*`
+   * or `@originjs/vite-plugin-federation`). This can't detect projects that configure webpack's
+   * built-in `ModuleFederationPlugin` directly without one of these packages.
+   */
+  hasModuleFederation?: boolean;
   features?: StorybookConfig['features'];
   refCount?: number;
   preview?: {
@@ -103,9 +131,21 @@ export interface Payload {
   [key: string]: any;
 }
 
+export type PayloadFactory = () => Payload | Promise<Payload>;
+
+export type PayloadInput = Payload | PayloadFactory;
+
 export interface Context {
   [key: string]: any;
 }
+
+export type YarnNodeLinker = 'node-modules' | 'pnp' | 'pnpm';
+
+export type PnpmNodeLinker = 'isolated' | 'hoisted' | 'pnp';
+
+// node_modules is Storybook's label for package managers without a linker setting, distinct from
+// Yarn Berry's node-modules so the telemetry data stays comparable over time.
+export type NodeLinker = 'node_modules' | YarnNodeLinker | PnpmNodeLinker;
 
 export interface Options {
   retryDelay: number;
@@ -114,6 +154,10 @@ export interface Options {
   enableCrashReports?: boolean;
   stripMetadata?: boolean;
   notify?: boolean;
+  /** Override the event timestamp. Used when flushing queued events to preserve original timing. */
+  timestamp?: number;
+  /** When true, bypass the disabled state. Used for error telemetry with enableCrashReports. */
+  force?: boolean;
 }
 
 export interface TelemetryData {
@@ -130,7 +174,13 @@ export interface TelemetryEvent extends TelemetryData {
 
 export interface InitPayload {
   projectType: string;
-  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean };
+  features: {
+    dev: boolean;
+    docs: boolean;
+    test: boolean;
+    onboarding: boolean;
+    ai: boolean;
+  };
   newUser: boolean;
   versionSpecifier: string | undefined;
   cliIntegration: string | undefined;

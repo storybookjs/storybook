@@ -4,10 +4,10 @@ import { Channel } from 'storybook/internal/channels';
 import { Tag } from 'storybook/internal/core-server';
 import type { DocsIndexEntry, RenderContextCallbacks, Renderer } from 'storybook/internal/types';
 
-import type { StoryStore } from '../../store';
-import { csfFileParts } from '../docs-context/test-utils';
-import { MdxDocsRender } from './MdxDocsRender';
-import { PREPARE_ABORTED } from './Render';
+import type { StoryStore } from '../../store/index.ts';
+import { csfFileParts } from '../docs-context/test-utils.ts';
+import { MdxDocsRender } from './MdxDocsRender.ts';
+import { PREPARE_ABORTED } from './Render.ts';
 
 const entry = {
   type: 'docs',
@@ -112,6 +112,20 @@ describe('attaching', () => {
     const context = render.docsContext(vi.fn());
 
     expect(context.storyById()).toEqual(story);
+  });
+
+  it('sets filterByAutodocs to false for MDX pages', async () => {
+    const render = new MdxDocsRender(
+      new Channel({}),
+      store,
+      attachedEntry,
+      {} as RenderContextCallbacks<Renderer>
+    );
+    await render.prepare();
+
+    const context = render.docsContext(vi.fn());
+
+    expect(context.filterByAutodocs).toBe(false);
   });
 });
 

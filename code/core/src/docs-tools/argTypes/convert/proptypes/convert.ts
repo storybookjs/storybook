@@ -2,8 +2,8 @@ import type { SBType } from 'storybook/internal/types';
 
 import { mapValues } from 'es-toolkit/object';
 
-import { parseLiteral } from '../utils';
-import type { PTType } from './types';
+import { parseLiteral } from '../utils.ts';
+import type { PTType } from './types.ts';
 
 const SIGNATURE_REGEXP = /^\(.*\) => /;
 

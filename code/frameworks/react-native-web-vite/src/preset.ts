@@ -4,7 +4,7 @@ import type { InlineConfig } from 'vite';
 import { rnw } from 'vite-plugin-rnw';
 import tsconfigPaths from 'vite-tsconfig-paths';
 
-import type { FrameworkOptions, StorybookConfig } from './types';
+import type { FrameworkOptions, StorybookConfig } from './types.ts';
 
 const getExcludeOptions = (modulesToTranspile: string[]) => {
   const defaultModulesToTranspile = ['react-native', '@react-native', 'expo', '@expo'];

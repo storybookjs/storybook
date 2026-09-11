@@ -6,8 +6,8 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 
-import { TooltipLinkList } from './TooltipLinkList';
-import { WithTooltip } from './WithTooltip';
+import { TooltipLinkList } from './TooltipLinkList.tsx';
+import { WithTooltip } from './WithTooltip.tsx';
 import ellipseUrl from './assets/ellipse.png';
 
 const onLinkClick = action('onLinkClick');

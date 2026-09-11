@@ -3,7 +3,7 @@ import React from 'react';
 import AnsiToHtml from 'ansi-to-html';
 import { dedent } from 'ts-dedent';
 
-import type { DecoratorFunction } from '../csf';
+import type { DecoratorFunction } from '../csf/index.ts';
 
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,

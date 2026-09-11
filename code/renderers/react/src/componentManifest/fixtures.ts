@@ -1,4 +1,5 @@
 import { Tag } from 'storybook/internal/core-server';
+import type { IndexEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
@@ -190,4 +191,4 @@ export const indexJson = {
       exportName: 'LoggedOut',
     },
   },
-};
+} satisfies { v: number; entries: Record<string, IndexEntry> };

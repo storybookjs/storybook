@@ -1,9 +1,9 @@
 import prettyBytes from 'pretty-bytes';
 import prettyTime from 'pretty-ms';
 
-import type { Task } from '../task';
-import { dev, PORT as devPort } from './dev';
-import { serve, PORT as servePort } from './serve';
+import type { Task } from '../task.ts';
+import { dev, PORT as devPort } from './dev.ts';
+import { serve, PORT as servePort } from './serve.ts';
 
 const logger = console;
 
@@ -18,8 +18,8 @@ export const bench: Task = {
     const controllers: AbortController[] = [];
     try {
       const { disableDocs } = options;
-      const { browse } = await import('../bench/browse');
-      const { saveBench, loadBench } = await import('../bench/utils');
+      const { browse } = await import('../bench/browse.ts');
+      const { saveBench, loadBench } = await import('../bench/utils.ts');
 
       const devController = await dev.run(details, { ...options, debug: false });
       if (!devController) {

@@ -2,8 +2,8 @@ import { describe, expect, it, vi } from 'vitest';
 
 import npmlog from 'npmlog';
 
-import { logger } from '.';
-import * as loggerRaw from './logger/logger';
+import { logger } from './index.ts';
+import * as loggerRaw from './logger/logger.ts';
 
 vi.mock('./logger/logger', () => ({
   log: vi.fn(),

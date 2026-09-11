@@ -5,7 +5,7 @@ import type { Args, Globals } from 'storybook/internal/types';
 import { expectTypeOf } from 'expect-type';
 import { computed, reactive } from 'vue';
 
-import { updateArgs } from './render';
+import { updateArgs } from './render.ts';
 
 describe('Render Story', () => {
   it('update reactive Args updateArgs()', () => {
@@ -89,6 +89,12 @@ describe('Render Story', () => {
     updateArgs(reactiveArgs, newArgs);
 
     expect(reactiveArgs).toEqual({ objectArg: { argFoo: 'bar' } });
+  });
+
+  it('clears all args when nextArgs is empty -> updateArgs()', () => {
+    const reactiveArgs = reactive({ argFoo: 'foo', argBar: 'bar' });
+    updateArgs(reactiveArgs, {} as any);
+    expect(reactiveArgs).toEqual({});
   });
 
   it('update reactive Globals', async () => {

@@ -1,7 +1,7 @@
 import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
-import { withMargin, withReset } from '../lib/common';
+import { withMargin, withReset } from '../lib/common.tsx';
 
 export const Pre = styled.pre(({ theme }) => ({
   ...(withReset({ theme }) as CSSObject),

@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Renderer, StoryAnnotationsOrFn } from 'storybook/internal/types';
 
-import { normalizeStory } from './normalizeStory';
+import { normalizeStory } from './normalizeStory.ts';
 
 vi.mock('storybook/internal/client-logger');
 

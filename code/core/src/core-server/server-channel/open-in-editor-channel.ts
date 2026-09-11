@@ -5,20 +5,13 @@ import type {
 } from 'storybook/internal/core-events';
 import { OPEN_IN_EDITOR_REQUEST, OPEN_IN_EDITOR_RESPONSE } from 'storybook/internal/core-events';
 import { telemetry } from 'storybook/internal/telemetry';
-import type { CoreConfig, Options, StoryIndex } from 'storybook/internal/types';
 
 import launch from 'launch-editor';
 
-export async function initOpenInEditorChannel(
-  channel: Channel,
-  _options: Options,
-  coreOptions: CoreConfig
-) {
+export async function initOpenInEditorChannel(channel: Channel) {
   channel.on(OPEN_IN_EDITOR_REQUEST, async (payload: OpenInEditorRequestPayload) => {
     const sendTelemetry = (data: { success: boolean; error?: string }) => {
-      if (!coreOptions.disableTelemetry) {
-        telemetry('open-in-editor', data);
-      }
+      telemetry('open-in-editor', data);
     };
     try {
       const { file: targetFile, line, column } = payload;

@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { transformImportFiles } from './transform-imports';
+import { transformImportFiles } from './transform-imports.ts';
 
 const consolidatedPackages = {
   '@storybook/core-common': 'storybook/internal/common',

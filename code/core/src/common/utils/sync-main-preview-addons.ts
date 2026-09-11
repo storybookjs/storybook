@@ -10,8 +10,8 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
 
-import { getAddonAnnotations } from './get-addon-annotations';
-import { getAddonNames } from './get-addon-names';
+import { getAddonAnnotations } from './get-addon-annotations.ts';
+import { getAddonNames } from './get-addon-names.ts';
 
 export async function syncStorybookAddons(
   mainConfig: StorybookConfig,

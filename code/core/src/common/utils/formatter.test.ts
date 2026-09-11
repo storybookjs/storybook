@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { formatFileContent } from './formatter';
+import { formatFileContent } from './formatter.ts';
 
 const mockPrettier = vi.hoisted(() => ({
   resolveConfig: vi.fn(),

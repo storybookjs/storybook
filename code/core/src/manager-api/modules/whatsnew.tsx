@@ -10,7 +10,7 @@ import type { WhatsNewCache, WhatsNewData } from 'storybook/internal/core-events
 
 import { global } from '@storybook/global';
 
-import type { ModuleFn } from '../lib/types';
+import type { ModuleFn } from '../lib/types.tsx';
 
 export type SubState = {
   whatsNewData?: WhatsNewData;
@@ -111,9 +111,14 @@ export const init: ModuleFn = ({ fullAPI, store, provider }) => {
     const urlState = fullAPI.getUrlState();
     const isOnboardingView =
       urlState?.path === '/onboarding' || urlState.queryParams?.onboarding === 'true';
+    const isReviewView =
+      urlState?.path === '/review/' ||
+      urlState?.path === '/review' ||
+      urlState?.path?.startsWith('/review/');
 
     if (
       !isOnboardingView &&
+      !isReviewView &&
       whatsNewData.status === 'SUCCESS' &&
       !whatsNewData.disableWhatsNewNotifications &&
       whatsNewData.showNotification

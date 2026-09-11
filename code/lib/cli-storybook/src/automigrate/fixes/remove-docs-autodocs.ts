@@ -3,8 +3,8 @@ import { readConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
-import { updateMainConfig } from '../helpers/mainConfigFile';
-import type { Fix } from '../types';
+import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import type { Fix } from '../types.ts';
 
 const logger = {
   log: (message: string) => {

@@ -1,4 +1,4 @@
-import type { PackageJson } from '../types';
+import type { PackageJson } from '../types/index.ts';
 
 const routerPackages = new Set([
   'react-router',

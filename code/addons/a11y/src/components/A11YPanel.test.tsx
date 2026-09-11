@@ -8,9 +8,9 @@ import React from 'react';
 import * as managerApi from 'storybook/manager-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import { type EnhancedResults } from '../types';
-import { A11YPanel } from './A11YPanel';
-import { type A11yContextStore, useA11yContext } from './A11yContext';
+import { type EnhancedResults } from '../types.ts';
+import { A11YPanel } from './A11YPanel.tsx';
+import { type A11yContextStore, useA11yContext } from './A11yContext.tsx';
 
 vi.mock('storybook/manager-api');
 const mockedManagerApi = vi.mocked(managerApi);

@@ -7,9 +7,9 @@ import { global } from '@storybook/global';
 
 import { useStorybookApi } from 'storybook/manager-api';
 
-import { matchesKeyCode, matchesModifiers } from '../../keybinding';
-import { cycle, isAncestor, scrollIntoView } from '../../utils/tree';
-import type { Highlight, Selection } from './types';
+import { matchesKeyCode, matchesModifiers } from '../../keybinding.ts';
+import { cycle, isAncestor, scrollIntoView } from '../../utils/tree.ts';
+import type { Highlight, Selection } from './types.ts';
 
 const { document, window: globalWindow } = global;
 

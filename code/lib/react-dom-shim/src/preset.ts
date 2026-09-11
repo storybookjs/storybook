@@ -3,7 +3,7 @@ import { isAbsolute, join } from 'node:path';
 
 import type { Options } from 'storybook/internal/types';
 
-import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
 
 /**
  * Get react-dom version from the resolvedReact preset, which points to either a root react-dom

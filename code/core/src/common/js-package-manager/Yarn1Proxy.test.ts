@@ -2,11 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { prompt } from 'storybook/internal/node-logger';
 
-import { dedent } from 'ts-dedent';
-
-import { executeCommand } from '../utils/command';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager';
-import { Yarn1Proxy } from './Yarn1Proxy';
+import { executeCommand } from '../utils/command.ts';
+import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import { Yarn1Proxy } from './Yarn1Proxy.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   prompt: {
@@ -20,7 +18,7 @@ vi.mock('storybook/internal/node-logger', () => ({
   },
 }));
 
-vi.mock(import('../utils/command'), { spy: true });
+vi.mock(import('../utils/command.ts'), { spy: true });
 const mockedExecuteCommand = vi.mocked(executeCommand);
 
 vi.mock('node:process', async (importOriginal) => {
@@ -286,31 +284,6 @@ describe('Yarn 1 Proxy', () => {
           "infoCommand": "yarn why",
         }
       `);
-    });
-  });
-
-  describe('parseErrors', () => {
-    it('should parse yarn1 errors', () => {
-      const YARN1_ERROR_SAMPLE = dedent`
-        yarn add v1.22.19
-        [1/4] Resolving packages...
-        error Couldn't find any versions for "react" that matches "28.2.0"
-        info Visit https://yarnpkg.com/en/docs/cli/add for documentation about this command.
-      `;
-
-      expect(yarn1Proxy.parseErrorFromLogs(YARN1_ERROR_SAMPLE)).toEqual(
-        `YARN1 error: Couldn't find any versions for "react" that matches "28.2.0"`
-      );
-    });
-
-    it('should show unknown yarn1 error', () => {
-      const YARN1_ERROR_SAMPLE = dedent`
-        yarn install v1.22.19
-        [1/4] 🔍  Resolving packages...
-        info Visit https://yarnpkg.com/en/docs/cli/install for documentation about this command.
-      `;
-
-      expect(yarn1Proxy.parseErrorFromLogs(YARN1_ERROR_SAMPLE)).toEqual(`YARN1 error`);
     });
   });
 });

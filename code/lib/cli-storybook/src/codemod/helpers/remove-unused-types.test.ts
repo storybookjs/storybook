@@ -4,8 +4,8 @@ import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getDiff } from '../../../../../core/src/core-server/utils/save-story/getDiff';
-import { removeUnusedTypes } from './remove-unused-types';
+import { getDiff } from '../../../../../core/src/core-server/utils/save-story/getDiff.ts';
+import { removeUnusedTypes } from './remove-unused-types.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),

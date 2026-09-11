@@ -3,7 +3,7 @@ import type {
   ModuleConfig,
   ResolveConfig,
   RulesConfig,
-} from './types';
+} from './types.ts';
 
 function mergePluginsField(
   defaultPlugins: Required<Configuration>['plugins'] = [],

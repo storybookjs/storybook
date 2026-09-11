@@ -2,8 +2,8 @@ import { global } from '@storybook/global';
 
 import type { AxeResults, Result } from 'axe-core';
 
-import { PANEL_ID } from './constants';
-import type { EnhancedResults } from './types';
+import { PANEL_ID } from './constants.ts';
+import type { EnhancedResults } from './types.ts';
 
 const { document } = global;
 

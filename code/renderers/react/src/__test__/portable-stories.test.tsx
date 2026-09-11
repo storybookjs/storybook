@@ -7,12 +7,12 @@ import React from 'react';
 import type { Meta } from '@storybook/react';
 
 import { expectTypeOf } from 'expect-type';
-import { addons } from 'storybook/preview-api';
+import { addons, useEffect } from 'storybook/preview-api';
 
-import { composeStories, composeStory, setProjectAnnotations } from '..';
-import type { Button } from './Button';
-import * as ButtonStories from './Button.stories';
-import * as ComponentWithErrorStories from './ComponentWithError.stories';
+import { composeStories, composeStory, setProjectAnnotations } from '../index.ts';
+import type { Button } from './Button.tsx';
+import * as ButtonStories from './Button.stories.tsx';
+import * as ComponentWithErrorStories from './ComponentWithError.stories.tsx';
 
 const HooksStory = composeStory(ButtonStories.HooksStory, ButtonStories.default);
 
@@ -184,6 +184,31 @@ it('should pass with decorators that need addons channel', () => {
   render(<PrimaryWithChannels>Hello world</PrimaryWithChannels>);
   const buttonElement = screen.getByText(/Hello world/i);
   expect(buttonElement).not.toBeNull();
+});
+
+// Regression: preview-api `useEffect` (the hook addon-themes' withThemeByDataAttribute uses, not
+// React's) registered by a decorator must run under portable stories, so theme/direction side
+// effects actually apply to the DOM before the play function / a11y check observe it.
+it('flushes preview-api useEffect side-effects from decorators after run', async () => {
+  const WithThemeEffect = composeStory(ButtonStories.CSF3Primary, ButtonStories.default, {
+    decorators: [
+      (StoryFn: any) => {
+        useEffect(() => {
+          document.documentElement.setAttribute('data-theme', 'dark');
+          return () => document.documentElement.removeAttribute('data-theme');
+        }, []);
+        return StoryFn();
+      },
+    ],
+  });
+
+  try {
+    expect(document.documentElement.getAttribute('data-theme')).toBeNull();
+    await WithThemeEffect.run();
+    expect(document.documentElement.getAttribute('data-theme')).toBe('dark');
+  } finally {
+    document.documentElement.removeAttribute('data-theme');
+  }
 });
 
 describe('ComposeStories types', () => {

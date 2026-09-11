@@ -1,5 +1,5 @@
 import * as domTestingLibrary from '@testing-library/dom';
-import type { FireFunction, FireObject } from '@testing-library/dom/types/events';
+import type { FireFunction, FireObject } from '@testing-library/dom';
 import * as _userEvent from '@testing-library/user-event';
 
 import { once } from 'storybook/internal/client-logger';
@@ -8,7 +8,7 @@ import { instrument } from 'storybook/internal/instrumenter';
 import { dedent } from 'ts-dedent';
 import type { Writable } from 'type-fest';
 
-import type { Promisify, PromisifyObject } from './utils';
+import type { Promisify, PromisifyObject } from './utils.ts';
 
 type TestingLibraryDom = typeof domTestingLibrary;
 

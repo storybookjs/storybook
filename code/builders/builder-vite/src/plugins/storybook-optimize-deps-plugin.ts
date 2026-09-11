@@ -6,8 +6,8 @@ import type { Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/
 import { resolve } from 'pathe';
 import { type Plugin } from 'vite';
 
-import { processPreviewAnnotation } from '../utils/process-preview-annotation';
-import { getUniqueImportPaths } from '../utils/unique-import-paths';
+import { processPreviewAnnotation } from '../utils/process-preview-annotation.ts';
+import { getUniqueImportPaths } from '../utils/unique-import-paths.ts';
 
 /**
  * Escapes special glob characters in a file path so Vite's dep optimizer treats it as a literal

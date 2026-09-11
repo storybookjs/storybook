@@ -20,8 +20,10 @@ import webpackModule from 'webpack';
 import webpackDevMiddleware from 'webpack-dev-middleware';
 import webpackHotMiddleware from 'webpack-hot-middleware';
 
-export * from './types';
-export * from './preview/virtual-module-mapping';
+import { createWebpackChangeDetectionAdapter } from './change-detection-adapter/index.ts';
+
+export * from './types.ts';
+export * from './preview/virtual-module-mapping.ts';
 
 const { DefinePlugin, IgnorePlugin, ProgressPlugin } = webpackModule;
 
@@ -38,6 +40,7 @@ const corePath = dirname(fileURLToPath(import.meta.resolve('storybook/package.js
 
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;
+let activeCompiler: import('webpack').Compiler | undefined;
 
 type WebpackBuilder = Builder<Configuration, Stats>;
 type Unpromise<T extends Promise<any>> = T extends Promise<infer U> ? U : never;
@@ -97,7 +100,7 @@ export const bail: WebpackBuilder['bail'] = async () => {
     reject();
   }
   // we wait for the compiler to finish it's work, so it's command-line output doesn't interfere
-  return new Promise((res, rej) => {
+  await new Promise<void>((res, rej) => {
     if (process && compilation) {
       try {
         compilation.close(() => res());
@@ -110,6 +113,21 @@ export const bail: WebpackBuilder['bail'] = async () => {
       res();
     }
   });
+  activeCompiler = undefined;
+};
+
+/**
+ * Returns a {@link ChangeDetectionAdapter} bound to the webpack compiler created by `start()`.
+ *
+ * Throws if called before `start()` has resolved (i.e. before the compiler exists).
+ */
+export const changeDetectionAdapter: NonNullable<WebpackBuilder['changeDetectionAdapter']> = () => {
+  if (!activeCompiler) {
+    throw new Error(
+      'builder-webpack5: changeDetectionAdapter() called before start(); the webpack compiler is not ready yet.'
+    );
+  }
+  return createWebpackChangeDetectionAdapter(activeCompiler);
 };
 
 /**
@@ -142,6 +160,8 @@ const starter: StarterFunction = async function* starterGeneratorFn({
       error: new Error(`Missing Webpack compiler at runtime!`),
     });
   }
+
+  activeCompiler = compiler;
 
   yield;
   const modulesCount = await options.cache?.get('modulesCount', 1000);

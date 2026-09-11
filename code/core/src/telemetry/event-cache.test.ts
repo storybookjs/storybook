@@ -3,9 +3,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { cache } from 'storybook/internal/common';
 
-import type { CacheEntry } from './event-cache';
-import { getLastEvents, getPrecedingUpgrade, set } from './event-cache';
-import type { TelemetryEvent } from './types';
+import type { CacheEntry } from './event-cache.ts';
+import { getLastEvents, getPrecedingUpgrade, set } from './event-cache.ts';
+import type { TelemetryEvent } from './types.ts';
 
 vi.mock('storybook/internal/common', { spy: true });
 

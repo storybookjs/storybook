@@ -12,9 +12,9 @@ import type { DecoratorFunction } from 'storybook/internal/types';
 
 import { addons, useEffect, useMemo, useRef } from 'storybook/preview-api';
 
-import { PSEUDO_STATES } from '../constants';
-import type { PseudoParameter, PseudoState, PseudoStateConfig } from '../types';
-import { rewriteStyleSheet } from './rewriteStyleSheet';
+import { PSEUDO_STATES } from '../constants.ts';
+import type { PseudoParameter, PseudoState, PseudoStateConfig } from '../types.ts';
+import { rewriteStyleSheet } from './rewriteStyleSheet.ts';
 
 const channel = addons.getChannel();
 const shadowHosts = new Set<Element>();
@@ -148,10 +148,16 @@ export const withPseudoState: DecoratorFunction = (
   const globalsRef = useRef(globals);
 
   // Sync parameter to globals, used by the toolbar (only in canvas as this
-  // doesn't make sense for docs because many stories are displayed at once)
+  // doesn't make sense for docs because many stories are displayed at once).
+  // Skip when the parameter has no pseudo states to sync; otherwise we'd wipe
+  // globals set via URL or toolbar on stories that don't declare pseudo states.
   useEffect(() => {
     const config = pseudoConfig(parameter);
-    if (viewMode === 'story' && !equals(config, globalsRef.current)) {
+    if (
+      viewMode === 'story' &&
+      Object.keys(config).length > 0 &&
+      !equals(config, globalsRef.current)
+    ) {
       channel.emit(UPDATE_GLOBALS, {
         globals: { pseudo: config },
       });

@@ -5,7 +5,7 @@ import {
   isDefined,
   removeTransformedVariableDeclarations,
   replaceImportWithParameterImport,
-} from './helpers';
+} from './helpers.ts';
 
 type Babel = typeof BabelCoreNamespace;
 

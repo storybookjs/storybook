@@ -23,12 +23,14 @@ const MaxLength = styled.div<{ isMaxed: boolean }>(({ isMaxed }) => ({
 export const TextControl: FC<TextProps> = ({
   name,
   storyId,
+  controlsId,
   value,
   onChange,
   onFocus,
   onBlur,
   maxLength,
   argType,
+  required,
 }) => {
   const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
     onChange(event.target.value);
@@ -50,7 +52,7 @@ export const TextControl: FC<TextProps> = ({
         variant="outline"
         size="medium"
         disabled={readonly}
-        id={getControlSetterButtonId(name, storyId)}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
         onClick={onForceVisible}
       >
         Set string
@@ -63,13 +65,14 @@ export const TextControl: FC<TextProps> = ({
   return (
     <Wrapper>
       <Form.Textarea
-        id={getControlId(name, storyId)}
+        id={getControlId(name, storyId, controlsId)}
         maxLength={maxLength}
         onChange={handleChange}
         disabled={readonly}
         size="flex"
         placeholder="Edit string..."
         autoFocus={forceVisible}
+        aria-required={required || undefined}
         valid={isValid ? undefined : 'error'}
         {...{ name, value: isValid ? value : '', onFocus, onBlur }}
       />

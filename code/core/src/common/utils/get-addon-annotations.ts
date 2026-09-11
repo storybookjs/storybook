@@ -1,6 +1,6 @@
 import { createRequire } from 'node:module';
 
-import { isCorePackage } from './cli';
+import { isCorePackage } from './cli.ts';
 
 /**
  * Get the name of the annotations object for a given addon.

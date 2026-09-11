@@ -8,8 +8,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby } from 'globby';
 
-import { makePackageManager } from '../helpers/testing-helpers';
-import { rnstorybookConfig } from './rnstorybook-config';
+import { makePackageManager } from '../helpers/testing-helpers.ts';
+import { rnstorybookConfig } from './rnstorybook-config.ts';
 
 const mockMainConfig: StorybookConfigRaw = {
   stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],

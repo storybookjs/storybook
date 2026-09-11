@@ -1,6 +1,6 @@
 import { expect, it } from 'vitest';
 
-import { getHasRouterPackage } from './get-has-router-package';
+import { getHasRouterPackage } from './get-has-router-package.ts';
 
 it('returns true if there is a routing package in package.json', () => {
   expect(

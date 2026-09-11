@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { normalizeProjectAnnotations } from './normalizeProjectAnnotations';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 
 describe('normalizeProjectAnnotations', () => {
   it('passes through initialGlobals', () => {

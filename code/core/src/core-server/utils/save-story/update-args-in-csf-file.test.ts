@@ -7,8 +7,8 @@ import { printCsf, readCsf } from 'storybook/internal/csf-tools';
 
 import { format } from 'prettier';
 
-import { getDiff } from './getDiff';
-import { updateArgsInCsfFile } from './update-args-in-csf-file';
+import { getDiff } from './getDiff.ts';
+import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
 
 const makeTitle = (userTitle: string) => userTitle;
 

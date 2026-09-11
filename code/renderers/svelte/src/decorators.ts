@@ -11,7 +11,7 @@ import DecoratorHandler from '@storybook/svelte/internal/DecoratorHandler.svelte
 
 import { sanitizeStoryContextUpdate } from 'storybook/preview-api';
 
-import type { SvelteRenderer } from './types';
+import type { SvelteRenderer } from './types.ts';
 
 /**
  * Handle component loaded with ESM or CJS, by getting the 'default' property of the object if it

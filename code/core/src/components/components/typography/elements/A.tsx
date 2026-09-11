@@ -1,8 +1,8 @@
 import type { CSSObject } from 'storybook/theming';
 import { styled } from 'storybook/theming';
 
-import { withReset } from '../lib/common';
-import { Link } from './Link';
+import { withReset } from '../lib/common.tsx';
+import { Link } from './Link.tsx';
 
 export const A = styled(Link)(({ theme }) => ({
   ...(withReset({ theme }) as CSSObject),
@@ -30,5 +30,20 @@ export const A = styled(Link)(({ theme }) => ({
   },
   '&.anchor:hover, &.anchor:focus': {
     textDecoration: 'underline',
+  },
+  '& code': {
+    color: 'inherit',
+    textDecoration: 'underline',
+    textDecorationThickness: '0.03125rem',
+    paddingLeft: 0,
+    paddingRight: 0,
+    '&::before': {
+      content: '"\\00a0"',
+      fontSize: '0.5em',
+    },
+    '&::after': {
+      content: '"\\00a0"',
+      fontSize: '0.5em',
+    },
   },
 }));

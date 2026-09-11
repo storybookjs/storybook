@@ -5,7 +5,7 @@ import { rollup } from 'rollup';
 import { dts } from 'rollup-plugin-dts';
 import { JsxEmit, ScriptTarget } from 'typescript';
 
-import { getExternal } from './entry-utils';
+import { getExternal } from './entry-utils.ts';
 
 async function run() {
   const [entryPoint] = process.argv.slice(2);
@@ -23,7 +23,10 @@ async function run() {
     input: entryPoint,
     external: (id) => {
       return external.some(
-        (dep) => id === dep || id.startsWith(`${dep}/`) || id.includes(`${sep}node_modules${sep}${dep}${sep}`)
+        (dep) =>
+          id === dep ||
+          id.startsWith(`${dep}/`) ||
+          id.includes(`${sep}node_modules${sep}${dep}${sep}`)
       );
     },
     output: { file: outputFile, format: 'es' },

@@ -1,9 +1,9 @@
 // @vitest-environment happy-dom
 import { describe, it, test } from 'vitest';
 
-import { action } from '../actions';
-import { expect, fn, isMockFunction } from './index';
-import { traverseArgs } from './preview';
+import { action } from '../actions/index.ts';
+import { expect, fn, isMockFunction } from './index.ts';
+import { traverseArgs } from './preview.ts';
 
 it('storybook expect and fn can be used in vitest test', () => {
   const spy = fn();

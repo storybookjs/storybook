@@ -9,11 +9,11 @@ import pLimit from 'p-limit';
 import picocolors from 'picocolors';
 import { parseConfigFile, runServer } from 'verdaccio';
 
-import { npmAuth } from './npm-auth';
-import { maxConcurrentTasks } from './utils/concurrency';
-import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants';
-import { killPort } from './utils/port';
-import { getCodeWorkspaces } from './utils/workspace';
+import { npmAuth } from './npm-auth.ts';
+import { maxConcurrentTasks } from './utils/concurrency.ts';
+import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants.ts';
+import { killPort } from './utils/port.ts';
+import { getCodeWorkspaces } from './utils/workspace.ts';
 
 program
   .option('-O, --open', 'keep process open')

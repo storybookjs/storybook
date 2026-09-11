@@ -7,8 +7,8 @@ import { Pressable } from '@react-aria/interactions';
 import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
 import { Popover as PopoverUpstream } from 'react-aria-components/patched-dist/Popover';
 
-import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers';
-import { Popover } from './Popover';
+import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
+import { Popover } from './Popover.tsx';
 
 export interface PopoverProviderProps {
   /**

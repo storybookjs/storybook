@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from './Button';
+import { Button } from './Button.tsx';
 import './grid.css';
 
 const PortalButton = (props: ComponentProps<typeof Button>) =>

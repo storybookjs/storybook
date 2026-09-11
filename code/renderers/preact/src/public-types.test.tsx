@@ -13,8 +13,8 @@ import { fn } from 'storybook/test';
 import type { Mock } from 'storybook/test';
 import type { SetOptional } from 'type-fest';
 
-import type { Decorator, Meta, StoryObj } from './public-types';
-import type { PreactRenderer } from './types';
+import type { Decorator, Meta, StoryObj } from './public-types.ts';
+import type { PreactRenderer } from './types.ts';
 
 type PreactStory<TArgs, TRequiredArgs> = StoryAnnotations<PreactRenderer, TArgs, TRequiredArgs>;
 

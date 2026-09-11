@@ -20,7 +20,7 @@ import {
 } from 'next/dist/shared/lib/hooks-client-context.shared-runtime.js';
 import { PAGE_SEGMENT_KEY } from 'next/dist/shared/lib/segment.js';
 
-import type { RouteParams } from './types';
+import type { RouteParams } from './types.tsx';
 
 // Using an inline type so we can support Next 14 and lower
 // from https://github.com/vercel/next.js/blob/v15.0.3/packages/next/src/server/request/params.ts#L25

@@ -2,7 +2,7 @@ import path from 'node:path';
 
 import { x as exec } from 'tinyexec';
 
-import type { BuildEntries } from '../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   prebuild: async (cwd) => {
@@ -35,6 +35,22 @@ const config: BuildEntries = {
       },
       {
         entryPoint: './src/core-server/presets/common-preset.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./internal/oxc-parser'],
+        entryPoint: './src/oxc-parser/index.ts',
+      },
+      {
+        entryPoint: './src/oxc-parser/worker.ts',
+        dts: false,
+      },
+      {
+        // Long-lived worker that runs docgen extraction off the main thread. Exposed as an internal
+        // export so docgen-worker-client.ts resolves it via the package map (import.meta.resolve)
+        // rather than a hard-coded dist path, keeping strict package managers (pnpm) happy.
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/shared/open-service/services/docgen/worker/docgen-worker.ts',
         dts: false,
       },
       {
@@ -73,12 +89,24 @@ const config: BuildEntries = {
         entryPoint: './src/common/index.ts',
       },
       {
+        exportEntries: ['./internal/component-meta'],
+        entryPoint: './src/component-meta/index.ts',
+      },
+      {
         entryPoint: './src/cli/index.ts',
         exportEntries: ['./internal/cli'],
       },
       {
         exportEntries: ['./internal/mocking-utils'],
         entryPoint: './src/mocking-utils/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools'],
+        entryPoint: './src/cli/tools/sdk/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools/child-host'],
+        entryPoint: './src/cli/tools/sdk/child-host.ts',
       },
     ],
     browser: [
@@ -111,6 +139,10 @@ const config: BuildEntries = {
         entryPoint: './src/actions/decorator.ts',
       },
       {
+        exportEntries: ['./backgrounds'],
+        entryPoint: './src/backgrounds/index.ts',
+      },
+      {
         exportEntries: ['./viewport'],
         entryPoint: './src/viewport/index.ts',
       },
@@ -121,6 +153,10 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/csf'],
         entryPoint: './src/csf/index.ts',
+      },
+      {
+        exportEntries: ['./internal/csf/csf-utils'],
+        entryPoint: './src/csf/csf-utils.ts',
       },
       {
         exportEntries: ['./internal/manager-errors'],
@@ -177,6 +213,25 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/types'],
         entryPoint: './src/types/index.ts',
+      },
+      {
+        exportEntries: ['./open-service'],
+        entryPoint: './src/shared/open-service/index.ts',
+      },
+      {
+        // Dependency-light docs toolset surface bundled into `@storybook/mcp`'s dist (core is a
+        // dev dependency there), replacing that package's own manifest-formatter copies. Portable:
+        // its d.ts is one flat self-contained file so that consumer can inline it through standard
+        // resolution; guarded by `portable-dist.test.ts` next to the entry source.
+        exportEntries: ['./internal/toolsets-docs'],
+        entryPoint: './src/shared/open-service/toolsets/docs/public.ts',
+        portable: { external: ['valibot'] },
+      },
+      {
+        // Pure skill-content builders shared by the skills CLI and addon-mcp so both consumers render
+        // the same instruction documents. Not portable: consumers resolve core normally.
+        exportEntries: ['./internal/skills'],
+        entryPoint: './src/cli/skills/content/index.ts',
       },
     ],
     runtime: [

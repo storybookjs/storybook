@@ -2,10 +2,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PackageJson } from 'storybook/internal/types';
 
-import { analyzeEcosystemPackages, getSafeVersionSpecifier } from './get-known-packages';
-import { getActualPackageVersion } from './package-json';
+import { analyzeEcosystemPackages, getSafeVersionSpecifier } from './get-known-packages.ts';
+import { getActualPackageVersion } from './package-json.ts';
 
-vi.mock(import('./package-json'), { spy: true });
+vi.mock(import('./package-json.ts'), { spy: true });
 
 describe('get-known-packages', () => {
   beforeEach(() => {
@@ -36,6 +36,7 @@ describe('get-known-packages', () => {
           vitest: '1.0.0',
           playwright: '1.30.0',
           '@testing-library/react': '1.0.0',
+          '@chromatic-com/vitest': '1.0.0',
         },
       };
 
@@ -48,6 +49,28 @@ describe('get-known-packages', () => {
         vitest: '1.0.0',
         playwright: '1.0.0',
         '@testing-library/react': '1.0.0',
+        '@chromatic-com/vitest': '1.0.0',
+      });
+    });
+
+    it('should analyze bundler packages with actual versions', async () => {
+      const packageJson: PackageJson = {
+        devDependencies: {
+          webpack: '5.90.0',
+          vite: '^5.0.0',
+          '@rsbuild/core': '1.0.0',
+          '@parcel/core': '2.0.0',
+          eslint: '9.0.0',
+        },
+      };
+
+      const result = await analyzeEcosystemPackages(packageJson);
+
+      expect(result.bundlerPackages).toEqual({
+        webpack: '1.0.0',
+        vite: '1.0.0',
+        '@rsbuild/core': '1.0.0',
+        '@parcel/core': '1.0.0',
       });
     });
 
@@ -58,6 +81,8 @@ describe('get-known-packages', () => {
           tailwindcss: '3.0.0',
           'styled-components': '6.0.0',
           emotion: '11.0.0',
+          '@stylexjs/stylex': '0.15.4',
+          '@stylexjs/postcss-plugin': '0.15.4',
           // state management
           redux: '4.0.0',
           'react-redux': '8.0.0',
@@ -88,6 +113,8 @@ describe('get-known-packages', () => {
         emotion: '11.0.0',
         tailwindcss: '3.0.0',
         'styled-components': '6.0.0',
+        '@stylexjs/stylex': '0.15.4',
+        '@stylexjs/postcss-plugin': '0.15.4',
       });
 
       expect(result.stateManagementPackages).toEqual({

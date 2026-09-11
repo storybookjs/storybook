@@ -4,7 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/client-logger';
 import type { StoryContextForEnhancers } from 'storybook/internal/types';
 
-import { argTypesEnhancers } from './inferControls';
+import { argTypesEnhancers } from './inferControls.ts';
 
 const getStoryContext = (overrides: any = {}): StoryContextForEnhancers => ({
   id: '',

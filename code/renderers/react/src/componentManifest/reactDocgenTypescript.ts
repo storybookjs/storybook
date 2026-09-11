@@ -1,17 +1,29 @@
-import { dirname } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import {
   type ComponentDoc,
   type FileParser,
   type ParserOptions,
   type PropItem,
-  withCompilerOptions,
 } from 'react-docgen-typescript';
-import ts from 'typescript';
+import type ts from 'typescript';
 
-import { cached, findTsconfigPath } from './utils';
+import { logger } from 'storybook/internal/node-logger';
+
+import { asyncCache, cached, findTsconfigPath } from './utils.ts';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
+
+type TypeScriptRuntime = typeof import('typescript');
+type ReactDocgenTypescriptRuntime = typeof import('react-docgen-typescript');
+
+let typeScriptPromise: Promise<TypeScriptRuntime> | undefined;
+let reactDocgenTypescriptPromise: Promise<ReactDocgenTypescriptRuntime> | undefined;
+
+const loadTypeScript = () => (typeScriptPromise ??= import('typescript'));
+
+const loadReactDocgenTypescript = () =>
+  (reactDocgenTypescriptPromise ??= import('react-docgen-typescript'));
 
 /**
  * Auto-detect bulk props contributed by a single non-user source file and filter them out.
@@ -53,22 +65,23 @@ const getLargeNonUserPropSources = (props: Record<string, PropItem>): Set<string
  * the identifier matches the given name, otherwise undefined.
  */
 function findDisplayNameAssignment(
+  typescript: TypeScriptRuntime,
   sourceFile: ts.SourceFile,
   identifierName: string
 ): string | undefined {
   for (const statement of sourceFile.statements) {
-    if (!ts.isExpressionStatement(statement)) {
+    if (!typescript.isExpressionStatement(statement)) {
       continue;
     }
     const expr = statement.expression;
     if (
-      ts.isBinaryExpression(expr) &&
-      expr.operatorToken.kind === ts.SyntaxKind.EqualsToken &&
-      ts.isPropertyAccessExpression(expr.left) &&
+      typescript.isBinaryExpression(expr) &&
+      expr.operatorToken.kind === typescript.SyntaxKind.EqualsToken &&
+      typescript.isPropertyAccessExpression(expr.left) &&
       expr.left.name.text === 'displayName' &&
-      ts.isIdentifier(expr.left.expression) &&
+      typescript.isIdentifier(expr.left.expression) &&
       expr.left.expression.text === identifierName &&
-      ts.isStringLiteral(expr.right)
+      typescript.isStringLiteral(expr.right)
     ) {
       return expr.right.text;
     }
@@ -88,7 +101,11 @@ function findDisplayNameAssignment(
  *
  * @see https://github.com/styleguidist/react-docgen-typescript/blob/master/src/parser.ts
  */
-function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): Map<string, string> {
+function getExportNameMap(
+  typescript: TypeScriptRuntime,
+  checker: ts.TypeChecker,
+  sourceFile: ts.SourceFile
+): Map<string, string> {
   const moduleSymbol = checker.getSymbolAtLocation(sourceFile);
   if (!moduleSymbol) {
     return new Map();
@@ -99,7 +116,7 @@ function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): M
 
   for (const exportSymbol of checker.getExportsOfModule(moduleSymbol)) {
     const resolved =
-      exportSymbol.flags & ts.SymbolFlags.Alias
+      exportSymbol.flags & typescript.SymbolFlags.Alias
         ? checker.getAliasedSymbol(exportSymbol)
         : exportSymbol;
 
@@ -135,7 +152,7 @@ function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): M
 
       // If the component has a static .displayName assignment (e.g. Foo.displayName = 'Bar'),
       // RDT uses that value. Map it → export name so we can match it.
-      const displayNameValue = findDisplayNameAssignment(sourceFile, resolvedName);
+      const displayNameValue = findDisplayNameAssignment(typescript, sourceFile, resolvedName);
       if (displayNameValue) {
         result.set(displayNameValue, exportName);
       }
@@ -145,50 +162,72 @@ function getExportNameMap(checker: ts.TypeChecker, sourceFile: ts.SourceFile): M
   return result;
 }
 
+type ParserState = { program: ts.Program; fileParser: FileParser };
+
 /**
- * Manages the TS program and react-docgen-typescript parser. On `invalidateParser()` the program is
- * rebuilt incrementally — TypeScript reuses source files that haven't changed on disk, so only
- * modified files are re-parsed. This keeps prop extraction correct across HMR cycles without the
- * cost of a full program rebuild.
+ * Manages TS programs and react-docgen-typescript parsers per tsconfig. On `invalidateParser()` the
+ * parsers are rebuilt incrementally — TypeScript reuses source files that haven't changed on disk,
+ * so only modified files are re-parsed. This keeps prop extraction correct across HMR cycles
+ * without the cost of a full program rebuild.
  */
-let cachedCompilerOptions: ts.CompilerOptions | undefined;
-let cachedFileNames: string[] | undefined;
-let previousProgram: ts.Program | undefined;
-let parser: { program: ts.Program; fileParser: FileParser } | undefined;
-let cachedParserOptionsKey: string | undefined;
+const previousProgramsByConfigKey = new Map<string, ts.Program | undefined>();
+let parserCache = new Map<string, ParserState>();
+let parserBuilds = new Map<string, Promise<ParserState>>();
 
 /** Rebuild the TS program incrementally so that file changes are picked up on the next parse. */
 export function invalidateParser() {
-  parser = undefined;
-  cachedCompilerOptions = undefined;
-  cachedFileNames = undefined;
+  parserCache = new Map();
+  parserBuilds = new Map();
+  previousProgramsByConfigKey.clear();
 }
 
-function getParser(userOptions?: ParserOptions) {
-  // Rebuild parser if options changed
+async function getParser(filePath: string, userOptions?: ParserOptions) {
+  const [typescript, reactDocgenTypescript] = await Promise.all([
+    loadTypeScript(),
+    loadReactDocgenTypescript(),
+  ]);
   const optionsKey = JSON.stringify(userOptions ?? {});
-  if (parser && cachedParserOptionsKey !== optionsKey) {
-    parser = undefined;
+
+  // Mirror the Volar-inspired project selection we already use in react-component-meta:
+  // if the nearest root tsconfig is only a project-references shell, follow references and pick
+  // the config that actually includes this file. This is the manifest-side extension of #34353.
+  const configPath =
+    findOwningTsconfigPath(typescript, process.cwd(), filePath) ?? findTsconfigPath(process.cwd());
+  const configKey = configPath ?? '<no-tsconfig>';
+  const parserKey = `${configKey}::${optionsKey}`;
+  const cachedParser = parserCache.get(parserKey);
+  if (cachedParser) {
+    return { ...cachedParser, typescript };
   }
 
-  if (!parser) {
-    const configPath = findTsconfigPath(process.cwd());
-    cachedCompilerOptions = { noErrorTruncation: true, strict: true };
+  const pendingParser = parserBuilds.get(parserKey);
+  if (pendingParser) {
+    return { ...(await pendingParser), typescript };
+  }
+
+  const buildParser = (async () => {
+    let compilerOptions: ts.CompilerOptions = { noErrorTruncation: true, strict: true };
+    let fileNames: string[] = [];
 
     if (configPath) {
-      const { config } = ts.readConfigFile(configPath, ts.sys.readFile);
-      const parsed = ts.parseJsonConfigFileContent(config, ts.sys, dirname(configPath));
-      cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
-      cachedFileNames = parsed.fileNames;
+      const parsed = parseTsconfig(typescript, configPath);
+      compilerOptions = { ...parsed.options, noErrorTruncation: true };
+      fileNames = parsed.fileNames;
+    } else {
+      logger.warn(
+        'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
+          'TypeScript component props will not be documented by react-docgen-typescript. ' +
+          'Create a tsconfig.json in your project root to enable automatic controls.'
+      );
     }
 
-    const program = ts.createProgram(
-      cachedFileNames ?? [],
-      cachedCompilerOptions,
+    const program = typescript.createProgram(
+      fileNames,
+      compilerOptions,
       undefined,
-      previousProgram
+      previousProgramsByConfigKey.get(configKey)
     );
-    previousProgram = program;
+    previousProgramsByConfigKey.set(configKey, program);
 
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
@@ -198,13 +237,22 @@ function getParser(userOptions?: ParserOptions) {
       savePropValueAsString: true,
     };
 
-    parser = {
+    const state = {
       program,
-      fileParser: withCompilerOptions(cachedCompilerOptions, parserOptions),
+      fileParser: reactDocgenTypescript.withCompilerOptions(compilerOptions, parserOptions),
     };
-    cachedParserOptionsKey = optionsKey;
+
+    parserCache.set(parserKey, state);
+    return state;
+  })();
+
+  parserBuilds.set(parserKey, buildParser);
+
+  try {
+    return { ...(await buildParser), typescript };
+  } finally {
+    parserBuilds.delete(parserKey);
   }
-  return parser;
 }
 
 /** Find the component doc that matches the given import/component name. */
@@ -232,20 +280,51 @@ export function matchComponentDoc(
   );
 }
 
+export function getReactDocgenTypescriptError(
+  path: string,
+  {
+    importName,
+    localImportName,
+    componentName,
+  }: { importName?: string; localImportName?: string; componentName?: string },
+  docs: ComponentDocWithExportName[]
+) {
+  if (docs.length === 0) {
+    return {
+      name: 'react-docgen-typescript found no component docs',
+      message: [
+        `File: ${path}`,
+        'react-docgen-typescript did not return any component docs for this file.',
+      ].join('\n'),
+    };
+  }
+
+  return {
+    name: 'react-docgen-typescript could not match component docs',
+    message: [
+      `File: ${path}`,
+      "react-docgen-typescript returned component docs for this file, but none matched the story's component import.",
+      `Looked for: componentName=${componentName}, localImportName=${localImportName ?? '<none>'}, importName=${importName ?? '<none>'}.`,
+    ].join('\n'),
+  };
+}
+
 /**
  * Parse a component file with react-docgen-typescript. Per-file results are cached via
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.
  */
-export const parseWithReactDocgenTypescript = cached(
-  (filePath: string, userOptions?: ParserOptions): ComponentDocWithExportName[] => {
-    const { program, fileParser } = getParser(userOptions);
+export const parseWithReactDocgenTypescript = asyncCache(
+  async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
+    const { program, fileParser, typescript } = await getParser(filePath, userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 
     const docs = fileParser.parseWithProgramProvider(filePath, () => program);
     // Map from resolved (original) name → public export name.
     // e.g. for `export { Card as RenamedCard }`: "Card" → "RenamedCard"
-    const exportNameMap = sourceFile ? getExportNameMap(checker, sourceFile) : new Map();
+    const exportNameMap = sourceFile
+      ? getExportNameMap(typescript, checker, sourceFile)
+      : new Map();
 
     return docs.map((doc) => {
       const largeNonUserSources = getLargeNonUserPropSources(doc.props);
@@ -266,3 +345,96 @@ export const parseWithReactDocgenTypescript = cached(
   },
   { name: 'parseWithReactDocgenTypescript' }
 );
+
+const findOwningTsconfigPath = cached(
+  (typescript: TypeScriptRuntime, cwd: string, filePath: string): string | undefined => {
+    const configPath = findTsconfigPath(cwd);
+    if (!configPath) {
+      return undefined;
+    }
+
+    return findTsconfigPathIncludingFile(typescript, configPath, filePath, new Set()) ?? configPath;
+  },
+  {
+    key: (typescript, cwd, filePath) =>
+      `${normalizeFileName(typescript, resolve(cwd))}::${normalizeFileName(
+        typescript,
+        resolve(filePath)
+      )}`,
+    name: 'findOwningTsconfigPath',
+  }
+);
+
+function findTsconfigPathIncludingFile(
+  typescript: TypeScriptRuntime,
+  configPath: string,
+  filePath: string,
+  seenConfigPaths: Set<string>
+): string | undefined {
+  const normalizedConfigPath = normalizeFileName(typescript, configPath);
+  if (seenConfigPaths.has(normalizedConfigPath)) {
+    return undefined;
+  }
+  seenConfigPaths.add(normalizedConfigPath);
+
+  const { config, parsed } = readTsconfig(typescript, configPath);
+  if (parsed.fileNames.some((name) => isSameFileName(typescript, name, filePath))) {
+    return configPath;
+  }
+
+  for (const referencedConfigPath of getReferencedTsconfigPaths(typescript, configPath, config)) {
+    const matchingConfigPath = findTsconfigPathIncludingFile(
+      typescript,
+      referencedConfigPath,
+      filePath,
+      seenConfigPaths
+    );
+    if (matchingConfigPath) {
+      return matchingConfigPath;
+    }
+  }
+
+  return undefined;
+}
+
+function getReferencedTsconfigPaths(
+  typescript: TypeScriptRuntime,
+  configPath: string,
+  config: unknown
+) {
+  const references = Array.isArray((config as { references?: unknown[] })?.references)
+    ? (config as { references: Array<{ path?: unknown }> }).references
+    : [];
+
+  return references
+    .map((reference) => reference.path)
+    .filter((referencePath): referencePath is string => typeof referencePath === 'string')
+    .map((referencePath) => resolve(dirname(configPath), referencePath))
+    .map((referencePath) =>
+      referencePath.endsWith('.json') ? referencePath : join(referencePath, 'tsconfig.json')
+    )
+    .filter((referencePath) => typescript.sys.fileExists(referencePath));
+}
+
+function parseTsconfig(typescript: TypeScriptRuntime, configPath: string) {
+  return readTsconfig(typescript, configPath).parsed;
+}
+
+function readTsconfig(typescript: TypeScriptRuntime, configPath: string) {
+  const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+  return {
+    config,
+    parsed: typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath)),
+  };
+}
+
+function isSameFileName(typescript: TypeScriptRuntime, left: string, right: string) {
+  return normalizeFileName(typescript, left) === normalizeFileName(typescript, right);
+}
+
+function normalizeFileName(typescript: TypeScriptRuntime, fileName: string) {
+  // TypeScript's parsed `fileNames` use `/` even on Windows; Node `path` APIs use `\`.
+  // Normalize both before comparing so project-reference ownership checks work cross-platform.
+  const normalized = resolve(fileName).replace(/\\/g, '/');
+  return typescript.sys.useCaseSensitiveFileNames ? normalized : normalized.toLowerCase();
+}

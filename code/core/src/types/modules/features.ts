@@ -3,4 +3,5 @@ export enum Feature {
   TEST = 'test',
   ONBOARDING = 'onboarding',
   A11Y = 'a11y',
+  AI = 'ai',
 }

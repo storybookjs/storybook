@@ -6,7 +6,7 @@ import type { Addon_StoryContext } from 'storybook/internal/types';
 // @ts-ignore-error (this only errors during compilation for production)
 import { ImageContext as ImageContextValue } from '@storybook/nextjs/image-context';
 
-import { type ImageContext as ImageContextType } from '../image-context';
+import { type ImageContext as ImageContextType } from '../image-context.ts';
 
 const ImageContext = ImageContextValue as typeof ImageContextType;
 

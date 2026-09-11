@@ -3,14 +3,15 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
+import { expect, fn, userEvent, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { isChromatic } from '../../../../.storybook/isChromatic';
-import { CallStates } from '../../instrumenter/types';
-import { getCalls, getInteractions } from '../mocks';
-import { InteractionsPanel } from './InteractionsPanel';
-import ToolbarStories from './Toolbar.stories';
+import { isChromatic } from '../../../../.storybook/isChromatic.ts';
+import { CallStates } from '../../instrumenter/types.ts';
+import { getCalls, getInteractions } from '../mocks/index.ts';
+import { InteractionsPanel } from './InteractionsPanel.tsx';
+import ToolbarStories from './Toolbar.stories.tsx';
+import { destroyAnnouncer } from '@react-aria/live-announcer';
 
 const StyledWrapper = styled.div(({ theme }) => ({
   backgroundColor: theme.background.content,
@@ -64,11 +65,40 @@ const meta = {
     // prop for the AddonPanel used as wrapper of Panel
     active: true,
   },
+  beforeEach: () => {
+    destroyAnnouncer();
+  },
 } as Meta<typeof InteractionsPanel>;
 
 export default meta;
 
 type Story = StoryObj<typeof meta>;
+
+const withNestedStepToggle = (isCollapsed: boolean) => {
+  return getInteractions(CallStates.DONE).map((interaction) =>
+    interaction.method === 'step'
+      ? { ...interaction, childCallIds: ['child-call-id'], isCollapsed }
+      : interaction
+  );
+};
+
+const expectLiveAnnouncement = async ({
+  canvas,
+  ariaLive,
+  text,
+  isListBusy,
+}: {
+  canvas: ReturnType<typeof within>;
+  ariaLive: 'polite' | 'assertive';
+  text: string;
+  isListBusy: boolean;
+}) => {
+  await expect(document.body).toHaveLiveRegion({ text, level: ariaLive });
+  await expect(canvas.getByRole('list')).toHaveAttribute(
+    'aria-busy',
+    isListBusy ? 'true' : 'false'
+  );
+};
 
 export const Passing: Story = {
   args: {
@@ -76,10 +106,20 @@ export const Passing: Story = {
     interactions: getInteractions(CallStates.DONE),
   },
   play: async ({ args, canvasElement, step }) => {
+    const canvas = within(canvasElement);
+
+    await step('Expose the completed run status for assistive tech', async () => {
+      await expectLiveAnnouncement({
+        canvas,
+        ariaLive: 'polite',
+        text: 'Component test completed successfully.',
+        isListBusy: false,
+      });
+    });
+
     if (isChromatic()) {
       return;
     }
-    const canvas = within(canvasElement);
 
     await step('Go to start', async () => {
       const btn = await canvas.findByLabelText('Go to start');
@@ -113,6 +153,44 @@ export const Passing: Story = {
   },
 };
 
+export const AccessibilityLabels: Story = {
+  args: {
+    interactions: withNestedStepToggle(false),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const list = canvas.getByRole('list');
+
+    expect(list.tagName).toBe('OL');
+    expect(within(list).getAllByRole('listitem').length).toBeGreaterThan(0);
+    await expect(
+      canvas.getByRole('button', {
+        name: 'Go to interaction row: Click button. Status: passed.',
+      })
+    ).toBeInTheDocument();
+    await expect(
+      canvas.getByRole('button', {
+        name: 'Collapse nested interaction steps for Click button',
+      })
+    ).toHaveAttribute('aria-expanded', 'true');
+  },
+};
+
+export const CollapsedNestedStep: Story = {
+  args: {
+    interactions: withNestedStepToggle(true),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expect(
+      canvas.getByRole('button', {
+        name: 'Expand nested interaction steps for Click button',
+      })
+    ).toHaveAttribute('aria-expanded', 'false');
+  },
+};
+
 export const Paused: Story = {
   args: {
     status: 'playing',
@@ -136,6 +214,16 @@ export const Playing: Story = {
     browserTestStatus: CallStates.ACTIVE,
     interactions: getInteractions(CallStates.ACTIVE),
   },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expectLiveAnnouncement({
+      canvas,
+      ariaLive: 'polite',
+      text: 'Component test is running.',
+      isListBusy: true,
+    });
+  },
 };
 
 export const Failed: Story = {
@@ -144,6 +232,16 @@ export const Failed: Story = {
     browserTestStatus: CallStates.ERROR,
     hasException: true,
     interactions: getInteractions(CallStates.ERROR),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expectLiveAnnouncement({
+      canvas,
+      ariaLive: 'assertive',
+      text: 'Component test failed.',
+      isListBusy: false,
+    });
   },
 };
 
@@ -183,6 +281,61 @@ export const RenderOnly: Story = {
   args: {
     browserTestStatus: CallStates.DONE,
     interactions: getInteractions(CallStates.DONE).slice(0, 1),
+  },
+};
+
+export const Rendering: Story = {
+  args: {
+    status: 'rendering',
+    browserTestStatus: CallStates.ACTIVE,
+    interactions: getInteractions(CallStates.ACTIVE),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expectLiveAnnouncement({
+      canvas,
+      ariaLive: 'polite',
+      text: 'Component test is rendering.',
+      isListBusy: true,
+    });
+  },
+};
+
+export const CompletedWithException: Story = {
+  args: {
+    status: 'completed',
+    browserTestStatus: CallStates.ERROR,
+    hasException: true,
+    interactions: getInteractions(CallStates.DONE),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expectLiveAnnouncement({
+      canvas,
+      ariaLive: 'assertive',
+      text: 'Component test failed.',
+      isListBusy: false,
+    });
+  },
+};
+
+export const Aborted: Story = {
+  args: {
+    status: 'aborted',
+    browserTestStatus: CallStates.DONE,
+    interactions: getInteractions(CallStates.DONE),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    await expectLiveAnnouncement({
+      canvas,
+      ariaLive: 'polite',
+      text: 'Component test was aborted.',
+      isListBusy: false,
+    });
   },
 };
 

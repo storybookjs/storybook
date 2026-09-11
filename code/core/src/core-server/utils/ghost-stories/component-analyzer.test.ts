@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getComponentComplexity } from './component-analyzer';
+import { getComponentComplexity } from './component-analyzer.ts';
 
 describe('getComponentComplexity', () => {
   it('returns score between 0 and 1', () => {

@@ -11,14 +11,14 @@ import { ManagerContext } from 'storybook/manager-api';
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 import { styled } from 'storybook/theming';
 
-import { isChromatic } from '../../../../../.storybook/isChromatic';
+import { isChromatic } from '../../../../../.storybook/isChromatic.ts';
 import {
   MINIMUM_HORIZONTAL_PANEL_HEIGHT_PX,
   MINIMUM_RIGHT_PANEL_WIDTH_PX,
   MINIMUM_SIDEBAR_WIDTH_PX,
-} from '../../constants';
-import { Layout } from './Layout';
-import { LayoutProvider } from './LayoutProvider';
+} from '../../constants.ts';
+import { Layout } from './Layout.tsx';
+import { LayoutProvider } from './LayoutProvider.tsx';
 
 const PlaceholderBlock = styled.div({
   width: '100%',
@@ -94,11 +94,19 @@ const mockManagerStore: any = {
         renderLabel,
       },
     },
+    // MobileNavigation reads the drawer's open state from `layout` and `enableShortcuts` from `ui`.
+    layout: { showMobileNavigation: false },
+    ui: { enableShortcuts: true },
   },
   api: {
     getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
     }),
+    getNavAvailability: fn(() => 'shown'),
+    // MobileNavigation reads the nav shortcut and resets the drawer on unmount; stub both so the
+    // mobile stories render and tear down cleanly.
+    getShortcutKeys: fn(() => ({ toggleNav: ['alt', 'S'] })),
+    setMobileNavigation: fn(),
   },
 };
 
@@ -506,5 +514,37 @@ export const MobileDocs = {
   ...Mobile,
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
+  },
+};
+
+export const MobileReview: Story = {
+  ...Mobile,
+  args: {
+    managerLayoutState: { ...defaultState, viewMode: 'review' },
+  },
+  decorators: [
+    (Story) => (
+      <ManagerContext.Provider
+        value={{
+          ...mockManagerStore,
+          state: {
+            ...mockManagerStore.state,
+            path: '/review/',
+            viewMode: 'review',
+            customQueryParams: {},
+          },
+          api: {
+            ...mockManagerStore.api,
+            getNavAvailability: fn(() => 'unavailable'),
+          },
+        }}
+      >
+        <Story />
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvas }) => {
+    expect(canvas.queryByLabelText('Open navigation menu')).not.toBeInTheDocument();
+    expect(canvas.getByTestId('preview')).toBeInTheDocument();
   },
 };

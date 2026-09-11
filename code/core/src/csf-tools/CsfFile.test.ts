@@ -6,7 +6,13 @@ import { logger } from 'storybook/internal/node-logger';
 import yaml from 'js-yaml';
 import { dedent } from 'ts-dedent';
 
-import { type CsfOptions, formatCsf, isModuleMock, isValidPreviewPath, loadCsf } from './CsfFile';
+import {
+  type CsfOptions,
+  formatCsf,
+  isModuleMock,
+  isValidPreviewPath,
+  loadCsf,
+} from './CsfFile.ts';
 
 expect.addSnapshotSerializer({
   print: (val: any) => yaml.dump(val).trimEnd(),
@@ -760,8 +766,9 @@ describe('CsfFile', () => {
           import type { Meta, StoryFn } from '@storybook/react';
           type PropTypes = {};
           const meta = { title: 'foo/bar/baz' } satisfies Meta<PropTypes> as Meta<PropTypes>;
-          const story = { name: 'Story A' };
-          export { meta as default, story as A };
+          const story1 = { name: 'Story A' };
+          const story2 = { name: 'Story B' };
+          export { meta as default, story1 as A, story2 as 'あ' };
         `,
           true
         )
@@ -771,9 +778,24 @@ describe('CsfFile', () => {
         stories:
           - id: foo-bar-baz--a
             name: A
-            localName: story
+            localName: story1
             parameters:
               __id: foo-bar-baz--a
+            __stats:
+              play: false
+              render: false
+              loaders: false
+              beforeEach: false
+              globals: false
+              tags: false
+              storyFn: false
+              mount: false
+              moduleMock: false
+          - id: foo-bar-baz--あ
+            name: あ
+            localName: story2
+            parameters:
+              __id: foo-bar-baz--あ
             __stats:
               play: false
               render: false

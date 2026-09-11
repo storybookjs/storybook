@@ -2,8 +2,8 @@ import type { Options } from 'storybook/internal/types';
 
 import type { Plugin } from 'vite';
 
-import { generateProjectAnnotationsCode } from '../codegen-project-annotations';
-import { getResolvedVirtualModuleId } from '../virtual-file-names';
+import { generateProjectAnnotationsCode } from '../codegen-project-annotations.ts';
+import { getResolvedVirtualModuleId } from '../virtual-file-names.ts';
 
 export const VIRTUAL_ID = 'virtual:/@storybook/builder-vite/project-annotations.js';
 const RESOLVED_VIRTUAL_ID = getResolvedVirtualModuleId(VIRTUAL_ID);

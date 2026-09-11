@@ -13,8 +13,8 @@ import {
   removeProperty,
   transformStoryParameters,
   transformValuesToOptions,
-} from '../helpers/ast-utils';
-import type { Fix } from '../types';
+} from '../helpers/ast-utils.ts';
+import type { Fix } from '../types.ts';
 
 interface AddonGlobalsApiOptions {
   previewConfig: ConfigFile;

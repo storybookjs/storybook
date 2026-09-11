@@ -1,0 +1,72 @@
+{
+  "default": {
+    "description": "Main content, rendered instead of the label.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "disabled": {
+    "description": "Whether the button is disabled.",
+    "name": "disabled",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "icon": {
+    "description": "Icon rendered before the content.",
+    "name": "icon",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ size: unknown }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ size: unknown }",
+    },
+  },
+  "label": {
+    "description": "Visible label of the button.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'Button'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

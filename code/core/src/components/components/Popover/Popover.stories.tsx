@@ -7,8 +7,8 @@ import { CloseAltIcon } from '@storybook/icons';
 import { screen } from 'storybook/test';
 import { fn } from 'storybook/test';
 
-import preview from '../../../../../.storybook/preview';
-import { Popover } from './Popover';
+import preview from '../../../../../.storybook/preview.tsx';
+import { Popover } from './Popover.tsx';
 
 const SampleTooltip = () => 'Lorem ipsum dolor sit amet';
 

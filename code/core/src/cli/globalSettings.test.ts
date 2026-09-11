@@ -4,7 +4,7 @@ import { afterEach } from 'node:test';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings';
+import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings.ts';
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');

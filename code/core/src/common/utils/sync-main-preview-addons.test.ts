@@ -6,8 +6,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';
 
-import { getAddonAnnotations } from './get-addon-annotations';
-import { syncPreviewAddonsWithMainConfig } from './sync-main-preview-addons';
+import { getAddonAnnotations } from './get-addon-annotations.ts';
+import { syncPreviewAddonsWithMainConfig } from './sync-main-preview-addons.ts';
 
 vi.mock('./get-addon-annotations');
 

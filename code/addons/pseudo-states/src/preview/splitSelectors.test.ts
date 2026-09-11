@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { splitSelectors } from './splitSelectors';
+import { splitSelectors } from './splitSelectors.ts';
 
 describe('splitSelectors', () => {
   it('handles basic selectors', () => {

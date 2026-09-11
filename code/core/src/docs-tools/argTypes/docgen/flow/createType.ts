@@ -1,6 +1,6 @@
-import { createSummaryValue, isTooLongForTypeSummary } from '../../utils';
-import type { PropType } from '../PropDef';
-import type { DocgenFlowType } from '../types';
+import { createSummaryValue, isTooLongForTypeSummary } from '../../utils.ts';
+import type { PropType } from '../PropDef.ts';
+import type { DocgenFlowType } from '../types.ts';
 
 enum FlowTypesType {
   UNION = 'union',

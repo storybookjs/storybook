@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 
 import { EyeIcon } from '@storybook/icons';
 
-import ListItem from './ListItem';
+import ListItem from './ListItem.tsx';
 
 export default {
   component: ListItem,

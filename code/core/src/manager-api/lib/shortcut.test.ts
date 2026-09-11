@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { isMacLike } from './platform';
-import type { KeyboardEventLike } from './shortcut';
+import { isMacLike } from './platform.ts';
+import type { KeyboardEventLike } from './shortcut.ts';
 import {
   controlOrMetaKey,
   controlOrMetaSymbol,
@@ -12,7 +12,7 @@ import {
   optionOrAltSymbol,
   shortcutMatchesShortcut,
   shortcutToHumanString,
-} from './shortcut';
+} from './shortcut.ts';
 
 // Mock the functions directly
 vi.mock('./platform', async () => {

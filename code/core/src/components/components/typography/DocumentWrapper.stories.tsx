@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { DocumentWrapper } from './DocumentWrapper';
+import { DocumentWrapper } from './DocumentWrapper.tsx';
 
 export default {
   component: DocumentWrapper,
@@ -166,6 +166,34 @@ export const WithDOM = () => (
     <p>
       Autoconverted link <a href="https://github.com/nodeca/pica">https://github.com/nodeca/pica</a>
       &nbsp;(enable linkify to see)
+    </p>
+    <h2>Inline Code Inside Links</h2>
+    <p>
+      Check out{' '}
+      <a href="https://example.com">
+        <code>inline-code</code>
+      </a>{' '}
+      inside a link.
+    </p>
+    <p>
+      Visit the{' '}
+      <a href="https://example.com">
+        <code>@storybook/addon-essentials</code>
+      </a>{' '}
+      package for more details.
+    </p>
+    <p>
+      Mixed link:{' '}
+      <a href="https://example.com">
+        regular text and <code>code text</code> together
+      </a>
+      .
+    </p>
+    <p>
+      For comparison, here is regular <code>inline-code</code> outside a link.
+    </p>
+    <p>
+      And a <a href="https://example.com">regular link without code</a>.
     </p>
     <h2>Images</h2>
     <p>

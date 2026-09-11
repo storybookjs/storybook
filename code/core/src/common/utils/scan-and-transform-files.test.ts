@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as paths from './paths';
-import { scanAndTransformFiles } from './scan-and-transform-files';
+import * as paths from './paths.ts';
+import { scanAndTransformFiles } from './scan-and-transform-files.ts';
 
 // Mock dependencies
 const mocks = vi.hoisted(() => {

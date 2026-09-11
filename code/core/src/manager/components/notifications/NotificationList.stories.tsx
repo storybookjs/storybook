@@ -4,8 +4,8 @@ import { LocationProvider } from 'storybook/internal/router';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import * as itemStories from './NotificationItem.stories';
-import { NotificationList } from './NotificationList';
+import * as itemStories from './NotificationItem.stories.tsx';
+import { NotificationList } from './NotificationList.tsx';
 
 const meta = {
   component: NotificationList,

@@ -3,9 +3,9 @@ import React from 'react';
 import { useChannel } from 'storybook/preview-api';
 import { fn, userEvent, within } from 'storybook/test';
 
-import preview from '../../../.storybook/preview';
-import { StoryContent } from './StoryContent';
-import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants';
+import preview from '../../../.storybook/preview.tsx';
+import { StoryContent } from './StoryContent.tsx';
+import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from './constants.ts';
 
 const highlight = (
   selectors: string[],

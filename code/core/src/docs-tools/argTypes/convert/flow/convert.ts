@@ -1,7 +1,7 @@
 import { UnknownArgTypesError } from 'storybook/internal/preview-errors';
 import type { SBType } from 'storybook/internal/types';
 
-import type { FlowLiteralType, FlowSigType, FlowType } from './types';
+import type { FlowLiteralType, FlowSigType, FlowType } from './types.ts';
 
 const isLiteral = (type: FlowType): type is FlowLiteralType => type.name === 'literal';
 const toEnumOption = (element: FlowLiteralType) => element.value.replace(/['|"]/g, '');

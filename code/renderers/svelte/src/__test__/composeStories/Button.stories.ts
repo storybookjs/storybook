@@ -1,6 +1,6 @@
 import { expect, fn, userEvent, within } from 'storybook/test';
 
-import type { StoryFn as CSF2Story, Meta, StoryObj } from '../..';
+import type { StoryFn as CSF2Story, Meta, StoryObj } from '../../index.ts';
 import AddWrapperDecorator from './AddWrapperDecorator.svelte';
 import Button from './Button.svelte';
 import CustomRenderComponent from './CustomRenderComponent.svelte';

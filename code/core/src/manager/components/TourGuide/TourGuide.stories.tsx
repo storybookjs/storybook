@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { fn } from 'storybook/test';
 
-import { TourGuide } from './TourGuide';
+import { TourGuide } from './TourGuide.tsx';
 
 const meta = {
   component: TourGuide,

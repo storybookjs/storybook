@@ -4,7 +4,7 @@ import React from 'react';
 import { transparentize } from 'polished';
 import { Global } from 'storybook/theming';
 
-import type { Highlight } from './types';
+import type { Highlight } from './types.ts';
 
 // @ts-expect-error (non strict)
 export const HighlightStyles: FC<Highlight> = ({ refId, itemId }) => (

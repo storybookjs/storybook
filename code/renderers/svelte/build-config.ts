@@ -1,4 +1,4 @@
-import type { BuildEntries } from '../../../scripts/build/utils/entry-utils';
+import type { BuildEntries } from '../../../scripts/build/utils/entry-utils.ts';
 
 const config: BuildEntries = {
   entries: {
@@ -16,10 +16,6 @@ const config: BuildEntries = {
         exportEntries: ['./entry-preview-docs'],
         entryPoint: './src/entry-preview-docs.ts',
         dts: false,
-      },
-      {
-        exportEntries: ['./experimental-playwright'],
-        entryPoint: './src/playwright.ts',
       },
     ],
     node: [

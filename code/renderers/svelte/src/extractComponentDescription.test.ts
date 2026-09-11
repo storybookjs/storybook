@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractComponentDescription } from './extractComponentDescription';
+import { extractComponentDescription } from './extractComponentDescription.ts';
 
 describe('extractComponentDescription', () => {
   it('Extract from docgen', () => {

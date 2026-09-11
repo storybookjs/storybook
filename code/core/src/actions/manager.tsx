@@ -2,9 +2,9 @@ import React from 'react';
 
 import { addons, types } from 'storybook/manager-api';
 
-import { Title } from './components/Title';
-import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants';
-import ActionLogger from './containers/ActionLogger';
+import { Title } from './components/Title.tsx';
+import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants.ts';
+import ActionLogger from './containers/ActionLogger/index.tsx';
 
 export default addons.register(ADDON_ID, (api) => {
   if (globalThis?.FEATURES?.actions) {

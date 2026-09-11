@@ -12,12 +12,18 @@
     "react-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "react-vite-default-js" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "react-vite-default-js"
+      }
+    },
     "dev": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "react-vite-default-js" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "react-vite-default-js"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

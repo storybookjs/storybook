@@ -8,8 +8,8 @@
 import { AST_NODE_TYPES } from '@typescript-eslint/utils';
 import { dedent } from 'ts-dedent';
 
-import ruleTester from '../test-utils';
-import rule from './use-storybook-expect';
+import ruleTester from '../test-utils.ts';
+import rule from './use-storybook-expect.ts';
 
 //------------------------------------------------------------------------------
 // Tests

@@ -119,10 +119,71 @@ describe('initial state', () => {
         rightPanelWidth: 0,
       });
     });
+
+    it('keeps layout params out of customQueryParams, passing through only custom params', () => {
+      const navigate = vi.fn();
+      const location = {
+        search:
+          '?' +
+          new URLSearchParams({
+            // every layout key consumed by the manager (the full LAYOUT_QUERY_PARAM_KEYS set)
+            full: '1',
+            panel: 'right',
+            nav: '0',
+            shortcuts: '0',
+            addonPanel: 'controls',
+            tabs: '0',
+            path: '/story/button--primary',
+            // genuinely custom params that must survive
+            collection: '2',
+            tags: 'a11y',
+          }).toString(),
+      };
+
+      const {
+        state: { customQueryParams },
+      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
+
+      // Layout params (full/panel/nav/...) are consumed by the manager and must not leak into the
+      // params forwarded to the preview iframe; only genuinely custom params remain.
+      expect(customQueryParams).toEqual({ collection: '2', tags: 'a11y' });
+    });
   });
 });
 
 describe('queryParams', () => {
+  it('removes a key from customQueryParams when null is passed', () => {
+    let state = { customQueryParams: { tags: 'a11y', args: 'foo:bar' } };
+    const store = {
+      setState: (change) => {
+        state = { ...state, ...change };
+      },
+      getState: () => state,
+    };
+    const channel = new EventEmitter();
+    const navigate = vi.fn();
+    const { api } = initURL({
+      state: { location: { search: '?tags=a11y&args=foo:bar', path: '/', hash: '' } },
+      navigate,
+      store,
+      provider: { channel },
+    });
+
+    api.applyQueryParams({ tags: null }, { replace: true });
+
+    // tags key must be absent from stored customQueryParams
+    expect(state.customQueryParams).not.toHaveProperty('tags');
+    expect(state.customQueryParams).toHaveProperty('args', 'foo:bar');
+
+    // subsequent URL updates must not reintroduce tags
+    api.applyQueryParams({ args: 'foo:baz' }, { replace: true });
+    expect(navigate).toHaveBeenLastCalledWith(
+      expect.not.stringContaining('tags='),
+      expect.anything()
+    );
+    expect(state.customQueryParams).not.toHaveProperty('tags');
+  });
+
   it('lets your read out parameters you set previously', () => {
     let state = {};
     const store = {
@@ -530,5 +591,69 @@ describe('getStoryHrefs', () => {
     const { managerHref, previewHref } = api.getStoryHrefs('test--story');
     expect(managerHref).toEqual('/design-system/index.html?path=/story/test--story');
     expect(previewHref).toEqual('/design-system/iframe.html?id=test--story&viewMode=story');
+  });
+
+  it('stays interactive by default (no freeze contract)', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story');
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story');
+    expect(previewHref).not.toContain('freeze');
+  });
+
+  it('opts the preview into the freeze contract when freeze is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { freeze: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&freeze=finished');
+    // Freezing is a preview-only contract; the manager href must be unaffected.
+    expect(managerHref).toEqual('/?path=/story/test--story');
+  });
+
+  it('opts the preview into embed mode when embed is set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true });
+    expect(previewHref).toEqual('/iframe.html?id=test--story&viewMode=story&embed=true');
+  });
+
+  it('includes both embed and freeze when both are set', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { previewHref } = api.getStoryHrefs('test--story', { embed: true, freeze: true });
+    const url = new URL(previewHref, 'http://localhost');
+    expect(url.pathname).toBe('/iframe.html');
+    expect(url.searchParams.get('id')).toBe('test--story');
+    expect(url.searchParams.get('viewMode')).toBe('story');
+    expect(url.searchParams.get('embed')).toBe('true');
+    expect(url.searchParams.get('freeze')).toBe('finished');
   });
 });

@@ -19,10 +19,10 @@ import {
   setDefaultProjectAnnotations,
 } from 'storybook/preview-api';
 
-import * as reactProjectAnnotations from './entry-preview';
-import * as reactArgTypesAnnotations from './entry-preview-argtypes';
-import type { Meta } from './public-types';
-import type { ReactRenderer } from './types';
+import * as reactProjectAnnotations from './entry-preview.tsx';
+import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
+import type { Meta } from './public-types.ts';
+import type { ReactRenderer } from './types.ts';
 
 /**
  * Function that sets the globalConfig of your storybook. The global config is the preview module of

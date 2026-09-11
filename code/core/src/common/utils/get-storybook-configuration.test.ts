@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { getStorybookConfiguration } from './get-storybook-configuration';
+import { getStorybookConfiguration } from './get-storybook-configuration.ts';
 
 describe('getStorybookConfiguration', () => {
   it('handles short names', () => {

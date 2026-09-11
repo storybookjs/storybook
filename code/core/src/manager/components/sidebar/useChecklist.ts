@@ -16,9 +16,9 @@ import {
   useStorybookState,
 } from 'storybook/manager-api';
 
-import type { ItemState } from '../../../shared/checklist-store';
-import type { ChecklistData } from '../../../shared/checklist-store/checklistData';
-import { checklistData } from '../../../shared/checklist-store/checklistData';
+import type { ItemState } from '../../../shared/checklist-store/index.ts';
+import type { ChecklistData } from '../../../shared/checklist-store/checklistData.tsx';
+import { checklistData } from '../../../shared/checklist-store/checklistData.tsx';
 
 type RawItemWithSection = ChecklistData['sections'][number]['items'][number] & {
   itemIndex: number;
@@ -56,7 +56,12 @@ const useStoryIndex = () => {
 const checkAvailable = (
   item: RawItemWithSection,
   itemsById: Record<RawItemWithSection['id'], RawItemWithSection>,
-  context: { api: API; index: API_IndexHash | undefined; item: RawItemWithSection }
+  context: {
+    api: API;
+    index: API_IndexHash | undefined;
+    item: RawItemWithSection;
+    storeState: import('../../../shared/checklist-store/index.ts').StoreState;
+  }
 ) => {
   if (item.available && !item.available(context)) {
     return false;
@@ -143,7 +148,7 @@ export const useChecklist = () => {
 
       const isAvailable = isCompleted
         ? item.afterCompletion !== 'unavailable'
-        : checkAvailable(item, itemsById, { api, index, item });
+        : checkAvailable(item, itemsById, { api, index, item, storeState: checklistState });
       const isLockedBy = checkLockedBy(item, itemsById, items);
       const isImmutable = isCompleted && item.afterCompletion === 'immutable';
       const isReady = isOpen && isAvailable && !isMuted && !isLockedBy;
@@ -162,7 +167,7 @@ export const useChecklist = () => {
         isMuted,
       };
     });
-  }, [itemsById, items, widget, api, index]);
+  }, [itemsById, items, widget, api, index, checklistState]);
 
   const itemCollections = useMemo(() => {
     const availableItems = allItems.filter((item) => item.isAvailable);

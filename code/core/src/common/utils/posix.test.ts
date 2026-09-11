@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { posix } from './posix';
+import { posix } from './posix.ts';
 
 describe('posix', () => {
   it('should replace backslashes with forward slashes', () => {

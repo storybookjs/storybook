@@ -1,7 +1,7 @@
 import * as clack from '@clack/prompts';
 
-import { logTracker } from '../logger/log-tracker';
-import { wrapTextForClackHint } from '../wrap-utils';
+import { logTracker } from '../logger/log-tracker.ts';
+import { wrapTextForClackHint } from '../wrap-utils.ts';
 import type {
   ConfirmPromptOptions,
   MultiSelectPromptOptions,
@@ -12,8 +12,8 @@ import type {
   TaskLogInstance,
   TaskLogOptions,
   TextPromptOptions,
-} from './prompt-provider-base';
-import { PromptProvider } from './prompt-provider-base';
+} from './prompt-provider-base.ts';
+import { PromptProvider } from './prompt-provider-base.ts';
 
 export const getCurrentTaskLog = (): ReturnType<typeof clack.taskLog> | null => {
   if (globalThis.STORYBOOK_CURRENT_TASK_LOG) {
@@ -37,10 +37,10 @@ const clearCurrentTaskLog = () => {
 };
 
 export class ClackPromptProvider extends PromptProvider {
-  private handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
+  private async handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
     if (clack.isCancel(result)) {
       if (promptOptions?.onCancel) {
-        promptOptions.onCancel();
+        await promptOptions.onCancel();
       } else {
         clack.cancel('Operation canceled.');
         process.exit(0);
@@ -50,7 +50,7 @@ export class ClackPromptProvider extends PromptProvider {
 
   async text(options: TextPromptOptions, promptOptions?: PromptOptions): Promise<string> {
     const result = await clack.text(options);
-    this.handleCancel(result, promptOptions);
+    await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result.toString();
   }
@@ -60,7 +60,7 @@ export class ClackPromptProvider extends PromptProvider {
       ...options,
       message: wrapTextForClackHint(options.message, undefined, undefined, 2),
     });
-    this.handleCancel(result, promptOptions);
+    await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return Boolean(result);
   }
@@ -70,7 +70,7 @@ export class ClackPromptProvider extends PromptProvider {
       ...options,
       message: wrapTextForClackHint(options.message, undefined, undefined, 2),
     });
-    this.handleCancel(result, promptOptions);
+    await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result as T;
   }
@@ -83,7 +83,7 @@ export class ClackPromptProvider extends PromptProvider {
       ...options,
       required: options.required,
     });
-    this.handleCancel(result, promptOptions);
+    await this.handleCancel(result, promptOptions);
     logTracker.addLog('prompt', options.message, { choice: result });
     return result as T[];
   }

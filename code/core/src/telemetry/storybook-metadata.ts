@@ -14,21 +14,28 @@ import { getInterpretedFile } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
+import { RN_STORYBOOK_DIR } from '../shared/constants/config-folder.ts';
+
 import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
-import { globalSettings } from '../cli/globalSettings';
-import { getApplicationFileCount } from './get-application-file-count';
-import { getChromaticVersionSpecifier } from './get-chromatic-version';
-import { getFrameworkInfo } from './get-framework-info';
-import { getHasRouterPackage } from './get-has-router-package';
-import { analyzeEcosystemPackages } from './get-known-packages';
-import { getMonorepoType } from './get-monorepo-type';
-import { getPackageManagerInfo } from './get-package-manager-info';
-import { getPortableStoriesFileCount } from './get-portable-stories-usage';
-import { getActualPackageVersion, getActualPackageVersions } from './package-json';
-import { cleanPaths } from './sanitize';
-import type { Dependency, StorybookAddon, StorybookMetadata } from './types';
+import { globalSettings } from '../cli/globalSettings.ts';
+import { detectAgent } from './detect-agent.ts';
+import { getApplicationFileCount } from './get-application-file-count.ts';
+import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
+import { getFrameworkInfo } from './get-framework-info.ts';
+import { getHasModuleFederation } from './get-has-module-federation.ts';
+import { getHasRouterPackage } from './get-has-router-package.ts';
+import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
+import { getRendererPackages } from './get-renderer-packages.ts';
+import { getHasTurbopack } from './get-has-turbopack.ts';
+import { analyzeEcosystemPackages } from './get-known-packages.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
+import { getPackageManagerInfo } from './get-package-manager-info.ts';
+import { getPortableStoriesFileCount } from './get-portable-stories-usage.ts';
+import { getActualPackageVersion, getActualPackageVersions } from './package-json.ts';
+import { cleanPaths } from './sanitize.ts';
+import type { Dependency, StorybookAddon, StorybookMetadata } from './types.ts';
 
 export const metaFrameworks = {
   next: 'Next',
@@ -113,12 +120,13 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = isCI() ? undefined : await globalSettings();
+  const settings = isCI() && !detectAgent() ? undefined : await globalSettings();
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
     userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
+    hasCustomVite: false,
     hasStaticDirs: false,
     hasStorybookEslint: false,
     refCount: 0,
@@ -142,6 +150,8 @@ export const computeStorybookMetadata = async ({
 
   metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
+  metadata.hasTurbopack = getHasTurbopack(packageJson);
+  metadata.hasModuleFederation = getHasModuleFederation(packageJson);
 
   const monorepoType = getMonorepoType();
   if (monorepoType) {
@@ -160,7 +170,10 @@ export const computeStorybookMetadata = async ({
     };
   }
   metadata.hasCustomBabel = !!mainConfig.babel;
-  metadata.hasCustomWebpack = !!mainConfig.webpackFinal;
+  metadata.hasCustomWebpack =
+    !!mainConfig.webpackFinal ||
+    (!!allDependencies.next && getHasNextCustomWebpack(dirname(packageJsonPath)));
+  metadata.hasCustomVite = !!mainConfig.viteFinal;
   metadata.hasStaticDirs = !!mainConfig.staticDirs;
 
   if (typeof mainConfig.typescript === 'object') {
@@ -168,6 +181,18 @@ export const computeStorybookMetadata = async ({
   }
 
   const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
+
+  const rendererPackages = Object.fromEntries(
+    await Promise.all(
+      getRendererPackages(frameworkInfo.renderer).map(async (packageName) => {
+        const { version } = await getActualPackageVersion(packageName);
+        return [packageName, version || 'unknown'];
+      })
+    )
+  );
+  if (Object.keys(rendererPackages).length > 0) {
+    metadata.knownPackages = { ...metadata.knownPackages, rendererPackages };
+  }
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;
@@ -309,20 +334,35 @@ async function hashMainConfig(configDir: string): Promise<string> {
   }
 }
 
+function resolveDefaultConfigDir(packageJson: PackageJson): string {
+  /*
+    TODO: improve the way configDir is extracted, as a "storybook" script might not be present.
+    Scenarios:
+    1. user changed it to something else e.g. "storybook:dev"
+    2. they are using angular/nx where the storybook config is defined somewhere else
+    3. React Native on-device Storybook uses `.rnstorybook` and `storybook:ios`/`storybook:android`
+       scripts (no `storybook` script), so the `.storybook` default never finds the config.
+  */
+  const fromScript = getStorybookConfiguration(
+    String((packageJson?.scripts as Record<string, unknown> | undefined)?.storybook || ''),
+    '-c',
+    '--config-dir'
+  ) as string | null;
+
+  if (fromScript) {
+    return fromScript;
+  }
+
+  if (existsSync(resolve(RN_STORYBOOK_DIR))) {
+    return RN_STORYBOOK_DIR;
+  }
+
+  return '.storybook';
+}
+
 export const getStorybookMetadata = async (_configDir?: string) => {
   const { packageJson, packageJsonPath } = await getPackageJsonDetails();
-  // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
-  // Scenarios:
-  // 1. user changed it to something else e.g. "storybook:dev"
-  // 2. they are using angular/nx where the storybook config is defined somewhere else
-  const configDir =
-    (_configDir ||
-      (getStorybookConfiguration(
-        String((packageJson?.scripts as Record<string, unknown> | undefined)?.storybook || ''),
-        '-c',
-        '--config-dir'
-      ) as string)) ??
-    '.storybook';
+  const configDir = _configDir || resolveDefaultConfigDir(packageJson);
   const contentHash = await hashMainConfig(configDir);
   const cacheKey = `${configDir}::${contentHash}`;
   const cached = metadataCache.get(cacheKey);

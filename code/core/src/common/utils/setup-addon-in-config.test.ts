@@ -4,10 +4,10 @@ import type { ConfigFile } from 'storybook/internal/csf-tools';
 import * as csfTools from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import * as loadMainConfigModule from './load-main-config';
-import { setupAddonInConfig } from './setup-addon-in-config';
-import * as syncModule from './sync-main-preview-addons';
-import * as wrapUtils from './wrap-getAbsolutePath-utils';
+import * as loadMainConfigModule from './load-main-config.ts';
+import { setupAddonInConfig } from './setup-addon-in-config.ts';
+import * as syncModule from './sync-main-preview-addons.ts';
+import * as wrapUtils from './wrap-getAbsolutePath-utils.ts';
 
 vi.mock('storybook/internal/csf-tools', { spy: true });
 vi.mock('./sync-main-preview-addons', { spy: true });

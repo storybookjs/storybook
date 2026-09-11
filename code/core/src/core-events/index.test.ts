@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import * as EventsPackageExport from './index';
-import EventsDefaultExport, { CHANNEL_CREATED } from './index';
+import * as EventsPackageExport from './index.ts';
+import EventsDefaultExport, { CHANNEL_CREATED } from './index.ts';
 
 describe('Core Events', () => {
   it('Should export the module as a namespace', () => {

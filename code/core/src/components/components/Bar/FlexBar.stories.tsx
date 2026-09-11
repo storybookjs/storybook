@@ -2,8 +2,8 @@ import React from 'react';
 
 import { styled } from 'storybook/theming';
 
-import preview from '../../../../../.storybook/preview';
-import { FlexBar } from './Bar';
+import preview from '../../../../../.storybook/preview.tsx';
+import { FlexBar } from './Bar.tsx';
 
 const meta = preview.meta({ component: FlexBar, title: 'Bar/FlexBar (deprecated)' });
 

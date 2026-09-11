@@ -8,8 +8,8 @@ import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/interna
 
 import { sep } from 'path';
 
-import { IS_WINDOWS } from '../../../vitest.helpers';
-import * as helpers from './helpers';
+import { IS_WINDOWS } from '../../../vitest.helpers.ts';
+import * as helpers from './helpers.ts';
 
 const normalizePath = (path: string) => (IS_WINDOWS ? path.replace(/\//g, sep) : path);
 

@@ -9,10 +9,10 @@ import { printCsf } from 'storybook/internal/csf-tools';
 import { dedent } from 'ts-dedent';
 
 // Import FixResult type
-import { addonGlobalsApi, transformStoryFile } from './addon-globals-api';
+import { addonGlobalsApi, transformStoryFile } from './addon-globals-api.ts';
 
 // Mock fs/promises
-vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises'));
+vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises.ts'));
 
 vi.mock(import('storybook/internal/babel'), async (actualImport) => {
   const actual = await actualImport();

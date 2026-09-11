@@ -6,7 +6,7 @@ import { global } from '@storybook/global';
 
 import { addons, makeDecorator } from 'storybook/preview-api';
 
-import { PARAM_KEY } from './constants';
+import { PARAM_KEY } from './constants.ts';
 
 const { document, HTMLElement } = global;
 

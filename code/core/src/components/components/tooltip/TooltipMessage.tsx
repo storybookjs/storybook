@@ -5,7 +5,7 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { styled } from 'storybook/theming';
 
-import { Link } from '../typography/link/link';
+import { Link } from '../typography/link/link.tsx';
 
 const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,

@@ -5,9 +5,9 @@ import { Component, ɵresetJitOptions } from '@angular/core';
 import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 
-import { CanvasRenderer } from './CanvasRenderer';
-import { RendererFactory } from './RendererFactory';
-import { DocsRenderer } from './DocsRenderer';
+import { CanvasRenderer } from './CanvasRenderer.ts';
+import { RendererFactory } from './RendererFactory.ts';
+import { DocsRenderer } from './DocsRenderer.ts';
 
 vi.mock('@angular/platform-browser-dynamic');
 
@@ -53,9 +53,9 @@ describe('RendererFactory', () => {
         },
         forced: false,
         targetDOMNode: rootTargetDOMNode,
+        storyId: 'my-story',
       });
-
-      expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊');
+      expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe('🦊');
     });
 
     it('should render my-story for story component', async () => {
@@ -70,9 +70,10 @@ describe('RendererFactory', () => {
         forced: false,
         component: FooComponent,
         targetDOMNode: rootTargetDOMNode,
+        storyId: 'my-story',
       });
 
-      expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe(
+      expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe(
         '<foo>🦊</foo><!--container-->'
       );
     });
@@ -97,9 +98,10 @@ describe('RendererFactory', () => {
         },
         forced: false,
         targetDOMNode: rootTargetDOMNode,
+        storyId: 'my-story',
       });
 
-      expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊');
+      expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe('🦊');
     });
 
     describe('when forced=true', () => {
@@ -116,11 +118,14 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
       });
 
       it('should be rendered a first time', async () => {
-        expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🦊: Fox');
+        expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe(
+          '🦊: Fox'
+        );
       });
 
       it('should not be re-rendered when only props change', async () => {
@@ -134,9 +139,12 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
 
-        expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('👾: Fox');
+        expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe(
+          '👾: Fox'
+        );
       });
 
       it('should be re-rendered when template change', async () => {
@@ -150,9 +158,10 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
 
-        expect(document.body.getElementsByTagName('storybook-root')[0].innerHTML).toBe('🍺');
+        expect(document.body.querySelector('#storybook-root').children[0].innerHTML).toBe('🍺');
       });
     });
   });
@@ -168,6 +177,7 @@ describe('RendererFactory', () => {
           },
           forced: true,
           targetDOMNode: rootTargetDOMNode,
+          storyId: 'my-story',
         });
       });
 
@@ -206,6 +216,7 @@ describe('RendererFactory', () => {
           forced: false,
           component: FooComponent,
           targetDOMNode: targetDOMNode1,
+          storyId: 'story-1',
         });
 
         const targetDOMNode2 = global.document.createElement('div');
@@ -218,6 +229,7 @@ describe('RendererFactory', () => {
           forced: false,
           component: FooComponent,
           targetDOMNode: targetDOMNode2,
+          storyId: 'story-1',
         });
 
         expect(global.document.querySelectorAll('#story-1 > story-1')[0].innerHTML).toBe(
@@ -252,12 +264,14 @@ describe('RendererFactory', () => {
             forced: false,
             component: FooComponent,
             targetDOMNode: targetDOMNode1,
+            storyId: 'story-1',
           }),
           render.render({
             storyFnAngular: {},
             forced: false,
             component: FooComponent,
             targetDOMNode: targetDOMNode2,
+            storyId: 'story-2',
           }),
         ]);
 

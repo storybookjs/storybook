@@ -13,9 +13,9 @@ import {
 import type { AxeResults } from 'axe-core';
 import * as api from 'storybook/manager-api';
 
-import { EVENTS, UI_STATE_ID } from '../constants';
-import { RuleType } from '../types';
-import { A11yContextProvider, useA11yContext } from './A11yContext';
+import { EVENTS, UI_STATE_ID } from '../constants.ts';
+import { RuleType } from '../types.ts';
+import { A11yContextProvider, useA11yContext } from './A11yContext.tsx';
 
 vi.mock('storybook/manager-api');
 const mockedApi = vi.mocked(api);

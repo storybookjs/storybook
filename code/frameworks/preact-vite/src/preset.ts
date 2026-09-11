@@ -1,4 +1,4 @@
-import type { StorybookConfig } from './types';
+import type { StorybookConfig } from './types.ts';
 
 export const core: StorybookConfig['core'] = {
   builder: import.meta.resolve('@storybook/builder-vite'),

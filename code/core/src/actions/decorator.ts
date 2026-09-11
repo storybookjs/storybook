@@ -2,8 +2,8 @@ import type { PartialStoryFn, Renderer } from 'storybook/internal/types';
 
 import { makeDecorator, useEffect } from 'storybook/preview-api';
 
-import { PARAM_KEY } from './constants';
-import { actions } from './runtime/actions';
+import { PARAM_KEY } from './constants.ts';
+import { actions } from './runtime/actions.ts';
 
 const delegateEventSplitter = /^(\S+)\s*(.*)$/;
 

@@ -12,12 +12,18 @@
     "preact-vite"
   ],
   "targets": {
-    "sandbox": { "options": { "dir": "preact-vite-default-js" } },
-    "prepare-sandbox": {},
+    "sandbox": {
+      "options": {
+        "dir": "preact-vite-default-js"
+      }
+    },
     "dev": {},
     "vitest-integration": {},
-    "build": { "options": { "dir": "preact-vite-default-js" } },
-    "prepare-build-sandbox": {},
+    "build": {
+      "options": {
+        "dir": "preact-vite-default-js"
+      }
+    },
     "chromatic": {},
     "serve": {},
     "e2e-tests-dev": {},

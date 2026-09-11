@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Feature, SupportedBuilder } from 'storybook/internal/types';
 
-import { AddonService } from './AddonService';
+import { AddonService } from './AddonService.ts';
 
 vi.mock('storybook/internal/common', async () => {
   const actual = await vi.importActual('storybook/internal/common');

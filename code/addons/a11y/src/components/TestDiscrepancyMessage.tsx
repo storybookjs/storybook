@@ -5,7 +5,7 @@ import { Link } from 'storybook/internal/components';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants';
+import { DOCUMENTATION_DISCREPANCY_LINK } from '../constants.ts';
 
 const Wrapper = styled.div(({ theme: { color, typography, background } }) => ({
   textAlign: 'start',

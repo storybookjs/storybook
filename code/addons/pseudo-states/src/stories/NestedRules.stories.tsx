@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { Button } from './NestedRules';
+import { Button } from './NestedRules.tsx';
 
 const meta = {
   title: 'NestedRules',

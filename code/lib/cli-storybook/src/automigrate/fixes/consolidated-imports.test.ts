@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { JsPackageManager, versions } from 'storybook/internal/common';
 
-import { consolidatedImports, transformPackageJsonFiles } from './consolidated-imports';
+import { consolidatedImports, transformPackageJsonFiles } from './consolidated-imports.ts';
 
 // mock picocolors yellow and cyan
 vi.mock('picocolors', () => {

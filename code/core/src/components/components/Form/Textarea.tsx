@@ -11,7 +11,7 @@ import {
   sizes,
   styles,
   validation,
-} from './styles';
+} from './styles.ts';
 
 /**
  * These types are copied from `react-textarea-autosize`. I copied them because of

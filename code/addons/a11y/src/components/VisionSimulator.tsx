@@ -7,8 +7,8 @@ import { AccessibilityIcon } from '@storybook/icons';
 import { useGlobals } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { VISION_GLOBAL_KEY } from '../constants';
-import { filterDefs, filters } from '../visionSimulatorFilters';
+import { VISION_GLOBAL_KEY } from '../constants.ts';
+import { filterDefs, filters } from '../visionSimulatorFilters.ts';
 
 const Hidden = styled.div({
   '&, & svg': {

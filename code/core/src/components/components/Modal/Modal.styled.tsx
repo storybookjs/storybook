@@ -10,9 +10,9 @@ import { Text } from 'react-aria-components/patched-dist/Text';
 import type { TransitionStatus } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
-import { Button } from '../Button/Button';
+import { Button } from '../Button/Button.tsx';
 // Import the ModalContext from the main Modal component
-import { ModalContext } from './Modal';
+import { ModalContext } from './Modal.tsx';
 
 const fadeIn = keyframes({
   from: { opacity: 0 },
@@ -58,14 +58,14 @@ const slideFromBottom = keyframes({
   },
   to: {
     opacity: 1,
-    maxHeight: '80vh',
+    maxHeight: '80dvh',
   },
 });
 
 const slideToBottom = keyframes({
   from: {
     opacity: 1,
-    maxHeight: '80vh',
+    maxHeight: '80dvh',
   },
   to: {
     opacity: 0,
@@ -135,6 +135,7 @@ export const Container = styled.div<{
           },
         }
       : {
+          position: 'fixed',
           bottom: '0',
           left: '0',
           right: '0',

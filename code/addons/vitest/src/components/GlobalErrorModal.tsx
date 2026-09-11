@@ -7,8 +7,8 @@ import { SyncIcon } from '@storybook/icons';
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants';
-import type { ErrorLike, StoreState } from '../types';
+import { DOCUMENTATION_FATAL_ERROR_LINK } from '../constants.ts';
+import type { ErrorLike, StoreState } from '../types.ts';
 
 const ModalBar = styled.div({
   display: 'flex',

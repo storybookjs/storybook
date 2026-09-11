@@ -4,7 +4,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { join } from 'path';
 import type { Page } from 'playwright-core';
 
-import type { BenchResults } from './types';
+import type { BenchResults } from './types.ts';
 
 export const now = () => new Date().getTime();
 

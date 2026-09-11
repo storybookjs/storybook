@@ -3,8 +3,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { CheckOptions, RunOptions } from '../types';
-import { addonMdxGfmRemove } from './addon-mdx-gfm-remove';
+import type { CheckOptions, RunOptions } from '../types.ts';
+import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 
 // Mock modules before any other imports or declarations
 vi.mock('node:fs/promises', async () => {

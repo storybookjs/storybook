@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { UnknownArgTypesError } from '../preview-errors';
+import { UnknownArgTypesError } from '../preview-errors.ts';
 
 describe('UnknownFlowArgTypesError', () => {
   it('should correctly handle error with convertSig', () => {

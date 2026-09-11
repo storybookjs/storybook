@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
@@ -9,7 +10,6 @@
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
-
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -542,6 +542,44 @@
 
 ## From version 10.x to 11.0.0
 
+### `parameters.componentSubtitle` removed
+
+The deprecated `parameters.componentSubtitle` fallback was removed. Move subtitles to
+`parameters.docs.subtitle`.
+
+When you upgrade to Storybook 11, the upgrade command offers to move directly declared properties
+in preview configuration and CSF files when it can preserve their behavior. To run this
+automigration directly from your project root without the post-migration health check, use:
+
+```sh
+npx storybook@11 automigrate component-subtitle --skip-doctor
+```
+
+Use `--config-dir <path>` if the Storybook configuration is not in the root `.storybook` directory.
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+If `parameters.docs` already exists, add `subtitle` without replacing its other options:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
+    docs: {
++     subtitle: 'Button variants',
+      source: { type: 'code' },
+    },
+  },
+};
+```
+
 ### Top-level `setConfig` layout and UI options removed
 
 The deprecated top-level layout and UI options passed to `addons.setConfig` are no longer applied.
@@ -651,6 +689,7 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 ### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
+
 
 ## From version 10.5.x to 10.6.0
 

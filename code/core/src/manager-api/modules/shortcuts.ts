@@ -130,9 +130,8 @@ export interface API_Shortcuts {
 export type API_Action = keyof API_Shortcuts;
 
 /**
- * A built-in shortcut action, or the id of a shortcut registered through `setAddonShortcut`
- * (`` `${addon}-${actionName}` ``). `(string & {})` admits those addon ids while preserving
- * autocompletion for the built-in names.
+ * Matchable shortcut actions include built-in and addon-defined actions. We use this type to
+ * get autocompletion on built-in actions, but allow arbitrary strings for addon-defined ones.
  */
 export type API_MatchableAction = API_Action | (string & {});
 

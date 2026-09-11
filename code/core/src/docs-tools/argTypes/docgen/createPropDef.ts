@@ -16,7 +16,13 @@ export type PropDefFactory = (
 
 function createType(type: DocgenType) {
   // A type could be null if a defaultProp has been provided without a type definition.
-  return type != null ? createSummaryValue(type.name) : null;
+  // `detail` is optional named-type display text; pass it only when present so producers that
+  // never set it keep the exact summary-only shape (no `detail: undefined` key).
+  return type != null
+    ? type.detail
+      ? createSummaryValue(type.name, type.detail)
+      : createSummaryValue(type.name)
+    : null;
 }
 
 // A heuristic to tell if a defaultValue comes from RDT
@@ -42,6 +48,15 @@ function isStringValued(type?: DocgenType) {
       )
     );
   }
+
+  // The component-meta engine's normalized enum emission carries the member literals in the
+  // type name (the shape react-docgen-typescript emits); same string-member semantics as the
+  // `enum` shape above.
+  if (typeof type.name === 'string' && type.name.includes('|')) {
+    const parts = type.name.split('|').map((part) => part.trim());
+    return parts.length > 0 && parts.every((part) => part.startsWith('"') && part.endsWith('"'));
+  }
+
   return false;
 }
 

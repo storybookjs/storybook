@@ -35,6 +35,11 @@ export interface PropItemType {
   name: string;
   raw?: string;
   value?: { value: string }[];
+  /**
+   * One-hop member lines of a named interface / object-shape alias / enum reference declared in
+   * the user's project, for `table.type.detail`. Absent whenever no expansion applies.
+   */
+  detail?: string;
 }
 
 export interface ParentType {
@@ -680,6 +685,228 @@ function getAllDeclarationParents(
 // Type serialization
 // ---------------------------------------------------------------------------
 
+/** Max member lines emitted into a named-type detail before the `… N more` marker. */
+const MAX_DETAIL_MEMBER_LINES = 20;
+
+/** Max hops when following alias symbols to their declaration; guards cyclic alias chains. */
+const MAX_ALIAS_HOPS = 5;
+
+/**
+ * Resolves the named symbol behind a type reference, following import/type-alias symbols to the
+ * declaration that owns the members. Cycle-guarded: a chain that revisits a symbol yields
+ * undefined rather than looping the shared docgen worker.
+ */
+function resolveNamedTypeSymbol(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  type: ts.Type
+): ts.Symbol | undefined {
+  let symbol = type.aliasSymbol ?? type.symbol;
+  if (!symbol) {
+    return undefined;
+  }
+
+  const seen = new Set<ts.Symbol>();
+  for (let hop = 0; symbol.flags & typescript.SymbolFlags.Alias; hop += 1) {
+    if (seen.has(symbol) || hop > MAX_ALIAS_HOPS) {
+      return undefined;
+    }
+    seen.add(symbol);
+    const aliased = checker.getAliasedSymbol(symbol);
+    if (!aliased || aliased === symbol) {
+      return undefined;
+    }
+    symbol = aliased;
+  }
+  return symbol;
+}
+
+/** Declarations outside the user's project (dependencies, ambient .d.ts) never expand. */
+function isExternalDeclaration(declaration: ts.Declaration): boolean {
+  const fileName = declaration.getSourceFile().fileName;
+  return fileName.includes('node_modules') || fileName.endsWith('.d.ts');
+}
+
+/**
+ * Single-line description suffix for a member line — only from the documentation the checker
+ * already holds on the symbol; no new resolution work. A detail line is one line, so any JSDoc
+ * whitespace collapses into single spaces.
+ */
+function getMemberDescriptionSuffix(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  member: ts.Symbol
+): string {
+  const description = typescript.displayPartsToString(member.getDocumentationComment(checker));
+  if (!description) {
+    return '';
+  }
+  const collapsed = description.replace(/\s+/g, ' ').trim();
+  return collapsed ? ` — ${collapsed}` : '';
+}
+
+/**
+ * Enum member lines `Name = value`. Values come from the checker's constant-value computation,
+ * falling back to the initializer as written; a member without a value renders as just its name.
+ */
+function getEnumMemberLines(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  declaration: ts.EnumDeclaration
+): string[] {
+  return declaration.members.map((member) => {
+    const name = member.name.getText();
+    const constantValue = checker.getConstantValue(member);
+    if (typeof constantValue === 'string') {
+      return `  ${name} = '${constantValue.replace(/'/g, "\\'")}'`;
+    }
+    if (typeof constantValue === 'number') {
+      return `  ${name} = ${constantValue}`;
+    }
+    const initializer = member.initializer?.getText();
+    return initializer ? `  ${name} = ${initializer}` : `  ${name}`;
+  });
+}
+
+/**
+ * One-hop property lines `name: typeText` for an interface or object-shape alias. Property types
+ * render as their text form and are never expanded recursively.
+ */
+function getObjectMemberLines(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  members: ts.Symbol[],
+  contextNode: ts.Node
+): string[] {
+  return members.map((member) => {
+    const memberType = checker.getTypeOfSymbolAtLocation(member, contextNode);
+    const typeText = checker.typeToString(memberType);
+    return `  ${member.getName()}: ${typeText}${getMemberDescriptionSuffix(
+      typescript,
+      checker,
+      member
+    )}`;
+  });
+}
+
+/**
+ * Detail text for a named reference to an interface, object-shape type alias, or enum declared in
+ * the user's project — the pinned cross-framework format:
+ *
+ *     User {            Color {
+ *       name: string      Red = 'red'
+ *       age: number       Green = 'green'
+ *     }                 }
+ *
+ * Bounded by contract: one hop only (property types render as their text form), capped at the
+ * first 20 member lines followed by `… N more`, and never expanded for node_modules / `.d.ts`
+ * declarations. Returns undefined — the detail key stays absent, not empty — whenever no
+ * expansion applies, including cyclic alias chains the guard cannot resolve.
+ */
+function getNamedTypeDetail(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  type: ts.Type
+): string | undefined {
+  // The header names the reference as written (alias spelling included), matching the summary.
+  const referencedName = type.aliasSymbol?.getName() ?? type.symbol?.getName();
+  const symbol = resolveNamedTypeSymbol(typescript, checker, type);
+  const declaration = symbol && (symbol.valueDeclaration ?? symbol.getDeclarations()?.[0]);
+  if (!referencedName || !symbol || !declaration || isExternalDeclaration(declaration)) {
+    return undefined;
+  }
+
+  let memberLines: string[];
+  if (typescript.isEnumDeclaration(declaration)) {
+    memberLines = getEnumMemberLines(typescript, checker, declaration);
+  } else if (
+    (typescript.isInterfaceDeclaration(declaration) ||
+      typescript.isTypeAliasDeclaration(declaration)) &&
+    // Object shapes only: scalar aliases (`type ID = string`), unions, arrays, and tuples never
+    // expand into member lines.
+    !!(type.getFlags() & typescript.TypeFlags.Object) &&
+    !checker.isArrayType(type) &&
+    !checker.isTupleType(type)
+  ) {
+    memberLines = getObjectMemberLines(
+      typescript,
+      checker,
+      checker.getPropertiesOfType(type),
+      declaration
+    );
+  } else {
+    return undefined;
+  }
+
+  if (memberLines.length === 0) {
+    return undefined;
+  }
+
+  return formatTypeDetail(referencedName, memberLines);
+}
+
+/** Assembles the pinned detail text: header, capped member lines, `… N more` marker, closer. */
+function formatTypeDetail(referencedName: string, memberLines: string[]): string {
+  const shown =
+    memberLines.length > MAX_DETAIL_MEMBER_LINES
+      ? [
+          ...memberLines.slice(0, MAX_DETAIL_MEMBER_LINES),
+          `… ${memberLines.length - MAX_DETAIL_MEMBER_LINES} more`,
+        ]
+      : memberLines;
+
+  return [`${referencedName} {`, ...shown, '}'].join('\n');
+}
+
+/**
+ * Detail fallback for an optional named enum (`status?: Color`): the member union plus
+ * `undefined` carries no aliasSymbol, but every member literal declares inside the same
+ * enum, so the declaration and header name are recovered from the members. Returns undefined
+ * unless all literal members share one in-project enum declaration.
+ */
+function getEnumMemberUnionDetail(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  literalMembers: ts.Type[]
+): string | undefined {
+  const declarations = literalMembers.map(
+    (member) => member.symbol?.valueDeclaration ?? member.symbol?.getDeclarations()?.[0]
+  );
+  const enumDeclarations = declarations.map((declaration) =>
+    declaration && typescript.isEnumMember(declaration) ? declaration.parent : undefined
+  );
+  const enumDeclaration = enumDeclarations[0];
+  if (
+    !enumDeclaration ||
+    !typescript.isEnumDeclaration(enumDeclaration) ||
+    !enumDeclarations.every((declaration) => declaration === enumDeclaration) ||
+    isExternalDeclaration(enumDeclaration)
+  ) {
+    return undefined;
+  }
+
+  const memberLines = getEnumMemberLines(typescript, checker, enumDeclaration);
+  if (memberLines.length === 0) {
+    return undefined;
+  }
+
+  return formatTypeDetail(enumDeclaration.name.getText(), memberLines);
+}
+
+/**
+ * Flat single-type serialization: the display name, plus named-type member detail when the type
+ * resolves to an expandable declaration in the user's project.
+ */
+function serializeFlatType(
+  typescript: typeof ts,
+  checker: ts.TypeChecker,
+  type: ts.Type
+): PropItemType {
+  const name = checker.typeToString(type);
+  const detail = getNamedTypeDetail(typescript, checker, type);
+  return detail === undefined ? { name } : { name, detail };
+}
+
 function serializeType(
   typescript: typeof ts,
   checker: ts.TypeChecker,
@@ -713,6 +940,33 @@ function serializeType(
 
     if (literalMembers.length > 0 && literalMembers.length === nonUndefinedTypes.length) {
       const rawParts = literalMembers.map((m) => checker.typeToString(m));
+      // Named enum references (user-project declarations) reach here as the union of their
+      // member literal types, same as anonymous literal unions; getNamedTypeDetail gates
+      // plain literal unions out, so a detail here means a named enum. The member-union
+      // fallback covers optional enums, where the `| undefined` union drops the aliasSymbol.
+      const detail =
+        getNamedTypeDetail(typescript, checker, type) ??
+        getEnumMemberUnionDetail(typescript, checker, literalMembers);
+
+      if (
+        detail !== undefined &&
+        literalMembers.every(
+          (m) =>
+            typeof m.value === 'number' || (typeof m.value === 'string' && !m.value.includes('|'))
+        )
+      ) {
+        // Normalize named enums to the literal-union shape react-docgen-typescript already
+        // emits: `convert()` recovers the identical enum sbType from the pipe-separated name,
+        // the legacy PropTypes enhancement no longer rebuilds the summary, and the member
+        // detail survives to table.type.detail. The name is exactly the summary text today's
+        // `enum` shape produces after enhancement, so summary and sbType are unchanged.
+        return {
+          name: literalMembers.map((m) => JSON.stringify(m.value)).join(' | '),
+          raw: rawParts.join(' | '),
+          detail,
+        };
+      }
+
       return {
         name: 'enum',
         raw: rawParts.join(' | '),
@@ -736,7 +990,7 @@ function serializeType(
       nonUndefinedTypes.length === 1 &&
       nonUndefinedTypes.length < type.types.length
     ) {
-      return { name: checker.typeToString(nonUndefinedTypes[0]) };
+      return serializeFlatType(typescript, checker, nonUndefinedTypes[0]);
     }
   }
 
@@ -745,7 +999,7 @@ function serializeType(
     return serializeType(typescript, checker, constraint, isRequired, depth + 1);
   }
 
-  return { name: checker.typeToString(type) };
+  return serializeFlatType(typescript, checker, type);
 }
 
 // ---------------------------------------------------------------------------

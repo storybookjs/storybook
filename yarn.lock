@@ -8487,6 +8487,19 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-aria/focus@npm:^3.22.1":
+  version: 3.22.1
+  resolution: "@react-aria/focus@npm:3.22.1"
+  dependencies:
+    "@swc/helpers": "npm:^0.5.0"
+    react-aria: "npm:^3.48.0"
+  peerDependencies:
+    react: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+    react-dom: ^16.8.0 || ^17.0.0-rc.1 || ^18.0.0 || ^19.0.0-rc.1
+  checksum: 10c0/09cfe01fafcdb938acccbdaa300186d400250208caaeaebebce06a041c117a372289dac261f824076073469f631420a5fc31b4fafd4166aad3065bcfe9d68570
+  languageName: node
+  linkType: hard
+
 "@react-aria/live-announcer@npm:^3.5.1":
   version: 3.5.1
   resolution: "@react-aria/live-announcer@npm:3.5.1"
@@ -32910,6 +32923,7 @@ __metadata:
     "@preact/signals-core": "npm:^1.14.2"
     "@radix-ui/react-scroll-area": "npm:1.2.0-rc.7"
     "@radix-ui/react-slot": "npm:^1.0.2"
+    "@react-aria/focus": "npm:^3.22.1"
     "@react-aria/live-announcer": "npm:^3.5.1"
     "@react-aria/overlays": "npm:^3.32.1"
     "@react-stately/overlays": "npm:^3.7.1"

@@ -1,6 +1,6 @@
-import { imageSize } from 'image-size';
 import { interpolateName } from 'loader-utils';
 import type { NextConfig } from 'next';
+import probeSync from 'probe-image-size/sync.js';
 import type { RawLoaderDefinition } from 'webpack';
 
 interface LoaderOptions {
@@ -24,7 +24,14 @@ const nextImageLoaderStub: RawLoaderDefinition<LoaderOptions> = async function N
     return `const src = '${outputPath}'; export default src;`;
   }
 
-  const { width, height } = imageSize(content as Uint8Array);
+  const size = probeSync(content as Buffer);
+
+  // probe-image-size returns null instead of throwing on unrecognized data
+  if (!size) {
+    throw new Error('Unsupported or corrupt image file');
+  }
+
+  const { width, height } = size;
 
   return `export default ${JSON.stringify({
     src: outputPath,

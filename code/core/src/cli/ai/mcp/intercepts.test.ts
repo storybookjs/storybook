@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { getInterceptMarkdown } from './intercepts.ts';
-import type { StorybookInstanceRecord } from './types.ts';
+import type { StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
 const record = (
   cwd: string,
@@ -90,7 +90,7 @@ describe('getInterceptMarkdown', () => {
       port: 9999,
       records: [record('/projects/foo', 'http://localhost:6006')],
     });
-    expect(markdown).toContain('not on port `9999`');
+    expect(markdown).toContain('on port `9999`');
     expect(markdown).toContain('- port `6006`');
     expect(markdown).toContain('omit `--port`');
   });

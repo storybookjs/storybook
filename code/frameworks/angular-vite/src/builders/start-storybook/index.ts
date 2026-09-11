@@ -30,15 +30,13 @@ import * as pkg from 'empathic/package';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
 import { Channel } from 'storybook/internal/channels';
-import { findTsconfigUp } from '../../find-tsconfig.ts';
+import { resolveTsconfig } from '../../find-tsconfig.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
 export type StorybookBuilderOptions = JsonObject & {
   browserTarget?: string | null;
   tsConfig?: string;
-  compodoc: boolean;
-  compodocArgs: string[];
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
@@ -216,7 +214,12 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   }
 
   return {
-    tsConfig: options.tsConfig ?? findTsconfigUp(options.configDir) ?? browserOptions.tsConfig,
+    tsConfig: resolveTsconfig({
+      workspaceRoot: context.workspaceRoot,
+      configDir: options.configDir,
+      tsConfig: options.tsConfig,
+      browserTsConfig: browserOptions?.tsConfig,
+    }),
   };
 }
 async function runInstance(options: StandaloneOptions) {

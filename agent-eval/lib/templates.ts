@@ -15,7 +15,6 @@ type FixturePackageJson = {
 
 type EvalAgent = 'claude-code' | 'codex';
 type EvalIntegration = 'mcp' | 'plugin';
-type DependencyOverrides = Record<string, string>;
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
 };
@@ -557,7 +556,7 @@ async function readLocalStorybookMcpPackage(): Promise<Record<string, string>> {
   const targetDir = path.posix.join('local-packages', 'mcp');
   const files = await readPackageDistFiles(sourceDir, targetDir);
 
-  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {});
+  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir);
 
   return files;
 }
@@ -571,19 +570,12 @@ async function readLocalStorybookAddonMcpPackage(): Promise<Record<string, strin
     path.join(sourceDir, 'preset.js'),
     'utf8'
   );
-  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir, {
-    dependencyOverrides: {
-      '@storybook/mcp': 'file:../mcp',
-    },
-  });
+  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir);
 
   return files;
 }
 
-async function readSandboxPackageJson(
-  sourceDir: string,
-  options: { dependencyOverrides?: DependencyOverrides }
-): Promise<string> {
+async function readSandboxPackageJson(sourceDir: string): Promise<string> {
   const packageJson = JSON.parse(
     await fs.readFile(path.join(sourceDir, 'package.json'), 'utf8')
   ) as unknown;
@@ -592,15 +584,13 @@ async function readSandboxPackageJson(
     throw new Error(`Expected ${path.join(sourceDir, 'package.json')} to contain a JSON object`);
   }
 
-  const sandboxPackageJson = rewritePackageSpecsForNpm(packageJson, options);
+  const sandboxPackageJson = rewritePackageSpecsForNpm(packageJson);
   return JSON.stringify(sandboxPackageJson, null, 2).concat('\n');
 }
 
 export function rewritePackageSpecsForNpm(
-  packageJson: Record<string, unknown>,
-  options: { dependencyOverrides?: DependencyOverrides }
+  packageJson: Record<string, unknown>
 ): Record<string, unknown> {
-  const dependencyOverrides = options.dependencyOverrides ?? {};
   const result = JSON.parse(JSON.stringify(packageJson)) as Record<string, unknown>;
   const version = typeof result.version === 'string' ? result.version : undefined;
   const dependencyFields = [
@@ -621,37 +611,22 @@ export function rewritePackageSpecsForNpm(
         continue;
       }
 
-      dependencies[name] = rewriteDependencySpec(name, spec, {
-        dependencyOverrides,
-        version,
-      });
+      dependencies[name] = rewriteDependencySpec(name, spec, version);
     }
   }
 
   return result;
 }
 
-function rewriteDependencySpec(
-  name: string,
-  spec: string,
-  options: {
-    dependencyOverrides: DependencyOverrides;
-    version: string | undefined;
-  }
-): string {
-  const override = options.dependencyOverrides[name];
-  if (override !== undefined) {
-    return override;
-  }
-
+function rewriteDependencySpec(name: string, spec: string, version: string | undefined): string {
   if (spec === 'workspace:*' || spec === 'workspace:^' || spec === 'workspace:~') {
-    if (options.version === undefined) {
+    if (version === undefined) {
       throw new Error(`Missing package version for workspace dependency ${name}`);
     }
 
     // Storybook publishes its monorepo packages in lockstep, so npm-facing
     // workspace ranges use the package manifest's own version.
-    return spec === 'workspace:*' ? options.version : `${spec.at(-1)}${options.version}`;
+    return spec === 'workspace:*' ? version : `${spec.at(-1)}${version}`;
   }
 
   if (spec.startsWith('workspace:')) {

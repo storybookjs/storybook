@@ -11,8 +11,8 @@ import {
   TypeMeta,
   createCheckerByJson,
 } from 'vue-component-meta';
-import { parseMulti } from 'vue-docgen-api';
 
+import { applyVueDocgenApiTempFixes } from '../../../../renderers/vue3/src/docgen/component-meta.ts';
 import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
 import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
@@ -65,26 +65,23 @@ async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undef
     }
     meta = checker.getComponentMeta(sfcPath, 'default');
 
-    // production's applyTempFixForEventDescriptions
-    if (meta.events.length) {
-      try {
-        const parsed = await parseMulti(sfcPath);
-        const eventsWithDescription = parsed[defaultIndex]?.events;
-        if (eventsWithDescription?.length) {
-          meta.events = meta.events.map((event) => {
-            const description = eventsWithDescription.find(
-              (i) => i.name === event.name
-            )?.description;
-            if (description) {
-              (event as typeof event & { description: string }).description = description;
-            }
-            return event;
-          });
-        }
-      } catch {
-        // noop, as in production
+    // The shared temp-fix pass pairs metas with parseMulti results by export name, so hand it
+    // every extractable export the way collectComponentMetaSources does.
+    const entries = exportNames.flatMap((name) => {
+      if (name === 'default') {
+        return [{ name, meta }];
       }
-    }
+      try {
+        return [{ name, meta: checker.getComponentMeta(sfcPath, name) }];
+      } catch {
+        return [];
+      }
+    });
+    await applyVueDocgenApiTempFixes(
+      sfcPath,
+      entries.map((entry) => entry.meta),
+      entries.map((entry) => entry.name)
+    );
   } catch {
     // the production transform swallows checker failures and attaches nothing
     return undefined;
@@ -108,11 +105,11 @@ async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undef
 
   const exposed = meta.exposed
     .filter((expose) => {
-      let nameWithoutOnPrefix = expose.name;
-      if (nameWithoutOnPrefix.startsWith('on')) {
-        nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
+      if (!/^on[A-Z]/.test(expose.name)) {
+        return true;
       }
-      return !meta.events.find((event) => event.name === nameWithoutOnPrefix);
+      const eventName = lowercaseFirstLetter(expose.name.slice('on'.length));
+      return !meta.events.some((event) => event.name === eventName);
     })
     .filter((expose) => {
       if (expose.name === '$slots') {

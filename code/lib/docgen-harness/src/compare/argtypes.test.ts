@@ -14,6 +14,12 @@ describe('compareArgTypes', () => {
     expect(violations).toEqual([expect.objectContaining({ arg: 'size', kind: 'lost-arg' })]);
   });
 
+  it('waives a lost ES-private member, which no modern engine is expected to record', () => {
+    const baseline = argTypes({ '#secret': { name: '#secret', type: { name: 'string' } } });
+
+    expect(compareArgTypes(baseline, argTypes({}))).toEqual([]);
+  });
+
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({
       size: { name: 'size', type: { name: 'string' } },
@@ -69,7 +75,7 @@ describe('compareArgTypes', () => {
 
   it('fails other-to-other when the value changes laterally', () => {
     const baseline = argTypes({
-      data: { name: 'data', type: { name: 'other', value: 'empty-enum' } },
+      data: { name: 'data', type: { name: 'other', value: 'TreeNode' } },
     });
     const candidate = argTypes({
       data: { name: 'data', type: { name: 'other', value: 'something-else' } },
@@ -157,6 +163,20 @@ describe('compareArgTypes', () => {
       const candidate = argTypes({ count: { name: 'count' } });
       expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
     }
+  });
+
+  it('does not generically waive numeric initializer source from a legacy baseline', () => {
+    const baseline = argTypes({
+      timeoutMs: {
+        name: 'timeoutMs',
+        table: { defaultValue: { summary: '5 * 60 * 1000' } },
+      },
+    });
+    const candidate = argTypes({ timeoutMs: { name: 'timeoutMs' } });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'timeoutMs', kind: 'lost-default' }),
+    ]);
   });
 
   it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {
@@ -435,6 +455,121 @@ describe('compareArgTypes', () => {
     }
   });
 
+  it.each([
+    {
+      input: '{ name: "array" } -> { name: "array", value: { name: "string" } }',
+      output: 'passes',
+      baselineType: { name: 'array' } as never,
+      candidateType: { name: 'array', value: { name: 'string' } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "object" } -> { name: "object", value: { label: { name: "string" } } }',
+      output: 'passes',
+      baselineType: { name: 'object' } as never,
+      candidateType: { name: 'object', value: { label: { name: 'string' } } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "enum" } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum' } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "enum", value: {} } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum', value: {} } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "union" } -> { name: "union", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'union' } as never,
+      candidateType: { name: 'union', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "intersection" } -> { name: "intersection", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'intersection' } as never,
+      candidateType: { name: 'intersection', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "tuple" } -> { name: "tuple", value: [{ name: "string" }] }',
+      output: 'passes',
+      baselineType: { name: 'tuple' } as never,
+      candidateType: { name: 'tuple', value: [{ name: 'string' }] } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: undefined } -> { name: "boolean" }',
+      output: 'passes',
+      baselineType: { name: undefined } as never,
+      candidateType: { name: 'boolean' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "PanelConfig" } -> { name: "object", value: { title: { name: "string" } } }',
+      output: 'passes',
+      baselineType: { name: 'PanelConfig' } as never,
+      candidateType: { name: 'object', value: { title: { name: 'string' } } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "Item[]" } -> { name: "array", value: { name: "string" } }',
+      output: 'passes',
+      baselineType: { name: 'Item[]' } as never,
+      candidateType: { name: 'array', value: { name: 'string' } } as never,
+      expectedViolations: [],
+    },
+    {
+      input: `{ name: "'primary' | 'secondary' | 'ghost'" } -> populated union`,
+      output: 'passes',
+      baselineType: { name: "'primary' | 'secondary' | 'ghost'" } as never,
+      candidateType: {
+        name: 'union',
+        value: [
+          { name: 'literal', value: 'primary' },
+          { name: 'literal', value: 'secondary' },
+          { name: 'literal', value: 'ghost' },
+        ],
+      } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "other", value: "undefined" } -> { name: "other", value: "TreeNode" }',
+      output: 'passes',
+      baselineType: { name: 'other', value: 'undefined' } as never,
+      candidateType: { name: 'other', value: 'TreeNode' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "other" } -> { name: "string" }',
+      output: 'passes',
+      baselineType: { name: 'other' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [],
+    },
+    {
+      input: '{ name: "PanelConfig" } -> { name: "string" }',
+      output: 'type-fidelity violation',
+      baselineType: { name: 'PanelConfig' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [expect.objectContaining({ arg: 'data', kind: 'type-fidelity' })],
+    },
+  ])(
+    'compares loose Web Components sbTypes: $input => $output',
+    ({ baselineType, candidateType, expectedViolations }) => {
+      const baseline = argTypes({ data: { name: 'data', type: baselineType } });
+      const candidate = argTypes({ data: { name: 'data', type: candidateType } });
+      expect(compareArgTypes(baseline, candidate)).toEqual(expectedViolations);
+    }
+  );
+
   it('fails when an other stub naming a real type collapses to an unrelated scalar', () => {
     // Half the corpus is other-typed free text that still names something: TreeNode, ButtonSize,
     // Array([object Object]), { theme: string; dense: boolean }. Swapping in a bare scalar is a
@@ -639,16 +774,15 @@ describe('compareArgTypes', () => {
     ]);
   });
 
-  it('flags a table.type.required true->false flip only under strictTable', () => {
+  // `canonicalType` ignores `required`, so the type-fidelity comparison cannot see this flip and
+  // this gate is the only thing standing between a lost required flag and a laundered `-u`.
+  it('flags a required true->false flip only under strictTable', () => {
     const required = (value: boolean) =>
       argTypes({
-        count: {
-          name: 'count',
-          table: { type: { required: value, summary: 'number' } as never },
-        },
+        count: { name: 'count', type: { name: 'number', required: value } },
       });
     const missing = argTypes({
-      count: { name: 'count', table: { type: { summary: 'number' } } },
+      count: { name: 'count', type: { name: 'number' } },
     });
     expect(compareArgTypes(required(true), required(false))).toEqual([]);
     expect(compareArgTypes(required(true), required(false), { strictTable: true })).toEqual([

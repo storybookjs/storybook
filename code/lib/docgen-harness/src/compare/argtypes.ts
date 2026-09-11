@@ -6,7 +6,7 @@ import type { Violation } from './types.ts';
 export interface CompareArgTypesOptions {
   /** Waive the legacy Angular pipeline's invented defaults, which must not be ratcheted. */
   legacyBaseline?: boolean;
-  /** Also gate `table.type.summary` text and `table.type.required`, for a same-engine baseline. */
+  /** Also gate `table.type.summary` text and the `required` flag, for a same-engine baseline. */
   strictTable?: boolean;
 }
 
@@ -25,7 +25,8 @@ export function compareArgTypes(
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {
     // ES-private `#member`s are inaccessible outside their class; legacy Compodoc records them
-    // anyway, and the modern extractor deliberately drops them. Their loss never gates.
+    // anyway, and the modern extractor only surfaces them under `propsTable: 'all'`. Their loss
+    // never gates.
     if (arg.startsWith('#')) {
       continue;
     }
@@ -61,8 +62,12 @@ export function compareArgTypes(
       });
     }
     violations.push(...compareTypeSummary(arg, baseEntry, candidateEntry, options));
-    const baseType = baseEntry.type;
-    const candidateType = candidateEntry.type;
+    violations.push(...compareRequired(arg, baseEntry, candidateEntry, options));
+    // Recorded corpora violate the SBType contract; normalize once here so the comparison below
+    // (and everything it calls) can trust the discriminated union.
+    const baseType = baseEntry.type == null ? undefined : normalizeRecordedType(baseEntry.type);
+    const candidateType =
+      candidateEntry.type == null ? undefined : normalizeRecordedType(candidateEntry.type);
     if (baseType != null) {
       if (candidateType == null) {
         violations.push({
@@ -115,8 +120,8 @@ const isRecordedSummary = (summary: unknown, legacyBaseline: boolean): boolean =
   );
 };
 
-// `table.type` is loosely typed upstream - `required` is a corpus field the csf type does not
-// declare - hence the unknown-safe reads.
+// `table.type` is loosely typed upstream and a recorded corpus can carry anything in it, hence the
+// unknown-safe reads.
 function compareTypeSummary(
   arg: string,
   baseEntry: StrictInputType,
@@ -146,18 +151,31 @@ function compareTypeSummary(
       message: `table.type.summary changed: baseline ${JSON.stringify(baseSummary)}, candidate ${JSON.stringify(candidateSummary)}`,
     });
   }
+  return violations;
+}
+
+// `canonicalType` strips `required` so a type-fidelity comparison ignores it, which leaves this the
+// only gate on the flag. It reads the sbType because that is where `SBBaseType` declares it.
+function compareRequired(
+  arg: string,
+  baseEntry: StrictInputType,
+  candidateEntry: StrictInputType,
+  options: CompareArgTypesOptions
+): Violation[] {
   if (
-    options.strictTable === true &&
-    baseTableType.required === true &&
-    candidateTableType.required !== true
+    options.strictTable !== true ||
+    baseEntry.type?.required !== true ||
+    candidateEntry.type?.required === true
   ) {
-    violations.push({
+    return [];
+  }
+  return [
+    {
       arg,
       kind: 'lost-required',
-      message: 'the baseline records table.type.required true but the candidate does not',
-    });
-  }
-  return violations;
+      message: 'the baseline records the arg as required but the candidate does not',
+    },
+  ];
 }
 
 const recordedTypeSummary = (summary: unknown): string | undefined => {
@@ -177,15 +195,21 @@ const describeDefault = (entry: StrictInputType): string =>
 const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 
 // Deep equality after normalization, or an enumerated improvement. Everything lateral fails and is
-// accepted only through a reviewed baseline update.
+// accepted only through a reviewed baseline update. Both sides are already normalized recorded
+// types, so the discriminants can be trusted.
 function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   if (deepEqual(canonicalType(baseline), canonicalType(candidate))) {
     return true;
   }
   if (baseline.name === 'other') {
-    if (candidate.name === 'other') {
-      return normalizeLiteral(baseline.value) === normalizeLiteral(candidate.value);
+    if (
+      candidate.name === 'other' &&
+      normalizeLiteral(baseline.value) === normalizeLiteral(candidate.value)
+    ) {
+      return true;
     }
+    // Unequal other-text falls through to stub resolution so a nothing-recorded marker accepts
+    // any candidate, including another `other`.
     if (!isQuotedToken(baseline.value)) {
       return resolvesStub(baseline.value, candidate);
     }
@@ -226,6 +250,50 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
     return typeCurrentOrBetter(baseline.value, candidate.value);
   }
   return false;
+}
+
+const SB_TYPE_NAMES: ReadonlySet<SBType['name']> = new Set<SBType['name']>([
+  'array',
+  'boolean',
+  'date',
+  'enum',
+  'function',
+  'intersection',
+  'literal',
+  'node',
+  'number',
+  'object',
+  'other',
+  'string',
+  'symbol',
+  'tuple',
+  'union',
+]);
+
+// The canonical "engine extracted nothing" node; `resolvesStub` accepts any candidate for it.
+const UNRESOLVED_TYPE: SBType = { name: 'other', value: 'undefined' };
+
+// Recorded corpora and the legacy Web Components extractor emit malformed top-level sbTypes.
+function normalizeRecordedType(type: SBType): SBType {
+  const name = (type as { name?: unknown }).name;
+  if (typeof name !== 'string') {
+    return UNRESOLVED_TYPE;
+  }
+  if (!SB_TYPE_NAMES.has(name as SBType['name'])) {
+    return { name: 'other', value: name };
+  }
+  const value = (type as { value?: unknown }).value;
+  if (name === 'other') {
+    return typeof value === 'string' ? type : UNRESOLVED_TYPE;
+  }
+  if (
+    ((name === 'enum' || name === 'union' || name === 'intersection' || name === 'tuple') &&
+      !Array.isArray(value)) ||
+    ((name === 'array' || name === 'object') && (typeof value !== 'object' || value === null))
+  ) {
+    return UNRESOLVED_TYPE;
+  }
+  return type;
 }
 
 // The corpus markers for "the engine extracted nothing"; any candidate improves on them.

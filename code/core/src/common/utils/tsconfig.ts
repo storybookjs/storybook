@@ -12,11 +12,20 @@ const DEFAULT_EXCLUDE_PATTERNS = ['node_modules', 'bower_components', 'jspm_pack
 
 type TsconfigReference = { path?: unknown };
 type TsconfigConfig = {
+  compilerOptions?: {
+    baseUrl?: unknown;
+    paths?: unknown;
+  };
   exclude?: unknown;
   extends?: unknown;
   files?: unknown;
   include?: unknown;
   references?: unknown;
+};
+
+type PathsBaseResolution = {
+  absoluteBaseUrl?: string;
+  pathsBasePath?: string;
 };
 
 type TsconfigEntry = {
@@ -80,6 +89,49 @@ export const findTsconfigPathForPath = (path: string): string | undefined => {
 
   return findTsconfigPathForFile(dirname(path), path);
 };
+
+// Without baseUrl, TypeScript resolves `paths` from the tsconfig that defined them, not the leaf that extends it.
+export const getTsconfigPathsBaseDir = (configPath: string): string => {
+  const normalizedConfigPath = resolve(configPath);
+  const resolved = resolvePathsBase(normalizedConfigPath, new Set());
+  return resolved.absoluteBaseUrl ?? resolved.pathsBasePath ?? dirname(normalizedConfigPath);
+};
+
+function resolvePathsBase(configPath: string, seen: Set<string>): PathsBaseResolution {
+  const normalizedConfigPath = resolve(configPath);
+  if (seen.has(normalizedConfigPath)) {
+    return {};
+  }
+  seen.add(normalizedConfigPath);
+
+  const config = readTsconfigConfig(normalizedConfigPath);
+  if (!config) {
+    return {};
+  }
+
+  let inherited: PathsBaseResolution = {};
+  for (const extendsPath of getExtendsPaths(normalizedConfigPath, config)) {
+    const base = resolvePathsBase(extendsPath, seen);
+    inherited = {
+      absoluteBaseUrl: base.absoluteBaseUrl ?? inherited.absoluteBaseUrl,
+      pathsBasePath: base.pathsBasePath ?? inherited.pathsBasePath,
+    };
+  }
+
+  const ownBaseUrl = config.compilerOptions?.baseUrl;
+  const ownPaths = config.compilerOptions?.paths;
+
+  return {
+    absoluteBaseUrl:
+      typeof ownBaseUrl === 'string' && ownBaseUrl.length > 0
+        ? resolve(dirname(normalizedConfigPath), ownBaseUrl)
+        : inherited.absoluteBaseUrl,
+    pathsBasePath:
+      ownPaths !== undefined && ownPaths !== null && typeof ownPaths === 'object'
+        ? dirname(normalizedConfigPath)
+        : inherited.pathsBasePath,
+  };
+}
 
 function isDirectoryPath(path: string) {
   try {

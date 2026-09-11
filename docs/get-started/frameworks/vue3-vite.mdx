@@ -71,7 +71,7 @@ setup((app) => {
 
 <Callout variant="info">
 
-`vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook.
+`vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook. The `vue-docgen-api` default is deprecated since Storybook 10.6 and will be removed in the next major version of Storybook, so we recommend switching to `vue-component-meta`.
 
 </Callout>
 
@@ -286,6 +286,12 @@ Default: `'vue-docgen-api'`
 Since: `8.0`
 
 Choose which docgen tool to use when generating controls for your components. See [Using `vue-component-meta`](#using-vue-component-meta) for more information.
+
+<Callout variant="warning">
+
+`'vue-docgen-api'` (the current default, also selected by `true`) is deprecated since Storybook 10.6 and will be removed in the next major version of Storybook. Set `docgen: 'vue-component-meta'` to migrate, or enable [server-side docgen](../../api/main-config/main-config-features.mdx) with `features: { experimentalDocgenServer: true }`, which becomes the default in Storybook 11 and also uses `vue-component-meta`.
+
+</Callout>
 
 Set to `false` to disable docgen processing entirely for improved build performance.
 

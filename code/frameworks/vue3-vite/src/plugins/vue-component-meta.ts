@@ -1,4 +1,4 @@
-import { parseLocalBindings } from 'storybook/internal/oxc-parser';
+import { parseDefaultImports, parseLocalBindings } from 'storybook/internal/oxc-parser';
 
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
@@ -51,11 +51,18 @@ export async function vueComponentMeta(
           // here, so attaching to them would reference an undefined variable at runtime.
           const localBindings = await parseLocalBindings(id, src);
 
+          // Production SFCs can import `_sfc_main` from their virtual script module
+          // instead of declaring it locally.
+          const sfcMainImportSource = (await parseDefaultImports(id, src)).get('_sfc_main');
+          const sfcMainQuery = new URLSearchParams(sfcMainImportSource?.split('?')[1]);
+          const hasImportedSfcMain =
+            id.endsWith('.vue') && sfcMainQuery.has('vue') && sfcMainQuery.get('type') === 'script';
+
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
 
-            if (!localBindings.has(name)) {
+            if (!localBindings.has(name) && !(isDefaultExport && hasImportedSfcMain)) {
               return;
             }
 

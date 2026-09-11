@@ -29,6 +29,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   'esbuild',
   'playwright',
   'playwright-core',
+  'polka@npm:1.0.0-next.28/@polka/url',
   'radix-ui@npm:^1.4.3',
   'react',
   'rxjs',

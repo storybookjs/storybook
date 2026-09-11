@@ -63,13 +63,25 @@ type LoadedSession = {
 };
 
 /**
- * Process-global registry of in-flight `load` promises keyed by `${serviceId}::${queryName}::${hash}`.
+ * Process-global registry of in-flight `load` promises keyed by
+ * `${runtimeId}::${serviceId}::${queryName}::${hash}`.
  *
  * The dedup is in-flight only: once a load settles, its entry is removed so a subsequent call can
  * refire it. The same registry is consulted by both same-service and cross-service callers so two
  * queries that depend on the same dependency share one load.
+ *
+ * The runtime scope is what keeps that sharing honest. A load body writes through the `self` of the
+ * runtime it started on, so joining a load in flight on a different runtime would resolve against
+ * state that load never wrote.
  */
 export const inFlightLoads = new Map<string, Promise<unknown>>();
+
+/**
+ * Monotonic instance id for {@link makeInFlightKey}. The load key already names the service;
+ * this token only has to be unique among live runtimes.
+ */
+let nextRuntimeSequence = 0;
+export const nextRuntimeId = (): string => String((nextRuntimeSequence += 1));
 
 /**
  * Active session for `.loaded()` while a sync handler is being re-run for dependency discovery.
@@ -112,6 +124,16 @@ function stableHash(value: unknown): string {
   };
 
   return JSON.stringify(encode(value));
+}
+
+/**
+ * Scopes a load key to one runtime instance for {@link inFlightLoads}.
+ *
+ * The unscoped {@link makeLoadKey} stays the identity used for cycle detection and settled-key
+ * bookkeeping, which are per-load-graph rather than per-runtime.
+ */
+export function makeInFlightKey(runtimeId: string, loadKey: string): string {
+  return `${runtimeId}::${loadKey}`;
 }
 
 export function makeLoadKey(
@@ -220,6 +242,14 @@ function detachSnapshot<TValue>(value: TValue): TValue {
  */
 export type QueryRuntimeRefs<TState> = {
   serviceId: ServiceId;
+  /**
+   * Identity of this runtime instance, used to scope {@link inFlightLoads}.
+   *
+   * A load body writes through the `self` of the runtime it started on, so a load in flight on one
+   * runtime says nothing about another runtime's state. The static build stands up a throwaway
+   * runtime per snapshot next to the live registry's runtime, which is where the two meet.
+   */
+  runtimeId: string;
   commandSelf: CommandSelf<TState>;
   /** Deep reactive proxy backing this service's state; reads inside a computed track fine-grained. */
   state: TState;
@@ -405,7 +435,8 @@ function triggerLoad<TState>(
   loadKey: string,
   parentAncestorChain: ReadonlySet<string>
 ): Promise<unknown> {
-  const existing = inFlightLoads.get(loadKey);
+  const inFlightKey = makeInFlightKey(refs.runtimeId, loadKey);
+  const existing = inFlightLoads.get(inFlightKey);
   if (existing) {
     return existing;
   }
@@ -424,12 +455,12 @@ function triggerLoad<TState>(
     .finally(() => {
       // Only clear the entry if it still points at this promise — another caller may have already
       // overwritten it with a fresh in-flight load for the next round.
-      if (inFlightLoads.get(loadKey) === promise) {
-        inFlightLoads.delete(loadKey);
+      if (inFlightLoads.get(inFlightKey) === promise) {
+        inFlightLoads.delete(inFlightKey);
       }
     });
 
-  inFlightLoads.set(loadKey, promise);
+  inFlightLoads.set(inFlightKey, promise);
   return promise;
 }
 

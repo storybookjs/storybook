@@ -225,9 +225,12 @@ class ManagerProvider extends Component<ManagerProviderProps, State> {
 
   static getDerivedStateFromProps(props: ManagerProviderProps, state: State): State {
     const locationSearchChanged = state.location?.search !== props.location?.search;
+    // In-page navigation (e.g. to a docs heading) only changes the hash, and consumers like
+    // getUrlState() and the sidebar's "last viewed" tracking need to observe it.
+    const locationHashChanged = state.location?.hash !== props.location?.hash;
     const pathChanged = state.path !== props.path;
 
-    if (pathChanged || locationSearchChanged) {
+    if (pathChanged || locationSearchChanged || locationHashChanged) {
       return {
         ...state,
         location: props.location,

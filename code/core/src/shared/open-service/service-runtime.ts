@@ -39,8 +39,8 @@
  *
  * ## Why each piece exists
  *
- * - **{@link inFlightLoads}** dedups concurrent calls for the same `(service, query, input)` so
- *   two consumers asking for the same data share one load.
+ * - **{@link inFlightLoads}** dedups concurrent calls for the same `(runtime, service, query,
+ *   input)` so two consumers asking for the same data share one load.
  * - **{@link LoadedSession.ancestorChain}** breaks cycles: a dep whose load key is already on the
  *   call chain is skipped (not added to any collector) so two queries that read each other do
  *   not self-deadlock.
@@ -70,7 +70,9 @@ import {
   buildQueries,
   buildReactiveLoadQueries,
   inFlightLoads,
+  makeInFlightKey,
   makeLoadKey,
+  nextRuntimeId,
   runLoadBody,
 } from './query-runtime.ts';
 import type { QueryRuntimeRefs, RuntimeQueryDefinition } from './query-runtime.ts';
@@ -379,8 +381,11 @@ export function createServiceRuntime<
     return routed as CommandSelf<TState>['commands'];
   };
 
+  const runtimeId = nextRuntimeId();
+
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,
+    runtimeId,
     commandSelf,
     state,
     registryApi,
@@ -436,23 +441,17 @@ export function createServiceRuntime<
 
     const loadKey = makeLoadKey(def.id, queryName, validatedInput);
     const ancestorChain = new Set<string>([loadKey]) as ReadonlySet<string>;
+    const inFlightKey = makeInFlightKey(runtimeId, loadKey);
 
-    // Register this runtime's root load without joining an unrelated in-flight entry from another
-    // runtime instance (e.g. the live singleton during parallel staticInputs resolution).
-    const previous = inFlightLoads.get(loadKey);
     const promise = Promise.resolve()
       .then(() => runLoadBody(refs, queryName, queryDef, validatedInput, ancestorChain))
       .finally(() => {
-        if (inFlightLoads.get(loadKey) === promise) {
-          if (previous) {
-            inFlightLoads.set(loadKey, previous);
-          } else {
-            inFlightLoads.delete(loadKey);
-          }
+        if (inFlightLoads.get(inFlightKey) === promise) {
+          inFlightLoads.delete(inFlightKey);
         }
       });
 
-    inFlightLoads.set(loadKey, promise);
+    inFlightLoads.set(inFlightKey, promise);
     await promise;
   };
 

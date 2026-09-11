@@ -174,33 +174,28 @@ The Storybook CLI includes support for the industry's popular package managers (
 
 If auto‑detection fails or you’re using a custom setup, pass the project type explicitly with `--type` when running the initializer. The allowed values are:
 
-| Type                   | Framework                        |
-| ---------------------- | -------------------------------- |
-| `angular`              | Angular                          |
-| `ember`                | Ember                            |
-| `html`                 | HTML                             |
-| `nextjs`               | Next.js                          |
-| `nuxt`                 | Nuxt                             |
-| `preact`               | Preact                           |
-| `qwik`                 | Qwik                             |
-| `react`                | React                            |
-| `react_native`         | React Native                     |
-| `react_native_web`     | React Native Web                 |
-| `react_native_and_rnw` | React Native (+ Web)             |
-| `react_scripts`        | Create React App (react-scripts) |
-| `react_project`        | React Project                    |
-| `server`               | Server renderer                  |
-| `solid`                | Solid                            |
-| `svelte`               | Svelte                           |
-| `sveltekit`            | SvelteKit                        |
-| `vue3`                 | Vue 3                            |
-| `web_components`       | Web Components                   |
+| Type                   | Framework            |
+| ---------------------- | -------------------- |
+| `angular`              | Angular              |
+| `ember`                | Ember                |
+| `html`                 | HTML                 |
+| `nextjs`               | Next.js              |
+| `nuxt`                 | Nuxt                 |
+| `preact`               | Preact               |
+| `qwik`                 | Qwik                 |
+| `react`                | React                |
+| `react_native`         | React Native         |
+| `react_native_web`     | React Native Web     |
+| `react_native_and_rnw` | React Native (+ Web) |
+| `react_project`        | React Project        |
+| `server`               | Server renderer      |
+| `solid`                | Solid                |
+| `svelte`               | Svelte               |
+| `sveltekit`            | SvelteKit            |
+| `vue3`                 | Vue 3                |
+| `web_components`       | Web Components       |
 
 <CodeSnippets path="create-command-manual-framework.md" />
-
-#### Yarn Plug'n'Play (PnP) support with Storybook
-
-If you've enabled Storybook in a project running on a new version of Yarn with [Plug'n'Play](https://yarnpkg.com/features/pnp) (PnP) enabled, you may notice that it will generate `node_modules` with some additional files and folders. This is a known constraint as Storybook relies on some directories (e.g., `.cache`) to store cache files and other data to improve performance and faster builds. You can safely ignore these files and folders, adjusting your `.gitignore` file to exclude them from the version control you're using.
 
 #### Run Storybook with Webpack 4
 

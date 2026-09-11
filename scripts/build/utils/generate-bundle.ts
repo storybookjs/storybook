@@ -178,6 +178,8 @@ export async function generateBundle({
           // Keep a single bundled acorn copy when CommonJS dependencies such as
           // acorn-jsx require('acorn') alongside ESM imports.
           acorn: join(resolvePackageDir('acorn'), 'dist/acorn.mjs'),
+          // Avoid a nested @polka/url@0.5.0 CJS copy that drops polka's named `parse` export.
+          '@polka/url': join(resolvePackageDir('@polka/url'), 'build.mjs'),
         },
         chunkNames: '_node-chunks/[name]-[hash]',
         banner: {

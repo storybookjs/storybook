@@ -1,5 +1,4 @@
 import { Component } from '@angular/core';
-import type { ArgTypes } from 'storybook/internal/types';
 import { describe, it, expect } from 'vitest';
 import {
   computesTemplateFromComponent,
@@ -20,7 +19,15 @@ describe('angular template decorator', () => {
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [counter]="counter" [accent]="accent" [isDisabled]="isDisabled" [label]="label" [aria-label]="this['aria-label']"></doc-button>`
+      [
+        '<doc-button',
+        '    [counter]="counter"',
+        '    [accent]="accent"',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label"',
+        `    [aria-label]="this['aria-label']">`,
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -29,12 +36,19 @@ describe('angular template decorator', () => {
     const props = {
       isDisabled: true,
       label: 'Hello world',
-      onClick: ($event: any) => {},
-      'dash-out': ($event: any) => {},
+      onClick: () => {},
+      'dash-out': () => {},
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [isDisabled]="isDisabled" [label]="label" (onClick)="onClick($event)" (dash-out)="this['dash-out']($event)"></doc-button>`
+      [
+        '<doc-button',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label"',
+        '    (onClick)="onClick($event)"',
+        `    (dash-out)="this['dash-out']($event)">`,
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -283,7 +297,14 @@ describe('angular template decorator', () => {
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [counter]="counter" [accent]="accent" [isDisabled]="isDisabled" [label]="label"></doc-button>`
+      [
+        '<doc-button',
+        '    [counter]="counter"',
+        '    [accent]="accent"',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label">',
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -292,11 +313,17 @@ describe('angular template decorator', () => {
     const props = {
       isDisabled: true,
       label: 'Hello world',
-      onClick: ($event: any) => {},
+      onClick: () => {},
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [isDisabled]="isDisabled" [label]="label" (onClick)="onClick($event)"></doc-button>`
+      [
+        '<doc-button',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label"',
+        '    (onClick)="onClick($event)">',
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -314,8 +341,7 @@ describe('angular source decorator', () => {
   it('with no props should generate simple tag', () => {
     const component = InputComponent;
     const props = {};
-    const argTypes: ArgTypes = {};
-    const source = computesTemplateSourceFromComponent(component, props, argTypes);
+    const source = computesTemplateSourceFromComponent(component, props);
     expect(source).toEqual('<doc-button></doc-button>');
   });
 
@@ -330,8 +356,7 @@ describe('angular source decorator', () => {
     it('should add component ng-container', async () => {
       const component = WithoutSelectorComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
         `<ng-container *ngComponentOutlet="WithoutSelectorComponent"></ng-container>`
       );
@@ -348,8 +373,7 @@ describe('angular source decorator', () => {
     it('should add attribute to template', async () => {
       const component = WithAttributeComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button foo></doc-button>`);
     });
   });
@@ -364,8 +388,7 @@ describe('angular source decorator', () => {
     it('should add attribute to template', async () => {
       const component = WithAttributeValueComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button foo="bar"></doc-button>`);
     });
   });
@@ -380,8 +403,7 @@ describe('angular source decorator', () => {
     it('should create a div and add attribute to template', async () => {
       const component = WithAttributeOnlyComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<div foo></div>`);
     });
   });
@@ -396,8 +418,7 @@ describe('angular source decorator', () => {
     it('should create without separate closing tag', async () => {
       const component = VoidElementWithAttributeComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<input foo />`);
     });
   });
@@ -412,8 +433,7 @@ describe('angular source decorator', () => {
     it('should create a div and add attribute to template', async () => {
       const component = WithAttributeOnlyComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<div foo="bar"></div>`);
     });
   });
@@ -428,8 +448,7 @@ describe('angular source decorator', () => {
     it('should create and add attribute to template without separate closing tag', async () => {
       const component = VoidElementWithAttributeComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<input foo="bar" />`);
     });
   });
@@ -444,8 +463,7 @@ describe('angular source decorator', () => {
     it('should add class to template', async () => {
       const component = WithClassComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button class="foo"></doc-button>`);
     });
   });
@@ -460,8 +478,7 @@ describe('angular source decorator', () => {
     it('should create a div and add attribute to template', async () => {
       const component = WithClassComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<div class="foo"></div>`);
     });
   });
@@ -476,8 +493,7 @@ describe('angular source decorator', () => {
     it('should use the first selector', async () => {
       const component = WithMultipleSelectorsComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button></doc-button>`);
     });
   });
@@ -492,8 +508,7 @@ describe('angular source decorator', () => {
     it('should use the first selector', async () => {
       const component = WithMultipleSelectorsComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button foo></doc-button>`);
     });
   });
@@ -508,8 +523,7 @@ describe('angular source decorator', () => {
     it('should use the first selector', async () => {
       const component = WithMultipleSelectorsComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button foo="bar"></doc-button>`);
     });
   });
@@ -524,8 +538,7 @@ describe('angular source decorator', () => {
     it('should use the first selector', async () => {
       const component = WithMultipleSelectorsComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button></doc-button>`);
     });
   });
@@ -541,8 +554,7 @@ describe('angular source decorator', () => {
     it('should use the first selector', async () => {
       const component = WithMultipleSelectorsComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button></doc-button>`);
     });
   });
@@ -558,18 +570,16 @@ describe('angular source decorator', () => {
     it('should use the first selector', async () => {
       const component = WithMultipleSelectorsComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<div foo></div>`);
     });
   });
 
-  describe('no argTypes', () => {
+  describe('arg value formatting', () => {
     it('should generate tag-only template with no props', () => {
       const component = InputComponent;
       const props = {};
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button></doc-button>`);
     });
     it('with props should generate tag with properties', () => {
@@ -581,10 +591,17 @@ describe('angular source decorator', () => {
         counter: 4,
         'aria-label': 'Hello world',
       };
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [counter]="4" [accent]="'High'" [isDisabled]="true" [label]="'Hello world'" [aria-label]="'Hello world'"></doc-button>`
+        [
+          '<doc-button',
+          '    [counter]="4"',
+          `    [accent]="'High'"`,
+          '    [isDisabled]="true"',
+          `    [label]="'Hello world'"`,
+          `    [aria-label]="'Hello world'">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
 
@@ -593,13 +610,19 @@ describe('angular source decorator', () => {
       const props = {
         isDisabled: true,
         label: 'Hello world',
-        onClick: ($event: any) => {},
-        'dash-out': ($event: any) => {},
+        onClick: () => {},
+        'dash-out': () => {},
       };
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [isDisabled]="true" [label]="'Hello world'" (onClick)="onClick($event)" (dash-out)="this['dash-out']($event)"></doc-button>`
+        [
+          '<doc-button',
+          '    [isDisabled]="true"',
+          `    [label]="'Hello world'"`,
+          '    (onClick)="onClick($event)"',
+          `    (dash-out)="this['dash-out']($event)">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
 
@@ -608,73 +631,12 @@ describe('angular source decorator', () => {
       const props = {
         color: '#ffffff',
       };
-      const argTypes: ArgTypes = {};
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(`<doc-button [color]="'#ffffff'"></doc-button>`);
     });
   });
 
-  describe('with argTypes (from compodoc)', () => {
-    it('should handle enum as strongly typed enum', () => {
-      const component = InputComponent;
-      const props = {
-        isDisabled: false,
-        label: 'Hello world',
-        accent: ButtonAccent.High,
-      };
-      const argTypes: ArgTypes = {
-        accent: {
-          control: {
-            options: ['Normal', 'High'],
-            type: 'radio',
-          },
-          defaultValue: undefined,
-          table: {
-            category: 'inputs',
-          },
-          type: {
-            name: 'enum',
-            required: true,
-            value: [],
-          },
-        },
-      };
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
-      expect(source).toEqual(
-        `<doc-button [accent]="'High'" [isDisabled]="false" [label]="'Hello world'"></doc-button>`
-      );
-    });
-
-    it('should handle enum without values as string', () => {
-      const component = InputComponent;
-      const props = {
-        isDisabled: false,
-        label: 'Hello world',
-        accent: ButtonAccent.High,
-      };
-      const argTypes: ArgTypes = {
-        accent: {
-          control: {
-            options: ['Normal', 'High'],
-            type: 'radio',
-          },
-          defaultValue: undefined,
-          table: {
-            category: 'inputs',
-          },
-          type: {
-            name: 'object',
-            required: true,
-            value: {},
-          },
-        },
-      };
-      const source = computesTemplateSourceFromComponent(component, props, argTypes);
-      expect(source).toEqual(
-        `<doc-button [accent]="'High'" [isDisabled]="false" [label]="'Hello world'"></doc-button>`
-      );
-    });
-
+  describe('object props', () => {
     it('should handle simple object as stringified', () => {
       const component = InputComponent;
 
@@ -703,11 +665,15 @@ describe('angular source decorator', () => {
         someDataObject,
       };
 
-      const source = computesTemplateSourceFromComponent(component, props, null);
-      // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
-      // This will have to do for now
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with \\'double quotes\\'', 'a string literal with \\'single quotes\\'', 'a single quoted string with \\'double quotes\\'', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped \\'double quotes\\'', 'a string literal with \\'escaped single quotes\\'', 'a string literal with \\'escaped double quotes\\'']}"></doc-button>`
+        [
+          '<doc-button',
+          '    [isDisabled]="false"',
+          `    [label]="'Hello world'"`,
+          `    [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;']}">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
 
@@ -740,11 +706,15 @@ describe('angular source decorator', () => {
         someDataObject,
       };
 
-      const source = computesTemplateSourceFromComponent(component, props, null);
-      // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
-      // This will have to do for now
+      const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with \\'double quotes\\'', 'a string literal with \\'single quotes\\'', 'a single quoted string with \\'double quotes\\'', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped \\'double quotes\\'', 'a string literal with \\'escaped single quotes\\'', 'a string literal with \\'escaped double quotes\\''], ref: '[Circular]'}"></doc-button>`
+        [
+          '<doc-button',
+          '    [isDisabled]="false"',
+          `    [label]="'Hello world'"`,
+          `    [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;'], ref: '[Circular]'}">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
   });

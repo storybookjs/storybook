@@ -6,6 +6,11 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ## Self-hosting `@storybook/mcp`
 
+This package is a library: the tarball ships one module and no executable. It declares no `bin`,
+starts no process, and has no CLI. You register its tools on an MCP server you own, using the
+snippets below. If you want a running Storybook MCP server with no code at all, use the dev server
+instead — `storybook dev` serves one at `/mcp` through `@storybook/addon-mcp`.
+
 ### Prerequisites
 
 - Node.js 20+
@@ -15,7 +20,10 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ### Example implementation
 
-In-repo local server: [`serve.ts`](./serve.ts) (Node process that loads manifests from a directory or URL).
+The Storybook repository has a local HTTP server built on this package,
+[`serve.ts`](https://github.com/storybookjs/storybook/blob/next/code/lib/mcp/serve.ts), that loads
+manifests from a directory or URL. It is a development harness and is not part of the published
+package.
 
 The snippets below cover the common self-hosting patterns.
 
@@ -80,9 +88,9 @@ A fetch-compatible request handler for your `/mcp` endpoint.
 ##### Behavior
 
 - Registers these MCP tools:
-  - [`list-all-documentation`](https://storybook.js.org/docs/next/ai/mcp/overview/#list-all-documentation)
-  - [`get-documentation`](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation)
-  - [`get-documentation-for-story`](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation-for-story)
+  - [`docs-list`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-list)
+  - [`docs-show`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show)
+  - [`docs-show-story`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show-story)
 - Uses HTTP transport from [`@tmcp/transport-http`](https://github.com/paoloricciuti/tmcp/).
 - For each request, the handler always passes the current `Request` as `context.request`.
 - Per-request `context` overrides handler-level `options` for:
@@ -203,7 +211,7 @@ Type:
 }) => void | Promise<void>
 ```
 
-Optional callback after `list-all-documentation` resolves successfully.
+Optional callback after `docs-list` resolves successfully.
 
 ##### `onGetDocumentation`
 
@@ -225,7 +233,7 @@ Type:
 ) => void | Promise<void>
 ```
 
-Optional callback after `get-documentation` runs:
+Optional callback after `docs-show` runs:
 
 - When a component/docs entry is found, receives `foundDocumentation` and `resultText`.
 - When not found, receives only `context` and `input`.
@@ -331,7 +339,7 @@ Type:
 	Promise<void>;
 ```
 
-Registers the [list tool](https://storybook.js.org/docs/next/ai/mcp/overview/#list-all-documentation) that returns all component/docs IDs from manifests.
+Registers the [list tool](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-list) that returns all component/docs IDs from manifests.
 
 #### `addGetDocumentationTool`
 
@@ -345,7 +353,7 @@ Type:
 ) => Promise<void>;
 ```
 
-Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation) by component/docs `id`.
+Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
 
 When `options.multiSource` is `true`, the tool schema requires `storybookId` input.
 
@@ -361,4 +369,4 @@ Type:
 ) => Promise<void>;
 ```
 
-Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation-for-story) for a specific story variant by `componentId` and `storyName`.
+Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show-story) for a specific story variant by `componentId` and `storyName`.

@@ -65,6 +65,7 @@
     "esbuild": "^0.28.0",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
+    "polka@npm:1.0.0-next.28/@polka/url": "1.0.0-next.29",
     "radix-ui@npm:^1.4.3": "1.6.0",
     "react": "^18.2.0",
     "react-joyride/type-fest": "~2.19",
@@ -85,7 +86,7 @@
     "oxfmt": "^0.41.0",
     "std-env": "^4.0.0",
     "vite": "^7.0.4",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   },
   "packageManager": "yarn@4.18.0"
 }

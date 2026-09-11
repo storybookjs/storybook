@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
+import { DOCGEN_WORKER_SPECIFIER } from '@storybook/vue3/preset';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
@@ -7,9 +8,7 @@ import type {
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
-import { DOCGEN_WORKER_SPECIFIER } from '@storybook/vue3/preset';
 
-import { Vue3ViteDocgenManifestError } from './errors.ts';
 import { VUE_COMPONENT_META, resolveDocgenContext } from './options.ts';
 
 /**
@@ -40,15 +39,7 @@ export const experimental_manifests: PresetPropertyFn<
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[]; watch: boolean }
 > = async (existingManifests = {}, options) => {
-  const { features, docgenServerActive } = await resolveDocgenContext(options);
-
-  if (
-    features?.experimentalDocgenServer === true &&
-    features.componentsManifest === true &&
-    !docgenServerActive
-  ) {
-    throw new Vue3ViteDocgenManifestError();
-  }
+  const { docgenServerActive } = await resolveDocgenContext(options);
 
   if (!docgenServerActive) {
     return existingManifests;

@@ -76,11 +76,7 @@ describe('rewritePackageSpecsForNpm', () => {
     const packageJson = JSON.parse(
       readFileSync(join(AGENT_EVAL_ROOT, '..', 'code', 'addons', 'mcp', 'package.json'), 'utf8')
     ) as Record<string, unknown>;
-    const rewritten = rewritePackageSpecsForNpm(packageJson, {
-      dependencyOverrides: {
-        '@storybook/mcp': 'file:../mcp',
-      },
-    });
+    const rewritten = rewritePackageSpecsForNpm(packageJson);
     const version = packageJson.version;
     const dependencyFields = [
       'dependencies',
@@ -93,9 +89,6 @@ describe('rewritePackageSpecsForNpm', () => {
     );
 
     expect(rewrittenSpecs.some((spec) => spec.startsWith('workspace:'))).toBe(false);
-    expect((rewritten.dependencies as Record<string, string>)['@storybook/mcp']).toBe(
-      'file:../mcp'
-    );
     expect((rewritten.devDependencies as Record<string, string>)['@storybook/addon-a11y']).toBe(
       version
     );

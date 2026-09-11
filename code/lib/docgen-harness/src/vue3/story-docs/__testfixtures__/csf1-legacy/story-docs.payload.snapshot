@@ -1,9 +1,34 @@
 {
   "id": "csf1-legacy",
-  "import": "import CsfOneButton from './CsfOneButton.vue';",
   "name": "CsfOneButton",
   "path": "__PATH__",
   "stories": {
+    "forms-csf1-legacy--assigned-args": {
+      "description": undefined,
+      "id": "forms-csf1-legacy--assigned-args",
+      "name": "Assigned Args",
+      "snippet": "<script lang="ts" setup>
+import CsfOneButton from './CsfOneButton.vue';
+</script>
+
+<template>
+  <CsfOneButton label="Assigned" />
+</template>",
+      "summary": undefined,
+    },
+    "forms-csf1-legacy--assigned-args-override-inline": {
+      "description": undefined,
+      "id": "forms-csf1-legacy--assigned-args-override-inline",
+      "name": "Assigned Args Override Inline",
+      "snippet": "<script lang="ts" setup>
+import CsfOneButton from './CsfOneButton.vue';
+</script>
+
+<template>
+  <CsfOneButton label="Assigned wins" />
+</template>",
+      "summary": undefined,
+    },
     "forms-csf1-legacy--primary": {
       "description": undefined,
       "id": "forms-csf1-legacy--primary",

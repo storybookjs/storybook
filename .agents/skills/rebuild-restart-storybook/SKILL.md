@@ -44,6 +44,6 @@ Once Storybook has started, give the user the URL. Then ask whether they want to
 
 ## Step 5: Display the review
 
-If the user wants a review, use Storybook's `display-review` MCP tool to create a UI review of relevant stories. Pick a set of stories related to the entirety of the conversation so far.
+If the user wants a review, use Storybook's `review-create` MCP tool to create a UI review of relevant stories. Pick a set of stories related to the entirety of the conversation so far.
 
 If there are no relevant stories because no UI elements were touched, ask the user what they would like to see a review for.

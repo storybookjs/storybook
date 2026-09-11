@@ -100,6 +100,14 @@ const config: BuildEntries = {
         exportEntries: ['./internal/mocking-utils'],
         entryPoint: './src/mocking-utils/index.ts',
       },
+      {
+        exportEntries: ['./internal/tools'],
+        entryPoint: './src/cli/tools/sdk/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools/child-host'],
+        entryPoint: './src/cli/tools/sdk/child-host.ts',
+      },
     ],
     browser: [
       {
@@ -145,6 +153,10 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/csf'],
         entryPoint: './src/csf/index.ts',
+      },
+      {
+        exportEntries: ['./internal/csf/csf-utils'],
+        entryPoint: './src/csf/csf-utils.ts',
       },
       {
         exportEntries: ['./internal/manager-errors'],
@@ -205,6 +217,21 @@ const config: BuildEntries = {
       {
         exportEntries: ['./open-service'],
         entryPoint: './src/shared/open-service/index.ts',
+      },
+      {
+        // Dependency-light docs toolset surface bundled into `@storybook/mcp`'s dist (core is a
+        // dev dependency there), replacing that package's own manifest-formatter copies. Portable:
+        // its d.ts is one flat self-contained file so that consumer can inline it through standard
+        // resolution; guarded by `portable-dist.test.ts` next to the entry source.
+        exportEntries: ['./internal/toolsets-docs'],
+        entryPoint: './src/shared/open-service/toolsets/docs/public.ts',
+        portable: { external: ['valibot'] },
+      },
+      {
+        // Pure skill-content builders shared by the skills CLI and addon-mcp so both consumers render
+        // the same instruction documents. Not portable: consumers resolve core normally.
+        exportEntries: ['./internal/skills'],
+        entryPoint: './src/cli/skills/content/index.ts',
       },
     ],
     runtime: [

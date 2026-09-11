@@ -19,9 +19,8 @@ export type GeneratorOptions = {
   builder: SupportedBuilder;
   framework: SupportedFramework;
   renderer: SupportedRenderer;
+  storybookVersionSpecifier?: string;
   linkable: boolean;
-  // TODO: Remove in SB11
-  pnp: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
@@ -101,6 +100,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
+  storybookVersionSpecifier?: string;
   telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
@@ -139,7 +139,7 @@ export interface GeneratorModule {
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
-  usePnp?: boolean;
+  storybookVersionSpecifier?: string;
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;

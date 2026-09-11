@@ -1,6 +1,5 @@
 {
   "id": "slot-scoped",
-  "import": "import ScopedList from './ScopedList.vue';",
   "name": "ScopedList",
   "path": "__PATH__",
   "stories": {
@@ -9,6 +8,7 @@
       "id": "forms-slot-scoped--primary",
       "name": "Primary",
       "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
     },
   },
 }

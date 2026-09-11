@@ -9,7 +9,7 @@ import type { PropDescriptor } from 'storybook/preview-api';
 import { filterArgTypes } from 'storybook/preview-api';
 
 import type { SortType } from '../components';
-import { ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
+import { ArgsTableError, ArgsTable as PureArgsTable, TabbedArgsTable } from '../components';
 import {
   extractComponentArgTypes,
   extractSubcomponentArgTypes,
@@ -32,7 +32,8 @@ type ArgTypesProps = ArgTypesParameters & {
 
 type ResolvedArgTypes = {
   parameters: Parameters;
-  componentId: string;
+  /** `undefined` for a bare `of={Component}` not reachable from this docs page's CSF files. */
+  componentId: string | undefined;
   storyId?: string;
   initialArgs?: Args;
   argTypes?: StrictArgTypes;
@@ -58,8 +59,8 @@ function useResolveArgTypes(props: ArgTypesProps): ResolvedArgTypes {
     resolvedArgTypes = {
       parameters: parameters as Parameters,
       // Bare `of={Component}` has no story/meta annotations; the docgen service is addressed by
-      // component id, recovered from the CSF file that declares this component.
-      componentId: context.getComponentId(component)!,
+      // component id, recovered by searching only the CSF files this docs page imports.
+      componentId: context.getComponentId(component),
       argTypes: extractComponentArgTypes(component, parameters as Parameters),
       component,
     };
@@ -156,8 +157,28 @@ const LegacyArgTypes: FC<ArgTypesProps> = (props) => {
 };
 
 const DocgenServiceArgTypes: FC<ArgTypesProps> = (props) => {
-  const { argTypes, parameters, componentId, storyId, initialArgs, filterProps, component } =
-    useResolveArgTypes(props);
+  const resolved = useResolveArgTypes(props);
+
+  // The docgen service is addressed by component id, and `getComponentId` only searches the CSF
+  // files this page imports (not the whole project), so `undefined` has nothing to serve here even
+  // when a story elsewhere declares this component. Saying so beats rendering nothing, which reads
+  // as "this has no props".
+  if (resolved.componentId === undefined) {
+    return <PureArgsTable error={ArgsTableError.NOT_A_STORY_COMPONENT} />;
+  }
+
+  return <DocgenServiceArgTypesRows {...resolved} componentId={resolved.componentId} />;
+};
+
+const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> = ({
+  argTypes,
+  parameters,
+  componentId,
+  storyId,
+  initialArgs,
+  filterProps,
+  component,
+}) => {
   const { rows: serviceRows, isInitialLoading } = useDocgenServiceRows({
     componentId,
     storyId,

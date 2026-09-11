@@ -8,40 +8,6 @@
           "summary": "Another default value"
         },
         "type": {
-          "required": true,
-          "summary": "string"
-        }
-      },
-      "type": {
-        "name": "string"
-      }
-    },
-    "_inputValue": {
-      "name": "_inputValue",
-      "table": {
-        "category": "properties",
-        "defaultValue": {
-          "summary": "some value"
-        },
-        "type": {
-          "required": true,
-          "summary": "string"
-        }
-      },
-      "type": {
-        "name": "string"
-      }
-    },
-    "_value": {
-      "description": "Private value.",
-      "name": "_value",
-      "table": {
-        "category": "properties",
-        "defaultValue": {
-          "summary": "Private hello"
-        },
-        "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -58,7 +24,6 @@
           "summary": "ButtonAccent.Normal"
         },
         "type": {
-          "required": true,
           "summary": "ButtonAccent"
         }
       },
@@ -76,12 +41,12 @@
           "summary": "Another default value"
         },
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
       "type": {
-        "name": "string"
+        "name": "string",
+        "required": true
       }
     },
     "aNullValue": {
@@ -93,7 +58,6 @@
           "summary": null
         },
         "type": {
-          "required": true,
           "summary": "string | null"
         }
       },
@@ -110,7 +74,6 @@
           "summary": 123
         },
         "type": {
-          "required": true,
           "summary": "number"
         }
       },
@@ -125,12 +88,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "undefined"
         }
       },
       "type": {
         "name": "other",
+        "required": true,
         "value": "empty-enum"
       }
     },
@@ -143,7 +106,6 @@
           "summary": "secondary"
         },
         "type": {
-          "required": true,
           "summary": "\"primary\" | \"secondary\""
         }
       },
@@ -158,7 +120,6 @@
         "category": "view child",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "ElementRef"
         }
       },
@@ -174,7 +135,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(x: number, y: string | number) => number"
         }
       },
@@ -191,7 +151,6 @@
           "summary": false
         },
         "type": {
-          "required": true,
           "summary": "boolean"
         }
       },
@@ -206,12 +165,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
       "type": {
-        "name": "string"
+        "name": "string",
+        "required": true
       }
     },
     "internalProperty": {
@@ -223,7 +182,6 @@
           "summary": "Public hello"
         },
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -240,7 +198,6 @@
           "summary": false
         },
         "type": {
-          "required": true,
           "summary": "boolean"
         }
       },
@@ -254,12 +211,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "T[]"
         }
       },
       "type": {
         "name": "other",
+        "required": true,
         "value": "empty-enum"
       }
     },
@@ -270,12 +227,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
       "type": {
-        "name": "string"
+        "name": "string",
+        "required": true
       }
     },
     "onClick": {
@@ -286,7 +243,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "EventEmitter"
         }
       },
@@ -301,24 +257,7 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(event: Event) => void"
-        }
-      },
-      "type": {
-        "name": "other",
-        "value": "void"
-      }
-    },
-    "privateMethod": {
-      "description": "A private method.",
-      "name": "privateMethod",
-      "table": {
-        "category": "methods",
-        "defaultValue": {},
-        "type": {
-          "required": false,
-          "summary": "(password: string) => void"
         }
       },
       "type": {
@@ -332,7 +271,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "T[]"
         }
       },
@@ -348,7 +286,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(id?: number) => void"
         }
       },
@@ -364,7 +301,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(things: ISomeInterface) => void"
         }
       },
@@ -379,12 +315,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "keyof T"
         }
       },
       "type": {
         "name": "other",
+        "required": true,
         "value": "empty-enum"
       }
     },
@@ -397,7 +333,6 @@
           "summary": "medium"
         },
         "type": {
-          "required": false,
           "summary": "ButtonSize"
         }
       },
@@ -413,12 +348,12 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "ISomeInterface"
         }
       },
       "type": {
         "name": "other",
+        "required": true,
         "value": "empty-enum"
       }
     },
@@ -434,7 +369,6 @@
           "deprecated": ""
         },
         "type": {
-          "required": true,
           "summary": "boolean"
         }
       },
@@ -451,7 +385,6 @@
           "summary": "Default value in component"
         },
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -466,13 +399,11 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string | number"
         }
       },
       "type": {
-        "name": "other",
-        "value": "empty-enum"
+        "name": "number"
       }
     }
   },

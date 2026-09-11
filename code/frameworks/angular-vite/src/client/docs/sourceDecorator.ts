@@ -36,13 +36,13 @@ export const sourceDecorator = (
     }
 
     const { props, userDefinedTemplate } = story;
-    const { component, argTypes, parameters } = context;
+    const { component, parameters } = context;
     const template: string = parameters.docs?.source?.excludeDecorators
       ? (context.originalStoryFn as ArgsStoryFn<AngularRenderer>)(context.args, context).template
       : story.template;
 
     if (component && !userDefinedTemplate) {
-      const sourceFromComponent = computesTemplateSourceFromComponent(component, props, argTypes);
+      const sourceFromComponent = computesTemplateSourceFromComponent(component, props);
 
       // We might have a story with a Directive or Service defined as the component
       // In these cases there might exist a template, even if we aren't able to create source from component

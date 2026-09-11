@@ -5,6 +5,11 @@ import { filterDefs, filters } from './visionSimulatorFilters.ts';
 describe('filterDefs', () => {
   it('avoids display:none, which makes Firefox ignore CSS url() filters', () => {
     expect(filterDefs).not.toMatch(/display\s*:\s*none/i);
+    expect(filterDefs).toContain('aria-hidden="true"');
+    expect(filterDefs).toContain('position:absolute');
+    expect(filterDefs).toContain('width:0');
+    expect(filterDefs).toContain('height:0');
+    expect(filterDefs).toContain('overflow:hidden');
   });
 
   it('renders in sRGB, the space the color matrices were derived in', () => {

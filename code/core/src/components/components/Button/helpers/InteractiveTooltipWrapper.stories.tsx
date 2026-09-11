@@ -3,22 +3,8 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../../.storybook/preview.tsx';
+import { POPPER_PLACEMENTS } from '../../shared/overlayHelpers.tsx';
 import { InteractiveTooltipWrapper } from './InteractiveTooltipWrapper.tsx';
-
-const tooltipPlacementOptions = [
-  'top',
-  'top-start',
-  'top-end',
-  'bottom',
-  'bottom-start',
-  'bottom-end',
-  'left',
-  'left-start',
-  'left-end',
-  'right',
-  'right-start',
-  'right-end',
-] as const;
 
 const meta = preview.meta({
   id: 'interactive-tooltip-wrapper-component',
@@ -28,7 +14,7 @@ const meta = preview.meta({
   argTypes: {
     tooltipPlacement: {
       control: 'select',
-      options: tooltipPlacementOptions,
+      options: POPPER_PLACEMENTS,
     },
   },
 });

@@ -14,6 +14,10 @@ describe('optimizeViteDeps', () => {
 
 describe('previewAnnotations', () => {
   it('does not throw when the docs preset returns undefined', async () => {
+    if (typeof previewAnnotations !== 'function') {
+      throw new Error('expected previewAnnotations to be a function');
+    }
+
     const options = {
       presets: {
         apply: async (key: string) => {

@@ -27,6 +27,7 @@ import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getGroupDualStatus } from '../../utils/status.tsx';
+import { useLayout } from '../layout/LayoutProvider.tsx';
 import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
@@ -200,6 +201,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const api = useStorybookApi();
+  const { isMobile } = useLayout();
+  // Mirrors the labelContext TreeNode passes to renderLabel, so pinned copies match their rows.
+  const labelContext = useMemo(() => ({ isMobile, location: 'sidebar' as const }), [isMobile]);
   const isModifiedFilterActive = (includedStatusFilters ?? []).includes('status-value:modified');
   // Whether any test provider is registered: gates the context menu on group/component rows.
   const hasTestProviders =
@@ -779,7 +783,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
                       <Traces level={level} isAlongsideSelected={false} />
                     </PinnedTraceAnchor>
                     <CollapseIcon isExpanded />
-                    <PinnedLabel>{entry.name}</PinnedLabel>
+                    <PinnedLabel>
+                      {entry.renderLabel?.(entry, api, labelContext) || entry.name}
+                    </PinnedLabel>
                   </PinnedRow>
                 );
               })}

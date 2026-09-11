@@ -563,6 +563,14 @@ const stickyChainIds = [
   'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
 ];
 
+const stickyIndex: IndexHash = {
+  ...index,
+  'webapp-screens': {
+    ...index['webapp-screens'],
+    renderLabel: (item) => <span>{`Custom ${item.name}`}</span>,
+  },
+};
+
 export const StickyAncestors: Story = {
   args: {
     refId: DEFAULT_REF_ID,
@@ -571,7 +579,12 @@ export const StickyAncestors: Story = {
     const [selectedId, setSelectedId] = useState(stickyStoryId);
     return (
       <div data-testid="sticky-harness" style={{ height: 320 }}>
-        <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+        <Tree
+          {...args}
+          data={stickyIndex}
+          selectedStoryId={selectedId}
+          onSelectStoryId={setSelectedId}
+        />
       </div>
     );
   },
@@ -593,6 +606,10 @@ export const StickyAncestors: Story = {
       expect(stickyChainIds.join(',')).toContain(ids.join(','));
       expect(ids).not.toContain(stickyStoryId);
     });
+
+    await expect(
+      canvasElement.querySelector('[data-pinned-item-id="webapp-screens"]')
+    ).toHaveTextContent('Custom Webapp screens');
 
     // Jitter regression: overlay membership must be stable across single-pixel scrolls
     // (membership derives from row offsets only, never from the engaged stack).

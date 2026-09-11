@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getStoryTitle } from 'storybook/internal/common';
@@ -49,6 +51,53 @@ const transform = async ({
 };
 
 describe('transformer', () => {
+  describe('imported factory meta', () => {
+    const fileName = fileURLToPath(
+      new URL('../__fixtures__/factory-meta/Button.stories.ts', import.meta.url)
+    );
+
+    it.each(['shared', 'reexport'])('transforms meta imported through %s', async (module) => {
+      const result = await transform({
+        fileName,
+        code: `
+          import { config } from '#.storybook/preview';
+          import sharedMeta from './${module}';
+          const meta = config.meta(sharedMeta);
+          export const Primary = meta.story({});
+          export const Excluded = meta.story({});
+        `,
+        tagsFilter: { include: ['shared-meta'], exclude: [], skip: [] },
+      });
+
+      expect(getStoryTitle).toHaveBeenCalledWith(
+        expect.objectContaining({ userTitle: 'Shared/Button' })
+      );
+      expect(result.code).toContain('...sharedMeta,');
+      expect(result.code).toContain('title: "automatic/calculated/title"');
+      expect(result.code).toContain('storyId: "shared-button--primary"');
+      expect(result.code).toContain('exportName: "Primary"');
+      expect(result.code).not.toContain('exportName: "Excluded"');
+      expect(result.code).not.toContain('render:');
+    });
+
+    it.each(['dynamic', 'missing', 'cycle-a'])(
+      'rejects unresolved meta from %s',
+      async (module) => {
+        await expect(
+          transform({
+            fileName,
+            code: `
+          import { config } from '#.storybook/preview';
+          import sharedMeta from './${module}';
+          const meta = config.meta(sharedMeta);
+          export const Primary = meta.story({});
+        `,
+          })
+        ).rejects.toThrow(/could not detect the meta/);
+      }
+    );
+  });
+
   describe('CSF v1/v2/v3', () => {
     describe('default exports (meta)', () => {
       it('should add title to inline default export if not present', async () => {
@@ -1482,7 +1531,7 @@ describe('transformer', () => {
       `);
     });
 
-    it('should error when the factory meta configuration is not an object literal', async () => {
+    it('should error when the imported factory meta configuration cannot be resolved', async () => {
       const code = `
         import { config } from '#.storybook/preview';
         import sharedMeta from './shared-meta';

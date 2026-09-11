@@ -37,7 +37,7 @@ export interface ReferenceContext extends ReferenceModule {
    * was written as means nothing where the snippet lands. Returning `undefined` rejects the value,
    * leaving the reference that reached it unresolved.
    */
-  externalize?: (node: t.Node) => t.Node | undefined;
+  externalize?: (node: t.Node, context: ReferenceContext) => t.Node | undefined;
 }
 
 /** The half of a {@link ReferenceContext} that is not specific to one story file. */
@@ -389,7 +389,7 @@ const externalized = (
   }
   const properties: Record<string, t.Node> = {};
   for (const [key, node] of Object.entries(members.properties)) {
-    const value = ctx.externalize(node);
+    const value = ctx.externalize(node, ctx);
     if (value === undefined) {
       return undefined;
     }
@@ -696,6 +696,23 @@ const resolveTargetModule = (
 
 /** The binding a module's export name reaches, following a re-export to the module that owns it. */
 const exportedBinding = (
+  ctx: ReferenceContext,
+  exportName: string,
+  visited: Set<string>
+): BoundMembers | undefined => {
+  const key = `export:${ctx.filePath}#${exportName}`;
+  if (visited.has(key)) {
+    return undefined;
+  }
+  visited.add(key);
+  try {
+    return unguardedExportedBinding(ctx, exportName, visited);
+  } finally {
+    visited.delete(key);
+  }
+};
+
+const unguardedExportedBinding = (
   ctx: ReferenceContext,
   exportName: string,
   visited: Set<string>

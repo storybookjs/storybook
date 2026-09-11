@@ -1,4 +1,3 @@
-<!-- @component Panel with string, number and boolean props. @summary Basic props fixture. -->
 <script lang="ts">
   interface Props {
     /** Visible label text. */
@@ -13,6 +12,13 @@
 
   let { label, count = 0, primary = false, title }: Props = $props();
 </script>
+
+<!--
+@component
+Panel with string, number and boolean props.
+
+@summary Basic props fixture.
+-->
 
 <section data-primary={primary}>
   {#if title}

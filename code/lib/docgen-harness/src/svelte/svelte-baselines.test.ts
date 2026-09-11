@@ -57,17 +57,34 @@ type ComponentWithDocgen = Component & {
   __docgen?: unknown;
 };
 
+type DocsDescription = {
+  component?: string;
+  story?: string;
+};
+
+type DocsParameters = {
+  docs?: {
+    description?: DocsDescription;
+  };
+};
+
 type SvelteMeta = {
   component: ComponentWithDocgen;
   args?: Args;
+  parameters?: DocsParameters;
   title?: string;
 };
 
 type SvelteStoryObject = StoryAnnotations<SvelteRenderer, Args> & {
   component?: ComponentWithDocgen;
+  parameters?: DocsParameters;
 };
 
-type SvelteStory = AnnotatedStoryFn<SvelteRenderer, Args> | SvelteStoryObject;
+type SvelteStoryFunction = AnnotatedStoryFn<SvelteRenderer, Args> & {
+  parameters?: DocsParameters;
+};
+
+type SvelteStory = SvelteStoryFunction | SvelteStoryObject;
 
 type SvelteStoriesModule = { default: SvelteMeta } & Record<string, unknown>;
 
@@ -100,6 +117,15 @@ describe('svelte legacy baselines', () => {
         ) as Record<string, SvelteStory>)
       : {};
     const component = meta.component;
+    await expect({
+      component: meta.parameters?.docs?.description?.component,
+      stories: Object.fromEntries(
+        Object.entries(stories).map(([exportName, story]) => [
+          exportName,
+          story.parameters?.docs?.description?.story,
+        ])
+      ),
+    }).toMatchFileSnapshot(join(testDir, 'story-descriptions.snapshot'));
 
     expect(
       component.__docgen,

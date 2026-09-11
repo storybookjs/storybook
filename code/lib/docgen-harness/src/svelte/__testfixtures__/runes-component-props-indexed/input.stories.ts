@@ -1,6 +1,6 @@
 import type { ComponentProps } from 'svelte';
 
-import type { Meta, StoryObj } from '../../../../../../renderers/svelte/src/index.ts';
+import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Modal from './Modal.svelte';
 

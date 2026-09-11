@@ -23,7 +23,7 @@
   {/snippet}
 </Story>
 
-<Story name="As Child" exportName="AsChild" asChild args={{ title: 'Explicit card' }}>
+<Story name="As Child" exportName="AsChild" asChild args={{ title: 'Story arg title' }}>
   <Card title="Explicit card">
     {#snippet footer()}
       <small>Explicit footer</small>

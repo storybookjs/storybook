@@ -1,4 +1,4 @@
-import type { Meta, StoryObj } from '../../../../../../renderers/svelte/src/index.ts';
+import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Panel from './Panel.svelte';
 

@@ -58,6 +58,7 @@ src/
 │   ├── svelte-render.test.ts
 │   └── __testfixtures__/<case>/  # component, input.stories.svelte, optional input.stories.ts,
 │                                 # argtypes.snapshot, description.snapshot,
+│                                 # story-descriptions.snapshot,
 │                                 # snippet-<story>.snapshot, plain-csf-snippet-<story>.snapshot
 ├── web-components/
 │   ├── web-components-baselines.test.ts
@@ -134,7 +135,7 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
   Signal fixtures also commit an `aot-cmp.ts` with the `ɵcmp` input/output maps, captured once from real `ngc` output - JIT leaves them empty.
   Stories import their CSF types from `src/angular/csf-types.ts`; the two runtime test files are excluded from the vue-tsc program because angular-vite client source is not strict-clean.
 - svelte: one component plus `input.stories.svelte`; add supporting component/type files and `input.stories.ts` when the plain CSF snippet path is relevant.
-  `input.stories.ts` imports `Meta`/`StoryObj` from the real Svelte renderer.
+  `input.stories.ts` imports `Meta`/`StoryObj` from `@storybook/svelte`.
   New fixtures need two focused Svelte test runs: the first creates `toMatchFileSnapshot` files at suite end, and the second proves the stale-file checks and comparator gates.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
@@ -148,6 +149,7 @@ The Svelte harness records two snippet paths because Storybook currently has two
 - `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by the published `@storybook/addon-svelte-csf` package pinned in devDependencies (5.1.2).
   The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the addon's runtime.
 - `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
+`story-descriptions.snapshot` records the docs description parameters that addon-svelte-csf creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
 
 ### Capturing compodoc input (angular)
 
@@ -244,6 +246,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Literal unions keep raw type text in `type.name` and `table.type.summary`; literal-only unions may get `control.options`, but they do not become an `enum` sbType.
 - `table.jsDocTags` is never populated. The current recordings keep only prop description text; `@deprecated`, `@default`, `@example`, and `@internal` do not leak into descriptions.
 - Svelte CSF text-content `args.x` references are JSON-stringified, so `<h1>{args.title}</h1>` records as `<h1>{"Reference title"}</h1>`.
+- Svelte CSF `asChild` markup is emitted verbatim; Story args do not reach the child component markup.
 - Svelte CSF `{...args}` expansion emits every non-null arg, including values equal to component defaults.
 - Plain CSF snippets omit `undefined` and `null`, skip action args, and render functions as `{<handler>}`; Svelte CSF renders Storybook `fn()` mocks by prepared arg key and named inline functions by name.
 - `$bindable` defaults record as `"..."`, while rest props inherited from `HTMLInputAttributes` are not recorded.

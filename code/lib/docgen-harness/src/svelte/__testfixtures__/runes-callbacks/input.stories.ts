@@ -1,6 +1,6 @@
 import { fn } from 'storybook/test';
 
-import type { Meta, StoryObj } from '../../../../../../renderers/svelte/src/index.ts';
+import type { Meta, StoryObj } from '@storybook/svelte';
 
 import Callbacks from './Callbacks.svelte';
 

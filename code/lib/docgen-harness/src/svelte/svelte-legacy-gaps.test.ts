@@ -14,6 +14,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 
 const BASELINES = {
   basicDescription: 'runes-basic-props/description.snapshot',
+  basicStoryDescriptions: 'runes-basic-props/story-descriptions.snapshot',
   unionArgTypes: 'runes-union-literal/argtypes.snapshot',
   snippetsArgTypes: 'runes-snippets/argtypes.snapshot',
   jsdocArgTypes: 'runes-jsdoc-tags/argtypes.snapshot',
@@ -90,6 +91,13 @@ describe('legacy behavior locked by the current recordings', () => {
   test('Svelte CSF and plain CSF record function args with their current mock spellings', () => {
     expect(baseline('callbacksSvelteSnippet')).toContain('onclick={onclick}');
     expect(baseline('callbacksPlainSnippet')).toContain('onclick={<handler>}');
+  });
+
+  test('Svelte CSF comments populate docs description parameters', () => {
+    const snapshot = baseline('basicStoryDescriptions');
+    expect(snapshot).toContain('Panel fixture component description.');
+    expect(snapshot).toContain('Default story docs description.');
+    expect(snapshot).toContain('"AllArgs": undefined');
   });
 });
 

@@ -1,0 +1,9 @@
+{
+  "component": "Modal fixture component description.
+Captured from defineMeta comments.",
+  "stories": {
+    "ContentOnly": undefined,
+    "Default": undefined,
+    "WithSnippets": "Modal story docs with snippet props.",
+  },
+}

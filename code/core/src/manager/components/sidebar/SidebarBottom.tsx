@@ -49,8 +49,11 @@ const getFilter = (warningsActive = false, errorsActive = false) => {
   return filterNone;
 };
 
+// The sidebar column is a flex layout since the tree scrolls itself; without a rigid basis
+// the reserved height would be flexed away whenever the tree wants the space.
 const Spacer = styled.div({
   pointerEvents: 'none',
+  flex: 'none',
 });
 
 const Content = styled.div(({ theme }) => ({

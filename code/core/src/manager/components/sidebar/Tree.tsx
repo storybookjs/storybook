@@ -32,6 +32,7 @@ import { useExpanded } from './useExpanded.ts';
 import { StatusContext } from './StatusContext.tsx';
 import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
@@ -144,7 +145,28 @@ const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   '& svg': {
     flexShrink: 0,
   },
+
+  // Same icon swap as natural rows: type icon at rest, collapse chevron while hovered.
+  '.hover-only': {
+    display: 'none',
+  },
+  '&:hover .hover-only': {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  '.static-only': {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  '&:hover .static-only': {
+    display: 'none',
+  },
 }));
+
+const PinnedRowIcon = styled.span({
+  display: 'flex',
+  alignItems: 'center',
+});
 
 // Zero-width anchor fixed at the natural row's content-box start (level indent, before the
 // 7px content padding), so the trace lines it hosts land exactly where real rows draw them.
@@ -783,7 +805,27 @@ export const Tree = React.memo<TreeProps>(function Tree({
                     <PinnedTraceAnchor $level={level}>
                       <Traces level={level} isAlongsideSelected={false} />
                     </PinnedTraceAnchor>
-                    <CollapseIcon isExpanded />
+                    <PinnedRowIcon
+                      data-testid="pinned-collapse"
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        setExpanded({ ids: [id], append: true, value: false });
+                        scrollPinnedRowIntoPlace(id, overlayIndex);
+                      }}
+                    >
+                      {entry.type === 'root' ? (
+                        <CollapseIcon isExpanded />
+                      ) : (
+                        <>
+                          <span className="hover-only">
+                            <CollapseIcon isExpanded />
+                          </span>
+                          <span className="static-only">
+                            <TypeIconWithSymbol item={entry} />
+                          </span>
+                        </>
+                      )}
+                    </PinnedRowIcon>
                     <PinnedLabel>
                       {entry.renderLabel?.(entry, api, labelContext) || entry.name}
                     </PinnedLabel>

@@ -611,6 +611,17 @@ export const StickyAncestors: Story = {
       canvasElement.querySelector('[data-pinned-item-id="webapp-screens"]')
     ).toHaveTextContent('Custom Webapp screens');
 
+    // Pinned branches carry the natural rows' icons: type icon at rest, chevron for hover.
+    // Pinned roots have no type icon and always show the chevron.
+    const pinnedBranch = canvasElement.querySelector(
+      `[data-pinned-item-id="${stickyChainIds[1]}"]`
+    )!;
+    expect(pinnedBranch.querySelector('.static-only use')).not.toBeNull();
+    expect(pinnedBranch.querySelector('.hover-only svg')).not.toBeNull();
+    const pinnedRoot = canvasElement.querySelector('[data-pinned-item-id="webapp-screens"]')!;
+    expect(pinnedRoot.querySelector('use')).toBeNull();
+    expect(pinnedRoot.querySelector('[data-testid="pinned-collapse"] svg')).not.toBeNull();
+
     // Trace lines of pinned copies must sit on the same x positions as the natural rows below.
     const traceLefts = (root: Element) =>
       [...root.querySelectorAll('[data-testid="trace-line"]')].map((el) =>
@@ -651,6 +662,18 @@ export const StickyAncestors: Story = {
     scroller.scrollTop = 10;
     await waitFor(() => {
       expect(overlayIds()).toEqual([firstRowId]);
+    });
+
+    // Clicking the pinned chevron collapses the node and lands its natural row in the slot
+    // the pinned copy occupied.
+    const pinnedFirst = canvasElement.querySelector(`[data-pinned-item-id="${firstRowId}"]`)!;
+    await userEvent.click(within(pinnedFirst as HTMLElement).getByTestId('pinned-collapse'));
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([]);
+      expect(scroller.scrollTop).toBe(0);
+      expect(
+        canvasElement.querySelector(`[data-item-id="${firstRowId}"]`)?.getAttribute('aria-expanded')
+      ).toBe('false');
     });
   },
 };

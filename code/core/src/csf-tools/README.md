@@ -12,7 +12,7 @@ It can parse MDX into CSF.
 ## Transforming stories
 
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta, each story export, and each CSF2 `Story.parameters` / `Story.story` annotation assignment.
-`{ meta, stories, annotations }` narrows what is discovered; meta and stories are included by default, annotations only when listed.
+`{ meta, stories }` narrows what is discovered; both are included by default. Story discovery also includes separate CSF2 parameter assignments, so callers use the same paths regardless of the source format.
 
 Each editor reads and writes static property paths with `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group`.
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Missing fields return `undefined`. Values that cannot be resolved statically return `undefined` and add a mutation diagnostic; reads never return a partially decoded object.

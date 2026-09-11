@@ -181,7 +181,6 @@ export interface CsfObject {
 export interface CsfObjectOptions {
   meta?: boolean;
   stories?: boolean;
-  annotations?: readonly 'parameters'[];
 }
 
 const UNRESOLVED = Symbol('unresolved');

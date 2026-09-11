@@ -323,8 +323,7 @@ const discoverStories = (
 const annotationCandidates = (
   csf: CsfFile,
   statement: NodePath<t.Statement>,
-  bindings: Map<string, StoryBinding>,
-  annotations: Set<'parameters'>
+  bindings: Map<string, StoryBinding>
 ): AnnotationCandidate[] => {
   if (!statement.isExpressionStatement()) {
     return [];
@@ -350,24 +349,26 @@ const annotationCandidates = (
         ? property.node.value
         : undefined;
   const binding = bindings.get(object.node.name);
-  if (!propertyName && left.node.computed && binding && annotations.size > 0) {
-    return [...annotations].map((annotation) => ({
-      target: {
-        kind: 'story-annotation',
-        exportName: binding.exportName,
-        localName: binding.localName,
-        annotation,
+  if (!propertyName && left.node.computed && binding) {
+    return [
+      {
+        target: {
+          kind: 'story-annotation',
+          exportName: binding.exportName,
+          localName: binding.localName,
+          annotation: 'parameters',
+        },
+        annotation: 'parameters',
+        node: property.node,
+        message: `Cannot mutate ${binding.localName} annotation because its computed name is not a static string literal`,
       },
-      annotation,
-      node: property.node,
-      message: `Cannot mutate ${binding.localName} annotation because its computed name is not a static string literal`,
-    }));
+    ];
   }
   if (!propertyName) {
     return [];
   }
   const annotation = propertyName === 'parameters' ? 'parameters' : undefined;
-  if (!annotation || !binding || !annotations.has(annotation)) {
+  if (!annotation || !binding) {
     return [];
   }
   const rootNode = unwrapExpression(right.node);
@@ -430,14 +431,13 @@ const reportOrCreateAnnotation = (
 const discoverAnnotations = (
   csf: CsfFile,
   storyBindings: StoryBinding[],
-  annotations: Set<'parameters'>,
   report: ReportDiagnostic,
   markChanged: MarkChanged
 ): CsfObject[] => {
   const bindings = new Map(storyBindings.map((binding) => [binding.localName, binding]));
   const candidates = new Map<string, AnnotationCandidate[]>();
   for (const statement of csf._file.path.get('body')) {
-    for (const candidate of annotationCandidates(csf, statement, bindings, annotations)) {
+    for (const candidate of annotationCandidates(csf, statement, bindings)) {
       const identity = `${candidate.target.localName}:${candidate.annotation}`;
       candidates.set(identity, [...(candidates.get(identity) ?? []), candidate]);
     }
@@ -453,14 +453,11 @@ export const discoverCsfObjects = (
   report: ReportDiagnostic,
   markChanged: MarkChanged
 ): readonly CsfObject[] => {
-  const annotations = new Set(options.annotations ?? []);
   const includeStories = options.stories ?? true;
-  const bindings = includeStories || annotations.size > 0 ? storyBindings(csf, report) : [];
+  const bindings = includeStories ? storyBindings(csf, report) : [];
   return [
     ...((options.meta ?? true) ? discoverMeta(csf, report, markChanged) : []),
     ...(includeStories ? discoverStories(csf, bindings, report, markChanged) : []),
-    ...(annotations.size > 0
-      ? discoverAnnotations(csf, bindings, annotations, report, markChanged)
-      : []),
+    ...(includeStories ? discoverAnnotations(csf, bindings, report, markChanged) : []),
   ];
 };

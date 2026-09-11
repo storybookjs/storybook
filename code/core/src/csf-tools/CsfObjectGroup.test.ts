@@ -68,10 +68,10 @@ describe('CsfObject.group', () => {
     expect(config.mutationDiagnostics).toEqual([]);
   });
 
-  it('groups fields in story objects and CSF2 annotations with the same paths', () => {
+  it('groups fields in meta, story objects, and CSF2 annotations with the same paths', () => {
     const csf = loadCsf(
       `
-      export default { title: 'Example' };
+      export default { title: 'Example', parameters: { width: 100, height: 200 } };
       export const Primary = { parameters: { width: 100, height: 200 } };
       export const Legacy = () => {};
       Legacy.parameters = { width: 100, height: 200 };
@@ -79,14 +79,16 @@ describe('CsfObject.group', () => {
       { makeTitle: (title) => title || 'Example' }
     ).parse();
 
-    for (const object of csf.objects({ meta: false, annotations: ['parameters'] })) {
+    const objects = csf.objects();
+    expect(objects).toHaveLength(3);
+    for (const object of objects) {
       object.group(['parameters', 'size'], ['width', 'height']);
     }
 
     const output = loadCsf(printCsf(csf).code, {
       makeTitle: (title) => title || 'Example',
     }).parse();
-    for (const object of output.objects({ meta: false, annotations: ['parameters'] })) {
+    for (const object of output.objects()) {
       expect(object.getValue(['parameters', 'size'])).toEqual({ width: 100, height: 200 });
     }
     expect(csf.changed).toBe(true);

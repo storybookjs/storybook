@@ -17,6 +17,7 @@ declare var VERSIONCHECK: any;
 declare var LOGLEVEL: 'trace' | 'debug' | 'info' | 'warn' | 'error' | 'silent' | undefined;
 
 declare var __REACT__: any;
+declare var __REACT_ARIA_FOCUS_SCOPE__: any;
 declare var __REACT_DOM__: any;
 declare var __REACT_DOM_CLIENT__: any;
 declare var __STORYBOOK_COMPONENTS__: any;

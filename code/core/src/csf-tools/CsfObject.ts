@@ -187,7 +187,9 @@ const UNRESOLVED = Symbol('unresolved');
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
 type MarkChanged = () => void;
-type ObjectRoot = Pick<NodePath<t.ObjectExpression>, 'node' | 'scope' | 'buildCodeFrameError'>;
+type ObjectRoot = Pick<NodePath<t.ObjectExpression>, 'node' | 'scope' | 'buildCodeFrameError'> & {
+  detached?: boolean;
+};
 
 type PropertyLookup =
   | { ok: true; property?: t.ObjectProperty | t.ObjectMethod }
@@ -619,6 +621,19 @@ class CsfObjectEditor implements CsfObject {
       const movedSet = new Set<t.ObjectMember | t.SpreadElement>(moved);
       parent.properties = parent.properties.filter((property) => !movedSet.has(property));
     } else {
+      if (parent === this.root.node && this.root.detached) {
+        const effectful = moved.find(
+          (property) => !t.isObjectProperty(property) || !isEvaluationInert(property.value)
+        );
+        if (effectful) {
+          return this.failure(
+            'evaluation-order',
+            path,
+            effectful,
+            'Grouping named config exports could change initializer evaluation order'
+          );
+        }
+      }
       const first = parent.properties.indexOf(moved[0]);
       const last = parent.properties.indexOf(moved.at(-1)!);
       if (last - first + 1 !== moved.length) {

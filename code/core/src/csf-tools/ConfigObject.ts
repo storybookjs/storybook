@@ -397,6 +397,7 @@ export function createConfigObject(
           { kind: 'config' },
           {
             node: virtualRoot,
+            detached: true,
             scope: program.scope,
             buildCodeFrameError: program.buildCodeFrameError.bind(program),
           },

@@ -146,14 +146,15 @@ const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   },
 }));
 
-// Zero-width anchor at the content start so the pinned row's trace lines share the same
-// coordinate system as real rows (lines offset backwards from the content edge).
-const PinnedTraceAnchor = styled.span({
-  position: 'relative',
-  alignSelf: 'stretch',
+// Zero-width anchor fixed at the natural row's content-box start (level indent, before the
+// 7px content padding), so the trace lines it hosts land exactly where real rows draw them.
+// Out of the flex flow, or the row gap would push the icon off the natural rows' grid.
+const PinnedTraceAnchor = styled.span<{ $level: number }>(({ $level }) => ({
+  position: 'absolute',
+  insetBlock: 0,
+  insetInlineStart: `calc(${$level} * 20px)`,
   width: 0,
-  flex: 'none',
-});
+}));
 
 // The label must own the free space and truncate stably, or the row content jitters
 // horizontally as pinned rows swap while scrolling.
@@ -779,7 +780,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
                     tabIndex={-1}
                     onClick={() => scrollPinnedRowIntoPlace(id, overlayIndex)}
                   >
-                    <PinnedTraceAnchor>
+                    <PinnedTraceAnchor $level={level}>
                       <Traces level={level} isAlongsideSelected={false} />
                     </PinnedTraceAnchor>
                     <CollapseIcon isExpanded />

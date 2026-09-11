@@ -198,7 +198,12 @@ export const Traces = ({
   return (
     <StyledTraces>
       {Array.from({ length: level }, (_, i) => (
-        <StyledTraceLine key={i} $offset={i} $forceVisible={isAlongsideSelected && i === 0} />
+        <StyledTraceLine
+          key={i}
+          data-testid="trace-line"
+          $offset={i}
+          $forceVisible={isAlongsideSelected && i === 0}
+        />
       ))}
     </StyledTraces>
   );

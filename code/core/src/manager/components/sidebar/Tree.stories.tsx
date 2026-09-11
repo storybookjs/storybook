@@ -611,6 +611,18 @@ export const StickyAncestors: Story = {
       canvasElement.querySelector('[data-pinned-item-id="webapp-screens"]')
     ).toHaveTextContent('Custom Webapp screens');
 
+    // Trace lines of pinned copies must sit on the same x positions as the natural rows below.
+    const traceLefts = (root: Element) =>
+      [...root.querySelectorAll('[data-testid="trace-line"]')].map((el) =>
+        Math.round(el.getBoundingClientRect().left)
+      );
+    const naturalLefts = traceLefts(scroller);
+    const overlay = canvasElement.querySelector('[data-testid="sticky-overlay"]')!;
+    expect(traceLefts(overlay).length).toBeGreaterThan(0);
+    for (const left of traceLefts(overlay)) {
+      expect(naturalLefts).toContain(left);
+    }
+
     // Jitter regression: overlay membership must be stable across single-pixel scrolls
     // (membership derives from row offsets only, never from the engaged stack).
     const stable = overlayIds().join();

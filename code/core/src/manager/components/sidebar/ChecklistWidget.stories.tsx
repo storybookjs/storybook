@@ -123,16 +123,26 @@ export const StableAcrossStateSyncs = meta.story({
     const rows = [...canvasElement.querySelectorAll('li')];
     await expect(rows.length).toBeGreaterThan(0);
 
-    mockStore.setState((state) => ({ ...state, items: { ...state.items } }));
-    let minOpacity = 1;
-    const start = performance.now();
-    while (performance.now() - start < 500) {
-      for (const row of rows) {
-        minOpacity = Math.min(minOpacity, parseFloat(getComputedStyle(row).opacity));
-      }
-      await new Promise((resolve) => requestAnimationFrame(resolve));
-    }
-    await expect(minOpacity).toBe(1);
+    // A transition replay swaps each row's emotion class per transition status, so any
+    // class mutation after an unrelated state sync is a replayed enter transition.
+    const mutations: MutationRecord[] = [];
+    const observer = new MutationObserver((records) => mutations.push(...records));
+    rows.forEach((row) => observer.observe(row, { attributes: true, attributeFilter: ['class'] }));
+    mockStore.setState({
+      loaded: true,
+      widget: {},
+      items: {
+        ...initialState.items,
+        controls: { status: 'accepted' },
+        renderComponent: { status: 'done' },
+        installVitest: { status: 'done' },
+        moreComponents: { status: 'skipped' },
+        moreStories: { status: 'skipped' },
+      },
+    });
+    await wait(600);
+    observer.disconnect();
+    await expect(mutations).toEqual([]);
     for (const row of rows) {
       await expect(canvasElement.contains(row)).toBe(true);
     }

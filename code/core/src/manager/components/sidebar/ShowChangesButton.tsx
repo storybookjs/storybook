@@ -166,7 +166,6 @@ export const ShowChangesButton = () => {
           size="small"
           onClick={onClearClick}
           ariaLabel="Clear"
-          disableAllTooltips
         >
           <UndoIcon />
         </Button>

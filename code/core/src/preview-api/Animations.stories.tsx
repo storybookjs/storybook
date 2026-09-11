@@ -63,13 +63,6 @@ export const Infinite: Story = {
       animation: `${rotate} 3s linear infinite alternate`,
     },
   },
-  play: async () => {
-    // Wait for the animation to run to its end frame (yellow).
-    // This would cause the color-contrast check to fail, but the accessibility addon handles
-    // that by pausing all animations before running the test and restoring them afterwards.
-    // If needed, users can also import and call `pauseAnimations` from `storybook/preview-api`.
-    await new Promise((resolve) => setTimeout(resolve, 3000));
-  },
 };
 
 const Container = styled.div({

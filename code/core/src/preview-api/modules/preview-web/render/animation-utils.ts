@@ -14,8 +14,8 @@ export function isTestEnvironment() {
   }
 }
 
-// Pause all DocumentTimeline animations and transitions by overriding the CSS properties
-export function pauseAnimations(): CleanupCallback {
+/** Snap document-timeline CSS animations and transitions. Finite animations finish when `atEnd` is true; otherwise they pause at t=0. */
+export function pauseAnimations(atEnd = true): CleanupCallback {
   if (
     !(
       'document' in globalThis &&
@@ -23,7 +23,6 @@ export function pauseAnimations(): CleanupCallback {
       'getAnimations' in globalThis.document
     )
   ) {
-    // Don't run in React Native
     return () => {};
   }
 
@@ -35,29 +34,28 @@ export function pauseAnimations(): CleanupCallback {
 
   const pauseAllAnimations = () => {
     const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
-    const animations = animationRoots.flatMap((el) => el?.getAnimations?.() || []);
-    animations.forEach((a) => {
-      if (!isDocumentAnimation(a)) {
-        return;
+    for (const animation of animationRoots.flatMap((root) => root?.getAnimations?.() || [])) {
+      if (!isDocumentAnimation(animation)) {
+        continue;
       }
       previousStates.push({
-        animation: a,
-        playState: a.playState,
-        currentTime: a.currentTime,
+        animation,
+        playState: animation.playState,
+        currentTime: animation.currentTime,
       });
-      // Normal animations and transitions instantly run to their end state (finish),
-      // while infinite animations pause and rewind to their starting state.
-      if (isFiniteAnimation(a)) {
-        a.finish();
+      if (atEnd && isFiniteAnimation(animation)) {
+        try {
+          animation.finish();
+        } catch {
+          animation.pause();
+          animation.currentTime = 0;
+        }
       } else {
-        a.pause();
-        a.currentTime = 0;
+        animation.pause();
+        animation.currentTime = 0;
       }
-    });
-
-    // Force a reflow
-    // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-    document.body.clientHeight;
+    }
+    void document.body?.clientHeight;
   };
 
   addEventListener('animationstart', pauseAllAnimations);
@@ -82,7 +80,6 @@ export function pauseAnimations(): CleanupCallback {
   };
 }
 
-// Use the Web Animations API to wait for any animations and transitions to finish
 export async function waitForAnimations(signal?: AbortSignal) {
   if (
     !(
@@ -91,29 +88,29 @@ export async function waitForAnimations(signal?: AbortSignal) {
       'querySelectorAll' in globalThis.document
     )
   ) {
-    // Don't run in React Native
     return;
   }
 
   let timedOut = false;
   await Promise.race([
-    // After 50ms, retrieve any running animations and wait for them to finish
-    // If new animations are created while waiting, we'll wait for them too
     new Promise((resolve) => {
       setTimeout(() => {
-        const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
         const checkAnimationsFinished = async () => {
           if (timedOut || signal?.aborted) {
             return;
           }
-          const runningAnimations = animationRoots
-            .flatMap((el) => el?.getAnimations?.() || [])
+          const runningAnimations = [globalThis.document, ...getShadowRoots(globalThis.document)]
+            .flatMap((root) => root?.getAnimations?.() || [])
             .filter(
-              (a) => a.playState === 'running' && isDocumentAnimation(a) && isFiniteAnimation(a)
+              (animation) =>
+                animation.playState === 'running' &&
+                isDocumentAnimation(animation) &&
+                isFiniteAnimation(animation)
             );
           if (runningAnimations.length > 0) {
-            // Treat any errors (e.g. AbortError) from `finished` as also finished, even though not successfully so
-            await Promise.allSettled(runningAnimations.map(async (a) => a.finished));
+            await Promise.allSettled(
+              runningAnimations.map(async (animation) => animation.finished)
+            );
             await checkAnimationsFinished();
           }
         };
@@ -121,7 +118,6 @@ export async function waitForAnimations(signal?: AbortSignal) {
       }, 100);
     }),
 
-    // If animations don't finish within the timeout, continue without waiting
     new Promise((resolve) =>
       setTimeout(() => {
         timedOut = true;
@@ -140,6 +136,7 @@ function getShadowRoots(doc: Document | ShadowRoot) {
   }, []);
 }
 
+// Scroll/view timelines must keep running; currentTime can be a CSSNumericValue.
 function isDocumentAnimation(anim: Animation) {
   return (
     (anim instanceof CSSAnimation || anim instanceof CSSTransition) &&

@@ -3,14 +3,13 @@ import { resolve } from 'node:path';
 
 import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
-import { telemetry } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import type { Command } from 'commander';
+import { Option, type Command } from 'commander';
 
-import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
-import { runToolsCommand, type ToolsCommandOutcome, type ToolsRunResult } from './run.ts';
+import { runToolsCommand, type ToolsRunResult } from './run.ts';
+import { reportToolsCommandEvent, sanitizeNamePart } from './sdk/command-telemetry.ts';
 import { isJsonToolsRun, TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
@@ -21,6 +20,9 @@ export type CommandFailureHandler = (
 type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
+  port?: string;
+  attach?: boolean;
+  noAttach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
@@ -29,9 +31,10 @@ type ToolsPassthroughOptions = ToolsOutputFlags & {
 
 /**
  * Register the `storybook tools` passthrough: a generic `[toolset] [tool] [args...]` argument
- * triple that runs the toolsets registered by the target Storybook configuration, in this process,
- * disconnected from any dev server. `passThroughOptions` hands every token after the tool name to
- * the tool untouched, which requires positional options on the program.
+ * triple that runs the toolsets registered by the target Storybook configuration. Attach is the
+ * default when a matching instance is running; `--no-attach` forces a local host.
+ * `passThroughOptions` hands every token after the tool name to the tool untouched, which requires
+ * positional options on the program.
  *
  * Commander's built-in (synchronous) help is replaced with our own `-h, --help` option so the help
  * output can be derived from the toolsets the target project registers. Target-selection options
@@ -56,6 +59,13 @@ export function registerToolsPassthrough(
     );
 
   for (const { flags, description } of TOOLS_OPTION_SPECS) {
+    if (flags === '--no-attach') {
+      const option = new Option(flags, description);
+      // Commander treats `--no-*` as the negation of `--*`, which would default `--attach` to true.
+      option.negate = false;
+      toolsCommand.addOption(option);
+      continue;
+    }
     toolsCommand.option(flags, description);
   }
 
@@ -74,6 +84,7 @@ export function registerToolsPassthrough(
           json: options.json,
           output: options.output,
           help: options.help,
+          attach: options.noAttach ? false : options.attach,
         };
         // `--json` promises a parseable stdout, but writers this realm does not own print to it:
         // `withTelemetry` evaluates the project's `main.ts` to resolve the telemetry opt-out
@@ -106,16 +117,25 @@ export function registerToolsPassthrough(
               const start = Date.now();
               let result: ToolsRunResult;
               try {
-                result = await runToolsCommand(
-                  {
+                if (options.attach && options.noAttach) {
+                  result = {
+                    exitCode: 1,
+                    output: 'Cannot combine `--attach` and `--no-attach`.',
+                    outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+                    requestedMode: 'auto',
+                    attachMode: 'auto',
+                  };
+                } else {
+                  result = await runToolsCommand({
                     toolset,
                     tool,
                     tokens,
                     target: { cwd: options.cwd, configDir: options.configDir },
+                    port: options.port,
+                    attach: options.noAttach ? false : options.attach,
                     flags,
-                  },
-                  { methodTelemetry: createMethodTelemetrySink(cliOptions) }
-                );
+                  });
+                }
               } finally {
                 clearInterval(keepAlive);
               }
@@ -126,13 +146,7 @@ export function registerToolsPassthrough(
                 // The tool has executed either way, so a failed `--output` write must not lose the
                 // event. Reporting after printing keeps a slow telemetry endpoint from ever
                 // delaying the user's result.
-                await reportToolsCommandTelemetry(
-                  toolset,
-                  tool,
-                  result.outcome,
-                  duration,
-                  cliOptions
-                );
+                await reportToolsCommandTelemetry({ toolset, tool, result, duration }, cliOptions);
               }
             }
           ).catch(handleCommandFailure(options.logfile));
@@ -166,73 +180,65 @@ function pickCliOptions(options: ToolsPassthroughOptions): CLIOptions {
 }
 
 /**
- * The per-method toolset telemetry sink. Events pass through `telemetry()`, which honors the
- * resolved opt-out state, so the sink itself never has to know whether telemetry is enabled. They
- * report under the same `tools-command` event as the per-invocation record, distinguished by the
- * `event` field the method supplies (mirroring how MCP method events report under `addon-mcp`).
- */
-function createMethodTelemetrySink(cliOptions: CLIOptions): ToolsetTelemetry {
-  return async (event, payload) => {
-    try {
-      await telemetry('tools-command', { event, ...payload }, { configDir: cliOptions.configDir });
-    } catch (error) {
-      logger.debug(`Error collecting telemetry: ${String(error)}`);
-    }
-  };
-}
-
-/**
- * Tool and toolset names are a fixed, project-defined vocabulary of short identifiers. Anything
- * else is arbitrary agent input (a typo'd path, a stray flag value) that must not be sent
- * verbatim, so it is collapsed to a placeholder. The intercept reason still tells the failure
- * class apart.
- */
-function sanitizeNamePart(part: string): string {
-  return /^[\w-]{1,64}$/.test(part) ? part : '(invalid)';
-}
-
-/**
  * Fire the `tools-command` event, once per executed tool, modeled on the `ai-command` event
- * (storybookjs/storybook#35131). Help lookups are excluded so they cannot skew success rates.
- * Unexpected failures additionally go through the standard sanitized error path; `failure`
- * outcomes (the tool ran and reported bad news) do not.
+ * (storybookjs/storybook#35131). The handler's own report, returned on its outcome, is merged
+ * into the same record. Help lookups are excluded so they cannot skew success rates. Unexpected
+ * failures additionally go through the standard sanitized error path; `failure` outcomes (the
+ * tool ran and reported bad news) do not.
  */
 async function reportToolsCommandTelemetry(
-  toolset: string | undefined,
-  tool: string | undefined,
-  outcome: ToolsCommandOutcome,
-  duration: number,
+  run: {
+    toolset: string | undefined;
+    tool: string | undefined;
+    result: ToolsRunResult;
+    duration: number;
+  },
   cliOptions: CLIOptions
 ): Promise<void> {
+  const { toolset, tool, result, duration } = run;
+  const { outcome } = result;
   if (outcome.kind === 'help') {
     return;
   }
-  const command =
-    [toolset, tool]
-      .filter((part): part is string => part !== undefined)
-      .map(sanitizeNamePart)
-      .join(' ') || '(none)';
-  await telemetry(
-    'tools-command',
+  await reportToolsCommandEvent(
     {
-      command,
+      ...(toolset !== undefined ? { toolset: sanitizeNamePart(toolset) } : {}),
+      ...(tool !== undefined ? { tool: sanitizeNamePart(tool) } : {}),
       success: outcome.kind === 'success',
-      ...(outcome.kind === 'intercept' && { interceptReason: outcome.reason }),
+      outcome: outcome.kind,
+      client: 'cli',
+      requestedMode: result.requestedMode,
+      attachMode: result.attachMode,
+      ...(result.host && (result.attachMode === 'attached' || result.attachMode === 'local')
+        ? { resolvedMode: result.attachMode }
+        : {}),
+      ...(result.host ? { host: result.host } : {}),
+      ...(result.multipleMatches ? { multipleMatches: true } : {}),
+      ...(result.fallbackReason ? { attachGate: result.fallbackReason } : {}),
+      ...(outcome.kind === 'attach-gate' ? { attachGate: outcome.reason } : {}),
+      ...(outcome.kind === 'intercept' ? { interceptReason: outcome.reason } : {}),
       duration,
     },
     // Metadata must describe the target project, consistent with the opt-out resolution.
-    { configDir: cliOptions.configDir }
+    { report: result.report, configDir: cliOptions.configDir }
   );
   if (outcome.kind === 'error') {
     await sendTelemetryError(outcome.error, 'tools-command', { cliOptions });
   }
 }
 
-/** Print to stdout, or to the file given via `-o, --output`. */
+/** Print to stdout, or to the file given via `-o, --output`. Notices go to stderr. */
 async function printResult(
-  { output, exitCode, outputPath }: ToolsRunResult,
+  { output, exitCode, outputPath, fallbackNotice, multiInstanceNotice }: ToolsRunResult,
   stdoutWrite: typeof process.stdout.write
 ): Promise<void> {
+  for (const notice of [fallbackNotice, multiInstanceNotice]) {
+    if (notice) {
+      await new Promise<void>((resolveWrite) => {
+        process.stderr.write(`${notice}\n`, () => resolveWrite());
+      });
+    }
+  }
   if (outputPath) {
     const resolvedPath = resolve(outputPath);
     await writeFile(resolvedPath, `${output}\n`, 'utf-8');

@@ -12,6 +12,7 @@ export type ValuePlan =
   | { kind: 'inline' }
   /** Hoisted into `<script setup>`, where the full JavaScript global scope applies. */
   | { kind: 'hoist' }
+  | { kind: 'unset' }
   /** Intentionally absent from the snippet, matching what the runtime source decorator drops. */
   | { kind: 'omit' }
   /** References something the snippet cannot declare, so rendering it would not compile. */
@@ -66,8 +67,12 @@ const NO_LOCALS: ReadonlySet<string> = new Set();
 export function classifyValue(node: t.Node): ValuePlan {
   const value = unwrapExpression(node);
 
+  if (isUndefinedIdentifier(value)) {
+    return { kind: 'unset' };
+  }
+
   // An empty string renders nothing, which is also what the runtime source decorator does with it.
-  if (isFunctionExpression(value) || isUndefinedIdentifier(value) || isEmptyString(value)) {
+  if (isFunctionExpression(value) || isEmptyString(value)) {
     return { kind: 'omit' };
   }
 

@@ -100,6 +100,14 @@ const config: BuildEntries = {
         exportEntries: ['./internal/mocking-utils'],
         entryPoint: './src/mocking-utils/index.ts',
       },
+      {
+        exportEntries: ['./internal/tools'],
+        entryPoint: './src/cli/tools/sdk/index.ts',
+      },
+      {
+        exportEntries: ['./internal/tools/child-host'],
+        entryPoint: './src/cli/tools/sdk/child-host.ts',
+      },
     ],
     browser: [
       {

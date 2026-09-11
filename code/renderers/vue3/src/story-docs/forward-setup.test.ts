@@ -395,7 +395,7 @@ export const Primary = {
 
     expect(story?.snippet).toBeUndefined();
     expect(story?.warning).toBe(
-      'No static snippet: the `render` function could not be resolved statically.'
+      'No static snippet: the story template could not be resolved statically.'
     );
   });
 });

@@ -34,6 +34,7 @@ const payload: StoryDocsPayload = {
 };
 const warning =
   'Label is declared in the story file, so the snippet references it without importing it.';
+const fallbackWarning = `${warning} Showing the story source instead.`;
 const payloadWithWarning: StoryDocsPayload = {
   ...payload,
   stories: { [storyId]: { ...payload.stories[storyId]!, warning } },
@@ -139,9 +140,67 @@ describe('storyDocsSourceBeforeEach', () => {
     await cleanup?.();
   });
 
-  it('emits no warning when it falls back to the CSF source', async () => {
+  it('emits the story warning with fallback context when it falls back to the CSF source', async () => {
     mockStoryDocsService(() =>
-      Promise.resolve({ ...payloadWithWarning, stories: {} } as StoryDocsPayload)
+      Promise.resolve({
+        ...payloadWithWarning,
+        stories: { [storyId]: { id: storyId, name: 'Primary', warning } },
+      })
+    );
+    const context = {
+      id: storyId,
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: { originalSource: 'export const Primary = {};' } },
+      },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      'export const Primary = {};',
+      context,
+      fallbackWarning
+    );
+    await cleanup?.();
+  });
+
+  it('keeps the fallback warning in production builds', async () => {
+    vi.stubGlobal('CONFIG_TYPE', 'PRODUCTION');
+    mockStoryDocsService(() =>
+      Promise.resolve({
+        ...payloadWithWarning,
+        stories: { [storyId]: { id: storyId, name: 'Primary', warning } },
+      })
+    );
+    const context = {
+      id: storyId,
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: { originalSource: 'export const Primary = {};' } },
+      },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      'export const Primary = {};',
+      context,
+      fallbackWarning
+    );
+    await cleanup?.();
+  });
+
+  it('emits no warning for the CSF source fallback without a story warning', async () => {
+    mockStoryDocsService(() =>
+      Promise.resolve({
+        ...payload,
+        stories: { [storyId]: { id: storyId, name: 'Primary' } },
+      })
     );
     const context = {
       id: storyId,

@@ -13,6 +13,7 @@ interface DocgenFixture {
 
 interface ReadableClassifyArgsResult {
   args: string[];
+  unset?: string[];
   unresolved?: string[];
 }
 
@@ -40,8 +41,14 @@ describe('classifyArgs', () => {
     });
   });
 
+  it('tracks an arg explicitly set to undefined without naming it unresolved', () => {
+    expect(classify(`{ a: undefined, label: 'ok' }`)).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+      unset: ['a'],
+    });
+  });
+
   it.each([
-    { label: 'undefined', value: 'undefined' },
     { label: 'a function', value: '() => null' },
     { label: 'an empty string', value: `''` },
   ])('drops an arg set to $label without naming it', ({ value }) => {
@@ -179,6 +186,7 @@ function classify(
 
   return {
     args: result.args.map(formatArg),
+    ...(result.unset.size > 0 ? { unset: Array.from(result.unset) } : {}),
     ...(result.unresolved.length > 0 ? { unresolved: result.unresolved } : {}),
   };
 }

@@ -488,8 +488,8 @@ export default {
   'storybook/internal/channels': [
     'Channel',
     'HEARTBEAT_INTERVAL',
-    'HEARTBEAT_MAX_LATENCY',
     'PostMessageTransport',
+    'SERVER_CHANNEL_PATH',
     'WebsocketTransport',
     'clearChannel',
     'createBrowserChannel',

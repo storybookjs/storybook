@@ -3,8 +3,7 @@ import * as v from 'valibot';
 import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
 import {
   defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
+  type ToolsetTelemetryReport,
   type ToolsetOutcome,
 } from 'storybook/open-service';
 
@@ -96,15 +95,18 @@ export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 export type TestRunData = TestRunOutput & { a11y: boolean };
 
 /**
- * The outcome split for `test.run`: a crashed or cancelled run is a failure that still carries its
- * full report, so clients keying on the tag cannot count it as a pass while agents keep the
- * diagnostic detail.
+ * The outcome split for `test.run`, following the Vitest convention: only a run that completes
+ * without failures succeeds. A failed outcome still carries its full report, so clients keying on
+ * `ok` cannot count it as a pass while agents keep the diagnostic detail.
  */
 export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 'no-stories' }> & {
   a11y: boolean;
 };
 
-export type TestRunFailureData = Extract<TestRunOutput, { status: 'error' | 'cancelled' }> & {
+export type TestRunFailureData = Extract<
+  TestRunOutput,
+  { status: 'completed' | 'error' | 'cancelled' }
+> & {
   a11y: boolean;
 };
 
@@ -155,38 +157,60 @@ For visual/design accessibility violations (for example color contrast), ask the
 }
 
 /**
- * Reports a run that reached a verdict. A run that never got one — a channel error, a cancellation —
- * stays silent, so the event counts runs whose numbers mean something.
+ * The report for a run that reached a verdict. A run that never got one — a channel error, a
+ * cancellation — reports nothing, so the event counts runs whose numbers mean something.
  */
-async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: ToolsetCtx) {
+function runTelemetry(data: TestRunData, input: RunInput): ToolsetTelemetryReport | undefined {
   const inputStoryCount = input.stories?.length ?? 0;
 
   if (data.status === 'no-stories') {
-    await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
-      toolset: 'test',
-      runA11y: data.a11y,
-      inputStoryCount,
-      matchedStoryCount: 0,
-      passingStoryCount: 0,
-      failingStoryCount: 0,
-      a11yViolationCount: 0,
-      unhandledErrorCount: 0,
-    });
-    return;
+    return {
+      payload: {
+        runA11y: data.a11y,
+        inputStoryCount,
+        matchedStoryCount: 0,
+        passingStoryCount: 0,
+        failingStoryCount: 0,
+        a11yViolationCount: 0,
+        unhandledErrorCount: 0,
+      },
+    };
   }
 
   if (data.status !== 'completed') {
-    return;
+    return undefined;
   }
 
-  await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
-    toolset: 'test',
-    runA11y: data.a11y,
-    inputStoryCount,
-    // A partially resolved selector list never reaches a run, so every input matched by this point.
-    matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
-    ...summarizeTestRun(data.result, data.a11y),
-  });
+  return {
+    payload: {
+      runA11y: data.a11y,
+      inputStoryCount,
+      // A partially resolved selector list never reaches a run, so every input matched by this point.
+      matchedStoryCount: data.result.storyIds?.length ?? inputStoryCount,
+      ...summarizeTestRun(data.result, data.a11y),
+    },
+  };
+}
+
+function isFailedRun(data: TestRunData): data is TestRunFailureData {
+  switch (data.status) {
+    case 'error':
+    case 'cancelled':
+      return true;
+    case 'completed':
+      return (
+        data.result.componentTestCount.error > 0 ||
+        (data.a11y && data.result.a11yCount.error > 0) ||
+        data.result.unhandledErrors.length > 0
+      );
+    case 'no-stories':
+      return false;
+    default: {
+      // Type-only: a new status must decide its own pass/fail rather than falling through.
+      const _exhaustive: never = data;
+      return _exhaustive;
+    }
+  }
 }
 
 export type CreateTestToolsetOptions = {
@@ -224,13 +248,11 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
               a11y: input.a11y,
             });
             const data: TestRunData = { ...output, a11y: input.a11y };
-
-            await reportRunTelemetry(data, input, ctx);
-
             const markdown = formatTestRun(data, ctx);
-            return data.status === 'error' || data.status === 'cancelled'
-              ? { ok: false, data, markdown }
-              : { ok: true, data, markdown };
+            const telemetry = runTelemetry(data, input);
+            return isFailedRun(data)
+              ? { ok: false, data, markdown, telemetry }
+              : { ok: true, data, markdown, telemetry };
           } finally {
             done();
           }

@@ -20,11 +20,11 @@ import {
 } from './test-utils.ts';
 
 describe('parseStorybookWorkflowShellCommands', () => {
-  test('records `skills get <id>` invocations literally, with their skill id', () => {
+  test('records `skills <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story 2>&1 | grep -v "npm warn"',
-      'npx storybook skills get stories',
-      'npx storybook skills list',
+      'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
+      'npx storybook skills stories',
+      'npx storybook skills',
     ]);
 
     expect(calls).toEqual([
@@ -33,22 +33,32 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
-  test('matches only the write-story skill to the historic instructions name', () => {
+  test('matches write-story and --all, but not other ids, to the historic instructions name', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story',
-      'npx storybook skills get stories',
+      'npx storybook skills write-story',
+      'npx storybook skills --all',
+      'npx storybook skills stories',
+      'npx storybook skills all',
     ]);
 
+    expect(calls.map((call) => call.input)).toEqual([
+      { id: 'write-story' },
+      { all: true },
+      { id: 'stories' },
+      { id: 'all' },
+    ]);
     expect(
       calls.map((call) => workflowCallMatchesName(call, 'get-storybook-story-instructions'))
-    ).toEqual([true, false]);
+    ).toEqual([true, true, false, false]);
   });
 
-  test('does not record skills help requests or quoted mentions as instruction fetches', () => {
+  test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story --help',
-      'npx storybook skills get write-story -h && npx storybook skills list',
-      "echo 'storybook skills get write-story'",
+      'npx storybook skills write-story --help',
+      'npx storybook skills write-story -h && npx storybook skills --all --help',
+      'npx storybook skills stories --all',
+      'npx storybook skills --all stories',
+      "echo 'storybook skills write-story'",
     ]);
 
     expect(calls).toHaveLength(0);

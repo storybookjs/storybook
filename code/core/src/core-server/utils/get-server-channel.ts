@@ -1,7 +1,12 @@
 import type { IncomingMessage } from 'node:http';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
-import { Channel, HEARTBEAT_INTERVAL, setChannel } from 'storybook/internal/channels';
+import {
+  Channel,
+  HEARTBEAT_INTERVAL,
+  SERVER_CHANNEL_PATH,
+  setChannel,
+} from 'storybook/internal/channels';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
@@ -46,7 +51,7 @@ export class ServerChannelTransport {
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
       try {
         const url = request.url && new URL(request.url, options.localAddress);
-        if (!url || url.pathname !== '/storybook-server-channel') {
+        if (!url || url.pathname !== SERVER_CHANNEL_PATH) {
           return;
         }
 

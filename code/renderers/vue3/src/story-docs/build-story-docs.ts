@@ -39,12 +39,7 @@ import {
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-import {
-  classifyArgs,
-  type ClassifiedArg,
-  type ClassifyArgsResult,
-  type VueDocgenArgInfo,
-} from './classify-args.ts';
+import { classifyArgs, type ClassifyArgsResult, type VueDocgenArgInfo } from './classify-args.ts';
 import type { ForwardableSetup } from './forward-setup.ts';
 import { printH } from './print-h.ts';
 import { createRenderContext } from './render-primitives.ts';
@@ -90,6 +85,14 @@ const SLOT_UNRESOLVED_WARNING =
   'No static snippet: a slot function could not be resolved statically.';
 const IMPORT_UNRESOLVED_WARNING =
   "No static snippet: the component's import could not be resolved statically.";
+const TEMPLATE_UNRESOLVED_WARNING =
+  'No static snippet: the story template could not be resolved statically.';
+const UNRENDERED_WARNINGS: Record<Exclude<StaticStoryRenderer, { kind: 'bail' }>['kind'], string> =
+  {
+    h: RENDER_UNRESOLVED_WARNING,
+    sfc: SLOT_UNRESOLVED_WARNING,
+    template: TEMPLATE_UNRESOLVED_WARNING,
+  };
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
@@ -343,7 +346,8 @@ function enrichStoryDoc(
   }
 
   const resolved = resolveStaticStoryArgs(storyExport, docgenArgInfo, options);
-  const { args, unresolved: classifyUnresolved } = resolved.classified;
+  const { classified } = resolved;
+  const { args, unresolved: classifyUnresolved } = classified;
   const unresolved = [...classifyUnresolved, ...resolved.unresolved];
 
   // A snippet showing none of the args the story actually sets would be a worse example than the
@@ -352,11 +356,15 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(renderer, args, componentName, docgenArgInfo, options);
+  const rendered = renderStaticStorySnippet(
+    renderer,
+    classified,
+    componentName,
+    docgenArgInfo,
+    options
+  );
   if (!rendered) {
-    return withWarning(
-      renderer.kind === 'sfc' ? SLOT_UNRESOLVED_WARNING : RENDER_UNRESOLVED_WARNING
-    );
+    return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
 
   return {
@@ -420,12 +428,13 @@ function resolveStaticStoryArgs(
 
 function renderStaticStorySnippet(
   renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
-  args: ClassifiedArg[],
+  classified: ClassifyArgsResult,
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
+  const { args } = classified;
 
   // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
@@ -436,6 +445,7 @@ function renderStaticStorySnippet(
           componentName,
           importBindings: options.importBindings,
           template: `<${componentName} v-bind="args" />`,
+          unsetArgs: classified.unset,
         })
       : undefined;
   }
@@ -448,6 +458,7 @@ function renderStaticStorySnippet(
       importBindings: options.importBindings,
       setup: renderer.setup,
       template: renderer.template,
+      unsetArgs: classified.unset,
     });
   }
 
@@ -472,6 +483,7 @@ function renderStaticStorySnippet(
     ctx,
     importBindings: options.importBindings,
     template: printed.template,
+    unsetArgs: classified.unset,
   });
 }
 

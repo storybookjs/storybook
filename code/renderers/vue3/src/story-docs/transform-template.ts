@@ -64,6 +64,8 @@ export interface TransformTemplateInput {
   template: string;
   /** Merged and classified CSF args for the story. */
   args: ClassifiedArg[];
+  /** Arg names explicitly set to undefined; their bindings render as if never written. */
+  unsetArgs: ReadonlySet<string>;
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
   /** Story component tag; role-aware args expansion applies only to it. */
@@ -89,6 +91,7 @@ interface Edit {
 
 interface TransformState {
   argsByName: Map<string, ClassifiedArg>;
+  unsetArgs: ReadonlySet<string>;
   ctx: RenderContext;
   edits: Edit[];
   componentImports: Map<string, string>;
@@ -126,6 +129,7 @@ type ExpressionContext = 'directive' | 'interpolation';
 const ARGS_NAME = 'args';
 const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
 const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
+const BLANK_REGEXP = /[ \t]/;
 const SETUP_PROPERTY = 'setup';
 
 const TEMPLATE_UNREADABLE_WARNING =
@@ -203,6 +207,7 @@ export function transformTemplate(
 
   const state: TransformState = {
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
+    unsetArgs: input.unsetArgs,
     ctx: input.ctx ?? createRenderContext(),
     edits: [],
     componentImports: input.componentImports,
@@ -259,15 +264,18 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
     let text = statement.source;
     for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
       const arg = state.argsByName.get(read.name);
-      // Only prop args substitute: a model arg becomes a ref, and slot or event args have no
-      // value form a script statement can read.
-      if (!arg || arg.role !== 'prop') {
+      const rendered = arg
+        ? arg.role === 'prop'
+          ? arg.plan.kind === 'inline'
+            ? printValue(unwrapExpression(arg.value))
+            : hoistArgValue(arg.name, arg.value, state.ctx)
+          : undefined
+        : state.unsetArgs.has(read.name)
+          ? 'undefined'
+          : undefined;
+      if (rendered === undefined) {
         return false;
       }
-      const rendered =
-        arg.plan.kind === 'inline'
-          ? printValue(unwrapExpression(arg.value))
-          : hoistArgValue(arg.name, arg.value, state.ctx);
       const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
@@ -338,7 +346,15 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
-  const rendered = arg ? inlinePrimitiveSource(arg.value) : undefined;
+  if (!arg && state.unsetArgs.has(argName)) {
+    state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: '' });
+    return true;
+  }
+  if (!arg) {
+    return false;
+  }
+
+  const rendered = inlinePrimitiveSource(arg.value);
   if (rendered === undefined) {
     return false;
   }
@@ -517,7 +533,15 @@ function transformDirective(
   // <MyButton :label="args.label" />
   if (directive.name === 'bind' && boundProp && directive.modifiers.length === 0 && argName) {
     const arg = state.argsByName.get(argName);
-    if (!arg || (attributesByName.get(boundProp)?.length ?? 0) > 1) {
+    if ((attributesByName.get(boundProp)?.length ?? 0) > 1) {
+      return false;
+    }
+    if (!arg && state.unsetArgs.has(argName)) {
+      // Vue resolves a prop bound to undefined to its declared default, exactly as an absent attribute does.
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
+    }
+    if (!arg) {
       return false;
     }
     // <MyButton :header="args.header" /> fills the slot the binding names.
@@ -549,7 +573,15 @@ function transformDirective(
   // <MyButton @click="args.onClick" />
   if (directive.name === 'on' && boundProp && argName && expressionNode) {
     const arg = state.argsByName.get(argName);
-    if (!arg || !isFunctionExpression(arg.value)) {
+    if (!arg && state.unsetArgs.has(argName)) {
+      // An undefined handler attaches no listener, exactly as an absent binding does.
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
+    }
+    if (!arg) {
+      return false;
+    }
+    if (!isFunctionExpression(arg.value)) {
       return false;
     }
     state.edits.push({
@@ -563,13 +595,17 @@ function transformDirective(
   // <MyButton v-model="args.modelValue" />
   if (directive.name === 'model' && argName && expressionNode) {
     const arg = state.argsByName.get(argName);
-    if (!arg || arg.role === 'slot' || arg.role === 'event') {
+    if (!arg && !state.unsetArgs.has(argName)) {
       return false;
     }
+    if (arg && (arg.role === 'slot' || arg.role === 'event')) {
+      return false;
+    }
+    // Dropping the binding would drop the two-way flow the story demonstrates, so it starts its ref empty.
     state.edits.push({
       start: expressionNode.loc.start.offset,
       end: expressionNode.loc.end.offset,
-      text: hoistModelRef(argName, arg.value, state.ctx),
+      text: hoistModelRef(argName, arg?.value, state.ctx),
     });
     return true;
   }
@@ -788,11 +824,17 @@ function replacementForArgsReference(
   state: TransformState
 ): string | undefined {
   const arg = state.argsByName.get(reference.name);
-  // Non-slot args are typed with renderable plans only, so no 'function-slot' check is needed.
-  if (!arg || arg.role === 'slot') {
+  if (!arg && state.unsetArgs.has(reference.name)) {
+    return 'undefined';
+  }
+  if (!arg) {
+    return undefined;
+  }
+  if (arg.role === 'slot') {
     return undefined;
   }
 
+  // Non-slot args are typed with renderable plans only, so no 'function-slot' check is needed.
   const text =
     arg.plan.kind === 'inline'
       ? printValue(unwrapExpression(arg.value))
@@ -811,13 +853,50 @@ function replacementForArgsReference(
  * neighbors, so `<MyButton v-bind="args" />` with nothing to expand stays `<MyButton />`.
  */
 function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, template: string): Edit {
-  let start = prop.loc.start.offset;
-  if (text === '') {
-    while (start > 0 && template[start - 1] === ' ') {
-      start -= 1;
-    }
+  const start = prop.loc.start.offset;
+  const end = prop.loc.end.offset;
+  if (text !== '') {
+    return { start, end, text };
   }
-  return { start, end: prop.loc.end.offset, text };
+
+  const lineStart = blankRunStart(template, start);
+  const lineEnd = blankRunEnd(template, end);
+  const lineTerminator = lineTerminatorAt(template, lineEnd);
+  if (template[lineStart - 1] === '\n' && lineTerminator) {
+    return {
+      start: previousLineTerminatorStart(template, lineStart),
+      end: lineTerminator.start,
+      text,
+    };
+  }
+  return { start: lineStart, end, text };
+}
+
+function blankRunStart(template: string, index: number): number {
+  let cursor = index;
+  while (cursor > 0 && BLANK_REGEXP.test(template[cursor - 1])) {
+    cursor -= 1;
+  }
+  return cursor;
+}
+
+function blankRunEnd(template: string, index: number): number {
+  let cursor = index;
+  while (cursor < template.length && BLANK_REGEXP.test(template[cursor])) {
+    cursor += 1;
+  }
+  return cursor;
+}
+
+function lineTerminatorAt(template: string, index: number): { start: number } | undefined {
+  if (template[index] === '\r' && template[index + 1] === '\n') {
+    return { start: index };
+  }
+  return template[index] === '\n' ? { start: index } : undefined;
+}
+
+function previousLineTerminatorStart(template: string, index: number): number {
+  return template[index - 2] === '\r' ? index - 2 : index - 1;
 }
 
 /**

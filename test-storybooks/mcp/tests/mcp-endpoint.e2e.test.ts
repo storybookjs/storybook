@@ -725,7 +725,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Get documentation for a UI component or docs entry.
 
-				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the docs-show-story tool to fetch the story documentation for the specific story variant you need.
+				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the docs-show-story tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as \`storyId\`.
 
 				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {
@@ -745,21 +745,24 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get Documentation",
 				  },
 				  {
-				    "description": "Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.",
+				    "description": "Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it. Identify the story by its story ID (preferred), or by componentId plus storyName.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
 				        "componentId": {
+				          "description": "The component ID (e.g., "button"). Use together with storyName, and only when you have no story ID.",
+				          "type": "string",
+				        },
+				        "storyId": {
+				          "description": "The story ID, as listed by the docs list tool with withStoryIds: true and shown next to each story in the component documentation (e.g., "button--primary"). Prefer this over componentId + storyName whenever you have a story ID.",
 				          "type": "string",
 				        },
 				        "storyName": {
+				          "description": "The human-readable story name (e.g., "Primary"). Use together with componentId.",
 				          "type": "string",
 				        },
 				      },
-				      "required": [
-				        "componentId",
-				        "storyName",
-				      ],
+				      "required": [],
 				      "type": "object",
 				    },
 				    "name": "docs-show-story",

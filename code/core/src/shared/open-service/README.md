@@ -110,18 +110,18 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
   narrowed to it. An outcome's `data` may carry more than this declares; only the declared shape
   reaches the wire
 - `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
-  effects and telemetry
+  effects and the usage report
 
 `handler` returns a `ToolsetOutcome<TSuccess, TFailure = TSuccess>` — a discriminated union of
-`{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, written as plain object
-literals (no factory helpers). The failure model is one line each: could not do the job →
+`{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, each with an optional
+`telemetry` usage report, written as plain object literals (no factory helpers). The failure model is one line each: could not do the job →
 **throw**; did the job and the answer is bad news (a failed test run, a not-found lookup) →
 **return `{ ok: false, data, markdown }`**. Infallible methods declare `TFailure = never`.
 
 One handler owns data and rendering because one MCP reply carries `content` (text) and
 `structuredContent` (JSON) at once and both must come from a single run — re-running a method with
-side effects would repeat them. Usage telemetry reports inline in the handler with the rendered
-text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
+side effects would repeat them. The usage report is part of the returned outcome, built with the
+rendered text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
 from `markdown`, `structuredContent` from `data`, MCP `isError` (and later CLI exit codes) from
 `ok` — and must not re-derive meaning from the data. `markdown` may be `string | string[]`:
 the CLI joins the blocks with blank lines, and its `--json` flag means "print `data`, skip
@@ -131,11 +131,11 @@ An error whose message speaks to the agent and names its own recovery declares `
 (a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
 property — never by keeping a class list, which misclassifies across bundle copies.
 
-`ctx` is `{ transport: 'cli' | 'mcp', origin?, getService, telemetry? }`. `origin` is the complete
+`ctx` is `{ transport: 'cli' | 'mcp' | 'sdk', origin?, getService }`. `origin` is the complete
 Storybook UI base URL, including a deployment subpath; the MCP adapter derives it from the request.
 Descriptions that name a sibling tool must render it through `getToolName(ctx)` rather than hardcoding
-either spelling, so the same sentence reads as the derived MCP tool name or the CLI command for the
-active transport. MCP names are derived from the toolset id and method key
+a spelling, so the same sentence reads as the derived MCP tool name, the CLI command, or the SDK
+dotted reference for the active transport. MCP names are derived from the toolset id and method key
 (`stories.findByComponent` → `stories-find-by-component`); they are not maintained in a separate
 compatibility map.
 Facts that are fixed at boot (whether review or a11y is enabled) are factory options on the
@@ -151,8 +151,14 @@ Adapters resolve one toolset with `getToolset(id)` or take the whole set via
 consume them today.
 
 Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
-definition. Use `reportToolsetTelemetry` so a rejected analytics sink cannot fail a tool call.
-Third-party toolsets do not need to participate in Storybook's telemetry taxonomy.
+definition. A handler returns at most one usage report on its outcome, `telemetry: { payload }`.
+`invokeToolsetMethod` — the one way every surface runs a method — names the report after the
+registration: `toolset`, `tool` in CLI spelling, and the generated `event`
+(`tool:stories_findByComponent`). The CLI and SDK forward that report as their `tools-command`
+record. The MCP adapter forwards it as its `addon-mcp` event, but under the pre-toolset event name
+the addon keeps per tool (`tool:getStoriesByComponent`), so MCP usage data stays continuous across
+versions. Toolsets never name events themselves. Third-party toolsets do not need to participate in
+Storybook's telemetry taxonomy.
 
 Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
 channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the
@@ -163,16 +169,22 @@ and provider accesses feed the same definition; composition combines accesses ra
 second engine. `storybook/internal/toolsets-docs` is a portable entry consumed by both MCP packages,
 so its bundled declaration must remain flat and import only its declared allowlist.
 
-The `storybook tools` CLI loads the target Storybook configuration in its own process and derives
-dispatch, help, validation, and output from the registered toolsets. Bootstrap always hosts the
-module graph so addon-owned toolsets can query it without appearing in a core allowlist; an
-unsupported builder settles the graph as unavailable without failing unrelated tools. Bootstrap
-also changes `process.cwd()` to the target project for the rest of the one-shot process. Embedders
-that need the launch directory must capture it first.
+The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
+attach to a matching running instance as a delegated leaf, and fall back to a local host when
+`createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
+`--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
+execute on the instance.
 
-Methods marked `requiresDevServer` use the runtime instance registry. `stories.preview` needs only
-the recorded origin. Until connect mode exists, `review.create` is the one temporary exception
-forwarded through the running Storybook's MCP endpoint; keep that proxy branch self-contained.
+Local bootstrap still hosts the module graph so addon-owned toolsets can query it without appearing
+in a core allowlist; an unsupported builder settles the graph as unavailable without failing
+unrelated tools. When this process is already in the project, local mode loads in-process. When
+`--cwd` points elsewhere, it starts a child host in that directory instead of changing
+`process.cwd()`. Attached mode never `chdir`s the host; a cwd or version mismatch spawns a
+project-local child host instead.
+
+Methods marked `requiresDevServer` intercept only in **local** mode (start-your-Storybook
+guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from
+the instance record. See [cli/tools/README.md](../../cli/tools/README.md).
 
 ### Query
 
@@ -706,9 +718,12 @@ Every registered runtime plays **both** roles at once, decided per command:
   first `services:command-result` for that `callId`, or rejects with the reconstructed error from the
   first `services:command-error`.
 - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
-  `services:command-ack` **immediately** (before running), executes the command locally — which
+  `services:command-ack` **immediately** (before running), then executes the command locally on a
+  deferred macrotask — so an async channel flushes the ack before any handler work starts, keeping
+  acks within the window regardless of how long a handler's synchronous fan-out runs. Execution
   validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
-  wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
+  wrappers so every peer converges — then it emits `services:command-result` or
+  `services:command-error`.
 
 Outside [delegated mode](#delegated-mode), a runtime never requests a command it implements (it runs
 that locally), so a responder never answers its own invoke echo: `onInvoke` only acts on commands in
@@ -717,15 +732,16 @@ how dispatch reaches the Storybook it attached to.
 
 ### Events
 
-All four events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
+All command events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
 several services routes them correctly.
 
 | Event | Direction | Payload |
-| ------------------------- | ------------------------ | ----------------------------------------------------- |
-| `services:command-invoke` | requester → implementers | `{ serviceId, commandName, input, callId, clientId }` |
-| `services:command-ack`    | implementer → requester  | `{ serviceId, callId, clientId }`                     |
-| `services:command-result` | implementer → requester  | `{ serviceId, callId, result, clientId }`             |
-| `services:command-error`  | implementer → requester  | `{ serviceId, callId, error, clientId }`              |
+| ---------------------------- | -------------------------- | ----------------------------------------------------- |
+| `services:command-invoke`    | requester → implementers   | `{ serviceId, commandName, input, callId, clientId }` |
+| `services:command-ack`       | implementer → requester    | `{ serviceId, callId, clientId }`                     |
+| `services:command-result`    | implementer → requester    | `{ serviceId, callId, result, clientId }`             |
+| `services:command-error`     | implementer → requester    | `{ serviceId, callId, error, clientId }`              |
+| `services:command-unhandled` | non-implementer → requester | `{ serviceId, callId, clientId }`                     |
 
 - `callId` is the per-invocation correlation id (see [Correlation and parallel calls](#correlation-and-parallel-calls)).
 - `clientId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
@@ -804,6 +820,14 @@ query's `load` calls a server-only command. Once a peer acknowledges, the reques
 `services:command-result` or `services:command-error` as before. Unregistering the service still
 rejects outstanding calls with `OpenServiceRemoteCommandDisconnectedError`.
 
+A peer that receives an invoke it cannot dispatch does not stay silent: a non-delegated runtime
+replies `services:command-unhandled` — per-service when it hosts the service but lacks that
+command's handler, and realm-globally (one reporter installed by the registry) when the service id
+is not registered at all. Non-delegated requesters ignore the reply: with no peer registry, one
+peer's report cannot speak for the others (a preview legitimately cannot dispatch a server-only
+command that the server will answer), so absence-of-ack stays their only signal. Only a
+[delegated](#delegated-mode) requester acts on it — see below.
+
 ### Delegated mode
 
 A runtime that attaches to an already-running Storybook (rather than starting its own) must not
@@ -829,10 +853,24 @@ What changes is **dispatch**, not registration:
 The flag is runtime-wide and read at registration time, like the installed channel, so set it once at
 the entry boundary before the first `registerService` call. `clearRegistry()` resets it.
 
-When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS`, the resulting
-`OpenServiceRemoteCommandUnhandledError` carries delegation-specific guidance instead of "not
-implemented in any connected runtime": the attached Storybook was started with a different
-configuration, so it must be restarted for that command's handler to exist.
+Genuine configuration drift — the attached Storybook does not register the service or the command
+this runtime's configuration does — is reported positively rather than inferred: command events are
+not relayed across a hub's transports, so the attached instance is the only runtime that ever sees
+a delegated caller's invoke, and its `services:command-unhandled` reply is authoritative. The
+delegated requester rejects immediately with `OpenServiceRemoteCommandConfigDriftError`, whose
+message names the command and gives the restart guidance that is now known to be correct. An older
+instance never sends the reply — as does one that registered no services at all (the reporter
+installs with the first registration) or one asked about an id it registered earlier (mid-HMR
+re-registration) — and each of those degrades to the timeout below.
+
+When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS` (and no unhandled reply arrived),
+the resulting `OpenServiceRemoteCommandUnhandledError` carries delegation-specific guidance instead
+of "not implemented in any connected runtime": the attached Storybook did not acknowledge the
+command in time (it may be busy or unreachable), and — delivery being at-least-once — the command
+may still have executed there, which a retry should take into account.
+
+The `storybook tools` SDK is the attached caller: it sets this flag, then loads the instance
+config. See [cli/tools/architecture.md](../../cli/tools/architecture.md).
 
 ## React Hooks
 
@@ -978,6 +1016,7 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
 - If you need to change channel transport, relay behavior, remote command execution, or delegated dispatch, start in [service-transport.ts](./service-transport.ts) — the delegated-mode flag itself lives in [service-registry.ts](./service-registry.ts).
+- If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../cli/tools/README.md) and [cli/tools/architecture.md](../../cli/tools/architecture.md).
 - If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
 - If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).

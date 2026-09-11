@@ -282,7 +282,7 @@ describe('module-graph open service', () => {
       expect(runtime.queries.graphRevision.get(undefined)).toBe(2);
     });
 
-    it('does not advance the revision for an out-of-graph change (no bumped stories)', async () => {
+    it('advances file activity but not graph revision for an out-of-graph change', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
@@ -294,6 +294,7 @@ describe('module-graph open service', () => {
       });
 
       expect(runtime.queries.graphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.fileActivityRevision.get(undefined)).toBe(1);
       expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
@@ -612,6 +613,87 @@ describe('module-graph open service', () => {
 
       expect(getAdapter).toHaveBeenCalledTimes(1);
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
+    });
+
+    it('returns serialized change-detection readiness from the injected getter', async () => {
+      const getChangeDetectionReadiness = vi.fn(async () => ({
+        status: 'unavailable' as const,
+        reason: 'disabled',
+      }));
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness,
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'disabled',
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'disabled',
+      });
+      expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
+    });
+
+    it('forwards an optional error on unavailable change-detection readiness', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'unavailable' as const,
+          reason: 'vite warmup failed',
+          error: new Error('warmup failed'),
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+    });
+
+    it('loads change-detection readiness through the query load hook', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({ status: 'ready' as const }),
+      });
+
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'pending',
+      });
+      await expect(runtime.queries.changeDetectionReadiness.loaded(undefined)).resolves.toEqual({
+        status: 'ready',
+      });
+    });
+
+    it('serializes a change-detection error readiness result', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'error',
+          error: { message: 'scan blew up' },
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'error',
+        error: { message: 'scan blew up' },
+      });
     });
 
     it('settles the graph as unavailable when getAdapter rejects', async () => {

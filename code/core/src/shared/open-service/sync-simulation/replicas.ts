@@ -121,7 +121,6 @@ export function attachReplica(options: {
   const reconciler = createSnapshotReconciler({
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
-    initialStamp: { version: 0, runtimeId },
     window,
   });
 

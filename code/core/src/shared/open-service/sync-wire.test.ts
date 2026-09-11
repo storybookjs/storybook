@@ -77,7 +77,6 @@ function connectLeafRuntime(channel: Channel) {
   const reconciler = createSnapshotReconciler({
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
-    initialStamp: { version: 0, runtimeId: ownRuntimeId },
   });
 
   const commandNames = Object.keys(definition.commands);

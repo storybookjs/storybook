@@ -79,7 +79,7 @@ export const transformStorySource = (source: string, inherited: Inheritance = no
     return null;
   }
   const csf = loadCsf(source, { makeTitle: (title) => title || 'default' }).parse();
-  const objects = csf.objects({ annotations: ['parameters'] });
+  const objects = csf.objects();
   for (const object of objects) {
     if (object.target.kind !== 'story') {
       continue;

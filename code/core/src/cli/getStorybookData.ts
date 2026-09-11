@@ -24,15 +24,9 @@ export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   packageManagerName,
   skipCache,
-  warnOnYarn1: warnOnYarn1Enabled,
 }: {
   configDir?: string;
   packageManagerName?: PackageManagerName;
-  /**
-   * Whether to warn when the project uses Yarn 1 (Classic). Defaults to true; pass `false` only
-   * for agent-facing consumers whose output must stay machine-clean.
-   */
-  warnOnYarn1?: boolean;
   /**
    * Skip the module cache when reading the main config. Pass `true` when a prior step in the same
    * process (e.g. an automigration) may have rewritten the main config on disk, otherwise this
@@ -76,10 +70,7 @@ export const getStorybookData = async ({
     storiesPaths,
   });
 
-  // Defaults to warning; only an explicit `false` (agent-facing tooling) suppresses it.
-  if (warnOnYarn1Enabled !== false) {
-    warnOnYarn1(packageManager.type);
-  }
+  warnOnYarn1(packageManager.type);
 
   logger.debug('Getting Storybook version...');
   const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;

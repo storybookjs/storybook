@@ -52,8 +52,6 @@ export async function getProjectInfo(opts: {
     const data = await getStorybookData({
       configDir: opts.configDir,
       packageManagerName: opts.packageManager,
-      // Agent-facing output must stay machine-clean; suppress the best-effort warning.
-      warnOnYarn1: false,
     });
 
     if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {

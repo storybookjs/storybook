@@ -97,12 +97,4 @@ describe('getStorybookData', () => {
 
     expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
   });
-
-  it('suppresses the Yarn 1 warning when warnOnYarn1 is explicitly false', async () => {
-    mocks.getPackageManagerMock.mockReturnValue(createPackageManager(PackageManagerName.YARN1));
-
-    await getStorybookData({ configDir: '.storybook', warnOnYarn1: false });
-
-    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
-  });
 });

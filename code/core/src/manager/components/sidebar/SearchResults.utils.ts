@@ -1,28 +1,25 @@
 import type { Match } from './types.ts';
 
-export const resolveHighlightRanges = (matches: Match[], query: string): Match[] => {
-  if (!query) {
+const escapeRegExp = (value: string) => {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+};
+
+export const resolveHighlightRanges = (matches: Match[], input: string): Match[] => {
+  if (!input) {
     return matches;
   }
 
-  const needle = query.toLowerCase();
+  const pattern = new RegExp(escapeRegExp(input), 'giu');
 
   return matches.map((match) => {
-    const value = match.value.toLowerCase();
-    const indices: [number, number][] = [];
+    const indices: [number, number][] = Array.from(match.value.matchAll(pattern)).map((result) => [
+      result.index,
+      result.index + result[0].length - 1,
+    ]);
 
-    let start = value.indexOf(needle);
-
-    while (start !== -1) {
-      indices.push([start, start + needle.length - 1]);
-      start = value.indexOf(needle, start + needle.length);
-    }
-
-    return indices.length > 0
-      ? {
-          ...match,
-          indices,
-        }
-      : match;
+    return {
+      ...match,
+      indices,
+    };
   });
 };

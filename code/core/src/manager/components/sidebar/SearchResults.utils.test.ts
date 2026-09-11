@@ -49,7 +49,7 @@ describe('SearchResults.utils', () => {
       ]);
     });
 
-    it('should keep the original match when the query is not a substring', () => {
+    it('should return no indices when the query is not a substring', () => {
       const matches: Match[] = [
         {
           key: 'name',
@@ -62,7 +62,14 @@ describe('SearchResults.utils', () => {
         },
       ];
 
-      expect(resolveHighlightRanges(matches, 'xyz')).toEqual(matches);
+      expect(resolveHighlightRanges(matches, 'xyz')).toEqual([
+        {
+          key: 'name',
+          value: 'Header',
+          indices: [],
+          arrayIndex: 0,
+        },
+      ]);
     });
 
     it('should keep the original matches when the query is empty', () => {
@@ -101,6 +108,26 @@ describe('SearchResults.utils', () => {
             [1, 2],
             [7, 8],
           ],
+          arrayIndex: 0,
+        },
+      ]);
+    });
+
+    it('should preserve original string offsets for Unicode case-insensitive matches', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'İx',
+          indices: [[0, 1]],
+          arrayIndex: 0,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'x')).toEqual([
+        {
+          key: 'name',
+          value: 'İx',
+          indices: [[1, 1]],
           arrayIndex: 0,
         },
       ]);

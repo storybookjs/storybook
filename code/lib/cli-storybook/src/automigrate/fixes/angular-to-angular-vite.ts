@@ -79,14 +79,14 @@ const rewriteTestStorybookScript = (content: string): string =>
   content.replace(/("test-storybook"\s*:\s*)"(?:[^"\\]|\\.)*"/, '$1"vitest run"');
 
 // Config file basenames whose presence means a Vite/Vitest setup already exists, so the migration
-// must not write a fresh `vitest.config.ts` over it — the deferred addon-vitest postinstall updates
-// the existing file (and the workspace path) instead.
+// must not write a fresh `vitest.config.ts` over it — the deferred addon-vitest postinstall
+// updates the existing file instead.
 const VITE_CONFIG_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 
 /**
- * Find an existing Vite/Vitest/workspace config by searching from the Storybook config dir up to the
- * project root, mirroring the addon-vitest postinstall's lookup. Returns the first match, or
- * `undefined` when none exists.
+ * Find an existing Vite/Vitest config by searching from the Storybook config dir up to the project
+ * root, mirroring the addon-vitest postinstall's lookup. Returns the first match, or `undefined`
+ * when none exists.
  */
 const findExistingViteConfig = (configDir: string): string | undefined => {
   const search = (basename: string, extensions: string[]) =>
@@ -96,9 +96,7 @@ const findExistingViteConfig = (configDir: string): string | undefined => {
     );
 
   return (
-    search('vitest.workspace', ['.ts', '.js', '.json']) ||
-    search('vite.config', VITE_CONFIG_EXTENSIONS) ||
-    search('vitest.config', VITE_CONFIG_EXTENSIONS)
+    search('vite.config', VITE_CONFIG_EXTENSIONS) || search('vitest.config', VITE_CONFIG_EXTENSIONS)
   );
 };
 

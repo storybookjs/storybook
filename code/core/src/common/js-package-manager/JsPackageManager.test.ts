@@ -47,6 +47,41 @@ describe('JsPackageManager', () => {
       expect(result).toEqual(['@storybook/new-addon@^next']);
     });
 
+    it('should map pkg.pr.new create-storybook specifiers to Storybook packages', async () => {
+      const result = await jsPackageManager.getVersionedPackages(['@storybook/react'], {
+        storybookVersionSpecifier: 'https://pkg.pr.new/create-storybook@abc123',
+      });
+
+      expect(result).toEqual(['@storybook/react@https://pkg.pr.new/@storybook/react@abc123']);
+      expect(mockLatestVersion).not.toHaveBeenCalled();
+    });
+
+    it('should map repo-scoped pkg.pr.new specifiers to Storybook packages', async () => {
+      const result = await jsPackageManager.getVersionedPackages(['@storybook/react'], {
+        storybookVersionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef',
+      });
+
+      expect(result).toEqual([
+        '@storybook/react@https://pkg.pr.new/storybookjs/storybook/@storybook/react@deadbeef',
+      ]);
+      expect(mockLatestVersion).not.toHaveBeenCalled();
+    });
+
+    it('should keep npm tags and prereleases on the CLI version path', async () => {
+      mockLatestVersion.mockResolvedValue('8.3.1');
+
+      await expect(
+        jsPackageManager.getVersionedPackages(['@storybook/react'], {
+          storybookVersionSpecifier: 'next',
+        })
+      ).resolves.toEqual(['@storybook/react@8.3.0']);
+      await expect(
+        jsPackageManager.getVersionedPackages(['@storybook/react'], {
+          storybookVersionSpecifier: '10.6.0-alpha.7',
+        })
+      ).resolves.toEqual(['@storybook/react@8.3.0']);
+    });
+
     it('should return the package name as is if it is not a Storybook package', async () => {
       const result = await jsPackageManager.getVersionedPackages(['some-other-package']);
 

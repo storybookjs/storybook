@@ -1,8 +1,12 @@
+import { mkdir, mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
+import { logger, once } from 'storybook/internal/node-logger';
 
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
@@ -16,6 +20,8 @@ const { getStorybookDataMock } = vi.hoisted(() => ({
   getStorybookDataMock: vi.fn(),
 }));
 const spawnSyncMock = vi.hoisted(() => vi.fn());
+// Mutable holder so tests can control the mocked manager's detected type (defaults to undefined).
+const managerTypeHolder = vi.hoisted(() => ({ type: undefined as string | undefined }));
 vi.mock('cross-spawn', () => ({ sync: spawnSyncMock }));
 
 vi.mock('storybook/internal/telemetry');
@@ -31,11 +37,12 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
     ...originalModule,
     JsPackageManagerFactory: {
       getPackageManager: () => ({
+        type: managerTypeHolder.type,
         findInstallations: findInstallationsMock,
         getInstalledVersion: getInstalledVersionMock,
         latestVersion: async () => '8.0.0',
         getAllDependencies: () => ({ storybook: '8.0.0' }),
-        getModulePackageJSON: vi.fn(),
+        getModulePackageJSON: async () => ({ version: '9.0.0' }),
       }),
     },
     versions: Object.keys(originalModule.versions).reduce(
@@ -399,5 +406,96 @@ describe('collectProjects', () => {
       expect(result.isCLIExactLatest).toBe(false);
       expect(result.latestCLIVersionOnNPM).toBeNull();
     }
+  });
+});
+
+describe('Yarn 1 best-effort warning', () => {
+  const projectDirs: string[] = [];
+
+  const createProjectFixture = async (): Promise<string> => {
+    const projectDir = await mkdtemp(join(tmpdir(), 'sb-upgrade-yarn1-'));
+    await mkdir(join(projectDir, '.storybook'), { recursive: true });
+    await writeFile(
+      join(projectDir, 'package.json'),
+      JSON.stringify({ name: 'yarn1-project', version: '1.0.0' })
+    );
+    await writeFile(join(projectDir, '.storybook', 'main.js'), 'export default { stories: [] };\n');
+    return projectDir;
+  };
+
+  // Route project collection through the real core getStorybookData so the Yarn 1 warning fires
+  // exactly where it would in a real run (the file-level mock normally bypasses it).
+  // Nothing earlier in this file emits through the dist node-logger, so its once() dedupe
+  // registry is still fresh when this describe runs.
+  const useRealProjectDataCollection = async () => {
+    const { getStorybookData: realGetStorybookData } = await import('storybook/internal/cli');
+    getStorybookDataMock.mockImplementation(realGetStorybookData as any);
+  };
+
+  // Warnings are captured at the process streams rather than via logger spies: the dist CLI
+  // path holds a different node-logger instance than the test-side import, so object spies
+  // on either copy can miss emissions from the other.
+  let warnOutput = '';
+
+  const captureWarnings = () => {
+    const sink = ((chunk: unknown) => {
+      warnOutput += String(chunk);
+      return true;
+    }) as typeof process.stdout.write;
+    vi.spyOn(process.stdout, 'write').mockImplementation(sink);
+    vi.spyOn(process.stderr, 'write').mockImplementation(sink);
+  };
+
+  const bestEffortWarningCount = () => warnOutput.split('best-effort').length - 1;
+
+  afterEach(async () => {
+    managerTypeHolder.type = undefined;
+    vi.restoreAllMocks();
+    await Promise.all(
+      projectDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
+    );
+  });
+
+  it('warns exactly once across multiple Yarn 1 projects and completes collection (AC3)', async () => {
+    const [dirA, dirB] = await Promise.all([createProjectFixture(), createProjectFixture()]);
+    projectDirs.push(dirA, dirB);
+    managerTypeHolder.type = PackageManagerName.YARN1;
+    await useRealProjectDataCollection();
+    warnOutput = '';
+    captureWarnings();
+
+    const results = await collectProjects(
+      { force: true } as any,
+      [join(dirA, '.storybook'), join(dirB, '.storybook')],
+      () => {}
+    );
+
+    expect(bestEffortWarningCount()).toBe(1);
+    expect(results).toHaveLength(2);
+    expect(results.every((r) => isSuccessResult(r))).toBe(true);
+  });
+
+  it.each([
+    PackageManagerName.NPM,
+    PackageManagerName.YARN2,
+    PackageManagerName.PNPM,
+    PackageManagerName.BUN,
+  ])('does not emit the warning for %s projects (AC4)', async (packageManagerType) => {
+    const dir = await createProjectFixture();
+    projectDirs.push(dir);
+    managerTypeHolder.type = packageManagerType;
+    await useRealProjectDataCollection();
+    warnOutput = '';
+    captureWarnings();
+
+    const results = await collectProjects(
+      { force: true } as any,
+      [join(dir, '.storybook')],
+      () => {}
+    );
+
+    expect(bestEffortWarningCount()).toBe(0);
+    expect(results).toHaveLength(1);
+    expect(results.every((r) => isSuccessResult(r))).toBe(true);
   });
 });

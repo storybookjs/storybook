@@ -9,10 +9,7 @@
       },
       "description": "Priority, a locally declared numeric enum.",
       "name": "level",
-      "options": [
-        0,
-        1
-      ],
+      "options": [0, 1],
       "table": {
         "category": "props",
         "type": {
@@ -23,10 +20,7 @@
       "type": {
         "name": "enum",
         "required": false,
-        "value": [
-          0,
-          1
-        ]
+        "value": [0, 1]
       }
     },
     "severity": {
@@ -39,11 +33,7 @@
       },
       "description": "Alert severity, an imported string enum.",
       "name": "severity",
-      "options": [
-        "info",
-        "warning",
-        "error"
-      ],
+      "options": ["info", "warning", "error"],
       "table": {
         "category": "props",
         "type": {
@@ -54,11 +44,7 @@
       "type": {
         "name": "enum",
         "required": true,
-        "value": [
-          "info",
-          "warning",
-          "error"
-        ]
+        "value": ["info", "warning", "error"]
       }
     },
     "size": {
@@ -73,11 +59,7 @@
       "type": {
         "name": "enum",
         "required": false,
-        "value": [
-          "small",
-          "medium",
-          "large"
-        ]
+        "value": ["small", "medium", "large"]
       }
     }
   },

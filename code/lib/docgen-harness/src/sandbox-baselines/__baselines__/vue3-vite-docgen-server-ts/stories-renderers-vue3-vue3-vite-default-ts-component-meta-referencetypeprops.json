@@ -74,11 +74,7 @@
       },
       "description": "description enum value",
       "name": "enumValue",
-      "options": [
-        0,
-        1,
-        2
-      ],
+      "options": [0, 1, 2],
       "table": {
         "category": "props",
         "type": {
@@ -89,11 +85,7 @@
       "type": {
         "name": "enum",
         "required": true,
-        "value": [
-          0,
-          1,
-          2
-        ]
+        "value": [0, 1, 2]
       }
     },
     "foo": {
@@ -137,14 +129,7 @@
       "type": {
         "name": "enum",
         "required": true,
-        "value": [
-          "Uncategorized",
-          "Content",
-          "Interaction",
-          "Display",
-          "Forms",
-          "Addons"
-        ]
+        "value": ["Uncategorized", "Content", "Interaction", "Display", "Forms", "Addons"]
       }
     },
     "nested": {

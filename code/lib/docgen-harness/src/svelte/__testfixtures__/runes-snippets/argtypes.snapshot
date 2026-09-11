@@ -1,0 +1,76 @@
+{
+  "children": {
+    "control": null,
+    "description": "Default body content.",
+    "name": "children",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[]>",
+      "required": false,
+    },
+  },
+  "footer": {
+    "control": null,
+    "description": "Footer content.",
+    "name": "footer",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[]>",
+      "required": true,
+    },
+  },
+  "header": {
+    "control": null,
+    "description": "Header content.",
+    "name": "header",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[title: string]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[title: string]>",
+      "required": false,
+    },
+  },
+  "title": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Card title.",
+    "name": "title",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""Card"",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

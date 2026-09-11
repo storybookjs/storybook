@@ -1,0 +1,118 @@
+{
+  "class": {
+    "description": "CSS class string.",
+    "name": "class",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string | string & ClassArray | string & ClassDictionary",
+      },
+    },
+    "type": {
+      "name": "string | string & ClassArray | string & ClassDictionary",
+      "required": false,
+    },
+  },
+  "font": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Font family choice.",
+    "name": "font",
+    "options": [
+      "mono",
+      "normal",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""normal"",
+      },
+      "type": {
+        "summary": ""mono" | "normal"",
+      },
+    },
+    "type": {
+      "name": ""mono" | "normal"",
+      "required": false,
+    },
+  },
+  "input": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Input element reference.",
+    "name": "input",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "type": {
+        "summary": "HTMLInputElement",
+      },
+    },
+    "type": {
+      "name": "HTMLInputElement",
+      "required": false,
+    },
+  },
+  "onchange": {
+    "control": null,
+    "description": "Value change callback.",
+    "name": "onchange",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "(v: string, valid: boolean) => void",
+      },
+    },
+    "type": {
+      "name": "(v: string, valid: boolean) => void",
+      "required": false,
+    },
+  },
+  "validate": {
+    "description": "Validation function or functions.",
+    "name": "validate",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Validator | Validator[]",
+      },
+    },
+    "type": {
+      "name": "Validator | Validator[]",
+      "required": false,
+    },
+  },
+  "value": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Current input value.",
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "...",
+      },
+      "type": {
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "any",
+      "required": false,
+    },
+  },
+}

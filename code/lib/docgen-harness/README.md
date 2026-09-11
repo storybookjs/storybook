@@ -30,6 +30,7 @@ src/
 │   ├── snippets.ts               # snippet rules + framework dispatch
 │   ├── snippets-vue3.ts          # Vue matcher
 │   ├── snippets-angular.ts       # Angular matcher
+│   ├── snippets-svelte.ts        # Svelte matcher
 │   ├── parse-element.ts          # root-element and attribute scanning
 │   ├── parse-snapshot.ts         # parser for committed argtypes*.snapshot text
 │   ├── expect-current-or-better.ts
@@ -51,7 +52,14 @@ src/
 │   ├── csf-types.ts
 │   └── __testfixtures__/<case>/  # component, stories, compodoc-input.json, aot-cmp.ts (signal cases),
 │                                 # argtypes.snapshot, argtypes-filtered.snapshot, snippet-<story>.snapshot
-├── svelte/                       # planned
+├── svelte/
+│   ├── svelte-baselines.test.ts
+│   ├── svelte-legacy-gaps.test.ts
+│   ├── svelte-render.test.ts
+│   └── __testfixtures__/<case>/  # component, input.stories.svelte, optional input.stories.ts,
+│                                 # argtypes.snapshot, description.snapshot,
+│                                 # story-descriptions.snapshot,
+│                                 # snippet-<story>.snapshot, plain-csf-snippet-<story>.snapshot
 ├── web-components/
 │   ├── web-components-baselines.test.ts
 │   ├── web-components-legacy-gaps.test.ts
@@ -84,6 +92,8 @@ src/
   Directive spelling is normalized, so `:x`/`v-bind:x`, `@x`/`v-on:x`, `#x`/`v-slot:x`, and any `.modifier` all read as the same name.
   The Angular comparison additionally gates root-element identity: the tag name must match and bare (valueless) attributes - the mangled attribute-selector markers - must survive.
   The Web Components comparison reads plain HTML root snippets: represented names are root attribute names lowercased as written, and the structure gate requires root tag identity plus survival of bare attributes.
+  The Svelte comparison parses only the PascalCase root component tag; its attribute scanner is brace-aware so values like `onclick={() => {}}`, object literals, arrays, and expressions containing `>` do not leak into attribute names.
+  Svelte represented names are the root component's attribute names, including shorthand `{name}` as `name`; `{...args}` is ignored because recorded snippets should already be substituted.
 - Acceptance: there is no allowlist file.
   The committed baseline is the allowlist - accept an intentional change by re-recording with `-u` and reviewing the diff.
 - The recorders read each committed file and run every gate BEFORE the snapshot call, so a `-u` run refuses to queue a regressed recording and stays red until the code is fixed.
@@ -124,10 +134,22 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - angular: one kebab-case `<case>.component.ts` (the class name must match the compodoc capture exactly) plus `input.stories.ts` and a captured `compodoc-input.json`.
   Signal fixtures also commit an `aot-cmp.ts` with the `ɵcmp` input/output maps, captured once from real `ngc` output - JIT leaves them empty.
   Stories import their CSF types from `src/angular/csf-types.ts`; the two runtime test files are excluded from the vue-tsc program because angular-vite client source is not strict-clean.
+- svelte: one component plus `input.stories.svelte`; add supporting component/type files and `input.stories.ts` when the plain CSF snippet path is relevant.
+  `input.stories.ts` imports `Meta`/`StoryObj` from `@storybook/svelte`.
+  New fixtures need two focused Svelte test runs: the first creates `toMatchFileSnapshot` files at suite end, and the second proves the stale-file checks and comparator gates.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.
   Optional hand-written 2.1.0 and WCA manifests live next to the capture and record under a prefix; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
+
+### Svelte story formats
+
+The Svelte harness records two snippet paths because Storybook currently has two production sources:
+
+- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by the published `@storybook/addon-svelte-csf` package pinned in devDependencies (5.1.2).
+  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the addon's runtime.
+- `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
+`story-descriptions.snapshot` records the docs description parameters that addon-svelte-csf creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
 
 ### Capturing compodoc input (angular)
 
@@ -216,6 +238,29 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #33779 (not reproduced) -> `decorator-union-enum/`: the reported union collapse does not occur at compodoc 2.0.0; regression baseline, no marker.
 - #29697 (not reproduced) -> `signal-io/`: aliased signal inputs record under their alias at 2.0.0; regression baseline, no marker.
 - #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ. The ACM engine closes it: `propsTable: 'api'` (its default) drops private and `#` properties and methods plus `@internal` members, while keeping `protected` members and every declared input and output, so the `acm-` baselines record fewer rows than the legacy ones on purpose.
+
+## Known legacy gaps (svelte)
+
+- Component descriptions are always empty; the svelte-vite docgen plugin writes `data` and `name` only, so `<!-- @component ... -->` never reaches `description.snapshot`.
+- No events or slots are recorded by the docgen plugin. Legacy `createEventDispatcher` and `<slot>` declarations stay absent, and Svelte `Snippet` props record as `properties`.
+- Literal unions keep raw type text in `type.name` and `table.type.summary`; literal-only unions may get `control.options`, but they do not become an `enum` sbType.
+- `table.jsDocTags` is never populated. The current recordings keep only prop description text; `@deprecated`, `@default`, `@example`, and `@internal` do not leak into descriptions.
+- Svelte CSF text-content `args.x` references are JSON-stringified, so `<h1>{args.title}</h1>` records as `<h1>{"Reference title"}</h1>`.
+- Svelte CSF `asChild` markup is emitted verbatim; Story args do not reach the child component markup.
+- Svelte CSF `{...args}` expansion emits every non-null arg, including values equal to component defaults.
+- Plain CSF snippets omit `undefined` and `null`, skip action args, and render functions as `{<handler>}`; Svelte CSF renders Storybook `fn()` mocks by prepared arg key and named inline functions by name.
+- `$bindable` defaults record as `"..."`, while rest props inherited from `HTMLInputAttributes` are not recorded.
+- Imported interfaces are resolved only to their alias name, e.g. `PanelConfig`; object, tuple, intersection, `Record`, `Date`, and array props record as raw type text.
+- JavaScript JSDoc `@type` props record names, types, required/default state, but no prop descriptions from the JSDoc object shape.
+- Intrinsic props from `svelte/elements` vanish even when destructured with defaults, so `type = 'text'`, `disabled`, and `placeholder` are absent from argTypes while still appearing in snippets when passed as args or template attributes.
+- Props declared both in the component's own type and in an intersected `svelte/elements` interface keep their rows but record the intersected type text, e.g. `value` from `runes-omit-rest-class` records `any` and `class` records `string | string & ClassArray | string & ClassDictionary`.
+- A prop named `class` records under the literal `class` key; `ClassValue` expands to Svelte's class helper union text.
+- `$bindable()` without a default records the same `"..."` default summary as `$bindable('')`.
+- Indexed-access component props such as `ComponentProps<typeof Button>['variant']` collapse to `any`, while generic prop type parameters can lose type text entirely and generic tuple arrays preserve raw text such as `[Value, string, (string | undefined)?][]`.
+- Legacy nullable unions drop `null`/`undefined` from the recorded type text, even when defaults such as `null` still record in `table.defaultValue.summary`.
+- `$$Props` helper interfaces and template-literal index signatures do not surface as rows; only matching `export let` declarations record.
+- Svelte CSF meta `render: template` stories record the root-level template source with substituted args; `defineMeta().argTypes` does not reach `extractArgTypes`, which records only component docgen output.
+- Static Svelte CSF templates with no args parameter record their literal markup.
 
 ## Known legacy gaps (web-components)
 

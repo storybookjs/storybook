@@ -33,10 +33,7 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
-  // TODO: remove try/catch in SB 11 where Node 22 is the minimum supported version
-  try {
-    Module.enableCompileCache?.();
-  } catch {}
+  Module.enableCompileCache();
 
   const args = process.argv.slice(2);
 

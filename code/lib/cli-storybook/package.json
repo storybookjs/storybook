@@ -36,6 +36,9 @@
     "README.md",
     "!src/**/*"
   ],
+  "engines": {
+    "node": ">=22.12.0"
+  },
   "dependencies": {
     "@storybook/codemod": "workspace:*",
     "@types/semver": "^7.7.1",

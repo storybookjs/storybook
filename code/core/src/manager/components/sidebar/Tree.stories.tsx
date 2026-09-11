@@ -664,6 +664,23 @@ export const StickyAncestors: Story = {
       expect(overlayIds()).toEqual([firstRowId]);
     });
 
+    // Push-out handoff: the pinned row lets go one slot before the next section's header
+    // reaches the stack, instead of covering it (VSCode-style).
+    const subtreeBottom =
+      canvasElement.querySelectorAll(`[data-item-id^="${firstRowId}"]`).length * TREE_ROW_HEIGHT;
+    scroller.scrollTop = subtreeBottom - 2 * TREE_ROW_HEIGHT;
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([firstRowId]);
+    });
+    scroller.scrollTop = subtreeBottom - TREE_ROW_HEIGHT;
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([]);
+    });
+    scroller.scrollTop = 10;
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([firstRowId]);
+    });
+
     // Clicking the pinned chevron collapses the node and lands its natural row in the slot
     // the pinned copy occupied.
     const pinnedFirst = canvasElement.querySelector(`[data-pinned-item-id="${firstRowId}"]`)!;

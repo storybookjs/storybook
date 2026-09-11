@@ -537,6 +537,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const gapIds = new Set<string>();
     const offsets: number[] = [];
     const indexById = new Map<string, number>();
+    const subtreeBottoms = new Map<string, number>();
     let y = 0;
     let prevLevel1 = true;
     const walk = (entries: TreeEntry[], level: number) => {
@@ -554,10 +555,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
         if (entry.resolvedChildren?.length && expanded.has(entry.id)) {
           walk(entry.resolvedChildren, level + 1);
         }
+        subtreeBottoms.set(entry.id, y);
       }
     };
     walk(tree, 1);
-    return { ids, gapIds, offsets, indexById, totalHeight: y };
+    return { ids, gapIds, offsets, indexById, subtreeBottoms, totalHeight: y };
   }, [tree, expanded]);
   const flatRowsRef = useRef(flatRows);
   flatRowsRef.current = flatRows;
@@ -565,7 +567,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // VSCode-style sticky scroll, rendered as an overlay above the virtualized scroller (CSS
   // position:sticky cannot work on virtualized, absolutely-positioned rows). The chain is the
   // strict ancestors of the row at the viewport's top line, plus that row itself while its own
-  // subtree continues below it; it stays pinned until the next subtree's rows reach the top.
+  // subtree continues below it; each pinned row hands off once the rows below its slot leave
+  // its subtree, so an incoming container's header is never covered by the stack.
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
   useEffect(() => {
     const scroller = containerRef.current;
@@ -575,7 +578,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     let rafId: number | null = null;
     const update = () => {
       rafId = null;
-      const { ids, offsets, indexById } = flatRowsRef.current;
+      const { ids, offsets, indexById, subtreeBottoms } = flatRowsRef.current;
       const targetY = scroller.scrollTop;
       // First row whose bottom is below the top line (bottom = next row's offset, or the
       // row's own offset + height for the last row).
@@ -600,11 +603,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
         if (nextId && getAncestorIds(collapsedDataRef.current, nextId).includes(topId)) {
           chainIds.push(topId);
         }
-        // Only chain rows that are actually above their slot pin; keep the rest natural so a
-        // chain root at the top of the viewport is not overlaid by its own copy.
+        // A chain row pins only while its natural row is above its slot (a chain root at the
+        // top of the viewport is not overlaid by its own copy) and its subtree still extends
+        // below the slot's bottom edge — otherwise the next container's header would slide
+        // under the stack, so the bottom pinned rows hand off to it instead (VSCode push-out).
+        // Both conditions fail monotonically with depth, so dropped rows form a suffix and
+        // surviving rows keep their slot index.
         chainIds = chainIds.filter((id, i) => {
           const index = indexById.get(id);
-          return index !== undefined && offsets[index] < targetY + i * TREE_ROW_HEIGHT;
+          return (
+            index !== undefined &&
+            offsets[index] < targetY + i * TREE_ROW_HEIGHT &&
+            (subtreeBottoms.get(id) ?? 0) > targetY + (i + 1) * TREE_ROW_HEIGHT
+          );
         });
       }
       setPinnedIds((prev) =>

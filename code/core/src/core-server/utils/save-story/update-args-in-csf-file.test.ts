@@ -19,6 +19,7 @@ const FILES = {
   unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
+  spreadVariances: join(__dirname, 'mocks/spread-variances.stories.tsx'),
 };
 
 describe('success', () => {
@@ -329,6 +330,82 @@ describe('success', () => {
         
         const BlockExport: Story = {
         ..."
+    `);
+  });
+  test('Spread Variances', async () => {
+    const newArgs = { bordered: true, initial: 'test1' };
+
+    const before = await format(await readFile(FILES.spreadVariances, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.spreadVariances, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    const nodes = names.map((name) => CSF.getStoryExport(name));
+
+    nodes.forEach((node) => {
+      updateArgsInCsfFile(node, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // args must be inserted after spread elements, otherwise the spread's args always win
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        export const Primary = {
+          args: {
+            absolute: true,
+        
+      -     initial: "bar",
+      - 
+      +     initial: "test1",
+      +     bordered: true,
+      + 
+          },
+        } satisfies Story;
+        
+        // args must be inserted after the spread, otherwise the spread's args always win
+        export const SpreadOnly = {
+          ...Primary,
+        
+      + 
+      +   args: {
+      +     bordered: true,
+      +     initial: "test1",
+      +   },
+      + 
+        } satisfies Story;
+        
+        export const SpreadWithRender = {
+          ...Primary,
+        
+      + 
+      +   args: {
+      +     bordered: true,
+      +     initial: "test1",
+      +   },
+      + 
+      + 
+          render: (args) => <MyComponent {...args} />,
+        } satisfies Story;
+        
+        export const SpreadPlainObject = {
+          ...Primary,
+        
+      + 
+      +   args: {
+      +     bordered: true,
+      +     initial: "test1",
+      +   },
+      + 
+        };
+        "
     `);
   });
   test('Data Variances', async () => {

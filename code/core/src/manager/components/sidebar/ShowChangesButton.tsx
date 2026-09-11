@@ -143,6 +143,7 @@ export const ShowChangesButton = () => {
   const changeKinds =
     newCount > 0 && modifiedCount > 0 ? 'new and modified' : newCount > 0 ? 'new' : 'modified';
   const label = `${isActive ? 'Showing' : 'Show'} ${changeKinds} stories`;
+  const ariaLabel = `${label} since last commit`;
 
   return (
     <Wrapper>
@@ -150,8 +151,7 @@ export const ShowChangesButton = () => {
         variant="ghost"
         padding="small"
         pressed={isActive}
-        ariaLabel={false}
-        disableAllTooltips
+        ariaLabel={ariaLabel}
         onClick={onClick}
       >
         <StyledIcon viewBox="0 0 14 14" width="14" height="14" aria-hidden>

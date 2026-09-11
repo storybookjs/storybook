@@ -224,6 +224,7 @@ async function generateSvelteCsfSnippet(
     flushSync();
     return await snippetRendered;
   } finally {
+    snippetRendered.catch(() => {});
     cleanup();
     document.body.replaceChildren();
   }

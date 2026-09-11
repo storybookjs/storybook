@@ -9,6 +9,7 @@
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [Addon A11y: Removed anomaly vision simulations](#addon-a11y-removed-anomaly-vision-simulations)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -651,6 +652,12 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 ### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
+
+### Addon A11y: Removed anomaly vision simulations
+
+The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. If a story sets one of these values through `globals.vision`, remove that global or change it to one of the remaining supported values.
+
+The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, while the existing `achromatopsia` matrix also runs in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 
 ## From version 10.5.x to 10.6.0
 

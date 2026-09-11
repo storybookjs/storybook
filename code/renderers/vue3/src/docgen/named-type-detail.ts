@@ -24,6 +24,10 @@ export const MAX_DETAIL_LINES = 20;
  */
 const TYPE_NAME_PATTERN = /^[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)*$/;
 
+/** Declarations outside the user's project (dependencies, ambient .d.ts) never expand. */
+const isExternalFile = (file: ts.SourceFile): boolean =>
+  file.isDeclarationFile || file.fileName.includes('node_modules');
+
 /** Resolves a prop's named type reference to its `table.type.detail` text, or undefined when the type stays flat. */
 export type NamedTypeDetailResolver = (typeName: string) => string | undefined;
 
@@ -83,10 +87,13 @@ export function createNamedTypeDetailResolver({
     renderMembers(
       name,
       type.getProperties().map((property) => {
-        const typeText = typeChecker
-          .typeToString(typeChecker.getTypeOfSymbol(property))
-          .replace(/ \| undefined$/, '');
-        return `  ${property.getName()}: ${typeText}`;
+        const typeText = typeChecker.typeToString(typeChecker.getTypeOfSymbol(property));
+        // Member JSDoc is documentation the checker already holds — no extra resolution pass.
+        const description = typescript
+          .displayPartsToString(property.getDocumentationComment(typeChecker))
+          .replace(/\s+/g, ' ')
+          .trim();
+        return `  ${property.getName()}: ${typeText}${description ? ` — ${description}` : ''}`;
       })
     );
 
@@ -94,10 +101,16 @@ export function createNamedTypeDetailResolver({
     renderMembers(
       name,
       declaration.members.map((member) => {
-        const value = typeChecker.getConstantValue(member) ?? member.initializer?.getText();
-        return value === undefined
-          ? `  ${member.name.getText()}`
-          : `  ${member.name.getText()} = ${typeof value === 'string' ? `'${value}'` : value}`;
+        const memberName = member.name.getText();
+        const constantValue = typeChecker.getConstantValue(member);
+        if (typeof constantValue === 'string') {
+          return `  ${memberName} = '${constantValue.replace(/'/g, "\\'")}'`;
+        }
+        if (typeof constantValue === 'number') {
+          return `  ${memberName} = ${constantValue}`;
+        }
+        const initializer = member.initializer?.getText();
+        return initializer ? `  ${memberName} = ${initializer}` : `  ${memberName}`;
       })
     );
 
@@ -115,9 +128,10 @@ export function createNamedTypeDetailResolver({
       return undefined;
     }
 
-    const declaringFile = declaration.getSourceFile();
     // Library types (node_modules, ambient .d.ts) stay flat: no library-type noise in payloads.
-    if (declaringFile.isDeclarationFile || declaringFile.fileName.includes('node_modules')) {
+    // Every declaration must be in-project: declaration merging can add ambient members to a
+    // locally-declared interface.
+    if (realSymbol.declarations?.some((d) => isExternalFile(d.getSourceFile()))) {
       return undefined;
     }
 
@@ -131,9 +145,16 @@ export function createNamedTypeDetailResolver({
       // The checker resolves the whole alias chain here and degrades circular aliases to `any`,
       // so resolution terminates and an unresolvable chain simply has no members to render.
       const resolved = typeChecker.getTypeAtLocation(declaration.type);
-      return resolved.flags & typescript.TypeFlags.Object
-        ? renderObject(typeName, resolved)
-        : undefined;
+      if (!(resolved.flags & typescript.TypeFlags.Object)) {
+        return undefined;
+      }
+      // A local alias can name a library type (`type LocalDate = Date`); the exclusion above only
+      // sees the alias's own in-project file, so the resolved target gets the same check.
+      const targetSymbol = resolved.getSymbol() ?? resolved.aliasSymbol;
+      if (targetSymbol?.declarations?.some((d) => isExternalFile(d.getSourceFile()))) {
+        return undefined;
+      }
+      return renderObject(typeName, resolved);
     }
     return undefined;
   };

@@ -7,6 +7,8 @@ import type {
   Dict,
   ID,
   Level,
+  LocalDate,
+  Prefs,
   Shapes,
   User,
 } from './named-types.ts';
@@ -24,6 +26,8 @@ defineProps<{
   inlined: { foo: string; bar: number };
   namespaced: AppTypes.Nested;
   dict: Dict;
+  prefs: Prefs;
+  localDate: LocalDate;
 }>();
 </script>
 

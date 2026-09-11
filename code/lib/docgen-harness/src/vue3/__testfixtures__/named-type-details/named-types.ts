@@ -57,3 +57,13 @@ export namespace AppTypes {
     count: number;
   }
 }
+
+export interface Prefs {
+  theme?: string;
+  /** Where it is stored. */
+  locale: string;
+}
+
+// A local alias naming a library type: the alias declaration is in-project, but the expansion
+// target (Date) is a lib declaration that must stay flat.
+export type LocalDate = Date;

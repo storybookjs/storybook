@@ -144,6 +144,23 @@
       ],
     },
   },
+  "localDate": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "localDate",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
   "namespaced": {
     "defaultValue": undefined,
     "description": "",
@@ -153,6 +170,23 @@
       "defaultValue": undefined,
       "type": {
         "summary": "AppTypes.Nested",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "prefs": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "prefs",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Prefs",
       },
     },
     "type": {

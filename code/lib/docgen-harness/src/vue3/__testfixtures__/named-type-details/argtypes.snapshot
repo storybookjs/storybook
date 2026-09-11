@@ -118,6 +118,23 @@
       "value": "Level",
     },
   },
+  "localDate": {
+    "description": undefined,
+    "name": "localDate",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "LocalDate",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "LocalDate",
+    },
+  },
   "namespaced": {
     "description": undefined,
     "name": "namespaced",
@@ -133,6 +150,23 @@
       "name": "other",
       "required": true,
       "value": "TSTypeReference",
+    },
+  },
+  "prefs": {
+    "description": undefined,
+    "name": "prefs",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Prefs",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Prefs",
     },
   },
   "scalarAlias": {

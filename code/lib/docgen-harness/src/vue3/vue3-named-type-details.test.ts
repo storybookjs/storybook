@@ -57,17 +57,23 @@ async function serverArgTypesFor(fixtureCase: string) {
 
 describe('vue3 docgen-server named-type details', () => {
   let argTypes: Awaited<ReturnType<typeof serverArgTypesFor>>['argTypes'];
+  let resolver: Awaited<ReturnType<typeof serverArgTypesFor>>['resolver'];
 
   it('expands cross-file interfaces with their property lines', async () => {
-    ({ argTypes } = await serverArgTypesFor('named-type-details'));
-    // Member JSDoc ("The display name.") is deliberately not rendered: descriptions are only
-    // appended when already available in the payload, and member metadata is stripped there.
+    ({ argTypes, resolver } = await serverArgTypesFor('named-type-details'));
     expect(tableTypeOf(argTypes, 'user')).toEqual({
       summary: 'User',
-      detail: 'User {\n  name: string\n  age: number\n}',
+      detail: 'User {\n  name: string — The display name.\n  age: number\n}',
     });
     // summary and sbType are untouched by the expansion
     expect(argTypes.user.type).toEqual({ name: 'object', value: {}, required: true });
+  });
+
+  it('renders optional members with their full type text and member JSDoc', () => {
+    expect(tableTypeOf(argTypes, 'prefs')).toEqual({
+      summary: 'Prefs',
+      detail: 'Prefs {\n  theme: string | undefined\n  locale: string — Where it is stored.\n}',
+    });
   });
 
   it('expands string TS enums to their member lines', () => {
@@ -123,6 +129,15 @@ describe('vue3 docgen-server named-type details', () => {
     expect(tableTypeOf(argTypes, 'builtin')).toEqual({ summary: 'Date' });
   });
 
+  it('stays flat for a local alias naming a library type', () => {
+    // vue-component-meta normalizes the prop to the library name before the resolver runs
+    // (summary "Date"), so the production path is already flat. The direct resolver call pins
+    // the alias-branch exclusion: a local alias whose target is a lib declaration must not
+    // expand the library's members.
+    expect(tableTypeOf(argTypes, 'localDate')).toEqual({ summary: 'Date' });
+    expect(resolver('LocalDate')).toBeUndefined();
+  });
+
   it('expands mutually recursive object aliases one hop without hanging', () => {
     // A pure alias-to-alias cycle is unrepresentable in valid TS (TS2456), so the cycle guard's
     // residual value is defensive; the compiled cyclic graph must still resolve bounded output.
@@ -136,7 +151,8 @@ describe('vue3 docgen-server named-type details', () => {
     ({ argTypes } = await serverArgTypesFor('recursive-type'));
     expect(tableTypeOf(argTypes, 'node')).toEqual({
       summary: 'TreeNode',
-      detail: 'TreeNode {\n  value: string\n  children: TreeNode[]\n}',
+      detail:
+        'TreeNode {\n  value: string — Node label.\n  children: TreeNode[] — Nested children of this node.\n}',
     });
   });
 

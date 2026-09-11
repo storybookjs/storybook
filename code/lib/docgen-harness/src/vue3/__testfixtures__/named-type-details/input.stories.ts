@@ -28,5 +28,7 @@ export const PropsAsWritten: Story = {
     inlined: { foo: 'foo', bar: 1 },
     namespaced: { key: 'k', count: 2 },
     dict: { a: 1 },
+    prefs: { locale: 'en-US' },
+    localDate: new Date(0),
   },
 };

@@ -252,7 +252,7 @@ describe('fix-faux-esm-require', () => {
 
       expect(mockWriteFile).toHaveBeenCalledWith(
         'main.js',
-        expect.stringContaining('import { createRequire } from "node:module"')
+        expect.stringContaining("import { createRequire } from 'node:module'")
       );
     });
 
@@ -281,9 +281,9 @@ describe('fix-faux-esm-require', () => {
       const writtenContent = mockWriteFile.mock.calls[0][1];
       expect(writtenContent).toMatchInlineSnapshot(`
         "
-                import { fileURLToPath } from "node:url";
-                import { dirname } from "node:path";
-                import { createRequire } from "node:module";
+                import { fileURLToPath } from 'node:url';
+                import { dirname } from 'node:path';
+                import { createRequire } from 'node:module';
                 import { addons } from '@storybook/addon-essentials';
                 const __filename = fileURLToPath(import.meta.url);
                 const __dirname = dirname(__filename);
@@ -324,8 +324,8 @@ describe('fix-faux-esm-require', () => {
 
       expect(writtenContent).toMatchInlineSnapshot(`
         "
-                import { fileURLToPath } from "node:url";
-                import { createRequire } from "node:module";
+                import { fileURLToPath } from 'node:url';
+                import { createRequire } from 'node:module';
                 import { dirname } from "node:path";
                 import { addons } from '@storybook/addon-essentials';
                 const __filename = fileURLToPath(import.meta.url);
@@ -381,9 +381,9 @@ describe('fix-faux-esm-require', () => {
       const writtenContent = mockWriteFile.mock.calls[0][1];
       expect(writtenContent).toMatchInlineSnapshot(`
         "
-                import { fileURLToPath } from "node:url";
-                import { dirname } from "node:path";
-                import { createRequire } from "node:module";
+                import { fileURLToPath } from 'node:url';
+                import { dirname } from 'node:path';
+                import { createRequire } from 'node:module';
                 import { addons } from '@storybook/addon-essentials';
                 const require = createRequire(import.meta.url);
                 const __filename = 'existing-filename';
@@ -422,7 +422,7 @@ describe('fix-faux-esm-require', () => {
       const writtenContent = mockWriteFile.mock.calls[0][1];
       expect(writtenContent).toMatchInlineSnapshot(`
         "
-                import { createRequire } from "node:module";
+                import { createRequire } from 'node:module';
                 import { addons } from '@storybook/addon-essentials';
                 const require = createRequire(import.meta.url);
                 const config = require('./some-config');

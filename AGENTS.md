@@ -88,6 +88,17 @@ Internal exports include:
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
 
+For AST mutations, use `CsfFile.objects()` for stories and `ConfigFile` directly for preview or main
+configuration. Both expose `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group`, with automatic
+empty-parent cleanup. `set` accepts AST expressions and plain values, including nested arrays and objects.
+`getValue` reads plain values statically; unresolved expressions produce diagnostics without executing code.
+Use the file's `changed` and `mutationDiagnostics` to decide whether to write
+the result. Named variable and function exports in config files share one logical root for these operations.
+Use `ConfigFile.callArguments()` for object arguments to imported method calls such as
+`addons.setConfig(...)`. Use `group(path, names)` when nesting sibling fields must preserve expression
+evaluation order. Keep AST discovery, mutation, and safety checks in `csf-tools`; automigrations declare
+the fields to change and provide migration-specific error guidance.
+
 ### Open services and toolsets
 
 - Open services own internal state, synchronization, queries, commands, and loading. Toolsets expose
@@ -246,6 +257,17 @@ Common templates:
 2. Recompile with NX, starting without `-c production`
 3. Generate a matching sandbox
 4. Run the relevant test-runner, E2E, or Storybook UI validation flow
+
+## Pull Request Requirements
+
+The `Danger` status check validates PR metadata, not the diff.
+It reads only the title, body, labels, and reviews, and it executes `scripts/dangerfile.ts` from the base branch, so nothing committed inside a PR can change that PR's own Danger result.
+Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth token)" node_modules/.bin/danger pr <pr-url> --dangerfile scripts/dangerfile.ts`.
+
+- **Title** must match `Area: Summary`, with both parts starting with a capital letter, for example `CSF: Add conservative story mutation API`. Conventional-commit titles such as `fix(csf-tools): add ...` fail the check, even though commit messages in this repo do use that form.
+- **Body** must contain a `#### Manual testing` heading followed by steps a maintainer can follow. The check bypasses `OWNER` and `MEMBER` authors, but private org membership resolves to `CONTRIBUTOR` for the CI token, so write the section even when you are a member.
+- **For non-release PRs targeting `next`, labels** must satisfy the exactly-one rules in [`scripts/dangerfile.ts`](scripts/dangerfile.ts). The valid change types come from the `pr-log` configuration in [`code/package.json`](code/package.json); the `ci:` and `qa:` label sets are defined in the dangerfile. Check those sources instead of copying their current values into agent guidance. The dangerfile also defines the separate release-PR rule. `other` is listed in the PR template but is not a valid change type for Danger, and `BREAKING CHANGE` is rejected while the dangerfile pins the branch version to minor.
+- **Review** must include an approving review from the `core` or `developer-experience` team. The author's own approval is ignored, so this one clears only once a human on those teams approves.
 
 ## Testing Expectations
 

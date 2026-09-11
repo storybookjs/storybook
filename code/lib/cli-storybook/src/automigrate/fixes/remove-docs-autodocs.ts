@@ -1,10 +1,13 @@
 import { Tag } from 'storybook/internal/core-server';
+import { types as t } from 'storybook/internal/babel';
+import { HandledError } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
+import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 
 const logger = {
   log: (message: string) => {
@@ -33,7 +36,13 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
 
     try {
       const config = await readConfig(mainConfigPath);
-      const autodocs = config.getSafeFieldValue(['docs', 'autodocs']);
+      const value = config.get(['docs', 'autodocs']);
+      assertConfigMutationSuccess(config);
+      const autodocs = t.isBooleanLiteral(value)
+        ? value.value
+        : t.isStringLiteral(value, { value: 'tag' })
+          ? 'tag'
+          : undefined;
 
       if (autodocs === undefined) {
         return null;
@@ -57,18 +66,7 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
     // Remove autodocs from main config
     logger.log(`🔄 Updating ${picocolors.cyan('docs')} parameter in main config file...`);
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-      const docs = main.getFieldValue(['docs']) || {};
-
-      if (!dryRun) {
-        delete docs.autodocs;
-
-        // If docs object is now empty, remove it entirely
-        if (Object.keys(docs).length === 0) {
-          main.removeField(['docs']);
-        } else {
-          main.setFieldValue(['docs'], docs);
-        }
-      }
+      main.remove(['docs', 'autodocs']);
     });
 
     // If autodocs was true, update preview config to use tags
@@ -77,10 +75,21 @@ export const removeDocsAutodocs: Fix<RemoveDocsAutodocsOptions> = {
       await updateMainConfig(
         { mainConfigPath: previewConfigPath, dryRun: !!dryRun },
         async (preview) => {
-          const tags = preview.getFieldValue(['tags']) || [];
-
-          if (!tags.includes(Tag.AUTODOCS) && !dryRun) {
-            preview.setFieldValue(['tags'], [...tags, Tag.AUTODOCS]);
+          const tags = preview.get(['tags']);
+          if (!tags) {
+            preview.set(['tags'], [Tag.AUTODOCS]);
+          } else if (!t.isArrayExpression(tags)) {
+            throw new HandledError(
+              'Cannot add the autodocs tag because tags is not a static array'
+            );
+          } else if (
+            !tags.elements.some((tag) => t.isStringLiteral(tag, { value: Tag.AUTODOCS }))
+          ) {
+            preview.transform(['tags'], (value) =>
+              t.isArrayExpression(value)
+                ? t.arrayExpression([...value.elements, t.stringLiteral(Tag.AUTODOCS)])
+                : undefined
+            );
           }
         }
       );

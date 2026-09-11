@@ -302,13 +302,13 @@ export async function configureEslintPlugin({
         await writeFile(eslintConfigFile, output);
       } else {
         const eslint = await readConfig(eslintConfigFile);
-        const existingExtends = normalizeExtends(eslint.getFieldValue(['extends'])).filter(Boolean);
+        const existingExtends = normalizeExtends(eslint.getValue(['extends'])).filter(Boolean);
 
         if (existingExtends.includes('plugin:storybook/recommended')) {
           return;
         }
 
-        eslint.setFieldValue(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
+        eslint.set(['extends'], [...existingExtends, 'plugin:storybook/recommended']);
 
         await writeConfig(eslint);
       }

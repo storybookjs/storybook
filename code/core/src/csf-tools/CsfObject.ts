@@ -215,7 +215,11 @@ const keyNode = (name: string) =>
 
 const unsafePath = (path: readonly string[]) => path.includes('__proto__');
 
-const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLookup => {
+const lookupProperty = (
+  object: t.ObjectExpression,
+  name: string,
+  removing = false
+): PropertyLookup => {
   const matches: (t.ObjectProperty | t.ObjectMethod)[] = [];
   let unknown: { code: CsfMutationDiagnosticCode; node: t.Node } | undefined;
   let unknownAfterMatch: { code: CsfMutationDiagnosticCode; node: t.Node } | undefined;
@@ -247,7 +251,7 @@ const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLooku
   // A member whose key is only known at runtime cannot shadow an explicit property declared after
   // it, but it can shadow one declared before it, and with no explicit property at all it leaves
   // both the value and its absence unproven.
-  const unproven = unknownAfterMatch ?? (matches.length === 0 ? unknown : undefined);
+  const unproven = unknownAfterMatch ?? (removing || matches.length === 0 ? unknown : undefined);
   if (unproven) {
     return { ok: false, code: unproven.code, node: unproven.node };
   }
@@ -405,6 +409,10 @@ class CsfObjectEditor implements CsfObject {
     if (!inspected.property || !inspected.parent) {
       return { ok: true, changed: false };
     }
+    const removal = lookupProperty(inspected.parent, logicalPath.at(-1)!, true);
+    if (!removal.ok) {
+      return this.failure(removal.code, path, removal.node);
+    }
     inspected.parent.properties.splice(inspected.parent.properties.indexOf(inspected.property), 1);
     this.removeEmptyParents(logicalPath);
     return this.success();
@@ -447,6 +455,10 @@ class CsfObjectEditor implements CsfObject {
     }
     if (!source.property || !source.parent) {
       return { ok: true, changed: false };
+    }
+    const removal = lookupProperty(source.parent, sourcePath.at(-1)!, true);
+    if (!removal.ok) {
+      return this.failure(removal.code, from, removal.node);
     }
     const destination = this.inspect(destinationPath);
     if (destination.ok === false) {
@@ -659,6 +671,9 @@ class CsfObjectEditor implements CsfObject {
       }
       const value = this.resolveExpression(ancestor.property.value);
       if (!t.isObjectExpression(value) || value.properties.length > 0) {
+        return;
+      }
+      if (!lookupProperty(ancestor.parent, path[depth - 1], true).ok) {
         return;
       }
       ancestor.parent.properties.splice(ancestor.parent.properties.indexOf(ancestor.property), 1);

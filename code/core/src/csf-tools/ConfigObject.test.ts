@@ -18,6 +18,49 @@ const configurations = [
 
 describe('ConfigFile mutations', () => {
   it.each([
+    'export const parameters = {}; export default { parameters: { legacy: true } };',
+    'export default configure({ parameters: { legacy: true } });',
+    'export default Object.assign({ parameters: { legacy: true } }, other);',
+    'export default definePreview({ parameters: { legacy: true } }).finalize();',
+    'const definePreview = (value) => other; export default definePreview({ parameters: { legacy: true } });',
+  ])('rejects ambiguous config roots in %s', (source) => {
+    const config = loadConfig(source).parse();
+    expect(config.remove(['parameters', 'legacy']).ok).toBe(false);
+    expect(config.changed).toBe(false);
+    expect(printConfig(config).code).toBe(source);
+  });
+
+  it('mutates an aliased config factory import', () => {
+    const config = loadConfig(
+      'import { definePreview as preview } from "@storybook/react"; export default preview({ tags: [] });'
+    ).parse();
+    expect(config.set(['tags'], ['autodocs']).ok).toBe(true);
+    expect(config.getValue(['tags'])).toEqual(['autodocs']);
+  });
+
+  it.each(['remove', 'move'] as const)(
+    'does not expose a shadowed spread value during %s',
+    (operation) => {
+      const source = 'export default { parameters: { ...shared, legacy: true } };';
+      const config = loadConfig(source).parse();
+      const result =
+        operation === 'remove'
+          ? config.remove(['parameters', 'legacy'])
+          : config.move(['parameters', 'legacy'], ['parameters', 'current']);
+      expect(result.ok).toBe(false);
+      expect(printConfig(config).code).toBe(source);
+    }
+  );
+
+  it('keeps an empty parent that shadows an earlier spread', () => {
+    const config = loadConfig(
+      'export default { ...shared, parameters: { legacy: true } };'
+    ).parse();
+    expect(config.remove(['parameters', 'legacy']).ok).toBe(true);
+    expect(config.getValue(['parameters'])).toEqual({});
+  });
+
+  it.each([
     'const tags = ["autodocs"]; export default { tags };',
     'const tags = ["autodocs"]; module.exports = { tags };',
     'const values = ["autodocs"]; export { values as tags };',

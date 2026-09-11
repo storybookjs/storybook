@@ -154,7 +154,9 @@ describe('CsfObject', () => {
       const output = printCsf(csf).code;
       expect(output).toContain('parameters:');
       expect(output).toContain(sibling);
-      expect(output).not.toContain('viewport');
+      expect(meta.getValue(['parameters', 'viewport'])).toEqual(
+        sibling === 'docs: {}' ? undefined : {}
+      );
       expect(csf.mutationDiagnostics).toEqual([]);
     }
   );
@@ -438,15 +440,16 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).toMatch(/options: \{\s+gray: \{ name: 'Gray', value: '#CCC' \}/);
   });
 
-  it('removes an explicit field after a spread without removing the spread', () => {
+  it('rejects removing an explicit field that could reveal a spread value', () => {
     const csf = parse(`export default { parameters: { ...base, componentSubtitle: 'Safe' } };`);
     const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(meta.remove(['parameters', 'componentSubtitle'])).toEqual({
-      ok: true,
-      changed: true,
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'spread-field' },
     });
-    expect(printCsf(csf).code).toBe('export default { parameters: {\n  ...base\n} };');
+    expect(csf.changed).toBe(false);
   });
 
   it('rejects an occupied move destination without changing the source', () => {

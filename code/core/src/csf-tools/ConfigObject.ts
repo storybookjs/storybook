@@ -9,6 +9,21 @@ type NamedExport = {
   specifier?: NodePath<t.ExportSpecifier>;
 };
 
+const isConfigFactory = (callee: NodePath): boolean => {
+  if (!callee.isIdentifier()) {
+    return false;
+  }
+  const binding = callee.scope.getBinding(callee.node.name);
+  const name = binding?.path.isImportSpecifier()
+    ? binding.path.node.imported
+    : !binding
+      ? callee.node
+      : undefined;
+  return (
+    t.isIdentifier(name) && ['defineMain', 'definePreview', 'defineConfig'].includes(name.name)
+  );
+};
+
 const isExportReference = (reference: NodePath): boolean => {
   const parent = reference.parentPath;
   if (!parent) {
@@ -79,6 +94,38 @@ export function createConfigObject(
       });
       const root = pathForNode(program, config._exportsObject);
       if (root) {
+        const declaration = root.findParent((parent) => parent.isVariableDeclarator());
+        if (Object.values(config._exportDecls).some((exported) => exported !== declaration?.node)) {
+          reject(
+            root.node,
+            'ambiguous-binding',
+            'Cannot mutate mixed default and named config exports'
+          );
+          return;
+        }
+        for (
+          let parent: NodePath | null = root.parentPath;
+          parent && !parent.isProgram();
+          parent = parent.parentPath
+        ) {
+          if (!parent.isCallExpression()) {
+            continue;
+          }
+          const callee = parent.get('callee');
+          const typeChain =
+            callee.isMemberExpression() &&
+            !callee.node.computed &&
+            t.isIdentifier(callee.node.property, { name: 'type' }) &&
+            parent.node.arguments.length === 0;
+          if (!typeChain && !(isConfigFactory(callee) && parent.node.arguments.length === 1)) {
+            reject(
+              parent.node,
+              'unsupported-initializer',
+              'Cannot mutate an arbitrary config factory call'
+            );
+            return;
+          }
+        }
         const statement = root.getStatementParent();
         if (
           !statement?.parentPath.isProgram() &&
@@ -91,7 +138,6 @@ export function createConfigObject(
           );
           return;
         }
-        const declaration = root.findParent((parent) => parent.isVariableDeclarator());
         if (declaration?.isVariableDeclarator() && t.isIdentifier(declaration.node.id)) {
           const binding = declaration.scope.getBinding(declaration.node.id.name);
           if (

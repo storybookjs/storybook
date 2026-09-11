@@ -18,6 +18,7 @@ it('adds minimal node polyfills without crypto-browserify', () => {
     fs: false,
     path: false,
     buffer: expect.stringContaining('buffer'),
+    events: expect.stringContaining('events'),
     process: expect.stringContaining('process'),
     stream: expect.stringContaining('stream-browserify'),
     util: expect.stringContaining('util'),

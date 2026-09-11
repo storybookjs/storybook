@@ -7,6 +7,7 @@ const require = createRequire(import.meta.url);
 
 const nodePolyfillFallback = {
   buffer: require.resolve('buffer/'),
+  events: require.resolve('events/'),
   process: require.resolve('process/browser.js'),
   stream: require.resolve('stream-browserify'),
   util: require.resolve('util/'),

@@ -109,6 +109,7 @@
     "browserify-zlib": "^0.2.0",
     "buffer": "^6.0.3",
     "css-loader": "^6.7.3",
+    "events": "^3.3.0",
     "loader-utils": "^3.2.1",
     "postcss": "^8.4.38",
     "postcss-loader": "^8.1.1",

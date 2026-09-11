@@ -42,6 +42,9 @@ it("re-asserts Storybook's build options when a user plugin's config hook overri
     config: () => ({
       build: { outDir: 'clobbered', emptyOutDir: true },
     }),
+    configEnvironment: () => ({
+      build: { outDir: 'clobbered', emptyOutDir: true },
+    }),
   };
 
   await build({

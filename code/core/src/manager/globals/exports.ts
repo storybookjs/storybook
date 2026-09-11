@@ -520,6 +520,7 @@ export default {
     'EmptyTabContent',
     'ErrorFormatter',
     'FlexBar',
+    'FocusScope',
     'Form',
     'H1',
     'H2',

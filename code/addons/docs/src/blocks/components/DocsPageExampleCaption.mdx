@@ -28,7 +28,7 @@ Combined emphasis with **asterisks and _underscores_**.
 
 Strikethrough uses two tildes. ~~Scratch this.~~
 
-Maybe include a [link](http://storybook.js.org) to your project as well.
+Maybe include a [link](https://storybook.js.org) to your project as well.
 
 ## Block quote
 

@@ -35,7 +35,7 @@ Sometimes you might want to manually include some code examples:
 const Button = () => <button />;
 ~~~
 
-Maybe include a [link](http://storybook.js.org) to your project as well.
+Maybe include a [link](https://storybook.js.org) to your project as well.
 `;
 
 storiesOf('Addons|Info.Markdown', module).add(

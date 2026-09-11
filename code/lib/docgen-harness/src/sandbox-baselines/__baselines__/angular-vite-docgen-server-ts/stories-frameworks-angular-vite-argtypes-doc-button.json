@@ -24,6 +24,7 @@
           "summary": "ButtonAccent.Normal"
         },
         "type": {
+          "detail": "ButtonAccent {\n  'Normal' = 'Normal'\n  'High' = 'High'\n}",
           "summary": "ButtonAccent"
         }
       },
@@ -348,6 +349,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
+          "detail": "ISomeInterface {\n  one: string\n  two: boolean\n  three: any[]\n}",
           "summary": "ISomeInterface"
         }
       },

@@ -285,6 +285,40 @@ export const AboutResetOnReopen: Story = {
   },
 };
 
+// The about overlay covers the menu inside the drawer, so it must trap focus: without a trap,
+// tabbing keeps cycling through the obscured menu underneath. Every stop is asserted, so both
+// escaping the overlay and skipping an element fail the test (regression test).
+export const AboutFocusTrapped: Story = {
+  play: async (context) => {
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    await userEvent.click(await screen.findByLabelText('About Storybook'));
+
+    const backButton = await screen.findByLabelText('Close about section');
+    await waitFor(() => expect(backButton).toHaveFocus());
+
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Github' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Documentation' })).toHaveFocus();
+    // The package manager tabs are a single stop with a roving tabindex.
+    await userEvent.tab();
+    await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect(screen.getByRole('tab', { name: 'yarn' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('button', { name: 'Copy command' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Chromatic' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(screen.getByRole('link', { name: 'Storybook Community' })).toHaveFocus();
+    await userEvent.tab();
+    await expect(backButton).toHaveFocus();
+  },
+};
+
 export const ReactNodeRenderLabel: Story = {
   decorators: [
     (storyFn) => {

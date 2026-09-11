@@ -179,7 +179,7 @@ function transformStoryFileResult(
     makeTitle: (title?: string) => title || 'default',
   }).parse();
 
-  const objects = storyConfig.objects({ annotations: ['parameters'] });
+  const objects = storyConfig.objects();
   for (const object of objects) {
     migrateAddonGlobals(storyConfig, object, options);
   }

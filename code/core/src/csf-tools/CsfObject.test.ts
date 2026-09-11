@@ -210,11 +210,7 @@ describe('CsfObject', () => {
       export const Basic = () => null;
       Basic.parameters = { viewport: { disable: true } };
     `);
-    const [parameters] = csf.objects({
-      meta: false,
-      stories: false,
-      annotations: ['parameters'],
-    });
+    const [parameters] = csf.objects({ meta: false });
 
     expect(parameters.remove(['parameters', 'viewport', 'disable'])).toEqual({
       ok: true,
@@ -330,11 +326,7 @@ describe('CsfObject', () => {
       export const Basic = () => null;
       Basic.parameters = { a11y: { element: '#root' } };
     `);
-    const [parameters] = csf.objects({
-      meta: false,
-      stories: false,
-      annotations: ['parameters'],
-    });
+    const [parameters] = csf.objects({ meta: false });
 
     expect(parameters.rename(['parameters', 'a11y', 'element'], 'context')).toEqual({
       ok: true,
@@ -351,7 +343,7 @@ describe('CsfObject', () => {
       Basic.parameters = { second: true };
     `);
 
-    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
+    expect(csf.objects({ meta: false })).toEqual([]);
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({
         code: 'ambiguous-binding',

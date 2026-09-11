@@ -97,7 +97,7 @@ export const addonA11yParameters: Fix<A11yOptions> = {
           try {
             const content = await readFile(file, 'utf-8');
             const code = loadCsf(content, { makeTitle: (title) => title || 'default' }).parse();
-            for (const object of code.objects({ annotations: ['parameters'] })) {
+            for (const object of code.objects()) {
               object.rename(['parameters', 'a11y', 'element'], 'context');
             }
 

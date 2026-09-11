@@ -230,11 +230,15 @@ export const TestingWidget = ({
   );
   const hasTestProviders = Object.values(registeredTestProviders).length > 0;
 
+  // Surface a crash by expanding once per transition; keying on isCollapsed would re-expand
+  // on every collapse attempt, locking tall error output open over the tree.
+  const wasCrashedRef = useRef(false);
   useEffect(() => {
-    if (isCrashed && isCollapsed) {
+    if (isCrashed && !wasCrashedRef.current) {
       toggleCollapsed(undefined, false);
     }
-  }, [isCrashed, isCollapsed, toggleCollapsed]);
+    wasCrashedRef.current = isCrashed;
+  }, [isCrashed, toggleCollapsed]);
 
   useDynamicFavicon(
     isCrashed

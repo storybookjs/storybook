@@ -92,6 +92,7 @@ export const sandbox: Task = {
       install,
       addGlobalMocks,
       addStories,
+      addStaticDirs,
       extendMain,
       extendPreview,
       init,
@@ -190,6 +191,7 @@ export const sandbox: Task = {
     });
 
     await extendMain(details, options);
+    await addStaticDirs(details, options);
 
     await setImportMap(details.sandboxDir);
 

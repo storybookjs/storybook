@@ -348,4 +348,17 @@ describe('keydown match gating', () => {
     expect(api.handleKeydownEvent({ key: 'S', code: 'KeyS', altKey: true })).toBeUndefined();
     expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBe('fullScreen');
   });
+
+  it('reports no match for an escape binding persisted by an older Storybook, so overlays receive the key', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, escape: ['escape'] },
+    });
+
+    expect(api.handleKeydownEvent({ key: 'Escape' })).toBeUndefined();
+  });
 });

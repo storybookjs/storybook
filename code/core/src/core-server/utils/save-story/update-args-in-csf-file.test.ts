@@ -19,6 +19,8 @@ const FILES = {
   unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
+  kebabCaseArgs: join(__dirname, 'mocks/kebab-case-args.stories.tsx'),
+  kebabCaseArgsCsf4: join(__dirname, 'mocks/kebab-case-args-csf4.stories.tsx'),
 };
 
 describe('success', () => {
@@ -329,6 +331,145 @@ describe('success', () => {
         
         const BlockExport: Story = {
         ..."
+    `);
+  });
+  test('Kebab-case args', async () => {
+    const newArgs = {
+      'data-testid': 'after',
+      'aria-label': 'button',
+      label: 'bar',
+      '123': 'baz',
+      default: 'reserved',
+      '123abc': 'mixed',
+    };
+
+    const before = await format(await readFile(FILES.kebabCaseArgs, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.kebabCaseArgs, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    const nodes = names.map((name) => CSF.getStoryExport(name));
+
+    nodes.forEach((node) => {
+      updateArgsInCsfFile(node, newArgs);
+    });
+
+    const rawAfter = printCsf(parsed).code;
+
+    // reserved-word keys are emitted quoted; prettier strips the optional quotes below
+    expect(rawAfter).toContain('"default":');
+
+    // formatting would throw if the generated keys were emitted unquoted
+    const after = await format(rawAfter, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+          123: string;
+        }> = (props) => <pre>{JSON.stringify(props)}</pre>;
+        
+        
+      - export const NoArgs = {} satisfies Story;
+      - 
+      + export const NoArgs = {
+      +   args: {
+      +     "123": "baz",
+      +     "data-testid": "after",
+      +     "aria-label": "button",
+      +     label: "bar",
+      +     default: "reserved",
+      +     "123abc": "mixed",
+      +   },
+      + } satisfies Story;
+      + 
+        
+        export const QuotedKebabArg = {
+          args: {
+        
+      -     "data-testid": "before",
+      -     label: "foo",
+      - 
+      +     "data-testid": "after",
+      +     label: "bar",
+      +     "123": "baz",
+      +     "aria-label": "button",
+      +     default: "reserved",
+      +     "123abc": "mixed",
+      + 
+          },
+        } satisfies Story;
+        
+        export const NumericKeyArg = {
+          args: {
+        
+      -     123: "before",
+      - 
+      +     123: "baz",
+      +     "data-testid": "after",
+      +     "aria-label": "button",
+      +     label: "bar",
+      +     default: "reserved",
+      +     "123abc": "mixed",
+      + 
+          },
+        } satisfies Story;
+        "
+    `);
+  });
+  test('Kebab-case args (CSF4)', async () => {
+    const newArgs = { 'aria-label': 'button' };
+
+    const before = await format(await readFile(FILES.kebabCaseArgsCsf4, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.kebabCaseArgsCsf4, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    const nodes = names.map((name) => CSF.getStoryExport(name));
+
+    nodes.forEach((node) => {
+      updateArgsInCsfFile(node, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly: the nested 'aria-label' must stay
+    // untouched and the new arg must be added at the top level
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        export const QuotedKebabArg = meta.story({
+          args: {
+            "data-testid": "before",
+        
+      +     "aria-label": "button",
+      + 
+          },
+        });
+        export const NestedCollision = meta.story({
+          args: {
+            nested: {
+              "aria-label": "inner",
+            },
+        
+      + 
+      +     "aria-label": "button",
+      + 
+          },
+        });
+        "
     `);
   });
   test('Data Variances', async () => {

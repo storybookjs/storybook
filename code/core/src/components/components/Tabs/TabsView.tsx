@@ -1,9 +1,8 @@
 import type { ComponentProps, FC, HTMLAttributes, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
-import { Item } from '@react-stately/collections';
-import type { TabListState } from '@react-stately/tabs';
-import { useTabListState } from '@react-stately/tabs';
+import { Item } from 'react-stately/Item';
+import { useTabListState, type TabListState } from 'react-stately/useTabListState';
 import type { Key } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 

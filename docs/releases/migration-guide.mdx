@@ -24,7 +24,18 @@ You'll first need to [upgrade to Storybook 10](./migration-guide-from-older-vers
 The rest of this guide will help you upgrade successfully, either automatically or manually. But first, there are some [breaking changes][full-migration-notes] in Storybook 11. Here are the most impactful changes you should know about before you go further:
 
 - Ecosystem updates
-  - [Yarn PNP support removed](#yarn-pnp-support-removed)
+  - [Node.js 22.12 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2212-or-higher)
+  - [Vite 6.3 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher)
+  - [Vitest 4 or higher for the Vitest addon](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
+  - [Next.js 15 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up)
+  - [Angular 21 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-requires-angular-21-or-higher)
+  - [Create React App preset removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed)
+  - [Yarn PnP support removed](#yarn-pnp-support-removed)
+- Configuration changes
+  - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
+  - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
+  - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+- [Changes for addon authors](../addons/addon-migration-guide.mdx)
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 
@@ -84,9 +95,15 @@ Storybook 11 removes support for Yarn [Plug'n'Play](https://yarnpkg.com/features
 - Storybook no longer bootstraps or scaffolds projects with Yarn PnP enabled. New projects always use the standard `node_modules` layout; if your project relies on Yarn PnP, switch your [`nodeLinker`](https://yarnpkg.com/features/linkers) setting to `node-modules`.
 - The `detectPnp` utility is no longer exported from `storybook/internal/cli`.
 
+For the configuration steps and removed CLI options, see the [Yarn PnP migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#yarn-pnp-support-removed).
+
 ## Optional migrations
 
 In addition to the automigrations and manual migrations above, there are also optional migrations that you should consider. These are features that we’ve deprecated in Storybook 11 (but remain backwards compatible), or best practices that should help you be more productive in the future.
+
+### Next.js Webpack to Next.js Vite
+
+The Webpack-based `@storybook/nextjs` framework is deprecated but remains supported in Storybook 11. Its removal is planned for Storybook 12. Follow the [Next.js framework migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated) to migrate to `@storybook/nextjs-vite`.
 
 ### `test-runner` to `addon-vitest`
 

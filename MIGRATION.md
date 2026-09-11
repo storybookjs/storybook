@@ -5,6 +5,7 @@
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
@@ -620,6 +621,41 @@ Storybook has dropped support for Next.js versions below 15. The minimum support
 If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`
+
+`@storybook/nextjs` no longer uses `node-polyfill-webpack-plugin`, which pulled `crypto-browserify` and the vulnerable `elliptic` package into every project's dependency tree. Storybook now configures a small set of polyfills itself.
+
+Still polyfilled: `buffer`, `events`, `process`, `stream`, `util` and `zlib`, plus the `Buffer` and `process` globals. This covers what Next.js itself needs in the preview bundle.
+
+No longer polyfilled: `assert`, `constants`, `domain`, `http`, `https`, `os`, `path`, `punycode`, `querystring`, `string_decoder`, `sys`, `timers`, `tty`, `url`, `vm` and the `_stream_*` aliases. The `console` global is no longer replaced with `console-browserify`; the browser's native `console` is used instead. `crypto` was already disabled by the webpack builder, so importing it in browser code did not work before either.
+
+If a story or component imports one of the removed modules, `storybook build` fails with webpack's `Module not found` error for that module. Install the browser implementation you need and add it as a fallback in `webpackFinal`:
+
+```ts
+// .storybook/main.ts
+import { createRequire } from 'node:module';
+import type { StorybookConfig } from '@storybook/nextjs';
+
+const require = createRequire(import.meta.url);
+
+const config: StorybookConfig = {
+  framework: '@storybook/nextjs',
+  webpackFinal: async (config) => {
+    config.resolve ??= {};
+    config.resolve.fallback = {
+      ...config.resolve.fallback,
+      path: require.resolve('path-browserify'),
+      url: require.resolve('url/'),
+    };
+    return config;
+  },
+};
+
+export default config;
+```
+
+Before adding a polyfill, check whether the import can be removed instead. Most browser code does not need Node.js built-ins, and `@storybook/nextjs-vite` does not polyfill them at all.
 
 ### Angular: requires Angular 21 or higher
 

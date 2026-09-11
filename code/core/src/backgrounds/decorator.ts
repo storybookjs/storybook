@@ -17,8 +17,6 @@ const defaultGrid: GridConfig = {
 const BG_SELECTOR_BASE = `addon-backgrounds`;
 const GRID_SELECTOR_BASE = 'addon-backgrounds-grid';
 
-const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
-
 export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const { globals = {}, parameters = {}, viewMode, id } = context;
   const {
@@ -53,6 +51,7 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const backgroundTarget = viewMode === 'docs' ? id : null;
 
   useEffect(() => {
+    const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
     const backgroundStyles = `
     ${backgroundSelector} {
       background: ${value} !important;

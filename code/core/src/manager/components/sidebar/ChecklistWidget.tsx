@@ -21,12 +21,12 @@ import { type TransitionMapOptions, useTransitionMap } from 'react-transition-st
 import { useStorybookApi } from 'storybook/manager-api';
 import { keyframes, styled } from 'storybook/theming';
 
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Optional } from '../Optional/Optional.tsx';
 import { Particles } from '../Particles/Particles.tsx';
 import { TextFlip } from '../TextFlip.tsx';
 import type { ChecklistItem } from './useChecklist.ts';
 import { useChecklist } from './useChecklist.ts';
-import { useCopyButton } from '../../../shared/useCopyButton.ts';
 
 const fadeScaleIn = keyframes`
   from {
@@ -255,7 +255,7 @@ export const ChecklistWidget = () => {
 
   return (
     <CollapsibleWithMargin collapsed={!hasItems || !loaded}>
-      <HoverCard id="storybook-checklist-widget" outlineAnimation="rainbow">
+      <HoverCard id="storybook-checklist-widget" outlineAnimation={animated ? 'rainbow' : 'none'}>
         <Collapsible
           storageKey="checklist-widget"
           initialCollapsed={!hasItems}

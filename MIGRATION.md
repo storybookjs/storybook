@@ -1,14 +1,19 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
+  - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
+  - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
+  - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -542,6 +547,24 @@
 
 ## From version 10.x to 11.0.0
 
+### Node.js 22.12 or higher
+
+Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
+
+During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
+
+### Yarn PnP support removed
+
+Storybook 11 removes support for Yarn Plug'n'Play, which was deprecated in Storybook 10. If you use Yarn PnP, configure Yarn to install dependencies in `node_modules` before upgrading Storybook.
+
+Set the following in your project's `.yarnrc.yml`, then run `yarn install`:
+
+```yaml
+nodeLinker: node-modules
+```
+
+Remove `--use-pnp` from any `storybook init` or `create storybook` commands. The `detectPnp` utility is also no longer exported from `storybook/internal/cli`; remove imports of that utility from custom tooling.
+
 ### Top-level `setConfig` layout and UI options removed
 
 The deprecated top-level layout and UI options passed to `addons.setConfig` are no longer applied.
@@ -576,6 +599,8 @@ option exists in both places, keep the nested value because it was authoritative
 ### Vitest Addon: requires Vitest 4.0 or higher
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
+
+If your custom tooling imports `canUpdateVitestWorkspaceFile` from `storybook/internal/babel`, remove that import. The workspace-file helper has been removed; migrate the configuration to `test.projects`.
 
 ### Vite: `publicDir` is handled by Storybook's `staticDirs`
 
@@ -651,6 +676,18 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 ### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
+
+### Internal WebSocket heartbeat controls removed
+
+If your addon or custom tooling imports `WebsocketTransport` from `storybook/internal/channels`, remove the `enableHeartbeat` constructor option and calls to `pauseHeartbeat()` and `resumeHeartbeat()`. The `HEARTBEAT_MAX_LATENCY` export has also been removed.
+
+Storybook no longer closes the client connection because its event loop failed to process a heartbeat in time. The transport still responds to server pings, so these client timeout controls have no replacement. Standard addon channel usage requires no changes.
+
+### Internal toolset telemetry now returns with the outcome
+
+If you implement toolsets using Storybook's internal open-service APIs, return usage data as `telemetry: { payload: { ... } }` alongside `ok`, `data`, and `markdown`. The `ToolsetCtx.telemetry` callback, `ToolsetTelemetry` type, and `reportToolsetTelemetry` helper have been removed. The adapter derives the event name from the registered toolset and method.
+
+Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`. The `toolsCommandDimensions` and `wrapMethodTelemetry` helpers are no longer exported from `storybook/internal/tools`. The CLI and MCP adapters handle reporting for their own calls.
 
 ## From version 10.5.x to 10.6.0
 

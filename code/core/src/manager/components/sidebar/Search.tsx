@@ -28,6 +28,8 @@ import type {
 } from './types.ts';
 import { isExpandType, isSearchResult } from './types.ts';
 
+import { resolveHighlightRanges } from './SearchResults.utils.ts';
+
 const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
@@ -250,9 +252,14 @@ export const Search = React.memo<SearchProps>(function Search({
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
 
-      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
-      });
+      const allMatches = (fuse.search(input) as SearchResult[])
+        .map((result) => ({
+          ...result,
+          matches: resolveHighlightRanges(result.matches ?? [], input),
+        }))
+        .filter(({ item }) => {
+          return item.type === 'component' || item.type === 'docs' || item.type === 'story';
+        });
 
       // When the index is being created, we have a legacy piece of logic that
       // wraps every docs page inside a component entry. This originates from

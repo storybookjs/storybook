@@ -168,7 +168,7 @@ interface AnalyzerFields {
   jsdoctags?: JsDocTag[];
   /** The `@Component`/`@Directive` decorator's `selector`, when statically resolvable. */
   selector?: string;
-  /** The decorator's `standalone` value, when statically resolvable to a boolean. */
+  /** The resolved value, Angular's default when omitted, or `undefined` when unreadable. */
   standalone?: boolean;
 }
 

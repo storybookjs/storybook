@@ -72,6 +72,37 @@ describe('buildHostComponentSnippet', () => {
     );
   });
 
+  it('keeps `imports` empty and warns about uncertainty when standalone status is unknown', () => {
+    const { snippet, warning } = build({ standalone: undefined });
+
+    expect(snippet).toContain('imports: [],');
+    expect(snippet).not.toContain('./button.component.ts');
+    expect(warning).toBe(
+      "ButtonComponent's `standalone` status could not be determined, so it was not added to " +
+        "the host component's `imports`. Add the NgModule that declares and exports " +
+        'ButtonComponent, or, if it is standalone, import ButtonComponent and add it to ' +
+        '`imports` directly.'
+    );
+  });
+
+  it('lists readable NgModules and still warns about uncertainty when standalone status is unknown', () => {
+    const { snippet, warning } = build({
+      standalone: undefined,
+      ngModules: {
+        names: ['ButtonModule'],
+        importStatements: ["import { ButtonModule } from './button.module.ts';"],
+      },
+    });
+
+    expect(snippet).toContain('imports: [ButtonModule],');
+    expect(warning).toBe(
+      "ButtonComponent's `standalone` status could not be determined, so the NgModules readable " +
+        'from `moduleMetadata` were listed instead of importing ButtonComponent directly. ' +
+        'Confirm one of them declares and exports ButtonComponent; if ButtonComponent is ' +
+        'standalone instead, import ButtonComponent and add it to `imports` directly.'
+    );
+  });
+
   it('references a non-standalone component as a value under the outlet, ignoring modules', () => {
     const { snippet, warning } = build({
       standalone: false,
@@ -92,6 +123,16 @@ describe('buildHostComponentSnippet', () => {
   it('reaches an output whose name is not an identifier the way the template does', () => {
     expect(build({ outputs: ['on-change'] }).snippet).toContain(
       "  ['on-change'](event: unknown) {}"
+    );
+  });
+
+  it('adjusts the uncertainty warning when the component is declared in the story file and needs no import', () => {
+    const { warning } = build({ standalone: undefined, componentImport: undefined });
+
+    expect(warning).toBe(
+      "ButtonComponent's `standalone` status could not be determined, so it was not added to " +
+        "the host component's `imports`. Add the NgModule that declares and exports " +
+        'ButtonComponent, or, if it is standalone, add ButtonComponent to `imports` directly.'
     );
   });
 

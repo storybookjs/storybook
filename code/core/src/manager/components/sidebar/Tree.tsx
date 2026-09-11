@@ -188,11 +188,14 @@ const PinnedLabel = styled.span({
   whiteSpace: 'nowrap',
 });
 
-// Without CSS anchor positioning (Firefox), the note cannot follow the focused row and
-// `position-visibility` cannot hide it either — it would sit as a stray pill over the
-// sidebar, so it only renders where anchors work.
+// Without CSS anchor positioning the note cannot follow the focused row, and without
+// `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
+// (mouse focus is not :focus-visible) — either way it would sit as a stray pill over the
+// sidebar, so it only renders where both work.
 const supportsAnchorPositioning =
-  typeof CSS !== 'undefined' && !!CSS.supports?.('anchor-name: --sb-probe');
+  typeof CSS !== 'undefined' &&
+  !!CSS.supports?.('anchor-name: --sb-probe') &&
+  !!CSS.supports?.('position-visibility: anchors-valid');
 
 const FocusTooltipNote = styled(TooltipNote)({
   marginBlockStart: 8,

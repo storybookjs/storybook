@@ -1,5 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
@@ -75,6 +75,19 @@ const TooltipProvider = ({
     },
     [onVisibleChange]
   );
+
+  // Dismiss on any press: react-aria only closes on trigger hover-out/press, and neither
+  // fires when a click elsewhere hides or replaces the trigger under the pointer — the
+  // tooltip would linger, repositioned against a display:none trigger.
+  const isTooltipShown = visible ?? isOpen;
+  useEffect(() => {
+    if (!isTooltipShown) {
+      return;
+    }
+    const onPointerDown = () => onOpenChange(false);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [isTooltipShown, onOpenChange]);
 
   return (
     <TooltipTrigger

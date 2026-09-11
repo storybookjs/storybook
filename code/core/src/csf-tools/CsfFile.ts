@@ -380,8 +380,8 @@ export class CsfFile {
   }
 
   /**
-   * Discover editors for the meta and stories. Include CSF2 annotation assignments explicitly
-   * with `annotations`; unsupported targets are skipped and reported in `mutationDiagnostics`.
+   * Discover editors for the meta and stories, including CSF2 parameter assignments. Unsupported
+   * targets are skipped and reported in `mutationDiagnostics`.
    *
    * @example
    * ```ts

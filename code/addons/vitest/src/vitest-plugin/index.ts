@@ -45,6 +45,7 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_FEATURES_PROVIDE_KEY,
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
@@ -400,6 +401,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           provide: {
+            [STORYBOOK_TEST_FEATURES_PROVIDE_KEY]: features,
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
             [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
               !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,

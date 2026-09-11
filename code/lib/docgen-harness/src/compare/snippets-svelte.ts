@@ -52,9 +52,8 @@ function findOpenTagEnd(snippet: string, start: number): number {
   let quote: '"' | "'" | '`' | undefined;
   for (let index = start; index < snippet.length; index += 1) {
     const char = snippet[index];
-    const previous = snippet[index - 1];
     if (quote !== undefined) {
-      if (char === quote && previous !== '\\') {
+      if (char === quote && !isEscapedQuote(snippet, index)) {
         quote = undefined;
       }
       continue;
@@ -141,11 +140,19 @@ function skipAttributeValue(text: string, cursor: number): number {
 
 function findQuotedEnd(text: string, start: number, quote: string): number {
   for (let cursor = start + 1; cursor < text.length; cursor += 1) {
-    if (text[cursor] === quote && text[cursor - 1] !== '\\') {
+    if (text[cursor] === quote && !isEscapedQuote(text, cursor)) {
       return cursor;
     }
   }
   return -1;
+}
+
+function isEscapedQuote(text: string, index: number): boolean {
+  let backslashes = 0;
+  for (let cursor = index - 1; cursor >= 0 && text[cursor] === '\\'; cursor -= 1) {
+    backslashes += 1;
+  }
+  return backslashes % 2 === 1;
 }
 
 function findBalancedEnd(text: string, start: number, open: string, close: string): number {
@@ -153,9 +160,8 @@ function findBalancedEnd(text: string, start: number, open: string, close: strin
   let quote: '"' | "'" | '`' | undefined;
   for (let cursor = start; cursor < text.length; cursor += 1) {
     const char = text[cursor];
-    const previous = text[cursor - 1];
     if (quote !== undefined) {
-      if (char === quote && previous !== '\\') {
+      if (char === quote && !isEscapedQuote(text, cursor)) {
         quote = undefined;
       }
       continue;

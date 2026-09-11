@@ -52,9 +52,9 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 
   gapTest('prop JSDoc tags are recorded in table.jsDocTags', () => {
-    expect(baseline('jsdocArgTypes')).toContain('"jsDocTags"');
-    expect(baseline('jsdocArgTypes')).toContain('deprecated');
-    expect(baseline('jsdocArgTypes')).toContain('default');
+    const snapshot = baseline('jsdocArgTypes');
+    expect(snapshot).toMatch(/"jsDocTags": \{[\s\S]*?"deprecated"/);
+    expect(snapshot).toMatch(/"jsDocTags": \{[\s\S]*?"default"/);
   });
 });
 

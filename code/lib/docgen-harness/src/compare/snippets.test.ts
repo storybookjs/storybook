@@ -446,6 +446,16 @@ describe('compareSnippet (svelte)', () => {
       expected: [],
     },
     {
+      baseline: String.raw`<Panel value="a\\" count={3} />`,
+      candidate: String.raw`<Panel count={3} value="a\\" />`,
+      expected: [],
+    },
+    {
+      baseline: String.raw`<Panel value="a\"b" count={3} />`,
+      candidate: String.raw`<Panel value="a\"b" />`,
+      expected: [expect.objectContaining({ arg: 'count', kind: 'lost-representation' })],
+    },
+    {
       baseline: '<Panel label="Save"><Child count={3} /></Panel>',
       candidate: '<Panel label="Save"></Panel>',
       expected: [],

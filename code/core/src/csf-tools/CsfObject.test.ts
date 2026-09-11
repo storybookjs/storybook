@@ -42,6 +42,22 @@ describe('CsfObject', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('keeps local bindings readable after replacing a story expression', () => {
+    const csf = parse(`
+      const params = { a11y: { element: '#app' } };
+      export default {};
+      export const Basic = { parameters: params };
+    `);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['parameters'], story.get(['parameters']))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(story.getValue(['parameters', 'a11y', 'element'])).toBe('#app');
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('returns fresh nested values on every read', () => {
     const csf = parse('export default { parameters: { values: [{ enabled: true }] } };');
     const [meta] = csf.objects({ stories: false });

@@ -883,6 +883,7 @@ class CsfObjectEditor implements CsfObject {
   private success(): CsfMutationResult {
     this.#changed = true;
     this.markChanged();
+    this.root.scope.getProgramParent().crawl();
     return { ok: true, changed: true };
   }
 }

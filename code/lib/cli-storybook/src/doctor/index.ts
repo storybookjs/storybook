@@ -176,6 +176,7 @@ export async function runMultiProjectDoctor(
     packageManager: project.packageManager,
     storybookVersion: project.storybookVersion,
     mainConfig: project.mainConfig,
+    configurationError: project.configurationError,
   }));
 
   // Always return the project-based results structure
@@ -189,12 +190,11 @@ export const doctor = async ({
 }: DoctorOptions) => {
   logger.step('Checking the health of your Storybook..');
 
-  const diagnosticResults: DiagnosticResult[] = [];
-
   let packageManager!: JsPackageManager;
   let configDir!: string;
   let versionInstalled: string | undefined;
   let mainConfig!: StorybookConfigRaw;
+  let configurationError: { title: string; message: string } | undefined;
 
   try {
     ({ packageManager, configDir, versionInstalled, mainConfig } = await getStorybookData({
@@ -215,12 +215,7 @@ export const doctor = async ({
       message = `❌ ${err.message}`;
     }
 
-    diagnosticResults.push({
-      type: DiagType.CONFIGURATION_ERROR,
-      title,
-      message,
-      projects: [{ configDir }],
-    });
+    configurationError = { title, message };
   }
 
   const doctorResults = await collectDoctorResultsByProject([
@@ -229,6 +224,7 @@ export const doctor = async ({
       packageManager,
       storybookVersion: versionInstalled,
       mainConfig,
+      configurationError,
     },
   ]);
 
@@ -245,22 +241,26 @@ export async function getDoctorDiagnostics({
   packageManager,
   storybookVersion,
   mainConfig,
+  configurationError,
 }: {
   configDir: string;
   packageManager: JsPackageManager;
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
+  configurationError?: { title: string; message: string };
 }): Promise<DoctorCheckResult[]> {
   const results: DoctorCheckResult[] = [];
 
   if (!storybookVersion) {
     results.push({
       type: DiagType.CONFIGURATION_ERROR,
-      title: 'Version Detection Failed',
-      message: dedent`
-        ❌ Unable to determine Storybook version so the command will not proceed.
-        🤔 Are you running storybook doctor from your project directory? Please specify your Storybook config directory with the --config-dir flag.
-      `,
+      title: configurationError?.title ?? 'Version Detection Failed',
+      message:
+        configurationError?.message ??
+        dedent`
+          ❌ Unable to determine Storybook version so the command will not proceed.
+          🤔 Are you running storybook doctor from your project directory? Please specify your Storybook config directory with the --config-dir flag.
+        `,
       project: { configDir },
     });
     return results;

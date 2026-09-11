@@ -3,6 +3,9 @@ export const globalsNameReferenceMap = {
   react: '__REACT__',
   'react-dom': '__REACT_DOM__',
   'react-dom/client': '__REACT_DOM_CLIENT__',
+  // FocusScope keeps a module-level scope tree, so all manager code must share the copy bundled
+  // with the components' Modal — scopes from a second copy cannot nest inside the Modal's scope.
+  'react-aria/FocusScope': '__REACT_ARIA_FOCUS_SCOPE__',
   '@storybook/icons': '__STORYBOOK_ICONS__',
 
   'storybook/manager-api': '__STORYBOOK_API__',

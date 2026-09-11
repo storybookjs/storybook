@@ -81,6 +81,13 @@ export class ServerChannelTransport {
     });
 
     this.socket.on('connection', (wss) => {
+      // Node rethrows an 'error' event that nothing is listening for, which would take
+      // the dev server down with the offending client.
+      wss.on('error', (error) => {
+        logger.warn(`WebSocket client error, closing the connection: ${error}`);
+        wss.terminate();
+      });
+
       wss.on('message', (raw) => {
         const data = raw.toString();
         const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;

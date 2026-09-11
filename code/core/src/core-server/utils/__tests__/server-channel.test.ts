@@ -129,6 +129,23 @@ describe('ServerChannelTransport', () => {
     expect(handler).toHaveBeenCalledWith('hello');
   });
 
+  // An 'error' event with no listener is rethrown by Node, which took the dev server
+  // down with whichever client sent the bad frame.
+  it('closes a client that errors instead of crashing', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = Object.assign(new EventEmitter(), { terminate: vi.fn() });
+    const transport = new ServerChannelTransport(server, options);
+
+    // @ts-expect-error (an internal API)
+    transport.socket.emit('connection', socket);
+
+    const error = Object.assign(new RangeError('Max payload size exceeded'), {
+      code: 'WS_ERR_UNSUPPORTED_MESSAGE_LENGTH',
+    });
+    expect(() => socket.emit('error', error)).not.toThrow();
+    expect(socket.terminate).toHaveBeenCalled();
+  });
+
   it('parses object JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();

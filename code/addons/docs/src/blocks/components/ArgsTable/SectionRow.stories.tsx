@@ -9,12 +9,14 @@ import { SectionRow } from './SectionRow';
 export default {
   component: SectionRow,
   decorators: [
-    (getStory: any) => (
-      <ResetWrapper>
-        <TableWrapper>
-          <tbody>{getStory()}</tbody>
-        </TableWrapper>
-      </ResetWrapper>
+    (getStory: any, context: any) => (
+      <div dir={context.parameters?.direction ?? 'ltr'}>
+        <ResetWrapper>
+          <TableWrapper>
+            <tbody>{getStory()}</tbody>
+          </TableWrapper>
+        </ResetWrapper>
+      </div>
     ),
   ],
 };
@@ -47,4 +49,14 @@ export const Nested = {
       </SectionRow>
     </SectionRow>
   ),
+};
+
+export const SectionRtl = {
+  args: { ...Section.args },
+  parameters: { direction: 'rtl' },
+};
+
+export const CollapsedRtl = {
+  args: { ...Collapsed.args },
+  parameters: { direction: 'rtl' },
 };

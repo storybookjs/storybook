@@ -27,3 +27,14 @@ export const Select: Story = {
     </Component>
   ),
 };
+
+export const Rtl: Story = {
+  ...Select,
+  decorators: [
+    (Story) => (
+      <div dir="rtl">
+        <Story />
+      </div>
+    ),
+  ],
+};

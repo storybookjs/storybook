@@ -421,8 +421,10 @@ export class Preview<TRenderer extends Renderer> {
     await Promise.all(this.storyRenders.map((r) => r.rerender()));
   }
 
-  async onForceRemount({ storyId }: { storyId: StoryId }) {
-    await Promise.all(this.storyRenders.filter((r) => r.id === storyId).map((r) => r.remount()));
+  async onForceRemount({ storyId, renderContext }: { storyId: StoryId; renderContext?: unknown }) {
+    await Promise.all(
+      this.storyRenders.filter((r) => r.id === storyId).map((r) => r.remount(renderContext))
+    );
   }
 
   async onStoryHotUpdated() {

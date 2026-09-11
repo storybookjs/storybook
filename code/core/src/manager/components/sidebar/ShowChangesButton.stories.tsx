@@ -289,7 +289,7 @@ export const HiddenWhenZeroCounts: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.queryByRole('button')).toBeNull();
+    await expect(canvas.queryByRole('switch')).toBeNull();
   },
 };
 
@@ -311,7 +311,7 @@ export const HiddenWhenFeatureOff: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(canvas.queryByRole('button')).toBeNull();
+    await expect(canvas.queryByRole('switch')).toBeNull();
   },
 };
 

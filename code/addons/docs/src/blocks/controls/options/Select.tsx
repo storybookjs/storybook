@@ -89,7 +89,7 @@ const SelectWrapper = styled.span(({ theme }) => ({
     pointerEvents: 'none',
     height: '12px',
     marginTop: '-6px',
-    right: '12px',
+    insetInlineEnd: '12px',
     top: '50%',
     fill: theme.textMutedColor,
 

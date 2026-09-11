@@ -71,7 +71,6 @@
     "@storybook/nextjs": "workspace:*",
     "@storybook/preact": "workspace:*",
     "@storybook/preact-vite": "workspace:*",
-    "@storybook/preset-create-react-app": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/preset-server-webpack": "workspace:*",
     "@storybook/react": "workspace:*",

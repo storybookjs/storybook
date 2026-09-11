@@ -10,20 +10,22 @@ export { seedQueryState } from './query-state.ts';
 
 export {
   defineToolset,
-  reportToolsetTelemetry,
+  invokeToolsetMethod,
   resolveToolsetDescription,
 } from './toolset-definition.ts';
 export type {
   AnyToolsetDefinition,
   AnyToolsetOutcome,
+  InvokedToolsetOutcome,
   ToolsetCtx,
   ToolsetDefinition,
   ToolsetGetService,
   ToolsetMethod,
   ToolsetMethodDescription,
   ToolsetObjectOutputSchema,
+  ToolsetMethodReport,
   ToolsetOutcome,
-  ToolsetTelemetry,
+  ToolsetTelemetryReport,
   ToolsetTransport,
 } from './toolset-definition.ts';
 export { getToolName, parseToolsetMethodId, toMcpToolName } from './toolset-names.ts';

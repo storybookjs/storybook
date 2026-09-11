@@ -466,7 +466,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     }
   }
 
-  async teardown() {
+  async teardown({ keepRenderedDom = false }: { keepRenderedDom?: boolean } = {}) {
     this.torndown = true;
     this.cancelRender();
 
@@ -480,7 +480,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // Note that there's a max of 5 nested timeouts before they're no longer "instant".
     for (let i = 0; i < 3; i += 1) {
       if (!this.isPending()) {
-        await this.teardownRender();
+        // When the same story is about to be re-rendered (e.g. after an HMR update), keep
+        // the current DOM mounted until the new render commits: unmounting it here collapses
+        // the document, which makes the browser clamp the scroll position to 0 (#22057).
+        if (!keepRenderedDom) {
+          await this.teardownRender();
+        }
         return;
       }
 

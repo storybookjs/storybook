@@ -148,12 +148,20 @@ export async function vitestTransform({
 
   const metaExportName = parsed._metaVariableName!;
 
-  const metaNode = parsed._metaNode as t.ObjectExpression;
+  let metaNode = parsed._metaNode;
 
-  if (!metaNode || parsed._metaNodeIsSynthetic || !parsed._meta) {
+  if (!metaNode || parsed._metaNodeSource === 'unresolved' || !parsed._meta) {
     throw new Error(
       'The Storybook vitest plugin could not detect the meta (default export) object in the story file. \n\nPlease make sure you have a default export with the meta object. If you are using a different export format that is not supported, please file an issue with details about your use case.'
     );
+  }
+
+  if (parsed._metaNodeSource === 'resolved' && parsed._metaFactoryCall) {
+    const [argument] = parsed._metaFactoryCall.arguments;
+    if (t.isExpression(argument)) {
+      metaNode = t.objectExpression([t.spreadElement(argument)]);
+      parsed._metaFactoryCall.arguments[0] = metaNode;
+    }
   }
 
   const metaTitleProperty = metaNode.properties.find(

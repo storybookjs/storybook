@@ -410,30 +410,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
   }, []);
   const closeContextMenu = useCallback(() => setContextMenuState(null), []);
 
-  // Listen for the global context-menu shortcut and open the menu for the right story.
-  // Prefer the currently focused tree item; fall back to the selected story when focus is outside
-  // the tree. RAC sets data-focused="true" on the focused row, and we track the current story with a ref.
-  useEffect(() => {
-    if (!api) {
-      return;
-    }
-    const handler = () => {
-      // The event is broadcast to every tree (one per composed ref). Fall back to this
-      // tree's selected story only when no tree row has DOM focus anywhere, or the tree
-      // owning the focused row and the tree owning the selection would both open a menu.
-      const focusInAnyTree = !!document.activeElement?.closest('[data-item-id]');
-      const itemId =
-        focusedItemIdRef.current ?? (focusInAnyTree ? null : selectedStoryIdRef.current);
-      if (itemId) {
-        openContextMenu(itemId, 'keyboard');
-      }
-    };
-    api.on(SIDEBAR_OPEN_CONTEXT_MENU, handler);
-    return () => {
-      api.off(SIDEBAR_OPEN_CONTEXT_MENU, handler);
-    };
-  }, [api, openContextMenu]);
-
   // Preload a branch row's first child story on hover (restores the pre-rewrite behavior) so
   // the preview has usually started loading by the time the user clicks. One delegated listener
   // instead of a handler per row.
@@ -677,6 +653,61 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
     return true;
   }, []);
+
+  // Listen for the global context-menu shortcut and open the menu for the right story.
+  // Prefer the currently focused tree item; fall back to the selected story when focus is outside
+  // the tree. RAC sets data-focused="true" on the focused row, and we track the current story with a ref.
+  useEffect(() => {
+    if (!api) {
+      return;
+    }
+    let rafId: number | null = null;
+    const handler = () => {
+      // The event is broadcast to every tree (one per composed ref). Fall back to this
+      // tree's selected story only when no tree row has DOM focus anywhere, or the tree
+      // owning the focused row and the tree owning the selection would both open a menu.
+      const focusInAnyTree = !!document.activeElement?.closest('[data-item-id]');
+      const itemId =
+        focusedItemIdRef.current ?? (focusInAnyTree ? null : selectedStoryIdRef.current);
+      if (!itemId) {
+        return;
+      }
+      // The popover anchors to the row's ⋯ button and is positioned once, on open, so an
+      // out-of-view target is first scrolled into view — virtualized rows mount only near
+      // the viewport — and the menu opens once the row has had a frame to mount.
+      const scroller = containerRef.current;
+      const row = scroller?.querySelector(`[data-item-id="${CSS.escape(itemId)}"]`);
+      const rowRect = row?.getBoundingClientRect();
+      const scrollerRect = scroller?.getBoundingClientRect();
+      if (
+        rowRect &&
+        scrollerRect &&
+        rowRect.top >= scrollerRect.top &&
+        rowRect.bottom <= scrollerRect.bottom
+      ) {
+        openContextMenu(itemId, 'keyboard');
+        return;
+      }
+      if (row) {
+        row.scrollIntoView({ block: 'center' });
+      } else {
+        scrollRowIntoView(itemId, 'center');
+      }
+      rafId = requestAnimationFrame(() => {
+        rafId = requestAnimationFrame(() => {
+          rafId = null;
+          openContextMenu(itemId, 'keyboard');
+        });
+      });
+    };
+    api.on(SIDEBAR_OPEN_CONTEXT_MENU, handler);
+    return () => {
+      api.off(SIDEBAR_OPEN_CONTEXT_MENU, handler);
+      if (rafId !== null) {
+        cancelAnimationFrame(rafId);
+      }
+    };
+  }, [api, openContextMenu, scrollRowIntoView]);
 
   // Scroll the selected story into view when it changes. Newly selected rows may not be in
   // the DOM yet (their ancestors expand in the same commit but only render on the next one),

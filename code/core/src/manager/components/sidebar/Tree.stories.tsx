@@ -692,6 +692,34 @@ export const StickyAncestors: Story = {
         canvasElement.querySelector(`[data-item-id="${firstRowId}"]`)?.getAttribute('aria-expanded')
       ).toBe('false');
     });
+
+    // Keyboard entry falls back to the selected story when no row is focused, even though
+    // its row sits far outside the viewport. (The scroll-into-view half of this behavior
+    // is not observable here: under NODE_ENV=test react-aria sizes the scroll view as
+    // Infinity and clamps its internal scroll offset to 0 on every render.)
+    (canvasElement.ownerDocument.activeElement as HTMLElement | null)?.blur?.();
+    const firstRowAfterCollapse = canvasElement.querySelector<HTMLElement>(
+      `[data-item-id="${firstRowId}"]`
+    )!;
+    await waitFor(() => {
+      expect(getComputedStyle(firstRowAfterCollapse).pointerEvents).not.toBe('none');
+    });
+    await userEvent.unhover(firstRowAfterCollapse);
+    await waitFor(() => {
+      expect(
+        canvasElement.querySelector('[data-focused="true"]')?.getAttribute('data-item-id') ?? null
+      ).toBeNull();
+    });
+    // The focus ref trails the DOM by one frame (the MutationObserver batches with rAF).
+    await frame();
+    const openMenuHandler = managerContext.api.on.mock.calls
+      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
+      .at(-1)?.[1];
+    openMenuHandler();
+    const popover = await screen.findByRole('dialog');
+    expect(popover).toBeVisible();
+    expect(within(popover).getByText('Go to story')).toBeVisible();
+    await userEvent.keyboard('{Escape}');
   },
 };
 

@@ -1,9 +1,18 @@
 import { join } from 'node:path';
+import process, * as nodeProcess from 'node:process';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { executeNodeCommand } from 'storybook/internal/common';
+import * as coreServer from 'storybook/internal/core-server';
+import {
+  experimental_MockUniversalStore as MockUniversalStore,
+  experimental_UniversalStore as UniversalStore,
+  internal_universalStatusStore,
+  internal_universalTestProviderStore,
+} from 'storybook/internal/core-server';
+import { UniversalStoreFollowerTimeoutError } from 'storybook/internal/manager-errors';
 import type { Options } from 'storybook/internal/types';
 
 import {
@@ -16,6 +25,7 @@ import { log } from '../logger.ts';
 import type { StoreEvent } from '../types.ts';
 import type { StoreState } from '../types.ts';
 import { killTestRunner, runTestRunner } from './boot-test-runner.ts';
+import { TestManager } from './test-manager.ts';
 
 let stdout: (chunk: Buffer | string) => void;
 let stderr: (chunk: Buffer | string) => void;
@@ -68,18 +78,9 @@ vi.mock('../../../../core/src/shared/utils/module', () => ({
     .mockImplementation(() => 'file://' + join(__dirname, '..', '..', 'dist', 'node', 'vitest.js')),
 }));
 
-vi.mock('storybook/internal/core-server', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/core-server')>();
-  return {
-    ...actual,
-    internal_universalStatusStore: {
-      subscribe: vi.fn(() => () => {}),
-    },
-    internal_universalTestProviderStore: {
-      subscribe: vi.fn(() => () => {}),
-    },
-  };
-});
+vi.mock('node:process', { spy: true });
+vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('./test-manager.ts', { spy: true });
 
 beforeEach(() => {
   vi.useFakeTimers();
@@ -94,20 +95,45 @@ const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransp
 const mockChannel = new Channel({ transport });
 
 describe('bootTestRunner', () => {
-  let mockStore: InstanceType<
-    typeof import('storybook/internal/core-server').experimental_MockUniversalStore<
-      StoreState,
-      StoreEvent
-    >
-  >;
+  let mockStore: MockUniversalStore<StoreState, StoreEvent>;
   const mockOptions = {
     configDir: '.storybook',
   } as Options;
 
-  beforeEach(async () => {
-    const { experimental_MockUniversalStore: MockUniversalStore } =
-      await import('storybook/internal/core-server');
+  beforeEach(() => {
     mockStore = new MockUniversalStore<StoreState, StoreEvent>(storeOptions);
+    vi.mocked(coreServer).internal_universalStatusStore = new MockUniversalStore(
+      { id: 'storybook/status', initialState: {} },
+      vi
+    );
+    vi.mocked(coreServer).internal_universalTestProviderStore = new MockUniversalStore(
+      { id: 'storybook/test-provider', initialState: {} },
+      vi
+    );
+    vi.mocked(internal_universalStatusStore).untilReady = vi.fn();
+    vi.mocked(internal_universalTestProviderStore).untilReady = vi.fn();
+    vi.mocked(internal_universalStatusStore.subscribe).mockImplementation(() => () => {});
+    vi.mocked(internal_universalTestProviderStore.subscribe).mockImplementation(() => () => {});
+    vi.mocked(internal_universalStatusStore.untilReady).mockResolvedValue([undefined, undefined]);
+    vi.mocked(internal_universalTestProviderStore.untilReady).mockResolvedValue([
+      undefined,
+      undefined,
+    ]);
+    Object.assign(vi.mocked(nodeProcess), {
+      default: {
+        ...process,
+        on: vi.fn<typeof process.on>(),
+        exit: vi.fn<typeof process.exit>(),
+        send: vi.fn<NonNullable<typeof process.send>>(),
+      },
+    });
+    vi.mocked(process.on).mockReturnValue(process);
+    vi.mocked(process.exit).mockImplementation(() => undefined as never);
+    vi.mocked(process.send!).mockImplementation((event) => {
+      message(event as Parameters<typeof message>[0]);
+      return true;
+    });
+    vi.mocked(TestManager).mockImplementation(function () {});
     vi.mocked(executeNodeCommand).mockClear();
     vi.mocked(log).mockClear();
     child.send.mockClear();
@@ -158,6 +184,8 @@ describe('bootTestRunner', () => {
   });
 
   it('should abort if vitest doesn’t become ready in time', async () => {
+    const onFatalError = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', onFatalError);
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
@@ -165,6 +193,95 @@ describe('bootTestRunner', () => {
     });
     vi.advanceTimersByTime(30001);
     await expect(promise).rejects.toThrow();
+    expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+      {
+        type: 'FATAL_ERROR',
+        payload: {
+          message: 'Failed to start test runner process',
+          error: expect.objectContaining({
+            message:
+              'Aborting test runner process because it took longer than 30 seconds to start.',
+          }),
+        },
+      },
+      expect.anything()
+    );
+  });
+
+  describe.each(['storybook/status', 'storybook/test-provider'])(
+    'when %s fails to become ready',
+    (storeId) => {
+      let error: UniversalStoreFollowerTimeoutError;
+
+      beforeEach(() => {
+        vi.resetModules();
+        vi.mocked((UniversalStore as any).__prepare).mockImplementation(() => {});
+        vi.mocked(UniversalStore.create<StoreState, StoreEvent>).mockReturnValue(mockStore);
+        error = new UniversalStoreFollowerTimeoutError(storeId);
+        const followerStore =
+          storeId === 'storybook/status'
+            ? internal_universalStatusStore
+            : internal_universalTestProviderStore;
+        vi.mocked(followerStore.untilReady).mockRejectedValue(error);
+      });
+
+      afterEach(() => {
+        vi.mocked((UniversalStore as any).__prepare).mockReset();
+        vi.mocked(UniversalStore.create).mockReset();
+      });
+
+      it('should report a follower readiness rejection once and preserve the original error', async () => {
+        const originalError = {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+          cause: undefined,
+        };
+        const onFatalError = vi.fn();
+        mockStore.subscribe('FATAL_ERROR', onFatalError);
+        const promise = runTestRunner({
+          channel: mockChannel,
+          store: mockStore,
+          options: mockOptions,
+        });
+        const rejection = expect(promise).rejects.toEqual(originalError);
+
+        await import('./vitest.ts');
+        await rejection;
+        await vi.advanceTimersByTimeAsync(0);
+        expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+          {
+            type: 'FATAL_ERROR',
+            payload: {
+              message: 'Failed to synchronize stores in the test runner process',
+              error: originalError,
+            },
+          },
+          expect.anything()
+        );
+        expect(process.exit).toHaveBeenCalledExactlyOnceWith(1);
+        expect(TestManager).not.toHaveBeenCalled();
+      });
+    }
+  );
+
+  it('should report an uncaught error after the child is ready', async () => {
+    const onFatalError = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', onFatalError);
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    message({ type: 'ready' });
+    await promise;
+
+    const payload = {
+      message: 'Uncaught exception in the test runner process',
+      error: { name: 'Error', message: 'Test runner failed', stack: 'Test runner stack' },
+    };
+    message({ type: 'uncaught-error', payload });
+
+    expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+      { type: 'FATAL_ERROR', payload },
+      expect.anything()
+    );
   });
 
   it('should forward universal store events', async () => {

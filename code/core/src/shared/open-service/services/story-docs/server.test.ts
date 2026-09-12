@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
@@ -61,6 +61,93 @@ describe('story-docs open service', () => {
     await expect(service.commands.extractStoryDocs({ id: 'button' })).resolves.toEqual(payload);
     expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
     expect(provider).toHaveBeenCalledWith({ entry });
+  });
+
+  describe('shared component ids across CSF files', () => {
+    let provider: Mock<StoryDocsProvider>;
+
+    beforeEach(() => {
+      provider = vi.fn();
+    });
+
+    function makeSiblingEntries() {
+      // Same componentId ('vega'), different files. Insertion order makes the
+      // second file the selected winner, mirroring selectComponentEntriesByComponentId.
+      const fileA = {
+        ...makeStoryEntry('vega--a', 'Vega'),
+        importPath: './a.stories.tsx',
+      };
+      const fileB = {
+        ...makeStoryEntry('vega--b', 'Vega'),
+        importPath: './b.stories.tsx',
+      };
+      return { fileA, fileB };
+    }
+
+    it('merges stories from every file sharing the component id', async () => {
+      const { fileA, fileB } = makeSiblingEntries();
+      vi.mocked(provider).mockImplementation(async ({ entry }) =>
+        makeStoryDocsPayload({
+          id: 'vega',
+          name: 'Vega',
+          path: entry.importPath,
+          stories: { [entry.id]: { id: entry.id, name: entry.id } },
+        })
+      );
+
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([fileA, fileB]),
+        storyDocsProvider: provider,
+      });
+
+      const result = await service.commands.extractStoryDocs({ id: 'vega' });
+      expect(Object.keys(result?.stories ?? {}).sort()).toEqual(['vega--a', 'vega--b']);
+      // Winner file (fileB) keeps its identity fields.
+      expect(result?.path).toBe('./b.stories.tsx');
+    });
+
+    it('prefers the winning file on story-id collisions', async () => {
+      const { fileA, fileB } = makeSiblingEntries();
+      vi.mocked(provider).mockImplementation(async ({ entry }) =>
+        makeStoryDocsPayload({
+          id: 'vega',
+          name: 'Vega',
+          path: entry.importPath,
+          stories: { 'vega--shared': { id: 'vega--shared', name: entry.importPath } },
+        })
+      );
+
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([fileA, fileB]),
+        storyDocsProvider: provider,
+      });
+
+      const result = await service.commands.extractStoryDocs({ id: 'vega' });
+      expect(result?.stories['vega--shared']?.name).toBe('./b.stories.tsx');
+    });
+
+    it('keeps the winning file stories when a sibling extraction fails', async () => {
+      const { fileA, fileB } = makeSiblingEntries();
+      vi.mocked(provider).mockImplementation(async ({ entry }) => {
+        if (entry.id === 'vega--a') {
+          throw new Error('sibling boom');
+        }
+        return makeStoryDocsPayload({
+          id: 'vega',
+          name: 'Vega',
+          path: entry.importPath,
+          stories: { [entry.id]: { id: entry.id, name: entry.id } },
+        });
+      });
+
+      const service = registerStoryDocsService({
+        getIndex: makeGetIndex([fileA, fileB]),
+        storyDocsProvider: provider,
+      });
+
+      const result = await service.commands.extractStoryDocs({ id: 'vega' });
+      expect(Object.keys(result?.stories ?? {})).toEqual(['vega--b']);
+    });
   });
 
   describe('module graph hot refresh', () => {

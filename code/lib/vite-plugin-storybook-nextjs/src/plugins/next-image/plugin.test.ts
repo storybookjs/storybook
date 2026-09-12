@@ -89,6 +89,27 @@ describe('vitePluginNextImage resolveId', () => {
     expect(loaded).toContain(resolvedPath);
   });
 
+  it('does not claim bare image imports that cannot be resolved', async () => {
+    const plugin = vitePluginNextImage(passthroughConfig);
+    const importer = '/project/src/Component.tsx';
+    const resolve = vi.fn().mockResolvedValue(null);
+    requireResolveMock.mockImplementationOnce(() => {
+      throw new Error('Cannot find module');
+    });
+
+    const id = await plugin.resolveId!.call(
+      createContext(resolve),
+      '@/assets/avatar.png',
+      importer
+    );
+
+    expect(resolve).toHaveBeenCalledWith('@/assets/avatar.png', importer, { skipSelf: true });
+    expect(requireResolveMock).toHaveBeenCalledWith('@/assets/avatar.png', {
+      paths: [dirname(importer)],
+    });
+    expect(id).toBeNull();
+  });
+
   it('keeps virtual IDs short and stable for deeply nested monorepo paths', async () => {
     const plugin = vitePluginNextImage(passthroughConfig);
     const deepDir = `/Users/x/dev/${'nested-'.repeat(30)}leaf`;

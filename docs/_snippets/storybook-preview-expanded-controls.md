@@ -27,6 +27,9 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -40,6 +43,9 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -50,6 +56,9 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -62,6 +71,9 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -72,6 +84,9 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -82,6 +97,9 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -94,5 +112,8 @@ export default definePreview({
   parameters: {
     controls: { expanded: true },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```

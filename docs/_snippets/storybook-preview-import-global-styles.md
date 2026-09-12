@@ -27,6 +27,9 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -40,6 +43,9 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -50,6 +56,9 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -62,6 +71,9 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -72,6 +84,9 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -82,6 +97,9 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -94,5 +112,8 @@ import '../src/styles/global.css';
 
 export default definePreview({
   parameters: {},
+  addons: [
+    /* ... */
+  ],
 });
 ```

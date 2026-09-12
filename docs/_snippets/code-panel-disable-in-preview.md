@@ -33,6 +33,9 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -48,6 +51,9 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -60,6 +66,9 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -74,6 +83,9 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -86,6 +98,9 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -98,6 +113,9 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -112,5 +130,8 @@ export default definePreview({
       codePanel: false,
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```

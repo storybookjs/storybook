@@ -14,5 +14,9 @@ import { sb } from 'storybook/test';
 // Prevents postgres (Node-only) from loading in the browser
 sb.mock(import('../src/db/client.ts'));
 
-export default definePreview({});
+export default definePreview({
+  addons: [
+    /* ... */
+  ],
+});
 ```

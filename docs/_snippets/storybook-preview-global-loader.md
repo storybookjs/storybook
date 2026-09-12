@@ -33,6 +33,9 @@ export default definePreview({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -48,6 +51,9 @@ export default definePreview({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -59,6 +65,9 @@ export default definePreview({
     async () => ({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -74,6 +83,9 @@ export default definePreview({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -86,6 +98,9 @@ export default definePreview({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -97,6 +112,9 @@ export default definePreview({
     async () => ({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -111,6 +129,9 @@ export default definePreview({
     async () => ({
       currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
     }),
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```

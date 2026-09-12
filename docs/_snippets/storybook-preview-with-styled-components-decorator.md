@@ -437,6 +437,9 @@ export default definePreview({
       </ThemeProvider>
     ),
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -458,6 +461,9 @@ export default definePreview({
         <Story />
       </ThemeProvider>
     ),
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -491,6 +497,9 @@ export default definePreview({
         `,
       };
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -526,6 +535,9 @@ export default definePreview({
         `,
       };
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```

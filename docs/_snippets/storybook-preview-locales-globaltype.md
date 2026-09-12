@@ -71,6 +71,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },
@@ -99,6 +102,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },
@@ -124,6 +130,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },
@@ -151,6 +160,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },
@@ -176,6 +188,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },
@@ -201,6 +216,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },
@@ -228,6 +246,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     locale: 'en',
   },

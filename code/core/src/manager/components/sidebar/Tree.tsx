@@ -13,7 +13,7 @@ import {
   getAncestorIds,
   indexToTree,
 } from '../../utils/tree.ts';
-import { SECTION_GAP, TREE_ROW_HEIGHT, Traces, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+import { SECTION_GAP, TREE_ROW_HEIGHT, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
 import {
   Addon_TypesEnum,
@@ -83,9 +83,8 @@ const TreeWrapper = styled.div(({ theme }) => ({
   // Contain the overlay's z-index so UI outside the tree still paints above it.
   isolation: 'isolate',
   '--sticky-bg': theme.background.content,
-  // Show trace lines only while hovering or keyboard-focused inside the tree. Scoped to the whole
-  // wrapper (not just the scroller) so the pinned overlay's lines follow the same rule instead of
-  // being permanently drawn.
+  '--trace-color': theme.appBorderColor,
+  // Show trace lines only while hovering or keyboard-focused inside the tree.
   '&:hover, &:has(:focus-visible)': {
     '--trace-opacity': 1,
   },
@@ -105,14 +104,40 @@ const TreeWrapper = styled.div(({ theme }) => ({
   },
 }));
 
-const PinnedOverlay = styled.div(({ theme }) => ({
+// Design 3: a single SVG above the fade and the pinned rows carries every trace line, so they are
+// continuous by construction (no per-row seams, no bridge, nothing can leak through). The path is
+// filled imperatively on scroll (see the scroll effect). Gated on hover/focus like the old lines.
+const TraceLayer = styled.svg(({ theme }) => ({
+  position: 'absolute',
+  inset: 0,
+  width: '100%',
+  height: '100%',
+  zIndex: 4,
+  pointerEvents: 'none',
+  opacity: 'var(--trace-opacity, 0)',
+  transition: 'opacity 150ms ease',
+  shapeRendering: 'crispEdges',
+  '& path': {
+    strokeWidth: 1,
+    fill: 'none',
+  },
+  // Grey grid; the hovered/focused row's slice is drawn over it in the accent colour.
+  '& path[data-trace-grid]': {
+    stroke: theme.appBorderColor,
+  },
+  '& path[data-trace-hover]': {
+    stroke: transparentize(0.52, theme.color.secondary),
+  },
+}));
+
+const PinnedOverlay = styled.div({
   position: 'absolute',
   top: 0,
   left: 0,
   right: 0,
   zIndex: 3,
-  '--trace-color': theme.appBorderColor,
-  // Soft fade between the pinned stack and the scrolling rows beneath it.
+  // Soft fade between the pinned stack and the scrolling rows beneath it. The trace lines sit above
+  // it (in TraceLayer), so they stay continuous through it.
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -123,12 +148,7 @@ const PinnedOverlay = styled.div(({ theme }) => ({
     pointerEvents: 'none',
     background: 'linear-gradient(to bottom, var(--sticky-bg), transparent)',
   },
-  // The bridge continues the deepest pinned row's lines, so it blues with that row (the last
-  // pinned button) — keeping the continued line one colour on hover.
-  '&:has([data-pinned-item-id]:last-of-type:hover) [data-pinned-bridge]': {
-    '--trace-color': transparentize(0.52, theme.color.secondary),
-  },
-}));
+});
 
 const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   position: 'relative',
@@ -161,10 +181,6 @@ const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   '&:hover::before': {
     background: theme.background.hoverable,
   },
-  // Blue the trace lines on hover, like natural rows (StyledTreeItem).
-  '&:hover': {
-    '--trace-color': transparentize(0.52, theme.color.secondary),
-  },
   '& svg': {
     flexShrink: 0,
   },
@@ -193,29 +209,6 @@ const PinnedRowIcon = styled.span({
   display: 'flex',
   alignItems: 'center',
 });
-
-// Zero-width anchor fixed at the natural row's content-box start (level indent, before the
-// 7px content padding), so the trace lines it hosts land exactly where real rows draw them.
-// Out of the flex flow, or the row gap would push the icon off the natural rows' grid.
-const PinnedTraceAnchor = styled.span<{ $level: number }>(({ $level }) => ({
-  position: 'absolute',
-  insetBlock: 0,
-  insetInlineStart: `calc(${$level} * 20px)`,
-  width: 0,
-}));
-
-// Continues the deepest pinned row's ancestor trace lines down through the fade, so they read as
-// one line with the scrolling rows below instead of being cut by the fade. Painted above the fade
-// (which sits at the overlay's ::after, z-index auto). Anchored like PinnedTraceAnchor.
-const PinnedFadeBridge = styled.span<{ $level: number }>(({ $level }) => ({
-  position: 'absolute',
-  top: '100%',
-  height: SECTION_GAP,
-  insetInlineStart: `calc(${$level} * 20px)`,
-  width: 0,
-  zIndex: 1,
-  pointerEvents: 'none',
-}));
 
 // The label must own the free space and truncate stably, or the row content jitters
 // horizontally as pinned rows swap while scrolling. position: relative keeps it above the row's
@@ -267,6 +260,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   onSelectStoryId: onSelectStoryIdProp,
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const treeWrapperRef = useRef<HTMLDivElement>(null);
+  // Design 3: the whole trace grid is drawn into these two paths, updated imperatively on scroll.
+  // The grey path carries every line; the blue path re-draws just the hovered/focused row's slice.
+  const tracePathRef = useRef<SVGPathElement>(null);
+  const traceHoverPathRef = useRef<SVGPathElement>(null);
+  const pinnedIdsRef = useRef<string[]>([]);
+  // The row (natural or pinned) currently under the pointer, whose trace slice is drawn blue.
+  const hoveredTraceRef = useRef<{ id: string; pinned: boolean } | null>(null);
   const api = useStorybookApi();
   const { isMobile } = useLayout();
   // Mirrors the labelContext TreeNode passes to renderLabel, so pinned copies match their rows.
@@ -604,6 +605,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const ids: string[] = [];
     const gapIds = new Set<string>();
     const offsets: number[] = [];
+    // Indent depth per row (0 for a top-level root), used to place trace guide lines.
+    const depths: number[] = [];
     const indexById = new Map<string, number>();
     const subtreeBottoms = new Map<string, number>();
     let y = 0;
@@ -617,6 +620,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         }
         indexById.set(entry.id, ids.length);
         ids.push(entry.id);
+        depths.push(level - 1);
         offsets.push(y + (hasGap ? SECTION_GAP : 0));
         y += TREE_ROW_HEIGHT + (hasGap ? SECTION_GAP : 0);
         prevLevel1 = isLevel1;
@@ -627,7 +631,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       }
     };
     walk(tree, 1);
-    return { ids, gapIds, offsets, indexById, subtreeBottoms, totalHeight: y };
+    return { ids, gapIds, offsets, depths, indexById, subtreeBottoms, totalHeight: y };
   }, [tree, expanded]);
   const flatRowsRef = useRef(flatRows);
   flatRowsRef.current = flatRows;
@@ -638,6 +642,94 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // subtree continues below it; each pinned row hands off once the rows below its slot leave
   // its subtree, so an incoming container's header is never covered by the stack.
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+
+  // Design 3: draw the whole trace grid into two SVG paths in viewport space — the pinned stack at
+  // fixed slots, the scrolling rows offset by scrollTop. The grey path carries every guide (a
+  // level-D row fills columns 1..D at x=k*20-7; adjacent rows' segments abut into continuous lines
+  // with no merge). The blue path re-draws only the hovered/focused row's own slice, restoring the
+  // per-row highlight the old row-level `--trace-color` gave. Written imperatively so scrolling and
+  // hovering never re-render the tree. Reads the last pinned chain from pinnedIdsRef.
+  const drawTraces = useCallback(() => {
+    const scroller = containerRef.current;
+    if (!scroller) {
+      return;
+    }
+    const { offsets, depths, indexById } = flatRowsRef.current;
+    const data = collapsedDataRef.current;
+    const chain = pinnedIdsRef.current;
+    const targetY = scroller.scrollTop;
+    const viewH = scroller.clientHeight;
+    const rowH = TREE_ROW_HEIGHT;
+    const slots = chain.length;
+    const stackBottom = slots * rowH;
+    const depthOf = (id: string) => {
+      const entry = data[id];
+      return entry ? (entry.type === 'root' ? 0 : (entry.depth ?? 0)) : 0;
+    };
+    const seg = (parts: string[], col: number, y1: number, y2: number) => {
+      const x = col * 20 - 7 + 0.5; // +0.5 keeps the 1px stroke on the device-pixel grid
+      parts.push(`M${x} ${Math.round(y1)}V${Math.round(y2)}`);
+    };
+
+    const grey: string[] = [];
+    for (let s = 0; s < slots; s += 1) {
+      const depth = depthOf(chain[s]);
+      for (let k = 1; k <= depth; k += 1) {
+        seg(grey, k, s * rowH, (s + 1) * rowH);
+      }
+    }
+    for (let i = 0; i < offsets.length; i += 1) {
+      const yTop = offsets[i] - targetY;
+      if (yTop >= viewH) {
+        break;
+      }
+      const yBot = yTop + rowH;
+      if (yBot <= stackBottom) {
+        continue; // occluded by the pinned stack
+      }
+      const top = Math.max(yTop, stackBottom);
+      for (let k = 1; k <= depths[i]; k += 1) {
+        seg(grey, k, top, yBot);
+      }
+    }
+    tracePathRef.current?.setAttribute('d', grey.join(''));
+
+    // Blue overlay: the hovered/focused row's own guide slice (drawn over the grey path).
+    const blue: string[] = [];
+    const naturalSlice = (id: string) => {
+      const idx = indexById.get(id);
+      if (idx === undefined) {
+        return;
+      }
+      const yTop = offsets[idx] - targetY;
+      const yBot = yTop + rowH;
+      if (yBot <= stackBottom || yTop >= viewH) {
+        return; // occluded or off-screen
+      }
+      const top = Math.max(yTop, stackBottom);
+      for (let k = 1; k <= depths[idx]; k += 1) {
+        seg(blue, k, top, yBot);
+      }
+    };
+    const hovered = hoveredTraceRef.current;
+    if (hovered?.pinned) {
+      const slot = chain.indexOf(hovered.id);
+      if (slot >= 0) {
+        const depth = depthOf(hovered.id);
+        for (let k = 1; k <= depth; k += 1) {
+          seg(blue, k, slot * rowH, (slot + 1) * rowH);
+        }
+      }
+    } else if (hovered) {
+      naturalSlice(hovered.id);
+    }
+    const focused = focusedItemIdRef.current;
+    if (focused && focused !== hovered?.id) {
+      naturalSlice(focused);
+    }
+    traceHoverPathRef.current?.setAttribute('d', blue.join(''));
+  }, []);
+
   useEffect(() => {
     const scroller = containerRef.current;
     if (!scroller) {
@@ -691,6 +783,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
           ? prev
           : chainIds
       );
+      pinnedIdsRef.current = chainIds;
+      drawTraces();
     };
     const scheduleUpdate = () => {
       if (rafId === null) {
@@ -705,7 +799,46 @@ export const Tree = React.memo<TreeProps>(function Tree({
         cancelAnimationFrame(rafId);
       }
     };
-  }, [flatRows]);
+  }, [flatRows, drawTraces]);
+
+  // Redraw the trace grid when the tree wants to (hover moves the blue slice, focus/geometry
+  // changes shift lines) without waiting for a scroll event.
+  useEffect(() => {
+    const wrapper = treeWrapperRef.current;
+    if (!wrapper) {
+      return;
+    }
+    const setHovered = (next: { id: string; pinned: boolean } | null) => {
+      const prev = hoveredTraceRef.current;
+      if (prev?.id === next?.id && prev?.pinned === next?.pinned) {
+        return;
+      }
+      hoveredTraceRef.current = next;
+      drawTraces();
+    };
+    const onOver = (event: Event) => {
+      const target = event.target as Element | null;
+      const pinned = target?.closest?.('[data-pinned-item-id]');
+      if (pinned) {
+        setHovered({ id: pinned.getAttribute('data-pinned-item-id')!, pinned: true });
+        return;
+      }
+      const natural = target?.closest?.('[data-item-id]');
+      setHovered(natural ? { id: natural.getAttribute('data-item-id')!, pinned: false } : null);
+    };
+    const onLeave = () => setHovered(null);
+    wrapper.addEventListener('mouseover', onOver);
+    wrapper.addEventListener('mouseleave', onLeave);
+    return () => {
+      wrapper.removeEventListener('mouseover', onOver);
+      wrapper.removeEventListener('mouseleave', onLeave);
+    };
+  }, [drawTraces]);
+
+  // Keyboard focus also highlights its row's slice.
+  useEffect(() => {
+    drawTraces();
+  }, [focusedItemId, drawTraces]);
 
   // Clicking a pinned row scrolls its real row to the exact position the pinned copy occupies
   // (slot i of the overlay), so nothing appears to move.
@@ -916,7 +1049,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   return (
     <StatusContext.Provider value={statusContextValue}>
       <RowUiContext.Provider value={rowUiStoreRef.current}>
-        <TreeWrapper>
+        <TreeWrapper ref={treeWrapperRef}>
           <Virtualizer layout={treeLayout}>
             <StyledAriaTree
               ref={containerRef}
@@ -955,9 +1088,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
                     tabIndex={-1}
                     onClick={() => scrollPinnedRowIntoPlace(id, overlayIndex)}
                   >
-                    <PinnedTraceAnchor $level={level}>
-                      <Traces level={level} isAlongsideSelected={false} />
-                    </PinnedTraceAnchor>
                     <PinnedRowIcon
                       data-testid="pinned-collapse"
                       onClick={(event) => {
@@ -985,24 +1115,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
                   </PinnedRow>
                 );
               })}
-              {(() => {
-                // Bridge the deepest pinned row's ancestor lines through the fade. The deepest
-                // level itself has no parent line above to continue, so it is excluded (a lone
-                // pinned root, level 0, draws no line at all).
-                const lastEntry = collapsedData[pinnedIds[pinnedIds.length - 1]];
-                const deepestLevel = lastEntry
-                  ? lastEntry.type === 'root'
-                    ? 0
-                    : (lastEntry.depth ?? 0)
-                  : 0;
-                return deepestLevel > 0 ? (
-                  <PinnedFadeBridge $level={deepestLevel} data-pinned-bridge>
-                    <Traces level={deepestLevel} isAlongsideSelected={false} />
-                  </PinnedFadeBridge>
-                ) : null;
-              })()}
             </PinnedOverlay>
           )}
+          <TraceLayer aria-hidden="true" data-testid="trace-layer">
+            <path ref={tracePathRef} data-trace-grid />
+            <path ref={traceHoverPathRef} data-trace-hover />
+          </TraceLayer>
         </TreeWrapper>
         {supportsAnchorPositioning && focusedItemShortcutLabel && (
           <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />

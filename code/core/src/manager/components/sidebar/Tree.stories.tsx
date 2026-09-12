@@ -659,17 +659,11 @@ export const StickyAncestors: Story = {
     expect(pinnedRoot.querySelector('use')).toBeNull();
     expect(pinnedRoot.querySelector('[data-testid="pinned-collapse"] svg')).not.toBeNull();
 
-    // Trace lines of pinned copies must sit on the same x positions as the natural rows below.
-    const traceLefts = (root: Element) =>
-      [...root.querySelectorAll('[data-testid="trace-line"]')].map((el) =>
-        Math.round(el.getBoundingClientRect().left)
-      );
-    const naturalLefts = traceLefts(scroller);
-    const overlay = canvasElement.querySelector('[data-testid="sticky-overlay"]')!;
-    expect(traceLefts(overlay).length).toBeGreaterThan(0);
-    for (const left of traceLefts(overlay)) {
-      expect(naturalLefts).toContain(left);
-    }
+    // The unified trace layer draws every guide line as one continuous SVG path spanning the
+    // pinned stack and the scrolling rows (Design 3), so pinned and natural lines share x by
+    // construction. Assert the layer is present and has drawn segments.
+    const tracePath = canvasElement.querySelector('[data-testid="trace-layer"] path')!;
+    expect(tracePath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
 
     // Jitter regression: overlay membership must be stable across single-pixel scrolls
     // (membership derives from row offsets only, never from the engaged stack).

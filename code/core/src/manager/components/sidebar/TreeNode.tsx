@@ -114,7 +114,7 @@ const StyledTreeItem = styled(TreeItem)<{
 
   '&:hover [data-displayed="off"], &:focus-visible [data-displayed="off"], &:focus-within [data-displayed="off"]':
     {
-      display: 'block',
+      display: 'inline-flex',
     },
 
   '& span:has([data-displayed="on"]) + *': {

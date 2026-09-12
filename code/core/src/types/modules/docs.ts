@@ -1,6 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 
-import type { Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf.ts';
+import type { Globals, Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf.ts';
 import type {
   CSFFile,
   ModuleExport,
@@ -92,6 +92,9 @@ export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
 
   /** Syncronously find all stories by CSF file. */
   componentStoriesFromCSFFile: (csfFile: CSFFile<TRenderer>) => PreparedStory<TRenderer>[];
+
+  /** Get the current global args. */
+  getGlobals: () => Globals;
 
   /** Get the story context of the referenced story. */
   getStoryContext: (

@@ -1,0 +1,257 @@
+{
+  "big": {
+    "description": undefined,
+    "name": "big",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "BigInterface",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "BigInterface",
+    },
+  },
+  "builtin": {
+    "description": undefined,
+    "name": "builtin",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Date",
+    },
+  },
+  "color": {
+    "description": undefined,
+    "name": "color",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Color",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Color",
+    },
+  },
+  "cyclic": {
+    "description": undefined,
+    "name": "cyclic",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "AliasA",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "AliasA",
+    },
+  },
+  "dict": {
+    "description": undefined,
+    "name": "dict",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Dict",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Dict",
+    },
+  },
+  "inlined": {
+    "description": undefined,
+    "name": "inlined",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ foo: string; bar: number }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "{ foo: string; bar: number }",
+    },
+  },
+  "level": {
+    "description": undefined,
+    "name": "level",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Level",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "Level",
+    },
+  },
+  "localDate": {
+    "description": undefined,
+    "name": "localDate",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "LocalDate",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "LocalDate",
+    },
+  },
+  "namespaced": {
+    "description": undefined,
+    "name": "namespaced",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "TSTypeReference",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "TSTypeReference",
+    },
+  },
+  "partialed": {
+    "description": undefined,
+    "name": "partialed",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Partialed",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Partialed",
+    },
+  },
+  "picked": {
+    "description": undefined,
+    "name": "picked",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Picked",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Picked",
+    },
+  },
+  "prefs": {
+    "description": undefined,
+    "name": "prefs",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Prefs",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Prefs",
+    },
+  },
+  "scalarAlias": {
+    "description": undefined,
+    "name": "scalarAlias",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "ID",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "ID",
+    },
+  },
+  "shapes": {
+    "description": undefined,
+    "name": "shapes",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "Shapes",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Shapes",
+    },
+  },
+  "user": {
+    "description": "The user to greet.",
+    "name": "user",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "User",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "User",
+    },
+  },
+}

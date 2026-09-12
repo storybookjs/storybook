@@ -1,20 +1,21 @@
-import type { ExtractedProp } from 'storybook/internal/docs-tools';
-import {
-  type ArgTypesExtractor,
-  convert,
-  extractComponentProps,
-  hasDocgen,
-} from 'storybook/internal/docs-tools';
+import type { Component, ExtractedProp } from 'storybook/internal/docs-tools';
+import { convert, extractComponentProps, hasDocgen } from 'storybook/internal/docs-tools';
 import type { SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 import type { VueDocgenInfo, VueDocgenInfoEntry, VueDocgenPlugin } from './types.ts';
+import type { NamedTypeDetailResolver } from './docgen/named-type-detail.ts';
 
 type PropertyMetaSchema = VueDocgenInfoEntry<'vue-component-meta', 'props'>['schema'];
 
 // "exposed" is used by the vue-component-meta plugin while "expose" is used by vue-docgen-api
 const ARG_TYPE_SECTIONS = ['props', 'events', 'slots', 'exposed', 'expose'] as const;
 
-export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | null => {
+// Own signature (not the shared ArgTypesExtractor contract): the docgen-server path passes a
+// second, optional resolver argument that the legacy client/Vite-plugin registration omits.
+export const extractArgTypes = (
+  component: Component,
+  resolveNamedTypeDetail?: NamedTypeDetailResolver
+): StrictArgTypes | null => {
   if (!hasDocgen<VueDocgenInfo<VueDocgenPlugin>>(component)) {
     return null;
   }
@@ -38,7 +39,7 @@ export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | 
       } else {
         const docgenInfo =
           extractedProp.docgenInfo as unknown as VueDocgenInfoEntry<'vue-component-meta'>;
-        argType = extractFromVueComponentMeta(docgenInfo, section);
+        argType = extractFromVueComponentMeta(docgenInfo, section, resolveNamedTypeDetail);
       }
 
       // skip duplicate and global props
@@ -151,7 +152,8 @@ export const extractFromVueDocgenApi = (
  */
 export const extractFromVueComponentMeta = (
   docgenInfo: VueDocgenInfoEntry<'vue-component-meta'>,
-  section: (typeof ARG_TYPE_SECTIONS)[number]
+  section: (typeof ARG_TYPE_SECTIONS)[number],
+  resolveNamedTypeDetail?: NamedTypeDetailResolver
 ): StrictInputType | undefined => {
   // ignore global props
 
@@ -168,6 +170,11 @@ export const extractFromVueComponentMeta = (
     const type = convertVueComponentMetaProp(propInfo);
     const enumLabels = getEnumMemberLabels(propInfo.schema);
 
+    // Named references to in-project interfaces, object-shape aliases and enums gain the type's
+    // members as detail text; the key stays absent when the type remains flat. The resolver is
+    // injected only on the docgen-server path, so the legacy Vite-plugin path stays unchanged.
+    const detail = resolveNamedTypeDetail?.(tableType.summary);
+
     return {
       name: propInfo.name,
       description: formatDescriptionWithTags(propInfo.description, propInfo.tags),
@@ -180,7 +187,7 @@ export const extractFromVueComponentMeta = (
         ? { options: type.value, control: { labels: enumLabels } }
         : {}),
       table: {
-        type: tableType,
+        type: detail ? { ...tableType, detail } : tableType,
         defaultValue,
         category: section,
       },

@@ -1,0 +1,285 @@
+{
+  "big": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "big",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "BigInterface",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "builtin": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "builtin",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "color": {
+    "control": {
+      "labels": {
+        "green": "Color.Green",
+        "red": "Color.Red",
+      },
+    },
+    "defaultValue": undefined,
+    "description": "",
+    "name": "color",
+    "options": [
+      "red",
+      "green",
+    ],
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Color",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": true,
+      "value": [
+        "red",
+        "green",
+      ],
+    },
+  },
+  "cyclic": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "cyclic",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "AliasA",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "dict": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "dict",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Dict",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Dict",
+    },
+  },
+  "inlined": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "inlined",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "{ foo: string; bar: number; }",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "level": {
+    "control": {
+      "labels": {
+        "0": "Level.Low",
+        "1": "Level.High",
+      },
+    },
+    "defaultValue": undefined,
+    "description": "",
+    "name": "level",
+    "options": [
+      0,
+      1,
+    ],
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Level",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        0,
+        1,
+      ],
+    },
+  },
+  "localDate": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "localDate",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "namespaced": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "namespaced",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "AppTypes.Nested",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "partialed": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "partialed",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Partial<User>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Partial<User>",
+    },
+  },
+  "picked": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "picked",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Picked",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Picked",
+    },
+  },
+  "prefs": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "prefs",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Prefs",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+  "scalarAlias": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "scalarAlias",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "shapes": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "shapes",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Shapes",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": true,
+      "value": [
+        "circle",
+        "square",
+      ],
+    },
+  },
+  "user": {
+    "defaultValue": undefined,
+    "description": "The user to greet.",
+    "name": "user",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "User",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+      "value": {},
+    },
+  },
+}

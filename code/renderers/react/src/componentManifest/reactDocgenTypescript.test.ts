@@ -4,6 +4,8 @@ import path from 'node:path';
 
 import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { dedent } from 'ts-dedent';
 
 import {
@@ -208,6 +210,123 @@ describe('parseWithReactDocgenTypescript', () => {
     expect(docs[0].props.label).toBeDefined();
     expect(propNames).not.toContain('className');
     expect(propNames).not.toContain('style');
+  });
+
+  test('builds the program from the tsconfig named by tsconfigPath', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({ files: [], include: [] }),
+      'tsconfig.storybook.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['src'],
+      }),
+      'src/Button.tsx': dedent`
+        interface ButtonProps {
+          /** The button label */
+          label: string;
+          disabled?: boolean;
+        }
+
+        export function Button(props: ButtonProps) {
+          return null;
+        }
+      `,
+    });
+
+    const docs = await parseWithReactDocgenTypescript(path.join(dir, 'src/Button.tsx'), {
+      tsconfigPath: './tsconfig.storybook.json',
+    });
+
+    expect(docs).toHaveLength(1);
+    expect(docs[0].exportName).toBe('Button');
+    expect(docs[0].props.label.required).toBe(true);
+    expect(docs[0].props.disabled.required).toBe(false);
+  });
+
+  test('warns and falls back to the discovered tsconfig when tsconfigPath does not exist', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['*.tsx'],
+      }),
+      'Button.tsx': dedent`
+        interface ButtonProps {
+          label: string;
+        }
+
+        export function Button(props: ButtonProps) {
+          return null;
+        }
+      `,
+    });
+
+    const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Button.tsx'), {
+      tsconfigPath: './tsconfig.missing.json',
+    });
+
+    expect(docs).toHaveLength(1);
+    expect(docs[0].props.label).toBeDefined();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining('tsconfig.missing.json'));
+  });
+
+  test('follows project references when tsconfigPath names a solution-style tsconfig', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({ files: [], include: [] }),
+      'packages/ui/tsconfig.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }],
+      }),
+      'packages/ui/tsconfig.app.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['src'],
+      }),
+      'packages/ui/src/Button.tsx': dedent`
+        interface ButtonProps {
+          /** The button label */
+          label: string;
+        }
+
+        export function Button(props: ButtonProps) {
+          return null;
+        }
+      `,
+    });
+
+    const docs = await parseWithReactDocgenTypescript(
+      path.join(dir, 'packages/ui/src/Button.tsx'),
+      { tsconfigPath: './packages/ui/tsconfig.json' }
+    );
+
+    expect(docs).toHaveLength(1);
+    expect(docs[0].props.label.required).toBe(true);
+  });
+
+  test('warns and falls back to the discovered tsconfig when tsconfigPath is not a file', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', strict: true },
+        include: ['*.tsx'],
+      }),
+      'config/.keep': '',
+      'Button.tsx': dedent`
+        interface ButtonProps {
+          label: string;
+        }
+
+        export function Button(props: ButtonProps) {
+          return null;
+        }
+      `,
+    });
+
+    const docs = await parseWithReactDocgenTypescript(path.join(dir, 'Button.tsx'), {
+      tsconfigPath: './config',
+    });
+
+    expect(docs).toHaveLength(1);
+    expect(docs[0].props.label).toBeDefined();
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(path.join(dir, 'config')));
   });
 
   test('handles Vite-style project references tsconfig files', async () => {

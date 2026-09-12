@@ -9,7 +9,8 @@ vi.mock('node:fs', { spy: true });
 import * as common from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { readFileSync, statSync } from 'node:fs';
+import { accessSync, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import { fs as memfs, vol } from 'memfs';
 
@@ -21,6 +22,7 @@ import {
   groupBy,
   invalidateCache,
   invariant,
+  resolveConfiguredTsconfigPath,
 } from './utils.ts';
 
 // Helpers
@@ -289,5 +291,34 @@ describe('findTsconfigPath', () => {
 
     expect(result).toBe('/project-root/tsconfig.json');
     expect(logger.warn).not.toHaveBeenCalled();
+  });
+});
+
+describe('resolveConfiguredTsconfigPath', () => {
+  beforeEach(() => {
+    vi.mocked(statSync).mockReturnValue({ isFile: () => true } as unknown as ReturnType<
+      typeof statSync
+    >);
+    vi.mocked(logger.warn).mockImplementation(() => {});
+  });
+
+  test('returns the configured path when it points at a readable file', () => {
+    vi.mocked(accessSync).mockImplementation(() => {});
+
+    expect(resolveConfiguredTsconfigPath('/project-root/tsconfig.storybook.json')).toBe(
+      resolve('/project-root/tsconfig.storybook.json')
+    );
+    expect(logger.warn).not.toHaveBeenCalled();
+  });
+
+  test('warns and falls back to discovery when the configured file cannot be read', () => {
+    vi.mocked(accessSync).mockImplementation(() => {
+      throw Object.assign(new Error('EACCES: permission denied'), { code: 'EACCES' });
+    });
+
+    expect(resolveConfiguredTsconfigPath('/project-root/tsconfig.storybook.json')).toBeUndefined();
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining(resolve('/project-root/tsconfig.storybook.json'))
+    );
   });
 });

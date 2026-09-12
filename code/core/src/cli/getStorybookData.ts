@@ -1,7 +1,7 @@
 import { dirname, isAbsolute, resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
+import { JsPackageManagerFactory, getStorybookInfo, warnOnYarn1 } from 'storybook/internal/common';
 import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -69,6 +69,8 @@ export const getStorybookData = async ({
     configDir,
     storiesPaths,
   });
+
+  warnOnYarn1(packageManager.type);
 
   logger.debug('Getting Storybook version...');
   const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;

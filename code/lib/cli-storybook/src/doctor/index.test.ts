@@ -1,18 +1,10 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { getDoctorDiagnostics } from './index.ts';
 import { DiagnosticType } from './types.ts';
-
-vi.mock('picocolors', () => ({
-  default: {
-    cyan: (str: string) => str,
-    yellow: (str: string) => str,
-    blue: (str: string) => str,
-  },
-}));
 
 const packageManagerMock = {} as JsPackageManager;
 

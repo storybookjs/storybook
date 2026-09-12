@@ -1,8 +1,8 @@
 import type { FC, HTMLAttributes } from 'react';
 import React, { useRef } from 'react';
 
-import { useTabPanel } from '@react-aria/tabs';
-import type { TabListState } from '@react-stately/tabs';
+import { useTabPanel } from 'react-aria/useTabList';
+import type { TabListState } from 'react-stately/useTabListState';
 import type { Node } from '@react-types/shared';
 import { styled } from 'storybook/theming';
 

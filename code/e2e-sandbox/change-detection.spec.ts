@@ -144,6 +144,12 @@ test.describe('Change Detection', () => {
     try {
       fs.writeFileSync(storyPath, `${original}\n// change-detection-e2e-modified`);
 
+      await expect(
+        page.getByRole('switch', {
+          name: /^Show (new|modified|new and modified) stories since last commit$/,
+        })
+      ).toBeVisible({ timeout: CHANGE_DETECTION_TIMEOUT });
+
       // Branch-level "Modified" change-detection icon is gated on the modified
       // status filter being active. Activate it via the FilterPanel.
       const filtersButton = page.getByRole('button', { name: 'Tag filters' });

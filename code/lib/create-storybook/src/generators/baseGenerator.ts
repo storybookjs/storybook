@@ -137,7 +137,6 @@ export async function baseGenerator(
     builder,
     framework,
     renderer,
-    pnp,
     features,
     dependencyCollector,
     storybookVersionSpecifier,
@@ -146,7 +145,7 @@ export async function baseGenerator(
 ) {
   const options = { ...defaultOptions, ..._options };
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();
-  const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository || pnp;
+  const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository;
 
   const taskLog = prompt.taskLog({
     id: 'base-generator',
@@ -249,7 +248,6 @@ export async function baseGenerator(
 
   await mkdir(`./${storybookConfigFolder}`, { recursive: true });
 
-  // TODO: Evaluate if this is correct after removing pnp compatibility code in SB11
   const prefixes = shouldApplyRequireWrapperOnPackageNames
     ? [
         'import { dirname } from "path"',
@@ -257,14 +255,14 @@ export async function baseGenerator(
         language === SupportedLanguage.JAVASCRIPT
           ? dedent`/**
             * This function is used to resolve the absolute path of a package.
-            * It is needed in projects that use Yarn PnP or are set up within a monorepo.
+            * It is needed in projects that are set up within a monorepo.
             */
             function getAbsolutePath(value) {
               return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))
             }`
           : dedent`/**
           * This function is used to resolve the absolute path of a package.
-          * It is needed in projects that use Yarn PnP or are set up within a monorepo.
+          * It is needed in projects that are set up within a monorepo.
           */
           function getAbsolutePath(value: string) {
             return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)))

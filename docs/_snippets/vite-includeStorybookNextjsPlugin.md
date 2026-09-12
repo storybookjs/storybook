@@ -3,7 +3,7 @@ import { defineConfig } from 'vite';
 import { storybookNextJsPlugin } from '@storybook/nextjs-vite/vite-plugin';
 
 export default defineConfig({
-  // only necessary when not using @storybook/addon-vitest, otherwise the plugin is loaded automatically
+  // Required when configuring Vitest manually or using portable stories; loaded automatically by the Vitest addon
   plugins: [storybookNextJsPlugin()],
 });
 ```

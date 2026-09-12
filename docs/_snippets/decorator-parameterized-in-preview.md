@@ -367,6 +367,9 @@ export default definePreview({
       }
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -404,6 +407,9 @@ export default definePreview({
       }
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -427,6 +433,9 @@ export default definePreview({
           return { template: '<story/>' };
       }
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -454,6 +463,9 @@ export default definePreview({
       }
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -477,6 +489,9 @@ export default definePreview({
           return story;
       }
     }),
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -503,6 +518,9 @@ export default definePreview({
           return story();
       }
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -531,6 +549,9 @@ export default definePreview({
           return story();
       }
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```

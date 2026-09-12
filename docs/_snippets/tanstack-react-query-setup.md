@@ -57,6 +57,9 @@ export default definePreview({
     // 👇 Clear the cache between stories so each story starts fresh
     queryClient.clear();
   },
+  addons: [
+    /* ... */
+  ],
   parameters: {
     tanstack: {
       router: {

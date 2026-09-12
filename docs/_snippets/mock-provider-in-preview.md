@@ -75,6 +75,9 @@ export default definePreview({
       );
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -103,6 +106,9 @@ export default definePreview({
         </ThemeProvider>
       );
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```

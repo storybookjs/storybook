@@ -27,6 +27,9 @@ export default definePreview({
       },
     ),
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -169,6 +172,9 @@ export default definePreview({
       };
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -202,6 +208,9 @@ export default definePreview({
       };
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -223,6 +232,9 @@ export default definePreview({
         </ThemeProvider>
       );
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -247,6 +259,9 @@ export default definePreview({
       );
     },
   ],
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -261,6 +276,9 @@ export default definePreview({
       const theme = context.globals.theme || 'light';
       return html`<div class=${theme}>${story()}</div>`;
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```
@@ -278,6 +296,9 @@ export default definePreview({
       const theme = context.globals.theme || 'light';
       return html`<div class=${theme}>${story()}</div>`;
     },
+  ],
+  addons: [
+    /* ... */
   ],
 });
 ```

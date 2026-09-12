@@ -5,7 +5,11 @@ import {
   OpenServiceMissingOriginError,
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
-import { resolveToolsetDescription, type ToolsetCtx } from '../../toolset-definition.ts';
+import {
+  invokeToolsetMethod,
+  resolveToolsetDescription,
+  type ToolsetCtx,
+} from '../../toolset-definition.ts';
 import { reviewToolset } from './definition.ts';
 
 const reviewUrl = 'http://localhost:6006/?path=/review/';
@@ -32,7 +36,9 @@ function createReview(
   overrides: Partial<v.InferInput<typeof reviewToolset.methods.create.input>> = {},
   ctx: ToolsetCtx = cliCtx
 ) {
-  return reviewToolset.methods.create.handler(
+  return invokeToolsetMethod(
+    reviewToolset,
+    'create',
     v.parse(reviewToolset.methods.create.input, { ...input, ...overrides }),
     ctx
   );
@@ -55,6 +61,17 @@ beforeEach(() => {
 });
 
 describe('review.create', () => {
+  it('reports what the published review contains', async () => {
+    const outcome = await createReview();
+
+    expect(outcome.telemetry).toEqual({
+      toolset: 'review',
+      tool: 'create',
+      event: 'tool:review_create',
+      payload: { collectionCount: 1, storyCount: 1, changedFileCount: 1 },
+    });
+  });
+
   it('publishes the review and returns its page URL plus what it contains', async () => {
     const outcome = await createReview();
 

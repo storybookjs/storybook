@@ -69,11 +69,29 @@ describe('vue3 docgen-server named-type details', () => {
     expect(argTypes.user.type).toEqual({ name: 'object', value: {}, required: true });
   });
 
-  it('renders optional members with their full type text and member JSDoc', () => {
+  it('renders optional members with the ? marker, their union text, and member JSDoc', () => {
     expect(tableTypeOf(argTypes, 'prefs')).toEqual({
       summary: 'Prefs',
-      detail: 'Prefs {\n  theme: string | undefined\n  locale: string — Where it is stored.\n}',
+      detail:
+        'Prefs {\n  theme?: string\n  density?: "cozy" | "compact"\n  locale: string — Where it is stored.\n}',
     });
+  });
+
+  it('expands mapped-type aliases over local types by member origin', () => {
+    // Pick resolves through the alias name to an instantiated mapped type whose members are
+    // the user's in-project properties — the expansion gate must judge member origins, not
+    // the resolved symbol (lib.d.ts declares the mapped type itself).
+    expect(tableTypeOf(argTypes, 'picked')).toEqual({
+      summary: 'Picked',
+      detail: 'Picked {\n  name: string — The display name.\n}',
+    });
+    // vue-component-meta renders this alias as its instantiated text, which the plain-name
+    // gate keeps flat in production; the direct resolver call pins the member-origin fix.
+    expect(tableTypeOf(argTypes, 'partialed')).toEqual({ summary: 'Partial<User>' });
+    expect(resolver('Picked')).toBe('Picked {\n  name: string — The display name.\n}');
+    expect(resolver('Partialed')).toBe(
+      'Partialed {\n  name?: string — The display name.\n  age?: number\n}'
+    );
   });
 
   it('expands string TS enums to their member lines', () => {

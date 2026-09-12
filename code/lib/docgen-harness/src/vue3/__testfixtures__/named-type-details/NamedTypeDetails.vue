@@ -8,6 +8,8 @@ import type {
   ID,
   Level,
   LocalDate,
+  Partialed,
+  Picked,
   Prefs,
   Shapes,
   User,
@@ -28,6 +30,8 @@ defineProps<{
   dict: Dict;
   prefs: Prefs;
   localDate: LocalDate;
+  picked: Picked;
+  partialed: Partialed;
 }>();
 </script>
 

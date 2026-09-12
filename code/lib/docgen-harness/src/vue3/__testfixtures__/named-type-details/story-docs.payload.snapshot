@@ -24,13 +24,17 @@ const localDate = new Date(0);
 
 const namespaced = { key: 'k', count: 2 };
 
+const partialed = { age: 36 };
+
+const picked = { name: 'Ada' };
+
 const prefs = { locale: 'en-US' };
 
 const user = { name: 'Ada', age: 36 };
 </script>
 
 <template>
-  <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :prefs="prefs" scalarAlias="abc-123" shapes="circle" :user="user" />
+  <NamedTypeDetails :big="big" :builtin="builtin" :cyclic="cyclic" :dict="dict" :inlined="inlined" :localDate="localDate" :namespaced="namespaced" :partialed="partialed" :picked="picked" :prefs="prefs" scalarAlias="abc-123" shapes="circle" :user="user" />
 </template>",
       "summary": undefined,
       "warning": "Incomplete snippet: `color: Color.Red`, `level: Level.High` could not be resolved statically.",

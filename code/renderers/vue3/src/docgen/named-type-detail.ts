@@ -87,13 +87,22 @@ export function createNamedTypeDetailResolver({
     renderMembers(
       name,
       type.getProperties().map((property) => {
-        const typeText = typeChecker.typeToString(typeChecker.getTypeOfSymbol(property));
+        // Optional members render as written (`theme?: string`): the checker folds the
+        // optionality into the type as `| undefined`, which would duplicate what the `?`
+        // marker already says. Strip that checker-added trailing undefined only when the
+        // symbol is optional; explicitly-declared unions keep their text verbatim.
+        const isOptional = !!(property.flags & typescript.SymbolFlags.Optional);
+        const rawTypeText = typeChecker.typeToString(typeChecker.getTypeOfSymbol(property));
+        const strippedTypeText = rawTypeText.replace(/\s*\|\s*undefined$/, '');
+        const typeText = isOptional ? strippedTypeText || rawTypeText : rawTypeText;
         // Member JSDoc is documentation the checker already holds — no extra resolution pass.
         const description = typescript
           .displayPartsToString(property.getDocumentationComment(typeChecker))
           .replace(/\s+/g, ' ')
           .trim();
-        return `  ${property.getName()}: ${typeText}${description ? ` — ${description}` : ''}`;
+        return `  ${property.getName()}${isOptional ? '?' : ''}: ${typeText}${
+          description ? ` — ${description}` : ''
+        }`;
       })
     );
 
@@ -148,10 +157,17 @@ export function createNamedTypeDetailResolver({
       if (!(resolved.flags & typescript.TypeFlags.Object)) {
         return undefined;
       }
-      // A local alias can name a library type (`type LocalDate = Date`); the exclusion above only
-      // sees the alias's own in-project file, so the resolved target gets the same check.
-      const targetSymbol = resolved.getSymbol() ?? resolved.aliasSymbol;
-      if (targetSymbol?.declarations?.some((d) => isExternalFile(d.getSourceFile()))) {
+      // Judge expansion by where the members are declared, not by the resolved symbol: lib.d.ts
+      // declares the mapped type itself, so `type Picked = Pick<User, 'name'>` resolves to an
+      // external symbol even though its members are the user's in-project properties and must
+      // still expand. A local alias naming a library type (`type LocalDate = Date`) has only
+      // externally-declared members and stays flat. Members without declarations count as
+      // external — anything unverifiable stays flat.
+      const members = typeChecker.getPropertiesOfType(resolved);
+      const allMembersExternal = members.every(
+        (member) => member.declarations?.some((d) => isExternalFile(d.getSourceFile())) ?? true
+      );
+      if (allMembersExternal) {
         return undefined;
       }
       return renderObject(typeName, resolved);

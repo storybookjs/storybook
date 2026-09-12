@@ -60,6 +60,7 @@ export namespace AppTypes {
 
 export interface Prefs {
   theme?: string;
+  density?: 'cozy' | 'compact';
   /** Where it is stored. */
   locale: string;
 }
@@ -67,3 +68,9 @@ export interface Prefs {
 // A local alias naming a library type: the alias declaration is in-project, but the expansion
 // target (Date) is a lib declaration that must stay flat.
 export type LocalDate = Date;
+
+// Mapped-type aliases over local types: lib.d.ts declares the instantiated mapped type itself,
+// so the expansion gate must judge member origins — these resolve to the user's properties
+// (from `User`) and must expand, unlike `LocalDate`.
+export type Picked = Pick<User, 'name'>;
+export type Partialed = Partial<User>;

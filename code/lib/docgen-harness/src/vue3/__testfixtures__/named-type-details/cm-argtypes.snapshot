@@ -178,6 +178,40 @@
       "value": {},
     },
   },
+  "partialed": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "partialed",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Partial<User>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Partial<User>",
+    },
+  },
+  "picked": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "picked",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "Picked",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "Picked",
+    },
+  },
   "prefs": {
     "defaultValue": undefined,
     "description": "",

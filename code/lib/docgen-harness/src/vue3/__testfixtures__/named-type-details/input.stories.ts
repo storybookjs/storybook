@@ -30,5 +30,7 @@ export const PropsAsWritten: Story = {
     dict: { a: 1 },
     prefs: { locale: 'en-US' },
     localDate: new Date(0),
+    picked: { name: 'Ada' },
+    partialed: { age: 36 },
   },
 };

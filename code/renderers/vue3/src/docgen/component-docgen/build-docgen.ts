@@ -11,15 +11,18 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 
 import type ts from 'typescript';
 
-import { extractArgTypes } from '../extractArgTypes.ts';
+import { extractArgTypes } from '../../extractArgTypes.ts';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
 
-import { buildApiDescription } from './api-description.ts';
-import { createNamedTypeDetailResolver } from './named-type-detail.ts';
-import { type MetaSource, collectComponentMetaSources } from './component-meta.ts';
-import { followReExport } from './follow-re-export.ts';
-import { type UnresolvedComponentReason, resolveMetaComponent } from './resolve-component.ts';
+import { buildApiDescription } from './api-description/api-description.ts';
+import { createNamedTypeDetailResolver } from './arg-types/named-type-detail.ts';
+import { type MetaSource, collectComponentMetaSources } from './component-meta/component-meta.ts';
+import { followReExport } from './resolve-component/follow-re-export.ts';
+import {
+  type UnresolvedComponentReason,
+  resolveMetaComponent,
+} from './resolve-component/resolve-component.ts';
 
 type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
 

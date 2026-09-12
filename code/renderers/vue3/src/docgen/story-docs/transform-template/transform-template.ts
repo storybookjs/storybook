@@ -15,8 +15,8 @@ import {
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
-import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression, printValue } from './classify-value.ts';
+import type { ClassifiedArg } from '../classify-args/classify-args.ts';
+import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
   createRenderContext,
@@ -30,7 +30,7 @@ import {
   renderPreparedSfcSnippet,
   wrapSlotContent,
   type RenderContext,
-} from './render-primitives.ts';
+} from '../../shared/render-primitives.ts';
 import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {

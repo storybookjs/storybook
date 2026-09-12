@@ -3,7 +3,7 @@ import { convert, extractComponentProps, hasDocgen } from 'storybook/internal/do
 import type { SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 import type { VueDocgenInfo, VueDocgenInfoEntry, VueDocgenPlugin } from './types.ts';
-import type { NamedTypeDetailResolver } from './docgen/named-type-detail.ts';
+import type { NamedTypeDetailResolver } from './docgen/component-docgen/arg-types/named-type-detail.ts';
 
 type PropertyMetaSchema = VueDocgenInfoEntry<'vue-component-meta', 'props'>['schema'];
 

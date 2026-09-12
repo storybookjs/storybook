@@ -5,7 +5,9 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';
 
-export { experimental_storyDocsProvider } from './story-docs/preset.ts';
+export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
+
+export { experimental_vueDocgenEngine } from './docgen/engine.ts';
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
@@ -28,9 +30,3 @@ export const experimental_importParsers = async (
   const { vueImportParser } = await import('./parsers/index.ts');
   return [...input, vueImportParser];
 };
-
-/** Docgen extraction engines, keyed by plugin. Each loads lazily so a project only pays for the one it uses. */
-export const experimental_vueDocgenEngine = async () => ({
-  componentMeta: () => import('./docgen/component-meta.ts'),
-  vueDocgenApi: () => import('./docgen/vue-docgen-api.ts'),
-});

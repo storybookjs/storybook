@@ -7,7 +7,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { resolveMetaComponent } from './resolve-component.ts';
 
-const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const storyPath = join(fixturesDir, 'Button.stories.ts');
 
 const parse = (source: string) => loadCsf(source, { makeTitle: () => 'Example/Button' }).parse();

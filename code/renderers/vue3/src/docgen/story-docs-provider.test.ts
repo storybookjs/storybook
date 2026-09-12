@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { Options, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
-import { experimental_storyDocsProvider } from './preset.ts';
+import { experimental_storyDocsProvider } from './story-docs-provider.ts';
 
 const NEXT_PAYLOAD: StoryDocsPayload = {
   id: 'button',

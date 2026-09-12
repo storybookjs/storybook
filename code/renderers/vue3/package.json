@@ -32,6 +32,11 @@
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./internal/docgen": {
+      "types": "./dist/docgen/index.d.ts",
+      "code": "./src/docgen/index.ts",
+      "default": "./dist/docgen/index.js"
+    },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": {

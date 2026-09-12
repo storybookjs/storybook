@@ -12,9 +12,11 @@ import {
   createCheckerByJson,
 } from 'vue-component-meta';
 
-import { applyVueDocgenApiTempFixes } from '../../../../renderers/vue3/src/docgen/component-meta.ts';
-import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
-import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
+import {
+  applyVueDocgenApiTempFixes,
+  extractArgTypes,
+  generateSourceCode,
+} from '@storybook/vue3/internal/docgen';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 

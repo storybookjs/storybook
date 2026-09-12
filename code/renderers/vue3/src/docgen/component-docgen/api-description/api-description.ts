@@ -1,5 +1,5 @@
-import { indent } from '../story-docs/render-primitives.ts';
-import type { MetaSource } from './component-meta.ts';
+import { indent } from '../../shared/render-primitives.ts';
+import type { MetaSource } from '../component-meta/component-meta.ts';
 
 /** The slice of a component's normalized `vue-component-meta` output the api description reads. */
 export type ApiDescriptionSource = Pick<

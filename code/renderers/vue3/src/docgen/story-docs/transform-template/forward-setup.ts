@@ -1,7 +1,11 @@
 import { types as t } from 'storybook/internal/babel';
 import { keyOf, unwrapExpression, type ImportBinding } from 'storybook/internal/csf-tools';
 
-import { collectPatternNames, isFunctionExpression, RESOLVABLE_GLOBALS } from './classify-value.ts';
+import {
+  collectPatternNames,
+  isFunctionExpression,
+  RESOLVABLE_GLOBALS,
+} from '../../shared/classify-value.ts';
 
 export interface ForwardableSetup {
   /** Setup-declared names plus return aliases, reserved so hoisted consts cannot collide. */

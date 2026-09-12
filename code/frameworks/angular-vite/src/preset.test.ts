@@ -2,10 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findConfigFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
+import {
+  AngularMissingStylePreprocessorError,
+  AngularUnresolvedStyleError,
+} from 'storybook/internal/server-errors';
 
-import { statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { existsSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { dirname, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { fs as memfs, vol } from 'memfs';
 import { mergeConfig, normalizePath } from 'vite';
@@ -18,6 +23,7 @@ import {
   experimental_manifests,
   experimental_storyDocsProvider,
   features,
+  stylePreprocessorCheckPlugin,
   viteFinal,
 } from './preset.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
@@ -34,6 +40,9 @@ vi.mock('vite', { spy: true });
 // Spy-only mock: `styles` resolution stats candidate files, and only that call is redirected to a
 // memfs volume, so everything else in the preset keeps reading the real filesystem.
 vi.mock('node:fs', { spy: true });
+// Spy-only as well: the preprocessor check is the one place that asks node for a package, and the
+// tests below need to say which packages a user's project has without installing any of them.
+vi.mock('node:module', { spy: true });
 // The only mock that has to replace the module rather than spy on it: loading the real Angular
 // plugin drags a full Angular toolchain into the run, and none of these tests are about it.
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
@@ -139,6 +148,247 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
   it('returns nothing when no style preprocessor paths are configured', () => {
     expect(runConfig(undefined)).toBeUndefined();
     expect(runConfig({})).toBeUndefined();
+  });
+});
+
+describe('stylePreprocessorCheckPlugin', () => {
+  // Vite's fallback directory. Computed the same way the plugin computes it, because a package
+  // only Vite's own tree can reach is one Vite still loads.
+  const VITE_DIR = dirname(fileURLToPath(import.meta.resolve('vite')));
+
+  type StyleCheckHook = {
+    filter: { id: { include: RegExp; exclude: RegExp } };
+    handler: (code: string, id: string) => unknown;
+  };
+
+  const runTransform = (hook: StyleCheckHook, id: string) =>
+    hook.filter.id.include.test(id) && !hook.filter.id.exclude.test(id)
+      ? hook.handler('', id)
+      : undefined;
+
+  function transformStyle(
+    id: string,
+    {
+      packages = [],
+      installedIn = WORKSPACE_ROOT,
+      entryPointResolves = packages,
+      notExported = [],
+      bypassFilter = false,
+    }: {
+      packages?: string[];
+      installedIn?: string;
+      entryPointResolves?: string[];
+      notExported?: string[];
+      bypassFilter?: boolean;
+    } = {}
+  ) {
+    const present = new Set(
+      packages.map((pkg) => resolve(installedIn, 'node_modules', pkg, 'package.json'))
+    );
+    vi.mocked(existsSync).mockImplementation((path) => present.has(String(path)));
+    // Node resolves upwards, so the mock answers per directory rather than globally: asking from
+    // somewhere that cannot see `installedIn` has to fail, or a test cannot tell the two search
+    // directories apart.
+    vi.mocked(createRequire).mockImplementation((from) => {
+      const askedFrom = dirname(String(from));
+      const prefix = installedIn.endsWith(sep) ? installedIn : installedIn + sep;
+      const canSee = askedFrom === installedIn || askedFrom.startsWith(prefix);
+      return {
+        resolve: (request: string) => {
+          if (canSee && entryPointResolves.includes(request)) {
+            return request;
+          }
+          const refusedEntryPoint = canSee && notExported.includes(request);
+          throw Object.assign(
+            new Error(
+              refusedEntryPoint
+                ? `No "exports" main defined in '${request}'`
+                : `Cannot find module '${request}'`
+            ),
+            { code: refusedEntryPoint ? 'ERR_PACKAGE_PATH_NOT_EXPORTED' : 'MODULE_NOT_FOUND' }
+          );
+        },
+      } as unknown as NodeJS.Require;
+    });
+
+    const plugin = stylePreprocessorCheckPlugin();
+    (plugin.configResolved as (config: unknown) => void)({ root: WORKSPACE_ROOT });
+    const hook = plugin.transform as StyleCheckHook;
+    return () => (bypassFilter ? hook.handler('', id) : runTransform(hook, id));
+  }
+
+  afterEach(() => {
+    vi.mocked(createRequire).mockRestore();
+    vi.mocked(existsSync).mockRestore();
+  });
+
+  // Vite's own message names `sass-embedded`, because `loadSassPackage` tries that first and
+  // rethrows *its* error, so the user installs a package that was never the missing one.
+  it('names `sass` when a project with no sass at all compiles SCSS', () => {
+    const compile = transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'));
+
+    expect(compile).toThrow(AngularMissingStylePreprocessorError);
+    expect(compile).toThrow(/npm install --save-dev sass/);
+  });
+
+  it('offers `sass-embedded` as the alternative rather than the fix', () => {
+    const compile = transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'));
+
+    expect(compile).toThrow(/'sass-embedded' works as well/);
+  });
+
+  it.each(['sass', 'sass-embedded'])('compiles SCSS when the project has %s', (pkg) => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), { packages: [pkg] })
+    ).not.toThrow();
+  });
+
+  it('checks `.sass` and `.less` against their own packages', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.sass'), { packages: ['sass'] })
+    ).not.toThrow();
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.less'), { packages: ['sass'] })
+    ).toThrow(/npm install --save-dev less/);
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.less'), { packages: ['less'] })
+    ).not.toThrow();
+  });
+
+  // Vite appends `?used`, `?inline` and friends before a stylesheet reaches `transform`.
+  it('checks a stylesheet that arrives with a Vite query suffix', () => {
+    const compile = transformStyle(`${resolve(WORKSPACE_ROOT, 'src/button.scss')}?used`);
+
+    expect(compile).toThrow(AngularMissingStylePreprocessorError);
+    expect(compile).toThrow(/button\.scss'/);
+    expect(compile).not.toThrow(/\?used/);
+  });
+
+  // Vite's css plugins exclude these queries from their transform, so the file is read as an asset
+  // and no preprocessor runs. Throwing here would refuse a project that compiles.
+  it.each(['raw', 'url', 'worker', 'sharedworker'])(
+    'leaves a stylesheet requested as `?%s` alone',
+    (query) => {
+      expect(
+        transformStyle(`${resolve(WORKSPACE_ROOT, 'src/button.scss')}?${query}`)
+      ).not.toThrow();
+    }
+  );
+
+  // A filter is an optimization Vite is free to skip, so the handler asks the same question itself.
+  it('leaves a `?raw` stylesheet alone even when the filter is skipped', () => {
+    expect(
+      transformStyle(`${resolve(WORKSPACE_ROOT, 'src/button.scss')}?raw`, { bypassFilter: true })
+    ).not.toThrow();
+  });
+
+  it('leaves files that need no preprocessor alone', () => {
+    expect(transformStyle(resolve(WORKSPACE_ROOT, 'src/button.css'))).not.toThrow();
+    expect(transformStyle(resolve(WORKSPACE_ROOT, 'src/button.ts'))).not.toThrow();
+  });
+
+  // A hoisted `sass` sits above the Vite root, which is exactly where Vite finds it and where this
+  // check has to look too - anything narrower reports a working project as broken.
+  it('searches upwards from the Vite root, not only inside it', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
+        packages: ['sass'],
+        installedIn: dirname(WORKSPACE_ROOT),
+      })
+    ).not.toThrow();
+  });
+
+  // Every case below is a project Vite compiles. The check aborts the build, so reporting any of
+  // them as missing turns a working setup into a hard failure.
+  //
+  // Vite resolves preprocessors with its own conditions, so a package whose `exports` map offers
+  // only `import` loads for Vite while `createRequire().resolve` throws ERR_PACKAGE_PATH_NOT_EXPORTED.
+  it('accepts a preprocessor whose `exports` map has no `require` condition', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
+        packages: ['sass'],
+        entryPointResolves: [],
+      })
+    ).not.toThrow();
+  });
+
+  // `loadPreprocessorPath` falls back to Vite's own directory when the root cannot see the package,
+  // which is how a linked or monorepo checkout compiles SCSS with nothing installed near the root.
+  it('accepts a copy that only Vite`s own directory can reach', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
+        packages: ['sass'],
+        installedIn: VITE_DIR,
+      })
+    ).not.toThrow();
+  });
+
+  // Yarn PnP has no `node_modules` directories to walk, so the resolver is the only thing that can
+  // answer there.
+  it('accepts a Yarn PnP install, where there is no `node_modules` to walk', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
+        packages: [],
+        entryPointResolves: ['sass'],
+      })
+    ).not.toThrow();
+  });
+
+  // The two cases above combined, and the one layout no `node_modules` walk can rescue: under PnP
+  // the resolver is the only witness, so it has to tell "no such package" apart from "the package is
+  // here and its entry point is not exported to `require`". Only the first is a missing install.
+  it('accepts a Yarn PnP install whose `exports` map has no `require` condition', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
+        packages: [],
+        entryPointResolves: [],
+        notExported: ['sass'],
+      })
+    ).not.toThrow();
+  });
+
+  // `pre` puts this hook ahead of the whole module graph, so an unfiltered handler would be called
+  // once per module - overwhelmingly for files that can never need a preprocessor - to answer a
+  // question about stylesheets. The filter is what keeps it off that path, and it earns its place
+  // only if it covers every stylesheet and nothing else.
+  it('is asked about stylesheets and nothing else', () => {
+    const { filter } = stylePreprocessorCheckPlugin().transform as StyleCheckHook;
+    const matching = (ids: string[]) =>
+      ids.filter((id) => filter.id.include.test(id) && !filter.id.exclude.test(id));
+
+    expect(
+      matching([
+        'src/button.scss',
+        'src/button.sass',
+        'src/button.less',
+        // Vite appends `?used`, `?inline` and friends before a stylesheet reaches `transform`.
+        'src/button.scss?used',
+      ])
+    ).toHaveLength(4);
+    expect(
+      matching([
+        'src/app.ts',
+        'src/app.html',
+        'src/button.css',
+        'src/scss-helpers.ts',
+        // Read as an asset, never handed to a preprocessor.
+        'src/button.scss?raw',
+      ])
+    ).toEqual([]);
+  });
+
+  // Without `pre`, `vite:css` transforms first and fails with its own `sass-embedded` message, so
+  // every assertion above still passes while the user sees none of it.
+  it('runs ahead of `vite:css`, whose message it exists to replace', () => {
+    expect(stylePreprocessorCheckPlugin().enforce).toBe('pre');
+  });
+
+  it('is registered by viteFinal, which is the only thing that runs it', async () => {
+    const result = await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
+
+    expect(result.plugins).toContainEqual(
+      expect.objectContaining({ name: 'storybook-angular-vite-style-preprocessor-check' })
+    );
   });
 });
 

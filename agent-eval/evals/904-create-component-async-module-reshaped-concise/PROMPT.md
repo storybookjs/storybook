@@ -1,1 +1,0 @@
-Build `InventoryList` (default export in `src/components/InventoryList.tsx`) that loads data via `getInventory()` from `src/services/inventoryApi.ts`, shows loading/empty/error states, and renders items.

@@ -14,10 +14,11 @@ import {
   normalizeStorybookWorkflowName,
   parseJson,
   parseStorybookWorkflowShellCommands,
+  workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
 
-export { isRecord, parseJson, parseStorybookWorkflowShellCommands };
+export { isRecord, parseJson, parseStorybookWorkflowShellCommands, workflowCallMatchesName };
 export type { StorybookWorkflowCall };
 
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
@@ -119,7 +120,7 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 }
 
 export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
-  return getStorybookWorkflowCalls().filter((call) => call.name === name);
+  return getStorybookWorkflowCalls().filter((call) => workflowCallMatchesName(call, name));
 }
 
 export function expectWorkflowCalls(expectedNames: string[]): void {
@@ -329,9 +330,15 @@ function usesClaudePreviewTooling(): boolean {
   return agent === 'claude-code' && integration === 'plugin';
 }
 
+// Claude-code plugin only: writes/validates `.claude/launch.json`. Callers must
+// gate with `test.skipIf(agent !== 'claude-code' || integration !== 'plugin')`
+// so inapplicable cells show as skipped; calling out of context fails loud.
 export function expectValidStorybookLaunchConfig(): void {
   if (!usesClaudePreviewTooling()) {
-    return;
+    const { agent, integration } = getEvalContext();
+    expect.fail(
+      `expectValidStorybookLaunchConfig is only for claude-code + plugin (got agent=${agent}, integration=${integration}). Gate callers with test.skipIf(...)`
+    );
   }
 
   if (!existsSync(LAUNCH_CONFIG_PATH)) {
@@ -361,8 +368,8 @@ export function expectValidStorybookLaunchConfig(): void {
   ).toBe('string');
 }
 
-// Preview-surface outcome check, per plugin surface — both branches check
-// tool usage in the transcript:
+// Preview-surface outcome check, per plugin surface. Both branches check tool
+// usage in the transcript:
 // - claude-code: the dev server must be started through the Claude preview
 //   tooling (the preview_start tool), which presents the app's preview browser.
 // - codex: the agent must open the Storybook URL in the in-app browser and
@@ -382,11 +389,14 @@ export function expectValidStorybookLaunchConfig(): void {
 //   control-in-app-browser skill being available; the assertion does not,
 //   because the codex plugin experiment always installs that skill and its
 //   browser mock (writeCodexInAppBrowserMock in lib/templates.ts).
-// MCP cells have no preview surface installed, so nothing is asserted there.
+// MCP cells have no preview surface. Callers must gate with
+// `test.skipIf(integration !== 'plugin')`; calling out of context fails loud.
 export function expectPreviewBrowserStarted(): void {
   const { agent, integration } = getEvalContext();
   if (integration !== 'plugin') {
-    return;
+    expect.fail(
+      `expectPreviewBrowserStarted is only for plugin (got integration=${integration}). Gate callers with test.skipIf(getEvalContext().integration !== 'plugin')`
+    );
   }
 
   if (usesClaudePreviewTooling()) {
@@ -457,7 +467,7 @@ export function findDevServerKillCommands(commands: string[], navigatedUrls: str
 // literals in its code argument. This mirrors how plugin workflow calls are
 // parsed out of `storybook ai` shell commands. A dynamically composed URL
 // (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
-// loud rather than passing vacuously.
+// loud rather than as a false-pass.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
   return rawTranscript.split('\n').flatMap((line) => {
     const event = parseJson(line);
@@ -541,10 +551,10 @@ export type WorkflowToolResult = {
 
 // The validation workflow the instructions demand: run test-run after
 // each component or story change, and fix failing tests before reporting
-// success. The section headers come from the test-run result
-// formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
-// ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
-// `storybook ai test-run` CLI output.
+// success. The section headers come from the shared test-run result formatter
+// (## Passing Stories / ## Failing Stories / ## Unhandled Errors) and appear
+// verbatim in the MCP tool result and — since storybookjs/storybook#36029 —
+// byte-identically in the `storybook tools test run` CLI output.
 //
 // `covering` pins the final green run to the change under test: at least one
 // of the given substrings must appear in its story ids. A stricter
@@ -703,7 +713,9 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return false;
   }
 
-  return parseStorybookWorkflowShellCommands([command]).some((call) => call.name === workflowName);
+  return parseStorybookWorkflowShellCommands([command]).some((call) =>
+    workflowCallMatchesName(call, workflowName)
+  );
 }
 
 // Codex raw transcripts report completed MCP tool calls and shell commands as
@@ -734,7 +746,9 @@ function collectCodexWorkflowToolResult(
   if (
     item.type === 'command_execution' &&
     typeof item.command === 'string' &&
-    parseStorybookWorkflowShellCommands([item.command]).some((call) => call.name === workflowName)
+    parseStorybookWorkflowShellCommands([item.command]).some((call) =>
+      workflowCallMatchesName(call, workflowName)
+    )
   ) {
     results.push({
       output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',
@@ -793,7 +807,7 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 // shell command. Gate call sites with
 // `test.skipIf(getEvalContext().integration === 'mcp')` — no skills are
 // installed on the MCP path, so MCP runs should report a skip instead of a
-// vacuous pass.
+// false-pass.
 export function expectSkillInvoked(skillName: string): void {
   const { agent } = getEvalContext();
 
@@ -1116,8 +1130,8 @@ function getRawCodexMcpWorkflowCalls(): StorybookWorkflowCall[] {
       }
 
       // Codex emits each MCP call twice (item.started + item.completed);
-      // counting both would double every call and let "called at least
-      // twice" assertions pass vacuously on a single real invocation.
+      // counting both would double every call and produce a false-pass for
+      // "called at least twice" assertions on a single real invocation.
       if (event.type !== 'item.completed') {
         return [];
       }

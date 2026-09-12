@@ -1,7 +1,0 @@
-{
-  "name": "901-create-component-atom-reshaped-detailed",
-  "type": "module",
-  "evals": {
-    "template": "reshaped-storybook"
-  }
-}

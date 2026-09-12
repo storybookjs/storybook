@@ -6,7 +6,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -21,7 +20,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -36,7 +34,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -53,7 +50,6 @@
           "summary": null
         },
         "type": {
-          "required": false,
           "summary": "User | null"
         }
       },

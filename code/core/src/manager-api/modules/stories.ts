@@ -51,6 +51,7 @@ import type {
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { global } from '@storybook/global';
+import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
@@ -81,6 +82,7 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
+const STATUS_CHANGE_REBUILD_THROTTLE = 500;
 
 const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
 
@@ -921,18 +923,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     experimental_setFilters: async (filters) => {
       await store.setState((state) => ({ filters: { ...state.filters, ...filters } }));
-
-      const { internal_index: index } = store.getState();
-
-      if (!index) {
+      if (!(await applyCurrentFilters())) {
         return;
-      }
-      // apply new filters by setting the index again
-      await api.setIndex(index);
-
-      const refs = await fullAPI.getRefs();
-      for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
-        await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
       }
 
       for (const id of Object.keys(filters)) {
@@ -1047,6 +1039,54 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         });
       }
     },
+  };
+
+  const applyCurrentFilters = async () => {
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return false;
+    }
+
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+      await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    }
+
+    return true;
+  };
+
+  // Simple queue so status-filter rebuilds never overlap.
+  let statusFilterRebuildQueued = false;
+  let statusFilterRebuildInFlight = false;
+
+  const flushStatusFilterRebuild = async () => {
+    if (statusFilterRebuildInFlight) {
+      return;
+    }
+    statusFilterRebuildInFlight = true;
+    try {
+      while (statusFilterRebuildQueued) {
+        statusFilterRebuildQueued = false;
+        try {
+          await applyCurrentFilters();
+        } catch (error) {
+          logger.warn('Failed to rebuild story index after status change:', error);
+        }
+      }
+    } finally {
+      statusFilterRebuildInFlight = false;
+      if (statusFilterRebuildQueued) {
+        void flushStatusFilterRebuild();
+      }
+    }
+  };
+
+  const requestStatusFilterRebuild = () => {
+    statusFilterRebuildQueued = true;
+    void flushStatusFilterRebuild();
   };
 
   const recomputeTagsFilter = () => {
@@ -1301,11 +1341,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     });
   });
 
-  fullStatusStore.onAllStatusChange(async () => {
-    // re-apply the filters when the statuses change; this also re-applies the index
-    // (and the indexes of composed refs), which read statuses at transform time
-    await recomputeStatusFilter();
-  });
+  fullStatusStore.onAllStatusChange(
+    throttle(requestStatusFilterRebuild, STATUS_CHANGE_REBUILD_THROTTLE, {
+      edges: ['leading', 'trailing'],
+    })
+  );
 
   const config = provider.getConfig();
   const configFilters = config?.sidebar?.filters || {};

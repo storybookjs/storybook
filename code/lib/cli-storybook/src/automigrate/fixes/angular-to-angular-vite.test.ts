@@ -11,6 +11,7 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import { ANALOG_VITE_PLUGIN_ANGULAR_VERSION } from 'storybook/internal/cli';
 
+import { resolveZoneless } from '../../../../../frameworks/angular-vite/src/preset.ts';
 import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { CheckOptions } from './index.ts';
@@ -87,6 +88,7 @@ const mockUpdateMainConfig = vi.mocked(updateMainConfig);
 describe('angular-to-angular-vite', () => {
   const mockPackageManager = {
     getAllDependencies: vi.fn(),
+    isDependencyInstalled: vi.fn(),
     packageJsonPaths: ['/project/package.json'],
     removeDependencies: vi.fn().mockResolvedValue(undefined),
     addDependencies: vi.fn().mockResolvedValue(undefined),
@@ -118,6 +120,11 @@ describe('angular-to-angular-vite', () => {
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
     mockAngularCore({ declared: null, resolved: null });
     vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+    // Derived exactly as `JsPackageManager` derives it, so a test only ever states the dependency
+    // tree once.
+    vi.mocked(mockPackageManager.isDependencyInstalled).mockImplementation((dependency) =>
+      Object.keys(mockPackageManager.getAllDependencies()).includes(dependency)
+    );
     // Default: angular.json doesn't exist (AngularJSON gracefully skips it). Tests that need
     // angular.json content override this via `mockAngularJson(...)`.
     mockExistsSync.mockReturnValue(false);
@@ -1395,8 +1402,47 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         });
       };
 
-      it("prepends `import 'zone.js';` and logs a step when the flag is unset", async () => {
+      /** Serve a single Nx `project.json` from the workspace glob, plus an empty preview. */
+      const mockNxProjectJson = async (zonelessOption: Record<string, unknown>) => {
+        // eslint-disable-next-line depend/ban-dependencies
+        const { globby } = await import('globby');
+        vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+        const projectJson = JSON.stringify({
+          name: 'soba',
+          targets: {
+            storybook: {
+              executor: '@storybook/angular:start-storybook',
+              options: zonelessOption,
+            },
+          },
+        });
+
+        mockReadFile.mockImplementation((filePath: any) => {
+          const p = String(filePath);
+          if (p.endsWith('project.json')) {
+            return Promise.resolve(projectJson) as any;
+          }
+          if (p === previewConfigPath) {
+            return Promise.resolve('export default {};') as any;
+          }
+          return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
+        });
+      };
+
+      /** Put `zone.js` in the project's dependency tree; `isDependencyInstalled` follows it. */
+      const declareZoneJs = () =>
+        vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({ 'zone.js': '~0.15.0' });
+
+      const zoneJsWarnings = () =>
+        vi
+          .mocked(logger.warn)
+          .mock.calls.map(([message]) => String(message))
+          .filter((message) => message.includes('does not depend on'));
+
+      it("prepends `import 'zone.js';` and logs a step when the project declares zone.js", async () => {
         mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
         mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
 
         await angularToAngularVite.run!({
@@ -1417,9 +1463,12 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         expect(logger.step).toHaveBeenCalledWith(expect.stringContaining(previewConfigPath));
       });
 
-      it('does not modify the preview when every storybook target sets experimentalZoneless: true', async () => {
+      // The common case, and the one this migration writes itself: a target that declares no
+      // `zoneless` option in a project with no `zone.js` to import. `@storybook/angular-vite`
+      // reads the same absence as zoneless, so an import here would be unresolvable.
+      it('leaves the preview alone when the target declares nothing and zone.js is not a dependency', async () => {
         mockPromptConfirm.mockResolvedValue(false);
-        mockFilesFor(angularJsonWithFlag(true), 'export default {};');
+        mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
 
         await angularToAngularVite.run!({
           result: baseResult,
@@ -1433,12 +1482,38 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         } as any);
 
         expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+        expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('does not depend on'));
+      });
+
+      // The declared dependency outranks the option: skipping the import costs a dead preview
+      // (NG0908), writing a resolvable one costs a console warning (NG0914).
+      it('writes the import when zone.js is declared, even for a target that sets zoneless: true', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
+        mockFilesFor(angularJsonWithFlag(true), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
       });
 
       // A multi-project upgrade runs every project's `run()` against the tree the first project's
       // run already rewrote, so projects 2..N only ever see angular-vite refs.
       it('still injects zone.js when an earlier run already rewrote the targets', async () => {
         mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
         mockFilesFor(
           JSON.stringify({
             projects: {
@@ -1469,7 +1544,34 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         );
       });
 
-      it('reads the zoneless flag an earlier run renamed, so a zoneless preview stays untouched', async () => {
+      // Unchanged behaviour, pinned so the new dependency check cannot swallow the one row that
+      // was already correct: this passes on `next` too.
+      it('injects for an explicitly zone-based target, without warning, when zone.js is declared', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
+        mockFilesFor(angularJsonWithFlag(false), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+        expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('does not depend on'));
+      });
+
+      // Writing the import here guarantees an unresolvable specifier, so name the contradiction
+      // instead. The `zoneless` spelling is what an earlier run leaves behind.
+      it('warns instead of writing when a target sets zoneless: false but zone.js is missing', async () => {
         mockPromptConfirm.mockResolvedValue(false);
         mockFilesFor(
           JSON.stringify({
@@ -1478,8 +1580,82 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
                 architect: {
                   storybook: {
                     builder: `${ANGULAR_VITE_PACKAGE}:start-storybook`,
-                    options: { zoneless: true },
+                    options: { zoneless: false },
                   },
+                },
+              },
+            },
+          }),
+          'export default {};'
+        );
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+        expect(zoneJsWarnings()).toMatchInlineSnapshot(`
+          [
+            "A Storybook builder target sets \`zoneless: false\`, but this project does not depend on \`zone.js\`, so no \`import 'zone.js';\` was added to your preview - it could not resolve, and every story would fail to load. Install \`zone.js\`, or set \`zoneless: true\` on that target if your app uses zoneless change detection.",
+          ]
+        `);
+      });
+
+      it('warns once when any of several storybook targets is zone-based and zone.js is missing', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(
+          JSON.stringify({
+            projects: {
+              myApp: {
+                architect: {
+                  storybook: {
+                    builder: '@storybook/angular:start-storybook',
+                    options: { experimentalZoneless: false },
+                  },
+                  'build-storybook': {
+                    builder: '@storybook/angular:build-storybook',
+                    options: {},
+                  },
+                },
+              },
+            },
+          }),
+          'export default {};'
+        );
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+        expect(zoneJsWarnings()).toHaveLength(1);
+      });
+
+      // Unchanged behaviour, pinned: `zone.js` in the dependency tree must not be enough on its
+      // own. This passes on `next` too.
+      it('writes nothing when the workspace has no storybook target, even with zone.js declared', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
+        mockFilesFor(
+          JSON.stringify({
+            projects: {
+              myApp: {
+                architect: {
+                  build: { builder: '@angular/build:application', options: {} },
                 },
               },
             },
@@ -1501,29 +1677,9 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
       });
 
-      it('behaves like unset when experimentalZoneless is explicitly false: injection happens', async () => {
-        mockPromptConfirm.mockResolvedValue(false);
-        mockFilesFor(angularJsonWithFlag(false), 'export default {};');
-
-        await angularToAngularVite.run!({
-          result: baseResult,
-          dryRun: false,
-          packageManager: mockPackageManager,
-          mainConfigPath: '/project/.storybook/main.ts',
-          previewConfigPath,
-          storiesPaths: [],
-          configDir: '.storybook',
-          storybookVersion: '9.0.0',
-        } as any);
-
-        expect(mockWriteFile).toHaveBeenCalledWith(
-          previewConfigPath,
-          expect.stringContaining('import "zone.js";')
-        );
-      });
-
       it('is idempotent: leaves a preview that already imports zone.js (incl. deep imports) untouched', async () => {
         mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
         mockFilesFor(
           angularJsonWithFlag(undefined),
           "import 'zone.js/testing';\nexport default {};"
@@ -1544,6 +1700,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       });
 
       it('performs no file writes in --dry-run while still reporting the planned change', async () => {
+        declareZoneJs();
         mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
 
         await angularToAngularVite.run!({
@@ -1563,6 +1720,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       it('works with a .tsx preview file', async () => {
         mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
         const tsxPreviewPath = '/project/.storybook/preview.tsx';
         mockAngularJson(angularJsonWithFlag(undefined));
         mockReadFile.mockImplementation((filePath: any) => {
@@ -1595,6 +1753,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       it('warns with manual-import guidance when no preview file was found, without throwing', async () => {
         mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
         mockFilesFor(angularJsonWithFlag(undefined), 'export default {};');
 
         await expect(
@@ -1639,30 +1798,8 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       it('handles Nx project.json storybook targets identically to angular.json targets', async () => {
         mockPromptConfirm.mockResolvedValue(false);
-        // eslint-disable-next-line depend/ban-dependencies
-        const { globby } = await import('globby');
-        vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
-
-        const projectJsonContent = JSON.stringify({
-          name: 'soba',
-          targets: {
-            storybook: {
-              executor: '@storybook/angular:start-storybook',
-              options: {},
-            },
-          },
-        });
-
-        mockReadFile.mockImplementation((filePath: any) => {
-          const p = String(filePath);
-          if (p.endsWith('project.json')) {
-            return Promise.resolve(projectJsonContent) as any;
-          }
-          if (p === previewConfigPath) {
-            return Promise.resolve('export default {};') as any;
-          }
-          return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
-        });
+        declareZoneJs();
+        await mockNxProjectJson({});
 
         await angularToAngularVite.run!({
           result: baseResult,
@@ -1681,62 +1818,9 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         );
       });
 
-      it('injects when one of multiple storybook targets leaves the flag unset (multi-target rule)', async () => {
+      it('warns for a zone-based Nx project.json target in a project without zone.js', async () => {
         mockPromptConfirm.mockResolvedValue(false);
-        const angularJsonContent = JSON.stringify({
-          projects: {
-            myApp: {
-              architect: {
-                storybook: {
-                  builder: '@storybook/angular:start-storybook',
-                  options: { experimentalZoneless: true },
-                },
-                'build-storybook': {
-                  builder: '@storybook/angular:build-storybook',
-                  options: {},
-                },
-              },
-            },
-          },
-        });
-        mockFilesFor(angularJsonContent, 'export default {};');
-
-        await angularToAngularVite.run!({
-          result: baseResult,
-          dryRun: false,
-          packageManager: mockPackageManager,
-          mainConfigPath: '/project/.storybook/main.ts',
-          previewConfigPath,
-          storiesPaths: [],
-          configDir: '.storybook',
-          storybookVersion: '9.0.0',
-        } as any);
-
-        expect(mockWriteFile).toHaveBeenCalledWith(
-          previewConfigPath,
-          expect.stringContaining('import "zone.js";')
-        );
-      });
-
-      it('skips injection when every one of multiple storybook targets sets the flag true', async () => {
-        mockPromptConfirm.mockResolvedValue(false);
-        const angularJsonContent = JSON.stringify({
-          projects: {
-            myApp: {
-              architect: {
-                storybook: {
-                  builder: '@storybook/angular:start-storybook',
-                  options: { experimentalZoneless: true },
-                },
-                'build-storybook': {
-                  builder: '@storybook/angular:build-storybook',
-                  options: { experimentalZoneless: true },
-                },
-              },
-            },
-          },
-        });
-        mockFilesFor(angularJsonContent, 'export default {};');
+        await mockNxProjectJson({ zoneless: false });
 
         await angularToAngularVite.run!({
           result: baseResult,
@@ -1750,10 +1834,12 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         } as any);
 
         expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('does not depend on'));
       });
 
       it('only renames/detects the correct project when two projects name their storybook target identically', async () => {
         mockPromptConfirm.mockResolvedValue(false);
+        declareZoneJs();
         const angularJsonContent = JSON.stringify({
           projects: {
             appA: {
@@ -1787,7 +1873,6 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
           storybookVersion: '9.0.0',
         } as any);
 
-        // Injection fires because appB's target is unset (multi-target rule).
         expect(mockWriteFile).toHaveBeenCalledWith(
           previewConfigPath,
           expect.stringContaining('import "zone.js";')
@@ -1801,6 +1886,110 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         // Only appA's target (which explicitly carried the old key) is renamed.
         expect(written.projects.appA.architect.storybook.options).toEqual({ zoneless: true });
         expect(written.projects.appB.architect.storybook.options).toEqual({});
+      });
+
+      // This migration and `@storybook/angular-vite` both read the `zoneless` builder option, and
+      // they used to default it in opposite directions: the framework read an absent option as
+      // zoneless while this migration read it as zone-based and wrote an `import 'zone.js'` the
+      // framework had already excluded from `optimizeDeps` - unresolvable in a project with no
+      // zone.js. Walking every (option x dependency tree) pair through both sides in one test is
+      // what keeps them from drifting apart again.
+      it('agrees with the framework: an absent zoneless option never means zone-based', async () => {
+        const observed: Record<
+          string,
+          { frameworkTreatsAsZoneless: boolean; migrationWritesImport: boolean }
+        > = {};
+
+        for (const zoneless of [undefined, true, false] as const) {
+          for (const zoneJsDeclared of [false, true] as const) {
+            vi.clearAllMocks();
+            mockPromptConfirm.mockResolvedValue(false);
+            vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue(
+              zoneJsDeclared ? { 'zone.js': '~0.15.0' } : {}
+            );
+            mockFilesFor(
+              JSON.stringify({
+                projects: {
+                  myApp: {
+                    architect: {
+                      storybook: {
+                        builder: '@storybook/angular:start-storybook',
+                        options: zoneless === undefined ? {} : { zoneless },
+                      },
+                    },
+                  },
+                },
+              }),
+              'export default {};'
+            );
+
+            await angularToAngularVite.run!({
+              result: baseResult,
+              dryRun: false,
+              packageManager: mockPackageManager,
+              mainConfigPath: '/project/.storybook/main.ts',
+              previewConfigPath,
+              storiesPaths: [],
+              configDir: '.storybook',
+              storybookVersion: '9.0.0',
+            } as any);
+
+            observed[`zoneless=${zoneless} zone.js=${zoneJsDeclared}`] = {
+              // The framework's own reading of the same builder option, imported from its preset.
+              frameworkTreatsAsZoneless: resolveZoneless(
+                zoneless === undefined ? {} : { zoneless }
+              ),
+              migrationWritesImport: mockWriteFile.mock.calls.some(
+                ([path, contents]) =>
+                  path === previewConfigPath && String(contents).includes('zone.js')
+              ),
+            };
+          }
+        }
+
+        expect(observed).toMatchInlineSnapshot(`
+          {
+            "zoneless=false zone.js=false": {
+              "frameworkTreatsAsZoneless": false,
+              "migrationWritesImport": false,
+            },
+            "zoneless=false zone.js=true": {
+              "frameworkTreatsAsZoneless": false,
+              "migrationWritesImport": true,
+            },
+            "zoneless=true zone.js=false": {
+              "frameworkTreatsAsZoneless": true,
+              "migrationWritesImport": false,
+            },
+            "zoneless=true zone.js=true": {
+              "frameworkTreatsAsZoneless": true,
+              "migrationWritesImport": true,
+            },
+            "zoneless=undefined zone.js=false": {
+              "frameworkTreatsAsZoneless": true,
+              "migrationWritesImport": false,
+            },
+            "zoneless=undefined zone.js=true": {
+              "frameworkTreatsAsZoneless": true,
+              "migrationWritesImport": true,
+            },
+          }
+        `);
+
+        // The framework reads an absent option as zoneless. The migration must not read that same
+        // absence as zone-based, which is the row the original defect landed on.
+        expect(observed['zoneless=undefined zone.js=false']).toEqual({
+          frameworkTreatsAsZoneless: true,
+          migrationWritesImport: false,
+        });
+
+        // Independent of the recorded table: an import is only ever written where `zone.js` is
+        // declared, so it can always resolve.
+        expect(
+          Object.keys(observed).filter(
+            (input) => observed[input].migrationWritesImport && input.endsWith('zone.js=false')
+          )
+        ).toEqual([]);
       });
     });
   });

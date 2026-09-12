@@ -17,7 +17,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   // contaminate the markdown output this command prints to stdout. Write directly to
   // stderr instead so piping `storybook ai setup` still yields clean markdown.
   process.stderr.write(
-    '`storybook ai setup` is deprecated and will be removed in a future release. Use `npx storybook skills get setup` instead.\n'
+    '`storybook ai setup` is deprecated and will be removed in a future release. Use `npx storybook skills setup` instead.\n'
   );
 
   const result = await getProjectInfo({

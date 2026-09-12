@@ -22,25 +22,13 @@ function previewReviewNudge(ctx: ToolsetCtx): string {
 /**
  * Splits a preview result into the text blocks a consumer shows.
  *
- * MCP renders one block per URL, so this returns the blocks; {@link formatPreviewStories} joins
- * them for consumers that want a single string.
+ * MCP renders one block per URL; the CLI adapter joins the blocks into one document.
  */
-export function formatPreviewStoryBlocks(
+export function formatPreviewStories(
   { stories }: PreviewStoriesOutput,
   ctx: ToolsetCtx,
   { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
 ): string[] {
-  if (ctx.transport !== 'mcp') {
-    return [
-      '# Story previews',
-      ...stories.map((story) =>
-        'error' in story
-          ? `- Error: ${story.error}`
-          : `- ${story.title} - ${story.name}\n  ${story.previewUrl}`
-      ),
-    ];
-  }
-
   const blocks = stories.map((story) => ('error' in story ? story.error : story.previewUrl));
 
   // An all-error result has nothing to curate, so the nudge only applies once a URL resolved.
@@ -49,16 +37,6 @@ export function formatPreviewStoryBlocks(
   }
 
   return blocks;
-}
-
-export function formatPreviewStories(
-  data: PreviewStoriesOutput,
-  ctx: ToolsetCtx,
-  options: { reviewEnabled?: boolean } = {}
-): string | string[] {
-  const blocks = formatPreviewStoryBlocks(data, ctx, options);
-  // MCP renders one text block per URL; the CLI list reads better as one joined document.
-  return ctx.transport === 'mcp' ? blocks : blocks.join('\n');
 }
 
 const BANNER_INLINE_LIMIT = 3;
@@ -107,21 +85,6 @@ export function formatChangedStories(
   ctx: ToolsetCtx,
   { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
 ): string {
-  if (ctx.transport !== 'mcp') {
-    const lines = [
-      '# Changed stories',
-      `New: ${counts.new}, modified: ${counts.modified}, affected: ${counts.affected}`,
-      ...stories.map(
-        (story) =>
-          `- [${story.statusValue.replace('status-value:', '')}] ${story.title} - ${story.name}`
-      ),
-    ];
-    if (unreachableFiles.length > 0) {
-      lines.push('', '## Unreachable files', ...unreachableFiles.map((file) => `- ${file}`));
-    }
-    return lines.join('\n');
-  }
-
   if (stories.length === 0) {
     return `No new, modified, or related stories detected.${formatUnreachableHint(unreachableFiles, ctx)}`;
   }
@@ -221,18 +184,7 @@ export function serializeComponentSection(
   return lines.join('\n');
 }
 
-export function formatFindByComponent(
-  { results, maxDistance }: FindByComponentOutput,
-  ctx: ToolsetCtx
-): string {
-  if (ctx.transport !== 'mcp') {
-    const lines = ['# Stories by component'];
-    for (const result of results) {
-      lines.push(`## ${result.componentPath}`, serializeComponentSection(result, maxDistance));
-    }
-    return lines.join('\n');
-  }
-
+export function formatFindByComponent({ results, maxDistance }: FindByComponentOutput): string {
   return results.length === 0
     ? 'No component paths provided.'
     : results.map((result) => serializeComponentSection(result, maxDistance)).join('\n\n');

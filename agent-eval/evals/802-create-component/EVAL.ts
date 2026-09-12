@@ -1,63 +1,71 @@
-import { test } from 'vitest';
 import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
   expectPreviewBrowserStarted,
   expectPreviewStoriesWithFinalLinks,
   expectSkillInvoked,
-  getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
   expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
+  getEvalContext,
   isReviewEnabled,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
-// Unlike 801, the template's valid .claude/launch.json is left intact, so the
-// plugin must reuse the existing config instead of writing a fresh one.
-const review = isReviewEnabled();
+describe('creating a ProfileCard component', () => {
+  const review = isReviewEnabled();
 
-// Building the ProfileCard from Reshaped primitives requires the docs tools;
-// codex is an accepted known failure here (skipped the docs tools under both
-// instruction shapes, CI run 28660377980, 2026-07-03).
-// Re-enable this assertion for Codex after the documentation tool call passes on three consecutive scheduled CI runs.
-test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
-  expectWorkflowCalls(['docs-show']);
-});
+  test('runs story tests after the change and finishes with them passing', () => {
+    expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
+  });
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-  expectDisplayReviewForVisualChange();
-});
+  describe.runIf(review)('when review is enabled', () => {
+    test('uses Storybook story instructions and publishes a display review', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+      expectDisplayReviewForVisualChange();
+    });
 
-test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['profilecard'] });
-});
+    test('every new story appears in the display review', () => {
+      expectAllStoryExportsInDisplayReview();
+    });
 
-test.runIf(review)('every new story appears in the display review', () => {
-  expectAllStoryExportsInDisplayReview();
-});
+    test('discovers stories through the workflow tools before publishing the review', () => {
+      expectStoryDiscoveryBeforeReview();
+    });
+  });
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+  describe.runIf(!review)('when review is disabled', () => {
+    test('uses Storybook story instructions and previews the new stories', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions']);
+      expectPreviewStoriesWithFinalLinks({ covering: ['profilecard'] });
+    });
+  });
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
-});
+  describe('depending on the current agent and integration', () => {
+    const { agent, integration } = getEvalContext();
 
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
+    // Building the ProfileCard from Reshaped primitives requires the docs tools.
+    // Skipped for Codex: it omits docs-show under both instruction
+    // shapes (CI 28660377980, 2026-07-03). Re-enable after the documentation
+    // tool call passes on three consecutive scheduled CI runs.
+    test.skipIf(agent === 'codex')('uses the documentation tooling', () =>
+      expectWorkflowCalls(['docs-show'])
+    );
 
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
+    test.skipIf(integration === 'mcp')('invokes the stories skill', () =>
+      expectSkillInvoked('stories')
+    );
 
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    // Unlike 801, the template's valid .claude/launch.json is left intact, so the
+    // plugin must reuse the existing config instead of writing a fresh one.
+    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
+      'keeps the pre-existing Storybook launch config valid',
+      () => expectValidStorybookLaunchConfig()
+    );
+
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
+      expectPreviewBrowserStarted()
+    );
+  });
 });

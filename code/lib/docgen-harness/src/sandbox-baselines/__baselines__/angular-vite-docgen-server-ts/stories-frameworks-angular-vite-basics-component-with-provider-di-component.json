@@ -6,7 +6,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "ElementRef"
         }
       },
@@ -21,7 +20,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => string"
         }
       },
@@ -36,7 +34,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "Injector"
         }
       },
@@ -51,7 +48,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => boolean"
         }
       },
@@ -66,7 +62,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "number"
         }
       },
@@ -80,7 +75,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

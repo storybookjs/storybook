@@ -141,7 +141,7 @@ The script ensures each repo is on its default branch with no local changes, fet
 node scripts/eval/sync-storybook-version.ts --version 9.1.0
 
 # Upgrade to a canary published from a Storybook PR
-node scripts/eval/sync-storybook-version.ts --version 0.0.0-pr-34297-sha-abcdef12
+node scripts/eval/sync-storybook-version.ts --version https://pkg.pr.new/storybookjs/storybook/storybook@abcdef1234567890
 
 # Upgrade a subset of projects
 node scripts/eval/sync-storybook-version.ts --version latest --project mealdrop --project edgy

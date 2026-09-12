@@ -35,7 +35,6 @@ describe('STRIP_KEYS', () => {
       'logFilters',
       'npmMinimalAgeGate',
       'npmPreapprovedPackages',
-      'pnpFallbackMode',
       'enableGlobalCache',
       'checksumBehavior',
     ]);
@@ -49,8 +48,6 @@ describe('EXCLUDE_GLOBS', () => {
       '**/.yarn/install-state.gz',
       '**/.yarn/build-state.yml',
       '**/.yarn/unplugged/**',
-      '**/.pnp.cjs',
-      '**/.pnp.loader.mjs',
       '**/node_modules/**',
       '**/.cache/**',
       '**/storybook-static/**',
@@ -81,7 +78,6 @@ describe('sanitizePublishedSandboxes', () => {
       'logFilters: []',
       'npmMinimalAgeGate: 0',
       'npmPreapprovedPackages: ["next", "@next/*"]',
-      'pnpFallbackMode: none',
       'enableGlobalCache: true',
       'checksumBehavior: ignore',
       '',
@@ -125,7 +121,6 @@ describe('sanitizePublishedSandboxes', () => {
     await writeFile(join(afterCache, 'pkg.zip'), 'binary blob');
     await mkdir(beforeNodeModules, { recursive: true });
     await writeFile(join(beforeNodeModules, 'index.js'), 'export {}');
-    await writeFile(join(afterDir, '.pnp.cjs'), '/* zero install */');
     await writeFile(join(afterDir, 'README.md'), '# kept');
 
     const result = await sanitizePublishedSandboxes(root);
@@ -133,7 +128,6 @@ describe('sanitizePublishedSandboxes', () => {
     expect(result.removedPaths).toBeGreaterThan(0);
     expect(await exists(afterCache)).toBe(false);
     expect(await exists(beforeNodeModules)).toBe(false);
-    expect(await exists(join(afterDir, '.pnp.cjs'))).toBe(false);
     // Non-excluded files survive
     expect(await exists(join(afterDir, 'README.md'))).toBe(true);
   });

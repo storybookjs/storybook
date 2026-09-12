@@ -2,8 +2,13 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
-import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
+import {
+  commonGlobOptions,
+  getProjectRoot,
+  getTsconfigPathsBaseDir,
+  normalizeStoryPath,
+} from 'storybook/internal/common';
+import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
@@ -30,9 +35,9 @@ import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
-import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
 import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
+import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
+import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -421,11 +426,11 @@ export class StoryIndexGenerator {
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {
-      matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-        'browser',
-        'module',
-        'main',
-      ]);
+      matchPath = TsconfigPaths.createMatchPath(
+        getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+        tsconfig.paths,
+        ['browser', 'module', 'main']
+      );
     }
 
     const toImportPath = (path: string | undefined) => {

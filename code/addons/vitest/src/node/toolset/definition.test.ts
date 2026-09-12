@@ -1,5 +1,5 @@
 import type { StoryIndex } from 'storybook/internal/types';
-import type { ToolsetCtx } from 'storybook/open-service';
+import { invokeToolsetMethod, type ToolsetCtx } from 'storybook/open-service';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
@@ -13,14 +13,12 @@ vi.mock('./run.ts', { spy: true });
 const index = { v: 5, entries: {} } as StoryIndex;
 const getIndex = vi.fn();
 const storyIndex = { getIndex };
-const telemetry = vi.fn();
 const channel = {} as never;
 
 const ctx = {
   transport: 'cli',
   origin: 'http://localhost:6006',
   getService: vi.fn() as ToolsetCtx['getService'],
-  telemetry,
 } satisfies ToolsetCtx;
 
 const mcpCtx = { ...ctx, transport: 'mcp' } satisfies ToolsetCtx;
@@ -75,7 +73,7 @@ function runTests(
   input: v.InferInput<typeof toolset.methods.run.input> = {},
   runCtx: ToolsetCtx = ctx
 ) {
-  return toolset.methods.run.handler(v.parse(toolset.methods.run.input, input), runCtx);
+  return invokeToolsetMethod(toolset, 'run', v.parse(toolset.methods.run.input, input), runCtx);
 }
 
 /** Runs and renders the way the MCP adapter does: one handler call, markdown from the outcome. */
@@ -97,17 +95,47 @@ describe('test API', () => {
     });
   });
 
-  it('summarizes counts for the CLI consumer', async () => {
-    const outcome = await runTests();
-
-    expect(outcome.markdown).toBe(
-      [
-        '# Test run completed',
-        '- Total tests: 3',
-        '- Component tests: 2 passed, 0 failed',
-        '- Accessibility tests: 1 passed, 0 warnings, 0 failed',
-      ].join('\n')
+  it('renders the same per-story report for the CLI consumer as for MCP', async () => {
+    vi.mocked(runStoryTests).mockResolvedValue(
+      completed({
+        componentTestCount: { success: 1, error: 1 },
+        a11yCount: { success: 0, warning: 0, error: 1 },
+        componentTestStatuses: [
+          componentTest('button--primary', 'status-value:success'),
+          componentTest(
+            'button--secondary',
+            'status-value:error',
+            'Expected button text to be "Secondary"'
+          ),
+        ],
+        a11yReports: {
+          'button--primary': [
+            {
+              violations: [
+                {
+                  id: 'color-contrast',
+                  description: 'Color contrast ratio is insufficient',
+                  nodes: [{ html: '<button>Click me</button>', impact: 'critical' }],
+                },
+              ],
+            },
+          ],
+        },
+      })
     );
+
+    const outcome = await runTests();
+    const mcpOutcome = await runForMcp();
+
+    expect(outcome.markdown).toBe(mcpOutcome.markdown);
+    expect(outcome.markdown).toContain('## Passing Stories');
+    expect(outcome.markdown).toContain('- button--primary');
+    expect(outcome.markdown).toContain('## Failing Stories');
+    expect(outcome.markdown).toContain('### button--secondary');
+    expect(outcome.markdown).toContain('Expected button text to be "Secondary"');
+    expect(outcome.markdown).toContain('## Accessibility Violations');
+    expect(outcome.markdown).toContain('### button--primary - color-contrast');
+    expect(outcome.markdown).toContain('Color contrast ratio is insufficient');
   });
 
   it('serializes concurrent test runs for one API registration', async () => {
@@ -130,6 +158,66 @@ describe('test API', () => {
       data: { ...completedRun, a11y: true },
     });
     expect(runStoryTests).toHaveBeenCalledTimes(2);
+  });
+
+  describe('run outcome', () => {
+    it('flags a completed run with failing tests as a failure', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 1 },
+          componentTestStatuses: [
+            componentTest('button--primary', 'status-value:success'),
+            componentTest('button--secondary', 'status-value:error', 'Assertion failed'),
+          ],
+        })
+      );
+
+      expect((await runTests()).ok).toBe(false);
+    });
+
+    it('flags a completed run with unhandled errors as a failure', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          unhandledErrors: [{ name: 'ReferenceError', message: 'foo is not defined' }],
+        })
+      );
+
+      expect((await runTests()).ok).toBe(false);
+    });
+
+    it('flags error-level accessibility results as a failure', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 0, error: 1 },
+        })
+      );
+
+      expect((await runTests()).ok).toBe(false);
+    });
+
+    it('passes a run whose accessibility results only carry warnings', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 2, error: 0 },
+        })
+      );
+
+      expect((await runTests()).ok).toBe(true);
+    });
+
+    it('ignores error-level accessibility results when the run disabled a11y', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 0, error: 1 },
+        })
+      );
+
+      expect((await runTests({ a11y: false })).ok).toBe(true);
+    });
   });
 
   describe('description', () => {
@@ -355,17 +443,21 @@ No story found for story ID "gone--story"`);
         })
       );
 
-      await runTests({ stories: [{ storyId: 'button--primary' }] });
+      const outcome = await runTests({ stories: [{ storyId: 'button--primary' }] });
 
-      expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+      expect(outcome.telemetry).toEqual({
         toolset: 'test',
-        runA11y: true,
-        inputStoryCount: 1,
-        matchedStoryCount: 1,
-        passingStoryCount: 1,
-        failingStoryCount: 0,
-        a11yViolationCount: 1,
-        unhandledErrorCount: 0,
+        tool: 'run',
+        event: 'tool:test_run',
+        payload: {
+          runA11y: true,
+          inputStoryCount: 1,
+          matchedStoryCount: 1,
+          passingStoryCount: 1,
+          failingStoryCount: 0,
+          a11yViolationCount: 1,
+          unhandledErrorCount: 0,
+        },
       });
     });
 
@@ -375,50 +467,30 @@ No story found for story ID "gone--story"`);
         notFoundMessages: ['No story found for story ID "missing--story"'],
       });
 
-      await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
+      const outcome = await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
 
-      expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+      expect(outcome.telemetry).toEqual({
         toolset: 'test',
-        runA11y: false,
-        inputStoryCount: 1,
-        matchedStoryCount: 0,
-        passingStoryCount: 0,
-        failingStoryCount: 0,
-        a11yViolationCount: 0,
-        unhandledErrorCount: 0,
+        tool: 'run',
+        event: 'tool:test_run',
+        payload: {
+          runA11y: false,
+          inputStoryCount: 1,
+          matchedStoryCount: 0,
+          passingStoryCount: 0,
+          failingStoryCount: 0,
+          a11yViolationCount: 0,
+          unhandledErrorCount: 0,
+        },
       });
     });
 
     it('stays silent for a run that never reached a verdict', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({ status: 'cancelled' });
 
-      await runTests();
+      const outcome = await runTests();
 
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      ['completed', completedRun],
-      [
-        'no-stories',
-        {
-          status: 'no-stories' as const,
-          notFoundMessages: ['No story found for story ID "missing--story"'],
-        },
-      ],
-    ])('does not fail a %s result when telemetry rejects', async (_status, result) => {
-      vi.mocked(runStoryTests).mockResolvedValue(result);
-      const rejectingCtx: ToolsetCtx = {
-        ...ctx,
-        telemetry: async () => {
-          throw new Error('telemetry unavailable');
-        },
-      };
-
-      const outcome = await runTests({}, rejectingCtx);
-
-      expect(outcome.ok).toBe(true);
-      expect(outcome.data.status).toBe(result.status);
+      expect(outcome.telemetry).toBeUndefined();
     });
   });
 });

@@ -5,7 +5,7 @@ import {
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { withTelemetry } from '../core-server/withTelemetry.ts';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -251,7 +251,7 @@ const aiCommand = command('ai')
 aiCommand
   .command('setup')
   .description(
-    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills get setup`)'
+    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills setup`)'
   )
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(

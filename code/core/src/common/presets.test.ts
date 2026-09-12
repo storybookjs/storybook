@@ -7,6 +7,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 
 import * as resolveUtils from '../shared/utils/module.ts';
+import { CommonJsGlobalInEsmError } from 'storybook/internal/server-errors';
+
 import { getPresets, loadPreset, resolveAddonName } from './presets.ts';
 
 function wrapPreset(basePresets: any): { babel: Function; webpack: Function } {
@@ -105,6 +107,36 @@ describe('presets', () => {
     await expect(getPresets(['preset-foo'], { isCritical: true })).rejects.toThrow();
   });
 
+  it('throws CommonJsGlobalInEsmError when a critical preset uses a CommonJS global', async () => {
+    mockedResolveUtils.importModule.mockImplementation(async () => {
+      throw new ReferenceError('__dirname is not defined in ES module scope');
+    });
+
+    const error = await getPresets(['./.storybook/main.ts'], {
+      isCritical: true,
+    } as any).catch((e: unknown) => e as Error);
+    expect(error).toBeInstanceOf(CommonJsGlobalInEsmError);
+  });
+
+  it('keeps the CommonJsGlobalInEsmError from a nested critical preset (no re-wrap)', async () => {
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === './.storybook/main.ts') {
+        return { presets: ['./addon-preset'] };
+      }
+      if (path === './addon-preset') {
+        throw new ReferenceError('require is not defined in ES module scope');
+      }
+      throw new Error(`Could not resolve ${path}`);
+    });
+
+    const error = await getPresets(['./.storybook/main.ts'], {
+      isCritical: true,
+    } as any).catch((e: unknown) => e as Error);
+
+    expect(error).toBeInstanceOf(CommonJsGlobalInEsmError);
+    expect((error as Error).message).toContain('./addon-preset');
+  });
+
   it('loads and applies presets when they are combined in another preset', async () => {
     mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
       if (path === 'preset-first') {
@@ -144,6 +176,46 @@ describe('presets', () => {
     const result = await presets.apply('aProperty', []);
 
     expect(result).toEqual(['first', 'second', 'sub-preset-fourth', 'third', 'fifth']);
+  });
+
+  it('wraps a CommonJS global thrown inside a hook into CommonJsGlobalInEsmError', async () => {
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === './.storybook/main.ts') {
+        return {
+          viteFinal: () => {
+            throw new ReferenceError('__dirname is not defined');
+          },
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
+    });
+
+    const presets = await getPresets(['./.storybook/main.ts'], {} as any);
+
+    const error = await presets
+      .apply('viteFinal', {})
+      .then(() => undefined)
+      .catch((e: unknown) => e as Error);
+    expect(error).toBeInstanceOf(CommonJsGlobalInEsmError);
+    expect((error as Error).message).toMatch(/viteFinal hook of .*\.storybook\/main\.ts/);
+  });
+
+  it('rethrows non-CommonJS hook errors unchanged', async () => {
+    const original = new Error('boom');
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === './.storybook/main.ts') {
+        return {
+          viteFinal: () => {
+            throw original;
+          },
+        };
+      }
+      throw new Error(`Could not resolve ${path}`);
+    });
+
+    const presets = await getPresets(['./.storybook/main.ts'], {} as any);
+
+    await expect(presets.apply('viteFinal', {})).rejects.toBe(original);
   });
 
   it('loads and applies presets when they are declared as a string', async () => {

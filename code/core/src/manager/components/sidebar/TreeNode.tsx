@@ -159,56 +159,6 @@ const StyledContent = styled.div({
   position: 'relative',
 });
 
-const StyledTraces = styled.span({
-  display: 'flex',
-  gap: 0,
-  alignItems: 'stretch',
-  height: '100%',
-  position: 'absolute',
-  left: 0,
-  top: 0,
-  bottom: 0,
-  pointerEvents: 'none',
-});
-
-const StyledTraceLine = styled.span<{ $offset: number; $forceVisible?: boolean }>(
-  ({ $offset, $forceVisible }) => ({
-    position: 'absolute',
-    left: `calc(${$offset} * -20px - 7px)`,
-    top: 0,
-    bottom: 0,
-    width: 1,
-    backgroundColor: 'var(--trace-color)',
-    opacity: $forceVisible ? 1 : 'var(--trace-opacity, 0)',
-    transition: 'opacity 150ms ease',
-  })
-);
-
-export const Traces = ({
-  level,
-  isAlongsideSelected,
-}: {
-  level: number;
-  isAlongsideSelected: boolean;
-}) => {
-  if (level === 0) {
-    return null;
-  }
-
-  return (
-    <StyledTraces>
-      {Array.from({ length: level }, (_, i) => (
-        <StyledTraceLine
-          key={i}
-          data-testid="trace-line"
-          $offset={i}
-          $forceVisible={isAlongsideSelected && i === 0}
-        />
-      ))}
-    </StyledTraces>
-  );
-};
-
 const StyledLabel = styled.span({
   flex: '1 1 auto',
   minWidth: 0,
@@ -304,10 +254,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   // as react-aria collection dependencies they re-rendered every row in the tree on each
   // selection change. Only rows whose derived value changes re-render.
   const rowUi = useContext(RowUiContext);
-  const isAlongsideSelected = useSyncExternalStore(
-    rowUi.subscribe,
-    () => item.type !== 'root' && rowUi.getState().selectedParentId === item.parent
-  );
   const contextMenuEntryMethod = useSyncExternalStore(rowUi.subscribe, () => {
     const menu = rowUi.getState().contextMenu;
     return menu?.itemId === item.id ? menu.entryMethod : undefined;
@@ -452,7 +398,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     >
       <TreeItemContent>
         <StyledContent>
-          <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
           <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>
           {renderContextMenu && (

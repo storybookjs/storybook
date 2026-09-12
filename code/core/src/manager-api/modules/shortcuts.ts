@@ -9,6 +9,7 @@ import { global } from '@storybook/global';
 
 import copy from 'copy-to-clipboard';
 
+import { logger } from 'storybook/internal/client-logger';
 import type { KeyboardEventLike } from '../lib/shortcut.ts';
 import { eventToShortcut, shortcutMatchesShortcut } from '../lib/shortcut.ts';
 import type { ModuleFn } from '../lib/types.tsx';
@@ -85,15 +86,16 @@ export interface SubAPI {
    * Handles a keydown event.
    *
    * @param event The event to handle.
+   * @returns The matched shortcut action name, or undefined if no shortcut was matched.
    */
-  handleKeydownEvent(event: KeyboardEventLike): void;
+  handleKeydownEvent(event: KeyboardEventLike): API_MatchableAction | undefined;
   /**
    * Handles a shortcut feature.
    *
    * @param feature The feature to handle.
    * @param event The event to handle.
    */
-  handleShortcutFeature(feature: API_Action, event: KeyboardEventLike): void;
+  handleShortcutFeature(feature: API_MatchableAction, event: KeyboardEventLike): void;
 }
 
 export type API_KeyCollection = string[];
@@ -114,7 +116,6 @@ export interface API_Shortcuts {
   nextStory: API_KeyCollection;
   shortcutsPage: API_KeyCollection;
   aboutPage: API_KeyCollection;
-  escape: API_KeyCollection;
   collapseAll: API_KeyCollection;
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
@@ -128,6 +129,12 @@ export interface API_Shortcuts {
 }
 
 export type API_Action = keyof API_Shortcuts;
+
+/**
+ * Matchable shortcut actions include built-in and addon-defined actions. We use this type to
+ * get autocompletion on built-in actions, but allow arbitrary strings for addon-defined ones.
+ */
+export type API_MatchableAction = API_Action | (string & {});
 
 interface API_AddonShortcut {
   label: string;
@@ -156,7 +163,6 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   nextStory: ['alt', 'ArrowRight'],
   shortcutsPage: [controlOrMetaKey(), 'shift', ','],
   aboutPage: [controlOrMetaKey(), ','],
-  escape: ['escape'], // This one is not customizable
   collapseAll: [controlOrMetaKey(), 'shift', 'ArrowUp'],
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
@@ -244,15 +250,37 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // Listening to shortcut events
     handleKeydownEvent(event) {
+      // A feature that would not run must report "no match": the capture listener stops
+      // propagation for matched shortcuts, so reporting a match here would swallow the key
+      // for the rest of the UI without performing any action.
+      if (!store.getState().ui.enableShortcuts) {
+        return undefined;
+      }
       const shortcut = eventToShortcut(event);
       const shortcuts = api.getShortcutKeys();
       const actions = keys(shortcuts);
-      const matchedFeature = actions.find((feature: API_Action) =>
-        shortcutMatchesShortcut(shortcut!, shortcuts[feature])
-      );
+      const matchedFeature = actions.find((feature: API_Action) => {
+        if (!shortcutMatchesShortcut(shortcut!, shortcuts[feature])) {
+          return false;
+        }
+
+        // Don't register sidebar shortcuts when it's hidden.
+        const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
+        if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
+          return false;
+        }
+
+        // Orphaned bindings persisted to localStorage by an old addon or SB version must not
+        // match or they would swallow a keyboard shortcut (due to stopPropagation()).
+        if (!(feature in defaultShortcuts)) {
+          return feature in addonsShortcuts;
+        }
+        return true;
+      });
       if (matchedFeature) {
         api.handleShortcutFeature(matchedFeature, event);
       }
+      return matchedFeature;
     },
 
     // warning: event might not have a full prototype chain because it may originate from the channel
@@ -279,16 +307,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         event.preventDefault();
       }
       switch (feature) {
-        case 'escape': {
-          if (fullAPI.getIsFullscreen()) {
-            fullAPI.toggleFullscreen(false);
-          } else if (isDesktopViewport() && fullAPI.getIsNavShown()) {
-            // On mobile toggleNav opens the drawer, so Escape must not reach it — only the desktop nav.
-            fullAPI.toggleNav(true);
-          }
-          break;
-        }
-
         // Handled by @react-aria/interactions and useLandmarkIndicator
         case 'goToNextLandmark':
         case 'goToPreviousLandmark':
@@ -502,7 +520,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           break;
         }
         default:
-          addonsShortcuts[feature].action();
+          if (feature in addonsShortcuts) {
+            addonsShortcuts[feature].action();
+          } else {
+            logger.warn(`api.handleShortcutFeature called with unknown feature: ${feature}.`);
+          }
           break;
       }
     },
@@ -518,16 +540,57 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   };
 
   const initModule = () => {
-    // Listen for keydown events in the manager
-    document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!shouldSkipShortcut(event)) {
-        api.handleKeydownEvent(event);
+    // Listen for keydown events in the manager.
+    // Capture phase ensures we run before React Aria (and other component libraries) can
+    // call stopPropagation(), which would prevent bubbling-phase listeners from firing.
+    // When a shortcut is matched we also stop propagation so React Aria cannot re-dispatch
+    // the same event (which it does for ArrowUp/Down) and cause double-firing or
+    // unintended tree navigation as a side effect.
+    // Landmark-navigation shortcuts (F6 / Shift+F6) are intentionally excluded: Storybook's
+    // handler is a no-op for them and React Aria must be allowed to handle them.
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (!shouldSkipShortcut(event)) {
+          const matched = api.handleKeydownEvent(event);
+          if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
+            event.stopPropagation();
+          }
+        }
+      },
+      { capture: true }
+    );
+
+    // Escape is deliberately not part of the shortcut map: react-aria overlays (menus,
+    // popovers, modals) handle it at the element level and stop propagation when they consume
+    // it, so this bubble-phase listener only sees presses nothing else claimed. Those exit
+    // fullscreen. Running at the capture phase instead would close overlays and exit
+    // fullscreen with a single press.
+    window.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        !shouldSkipShortcut(event) &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        event.preventDefault();
+        fullAPI.toggleFullscreen(false);
       }
     });
 
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {
       api.handleKeydownEvent(data.event);
+      // The preview only forwards keydowns when focus is outside inputs, so Escape pressed
+      // while interacting with the story exits fullscreen just like it does in the manager.
+      if (
+        data.event.key === 'Escape' &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        fullAPI.toggleFullscreen(false);
+      }
     });
   };
 

@@ -5,8 +5,8 @@
   "type": "module",
   "main": "./src/index.ts",
   "scripts": {
-    "storybook": "storybook dev",
     "build-storybook": "storybook build",
+    "storybook": "storybook dev",
     "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook"
   },
   "dependencies": {

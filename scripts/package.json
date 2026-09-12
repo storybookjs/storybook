@@ -76,7 +76,6 @@
     "@types/wait-on": "^5.3.4",
     "@types/window-size": "^1.1.4",
     "@vitest/coverage-v8": "^4.1.6",
-    "ansi-regex": "^6.0.1",
     "chromatic": "^18.0.1",
     "citty": "^0.2.1",
     "codecov": "^3.8.1",

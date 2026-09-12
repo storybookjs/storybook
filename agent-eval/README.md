@@ -25,15 +25,14 @@ tests through the MCP server or the plugin skills.
 
 ## Running Evals
 
-Run the commands below from the repository root with
-`yarn workspace agent-eval run <script>`.
+Run the commands below from inside `agent-eval/`.
 
 ### Preview (no cost)
 
 See what will run without making API calls:
 
 ```bash
-yarn workspace agent-eval run eval:dry
+yarn eval:dry
 ```
 
 ### Run Experiments
@@ -41,13 +40,13 @@ yarn workspace agent-eval run eval:dry
 Run all configured experiments:
 
 ```bash
-yarn workspace agent-eval run eval
+yarn eval
 ```
 
 Run a single experiment:
 
 ```bash
-yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
+yarn exec agent-eval cc-mcp-opus-high
 ```
 
 Pull requests with the `ci:eval` label run all experiments in CI. The
@@ -65,8 +64,8 @@ workflow evals on every experiment plus the lifecycle 82x evals
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_EXTRA_EVALS=1 yarn workspace agent-eval run eval
-EVAL_ONLY=803-edit-component yarn workspace agent-eval run eval
+EVAL_EXTRA_EVALS=1 yarn eval
+EVAL_ONLY=803-edit-component yarn eval
 ```
 
 Before a local run, rebuild the local `@storybook/addon-mcp`/`@storybook/mcp`
@@ -94,7 +93,7 @@ run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
 for the default-model experiments:
 
 ```bash
-EVAL_EXTRA_MODELS=1 yarn workspace agent-eval exec agent-eval cc-plugin-sonnet-medium
+EVAL_EXTRA_MODELS=1 yarn exec agent-eval cc-plugin-sonnet-medium
 ```
 
 Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
@@ -107,7 +106,7 @@ builds — to check whether a behavior change (e.g. in the documentation tooling
 regressed since the last stable release:
 
 ```bash
-EVAL_STORYBOOK_LATEST=1 yarn workspace agent-eval run eval
+EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
 Review mode follows the integration. The plugin experiments always run — and
@@ -120,7 +119,7 @@ the flag in every sandbox Storybook and flip the MCP assertions to the review
 workflow too:
 
 ```bash
-EVAL_REVIEW=1 yarn workspace agent-eval run eval
+EVAL_REVIEW=1 yarn eval
 ```
 
 In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
@@ -154,6 +153,64 @@ relaxed assertion in the affected `EVAL.ts`. The comment is self-contained:
 the observed behavior, the evidence (CI run id and date), and the condition
 for re-enabling. See the gates in `evals/807-docs-request/EVAL.ts` and
 `evals/808-shared-infra-fallback/EVAL.ts` for the expected shape.
+
+## Design-system misuse judging
+
+`ds-coverage` measures how _much_ of a run's UI comes from the design system.
+
+Each report also carries an instance-weighted view (`instances`): JSX inside a
+reused local component counts once per estimated instantiation, so a
+`LocalButton` used 100 times contributes its internal `DSButton` 100 times.
+Multipliers come from a whole-graph usage census (recursion counted at depth
+1, unused components floored at 1); the grouped summary tables report the
+instance-weighted shares, the per-run tables show both. Static counts are
+unchanged and stay in every report. Known blind spots, by design: list
+multiplicity (`.map()`) and JSX-valued constants referenced as `{icon}` are
+counted at their syntactic site. DS usage reached only behind a conditional
+carries a fractional weight, so its instance share can legitimately read
+lower than the static share.
+
+`ds-misuse` measures whether the agent used it _well_, scoring the JSX nodes a
+run introduced against the Droppy design system's own documentation:
+
+- `correct-ds-decision` — was this the right DS component, or did a better DS
+  alternative exist?
+- `correct-ds-usage` — does this usage violate a documented guideline?
+- `correct-local-decision` — should this have been local, or did a DS component
+  with a relevant API exist?
+
+Each is scored 1 / 0.5 / 0 per node and summarised as a mean in `[0, 1]`.
+
+`node scripts/ds-coverage.ts <dir> --ds <pattern> --nodes` lists the
+census records a tree produces. Note its `Nodes (N)` count is much smaller than
+the `JSX nodes: N weighted` line above it — the former counts only judgeable
+component elements, since hosts and unresolved tags are deliberately excluded.
+The two are not meant to reconcile.
+
+Unlike every other metric here, this one **costs money** — one Claude call per
+run — so it lives behind its own command rather than running as part of
+`results:analyze`:
+
+```bash
+yarn results:analyze --recompute   # builds the baselines and node census first
+yarn judge:ds-misuse --latest      # then judges; roughly $0.10-0.15 per run
+yarn results:analyze --misuse      # reads the artifacts and prints the tables
+```
+
+It needs `ANTHROPIC_API_KEY` and aborts naming it if absent. Each run's
+judgement is cached in its run directory as `ds-misuse.json` and reused until
+the guidelines pin or `metricsVersion` moves; `--recompute` re-judges.
+
+`--dry` (or `yarn judge:ds-misuse:dry`) resolves the same selection, runs every
+local check the real pass runs, and prints which runs it would judge, reuse from
+cache, or skip.
+
+Every arm is judged against **one pinned, complete** copy of the design system's
+documentation (`DS_DOCS_PIN` in
+`lib/agentic-reference/metrics/ds-misuse/ds-docs.ts`) — deliberately not the
+docs variant that arm was served. Content variation between arms is the round's
+independent variable, so judging each arm against what it saw would score a
+degraded arm against a lowered bar.
 
 ## Shared Templates
 
@@ -210,10 +267,179 @@ Codex experiments use the direct `codex` agent with `OPENAI_API_KEY`. The
 path handles Codex's Responses namespace tool shape reliably. See
 https://github.com/openai/codex/issues/26234.
 
+## Agentic-reference cases
+
+The agentic-reference research line (the `70x` workflow fixtures) works
+differently from other evals. Instead of running a workflow and making
+pass/fail assertions about its output, it collects the output of the LLM eval,
+and performs an in-depth post-analysis that involves computing metrics,
+running LLM judges, and comparing different experiments that used the same
+workflow fixture for statistically significant changes to metrics.
+
+Agentic reference uses the following concepts:
+
+- An external app repo where the LLM workflow will run (e.g. Mealdrop)
+- An external MCP app that provides Storybook content (e.g. the Droppy DS)
+- A workflow fixture that contains the prompt to run
+- An experiment case that defines which version of the app and MCP will be used
+
+The Storybook instance used for agentic reference (either Base UI or Droppy)
+generates dozens of different NPM packages with different stories and MDX docs.
+This is performed by classifying the Storybook data and running two tailored
+scripts on these repos: `pnpm experiment:freeze` and `pnpm experiment:publish`.
+To use a different Storybook for agentic reference, it needs the same concepts
+built in.
+
+Much of agentic reference eval is about comparing these different MCP contents
+to see which ones perform a set of workflows best. This is configured in
+`lib/agentic-reference/cases.ts`, where `storybookMcpPackage` or `storybookMcpUrl`
+can be passed to point to a published MCP package or deployed Chromatic MCP.
+Experiments are generated with the `yarn gen:agentic-ref` command, into a git
+ignored folder, to avoid having to hand maintain dozens of experiments.
+
+Control cases to compare against the Storybook MCP can choose to not provide any
+instructions, or use `skillDirs` to provide competing skills. It's also possible
+to pass a `transformPrompt` function to inject instructions to use a MCP, skill
+or external resource based on whether you're testing agents' tool selection
+behaviour or their raw performance once the tested tool has been selected.
+
+To capture runs, first use the dry mode command to understand what will happen.
+See below for options for this command. Runs can cost up to $25 each for larger
+workflows.
+
+```bash
+yarn eval:agentic-ref:dry
+```
+
+If you have run capture in the cloud via the GitHub action, you'll need to
+download data locally with `yarn results:download`.
+
+Once runs have been captured, the agentic reference post-analysis computes
+metrics for a control case and Storybook cases. This happens in
+`scripts/analyze-results.ts`, via `yarn results:analyze`.
+
+Its tables cover one comparable set each — every stored run measuring the same
+thing, however many result directories they were collected in, since a plan tops
+a cell up in as many invocations as it takes.
+
+What a run measured is read from the run's own artifacts
+(`lib/agentic-reference/identity.ts`): the external-repo pin, the design-system
+MCP served, the model, whether the case rewrote the prompt, and a digest of the
+fixture's `PROMPT.md` and `EVAL.ts`. The harness's own fingerprint is not used —
+it hashes the sample size and the whole fixture, so two collections of one cell
+never match and an unrelated fixture edit invalidates everything.
+
+Runs measuring something their cell no longer measures are kept in a group of
+their own rather than averaged into the sample being collected today, and are
+not printed unless `--superseded` is passed. With it, each such group says which
+part of its measurement moved, e.g. `pin: yannbf/mealdrop@droppy-v2 →
+yannbf/mealdrop@droppy-70pc`.
+
+Where two external-repo pins name the same upstream tree — a re-tag, say — list
+them in `BUNDLED_PINS` (`lib/agentic-reference/identity.ts`) and their runs are
+aggregated as one sample.
+
+Each result directory's own `summary.json` still describes only the runs beside
+it.
+
+Once all metrics have been computed, a separate script compares them for
+statistical significance between experiments. The command for that is
+`yarn results:compare`.
+
+### Selecting what runs
+
+Choices can be passed as CLI options or environment variables. Flags take precedence over env vars.
+
+| Flag                   | Selects                                                 | Env fallback              | Alternative name |
+| ---------------------- | ------------------------------------------------------- | ------------------------- | ---------------- |
+| `--experiments <list>` | cases, by name or glob (`agentic-ref-cc-control-none*`) | `AGENTIC_REF_EXPERIMENTS` | `--cases <list>` |
+| `--evals <list>`       | evals, by name, number (`703`) or glob (`70*`)          | `AGENTIC_REF_EVALS`       | `--flows <list>` |
+| `--runs <n>`           | repetitions per (experiment, eval) cell (default 10)    | `AGENTIC_REF_RUNS`        |                  |
+| `--force`              | re-run cells that already have saved results            | `AGENTIC_REF_FORCE`       |                  |
+| `--dry`                | print the plan, spend nothing                           | `AGENTIC_REF_DRY`         |                  |
+| `--expect <n>`         | refuse to run unless the plan is exactly `n` evals      | `AGENTIC_REF_EXPECT`      |                  |
+
+Each env fallback is the flag uppercased behind `AGENTIC_REF_`, and a flag always
+beats its env var.
+`--experiments` and `--evals` have alternative names to account for how we talk about them in the day to day (`--cases` and `--flows`).
+These options take comma-separated values. Each value can be a full name, or a glob pattern. For evals, a number can also be passed.
+
+The same options drive `yarn eval:agentic-ref:dry`, `yarn results:analyze` and
+`yarn results:compare`. `results:analyze` adds `--since <ISO date>`, `--latest`,
+`--recompute`, `--superseded` and the `--general`/`--complexity`/`--coverage`
+table flags, each with the same `AGENTIC_REF_` fallback.
+
+Fallbacks key off the canonical flag name, never an alternative one:
+`--recompute` reads `AGENTIC_REF_RECOMPUTE`, and its `--force` spelling stays
+command-line only. Otherwise an `AGENTIC_REF_FORCE` exported to re-run a case
+would go on to rebuild every committed baseline in the next analysis pass.
+
+```bash
+# Preview any invocation below at zero cost
+yarn eval:agentic-ref:dry
+
+# Everything: every experiment × its evals
+yarn eval:agentic-ref
+
+# One experiment, all of its evals
+yarn eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high
+
+# A group of experiments, by glob (make sure to quote it)
+yarn eval:agentic-ref --experiments "agentic-ref-cc-*"
+
+# One eval across every experiment that includes it
+yarn eval:agentic-ref --evals 703
+
+# One cell: one experiment against one eval
+yarn eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high --evals 703
+
+# Research sample: repeat every selected cell once
+yarn eval:agentic-ref --experiments "agentic-ref-cc-*" --runs 1
+
+# Spend guard: run only if this selection is exactly the size expected
+yarn eval:agentic-ref --experiments "agentic-ref-cc-*" --evals 703 --runs 1 --expect 3
+```
+
+Completed (experiment, eval) cells are fingerprint-cached: re-running a
+partially completed selection only executes what is missing (`--force`
+overrides).
+
+## Comparing cases (results:compare)
+
+Compares a control case against treatment cases over recorded run artifacts:
+per-metric OLS estimates with HC3 robust errors, Benjamini–Hochberg FDR
+verdicts at 5%, and ECDF curves. Reproducible: everything derives from
+`results/` alone.
+
+```shell
+yarn results:compare:setup                   # one-time: installs uv + Python deps
+yarn results:compare                        # control-none vs all cases, auto workflows
+yarn results:compare --cases=do-dont --workflows=701          # one pair, one workflow
+yarn results:compare --cases=do-dont,full --workflows=701,703 # aggregation mode
+yarn results:compare --plan=1-levels-create                   # one plan's cases and workflows
+yarn results:compare --min-runs=5                             # quick look at a smaller gate
+```
+
+`--plan` scopes the comparison to one collection plan (`plans/<name>.plan.ts`,
+by name or path) instead of every case with data, and gates cells at the
+plan's target sample size unless `--min-runs` overrides it.
+
+Which stored runs count is decided the same way the plan runner decides what
+to reuse: a run whose measurement differs from what its (experiment, eval)
+pair measures today is superseded and set aside. A cell pools every remaining
+comparable run across all of its collection batches, so a sample topped up
+over several invocations counts as one sample.
+
+Output lands in `comparisons/<slug>/`: `report.md`, `estimates.csv|json`,
+`curves/`, `dataset.csv`, `manifest.json`. When usable data is missing —
+never collected, superseded, or not yet analyzed by the current metrics
+code — the command exits and prints the exact
+`yarn eval:agentic-ref` / `yarn results:analyze` commands to run.
+
 ### View Results
 
 ```bash
-yarn workspace agent-eval run playground
+yarn playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
@@ -225,8 +451,8 @@ Pull the eval results produced by recent CI runs into the local
 and inspected by analysis tooling:
 
 ```bash
-yarn workspace agent-eval run results:download        # latest 20 agent-eval-results artifacts
-yarn workspace agent-eval run results:download 5      # or any count between 1 and 100
+yarn results:download        # latest 20 agent-eval-results artifacts
+yarn results:download 5      # or any count between 1 and 100
 ```
 
 Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
@@ -234,6 +460,27 @@ Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
 keyed by experiment name and run timestamp, so artifacts from multiple CI runs
 merge into `agent-eval/results` without colliding, and re-running the command
 is idempotent. Each artifact is roughly 20–40 MB extracted.
+
+### Clear Out Interrupted Runs
+
+A run stopped by something outside the experiment — a 402 from the gateway, an
+eval timeout, an MCP endpoint that would not answer, the host killing a
+container — still leaves a `run-N` directory behind, holding a transcript of how
+far it got and no `project` tree. There is nothing in it to measure, so the
+analysis skips it and the plan runner does not count it towards a cell's sample.
+
+`yarn results:prune` is what removes them:
+
+```bash
+yarn results:prune                                  # list them, delete nothing
+yarn results:prune --experiments "agentic-ref-cc-*" # same selection grammar as the runner
+yarn results:prune --delete                         # remove them
+```
+
+It reports what stopped each run (billing, timeout, network), and `--delete`
+removes the directories, along with any eval or result directory they leave
+empty. Re-run `yarn eval:plan --dry` afterwards to see the gaps they were
+hiding.
 
 ### Deploy Results Playground
 
@@ -253,7 +500,7 @@ workflow status still fails when the eval, build, or deploy step fails.
 The workflow links the Vercel project at runtime instead of committing
 `.vercel/project.json`. It uses the same Vercel access token for the Sandbox
 evals and the Vercel CLI preview deployment, but those are separate steps:
-Sandbox auth happens in `yarn workspace agent-eval run eval`, while the preview playground deployment
+Sandbox auth happens in `yarn eval`, while the preview playground deployment
 runs `vercel link`, `vercel pull`, `vercel build`, and
 `vercel deploy --prebuilt`.
 
@@ -265,4 +512,4 @@ Configure these GitHub secrets before enabling the workflow:
 
 The thin app wrapper in `agent-eval/app` re-exports routes from
 `@vercel/agent-eval-playground` so Next.js can discover them from this package.
-Run `yarn workspace agent-eval run playground:check-routes` after upgrading the playground package.
+Run `yarn playground:check-routes` after upgrading the playground package.

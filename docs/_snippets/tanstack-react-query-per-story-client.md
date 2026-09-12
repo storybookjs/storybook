@@ -53,10 +53,9 @@ const preview: Preview = {
       </QueryClientProvider>
     ),
   ],
-  afterEach: ({ id }) => {
-    // Drop the client once the story's test finishes
-    removeStoryClient(id);
-  },
+  // Return the cleanup from beforeEach: it runs after the story
+  // unmounts, so the client is never cleared while still rendering
+  beforeEach: ({ id }) => () => removeStoryClient(id),
 };
 
 export default preview;
@@ -88,10 +87,9 @@ export default definePreview({
       </QueryClientProvider>
     ),
   ],
-  afterEach: ({ id }) => {
-    // Drop the client once the story's test finishes
-    removeStoryClient(id);
-  },
+  // Return the cleanup from beforeEach: it runs after the story
+  // unmounts, so the client is never cleared while still rendering
+  beforeEach: ({ id }) => () => removeStoryClient(id),
 });
 ```
 

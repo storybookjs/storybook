@@ -197,7 +197,7 @@ For per-story isolation, create one client per story and pass the same instance 
 
 <CodeSnippets path="tanstack-react-query-per-story-client.md" />
 
-Two details matter here. First, with the factory form, `parameters.tanstack.router.context` is a function, so story hooks can no longer read the client from parameters; key the clients by story ID in a shared module and use that helper in story `beforeEach` hooks, as shown above. Second, per-story clients own timers and subscriptions, so drop each client when its story's test finishes (the `afterEach` hook in the example). Clients used only for Docs rendering live as long as the page.
+Two details matter here. First, with the factory form, `parameters.tanstack.router.context` is a function, so story hooks can no longer read the client from parameters; key the clients by story ID in a shared module and use that helper in story `beforeEach` hooks, as shown above. Second, per-story clients own timers and subscriptions, so drop each client after its story unmounts (the cleanup returned from `beforeEach` in the example). Returning the cleanup from `beforeEach` runs it after the story's own teardown, so the client is never cleared while the story is still rendering. Clients used only for Docs rendering live as long as the page.
 
 If story tests still flake because several stories overlap in one browser context, and switching to per-story clients is not an option, disable file parallelism for the story test project so files run one at a time:
 

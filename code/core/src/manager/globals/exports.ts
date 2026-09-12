@@ -56,6 +56,7 @@ export default {
     'version',
   ],
   'react-dom/client': ['createRoot', 'hydrateRoot'],
+  'react-aria/FocusScope': ['FocusScope', 'useFocusManager'],
   '@storybook/icons': [
     'AccessibilityAltIcon',
     'AccessibilityIcon',

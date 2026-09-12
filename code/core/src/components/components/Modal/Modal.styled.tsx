@@ -51,27 +51,31 @@ const zoomOut = keyframes({
   },
 });
 
-const slideFromBottom = keyframes({
-  from: {
-    opacity: 0,
-    maxHeight: '0px',
-  },
-  to: {
-    opacity: 1,
-    maxHeight: '80dvh',
-  },
-});
+// The slide fills forwards, so the end maxHeight must equal the drawer's own height — a fixed
+// value would keep clamping taller drawers after the animation.
+const slideFromBottom = (maxHeight: string | number) =>
+  keyframes({
+    from: {
+      opacity: 0,
+      maxHeight: '0px',
+    },
+    to: {
+      opacity: 1,
+      maxHeight,
+    },
+  });
 
-const slideToBottom = keyframes({
-  from: {
-    opacity: 1,
-    maxHeight: '80dvh',
-  },
-  to: {
-    opacity: 0,
-    maxHeight: '0px',
-  },
-});
+const slideToBottom = (maxHeight: string | number) =>
+  keyframes({
+    from: {
+      opacity: 1,
+      maxHeight,
+    },
+    to: {
+      opacity: 0,
+      maxHeight: '0px',
+    },
+  });
 
 export const Overlay = styled.div<{
   $status?: TransitionStatus;
@@ -112,51 +116,54 @@ export const Container = styled.div<{
       outline: 'none',
     },
   }),
-  ({ theme, width, height, $variant, $status, $transitionDuration }) =>
-    $variant === 'dialog'
-      ? {
-          top: '50%',
-          left: '50%',
-          width: width ?? 740,
-          height: height ?? 'auto',
-          maxWidth: 'calc(100% - 40px)',
-          maxHeight: '85vh',
-          '@media (prefers-reduced-motion: no-preference)': {
-            willChange: 'transform, opacity',
-            animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
-            animation:
-              $status === 'exiting' || $status === 'preExit'
-                ? `${zoomOut} ${$transitionDuration}ms`
-                : `${zoomIn} ${$transitionDuration}ms`,
-            animationFillMode: 'forwards !important',
-          },
-          '@media (prefers-reduced-motion: reduce)': {
-            transform: 'translate(-50%, -50%) scale(1)',
-          },
-        }
-      : {
-          position: 'fixed',
-          bottom: '0',
-          left: '0',
-          right: '0',
-          borderRadius: '10px 10px 0 0',
-          overflow: 'hidden',
-          width: width ?? '100%',
-          height: height ?? '80%',
-          maxWidth: '100%',
-          background: theme.background.content,
-          '@supports (interpolate-size: allow-keywords)': {
-            interpolateSize: 'allow-keywords',
-          },
-          '@media (prefers-reduced-motion: no-preference)': {
-            animationTimingFunction: 'cubic-bezier(.9,.16,.77,.64)',
-            animation:
-              $status === 'exiting' || $status === 'preExit'
-                ? `${slideToBottom} ${$transitionDuration}ms`
-                : `${slideFromBottom} ${$transitionDuration}ms`,
-            animationFillMode: 'forwards !important',
-          },
-        }
+  ({ theme, width, height, $variant, $status, $transitionDuration }) => {
+    if ($variant === 'dialog') {
+      return {
+        top: '50%',
+        left: '50%',
+        width: width ?? 740,
+        height: height ?? 'auto',
+        maxWidth: 'calc(100% - 40px)',
+        maxHeight: '85vh',
+        '@media (prefers-reduced-motion: no-preference)': {
+          willChange: 'transform, opacity',
+          animationTimingFunction: 'cubic-bezier(0.32, 0.72, 0, 1)',
+          animation:
+            $status === 'exiting' || $status === 'preExit'
+              ? `${zoomOut} ${$transitionDuration}ms`
+              : `${zoomIn} ${$transitionDuration}ms`,
+          animationFillMode: 'forwards !important',
+        },
+        '@media (prefers-reduced-motion: reduce)': {
+          transform: 'translate(-50%, -50%) scale(1)',
+        },
+      };
+    }
+    const drawerHeight = height ?? '80%';
+    return {
+      position: 'fixed',
+      bottom: '0',
+      left: '0',
+      right: '0',
+      borderRadius: '10px 10px 0 0',
+      overflow: 'hidden',
+      width: width ?? '100%',
+      height: drawerHeight,
+      maxWidth: '100%',
+      background: theme.background.content,
+      '@supports (interpolate-size: allow-keywords)': {
+        interpolateSize: 'allow-keywords',
+      },
+      '@media (prefers-reduced-motion: no-preference)': {
+        animationTimingFunction: 'cubic-bezier(.9,.16,.77,.64)',
+        animation:
+          $status === 'exiting' || $status === 'preExit'
+            ? `${slideToBottom(drawerHeight)} ${$transitionDuration}ms`
+            : `${slideFromBottom(drawerHeight)} ${$transitionDuration}ms`,
+        animationFillMode: 'forwards !important',
+      },
+    };
+  }
 );
 
 interface CloseProps {

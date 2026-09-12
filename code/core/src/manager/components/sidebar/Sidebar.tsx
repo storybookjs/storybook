@@ -52,12 +52,20 @@ const Container = styled.header(({ theme }) => ({
   },
 }));
 
-const Stack = styled.div({
+const Stack = styled.div<{ isMobile: boolean }>(({ isMobile }) => ({
   display: 'flex',
   flexDirection: 'column',
   gap: 16,
   padding: '16px 12px 20px 12px',
-});
+  ...(isMobile && {
+    flexGrow: 1,
+    minHeight: 0,
+    '& > #storybook-explorer-menu': {
+      flexGrow: 1,
+      minHeight: 0,
+    },
+  }),
+}));
 
 const CreateNewStoryButton = styled(Button)<{ isMobile: boolean }>(({ theme, isMobile }) => ({
   color: theme.textMutedColor,
@@ -156,6 +164,96 @@ export const Sidebar = React.memo(function Sidebar({
     global.FEATURES?.sidebarOnboardingChecklist !== false &&
     !showReviewWidget;
 
+  const stack = (
+    <Stack isMobile={isMobile}>
+      <div>
+        <Heading
+          className="sidebar-header"
+          menuHighlighted={menuHighlighted}
+          menu={menu}
+          skipLinkHref={skipLinkHref}
+          isLoading={isLoading}
+          onMenuClick={onMenuClick}
+        />
+        {!showOnboardingChecklist ? null : <ChecklistWidget />}
+      </div>
+      {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
+      <Search
+        dataset={dataset}
+        enableShortcuts={enableShortcuts}
+        searchBarContent={
+          showCreateStoryButton && (
+            <>
+              <CreateNewStoryButton
+                isMobile={isMobile}
+                onClick={() => {
+                  setIsFileSearchModalOpen(true);
+                }}
+                ariaLabel="Create a new story"
+                variant="outline"
+                padding="small"
+              >
+                <PlusIcon />
+              </CreateNewStoryButton>
+              <CreateNewStoryFileModal
+                open={isFileSearchModalOpen}
+                onOpenChange={setIsFileSearchModalOpen}
+              />
+            </>
+          )
+        }
+        searchFieldContent={<Filter />}
+        belowSearchContent={<ShowChangesButton />}
+        {...lastViewedProps}
+      >
+        {({
+          query,
+          results,
+          isNavVisible,
+          isNavReachable,
+          isSearchResultRendered,
+          closeMenu,
+          getMenuProps,
+          getItemProps,
+          highlightedIndex,
+        }) => {
+          const explorerAndResults = (
+            <>
+              <Explorer
+                dataset={dataset}
+                selected={selected}
+                isLoading={isLoading}
+                isBrowsing={isNavVisible}
+                isHidden={!isNavReachable}
+                hasEntries={hasEntries}
+              />
+              {isSearchResultRendered && (
+                <SearchResults
+                  query={query}
+                  results={results}
+                  closeMenu={closeMenu}
+                  getMenuProps={getMenuProps}
+                  getItemProps={getItemProps}
+                  highlightedIndex={highlightedIndex}
+                  enableShortcuts={enableShortcuts}
+                  isLoading={isLoading}
+                  clearLastViewed={lastViewedProps.clearLastViewed}
+                />
+              )}
+            </>
+          );
+          return isMobile ? (
+            <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
+              {explorerAndResults}
+            </ScrollArea>
+          ) : (
+            explorerAndResults
+          );
+        }}
+      </Search>
+    </Stack>
+  );
+
   return (
     <Container
       className="container sidebar-container"
@@ -167,89 +265,16 @@ export const Sidebar = React.memo(function Sidebar({
         Storybook
       </h1>
       <IconSymbols />
-      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
-        <Stack>
-          <div>
-            <Heading
-              className="sidebar-header"
-              menuHighlighted={menuHighlighted}
-              menu={menu}
-              skipLinkHref={skipLinkHref}
-              isLoading={isLoading}
-              onMenuClick={onMenuClick}
-            />
-            {!showOnboardingChecklist ? null : <ChecklistWidget />}
-          </div>
-          {!isLoading && showReviewWidget ? <ReviewWidget /> : null}
-          <Search
-            dataset={dataset}
-            enableShortcuts={enableShortcuts}
-            searchBarContent={
-              showCreateStoryButton && (
-                <>
-                  <CreateNewStoryButton
-                    isMobile={isMobile}
-                    onClick={() => {
-                      setIsFileSearchModalOpen(true);
-                    }}
-                    ariaLabel="Create a new story"
-                    variant="outline"
-                    padding="small"
-                  >
-                    <PlusIcon />
-                  </CreateNewStoryButton>
-                  <CreateNewStoryFileModal
-                    open={isFileSearchModalOpen}
-                    onOpenChange={setIsFileSearchModalOpen}
-                  />
-                </>
-              )
-            }
-            searchFieldContent={<Filter />}
-            belowSearchContent={<ShowChangesButton />}
-            {...lastViewedProps}
-          >
-            {({
-              query,
-              results,
-              isNavVisible,
-              isNavReachable,
-              isSearchResultRendered,
-              closeMenu,
-              getMenuProps,
-              getItemProps,
-              highlightedIndex,
-            }) => (
-              <>
-                {
-                  <Explorer
-                    dataset={dataset}
-                    selected={selected}
-                    isLoading={isLoading}
-                    isBrowsing={isNavVisible}
-                    isHidden={!isNavReachable}
-                    hasEntries={hasEntries}
-                  />
-                }
-                {isSearchResultRendered && (
-                  <SearchResults
-                    query={query}
-                    results={results}
-                    closeMenu={closeMenu}
-                    getMenuProps={getMenuProps}
-                    getItemProps={getItemProps}
-                    highlightedIndex={highlightedIndex}
-                    enableShortcuts={enableShortcuts}
-                    isLoading={isLoading}
-                    clearLastViewed={lastViewedProps.clearLastViewed}
-                  />
-                )}
-              </>
-            )}
-          </Search>
-        </Stack>
-        {isMobile || isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
-      </ScrollArea>
+      {/* On mobile only the explorer scrolls, keeping the heading and search reachable while
+       browsing a long story list inside the bottom drawer. */}
+      {isMobile ? (
+        stack
+      ) : (
+        <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
+          {stack}
+          {isLoading ? null : <SidebarBottom isDevelopment={isDevelopment} />}
+        </ScrollArea>
+      )}
     </Container>
   );
 });

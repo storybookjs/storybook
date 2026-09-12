@@ -187,6 +187,31 @@ This setup keeps the router context and React provider pointed at the same `Quer
 
 You can create a separate `QueryClient` for each story when you need stronger isolation, such as rendering several stories with the same query keys on one Docs page and keeping their cached responses independent. The tradeoff is that you must make the per-story client available to both the router context and the `QueryClientProvider` for that story. If those two places receive different clients, route loaders and components can read different caches, and story setup that calls `setQueryData` may not affect the component being rendered. Per-story clients also require explicit cleanup of timers, subscriptions, and cached data owned by each client.
 
+#### Story isolation on Docs pages and in parallel test runs
+
+The shared-client setup above is safe for parallel test files: each Vitest browser instance loads its own copy of the preview module, so stories running in different files never share a cache.
+
+It breaks down when several stories render at the same time in one browser context, most often on a [Docs page](../../writing-docs/autodocs.mdx) that shows multiple stories. Simultaneously rendered stories share the single client, so two stories that seed the same query key overwrite each other, and a `beforeEach` cache clear for one story can remove data another story is still reading. A Docs page showing `LoggedInAsAlice` and `LoggedInAsBob` stories seeded through the same key renders the last-seeded user in both.
+
+For per-story isolation, create one client per story and pass the same instance to the router context, the `QueryClientProvider`, and story setup. The [`context`](#context) factory runs before the router's initial load, so route loaders see the story's own client:
+
+<CodeSnippets path="tanstack-react-query-per-story-client.md" />
+
+Two details matter here. First, with the factory form, `parameters.tanstack.router.context` is a function, so story hooks can no longer read the client from parameters; key the clients by story ID in a shared module and use that helper in story `beforeEach` hooks, as shown above. Second, per-story clients own timers and subscriptions, so drop each client after its story unmounts (the cleanup returned from `beforeEach` in the example). Returning the cleanup from `beforeEach` runs it after the story's own teardown, so the client is never cleared while the story is still rendering. Clients used only for Docs rendering live as long as the page.
+
+If story tests still flake because several stories overlap in one browser context, and switching to per-story clients is not an option, disable file parallelism for the story test project so files run one at a time:
+
+```ts title="vitest.config.ts"
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    // Run story test files one at a time so they cannot overlap
+    fileParallelism: false,
+  },
+});
+```
+
 #### Seeding query data per story
 
 In individual stories, use [`beforeEach`](../../writing-tests/interaction-testing.mdx#beforeeach) to call [`setQueryData`](https://tanstack.com/query/latest/docs/reference/QueryClient#queryclientsetquerydata) on the shared `QueryClient` before the component renders. Access it from `parameters.tanstack.router.context`:

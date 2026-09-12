@@ -360,7 +360,9 @@ async function runStory<TRenderer extends Renderer>(
     await waitForAnimations(context.abortSignal);
   }
 
-  await story.applyAfterEach(context);
-
-  await cleanUp?.();
+  try {
+    await story.applyAfterEach(context);
+  } finally {
+    await cleanUp?.();
+  }
 }

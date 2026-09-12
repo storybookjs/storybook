@@ -6,8 +6,12 @@ import {
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
-import { classifyArg, type ClassifiedSlotArg, type VueDocgenArgInfo } from './classify-args.ts';
-import { isFunctionExpression, printValue } from './classify-value.ts';
+import {
+  classifyArg,
+  type ClassifiedSlotArg,
+  type VueDocgenArgInfo,
+} from '../classify-args/classify-args.ts';
+import { isFunctionExpression, printValue } from '../../shared/classify-value.ts';
 import {
   escapeTextContent,
   formatRenderedProp,
@@ -19,7 +23,7 @@ import {
   renderSlotContent,
   wrapSlotContent,
   type RenderContext,
-} from './render-primitives.ts';
+} from '../../shared/render-primitives.ts';
 
 export interface PrintHInput {
   /** Render-function expression to print as template markup. */

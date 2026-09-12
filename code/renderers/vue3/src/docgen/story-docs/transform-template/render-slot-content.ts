@@ -1,9 +1,9 @@
 import { unwrapExpression, type ImportBinding } from 'storybook/internal/csf-tools';
 
-import type { ClassifiedSlotArg } from './classify-args.ts';
-import { isFunctionExpression } from './classify-value.ts';
-import { printHFragment } from './print-h.ts';
-import { renderSlotContent, type RenderContext } from './render-primitives.ts';
+import type { ClassifiedSlotArg } from '../classify-args/classify-args.ts';
+import { isFunctionExpression } from '../../shared/classify-value.ts';
+import { printHFragment } from '../print-h/print-h.ts';
+import { renderSlotContent, type RenderContext } from '../../shared/render-primitives.ts';
 
 /** Slot children for one classified slot arg, or undefined when a function slot cannot render. */
 export function renderSlotArgContent(

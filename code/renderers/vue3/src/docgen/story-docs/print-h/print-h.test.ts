@@ -19,11 +19,14 @@ import {
   type ClassifiedArg,
   type ClassifiedSlotArg,
   type VueDocgenArgInfo,
-} from './classify-args.ts';
+} from '../classify-args/classify-args.ts';
 import { printH } from './print-h.ts';
-import { createRenderContext } from './render-primitives.ts';
-import { renderSlotArgContent } from './render-slot-content.ts';
-import { transformTemplate, type TransformTemplateResult } from './transform-template.ts';
+import { createRenderContext } from '../../shared/render-primitives.ts';
+import { renderSlotArgContent } from '../transform-template/render-slot-content.ts';
+import {
+  transformTemplate,
+  type TransformTemplateResult,
+} from '../transform-template/transform-template.ts';
 
 const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
 

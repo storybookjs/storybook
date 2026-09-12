@@ -7,7 +7,7 @@ import { vol } from 'memfs';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
-import { buildStoryDocsPayload } from './build-story-docs.ts';
+import { buildStoryDocsPayload } from '../build-story-docs.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 

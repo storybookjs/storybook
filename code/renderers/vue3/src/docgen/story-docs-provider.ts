@@ -3,8 +3,8 @@ import { fileURLToPath } from 'node:url';
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import type { DocgenProviderDescriptor, StoryDocsProviderPreset } from 'storybook/internal/types';
 
-import { DOCGEN_WORKER_SPECIFIER } from '../docgen/worker-specifier.ts';
-import { buildStoryDocsPayload } from './build-story-docs.ts';
+import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
+import { buildStoryDocsPayload } from './story-docs/build-story-docs.ts';
 
 /**
  * Vue renderer story-docs provider, enabled only when Vue's docgen worker is active.

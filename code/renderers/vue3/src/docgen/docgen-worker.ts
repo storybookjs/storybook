@@ -13,8 +13,8 @@ import { createLazyDocgenMiddleware } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
-import { buildDocgenPayload } from './build-docgen.ts';
-import { VueComponentMetaManager } from './vue-project-manager.ts';
+import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
+import { VueComponentMetaManager } from './component-docgen/component-meta/vue-project-manager.ts';
 
 /**
  * Builds the Vue docgen middleware. Owns one {@link VueComponentMetaManager} for the worker's

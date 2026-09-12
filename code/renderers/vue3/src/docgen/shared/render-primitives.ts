@@ -10,7 +10,7 @@ import type {
   ClassifiedPropLikeArg,
   ClassifiedSlotArg,
   RenderableValuePlan,
-} from './classify-args.ts';
+} from '../story-docs/classify-args/classify-args.ts';
 import { printValue } from './classify-value.ts';
 
 export interface RenderSfcMarkupInput {

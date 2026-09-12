@@ -4,7 +4,7 @@ import { emitTransformCode, useEffect } from 'storybook/preview-api';
 import type { VNode } from 'vue';
 import { isVNode } from 'vue';
 
-import type { Args, Decorator, StoryContext } from '../public-types';
+import type { Args, Decorator, StoryContext } from '../../../public-types.ts';
 
 /**
  * Context that is passed down to nested components/slots when generating the source code for a

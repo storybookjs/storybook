@@ -9,7 +9,7 @@ import {
   extractArgTypes,
   extractFromVueComponentMeta,
 } from './extractArgTypes.ts';
-import type { VueDocgenInfoEntry } from './types.ts';
+import type { VueDocgenInfoEntry } from '../../../types.ts';
 
 vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
   const module: Record<string, unknown> = await importOriginal();

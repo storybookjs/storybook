@@ -39,15 +39,19 @@ import {
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-import { classifyArgs, type ClassifyArgsResult, type VueDocgenArgInfo } from './classify-args.ts';
-import type { ForwardableSetup } from './forward-setup.ts';
-import { printH } from './print-h.ts';
-import { createRenderContext } from './render-primitives.ts';
+import {
+  classifyArgs,
+  type ClassifyArgsResult,
+  type VueDocgenArgInfo,
+} from './classify-args/classify-args.ts';
+import type { ForwardableSetup } from './transform-template/forward-setup.ts';
+import { printH } from './print-h/print-h.ts';
+import { createRenderContext } from '../shared/render-primitives.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
   type TemplateRenderConfig,
-} from './transform-template.ts';
+} from './transform-template/transform-template.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */

@@ -49,6 +49,9 @@ const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
   // The virtualizer makes the tree its own scroll container; the parent must bound its height.
   height: '100%',
   overflow: 'auto',
+  // Reserve room under the floating sidebar-bottom widget (its measured height, published as a
+  // CSS variable) so the last rows can scroll clear of it. 0 when no widget is mounted.
+  paddingBottom: 'var(--sidebar-bottom-height, 0px)',
 
   // Match the ScrollArea look: a thin muted thumb on a transparent track, only visible while
   // hovering or keyboard-focused inside the tree.
@@ -71,11 +74,6 @@ const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
   '&::-webkit-scrollbar-thumb:hover': {
     backgroundColor: transparentize(0.2, theme.textMutedColor),
   },
-
-  // Show trace lines on hover or keyboard focus.
-  '&:hover, &:has(:focus-visible)': {
-    '--trace-opacity': 1,
-  },
 }));
 
 const TreeWrapper = styled.div(({ theme }) => ({
@@ -85,6 +83,12 @@ const TreeWrapper = styled.div(({ theme }) => ({
   // Contain the overlay's z-index so UI outside the tree still paints above it.
   isolation: 'isolate',
   '--sticky-bg': theme.background.content,
+  // Show trace lines only while hovering or keyboard-focused inside the tree. Scoped to the whole
+  // wrapper (not just the scroller) so the pinned overlay's lines follow the same rule instead of
+  // being permanently drawn.
+  '&:hover, &:has(:focus-visible)': {
+    '--trace-opacity': 1,
+  },
   [MEDIA_DESKTOP_BREAKPOINT]: {
     '--sticky-bg': theme.background.app,
   },
@@ -108,7 +112,6 @@ const PinnedOverlay = styled.div(({ theme }) => ({
   right: 0,
   zIndex: 3,
   '--trace-color': theme.appBorderColor,
-  '--trace-opacity': 1,
   // Soft fade between the pinned stack and the scrolling rows beneath it.
   '&::after': {
     content: '""',
@@ -119,6 +122,11 @@ const PinnedOverlay = styled.div(({ theme }) => ({
     height: SECTION_GAP,
     pointerEvents: 'none',
     background: 'linear-gradient(to bottom, var(--sticky-bg), transparent)',
+  },
+  // The bridge continues the deepest pinned row's lines, so it blues with that row (the last
+  // pinned button) — keeping the continued line one colour on hover.
+  '&:has([data-pinned-item-id]:last-of-type:hover) [data-pinned-bridge]': {
+    '--trace-color': transparentize(0.52, theme.color.secondary),
   },
 }));
 
@@ -139,9 +147,23 @@ const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   textAlign: 'left',
   font: 'inherit',
   color: theme.color.defaultText,
+  // Opaque, square backing so the pinned row fully occludes the scrolling rows beneath it.
   backgroundColor: 'var(--sticky-bg)',
+  // Hover highlight on a rounded inset layer, matching the natural rows' ::before (which the
+  // square backing cannot carry without letting the rows below show through its rounded corners).
+  '&::before': {
+    content: '""',
+    position: 'absolute',
+    inset: 0,
+    borderRadius: 4,
+    pointerEvents: 'none',
+  },
+  '&:hover::before': {
+    background: theme.background.hoverable,
+  },
+  // Blue the trace lines on hover, like natural rows (StyledTreeItem).
   '&:hover': {
-    backgroundImage: `linear-gradient(${theme.background.hoverable}, ${theme.background.hoverable})`,
+    '--trace-color': transparentize(0.52, theme.color.secondary),
   },
   '& svg': {
     flexShrink: 0,
@@ -164,7 +186,10 @@ const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   },
 }));
 
+// position: relative lifts the content above the row's ::before hover highlight (a positioned
+// pseudo-element would otherwise paint over it), matching the natural rows' relative StyledContent.
 const PinnedRowIcon = styled.span({
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
 });
@@ -179,9 +204,24 @@ const PinnedTraceAnchor = styled.span<{ $level: number }>(({ $level }) => ({
   width: 0,
 }));
 
+// Continues the deepest pinned row's ancestor trace lines down through the fade, so they read as
+// one line with the scrolling rows below instead of being cut by the fade. Painted above the fade
+// (which sits at the overlay's ::after, z-index auto). Anchored like PinnedTraceAnchor.
+const PinnedFadeBridge = styled.span<{ $level: number }>(({ $level }) => ({
+  position: 'absolute',
+  top: '100%',
+  height: SECTION_GAP,
+  insetInlineStart: `calc(${$level} * 20px)`,
+  width: 0,
+  zIndex: 1,
+  pointerEvents: 'none',
+}));
+
 // The label must own the free space and truncate stably, or the row content jitters
-// horizontally as pinned rows swap while scrolling.
+// horizontally as pinned rows swap while scrolling. position: relative keeps it above the row's
+// ::before hover highlight (see PinnedRowIcon).
 const PinnedLabel = styled.span({
+  position: 'relative',
   flex: '1 1 auto',
   minWidth: 0,
   overflow: 'hidden',
@@ -693,18 +733,37 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return false;
     }
     const offset = offsets[index];
+    // The pinned overlay covers `stack` px at the top; the floating sidebar-bottom widget covers
+    // `bottomInset` px at the bottom (its height, reserved as the scroller's padding-bottom). A
+    // row is only truly visible between them.
     const stack = getAncestorIds(collapsedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
+    const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
     if (block === 'center') {
-      scroller.scrollTop = offset - Math.max((scroller.clientHeight - TREE_ROW_HEIGHT) / 2, stack);
+      const half = Math.max((scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT) / 2, stack);
+      scroller.scrollTop = offset - half;
       return true;
     }
     const viewTop = scroller.scrollTop + stack;
-    const viewBottom = scroller.scrollTop + scroller.clientHeight - TREE_ROW_HEIGHT;
-    if (offset < viewTop || offset > viewBottom) {
+    const viewBottom = scroller.scrollTop + scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT;
+    if (offset < viewTop) {
       scroller.scrollTop = offset - stack;
+    } else if (offset > viewBottom) {
+      // Reveal the row just above the widget, rather than jumping it to the top.
+      scroller.scrollTop = offset + TREE_ROW_HEIGHT + bottomInset - scroller.clientHeight;
     }
     return true;
   }, []);
+
+  // Keep the keyboard-focused row clear of the pinned overlay and the floating bottom widget.
+  // RAC scrolls a focused row only within the raw viewport, so a row behind either overlay counts
+  // as "visible" and no scroll fires — the user has to keep pressing until focus clears the stack.
+  // scrollRowIntoView knows both insets, and no-ops when the row is already fully visible. Gated to
+  // keyboard navigation: a pointer click must not jump-scroll the row it lands on.
+  useEffect(() => {
+    if (focusedItemId && lastInputModalityRef.current === 'keyboard') {
+      scrollRowIntoView(focusedItemId, 'nearest');
+    }
+  }, [focusedItemId, scrollRowIntoView]);
 
   // Listen for the global context-menu shortcut and open the menu for the right story.
   // Prefer the currently focused tree item; fall back to the selected story when focus is outside
@@ -926,6 +985,22 @@ export const Tree = React.memo<TreeProps>(function Tree({
                   </PinnedRow>
                 );
               })}
+              {(() => {
+                // Bridge the deepest pinned row's ancestor lines through the fade. The deepest
+                // level itself has no parent line above to continue, so it is excluded (a lone
+                // pinned root, level 0, draws no line at all).
+                const lastEntry = collapsedData[pinnedIds[pinnedIds.length - 1]];
+                const deepestLevel = lastEntry
+                  ? lastEntry.type === 'root'
+                    ? 0
+                    : (lastEntry.depth ?? 0)
+                  : 0;
+                return deepestLevel > 0 ? (
+                  <PinnedFadeBridge $level={deepestLevel} data-pinned-bridge>
+                    <Traces level={deepestLevel} isAlongsideSelected={false} />
+                  </PinnedFadeBridge>
+                ) : null;
+              })()}
             </PinnedOverlay>
           )}
         </TreeWrapper>

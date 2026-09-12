@@ -765,6 +765,100 @@ export const StickyAncestorsDark: Story = {
   globals: { sb_theme: 'dark' },
 };
 
+/**
+ * Arrow-up navigation must keep the focused row clear of the pinned overlay. React-aria only
+ * scrolls a focused row within the raw viewport, so rows behind the sticky stack would otherwise
+ * stay obscured until focus climbed past the whole stack (one wasted press per pinned row).
+ */
+export const StickyKeyboardReveal: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(stickyStoryId);
+    return (
+      <div style={{ height: 320 }}>
+        <Tree
+          {...args}
+          data={stickyIndex}
+          selectedStoryId={selectedId}
+          onSelectStoryId={setSelectedId}
+        />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const scroller = canvasElement.querySelector<HTMLElement>('[role="treegrid"]')!;
+    const overlay = () =>
+      canvasElement.querySelector<HTMLElement>('[data-testid="sticky-overlay"]');
+    const focusedRow = () =>
+      canvasElement.querySelector<HTMLElement>('[data-item-id][data-focused="true"]');
+
+    // On mount the selected deep story is centered, pinning its ancestor chain.
+    await waitFor(() => expect(overlay()).not.toBeNull());
+    const leaf = canvasElement.querySelector<HTMLElement>(`[data-item-id="${stickyStoryId}"]`)!;
+    // The virtualizer briefly disables pointer events on rows while it settles.
+    await waitFor(() => expect(getComputedStyle(leaf).pointerEvents).not.toBe('none'));
+    await userEvent.click(leaf);
+    await waitFor(() => expect(focusedRow()?.getAttribute('data-item-id')).toBe(stickyStoryId));
+
+    // Climb toward the pinned stack. Each ArrowUp lands focus on an ancestor that is behind the
+    // sticky overlay, so the scroll must follow — scrollTop drops by a row each step. (The test
+    // renderer sizes the virtual scroll view oddly, so row rects are unreliable; scrollTop is not,
+    // and it is what a stuck reveal would leave unchanged.)
+    const scrollTops: number[] = [];
+    for (let i = 0; i < 4; i += 1) {
+      await userEvent.keyboard('{ArrowUp}');
+      await waitFor(() => expect(focusedRow()).not.toBeNull());
+      scrollTops.push(scroller.scrollTop);
+    }
+    for (let i = 1; i < scrollTops.length; i += 1) {
+      expect(scrollTops[i]).toBeLessThan(scrollTops[i - 1]);
+    }
+  },
+};
+
+/**
+ * Moving focus onto a collapsed branch with the arrow keys must leave it collapsed: focus is not
+ * activation. react-aria's selectionBehavior="replace" makes selection follow focus, so without a
+ * guard, arrowing past a branch would toggle it. Explicit activation (click, Enter, Space) still
+ * expands it.
+ */
+export const ArrowFocusDoesNotToggleBranch: Story = {
+  args: { refId: DEFAULT_REF_ID },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const row = (id: string) => canvasElement.querySelector<HTMLElement>(`[data-item-id="${id}"]`);
+    const focusedId = () =>
+      canvasElement
+        .querySelector('[data-item-id][data-focused="true"]')
+        ?.getAttribute('data-item-id') ?? null;
+
+    // emails is an expanded root; its first child is a leaf, its second a collapsed branch.
+    await canvas.findByText('Introduction');
+    expect(row('emails-buildnotification')).toHaveAttribute('aria-expanded', 'false');
+
+    // Focus the leaf, then arrow down onto the collapsed branch.
+    await userEvent.click(row('emails-introduction')!);
+    await waitFor(() => expect(focusedId()).toBe('emails-introduction'));
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(focusedId()).toBe('emails-buildnotification'));
+
+    // Focus landed on the branch but must not have expanded it.
+    expect(row('emails-buildnotification')).toHaveAttribute('aria-expanded', 'false');
+
+    // Pressing Enter on the focused branch still expands it.
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(row('emails-buildnotification')).toHaveAttribute('aria-expanded', 'true')
+    );
+  },
+};
+
 /** Plain arrow keys must move focus between rows (react-aria keyboard navigation). */
 export const KeyboardNavigation: Story = {
   args: {

@@ -1,4 +1,4 @@
-import React, { Fragment, useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 
 import {
   type API_FilterFunction,
@@ -19,10 +19,12 @@ import type { TestProviderStateByProviderId } from '../../../shared/test-provide
 import { NotificationList } from '../notifications/NotificationList.tsx';
 import { TestingWidget } from './TestingWidget.tsx';
 
-// This ID is used dynamically add/remove space at the bottom to prevent overlapping the main sidebar content.
-const SIDEBAR_BOTTOM_SPACER_ID = 'sidebar-bottom-spacer';
 // This ID is used by some integrators to target the (fixed position) sidebar bottom element so it should remain stable.
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
+// The widget floats over the tree; its measured height is published here so the tree can reserve
+// matching bottom padding (letting the last rows scroll clear of the widget) without a rigid spacer
+// that would stop the tree from showing through beneath it.
+const SIDEBAR_BOTTOM_HEIGHT_VAR = '--sidebar-bottom-height';
 
 const filterNone: API_FilterFunction = () => true;
 const filterWarn: API_FilterFunction = ({ statuses = {} }) =>
@@ -48,13 +50,6 @@ const getFilter = (warningsActive = false, errorsActive = false) => {
   }
   return filterNone;
 };
-
-// The sidebar column is a flex layout since the tree scrolls itself; without a rigid basis
-// the reserved height would be flexed away whenever the tree wants the space.
-const Spacer = styled.div({
-  pointerEvents: 'none',
-  flex: 'none',
-});
 
 const Content = styled.div(({ theme }) => ({
   position: 'absolute',
@@ -107,21 +102,27 @@ export const SidebarBottomBase = ({
   registeredTestProviders,
   onRunAll,
 }: SidebarBottomProps) => {
-  const spacerRef = useRef<HTMLDivElement | null>(null);
   const wrapperRef = useRef<HTMLDivElement | null>(null);
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
 
+  // Publish the floating widget's height to the sidebar so the tree can pad its scroll area to
+  // match, keeping the last rows reachable above the widget. Written on the sidebar container
+  // (the wrapper's parent) so it inherits down to the tree scroller.
   useEffect(() => {
-    if (spacerRef.current && wrapperRef.current) {
-      const resizeObserver = new ResizeObserver(() => {
-        if (spacerRef.current && wrapperRef.current) {
-          spacerRef.current.style.height = `${wrapperRef.current.scrollHeight}px`;
-        }
-      });
-      resizeObserver.observe(wrapperRef.current);
-      return () => resizeObserver.disconnect();
+    const wrapper = wrapperRef.current;
+    const container = wrapper?.parentElement;
+    if (!wrapper || !container) {
+      return;
     }
+    const resizeObserver = new ResizeObserver(() => {
+      container.style.setProperty(SIDEBAR_BOTTOM_HEIGHT_VAR, `${wrapper.scrollHeight}px`);
+    });
+    resizeObserver.observe(wrapper);
+    return () => {
+      resizeObserver.disconnect();
+      container.style.removeProperty(SIDEBAR_BOTTOM_HEIGHT_VAR);
+    };
   }, []);
 
   useEffect(() => {
@@ -139,38 +140,35 @@ export const SidebarBottomBase = ({
   }
 
   return (
-    <Fragment>
-      <Spacer id={SIDEBAR_BOTTOM_SPACER_ID} ref={spacerRef}></Spacer>
-      <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
-        <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
-        {isDevelopment && (
-          <TestingWidget
-            {...{
-              registeredTestProviders,
-              testProviderStates,
-              onRunAll: () => {
-                onRunAll();
-                setErrorsActive(false);
-                setWarningsActive(false);
-              },
-              hasStatuses,
-              clearStatuses: () => {
-                api.clearStatuses();
-                setErrorsActive(false);
-                setWarningsActive(false);
-              },
-              errorCount,
-              errorsActive,
-              setErrorsActive,
-              warningCount,
-              warningsActive,
-              setWarningsActive,
-              successCount,
-            }}
-          />
-        )}
-      </Content>
-    </Fragment>
+    <Content id={SIDEBAR_BOTTOM_WRAPPER_ID} ref={wrapperRef}>
+      <NotificationList notifications={notifications} clearNotification={api.clearNotification} />
+      {isDevelopment && (
+        <TestingWidget
+          {...{
+            registeredTestProviders,
+            testProviderStates,
+            onRunAll: () => {
+              onRunAll();
+              setErrorsActive(false);
+              setWarningsActive(false);
+            },
+            hasStatuses,
+            clearStatuses: () => {
+              api.clearStatuses();
+              setErrorsActive(false);
+              setWarningsActive(false);
+            },
+            errorCount,
+            errorsActive,
+            setErrorsActive,
+            warningCount,
+            warningsActive,
+            setWarningsActive,
+            successCount,
+          }}
+        />
+      )}
+    </Content>
   );
 };
 

@@ -1,13 +1,15 @@
 import fs from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { dirname, join } from 'node:path';
 
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
+import { getStorybookConfigDir } from '../common/utils/storybook-config-dir.ts';
 import { invariant } from '../common/utils/utils.ts';
 
-const DEFAULT_SETTINGS_PATH = join(homedir(), '.storybook', 'settings.json');
+const SETTINGS_FILE = 'settings.json';
+
+const getDefaultSettingsPath = () => join(getStorybookConfigDir(), SETTINGS_FILE);
 
 const VERSION = 1;
 
@@ -60,7 +62,7 @@ const userSettingSchema = z.object({
 });
 
 let settings: Settings | undefined;
-export async function globalSettings(filePath = DEFAULT_SETTINGS_PATH) {
+export async function globalSettings(filePath = getDefaultSettingsPath()) {
   if (settings) {
     return settings;
   }

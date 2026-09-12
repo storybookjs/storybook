@@ -412,15 +412,52 @@ export const ContextMenuKeyboardEntry: Story = {
 
     const popover = await screen.findByRole('dialog');
 
-    // Focus stays on the popover container on open — autofocusing the first item makes
-    // screen readers announce it twice. The first Tab reaches the "Go to story" item.
-    await waitFor(() => expect(popover).toHaveFocus());
-    await userEvent.tab();
-    await expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus();
+    // Opening via keyboard autofocuses the first actionable item ("Go to story") so it can be
+    // operated without a Tab first. Pointer opens keep focus on the container instead (see the
+    // SomeContextContent story).
+    await waitFor(() =>
+      expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus()
+    );
 
     // Status links were removed from the context menu; statuses stay on the row itself.
     expect(within(popover).queryByText('Vitest')).not.toBeInTheDocument();
     expect(within(popover).queryByText('Change Detection')).not.toBeInTheDocument();
+  },
+};
+
+/**
+ * Pressing Enter on the ⋯ trigger counts as keyboard entry, just like Ctrl+Shift+U: the menu opens
+ * with the "Go to story" navigation item and autofocuses it. A mouse click on the same trigger
+ * opens with pointer entry and leaves focus on the container (see WithContextContent).
+ */
+export const ContextMenuEnterOnTrigger: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('marketing hero');
+
+    // Focus the row so its ⋯ trigger (revealed on focus-within) becomes focusable, then move
+    // focus to the trigger and activate it with Enter.
+    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
+    await userEvent.click(row);
+    const trigger = within(row).getByTestId('context-menu');
+    trigger.focus();
+    await userEvent.keyboard('{Enter}');
+
+    const popover = await screen.findByRole('dialog');
+    await waitFor(() =>
+      expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus()
+    );
   },
 };
 

@@ -33,6 +33,7 @@ import { StatusContext } from './StatusContext.tsx';
 import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
+import type { ContextMenuEntryMethod } from './ContextMenu.tsx';
 import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
@@ -255,10 +256,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const focusedItemIdRef = useRef<string | null>(null);
 
   // Context-menu state: which item's menu is open, and how it was triggered.
-  // 'pointer' = click on the ⋯ button; 'keyboard' = global shortcut (shows extra actions).
+  // 'pointer' = mouse click on the ⋯ button; 'keyboard' = global shortcut or Enter/Space on the
+  // ⋯ button (shows extra actions and autofocuses the first item).
   const [contextMenuState, setContextMenuState] = useState<{
     itemId: string;
-    entryMethod: 'pointer' | 'keyboard';
+    entryMethod: ContextMenuEntryMethod;
   } | null>(null);
 
   // Rewrite the dataset to place the single child story in place of the component.
@@ -344,6 +346,45 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [setExpanded]
   );
 
+  // react-aria's selectionBehavior="replace" makes selection follow focus, so onSelectionChange
+  // fires as focus moves (arrow keys, Tab, programmatic focus) — not only on genuine activation.
+  // Acting on those would expand/collapse a branch or navigate a story merely because focus
+  // landed on the row. This flag is true only while a pointer press or Space keypress is being
+  // handled on the tree, so handleSelectionChange can ignore focus-driven changes. Enter and
+  // double-click activate through onAction, which fires regardless.
+  const isActivatingRef = useRef(false);
+  // The modality of the last input inside the tree. The ⋯ button opens its menu through
+  // react-aria's press handling, which doesn't tell us whether it was a click or Enter/Space, so
+  // the capture-phase listeners below record it: opening the menu via keyboard autofocuses the
+  // first item, while a mouse click does not.
+  const lastInputModalityRef = useRef<ContextMenuEntryMethod>('pointer');
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+    const arm = (event: PointerEvent | KeyboardEvent) => {
+      lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
+      if (event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ') {
+        isActivatingRef.current = true;
+      }
+    };
+    const disarm = () => {
+      isActivatingRef.current = false;
+    };
+    container.addEventListener('pointerdown', arm, { capture: true });
+    container.addEventListener('keydown', arm, { capture: true });
+    // pointerup can land outside the row (or the tree) after a drag, so listen on the window.
+    window.addEventListener('pointerup', disarm, { capture: true });
+    container.addEventListener('keyup', disarm, { capture: true });
+    return () => {
+      container.removeEventListener('pointerdown', arm, { capture: true });
+      container.removeEventListener('keydown', arm, { capture: true });
+      window.removeEventListener('pointerup', disarm, { capture: true });
+      container.removeEventListener('keyup', disarm, { capture: true });
+    };
+  }, []);
+
   // Use refs so the callbacks below can read the latest values without re-creating.
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
@@ -374,6 +415,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const handleSelectionChange = useCallback(
     (keys: 'all' | Set<React.Key>) => {
       if (keys === 'all') {
+        return;
+      }
+      // Ignore selection changes that merely follow focus (arrow keys, Tab, programmatic focus):
+      // only a pointer press or Space activates a row. Otherwise navigating past a branch would
+      // toggle its expansion. See isActivatingRef.
+      if (!isActivatingRef.current) {
         return;
       }
       const selectedKey = Array.from(keys)[0];
@@ -407,9 +454,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [isBranch, setExpanded, onSelectStoryId]
   );
 
-  // Open or close the context menu. Stable callback for children.
-  const openContextMenu = useCallback((itemId: string, entryMethod: 'pointer' | 'keyboard') => {
-    setContextMenuState({ itemId, entryMethod });
+  // Open or close the context menu. Stable callback for children. When the caller does not specify
+  // an entry method (the ⋯ button), derive it from the last input modality so Enter/Space open with
+  // keyboard semantics (autofocus) and a mouse click opens with pointer semantics.
+  const openContextMenu = useCallback((itemId: string, entryMethod?: ContextMenuEntryMethod) => {
+    setContextMenuState({ itemId, entryMethod: entryMethod ?? lastInputModalityRef.current });
   }, []);
   const closeContextMenu = useCallback(() => setContextMenuState(null), []);
 

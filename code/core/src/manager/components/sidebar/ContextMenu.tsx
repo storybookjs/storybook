@@ -1,5 +1,5 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { memo, useCallback, useMemo } from 'react';
+import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -156,7 +156,7 @@ export const ContextMenu: FC<{
         defaultVisible={false}
         visible={isOpen}
         onVisibleChange={setIsOpen}
-        popover={<LiveContextMenu context={context} links={topLinks} />}
+        popover={<LiveContextMenu context={context} links={topLinks} entryMethod={entryMethod} />}
         hasChrome={true}
         padding={0}
       >
@@ -182,15 +182,30 @@ ContextMenu.displayName = 'ContextMenu';
  * render the context menu for the sidebar. it self is a tooltip link list that renders the links
  * provided to it. In addition to the links, it also renders the test providers.
  */
-const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof TooltipLinkList>> = ({
-  context,
-  links,
-  ...rest
-}) => {
+const LiveContextMenu: FC<
+  {
+    context: API_HashEntry;
+    entryMethod?: ContextMenuEntryMethod;
+  } & ComponentProps<typeof TooltipLinkList>
+> = ({ context, links, entryMethod, ...rest }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+
+  // Opening via keyboard (the global shortcut, or Enter/Space on the ⋯ button) moves focus onto
+  // the first actionable item so it can be operated without a Tab first. Pointer opens leave focus
+  // on the popover container: autofocusing an item there makes screen readers announce it twice.
+  const containerRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (entryMethod !== 'keyboard') {
+      return;
+    }
+    const firstItem = containerRef.current?.querySelector<HTMLElement>(
+      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
+    );
+    firstItem?.focus();
+  }, [entryMethod]);
 
   /**
    * The context menu can take a list of lists of links, so that the links are grouped and separated
@@ -202,7 +217,12 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
 
   const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
 
-  return <TooltipLinkList {...rest} links={all} />;
+  // display: contents keeps the wrapper out of the layout while still scoping the focus query.
+  return (
+    <div ref={containerRef} style={{ display: 'contents' }}>
+      <TooltipLinkList {...rest} links={all} />
+    </div>
+  );
 };
 
 type ExcludesNull = <T>(x: T | null) => x is T;

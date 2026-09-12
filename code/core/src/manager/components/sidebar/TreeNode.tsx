@@ -257,8 +257,11 @@ export interface TreeNodeProps {
   /** Callback to select a story by its ID. */
   onSelectStoryId: (itemId: string) => void;
   api: API;
-  /** Open the context menu for a given item ID with the specified entry method. */
-  openContextMenu?: (itemId: string, entryMethod: ContextMenuEntryMethod) => void;
+  /**
+   * Open the context menu for a given item ID. When `entryMethod` is omitted the tree derives it
+   * from the last input modality (keyboard vs pointer); pass it explicitly for the global shortcut.
+   */
+  openContextMenu?: (itemId: string, entryMethod?: ContextMenuEntryMethod) => void;
   /** Close the currently-open context menu. */
   closeContextMenu?: () => void;
   /** Whether any test provider addon is registered (enables the menu on group rows). */
@@ -317,12 +320,13 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 
   const stopRowPress = useCallback((event: React.SyntheticEvent) => event.stopPropagation(), []);
 
-  // Per-item handler for toggling the context menu open/close, suitable as the `setIsOpen`
-  // parameter for `useContextMenu`. Uses pointer mode by default when toggled via the ⋯ button.
+  // Toggles the context menu open/close, suitable as the `setIsOpen` parameter for the popover.
+  // The entry method (pointer vs keyboard) is derived by the tree from the last input modality,
+  // so Enter/Space on the ⋯ button count as keyboard entry while a mouse click counts as pointer.
   const handleContextMenuOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
-        openContextMenu?.(item.id, 'pointer');
+        openContextMenu?.(item.id);
       } else {
         closeContextMenu?.();
       }

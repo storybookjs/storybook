@@ -7,7 +7,8 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options
 ) => {
-  const docsEnabled = Object.keys(await options.presets.apply('docs', {}, options)).length > 0;
+  const docsEnabled =
+    Object.keys((await options.presets.apply('docs', {}, options)) ?? {}).length > 0;
   const result: string[] = [];
 
   return result

@@ -27,25 +27,28 @@ import type {
 export function collectDeduplicatedDiagnostics(
   projectResults: Record<string, ProjectDoctorResults>
 ): DiagnosticResult[] {
-  const diagnosticMap = new Map<DiagnosticType, DiagnosticResult>();
+  const diagnosticMap = new Map<string, DiagnosticResult>();
 
   Object.entries(projectResults).forEach(([configDir, result]) => {
     Object.entries(result.diagnostics).forEach(([type, status]) => {
       if (status !== DiagnosticStatus.PASSED) {
         const diagnosticType = type as DiagnosticType;
-        const message = result.messages[diagnosticType];
+        const diagnostic = result.messages[diagnosticType];
 
-        if (message) {
-          const existing = diagnosticMap.get(diagnosticType);
+        if (diagnostic) {
+          // Diagnostics of the same type can still differ per project (e.g. distinct
+          // configuration errors), so deduplicate by their content
+          const key = `${diagnosticType}:${diagnostic.message}`;
+          const existing = diagnosticMap.get(key);
           if (existing) {
             // Add project to existing diagnostic
             existing.projects.push({ configDir });
           } else {
             // Create new diagnostic entry
-            diagnosticMap.set(diagnosticType, {
+            diagnosticMap.set(key, {
               type: diagnosticType,
-              title: type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
-              message,
+              title: diagnostic.title,
+              message: diagnostic.message,
               projects: [{ configDir }],
             });
           }
@@ -100,14 +103,13 @@ export function displayDoctorResults(
       // Display each diagnostic issue
       Object.entries(result.diagnostics).forEach(([type, status]) => {
         if (status !== DiagnosticStatus.PASSED) {
-          const message = result.messages[type as DiagnosticType];
-          if (message) {
-            const title = type.replace(/_/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
-            logger.logBox(message, {
+          const diagnostic = result.messages[type as DiagnosticType];
+          if (diagnostic) {
+            logger.logBox(diagnostic.message, {
               title:
                 status === DiagnosticStatus.CHECK_ERROR
-                  ? CLI_COLORS.error(title)
-                  : CLI_COLORS.warning(title),
+                  ? CLI_COLORS.error(diagnostic.title)
+                  : CLI_COLORS.warning(diagnostic.title),
             });
           }
         }
@@ -363,7 +365,7 @@ export async function collectDoctorResultsByProject(
         DiagnosticType,
         DiagnosticStatus
       >;
-      const messages: Record<DiagnosticType, string> = {} as Record<DiagnosticType, string>;
+      const messages: ProjectDoctorResults['messages'] = {} as ProjectDoctorResults['messages'];
 
       // Initialize all diagnostic types as passed
       Object.values(DiagType).forEach((type) => {
@@ -382,7 +384,10 @@ export async function collectDoctorResultsByProject(
           diagnostics[checkResult.type] = DiagnosticStatus.HAS_ISSUES;
           hasIssues = true;
         }
-        messages[checkResult.type] = checkResult.message;
+        messages[checkResult.type] = {
+          title: checkResult.title,
+          message: checkResult.message,
+        };
       }
 
       const status = hasErrors ? 'check_error' : hasIssues ? 'has_issues' : 'healthy';
@@ -401,15 +406,17 @@ export async function collectDoctorResultsByProject(
         DiagnosticType,
         DiagnosticStatus
       >;
-      const messages: Record<DiagnosticType, string> = {} as Record<DiagnosticType, string>;
+      const messages: ProjectDoctorResults['messages'] = {} as ProjectDoctorResults['messages'];
 
       Object.values(DiagType).forEach((type) => {
         diagnostics[type] = DiagnosticStatus.PASSED;
       });
 
       diagnostics[DiagType.CONFIGURATION_ERROR] = DiagnosticStatus.CHECK_ERROR;
-      messages[DiagType.CONFIGURATION_ERROR] =
-        `Failed to run doctor checks: ${error instanceof Error ? error.message : String(error)}`;
+      messages[DiagType.CONFIGURATION_ERROR] = {
+        title: 'Configuration Error',
+        message: `Failed to run doctor checks: ${error instanceof Error ? error.message : String(error)}`,
+      };
 
       projectResults[configDir] = {
         configDir,

@@ -26,6 +26,39 @@ const isReactSyntheticEvent = (e: unknown): e is SyntheticEvent =>
     findProto(e, (proto) => /^Synthetic(?:Base)?Event$/.test(proto.constructor.name)) &&
     typeof (e as SyntheticEvent).persist === 'function'
   );
+const isWindowObject = (value: unknown): value is Window => {
+  try {
+    // `window.window === window` and the `window` property is one of the few
+    // allowed to be read on cross-origin Window objects, so this also detects
+    // windows we cannot inspect any further.
+    return typeof value === 'object' && value !== null && (value as Window).window === value;
+  } catch {
+    return true;
+  }
+};
+
+// Replaces a property pointing to a Window with an empty stub: sending a real
+// Window over the channel makes the serializer walk `top`/`frames` into any
+// cross-origin iframes in the manager document and throw a SecurityError.
+const stubWindowProp = (target: Record<string, unknown>, prop: string) => {
+  let value: unknown;
+  try {
+    value = target[prop];
+  } catch {
+    return;
+  }
+
+  if (isWindowObject(value)) {
+    const descriptor = Object.getOwnPropertyDescriptor(target, prop);
+    Object.defineProperty(target, prop, {
+      enumerable: descriptor?.enumerable ?? true,
+      configurable: true,
+      writable: true,
+      value: Object.create(value.constructor.prototype),
+    });
+  }
+};
+
 const serializeArg = <T extends object>(a: T) => {
   if (isReactSyntheticEvent(a)) {
     const e: SyntheticEvent = Object.create(
@@ -33,14 +66,27 @@ const serializeArg = <T extends object>(a: T) => {
       Object.getOwnPropertyDescriptors(a)
     );
     e.persist();
-    const viewDescriptor = Object.getOwnPropertyDescriptor(e, 'view');
     // don't send the entire window object over.
-    const view: unknown = viewDescriptor?.value;
-    if (typeof view === 'object' && view?.constructor.name === 'Window') {
-      Object.defineProperty(e, 'view', {
-        ...viewDescriptor,
-        value: Object.create(view.constructor.prototype),
-      });
+    stubWindowProp(e, 'view');
+
+    // the native event's `view` exposes the same Window (as a non-configurable
+    // accessor in React 19); stub it on a copy so the event retained by the spy
+    // is untouched
+    const nativeEventDescriptor = Object.getOwnPropertyDescriptor(e, 'nativeEvent');
+    const nativeEvent: unknown =
+      nativeEventDescriptor && 'value' in nativeEventDescriptor
+        ? nativeEventDescriptor.value
+        : undefined;
+    if (typeof nativeEvent === 'object' && nativeEvent) {
+      const nativeEventDescriptors = Object.getOwnPropertyDescriptors(nativeEvent);
+      // `view` may be a non-configurable accessor, so it can't be redefined on the copy
+      delete nativeEventDescriptors.view;
+      const nativeEventCopy = Object.create(
+        Object.getPrototypeOf(nativeEvent),
+        nativeEventDescriptors
+      );
+      stubWindowProp(nativeEventCopy, 'view');
+      Object.defineProperty(e, 'nativeEvent', { ...nativeEventDescriptor, value: nativeEventCopy });
     }
     return e;
   }

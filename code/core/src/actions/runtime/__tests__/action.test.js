@@ -31,6 +31,46 @@ describe('Action', () => {
   });
 });
 
+describe('serializing React synthetic events', () => {
+  // a Window self-references via .window, including cross-origin windows
+  class Window {}
+  const fakeWindow = new Window();
+  fakeWindow.window = fakeWindow;
+
+  const createSyntheticEvent = () => {
+    class SyntheticBaseEvent {}
+    class PointerEvent {}
+    // DOM events expose `view` through the prototype chain…
+    Object.defineProperty(PointerEvent.prototype, 'view', { get: () => fakeWindow });
+    const nativeEvent = Object.create(PointerEvent.prototype);
+    // …and React 19 also stamps it as a non-configurable own accessor
+    Object.defineProperty(nativeEvent, 'view', { enumerable: true, get: () => fakeWindow });
+    return Object.assign(Object.create(SyntheticBaseEvent.prototype), {
+      persist: () => {},
+      nativeEvent,
+      view: fakeWindow,
+    });
+  };
+
+  it('stubs `view` and `nativeEvent.view` so no Window reaches the channel', () => {
+    const channel = createChannel();
+    const event = createSyntheticEvent();
+
+    action('test-action')(event);
+
+    const emitted = getChannelData(channel);
+    expect(emitted).not.toBe(event);
+    expect(emitted.view).not.toBe(fakeWindow);
+    expect(Object.keys(emitted.view)).toEqual([]);
+    expect(emitted.nativeEvent).not.toBe(event.nativeEvent);
+    expect(emitted.nativeEvent.view).not.toBe(fakeWindow);
+    expect(Object.keys(emitted.nativeEvent.view)).toEqual([]);
+    // the event the story (and spy) retains is left untouched
+    expect(event.view).toBe(fakeWindow);
+    expect(event.nativeEvent.view).toBe(fakeWindow);
+  });
+});
+
 describe('Depth config', () => {
   it('with global depth configuration', () => {
     const channel = createChannel();

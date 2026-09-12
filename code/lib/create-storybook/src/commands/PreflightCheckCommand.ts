@@ -1,4 +1,3 @@
-import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
@@ -8,7 +7,7 @@ import {
   isCI,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
-import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
@@ -84,14 +83,6 @@ export class PreflightCheckCommand {
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
       await packageManager.installDependencies();
-    }
-
-    const pnp = await detectPnp();
-    if (pnp) {
-      deprecate(dedent`
-        As of Storybook 10.0, PnP is deprecated. 
-        If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode. In future versions, PnP compatibility will be removed.
-    `);
     }
 
     this.checkPackageNameConflict(packageManager);

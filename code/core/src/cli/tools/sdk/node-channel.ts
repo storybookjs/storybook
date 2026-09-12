@@ -86,8 +86,6 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
     url: socketUrl.href,
     onError: () => {},
     createSocket: () => socket,
-    // Config load and tool calls occupy this event loop longer than the 20s receive watchdog.
-    enableHeartbeat: false,
   });
 
   const channel = new Channel({ transports: [transport] });

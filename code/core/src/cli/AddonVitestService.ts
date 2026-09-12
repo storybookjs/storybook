@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 
-import { canUpdateVitestConfigFile, canUpdateVitestWorkspaceFile } from 'storybook/internal/babel';
+import { canUpdateVitestConfigFile } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
@@ -293,21 +293,6 @@ export class AddonVitestService {
   async validateConfigFiles(directory: string): Promise<Result> {
     const reasons: string[] = [];
     const projectRoot = getProjectRoot();
-
-    // Check projects files
-    const vitestProjectsFile = find.any(
-      ['ts', 'js', 'json'].map((ex) => `vitest.projects.${ex}`),
-      { cwd: directory, last: projectRoot }
-    );
-
-    if (vitestProjectsFile?.endsWith('.json')) {
-      reasons.push(`Cannot auto-update JSON projects file: ${vitestProjectsFile}`);
-    } else if (vitestProjectsFile) {
-      const fileContents = await fs.readFile(vitestProjectsFile, 'utf8');
-      if (!canUpdateVitestWorkspaceFile(fileContents)) {
-        reasons.push(`Found an invalid projects config file: ${vitestProjectsFile}`);
-      }
-    }
 
     // Check config files
     const vitestConfigFile = find.any(

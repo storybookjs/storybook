@@ -50,11 +50,13 @@ const stubWindowProp = (target: Record<string, unknown>, prop: string) => {
 
   if (isWindowObject(value)) {
     const descriptor = Object.getOwnPropertyDescriptor(target, prop);
+    // the stub must not read anything off `value`: a cross-origin Window throws
+    // a SecurityError on non-whitelisted properties such as `constructor`
     Object.defineProperty(target, prop, {
       enumerable: descriptor?.enumerable ?? true,
       configurable: true,
       writable: true,
-      value: Object.create(value.constructor.prototype),
+      value: {},
     });
   }
 };

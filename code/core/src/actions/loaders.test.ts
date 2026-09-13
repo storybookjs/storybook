@@ -1,22 +1,27 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { addons } from 'storybook/preview-api';
 import { onMockCall } from 'storybook/test';
 
 import { loaders } from './loaders.ts';
 
-vi.mock('storybook/preview-api');
-vi.mock('storybook/test', () => ({ onMockCall: vi.fn() }));
+vi.mock('storybook/preview-api', { spy: true });
+// { spy: true } can't be used here: the real `storybook/test` exports a
+// chai-proxied `expect` that throws `Invalid Chai property` when vitest's spy
+// machinery inspects it. Keep the real exports and stub just `onMockCall`.
+vi.mock('storybook/test', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/test')>()),
+  onMockCall: vi.fn(),
+}));
 
-const createChannel = () => {
-  const channel = { emit: vi.fn() };
+const channel = { emit: vi.fn() };
+
+beforeEach(() => {
   vi.mocked(addons.getChannel).mockReturnValue(channel as any);
-  return channel;
-};
+});
 
 describe('loaders', () => {
   it('emits each mock call argument to the action channel, not the args array', () => {
-    const channel = createChannel();
     loaders[0]({ parameters: {} } as any);
 
     expect(onMockCall).toHaveBeenCalledOnce();

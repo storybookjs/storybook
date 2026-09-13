@@ -37,18 +37,18 @@ describe('serializing React synthetic events', () => {
   const fakeWindow = new Window();
   fakeWindow.window = fakeWindow;
 
-  const createSyntheticEvent = () => {
+  const createSyntheticEvent = (win = fakeWindow) => {
     class SyntheticBaseEvent {}
     class PointerEvent {}
     // DOM events expose `view` through the prototype chain…
-    Object.defineProperty(PointerEvent.prototype, 'view', { get: () => fakeWindow });
+    Object.defineProperty(PointerEvent.prototype, 'view', { get: () => win });
     const nativeEvent = Object.create(PointerEvent.prototype);
     // …and React 19 also stamps it as a non-configurable own accessor
-    Object.defineProperty(nativeEvent, 'view', { enumerable: true, get: () => fakeWindow });
+    Object.defineProperty(nativeEvent, 'view', { enumerable: true, get: () => win });
     return Object.assign(Object.create(SyntheticBaseEvent.prototype), {
       persist: () => {},
       nativeEvent,
-      view: fakeWindow,
+      view: win,
     });
   };
 
@@ -68,6 +68,32 @@ describe('serializing React synthetic events', () => {
     // the event the story (and spy) retains is left untouched
     expect(event.view).toBe(fakeWindow);
     expect(event.nativeEvent.view).toBe(fakeWindow);
+  });
+
+  it('stubs `view` without reading `constructor` — a cross-origin Window throws on it', () => {
+    const channel = createChannel();
+    // cross-origin windows only allow a whitelist of property reads; anything
+    // else, including `constructor`, throws a SecurityError
+    const foreignWindow = {};
+    Object.defineProperties(foreignWindow, {
+      window: { get: () => foreignWindow },
+      constructor: {
+        get: () => {
+          throw new Error('SecurityError');
+        },
+      },
+    });
+    const event = createSyntheticEvent(foreignWindow);
+
+    action('test-action')(event);
+
+    // `===` instead of `.not.toBe` so vitest's equality internals never read
+    // properties (e.g. `constructor`) on the simulated cross-origin window
+    const emitted = getChannelData(channel);
+    expect(emitted.view === foreignWindow).toBe(false);
+    expect(emitted.view).toEqual({});
+    expect(emitted.nativeEvent.view === foreignWindow).toBe(false);
+    expect(emitted.nativeEvent.view).toEqual({});
   });
 });
 

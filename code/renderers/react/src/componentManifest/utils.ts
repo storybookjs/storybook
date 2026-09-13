@@ -66,7 +66,7 @@ let textFileCache: Map<string, { mtimeMs: number; content: string }> = new Map()
 // - Uses module-level store so multiple wrappers around the same function share cache
 export const cached = <A extends unknown[], R>(
   fn: (...args: A) => R,
-  opts: { key?: (...args: A) => string; name?: string } = {}
+  opts: { key?: (...args: A) => string; name?: string; shouldCache?: (result: R) => boolean } = {}
 ): ((...args: A) => R) => {
   const keyOf: (...args: A) => string =
     opts.key ??
@@ -101,7 +101,9 @@ export const cached = <A extends unknown[], R>(
     const start = Date.now();
     const result = fn(...args);
     const duration = Date.now() - start;
-    store.set(k, result as unknown);
+    if (opts.shouldCache?.(result) ?? true) {
+      store.set(k, result as unknown);
+    }
     logger.verbose(`[cache] miss ${name} took ${duration}ms key=${k}`);
     return result;
   };

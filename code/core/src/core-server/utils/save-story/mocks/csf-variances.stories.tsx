@@ -59,6 +59,12 @@ export const OrderedArgs = {
   render: (args) => <MyComponent {...args} />,
 } satisfies Story;
 
+// A spread carries its own args, so saved args have to land after it to take effect
+export const SpreadsAnotherStory = {
+  ...OnlyArgs,
+  render: (args) => <MyComponent {...args} />,
+} satisfies Story;
+
 // The order of both the properties of the story and the order of args should be preserved
 export const HasPlayFunction = {
   args: {

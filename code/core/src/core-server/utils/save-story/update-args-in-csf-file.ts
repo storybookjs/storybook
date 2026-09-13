@@ -55,7 +55,17 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
         }
       }
     } else {
-      properties.unshift(
+      // A spread can carry its own args, so it would override anything placed before it.
+      let index = 0;
+      properties.forEach((property, i) => {
+        if (t.isSpreadElement(property)) {
+          index = i + 1;
+        }
+      });
+
+      properties.splice(
+        index,
+        0,
         t.objectProperty(
           t.identifier('args'),
           t.objectExpression(
@@ -107,15 +117,26 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
           }
         }
       } else {
-        path.unshiftContainer(
-          'properties',
-          t.objectProperty(
-            t.identifier('args'),
-            t.objectExpression(
-              Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
-            )
+        const newArgs = t.objectProperty(
+          t.identifier('args'),
+          t.objectExpression(
+            Object.entries(args).map(([key, value]) => t.objectProperty(t.identifier(key), value))
           )
         );
+
+        // A spread can carry its own args, so it would override anything placed before it.
+        let lastSpread;
+        properties.forEach((property) => {
+          if (property.isSpreadElement()) {
+            lastSpread = property;
+          }
+        });
+
+        if (lastSpread) {
+          (lastSpread as (typeof properties)[number]).insertAfter(newArgs);
+        } else {
+          path.unshiftContainer('properties', newArgs);
+        }
       }
     },
 

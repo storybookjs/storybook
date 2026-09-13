@@ -67,6 +67,11 @@ describe('success', () => {
       +   render: (args) => <MyComponent {...args} />,
       + } satisfies Story;
       + 
+      + export const SpreadsAnotherStoryDuplicated = {
+      +   ...OnlyArgs,
+      +   render: (args) => <MyComponent {...args} />,
+      + } satisfies Story;
+      + 
       + export const HasPlayFunctionDuplicated = {
       +   play: async ({ canvasElement }) => {
       +     console.log("play");
@@ -100,12 +105,16 @@ describe('success', () => {
     // check if the code was updated correctly
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
-            foo: "bar",
-          },
+        export const SpreadsAnotherStory = meta.story({
+          ...WithArgs,
         });
         
       + export const EmptyDuplicated = meta.story({});
       + export const WithArgsDuplicated = meta.story({});
+      + 
+      + export const SpreadsAnotherStoryDuplicated = meta.story({
+      +   ...WithArgs,
+      + });
       + "
     `);
   });

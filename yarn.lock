@@ -10215,7 +10215,7 @@ __metadata:
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
-    vite-plugin-rnw: "npm:^0.0.12"
+    vite-plugin-rnw: "npm:~0.0.12"
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -35639,7 +35639,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-rnw@npm:^0.0.12":
+"vite-plugin-rnw@npm:~0.0.12":
   version: 0.0.12
   resolution: "vite-plugin-rnw@npm:0.0.12"
   dependencies:

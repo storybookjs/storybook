@@ -27,7 +27,6 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
-    "./preset-cra": "./dist/framework-preset-cra.js",
     "./preset-react-docs": "./dist/framework-preset-react-docs.js",
     "./react-docgen-loader": "./dist/loaders/react-docgen-loader.js"
   },
@@ -41,11 +40,9 @@
   "dependencies": {
     "@storybook/core-webpack": "workspace:*",
     "@storybook/react-docgen-typescript-plugin": "1.0.6--canary.9.0c3f3b7.0",
-    "@types/semver": "^7.7.1",
     "magic-string": "^1.1.0",
     "react-docgen": "^8.0.2",
     "resolve": "^1.22.8",
-    "semver": "^7.7.3",
     "tsconfig-paths": "^4.2.0",
     "webpack": "5"
   },

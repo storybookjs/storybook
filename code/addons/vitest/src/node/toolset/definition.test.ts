@@ -1,5 +1,5 @@
 import type { StoryIndex } from 'storybook/internal/types';
-import type { ToolsetCtx } from 'storybook/open-service';
+import { invokeToolsetMethod, type ToolsetCtx } from 'storybook/open-service';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
@@ -13,14 +13,12 @@ vi.mock('./run.ts', { spy: true });
 const index = { v: 5, entries: {} } as StoryIndex;
 const getIndex = vi.fn();
 const storyIndex = { getIndex };
-const telemetry = vi.fn();
 const channel = {} as never;
 
 const ctx = {
   transport: 'cli',
   origin: 'http://localhost:6006',
   getService: vi.fn() as ToolsetCtx['getService'],
-  telemetry,
 } satisfies ToolsetCtx;
 
 const mcpCtx = { ...ctx, transport: 'mcp' } satisfies ToolsetCtx;
@@ -75,7 +73,7 @@ function runTests(
   input: v.InferInput<typeof toolset.methods.run.input> = {},
   runCtx: ToolsetCtx = ctx
 ) {
-  return toolset.methods.run.handler(v.parse(toolset.methods.run.input, input), runCtx);
+  return invokeToolsetMethod(toolset, 'run', v.parse(toolset.methods.run.input, input), runCtx);
 }
 
 /** Runs and renders the way the MCP adapter does: one handler call, markdown from the outcome. */
@@ -445,17 +443,21 @@ No story found for story ID "gone--story"`);
         })
       );
 
-      await runTests({ stories: [{ storyId: 'button--primary' }] });
+      const outcome = await runTests({ stories: [{ storyId: 'button--primary' }] });
 
-      expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+      expect(outcome.telemetry).toEqual({
         toolset: 'test',
-        runA11y: true,
-        inputStoryCount: 1,
-        matchedStoryCount: 1,
-        passingStoryCount: 1,
-        failingStoryCount: 0,
-        a11yViolationCount: 1,
-        unhandledErrorCount: 0,
+        tool: 'run',
+        event: 'tool:test_run',
+        payload: {
+          runA11y: true,
+          inputStoryCount: 1,
+          matchedStoryCount: 1,
+          passingStoryCount: 1,
+          failingStoryCount: 0,
+          a11yViolationCount: 1,
+          unhandledErrorCount: 0,
+        },
       });
     });
 
@@ -465,50 +467,30 @@ No story found for story ID "gone--story"`);
         notFoundMessages: ['No story found for story ID "missing--story"'],
       });
 
-      await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
+      const outcome = await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
 
-      expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+      expect(outcome.telemetry).toEqual({
         toolset: 'test',
-        runA11y: false,
-        inputStoryCount: 1,
-        matchedStoryCount: 0,
-        passingStoryCount: 0,
-        failingStoryCount: 0,
-        a11yViolationCount: 0,
-        unhandledErrorCount: 0,
+        tool: 'run',
+        event: 'tool:test_run',
+        payload: {
+          runA11y: false,
+          inputStoryCount: 1,
+          matchedStoryCount: 0,
+          passingStoryCount: 0,
+          failingStoryCount: 0,
+          a11yViolationCount: 0,
+          unhandledErrorCount: 0,
+        },
       });
     });
 
     it('stays silent for a run that never reached a verdict', async () => {
       vi.mocked(runStoryTests).mockResolvedValue({ status: 'cancelled' });
 
-      await runTests();
+      const outcome = await runTests();
 
-      expect(telemetry).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      ['completed', completedRun],
-      [
-        'no-stories',
-        {
-          status: 'no-stories' as const,
-          notFoundMessages: ['No story found for story ID "missing--story"'],
-        },
-      ],
-    ])('does not fail a %s result when telemetry rejects', async (_status, result) => {
-      vi.mocked(runStoryTests).mockResolvedValue(result);
-      const rejectingCtx: ToolsetCtx = {
-        ...ctx,
-        telemetry: async () => {
-          throw new Error('telemetry unavailable');
-        },
-      };
-
-      const outcome = await runTests({}, rejectingCtx);
-
-      expect(outcome.ok).toBe(true);
-      expect(outcome.data.status).toBe(result.status);
+      expect(outcome.telemetry).toBeUndefined();
     });
   });
 });

@@ -63,8 +63,11 @@ export function compareArgTypes(
     }
     violations.push(...compareTypeSummary(arg, baseEntry, candidateEntry, options));
     violations.push(...compareRequired(arg, baseEntry, candidateEntry, options));
-    const baseType = baseEntry.type;
-    const candidateType = candidateEntry.type;
+    // Recorded corpora violate the SBType contract; normalize once here so the comparison below
+    // (and everything it calls) can trust the discriminated union.
+    const baseType = baseEntry.type == null ? undefined : normalizeRecordedType(baseEntry.type);
+    const candidateType =
+      candidateEntry.type == null ? undefined : normalizeRecordedType(candidateEntry.type);
     if (baseType != null) {
       if (candidateType == null) {
         violations.push({
@@ -192,15 +195,21 @@ const describeDefault = (entry: StrictInputType): string =>
 const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 
 // Deep equality after normalization, or an enumerated improvement. Everything lateral fails and is
-// accepted only through a reviewed baseline update.
+// accepted only through a reviewed baseline update. Both sides are already normalized recorded
+// types, so the discriminants can be trusted.
 function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   if (deepEqual(canonicalType(baseline), canonicalType(candidate))) {
     return true;
   }
   if (baseline.name === 'other') {
-    if (candidate.name === 'other') {
-      return normalizeLiteral(baseline.value) === normalizeLiteral(candidate.value);
+    if (
+      candidate.name === 'other' &&
+      normalizeLiteral(baseline.value) === normalizeLiteral(candidate.value)
+    ) {
+      return true;
     }
+    // Unequal other-text falls through to stub resolution so a nothing-recorded marker accepts
+    // any candidate, including another `other`.
     if (!isQuotedToken(baseline.value)) {
       return resolvesStub(baseline.value, candidate);
     }
@@ -241,6 +250,50 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
     return typeCurrentOrBetter(baseline.value, candidate.value);
   }
   return false;
+}
+
+const SB_TYPE_NAMES: ReadonlySet<SBType['name']> = new Set<SBType['name']>([
+  'array',
+  'boolean',
+  'date',
+  'enum',
+  'function',
+  'intersection',
+  'literal',
+  'node',
+  'number',
+  'object',
+  'other',
+  'string',
+  'symbol',
+  'tuple',
+  'union',
+]);
+
+// The canonical "engine extracted nothing" node; `resolvesStub` accepts any candidate for it.
+const UNRESOLVED_TYPE: SBType = { name: 'other', value: 'undefined' };
+
+// Recorded corpora and the legacy Web Components extractor emit malformed top-level sbTypes.
+function normalizeRecordedType(type: SBType): SBType {
+  const name = (type as { name?: unknown }).name;
+  if (typeof name !== 'string') {
+    return UNRESOLVED_TYPE;
+  }
+  if (!SB_TYPE_NAMES.has(name as SBType['name'])) {
+    return { name: 'other', value: name };
+  }
+  const value = (type as { value?: unknown }).value;
+  if (name === 'other') {
+    return typeof value === 'string' ? type : UNRESOLVED_TYPE;
+  }
+  if (
+    ((name === 'enum' || name === 'union' || name === 'intersection' || name === 'tuple') &&
+      !Array.isArray(value)) ||
+    ((name === 'array' || name === 'object') && (typeof value !== 'object' || value === null))
+  ) {
+    return UNRESOLVED_TYPE;
+  }
+  return type;
 }
 
 // The corpus markers for "the engine extracted nothing"; any candidate improves on them.

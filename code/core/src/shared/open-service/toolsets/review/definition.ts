@@ -5,12 +5,7 @@ import {
   describeUnknownStoryIds,
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { ReviewService } from '../../services/review/definition.ts';
 
@@ -176,20 +171,20 @@ export const reviewToolset = defineToolset({
           0
         );
 
-        await reportToolsetTelemetry(ctx, 'tool:displayReview', {
-          toolset: 'dev',
-          collectionCount,
-          storyCount,
-          changedFileCount: review.changedFiles.length,
-        });
-
         const data: ReviewCreateOutput = {
           reviewUrl: `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`,
           collectionCount,
           storyCount,
         };
 
-        return { ok: true, data, markdown: formatReviewApplied(data, ctx) };
+        return {
+          ok: true,
+          data,
+          markdown: formatReviewApplied(data, ctx),
+          telemetry: {
+            payload: { collectionCount, storyCount, changedFileCount: review.changedFiles.length },
+          },
+        };
       },
     },
   },

@@ -39,7 +39,7 @@ const config: TestRunnerConfig = {
     // Waits for the page to be ready before taking a screenshot to ensure consistent results
     await waitForPageReady(page);
 
-    // To capture a screenshot for for different browsers, add page.context().browser().browserType().name() to get the browser name to prefix the file name
+    // To capture a screenshot for different browsers, add page.context().browser().browserType().name() to get the browser name to prefix the file name
     const image = await page.screenshot();
     expect(image).toMatchImageSnapshot({
       customSnapshotsDir,

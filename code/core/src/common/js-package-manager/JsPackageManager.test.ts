@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger, prompt } from 'storybook/internal/node-logger';
+
 import { JsPackageManager } from './JsPackageManager.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const mockVersions = vi.hoisted(() => ({
   '@storybook/react': '8.3.0',
@@ -86,6 +90,39 @@ describe('JsPackageManager', () => {
       const result = await jsPackageManager.getVersionedPackages(['some-other-package']);
 
       expect(result).toEqual(['some-other-package']);
+    });
+  });
+
+  describe('installDependencies method', () => {
+    it('propagates a truncated npm stderr tail into the thrown error', async () => {
+      const stderr = [
+        'npm error code ERESOLVE',
+        ...Array.from({ length: 30 }, (_, i) => `npm error while resolving line ${i}`),
+        'npm error Could not resolve dependency: vitest@5.0.0',
+      ].join('\n');
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(
+        Object.assign(new Error('Command failed: npm install'), { stderr })
+      );
+
+      const error = await jsPackageManager.installDependencies().then(
+        () => null,
+        (e) => e
+      );
+
+      // The tail (last 15 lines) is folded into the error message...
+      expect(error.message).toContain('Could not resolve dependency: vitest@5.0.0');
+      // ...truncated: the head of a long stderr does not leak into the message...
+      expect(error.message).not.toContain('npm error code ERESOLVE');
+      // ...and is printed so failures behind the spinner name themselves.
+      expect(vi.mocked(logger.error)).toHaveBeenCalledWith(expect.stringContaining('vitest@5.0.0'));
+    });
+
+    it('resolves and clears the installed version cache on success', async () => {
+      const clearSpy = vi.spyOn(jsPackageManager, 'clearInstalledVersionCache');
+      vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+
+      await expect(jsPackageManager.installDependencies()).resolves.toBeUndefined();
+      expect(clearSpy).toHaveBeenCalled();
     });
   });
 });

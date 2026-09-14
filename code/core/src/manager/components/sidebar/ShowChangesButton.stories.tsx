@@ -345,8 +345,8 @@ export const ToggleActivate: Story = {
 const togglePreservesMock = fn().mockName('api::setAllStatusFilters');
 
 /**
- * When one of the CTA's change filters is already active through exclusion, toggling it off clears
- * those owned filters.
+ * Activating the CTA moves a previously excluded change-detection status to included, rather than
+ * leaving the story hidden by its own exclusion.
  */
 export const TogglePreservesExcluded: Story = {
   parameters: {
@@ -368,8 +368,9 @@ export const TogglePreservesExcluded: Story = {
     const mock = parameters.contextOptions.setAllStatusFilters;
     await expect(mock).toHaveBeenCalledOnce();
     const [included, excluded] = mock.mock.calls[0];
-    await expect(included).toEqual([]);
-    await expect(excluded).toEqual([]);
+    await expect(included).toContain('status-value:new');
+    await expect(included).toContain('status-value:modified');
+    await expect(excluded).not.toContain('status-value:new');
   },
 };
 

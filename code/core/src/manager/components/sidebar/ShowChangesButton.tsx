@@ -104,11 +104,7 @@ export const ShowChangesButton = () => {
 
   const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
   const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
-  const isActive =
-    includedStatusFilters.includes(NEW) ||
-    includedStatusFilters.includes(MOD) ||
-    excludedStatusFilters.includes(NEW) ||
-    excludedStatusFilters.includes(MOD);
+  const isActive = includedStatusFilters.includes(NEW) || includedStatusFilters.includes(MOD);
 
   if (!globalThis.FEATURES?.changeDetection) {
     return null;

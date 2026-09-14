@@ -49,7 +49,7 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
     await addonGlobalsApi.run?.({
       result,
       dryRun: false,
-      storiesPaths: ['**/*.stories.{js,jsx,ts,tsx,mdx}'],
+      storiesPaths: [],
       packageManager: {} as never,
     } as never);
 
@@ -58,8 +58,6 @@ const runMigrationAndGetTransformFn = async (previewContents: string) => {
         const transformed = transformStoryFile(content, {
           needsViewportMigration: result.needsViewportMigration,
           needsBackgroundsMigration: result.needsBackgroundsMigration,
-          viewportsOptions: result.viewportsOptions,
-          backgroundsOptions: result.backgroundsOptions,
         });
         return transformed ? printCsf(transformed, {}).code : null;
       };
@@ -102,8 +100,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(false);
-      expect(result?.viewportsOptions?.defaultViewport).toBe('mobile');
-      expect(result?.viewportsOptions?.disable).toBe(true);
     });
 
     it('should detect backgrounds configuration', async () => {
@@ -125,7 +121,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(false);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.backgroundsOptions?.default).toBe('Light');
     });
 
     it('should detect both viewport and backgrounds configuration', async () => {
@@ -153,8 +148,6 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.viewportsOptions?.defaultViewport).toBe('tablet');
-      expect(result?.backgroundsOptions?.default).toBe('Dark');
     });
 
     it('should detect both viewport and backgrounds configuration with dynamic values', async () => {
@@ -183,11 +176,9 @@ describe('addon-globals-api', () => {
       expect(result).toBeTruthy();
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(true);
-      expect(result?.viewportsOptions?.defaultViewport).toBe('tablet');
-      expect(result?.backgroundsOptions?.default).toBe('Dark');
     });
 
-    it('should not detect configurations already using globals API', async () => {
+    it('should not detect configurations already using the options API', async () => {
       const result = await check(`
         export default {
           parameters: {
@@ -195,25 +186,21 @@ describe('addon-globals-api', () => {
               options: {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' },
                 tablet: { name: 'Tablet', width: '768px', height: '1024px' }
-              }
+              },
+              disable: true
             },
             backgrounds: {
               options: {
                 light: { name: 'Light', value: '#F8F8F8' },
                 dark: { name: 'Dark', value: '#333333' }
-              }
+              },
+              disable: false
             }
-          },
-          initialGlobals: {
-            viewport: { value: 'mobile', isRotated: false },
-            backgrounds: { value: 'dark' }
           }
         }
       `);
 
-      // Since there's no defaultViewport or default properties, it should return null (nothing to migrate)
-      expect(result?.needsViewportMigration).toBeFalsy();
-      expect(result?.needsBackgroundsMigration).toBeFalsy();
+      expect(result).toBeFalsy();
     });
   });
 
@@ -289,7 +276,7 @@ describe('addon-globals-api', () => {
       `);
     });
 
-    it('should rename backgrounds disable property to disabled', async () => {
+    it('should leave the backgrounds disable parameter untouched', async () => {
       const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
         export default {
           parameters: {
@@ -310,27 +297,11 @@ describe('addon-globals-api', () => {
               options: {
                 light: { name: 'Light', value: '#F8F8F8' }
               },
-              disabled: true
+              disable: true
             }
           }
         }"
       `);
-    });
-
-    it('should remove deprecated backgrounds disable when disabled already exists', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
-        export default {
-          parameters: {
-            backgrounds: {
-              disable: false,
-              disabled: true
-            }
-          }
-        }
-      `);
-
-      expect(previewFileContent).toContain('disabled: true');
-      expect(previewFileContent).not.toMatch(/\bdisable:/);
     });
 
     it('should migrate both viewport and backgrounds configurations', async () => {
@@ -363,7 +334,7 @@ describe('addon-globals-api', () => {
           mobile: { name: 'Mobile', width: '320px', height: '568px' }
         },
 
-        disabled: true
+        disable: true
       },
       backgrounds: {
         options: {
@@ -560,50 +531,6 @@ describe('addon-globals-api', () => {
       `);
     });
 
-    it('should migrate parameters.backgrounds.disable: true to disabled: true', async () => {
-      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
-      const storyContent = dedent`
-          import Button from './Button';
-          export default { component: Button };
-          export const Disabled = {
-            parameters: {
-              backgrounds: { disable: true }
-            }
-          };
-        `;
-      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
-        "import Button from './Button';
-        export default { component: Button };
-        export const Disabled = {
-          parameters: {
-            backgrounds: { disabled: true }
-          }
-        };"
-      `);
-    });
-
-    it('should rename parameters.backgrounds.disable: false to disabled: false', async () => {
-      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
-      const storyContent = dedent`
-          import Button from './Button';
-          export default { component: Button };
-          export const Disabled = {
-            parameters: {
-              backgrounds: { disable: false }
-            }
-          };
-        `;
-      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
-        "import Button from './Button';
-        export default { component: Button };
-        export const Disabled = {
-          parameters: {
-            backgrounds: { disabled: false }
-          }
-        };"
-      `);
-    });
-
     it('should migrate parameters.viewport.defaultViewport to globals.viewport', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
@@ -693,7 +620,7 @@ describe('addon-globals-api', () => {
         export default { component: Button };
         export const NoParams = {};
         export const ExistingGlobals = { globals: { backgrounds: { value: 'dark' } } };
-        export const ExistingDisabled = { parameters: { backgrounds: { disabled: true } } };
+        export const ExistingDisabled = { parameters: { backgrounds: { disable: true } } };
       `;
       expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toBeNull();
@@ -833,7 +760,7 @@ describe('addon-globals-api', () => {
       `);
     });
 
-    it('should transform defaultOrientation and disabled properties in viewport stories', async () => {
+    it('should transform defaultOrientation while leaving disable untouched in viewport stories', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
           import Button from './Button';
@@ -855,7 +782,7 @@ describe('addon-globals-api', () => {
         export const Mobile = {
           parameters: {
             viewport: {
-              disabled: true
+              disable: true
             },
           },
 

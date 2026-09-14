@@ -7,6 +7,7 @@ import type {} from '@vitest/browser-playwright';
 
 import {
   DEFAULT_FILES_PATTERN,
+  HandledError,
   getInterpretedFile,
   normalizeStories,
   optionalEnvToBoolean,
@@ -44,6 +45,7 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_FEATURES_PROVIDE_KEY,
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
@@ -68,7 +70,15 @@ const extractTagsFromPreview = async (configDir: string) => {
     return [];
   }
   const previewConfig = await readConfig(previewConfigPath);
-  return previewConfig.getFieldValue(['tags']) ?? [];
+  const tags = previewConfig.getValue(['tags']) ?? [];
+  if (
+    previewConfig.mutationDiagnostics.some(({ code }) => code === 'unsupported-value') ||
+    !Array.isArray(tags) ||
+    !tags.every((tag) => typeof tag === 'string')
+  ) {
+    throw new HandledError('Preview tags must be a static array of strings');
+  }
+  return tags;
 };
 
 const getStoryGlobsAndFiles = async (
@@ -391,6 +401,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           provide: {
+            [STORYBOOK_TEST_FEATURES_PROVIDE_KEY]: features,
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
             [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
               !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
-import { buildStoryDocsPayload } from '../../../../../renderers/vue3/src/story-docs/build-story-docs.ts';
+import { buildStoryDocsPayload } from '@storybook/vue3/internal/docgen';
 import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
 
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');

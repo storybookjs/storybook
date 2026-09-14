@@ -1,44 +1,38 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import type { ConfigFile, CsfFile, CsfObject } from 'storybook/internal/csf-tools';
+import type {
+  ConfigFile,
+  CsfFile,
+  CsfMutationDiagnostic,
+  CsfObject,
+} from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig, loadCsf, writeCsf } from 'storybook/internal/csf-tools';
 
-import type { ArrayExpression, Expression, ObjectExpression } from '@babel/types';
-
-import {
-  addProperty,
-  getKeyFromName,
-  removeProperty,
-  transformValuesToOptions,
-} from '../helpers/ast-utils.ts';
 import type { Fix } from '../types.ts';
+import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 
 interface AddonGlobalsApiOptions {
   previewConfig: ConfigFile;
   previewConfigPath: string;
   needsViewportMigration: boolean;
   needsBackgroundsMigration: boolean;
-  viewportsOptions:
-    | {
-        defaultViewport?: string;
-        viewports?: Expression;
-        disable?: boolean;
-      }
-    | undefined;
-  backgroundsOptions:
-    | {
-        default?: string;
-        values?: Expression;
-        disable?: boolean;
-      }
-    | undefined;
 }
 
 type StoryGlobalsMigrationOptions = Pick<
   AddonGlobalsApiOptions,
-  'needsViewportMigration' | 'needsBackgroundsMigration' | 'viewportsOptions' | 'backgroundsOptions'
+  'needsViewportMigration' | 'needsBackgroundsMigration'
 >;
+
+type StoryTransformResult =
+  | { ok: true; file: string; transformed: CsfFile | null }
+  | {
+      ok: false;
+      file: string;
+      failure:
+        | { kind: 'diagnostic'; diagnostic: CsfMutationDiagnostic }
+        | { kind: 'error'; message: string };
+    };
 
 /**
  * Migrate viewport and backgrounds addons to use the new globals API in Storybook 9
@@ -57,79 +51,31 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
 
     const previewConfig = loadConfig((await readFile(previewConfigPath)).toString()).parse();
 
-    const getFieldNode = previewConfig.getFieldNode.bind(previewConfig);
-    const getFieldValue = previewConfig.getFieldValue.bind(previewConfig);
-
-    // Reusable function to check addon migration status
-    const checkAddonMigration = (addonName: 'viewport' | 'backgrounds') => {
-      const paramPath = ['parameters', addonName];
-      const addonParams = getFieldNode(paramPath) as ObjectExpression | undefined;
-
-      if (!addonParams) {
-        return { needsMigration: false };
-      }
-
-      const hasOptions = getFieldNode([...paramPath, 'options']) !== undefined;
-
-      // Define fields to check based on addon type
-      const fieldsToCheck =
-        addonName === 'viewport'
-          ? ['viewports', 'defaultViewport', 'disable']
-          : ['values', 'default', 'disable'];
-
-      // Check if any old format fields exist
-      const hasOldFormat = fieldsToCheck.some(
-        (field) => getFieldNode([...paramPath, field]) !== undefined
-      );
-
-      // Only migrate if using old format and not already migrated
-      const needsMigration = hasOldFormat && !hasOptions;
-
-      // Collect relevant options from old format
-      const options: {
-        [key: string]: Expression | string | boolean | undefined;
-        viewports?: Expression;
-        defaultViewport?: string;
-        values?: Expression;
-        default?: string;
-        disable?: boolean;
-      } = {};
-
-      if (needsMigration) {
-        fieldsToCheck.forEach((field) => {
-          const value =
-            (addonName === 'viewport' && field === 'viewports') ||
-            (addonName === 'backgrounds' && field === 'values')
-              ? getFieldNode([...paramPath, field])
-              : getFieldValue([...paramPath, field]);
-
-          if (value !== undefined) {
-            // Convert field names if necessary (maintaining the expected output structure)
-            const optionKey = addonName === 'viewport' ? field : field;
-            options[optionKey] = value;
-          }
-        });
-      }
-
-      return { needsMigration, options };
+    const checkAddonMigration = (addon: 'viewport' | 'backgrounds') => {
+      const path = ['parameters', addon];
+      const hasOptions = previewConfig.get([...path, 'options']) !== undefined;
+      const values = previewConfig.get([...path, addon === 'viewport' ? 'viewports' : 'values']);
+      const defaultValue = previewConfig.get([
+        ...path,
+        addon === 'viewport' ? 'defaultViewport' : 'default',
+      ]);
+      return !hasOptions && (values !== undefined || defaultValue !== undefined);
     };
 
-    // Check migration status for both addons
-    const viewportMigration = checkAddonMigration('viewport');
-    const backgroundsMigration = checkAddonMigration('backgrounds');
+    const needsViewportMigration = checkAddonMigration('viewport');
+    const needsBackgroundsMigration = checkAddonMigration('backgrounds');
 
-    // Return null if there's nothing to migrate
-    if (!viewportMigration.needsMigration && !backgroundsMigration.needsMigration) {
+    if (!needsViewportMigration && !needsBackgroundsMigration) {
       return null;
     }
+
+    assertConfigMutationSuccess(previewConfig);
 
     return {
       previewConfig,
       previewConfigPath,
-      needsViewportMigration: viewportMigration.needsMigration,
-      needsBackgroundsMigration: backgroundsMigration.needsMigration,
-      viewportsOptions: viewportMigration.options,
-      backgroundsOptions: backgroundsMigration.options,
+      needsViewportMigration,
+      needsBackgroundsMigration,
     };
   },
 
@@ -138,279 +84,222 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
   },
 
   async run({ dryRun = false, result, storiesPaths }) {
-    const {
-      previewConfig,
-      needsViewportMigration,
-      needsBackgroundsMigration,
-      viewportsOptions,
-      backgroundsOptions,
-    } = result;
+    const { previewConfig, needsViewportMigration, needsBackgroundsMigration } = result;
+    migrateAddonGlobals(previewConfig, previewConfig, result);
+    assertConfigMutationSuccess(previewConfig);
 
-    const getFieldNode = previewConfig.getFieldNode.bind(previewConfig);
+    let storyResults: StoryTransformResult[] = [];
+    if (needsViewportMigration || needsBackgroundsMigration) {
+      storyResults = await transformStoryFiles(storiesPaths, {
+        needsViewportMigration,
+        needsBackgroundsMigration,
+      });
+      const failures = storyResults.filter((storyResult) => !storyResult.ok);
 
-    if (needsViewportMigration) {
-      // Get the viewport parameter object
-      const viewports = getFieldNode(['parameters', 'viewport', 'viewports']) as ObjectExpression;
-
-      if (viewportsOptions?.viewports) {
-        // Remove the old viewports property
-        previewConfig.removeField(['parameters', 'viewport', 'viewports']);
-        addProperty(
-          getFieldNode(['parameters', 'viewport']) as ObjectExpression,
-          'options',
-          viewports
+      if (failures.length > 0) {
+        // eslint-disable-next-line local-rules/no-uncategorized-errors
+        throw new Error(
+          `Failed to process ${failures.length} files:\n${failures
+            .map(({ file, failure }) => {
+              const message =
+                failure.kind === 'diagnostic' ? failure.diagnostic.message : failure.message;
+              return `- ${file}:\n  - ${message}`;
+            })
+            .join('\n')}`
         );
-      }
-
-      // If defaultViewport exists, create initialGlobals.viewport
-      if (viewportsOptions?.defaultViewport) {
-        // Remove the old defaultViewport property
-        const viewportNode = getFieldNode(['parameters', 'viewport']);
-        removeProperty(viewportNode as ObjectExpression, 'defaultViewport');
-
-        previewConfig.setFieldValue(
-          ['initialGlobals', 'viewport', 'value'],
-          viewportsOptions.defaultViewport
-        );
-        previewConfig.setFieldValue(['initialGlobals', 'viewport', 'isRotated'], false);
-      }
-
-      if (typeof viewportsOptions?.disable === 'boolean') {
-        const viewport = getFieldNode(['parameters', 'viewport']) as ObjectExpression;
-        const disabled = getFieldNode(['parameters', 'viewport', 'disabled']);
-        removeProperty(viewport, 'disable');
-        if (!disabled) {
-          addProperty(viewport, 'disabled', t.booleanLiteral(viewportsOptions.disable));
-        }
       }
     }
 
-    if (needsBackgroundsMigration) {
-      if (backgroundsOptions?.values) {
-        // Transform values array to options object
-        const optionsObject = transformValuesToOptions(
-          backgroundsOptions.values as ArrayExpression
-        );
-
-        // Remove the old values property
-        previewConfig.removeField(['parameters', 'backgrounds', 'values']);
-        addProperty(
-          getFieldNode(['parameters', 'backgrounds']) as ObjectExpression,
-          'options',
-          optionsObject
-        );
-      }
-
-      // If default exists, create initialGlobals.backgrounds
-      if (backgroundsOptions?.default) {
-        // Remove the old default property
-        removeProperty(getFieldNode(['parameters', 'backgrounds']) as ObjectExpression, 'default');
-
-        previewConfig.setFieldValue(
-          ['initialGlobals', 'backgrounds', 'value'],
-          getKeyFromName(backgroundsOptions.values as ArrayExpression, backgroundsOptions.default)
-        );
-      }
-
-      if (typeof backgroundsOptions?.disable === 'boolean') {
-        const backgrounds = getFieldNode(['parameters', 'backgrounds']) as ObjectExpression;
-        const disabled = getFieldNode(['parameters', 'backgrounds', 'disabled']);
-        removeProperty(backgrounds, 'disable');
-        if (!disabled) {
-          addProperty(backgrounds, 'disabled', t.booleanLiteral(backgroundsOptions.disable));
-        }
-      }
-    }
-
-    // Write the updated config back to the file
     if (!dryRun) {
       await writeFile(result.previewConfigPath, formatConfig(previewConfig));
-    }
-
-    // Update stories
-    if (needsViewportMigration || needsBackgroundsMigration) {
-      await transformStoryFiles(
-        storiesPaths,
-        {
-          needsViewportMigration,
-          needsBackgroundsMigration,
-          viewportsOptions,
-          backgroundsOptions,
-        },
-        dryRun
+      await Promise.all(
+        storyResults.map((storyResult) =>
+          storyResult.ok && storyResult.transformed
+            ? writeCsf(storyResult.transformed, storyResult.file)
+            : undefined
+        )
       );
     }
   },
 };
 
-// Story transformation function
 async function transformStoryFiles(
   files: string[],
-  options: StoryGlobalsMigrationOptions,
-  dryRun: boolean
-): Promise<Array<{ file: string; error: Error }>> {
-  const errors: Array<{ file: string; error: Error }> = [];
+  options: StoryGlobalsMigrationOptions
+): Promise<StoryTransformResult[]> {
   const { default: pLimit } = await import('p-limit');
   const limit = pLimit(10);
 
-  await Promise.all(
+  return Promise.all(
     files.map((file) =>
-      limit(async () => {
+      limit(async (): Promise<StoryTransformResult> => {
         try {
           const content = await readFile(file, 'utf-8');
-          const transformed = transformStoryFile(content, options);
+          const transformed = transformStoryFileResult(content, options);
 
-          if (transformed && !dryRun) {
-            await writeCsf(transformed, file);
+          if (!transformed.ok) {
+            return { ok: false, file, failure: transformed.failure };
           }
+
+          return { ok: true, file, transformed: transformed.transformed };
         } catch (error) {
-          errors.push({ file, error: error as Error });
+          return {
+            ok: false,
+            file,
+            failure: {
+              kind: 'error',
+              message: error instanceof Error ? error.message : String(error),
+            },
+          };
         }
       })
     )
   );
-
-  return errors;
 }
 
-// Transform a single story file
 export function transformStoryFile(
   source: string,
   options: StoryGlobalsMigrationOptions
 ): CsfFile | null {
+  const result = transformStoryFileResult(source, options);
+  if (!result.ok) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error(result.failure.diagnostic.message);
+  }
+  return result.transformed;
+}
+
+function transformStoryFileResult(
+  source: string,
+  options: StoryGlobalsMigrationOptions
+):
+  | { ok: true; transformed: CsfFile | null }
+  | { ok: false; failure: { kind: 'diagnostic'; diagnostic: CsfMutationDiagnostic } } {
   const storyConfig = loadCsf(source, {
     makeTitle: (title?: string) => title || 'default',
   }).parse();
 
-  const objects = storyConfig.objects({ annotations: ['parameters'] });
+  const objects = storyConfig.objects();
   for (const object of objects) {
-    migrateStoryGlobals(storyConfig, object, options);
+    migrateAddonGlobals(storyConfig, object, options);
   }
 
-  return storyConfig.changed ? storyConfig : null;
+  const [diagnostic] = storyConfig.mutationDiagnostics;
+  if (diagnostic) {
+    return { ok: false, failure: { kind: 'diagnostic', diagnostic } };
+  }
+
+  return { ok: true, transformed: storyConfig.changed ? storyConfig : null };
 }
 
-const migrateStoryGlobals = (
-  csf: CsfFile,
+const migrateAddonGlobals = (
+  csf: CsfFile | ConfigFile,
   object: CsfObject,
   options: StoryGlobalsMigrationOptions
 ) => {
-  const diagnosticsBefore = csf.mutationDiagnostics.length;
-  const viewportDefault = options.needsViewportMigration
-    ? object.get(['parameters', 'viewport', 'defaultViewport'])
-    : undefined;
-  const viewportOrientation = options.needsViewportMigration
-    ? object.get(['parameters', 'viewport', 'defaultOrientation'])
-    : undefined;
-  const viewportDisable = options.needsViewportMigration
-    ? object.get(['parameters', 'viewport', 'disable'])
-    : undefined;
-  const viewportDisabled = options.needsViewportMigration
-    ? object.get(['parameters', 'viewport', 'disabled'])
-    : undefined;
-  const backgroundValues = options.needsBackgroundsMigration
-    ? object.get(['parameters', 'backgrounds', 'values'])
-    : undefined;
-  const backgroundOptions = options.needsBackgroundsMigration
-    ? object.get(['parameters', 'backgrounds', 'options'])
-    : undefined;
-  const backgroundDefault = options.needsBackgroundsMigration
-    ? object.get(['parameters', 'backgrounds', 'default'])
-    : undefined;
-  const backgroundDisable = options.needsBackgroundsMigration
-    ? object.get(['parameters', 'backgrounds', 'disable'])
-    : undefined;
-  const backgroundDisabled = options.needsBackgroundsMigration
-    ? object.get(['parameters', 'backgrounds', 'disabled'])
-    : undefined;
+  const addons = [
+    ['viewport', options.needsViewportMigration],
+    ['backgrounds', options.needsBackgroundsMigration],
+  ] as const;
 
-  // The `globals` reads stay behind the fields that need them, so an unprovable value that no
-  // migration would write does not make the whole object unsafe.
-  const canSetGlobals = object.target.kind !== 'story-annotation';
-  const migratesViewportDefault =
-    canSetGlobals && (t.isStringLiteral(viewportDefault) || t.isMemberExpression(viewportDefault));
-  const viewportGlobal = migratesViewportDefault
-    ? object.get(['globals', 'viewport', 'value'])
-    : undefined;
-  const viewportRotated = migratesViewportDefault
-    ? object.get(['globals', 'viewport', 'isRotated'])
-    : undefined;
-  const migratesBackgroundDefault = canSetGlobals && t.isStringLiteral(backgroundDefault);
-  const backgroundGlobal = migratesBackgroundDefault
-    ? object.get(['globals', 'backgrounds', 'value'])
-    : undefined;
+  for (const [addon, needsMigration] of addons) {
+    if (!needsMigration) {
+      continue;
+    }
 
-  if (csf.mutationDiagnostics.length > diagnosticsBefore) {
-    return;
-  }
+    const diagnosticsBefore = csf.mutationDiagnostics.length;
+    const parameterPath = ['parameters', addon];
+    const defaultPath = [...parameterPath, addon === 'viewport' ? 'defaultViewport' : 'default'];
+    const isPreview = object.target.kind === 'config';
+    const globals = isPreview ? 'initialGlobals' : 'globals';
+    const globalPath = [globals, addon, 'value'];
+    const defaultValue = object.get(defaultPath);
+    const orientation =
+      addon === 'viewport' && !isPreview
+        ? object.get([...parameterPath, 'defaultOrientation'])
+        : undefined;
+    const valuesPath = [...parameterPath, addon === 'viewport' ? 'viewports' : 'values'];
+    const values = addon === 'backgrounds' || isPreview ? object.get(valuesPath) : undefined;
+    const hasOptions =
+      (addon === 'backgrounds' || isPreview) && object.get([...parameterPath, 'options']);
+    const migrateDefault =
+      (!isPreview || !hasOptions) &&
+      object.target.kind !== 'story-annotation' &&
+      (t.isStringLiteral(defaultValue) ||
+        (addon === 'viewport' && t.isMemberExpression(defaultValue)));
 
-  if (migratesViewportDefault) {
-    if (viewportGlobal) {
-      object.remove(['parameters', 'viewport', 'defaultViewport']);
-    } else {
-      object.move(['parameters', 'viewport', 'defaultViewport'], ['globals', 'viewport', 'value']);
-      const orientationCanBeMigrated =
-        !viewportOrientation ||
-        (t.isStringLiteral(viewportOrientation) &&
-          (viewportOrientation.value === 'portrait' || viewportOrientation.value === 'landscape'));
-      if (!viewportRotated && orientationCanBeMigrated) {
-        object.set(
-          ['globals', 'viewport', 'isRotated'],
-          t.booleanLiteral(
-            t.isStringLiteral(viewportOrientation) && viewportOrientation.value === 'portrait'
-          )
-        );
-        object.remove(['parameters', 'viewport', 'defaultOrientation']);
+    // Reading unrelated globals can report diagnostics for values this migration never writes.
+    const globalValue = migrateDefault ? object.get(globalPath) : undefined;
+    const rotated =
+      migrateDefault && addon === 'viewport'
+        ? object.get([globals, 'viewport', 'isRotated'])
+        : undefined;
+
+    if (csf.mutationDiagnostics.length > diagnosticsBefore) {
+      return;
+    }
+
+    if (values && !hasOptions) {
+      if (addon === 'backgrounds' && t.isArrayExpression(values)) {
+        object.transform(valuesPath, transformValuesToOptions);
+        object.rename(valuesPath, 'options');
+      } else if (addon === 'viewport' && isPreview) {
+        object.rename(valuesPath, 'options');
+      }
+    }
+
+    if (migrateDefault) {
+      if (globalValue) {
+        object.remove(defaultPath);
+      } else if (addon === 'viewport') {
+        object.move(defaultPath, globalPath);
+        const canMigrateOrientation =
+          !orientation ||
+          (t.isStringLiteral(orientation) &&
+            (orientation.value === 'portrait' || orientation.value === 'landscape'));
+        if (!rotated && canMigrateOrientation) {
+          object.set(
+            [globals, 'viewport', 'isRotated'],
+            t.isStringLiteral(orientation) && orientation.value === 'portrait'
+          );
+          if (!isPreview) {
+            object.remove([...parameterPath, 'defaultOrientation']);
+          }
+        }
+      } else if (t.isStringLiteral(defaultValue)) {
+        object.set(globalPath, defaultValue.value.toLowerCase().replace(/\s+/g, '_'));
+        object.remove(defaultPath);
       }
     }
   }
-  if (t.isBooleanLiteral(viewportDisable)) {
-    if (viewportDisabled) {
-      object.remove(['parameters', 'viewport', 'disable']);
-    } else {
-      object.rename(['parameters', 'viewport', 'disable'], 'disabled');
-    }
-  }
-
-  if (t.isArrayExpression(backgroundValues) && !backgroundOptions) {
-    object.transform(['parameters', 'backgrounds', 'values'], (values) =>
-      t.isArrayExpression(values) ? transformValuesToOptions(values) : undefined
-    );
-    object.rename(['parameters', 'backgrounds', 'values'], 'options');
-  }
-  if (migratesBackgroundDefault) {
-    if (!backgroundGlobal) {
-      object.set(
-        ['globals', 'backgrounds', 'value'],
-        t.stringLiteral(getKeyFromName(options.backgroundsOptions?.values, backgroundDefault.value))
-      );
-    }
-    object.remove(['parameters', 'backgrounds', 'default']);
-  }
-  if (t.isBooleanLiteral(backgroundDisable)) {
-    if (backgroundDisabled) {
-      object.remove(['parameters', 'backgrounds', 'disable']);
-    } else {
-      object.rename(['parameters', 'backgrounds', 'disable'], 'disabled');
-    }
-  }
-
-  if (!object.changed) {
-    return;
-  }
-
-  if (options.needsViewportMigration) {
-    removeEmptyObject(object, ['parameters', 'viewport']);
-  }
-  if (options.needsBackgroundsMigration) {
-    removeEmptyObject(object, ['parameters', 'backgrounds']);
-  }
-  removeEmptyObject(object, ['parameters']);
 };
 
-const removeEmptyObject = (object: CsfObject, path: readonly string[]) => {
-  const value = object.get(path);
-  if (t.isObjectExpression(value) && value.properties.length === 0) {
-    object.remove(path);
+const transformValuesToOptions = (values: t.Expression): t.ObjectExpression => {
+  const options = t.objectExpression([]);
+  if (!t.isArrayExpression(values)) {
+    return options;
   }
+
+  for (const element of values.elements) {
+    if (!t.isObjectExpression(element)) {
+      continue;
+    }
+    const nameProperty = element.properties.find(
+      (property) =>
+        t.isObjectProperty(property) &&
+        (t.isIdentifier(property.key, { name: 'name' }) ||
+          t.isStringLiteral(property.key, { value: 'name' }))
+    );
+    if (!t.isObjectProperty(nameProperty) || !t.isStringLiteral(nameProperty.value)) {
+      continue;
+    }
+    const name = nameProperty.value;
+    const key = name.value.toLowerCase().replace(/\s+/g, '_');
+    const keyNode = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key)
+      ? t.identifier(key)
+      : t.stringLiteral(name.value);
+    options.properties.push(t.objectProperty(keyNode, element));
+  }
+
+  return options;
 };

@@ -12,11 +12,7 @@ describe('CsfObject discovery', () => {
       export const Basic = () => null;
       Basic['parameters'] = { a11y: true };
     `);
-    const [parameters] = csf.objects({
-      meta: false,
-      stories: false,
-      annotations: ['parameters'],
-    });
+    const [parameters] = csf.objects({ meta: false });
 
     expect(parameters.remove(['parameters', 'a11y'])).toEqual({ ok: true, changed: true });
     expect(printCsf(csf).code).not.toContain('a11y');
@@ -30,7 +26,7 @@ describe('CsfObject discovery', () => {
       Basic[key] = { a11y: true };
     `);
 
-    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
+    expect(csf.objects({ meta: false })).toEqual([]);
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({
         code: 'unsupported-initializer',
@@ -44,27 +40,21 @@ describe('CsfObject discovery', () => {
     );
   });
 
-  it('rejects every requested annotation after a computed CSF2 write', () => {
+  it('rejects an annotation that is also written under a computed key', () => {
     const csf = parse(`
       const key = getKey();
       export default { title: 'Example' };
       export const Basic = () => null;
-      Basic.story = { name: 'Basic' };
-      Basic[key] = { a11y: true };
+      Basic.parameters = { a11y: true };
+      Basic[key] = { a11y: false };
     `);
 
-    expect(
-      csf.objects({ meta: false, stories: false, annotations: ['parameters', 'story'] })
-    ).toEqual([]);
+    expect(csf.objects({ meta: false })).toEqual([]);
     expect(csf.mutationDiagnostics).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          code: 'unsupported-initializer',
-          target: expect.objectContaining({ annotation: 'parameters' }),
-        }),
-        expect.objectContaining({
           code: 'ambiguous-binding',
-          target: expect.objectContaining({ annotation: 'story' }),
+          target: expect.objectContaining({ annotation: 'parameters' }),
         }),
       ])
     );
@@ -109,17 +99,20 @@ describe('CsfObject discovery', () => {
       Basic.parameters ||= { a11y: true };
     `);
 
-    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
+    expect(csf.objects({ meta: false })).toEqual([]);
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({ code: 'unsupported-initializer' })
     );
   });
 
-  it('does not discover or diagnose stories when only meta is requested', () => {
+  it('does not discover or diagnose stories or their annotations when only meta is requested', () => {
     const csf = parse(`
       export default { title: 'Example' };
       export let Basic = { args: {} };
       Basic = { args: { changed: true } };
+      export const Legacy = () => null;
+      Legacy.parameters = { a11y: true };
+      Legacy.parameters = { a11y: false };
     `);
 
     expect(csf.objects({ meta: true, stories: false })).toHaveLength(1);

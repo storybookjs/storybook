@@ -25,7 +25,7 @@ export const transformPreviewSource = (source: string) => {
 
 export const transformStorySource = (source: string) => {
   const csf = loadCsf(source, { makeTitle: (title) => title || 'default' }).parse();
-  for (const object of csf.objects({ annotations: ['parameters'] })) {
+  for (const object of csf.objects()) {
     migrateObject(object);
   }
   return csf.changed ? printCsf(csf).code : null;

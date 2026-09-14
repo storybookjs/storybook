@@ -1,13 +1,241 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
 
 import { loadCsf, printCsf } from './CsfFile.ts';
+import { loadConfig } from './ConfigFile.ts';
+import type { CsfValue } from './CsfObject.ts';
 
 const parse = (source: string) =>
   loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
 
 describe('CsfObject', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it.each([
+    { expression: 'false', expected: false },
+    { expression: '-2.5', expected: -2.5 },
+    { expression: '\`dark\`', expected: 'dark' },
+    { expression: '("dark" as const) satisfies string', expected: 'dark' },
+    { expression: '[1, ...[false, "dark"], null]', expected: [1, false, 'dark', null] },
+    {
+      expression: '{ ...{ enabled: false }, nested: { values: [1, "dark"] } }',
+      expected: { enabled: false, nested: { values: [1, 'dark'] } },
+    },
+    { expression: '{ ["font-size"]: 12 }', expected: { 'font-size': 12 } },
+  ])('reads $expression without changing the file', ({ expression, expected }) => {
+    const source = `export default { parameters: ${expression} };`;
+    const csf = parse(source);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.getValue(['parameters'])).toEqual(expected);
+    expect(meta.getValue(['missing'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(csf.changed).toBe(false);
+    expect(printCsf(csf).code).toBe(source);
+  });
+
+  it('reads local constant values through references', () => {
+    const csf = parse('const tags = ["autodocs"]; export default { tags };');
+    const [meta] = csf.objects({ stories: false });
+    expect(meta.getValue(['tags'])).toEqual(['autodocs']);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('keeps local bindings readable after replacing a story expression', () => {
+    const csf = parse(`
+      const params = { a11y: { element: '#app' } };
+      export default {};
+      export const Basic = { parameters: params };
+    `);
+    const [story] = csf.objects({ meta: false });
+
+    expect(story.set(['parameters'], story.get(['parameters']))).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(story.getValue(['parameters', 'a11y', 'element'])).toBe('#app');
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('returns fresh nested values on every read', () => {
+    const csf = parse('export default { parameters: { values: [{ enabled: true }] } };');
+    const [meta] = csf.objects({ stories: false });
+    const values = meta.getValue(['parameters', 'values']);
+    if (!Array.isArray(values)) {
+      throw new Error('Expected an array');
+    }
+    values[0].enabled = false;
+    values.push('new');
+    expect(meta.getValue(['parameters', 'values'])).toEqual([{ enabled: true }]);
+    expect(csf.changed).toBe(false);
+  });
+
+  it('reads an own __proto__ field without modifying the returned object prototype', () => {
+    const csf = parse('export default { parameters: { ["__proto__"]: { enabled: true } } };');
+    const [meta] = csf.objects({ stories: false });
+    const value = meta.getValue(['parameters']);
+    expect(value).toEqual(JSON.parse('{"__proto__":{"enabled":true}}'));
+    expect(Object.getPrototypeOf(value)).toBe(Object.prototype);
+  });
+
+  it.each([
+    'globalThis.csfReadProbe()',
+    '{ known: true, dynamic: globalThis.csfReadProbe() }',
+    '["known", globalThis.csfReadProbe()]',
+    '{ get enabled() { return globalThis.csfReadProbe(); } }',
+    'globalThis.csfReadProbe.value',
+    '() => globalThis.csfReadProbe()',
+  ])('reports an unresolved value without executing %s', (expression) => {
+    const probe = vi.fn();
+    vi.stubGlobal('csfReadProbe', probe);
+    const csf = parse(`export default { parameters: ${expression} };`);
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.getValue(['parameters'])).toBeUndefined();
+    expect(probe).not.toHaveBeenCalled();
+    expect(csf.mutationDiagnostics).toContainEqual(
+      expect.objectContaining({
+        code: 'unsupported-value',
+        path: ['parameters'],
+      })
+    );
+    expect(csf.changed).toBe(false);
+  });
+
+  it('edits a local object referenced by a story and cleans up the empty parent', () => {
+    const csf = parse(
+      `const a11y = { element: '#root' }; export default {}; export const Story = { parameters: { a11y } };`
+    );
+    const [story] = csf.objects({ meta: false });
+
+    story.rename(['parameters', 'a11y', 'element'], 'context');
+    expect(story.get(['parameters', 'a11y', 'context'])).toMatchObject({ value: '#root' });
+    story.move(['parameters', 'a11y', 'context'], ['globals', 'a11y']);
+
+    const [updated] = parse(printCsf(csf).code).objects({ meta: false });
+    expect(updated.get(['parameters'])).toBeUndefined();
+    expect(updated.get(['globals', 'a11y'])).toMatchObject({ value: '#root' });
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('renames and transforms a story method without changing it to a property', () => {
+    const csf = parse('export default {}; export const Story = { play() { setup(); } };');
+    const [story] = csf.objects({ meta: false });
+    story.rename(['play'], 'beforeEach');
+    story.transform(['beforeEach'], (value) => {
+      if (!t.isFunctionExpression(value)) {
+        throw new Error('Expected a function expression');
+      }
+      return {
+        ...value,
+        body: t.blockStatement([...value.body.body, t.returnStatement(t.booleanLiteral(true))]),
+      };
+    });
+    expect(printCsf(csf).code).toContain('beforeEach()');
+    expect(printCsf(csf).code).toContain('return true;');
+    expect(story.get(['play'])).toBeUndefined();
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each([
+    `{ viewport: { defaultViewport: 'mobile' } }`,
+    `({ viewport: ({ defaultViewport: 'mobile' } as const) } satisfies Parameters)`,
+  ])('removes empty ancestors from %s', (parameters) => {
+    const csf = parse(`export default { parameters: ${parameters} };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'viewport', 'defaultViewport'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toBe('export default {};');
+    expect(meta.changed).toBe(true);
+    expect(csf.changed).toBe(true);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it.each(['docs: {}', '...base', '[field]: true'])(
+    'preserves the sibling %s when cleaning up empty parents',
+    (sibling) => {
+      const csf = parse(`export default {
+        parameters: { ${sibling}, viewport: { defaultViewport: 'mobile' } }
+      };`);
+      const [meta] = csf.objects({ meta: true, stories: false });
+
+      expect(meta.remove(['parameters', 'viewport', 'defaultViewport'])).toEqual({
+        ok: true,
+        changed: true,
+      });
+      const output = printCsf(csf).code;
+      expect(output).toContain('parameters:');
+      expect(output).toContain(sibling);
+      expect(meta.getValue(['parameters', 'viewport'])).toEqual(
+        sibling === 'docs: {}' ? undefined : {}
+      );
+      expect(csf.mutationDiagnostics).toEqual([]);
+    }
+  );
+
+  it.each([
+    ['globals', 'viewport', 'value'],
+    ['parameters', 'value'],
+    ['parameters', 'viewport', 'nested', 'value'],
+  ])('cleans up after moving to %j', (...destination) => {
+    const csf = parse(`export default {
+      parameters: { viewport: { defaultViewport: 'mobile' } }
+    };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.move(['parameters', 'viewport', 'defaultViewport'], destination)).toEqual({
+      ok: true,
+      changed: true,
+    });
+    const output = parse(printCsf(csf).code);
+    const [updated] = output.objects({ meta: true, stories: false });
+    expect(updated.get(destination)).toMatchObject({ type: 'StringLiteral', value: 'mobile' });
+    if (destination[0] === 'globals') {
+      expect(updated.get(['parameters'])).toBeUndefined();
+    } else if (destination.length === 2) {
+      expect(updated.get(['parameters', 'viewport'])).toBeUndefined();
+    }
+    expect(printCsf(csf).code).not.toContain('defaultViewport');
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('preserves empty objects when removing or moving a missing field', () => {
+    const source = 'export default { parameters: { viewport: {} } };';
+    const csf = parse(source);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'viewport', 'missing'])).toEqual({
+      ok: true,
+      changed: false,
+    });
+    expect(meta.move(['parameters', 'viewport', 'missing'], ['globals', 'viewport'])).toEqual({
+      ok: true,
+      changed: false,
+    });
+    expect(printCsf(csf).code).toBe(source);
+    expect(csf.changed).toBe(false);
+  });
+
+  it('stops cleanup at a CSF2 annotation root', () => {
+    const csf = parse(`
+      export default { title: 'Example' };
+      export const Basic = () => null;
+      Basic.parameters = { viewport: { disable: true } };
+    `);
+    const [parameters] = csf.objects({ meta: false });
+
+    expect(parameters.remove(['parameters', 'viewport', 'disable'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    expect(printCsf(csf).code).toContain('Basic.parameters = {};');
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('moves a nested meta field and preserves its comments', () => {
     const csf = parse(`
       export default {
@@ -19,13 +247,60 @@ describe('CsfObject', () => {
     `);
     const [meta] = csf.objects({ meta: true, stories: false });
 
-    expect(
-      meta.move(['parameters', 'componentSubtitle'], ['parameters', 'docs', 'subtitle'])
-    ).toEqual({ ok: true, changed: true });
+    expect(meta.move(['parameters', 'componentSubtitle'], ['parameters', 'docs', 'subtitle']))
+      .toMatchInlineSnapshot(`
+      {
+        "changed": true,
+        "ok": true,
+      }
+    `);
     expect(csf.changed).toBe(true);
     expect(printCsf(csf).code).toMatch(
       /docs: \{\s+\/\/ Keep this explanation with the subtitle\.\s+subtitle: 'Buttons'/
     );
+  });
+
+  it.each([
+    { value: 42 },
+    { value: -2.5 },
+    { value: -0 },
+    { value: true },
+    { value: false },
+    { value: 'todo' },
+    { value: '' },
+    { value: null },
+    { value: undefined },
+    { value: [] },
+    { value: [1, false, 'autodocs', null] },
+    { value: {} },
+    { value: { nested: { enabled: true, 'font-size': 12 }, levels: [0, ['dark', false]] } },
+    { value: { type: 'button', data: { type: 'Identifier', name: 'plainData' } } },
+  ] satisfies { value: CsfValue }[])('sets the literal value $value', ({ value }) => {
+    const csf = parse('export default { parameters: { existing: true } };');
+    const [meta] = csf.objects({ stories: false });
+
+    expect(meta.set(['parameters', 'value'], value)).toEqual({ ok: true, changed: true });
+    const output = loadConfig(printCsf(csf).code).parse();
+    expect(output.getValue(['parameters', 'value'])).toEqual(value);
+    expect(output.getValue(['parameters', 'existing'])).toBe(true);
+    expect(meta.changed).toBe(true);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
+  it('copies nested literal inputs when setting story args', () => {
+    const csf = parse('export default {}; export const Story = { args: {} };');
+    const [story] = csf.objects({ meta: false });
+    const value = { appearance: { dark: true }, labels: ['original'] };
+
+    story.set(['args'], value);
+    value.appearance.dark = false;
+    value.labels.push('changed');
+
+    const [updated] = parse(printCsf(csf).code).objects({ meta: false });
+    expect(updated.get(['args', 'appearance', 'dark'])).toMatchObject({ value: true });
+    expect(updated.get(['args', 'labels'])).toMatchObject({
+      elements: [{ type: 'StringLiteral', value: 'original' }],
+    });
   });
 
   it('does not expose mutable AST nodes through get or set', () => {
@@ -67,11 +342,7 @@ describe('CsfObject', () => {
       export const Basic = () => null;
       Basic.parameters = { a11y: { element: '#root' } };
     `);
-    const [parameters] = csf.objects({
-      meta: false,
-      stories: false,
-      annotations: ['parameters'],
-    });
+    const [parameters] = csf.objects({ meta: false });
 
     expect(parameters.rename(['parameters', 'a11y', 'element'], 'context')).toEqual({
       ok: true,
@@ -88,7 +359,7 @@ describe('CsfObject', () => {
       Basic.parameters = { second: true };
     `);
 
-    expect(csf.objects({ meta: false, stories: false, annotations: ['parameters'] })).toEqual([]);
+    expect(csf.objects({ meta: false })).toEqual([]);
     expect(csf.mutationDiagnostics).toContainEqual(
       expect.objectContaining({
         code: 'ambiguous-binding',
@@ -175,6 +446,18 @@ describe('CsfObject', () => {
       changed: true,
     });
     expect(printCsf(csf).code).toMatch(/options: \{\s+gray: \{ name: 'Gray', value: '#CCC' \}/);
+  });
+
+  it('rejects removing an explicit field that could reveal a spread value', () => {
+    const csf = parse(`export default { parameters: { ...base, componentSubtitle: 'Safe' } };`);
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'componentSubtitle'])).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'spread-field' },
+    });
+    expect(csf.changed).toBe(false);
   });
 
   it('rejects an occupied move destination without changing the source', () => {
@@ -343,6 +626,15 @@ describe('CsfObject', () => {
 
     expect(meta.rename(['oldName'], 'newName')).toEqual({ ok: true, changed: true });
     expect(printCsf(csf).code).toBe(`export default { first: true, newName: true, last: true };`);
+  });
+
+  it('replaces a shorthand property value', () => {
+    const csf = parse('const name = "old"; export default { name };');
+    const [meta] = csf.objects({ stories: false });
+    meta.set(['name'], t.stringLiteral('new'));
+
+    const [updated] = parse(printCsf(csf).code).objects({ stories: false });
+    expect(updated.get(['name'])).toMatchObject({ type: 'StringLiteral', value: 'new' });
   });
 
   it('preserves a shorthand property value when renaming its key', () => {

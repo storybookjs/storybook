@@ -6,8 +6,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type * as sbcc from 'storybook/internal/common';
 import { type JsPackageManager, PackageManagerName } from 'storybook/internal/common';
-import { logger, once } from 'storybook/internal/node-logger';
+import { logger } from 'storybook/internal/node-logger';
 
+import { getStorybookData as sourceGetStorybookData } from '../../../core/src/cli/getStorybookData.ts';
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import type { UpgradeOptions } from './upgrade.ts';
 import { checkVersionConsistency, getStorybookVersion } from './upgrade.ts';
@@ -23,6 +24,20 @@ const spawnSyncMock = vi.hoisted(() => vi.fn());
 // Mutable holder so tests can control the mocked manager's detected type (defaults to undefined).
 const managerTypeHolder = vi.hoisted(() => ({ type: undefined as string | undefined }));
 vi.mock('cross-spawn', () => ({ sync: spawnSyncMock }));
+
+// Mirrors every logger.warn call (deduped emissions included) so tests can assert on emissions
+// from the real source chain, which loads copies of node-logger that process-level spies cannot
+// reach. Delegates to the actual logger so once() dedupe and output behavior stay intact.
+const { loggerWarnSpy } = vi.hoisted(() => ({ loggerWarnSpy: vi.fn() }));
+vi.mock('storybook/internal/node-logger', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/internal/node-logger')>();
+  const originalWarn = actual.logger.warn.bind(actual.logger);
+  actual.logger.warn = (...args: Parameters<typeof originalWarn>) => {
+    loggerWarnSpy(...args);
+    return originalWarn(...args);
+  };
+  return actual;
+});
 
 vi.mock('storybook/internal/telemetry');
 vi.mock('./autoblock/index.ts', () => ({
@@ -423,34 +438,24 @@ describe('Yarn 1 best-effort warning', () => {
     return projectDir;
   };
 
-  // Route project collection through the real core getStorybookData so the Yarn 1 warning fires
-  // exactly where it would in a real run (the file-level mock normally bypasses it).
-  // Nothing earlier in this file emits through the dist node-logger, so its once() dedupe
-  // registry is still fresh when this describe runs.
-  const useRealProjectDataCollection = async () => {
-    const { getStorybookData: realGetStorybookData } = await import('storybook/internal/cli');
-    getStorybookDataMock.mockImplementation(realGetStorybookData as any);
+  // Route project collection through the real core getStorybookData (source) so the Yarn 1
+  // warning fires exactly where it would in a real run (the file-level mock normally bypasses
+  // it). The source import stays inside the Vitest module graph, so the file-level common mock
+  // and logger spies apply; the built dist CLI runs externalized, making its logger invisible.
+  const useRealProjectDataCollection = () => {
+    getStorybookDataMock.mockImplementation(sourceGetStorybookData as any);
   };
 
-  // Warnings are captured at the process streams rather than via logger spies: the dist CLI
-  // path holds a different node-logger instance than the test-side import, so object spies
-  // on either copy can miss emissions from the other.
-  let warnOutput = '';
-
-  const captureWarnings = () => {
-    const sink = ((chunk: unknown) => {
-      warnOutput += String(chunk);
-      return true;
-    }) as typeof process.stdout.write;
-    vi.spyOn(process.stdout, 'write').mockImplementation(sink);
-    vi.spyOn(process.stderr, 'write').mockImplementation(sink);
-  };
-
-  const bestEffortWarningCount = () => warnOutput.split('best-effort').length - 1;
+  // Warnings are observed through the file-level node-logger mock above: it mirrors every
+  // logger.warn call (deduped emissions included) into loggerWarnSpy while delegating to the
+  // real logger, so once() dedupe stays intact and the assertion sees final emissions only.
+  const bestEffortWarningCount = () =>
+    loggerWarnSpy.mock.calls.filter(([message]) => String(message).includes('best-effort')).length;
 
   afterEach(async () => {
     managerTypeHolder.type = undefined;
     vi.restoreAllMocks();
+    loggerWarnSpy.mockClear();
     await Promise.all(
       projectDirs.splice(0).map((dir) => rm(dir, { recursive: true, force: true }))
     );
@@ -460,9 +465,7 @@ describe('Yarn 1 best-effort warning', () => {
     const [dirA, dirB] = await Promise.all([createProjectFixture(), createProjectFixture()]);
     projectDirs.push(dirA, dirB);
     managerTypeHolder.type = PackageManagerName.YARN1;
-    await useRealProjectDataCollection();
-    warnOutput = '';
-    captureWarnings();
+    useRealProjectDataCollection();
 
     const results = await collectProjects(
       { force: true } as any,
@@ -484,9 +487,7 @@ describe('Yarn 1 best-effort warning', () => {
     const dir = await createProjectFixture();
     projectDirs.push(dir);
     managerTypeHolder.type = packageManagerType;
-    await useRealProjectDataCollection();
-    warnOutput = '';
-    captureWarnings();
+    useRealProjectDataCollection();
 
     const results = await collectProjects(
       { force: true } as any,

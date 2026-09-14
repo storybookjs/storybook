@@ -29,8 +29,8 @@ const mocks = vi.hoisted(() => ({
   getPackageManagerMock: vi.fn(),
 }));
 
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/common')>();
+vi.mock(import('storybook/internal/common'), async (importOriginal) => {
+  const actual = await importOriginal();
   return {
     ...actual,
     getStorybookInfo: mocks.getStorybookInfoMock,

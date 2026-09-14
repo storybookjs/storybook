@@ -93,13 +93,24 @@ export const enhanceContext: LoaderFunction = async (context) => {
     context.canvas = within(context.canvasElement);
   }
 
+  // In portable story contexts (Story.run() / Story.load()), the consumer owns
+  // userEvent setup. Installing our own uninstrumentedUserEvent.setup() would
+  // register a second set of Symbol-keyed document interceptors (isPrepared,
+  // Interceptor, UIValue, …) that conflict with the consumer's
+  // @testing-library/user-event copy, corrupting its event queue.
+  // See: https://github.com/storybookjs/storybook/issues/35928
+  if (context.parameters.__isPortableStory) {
+    return;
+  }
+
   try {
     // userEvent.setup() cannot be called in non browser environment and will attempt to access window.navigator.clipboard
     // which will throw an error in react native for example.
     const clipboard = globalThis.window?.navigator?.clipboard;
     if (clipboard) {
+      const userEventInstance = uninstrumentedUserEvent.setup();
       context.userEvent = instrument(
-        { userEvent: uninstrumentedUserEvent.setup() },
+        { userEvent: userEventInstance },
         {
           intercept: true,
           getKeys: (obj) => Object.keys(obj).filter((key) => key !== 'eventWrapper'),
@@ -165,6 +176,15 @@ export const enhanceContext: LoaderFunction = async (context) => {
 
         patchedFocus = true;
       }
+
+      // Return a cleanup function so the userEvent instance's document interceptors
+      // (Symbol-keyed state like `isPrepared`, `Interceptor`) are torn down after
+      // each story, preventing leakage into subsequent tests.
+      return async () => {
+        try {
+          await (userEventInstance as any)?.cleanup?.();
+        } catch {}
+      };
     }
   } catch {}
 };

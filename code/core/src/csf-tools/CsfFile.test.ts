@@ -420,6 +420,22 @@ describe('CsfFile', () => {
       `);
     });
 
+    it('flow with modern syntax', () => {
+      const parsed = loadCsf(
+        dedent`
+          // @flow
+          import Badge from './Badge';
+          type StoryArgs = { readonly label: string };
+          export default { title: 'foo/bar', component: Badge };
+          export const A = { args: { label: 'hi' } as StoryArgs };
+          export const B = { args: { label: 'bye' } as StoryArgs };
+        `,
+        { makeTitle }
+      ).parse();
+      expect(Object.keys(parsed._stories)).toEqual(['A', 'B']);
+      expect(parsed.meta?.title).toBe('foo/bar');
+    });
+
     it('typescript satisfies', () => {
       expect(
         parse(

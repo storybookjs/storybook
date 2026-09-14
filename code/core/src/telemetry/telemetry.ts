@@ -1,27 +1,25 @@
 /// <reference types="node" />
-import { readFileSync } from 'node:fs';
+import { spawn } from 'node:child_process';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import * as os from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { isCI } from 'storybook/internal/common';
 
-import retry from 'fetch-retry';
 import { nanoid } from 'nanoid';
 
 import { version } from '../../package.json';
-import { resolvePackageDir } from '../shared/utils/module.ts';
+import { importMetaResolve, resolvePackageDir } from '../shared/utils/module.ts';
 import { getAnonymousProjectId, getProjectSince } from './anonymous-id.ts';
 import { detectAgent } from './detect-agent.ts';
 import { set as saveToCache } from './event-cache.ts';
-import { fetch } from './fetch.ts';
+import { type PendingEvent, postEvent } from './post-event.ts';
 import { getSessionId } from './session-id.ts';
-import type { Options, TelemetryData } from './types.ts';
+import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
-const retryingFetch = retry(fetch);
-
-const URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log';
-
-let tasks: Promise<any>[] = [];
+const inFlight = new Map<string, PendingEvent>();
+process.once('exit', handOffPendingEvents);
 
 export const addToGlobalContext = (key: string, value: any) => {
   globalContext[key] = value;
@@ -61,36 +59,6 @@ const globalContext = {
   storybookVersion: getVersionNumber(),
 } as Record<string, any>;
 
-const prepareRequest = async (data: TelemetryData, context: Record<string, any>, options: any) => {
-  const { eventType, payload, metadata, ...rest } = data;
-  const sessionId = await getSessionId();
-  const eventId = nanoid();
-  const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
-  const signal = AbortSignal.timeout(30_000);
-  const maxRetries = 3;
-
-  return retryingFetch(URL, {
-    method: 'post',
-    body: JSON.stringify(body),
-    headers: { 'Content-Type': 'application/json' },
-    retryDelay: (attempt: number) =>
-      2 ** attempt *
-      (typeof options?.retryDelay === 'number' && !Number.isNaN(options?.retryDelay)
-        ? options.retryDelay
-        : 1000),
-    retryOn: (attempt, error, response) => {
-      // If explicitly aborted (e.g. by the timeout above), or if we've exhausted our retries, give up.
-      if (signal.aborted || attempt >= maxRetries) {
-        return false;
-      }
-
-      // Retry transient network errors and server-overload responses.
-      return Boolean(error) || response?.status === 503 || response?.status === 504;
-    },
-    signal,
-  });
-};
-
 function getVersionNumber() {
   try {
     return JSON.parse(readFileSync(join(resolvePackageDir('storybook'), 'package.json'), 'utf8'))
@@ -100,17 +68,8 @@ function getVersionNumber() {
   }
 }
 
-export async function sendTelemetry(
-  data: TelemetryData,
-  options: Partial<Options> = { retryDelay: 1000, immediate: false }
-) {
+export async function sendTelemetry(data: TelemetryData, options: Partial<Options> = {}) {
   const { eventType, payload, metadata, ...rest } = data;
-
-  // We use this id so we can de-dupe events that arrive at the index multiple times due to the
-  // use of retries. There are situations in which the request "5xx"s (or times-out), but
-  // the server actually gets the request and stores it anyway.
-
-  // flatten the data before we send it
 
   const context = options.stripMetadata
     ? globalContext
@@ -120,20 +79,49 @@ export async function sendTelemetry(
         projectSince: getProjectSince()?.getTime(),
       };
 
-  let request: any;
   try {
-    request = prepareRequest(data, context, options);
-    tasks.push(request);
+    // The eventId lets the server de-duplicate an event that arrives more than once: a retry
+    // after a timed-out response, or the detached process re-sending what this one had started.
+    const body: TelemetryEvent = {
+      ...rest,
+      eventType,
+      eventId: nanoid(),
+      sessionId: getSessionId(),
+      metadata,
+      payload,
+      context,
+    };
+    const event: PendingEvent = { body, retryDelay: options.retryDelay };
+    const request = postEvent(event, { keepProcessAlive: false })
+      .catch(() => {})
+      .finally(() => inFlight.delete(body.eventId));
 
-    const sessionId = await getSessionId();
-    const eventId = nanoid();
-    const body = { ...rest, eventType, eventId, sessionId, metadata, payload, context };
+    inFlight.set(body.eventId, event);
 
-    const waitFor = options.immediate ? tasks : [request];
-    await Promise.all([...waitFor, saveToCache(eventType, body)]);
+    await saveToCache(eventType, body);
   } catch (err) {
     //
-  } finally {
-    tasks = tasks.filter((task) => task !== request);
+  }
+}
+
+// Runs on process exit, where only synchronous work is possible: the events without a response
+// go to a detached child that outlives this process and posts them.
+export function handOffPendingEvents() {
+  if (inFlight.size === 0) {
+    return;
+  }
+  const events = [...inFlight.values()];
+  inFlight.clear();
+  const file = join(os.tmpdir(), `storybook-telemetry-${nanoid()}.json`);
+  try {
+    writeFileSync(file, JSON.stringify(events));
+    const script = fileURLToPath(importMetaResolve('storybook/internal/telemetry/detached-flush'));
+    spawn(process.execPath, [script, file], {
+      detached: true,
+      stdio: 'ignore',
+      windowsHide: true,
+    }).unref();
+  } catch {
+    rmSync(file, { force: true });
   }
 }

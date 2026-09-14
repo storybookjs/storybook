@@ -120,7 +120,7 @@ We assume that Storybook is already instantiated for your project. Do you still 
         await telemetry(
           'exit',
           { eventType: 'init', reason: 'existing-installation' },
-          { stripMetadata: true, immediate: true }
+          { stripMetadata: true }
         );
         process.exit(0);
       }

@@ -68,6 +68,66 @@ describe('CsfObject.group', () => {
     expect(config.mutationDiagnostics).toEqual([]);
   });
 
+  it('rejects grouping named exports across an intervening statement without reordering execution', () => {
+    const source = `
+      export const showNav = record('nav');
+      record('between');
+      export const showPanel = record('panel');
+    `;
+    const config = loadConfig(source).parse();
+
+    expect.soft(config.group(['layout'], ['showNav', 'showPanel'])).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'evaluation-order' },
+    });
+
+    const order: string[] = [];
+    runInNewContext(printConfig(config).code.replaceAll('export const', 'const'), {
+      record: (name: string) => order.push(name),
+    });
+    expect(order).toEqual(['nav', 'between', 'panel']);
+    expect(printConfig(config).code).toBe(source);
+    expect(config.changed).toBe(false);
+  });
+
+  it.each([
+    `export const showNav = record('nav');
+     export const showPanel = record('panel');
+     record('after');`,
+    `const showNav = record('nav');
+     const showPanel = record('panel');
+     export { showNav, showPanel };`,
+  ])('does not relocate or duplicate named export initializers in %s', (source) => {
+    const config = loadConfig(source).parse();
+
+    expect(config.group(['layout'], ['showNav', 'showPanel'])).toMatchObject({
+      ok: false,
+      changed: false,
+      diagnostic: { code: 'evaluation-order' },
+    });
+    expect(printConfig(config).code).toBe(source);
+    expect(config.changed).toBe(false);
+  });
+
+  it('preserves execution order when grouping inside a named export', () => {
+    const config = loadConfig(`
+      export const parameters = { width: record('width'), height: record('height') };
+      record('after');
+    `).parse();
+
+    expect(config.group(['parameters', 'size'], ['width', 'height'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+    const order: string[] = [];
+    runInNewContext(printConfig(config).code.replace('export const', 'const'), {
+      record: (name: string) => order.push(name),
+    });
+    expect(order).toEqual(['width', 'height', 'after']);
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
   it('groups fields in meta, story objects, and CSF2 annotations with the same paths', () => {
     const csf = loadCsf(
       `

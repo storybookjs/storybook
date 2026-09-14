@@ -72,38 +72,6 @@ yarn storybook:vitest
 | List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
 | Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |
 
-## NX and `yarn task`
-
-Use NX when you want better caching and dependency tracking. Prefer these faster defaults first, and only add `-c production` or `--no-link` when you specifically need sandbox parity or CI-like behavior.
-
-```bash
-# Compile all packages
-yarn task compile
-yarn nx run-many -t compile
-
-# Check all packages
-yarn task check
-yarn nx run-many -t check
-
-# Run E2E tests for a template
-yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto
-yarn nx e2e-tests-dev react-vite/default-ts -c production
-
-# Jump to a later step
-yarn task e2e-tests-dev --start-from e2e-tests --template react-vite/default-ts
-yarn nx e2e-tests-dev -c production --exclude-task-dependencies
-```
-
-Key points:
-
-- `-c production` is required for sandbox-related NX commands and CI-parity runs
-- `react-vite/default-ts` is the default sandbox template
-- `--no-link` is opt-in, not the default
-- NX handles task dependencies via `nx.json`
-- NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
-- Example: `yarn nx compile core` (project `core` is published as package `storybook`)
-- NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") degrade to the local cache, so they are expected on local runs where `NX_CLOUD_ACCESS_TOKEN` is unset. CI always sets that token, so a 401 there means an invalid or expired token and should be investigated rather than ignored. A read-only token enables cache reads but cannot store artifacts, so the "wasn't able to store" warning is still expected with one
-
 ## Sandbox Notes
 
 Sandboxes are generated outside the repository at `../storybook-sandboxes/` by default.
@@ -239,17 +207,6 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 - Use `--debug` for verbose CLI output
 - Check generated sandbox directories and `.cache/` for build artifacts
 
-## Environment Variables
-
-| Variable                      | Purpose                                         |
-| ----------------------------- | ----------------------------------------------- |
-| `IN_STORYBOOK_SANDBOX`        | Set during sandbox creation                     |
-| `STORYBOOK_DISABLE_TELEMETRY` | Disable telemetry                               |
-| `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
-| `DEBUG`                       | Enable debug logging                            |
-| `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
-| `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
-
 ## Canary Releases
 
 When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.agents/skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](CONTRIBUTING/RELEASING.md).
@@ -299,6 +256,8 @@ canonical for its topic; this file owns the pointers.
 
 - [Architecture and repository structure](.agents/guidelines/architecture.md) — read before
   touching `code/core` internals, presets, open services, or the tools CLI.
+- [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) — read before sandbox, E2E, or
+  CI-parity work. Includes the environment variable reference.
 
 ## Learned User Preferences
 

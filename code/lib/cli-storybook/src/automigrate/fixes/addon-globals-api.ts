@@ -249,7 +249,7 @@ const migrateAddonGlobals = (
     }
 
     if (migrateDefault) {
-      if (globalValue) {
+      if (globalValue !== undefined) {
         object.remove(defaultPath);
       } else if (addon === 'viewport') {
         object.move(defaultPath, globalPath);
@@ -257,11 +257,13 @@ const migrateAddonGlobals = (
           !orientation ||
           (t.isStringLiteral(orientation) &&
             (orientation.value === 'portrait' || orientation.value === 'landscape'));
-        if (!rotated && canMigrateOrientation) {
-          object.set(
-            [globals, 'viewport', 'isRotated'],
-            t.isStringLiteral(orientation) && orientation.value === 'portrait'
-          );
+        if (canMigrateOrientation) {
+          if (rotated === undefined) {
+            object.set(
+              [globals, 'viewport', 'isRotated'],
+              t.isStringLiteral(orientation) && orientation.value === 'portrait'
+            );
+          }
           if (!isPreview) {
             object.remove([...parameterPath, 'defaultOrientation']);
           }

@@ -712,6 +712,42 @@ describe('addon-globals-api', () => {
       `);
     });
 
+    it('should preserve existing falsy backgrounds globals in story files', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+        import Button from './Button';
+
+        export default { component: Button };
+
+        export const ExistingAndNeedsMigration = {
+          globals: {
+            backgrounds: {
+              value: '',
+            },
+          },
+          parameters: {
+            backgrounds: {
+              default: 'Dark',
+            },
+          },
+        };
+      `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+
+        export default { component: Button };
+
+        export const ExistingAndNeedsMigration = {
+          globals: {
+            backgrounds: {
+              value: '',
+            },
+          }
+        };"
+      `);
+    });
+
     it('should remove empty parameters/backgrounds/viewport objects after migration', async () => {
       const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
       const storyContent = dedent`
@@ -757,6 +793,44 @@ describe('addon-globals-api', () => {
         };
 
         export const Unchanged = { parameters: {} };"
+      `);
+    });
+
+    it('should preserve existing falsy viewport rotation globals in story files', async () => {
+      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
+      const storyContent = dedent`
+          import Button from './Button';
+
+          export default { component: Button };
+
+          export const Mobile = {
+            globals: {
+              viewport: {
+                isRotated: false,
+              },
+            },
+            parameters: {
+              viewport: {
+                defaultViewport: 'iphonex',
+                defaultOrientation: 'portrait',
+              },
+            },
+          };
+        `;
+      expect(transformFn).toBeDefined();
+      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
+        "import Button from './Button';
+
+        export default { component: Button };
+
+        export const Mobile = {
+          globals: {
+            viewport: {
+              isRotated: false,
+              value: 'iphonex'
+            },
+          }
+        };"
       `);
     });
 

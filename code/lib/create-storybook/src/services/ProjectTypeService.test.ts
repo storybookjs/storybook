@@ -26,18 +26,15 @@ describe('ProjectTypeService', () => {
   });
 
   describe('autoDetectProjectType', () => {
-    it('logs a helpful message when framework cannot be detected', async () => {
+    it('returns UNDETECTED when framework cannot be detected', async () => {
       const service = new ProjectTypeService(pm);
       const options = { html: false } as unknown as CommandOptions;
       // @ts-expect-error accessing private for test
       vi.spyOn(service, 'detectProjectType').mockResolvedValue(ProjectType.UNDETECTED);
 
-      await expect(service.autoDetectProjectType(options)).rejects.toThrowError(
-        'Storybook failed to detect your project type'
-      );
-      expect(logger.error).toHaveBeenCalledWith(
-        expect.stringContaining('Unable to initialize Storybook in this directory.')
-      );
+      // messaging and prompting for undetected projects is handled by the command layer
+      await expect(service.autoDetectProjectType(options)).resolves.toBe(ProjectType.UNDETECTED);
+      expect(logger.error).not.toHaveBeenCalled();
     });
 
     it('throws NxProjectDetectedError when NX project is detected', async () => {
@@ -277,7 +274,7 @@ describe('ProjectTypeService', () => {
 
       await expect(
         service.autoDetectProjectType({ html: false } as CommandOptions)
-      ).rejects.toThrowError('Storybook failed to detect your project type');
+      ).resolves.toBe(ProjectType.UNDETECTED);
     });
   });
 

@@ -14,6 +14,12 @@ To install Storybook in an existing project, run this command in your project's 
 
 <CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
 
+<Callout variant="info">
+
+The installer detects Web components projects through a library dependency like [Lit](https://lit.dev/). If your project doesn't use one (for example, vanilla Web components), detection fails and you need to pass the project type explicitly: use `--type web_components` to install this framework, or `--type html` for plain HTML projects, e.g. `pnpm create storybook --type html`. See [the full list of project types](../install.mdx#the-cli-doesnt-detect-my-framework).
+
+</Callout>
+
 You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
 
 ### Requirements

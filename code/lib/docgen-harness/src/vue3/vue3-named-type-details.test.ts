@@ -10,9 +10,9 @@ import { createCheckerByJson } from 'vue-component-meta';
 import {
   CHECKER_OPTIONS,
   collectComponentMetaSources,
-} from '../../../../renderers/vue3/src/docgen/component-meta.ts';
-import { createNamedTypeDetailResolver } from '../../../../renderers/vue3/src/docgen/named-type-detail.ts';
-import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
+  createNamedTypeDetailResolver,
+  extractArgTypes,
+} from '@storybook/vue3/internal/docgen';
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 /**

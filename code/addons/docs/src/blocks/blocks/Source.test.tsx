@@ -4,7 +4,7 @@ import { useCode } from './Source.tsx';
 
 describe('useCode', () => {
   it('does not apply sourceParameters.transform twice when snippet is already provided (issue #35889)', () => {
-    const transform = vi.fn((code: string) => /*transformed*/ );
+    const transform = vi.fn((code: string) => '/*transformed*/ ' + code);
 
     const result = useCode({
       snippet: '/*transformed*/ <Button />', // already transformed by emitTransformCode
@@ -28,7 +28,7 @@ describe('useCode', () => {
   });
 
   it('applies transformFromProps if explicitly provided on props', () => {
-    const propTransform = vi.fn((code: string) => /*prop*/ );
+    const propTransform = vi.fn((code: string) => '/*prop*/ ' + code);
 
     const result = useCode({
       snippet: '<Button />',
@@ -52,7 +52,7 @@ describe('useCode', () => {
   });
 
   it('applies sourceParameters.transform when using originalSource fallback', () => {
-    const transform = vi.fn((code: string) => /*transformed*/ );
+    const transform = vi.fn((code: string) => '/*transformed*/ ' + code);
 
     const result = useCode({
       snippet: '',

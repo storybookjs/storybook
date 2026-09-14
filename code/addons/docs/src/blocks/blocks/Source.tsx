@@ -94,7 +94,7 @@ const useCode = ({
   // When using snippet (emitted via SNIPPET_RENDERED), emitTransformCode has already applied sourceParameters.transform.
   // Avoid re-applying it unless explicitly overridden via transformFromProps.
   const transformer =
-    transformFromProps ?? (useSnippet && snippet ? undefined : sourceParameters.transform);
+    transformFromProps ?? (useSnippet && !serviceSnippet && snippet ? undefined : sourceParameters.transform);
 
   const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
 

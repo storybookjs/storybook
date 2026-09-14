@@ -39,8 +39,9 @@ export const navigate = (params: ParamsId | ParamsCombo) =>
 const generateStoryUrl = (title: ComponentTitle, name: StoryName): string => {
   const { location } = document;
   const query = parseQuery(location.search);
-  const existingId = query.id;
-  const titleToLink = title || existingId.split('--', 2)[0];
+  const existingId = query.id ?? query.path?.match(/^\/story\/(.+)$/)?.[1];
+  const titleToLink = title ?? existingId?.split('--', 2)[0] ?? '';
+
   const id = toId(titleToLink, name);
   const path = `/story/${id}`;
 

@@ -8,6 +8,7 @@ import { addons, waitForAnimations } from 'storybook/preview-api';
 import { withLinkPaths } from './a11yRunnerUtils.ts';
 import { EVENTS } from './constants.ts';
 import type { A11yParameters } from './params.ts';
+import { getIsVitestStandaloneRun } from './utils.ts';
 
 const { document } = global;
 
@@ -135,6 +136,13 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
   const optionsWithDisabledRules = mergeDisabledRulesIntoRunOptions(options, configWithDefault);
 
+  // A standalone Vitest run serializes the whole a11y result to the Node process and only
+  // fails on violations; resultTypes trims the other groups to one node per rule to keep it small.
+  const runOptions: RunOptions =
+    getIsVitestStandaloneRun() && !optionsWithDisabledRules.resultTypes
+      ? { ...optionsWithDisabledRules, resultTypes: ['violations', 'incomplete'] }
+      : optionsWithDisabledRules;
+
   return new Promise<AxeResults>((resolve, reject) => {
     const highlightsRoot = document?.getElementById('storybook-highlights-root');
     if (highlightsRoot) {
@@ -143,7 +151,7 @@ export const run = async (input: A11yParameters = DEFAULT_PARAMETERS, storyId: s
 
     const task = async () => {
       try {
-        const result = await axe.run(context, optionsWithDisabledRules);
+        const result = await axe.run(context, runOptions);
         const resultWithLinks = withLinkPaths(result, storyId);
         resolve(resultWithLinks);
       } catch (error) {

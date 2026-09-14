@@ -174,10 +174,17 @@ Before writing or editing any code file, read [`.agents/guidelines/comments-and-
 
 ## Maintenance Rules For Agents
 
-- Use this file as the canonical instruction source
-- Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
-- Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
-- Do not reintroduce duplicated instruction files when a reference will do
+- `AGENTS.md` owns the kickstart: identity, base rules, common commands,
+  guardrails, and the pointers below. Keep it lean; push detail into the
+  linked documents instead of inlining it.
+- Each linked document is canonical for its topic. Update that document, not
+  this file, when its topic changes. If a topic disappears, remove the
+  document and its pointer together.
+- Keep `CLAUDE.md` and other agent entrypoints as thin references to
+  `AGENTS.md`.
+- `.github/workflows/claude.yml` `--disallowed-tools` mirrors the Commands To
+  Avoid section; update both together.
+- Do not reintroduce duplicated instruction files when a reference will do.
 
 ## Deep dives
 

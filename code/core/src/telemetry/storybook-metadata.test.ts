@@ -121,7 +121,7 @@ beforeEach(() => {
   }));
 
   vi.mocked(getActualPackageVersions).mockImplementation((packages) =>
-    Promise.all(Object.keys(packages).map(getActualPackageVersion))
+    Promise.all(Object.keys(packages).map((packageName) => getActualPackageVersion(packageName)))
   );
 });
 

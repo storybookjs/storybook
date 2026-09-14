@@ -18,102 +18,6 @@ Storybook is a large TypeScript monorepo. The git root is the repo root, the mai
 - **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
 - **Type checking**: Per-package checks (`yarn task check`, `scripts/check/check-package.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias); diagnostics are filtered to the checked package. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (e.g. no `baseUrl`).
 
-## Repository Structure
-
-```text
-storybook/
-├── .github/                      # GitHub configs and workflows
-├── .nx/                          # NX workflow state
-├── code/                         # Main codebase
-│   ├── .storybook/               # Internal Storybook UI config
-│   ├── core/                     # Core package published as "storybook"
-│   ├── addons/                   # Core addons
-│   ├── builders/                 # Builder integrations
-│   ├── renderers/                # Renderer integrations
-│   ├── frameworks/               # Framework integrations
-│   ├── lib/                      # Supporting libraries
-│   ├── presets/                  # Webpack-oriented presets
-│   └── sandbox/                  # Internal build artifacts
-├── scripts/                      # Build and development scripts
-├── docs/                         # Documentation
-├── test-storybooks/              # Test repos
-└── ../storybook-sandboxes/       # Generated sandboxes outside repo
-```
-
-## Architecture
-
-### Renderer vs builder vs framework
-
-| Concept   | Role                                  | Example                   |
-| --------- | ------------------------------------- | ------------------------- |
-| Renderer  | Mounts UI framework to the DOM        | `@storybook/react`        |
-| Builder   | Bundles and serves Storybook          | `@storybook/builder-vite` |
-| Framework | Renderer + builder + framework config | `@storybook/react-vite`   |
-
-### Core package
-
-The main package is `code/core/src/`. The most important areas are:
-
-- `core-server/` for dev server, static build, and presets
-- `manager/` and `manager-api/` for the Storybook UI
-- `preview/` and `preview-api/` for story rendering
-- `channels/` for manager <-> preview communication
-- `csf-tools/` for AST-based story indexing
-- `common/` for shared Node.js utilities
-- `test/` and `instrumenter/` for testing support
-
-Public exports include:
-
-- `storybook/actions`
-- `storybook/preview-api`
-- `storybook/manager-api`
-- `storybook/theming`
-- `storybook/test`
-
-Internal exports include:
-
-- `storybook/internal/core-server`
-- `storybook/internal/csf-tools`
-- `storybook/internal/common`
-- `storybook/internal/channels`
-- `storybook/internal/tools` — Node SDK for `storybook tools` (`createTools`)
-
-### Key flow
-
-- `.storybook/main.ts` is loaded at startup
-- `.storybook/preview.ts` is bundled into preview (TSX for React-based frameworks)
-- `.storybook/manager.ts` is bundled into manager
-- `*.stories.*` files are indexed by AST before runtime
-- Story selection loads the module, prepares the story, and renders it
-
-AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
-
-### Open services and toolsets
-
-- Open services own internal state, synchronization, queries, commands, and loading. Toolsets expose
-  capabilities to agents through MCP and the `storybook tools` CLI.
-- Definitions live under `code/core/src/shared/open-service/`; addons may own and register their own
-  toolsets, as addon-vitest does for `test`.
-- Register services and toolsets from the same `services` preset hook and behind the same feature
-  gate. Missing or duplicate registrations fail loudly.
-- The tools CLI consumes `storybook/internal/tools` (`createTools`). Default mode is
-  attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
-  failure. `--attach` requires attachment; `--no-attach` forces local. When several running
-  instances match the project, attach picks the invoking agent's most recently started one and
-  warns on stderr; `-p, --port` targets a specific instance. Local `createTools` never
-  `chdir`s: a foreign `cwd` starts a project-local child host.
-- Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
-  registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and
-  `code/core/src/cli/tools/architecture.md` before changing attachment, the SDK, or the tools CLI.
-
-### Agent-facing skills
-
-- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
-- Pure content lives in `code/core/src/cli/skills/content/` and is exported through
-  `storybook/internal/skills`; addon-mcp consumes the same builders.
-- Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
-  `core-server`. Lint rules enforce both boundaries.
-
 ## Common Commands
 
 Run commands from the repository root unless stated otherwise.
@@ -387,6 +291,14 @@ Before writing or editing any code file, read [`.agents/guidelines/comments-and-
 - Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
 - Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
 - Do not reintroduce duplicated instruction files when a reference will do
+
+## Deep dives
+
+Read these when the task calls for them, not by default. Each document is
+canonical for its topic; this file owns the pointers.
+
+- [Architecture and repository structure](.agents/guidelines/architecture.md) — read before
+  touching `code/core` internals, presets, open services, or the tools CLI.
 
 ## Learned User Preferences
 

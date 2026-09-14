@@ -14,3 +14,12 @@ export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
   SupportedFramework.WEB_COMPONENTS_VITE,
   SupportedFramework.TANSTACK_REACT,
 ];
+
+/**
+ * Vitest range installed when the project does not declare its own Vitest version. `^4` is the
+ * family @storybook/addon-vitest's devDependencies are tested against; an unpinned install would
+ * resolve the latest Vitest major, whose optional `@types/node` peer range can hard-fail npm
+ * installs on projects pinning older `@types/node` (e.g. create-next-app scaffolds with
+ * `@types/node@^20`). Keep this in sync with the addon's supported majors.
+ */
+export const DEFAULT_VITEST_SPECIFIER = '^4';

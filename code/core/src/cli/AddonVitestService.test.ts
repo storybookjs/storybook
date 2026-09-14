@@ -61,11 +61,12 @@ describe('AddonVitestService', () => {
     it('should collect base packages when not installed', async () => {
       const deps = await service.collectDependencies();
 
-      expect(deps).toContain('vitest');
+      // No vitest version is declared, so the fresh install defaults to the Vitest 4 family
+      expect(deps).toContain('vitest@^4');
       // The addon always installs the Vitest 4 browser provider
-      expect(deps).toContain('@vitest/browser-playwright');
+      expect(deps).toContain('@vitest/browser-playwright@^4');
       expect(deps).toContain('playwright');
-      expect(deps).toContain('@vitest/coverage-v8');
+      expect(deps).toContain('@vitest/coverage-v8@^4');
     });
 
     it('should not include base packages if already installed', async () => {
@@ -92,11 +93,11 @@ describe('AddonVitestService', () => {
       const deps = await service.collectDependencies();
 
       // Should only contain base packages, not framework-specific ones
-      expect(deps).toContain('vitest');
+      expect(deps).toContain('vitest@^4');
       // The addon always installs the Vitest 4 browser provider
-      expect(deps).toContain('@vitest/browser-playwright');
+      expect(deps).toContain('@vitest/browser-playwright@^4');
       expect(deps).toContain('playwright');
-      expect(deps).toContain('@vitest/coverage-v8');
+      expect(deps).toContain('@vitest/coverage-v8@^4');
       expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
     });
 
@@ -143,14 +144,23 @@ describe('AddonVitestService', () => {
       );
     });
 
-    it('does not pin anything when the vitest version cannot be resolved', async () => {
+    it('defaults to the Vitest 4 family when no vitest version is declared', async () => {
       vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
 
       const deps = await service.collectDependencies();
 
-      expect(deps).toContain('@vitest/coverage-v8');
-      expect(deps.every((d) => !d.includes('@catalog:') && !d.includes('@3.'))).toBe(true);
-      expect(mockPackageManager.applyVersionToRelatedPackages).not.toHaveBeenCalled();
+      expect(deps).toContain('vitest@^4');
+      expect(deps).toContain('@vitest/browser-playwright@^4');
+      expect(deps).toContain('@vitest/coverage-v8@^4');
+      expect(deps).toContain('playwright'); // playwright is versioned independently
+      expect(deps.every((d) => !d.includes('@catalog:') && !d.includes('@5.'))).toBe(true);
+      // The fallback flows through the same alignment path as a declared specifier, so the
+      // package manager applies its own convention (e.g. pnpm catalog registration).
+      expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
+        ['vitest', '@vitest/browser-playwright', '@vitest/coverage-v8'],
+        '^4',
+        'vitest'
+      );
     });
   });
 

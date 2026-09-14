@@ -13,7 +13,7 @@ import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';
-import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
+import { DEFAULT_VITEST_SPECIFIER, SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
 
 type Result = {
   compatible: boolean;
@@ -68,7 +68,11 @@ export class AddonVitestService {
 
     // Resolve the Vitest version/range to keep the derived `@vitest/*` packages on a compatible
     // major. The package manager owns the resolution (e.g. reading a pnpm `catalog:` reference).
-    const vitestVersionSpecifier = await this.packageManager.getDeclaredVersionSpecifier('vitest');
+    // Projects that declare no Vitest at all get DEFAULT_VITEST_SPECIFIER instead of unpinned
+    // latest, so a fresh install cannot resolve a major whose peer ranges conflict with the
+    // project (e.g. Vitest 5's `@types/node` peer vs. create-next-app's `@types/node@^20`).
+    const vitestVersionSpecifier =
+      (await this.packageManager.getDeclaredVersionSpecifier('vitest')) ?? DEFAULT_VITEST_SPECIFIER;
 
     // only install these dependencies if they are not already installed
     const basePackages = ['vitest', 'playwright', '@vitest/browser-playwright'];
@@ -88,10 +92,6 @@ export class AddonVitestService {
 
     if (!v8Version && !istanbulVersion) {
       dependencies.push('@vitest/coverage-v8');
-    }
-
-    if (!vitestVersionSpecifier) {
-      return dependencies;
     }
 
     // Pin the vitest-related packages to the resolved vitest version, letting the package manager

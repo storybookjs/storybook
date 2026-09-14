@@ -17,6 +17,22 @@ const configurations = [
 ];
 
 describe('ConfigFile mutations', () => {
+  it('keeps local bindings readable after setting an expression returned by get', () => {
+    const config = loadConfig(`
+      const params = { a11y: { element: '#app' } };
+      export default { parameters: params };
+    `).parse();
+
+    expect(config.getValue(['parameters', 'a11y', 'element'])).toBe('#app');
+    expect(config.set(['parameters'], config.get(['parameters']))).toEqual({
+      ok: true,
+      changed: true,
+    });
+
+    expect.soft(config.getValue(['parameters', 'a11y', 'element'])).toBe('#app');
+    expect(config.mutationDiagnostics).toEqual([]);
+  });
+
   it.each([
     'let config; config = definePreview({ parameters: { legacy: true } }); module.exports = config;',
     'export default {}; definePreview({ parameters: { legacy: true } });',

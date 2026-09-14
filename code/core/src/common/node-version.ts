@@ -11,7 +11,6 @@ export interface MinNodeVersion {
  * This is the single source of truth — all version checks should reference this.
  */
 export const MIN_SUPPORTED_NODE_VERSIONS: readonly MinNodeVersion[] = [
-  { major: 20, minor: 19, patch: 0 },
   { major: 22, minor: 12, patch: 0 },
 ];
 

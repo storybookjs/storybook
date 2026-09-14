@@ -182,6 +182,9 @@ const config = defineMain({
                 'sb-original/image-context': imageContextPath,
               }
             : {
+                // The components dist bundle inlines react-aria; resolving to source keeps the
+                // preview on a single react-aria copy so FocusScopes can nest across modules.
+                'storybook/internal/components': componentsPath,
                 'storybook/manager-api': managerApiPath,
                 'storybook/preview-api': previewApiPath,
               },

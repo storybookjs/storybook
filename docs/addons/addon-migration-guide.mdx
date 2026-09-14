@@ -17,7 +17,7 @@ We sincerely appreciate the dedication and effort addon creators put into keepin
   action={{
     label: 'Copy prompt',
     event: 'copy_addon_migration_prompt',
-    copy: 'In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using the [addon migration guide](https://storybook.js.org/docs/11/addons/addon-migration-guide.md). Addon repositories usually contain a local Storybook instance. Migrate it using the [Storybook migration guide](https://storybook.js.org/docs/11/releases/migration-guide.md). In case the local repository does not align well with the content of the migration guide, use the [addon-kit repository](https://github.com/storybookjs/addon-kit) as a reference implementation. Create a PR for the user to review.',
+    copy: 'In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using [addon migration guide](https://storybook.js.org/docs/11/addons/addon-migration-guide.md). Addon repositories usually contain a local Storybook instance. Migrate it using [Storybook migration guide](https://storybook.js.org/docs/11/releases/migration-guide.md). In case the local repository does not align well with the content of the migration guide, use the [Addon Kit](https://github.com/storybookjs/addon-kit) repository as a reference implementation. Create a PR for the user to review.',
   }}
 >
   Use this prompt with your AI assistant to migrate your addon.
@@ -70,7 +70,7 @@ Here are the changes in version 11.0 that impact addon development.
 
 #### Node.js
 
-Storybook 11's minimum supported version is now 22.12. Update the types package in your `package.json` to `^22.12.0`.
+Storybook 11 targets Node.js 22.12 or higher. See the [Node.js migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2212-or-higher) for environment updates and prerelease support. Update the types package in your `package.json` to `^22.12.0`.
 
 ```diff title="package.json"
 -    "@types/node": "^20",
@@ -149,6 +149,18 @@ export default definePreview({
 ````
 
 ### Addon API changes
+
+#### Manager layout configuration
+
+Move deprecated top-level `addons.setConfig` layout options into `layout`, and move `enableShortcuts` into `ui`. The old top-level values are no longer applied. See the [setConfig migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed) for an example and automigration instructions.
+
+#### Internal API changes
+
+If your addon imports internal Storybook APIs, review these additional changes:
+
+- [Removed WebSocket heartbeat controls](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-websocket-heartbeat-controls-removed)
+- [Removed Vitest workspace configuration helper](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
+- [Toolset telemetry returned with the outcome](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-toolset-telemetry-now-returns-with-the-outcome)
 
 #### Tab UI type removed
 

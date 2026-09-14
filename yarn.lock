@@ -9037,7 +9037,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@rolldown/pluginutils@npm:^1.0.0, @rolldown/pluginutils@npm:^1.0.0-rc.9":
+"@rolldown/pluginutils@npm:^1.0.0, @rolldown/pluginutils@npm:^1.0.1":
   version: 1.0.1
   resolution: "@rolldown/pluginutils@npm:1.0.1"
   checksum: 10c0/99d9b06d90196823e4d8c841f258db7a16e5dbba5824a2962b05d907b79f1ba929d56f22dd744fd530936e568c865ee56a719dc31e57e13bc0a8eb4764a8d8dd
@@ -10215,7 +10215,7 @@ __metadata:
     "@storybook/react-vite": "workspace:*"
     "@types/node": "npm:^22.19.1"
     typescript: "npm:^6.0.3"
-    vite-plugin-rnw: "npm:^0.0.11"
+    vite-plugin-rnw: "npm:~0.0.12"
     vite-tsconfig-paths: "npm:^6.1.1"
   peerDependencies:
     react: ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -20942,17 +20942,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"flow-remove-types@npm:^2.305.0":
-  version: 2.306.0
-  resolution: "flow-remove-types@npm:2.306.0"
+"flow-remove-types@npm:^2.322.0":
+  version: 2.331.0
+  resolution: "flow-remove-types@npm:2.331.0"
   dependencies:
-    hermes-parser: "npm:0.34.0"
+    hermes-parser: "npm:0.36.1"
     pirates: "npm:^3.0.2"
     vlq: "npm:^0.2.1"
   bin:
     flow-node: flow-node
     flow-remove-types: flow-remove-types
-  checksum: 10c0/2b965f5aa70e7d0b4d6ae6ef115f655fdb8ddd6e21563a2efda5644dc9b64dec1490f45b6658f2cf0ad11299bc199aeb78d589428e46ae0b5dba84a8dc09f92a
+  checksum: 10c0/94f9e2ea2010dc3eeafb546a7964d4117b4afcbd172197f1df22450ff4283da0caf5427e248474860e93fb63b8d99c3593ecec6ea83147ac0ba3f4457e04ed47
   languageName: node
   linkType: hard
 
@@ -22256,19 +22256,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"hermes-estree@npm:0.34.0":
-  version: 0.34.0
-  resolution: "hermes-estree@npm:0.34.0"
-  checksum: 10c0/bd4ad520838c69aa79887230a2030fe1e07d0826389112e2c23a8b18494f9f2fa6b1639f413ad978f3468daea66903869188481f9500aaa1fb79ed6266afb744
+"hermes-estree@npm:0.36.1":
+  version: 0.36.1
+  resolution: "hermes-estree@npm:0.36.1"
+  checksum: 10c0/9f552e1f809e05a4ddc5dcc10c5d1d5e375eade985026c3f8876a227db76c33059d25f93f92628a0e43d29a6da6977fbb643fafc8830babad62c1b88b2b56739
   languageName: node
   linkType: hard
 
-"hermes-parser@npm:0.34.0":
-  version: 0.34.0
-  resolution: "hermes-parser@npm:0.34.0"
+"hermes-parser@npm:0.36.1":
+  version: 0.36.1
+  resolution: "hermes-parser@npm:0.36.1"
   dependencies:
-    hermes-estree: "npm:0.34.0"
-  checksum: 10c0/e20657a21ebc3187f53780f5f2c5dd7434f4371979d05b016ff06306b6db63f9d2575ee60c63e9e7d831dd0f592542193a50a6e8397678d4a312fc5373bbe382
+    hermes-estree: "npm:0.36.1"
+  checksum: 10c0/31f2b0a383e15a3cdd8f34bc11498a35504771b58f24db5694ea5013faf6dbe6b27a47f7825bae5494dd57afac4de54c05f750d4ad646ff6787bbba97dfbd8eb
   languageName: node
   linkType: hard
 
@@ -25223,12 +25223,12 @@ __metadata:
   languageName: node
   linkType: hard
 
-"magic-string@npm:^1.1.0":
-  version: 1.1.0
-  resolution: "magic-string@npm:1.1.0"
+"magic-string@npm:^1.0.0, magic-string@npm:^1.1.0":
+  version: 1.2.3
+  resolution: "magic-string@npm:1.2.3"
   dependencies:
     "@jridgewell/sourcemap-codec": "npm:^1.5.5"
-  checksum: 10c0/f904dee2fd190ee5450c754234d8a831228677e9092ed2e545e42746beecf18d617156eb911af55a14496ebe1e60179678c4080c919f74eca7738eba3f38f13a
+  checksum: 10c0/541ecb30ec96e4d9b76ca65aed00124592dca26739aeee86e01d7fbce227b3fce43c9d2f0b9495dc9077c30794c967b1e091445614e2e45722ea4c128be60a93
   languageName: node
   linkType: hard
 
@@ -35630,20 +35630,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-rnw@npm:^0.0.11":
-  version: 0.0.11
-  resolution: "vite-plugin-rnw@npm:0.0.11"
+"vite-plugin-rnw@npm:~0.0.12":
+  version: 0.0.12
+  resolution: "vite-plugin-rnw@npm:0.0.12"
   dependencies:
-    "@rolldown/pluginutils": "npm:^1.0.0-rc.9"
+    "@rolldown/pluginutils": "npm:^1.0.1"
     "@vitejs/plugin-react": "npm:^5.2.0"
-    flow-remove-types: "npm:^2.305.0"
-    magic-string: "npm:^0.30.21"
+    flow-remove-types: "npm:^2.322.0"
+    magic-string: "npm:^1.0.0"
     vite-plugin-commonjs: "npm:^0.10.4"
   peerDependencies:
     react-native-web: "*"
-    typescript: ^5
     vite: ^4.2.0 || ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/28553936d25c1f47a1ea24d8b8dd9574d3f2d3a4cf7d65cfc58670dd7e7e6e075e6248762793fadb73ae754e2ad3fb80fd28e10be56c48a507d5ae7bd34b64e4
+  checksum: 10c0/7f4d1e8d9d107e63d4e7089eaea6def86a56a2b664d604af7a114e74a0fa7edd13dcd91347d5ef52419e11f98047ce925d8265a9c24c77bb12318251f3b73b18
   languageName: node
   linkType: hard
 

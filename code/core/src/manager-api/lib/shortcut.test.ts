@@ -210,7 +210,7 @@ describe('shortcut', () => {
       expect(keyToSymbol('Enter')).toBe('');
       expect(keyToSymbol('Backspace')).toBe('');
       expect(keyToSymbol('Esc')).toBe('');
-      // The feature branch shows Escape as text (used by the fullscreen tool's shortcut hint).
+      // Escape renders as text for the fullscreen tool's shortcut hint.
       expect(keyToSymbol('escape')).toBe('ESCAPE');
       expect(keyToSymbol(' ')).toBe('SPACE');
       expect(keyToSymbol('ArrowUp')).toBe('↑');

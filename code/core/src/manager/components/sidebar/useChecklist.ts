@@ -174,9 +174,8 @@ export const useChecklist = () => {
     const openItems = availableItems.filter((item) => item.isOpen);
     const readyItems = openItems.filter((item) => item.isReady);
 
-    // Collect a list of the next 3 tasks that are ready.
-    // Tasks are pulled from each section in a round-robin fashion,
-    // so that users can choose their own adventure.
+    // Collect the next 3 tasks that are ready.
+    // Take the tasks from each section in turn, so that users can start with any section.
     const nextItems = Object.values(
       readyItems.reduce<Record<string, ChecklistItem[]>>((acc, item) => {
         // Reset itemIndex to only include ready items.

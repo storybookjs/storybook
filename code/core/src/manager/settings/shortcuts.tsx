@@ -214,8 +214,8 @@ class ShortcutsScreen extends Component<ShortcutsScreenProps, ShortcutsScreenSta
       Array.isArray(key) ? key.at(-1) : key
     ) as string[];
 
-    // Escape stays reserved: overlays across the manager close on it, and a persisted
-    // binding would swallow every Escape press at the document level before they see it.
+    // Escape is reserved. Overlays across the manager close on Escape, and a saved binding
+    // would swallow the key at the document level before an overlay receives it.
     const isReservedKey = normalizedShortcut.length === 1 && normalizedShortcut[0] === 'escape';
 
     // Check we don't match any other shortcuts

@@ -230,8 +230,8 @@ export const TestingWidget = ({
   );
   const hasTestProviders = Object.values(registeredTestProviders).length > 0;
 
-  // Surface a crash by expanding once per transition; keying on isCollapsed would re-expand
-  // on every collapse attempt, locking tall error output open over the tree.
+  // Expand the widget once for each crash. The error output must not reopen after the user
+  // collapses it.
   const wasCrashedRef = useRef(false);
   useEffect(() => {
     if (isCrashed && !wasCrashedRef.current) {

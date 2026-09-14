@@ -86,7 +86,7 @@ export interface SubAPI {
    * Handles a keydown event.
    *
    * @param event The event to handle.
-   * @returns The matched shortcut action name, or undefined if no shortcut was matched.
+   * @returns The name of the matched shortcut action, or `undefined` when no shortcut matches.
    */
   handleKeydownEvent(event: KeyboardEventLike): API_MatchableAction | undefined;
   /**
@@ -132,9 +132,9 @@ export interface API_Shortcuts {
 export type API_Action = keyof API_Shortcuts;
 
 /**
- * A built-in shortcut action, or the id of a shortcut registered through `setAddonShortcut`
- * (`` `${addon}-${actionName}` ``). `(string & {})` admits those addon ids while preserving
- * autocompletion for the built-in names.
+ * A built-in shortcut action, or the id of a shortcut that `setAddonShortcut` registers
+ * (`` `${addon}-${actionName}` ``). The `(string & {})` member accepts an addon id and keeps the
+ * autocompletion of the built-in names.
  */
 export type API_MatchableAction = API_Action | (string & {});
 
@@ -253,9 +253,8 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // Listening to shortcut events
     handleKeydownEvent(event) {
-      // A feature that would not run must report "no match": the capture listener stops
-      // propagation for matched shortcuts, so reporting a match here would swallow the key
-      // for the rest of the UI without performing any action.
+      // Report no match while shortcuts are disabled. The capture listener stops propagation
+      // for a matched shortcut, so a match here would swallow the key and run no action.
       if (!store.getState().ui.enableShortcuts) {
         return undefined;
       }
@@ -267,14 +266,15 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           return false;
         }
 
-        // Don't register sidebar shortcuts when it's hidden.
+        // Do not match the sidebar shortcuts while the sidebar is hidden.
         const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
         if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
           return false;
         }
 
-        // Orphaned bindings persisted to localStorage by an old addon or SB version must not
-        // match or they would swallow a keyboard shortcut (due to stopPropagation()).
+        // An old addon or Storybook version can leave an orphaned binding in localStorage.
+        // Such a binding must not match, because the capture listener then calls
+        // stopPropagation() and the key reaches nothing else.
         if (!(feature in defaultShortcuts)) {
           return feature in addonsShortcuts;
         }
@@ -544,13 +544,12 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
   const initModule = () => {
     // Listen for keydown events in the manager.
-    // Capture phase ensures we run before React Aria (and other component libraries) can
-    // call stopPropagation(), which would prevent bubbling-phase listeners from firing.
-    // When a shortcut is matched we also stop propagation so React Aria cannot re-dispatch
-    // the same event (which it does for ArrowUp/Down) and cause double-firing or
-    // unintended tree navigation as a side effect.
-    // Landmark-navigation shortcuts (F6 / Shift+F6) are intentionally excluded: Storybook's
-    // handler is a no-op for them and React Aria must be allowed to handle them.
+    // The capture phase runs before React Aria and other component libraries call
+    // stopPropagation(). Such a call stops every bubble-phase listener.
+    // A matched shortcut also stops propagation. React Aria re-dispatches ArrowUp and ArrowDown
+    // events, which would run the action twice and move the tree selection.
+    // The landmark shortcuts (F6 and Shift+F6) are the exception. Storybook does nothing for
+    // them, so React Aria must receive them.
     document.addEventListener(
       'keydown',
       (event: KeyboardEvent) => {
@@ -564,11 +563,11 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       { capture: true }
     );
 
-    // Escape is deliberately not part of the shortcut map: react-aria overlays (menus,
-    // popovers, modals) handle it at the element level and stop propagation when they consume
-    // it, so this bubble-phase listener only sees presses nothing else claimed. Those exit
-    // fullscreen. Running at the capture phase instead would close overlays and exit
-    // fullscreen with a single press.
+    // Escape is not part of the shortcut map. React Aria overlays (menus, popovers, modals)
+    // handle Escape on the element and stop propagation when they consume it. This bubble-phase
+    // listener therefore receives only the presses that no overlay claimed, and it exits
+    // fullscreen. A capture-phase listener would close an overlay and exit fullscreen with one
+    // press.
     window.addEventListener('keydown', (event: KeyboardEvent) => {
       if (
         event.key === 'Escape' &&
@@ -585,8 +584,8 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {
       api.handleKeydownEvent(data.event);
-      // The preview only forwards keydowns when focus is outside inputs, so Escape pressed
-      // while interacting with the story exits fullscreen just like it does in the manager.
+      // The preview forwards a keydown event only when the focus is outside an input field.
+      // Escape from the story therefore exits fullscreen, the same as Escape in the manager.
       if (
         data.event.key === 'Escape' &&
         store.getState().ui.enableShortcuts &&

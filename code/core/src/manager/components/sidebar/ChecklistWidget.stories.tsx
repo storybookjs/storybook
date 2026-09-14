@@ -118,13 +118,13 @@ export const StableAcrossStateSyncs = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await canvas.findAllByRole('listitem');
-    // Wait for the widget's animated mode and the initial enter transitions to settle.
+    // Wait for the widget to enter animated mode and for the first enter transitions to end.
     await wait(3000);
     const rows = [...canvasElement.querySelectorAll('li')];
     await expect(rows.length).toBeGreaterThan(0);
 
-    // A transition replay swaps each row's emotion class per transition status, so any
-    // class mutation after an unrelated state sync is a replayed enter transition.
+    // Each row gets a different Emotion class for each transition status. A class change after
+    // an unrelated state sync therefore means that the enter transition ran again.
     const mutations: MutationRecord[] = [];
     const observer = new MutationObserver((records) => mutations.push(...records));
     rows.forEach((row) => observer.observe(row, { attributes: true, attributeFilter: ['class'] }));

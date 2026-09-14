@@ -68,7 +68,7 @@ enum events {
   SELECT_STORY = 'selectStory',
   STORIES_COLLAPSE_ALL = 'storiesCollapseAll',
   STORIES_EXPAND_ALL = 'storiesExpandAll',
-  // Used in the sidebar to open the context menu for the currently focused entry
+  // Tell the sidebar to open the context menu of the focused entry
   SIDEBAR_OPEN_CONTEXT_MENU = 'sidebarOpenContextMenu',
   DOCS_RENDERED = 'docsRendered',
   SHARED_STATE_CHANGED = 'sharedStateChanged',

@@ -62,9 +62,9 @@ const useTransitionArray = <K, V>(
     ...options,
   });
 
-  // setItem resets a key's transition state even when the key is already tracked, so calling
-  // it on every array identity change would replay the enter transition of every visible item
-  // whenever unrelated state churns. Register each key once.
+  // setItem resets the transition state of a key, even for a key it already tracks. Register
+  // each key only once. A call on every array identity change would replay the enter transition
+  // of every visible item.
   const knownKeys = useRef(new Set<K>());
   useEffect(() => {
     const keyFn = keyFnRef.current;

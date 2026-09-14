@@ -31,11 +31,11 @@ const Note = styled.div<{ maxWidth: number }>(
 );
 
 export interface TooltipNoteProps {
-  /* The note to display. A note may also present a shortcut alone. */
+  /** The text to display. Optional, because the component can display a shortcut alone. */
   note?: string;
-  /* The optional keyboard shortcut for the action being presented. */
+  /** The keyboard shortcut for the action. */
   shortcut?: string;
-  /* The maximum width of the note. */
+  /** The maximum width of the note, in pixels. */
   maxWidth?: number;
 }
 

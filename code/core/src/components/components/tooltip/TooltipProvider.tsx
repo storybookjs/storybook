@@ -76,9 +76,9 @@ const TooltipProvider = ({
     [onVisibleChange]
   );
 
-  // Dismiss on any press: react-aria only closes on trigger hover-out/press, and neither
-  // fires when a click elsewhere hides or replaces the trigger under the pointer — the
-  // tooltip would linger, repositioned against a display:none trigger.
+  // Hide the tooltip on any pointer press in the document. react-aria hides the tooltip only when
+  // the pointer leaves the trigger or presses it. A press elsewhere can hide or replace the
+  // trigger, and the tooltip then stays open next to a hidden trigger.
   const isTooltipShown = visible ?? isOpen;
   useEffect(() => {
     if (!isTooltipShown) {

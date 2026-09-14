@@ -542,13 +542,13 @@
 
 ### Sidebar rewrite: manager API changes
 
-The sidebar tree was rebuilt on react-aria-components. Most changes are internal, but a few public manager API surfaces moved:
+The sidebar tree is rebuilt on react-aria-components. These public manager API surfaces changed:
 
-- `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working — the parameter is optional.
-- `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds `aria-label` on tree rows and the mobile bottom bar's current-page announcement.
-- The `escape` entry was removed from the configurable shortcuts (`api.getShortcutKeys()` no longer includes it, and `api.setShortcut('escape', …)` is no longer accepted by the types). Escape still exits fullscreen, but as fixed behavior that no longer competes with overlay dismissal, so it cannot be rebound.
-- A `contextMenu` shortcut was added (default <kbd>ctrl/⌘+shift+U</kbd>) that opens the sidebar row actions menu for the focused or selected story.
-- The `StatusButton` and `StatusLabel` exports from the internal sidebar components were renamed/absorbed (`ContextMenuButton`); these were internal but are mentioned here in case addons imported them from unexported paths.
+- `sidebar.renderLabel` receives a third argument, `context`, of type `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`. Use it to change the label for the sidebar tree or for the mobile bottom bar. The argument is optional, so a function of two arguments continues to work.
+- `sidebar.renderAriaLabel` is new and must return a plain string. Storybook uses the result for the `aria-label` of a tree row and for the current-page announcement in the mobile bottom bar.
+- The `escape` entry is no longer a configurable shortcut. `api.getShortcutKeys()` omits it, and the types reject `api.setShortcut('escape', …)`. Escape exits fullscreen as fixed behavior, so you cannot rebind it.
+- A `contextMenu` shortcut is new (default <kbd>ctrl/⌘+shift+U</kbd>). It opens the actions menu of the focused or selected story row.
+- The internal sidebar components no longer export `StatusButton` or `StatusLabel`. `ContextMenuButton` replaces both. These exports were always internal, but an addon can import them from an unexported path.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

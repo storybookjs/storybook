@@ -6,8 +6,7 @@
  * the synchronous `vue-component-meta` (Volar) type checking stays off the main event loop and
  * cannot starve the dev server.
  *
- * The framework contributes the descriptor that points here; nothing in this module is bundler
- * specific, so it sits with the rest of the Vue docgen code in the renderer.
+ * The renderer preset contributes the descriptor that points here.
  */
 import { createLazyDocgenMiddleware } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';

@@ -1,6 +1,5 @@
 import { fileURLToPath } from 'node:url';
 
-import { DOCGEN_WORKER_SPECIFIER } from '@storybook/vue3/preset';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
@@ -9,20 +8,19 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { VUE_COMPONENT_META, resolveDocgenContext } from './options.ts';
+import type { VueDocgenPlugin } from '../types.ts';
+import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
 
-/**
- * Vue docgen provider.
- *
- * Contributes a {@link DocgenProviderDescriptor} pointing at `@storybook/vue3/internal/docgen-worker`
- */
+const VUE_COMPONENT_META = 'vue-component-meta' satisfies VueDocgenPlugin;
+
+/** Contributes the Vue docgen worker descriptor. */
 export const experimental_docgenProvider = async (
   existing: DocgenProviderDescriptor[] = [],
   options: Options
 ): Promise<DocgenProviderDescriptor[]> => {
-  const { docgenServerActive } = await resolveDocgenContext(options);
+  const features = await options.presets.apply('features', {});
 
-  if (!docgenServerActive) {
+  if (features?.experimentalDocgenServer !== true) {
     return existing;
   }
 
@@ -34,14 +32,15 @@ export const experimental_docgenProvider = async (
   ];
 };
 
+/** Declares the Vue component manifest engine. */
 export const experimental_manifests: PresetPropertyFn<
   'experimental_manifests',
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[]; watch: boolean }
 > = async (existingManifests = {}, options) => {
-  const { docgenServerActive } = await resolveDocgenContext(options);
+  const features = await options.presets.apply('features', {});
 
-  if (!docgenServerActive) {
+  if (features?.experimentalDocgenServer !== true) {
     return existingManifests;
   }
 

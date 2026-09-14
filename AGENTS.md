@@ -74,31 +74,7 @@ yarn storybook:vitest
 
 ## Sandbox Notes
 
-Sandboxes are generated outside the repository at `../storybook-sandboxes/` by default.
-
-- `STORYBOOK_SANDBOX_ROOT=./sandbox` forces local output, but is usually not preferred
-- `./sandbox` inside the repo mainly exists for NX outputs, not CI sandboxes
 - If sandbox generation fails, fall back to `cd code && yarn storybook:ui`
-
-Generate and use a sandbox with the same `sandbox` command shape used elsewhere in this file:
-
-```bash
-yarn task sandbox --template react-vite/default-ts --start-from auto
-# Same sandbox step via NX
-yarn nx sandbox react-vite/default-ts -c production
-cd ../storybook-sandboxes/react-vite-default-ts
-yarn install
-yarn storybook
-```
-
-Common templates:
-
-- `react-vite/default-ts`
-- `react-webpack/default-ts`
-- `angular-cli/default-ts`
-- `svelte-vite/default-ts`
-- `vue3-vite/default-ts`
-- `nextjs/default-ts`
 
 ## How To Work In This Repo
 
@@ -258,6 +234,7 @@ canonical for its topic; this file owns the pointers.
   touching `code/core` internals, presets, open services, or the tools CLI.
 - [NX and `yarn task`](.agents/guidelines/nx-and-yarn-task.md) — read before sandbox, E2E, or
   CI-parity work. Includes the environment variable reference.
+- [Sandboxes](.agents/guidelines/sandboxes.md) — read before generating or debugging a sandbox.
 
 ## Learned User Preferences
 

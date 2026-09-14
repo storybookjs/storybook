@@ -12,7 +12,7 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 
 import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
-import { AddonVitestService } from './AddonVitestService.ts';
+import { AddonVitestService, canInstallLatestVitest } from './AddonVitestService.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:os', { spy: true });
@@ -61,12 +61,12 @@ describe('AddonVitestService', () => {
     it('should collect base packages when not installed', async () => {
       const deps = await service.collectDependencies();
 
-      // No vitest version is declared, so the fresh install defaults to the Vitest 4 family
-      expect(deps).toContain('vitest@^4');
-      // The addon always installs the Vitest 4 browser provider
-      expect(deps).toContain('@vitest/browser-playwright@^4');
+      // No vitest version is declared and no @types/node conflict exists, so the fresh install
+      // resolves latest Vitest
+      expect(deps).toContain('vitest@latest');
+      expect(deps).toContain('@vitest/browser-playwright@latest');
       expect(deps).toContain('playwright');
-      expect(deps).toContain('@vitest/coverage-v8@^4');
+      expect(deps).toContain('@vitest/coverage-v8@latest');
     });
 
     it('should not include base packages if already installed', async () => {
@@ -93,11 +93,10 @@ describe('AddonVitestService', () => {
       const deps = await service.collectDependencies();
 
       // Should only contain base packages, not framework-specific ones
-      expect(deps).toContain('vitest@^4');
-      // The addon always installs the Vitest 4 browser provider
-      expect(deps).toContain('@vitest/browser-playwright@^4');
+      expect(deps).toContain('vitest@latest');
+      expect(deps).toContain('@vitest/browser-playwright@latest');
       expect(deps).toContain('playwright');
-      expect(deps).toContain('@vitest/coverage-v8@^4');
+      expect(deps).toContain('@vitest/coverage-v8@latest');
       expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
     });
 
@@ -144,8 +143,11 @@ describe('AddonVitestService', () => {
       );
     });
 
-    it('defaults to the Vitest 4 family when no vitest version is declared', async () => {
+    it('falls back to the Vitest 4 family when no vitest is declared and @types/node conflicts', async () => {
       vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        '@types/node': '^20', // e.g. create-next-app scaffolds
+      });
 
       const deps = await service.collectDependencies();
 
@@ -153,7 +155,6 @@ describe('AddonVitestService', () => {
       expect(deps).toContain('@vitest/browser-playwright@^4');
       expect(deps).toContain('@vitest/coverage-v8@^4');
       expect(deps).toContain('playwright'); // playwright is versioned independently
-      expect(deps.every((d) => !d.includes('@catalog:') && !d.includes('@5.'))).toBe(true);
       // The fallback flows through the same alignment path as a declared specifier, so the
       // package manager applies its own convention (e.g. pnpm catalog registration).
       expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
@@ -161,6 +162,51 @@ describe('AddonVitestService', () => {
         '^4',
         'vitest'
       );
+    });
+
+    it('installs latest Vitest when no vitest is declared and no peer conflict exists', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('vitest@latest');
+      expect(deps).toContain('@vitest/browser-playwright@latest');
+      expect(deps).toContain('@vitest/coverage-v8@latest');
+      expect(deps).toContain('playwright');
+      expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
+        ['vitest', '@vitest/browser-playwright', '@vitest/coverage-v8'],
+        'latest',
+        'vitest'
+      );
+    });
+
+    it('installs latest Vitest when the project @types/node range satisfies the latest peer', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        '@types/node': '^22',
+      });
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('vitest@latest');
+    });
+  });
+
+  describe('canInstallLatestVitest', () => {
+    it('allows latest when @types/node is absent or unversioned', () => {
+      expect(canInstallLatestVitest({})).toBe(true);
+      expect(canInstallLatestVitest({ '@types/node': '*' })).toBe(true);
+    });
+
+    it('blocks latest when the @types/node range cannot satisfy the latest peer range', () => {
+      expect(canInstallLatestVitest({ '@types/node': '^20' })).toBe(false);
+      expect(canInstallLatestVitest({ '@types/node': '20.19.0' })).toBe(false);
+    });
+
+    it('allows latest when the @types/node range intersects the latest peer range', () => {
+      expect(canInstallLatestVitest({ '@types/node': '^22' })).toBe(true);
+      expect(canInstallLatestVitest({ '@types/node': '>=20' })).toBe(true);
     });
   });
 

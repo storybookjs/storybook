@@ -1,17 +1,17 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 import { TooltipNote } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
 
 import { Collection } from 'react-aria-components/Collection';
 import { Tree as AriaTree } from 'react-aria-components/Tree';
 import { ListLayout, Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
-  type TreeEntry,
   collapseSingleStoryComponents,
   getAncestorIds,
   indexToTree,
+  type TreeEntry,
 } from '../../utils/tree.ts';
 import { SECTION_GAP, TREE_ROW_HEIGHT, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
@@ -21,20 +21,20 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
 import { transparentize } from 'polished';
+import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { useExpanded } from './useExpanded.ts';
-import { StatusContext } from './StatusContext.tsx';
-import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { ContextMenuEntryMethod } from './ContextMenu.tsx';
 import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
+import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
+import { StatusContext } from './StatusContext.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
+import { useExpanded } from './useExpanded.ts';
 
 // FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
 // -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
@@ -104,14 +104,17 @@ const TreeWrapper = styled.div(({ theme }) => ({
   },
 }));
 
-// Design 3: a single SVG above the fade and the pinned rows carries every trace line, so they are
-// continuous by construction (no per-row seams, no bridge, nothing can leak through). The path is
-// filled imperatively on scroll (see the scroll effect). Gated on hover/focus like the old lines.
+// SVG lines drawn over the sticky header and tree items. Computed imperatively on scroll.
+// One first path covers the whole tree, and another path only the currently hovered item,
+// to inject an accent color. The actual line display is handled by an opacity CSS variable.
+// This design ensures we never get misaligned line items between the sticky and non-sticky
+// items regardless of zoom level, and limits the number of DOM elements.
 const TraceLayer = styled.svg(({ theme }) => ({
   position: 'absolute',
   inset: 0,
   width: '100%',
   height: '100%',
+  // Above the shadow added to PinnedOverlay.
   zIndex: 4,
   pointerEvents: 'none',
   opacity: 'var(--trace-opacity, 0)',
@@ -121,10 +124,11 @@ const TraceLayer = styled.svg(({ theme }) => ({
     strokeWidth: 1,
     fill: 'none',
   },
-  // Grey grid; the hovered/focused row's slice is drawn over it in the accent colour.
+  // Grey lines used for every line
   '& path[data-trace-grid]': {
     stroke: theme.appBorderColor,
   },
+  // On top of those, a blue line for hovered items
   '& path[data-trace-hover]': {
     stroke: transparentize(0.52, theme.color.secondary),
   },
@@ -135,9 +139,8 @@ const PinnedOverlay = styled.div({
   top: 0,
   left: 0,
   right: 0,
+  // Under TraceLayer so the gradient below doesn't cut decorative lines in two.
   zIndex: 3,
-  // Soft fade between the pinned stack and the scrolling rows beneath it. The trace lines sit above
-  // it (in TraceLayer), so they stay continuous through it.
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -261,13 +264,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const treeWrapperRef = useRef<HTMLDivElement>(null);
-  // Design 3: the whole trace grid is drawn into these two paths, updated imperatively on scroll.
-  // The grey path carries every line; the blue path re-draws just the hovered/focused row's slice.
+  // Decorative line refs.
   const tracePathRef = useRef<SVGPathElement>(null);
   const traceHoverPathRef = useRef<SVGPathElement>(null);
-  const pinnedIdsRef = useRef<string[]>([]);
-  // The row (natural or pinned) currently under the pointer, whose trace slice is drawn blue.
+  // The row currently under the pointer, whose trace slice is drawn blue.
   const hoveredTraceRef = useRef<{ id: string; pinned: boolean } | null>(null);
+  const pinnedIdsRef = useRef<string[]>([]);
   const api = useStorybookApi();
   const { isMobile } = useLayout();
   // Mirrors the labelContext TreeNode passes to renderLabel, so pinned copies match their rows.
@@ -643,7 +645,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // its subtree, so an incoming container's header is never covered by the stack.
   const [pinnedIds, setPinnedIds] = useState<string[]>([]);
 
-  // Design 3: draw the whole trace grid into two SVG paths in viewport space — the pinned stack at
+  // Draw the whole trace grid into two SVG paths in viewport space — the pinned stack at
   // fixed slots, the scrolling rows offset by scrollTop. The grey path carries every guide (a
   // level-D row fills columns 1..D at x=k*20-7; adjacent rows' segments abut into continuous lines
   // with no merge). The blue path re-draws only the hovered/focused row's own slice, restoring the

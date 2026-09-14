@@ -659,9 +659,8 @@ export const StickyAncestors: Story = {
     expect(pinnedRoot.querySelector('use')).toBeNull();
     expect(pinnedRoot.querySelector('[data-testid="pinned-collapse"] svg')).not.toBeNull();
 
-    // The unified trace layer draws every guide line as one continuous SVG path spanning the
-    // pinned stack and the scrolling rows (Design 3), so pinned and natural lines share x by
-    // construction. Assert the layer is present and has drawn segments.
+    // Guide lines are drawn as one continuous SVG path spanning the sticky header
+    // and tree content. Assert the layer is present and has drawn segments.
     const tracePath = canvasElement.querySelector('[data-testid="trace-layer"] path')!;
     expect(tracePath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
 

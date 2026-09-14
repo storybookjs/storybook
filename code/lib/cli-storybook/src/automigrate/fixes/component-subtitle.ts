@@ -1,35 +1,16 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import picocolors from 'picocolors';
-import type { CsfObject } from 'storybook/internal/csf-tools';
-import { formatConfig, loadConfig, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import type { Fix } from '../types.ts';
-export class ComponentSubtitleMigrationError extends Error {}
+import {
+  ComponentSubtitleMigrationError,
+  previewSubtitleInheritance,
+  transformPreviewSource,
+  transformStorySource,
+} from './component-subtitle-transform.ts';
 
-const componentSubtitlePath = ['parameters', 'componentSubtitle'];
-const docsSubtitlePath = ['parameters', 'docs', 'subtitle'];
-
-const migrateObject = (object: CsfObject) => {
-  const result = object.move(componentSubtitlePath, docsSubtitlePath);
-  if (!result.ok) {
-    throw new ComponentSubtitleMigrationError(result.diagnostic.message);
-  }
-};
-
-export const transformPreviewSource = (source: string) => {
-  const config = loadConfig(source).parse();
-  migrateObject(config);
-  return config.changed ? formatConfig(config) : null;
-};
-
-export const transformStorySource = (source: string) => {
-  const csf = loadCsf(source, { makeTitle: (title) => title || 'default' }).parse();
-  for (const object of csf.objects()) {
-    migrateObject(object);
-  }
-  return csf.changed ? printCsf(csf).code : null;
-};
+export { transformPreviewSource, transformStorySource } from './component-subtitle-transform.ts';
 
 interface ComponentSubtitleOptions {
   files: string[];
@@ -61,7 +42,7 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
         })
       )
     ).filter((file): file is string => file !== null);
-    return matchingFiles.length > 0 ? { files: matchingFiles, previewConfigPath } : null;
+    return matchingFiles.length > 0 ? { files, previewConfigPath } : null;
   },
 
   prompt() {
@@ -70,7 +51,19 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
 
   async run({ dryRun, result }) {
     const transformedFiles: Array<{ file: string; source: string }> = [];
-    const errors: Array<{ file: string; error: Error }> = [];
+    const errors: Array<{ file: string; message: string }> = [];
+    let inheritance = { subtitleCanWin: false, legacySubtitle: false };
+
+    if (result.previewConfigPath) {
+      try {
+        inheritance = previewSubtitleInheritance(await readFile(result.previewConfigPath, 'utf-8'));
+      } catch (error) {
+        errors.push({
+          file: result.previewConfigPath,
+          message: error instanceof Error ? error.message : String(error),
+        });
+      }
+    }
 
     for (const file of result.files) {
       if (errors.some((entry) => entry.file === file)) {
@@ -81,19 +74,19 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
         const transformed =
           file === result.previewConfigPath
             ? transformPreviewSource(source)
-            : transformStorySource(source);
+            : transformStorySource(source, inheritance);
         if (transformed) {
           transformedFiles.push({ file, source: transformed });
         }
       } catch (error) {
-        errors.push({ file, error: error as Error });
+        errors.push({ file, message: error instanceof Error ? error.message : String(error) });
       }
     }
 
     if (errors.length > 0) {
       throw new ComponentSubtitleMigrationError(
         `Could not migrate parameters.componentSubtitle automatically:\n${errors
-          .map(({ file, error }) => `- ${file}: ${error.message}`)
+          .map(({ file, message }) => `- ${file}: ${message}`)
           .join('\n')}\nMove each value to parameters.docs.subtitle manually.`
       );
     }

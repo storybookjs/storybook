@@ -136,6 +136,26 @@ describe('buildBatchRunDescriptors', () => {
     ).toEqual(new Set(['medium']));
   });
 
+  it('supports multiple Codex efforts and model overrides in a single batch', () => {
+    const descriptors = buildBatchRunDescriptors({
+      prompt: TEST_PROMPT,
+      agents: ['codex'],
+      codexModels: ['gpt-5.5'],
+      codexEfforts: ['high', 'xhigh'],
+      projects: ['wikitok', 'evergreen-ci', 'mealdrop'],
+      repetitions: 3,
+    });
+
+    expect(descriptors).toHaveLength(3 * 2 * 3);
+    expect(new Set(descriptors.map((descriptor) => descriptor.agent))).toEqual(new Set(['codex']));
+    expect(new Set(descriptors.map((descriptor) => descriptor.model))).toEqual(
+      new Set(['gpt-5.5'])
+    );
+    expect(new Set(descriptors.map((descriptor) => descriptor.effort))).toEqual(
+      new Set(['high', 'xhigh'])
+    );
+  });
+
   it('uses a prompt override for every batch run descriptor', () => {
     const descriptors = buildBatchRunDescriptors({ prompt: TEST_PROMPT });
 
@@ -226,6 +246,19 @@ describe('buildBatchVariants', () => {
       { agent: 'claude', model: BATCH_MATRIX_MODELS.claude, effort: 'high' },
     ]);
   });
+
+  it('supports multiple Codex variants when model and effort matrices are requested', () => {
+    expect(
+      buildBatchVariants({
+        agents: ['codex'],
+        codexModels: ['gpt-5.5'],
+        codexEfforts: ['high', 'xhigh'],
+      })
+    ).toEqual([
+      { agent: 'codex', model: 'gpt-5.5', effort: 'high' },
+      { agent: 'codex', model: 'gpt-5.5', effort: 'xhigh' },
+    ]);
+  });
 });
 
 describe('parseRunBatchArgs', () => {
@@ -256,6 +289,32 @@ describe('parseRunBatchArgs', () => {
     expect(parseRunBatchArgs(['--prompt', TEST_PROMPT, '--claude-efforts', 'max,high'])).toEqual({
       prompt: TEST_PROMPT,
       claudeEfforts: ['max', 'high'],
+    });
+  });
+
+  it('parses multiple Codex efforts and models from the CLI', () => {
+    expect(
+      parseRunBatchArgs([
+        '--prompts',
+        'monorepo-optimized-tests-relaxed-limits-no-story-deletion,pattern-copy-play',
+        '--agents',
+        'codex',
+        '--codex-models',
+        'gpt-5.5',
+        '--codex-efforts',
+        'high,xhigh',
+        '--projects',
+        'wikitok,evergreen-ci,mealdrop',
+        '--repetitions',
+        '3',
+      ])
+    ).toEqual({
+      prompts: ['monorepo-optimized-tests-relaxed-limits-no-story-deletion', 'pattern-copy-play'],
+      agents: ['codex'],
+      codexModels: ['gpt-5.5'],
+      codexEfforts: ['high', 'xhigh'],
+      projects: ['wikitok', 'evergreen-ci', 'mealdrop'],
+      repetitions: 3,
     });
   });
 

@@ -42,12 +42,16 @@ export function buildStoryInstructions({
   // The two channels must state the same workflow.
   const storyLinkingWorkflow = changeDetectionEnabled
     ? reviewEnabled
-      ? `After changing any component or story, call \`${ref('stories.changed')}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as ${ref('stories.findByComponent')} for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **${ref('review.create')}** when the change is visually observable; use \`${ref('stories.preview')}\` only while iterating on a specific story.`
+      ? `After changing any component or story, call \`${ref('stories.changed')}\` to discover the new, modified, and related stories affected by your change. Story IDs must come from that call (or a fallback discovery tool such as ${ref('stories.findByComponent')} for shared-infrastructure changes) — never construct them from file names, export names, or memory. Feed the discovered IDs into **${ref('review.create')}** when the change is visually observable.`
       : `After changing UI, call \`${ref('stories.changed')}\` first, then use \`${ref('stories.preview')}\` with selected \`storyId\` values from those results.`
     : `After changing UI, call \`${ref('stories.preview')}\` and share the most relevant links for the changes.`;
   const changedStoryFallbackLinkGuidance = changeDetectionEnabled
     ? `When sharing preview/story links (not when ending with a review section): if you did not pass every changed story into \`${ref('stories.preview')}\`, include this Storybook fallback link so the user can view the complete changed list: \`/?statuses=affected;modified;new\`.`
     : `When sharing preview/story links (not when ending with a review section) and you passed only a subset into \`${ref('stories.preview')}\`, mention that additional relevant stories may exist in Storybook.`;
+  const previewLinkGuidance = reviewEnabled
+    ? ''
+    : `- When sharing preview/story links, pass only the most relevant story IDs into **${ref('stories.preview')}** (generally no more than 5) so the returned URL list stays manageable. Include every URL returned by that call in your final response — do not drop links there.
+- ${changedStoryFallbackLinkGuidance}`;
 
   /**
    * Injected into the story instructions when the documentation toolset is
@@ -69,8 +73,7 @@ This Storybook exposes component documentation tools. Before creating or changin
     .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsEnabled ? docsWorkflowGuidance : '')
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
     .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport, reviewEnabled))
-    .replace('{{PREVIEW_STORIES}}', ref('stories.preview'))
-    .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
+    .replace('{{PREVIEW_LINK_GUIDANCE}}', previewLinkGuidance);
 
   if (testSupported) {
     const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';

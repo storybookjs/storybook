@@ -1,6 +1,6 @@
 import React, { useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
 
-import { Addon_TypesEnum, type StatusValue } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
 import { Button as AriaButton } from 'react-aria-components/Button';
@@ -10,34 +10,32 @@ import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
-import { type TreeEntry } from '../../utils/tree.ts';
-import { useLayout } from '../layout/LayoutProvider.tsx';
+import { isBranch, type TreeEntry } from '../../utils/tree.ts';
 import {
   ContextMenu,
-  generateTestProviderLinks,
   hasContextMenu,
-  type ContextMenuEntryMethod,
+  hasProviderMenuEntriesFor,
+  type ContextMenuTrigger,
 } from './ContextMenu.tsx';
 
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { RowUiContext } from './RowUiContext.tsx';
+import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
 import { StatusContext } from './StatusContext.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
-import type { Item } from './types.ts';
-
-// FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
-
-/** Height of a tree row in px. Rows are single-line (labels ellipsize), so this is constant. */
-export const TREE_ROW_HEIGHT = 28;
-
-/** Gap above a top-level section that follows another section's subtree, carried as row padding. */
-export const SECTION_GAP = 14;
+import type { Item, SidebarLabelContext } from './types.ts';
+import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
+import {
+  SECTION_GAP,
+  TREE_CONTENT_INSET,
+  TREE_INDENT_STEP,
+  TREE_ROW_HEIGHT,
+} from './treeGeometry.ts';
 
 const StyledTreeItem = styled(TreeItem)<{
   $level: number;
   $textColor: string | null;
-  $hasSectionGap: boolean;
-}>(({ $level, theme, $textColor, $hasSectionGap }) => ({
+  $startsSection: boolean;
+}>(({ $level, theme, $textColor, $startsSection }) => ({
   // General layout.
   position: 'relative',
   display: 'flex',
@@ -49,11 +47,11 @@ const StyledTreeItem = styled(TreeItem)<{
   cursor: 'pointer',
 
   // Indent based on tree level.
-  paddingInlineStart: `calc(${$level} * 20px)`,
+  paddingInlineStart: `calc(${$level} * ${TREE_INDENT_STEP}px)`,
 
   // Inter-section spacing, carried by the section-start row itself: the tree is virtualized
   // (rows are absolutely positioned), so sibling margins cannot create the gap.
-  paddingBlockStart: $hasSectionGap ? SECTION_GAP : 0,
+  paddingBlockStart: $startsSection ? SECTION_GAP : 0,
 
   // Hover/selection/focus decorations paint on this inner surface, which excludes the
   // section-gap padding — painting them on the row itself would bleed into the gap.
@@ -63,21 +61,18 @@ const StyledTreeItem = styled(TreeItem)<{
     left: 0,
     right: 0,
     bottom: 0,
-    top: $hasSectionGap ? SECTION_GAP : 0,
+    top: $startsSection ? SECTION_GAP : 0,
     borderRadius: 4,
     pointerEvents: 'none',
   },
 
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
-  '--trace-color': theme.appBorderColor,
-  a: { color: $textColor ?? 'currentColor' },
 
   // Hover colors: data-focused is set by RAC on hovered items (it mixes hover/focus states).
   '&:hover, &[data-focused="true"]': {
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
-    '--trace-color': transparentize(0.52, theme.color.secondary),
     svg: { color: 'currentColor' },
   },
   '&:hover::before, &[data-focused="true"]::before': {
@@ -97,7 +92,6 @@ const StyledTreeItem = styled(TreeItem)<{
   // Focus colors. The ring is inset so neighboring rows and the scroller edges never crop it.
   '&:focus-visible': {
     outline: 'none',
-    '--trace-color': transparentize(0.88, theme.color.secondary),
     anchorName: '--focused-treenode',
     zIndex: 1,
   },
@@ -126,24 +120,8 @@ const StyledTreeItem = styled(TreeItem)<{
       display: 'none',
     },
 
-  /* CollapseIcon and TypeIcon visibility.
-   * Expand/collapse icon is shown instead of the TypeIcon on hover/focus. */
-  '.hover-only': {
-    display: 'none',
-  },
-  '&:hover .hover-only, &:focus-visible .hover-only': {
-    display: 'flex',
-    alignContent: 'center',
-    alignItems: 'center',
-  },
-  '.static-only': {
-    display: 'flex',
-    alignContent: 'center',
-    alignItems: 'center',
-  },
-  '&:hover .static-only, &:focus-visible .static-only': {
-    display: 'none',
-  },
+  // Show the expand/collapse icon instead of the type icon while the row is active.
+  ...iconSwap(['&:hover', '&:focus-visible']),
 }));
 
 const StyledContent = styled.div({
@@ -152,7 +130,7 @@ const StyledContent = styled.div({
   minWidth: 28,
   minHeight: 28,
   padding: 2,
-  paddingInlineStart: 7,
+  paddingInlineStart: TREE_CONTENT_INSET,
   justifyContent: 'center',
   alignItems: 'center',
   flex: '1 0 0',
@@ -160,12 +138,8 @@ const StyledContent = styled.div({
 });
 
 const StyledLabel = styled.span({
-  flex: '1 1 auto',
-  minWidth: 0,
+  ...truncatedLabel,
   marginInlineStart: 6,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
 });
 
 const MenuTriggerContainer = styled.span({
@@ -175,7 +149,7 @@ const MenuTriggerContainer = styled.span({
 // react-aria requires expandable rows to carry a `slot="chevron"` Button so assistive
 // technology gets a dedicated expand/collapse target; row-level visuals stay in charge, so
 // the button itself is chromeless and the row paints focus.
-const ChevronButton = styled(AriaButton)({
+const ExpandToggleButton = styled(AriaButton)({
   all: 'unset',
   display: 'flex',
   alignItems: 'center',
@@ -194,24 +168,25 @@ const StatusIconContainer = styled.span({
   zIndex: 1,
 });
 
-// FIXME/TODO: find what to do with orphans. Try trees with orphan items. Likely special treatment with lines.
 export interface TreeNodeProps {
   /** The item for this TreeNode. */
   item: TreeEntry;
   /** refId of the composed Storybook, if the item isn't from the host instance. */
   refId: string;
+  /** Passed to `renderLabel` and `renderAriaLabel`, so that every row reports the same context. */
+  labelContext: SidebarLabelContext;
   /** Whether this node is currently expanded. */
   isExpanded: boolean;
   /** Whether this row starts a new top-level section and carries the inter-section gap. */
-  hasSectionGap?: boolean;
+  startsSection?: boolean;
   /** Callback to select a story by its ID. */
   onSelectStoryId: (itemId: string) => void;
   api: API;
   /**
-   * Open the context menu for a given item ID. When `entryMethod` is omitted the tree derives it
+   * Open the context menu for a given item ID. When `openedBy` is omitted the tree derives it
    * from the last input modality (keyboard vs pointer); pass it explicitly for the global shortcut.
    */
-  openContextMenu?: (itemId: string, entryMethod?: ContextMenuEntryMethod) => void;
+  openContextMenu?: (itemId: string, openedBy?: ContextMenuTrigger) => void;
   /** Close the currently-open context menu. */
   closeContextMenu?: () => void;
   /** Whether any test provider addon is registered (enables the menu on group rows). */
@@ -219,11 +194,7 @@ export interface TreeNodeProps {
   children?: React.ReactNode;
 }
 
-function guardHasChildren(item: Item): item is Item & { children: string[] } {
-  return 'children' in item && Array.isArray(item.children) && item.children.length > 0;
-}
-
-const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
+const STATUS_ANNOUNCEMENTS: Record<StatusValue, string> = {
   'status-value:success': 'Tests passing',
   'status-value:error': 'Tests failing',
   'status-value:warning': 'Tests passing with warnings',
@@ -231,15 +202,16 @@ const StatusLabelsInAriaLabel: Record<StatusValue, string> = {
   'status-value:unknown': 'Test status unknown',
   'status-value:new': 'Has new stories',
   'status-value:modified': 'Has modified stories',
-  'status-value:affected': 'Affected by other changes', // TODO/FIXME: talk to MA about using better copy here.
+  'status-value:affected': 'Affected by other changes',
   'status-value:reviewing': 'Included in the active review',
 };
 
 export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   item,
   refId,
+  labelContext,
   isExpanded,
-  hasSectionGap = false,
+  startsSection = false,
   api,
   onSelectStoryId,
   openContextMenu,
@@ -250,20 +222,15 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   const theme = useTheme();
   const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
 
-  // Selection accents and context-menu state come from a subscription store rather than props:
-  // as react-aria collection dependencies they re-rendered every row in the tree on each
-  // selection change. Only rows whose derived value changes re-render.
-  const rowUi = useContext(RowUiContext);
-  const contextMenuEntryMethod = useSyncExternalStore(rowUi.subscribe, () => {
-    const menu = rowUi.getState().contextMenu;
-    return menu?.itemId === item.id ? menu.entryMethod : undefined;
+  // The open context menu comes from a subscription store, not from props. As a react-aria
+  // collection dependency it invalidates the node cache, which re-renders every row in the tree.
+  // With the store, only the row that opens or closes its menu re-renders.
+  const menuStore = useContext(ContextMenuStoreContext);
+  const openedBy = useSyncExternalStore(menuStore.subscribe, () => {
+    const menu = menuStore.getState();
+    return menu?.itemId === item.id ? menu.openedBy : undefined;
   });
-  const isContextMenuOpen = contextMenuEntryMethod !== undefined;
-  const { isMobile } = useLayout();
-  // The tree is 'sidebar' even in the mobile drawer — 'bottom-bar' is reserved for the
-  // mobile bottom bar, whose labels users are advised to strip down.
-  const labelContext = useMemo(() => ({ isMobile, location: 'sidebar' as const }), [isMobile]);
-
+  const isContextMenuOpen = openedBy !== undefined;
   const stopRowPress = useCallback((event: React.SyntheticEvent) => event.stopPropagation(), []);
 
   // Toggles the context menu open/close, suitable as the `setIsOpen` parameter for the popover.
@@ -318,23 +285,25 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     };
   }, [groupDualStatus, item.id, theme, isModifiedFilterActive]);
 
-  const isBranch = guardHasChildren(item);
+  const itemIsBranch = isBranch(item);
 
-  // Whether a registered test provider actually contributes menu content for THIS item —
-  // gates the menu on group/component rows so the button never opens an empty popover.
-  const providerMenuAvailable = useMemo(() => {
-    if (!hasTestProviders || item.type === 'root') {
-      return false;
-    }
-    return (
-      generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), item)
-        .length > 0
-    );
-  }, [hasTestProviders, api, item]);
+  // The row type that addons and end-to-end tests select on. A test entry reports its subtype, and
+  // a docs entry reports 'document'.
+  const nodeType =
+    'subtype' in item && item.subtype === 'test'
+      ? 'test'
+      : item.type === 'docs'
+        ? 'document'
+        : item.type;
+
+  const hasProviderMenuEntries = useMemo(
+    () => hasProviderMenuEntriesFor(api, item, hasTestProviders),
+    [api, item, hasTestProviders]
+  );
 
   const renderContextMenu = useMemo(
-    () => hasContextMenu(item, providerMenuAvailable),
-    [item, providerMenuAvailable]
+    () => hasContextMenu(item, hasProviderMenuEntries),
+    [item, hasProviderMenuEntries]
   );
   const shortcutKeys = api.getShortcutKeys();
 
@@ -343,11 +312,11 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     let label = item.renderAriaLabel?.(item, api, labelContext) || item.name;
 
     if (testStatus !== 'status-value:unknown') {
-      label += `. ${StatusLabelsInAriaLabel[testStatus]}`;
+      label += `. ${STATUS_ANNOUNCEMENTS[testStatus]}`;
     }
 
     if (changeStatus !== 'status-value:unknown') {
-      label += `. ${StatusLabelsInAriaLabel[changeStatus]}`;
+      label += `. ${STATUS_ANNOUNCEMENTS[changeStatus]}`;
     }
 
     // The context-menu shortcut may be absent, e.g. when shortcuts are disabled.
@@ -358,34 +327,34 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
     return label;
   }, [item, api, labelContext, renderContextMenu, changeStatus, testStatus, shortcutKeys]);
 
-  const prefixAction = useMemo(() => {
+  const leadingIcon = useMemo(() => {
     if (item.type === 'root') {
       return (
-        <ChevronButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'}>
+        <ExpandToggleButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'}>
           <CollapseIcon isExpanded={isExpanded} />
-        </ChevronButton>
+        </ExpandToggleButton>
       );
     }
 
-    if (isBranch) {
+    if (itemIsBranch) {
       return (
-        <ChevronButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'}>
+        <ExpandToggleButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'}>
           <span className="hover-only">{<CollapseIcon isExpanded={isExpanded} />}</span>
           <span className="static-only">
             <TypeIconWithSymbol item={item} />
           </span>
-        </ChevronButton>
+        </ExpandToggleButton>
       );
     }
 
     return <TypeIconWithSymbol item={item} />;
-  }, [item, isBranch, isExpanded]);
+  }, [item, itemIsBranch, isExpanded]);
 
   return (
     <StyledTreeItem
       $level={item.depth}
       $textColor={statusTextColor}
-      $hasSectionGap={hasSectionGap}
+      $startsSection={startsSection}
       textValue={item.name}
       aria-label={ariaLabel}
       // The collection key must be the raw entry id: selection, expansion, and the delegated
@@ -393,12 +362,15 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       // (its own collection), so ids need no cross-ref disambiguation.
       id={item.id}
       key={item.id}
+      // Addons and end-to-end tests select rows by these attributes.
+      className={item.type === 'root' ? 'sidebar-subheading' : 'sidebar-item'}
       data-item-id={item.id}
       data-ref-id={refId}
+      data-nodetype={nodeType}
     >
       <TreeItemContent>
         <StyledContent>
-          {prefixAction}
+          {leadingIcon}
           <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>
           {renderContextMenu && (
             // react-aria selects rows on pointerdown; the press that opens the menu must not
@@ -415,8 +387,8 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
                   setIsOpen={handleContextMenuOpenChange}
                   onSelectStoryId={onSelectStoryId}
                   api={api}
-                  entryMethod={contextMenuEntryMethod}
-                  hasTestProviders={providerMenuAvailable}
+                  openedBy={openedBy}
+                  hasProviderMenuEntries={hasProviderMenuEntries}
                 />
               }
             </MenuTriggerContainer>

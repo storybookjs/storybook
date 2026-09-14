@@ -8,6 +8,16 @@ export type RefType = Refs[keyof Refs] & {
   allStatuses?: StatusesByStoryIdAndTypeId;
 };
 export type Item = StoriesHash[keyof StoriesHash];
+
+/**
+ * The third argument the sidebar passes to `renderLabel` and `renderAriaLabel`. The tree always
+ * reports `sidebar`, including inside the mobile drawer: `bottom-bar` is reserved for the mobile
+ * bottom bar, whose labels the documentation advises integrators to strip down.
+ */
+export interface SidebarLabelContext {
+  isMobile: boolean;
+  location: 'sidebar';
+}
 export type Dataset = Record<string, Item>;
 
 export interface CombinedDataset {
@@ -15,17 +25,12 @@ export interface CombinedDataset {
   entries: [string, RefType][];
 }
 
-export interface ItemRef {
-  itemId: string;
-  refId: string;
-}
 export interface StoryRef {
   storyId: string;
   refId: string;
   anchor?: string;
 }
 
-export type Highlight = ItemRef | null;
 export type Selection = StoryRef | null;
 
 export interface Match {

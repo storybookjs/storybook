@@ -90,9 +90,8 @@ export const FilterPanel = ({
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
       const { icon: statusIconEl } = getStatus(theme, entry.statusValue);
-      // Related has no status icon, but ActionList only hides the checkbox until hover when a
-      // non-input sibling precedes it — an empty placeholder preserves that behavior.
-      // Status icons carry their own color, so no $iconColor override is needed.
+      // The related entry has no status icon. ActionList hides the checkbox until hover only
+      // when a non-input sibling comes first, so an empty placeholder keeps that behavior.
       const icon = isRelated ? (
         <span aria-hidden="true" />
       ) : statusIconEl ? (

@@ -1,15 +1,10 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
-import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
+import type { StatusValue } from 'storybook/internal/types';
 
 import { mockDataset } from '../components/sidebar/mockdata.ts';
-import {
-  getChangeDetectionStatus,
-  getGroupDualStatus,
-  getGroupStatus,
-  getMostCriticalStatusValue,
-} from './status.tsx';
+import { getGroupDualStatus, getGroupStatus, getMostCriticalStatusValue } from './status.tsx';
 
 describe('getHighestStatus', () => {
   it('default value', () => {
@@ -155,75 +150,6 @@ describe('getGroupStatus', () => {
   });
 });
 
-describe('dual-slot status splitting', () => {
-  const makeStatus = (typeId: string, value: StatusValue) => ({
-    storyId: 'story-1',
-    typeId,
-    value,
-    title: '',
-    description: '',
-  });
-
-  it('leaf with only change-detection status', () => {
-    const statuses = {
-      'storybook/change-detection': makeStatus('storybook/change-detection', 'status-value:new'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:new');
-    expect(testStatus).toBe('status-value:unknown');
-  });
-
-  it('leaf with both change-detection and test status', () => {
-    const statuses = {
-      'storybook/change-detection': makeStatus(
-        'storybook/change-detection',
-        'status-value:modified'
-      ),
-      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:error'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:modified');
-    expect(testStatus).toBe('status-value:error');
-  });
-
-  it('leaf with only test status', () => {
-    const statuses = {
-      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:warning'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:unknown');
-    expect(testStatus).toBe('status-value:warning');
-  });
-
-  it('ignores reviewing status for sidebar test slot', () => {
-    const statuses = {
-      [REVIEW_STATUS_TYPE_ID]: makeStatus(REVIEW_STATUS_TYPE_ID, 'status-value:reviewing'),
-      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:success'),
-    };
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:unknown');
-    expect(testStatus).toBe('status-value:success');
-  });
-
-  it('priority within change-detection slot: new beats modified beats affected', () => {
-    const statuses = {
-      first: makeStatus('storybook/change-detection', 'status-value:affected'),
-      second: makeStatus('storybook/change-detection', 'status-value:modified'),
-      third: makeStatus('storybook/change-detection', 'status-value:new'),
-    } as unknown as StatusByTypeId;
-
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
-    expect(changeStatus).toBe('status-value:new');
-    expect(testStatus).toBe('status-value:unknown');
-  });
-
-  it('branch/group combined priority: error beats new', () => {
-    expect(getMostCriticalStatusValue(['status-value:new', 'status-value:error'])).toBe(
-      'status-value:error'
-    );
-  });
-});
-
 describe('getGroupDualStatus', () => {
   const makeStatus = (storyId: string, typeId: string, value: StatusValue) => ({
     storyId,
@@ -258,6 +184,48 @@ describe('getGroupDualStatus', () => {
       children: [],
     },
   };
+
+  it("splits a leaf's statuses into the change slot and the test slot", () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        'storybook/change-detection': makeStatus(
+          'comp--a',
+          'storybook/change-detection',
+          'status-value:modified'
+        ),
+        vitest: makeStatus('comp--a', 'vitest', 'status-value:error'),
+      },
+    });
+    expect(dual['comp--a'].change.value).toBe('status-value:modified');
+    expect(dual['comp--a'].test.value).toBe('status-value:error');
+  });
+
+  it('keeps the review status out of both slots', () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        [REVIEW_STATUS_TYPE_ID]: makeStatus(
+          'comp--a',
+          REVIEW_STATUS_TYPE_ID,
+          'status-value:reviewing'
+        ),
+        vitest: makeStatus('comp--a', 'vitest', 'status-value:success'),
+      },
+    });
+    expect(dual['comp--a'].change.value).toBe('status-value:unknown');
+    expect(dual['comp--a'].test.value).toBe('status-value:success');
+  });
+
+  it('keeps the most critical value inside the change slot: new beats modified beats affected', () => {
+    const dual = getGroupDualStatus(data, {
+      'comp--a': {
+        first: makeStatus('comp--a', 'storybook/change-detection', 'status-value:affected'),
+        second: makeStatus('comp--a', 'storybook/change-detection', 'status-value:modified'),
+        third: makeStatus('comp--a', 'storybook/change-detection', 'status-value:new'),
+      },
+    });
+    expect(dual['comp--a'].change.value).toBe('status-value:new');
+    expect(dual['comp--a'].test.value).toBe('status-value:unknown');
+  });
 
   it("includes a leaf story's own statuses on its own row", () => {
     const dual = getGroupDualStatus(data, {

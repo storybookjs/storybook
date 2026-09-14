@@ -8,12 +8,13 @@ import { Tree as AriaTree } from 'react-aria-components/Tree';
 import { ListLayout, Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
-  collapseSingleStoryComponents,
   getAncestorIds,
+  hoistSingleStoryComponents,
   indexToTree,
+  isBranch,
   type TreeEntry,
 } from '../../utils/tree.ts';
-import { SECTION_GAP, TREE_ROW_HEIGHT, TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
 
 import {
   Addon_TypesEnum,
@@ -28,18 +29,19 @@ import { styled } from 'storybook/theming';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { CollapseIcon } from './CollapseIcon.tsx';
-import type { ContextMenuEntryMethod } from './ContextMenu.tsx';
-import { generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
-import { RowUiContext, createRowUiStore } from './RowUiContext.tsx';
+import type { ContextMenuTrigger } from './ContextMenu.tsx';
+import { hasContextMenu, hasProviderMenuEntriesFor } from './ContextMenu.tsx';
+import {
+  ContextMenuStoreContext,
+  createContextMenuStore,
+  type ContextMenuStore,
+} from './ContextMenuStore.tsx';
 import { StatusContext } from './StatusContext.tsx';
-import { TypeIconWithSymbol } from './TypeIcon.tsx';
+import { INDENT_LINE_OPACITY_VAR, useIndentLines, type HoveredRow } from './TreeIndentLines.tsx';
+import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
+import type { SidebarLabelContext } from './types.ts';
 import { useExpanded } from './useExpanded.ts';
-
-// FIXME/TODO: Review with MA: should clicking on a story with children also navigate to it?
-// -> Add a "Story" item in the tree, or get a commitment from the team to remove .test
-// FIXME/TODO: Tree is no longer showing the section animation on F6 after an item is focused
-// FIXME/TODO: add a level for trees with a RefHead.
+import { TREE_ROW_HEIGHT, flattenRows } from './treeGeometry.ts';
 
 const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
   listStyle: 'none',
@@ -80,16 +82,16 @@ const TreeWrapper = styled.div(({ theme }) => ({
   position: 'relative',
   height: '100%',
   minHeight: 0,
-  // Contain the overlay's z-index so UI outside the tree still paints above it.
+  // Contain the z-index of the overlays, so that UI outside the tree still paints above them.
   isolation: 'isolate',
-  '--sticky-bg': theme.background.content,
-  '--trace-color': theme.appBorderColor,
-  // Show trace lines only while hovering or keyboard-focused inside the tree.
+  '--sticky-row-background': theme.background.content,
+  // Show the indent lines only while the pointer is over the tree, or while a row holds keyboard
+  // focus. The selection line has its own path and ignores this.
   '&:hover, &:has(:focus-visible)': {
-    '--trace-opacity': 1,
+    [INDENT_LINE_OPACITY_VAR]: 1,
   },
   [MEDIA_DESKTOP_BREAKPOINT]: {
-    '--sticky-bg': theme.background.app,
+    '--sticky-row-background': theme.background.app,
   },
   // Soft fade at the bottom of the scroll area, easing the cut-off into the rest of the UI.
   '&::after': {
@@ -100,130 +102,9 @@ const TreeWrapper = styled.div(({ theme }) => ({
     bottom: 0,
     height: 16,
     pointerEvents: 'none',
-    background: 'linear-gradient(to top, var(--sticky-bg), transparent)',
+    background: 'linear-gradient(to top, var(--sticky-row-background), transparent)',
   },
 }));
-
-// SVG lines drawn over the sticky header and tree items. Computed imperatively on scroll.
-// One first path covers the whole tree, and another path only the currently hovered item,
-// to inject an accent color. The actual line display is handled by an opacity CSS variable.
-// This design ensures we never get misaligned line items between the sticky and non-sticky
-// items regardless of zoom level, and limits the number of DOM elements.
-const TraceLayer = styled.svg(({ theme }) => ({
-  position: 'absolute',
-  inset: 0,
-  width: '100%',
-  height: '100%',
-  // Above the shadow added to PinnedOverlay.
-  zIndex: 4,
-  pointerEvents: 'none',
-  opacity: 'var(--trace-opacity, 0)',
-  transition: 'opacity 150ms ease',
-  shapeRendering: 'crispEdges',
-  '& path': {
-    strokeWidth: 1,
-    fill: 'none',
-  },
-  // Grey lines used for every line
-  '& path[data-trace-grid]': {
-    stroke: theme.appBorderColor,
-  },
-  // On top of those, a blue line for hovered items
-  '& path[data-trace-hover]': {
-    stroke: transparentize(0.52, theme.color.secondary),
-  },
-}));
-
-const PinnedOverlay = styled.div({
-  position: 'absolute',
-  top: 0,
-  left: 0,
-  right: 0,
-  // Under TraceLayer so the gradient below doesn't cut decorative lines in two.
-  zIndex: 3,
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    height: SECTION_GAP,
-    pointerEvents: 'none',
-    background: 'linear-gradient(to bottom, var(--sticky-bg), transparent)',
-  },
-});
-
-const PinnedRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-  width: '100%',
-  height: TREE_ROW_HEIGHT,
-  overflow: 'hidden',
-  border: 0,
-  margin: 0,
-  paddingBlock: 0,
-  paddingInlineEnd: 8,
-  paddingInlineStart: `calc(${$level} * 20px + 7px)`,
-  gap: 6,
-  cursor: 'pointer',
-  textAlign: 'left',
-  font: 'inherit',
-  color: theme.color.defaultText,
-  // Opaque, square backing so the pinned row fully occludes the scrolling rows beneath it.
-  backgroundColor: 'var(--sticky-bg)',
-  // Hover highlight on a rounded inset layer, matching the natural rows' ::before (which the
-  // square backing cannot carry without letting the rows below show through its rounded corners).
-  '&::before': {
-    content: '""',
-    position: 'absolute',
-    inset: 0,
-    borderRadius: 4,
-    pointerEvents: 'none',
-  },
-  '&:hover::before': {
-    background: theme.background.hoverable,
-  },
-  '& svg': {
-    flexShrink: 0,
-  },
-
-  // Same icon swap as natural rows: type icon at rest, collapse chevron while hovered.
-  '.hover-only': {
-    display: 'none',
-  },
-  '&:hover .hover-only': {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  '.static-only': {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  '&:hover .static-only': {
-    display: 'none',
-  },
-}));
-
-// position: relative lifts the content above the row's ::before hover highlight (a positioned
-// pseudo-element would otherwise paint over it), matching the natural rows' relative StyledContent.
-const PinnedRowIcon = styled.span({
-  position: 'relative',
-  display: 'flex',
-  alignItems: 'center',
-});
-
-// The label must own the free space and truncate stably, or the row content jitters
-// horizontally as pinned rows swap while scrolling. position: relative keeps it above the row's
-// ::before hover highlight (see PinnedRowIcon).
-const PinnedLabel = styled.span({
-  position: 'relative',
-  flex: '1 1 auto',
-  minWidth: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-});
 
 // Without CSS anchor positioning the note cannot follow the focused row, and without
 // `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
@@ -264,16 +145,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const treeWrapperRef = useRef<HTMLDivElement>(null);
-  // Decorative line refs.
-  const tracePathRef = useRef<SVGPathElement>(null);
-  const traceHoverPathRef = useRef<SVGPathElement>(null);
-  // The row currently under the pointer, whose trace slice is drawn blue.
-  const hoveredTraceRef = useRef<{ id: string; pinned: boolean } | null>(null);
-  const pinnedIdsRef = useRef<string[]>([]);
   const api = useStorybookApi();
   const { isMobile } = useLayout();
-  // Mirrors the labelContext TreeNode passes to renderLabel, so pinned copies match their rows.
-  const labelContext = useMemo(() => ({ isMobile, location: 'sidebar' as const }), [isMobile]);
+  const labelContext = useMemo<SidebarLabelContext>(
+    () => ({ isMobile, location: 'sidebar' }),
+    [isMobile]
+  );
   const isModifiedFilterActive = (includedStatusFilters ?? []).includes('status-value:modified');
   // Whether any test provider is registered: gates the context menu on group/component rows.
   const hasTestProviders =
@@ -292,36 +169,25 @@ export const Tree = React.memo<TreeProps>(function Tree({
   onSelectStoryIdRef.current = onSelectStoryIdProp;
   const onSelectStoryId = useCallback((id: string) => onSelectStoryIdRef.current(id), []);
 
-  // Tracks the currently focused item for the ContextMenu global shortcut.
+  // The row that holds keyboard focus. The context-menu shortcut and the indent lines follow it.
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
-
-  // Tracks the last focused item to detect when we switch to no item being focused.
   const focusedItemIdRef = useRef<string | null>(null);
 
-  // Context-menu state: which item's menu is open, and how it was triggered.
-  // 'pointer' = mouse click on the ⋯ button; 'keyboard' = global shortcut or Enter/Space on the
-  // ⋯ button (shows extra actions and autofocuses the first item).
-  const [contextMenuState, setContextMenuState] = useState<{
-    itemId: string;
-    entryMethod: ContextMenuEntryMethod;
-  } | null>(null);
-
   // Rewrite the dataset to place the single child story in place of the component.
-  const collapsedData = useMemo(() => collapseSingleStoryComponents(data), [data]);
+  const hoistedData = useMemo(() => hoistSingleStoryComponents(data), [data]);
 
   // Switch to a tree structure from now on.
-  const tree = useMemo(() => indexToTree(collapsedData), [collapsedData]);
+  const tree = useMemo(() => indexToTree(hoistedData), [hoistedData]);
 
   // Track expanded nodes, keep it in sync with props and enable keyboard shortcuts.
   const [expanded, setExpanded] = useExpanded({
-    refId,
-    data: collapsedData,
+    data: hoistedData,
     selectedStoryId,
   });
 
   const groupDualStatus = useMemo(
-    () => getGroupDualStatus(collapsedData, allStatuses ?? {}),
-    [collapsedData, allStatuses]
+    () => getGroupDualStatus(hoistedData, allStatuses ?? {}),
+    [hoistedData, allStatuses]
   );
 
   const contextMenuShortcut = useMemo(() => {
@@ -333,22 +199,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return shortcutToHumanString(shortcutKeys.contextMenu);
   }, [api]);
 
-  // Compute tooltip data only for the focused item (duplicates TreeNode logic by design).
+  // The note that tells the user which shortcut opens the actions of the focused row. Rows compute
+  // the same availability for their own ⋯ button (see TreeNode).
   const focusedItemShortcutLabel = useMemo(() => {
-    if (!focusedItemId || !contextMenuShortcut) {
+    if (!supportsAnchorPositioning || !focusedItemId || !contextMenuShortcut) {
       return null;
     }
 
-    const item = collapsedData[focusedItemId];
+    const item = hoistedData[focusedItemId];
     if (!item) {
       return null;
     }
 
-    const providerMenuAvailable =
-      hasTestProviders &&
-      generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), item)
-        .length > 0;
-    if (!hasContextMenu(item, providerMenuAvailable)) {
+    if (!hasContextMenu(item, hasProviderMenuEntriesFor(api, item, hasTestProviders))) {
       return null;
     }
 
@@ -359,7 +222,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
       ? 'Status and actions'
       : 'Actions';
-  }, [focusedItemId, contextMenuShortcut, collapsedData, groupDualStatus, hasTestProviders, api]);
+  }, [focusedItemId, contextMenuShortcut, hoistedData, groupDualStatus, hasTestProviders, api]);
 
   // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
   const selectedKeys = useMemo(
@@ -367,19 +230,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [selectedStoryId]
   );
 
+  // The children of this row share the selection line in the indent layer.
   const selectedParentId = useMemo(() => {
-    if (!selectedStoryId) {
-      return null;
-    }
-    const entry = collapsedData[selectedStoryId];
-    if (!entry) {
-      return null;
-    }
-    if (entry.type === 'root') {
-      return null;
-    }
-    return entry.parent ?? null;
-  }, [selectedStoryId, collapsedData]);
+    const entry = selectedStoryId ? hoistedData[selectedStoryId] : undefined;
+    return !entry || entry.type === 'root' ? null : (entry.parent ?? null);
+  }, [selectedStoryId, hoistedData]);
 
   // Stable handlers so children (especially TreeNode) can rely on prop identity.
   const handleExpandedChange = useCallback(
@@ -400,61 +255,61 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // react-aria's press handling, which doesn't tell us whether it was a click or Enter/Space, so
   // the capture-phase listeners below record it: opening the menu via keyboard autofocuses the
   // first item, while a mouse click does not.
-  const lastInputModalityRef = useRef<ContextMenuEntryMethod>('pointer');
+  const lastInputModalityRef = useRef<ContextMenuTrigger>('pointer');
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
-    const arm = (event: PointerEvent | KeyboardEvent) => {
+    const onInputStart = (event: PointerEvent | KeyboardEvent) => {
       lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
       if (event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ') {
         isActivatingRef.current = true;
       }
     };
-    const disarm = () => {
+    const onInputEnd = () => {
       isActivatingRef.current = false;
     };
-    container.addEventListener('pointerdown', arm, { capture: true });
-    container.addEventListener('keydown', arm, { capture: true });
+    container.addEventListener('pointerdown', onInputStart, { capture: true });
+    container.addEventListener('keydown', onInputStart, { capture: true });
     // pointerup can land outside the row (or the tree) after a drag, so listen on the window.
-    window.addEventListener('pointerup', disarm, { capture: true });
-    container.addEventListener('keyup', disarm, { capture: true });
+    window.addEventListener('pointerup', onInputEnd, { capture: true });
+    container.addEventListener('keyup', onInputEnd, { capture: true });
     return () => {
-      container.removeEventListener('pointerdown', arm, { capture: true });
-      container.removeEventListener('keydown', arm, { capture: true });
-      window.removeEventListener('pointerup', disarm, { capture: true });
-      container.removeEventListener('keyup', disarm, { capture: true });
+      container.removeEventListener('pointerdown', onInputStart, { capture: true });
+      container.removeEventListener('keydown', onInputStart, { capture: true });
+      window.removeEventListener('pointerup', onInputEnd, { capture: true });
+      container.removeEventListener('keyup', onInputEnd, { capture: true });
     };
   }, []);
 
   // Use refs so the callbacks below can read the latest values without re-creating.
   const expandedRef = useRef(expanded);
   expandedRef.current = expanded;
-  const collapsedDataRef = useRef(collapsedData);
-  collapsedDataRef.current = collapsedData;
+  const hoistedDataRef = useRef(hoistedData);
+  hoistedDataRef.current = hoistedData;
   const selectedStoryIdRef = useRef(selectedStoryId);
   selectedStoryIdRef.current = selectedStoryId;
 
   const updateFocusedItemId = useCallback((itemId: string | null) => {
     focusedItemIdRef.current = itemId;
-    setFocusedItemId((current) => (current === itemId ? current : itemId));
+    setFocusedItemId(itemId);
   }, []);
 
-  // Helper: returns true when an item ID corresponds to a branch (has children).
-  const isBranch = useCallback((id: string): boolean => {
-    const item = collapsedDataRef.current[id];
-    return !!(
-      item &&
-      'children' in item &&
-      Array.isArray((item as { children?: string[] }).children) &&
-      (item as { children: string[] }).children.length > 0
-    );
-  }, []);
+  // A branch toggles its own expansion. A leaf navigates to its story or docs page.
+  const activateRow = useCallback(
+    (itemId: string) => {
+      const item = hoistedDataRef.current[itemId];
+      if (item && isBranch(item)) {
+        setExpanded({ ids: [itemId], append: true, value: !expandedRef.current.has(itemId) });
+      } else {
+        onSelectStoryId(itemId);
+      }
+    },
+    [onSelectStoryId, setExpanded]
+  );
 
-  // Click (single) and Space both fire onSelectionChange.
-  //   • Branch items: toggle expand/collapse (do NOT navigate).
-  //   • Leaf items: navigate to story/docs via onSelectStoryId.
+  // A pointer click and Space both reach the tree as a selection change.
   const handleSelectionChange = useCallback(
     (keys: 'all' | Set<React.Key>) => {
       if (keys === 'all') {
@@ -467,80 +322,33 @@ export const Tree = React.memo<TreeProps>(function Tree({
         return;
       }
       const selectedKey = Array.from(keys)[0];
-      if (!selectedKey || typeof selectedKey !== 'string') {
-        return;
-      }
-
-      if (isBranch(selectedKey)) {
-        setExpanded({
-          ids: [selectedKey],
-          append: true,
-          value: !expandedRef.current.has(selectedKey),
-        });
-      } else {
-        onSelectStoryId(selectedKey);
+      if (typeof selectedKey === 'string') {
+        activateRow(selectedKey);
       }
     },
-    [onSelectStoryId, isBranch, setExpanded]
+    [activateRow]
   );
 
-  // Enter / double-click fire onAction — same logic as single click.
-  const handleAction = useCallback(
-    (key: React.Key) => {
-      const keyStr = String(key);
-      if (isBranch(keyStr)) {
-        setExpanded({ ids: [keyStr], append: true, value: !expandedRef.current.has(keyStr) });
-      } else {
-        onSelectStoryId(keyStr);
-      }
-    },
-    [isBranch, setExpanded, onSelectStoryId]
-  );
+  // Enter and a double click reach the tree as an action.
+  const handleAction = useCallback((key: React.Key) => activateRow(String(key)), [activateRow]);
 
-  // Open or close the context menu. Stable callback for children. When the caller does not specify
-  // an entry method (the ⋯ button), derive it from the last input modality so Enter/Space open with
-  // keyboard semantics (autofocus) and a mouse click opens with pointer semantics.
-  const openContextMenu = useCallback((itemId: string, entryMethod?: ContextMenuEntryMethod) => {
-    setContextMenuState({ itemId, entryMethod: entryMethod ?? lastInputModalityRef.current });
+  // The open menu lives in a store rather than in React state: the tree renders nothing from it,
+  // and only the row that opens or closes its menu needs to re-render (see ContextMenuStore).
+  const contextMenuStoreRef = useRef<ContextMenuStore | null>(null);
+  contextMenuStoreRef.current ??= createContextMenuStore();
+
+  // Open or close the context menu. Stable callbacks for children. When the caller does not name an
+  // opener (the ⋯ button), take the last input modality, so that Enter and Space open the menu with
+  // keyboard semantics and a mouse click opens it with pointer semantics.
+  const openContextMenu = useCallback((itemId: string, openedBy?: ContextMenuTrigger) => {
+    contextMenuStoreRef.current!.setState({
+      itemId,
+      openedBy: openedBy ?? lastInputModalityRef.current,
+    });
   }, []);
-  const closeContextMenu = useCallback(() => setContextMenuState(null), []);
+  const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
 
-  // Preload a branch row's first child story on hover (restores the pre-rewrite behavior) so
-  // the preview has usually started loading by the time the user clicks. One delegated listener
-  // instead of a handler per row.
-  useEffect(() => {
-    const container = containerRef.current;
-    if (!container || !api) {
-      return;
-    }
-
-    let lastPreloadedId: string | null = null;
-    const onMouseOver = (event: MouseEvent) => {
-      const row = (event.target as Element | null)?.closest?.('[data-item-id]');
-      if (!row || !container.contains(row)) {
-        return;
-      }
-      const itemId = row.getAttribute('data-item-id');
-      if (!itemId || itemId === lastPreloadedId) {
-        return;
-      }
-      lastPreloadedId = itemId;
-      const item = collapsedDataRef.current[itemId];
-      if (
-        item &&
-        (item.type === 'component' || item.type === 'story') &&
-        'children' in item &&
-        item.children?.length
-      ) {
-        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]], options: { target: refId } });
-      }
-    };
-
-    container.addEventListener('mouseover', onMouseOver, { passive: true });
-    return () => container.removeEventListener('mouseover', onMouseOver);
-  }, [api, refId]);
-
-  // Track focused item via one MutationObserver, batched with rAF.
+  // Track the focused row with one MutationObserver: react-aria marks it with data-focused.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
@@ -550,39 +358,19 @@ export const Tree = React.memo<TreeProps>(function Tree({
     const focusedElement = container.querySelector<HTMLElement>(
       '[data-focused="true"][data-item-id]'
     );
-    const focusedId = focusedElement?.getAttribute('data-item-id') ?? null;
-    updateFocusedItemId(focusedId);
-
-    let rafId: number | null = null;
-    const pendingMutations: MutationRecord[] = [];
-
-    const processMutations = () => {
-      rafId = null;
-
-      for (const mutation of pendingMutations) {
-        if (
-          mutation.type === 'attributes' &&
-          mutation.attributeName === 'data-focused' &&
-          mutation.target instanceof HTMLElement
-        ) {
-          const el = mutation.target;
-          const itemId = el.getAttribute('data-item-id');
-
-          if (el.getAttribute('data-focused') === 'true') {
-            updateFocusedItemId(itemId);
-          } else if (focusedItemIdRef.current === itemId) {
-            updateFocusedItemId(null);
-          }
-        }
-      }
-
-      pendingMutations.length = 0;
-    };
+    updateFocusedItemId(focusedElement?.getAttribute('data-item-id') ?? null);
 
     const observer = new MutationObserver((mutations) => {
-      pendingMutations.push(...mutations);
-      if (rafId === null) {
-        rafId = requestAnimationFrame(processMutations);
+      for (const mutation of mutations) {
+        if (!(mutation.target instanceof HTMLElement)) {
+          continue;
+        }
+        const itemId = mutation.target.getAttribute('data-item-id');
+        if (mutation.target.getAttribute('data-focused') === 'true') {
+          updateFocusedItemId(itemId);
+        } else if (focusedItemIdRef.current === itemId) {
+          updateFocusedItemId(null);
+        }
       }
     });
 
@@ -592,286 +380,131 @@ export const Tree = React.memo<TreeProps>(function Tree({
       subtree: true,
     });
 
-    return () => {
-      observer.disconnect();
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
-      }
-    };
+    return () => observer.disconnect();
   }, [updateFocusedItemId]);
 
-  // Flattened visible rows in render order, with arithmetic geometry. The tree is
-  // virtualized, so most rows have no DOM node to measure: positions derive from the fixed
-  // row height plus the deterministic section gap (mirrored in TreeNode's padding rule).
-  const flatRows = useMemo(() => {
-    const ids: string[] = [];
-    const gapIds = new Set<string>();
-    const offsets: number[] = [];
-    // Indent depth per row (0 for a top-level root), used to place trace guide lines.
-    const depths: number[] = [];
-    const indexById = new Map<string, number>();
-    const subtreeBottoms = new Map<string, number>();
-    let y = 0;
-    let prevLevel1 = true;
-    const walk = (entries: TreeEntry[], level: number) => {
-      for (const entry of entries) {
-        const isLevel1 = level === 1;
-        const hasGap = isLevel1 && ids.length > 0 && !prevLevel1;
-        if (hasGap) {
-          gapIds.add(entry.id);
-        }
-        indexById.set(entry.id, ids.length);
-        ids.push(entry.id);
-        depths.push(level - 1);
-        offsets.push(y + (hasGap ? SECTION_GAP : 0));
-        y += TREE_ROW_HEIGHT + (hasGap ? SECTION_GAP : 0);
-        prevLevel1 = isLevel1;
-        if (entry.resolvedChildren?.length && expanded.has(entry.id)) {
-          walk(entry.resolvedChildren, level + 1);
-        }
-        subtreeBottoms.set(entry.id, y);
-      }
-    };
-    walk(tree, 1);
-    return { ids, gapIds, offsets, depths, indexById, subtreeBottoms, totalHeight: y };
-  }, [tree, expanded]);
-  const flatRowsRef = useRef(flatRows);
-  flatRowsRef.current = flatRows;
+  // Geometry of the visible rows, in render order.
+  const rows = useMemo(() => flattenRows(tree, expanded), [tree, expanded]);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
 
-  // VSCode-style sticky scroll, rendered as an overlay above the virtualized scroller (CSS
-  // position:sticky cannot work on virtualized, absolutely-positioned rows). The chain is the
-  // strict ancestors of the row at the viewport's top line, plus that row itself while its own
-  // subtree continues below it; each pinned row hands off once the rows below its slot leave
-  // its subtree, so an incoming container's header is never covered by the stack.
-  const [pinnedIds, setPinnedIds] = useState<string[]>([]);
+  // The ancestors of the top row, kept in view above the tree.
+  const [stickyIds, setStickyIds] = useState<string[]>([]);
+  const stickyIdsRef = useRef<string[]>([]);
 
-  // Draw the whole trace grid into two SVG paths in viewport space — the pinned stack at
-  // fixed slots, the scrolling rows offset by scrollTop. The grey path carries every guide (a
-  // level-D row fills columns 1..D at x=k*20-7; adjacent rows' segments abut into continuous lines
-  // with no merge). The blue path re-draws only the hovered/focused row's own slice, restoring the
-  // per-row highlight the old row-level `--trace-color` gave. Written imperatively so scrolling and
-  // hovering never re-render the tree. Reads the last pinned chain from pinnedIdsRef.
-  const drawTraces = useCallback(() => {
-    const scroller = containerRef.current;
-    if (!scroller) {
-      return;
-    }
-    const { offsets, depths, indexById } = flatRowsRef.current;
-    const data = collapsedDataRef.current;
-    const chain = pinnedIdsRef.current;
-    const targetY = scroller.scrollTop;
-    const viewH = scroller.clientHeight;
-    const rowH = TREE_ROW_HEIGHT;
-    const slots = chain.length;
-    const stackBottom = slots * rowH;
-    const depthOf = (id: string) => {
-      const entry = data[id];
-      return entry ? (entry.type === 'root' ? 0 : (entry.depth ?? 0)) : 0;
-    };
-    const seg = (parts: string[], col: number, y1: number, y2: number) => {
-      const x = col * 20 - 7 + 0.5; // +0.5 keeps the 1px stroke on the device-pixel grid
-      parts.push(`M${x} ${Math.round(y1)}V${Math.round(y2)}`);
-    };
+  // The row under the pointer. The indent lines mark it, and the tree preloads its first story.
+  const hoveredRowRef = useRef<HoveredRow | null>(null);
 
-    const grey: string[] = [];
-    for (let s = 0; s < slots; s += 1) {
-      const depth = depthOf(chain[s]);
-      for (let k = 1; k <= depth; k += 1) {
-        seg(grey, k, s * rowH, (s + 1) * rowH);
-      }
-    }
-    for (let i = 0; i < offsets.length; i += 1) {
-      const yTop = offsets[i] - targetY;
-      if (yTop >= viewH) {
-        break;
-      }
-      const yBot = yTop + rowH;
-      if (yBot <= stackBottom) {
-        continue; // occluded by the pinned stack
-      }
-      const top = Math.max(yTop, stackBottom);
-      for (let k = 1; k <= depths[i]; k += 1) {
-        seg(grey, k, top, yBot);
-      }
-    }
-    tracePathRef.current?.setAttribute('d', grey.join(''));
+  const { layer: indentLines, redraw: redrawIndentLines } = useIndentLines({
+    scrollerRef: containerRef,
+    rowsRef,
+    stickyIdsRef,
+    hoveredRowRef,
+    focusedItemId,
+    selectedParentId,
+  });
 
-    // Blue overlay: the hovered/focused row's own guide slice (drawn over the grey path).
-    const blue: string[] = [];
-    const naturalSlice = (id: string) => {
-      const idx = indexById.get(id);
-      if (idx === undefined) {
-        return;
-      }
-      const yTop = offsets[idx] - targetY;
-      const yBot = yTop + rowH;
-      if (yBot <= stackBottom || yTop >= viewH) {
-        return; // occluded or off-screen
-      }
-      const top = Math.max(yTop, stackBottom);
-      for (let k = 1; k <= depths[idx]; k += 1) {
-        seg(blue, k, top, yBot);
-      }
-    };
-    const hovered = hoveredTraceRef.current;
-    if (hovered?.pinned) {
-      const slot = chain.indexOf(hovered.id);
-      if (slot >= 0) {
-        const depth = depthOf(hovered.id);
-        for (let k = 1; k <= depth; k += 1) {
-          seg(blue, k, slot * rowH, (slot + 1) * rowH);
-        }
-      }
-    } else if (hovered) {
-      naturalSlice(hovered.id);
-    }
-    const focused = focusedItemIdRef.current;
-    if (focused && focused !== hovered?.id) {
-      naturalSlice(focused);
-    }
-    traceHoverPathRef.current?.setAttribute('d', blue.join(''));
-  }, []);
-
+  // Recompute the sticky rows and the indent lines on every scroll, and whenever the geometry
+  // changes. A resize alone can reveal rows, so the scroller is observed as well.
   useEffect(() => {
     const scroller = containerRef.current;
     if (!scroller) {
       return;
     }
-    let rafId: number | null = null;
+    let frame: number | null = null;
     const update = () => {
-      rafId = null;
-      const { ids, offsets, indexById, subtreeBottoms } = flatRowsRef.current;
-      const targetY = scroller.scrollTop;
-      // First row whose bottom is below the top line (bottom = next row's offset, or the
-      // row's own offset + height for the last row).
-      let lo = 0;
-      let hi = ids.length - 1;
-      let topIndex = ids.length;
-      while (lo <= hi) {
-        const mid = (lo + hi) >> 1;
-        const bottom = mid + 1 < ids.length ? offsets[mid + 1] : offsets[mid] + TREE_ROW_HEIGHT;
-        if (bottom <= targetY) {
-          lo = mid + 1;
-        } else {
-          topIndex = mid;
-          hi = mid - 1;
-        }
-      }
-      let chainIds: string[] = [];
-      if (topIndex < ids.length) {
-        const topId = ids[topIndex];
-        chainIds = [...getAncestorIds(collapsedDataRef.current, topId)].reverse();
-        const nextId = ids[topIndex + 1];
-        if (nextId && getAncestorIds(collapsedDataRef.current, nextId).includes(topId)) {
-          chainIds.push(topId);
-        }
-        // A chain row pins only while its natural row is above its slot (a chain root at the
-        // top of the viewport is not overlaid by its own copy) and its subtree still extends
-        // below the slot's bottom edge — otherwise the next container's header would slide
-        // under the stack, so the bottom pinned rows hand off to it instead (VSCode push-out).
-        // Both conditions fail monotonically with depth, so dropped rows form a suffix and
-        // surviving rows keep their slot index.
-        chainIds = chainIds.filter((id, i) => {
-          const index = indexById.get(id);
-          return (
-            index !== undefined &&
-            offsets[index] < targetY + i * TREE_ROW_HEIGHT &&
-            (subtreeBottoms.get(id) ?? 0) > targetY + (i + 1) * TREE_ROW_HEIGHT
-          );
-        });
-      }
-      setPinnedIds((prev) =>
-        prev.length === chainIds.length && prev.every((id, i) => id === chainIds[i])
-          ? prev
-          : chainIds
+      frame = null;
+      const stickyRowIds = getStickyRowIds(
+        rowsRef.current,
+        hoistedDataRef.current,
+        scroller.scrollTop
       );
-      pinnedIdsRef.current = chainIds;
-      drawTraces();
+      stickyIdsRef.current = stickyRowIds;
+      setStickyIds((current) =>
+        current.length === stickyRowIds.length &&
+        current.every((id, index) => id === stickyRowIds[index])
+          ? current
+          : stickyRowIds
+      );
+      redrawIndentLines();
     };
     const scheduleUpdate = () => {
-      if (rafId === null) {
-        rafId = requestAnimationFrame(update);
-      }
+      frame ??= requestAnimationFrame(update);
     };
     update();
     scroller.addEventListener('scroll', scheduleUpdate, { passive: true });
+    const resizeObserver = new ResizeObserver(scheduleUpdate);
+    resizeObserver.observe(scroller);
     return () => {
       scroller.removeEventListener('scroll', scheduleUpdate);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
+      resizeObserver.disconnect();
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
       }
     };
-  }, [flatRows, drawTraces]);
+  }, [rows, redrawIndentLines]);
 
-  // Redraw the trace grid when the tree wants to (hover moves the blue slice, focus/geometry
-  // changes shift lines) without waiting for a scroll event.
+  // One delegated listener for everything the hovered row drives: the accent indent line, and the
+  // preload of the first story of a branch. It sits on the wrapper, so it also sees the sticky
+  // rows, which are outside the scroller.
   useEffect(() => {
     const wrapper = treeWrapperRef.current;
     if (!wrapper) {
       return;
     }
-    const setHovered = (next: { id: string; pinned: boolean } | null) => {
-      const prev = hoveredTraceRef.current;
-      if (prev?.id === next?.id && prev?.pinned === next?.pinned) {
+    let preloadedId: string | null = null;
+    const setHovered = (next: HoveredRow | null) => {
+      const previous = hoveredRowRef.current;
+      if (previous?.id === next?.id && previous?.sticky === next?.sticky) {
         return;
       }
-      hoveredTraceRef.current = next;
-      drawTraces();
+      hoveredRowRef.current = next;
+      redrawIndentLines();
+
+      const item = next && !next.sticky ? hoistedDataRef.current[next.id] : undefined;
+      if (item && next!.id !== preloadedId && isBranch(item)) {
+        preloadedId = next!.id;
+        // The preview has then usually started to load by the time the user clicks.
+        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]], options: { target: refId } });
+      }
     };
     const onOver = (event: Event) => {
       const target = event.target as Element | null;
-      const pinned = target?.closest?.('[data-pinned-item-id]');
-      if (pinned) {
-        setHovered({ id: pinned.getAttribute('data-pinned-item-id')!, pinned: true });
+      const sticky = target?.closest?.('[data-sticky-item-id]');
+      if (sticky) {
+        setHovered({ id: sticky.getAttribute('data-sticky-item-id')!, sticky: true });
         return;
       }
-      const natural = target?.closest?.('[data-item-id]');
-      setHovered(natural ? { id: natural.getAttribute('data-item-id')!, pinned: false } : null);
+      const row = target?.closest?.('[data-item-id]');
+      setHovered(row ? { id: row.getAttribute('data-item-id')!, sticky: false } : null);
     };
     const onLeave = () => setHovered(null);
-    wrapper.addEventListener('mouseover', onOver);
+    wrapper.addEventListener('mouseover', onOver, { passive: true });
     wrapper.addEventListener('mouseleave', onLeave);
     return () => {
       wrapper.removeEventListener('mouseover', onOver);
       wrapper.removeEventListener('mouseleave', onLeave);
     };
-  }, [drawTraces]);
-
-  // Keyboard focus also highlights its row's slice.
-  useEffect(() => {
-    drawTraces();
-  }, [focusedItemId, drawTraces]);
-
-  // Clicking a pinned row scrolls its real row to the exact position the pinned copy occupies
-  // (slot i of the overlay), so nothing appears to move.
-  const scrollPinnedRowIntoPlace = useCallback((itemId: string, overlayIndex: number) => {
-    const scroller = containerRef.current;
-    const { offsets, indexById } = flatRowsRef.current;
-    const index = indexById.get(itemId);
-    if (!scroller || index === undefined) {
-      return;
-    }
-    scroller.scrollTop = offsets[index] - overlayIndex * TREE_ROW_HEIGHT;
-  }, []);
+  }, [api, refId, redrawIndentLines]);
 
   // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
-  // pinned overlay covers the top of the viewport, so the target lands below the prospective
-  // stack (the target's own ancestors).
+  // sticky rows cover the top of the viewport, so the target lands below the stack it would
+  // produce (its own ancestors).
   const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
     const scroller = containerRef.current;
     if (!scroller) {
       return false;
     }
-    const { offsets, indexById } = flatRowsRef.current;
+    const { offsets, indexById } = rowsRef.current;
     const index = indexById.get(itemId);
     if (index === undefined) {
       return false;
     }
     const offset = offsets[index];
-    // The pinned overlay covers `stack` px at the top; the floating sidebar-bottom widget covers
-    // `bottomInset` px at the bottom (its height, reserved as the scroller's padding-bottom). A
-    // row is only truly visible between them.
-    const stack = getAncestorIds(collapsedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
+    // The sticky rows cover `stack` px at the top. The floating sidebar-bottom widget covers
+    // `bottomInset` px at the bottom, reserved as the scroller's padding-bottom. A row is fully
+    // visible only between them.
+    const stack = getAncestorIds(hoistedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
     const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
     if (block === 'center') {
       const half = Math.max((scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT) / 2, stack);
@@ -889,38 +522,34 @@ export const Tree = React.memo<TreeProps>(function Tree({
     return true;
   }, []);
 
-  // Keep the keyboard-focused row clear of the pinned overlay and the floating bottom widget.
-  // RAC scrolls a focused row only within the raw viewport, so a row behind either overlay counts
-  // as "visible" and no scroll fires — the user has to keep pressing until focus clears the stack.
-  // scrollRowIntoView knows both insets, and no-ops when the row is already fully visible. Gated to
-  // keyboard navigation: a pointer click must not jump-scroll the row it lands on.
+  // Keep the keyboard-focused row clear of the sticky rows and of the floating bottom widget.
+  // React-aria scrolls a focused row inside the raw viewport only, so a row behind either overlay
+  // counts as visible and no scroll happens. The user then has to keep pressing until focus clears
+  // the stack. A pointer click must not jump-scroll the row it lands on, so this runs for keyboard
+  // navigation only.
   useEffect(() => {
     if (focusedItemId && lastInputModalityRef.current === 'keyboard') {
       scrollRowIntoView(focusedItemId, 'nearest');
     }
   }, [focusedItemId, scrollRowIntoView]);
 
-  // Listen for the global context-menu shortcut and open the menu for the right story.
-  // Prefer the currently focused tree item; fall back to the selected story when focus is outside
-  // the tree. RAC sets data-focused="true" on the focused row, and we track the current story with a ref.
+  // Open the context menu for the right row when the global shortcut fires. Prefer the focused
+  // row, and fall back to the selected story when focus is outside the tree.
   useEffect(() => {
-    if (!api) {
-      return;
-    }
-    let rafId: number | null = null;
+    let frame: number | null = null;
     const handler = () => {
-      // The event is broadcast to every tree (one per composed ref). Fall back to this
-      // tree's selected story only when no tree row has DOM focus anywhere, or the tree
-      // owning the focused row and the tree owning the selection would both open a menu.
+      // Every tree receives the event, one per composed ref. Fall back to the selected story of
+      // this tree only when no row anywhere holds DOM focus. Otherwise the tree that owns the
+      // focused row and the tree that owns the selection would both open a menu.
       const focusInAnyTree = !!document.activeElement?.closest('[data-item-id]');
       const itemId =
         focusedItemIdRef.current ?? (focusInAnyTree ? null : selectedStoryIdRef.current);
       if (!itemId) {
         return;
       }
-      // The popover anchors to the row's ⋯ button and is positioned once, on open, so an
-      // out-of-view target is first scrolled into view — virtualized rows mount only near
-      // the viewport — and the menu opens once the row has had a frame to mount.
+      // The popover anchors to the ⋯ button of the row and takes its position once, when it
+      // opens. A row outside the viewport is therefore scrolled into view first, because a
+      // virtualized row mounts only near the viewport, and the menu opens on the next frame.
       const scroller = containerRef.current;
       const row = scroller?.querySelector(`[data-item-id="${CSS.escape(itemId)}"]`);
       const rowRect = row?.getBoundingClientRect();
@@ -934,31 +563,24 @@ export const Tree = React.memo<TreeProps>(function Tree({
         openContextMenu(itemId, 'keyboard');
         return;
       }
-      if (row) {
-        row.scrollIntoView({ block: 'center' });
-      } else {
-        scrollRowIntoView(itemId, 'center');
-      }
-      rafId = requestAnimationFrame(() => {
-        rafId = requestAnimationFrame(() => {
-          rafId = null;
-          openContextMenu(itemId, 'keyboard');
-        });
+      scrollRowIntoView(itemId, 'center');
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        openContextMenu(itemId, 'keyboard');
       });
     };
     api.on(SIDEBAR_OPEN_CONTEXT_MENU, handler);
     return () => {
       api.off(SIDEBAR_OPEN_CONTEXT_MENU, handler);
-      if (rafId !== null) {
-        cancelAnimationFrame(rafId);
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
       }
     };
   }, [api, openContextMenu, scrollRowIntoView]);
 
-  // Scroll the selected story into view when it changes. Newly selected rows may not be in
-  // the DOM yet (their ancestors expand in the same commit but only render on the next one),
-  // so retry on expansion changes until the row exists — but never re-scroll for the same
-  // selection once it succeeded.
+  // Scroll the selected story into view when it changes. A newly selected row may not be in the
+  // DOM yet, because its ancestors expand in the same commit but render on the next one. The
+  // effect therefore retries on every expansion change, and stops once the row exists.
   const lastScrolledIdRef = useRef<string | null>(null);
   useEffect(() => {
     if (!selectedStoryId || lastScrolledIdRef.current === selectedStoryId) {
@@ -969,44 +591,30 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
   }, [selectedStoryId, expanded, scrollRowIntoView]);
 
-  // Center the selected story once when the tree mounts with a selection (deep links).
-  // A selection made after a selection-less mount is a user click on a visible row, where
-  // a center-scroll would yank the row out from under the cursor.
-  const hadInitialSelectionRef = useRef(selectedStoryId != null);
-  const [mountCounter, setMountCounter] = useState(0);
-  useEffect(() => setMountCounter(1), []);
+  // Center the selected story once, when the tree mounts with a selection already made (a deep
+  // link). A selection that arrives after a selection-less mount is a click on a visible row,
+  // where a center scroll would pull the row out from under the pointer.
+  const needsInitialCenterRef = useRef(selectedStoryId != null);
   useEffect(() => {
-    if (mountCounter !== 1) {
+    if (!needsInitialCenterRef.current || !selectedStoryId) {
       return;
     }
-    if (!hadInitialSelectionRef.current) {
-      setMountCounter(2);
-      return;
-    }
-    if (selectedStoryId && scrollRowIntoView(selectedStoryId, 'center')) {
+    if (scrollRowIntoView(selectedStoryId, 'center')) {
+      needsInitialCenterRef.current = false;
       lastScrolledIdRef.current = selectedStoryId;
-      setMountCounter(2);
     }
-  }, [mountCounter, selectedStoryId, expanded, scrollRowIntoView]);
+  }, [selectedStoryId, expanded, scrollRowIntoView]);
 
   // One dependencies array shared by every Collection level, so react-aria's cached nodes are
   // invalidated consistently — a drifted copy at one level renders stale rows. Deliberately
   // minimal: invalidating the collection re-renders every row in the tree, which takes seconds
-  // on fully-expanded trees. Selection and context-menu state reach rows through RowUiContext
-  // (subscription store) instead, and statuses through StatusContext. hasTestProviders is
-  // baked into cached row elements, so it must invalidate them when a provider registers.
+  // on fully-expanded trees. The open context menu reaches rows through ContextMenuStore
+  // instead, and the statuses through StatusContext. hasTestProviders is baked into cached row
+  // elements, so it must invalidate them when a provider registers.
   const collectionDependencies = useMemo(
     () => [expanded, hasTestProviders],
     [expanded, hasTestProviders]
   );
-
-  // Feed interaction state to rows without re-rendering the tree: only rows whose derived
-  // value changes re-render (see RowUiContext).
-  const rowUiStoreRef = useRef<ReturnType<typeof createRowUiStore> | null>(null);
-  rowUiStoreRef.current ??= createRowUiStore();
-  useEffect(() => {
-    rowUiStoreRef.current!.setState({ selectedParentId, contextMenu: contextMenuState });
-  }, [selectedParentId, contextMenuState]);
 
   // Memoize renderNode's returned closure so Collection receives a stable children prop
   // as long as the relevant inputs are stable.
@@ -1017,7 +625,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
         refId,
         onSelectStoryId,
         expanded,
-        gapIds: flatRows.gapIds,
+        sectionStartIds: rows.sectionStartIds,
+        labelContext,
         openContextMenu,
         closeContextMenu,
         hasTestProviders,
@@ -1028,7 +637,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
       refId,
       onSelectStoryId,
       expanded,
-      flatRows.gapIds,
+      rows.sectionStartIds,
+      labelContext,
       openContextMenu,
       closeContextMenu,
       hasTestProviders,
@@ -1043,14 +653,18 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
   // every TreeNode through the context.
   const statusContextValue = useMemo(
-    () => ({ data, allStatuses, groupDualStatus, isModifiedFilterActive }),
-    [data, allStatuses, groupDualStatus, isModifiedFilterActive]
+    () => ({ groupDualStatus, isModifiedFilterActive }),
+    [groupDualStatus, isModifiedFilterActive]
   );
 
-  // TODO: consider passing more data via the provider to limit prop drilling in renderNode? Any advantage?
+  const collapseStickyRow = useCallback(
+    (itemId: string) => setExpanded({ ids: [itemId], append: true, value: false }),
+    [setExpanded]
+  );
+
   return (
     <StatusContext.Provider value={statusContextValue}>
-      <RowUiContext.Provider value={rowUiStoreRef.current}>
+      <ContextMenuStoreContext.Provider value={contextMenuStoreRef.current}>
         <TreeWrapper ref={treeWrapperRef}>
           <Virtualizer layout={treeLayout}>
             <StyledAriaTree
@@ -1071,63 +685,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
               </Collection>
             </StyledAriaTree>
           </Virtualizer>
-          {pinnedIds.length > 0 && (
-            // Purely a pointer affordance: the real rows carry the accessible tree semantics,
-            // so the overlay stays out of the tab order and the accessibility tree.
-            <PinnedOverlay data-testid="sticky-overlay" aria-hidden="true">
-              {pinnedIds.map((id, overlayIndex) => {
-                const entry = collapsedData[id];
-                if (!entry) {
-                  return null;
-                }
-                const level = entry.type === 'root' ? 0 : (entry.depth ?? 0);
-                return (
-                  <PinnedRow
-                    key={id}
-                    $level={level}
-                    data-pinned-item-id={id}
-                    type="button"
-                    tabIndex={-1}
-                    onClick={() => scrollPinnedRowIntoPlace(id, overlayIndex)}
-                  >
-                    <PinnedRowIcon
-                      data-testid="pinned-collapse"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        setExpanded({ ids: [id], append: true, value: false });
-                        scrollPinnedRowIntoPlace(id, overlayIndex);
-                      }}
-                    >
-                      {entry.type === 'root' ? (
-                        <CollapseIcon isExpanded />
-                      ) : (
-                        <>
-                          <span className="hover-only">
-                            <CollapseIcon isExpanded />
-                          </span>
-                          <span className="static-only">
-                            <TypeIconWithSymbol item={entry} />
-                          </span>
-                        </>
-                      )}
-                    </PinnedRowIcon>
-                    <PinnedLabel>
-                      {entry.renderLabel?.(entry, api, labelContext) || entry.name}
-                    </PinnedLabel>
-                  </PinnedRow>
-                );
-              })}
-            </PinnedOverlay>
-          )}
-          <TraceLayer aria-hidden="true" data-testid="trace-layer">
-            <path ref={tracePathRef} data-trace-grid />
-            <path ref={traceHoverPathRef} data-trace-hover />
-          </TraceLayer>
+          <TreeStickyRows
+            ids={stickyIds}
+            data={hoistedData}
+            api={api}
+            labelContext={labelContext}
+            scrollerRef={containerRef}
+            rowsRef={rowsRef}
+            onCollapse={collapseStickyRow}
+          />
+          {indentLines}
         </TreeWrapper>
-        {supportsAnchorPositioning && focusedItemShortcutLabel && (
+        {focusedItemShortcutLabel && (
           <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
         )}
-      </RowUiContext.Provider>
+      </ContextMenuStoreContext.Provider>
     </StatusContext.Provider>
   );
 });
@@ -1158,10 +730,13 @@ function useStableIdentity<T extends Record<string, any> | undefined>(value: T):
   return ref.current;
 }
 
-interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelectStoryId'> {
+interface RenderNodeProps extends Pick<
+  TreeNodeProps,
+  'api' | 'refId' | 'onSelectStoryId' | 'labelContext'
+> {
   expanded: Set<string>;
   /** Section-start rows that carry the inter-section gap as padding. */
-  gapIds: Set<string>;
+  sectionStartIds: Set<string>;
   openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
   closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
   hasTestProviders: boolean;
@@ -1171,7 +746,7 @@ interface RenderNodeProps extends Pick<TreeNodeProps, 'api' | 'refId' | 'onSelec
 
 function renderNode({
   expanded,
-  gapIds,
+  sectionStartIds,
   openContextMenu,
   closeContextMenu,
   hasTestProviders,
@@ -1185,7 +760,7 @@ function renderNode({
         key={item.id}
         item={item}
         isExpanded={expanded.has(item.id)}
-        hasSectionGap={gapIds.has(item.id)}
+        startsSection={sectionStartIds.has(item.id)}
         openContextMenu={openContextMenu}
         closeContextMenu={closeContextMenu}
         hasTestProviders={hasTestProviders}

@@ -3,7 +3,7 @@ import React from 'react';
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { IconSymbolsDecorator } from './Filter.story-helpers.tsx';
-import { TypeIcon, TypeIconWithSymbol } from './TypeIcon.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
 const meta = {
   title: 'Sidebar/TypeIcon',

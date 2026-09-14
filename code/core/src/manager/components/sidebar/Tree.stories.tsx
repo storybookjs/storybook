@@ -19,7 +19,7 @@ import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
-import { TREE_ROW_HEIGHT } from './TreeNode.tsx';
+import { TREE_ROW_HEIGHT } from './treeGeometry.ts';
 import { index } from './mockdata.large.ts';
 
 const managerContext: any = {
@@ -366,10 +366,19 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
       },
     },
   },
-  // Modified branch icon only renders when the modified status filter is
-  // active; activate it so the dual-slot design (change + test) is visible.
+  // The modified branch icon renders only while the modified status filter is active. Activate the
+  // filter, so that both slots (change and test) are visible.
   ['status-value:modified']
 );
+
+WithChangeDetectionAndTestStatus.play = async ({ canvasElement }) => {
+  // Each slot renders its own icon on the leaf row: the change status and the test status.
+  const leafRow = canvasElement.querySelector(`[data-item-id="${dualSlotStoryId}"]`)!;
+  await waitFor(() => {
+    expect(leafRow.querySelector('[data-testid="tree-change-status-button"]')).not.toBeNull();
+    expect(leafRow.querySelector('[data-testid="tree-test-status-button"]')).not.toBeNull();
+  });
+};
 
 /**
  * Ctrl+Shift+U flow: the tree opens the menu for the selected story when the shortcut's channel
@@ -626,16 +635,16 @@ export const StickyAncestors: Story = {
     );
   },
   play: async ({ canvasElement }) => {
-    // The virtualized tree is its own scroll container; pinned ancestors render in an overlay.
+    // The tree is the scroll container. The sticky ancestors render in an overlay above it.
     const scroller = canvasElement.querySelector<HTMLElement>('[role="treegrid"]')!;
     const overlayIds = () =>
       [
-        ...canvasElement.querySelectorAll('[data-testid="sticky-overlay"] [data-pinned-item-id]'),
-      ].map((el) => el.getAttribute('data-pinned-item-id'));
+        ...canvasElement.querySelectorAll('[data-testid="sticky-overlay"] [data-sticky-item-id]'),
+      ].map((el) => el.getAttribute('data-sticky-item-id'));
     const frame = () =>
       new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
-    // The selected deep story is centered on mount; the overlay shows (a suffix of) its
+    // The tree centers the selected deep story on mount. The overlay then shows a suffix of its
     // ancestor chain, in order, and never the leaf itself.
     await waitFor(() => {
       const ids = overlayIds();
@@ -645,27 +654,35 @@ export const StickyAncestors: Story = {
     });
 
     await expect(
-      canvasElement.querySelector('[data-pinned-item-id="webapp-screens"]')
+      canvasElement.querySelector('[data-sticky-item-id="webapp-screens"]')
     ).toHaveTextContent('Custom Webapp screens');
 
-    // Pinned branches carry the natural rows' icons: type icon at rest, chevron for hover.
-    // Pinned roots have no type icon and always show the chevron.
-    const pinnedBranch = canvasElement.querySelector(
-      `[data-pinned-item-id="${stickyChainIds[1]}"]`
+    // A sticky branch carries the icons of the scrolling rows: the type icon at rest and the
+    // chevron on hover. A sticky root has no type icon and always shows the chevron.
+    const stickyBranch = canvasElement.querySelector(
+      `[data-sticky-item-id="${stickyChainIds[1]}"]`
     )!;
-    expect(pinnedBranch.querySelector('.static-only use')).not.toBeNull();
-    expect(pinnedBranch.querySelector('.hover-only svg')).not.toBeNull();
-    const pinnedRoot = canvasElement.querySelector('[data-pinned-item-id="webapp-screens"]')!;
-    expect(pinnedRoot.querySelector('use')).toBeNull();
-    expect(pinnedRoot.querySelector('[data-testid="pinned-collapse"] svg')).not.toBeNull();
+    expect(stickyBranch.querySelector('.static-only use')).not.toBeNull();
+    expect(stickyBranch.querySelector('.hover-only svg')).not.toBeNull();
+    const stickyRoot = canvasElement.querySelector('[data-sticky-item-id="webapp-screens"]')!;
+    expect(stickyRoot.querySelector('use')).toBeNull();
+    expect(stickyRoot.querySelector('[data-testid="sticky-collapse"] svg')).not.toBeNull();
 
-    // Guide lines are drawn as one continuous SVG path spanning the sticky header
-    // and tree content. Assert the layer is present and has drawn segments.
-    const tracePath = canvasElement.querySelector('[data-testid="trace-layer"] path')!;
-    expect(tracePath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
+    // One SVG path carries the indent lines of the sticky rows and of the scrolling rows.
+    const gridPath = canvasElement.querySelector(
+      '[data-testid="indent-lines"] path[data-indent-lines="grid"]'
+    )!;
+    expect(gridPath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
 
-    // Jitter regression: overlay membership must be stable across single-pixel scrolls
-    // (membership derives from row offsets only, never from the engaged stack).
+    // The children of the selected story's parent keep a selection line, which stays visible
+    // while the tree is not hovered.
+    const selectionPath = canvasElement.querySelector(
+      '[data-testid="indent-lines"] path[data-indent-lines="selection"]'
+    )!;
+    expect(selectionPath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
+
+    // The overlay membership must not change on a single-pixel scroll. It derives from the row
+    // offsets alone, never from the rows that are already sticky.
     const stable = overlayIds().join();
     for (const delta of [-1, 1, -1]) {
       scroller.scrollTop += delta;
@@ -673,15 +690,15 @@ export const StickyAncestors: Story = {
       expect(overlayIds().join()).toBe(stable);
     }
 
-    // Back at the very top nothing is pinned.
+    // At the very top no row is sticky.
     scroller.scrollTop = 0;
     await waitFor(() => {
       expect(overlayIds()).toEqual([]);
     });
 
-    // A branch pins as soon as it is partially hidden: expand the first top-level branch,
-    // nudge it 10px past the viewport top, and it is already pinned. Collapsed branches
-    // never pin (their next row is not a descendant).
+    // A branch becomes sticky as soon as a scroll hides part of it. Expand the first top-level
+    // branch and move it 10px past the top of the viewport. A collapsed branch never becomes
+    // sticky, because the next row is not one of its descendants.
     const firstRow = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
     const firstRowId = firstRow.getAttribute('data-item-id');
     // The virtualizer disables pointer events on rows briefly while scrolling.
@@ -694,8 +711,8 @@ export const StickyAncestors: Story = {
       expect(overlayIds()).toEqual([firstRowId]);
     });
 
-    // Push-out handoff: the pinned row lets go one slot before the next section's header
-    // reaches the stack, instead of covering it (VSCode-style).
+    // The sticky row hands its slot over one row before the header of the next section reaches
+    // the stack, instead of covering that header.
     const subtreeBottom =
       canvasElement.querySelectorAll(`[data-item-id^="${firstRowId}"]`).length * TREE_ROW_HEIGHT;
     scroller.scrollTop = subtreeBottom - 2 * TREE_ROW_HEIGHT;
@@ -711,10 +728,10 @@ export const StickyAncestors: Story = {
       expect(overlayIds()).toEqual([firstRowId]);
     });
 
-    // Clicking the pinned chevron collapses the node and lands its natural row in the slot
-    // the pinned copy occupied.
-    const pinnedFirst = canvasElement.querySelector(`[data-pinned-item-id="${firstRowId}"]`)!;
-    await userEvent.click(within(pinnedFirst as HTMLElement).getByTestId('pinned-collapse'));
+    // A click on the sticky chevron collapses the node and moves its own row into the slot that
+    // the sticky copy held.
+    const stickyFirst = canvasElement.querySelector(`[data-sticky-item-id="${firstRowId}"]`)!;
+    await userEvent.click(within(stickyFirst as HTMLElement).getByTestId('sticky-collapse'));
     await waitFor(() => {
       expect(overlayIds()).toEqual([]);
       expect(scroller.scrollTop).toBe(0);
@@ -759,9 +776,9 @@ export const StickyAncestorsDark: Story = {
 };
 
 /**
- * Arrow-up navigation must keep the focused row clear of the pinned overlay. React-aria only
- * scrolls a focused row within the raw viewport, so rows behind the sticky stack would otherwise
- * stay obscured until focus climbed past the whole stack (one wasted press per pinned row).
+ * Arrow-up navigation must keep the focused row clear of the sticky rows. React-aria scrolls a
+ * focused row inside the raw viewport only, so a row behind the sticky rows stays hidden until the
+ * focus climbs past the whole stack. That costs the user one key press for each sticky row.
  */
 export const StickyKeyboardReveal: Story = {
   args: { refId: DEFAULT_REF_ID },
@@ -785,7 +802,7 @@ export const StickyKeyboardReveal: Story = {
     const focusedRow = () =>
       canvasElement.querySelector<HTMLElement>('[data-item-id][data-focused="true"]');
 
-    // On mount the selected deep story is centered, pinning its ancestor chain.
+    // On mount the tree centers the selected deep story, which makes its ancestors sticky.
     await waitFor(() => expect(overlay()).not.toBeNull());
     const leaf = canvasElement.querySelector<HTMLElement>(`[data-item-id="${stickyStoryId}"]`)!;
     // The virtualizer briefly disables pointer events on rows while it settles.
@@ -793,10 +810,10 @@ export const StickyKeyboardReveal: Story = {
     await userEvent.click(leaf);
     await waitFor(() => expect(focusedRow()?.getAttribute('data-item-id')).toBe(stickyStoryId));
 
-    // Climb toward the pinned stack. Each ArrowUp lands focus on an ancestor that is behind the
-    // sticky overlay, so the scroll must follow — scrollTop drops by a row each step. (The test
-    // renderer sizes the virtual scroll view oddly, so row rects are unreliable; scrollTop is not,
-    // and it is what a stuck reveal would leave unchanged.)
+    // Climb toward the sticky rows. Each ArrowUp moves focus to an ancestor behind the overlay,
+    // so the tree must scroll and scrollTop must drop by one row at each step. The test renderer
+    // sizes the virtual scroll view in its own way, so the row rectangles are unreliable.
+    // scrollTop is reliable, and a reveal that does not happen leaves it unchanged.
     const scrollTops: number[] = [];
     for (let i = 0; i < 4; i += 1) {
       await userEvent.keyboard('{ArrowUp}');

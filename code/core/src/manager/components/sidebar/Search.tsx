@@ -156,7 +156,7 @@ const Actions = styled.div({
   gap: 2,
 });
 
-// Fills the remaining sidebar height: the virtualized tree inside scrolls itself.
+// Fill the remaining sidebar height. The virtualized tree inside scrolls itself.
 const FocusContainer = styled.div({
   outline: 0,
   flex: '1 1 auto',
@@ -206,8 +206,8 @@ export const Search = React.memo<SearchProps>(function Search({
         const ownStatusValues = Object.values(storyStatuses ?? {})
           .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
           .map((status) => status.value);
-        // A story whose only statuses are review-typed has no own status; fall back to the
-        // group aggregate instead of surfacing the 'unknown' placeholder value.
+        // A story can carry review statuses only. Such a story has no status of its own, so use
+        // the group status instead of the 'unknown' placeholder value.
         const mostCriticalStatusValue = ownStatusValues.length
           ? getMostCriticalStatusValue(ownStatusValues)
           : null;

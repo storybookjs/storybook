@@ -564,7 +564,7 @@ export const Scrolled: Story = {
   play: async ({ canvasElement, step }) => {
     await waitForChecklistWidget();
     const canvas = await within(canvasElement);
-    // The virtualized tree is its own scroll container (the sidebar has no outer scroller).
+    // The tree is the scroll container. The sidebar has no outer scroll container.
     const scrollable = await canvasElement.querySelector('[role="treegrid"]');
     await step('expand component', async () => {
       const componentNode = await canvas.queryAllByText('Child A2')[1];

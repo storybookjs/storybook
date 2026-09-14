@@ -21,9 +21,9 @@ import { TestingWidget } from './TestingWidget.tsx';
 
 // This ID is used by some integrators to target the (fixed position) sidebar bottom element so it should remain stable.
 const SIDEBAR_BOTTOM_WRAPPER_ID = 'sidebar-bottom-wrapper';
-// The widget floats over the tree; its measured height is published here so the tree can reserve
-// matching bottom padding (letting the last rows scroll clear of the widget) without a rigid spacer
-// that would stop the tree from showing through beneath it.
+// The testing widget floats over the tree. Its measured height goes into this CSS variable, and
+// the tree adds matching bottom padding. The last rows then scroll clear of the widget, and the
+// tree stays visible behind it.
 const SIDEBAR_BOTTOM_HEIGHT_VAR = '--sidebar-bottom-height';
 
 const filterNone: API_FilterFunction = () => true;
@@ -106,9 +106,8 @@ export const SidebarBottomBase = ({
   const [warningsActive, setWarningsActive] = useState(false);
   const [errorsActive, setErrorsActive] = useState(false);
 
-  // Publish the floating widget's height to the sidebar so the tree can pad its scroll area to
-  // match, keeping the last rows reachable above the widget. Written on the sidebar container
-  // (the wrapper's parent) so it inherits down to the tree scroller.
+  // Set the variable on the sidebar container (the wrapper's parent) so that the tree scroller
+  // inherits it.
   useEffect(() => {
     const wrapper = wrapperRef.current;
     const container = wrapper?.parentElement;

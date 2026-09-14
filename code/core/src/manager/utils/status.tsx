@@ -7,7 +7,6 @@ import {
   NON_AGGREGATED_STATUS_TYPE_IDS,
   REVIEW_STATUS_TYPE_ID,
   type API_HashEntry,
-  type StatusByTypeId,
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
@@ -118,22 +117,6 @@ export const shouldShowChangeStatus = (
 const isAggregatedTestStatus = (status: { typeId: string }): boolean =>
   !NON_AGGREGATED_STATUS_TYPE_IDS.includes(status.typeId);
 
-export function getChangeDetectionStatus(statuses: StatusByTypeId): {
-  changeStatus: StatusValue;
-  testStatus: StatusValue;
-} {
-  const changeValues = Object.values(statuses)
-    .filter((status) => status.typeId === CHANGE_DETECTION_STATUS_TYPE_ID)
-    .map((status) => status.value);
-  const testValues = Object.values(statuses)
-    .filter(isAggregatedTestStatus)
-    .map((status) => status.value);
-  return {
-    changeStatus: getMostCriticalStatusValue(changeValues),
-    testStatus: getMostCriticalStatusValue(testValues),
-  };
-}
-
 export const getMostCriticalStatusValue = (statusValues: StatusValue[]): StatusValue => {
   return statusPriority.findLast((value) => statusValues.includes(value)) || 'status-value:unknown';
 };
@@ -145,23 +128,23 @@ const statusesExcludingReview = <T extends { typeId: string }>(statuses: T[]): T
   statuses.filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID);
 
 /**
- * Compute the aggregate status for every non-leaf item in a single bottom-up pass.
+ * Compute one merged status value for every ancestor row, in a single bottom-up pass.
  *
- * For each story leaf we look up its most-critical status, then walk up the parent chain
- * and promote each ancestor's status if the leaf's status is more critical. This replaces
- * the previous O(n*m) approach that called the memoizerific-wrapped `getDescendantIds` per
- * item — which thrashed the LRU cache because `collapsedData` is a fresh object on every
- * render.
+ * For each story leaf, find the most critical status. Then walk up the parent chain and promote
+ * the status of each ancestor when the leaf status is more critical.
+ *
+ * Coverage differs from {@link getGroupDualStatus}: this function reads story leaves only, writes
+ * to the ancestors of a leaf and never to the leaf's own row, and does include root rows.
  */
 export function getGroupStatus(
-  collapsedData: {
+  index: {
     [x: string]: Partial<API_HashEntry>;
   },
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, StatusValue> {
   const result: Record<string, StatusValue> = {};
 
-  for (const item of Object.values(collapsedData)) {
+  for (const item of Object.values(index)) {
     if (item.type !== 'story') {
       continue;
     }
@@ -175,7 +158,6 @@ export function getGroupStatus(
       statusesExcludingReview(Object.values(storyStatuses)).map((s) => s.value)
     );
 
-    // Walk up the parent chain and propagate the most-critical status.
     let currentItem: Partial<API_HashEntry> | undefined = item;
     while (currentItem) {
       const pid: string | undefined =
@@ -189,7 +171,7 @@ export function getGroupStatus(
         result[pid] = leafStatus;
       }
 
-      currentItem = collapsedData[pid];
+      currentItem = index[pid];
     }
   }
 
@@ -197,22 +179,25 @@ export function getGroupStatus(
 }
 
 /**
- * Compute the dual (change-detection + test) status for every item in a single bottom-up pass:
- * each story/docs entry's own statuses apply to its own row and roll up its ancestor chain.
- * Like getGroupStatus, this avoids the O(n*m) per-item getDescendantIds materialization.
+ * Compute the change-detection status and the test status for every row, in a single bottom-up
+ * pass. The statuses of a story or docs entry apply to its own row. They also roll up to every
+ * ancestor of that row.
  *
- * Review-typed statuses are excluded from both slots (they are neither test results nor change
- * detection), matching isAggregatedTestStatus.
+ * Review statuses are excluded from both slots. A review status is neither a test result nor a
+ * change-detection result. `isAggregatedTestStatus` applies the same rule.
+ *
+ * Coverage differs from {@link getGroupStatus}: this function reads story and docs leaves, writes
+ * to the leaf's own row as well as to its ancestors, and never writes to a root row.
  */
 export function getGroupDualStatus(
-  collapsedData: API_IndexHash,
+  index: API_IndexHash,
   allStatuses: StatusesByStoryIdAndTypeId
 ): Record<string, { change: Status; test: Status }> {
   const result: Record<string, { change: Status; test: Status }> = {};
 
   const promote = (id: string, status: Status, slot: 'change' | 'test') => {
     // Root rows never display aggregate statuses.
-    if (collapsedData[id]?.type === 'root') {
+    if (index[id]?.type === 'root') {
       return;
     }
     const entry = (result[id] ??= {
@@ -224,7 +209,7 @@ export function getGroupDualStatus(
     }
   };
 
-  for (const item of Object.values(collapsedData)) {
+  for (const item of Object.values(index)) {
     if (item.type !== 'story' && item.type !== 'docs') {
       continue;
     }
@@ -244,14 +229,14 @@ export function getGroupDualStatus(
         continue;
       }
 
-      // The status colors the story's own row…
+      // Apply the status to the story's own row.
       promote(item.id, status, slot);
 
-      // …and rolls up the ancestor chain.
+      // Roll the status up to every ancestor row.
       let current: Partial<API_HashEntry> | undefined = item;
       while (current && 'parent' in current && current.parent) {
         promote(current.parent, status, slot);
-        current = collapsedData[current.parent];
+        current = index[current.parent];
       }
     }
   }

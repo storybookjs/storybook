@@ -22,8 +22,8 @@ import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
 
 /**
- * TreeNode is a react-aria TreeItem and can only render inside an Aria Tree collection, so these
- * stories exercise individual node types and states through a minimal `<Tree />` harness.
+ * TreeNode is a react-aria TreeItem. It renders only inside a react-aria Tree collection, so these
+ * stories use a small `<Tree />` harness to show each node type and state.
  */
 
 const groupItem: GroupEntry = {
@@ -161,7 +161,7 @@ type Story = StoryObj<typeof meta>;
 /** All node types at once: group, component, docs, story with tests, test, and story leaf. */
 export const AllTypes: Story = {
   args: {
-    // Selecting the deepest test expands the whole ancestor chain, revealing every node type.
+    // Selection of the deepest test expands the whole ancestor chain and shows every node type.
     selectedStoryId: testItem.id,
   },
   play: async ({ canvasElement }) => {
@@ -172,6 +172,17 @@ export const AllTypes: Story = {
     await expect(await canvas.findByText('Primary variant')).toBeInTheDocument();
     await expect(await canvas.findByText('is clickable')).toBeInTheDocument();
     await expect(await canvas.findByText('Secondary variant')).toBeInTheDocument();
+
+    // Addons and end-to-end tests select rows by class and node type, so both must stay on the row.
+    const nodeTypeOf = (id: string) =>
+      canvasElement
+        .querySelector(`.sidebar-item[data-item-id="${id}"]`)
+        ?.getAttribute('data-nodetype');
+    await expect(nodeTypeOf(groupItem.id)).toBe('group');
+    await expect(nodeTypeOf(componentItem.id)).toBe('component');
+    await expect(nodeTypeOf(docsItem.id)).toBe('document');
+    await expect(nodeTypeOf(storyLeafItem.id)).toBe('story');
+    await expect(nodeTypeOf(testItem.id)).toBe('test');
   },
 };
 

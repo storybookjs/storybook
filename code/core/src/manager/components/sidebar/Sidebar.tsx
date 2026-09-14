@@ -56,7 +56,7 @@ const Stack = styled.div({
   flexDirection: 'column',
   gap: 16,
   padding: '16px 12px 20px 12px',
-  // Fill the sidebar so the virtualized tree (which scrolls itself) gets a bounded height.
+  // Fill the sidebar height. The virtualized tree scrolls itself and needs a bounded height.
   flex: '1 1 auto',
   minHeight: 0,
 });
@@ -223,7 +223,6 @@ export const Sidebar = React.memo(function Sidebar({
             <>
               {
                 <Explorer
-                  api={api}
                   dataset={dataset}
                   selected={selected}
                   isLoading={isLoading}
@@ -233,7 +232,8 @@ export const Sidebar = React.memo(function Sidebar({
                 />
               }
               {isSearchResultRendered && (
-                // Scrolls on its own now that the sidebar no longer has an outer scroller.
+                // The search results need their own scroll container. The sidebar has no outer
+                // scroller.
                 <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
                   <SearchResults
                     query={query}

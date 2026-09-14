@@ -8,10 +8,6 @@ import { TypeIcon } from './TypeIcon.tsx';
 
 const TYPE_ICON_TYPES = ['group', 'component', 'docs', 'story', 'test'] as const;
 const STATUS_ICON_TYPES = [
-  'success',
-  'error',
-  'warning',
-  'dot',
   'change-new',
   'reviewing',
   'change-modified',

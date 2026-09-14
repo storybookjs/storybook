@@ -18,15 +18,6 @@ describe('sanity', () => {
   });
 });
 
-describe('createId', () => {
-  it('creates an id', () => {
-    const inputs = ['testpath', 'testref'];
-    const output = utils.createId(...inputs);
-
-    expect(output).toEqual('testref_testpath');
-  });
-});
-
 describe('get', () => {
   it('retrieved by key', () => {
     const value = {};
@@ -94,7 +85,7 @@ describe('isStoryHoistable', () => {
   });
 });
 
-describe('collapseSingleStoryComponents', () => {
+describe('hoistSingleStoryComponents', () => {
   const makeData = () => ({
     root: { type: 'root', id: 'root', name: 'Root', depth: 0, children: ['button', 'card'] },
     button: {
@@ -155,28 +146,28 @@ describe('collapseSingleStoryComponents', () => {
   });
 
   it('replaces a single-story component with its hoisted story', () => {
-    const collapsed = utils.collapseSingleStoryComponents(makeData());
+    const collapsed = utils.hoistSingleStoryComponents(makeData());
 
-    // The component entry is gone — no phantom row can render from its parent pointer.
+    // The component entry is removed, so no row can render from its parent pointer.
     expect(collapsed.button).toBeUndefined();
-    // The story took the component's place: name, parent and depth.
+    // The story takes the name, parent and depth of the component.
     expect(collapsed['button--only']).toMatchObject({
       name: 'Button',
       parent: 'root',
       depth: 1,
     });
-    // The grandparent's children now point at the story.
+    // The children of the grandparent point at the story.
     expect(collapsed.root.children).toEqual(['button--only', 'card']);
   });
 
   it('leaves multi-story components untouched', () => {
-    const collapsed = utils.collapseSingleStoryComponents(makeData());
+    const collapsed = utils.hoistSingleStoryComponents(makeData());
     expect(collapsed.card).toBeDefined();
     expect(collapsed['card--a'].parent).toBe('card');
   });
 
   it('hoisted stories do not leave phantom rows in indexToTree', () => {
-    const collapsed = utils.collapseSingleStoryComponents(makeData());
+    const collapsed = utils.hoistSingleStoryComponents(makeData());
     const tree = utils.indexToTree(collapsed);
     const flat = [];
     const walk = (nodes) =>
@@ -211,14 +202,14 @@ describe('collapseSingleStoryComponents', () => {
         tags: [],
       },
     };
-    const collapsed = utils.collapseSingleStoryComponents(data);
+    const collapsed = utils.hoistSingleStoryComponents(data);
     expect(collapsed.intro).toBeUndefined();
     expect(collapsed['intro--docs']).toMatchObject({ name: 'Intro', depth: 0 });
     expect(collapsed['intro--docs'].parent).toBeUndefined();
   });
 });
 
-describe('collapseSingleStoryComponents with sibling hoists', () => {
+describe('hoistSingleStoryComponents with sibling hoists', () => {
   it('hoists two single-story components sharing a parent without losing either', () => {
     const data = {
       root: { type: 'root', id: 'root', name: 'Root', depth: 0, children: ['a', 'b'] },
@@ -251,7 +242,7 @@ describe('collapseSingleStoryComponents with sibling hoists', () => {
         children: [],
       },
     };
-    const collapsed = utils.collapseSingleStoryComponents(data);
+    const collapsed = utils.hoistSingleStoryComponents(data);
     expect(collapsed.root.children).toEqual(['a--a', 'b--b']);
     expect(collapsed.a).toBeUndefined();
     expect(collapsed.b).toBeUndefined();

@@ -3,7 +3,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { BookIcon } from '@storybook/icons';
 
-import { useStorybookState, type API } from 'storybook/manager-api';
+import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { getActiveFilterCount } from '../../../shared/utils/story-index-filters.ts';
@@ -14,18 +14,18 @@ import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
 import { CollapseIcon } from './CollapseIcon.tsx';
 import type { RefType } from './types.ts';
+import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 
 export interface RefProps {
-  api: API;
   isLoading: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
-  // Every tree is a bounded flex child so its virtualizer can scroll itself: the main tree
-  // additionally grows into free space, while ref trees keep their natural height and only
-  // shrink (sharing the viewport proportionally) when the column runs out of room.
+  // Each tree is a bounded flex child, because its virtualizer scrolls itself. The main tree also
+  // grows into the free space. A ref tree keeps its natural height and shrinks only when the
+  // column runs out of room.
   flex: isMain ? '1 1 auto' : '0 1 auto',
   minHeight: 0,
   display: 'flex',
@@ -45,36 +45,16 @@ const RefHead = styled.div(({ theme }) => ({
   marginTop: 28,
   color: theme.color.defaultText,
 
-  // Highlight the whole row on hover or when the toggle button is keyboard-focused.
   '&:hover, &:has(button:focus-visible)': {
     background: theme.background.hoverable,
     color: theme.barHoverColor,
   },
 
-  // Icon swap: BookIcon visible at rest, CollapseIcon visible on hover/focus.
-  '.hover-only': {
-    display: 'none',
-  },
-  '.static-only': {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  '&:hover .hover-only, &:has(button:focus-visible) .hover-only': {
-    display: 'flex',
-    alignItems: 'center',
-  },
-  '&:hover .static-only, &:has(button:focus-visible) .static-only': {
-    display: 'none',
-  },
+  // Show the BookIcon at rest. Show the CollapseIcon on hover and on keyboard focus.
+  ...iconSwap(['&:hover', '&:has(button:focus-visible)']),
 }));
 
-const RefTitle = styled.span({
-  flex: '1 1 auto',
-  minWidth: 0,
-  overflow: 'hidden',
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-});
+const RefTitle = styled.span(truncatedLabel);
 
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',
@@ -103,9 +83,9 @@ const RefBookIcon = styled(BookIcon)({
 });
 
 export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
+  const api = useStorybookApi();
   const storybookState = useStorybookState();
   const {
-    api,
     filteredIndex: index,
     id: refId,
     title = refId,
@@ -144,7 +124,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   const handleClick = useCallback(() => setExpanded((value) => !value), []);
 
   const onSelectStoryId = useCallback(
-    (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
+    (storyId: string) => api.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
     [api, isMain, refId]
   );
 

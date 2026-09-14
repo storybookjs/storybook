@@ -188,94 +188,34 @@ const refs: Record<string, RefType> = {
 };
 
 export const Optimized = () => (
-  <Ref
-    {...refs.optimized}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.optimized} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const NoEntries = () => (
-  <Ref
-    {...refs.empty}
-    hasEntries={false}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.empty} hasEntries={false} isLoading={false} selectedStoryId="" />
 );
 export const IsEmpty = () => (
-  <Ref
-    {...refs.empty}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.empty} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const StartInjectedUnknown = () => (
-  <Ref
-    {...refs.startInjected_unknown}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.startInjected_unknown} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const StartInjectedLoading = () => (
-  <Ref
-    {...refs.startInjected_loading}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.startInjected_loading} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const StartInjectedReady = () => (
-  <Ref
-    {...refs.startInjected_ready}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.startInjected_ready} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const Versions = () => (
-  <Ref
-    {...refs.versions}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.versions} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const VersionsMissingCurrent = () => (
-  <Ref
-    {...refs.versionsMissingCurrent}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.versionsMissingCurrent} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const Errored = () => (
-  <Ref
-    {...refs.error}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.error} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const ErroredMobile = () => (
-  <Ref
-    {...refs.error}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.error} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 ErroredMobile.globals = { sb_theme: 'stacked', viewport: { value: 'mobile1' } };
 export const ErroredWithErrorOpen: StoryObj = {
@@ -313,30 +253,12 @@ export const ErroredMobileWithIndicatorOpen: StoryObj = {
   },
 };
 export const Auth = () => (
-  <Ref
-    {...refs.auth}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.auth} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 export const Long = () => (
-  <Ref
-    {...refs.long}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.long} hasEntries={true} isLoading={false} selectedStoryId="" />
 );
 
 export const WithSourceCode = () => (
-  <Ref
-    {...refs.withSourceCode}
-    hasEntries={true}
-    isLoading={false}
-    api={managerContext.api}
-    selectedStoryId=""
-  />
+  <Ref {...refs.withSourceCode} hasEntries={true} isLoading={false} selectedStoryId="" />
 );

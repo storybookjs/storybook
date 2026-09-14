@@ -21,7 +21,8 @@ import { Shortcut } from '../Shortcut.tsx';
 import { ContextMenuButton } from './ContextMenuButton.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
-export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
+/** How the user opened a context menu. A keyboard open also focuses the first menu item. */
+export type ContextMenuTrigger = 'pointer' | 'keyboard';
 
 function getGoToLabel(context: API_HashEntry): string | null {
   if (context.type === 'docs') {
@@ -37,7 +38,7 @@ function getGoToLabel(context: API_HashEntry): string | null {
   return null;
 }
 
-export function hasContextMenu(context: API_HashEntry, hasTestProviders = false): boolean {
+export function hasContextMenu(context: API_HashEntry, hasProviderMenuEntries = false): boolean {
   // Never show the ContextMenu in production.
   if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
     return false;
@@ -52,7 +53,27 @@ export function hasContextMenu(context: API_HashEntry, hasTestProviders = false)
     context.type === 'story' ||
     context.type === 'docs' ||
     // Test providers contribute entries (e.g. "run tests for this group") to branch rows.
-    (hasTestProviders && (context.type === 'group' || context.type === 'component'))
+    (hasProviderMenuEntries && (context.type === 'group' || context.type === 'component'))
+  );
+}
+
+/**
+ * Whether a registered test provider contributes menu entries for this one entry. It gates the
+ * menu on a group or component row, so that the ⋯ button never opens an empty popover.
+ *
+ * @param hasTestProviders Whether any test provider addon is registered at all.
+ */
+export function hasProviderMenuEntriesFor(
+  api: API,
+  context: API_HashEntry,
+  hasTestProviders: boolean
+): boolean {
+  if (!hasTestProviders || context.type === 'root') {
+    return false;
+  }
+  return (
+    generateTestProviderLinks(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER), context)
+      .length > 0
   );
 }
 
@@ -62,11 +83,19 @@ export const ContextMenu: FC<{
   setIsOpen: (open: boolean) => void;
   onSelectStoryId: (id: string) => void;
   api: API;
-  entryMethod?: ContextMenuEntryMethod;
-  /** Whether any test provider addon is registered (they add entries for branch rows). */
-  hasTestProviders?: boolean;
+  openedBy?: ContextMenuTrigger;
+  /** Whether a test provider contributes menu entries for this entry. */
+  hasProviderMenuEntries?: boolean;
 }> = memo(
-  ({ context, isOpen, setIsOpen, onSelectStoryId, api, entryMethod, hasTestProviders = false }) => {
+  ({
+    context,
+    isOpen,
+    setIsOpen,
+    onSelectStoryId,
+    api,
+    openedBy,
+    hasProviderMenuEntries = false,
+  }) => {
     const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
     const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
       children: 'Copy story name',
@@ -78,9 +107,9 @@ export const ContextMenu: FC<{
 
       const shortcutKeys = api.getShortcutKeys();
 
-      // When opened via keyboard shortcut, put a navigation link at the top, so users with
-      // motor disability have a way to navigate to stories with child tests.
-      if (entryMethod === 'keyboard') {
+      // Add a navigation link at the top when the menu opens from the keyboard.
+      // Keyboard-only users then have a way to open a story that has child tests.
+      if (openedBy === 'keyboard') {
         const goToLabel = getGoToLabel(context);
         if (goToLabel) {
           defaultLinks.push({
@@ -116,11 +145,6 @@ export const ContextMenu: FC<{
           id: 'copy-story-name',
           title: copyText,
           icon: <CopyIcon />,
-          // FIXME/TODO: bring this back once we want to add shortcuts for this
-          // right:
-          //   enableShortcuts && shortcutKeys.copyStoryName ? (
-          //     <Shortcut keys={shortcutKeys.copyStoryName} />
-          //   ) : null,
           onClick: (e: SyntheticEvent) => {
             e.preventDefault();
             copyButtonProps.onClick(e);
@@ -129,7 +153,7 @@ export const ContextMenu: FC<{
       }
 
       return defaultLinks;
-    }, [api, onSelectStoryId, context, copyText, copyButtonProps, entryMethod, setIsOpen]);
+    }, [api, onSelectStoryId, context, copyText, copyButtonProps, openedBy, setIsOpen]);
 
     const handleOpen = useCallback(
       (event: SyntheticEvent) => {
@@ -139,12 +163,12 @@ export const ContextMenu: FC<{
       [setIsOpen]
     );
 
-    // Never show the ContextMenu in production
+    // Never show the ContextMenu in production.
     if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
       return null;
     }
 
-    const shouldRender = !context.refId && (topLinks.length > 0 || hasTestProviders);
+    const shouldRender = !context.refId && (topLinks.length > 0 || hasProviderMenuEntries);
     if (!shouldRender) {
       return null;
     }
@@ -156,7 +180,7 @@ export const ContextMenu: FC<{
         defaultVisible={false}
         visible={isOpen}
         onVisibleChange={setIsOpen}
-        popover={<LiveContextMenu context={context} links={topLinks} entryMethod={entryMethod} />}
+        popover={<ContextMenuContent context={context} links={topLinks} openedBy={openedBy} />}
         hasChrome={true}
         padding={0}
       >
@@ -178,34 +202,34 @@ export const ContextMenu: FC<{
 ContextMenu.displayName = 'ContextMenu';
 
 /**
- * This component re-subscribes to storybook's core state, hence the Live prefix. It is used to
- * render the context menu for the sidebar. it self is a tooltip link list that renders the links
- * provided to it. In addition to the links, it also renders the test providers.
+ * The body of the sidebar context menu, rendered as a tooltip link list. It reads the registered
+ * test providers on every render, so the provider links stay current, and it renders them below
+ * the given links.
  */
-const LiveContextMenu: FC<
+const ContextMenuContent: FC<
   {
     context: API_HashEntry;
-    entryMethod?: ContextMenuEntryMethod;
+    openedBy?: ContextMenuTrigger;
   } & ComponentProps<typeof TooltipLinkList>
-> = ({ context, links, entryMethod, ...rest }) => {
+> = ({ context, links, openedBy, ...rest }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
 
-  // Opening via keyboard (the global shortcut, or Enter/Space on the ⋯ button) moves focus onto
-  // the first actionable item so it can be operated without a Tab first. Pointer opens leave focus
-  // on the popover container: autofocusing an item there makes screen readers announce it twice.
+  // Move focus to the first actionable item when the menu opens from the keyboard, so the user
+  // can operate the menu without a Tab press. An open from the pointer keeps focus on the popover
+  // container, because a focused item there makes screen readers announce the item twice.
   const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
-    if (entryMethod !== 'keyboard') {
+    if (openedBy !== 'keyboard') {
       return;
     }
     const firstItem = containerRef.current?.querySelector<HTMLElement>(
       'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
     );
     firstItem?.focus();
-  }, [entryMethod]);
+  }, [openedBy]);
 
   /**
    * The context menu can take a list of lists of links, so that the links are grouped and separated
@@ -217,7 +241,7 @@ const LiveContextMenu: FC<
 
   const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
 
-  // display: contents keeps the wrapper out of the layout while still scoping the focus query.
+  // The wrapper scopes the focus query. display: contents keeps the wrapper out of the layout.
   return (
     <div ref={containerRef} style={{ display: 'contents' }}>
       <TooltipLinkList {...rest} links={all} />

@@ -17,28 +17,21 @@ export interface ExpandAction {
 }
 
 export interface ExpandedProps {
-  refId: string;
   data: StoriesHash;
-  initialExpanded?: ExpandedState;
   selectedStoryId: string | null;
 }
 
 const initializeExpanded = ({
   data,
-  initialExpanded = new Set<string>(),
+  initialExpanded,
   selectedStoryId,
 }: {
   data: StoriesHash;
-  initialExpanded?: ExpandedState;
+  initialExpanded: ExpandedState;
   selectedStoryId: string | null;
 }) => {
   const selectedStory = selectedStoryId && data[selectedStoryId];
   const candidates: string[] = [];
-  // TODO/FIXME: this might not be necessary based on the order of rendering between the selected story ID and this hook.
-  // If still necessary, reimplement by checking the data-story-id of document.activeElement instead of highlightedRef.
-  // if (highlightedRef.current?.refId === refId) {
-  //   candidates.push(...getAncestorIds(data, highlightedRef.current?.itemId));
-  // }
   if (selectedStory && 'children' in selectedStory && selectedStory.children?.length) {
     candidates.push(selectedStoryId);
   }
@@ -46,10 +39,7 @@ const initializeExpanded = ({
   return new Set([...candidates, ...initialExpanded]);
 };
 
-const noop = () => {};
-
 export const useExpanded = ({
-  refId,
   data,
   selectedStoryId,
 }: ExpandedProps): [Set<string>, Dispatch<ExpandAction>] => {
@@ -70,16 +60,15 @@ export const useExpanded = ({
   const [expanded, setExpanded] = useReducer<
     Reducer<ExpandedState, ExpandAction>,
     {
-      refId: string;
       data: StoriesHash;
       initialExpanded: ExpandedState;
       selectedStoryId: string | null;
     }
   >(
     (state, { ids, append, value }) => {
-      // No-op actions must return the same Set: the tree uses the set's identity as a
-      // react-aria collection dependency, and a fresh identity re-renders every row. The
-      // selection effect below dispatches on every story change, usually redundantly.
+      // A no-op action must return the same Set. The tree uses the identity of the Set as a
+      // react-aria collection dependency, and a new identity re-renders every row. The selection
+      // effect below dispatches on every story change, and the dispatch is usually redundant.
       if (append) {
         if (value) {
           if (ids.every((id) => state.has(id))) {
@@ -95,7 +84,7 @@ export const useExpanded = ({
       }
       return new Set(ids);
     },
-    { refId, data, initialExpanded, selectedStoryId },
+    { data, initialExpanded, selectedStoryId },
     initializeExpanded
   );
 
@@ -106,9 +95,9 @@ export const useExpanded = ({
     }
   }, [data, selectedStoryId]);
 
-  // Add event handlers for collapse all / expand all global keyboard shortcuts.
-  // Collapse-all keeps the default root sections open (as on first load); collapsing roots
-  // too would reduce the sidebar to bare section headers.
+  // Handlers for the global collapse-all and expand-all keyboard shortcuts. Collapse-all keeps
+  // the default root sections open, as on first load. A collapse of the roots too would reduce
+  // the sidebar to bare section headers.
   const collapseAll = useCallback(() => {
     setExpanded({ ids: [...initialExpanded] });
   }, [initialExpanded]);
@@ -122,10 +111,6 @@ export const useExpanded = ({
   }, [data]);
 
   useEffect(() => {
-    if (!api) {
-      return noop;
-    }
-
     api.on(STORIES_COLLAPSE_ALL, collapseAll);
     api.on(STORIES_EXPAND_ALL, expandAll);
 

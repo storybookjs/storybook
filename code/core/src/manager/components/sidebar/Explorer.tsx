@@ -1,15 +1,12 @@
 import type { FC } from 'react';
 import React, { useRef } from 'react';
 
-import type { API } from 'storybook/manager-api';
-
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { Ref } from './Refs.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 
 export interface ExplorerProps {
   className?: string;
-  api: API;
   isLoading: boolean;
   isBrowsing: boolean;
   isHidden: boolean;
@@ -19,7 +16,6 @@ export interface ExplorerProps {
 }
 
 export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
-  api,
   hasEntries,
   isLoading,
   isBrowsing,
@@ -53,7 +49,6 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
         <Ref
           {...ref}
           key={refId}
-          api={api}
           isLoading={isLoading}
           hasEntries={hasEntries}
           selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}

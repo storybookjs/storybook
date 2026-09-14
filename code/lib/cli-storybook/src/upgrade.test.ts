@@ -29,10 +29,10 @@ vi.mock('cross-spawn', () => ({ sync: spawnSyncMock }));
 // from the real source chain, which loads copies of node-logger that process-level spies cannot
 // reach. Delegates to the actual logger so once() dedupe and output behavior stay intact.
 const { loggerWarnSpy } = vi.hoisted(() => ({ loggerWarnSpy: vi.fn() }));
-vi.mock('storybook/internal/node-logger', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('storybook/internal/node-logger')>();
+vi.mock(import('storybook/internal/node-logger'), async (importOriginal) => {
+  const actual = await importOriginal();
   const originalWarn = actual.logger.warn.bind(actual.logger);
-  actual.logger.warn = (...args: Parameters<typeof originalWarn>) => {
+  actual.logger.warn = (...args) => {
     loggerWarnSpy(...args);
     return originalWarn(...args);
   };
@@ -46,11 +46,11 @@ vi.mock('./autoblock/index.ts', () => ({
 vi.mock('./automigrate/helpers/mainConfigFile.ts', () => ({
   getStorybookData: getStorybookDataMock,
 }));
-vi.mock('storybook/internal/common', async (importOriginal) => {
-  const originalModule = (await importOriginal()) as typeof sbcc;
+vi.mock(import('storybook/internal/common'), async (importOriginal) => {
+  const originalModule = await importOriginal();
   return {
     ...originalModule,
-    JsPackageManagerFactory: {
+    JsPackageManagerFactory: Object.assign(originalModule.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: managerTypeHolder.type,
         findInstallations: findInstallationsMock,
@@ -59,14 +59,14 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
         getAllDependencies: () => ({ storybook: '8.0.0' }),
         getModulePackageJSON: async () => ({ version: '9.0.0' }),
       }),
-    },
+    }),
     versions: Object.keys(originalModule.versions).reduce(
       (acc, key) => {
         acc[key] = '9.0.0';
         return acc;
       },
       {} as Record<string, string>
-    ),
+    ) as typeof originalModule.versions,
   };
 });
 

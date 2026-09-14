@@ -34,10 +34,9 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
   return {
     ...actual,
     getStorybookInfo: mocks.getStorybookInfoMock,
-    JsPackageManagerFactory: {
-      ...actual.JsPackageManagerFactory,
+    JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: mocks.getPackageManagerMock,
-    },
+    }),
   };
 });
 vi.mock('storybook/internal/core-server', { spy: true });

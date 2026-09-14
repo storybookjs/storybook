@@ -72,7 +72,7 @@ export const createExperimentalFeatureFix = ({
 
   run: async ({ mainConfigPath, dryRun }) => {
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-      main.setFieldValue(['features', name], true);
+      main.set(['features', name], true);
     });
   },
 });

@@ -369,8 +369,8 @@ export const removeCompodocSetup = async ({
 
   if (hasFrameworkOptions) {
     await updateMainConfig({ mainConfigPath, dryRun }, (main) => {
-      main.removeField(['framework', 'options', 'compodoc']);
-      main.removeField(['framework', 'options', 'compodocArgs']);
+      main.remove(['framework', 'options', 'compodoc']);
+      main.remove(['framework', 'options', 'compodocArgs']);
     });
     logger.step(`${removed} the Compodoc framework options from ${mainConfigPath}`);
   }

@@ -1,16 +1,35 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import picocolors from 'picocolors';
+import type { CsfObject } from 'storybook/internal/csf-tools';
+import { formatConfig, loadConfig, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import type { Fix } from '../types.ts';
-import { ComponentSubtitleMigrationError } from './component-subtitle-ast.ts';
-import {
-  previewSubtitleCanWin,
-  transformPreviewSource,
-  transformStorySource,
-} from './component-subtitle-transform.ts';
+export class ComponentSubtitleMigrationError extends Error {}
 
-export { transformPreviewSource, transformStorySource } from './component-subtitle-transform.ts';
+const componentSubtitlePath = ['parameters', 'componentSubtitle'];
+const docsSubtitlePath = ['parameters', 'docs', 'subtitle'];
+
+const migrateObject = (object: CsfObject) => {
+  const result = object.move(componentSubtitlePath, docsSubtitlePath);
+  if (!result.ok) {
+    throw new ComponentSubtitleMigrationError(result.diagnostic.message);
+  }
+};
+
+export const transformPreviewSource = (source: string) => {
+  const config = loadConfig(source).parse();
+  migrateObject(config);
+  return config.changed ? formatConfig(config) : null;
+};
+
+export const transformStorySource = (source: string) => {
+  const csf = loadCsf(source, { makeTitle: (title) => title || 'default' }).parse();
+  for (const object of csf.objects({ annotations: ['parameters'] })) {
+    migrateObject(object);
+  }
+  return csf.changed ? printCsf(csf).code : null;
+};
 
 interface ComponentSubtitleOptions {
   files: string[];
@@ -52,17 +71,6 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
   async run({ dryRun, result }) {
     const transformedFiles: Array<{ file: string; source: string }> = [];
     const errors: Array<{ file: string; error: Error }> = [];
-    let inheritedSubtitleCanWin = false;
-
-    if (result.previewConfigPath) {
-      try {
-        inheritedSubtitleCanWin = previewSubtitleCanWin(
-          await readFile(result.previewConfigPath, 'utf-8')
-        );
-      } catch (error) {
-        errors.push({ file: result.previewConfigPath, error: error as Error });
-      }
-    }
 
     for (const file of result.files) {
       if (errors.some((entry) => entry.file === file)) {
@@ -73,7 +81,7 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
         const transformed =
           file === result.previewConfigPath
             ? transformPreviewSource(source)
-            : transformStorySource(source, inheritedSubtitleCanWin);
+            : transformStorySource(source);
         if (transformed) {
           transformedFiles.push({ file, source: transformed });
         }

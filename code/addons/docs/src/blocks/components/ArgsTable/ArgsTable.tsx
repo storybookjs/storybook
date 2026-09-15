@@ -204,7 +204,9 @@ const argsTableErrorCopy: Record<ArgsTableError, { title: string; summary?: stri
     summary: 'See the Args documentation for your framework.',
   },
   [ArgsTableError.NOT_A_STORY_COMPONENT]: {
-    title: 'No docs found for this component',
+    // "on this page" is load-bearing: the component may have docs elsewhere that this page
+    // simply cannot reach, so the copy must not claim the component has no docs at all.
+    title: 'No docs found for this component on this page',
     summary:
       'Import the story file whose meta.component is this component, or pass `of={ComponentStories}`.',
   },

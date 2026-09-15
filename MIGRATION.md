@@ -6,6 +6,7 @@
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
+  - [Vitest Addon: project annotations are always applied](#vitest-addon-project-annotations-are-always-applied)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
@@ -609,6 +610,54 @@ option exists in both places, keep the nested value because it was authoritative
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
 
 If your custom tooling imports `canUpdateVitestWorkspaceFile` from `storybook/internal/babel`, remove that import. The workspace-file helper has been removed; migrate the configuration to `test.projects`.
+
+### Vitest Addon: project annotations are always applied
+
+The `@storybook/addon-vitest` addon now always applies your project annotations (your framework's defaults and your `.storybook/preview` exports) through its own internal setup file. In Storybook 10.3 to 10.x, the addon detected a user setup file calling `setProjectAnnotations` and skipped its own provisioning to avoid applying the annotations twice. That detection is removed: the addon never relies on your setup file, and your `setProjectAnnotations` calls run in addition to the automatic provisioning.
+
+Calls to `setProjectAnnotations` compose additively, so nothing breaks, but a setup file that only re-applies your `.storybook/preview` is redundant boilerplate. Keep custom annotations (for example, from an addon's preview): they compose with the automatic ones. See [stories in unit tests](https://storybook.js.org/docs/writing-tests/stories-in-unit-tests) for how annotations are applied when writing tests outside the addon.
+
+Run the automigration to remove the generated boilerplate:
+
+```sh
+npx storybook automigrate vitest-setup-file
+```
+
+The automigration deletes setup files matching the shape the addon generated before Storybook 10.3 and removes their entries from the `setupFiles` option in your Vitest or Vite config. It stops with manual instructions when a setup file cannot be rewritten safely — for example, when the call's return value is captured (`beforeAll(project.beforeAll)`), when the call passes inline objects or addon annotation modules, or when the imports are not part of the generated boilerplate.
+
+Before:
+
+```ts
+// .storybook/vitest.setup.ts
+import { setProjectAnnotations } from '@storybook/react-vite';
+import * as projectAnnotations from './preview';
+
+setProjectAnnotations([projectAnnotations]);
+```
+
+```ts
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    setupFiles: ['./.storybook/vitest.setup.ts'],
+  },
+});
+```
+
+After:
+
+```ts
+// vitest.config.ts
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {},
+});
+```
+
+The `.storybook/vitest.setup.ts` file is deleted along with the `setupFiles` entry.
 
 ### Vite: `publicDir` is handled by Storybook's `staticDirs`
 

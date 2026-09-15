@@ -1,66 +1,99 @@
-import type { Node } from '@react-types/shared';
+import type { Key, Node } from '@react-types/shared';
 
-import { ListLayout, type ListLayoutOptions } from 'react-aria-components/Virtualizer';
+import { Layout, LayoutInfo, Rect, Size } from 'react-aria-components/Virtualizer';
 
-import { SECTION_GAP, TREE_ROW_HEIGHT } from './treeGeometry.ts';
+import {
+  SECTION_GAP,
+  TREE_ROW_HEIGHT,
+  findFirstRowBelow,
+  flattenRows,
+  type FlatRows,
+} from './treeGeometry.ts';
 
-export interface TreeRowLayoutOptions extends ListLayoutOptions {
-  /** Rows that start a top-level section and carry the section gap as padding. */
-  sectionStartIds?: ReadonlySet<string>;
+export interface TreeRowLayoutOptions {
+  rows?: FlatRows;
 }
 
-/**
- * Lays the tree's rows out at the model's exact heights instead of measuring them.
- *
- * With estimated heights, rows the user has never scrolled past sit at the estimate until they
- * render once, so after a deep link the DOM disagrees with `flattenRows` by the section gap for
- * every unmeasured section. Every consumer of the model — the sticky rows, the indent lines,
- * scroll targeting — would inherit that drift. Row heights are deterministic, so the layout takes
- * them from the same rule as the model and ignores DOM measurements; a row that violates the
- * fixed height shows up as visible overlap instead of silently shifting everything below it.
- */
-export class TreeRowLayout extends ListLayout<object, TreeRowLayoutOptions> {
-  private sectionStartIds: ReadonlySet<string> = new Set();
+const EMPTY_ROWS: FlatRows = flattenRows([], new Set());
 
-  constructor() {
-    super({ rowHeight: TREE_ROW_HEIGHT });
-  }
+/**
+ * Places the tree's rows exactly where the geometry model puts them.
+ *
+ * A measuring layout estimates rows it has not materialized, so its reported content height and
+ * the absolute position of everything below an unmaterialized section drift from the model by the
+ * section gap — the tree then under-reports its height and the next sidebar block overlaps its
+ * rows. This layout derives every position and the content size from `flattenRows`, the same
+ * model that drives the sticky rows and scroll targeting, so they cannot disagree.
+ */
+export class TreeRowLayout extends Layout<Node<object>, TreeRowLayoutOptions> {
+  private rows: FlatRows = EMPTY_ROWS;
+  private cache = new Map<string, LayoutInfo>();
+  private cachedWidth = 0;
 
   /**
-   * Also set directly during render, so even the very first layout build uses the real section
-   * starts and the tree's reported height never under-counts — a following block would otherwise
-   * overlap the tree's rows. `layoutOptions` still carries the set, to invalidate on change.
+   * Also set directly during render, so even the very first layout build uses the real geometry;
+   * `layoutOptions` carries the same object to invalidate the virtualizer on change.
    */
-  setSectionStartIds(ids: ReadonlySet<string>) {
-    this.sectionStartIds = ids;
+  setRows(rows: FlatRows) {
+    if (this.rows !== rows) {
+      this.rows = rows;
+      this.cache.clear();
+    }
   }
 
-  update(invalidationContext: Parameters<ListLayout<object, TreeRowLayoutOptions>['update']>[0]) {
-    this.sectionStartIds =
-      invalidationContext.layoutOptions?.sectionStartIds ?? this.sectionStartIds;
-    super.update(invalidationContext);
+  update(invalidationContext: Parameters<Layout<Node<object>, TreeRowLayoutOptions>['update']>[0]) {
+    if (invalidationContext.layoutOptions?.rows) {
+      this.setRows(invalidationContext.layoutOptions.rows);
+    }
+    const width = this.virtualizer?.visibleRect.width ?? 0;
+    if (width !== this.cachedWidth) {
+      this.cachedWidth = width;
+      this.cache.clear();
+    }
   }
 
   shouldInvalidateLayoutOptions(
     newOptions: TreeRowLayoutOptions,
     oldOptions: TreeRowLayoutOptions
   ) {
-    return (
-      newOptions.sectionStartIds !== oldOptions.sectionStartIds ||
-      super.shouldInvalidateLayoutOptions(newOptions, oldOptions)
-    );
+    return newOptions.rows !== oldOptions.rows;
   }
 
-  protected buildItem(node: Node<object>, x: number, y: number) {
-    const layoutNode = super.buildItem(node, x, y);
-    if (this.sectionStartIds.has(String(node.key))) {
-      layoutNode.layoutInfo.rect.height = TREE_ROW_HEIGHT + SECTION_GAP;
-      layoutNode.validRect = layoutNode.layoutInfo.rect.intersection(this.requestedRect);
+  private layoutInfoAt(index: number): LayoutInfo {
+    const { ids, offsets, sectionStartIds } = this.rows;
+    const id = ids[index];
+    let info = this.cache.get(id);
+    if (!info) {
+      // The section gap is part of the row's box, above its content, matching the row's CSS.
+      const gap = sectionStartIds.has(id) ? SECTION_GAP : 0;
+      const rect = new Rect(0, offsets[index] - gap, this.cachedWidth, TREE_ROW_HEIGHT + gap);
+      info = new LayoutInfo('item', id, rect);
+      this.cache.set(id, info);
     }
-    return layoutNode;
+    return info;
   }
 
-  updateItemSize() {
-    return false;
+  getVisibleLayoutInfos(rect: Rect) {
+    const { ids, offsets } = this.rows;
+    const infos: LayoutInfo[] = [];
+    for (
+      let index = findFirstRowBelow(this.rows, rect.y);
+      index < ids.length && offsets[index] - SECTION_GAP < rect.maxY;
+      index += 1
+    ) {
+      infos.push(this.layoutInfoAt(index));
+    }
+    return infos;
+  }
+
+  getLayoutInfo(key: Key) {
+    const index = this.rows.indexById.get(String(key));
+    return index === undefined ? null : this.layoutInfoAt(index);
+  }
+
+  getContentSize() {
+    const { ids, offsets } = this.rows;
+    const height = ids.length > 0 ? offsets[ids.length - 1] + TREE_ROW_HEIGHT : 0;
+    return new Size(this.cachedWidth, height);
   }
 }

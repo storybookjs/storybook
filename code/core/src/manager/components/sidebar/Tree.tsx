@@ -617,11 +617,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   const treeLayout = useMemo(() => new TreeRowLayout(), []);
-  treeLayout.setSectionStartIds(rows.sectionStartIds);
-  const treeLayoutOptions = useMemo(
-    () => ({ sectionStartIds: rows.sectionStartIds }),
-    [rows.sectionStartIds]
-  );
+  treeLayout.setRows(rows);
+  const treeLayoutOptions = useMemo(() => ({ rows }), [rows]);
 
   // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
   // every TreeNode through the context.

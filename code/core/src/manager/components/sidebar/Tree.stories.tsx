@@ -389,6 +389,76 @@ export const WithContextMenuAddon: Story = {
   },
 };
 
+const throwingContextMenuManagerContext: any = {
+  ...managerContext,
+  api: {
+    ...managerContext.api,
+    getElements: fn((type: Addon_TypesEnum) => {
+      if (type === Addon_TypesEnum.experimental_CONTEXT_MENU) {
+        return {
+          'my-addon/context-menu': {
+            type: Addon_TypesEnum.experimental_CONTEXT_MENU,
+            id: 'my-addon/context-menu',
+            items: () => [
+              {
+                id: 'throwing',
+                title: 'ADDON_CONTEXT_MENU_THROWING_ITEM',
+                onClick: () => {
+                  throw new Error('Expected error from a context menu item');
+                },
+              },
+            ],
+          },
+        } satisfies Addon_Collection<Addon_ContextMenuType>;
+      }
+      return managerContext.api.getElements(type);
+    }),
+  },
+};
+
+export const WithThrowingContextMenuAddon: Story = {
+  ...DocsOnlySingleStoryComponents,
+  parameters: WithContextContent.parameters,
+  globals: WithContextContent.globals,
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={throwingContextMenuManagerContext}>
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const link = await canvas.findByText('TooltipBuildList');
+    await userEvent.hover(link);
+
+    const row = link.closest('[data-item-id]') as HTMLElement;
+    const contextButton = await within(row).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const popover = await screen.findByRole('dialog');
+    const entry = within(popover).getByRole('button', {
+      name: 'ADDON_CONTEXT_MENU_THROWING_ITEM',
+    });
+
+    // The item's onClick throws on purpose; swallow the expected uncaught error so it does not
+    // fail the test run.
+    const swallowExpectedError = (event: ErrorEvent) => {
+      if (event.error?.message === 'Expected error from a context menu item') {
+        event.preventDefault();
+      }
+    };
+    window.addEventListener('error', swallowExpectedError);
+    try {
+      await userEvent.click(entry);
+      await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+    } finally {
+      window.removeEventListener('error', swallowExpectedError);
+    }
+  },
+};
+
 const dualSlotStoryId = storyId;
 const dualSlotParentId = (index[dualSlotStoryId] as any).parent as string;
 

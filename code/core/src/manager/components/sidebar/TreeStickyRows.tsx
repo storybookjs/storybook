@@ -6,7 +6,7 @@ import { styled } from 'storybook/theming';
 
 import { getAncestorIds } from '../../utils/tree.ts';
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { IndentLines, indentLineX } from './TreeIndentLines.tsx';
+import { IndentLines, indentLineX, type SelectionLine } from './TreeIndentLines.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { SidebarLabelContext } from './types.ts';
 import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
@@ -195,6 +195,8 @@ interface StickyRowsProps {
   rowsRef: RefObject<FlatRows>;
   /** The row that holds keyboard focus; its sticky copy colors its own indent lines. */
   accentId: string | null;
+  /** The rows around the selected story; a sticky copy of one keeps their shared line visible. */
+  selectionLine: SelectionLine | null;
   /** Collapse a branch after the user presses its chevron. */
   onCollapse: (id: string) => void;
 }
@@ -216,6 +218,7 @@ export function TreeStickyRows({
   wrapperRef,
   rowsRef,
   accentId,
+  selectionLine,
   onCollapse,
 }: StickyRowsProps) {
   if (ids.length === 0) {
@@ -259,7 +262,10 @@ export function TreeStickyRows({
               tabIndex={-1}
               onClick={() => scrollIntoSlot(id, slot)}
             >
-              <IndentLines level={level} />
+              <IndentLines
+                level={level}
+                selectionLevel={selectionLine?.rowIds.has(id) ? selectionLine.level : 0}
+              />
               <StickyRowIcon
                 data-testid="sticky-collapse"
                 onClick={(event) => {

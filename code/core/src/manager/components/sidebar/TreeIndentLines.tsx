@@ -1,8 +1,8 @@
-import React, { useEffect, useRef } from 'react';
+import React, { createContext, useContext, useSyncExternalStore } from 'react';
 
 import { styled } from 'storybook/theming';
 
-import { TREE_CONTENT_INSET, TREE_INDENT_STEP, type FlatRows } from './treeGeometry.ts';
+import { TREE_CONTENT_INSET, TREE_INDENT_STEP } from './treeGeometry.ts';
 
 /**
  * The tree sets this custom property to 1 while the pointer is over the tree, or while a row holds
@@ -27,20 +27,33 @@ const IndentLine = styled.span(({ theme }) => ({
   backgroundColor: theme.appBorderColor,
   opacity: `var(${INDENT_LINE_OPACITY_VAR}, 0)`,
   transition: 'opacity 150ms ease',
+  // The rows around the selected story keep their shared line visible while the rest are hidden,
+  // so the user can see where the selection sits.
+  '&[data-selection-line]': {
+    opacity: 1,
+  },
 }));
 
 /**
  * The indent lines of one row, levels 1 to `level`. Each row and each sticky copy carries its
  * own, so the lines scroll and stick on the compositor with the row that owns them. The host row
- * colors them on hover and keyboard focus through `[data-indent-line]`.
+ * colors them on hover and keyboard focus through `[data-indent-line]`, and `selectionLevel`
+ * marks the one line this row shares with the selected story's siblings.
  */
-export function IndentLines({ level }: { level: number }) {
+export function IndentLines({
+  level,
+  selectionLevel = 0,
+}: {
+  level: number;
+  selectionLevel?: number;
+}) {
   return (
     <>
       {Array.from({ length: level }, (_, index) => (
         <IndentLine
           key={index}
           data-indent-line
+          data-selection-line={index + 1 === selectionLevel || undefined}
           aria-hidden="true"
           style={{ left: indentLineX(index + 1) }}
         />
@@ -49,64 +62,49 @@ export function IndentLines({ level }: { level: number }) {
   );
 }
 
-const SelectionLineLayer = styled.svg(({ theme }) => ({
-  position: 'absolute',
-  inset: 0,
-  width: '100%',
-  height: '100%',
-  overflow: 'visible',
-  // Above the rows and their hover fills, below the sticky rows (zIndex 3).
-  zIndex: 2,
-  pointerEvents: 'none',
-  shapeRendering: 'crispEdges',
-  '& path': {
-    strokeWidth: 1,
-    fill: 'none',
-    stroke: theme.appBorderColor,
-  },
-}));
-
-interface SelectionLineOptions {
-  /** Geometry of the visible rows. */
-  rows: FlatRows;
-  /** Parent of the selected story. Its children share the selection line. */
-  selectedParentId: string | null;
+/** The rows around the selected story, and the indent level of the line they share. */
+export interface SelectionLine {
+  level: number;
+  rowIds: ReadonlySet<string>;
 }
 
 /**
- * Draw the selection line and return the layer to render.
- *
- * The children of the selected story's parent keep one line at their own level, so the user can
- * see where the selection sits even while the indent lines are hidden. The line spans many rows,
- * so it cannot be carried by one of them; it is drawn once per geometry change in the tree's own
- * coordinates, and scrolls with the content.
+ * Minimal external store for the selection line, following ContextMenuStore: as a react-aria
+ * collection dependency or a row prop, a selection change would re-render every row in the tree.
+ * Rows subscribe here instead, so only the rows entering or leaving the selection re-render.
  */
-export function useSelectionLine({ rows, selectedParentId }: SelectionLineOptions) {
-  const pathRef = useRef<SVGPathElement>(null);
+export interface SelectionLineStore {
+  getState: () => SelectionLine | null;
+  setState: (state: SelectionLine | null) => void;
+  subscribe: (listener: () => void) => () => void;
+}
 
-  useEffect(() => {
-    const { offsets, depths, indexById, subtreeBottoms } = rows;
-    let d = '';
-    const parentIndex = selectedParentId === null ? undefined : indexById.get(selectedParentId);
-    const firstChildIndex = parentIndex === undefined ? undefined : parentIndex + 1;
-    if (
-      selectedParentId !== null &&
-      parentIndex !== undefined &&
-      firstChildIndex !== undefined &&
-      depths[firstChildIndex] === depths[parentIndex] + 1
-    ) {
-      // The half pixel keeps the 1px stroke on the device pixel grid.
-      const x = indentLineX(depths[firstChildIndex]) + 0.5;
-      d = `M${x} ${offsets[firstChildIndex]}V${subtreeBottoms.get(selectedParentId) ?? 0}`;
-    }
-    pathRef.current?.setAttribute('d', d);
-  }, [rows, selectedParentId]);
+export const createSelectionLineStore = (): SelectionLineStore => {
+  let state: SelectionLine | null = null;
+  const listeners = new Set<() => void>();
+  return {
+    getState: () => state,
+    setState: (next: SelectionLine | null) => {
+      state = next;
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => listeners.delete(listener);
+    },
+  };
+};
 
-  const layer = (
-    <SelectionLineLayer aria-hidden="true" data-testid="indent-lines">
-      <path ref={pathRef} data-indent-lines="selection" />
-    </SelectionLineLayer>
-  );
+/** Default store so TreeNode can render outside a Tree (stories, tests). */
+export const SelectionLineStoreContext = createContext<SelectionLineStore>(
+  createSelectionLineStore()
+);
 
-  return { layer };
+/** The level of the selection line this row carries, or 0. */
+export function useSelectionLineLevel(itemId: string): number {
+  const store = useContext(SelectionLineStoreContext);
+  return useSyncExternalStore(store.subscribe, () => {
+    const state = store.getState();
+    return state && state.rowIds.has(itemId) ? state.level : 0;
+  });
 }

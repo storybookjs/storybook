@@ -789,12 +789,11 @@ export const StickyAncestors: Story = {
     const naturalLine = canvasElement.querySelector('[role="treegrid"] [data-indent-line]')!;
     expect(Math.round(naturalLine.getBoundingClientRect().left - treeLeft)).toBe(13);
 
-    // The children of the selected story's parent keep a selection line, which stays visible
-    // while the tree is not hovered.
-    const selectionPath = canvasElement.querySelector(
-      '[data-testid="indent-lines"] path[data-indent-lines="selection"]'
-    )!;
-    expect(selectionPath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
+    // The rows around the selected story mark their shared line, which stays visible while the
+    // tree is not hovered.
+    const selectionSpan = canvasElement.querySelector('[data-indent-line][data-selection-line]')!;
+    expect(selectionSpan).not.toBeNull();
+    expect(getComputedStyle(selectionSpan).opacity).toBe('1');
 
     // The overlay membership must not change on a single-pixel scroll. It derives from the row
     // offsets alone, never from the rows that are already sticky.

@@ -36,7 +36,12 @@ import {
 } from './ContextMenuStore.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import { StatusContext } from './StatusContext.tsx';
-import { INDENT_LINE_OPACITY_VAR, useSelectionLine } from './TreeIndentLines.tsx';
+import {
+  INDENT_LINE_OPACITY_VAR,
+  SelectionLineStoreContext,
+  createSelectionLineStore,
+  type SelectionLine,
+} from './TreeIndentLines.tsx';
 import { TreeRowLayout } from './TreeRowLayout.ts';
 import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
 import type { SidebarLabelContext } from './types.ts';
@@ -195,7 +200,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     [selectedStoryId]
   );
 
-  // The children of this row share the selection line in the indent layer.
+  // The children of this row share the selection line.
   const selectedParentId = useMemo(() => {
     const entry = selectedStoryId ? hoistedData[selectedStoryId] : undefined;
     return !entry || entry.type === 'root' ? null : (entry.parent ?? null);
@@ -367,7 +372,30 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // The row under the pointer, tracked so a branch's first story preloads once per hover.
   const hoveredRowRef = useRef<{ id: string; sticky: boolean } | null>(null);
 
-  const { layer: selectionLine } = useSelectionLine({ rows, selectedParentId });
+  // The rows that carry the selection line: every row of the selected parent's subtree, at the
+  // level of its direct children. Distributed through a store, so only rows entering or leaving
+  // the selection re-render when it moves.
+  const selectionLine = useMemo<SelectionLine | null>(() => {
+    const { ids, offsets, depths, indexById, subtreeBottoms } = rows;
+    const parentIndex = selectedParentId === null ? undefined : indexById.get(selectedParentId);
+    if (parentIndex === undefined) {
+      return null;
+    }
+    const firstChildIndex = parentIndex + 1;
+    if (depths[firstChildIndex] !== depths[parentIndex] + 1) {
+      return null;
+    }
+    const bottom = subtreeBottoms.get(selectedParentId!) ?? 0;
+    const rowIds = new Set<string>();
+    for (let index = firstChildIndex; index < ids.length && offsets[index] < bottom; index += 1) {
+      rowIds.add(ids[index]);
+    }
+    return { level: depths[firstChildIndex], rowIds };
+  }, [rows, selectedParentId]);
+  const selectionLineStoreRef = useRef(createSelectionLineStore());
+  useEffect(() => {
+    selectionLineStoreRef.current.setState(selectionLine);
+  }, [selectionLine]);
 
   // Recompute the sticky rows on every scroll and whenever the geometry changes. A resize alone
   // can reveal rows, so the scroller is observed as well. The indent lines never take part: they
@@ -635,49 +663,51 @@ export const Tree = React.memo<TreeProps>(function Tree({
   return (
     <StatusContext.Provider value={statusContextValue}>
       <ContextMenuStoreContext.Provider value={contextMenuStoreRef.current}>
-        <TreeWrapper ref={treeWrapperRef}>
-          {/* First child, so that it sticks from the top of this tree rather than from its end. */}
-          <TreeStickyRows
-            ids={stickyIds}
-            data={hoistedData}
-            api={api}
-            labelContext={labelContext}
-            scrollerRef={scrollerRef}
-            wrapperRef={treeWrapperRef}
-            rowsRef={rowsRef}
-            accentId={keyboardFocusedItemId}
-            onCollapse={collapseStickyRow}
-          />
-          <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
-            <StyledAriaTree
-              ref={containerRef}
-              aria-label="Stories"
-              selectionMode="single"
-              // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
-              // selection exists; 'replace' keeps Enter firing onAction on every row.
-              selectionBehavior="replace"
-              // The selection mirrors the current story, so it is never empty and clearing it
-              // must not be offered.
-              disallowEmptySelection
-              // Stop react-aria from consuming Escape to clear the selection, which swallowed
-              // the key before ancestors (like the mobile menu drawer) could act on it.
-              escapeKeyBehavior="none"
-              expandedKeys={expanded}
-              onExpandedChange={handleExpandedChange}
-              selectedKeys={selectedKeys}
-              onSelectionChange={handleSelectionChange}
-              onAction={handleAction}
-            >
-              <Collection items={tree} dependencies={collectionDependencies}>
-                {nodeRenderer}
-              </Collection>
-            </StyledAriaTree>
-          </Virtualizer>
-          {selectionLine}
-        </TreeWrapper>
-        {focusedItemShortcutLabel && (
-          <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
-        )}
+        <SelectionLineStoreContext.Provider value={selectionLineStoreRef.current}>
+          <TreeWrapper ref={treeWrapperRef}>
+            {/* First child, so that it sticks from the top of this tree rather than from its end. */}
+            <TreeStickyRows
+              ids={stickyIds}
+              data={hoistedData}
+              api={api}
+              labelContext={labelContext}
+              scrollerRef={scrollerRef}
+              wrapperRef={treeWrapperRef}
+              rowsRef={rowsRef}
+              accentId={keyboardFocusedItemId}
+              selectionLine={selectionLine}
+              onCollapse={collapseStickyRow}
+            />
+            <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
+              <StyledAriaTree
+                ref={containerRef}
+                aria-label="Stories"
+                selectionMode="single"
+                // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
+                // selection exists; 'replace' keeps Enter firing onAction on every row.
+                selectionBehavior="replace"
+                // The selection mirrors the current story, so it is never empty and clearing it
+                // must not be offered.
+                disallowEmptySelection
+                // Stop react-aria from consuming Escape to clear the selection, which swallowed
+                // the key before ancestors (like the mobile menu drawer) could act on it.
+                escapeKeyBehavior="none"
+                expandedKeys={expanded}
+                onExpandedChange={handleExpandedChange}
+                selectedKeys={selectedKeys}
+                onSelectionChange={handleSelectionChange}
+                onAction={handleAction}
+              >
+                <Collection items={tree} dependencies={collectionDependencies}>
+                  {nodeRenderer}
+                </Collection>
+              </StyledAriaTree>
+            </Virtualizer>
+          </TreeWrapper>
+          {focusedItemShortcutLabel && (
+            <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
+          )}
+        </SelectionLineStoreContext.Provider>
       </ContextMenuStoreContext.Provider>
     </StatusContext.Provider>
   );

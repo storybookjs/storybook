@@ -19,7 +19,7 @@ import {
 } from './ContextMenu.tsx';
 
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { IndentLines } from './TreeIndentLines.tsx';
+import { IndentLines, useSelectionLineLevel } from './TreeIndentLines.tsx';
 import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
 import { StatusContext } from './StatusContext.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
@@ -231,6 +231,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   // The open context menu comes from a subscription store, not from props. As a react-aria
   // collection dependency it invalidates the node cache, which re-renders every row in the tree.
   // With the store, only the row that opens or closes its menu re-renders.
+  const selectionLineLevel = useSelectionLineLevel(item.id);
   const menuStore = useContext(ContextMenuStoreContext);
   const openedBy = useSyncExternalStore(menuStore.subscribe, () => {
     const menu = menuStore.getState();
@@ -375,7 +376,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       data-nodetype={nodeType}
     >
       <TreeItemContent>
-        <IndentLines level={item.depth} />
+        <IndentLines level={item.depth} selectionLevel={selectionLineLevel} />
         <StyledContent>
           {leadingIcon}
           <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>

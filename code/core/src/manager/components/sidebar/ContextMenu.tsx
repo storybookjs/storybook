@@ -250,8 +250,11 @@ export function generateAddonContextMenuLinks(
       ...item,
       id: `${addon.id}-${id}`,
       onClick: (event: SyntheticEvent) => {
-        onClick(event, { triggerRef });
-        onHide();
+        try {
+          onClick(event, { triggerRef });
+        } finally {
+          onHide();
+        }
       },
     }))
   );

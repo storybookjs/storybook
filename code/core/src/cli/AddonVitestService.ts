@@ -36,10 +36,16 @@ export interface AddonVitestCompatibilityOptions {
  * own `@types/node` range never intersects that range (e.g. create-next-app scaffolds pinning
  * `@types/node@^20`) hard-fails npm's peer resolution, so `latest` must be skipped in favor of
  * VITEST_FALLBACK_SPECIFIER. No declared `@types/node` at all means nothing to conflict with.
+ * Unparseable specifiers (pnpm `catalog:` references) cannot be checked for peer compatibility,
+ * so they also fall back rather than risk an ERESOLVE — or throw on an invalid comparator.
  */
 export const canInstallLatestVitest = (allDependencies: Record<string, string>): boolean => {
   const typesNodeRange = allDependencies['@types/node'];
-  return !typesNodeRange || intersects(typesNodeRange, LATEST_VITEST_TYPES_NODE_PEER);
+  if (!typesNodeRange) {
+    return true;
+  }
+  const range = validRange(typesNodeRange);
+  return range ? intersects(range, LATEST_VITEST_TYPES_NODE_PEER) : false;
 };
 
 /**

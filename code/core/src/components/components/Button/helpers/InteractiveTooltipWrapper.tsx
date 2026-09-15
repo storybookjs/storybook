@@ -20,7 +20,7 @@ export const InteractiveTooltipWrapper: React.FC<{
 
     // Read the flag from the DOM instead of the manager API. Button is public API and can be
     // imported in MDX, where the addons singleton is not available. The flag does not change in
-    // the UI, so the missing reactivity is safe.
+    // the app's lifecycle, so it's safe to use without reactivity.
     const hasShortcuts = document?.body?.getAttribute('data-shortcuts-enabled') !== 'false';
     if (!hasShortcuts) {
       return undefined;
@@ -29,8 +29,8 @@ export const InteractiveTooltipWrapper: React.FC<{
     return shortcutToHumanString(shortcut);
   }, [shortcut]);
 
-  // Show a tooltip for the shortcut alone. A Button with visible text sets no `tooltip`, and the
-  // tooltip is the only place that shows the shortcut.
+  // Show a tooltip for the shortcut alone. When a Button sets no `tooltip`, we still
+  // need to show it for the shortcut to be discoverable.
   return tooltip || shortcutLabel ? (
     <TooltipProvider
       placement={tooltipPlacement}

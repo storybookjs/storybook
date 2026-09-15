@@ -129,20 +129,24 @@ export default meta;
 </script>
 ```
 
-```js filename="Button.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Button from './Button.svelte';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next"
+<script module>
+  import preview from '../.storybook/preview';
 
-export default {
-  component: Button,
-  //👇 Creates specific argTypes
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-  args: {
-    //👇 Now all Button stories will be primary.
-    primary: true,
-  },
-};
+  import Button from './Button.svelte';
+
+  const { Story } = preview.meta({
+    component: Button,
+    //👇 Creates specific argTypes
+    argTypes: {
+      backgroundColor: { control: 'color' },
+    },
+    args: {
+      //👇 Now all Button stories will be primary.
+      primary: true,
+    },
+  });
+</script>
 ```
 
 ```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -165,25 +169,24 @@ export default {
 </script>
 ```
 
-```ts filename="Button.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta } from '@storybook/your-framework';
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next"
+<script module>
+  import preview from '../.storybook/preview';
 
-import Button from './Button.svelte';
+  import Button from './Button.svelte';
 
-const meta = {
-  component: Button,
-  //👇 Creates specific argTypes
-  argTypes: {
-    backgroundColor: { control: 'color' },
-  },
-  args: {
-    //👇 Now all Button stories will be primary.
-    primary: true,
-  },
-} satisfies Meta<typeof Button>;
-
-export default meta;
+  const { Story } = preview.meta({
+    component: Button,
+    //👇 Creates specific argTypes
+    argTypes: {
+      backgroundColor: { control: 'color' },
+    },
+    args: {
+      //👇 Now all Button stories will be primary.
+      primary: true,
+    },
+  });
+</script>
 ```
 
 ```js filename="Button.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

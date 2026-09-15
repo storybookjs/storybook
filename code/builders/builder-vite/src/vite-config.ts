@@ -72,7 +72,8 @@ export async function resolveVitePublicDir(
 // Vite config that is common to development and production mode
 export async function commonConfig(
   options: Options,
-  _type: PluginConfigType
+  _type: PluginConfigType,
+  appConfig?: ViteConfig
 ): Promise<ViteInlineConfig> {
   const { mergeConfig } = await import('vite');
 
@@ -81,10 +82,8 @@ export async function commonConfig(
   // I destructure away the `build` property from the user's config object
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
   // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
-  const { build: buildProperty = undefined, ...userConfig } = await loadUserViteConfig(
-    options,
-    _type
-  );
+  const { build: buildProperty = undefined, ...userConfig } =
+    appConfig ?? (await loadUserViteConfig(options, _type));
 
   // Storybook's Vite config is assembled from self-contained plugins.
   // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),

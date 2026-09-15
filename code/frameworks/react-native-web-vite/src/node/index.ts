@@ -5,3 +5,6 @@ export function defineMain(config: StorybookConfig) {
 }
 
 export type { StorybookConfig };
+
+export { experimental_vitePlugin } from '@storybook/builder-vite';
+export type { experimental_VitePluginUserOptions } from '@storybook/builder-vite';

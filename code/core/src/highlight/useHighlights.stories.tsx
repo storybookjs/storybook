@@ -231,3 +231,44 @@ export const LayoutCentered = meta.story({
   },
   render: () => <div style={{ padding: 10 }}>Content</div>,
 });
+
+export const SmallTarget = meta.story({
+  parameters: {
+    highlights: [
+      {
+        selectors: ['#small-target'],
+        options: {
+          menu: [],
+        },
+      },
+    ],
+  },
+
+  render: () => (
+    <div style={{ padding: 100 }}>
+      <div
+        style={{
+          position: 'relative',
+          width: 28,
+          height: 28,
+          border: '1px solid red',
+          background: 'rgba(255, 0, 0, 0.1)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          pointerEvents: 'none',
+        }}
+      >
+        <div
+          id="small-target"
+          style={{
+            width: 8,
+            height: 8,
+            background: 'black',
+            pointerEvents: 'auto',
+          }}
+        />
+      </div>
+    </div>
+  ),
+});

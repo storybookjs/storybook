@@ -35,6 +35,7 @@ afterEach(() => {
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const STORY_PATH = join(FIXTURES, 'button.stories.ts');
 const COMPONENT_PATH = join(FIXTURES, 'button.component.ts');
+const COLOR_PICKER_PATH = join(FIXTURES, 'color-picker.component.ts');
 
 const entry: IndexEntry = {
   id: 'button--default',
@@ -94,10 +95,38 @@ const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
   extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => meta),
 });
 
+// Extraction is keyed by path, so a story with a subcomponent can hand the stub one meta per file.
+const managerForPaths = (metas: Record<string, AngularComponentMetaResult | undefined>) => ({
+  extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(
+    (path: string) => metas[path]
+  ),
+});
+
 const context = (
   manager: AngularComponentMetaSource,
   options: BuildDocgenContext['options'] = { propsTable: 'all' }
 ): BuildDocgenContext => ({ manager, options, logger });
+
+// `line` is what marks the input/output pair as one `model()`, not two aliased members.
+const colorPickerClassMeta = componentEntry({
+  name: 'ColorPickerComponent',
+  description: 'The colour picker panel.',
+  rawdescription: 'The colour picker panel.',
+  inputsClass: [
+    {
+      name: 'color',
+      type: 'string',
+      optional: true,
+      line: 12,
+      initializer: { kind: 'literal', literalKind: 'string', text: "'#345F92'" },
+      rawdescription: 'The currently selected colour',
+    },
+  ],
+  outputsClass: [{ name: 'color', type: 'string', line: 12 }],
+  propertiesClass: [
+    { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+  ],
+});
 
 describe('buildDocgenPayload', () => {
   it('extracts argTypes from the analyzer and derives the snippet meta', () => {
@@ -133,7 +162,8 @@ describe('buildDocgenPayload', () => {
       enums: [],
     });
     expect(payload?.compodoc).toBeUndefined();
-    expect(payload?.subcomponents).toBeUndefined();
+    // The story declares no subcomponents: the key is absent entirely, not an empty record.
+    expect(payload && 'subcomponents' in payload).toBe(false);
     expect(payload?.error).toBeUndefined();
   });
 
@@ -334,28 +364,9 @@ describe('buildDocgenPayload', () => {
   });
 
   describe('apiDescription', () => {
-    // `line` is what marks the input/output pair as one `model()`, not two aliased members.
-    const colorPicker = componentEntry({
-      name: 'ColorPickerComponent',
-      inputsClass: [
-        {
-          name: 'color',
-          type: 'string',
-          optional: true,
-          line: 12,
-          initializer: { kind: 'literal', literalKind: 'string', text: "'#345F92'" },
-          rawdescription: 'The currently selected colour',
-        },
-      ],
-      outputsClass: [{ name: 'color', type: 'string', line: 12 }],
-      propertiesClass: [
-        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
-      ],
-    });
-
     it('documents the two-way binding and tags the payload with its renderer', () => {
       givenStoryFile();
-      const manager = managerReturning(metaFor(colorPicker));
+      const manager = managerReturning(metaFor(colorPickerClassMeta));
 
       const payload = buildDocgenPayload({ entry }, context(manager, { propsTable: 'api' }));
 
@@ -389,10 +400,10 @@ describe('buildDocgenPayload', () => {
       'documents the same api surface when the props table is `%s`',
       (propsTable) => {
         givenStoryFile();
-        const manager = managerReturning(metaFor(colorPicker));
+        const manager = managerReturning(metaFor(colorPickerClassMeta));
         const apiPayload = buildDocgenPayload(
           { entry },
-          context(managerReturning(metaFor(colorPicker)), { propsTable: 'api' })
+          context(managerReturning(metaFor(colorPickerClassMeta)), { propsTable: 'api' })
         );
 
         const payload = buildDocgenPayload({ entry }, context(manager, { propsTable }));
@@ -448,6 +459,58 @@ describe('buildDocgenPayload', () => {
         exportName: 'ButtonComponent',
         localName: 'ButtonComponent',
       });
+      expect(payload?.error).toBeUndefined();
+    });
+  });
+
+  describe('declared subcomponents', () => {
+    it('documents declared subcomponents through the same chain, isolating one that cannot resolve', () => {
+      givenStoryFile(`
+        import { ButtonComponent } from './button.component';
+        import { ColorPickerComponent } from './color-picker.component';
+        import { GhostComponent } from './nope.component';
+        export default {
+          title: 'Button',
+          component: ButtonComponent,
+          subcomponents: { ColorPicker: ColorPickerComponent, Ghost: GhostComponent },
+        };
+      `);
+      const manager = managerForPaths({
+        [COMPONENT_PATH]: metaFor(componentEntry()),
+        [COLOR_PICKER_PATH]: metaFor(colorPickerClassMeta),
+      });
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      // The primary and the resolvable child are extracted; the unresolvable child never is.
+      expect(manager.extractComponentMeta).toHaveBeenCalledTimes(2);
+      expect(manager.extractComponentMeta).toHaveBeenCalledWith(COLOR_PICKER_PATH, {
+        exportName: 'ColorPickerComponent',
+        localName: 'ColorPickerComponent',
+      });
+      expect(payload?.subcomponents?.ColorPicker).toMatchObject({
+        name: 'ColorPickerComponent',
+        path: COLOR_PICKER_PATH,
+        description: 'The colour picker panel.',
+        renderer: 'angular',
+      });
+      expect(payload?.subcomponents?.ColorPicker?.argTypes?.color).toMatchObject({
+        name: 'color',
+        table: { category: 'inputs' },
+      });
+      expect(payload?.subcomponents?.ColorPicker?.apiDescription).toContain(
+        'export type ColorPickerComponentInputs = {'
+      );
+      expect(payload?.subcomponents?.Ghost).toMatchObject({
+        name: 'GhostComponent',
+        path: STORY_PATH,
+        jsDocTags: {},
+        error: { name: 'AngularComponentMetaNotFound' },
+      });
+      expect(payload?.subcomponents?.Ghost?.error?.message).toContain('./nope.component');
+      // One child's failure leaves the primary payload and its siblings intact.
+      expect(payload?.name).toBe('ButtonComponent');
+      expect(payload?.argTypes?.label).toBeDefined();
       expect(payload?.error).toBeUndefined();
     });
   });

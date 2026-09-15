@@ -35,6 +35,14 @@ const Copy = styled.div({
   gap: 4,
 });
 
+const TitleRow = styled.div({
+  display: 'flex',
+  flexDirection: 'row',
+  alignItems: 'center',
+  justifyContent: 'center',
+  gap: 8,
+});
+
 const Title = styled.div(({ theme }) => ({
   fontWeight: theme.typography.weight.bold,
   fontSize: theme.typography.size.s2 - 1,
@@ -53,9 +61,11 @@ const Actions = styled.div(({ theme }) => ({
 
 export const StateShell = ({ severity, title, summary, actions }: StateShellProps) => (
   <Shell>
-    {severity && <Badge status={severity}>{severityLabels[severity]}</Badge>}
     <Copy>
-      <Title>{title}</Title>
+      <TitleRow>
+        {severity && <Badge status={severity}>{severityLabels[severity]}</Badge>}
+        <Title>{title}</Title>
+      </TitleRow>
       {summary && <Summary>{summary}</Summary>}
     </Copy>
     {actions && <Actions>{actions}</Actions>}

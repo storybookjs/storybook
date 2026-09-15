@@ -29,10 +29,10 @@ import type {
 import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
-import type { PrintResultType } from './PrintResultType.ts';
 import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
+import type { PrintResultType } from './PrintResultType.ts';
 import {
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
@@ -909,6 +909,12 @@ export class CsfFile {
                   self._metaIsFactory = true;
                   self._metaFactoryCall = node;
                   const metaDeclarator = path.findParent((p) => p.isVariableDeclarator());
+                  const metaStatementPath = path.findParent((p) => p.isVariableDeclaration());
+
+                  if (metaStatementPath?.isVariableDeclaration()) {
+                    self._metaStatementPath = metaStatementPath;
+                    self._metaStatement = metaStatementPath.node;
+                  }
 
                   // find the name of the meta variable declaration
                   // e.g. const foo = preview.meta({ ... });

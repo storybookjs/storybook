@@ -113,12 +113,6 @@ const CardOutline = styled.div<{
       // therefore repeats at exactly 50% of the gradient line.
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
       willChange: 'transform, opacity',
-      '@media (prefers-reduced-motion: reduce)': {
-        animation: 'none',
-        width: '100%',
-        height: '100%',
-        top: 0,
-      },
     }),
 
     ...(animation === 'spin' && {

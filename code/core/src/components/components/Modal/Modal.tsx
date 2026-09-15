@@ -202,7 +202,7 @@ function BaseModal({
         e.stopPropagation();
         if (dismissOnEscape) {
           onEscapeKeyDown?.(e.nativeEvent);
-          // The deprecated handler can veto the close by preventing default (Radix contract).
+          // The deprecated onEscapeKeyDown handler can cancel the close with preventDefault.
           if (!e.nativeEvent.defaultPrevented) {
             close();
           }

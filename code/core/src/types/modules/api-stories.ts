@@ -86,16 +86,15 @@ export type API_HashEntry =
   | API_TestEntry;
 
 /**
- * The `IndexHash` is our manager-side representation of the `StoryIndex`. We create entries in the
- * hash not only for each story or docs entry, but also for each "group" of the component (split on
- * '/'), as that's how things are manipulated in parts of the manager (i.e. in search).
+ * The `IndexHash` is the manager-side representation of the `StoryIndex`. The hash holds an entry
+ * for each story and each docs entry. It also holds an entry for each component group, which is the
+ * component title split on '/'. Parts of the manager, for example search, work on these group
+ * entries.
  */
 export interface API_IndexHash {
   [id: string]: API_HashEntry;
 }
 
-// We used to received a bit more data over the channel on the SET_STORIES event, including
-// the full parameters for each story.
 export type API_PreparedIndexEntry = IndexEntry & {
   parameters?: Parameters;
   argTypes?: ArgTypes;

@@ -38,24 +38,24 @@ function combineIndexes(rootIndex: API_IndexHash | undefined, refs: API_Refs) {
 }
 
 /**
- * Walks the tree from the current story to combine story+component+folder names into a single
- * string
+ * Walk the tree from the current story up to the root. Join the story, component and folder names
+ * into a visible name and an accessible name.
  */
 const useFullStoryName = () => {
   const { index, refs } = useStorybookState();
   const api = useStorybookApi();
   const currentStory = api.getCurrentStoryData();
 
-  // Merging every ref index allocates an object as large as the whole sidebar; only rebuild
-  // it when the indexes actually change, not on every state-driven re-render.
+  // A merge of every ref index allocates an object as large as the whole sidebar. Rebuild it
+  // only when the indexes change.
   const combinedIndex = useMemo(() => combineIndexes(index, refs || {}), [index, refs]);
 
   if (!currentStory) {
     return { fullStoryAriaLabel: '', fullStoryName: '' };
   }
-  // renderLabel may return any ReactNode; the bottom bar concatenates names into plain
-  // strings (visible label and aria-label alike), so anything else falls back to the entry
-  // name rather than stringifying to "[object Object]".
+  // renderLabel and renderAriaLabel can return any ReactNode. The bottom bar joins names into
+  // plain strings, so a value that is not a string falls back to the entry name. The fallback
+  // keeps the string "[object Object]" out of the label.
   const labelContext = { isMobile: true, location: 'bottom-bar' } as const;
   const storyLabel = currentStory.renderLabel?.(currentStory, api, labelContext);
   let fullStoryName = typeof storyLabel === 'string' ? storyLabel : currentStory.name;
@@ -71,7 +71,7 @@ const useFullStoryName = () => {
     const parentAriaOutput = node.renderAriaLabel?.(node, api, labelContext);
     const parentAriaLabel = typeof parentAriaOutput === 'string' ? parentAriaOutput : parentName;
 
-    // Limit length of name shown in UI due to layout constraints.
+    // The visible name must stay short, because the bottom bar has little space.
     if (fullStoryName.length < 24) {
       fullStoryName = `${parentName}/${fullStoryName}`;
     }
@@ -93,11 +93,11 @@ interface MobileBottomBarContentProps {
 }
 
 /**
- * The mobile bottom bar is split into its own component so that `useLandmark` is only invoked while
- * the underlying DOM element is mounted. Calling `useLandmark` unconditionally from a parent that
- * conditionally renders the bar leaves a stale landmark with a null `ref.current` in
- * `@react-aria/landmark`'s manager, which crashes the binary-search position comparison the next
- * time another landmark is registered.
+ * The mobile bottom bar is a separate component so that `useLandmark` runs only while the bar
+ * element is mounted. A call to `useLandmark` from a parent that renders the bar conditionally
+ * leaves a stale landmark with a null `ref.current` in the react-aria landmark manager. That stale
+ * landmark then crashes the binary search for the landmark position when the next landmark
+ * registers.
  */
 const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
   fullStoryAriaLabel,

@@ -40,6 +40,24 @@ const inferType = (
       return cache.get(value)!;
     }
 
+    // Values with a custom `toJSON()` define their own serialization
+    // (Backbone models, Moment, Decimal.js, etc.). Walking their internals
+    // can hit cycles that don't exist in the JSON output, which produced
+    // misleading "Args should be JSON-serializable" warnings even though
+    // `JSON.stringify` and the Controls panel both honor `toJSON`.
+    if (typeof value.toJSON === 'function') {
+      try {
+        const serialized = value.toJSON();
+        if (serialized !== value) {
+          const inferred = inferType(serialized, name, visited, cache);
+          cache.set(value, inferred);
+          return inferred;
+        }
+      } catch {
+        // A throwing toJSON falls through to the regular inference path.
+      }
+    }
+
     // Check for cycles (currently being processed in this path)
     if (visited.has(value)) {
       logger.warn(dedent`

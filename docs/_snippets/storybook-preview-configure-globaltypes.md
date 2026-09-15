@@ -68,6 +68,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },
@@ -95,6 +98,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },
@@ -119,6 +125,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },
@@ -145,6 +154,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },
@@ -169,6 +181,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },
@@ -193,6 +208,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },
@@ -219,6 +237,9 @@ export default definePreview({
       },
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     theme: 'light',
   },

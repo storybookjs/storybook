@@ -76,6 +76,9 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -105,6 +108,9 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -132,6 +138,9 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -160,6 +169,9 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -187,6 +199,9 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -214,6 +229,9 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -242,5 +260,8 @@ export default definePreview({
         originalConsoleLog(...args);
       });
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```

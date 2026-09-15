@@ -40,6 +40,9 @@ sb.mock(import('../lib/session.ts'), { spy: true });
 sb.mock(import('uuid'), { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```
@@ -58,6 +61,9 @@ sb.mock('../lib/session.js', { spy: true });
 sb.mock('uuid', { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```
@@ -73,6 +79,9 @@ sb.mock(import('../lib/session.ts'), { spy: true });
 sb.mock(import('uuid'), { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```
@@ -90,6 +99,9 @@ sb.mock('../lib/session.js', { spy: true });
 sb.mock('uuid', { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```
@@ -105,6 +117,9 @@ sb.mock(import('../lib/session.ts'), { spy: true });
 sb.mock(import('uuid'), { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```
@@ -120,6 +135,9 @@ sb.mock(import('../lib/session.ts'), { spy: true });
 sb.mock(import('uuid'), { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```
@@ -137,6 +155,9 @@ sb.mock('../lib/session.js', { spy: true });
 sb.mock('uuid', { spy: true });
 
 export default definePreview({
+  addons: [
+    /* ... */
+  ],
   // ...
 });
 ```

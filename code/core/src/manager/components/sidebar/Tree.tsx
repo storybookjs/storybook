@@ -367,18 +367,16 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // The row under the pointer. The indent lines mark it, and the tree preloads its first story.
   const hoveredRowRef = useRef<HoveredRow | null>(null);
 
-  const { layer: indentLines, redraw: redrawIndentLines } = useIndentLines({
-    scrollerRef,
-    wrapperRef: treeWrapperRef,
-    rowsRef,
-    stickyIdsRef,
+  const { layer: indentLines, redrawAccent } = useIndentLines({
+    rows,
     hoveredRowRef,
     keyboardFocusedItemId,
     selectedParentId,
   });
 
-  // Recompute the sticky rows and the indent lines on every scroll, and whenever the geometry
-  // changes. A resize alone can reveal rows, so the scroller is observed as well.
+  // Recompute the sticky rows on every scroll and whenever the geometry changes. A resize alone
+  // can reveal rows, so the scroller is observed as well. The indent lines never take part: they
+  // live in the scrolled content and in the sticky rows themselves.
   useEffect(() => {
     const scroller = scrollerRef?.current;
     const wrapper = treeWrapperRef.current;
@@ -400,7 +398,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
           ? current
           : stickyRowIds
       );
-      redrawIndentLines();
     };
     const scheduleUpdate = () => {
       frame ??= requestAnimationFrame(update);
@@ -416,7 +413,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         cancelAnimationFrame(frame);
       }
     };
-  }, [rows, redrawIndentLines, scrollerRef]);
+  }, [rows, scrollerRef]);
 
   // One delegated listener for everything the hovered row drives: the accent indent line, and the
   // preload of the first story of a branch. It sits on the wrapper, so it also sees the sticky
@@ -433,7 +430,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         return;
       }
       hoveredRowRef.current = next;
-      redrawIndentLines();
+      redrawAccent();
 
       const item = next && !next.sticky ? hoistedDataRef.current[next.id] : undefined;
       if (item && next!.id !== preloadedId && isBranch(item)) {
@@ -459,7 +456,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       wrapper.removeEventListener('mouseover', onOver);
       wrapper.removeEventListener('mouseleave', onLeave);
     };
-  }, [api, refId, redrawIndentLines]);
+  }, [api, refId, redrawAccent]);
 
   // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
   // sticky rows cover the top of the viewport, so the target lands below the stack it would
@@ -657,6 +654,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
             scrollerRef={scrollerRef}
             wrapperRef={treeWrapperRef}
             rowsRef={rowsRef}
+            accentId={keyboardFocusedItemId}
             onCollapse={collapseStickyRow}
           />
           <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>

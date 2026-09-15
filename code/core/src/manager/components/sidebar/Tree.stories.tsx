@@ -774,11 +774,23 @@ export const StickyAncestors: Story = {
     expect(stickyRoot.querySelector('use')).toBeNull();
     expect(stickyRoot.querySelector('[data-testid="sticky-collapse"] svg')).not.toBeNull();
 
-    // One SVG path carries the indent lines of the sticky rows and of the scrolling rows.
+    // The grid path draws the scrolling rows' lines in the scrolled content, so it never changes
+    // with the scroll offset; the sticky rows carry their own aligned segments on top.
     const gridPath = canvasElement.querySelector(
       '[data-testid="indent-lines"] path[data-indent-lines="grid"]'
     )!;
     expect(gridPath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
+    const gridBeforeScroll = gridPath.getAttribute('d');
+    const scrollTopBefore = scroller.scrollTop;
+    scroller.scrollTop += 40;
+    await frame();
+    expect(gridPath.getAttribute('d')).toBe(gridBeforeScroll);
+    scroller.scrollTop = scrollTopBefore;
+    await frame();
+    const treeLeft = canvasElement.querySelector('[role="treegrid"]')!.getBoundingClientRect().left;
+    const stickyLine = stickyBranch.querySelector('[data-indent-line]')!;
+    expect(Math.round(stickyLine.getBoundingClientRect().left - treeLeft)).toBe(13);
+    expect(gridBeforeScroll).toContain('M13.5 ');
 
     // The children of the selected story's parent keep a selection line, which stays visible
     // while the tree is not hovered.

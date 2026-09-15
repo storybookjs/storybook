@@ -7,8 +7,6 @@ import {
   TREE_CONTENT_INSET,
   TREE_INDENT_STEP,
   TREE_ROW_HEIGHT,
-  findFirstRowBelow,
-  scrollTopWithin,
   type FlatRows,
 } from './treeGeometry.ts';
 
@@ -19,10 +17,19 @@ import {
 export const INDENT_LINE_OPACITY_VAR = '--indent-line-opacity';
 
 /**
- * One SVG layer above the sticky rows carries every indent line of the tree. A per-row line would
- * have to stitch itself across the sticky rows and the fade below them, and would drift from the
- * rows it marks at some zoom levels. One layer also keeps the DOM small: the tree draws three
- * paths, not one element per indent level per row.
+ * Distance in px from the tree's left edge to an indent level's line, just left of the icons. The
+ * sticky rows draw their own line segments at the same positions.
+ */
+export function indentLineX(level: number): number {
+  return level * TREE_INDENT_STEP - TREE_CONTENT_INSET;
+}
+
+/**
+ * One SVG layer carries every indent line of the scrolling rows. It lives in the scrolled content,
+ * so the lines move with the rows on the compositor and no scroll handler is involved; the sticky
+ * rows are opaque and draw their own segments on top. One layer also keeps the DOM small — three
+ * paths, not one element per indent level per row — and a single path cannot land on different
+ * device pixels row by row at fractional zoom.
  */
 const IndentLineLayer = styled.svg(({ theme }) => ({
   position: 'absolute',
@@ -30,8 +37,8 @@ const IndentLineLayer = styled.svg(({ theme }) => ({
   width: '100%',
   height: '100%',
   overflow: 'visible',
-  // Above the shadow of the sticky overlay.
-  zIndex: 4,
+  // Above the rows and their hover fills, below the sticky rows (zIndex 3).
+  zIndex: 2,
   pointerEvents: 'none',
   shapeRendering: 'crispEdges',
   '& path': {
@@ -50,21 +57,15 @@ const IndentLineLayer = styled.svg(({ theme }) => ({
   },
 }));
 
-/** The row under the pointer. A sticky copy and the row it covers need different geometry. */
+/** The row under the pointer. A sticky copy draws its own accent, so it is skipped here. */
 export interface HoveredRow {
   id: string;
   sticky: boolean;
 }
 
 interface IndentLinesOptions {
-  /** The sidebar's one scroll area. */
-  scrollerRef: RefObject<HTMLElement | null> | null;
-  /** The tree's own box, which the lines are drawn over. */
-  wrapperRef: RefObject<HTMLElement | null>;
   /** Geometry of the visible rows. */
-  rowsRef: RefObject<FlatRows>;
-  /** Ids of the sticky rows, from the top slot down. */
-  stickyIdsRef: RefObject<string[]>;
+  rows: FlatRows;
   /** The row under the pointer, or null. */
   hoveredRowRef: RefObject<HoveredRow | null>;
   /** The row that holds keyboard focus, or null. A pointer press does not set it. */
@@ -73,17 +74,20 @@ interface IndentLinesOptions {
   selectedParentId: string | null;
 }
 
+// The half pixel keeps the 1px stroke on the device pixel grid.
+const line = (parts: string[], level: number, top: number, bottom: number) => {
+  parts.push(`M${indentLineX(level) + 0.5} ${top}V${bottom}`);
+};
+
 /**
  * Draw the indent lines of the tree, and return the layer to render.
  *
- * The lines are written straight to the SVG paths, so a scroll or a pointer move never re-renders
- * the tree. Call `redraw` whenever the scroll offset, the sticky rows or the row geometry change.
+ * Every line is drawn in the tree's own coordinates over the full tree height, so nothing here
+ * depends on the scroll offset: the grid and selection paths change only with the row geometry,
+ * and the accent path only when the hovered or focused row changes (call `redrawAccent` then).
  */
 export function useIndentLines({
-  scrollerRef,
-  wrapperRef,
-  rowsRef,
-  stickyIdsRef,
+  rows,
   hoveredRowRef,
   keyboardFocusedItemId,
   selectedParentId,
@@ -91,83 +95,45 @@ export function useIndentLines({
   const gridPathRef = useRef<SVGPathElement>(null);
   const accentPathRef = useRef<SVGPathElement>(null);
   const selectionPathRef = useRef<SVGPathElement>(null);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
   const keyboardFocusedItemIdRef = useRef(keyboardFocusedItemId);
   keyboardFocusedItemIdRef.current = keyboardFocusedItemId;
-  const selectedParentIdRef = useRef(selectedParentId);
-  selectedParentIdRef.current = selectedParentId;
 
-  const redraw = useCallback(() => {
-    const scroller = scrollerRef?.current;
-    const wrapper = wrapperRef.current;
-    const rows = rowsRef.current;
-    if (!scroller || !wrapper || !rows) {
-      return;
-    }
-    const { offsets, depths, indexById, subtreeBottoms } = rows;
-    const stickyIds = stickyIdsRef.current ?? [];
-    // Every y below is a distance from the top of this tree, because the layer covers the tree
-    // rather than the scroll area. `scrollTop` is how far this tree has scrolled past the top of
-    // the visible area, and it is negative while the tree still starts below that edge.
-    const scrollTop = scrollTopWithin(scroller, wrapper);
-    const viewportHeight = scroller.clientHeight;
-    const stickyHeight = stickyIds.length * TREE_ROW_HEIGHT;
-    const stickyBottom = scrollTop + stickyHeight;
-
-    // A line sits at the start of its own indent level, just left of the icons. The half pixel
-    // keeps the 1px stroke on the device pixel grid.
-    const line = (parts: string[], level: number, top: number, bottom: number) => {
-      const x = level * TREE_INDENT_STEP - TREE_CONTENT_INSET + 0.5;
-      parts.push(`M${x} ${Math.round(top)}V${Math.round(bottom)}`);
-    };
-
-    // Every line of one row. Segments of rows above and below each other abut, so they read as one
-    // continuous line without any merge step.
-    const rowLines = (parts: string[], rowIndex: number, top: number, bottom: number) => {
-      for (let level = 1; level <= depths[rowIndex]; level += 1) {
-        line(parts, level, top, bottom);
-      }
-    };
-
+  // One segment per branch: from the top of its first child to the bottom of its subtree. The
+  // union of these segments equals a per-row drawing, because every row in a subtree is at least
+  // one level deeper than the branch, and section gaps only occur between top-level sections.
+  useEffect(() => {
+    const { ids, offsets, subtreeBottoms, depths } = rows;
     const grid: string[] = [];
-    stickyIds.forEach((id, slot) => {
-      const rowIndex = indexById.get(id);
-      if (rowIndex !== undefined) {
-        const top = scrollTop + slot * TREE_ROW_HEIGHT;
-        rowLines(grid, rowIndex, top, top + TREE_ROW_HEIGHT);
+    for (let i = 0; i < ids.length; i += 1) {
+      const rowBottom = offsets[i] + TREE_ROW_HEIGHT;
+      const subtreeBottom = subtreeBottoms.get(ids[i]) ?? 0;
+      if (subtreeBottom > rowBottom) {
+        line(grid, depths[i] + 1, rowBottom, subtreeBottom);
       }
-    });
-    // The sticky rows are opaque, so the first scrolling row to draw is the first one below them.
-    for (let i = findFirstRowBelow(rows, stickyBottom); i < offsets.length; i += 1) {
-      const top = offsets[i];
-      if (top >= scrollTop + viewportHeight) {
-        break;
-      }
-      rowLines(grid, i, Math.max(top, stickyBottom), top + TREE_ROW_HEIGHT);
     }
     gridPathRef.current?.setAttribute('d', grid.join(''));
+  }, [rows]);
 
-    // The accent marks the row the user points at, and the row that holds keyboard focus. A row in
-    // the sticky stack is drawn at its slot, because its own row is behind the stack.
+  // Every line of the hovered and keyboard-focused rows, within their own band. A row covered by
+  // the sticky stack is painted over by its opaque backing, and a hovered sticky copy colors its
+  // own segments, so neither needs handling here.
+  const redrawAccent = useCallback(() => {
+    const { offsets, depths, indexById } = rowsRef.current;
     const accent: string[] = [];
     const accentRow = (id: string) => {
-      const slot = stickyIds.indexOf(id);
       const rowIndex = indexById.get(id);
       if (rowIndex === undefined) {
         return;
       }
-      if (slot >= 0) {
-        const top = scrollTop + slot * TREE_ROW_HEIGHT;
-        rowLines(accent, rowIndex, top, top + TREE_ROW_HEIGHT);
-        return;
-      }
       const top = offsets[rowIndex];
-      const bottom = top + TREE_ROW_HEIGHT;
-      if (bottom > stickyBottom && top < scrollTop + viewportHeight) {
-        rowLines(accent, rowIndex, Math.max(top, stickyBottom), bottom);
+      for (let level = 1; level <= depths[rowIndex]; level += 1) {
+        line(accent, level, top, top + TREE_ROW_HEIGHT);
       }
     };
     const hovered = hoveredRowRef.current;
-    if (hovered) {
+    if (hovered && !hovered.sticky) {
       accentRow(hovered.id);
     }
     const focused = keyboardFocusedItemIdRef.current;
@@ -175,36 +141,34 @@ export function useIndentLines({
       accentRow(focused);
     }
     accentPathRef.current?.setAttribute('d', accent.join(''));
+  }, [hoveredRowRef]);
 
-    // The children of the selected story's parent keep one line at their own level, so the user
-    // can see where the selection sits even when the rest of the grid is hidden. The line runs
-    // from the first child down to the bottom of the last child's subtree.
+  // The children of the selected story's parent keep one line at their own level, so the user
+  // can see where the selection sits even when the rest of the grid is hidden. The line runs
+  // from the first child down to the bottom of the last child's subtree.
+  useEffect(() => {
+    const { offsets, depths, indexById, subtreeBottoms } = rows;
     const selection: string[] = [];
-    const parentId = selectedParentIdRef.current;
-    const parentIndex = parentId === null ? undefined : indexById.get(parentId);
+    const parentIndex = selectedParentId === null ? undefined : indexById.get(selectedParentId);
     const firstChildIndex = parentIndex === undefined ? undefined : parentIndex + 1;
     if (
-      parentId !== null &&
+      selectedParentId !== null &&
       parentIndex !== undefined &&
       firstChildIndex !== undefined &&
       depths[firstChildIndex] === depths[parentIndex] + 1
     ) {
-      const top = offsets[firstChildIndex];
-      const bottom = subtreeBottoms.get(parentId) ?? 0;
-      if (bottom > stickyBottom && top < scrollTop + viewportHeight) {
-        line(
-          selection,
-          depths[firstChildIndex],
-          Math.max(top, stickyBottom),
-          Math.min(bottom, scrollTop + viewportHeight)
-        );
-      }
+      line(
+        selection,
+        depths[firstChildIndex],
+        offsets[firstChildIndex],
+        subtreeBottoms.get(selectedParentId) ?? 0
+      );
     }
     selectionPathRef.current?.setAttribute('d', selection.join(''));
-  }, [scrollerRef, wrapperRef, rowsRef, stickyIdsRef, hoveredRowRef]);
+  }, [rows, selectedParentId]);
 
-  // Keyboard focus and selection move without a scroll event.
-  useEffect(redraw, [redraw, keyboardFocusedItemId, selectedParentId]);
+  // Keyboard focus moves without a pointer event.
+  useEffect(redrawAccent, [redrawAccent, keyboardFocusedItemId, rows]);
 
   const layer = (
     <IndentLineLayer aria-hidden="true" data-testid="indent-lines">
@@ -214,5 +178,5 @@ export function useIndentLines({
     </IndentLineLayer>
   );
 
-  return { layer, redraw };
+  return { layer, redrawAccent };
 }

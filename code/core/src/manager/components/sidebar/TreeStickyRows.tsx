@@ -1,15 +1,16 @@
 import React, { type RefObject } from 'react';
 
+import { transparentize } from 'polished';
 import type { API, IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { getAncestorIds } from '../../utils/tree.ts';
 import { CollapseIcon } from './CollapseIcon.tsx';
+import { INDENT_LINE_OPACITY_VAR, indentLineX } from './TreeIndentLines.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { SidebarLabelContext } from './types.ts';
 import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 import {
-  SECTION_GAP,
   TREE_CONTENT_INSET,
   TREE_INDENT_STEP,
   TREE_ROW_HEIGHT,
@@ -33,16 +34,6 @@ const StickyStack = styled.div({
   top: 0,
   left: 0,
   right: 0,
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    height: SECTION_GAP,
-    pointerEvents: 'none',
-    background: 'linear-gradient(to bottom, var(--sticky-row-background), transparent)',
-  },
 });
 
 const StickyRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
@@ -80,8 +71,26 @@ const StickyRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
     flexShrink: 0,
   },
 
+  // The same accent as the grid layer's, for this row's own segments.
+  '&:hover [data-indent-line], &[data-accent="true"] [data-indent-line]': {
+    backgroundColor: transparentize(0.52, theme.color.secondary),
+  },
+
   // The same icon swap as the scrolling rows: type icon at rest, collapse chevron on hover.
   ...iconSwap(['&:hover']),
+}));
+
+// The same lines as the grid layer, locked to their sticky row so the compositor carries them
+// with position: sticky. The grid layer paints below the rows' opaque backing.
+const StickyRowLine = styled.span(({ theme }) => ({
+  position: 'absolute',
+  top: 0,
+  bottom: 0,
+  width: 1,
+  pointerEvents: 'none',
+  backgroundColor: theme.appBorderColor,
+  opacity: `var(${INDENT_LINE_OPACITY_VAR}, 0)`,
+  transition: 'opacity 150ms ease',
 }));
 
 // position: relative lifts the content above the row's ::before hover highlight, which a
@@ -169,6 +178,8 @@ interface StickyRowsProps {
   wrapperRef: RefObject<HTMLElement | null>;
   /** Geometry of the visible rows. */
   rowsRef: RefObject<FlatRows>;
+  /** The row that holds keyboard focus; its sticky copy colors its own indent lines. */
+  accentId: string | null;
   /** Collapse a branch after the user presses its chevron. */
   onCollapse: (id: string) => void;
 }
@@ -189,6 +200,7 @@ export function TreeStickyRows({
   scrollerRef,
   wrapperRef,
   rowsRef,
+  accentId,
   onCollapse,
 }: StickyRowsProps) {
   if (ids.length === 0) {
@@ -218,15 +230,25 @@ export function TreeStickyRows({
           if (!entry || rowIndex === undefined) {
             return null;
           }
+          const level = rowsRef.current!.depths[rowIndex];
           return (
             <StickyRow
               key={id}
-              $level={rowsRef.current!.depths[rowIndex]}
+              $level={level}
               data-sticky-item-id={id}
+              data-accent={id === accentId || undefined}
               type="button"
               tabIndex={-1}
               onClick={() => scrollIntoSlot(id, slot)}
             >
+              {Array.from({ length: level }, (_, i) => (
+                <StickyRowLine
+                  key={i}
+                  data-indent-line
+                  style={{ left: indentLineX(i + 1) }}
+                  aria-hidden="true"
+                />
+              ))}
               <StickyRowIcon
                 data-testid="sticky-collapse"
                 onClick={(event) => {

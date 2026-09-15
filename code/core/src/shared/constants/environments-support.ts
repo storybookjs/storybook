@@ -11,7 +11,7 @@ export const BROWSER_TARGETS: BuildOptions['target'] = [
 ];
 
 // https://esbuild.github.io/api/#target
-export const NODE_TARGET: BuildOptions['target'] = 'node20.19';
+export const NODE_TARGET: BuildOptions['target'] = 'node22.12';
 
 // https://esbuild.github.io/api/#supported
 export const SUPPORTED_FEATURES: BuildOptions['supported'] = {

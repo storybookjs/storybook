@@ -65,19 +65,19 @@ describe('wrapGetAbsolutePath', () => {
       const call = writeFile.mock.calls[0];
 
       expect(call[1]).toMatchInlineSnapshot(`
-        "import { fileURLToPath } from "node:url";
-        import { dirname } from "node:path";
+        "import { fileURLToPath } from 'node:url';
+        import { dirname } from 'node:path';
         const config = {
           stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
           addons: [
             {
-              name: getAbsolutePath("@chromatic-com/storybook"),
+              name: getAbsolutePath('@chromatic-com/storybook'),
               options: {},
             },
-            getAbsolutePath("@storybook/addon-vitest"),
+            getAbsolutePath('@storybook/addon-vitest'),
           ],
           framework: {
-            name: getAbsolutePath("@storybook/angular"),
+            name: getAbsolutePath('@storybook/angular'),
             options: {},
           },
           docs: {

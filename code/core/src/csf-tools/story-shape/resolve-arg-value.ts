@@ -1,7 +1,8 @@
 // Reads an arg value written as a name through to the definition it refers to, and reports what
 // printing the result still depends on.
-import { type NodePath, traverse, types as t } from 'storybook/internal/babel';
+import { type NodePath, types as t } from 'storybook/internal/babel';
 
+import { freeNames } from './free-names.ts';
 import { type ImportRef } from './import-statements.ts';
 import { type ImportBinding, collectImportBindings } from './imports.ts';
 import { type ReferenceContext, resolveArgsRecord } from './resolve-members.ts';
@@ -189,34 +190,4 @@ const followValue = (node: t.Node, ctx: ReferenceContext, seen: Set<string>): t.
   }
   seen.add(node.name);
   return followValue(unwrapExpression(binding.path.node.init), ctx, seen);
-};
-
-/**
- * Names an expression reaches for from outside itself. ES globals count as resolved, since they
- * mean the same wherever the snippet lands.
- */
-const freeNames = (node: t.Node): Set<string> => {
-  const expression = t.isExpression(node)
-    ? node
-    : t.isObjectMethod(node)
-      ? t.objectExpression([node])
-      : undefined;
-  if (expression === undefined) {
-    throw new Error(`Cannot read the names a ${node.type} depends on: it is not an expression`);
-  }
-
-  // The clone keeps this traversal from binding scope information to nodes the story file's own
-  // program still owns.
-  const wrapped = t.file(
-    t.program([t.expressionStatement(t.cloneNode(expression, true) as t.Expression)])
-  );
-  const names = new Set<string>();
-  traverse(wrapped, {
-    ReferencedIdentifier(path) {
-      if (!path.scope.hasBinding(path.node.name)) {
-        names.add(path.node.name);
-      }
-    },
-  });
-  return names;
 };

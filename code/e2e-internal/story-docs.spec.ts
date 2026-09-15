@@ -22,6 +22,9 @@ const docsPath = '/docs/addons-docs-codepanel--docs';
 const defaultStoryBlockId = 'story--addons-docs-codepanel--default';
 const primaryStoryBlockId = `${defaultStoryBlockId}--primary`;
 const componentId = 'addons-docs-codepanel';
+// Renders through a wrapper declared in its own file; see SourceLocalHelper.stories.tsx.
+const localHelperStoryPath =
+  '/story/addons-docs-blocks-blocks-sourcelocalhelper--with-local-wrapper';
 const storyDocsStaticPath = `/services/core/story-docs/${componentId}.json`;
 
 const E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE = 'e2eStoryDocsBefore';
@@ -128,6 +131,23 @@ async function gotoAutodocsPage(page: Page) {
   await expectExperimentalDocgenServer(page);
   await waitForPreviewReady(page);
 }
+
+test.describe('story-docs snippet dependencies', () => {
+  test.setTimeout(90_000);
+
+  test('carries a locally declared wrapper into the Code panel', async ({ page }) => {
+    await page.goto(`${storybookUrl}/?path=${localHelperStoryPath}`);
+    await expectExperimentalDocgenServer(page);
+    await waitForPreviewReady(page);
+    await openCodePanel(page);
+
+    const codePanel = page.getByRole('tabpanel', { name: 'Code' });
+    await expect(codePanel).toContainText('const buttonRowGap = 8', {
+      timeout: PREVIEW_STORY_TIMEOUT,
+    });
+    await expect(codePanel).toContainText('const ButtonRow', { timeout: PREVIEW_STORY_TIMEOUT });
+  });
+});
 
 test.describe('story-docs open service', () => {
   test.describe.configure({ mode: 'serial' });

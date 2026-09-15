@@ -230,9 +230,19 @@ export function buildStoryDocsFromResolved({
     filePath: storyPath,
     ...openStoryReferences(),
   });
-  // An arg value that kept the name another module gave it only compiles once the import block
-  // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.
-  const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));
+  // A snippet name that kept the module another file gave it only compiles once the import block
+  // names that module too. `packageName` rewriting is for the component, so those refs opt out of
+  // it - which is also why a name the component refs already cover has to be dropped here: the two
+  // would otherwise bucket under different sources and print the same import twice.
+  // Matching on the local name alone is deliberate: a namespace component (`Accordion.Root` via
+  // `import * as Accordion`) rewrites to a named import, so its exported name no longer matches the
+  // `*` the snippet ref carries, yet the component ref already covers the binding.
+  const componentLocalNames = new Set(
+    allComponents.flatMap((ref) => (ref.localImportName ? [ref.localImportName] : []))
+  );
+  const argRefs = storyEntries.imports
+    .filter((ref) => !ref.localImportName || !componentLocalNames.has(ref.localImportName))
+    .map((ref) => ({ ...ref, isPackage: true }));
   const imports =
     buildImportStatements({ refs: [...allComponents, ...argRefs], packageName })
       .join('\n')

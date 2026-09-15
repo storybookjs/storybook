@@ -1,3 +1,4 @@
+export { freeNames } from './free-names.ts';
 export {
   buildImportStatements,
   resolveComponentImport,

@@ -5,6 +5,7 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
+import { vi } from 'vitest';
 
 import { MemoryRouter } from 'storybook/internal/router';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
@@ -117,11 +118,8 @@ const meta = {
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
     sessionStorage.clear();
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: true };
-    return () => {
-      global.FEATURES = features;
-    };
+    vi.stubGlobal('FEATURES', { ...global.FEATURES, changeDetection: true });
+    return () => vi.unstubAllGlobals();
   },
 } satisfies Meta<typeof ShowChangesButton>;
 
@@ -174,13 +172,13 @@ export const Active: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
-    await expect(button).toHaveTextContent('Showing new and modified stories');
+    await expect(button).toHaveTextContent('Show new and modified stories');
     await expect(button).toHaveAttribute('aria-checked', 'true');
     await expect(canvas.getByRole('button', { name: 'Clear' })).toBeVisible();
   },
 };
 
-/** Only 'status-value:new' is filtered on, which is not the full toggle state. */
+/** Any active change-detection filter means the CTA is already in its toggled-on state. */
 export const PartialFilter: Story = {
   parameters: {
     contextOptions: {
@@ -192,8 +190,9 @@ export const PartialFilter: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
-    await expect(button).toHaveAttribute('aria-checked', 'false');
-    await expect(button.textContent).toMatch(/^Show /);
+    await expect(button).toHaveTextContent('Show new and modified stories');
+    await expect(button).toHaveAttribute('aria-checked', 'true');
+    await expect(canvas.getByRole('button', { name: 'Clear' })).toBeVisible();
   },
 };
 
@@ -302,10 +301,9 @@ export const HiddenWhenFeatureOff: Story = {
   },
   beforeEach: () => {
     const cleanup = setChangeStatuses({ s1: 'status-value:new' });
-    const features = global.FEATURES;
-    global.FEATURES = { ...features, changeDetection: false };
+    vi.stubGlobal('FEATURES', { ...global.FEATURES, changeDetection: false });
     return () => {
-      global.FEATURES = features;
+      vi.unstubAllGlobals();
       cleanup();
     };
   },

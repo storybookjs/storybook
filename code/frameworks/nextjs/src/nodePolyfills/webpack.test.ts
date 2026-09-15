@@ -13,6 +13,11 @@ it('adds minimal node polyfills without crypto-browserify', () => {
   expect(config.plugins).toHaveLength(2);
   expect(config.plugins?.[1]).toBeInstanceOf(ProvidePlugin);
   expect(config.resolve?.fallback).toMatchObject({
+    _stream_duplex: expect.stringContaining('readable-stream'),
+    _stream_passthrough: expect.stringContaining('readable-stream'),
+    _stream_readable: expect.stringContaining('readable-stream'),
+    _stream_transform: expect.stringContaining('readable-stream'),
+    _stream_writable: expect.stringContaining('readable-stream'),
     fs: false,
     path: false,
     buffer: expect.stringContaining('buffer'),

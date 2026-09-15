@@ -1,11 +1,6 @@
 import * as v from 'valibot';
 
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName, type ToolsetMethodId } from '../../toolset-names.ts';
 import type { DocsAccess, ResolvedDocsEntry } from './access.ts';
 import {
@@ -69,8 +64,9 @@ export type DocsShowOutput = {
 };
 
 export type DocsShowStoryOutput = {
-  componentId: string;
-  storyName: string;
+  componentId?: string;
+  storyName?: string;
+  storyId?: string;
   entry?: ResolvedDocsEntry;
   storybookId?: string;
   sourceError?: string;
@@ -110,19 +106,36 @@ function resolveShow({ entry, sourceError }: DocsShowOutput): ShowResolution {
 }
 
 type ComponentEntry = Extract<ResolvedDocsEntry, { kind: 'component' }>;
+type ComponentStory = NonNullable<ComponentEntry['component']['stories']>[number];
 
 /** The `showStory` counterpart of {@link ShowResolution}. */
 type ShowStoryResolution =
+  | { kind: 'input-invalid' }
   | { kind: 'source-error'; message: string }
   | { kind: 'component-missing' }
   | { kind: 'story-missing'; component: ComponentEntry['component'] }
-  | { kind: 'found'; component: ComponentEntry['component'] };
+  | { kind: 'found'; component: ComponentEntry['component']; story: ComponentStory };
 
-function resolveShowStory({
-  entry,
-  storyName,
-  sourceError,
-}: DocsShowStoryOutput): ShowStoryResolution {
+/** Whether a `showStory` input names a story at all: a story id, or a complete name pair. */
+function isShowStorySelector({ storyId, componentId, storyName }: DocsShowStoryOutput): boolean {
+  return storyId !== undefined || (componentId !== undefined && storyName !== undefined);
+}
+
+/**
+ * The component id a story id starts with (`button--primary` → `button`). Only a routing hint for
+ * which manifest entry to resolve — a match is reported solely when a story's `id` equals the
+ * input.
+ */
+function componentIdOfStoryId(storyId: string): string {
+  const separator = storyId.indexOf('--');
+  return separator === -1 ? storyId : storyId.slice(0, separator);
+}
+
+function resolveShowStory(data: DocsShowStoryOutput): ShowStoryResolution {
+  const { entry, storyId, storyName, sourceError } = data;
+  if (!isShowStorySelector(data)) {
+    return { kind: 'input-invalid' };
+  }
   if (sourceError !== undefined) {
     return { kind: 'source-error', message: sourceError };
   }
@@ -130,9 +143,11 @@ function resolveShowStory({
     return { kind: 'component-missing' };
   }
   const { component } = entry;
-  return component.stories?.some((story) => story.name === storyName)
-    ? { kind: 'found', component }
-    : { kind: 'story-missing', component };
+  const story =
+    storyId !== undefined
+      ? component.stories?.find((candidate) => candidate.id === storyId)
+      : component.stories?.find((candidate) => candidate.name === storyName);
+  return story ? { kind: 'found', component, story } : { kind: 'story-missing', component };
 }
 
 /**
@@ -157,7 +172,7 @@ function describeList(ctx: ToolsetCtx): string {
 function describeShow(ctx: ToolsetCtx): string {
   return `Get documentation for a UI component or docs entry.
 
-Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need.
+Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as \`storyId\`.
 
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
@@ -187,20 +202,37 @@ function renderShow(data: DocsShowOutput, ctx: ToolsetCtx): string {
   }
 }
 
+/** The stories a miss can be corrected to, with ids where the manifest carries them. */
+function formatAvailableStories(stories: ComponentEntry['component']['stories']): string {
+  const listed = stories
+    ?.map((story) => (story.id ? `${story.name} (${story.id})` : story.name))
+    .join(', ');
+  return listed || 'none';
+}
+
 /** Pure renderer for `showStory`. */
-function renderShowStory(data: DocsShowStoryOutput, ctx: ToolsetCtx): string {
-  const resolution = resolveShowStory(data);
+function renderShowStory(
+  resolution: ShowStoryResolution,
+  data: DocsShowStoryOutput,
+  ctx: ToolsetCtx
+): string {
   switch (resolution.kind) {
+    case 'input-invalid':
+      return `Provide either \`storyId\`, or both \`componentId\` and \`storyName\`. Story ids are listed by the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool with \`withStoryIds: true\` and in ${getToolName(ctx)(DOCS_METHOD_REFS.show)} output.`;
     case 'source-error':
       return resolution.message;
     case 'component-missing':
-      return `Component not found: "${data.componentId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components.`;
+      return data.storyId !== undefined
+        ? `Story not found: "${data.storyId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool with \`withStoryIds: true\` to see available stories and their ids.`
+        : `Component not found: "${data.componentId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components.`;
     case 'story-missing': {
-      const availableStories = resolution.component.stories?.map((story) => story.name).join(', ');
-      return `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories || 'none'}`;
+      const availableStories = formatAvailableStories(resolution.component.stories);
+      return data.storyId !== undefined
+        ? `Story not found: "${data.storyId}" for component "${resolution.component.id}". Available stories: ${availableStories}`
+        : `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories}`;
     }
     case 'found':
-      return formatStoryDocumentation(resolution.component, data.storyName);
+      return formatStoryDocumentation(resolution.component, resolution.story.name);
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -274,9 +306,33 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
       });
 
+  // Two selector shapes in one flat object: MCP requires an `inputSchema` whose root is
+  // `type: "object"`, so this cannot be a top-level union (it would convert to a bare `anyOf`),
+  // and valibot refinements don't survive JSON Schema conversion, so the either-shape rule is
+  // enforced by the handler, which renders actionable guidance instead of a validation error.
+  const showStoryFields = {
+    storyId: v.pipe(
+      v.optional(v.string()),
+      v.description(
+        'The story ID, as listed by the docs list tool with withStoryIds: true and shown next to each story in the component documentation (e.g., "button--primary"). Prefer this over componentId + storyName whenever you have a story ID.'
+      )
+    ),
+    componentId: v.pipe(
+      v.optional(v.string()),
+      v.description(
+        'The component ID (e.g., "button"). Use together with storyName, and only when you have no story ID.'
+      )
+    ),
+    storyName: v.pipe(
+      v.optional(v.string()),
+      v.description(
+        'The human-readable story name (e.g., "Primary"). Use together with componentId.'
+      )
+    ),
+  };
   const showStorySchema = multiSource
-    ? v.object({ componentId: v.string(), storyName: v.string(), ...storybookIdField })
-    : v.object({ componentId: v.string(), storyName: v.string() });
+    ? v.object({ ...showStoryFields, ...storybookIdField })
+    : v.object(showStoryFields);
 
   /** The access for a lookup, plus the id it was scoped to. */
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
@@ -300,7 +356,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
         }),
         title: 'List All Documentation',
         description: describeList,
-        handler: async (input, ctx): Promise<ToolsetOutcome<DocsListOutput, never>> => {
+        handler: async (input): Promise<ToolsetOutcome<DocsListOutput, never>> => {
           const { withStoryIds } = input;
           const data: DocsListOutput = multiSource
             ? { withStoryIds, sources: await listSources(sources!, { withStoryIds }) }
@@ -312,17 +368,23 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           // A listing of nothing but errors is not a usage signal, so nothing is counted then.
           const counted = selectReportedManifests(data);
-          if (counted) {
-            await reportToolsetTelemetry(ctx, 'tool:listAllDocumentation', {
-              toolset: 'docs',
-              componentCount: Object.keys(counted.componentManifest.components).length,
-              docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
-              resultTokenCount: estimateTokens(markdown),
-              sourceCount: data.sources?.length,
-            });
-          }
-
-          return { ok: true, data, markdown };
+          return {
+            ok: true,
+            data,
+            markdown,
+            ...(counted
+              ? {
+                  telemetry: {
+                    payload: {
+                      componentCount: Object.keys(counted.componentManifest.components).length,
+                      docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
+                      resultTokenCount: estimateTokens(markdown),
+                      sourceCount: data.sources?.length,
+                    },
+                  },
+                }
+              : {}),
+          };
         },
       },
       [DOCS_METHOD_NAMES.show]: {
@@ -338,44 +400,60 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           const markdown = renderShow(data, ctx);
 
-          await reportToolsetTelemetry(ctx, 'tool:getDocumentation', {
-            toolset: 'docs',
-            componentId: id,
-            found: data.entry !== undefined,
-            resultTokenCount: estimateTokens(markdown),
-          });
-
+          const telemetry = {
+            payload: {
+              componentId: id,
+              found: data.entry !== undefined,
+              resultTokenCount: estimateTokens(markdown),
+            },
+          };
           return isDocsShowError(data)
-            ? { ok: false, data, markdown }
-            : { ok: true, data, markdown };
+            ? { ok: false, data, markdown, telemetry }
+            : { ok: true, data, markdown, telemetry };
         },
       },
       [DOCS_METHOD_NAMES.showStory]: {
         input: showStorySchema,
         title: 'Get Documentation for Story',
         description:
-          'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.',
+          'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it. Identify the story by its story ID (preferred), or by componentId plus storyName.',
         handler: async (input, ctx): Promise<ToolsetOutcome<DocsShowStoryOutput>> => {
-          const { componentId, storyName, storybookId } = input as {
-            componentId: string;
-            storyName: string;
+          const { storyId, componentId, storyName, storybookId } = input as {
+            storyId?: string;
+            componentId?: string;
+            storyName?: string;
             storybookId?: string;
           };
-          const selected = access(storybookId, ctx);
-          const data: DocsShowStoryOutput = selected.sourceError
-            ? { componentId, storyName, storybookId, sourceError: selected.sourceError }
-            : {
-                componentId,
-                storyName,
-                storybookId,
-                entry: await selected.access!.resolve(componentId),
-              };
+          const request: DocsShowStoryOutput = { storyId, componentId, storyName, storybookId };
 
-          const markdown = renderShowStory(data, ctx);
+          // The id shape wins when both are passed, mirroring its listed preference.
+          const resolveId =
+            storyId !== undefined
+              ? componentIdOfStoryId(storyId)
+              : componentId !== undefined && storyName !== undefined
+                ? componentId
+                : undefined;
 
-          return isDocsShowStoryError(data)
-            ? { ok: false, data, markdown }
-            : { ok: true, data, markdown };
+          const selected = resolveId !== undefined ? access(storybookId, ctx) : {};
+          const data: DocsShowStoryOutput =
+            selected.access && resolveId !== undefined
+              ? { ...request, entry: await selected.access.resolve(resolveId) }
+              : { ...request, sourceError: selected.sourceError };
+
+          const resolution = resolveShowStory(data);
+          const markdown = renderShowStory(resolution, data, ctx);
+
+          const telemetry = {
+            payload: {
+              found: resolution.kind === 'found',
+              storyId: resolution.kind === 'found' ? resolution.story.id : storyId,
+              lookup: storyId !== undefined ? 'storyId' : 'name',
+              resultTokenCount: estimateTokens(markdown),
+            },
+          };
+          return resolution.kind === 'found'
+            ? { ok: true, data, markdown, telemetry }
+            : { ok: false, data, markdown, telemetry };
         },
       },
     },

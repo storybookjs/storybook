@@ -1,41 +1,68 @@
 import type { FC } from 'react';
-import React, { useState } from 'react';
+import React from 'react';
 
-import { Link } from 'storybook/internal/components';
+import { Button, Link, TabList, TabPanel, useTabsState } from 'storybook/internal/components';
+
+import { CheckIcon, CopyIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 
 interface UpgradeBlockProps {
   onNavigateToWhatsNew?: () => void;
 }
 
+const UpgradeSnippet: FC<{ command: string }> = ({ command }) => {
+  const { children, buttonProps } = useCopyButton({
+    children: <CopyIcon />,
+    childrenOnCopy: <CheckIcon />,
+    content: command,
+    ariaLabel: 'Copy command',
+    ariaLabelOnCopy: 'Command copied',
+  });
+
+  return (
+    <Code>
+      {command}
+      <Button variant="ghost" padding="small" size="small" {...buttonProps}>
+        {children}
+      </Button>
+    </Code>
+  );
+};
+
 export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) => {
   const api = useStorybookApi();
-  const [activeTab, setActiveTab] = useState<'npm' | 'yarn' | 'pnpm'>('npm');
+  const tabsState = useTabsState({
+    defaultSelected: 'npm',
+    tabs: [
+      {
+        id: 'npm',
+        title: 'npm',
+        children: <UpgradeSnippet command="npx storybook@latest upgrade" />,
+      },
+      {
+        id: 'yarn',
+        title: 'yarn',
+        children: <UpgradeSnippet command="yarn dlx storybook@latest upgrade" />,
+      },
+      {
+        id: 'pnpm',
+        title: 'pnpm',
+        children: <UpgradeSnippet command="pnpm dlx storybook@latest upgrade" />,
+      },
+    ],
+  });
 
   return (
     <Container>
       <strong>You are on Storybook {api.getCurrentVersion().version}</strong>
       <p>Run the following script to check for updates and upgrade to the latest version.</p>
-      <Tabs>
-        <ButtonTab active={activeTab === 'npm'} onClick={() => setActiveTab('npm')}>
-          npm
-        </ButtonTab>
-        <ButtonTab active={activeTab === 'yarn'} onClick={() => setActiveTab('yarn')}>
-          yarn
-        </ButtonTab>
-        <ButtonTab active={activeTab === 'pnpm'} onClick={() => setActiveTab('pnpm')}>
-          pnpm
-        </ButtonTab>
-      </Tabs>
-      <Code>
-        {activeTab === 'npm'
-          ? 'npx storybook@latest upgrade'
-          : `${activeTab} dlx storybook@latest upgrade`}
-      </Code>
+      <TabList state={tabsState} />
+      <TabPanel state={tabsState} hasScrollbar={false} />
       {onNavigateToWhatsNew && (
         <Link onClick={onNavigateToWhatsNew}>See what's new in Storybook</Link>
       )}
@@ -57,26 +84,12 @@ const Container = styled.div(({ theme }) => ({
   },
 }));
 
-const Tabs = styled.div({
-  display: 'flex',
-  gap: 2,
-});
-
 const Code = styled.pre(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
   background: theme.base === 'light' ? 'rgba(0, 0, 0, 0.05)' : theme.appBorderColor,
   fontSize: theme.typography.size.s2 - 1,
   margin: '4px 0 16px',
-}));
-
-const ButtonTab = styled.button<{ active: boolean }>(({ theme, active }) => ({
-  all: 'unset',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s2 - 1,
-  borderBottom: '2px solid transparent',
-  borderBottomColor: active ? theme.color.secondary : 'none',
-  padding: '0 10px 5px',
-  marginBottom: '5px',
-  cursor: 'pointer',
 }));

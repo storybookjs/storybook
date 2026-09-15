@@ -6,7 +6,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "{ id: number; text: string; }[]"
         }
       },
@@ -22,7 +21,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -38,7 +36,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },

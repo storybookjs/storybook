@@ -27,22 +27,6 @@ export class VersionService {
   }
 
   /**
-   * Extract Storybook version from process ancestry Looks for version specifiers in command history
-   * like: create-storybook@1.0.0 or storybook@1.0.0
-   */
-  getStorybookVersionFromAncestry(
-    ancestry: ReturnType<typeof getProcessAncestry>
-  ): string | undefined {
-    for (const ancestor of ancestry.toReversed()) {
-      const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
-      if (match) {
-        return match[1];
-      }
-    }
-    return undefined;
-  }
-
-  /**
    * Extract CLI integration from process ancestry Detects if Storybook was invoked via sv create,
    * sv add, create-rsbuild, or @tanstack/start commands
    */

@@ -26,7 +26,7 @@ npx storybook@<VERSION> upgrade
 ### Upgrade to canary version
 
 ```bash
-npx storybook@0.0.0-pr-33526-sha-a2e09fa2 upgrade
+npx --yes --allow-remote=all https://pkg.pr.new/storybook@<SHA> upgrade
 ```
 
 ### Upgrade to latest stable

@@ -16,17 +16,15 @@ const status = { state: 'available', version: '1.2.3' };
 </script>
 
 <template>
-  
-        <div
-          :style="{
-            '--sidebar-width-collapsed': '52px',
-            width: true ? '52px' : '176px',
-            overflow: 'hidden'
-          }"
-        >
-          <TemplateArgsExpression isCollapsed :release="release" :status="status" :updateProgressInfo="null" />
-        </div>
-      
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: true ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression isCollapsed :release="release" :status="status" :updateProgressInfo="null" />
+  </div>
 </template>",
       "summary": undefined,
     },
@@ -43,17 +41,15 @@ const status = { state: 'available', version: '1.2.3' };
 </script>
 
 <template>
-  
-        <div
-          :style="{
-            '--sidebar-width-collapsed': '52px',
-            width: false ? '52px' : '176px',
-            overflow: 'hidden'
-          }"
-        >
-          <TemplateArgsExpression :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" />
-        </div>
-      
+  <div
+    :style="{
+      '--sidebar-width-collapsed': '52px',
+      width: false ? '52px' : '176px',
+      overflow: 'hidden'
+    }"
+  >
+    <TemplateArgsExpression :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" />
+  </div>
 </template>",
       "summary": undefined,
     },

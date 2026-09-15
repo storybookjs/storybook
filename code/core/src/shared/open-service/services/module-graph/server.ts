@@ -4,7 +4,7 @@ import type { Presets } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
 import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
-import { moduleGraphServiceDef } from './definition.ts';
+import { moduleGraphServiceDef, type ChangeDetectionReadinessResult } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 import { errorToErrorLike } from './types.ts';
@@ -15,6 +15,9 @@ export type RegisterModuleGraphServiceOptions = {
   workingDir?: string;
   presets?: Presets;
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
+  getChangeDetectionReadiness?: () => Promise<
+    Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>
+  >;
 };
 
 type AdapterDeferred = {
@@ -92,6 +95,40 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
             await ensureAdapter();
             applyAdapter(await adapterPromise);
             await engine!.whenSettled();
+          },
+        },
+        _waitForChangeDetectionReadiness: {
+          handler: async (_input, ctx) => {
+            const readiness = options.getChangeDetectionReadiness
+              ? await options.getChangeDetectionReadiness()
+              : { status: 'ready' as const };
+            let serialized: Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>;
+            switch (readiness.status) {
+              case 'ready':
+                serialized = { status: 'ready' };
+                break;
+              case 'unavailable':
+                serialized = {
+                  status: 'unavailable',
+                  reason: readiness.reason,
+                  ...(readiness.error ? { error: { message: readiness.error.message } } : {}),
+                };
+                break;
+              case 'error':
+                serialized = {
+                  status: 'error',
+                  error: { message: readiness.error.message },
+                };
+                break;
+              default: {
+                const exhaustive: never = readiness;
+                throw exhaustive;
+              }
+            }
+            ctx.self.setState((state) => {
+              state.changeDetectionReadiness = serialized;
+            });
+            return serialized;
           },
         },
       },

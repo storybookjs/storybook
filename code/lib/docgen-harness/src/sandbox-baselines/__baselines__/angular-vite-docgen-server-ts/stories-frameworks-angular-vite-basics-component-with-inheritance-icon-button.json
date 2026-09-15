@@ -6,7 +6,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -20,7 +19,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

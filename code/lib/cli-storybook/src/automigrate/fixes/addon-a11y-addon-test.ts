@@ -10,6 +10,7 @@ import { dedent } from 'ts-dedent';
 // Relative path import to avoid dependency to storybook/test
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
+import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 
 export const fileExtensions = [
   '.js',
@@ -249,7 +250,8 @@ export function transformPreviewFile(source: string, filePath: string) {
 
   const previewConfig = loadConfig(source).parse();
 
-  previewConfig.setFieldValue(['parameters', 'a11y', 'test'], 'todo');
+  previewConfig.set(['parameters', 'a11y', 'test'], 'todo');
+  assertConfigMutationSuccess(previewConfig);
 
   const formattedPreviewConfig = formatConfig(previewConfig);
   const lines = formattedPreviewConfig.split('\n');
@@ -275,7 +277,8 @@ export function transformPreviewFile(source: string, filePath: string) {
 
 export function shouldPreviewFileBeTransformed(source: string) {
   const previewConfig = loadConfig(source).parse();
-  const parametersA11yTest = previewConfig.getFieldNode(['parameters', 'a11y', 'test']);
+  const parametersA11yTest = previewConfig.get(['parameters', 'a11y', 'test']);
+  assertConfigMutationSuccess(previewConfig);
 
   if (parametersA11yTest) {
     return false;

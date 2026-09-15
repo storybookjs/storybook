@@ -13,7 +13,7 @@ Run the Storybook dev server and every Storybook CLI command from the same worki
 
 For docs, props, or usage questions, use `npx storybook tools docs list` followed by `npx storybook tools docs show` before inspecting source files. Fall back to source inspection only when the documentation commands are unavailable or return no relevant documentation.
 
-Run `npx storybook skills get stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
+Run `npx storybook skills stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
 Before invoking any `npx storybook tools` command for the first time in a session, run it with `--help` appended and read the output fully. The workflow only names the commands; each command's argument shape and usage rules (which fields to include when) live in its own help output. Never guess a command's arguments from its name — a validation error only reports missing required fields, not the optional fields the workflow expects you to provide.
 

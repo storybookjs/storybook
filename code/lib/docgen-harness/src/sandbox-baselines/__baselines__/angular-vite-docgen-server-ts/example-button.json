@@ -7,7 +7,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -21,7 +20,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string[]"
         }
       },
@@ -39,7 +37,6 @@
           "summary": "Button"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -55,7 +52,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -73,7 +69,6 @@
           "summary": false
         },
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -90,7 +85,6 @@
           "summary": "medium"
         },
         "type": {
-          "required": false,
           "summary": "\"small\" | \"medium\" | \"large\""
         }
       },

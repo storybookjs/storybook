@@ -5,6 +5,7 @@ import { pathToFileURL } from 'node:url';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
+import { getProcessAncestry } from 'process-ancestry';
 import { dedent } from 'ts-dedent';
 
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
@@ -32,10 +33,7 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
-  // TODO: remove try/catch in SB 11 where Node 22 is the minimum supported version
-  try {
-    Module.enableCompileCache?.();
-  } catch {}
+  Module.enableCompileCache();
 
   const args = process.argv.slice(2);
 
@@ -51,8 +49,13 @@ async function run() {
 
   // Only the external-CLI routes below need the package-manager machinery; importing it lazily
   // keeps the (hot) core route above from evaluating that dependency-heavy part of `common`.
-  const { JsPackageManagerFactory, executeNodeCommand, getRemotePackageRunnerArgs } =
-    await import('storybook/internal/common');
+  const {
+    JsPackageManagerFactory,
+    executeNodeCommand,
+    getPkgPrNewPackageSpecifier,
+    getRemotePackageRunnerArgs,
+    resolveStorybookVersionSpecifier,
+  } = await import('storybook/internal/common');
 
   const targetCli =
     args[0] === 'init'
@@ -64,6 +67,20 @@ async function run() {
           pkg: '@storybook/cli',
           args,
         } as const);
+
+  let storybookVersionSpecifier: string | undefined;
+  try {
+    storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
+  } catch {
+    storybookVersionSpecifier = resolveStorybookVersionSpecifier([]);
+  }
+  if (storybookVersionSpecifier) {
+    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
+  }
+
+  const dispatchedVersion =
+    getPkgPrNewPackageSpecifier(targetCli.pkg, storybookVersionSpecifier) ??
+    versions[targetCli.pkg];
 
   try {
     const { default: targetCliPackageJson } = await import(`${targetCli.pkg}/package.json`, {
@@ -91,7 +108,7 @@ async function run() {
     args: getRemotePackageRunnerArgs(
       packageManager.type,
       targetCli.pkg,
-      versions[targetCli.pkg],
+      dispatchedVersion,
       targetCli.args
     ),
     useRemotePkg: true,

@@ -6,7 +6,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -20,7 +19,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -35,7 +33,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },

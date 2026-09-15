@@ -3,13 +3,7 @@ import { join } from 'path/posix';
 
 import { build_linux } from './common-jobs.ts';
 import { artifact, workflow } from './utils/helpers.ts';
-import {
-  type JobOrNoOpJob,
-  type Workflow,
-  defineJob,
-  defineNoOpJob,
-  isWorkflowOrAbove,
-} from './utils/types.ts';
+import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
@@ -68,72 +62,6 @@ export function definePortableStoryTest(directory: string) {
             name: 'Run Cypress CT tests',
             working_directory,
             command: 'yarn cypress',
-          },
-        },
-      ],
-    }),
-    [testStorybooksNoOpJob]
-  );
-}
-
-export function definePortableStoryTestPNP() {
-  return defineJob(
-    'test-storybooks-pnp',
-    () => ({
-      executor: {
-        name: 'sb_node_22_classic',
-        class: 'medium',
-      },
-      steps: [
-        ...workflow.restoreLinux(),
-        {
-          run: {
-            name: 'Install dependencies',
-            working_directory: 'test-storybooks/yarn-pnp',
-            command: 'yarn install --no-immutable',
-            environment: {
-              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-            },
-          },
-        },
-        {
-          run: {
-            name: 'Run Storybook smoke test',
-            working_directory: 'test-storybooks/yarn-pnp',
-            command: 'yarn storybook --smoke-test',
-          },
-        },
-      ],
-    }),
-    [testStorybooksNoOpJob]
-  );
-}
-
-export function definePortableStoryTestVitest3() {
-  return defineJob(
-    'test-storybooks-portable-vitest3',
-    () => ({
-      executor: {
-        name: 'sb_playwright',
-        class: 'medium',
-      },
-      steps: [
-        ...workflow.restoreLinux(),
-        {
-          run: {
-            name: 'Install dependencies',
-            working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
-            command: 'yarn install --no-immutable',
-            environment: {
-              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-            },
-          },
-        },
-        {
-          run: {
-            name: 'Run Playwright E2E tests',
-            working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
-            command: 'yarn playwright-e2e',
           },
         },
       ],
@@ -240,21 +168,13 @@ export function defineMcpTestStorybook() {
 
 export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
-export function getTestStorybooks(workflow: Workflow) {
+export function getTestStorybooks() {
   const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3', 'svelte', 'nextjs'].map(
     definePortableStoryTest
   );
 
   testStorybooks.push(defineVitePluginTest());
   testStorybooks.push(defineMcpTestStorybook());
-
-  if (isWorkflowOrAbove(workflow, 'daily')) {
-    testStorybooks.push(definePortableStoryTestPNP());
-  }
-
-  if (isWorkflowOrAbove(workflow, 'merged')) {
-    testStorybooks.push(definePortableStoryTestVitest3());
-  }
 
   return testStorybooks;
 }

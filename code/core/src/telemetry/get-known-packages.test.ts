@@ -81,6 +81,8 @@ describe('get-known-packages', () => {
           tailwindcss: '3.0.0',
           'styled-components': '6.0.0',
           emotion: '11.0.0',
+          '@stylexjs/stylex': '0.15.4',
+          '@stylexjs/postcss-plugin': '0.15.4',
           // state management
           redux: '4.0.0',
           'react-redux': '8.0.0',
@@ -111,6 +113,8 @@ describe('get-known-packages', () => {
         emotion: '11.0.0',
         tailwindcss: '3.0.0',
         'styled-components': '6.0.0',
+        '@stylexjs/stylex': '0.15.4',
+        '@stylexjs/postcss-plugin': '0.15.4',
       });
 
       expect(result.stateManagementPackages).toEqual({

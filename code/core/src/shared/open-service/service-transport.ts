@@ -29,6 +29,7 @@
 import * as v from 'valibot';
 
 import {
+  OpenServiceRemoteCommandConfigDriftError,
   OpenServiceRemoteCommandDisconnectedError,
   OpenServiceRemoteCommandUnhandledError,
 } from '../../server-errors.ts';
@@ -37,6 +38,7 @@ import {
   SERVICE_COMMAND_ERROR,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
+  SERVICE_COMMAND_UNHANDLED,
   SERVICE_PATCHES,
   SERVICE_SYNC_START,
   SERVICE_SYNC_START_REPLY,
@@ -44,6 +46,7 @@ import {
   type CommandErrorPayload,
   type CommandInvokePayload,
   type CommandResultPayload,
+  type CommandUnhandledPayload,
   type PatchesPayload,
   type ServiceChannel,
   type SyncStartPayload,
@@ -52,6 +55,7 @@ import {
   commandErrorSchema,
   commandInvokeSchema,
   commandResultSchema,
+  commandUnhandledSchema,
   generateClientId,
   stampedSnapshotSchema,
   syncStartSchema,
@@ -76,6 +80,11 @@ type RuntimeCommand = (input: unknown) => Promise<unknown>;
  * case the requester rejects with `OpenServiceRemoteCommandUnhandledError` even though the command
  * still ran and broadcast its mutation. Remote command execution is therefore best-effort /
  * at-least-once, not exactly-once: callers must not assume a rejection means nothing happened.
+ *
+ * The window assumes an ack reaches the wire promptly, which ack-then-execute alone does not
+ * guarantee: on an async channel the emitted ack needs an event-loop turn, which the responder's
+ * own handler can starve for the length of its synchronous prefix. Deferring handler execution to
+ * a macrotask (see `onInvoke`) is what keeps acks inside the window regardless of the handler.
  */
 export const REMOTE_COMMAND_ACK_TIMEOUT_MS = 300;
 
@@ -267,9 +276,15 @@ export function connectRuntimeToChannel(
  *   `services:command-result` for that `callId`, or rejects with the (deserialized) error from the
  *   first `services:command-error`.
  * - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
- *   `services:command-ack` immediately, runs the command locally (which also broadcasts the
- *   post-mutation state via the broadcast wrappers, so peers converge as usual), then emits
+ *   `services:command-ack` immediately, runs the command locally on a deferred macrotask — so an
+ *   async channel flushes the ack before any handler work starts (which also broadcasts the
+ *   post-mutation state via the broadcast wrappers, so peers converge as usual) — then emits
  *   `services:command-result` or `services:command-error`.
+ * - **Non-implementer**: a non-delegated runtime that hosts the service but not the invoked
+ *   command's handler replies `services:command-unhandled` instead of staying silent. Only a
+ *   delegated requester acts on that reply (rejecting with config-drift guidance, since the
+ *   Storybook it attached to is the only runtime that sees its invokes); other requesters ignore
+ *   it, because one peer's report cannot speak for the others.
  *
  * Both roles coexist on one runtime: it responds for the commands it implements and requests the
  * ones it does not. A runtime never requests a command it implements (it runs that locally), so it
@@ -346,14 +361,24 @@ export function connectCommandTransport(context: {
   // Responder: run a locally-implemented command on a peer's request and reply with the outcome.
   const onInvoke = (payload: unknown): void => {
     const parsed = v.safeParse(commandInvokeSchema, payload);
-    if (
-      !parsed.success ||
-      parsed.output.serviceId !== serviceId ||
-      !dispatchesLocally(parsed.output.commandName)
-    ) {
+    if (!parsed.success || parsed.output.serviceId !== serviceId) {
       return;
     }
     const invoke = parsed.output;
+
+    if (!dispatchesLocally(invoke.commandName)) {
+      // A hosted service without this command's handler is a positive config-drift signal for a
+      // delegated caller. A delegated runtime answers no invokes, and a runtime that requested a
+      // command remotely must not report its own echo.
+      if (!delegated && invoke.clientId !== ownClientId) {
+        channel.emit(SERVICE_COMMAND_UNHANDLED, {
+          serviceId,
+          callId: invoke.callId,
+          clientId: ownClientId,
+        } satisfies CommandUnhandledPayload);
+      }
+      return;
+    }
 
     channel.emit(SERVICE_COMMAND_ACK, {
       serviceId,
@@ -361,26 +386,34 @@ export function connectCommandTransport(context: {
       clientId: ownClientId,
     } satisfies CommandAckPayload);
 
-    void Promise.resolve()
-      .then(() => localCommands[invoke.commandName](invoke.input))
-      .then(
-        (result) => {
-          channel.emit(SERVICE_COMMAND_RESULT, {
-            serviceId,
-            callId: invoke.callId,
-            result,
-            clientId: ownClientId,
-          } satisfies CommandResultPayload);
-        },
-        (error: unknown) => {
-          channel.emit(SERVICE_COMMAND_ERROR, {
-            serviceId,
-            callId: invoke.callId,
-            error: serializeError(error),
-            clientId: ownClientId,
-          } satisfies CommandErrorPayload);
-        }
-      );
+    // On an async channel the emitted ack still needs an event-loop turn to reach the wire, so the
+    // handler starts on a macrotask: a microtask start would starve that turn for as long as the
+    // handler's synchronous prefix runs (a fan-out over hundreds of components outlives the window).
+    // A timer, not `setImmediate`: an immediate would glue the handler to the same check phase as
+    // the deferred ack sends, starving the acks of sibling invokes read in the same poll batch (a
+    // docs listing issues the docgen and mdx fan-outs together); the timer waits one full turn.
+    setTimeout(() => {
+      void Promise.resolve()
+        .then(() => localCommands[invoke.commandName](invoke.input))
+        .then(
+          (result) => {
+            channel.emit(SERVICE_COMMAND_RESULT, {
+              serviceId,
+              callId: invoke.callId,
+              result,
+              clientId: ownClientId,
+            } satisfies CommandResultPayload);
+          },
+          (error: unknown) => {
+            channel.emit(SERVICE_COMMAND_ERROR, {
+              serviceId,
+              callId: invoke.callId,
+              error: serializeError(error),
+              clientId: ownClientId,
+            } satisfies CommandErrorPayload);
+          }
+        );
+    }, 0);
   };
 
   // Requester: resolve/reject the pending promise for a reply addressed to one of our calls.
@@ -414,10 +447,29 @@ export function connectCommandTransport(context: {
     clearTimeout(entry.noAckTimer);
   };
 
+  // Only for a delegated requester is one peer's report authoritative (the attached Storybook is
+  // the only runtime that sees its invokes); elsewhere absence-of-ack stays the only signal.
+  const onUnhandled = (payload: unknown): void => {
+    const report = v.safeParse(commandUnhandledSchema, payload);
+    if (!report.success || report.output.serviceId !== serviceId || !delegated) {
+      return;
+    }
+
+    settle(report.output.callId, (entry) =>
+      entry.reject(
+        new OpenServiceRemoteCommandConfigDriftError({
+          serviceId,
+          commandName: entry.commandName,
+        })
+      )
+    );
+  };
+
   channel.on(SERVICE_COMMAND_INVOKE, onInvoke);
   channel.on(SERVICE_COMMAND_RESULT, onResult);
   channel.on(SERVICE_COMMAND_ERROR, onError);
   channel.on(SERVICE_COMMAND_ACK, onAck);
+  channel.on(SERVICE_COMMAND_UNHANDLED, onUnhandled);
 
   const requestRemote = (commandName: string, input: unknown): Promise<unknown> => {
     const callId = generateClientId();
@@ -462,6 +514,7 @@ export function connectCommandTransport(context: {
       channel.off(SERVICE_COMMAND_RESULT, onResult);
       channel.off(SERVICE_COMMAND_ERROR, onError);
       channel.off(SERVICE_COMMAND_ACK, onAck);
+      channel.off(SERVICE_COMMAND_UNHANDLED, onUnhandled);
 
       // Fail any still-pending remote calls so awaiters don't hang forever past teardown.
       for (const [, entry] of pending) {
@@ -470,6 +523,45 @@ export function connectCommandTransport(context: {
       }
       pending.clear();
     },
+  };
+}
+
+/**
+ * Reports invokes for service ids this realm does not register at all.
+ *
+ * The per-service transport can only speak for services it hosts, but the common config-drift
+ * shape — a feature flag gating a whole service — leaves the invoke with no listener at all. One
+ * realm-global listener closes that gap: a non-delegated realm replies `services:command-unhandled`
+ * for any invoke whose service id it has never registered, so a delegated caller learns the drift
+ * positively instead of waiting out the ack window. Delegated realms answer nothing, a realm never
+ * reports its own invokes (they are only ever for services it registers), and an id that was
+ * registered before (mid-HMR re-registration) is not reported — staying silent degrades to the
+ * retryable timeout error, while a false report would hand out restart guidance for a transient.
+ */
+export function connectUnknownServiceReporter(context: {
+  channel: ServiceChannel;
+  isServiceRegistered: (serviceId: ServiceId) => boolean;
+  isDelegated: () => boolean;
+}): () => void {
+  const { channel, isServiceRegistered, isDelegated } = context;
+  const ownClientId = generateClientId();
+
+  const onInvoke = (payload: unknown): void => {
+    const parsed = v.safeParse(commandInvokeSchema, payload);
+    if (!parsed.success || isDelegated() || isServiceRegistered(parsed.output.serviceId)) {
+      return;
+    }
+
+    channel.emit(SERVICE_COMMAND_UNHANDLED, {
+      serviceId: parsed.output.serviceId,
+      callId: parsed.output.callId,
+      clientId: ownClientId,
+    } satisfies CommandUnhandledPayload);
+  };
+
+  channel.on(SERVICE_COMMAND_INVOKE, onInvoke);
+  return (): void => {
+    channel.off(SERVICE_COMMAND_INVOKE, onInvoke);
   };
 }
 

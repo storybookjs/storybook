@@ -371,7 +371,7 @@ describe('runAiTool', () => {
       port: '9999',
     });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('not on port `9999`');
+    expect(result.output).toContain('on port `9999`');
     expect(result.output).toContain('- port `6006`');
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'port-mismatch' });
   });

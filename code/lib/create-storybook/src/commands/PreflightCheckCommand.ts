@@ -1,16 +1,18 @@
-import { detectPnp } from 'storybook/internal/cli';
 import {
   type JsPackageManager,
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
+  resolveStorybookVersionSpecifier,
   isCI,
   invalidateProjectRootCache,
+  warnOnYarn1,
 } from 'storybook/internal/common';
-import { CLI_COLORS, deprecate, logger } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
+import { getProcessAncestry } from 'process-ancestry';
 
 import type { CommandOptions } from '../generators/types.ts';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';
@@ -37,6 +39,14 @@ export class PreflightCheckCommand {
     private readonly telemetryService = new TelemetryService()
   ) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
+    if (options.storybookVersionSpecifier === undefined) {
+      try {
+        options.storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
+      } catch {
+        // Ignore ancestry lookup failures and fall back to the embedded release versions.
+      }
+    }
+
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();
     let packageManagerType = JsPackageManagerFactory.getPackageManagerType();
 
@@ -70,18 +80,11 @@ export class PreflightCheckCommand {
     });
 
     logger.info(`Package manager: ${getPrettyPackageManagerName(packageManager.type)}`);
+    warnOnYarn1(packageManager.type);
 
     // Install base project dependencies if we scaffolded a new project
     if (isEmptyDirProject && !options.skipInstall) {
       await packageManager.installDependencies();
-    }
-
-    const pnp = await detectPnp();
-    if (pnp) {
-      deprecate(dedent`
-        As of Storybook 10.0, PnP is deprecated. 
-        If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode. In future versions, PnP compatibility will be removed.
-    `);
     }
 
     this.checkPackageNameConflict(packageManager);

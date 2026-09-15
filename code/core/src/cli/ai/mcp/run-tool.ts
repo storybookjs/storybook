@@ -21,9 +21,10 @@ import {
   schemaLines,
   type JsonSchemaNode,
 } from '../../tools/schema-lines.ts';
+import { parsePort } from '../../tools/tool-tokens.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
 import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
-import { parsePort, parseToolArgs } from './tool-args.ts';
+import { parseToolArgs } from './tool-args.ts';
 
 /**
  * Why an invocation failed before any command executed, for the `ai-command` telemetry event

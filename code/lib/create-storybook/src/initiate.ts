@@ -190,7 +190,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     showAiInstructions: hasAiFeature,
     logfile: options.logfile,
     storybookCommand,
-    setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'get', 'setup']),
+    setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'setup']),
   });
 
   // Step 9: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)

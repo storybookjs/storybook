@@ -47,6 +47,38 @@ const moduleGraphStatusSchema = v.variant('value', [
 
 const noInputSchema = v.undefined();
 
+const changeDetectionReadinessSchema = v.variant('status', [
+  v.object({
+    status: v.literal('pending'),
+  }),
+  v.object({
+    status: v.literal('ready'),
+  }),
+  v.object({
+    status: v.literal('unavailable'),
+    reason: v.pipe(
+      v.string(),
+      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+    ),
+    error: v.optional(
+      v.object({
+        message: v.pipe(
+          v.string(),
+          v.description('Optional diagnostic from the provider that marked scanning unavailable.')
+        ),
+      })
+    ),
+  }),
+  v.object({
+    status: v.literal('error'),
+    error: v.object({
+      message: v.pipe(v.string(), v.description('Human-readable scan failure message.')),
+    }),
+  }),
+]);
+
+export type ChangeDetectionReadinessResult = v.InferOutput<typeof changeDetectionReadinessSchema>;
+
 export type { ModuleGraphServiceState } from './types.ts';
 
 export const moduleGraphServiceDef = defineService({
@@ -61,6 +93,7 @@ export const moduleGraphServiceDef = defineService({
     fileActivityRevision: 0,
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
+    changeDetectionReadiness: { status: 'pending' },
   } as ModuleGraphServiceState,
   queries: {
     status: {
@@ -72,6 +105,16 @@ export const moduleGraphServiceDef = defineService({
         await ctx.self.commands._waitForSettledEngine(undefined);
       },
       handler: (_input, ctx) => ctx.self.state.status,
+    },
+    changeDetectionReadiness: {
+      description:
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._waitForChangeDetectionReadiness(undefined);
+      },
+      handler: (_input, ctx) => ctx.self.state.changeDetectionReadiness,
     },
     graphRevision: {
       description:
@@ -253,6 +296,13 @@ export const moduleGraphServiceDef = defineService({
         'Starts the engine if needed and waits until its current build or patch cycle has finished. Handler is supplied at server registration.',
       input: noInputSchema,
       output: v.void(),
+    },
+    _waitForChangeDetectionReadiness: {
+      internal: true,
+      description:
+        'Waits until change-detection scan readiness is published on the process that owns the scanner.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
     },
   },
 });

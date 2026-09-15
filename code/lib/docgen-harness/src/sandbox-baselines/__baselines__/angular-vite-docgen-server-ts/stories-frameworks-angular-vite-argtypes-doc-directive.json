@@ -9,7 +9,6 @@
           "summary": false
         },
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -23,7 +22,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },

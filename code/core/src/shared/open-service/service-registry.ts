@@ -22,10 +22,10 @@ import {
   OpenServiceMissingServiceError,
   OpenServiceOperationNameCollisionError,
 } from '../../server-errors.ts';
-import { generateClientId } from './service-channel.ts';
+import { type ServiceChannel, generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
-import { connectServiceToChannel } from './service-transport.ts';
+import { connectServiceToChannel, connectUnknownServiceReporter } from './service-transport.ts';
 import type { StaticLoader } from './static-fetch.ts';
 import type {
   AnyServiceDefinition,
@@ -57,6 +57,15 @@ const REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 type RegistryInventory = {
   entries: Map<string, RegistryEntry>;
   delegatedMode: boolean;
+  /**
+   * Every id this realm has ever registered. The unknown-service reporter must not report an id
+   * that is merely mid-HMR (unregistered and about to re-register): a false report converts a
+   * transient into config-drift restart guidance, while staying silent only degrades to the
+   * retryable timeout error.
+   */
+  everRegisteredIds: Set<string>;
+  /** The realm's unknown-service reporter, keyed to the channel it listens on. */
+  unknownServiceReporter?: { channel: ServiceChannel; disconnect: () => void };
 };
 
 /**
@@ -74,6 +83,7 @@ function getInventory(): RegistryInventory {
   registryGlobal[REGISTRY_SYMBOL] ??= {
     entries: new Map<string, RegistryEntry>(),
     delegatedMode: false,
+    everRegisteredIds: new Set<string>(),
   };
 
   return registryGlobal[REGISTRY_SYMBOL];
@@ -99,6 +109,26 @@ export function setDelegatedMode(enabled: boolean): void {
 /** Whether this runtime delegates command dispatch to the Storybook it is attached to. */
 export function isDelegatedMode(): boolean {
   return getInventory().delegatedMode;
+}
+
+// One reporter per realm answers invokes for service ids nothing here registers (the whole-service
+// config-drift shape, which no per-service transport can see). Keyed to the channel so swapping
+// channels (tests, teardown/re-install) re-attaches it instead of leaking listeners.
+function ensureUnknownServiceReporter(channel: ServiceChannel): void {
+  const inventory = getInventory();
+  if (inventory.unknownServiceReporter?.channel === channel) {
+    return;
+  }
+
+  inventory.unknownServiceReporter?.disconnect();
+  inventory.unknownServiceReporter = {
+    channel,
+    disconnect: connectUnknownServiceReporter({
+      channel,
+      isServiceRegistered: (serviceId) => inventory.everRegisteredIds.has(serviceId),
+      isDelegated: () => inventory.delegatedMode,
+    }),
+  };
 }
 
 function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
@@ -304,6 +334,9 @@ export function registerService<
     throw new OpenServiceMissingChannelError({ serviceId: definition.id });
   }
 
+  getInventory().everRegisteredIds.add(definition.id);
+  ensureUnknownServiceReporter(channel);
+
   // A command may only have a handler in some runtimes (e.g. supplied at server registration). Where
   // a local handler exists, callers run it locally and broadcast; where it does not, the resulting
   // command routes calls to a peer that implements it and awaits the reply. A delegated runtime
@@ -423,12 +456,15 @@ export function unregisterService(serviceId: ServiceId): void {
  * — from one scenario do not leak into the next.
  */
 export function clearRegistry(): void {
-  const registry = getRegistry();
+  const inventory = getInventory();
 
-  for (const entry of registry.values()) {
+  for (const entry of inventory.entries.values()) {
     entry.disconnect();
   }
 
-  registry.clear();
-  getInventory().delegatedMode = false;
+  inventory.entries.clear();
+  inventory.delegatedMode = false;
+  inventory.everRegisteredIds.clear();
+  inventory.unknownServiceReporter?.disconnect();
+  inventory.unknownServiceReporter = undefined;
 }

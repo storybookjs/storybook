@@ -8,7 +8,6 @@
           "summary": "#5eadf5"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

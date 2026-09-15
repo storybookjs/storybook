@@ -4,7 +4,7 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 /** Why attaching to a running Storybook was not possible. */
 export type AttachUnavailableReason =
   | 'no-instance'
-  | 'multiple-matches'
+  | 'port-mismatch'
   | 'old-server'
   | 'connection-failed';
 
@@ -13,8 +13,8 @@ export type AttachUnavailableReason =
  *
  * `remediation` is the whole message: it is written for the agent or developer that triggered the
  * call and names the next step, which is what `agentFacing` declares. `instances` carries every
- * live record the SDK knows about so a caller can point at another project or disambiguate a
- * `multiple-matches` failure itself. Channel tokens are omitted so logging the error cannot leak
+ * live record the SDK knows about so a caller can point at another project or resolve a
+ * `port-mismatch` failure itself. Channel tokens are omitted so logging the error cannot leak
  * them.
  */
 export class AttachUnavailableError extends StorybookError {
@@ -49,22 +49,19 @@ export class AttachUnavailableError extends StorybookError {
 }
 
 /**
- * The `storybook` binary resolved for this process does not belong to the Storybook project the
- * SDK was pointed at, and auto-spawning a matching child host was declined.
+ * The instance record cannot prove which `storybook` installation the running Storybook is, or
+ * the installations differ and spawning a child host from the recorded one is not allowed
+ * (`autoSpawn: false`, or this process is already a child host). `reason` is the whole message
+ * and names the recovery.
  */
 export class EnvironmentMismatchError extends StorybookError {
-  constructor(
-    public data: {
-      instanceCwd: string;
-      resolvedBinPath: string;
-      reason: string;
-    }
-  ) {
+  constructor(public data: { reason: string }) {
     super({
       name: 'EnvironmentMismatchError',
       category: Category.CLI,
       code: 5,
-      message: `${data.reason} The Storybook project at ${data.instanceCwd} does not own the \`storybook\` binary resolved at ${data.resolvedBinPath}.`,
+      message: data.reason,
+      agentFacing: true,
     });
   }
 }

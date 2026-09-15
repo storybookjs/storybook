@@ -1,10 +1,5 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type {
-  DocgenJsDocTags,
-  DocgenPayload,
-  DocgenProviderInput,
-  StrictArgTypes,
-} from 'storybook/internal/types';
+import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -220,18 +215,18 @@ export const buildDocgenPayload = (
     metadataJson: meta.json,
     propsTable: options.propsTable,
     logger,
-  }) as StrictArgTypes;
+  });
 
   // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
   // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
   const apiArgTypes =
     options.propsTable === 'api'
       ? argTypes
-      : (extractArgTypesFromData(meta.entry, {
+      : extractArgTypesFromData(meta.entry, {
           metadataJson: meta.json,
           propsTable: 'api',
           logger,
-        }) as StrictArgTypes);
+        });
 
   const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
   const description =

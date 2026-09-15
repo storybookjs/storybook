@@ -59,7 +59,7 @@ function methodBodyLines(method: ToolsetCatalogMethod): string[] {
   }
   const outputLines = argumentLines(method.output, false);
   if (outputLines && outputLines.length > 0) {
-    lines.push('', 'Output:', ...outputLines);
+    lines.push('', 'Output (`--json`):', ...outputLines);
   }
   return lines;
 }
@@ -123,6 +123,7 @@ export function renderToolsHelpFromCatalog(catalog: ToolsetCatalog): string {
   const notes = [
     `${LOCAL_BADGE} tools run without a running Storybook.`,
     `${DEV_SERVER_BADGE} tools need a running Storybook dev server; start it first.`,
+    'Tool results print as markdown; the Output blocks below describe the `--json` data.',
     'Individual `--key value` flags override entries of `--input`.',
   ].join('\n');
   const referenceIntro =
@@ -161,8 +162,8 @@ export function renderMethodHelpFromCatalog(
  * The complete agent discovery surface, in commander's conventional shape — Usage, Options, and a
  * `Commands:` listing with one-line summaries — followed by a full reference for every tool
  * (description, input schema, declared output schema) so agents learn the surface from this single
- * invocation instead of paying a project load per lookup. The Options block is the flags' only
- * documentation, since commander's own help is disabled in favor of this runtime-derived one.
+ * invocation instead of paying a project load per lookup. The flags are documented here and nowhere
+ * else, since commander's own help is disabled in favor of this runtime-derived one.
  */
 export function renderToolsHelp(
   configDir: string,

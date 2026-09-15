@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { Channel, setChannel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
@@ -14,7 +16,7 @@ import { global } from '@storybook/global';
 
 import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
-import { resolvePackageDir } from '../shared/utils/module.ts';
+import { resolvePackageDir, safeResolveModule } from '../shared/utils/module.ts';
 
 export async function loadStorybook(
   options: CLIOptions &
@@ -80,9 +82,17 @@ export async function loadStorybook(
        file URL / absolute path (e.g. 'file:///.../.../dist/index.js'). For bare package names, we
        need to resolve the package directory first; for already-resolved paths, dirname works directly.
     */
-    const isResolved = builderName.startsWith('file:') || isAbsolute(builderName);
-    const builderPresetDir = isResolved ? dirname(builderName) : resolvePackageDir(builderName);
-    corePresets.push(join(builderPresetDir, 'preset.js'));
+    const builderEntry = builderName.startsWith('file:') ? fileURLToPath(builderName) : builderName;
+    const builderPresetDir = isAbsolute(builderEntry)
+      ? dirname(builderEntry)
+      : resolvePackageDir(builderEntry);
+    // Not every builder ships this preset: builder-webpack5 declares its presets on its main module
+    // instead, and only the dev server and static build load a builder module to reach them.
+    const builderPreset = safeResolveModule({ specifier: join(builderPresetDir, 'preset.js') });
+
+    if (builderPreset) {
+      corePresets.push(builderPreset);
+    }
   }
 
   // Load second pass: all presets are applied in order

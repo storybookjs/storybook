@@ -669,8 +669,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
               disallowEmptySelection
               // Stop react-aria from consuming Escape to clear the selection, which swallowed
               // the key before ancestors (like the mobile menu drawer) could act on it.
-              // @ts-expect-error react-aria-components@1.21 forwards this to useGridList but
-              // omits it from TreeProps.
               escapeKeyBehavior="none"
               expandedKeys={expanded}
               onExpandedChange={handleExpandedChange}

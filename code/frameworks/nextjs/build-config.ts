@@ -61,6 +61,16 @@ const config: BuildEntries = {
         entryPoint: './src/rsc/server-only.ts',
         dts: false,
       },
+      {
+        exportEntries: ['./rsc/jsx-runtime'],
+        entryPoint: './src/rsc/jsx-runtime.ts',
+        dts: false,
+      },
+      {
+        exportEntries: ['./rsc/jsx-dev-runtime'],
+        entryPoint: './src/rsc/jsx-dev-runtime.ts',
+        dts: false,
+      },
     ],
     node: [
       {

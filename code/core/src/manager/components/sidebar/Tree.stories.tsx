@@ -122,6 +122,53 @@ export const Full: Story = {
     );
   },
 };
+
+/**
+ * Escape pressed on a focused row must reach ancestors unconsumed. The mobile menu drawer hosts
+ * the tree in a modal that closes on an unconsumed Escape, and react-aria would otherwise swallow
+ * the key on every press to clear a selection that is controlled and never empty.
+ */
+export const EscapeReachesAncestors: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  decorators: [
+    (storyFn) => (
+      <div
+        style={{ display: 'contents' }}
+        data-testid="escape-recorder"
+        onKeyDown={(event) => {
+          if (event.key === 'Escape') {
+            event.currentTarget.dataset.escapeArrived = String(!event.nativeEvent.defaultPrevented);
+          }
+        }}
+      >
+        {storyFn()}
+      </div>
+    ),
+  ],
+  play: async ({ canvas, canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
+    await waitFor(() => {
+      expect(getComputedStyle(row).pointerEvents).not.toBe('none');
+    });
+    await userEvent.click(row);
+    // The virtualizer can re-render on selection and drop focus to <body>, where Escape would
+    // bypass the tree entirely and prove nothing.
+    await waitFor(() => {
+      const active = canvasElement.ownerDocument.activeElement;
+      expect(active?.closest('[data-item-id]')).toBeTruthy();
+    });
+    await userEvent.keyboard('{Escape}');
+    expect(canvas.getByTestId('escape-recorder').dataset.escapeArrived).toBe('true');
+  },
+};
 export const Dark: Story = {
   ...Full,
   globals: { sb_theme: 'dark' },

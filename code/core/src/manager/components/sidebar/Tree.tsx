@@ -664,6 +664,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
               // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
               // selection exists; 'replace' keeps Enter firing onAction on every row.
               selectionBehavior="replace"
+              // The selection mirrors the current story, so it is never empty and clearing it
+              // must not be offered.
+              disallowEmptySelection
+              // Stop react-aria from consuming Escape to clear the selection, which swallowed
+              // the key before ancestors (like the mobile menu drawer) could act on it.
+              // @ts-expect-error react-aria-components@1.21 forwards this to useGridList but
+              // omits it from TreeProps.
+              escapeKeyBehavior="none"
               expandedKeys={expanded}
               onExpandedChange={handleExpandedChange}
               selectedKeys={selectedKeys}

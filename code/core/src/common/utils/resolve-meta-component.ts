@@ -51,6 +51,10 @@ const unwrapComponentExpression = (node: t.Node): t.Node => {
  *
  * Server-side docgen never loads the story module, so the exported name and declaring file have to
  * be recovered from source; the resolver caches, so create one per host rather than per call.
+ *
+ * Passing `componentNode` resolves a different declared expression — a CSF `subcomponents` entry —
+ * through the same import, namespace, and reference following; the default stays the meta's own
+ * component annotation.
  */
 export function createMetaComponentResolver(options: MetaComponentResolverOptions = {}) {
   const resolver = createModuleResolver({
@@ -91,10 +95,14 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
     };
   };
 
-  return function resolveMetaComponent(csf: CsfFile, storyPath: string): MetaComponentResolution {
-    // `_meta.component` is printed source text, so only the parsed node shows whether the value is
-    // a name this pass can follow.
-    const node = csf._metaAnnotations.component;
+  return function resolveMetaComponent(
+    csf: CsfFile,
+    storyPath: string,
+    componentNode?: t.Node
+  ): MetaComponentResolution {
+    // The component is printed source text, so only the parsed node shows whether the value is a
+    // name this pass can follow.
+    const node = componentNode ?? csf._metaAnnotations.component;
     if (!node) {
       return { reason: 'no-meta-component' };
     }

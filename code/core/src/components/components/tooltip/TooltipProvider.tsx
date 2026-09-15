@@ -1,5 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
@@ -75,6 +75,19 @@ const TooltipProvider = ({
     },
     [onVisibleChange]
   );
+
+  // Hide the tooltip on any pointer press in the document. react-aria hides the tooltip only when
+  // the pointer leaves the trigger or presses it. A press elsewhere can hide or replace the
+  // trigger, and the tooltip then stays open next to a hidden trigger.
+  const isTooltipShown = visible ?? isOpen;
+  useEffect(() => {
+    if (!isTooltipShown) {
+      return;
+    }
+    const onPointerDown = () => onOpenChange(false);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [isTooltipShown, onOpenChange]);
 
   return (
     <TooltipTrigger

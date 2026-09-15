@@ -336,11 +336,11 @@ const contextMenuAddonManagerContext: any = {
           'my-addon/context-menu': {
             type: Addon_TypesEnum.experimental_CONTEXT_MENU,
             id: 'my-addon/context-menu',
-            items: ({ context, triggerRef }) => [
+            items: ({ context }) => [
               {
                 id: 'annotate',
                 title: 'ADDON_CONTEXT_MENU_ITEM',
-                onClick: () => {
+                onClick: (_event, { triggerRef }) => {
                   contextMenuEntryAction(context.id, triggerRef.current?.dataset.testid);
                 },
               },

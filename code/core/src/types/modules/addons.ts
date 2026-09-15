@@ -461,6 +461,14 @@ export interface Addon_TestProviderType {
   clear?: () => void;
 }
 
+export interface Addon_ContextMenuItemClickOptions {
+  /**
+   * Ref to the button that opens the context menu. Use it to anchor floating UI to the menu's
+   * origin, e.g. by passing it as `triggerRef` to a React Aria Components Popover.
+   */
+  triggerRef: RefObject<HTMLButtonElement | null>;
+}
+
 export interface Addon_ContextMenuItem {
   /** The unique id of the menu item within this addon's contribution. */
   id: string;
@@ -470,17 +478,12 @@ export interface Addon_ContextMenuItem {
   icon?: ReactNode;
   disabled?: boolean;
   /** Called when the user selects the item; the context menu closes afterwards. */
-  onClick: (event: SyntheticEvent) => void;
+  onClick: (event: SyntheticEvent, options: Addon_ContextMenuItemClickOptions) => void;
 }
 
 export interface Addon_ContextMenuOptions {
   /** The index entry (story, docs, component, group or root) the context menu is opened for. */
   context: API_HashEntry;
-  /**
-   * Ref to the button that opens the context menu. Use it to anchor floating UI to the menu's
-   * origin, e.g. by passing it as `triggerRef` to a React Aria Components Popover.
-   */
-  triggerRef: RefObject<HTMLButtonElement | null>;
 }
 
 export interface Addon_ContextMenuType {

@@ -5,7 +5,7 @@ import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components'
 import {
   type API_HashEntry,
   type Addon_Collection,
-  type Addon_ContextMenuOptions,
+  type Addon_ContextMenuItemClickOptions,
   type Addon_ContextMenuType,
   type Addon_TestProviderType,
   Addon_TypesEnum,
@@ -125,7 +125,8 @@ export const useContextMenu = (
         ...generateTestProviderLinks(registeredTestProviders, context),
         ...generateAddonContextMenuLinks(
           registeredContextMenus,
-          { context, triggerRef },
+          context,
+          triggerRef,
           handlers.onClose
         ),
       ];
@@ -189,14 +190,16 @@ export const useContextMenu = (
  * addons and test providers.
  */
 const LiveContextMenu: FC<
-  Addon_ContextMenuOptions & { onHide: () => void } & ComponentProps<typeof TooltipLinkList>
+  { context: API_HashEntry; onHide: () => void } & Addon_ContextMenuItemClickOptions &
+    ComponentProps<typeof TooltipLinkList>
 > = ({ context, links, triggerRef, onHide, ...rest }) => {
   const api = useStorybookApi();
   const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
   const addonLinks: Link[] = generateAddonContextMenuLinks(
     api.getElements(Addon_TypesEnum.experimental_CONTEXT_MENU),
-    { context, triggerRef },
+    context,
+    triggerRef,
     onHide
   );
 
@@ -238,15 +241,16 @@ export function generateTestProviderLinks(
 
 export function generateAddonContextMenuLinks(
   registeredContextMenus: Addon_Collection<Addon_ContextMenuType>,
-  options: Addon_ContextMenuOptions,
+  context: API_HashEntry,
+  triggerRef: Addon_ContextMenuItemClickOptions['triggerRef'],
   onHide: () => void
 ): Link[] {
   return Object.values(registeredContextMenus).flatMap((addon) =>
-    (addon?.items(options) ?? []).map(({ id, onClick, ...item }) => ({
+    (addon?.items({ context }) ?? []).map(({ id, onClick, ...item }) => ({
       ...item,
       id: `${addon.id}-${id}`,
       onClick: (event: SyntheticEvent) => {
-        onClick(event);
+        onClick(event, { triggerRef });
         onHide();
       },
     }))

@@ -30,27 +30,28 @@ export const withThemeByClassName = <TRenderer extends Renderer = Renderer>({
     useEffect(() => {
       const selectedThemeName = themeOverride || selected || defaultTheme;
       const parentElement = document.querySelector(parentSelector);
+      const docsElement =
+        context.viewMode === 'docs' ? document.querySelector('#storybook-docs') : null;
 
-      if (!parentElement) {
-        return;
-      }
+      const elements = [parentElement, docsElement].filter(Boolean) as Element[];
 
-      Object.entries(themes)
-        .filter(([themeName]) => themeName !== selectedThemeName)
-        .forEach(([themeName, className]) => {
-          const classes = classStringToArray(className);
-          if (classes.length > 0) {
-            parentElement.classList.remove(...classes);
-          }
-        });
+      elements.forEach((element) => {
+        Object.entries(themes)
+          .filter(([themeName]) => themeName !== selectedThemeName)
+          .forEach(([, className]) => {
+            const classes = classStringToArray(className);
+            if (classes.length > 0) {
+              element.classList.remove(...classes);
+            }
+          });
 
-      const newThemeClasses = classStringToArray(themes[selectedThemeName]);
+        const newThemeClasses = classStringToArray(themes[selectedThemeName]);
 
-      if (newThemeClasses.length > 0) {
-        parentElement.classList.add(...newThemeClasses);
-      }
-    }, [themeOverride, selected]);
-
+        if (newThemeClasses.length > 0) {
+          element.classList.add(...newThemeClasses);
+        }
+      });
+    }, [themeOverride, selected, context.viewMode]);
     return storyFn();
   };
 };

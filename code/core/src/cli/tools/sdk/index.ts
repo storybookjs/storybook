@@ -10,7 +10,6 @@ export {
   type ToolsAttachGateReason,
   type ToolsRuntimeErrorReason,
 } from './errors.ts';
-export { toolsCommandDimensions, wrapMethodTelemetry } from './command-telemetry.ts';
 export type { ToolsRuntime } from './local-runtime.ts';
 export type { ToolsetJsonSchema } from './json-schema.ts';
 export { formatMultiInstanceNotice } from './attach-messages.ts';

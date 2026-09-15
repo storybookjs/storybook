@@ -7,15 +7,6 @@ import { styled } from 'storybook/theming';
 import { Button } from '../Button/Button.tsx';
 import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
 
-const StyledButton = styled(Button)(({ size }) => ({
-  gap: size === 'small' ? 6 : 8,
-
-  '&:focus-visible': {
-    // Prevent focus outline from being cut off by overflow: hidden
-    outlineOffset: -2,
-  },
-}));
-
 const ActionListItem = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;

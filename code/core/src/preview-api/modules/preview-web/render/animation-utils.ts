@@ -14,43 +14,72 @@ export function isTestEnvironment() {
   }
 }
 
-// Pause all animations and transitions by overriding the CSS properties
+/** Snap document-timeline CSS animations and transitions. Finite animations finish when `atEnd` is true; otherwise they pause at t=0. */
 export function pauseAnimations(atEnd = true): CleanupCallback {
-  if (!('document' in globalThis && 'createElement' in globalThis.document)) {
-    // Don't run in React Native
+  if (
+    !(
+      'document' in globalThis &&
+      'createElement' in globalThis.document &&
+      'getAnimations' in globalThis.document
+    )
+  ) {
     return () => {};
   }
 
-  // Remove all animations
-  const disableStyle = document.createElement('style');
-  disableStyle.textContent = `*, *:before, *:after {
-    animation: none !important;
-  }`;
-  document.head.appendChild(disableStyle);
+  const previousStates: {
+    animation: Animation;
+    playState: AnimationPlayState;
+    currentTime: CSSNumberish | null;
+  }[] = [];
 
-  // Pause any new animations
-  const pauseStyle = document.createElement('style');
-  pauseStyle.textContent = `*, *:before, *:after {
-    animation-delay: 0s !important;
-    animation-direction: ${atEnd ? 'reverse' : 'normal'} !important;
-    animation-play-state: paused !important;
-    transition: none !important;
-  }`;
-  document.head.appendChild(pauseStyle);
+  const pauseAllAnimations = () => {
+    const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
+    for (const animation of animationRoots.flatMap((root) => root?.getAnimations?.() || [])) {
+      if (!isDocumentAnimation(animation)) {
+        continue;
+      }
+      previousStates.push({
+        animation,
+        playState: animation.playState,
+        currentTime: animation.currentTime,
+      });
+      if (atEnd && isFiniteAnimation(animation)) {
+        try {
+          animation.finish();
+        } catch {
+          animation.pause();
+          animation.currentTime = 0;
+        }
+      } else {
+        animation.pause();
+        animation.currentTime = 0;
+      }
+    }
+    void document.body?.clientHeight;
+  };
 
-  // Force a reflow
-  // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-  document.body.clientHeight;
-
-  // Now recreate all animations, getting paused in their initial state
-  document.head.removeChild(disableStyle);
+  addEventListener('animationstart', pauseAllAnimations);
+  addEventListener('transitionrun', pauseAllAnimations);
+  pauseAllAnimations();
 
   return () => {
-    pauseStyle.parentNode?.removeChild(pauseStyle);
+    removeEventListener('animationstart', pauseAllAnimations);
+    removeEventListener('transitionrun', pauseAllAnimations);
+
+    while (previousStates.length > 0) {
+      const { animation, playState, currentTime } = previousStates.pop()!;
+      try {
+        animation.currentTime = currentTime;
+        if (playState === 'paused') {
+          animation.pause();
+        } else if (playState === 'running') {
+          animation.play();
+        }
+      } catch {}
+    }
   };
 }
 
-// Use the Web Animations API to wait for any animations and transitions to finish
 export async function waitForAnimations(signal?: AbortSignal) {
   if (
     !(
@@ -59,27 +88,29 @@ export async function waitForAnimations(signal?: AbortSignal) {
       'querySelectorAll' in globalThis.document
     )
   ) {
-    // Don't run in React Native
     return;
   }
 
   let timedOut = false;
   await Promise.race([
-    // After 50ms, retrieve any running animations and wait for them to finish
-    // If new animations are created while waiting, we'll wait for them too
     new Promise((resolve) => {
       setTimeout(() => {
-        const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
         const checkAnimationsFinished = async () => {
           if (timedOut || signal?.aborted) {
             return;
           }
-          const runningAnimations = animationRoots
-            .flatMap((el) => el?.getAnimations?.() || [])
-            .filter((a) => a.playState === 'running' && !isInfiniteAnimation(a));
+          const runningAnimations = [globalThis.document, ...getShadowRoots(globalThis.document)]
+            .flatMap((root) => root?.getAnimations?.() || [])
+            .filter(
+              (animation) =>
+                animation.playState === 'running' &&
+                isDocumentAnimation(animation) &&
+                isFiniteAnimation(animation)
+            );
           if (runningAnimations.length > 0) {
-            // Treat any errors (e.g. AbortError) from `finished` as also finished, even though not successfully so
-            await Promise.allSettled(runningAnimations.map(async (a) => a.finished));
+            await Promise.allSettled(
+              runningAnimations.map(async (animation) => animation.finished)
+            );
             await checkAnimationsFinished();
           }
         };
@@ -87,7 +118,6 @@ export async function waitForAnimations(signal?: AbortSignal) {
       }, 100);
     }),
 
-    // If animations don't finish within the timeout, continue without waiting
     new Promise((resolve) =>
       setTimeout(() => {
         timedOut = true;
@@ -106,12 +136,18 @@ function getShadowRoots(doc: Document | ShadowRoot) {
   }, []);
 }
 
-function isInfiniteAnimation(anim: Animation) {
-  if (anim instanceof CSSAnimation && anim.effect instanceof KeyframeEffect && anim.effect.target) {
-    const style = getComputedStyle(anim.effect.target, anim.effect.pseudoElement);
-    const index = style.animationName?.split(', ').indexOf(anim.animationName);
-    const iterations = style.animationIterationCount.split(', ')[index];
-    return iterations === 'infinite';
-  }
-  return false;
+// Scroll/view timelines must keep running; currentTime can be a CSSNumericValue.
+function isDocumentAnimation(anim: Animation) {
+  return (
+    (anim instanceof CSSAnimation || anim instanceof CSSTransition) &&
+    anim.timeline instanceof DocumentTimeline
+  );
+}
+
+function isFiniteAnimation(anim: Animation) {
+  return !(
+    anim instanceof CSSAnimation &&
+    anim.effect instanceof KeyframeEffect &&
+    anim.effect.getTiming().iterations === Infinity
+  );
 }

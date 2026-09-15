@@ -9874,6 +9874,17 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/devtools-spike@workspace:code/lib/devtools-spike":
+  version: 0.0.0-use.local
+  resolution: "@storybook/devtools-spike@workspace:code/lib/devtools-spike"
+  dependencies:
+    typescript: "npm:^6.0.3"
+    vite: "npm:^7.0.4"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/docgen-harness@workspace:code/lib/docgen-harness":
   version: 0.0.0-use.local
   resolution: "@storybook/docgen-harness@workspace:code/lib/docgen-harness"

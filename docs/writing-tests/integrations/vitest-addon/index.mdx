@@ -331,6 +331,16 @@ export default defineConfig({
 });
 ```
 
+### How do I configure Vitest for Next.js?
+
+Next.js projects must use the [`@storybook/nextjs-vite` framework](../../../get-started/frameworks/nextjs-vite.mdx). When you set up the Vitest addon with [automatic setup](#automatic-setup), Storybook's Next.js Vite plugin is included in your test configuration.
+
+If you configure Vitest manually, or run [portable stories](../../../api/portable-stories/portable-stories-vitest.mdx) outside the addon, add `storybookNextJsPlugin()` to your Vitest configuration so Next.js features work in tests:
+
+<CodeSnippets path="vite-includeStorybookNextjsPlugin.md" />
+
+See the [Next.js (Vite) framework docs](../../../get-started/frameworks/nextjs-vite.mdx#testing-with-vitest) for more details.
+
 </If>
 
 ### How do I fix the `Error: Vitest failed to find the current suite` error?

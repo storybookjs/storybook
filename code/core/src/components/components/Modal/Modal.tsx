@@ -203,6 +203,7 @@ function BaseModal({
         if (dismissOnEscape) {
           onEscapeKeyDown?.(e.nativeEvent);
           // The deprecated onEscapeKeyDown handler can cancel the close with preventDefault.
+          // TODO: Storybook 11: the conditional will no longer be necessary.
           if (!e.nativeEvent.defaultPrevented) {
             close();
           }

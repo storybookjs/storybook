@@ -116,8 +116,8 @@ export interface API_SidebarOptions<API = any> {
   renderAriaLabel?: (
     item: API_HashEntry,
     api: API,
-    // The context is optional, so a consumer can declare a function of two arguments.
-    // Storybook always passes the context.
+    // Optional so pre-existing consumers that invoke these callbacks with two arguments
+    // keep compiling; Storybook itself always passes the context.
     context?: {
       isMobile: boolean;
       location: 'sidebar' | 'bottom-bar';

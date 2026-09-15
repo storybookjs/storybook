@@ -113,6 +113,17 @@ const CardOutline = styled.div<{
       // therefore repeats at exactly 50% of the gradient line.
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
       willChange: 'transform, opacity',
+
+      // The static ring is softened to the purple-orange span at low opacity: a full-strength
+      // rainbow reads nearly as loud as the motion it replaces.
+      '@media (prefers-reduced-motion: reduce)': {
+        width: '100%',
+        height: '100%',
+        top: 0,
+        animation: 'none',
+        backgroundImage: `linear-gradient(45deg, rgba(181, 0, 181, 0.35), rgba(234, 0, 0, 0.35), rgba(255, 157, 0, 0.35))`,
+        willChange: 'auto',
+      },
     }),
 
     ...(animation === 'spin' && {
@@ -136,6 +147,12 @@ const CardOutline = styled.div<{
               ? `conic-gradient(transparent 90deg, rgba(114,58,166,0.65) 150deg, rgba(157,98,214,0.6) 210deg, transparent 270deg)`
               : `conic-gradient(transparent 90deg, #b6a7ff 150deg, #d8aeff 210deg, transparent 270deg)`
             : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
+
+      // Frozen at 0deg, the conic arc rests along the card's bottom edge as a dimmed glow.
+      '@media (prefers-reduced-motion: reduce)': {
+        animation: 'none',
+        opacity: 0.6,
+      },
     }),
   },
 }));

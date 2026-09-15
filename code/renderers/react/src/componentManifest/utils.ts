@@ -1,5 +1,6 @@
 // Object.groupBy polyfill
-import { readFileSync, statSync } from 'node:fs';
+import { accessSync, constants, readFileSync, statSync } from 'node:fs';
+import { resolve } from 'node:path';
 
 import {
   findTsconfigPath as findTsconfigPathCommon,
@@ -212,3 +213,36 @@ export const findTsconfigPath = cached(
     name: 'findTsconfigPath',
   }
 );
+
+export const resolveConfiguredTsconfigPath = (tsconfigPath: string | undefined) => {
+  if (!tsconfigPath) {
+    return undefined;
+  }
+
+  const configuredPath = resolve(process.cwd(), tsconfigPath);
+  // Prop extraction is best effort, so an unusable path warns and lets the caller keep looking
+  // instead of failing the build.
+  if (!isReadableFile(configuredPath)) {
+    logger.warn(
+      `The tsconfig configured in typescript.reactDocgenTypescriptOptions.tsconfigPath cannot be read as a file at ${configuredPath}. Falling back to the tsconfig found from the working directory.`
+    );
+    return undefined;
+  }
+
+  return configuredPath;
+};
+
+const isReadableFile = (filePath: string) => {
+  try {
+    if (!statSync(filePath).isFile()) {
+      return false;
+    }
+    // A path that stats as a file can still be unopenable, for example a tsconfig owned by another
+    // user inside a container. TypeScript reports a read error for it and every caller ends up with
+    // no compiler options at all, so treat it the same as a missing path and keep looking.
+    accessSync(filePath, constants.R_OK);
+    return true;
+  } catch {
+    return false;
+  }
+};

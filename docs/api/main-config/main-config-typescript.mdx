@@ -75,6 +75,14 @@ Configures the options to pass to `react-docgen-typescript-plugin` if `react-doc
 
 <CodeSnippets path="main-config-typescript-react-docgen-typescript-options.md" />
 
+### `reactDocgenTypescriptOptions.tsconfigPath`
+
+Type: `string`
+
+Path to the tsconfig used to build the TypeScript program that props are extracted from, resolved relative to the working directory. When omitted, Storybook uses the tsconfig that owns each component file, following project references from the nearest `tsconfig.json`. Set it when that file is not the one that should describe your components, such as a solution-style root `tsconfig.json` with empty `include` and `files`, or a tsconfig written specifically for documentation.
+
+<CodeSnippets path="main-config-typescript-react-docgen-typescript-tsconfig-path.md" />
+
 </If>
 
 ## `skipCompiler`

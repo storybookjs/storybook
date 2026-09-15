@@ -7,11 +7,7 @@ import type { BuilderStats } from 'storybook/internal/types';
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
-import {
-  SB_VIRTUAL_FILES,
-  getOriginalVirtualModuleId,
-  getResolvedVirtualModuleId,
-} from '../virtual-file-names.ts';
+import { SB_VIRTUAL_FILES, getOriginalVirtualModuleId } from '../virtual-file-names.ts';
 import { VIRTUAL_ID as PROJECT_ANNOTATIONS_VIRTUAL_ID } from './storybook-project-annotations-plugin.ts';
 
 const STATS_VIRTUAL_FILES = new Set([

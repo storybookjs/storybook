@@ -36,7 +36,7 @@ import {
 } from './ContextMenuStore.tsx';
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import { StatusContext } from './StatusContext.tsx';
-import { INDENT_LINE_OPACITY_VAR, useIndentLines, type HoveredRow } from './TreeIndentLines.tsx';
+import { INDENT_LINE_OPACITY_VAR, useSelectionLine } from './TreeIndentLines.tsx';
 import { TreeRowLayout } from './TreeRowLayout.ts';
 import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
 import type { SidebarLabelContext } from './types.ts';
@@ -364,15 +364,10 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const [stickyIds, setStickyIds] = useState<string[]>([]);
   const stickyIdsRef = useRef<string[]>([]);
 
-  // The row under the pointer. The indent lines mark it, and the tree preloads its first story.
-  const hoveredRowRef = useRef<HoveredRow | null>(null);
+  // The row under the pointer, tracked so a branch's first story preloads once per hover.
+  const hoveredRowRef = useRef<{ id: string; sticky: boolean } | null>(null);
 
-  const { layer: indentLines, redrawAccent } = useIndentLines({
-    rows,
-    hoveredRowRef,
-    keyboardFocusedItemId,
-    selectedParentId,
-  });
+  const { layer: selectionLine } = useSelectionLine({ rows, selectedParentId });
 
   // Recompute the sticky rows on every scroll and whenever the geometry changes. A resize alone
   // can reveal rows, so the scroller is observed as well. The indent lines never take part: they
@@ -415,22 +410,20 @@ export const Tree = React.memo<TreeProps>(function Tree({
     };
   }, [rows, scrollerRef]);
 
-  // One delegated listener for everything the hovered row drives: the accent indent line, and the
-  // preload of the first story of a branch. It sits on the wrapper, so it also sees the sticky
-  // rows, which are outside the scroller.
+  // One delegated listener preloads a hovered branch's first story. It sits on the wrapper, so
+  // it also sees the sticky rows, which are outside the scroller.
   useEffect(() => {
     const wrapper = treeWrapperRef.current;
     if (!wrapper) {
       return;
     }
     let preloadedId: string | null = null;
-    const setHovered = (next: HoveredRow | null) => {
+    const setHovered = (next: { id: string; sticky: boolean } | null) => {
       const previous = hoveredRowRef.current;
       if (previous?.id === next?.id && previous?.sticky === next?.sticky) {
         return;
       }
       hoveredRowRef.current = next;
-      redrawAccent();
 
       const item = next && !next.sticky ? hoistedDataRef.current[next.id] : undefined;
       if (item && next!.id !== preloadedId && isBranch(item)) {
@@ -456,7 +449,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       wrapper.removeEventListener('mouseover', onOver);
       wrapper.removeEventListener('mouseleave', onLeave);
     };
-  }, [api, refId, redrawAccent]);
+  }, [api, refId]);
 
   // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
   // sticky rows cover the top of the viewport, so the target lands below the stack it would
@@ -624,6 +617,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
   );
 
   const treeLayout = useMemo(() => new TreeRowLayout(), []);
+  treeLayout.setSectionStartIds(rows.sectionStartIds);
   const treeLayoutOptions = useMemo(
     () => ({ sectionStartIds: rows.sectionStartIds }),
     [rows.sectionStartIds]
@@ -682,7 +676,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
               </Collection>
             </StyledAriaTree>
           </Virtualizer>
-          {indentLines}
+          {selectionLine}
         </TreeWrapper>
         {focusedItemShortcutLabel && (
           <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />

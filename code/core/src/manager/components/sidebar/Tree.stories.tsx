@@ -161,6 +161,14 @@ export const RowsMatchModelPitch: Story = {
         expect(rows[i].top - rows[i - 1].top).toBe(TREE_ROW_HEIGHT + gap);
       }
       expect(sawSectionGap).toBe(true);
+
+      // The tree's reported height must reach exactly to its last row, or the next block in the
+      // sidebar's shared scroll area would overlap the tree.
+      const treeBottom = canvasElement
+        .querySelector('[role="treegrid"]')!
+        .getBoundingClientRect().bottom;
+      const lastRowBottom = Math.max(...rows.map((r) => r.el.getBoundingClientRect().bottom));
+      expect(Math.round(treeBottom - lastRowBottom)).toBe(0);
     });
   },
 };
@@ -774,23 +782,12 @@ export const StickyAncestors: Story = {
     expect(stickyRoot.querySelector('use')).toBeNull();
     expect(stickyRoot.querySelector('[data-testid="sticky-collapse"] svg')).not.toBeNull();
 
-    // The grid path draws the scrolling rows' lines in the scrolled content, so it never changes
-    // with the scroll offset; the sticky rows carry their own aligned segments on top.
-    const gridPath = canvasElement.querySelector(
-      '[data-testid="indent-lines"] path[data-indent-lines="grid"]'
-    )!;
-    expect(gridPath.getAttribute('d')?.length ?? 0).toBeGreaterThan(0);
-    const gridBeforeScroll = gridPath.getAttribute('d');
-    const scrollTopBefore = scroller.scrollTop;
-    scroller.scrollTop += 40;
-    await frame();
-    expect(gridPath.getAttribute('d')).toBe(gridBeforeScroll);
-    scroller.scrollTop = scrollTopBefore;
-    await frame();
+    // Every row carries its own indent lines, and a sticky copy's align with the scrolling rows'.
     const treeLeft = canvasElement.querySelector('[role="treegrid"]')!.getBoundingClientRect().left;
     const stickyLine = stickyBranch.querySelector('[data-indent-line]')!;
     expect(Math.round(stickyLine.getBoundingClientRect().left - treeLeft)).toBe(13);
-    expect(gridBeforeScroll).toContain('M13.5 ');
+    const naturalLine = canvasElement.querySelector('[role="treegrid"] [data-indent-line]')!;
+    expect(Math.round(naturalLine.getBoundingClientRect().left - treeLeft)).toBe(13);
 
     // The children of the selected story's parent keep a selection line, which stays visible
     // while the tree is not hovered.

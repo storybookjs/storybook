@@ -19,6 +19,7 @@ import {
 } from './ContextMenu.tsx';
 
 import { CollapseIcon } from './CollapseIcon.tsx';
+import { IndentLines } from './TreeIndentLines.tsx';
 import { ContextMenuStoreContext } from './ContextMenuStore.tsx';
 import { StatusContext } from './StatusContext.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
@@ -76,6 +77,9 @@ const StyledTreeItem = styled(TreeItem)<{
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
     svg: { color: 'currentColor' },
+  },
+  '&:hover [data-indent-line], &[data-focus-visible] [data-indent-line]': {
+    backgroundColor: transparentize(0.52, theme.color.secondary),
   },
   '&:hover::before, &[data-focus-visible]::before': {
     background: theme.background.hoverable,
@@ -371,6 +375,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       data-nodetype={nodeType}
     >
       <TreeItemContent>
+        <IndentLines level={item.depth} />
         <StyledContent>
           {leadingIcon}
           <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>

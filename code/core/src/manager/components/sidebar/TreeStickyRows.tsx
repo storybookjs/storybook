@@ -6,11 +6,12 @@ import { styled } from 'storybook/theming';
 
 import { getAncestorIds } from '../../utils/tree.ts';
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { INDENT_LINE_OPACITY_VAR, indentLineX } from './TreeIndentLines.tsx';
+import { IndentLines, indentLineX } from './TreeIndentLines.tsx';
 import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { SidebarLabelContext } from './types.ts';
 import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 import {
+  SECTION_GAP,
   TREE_CONTENT_INSET,
   TREE_INDENT_STEP,
   TREE_ROW_HEIGHT,
@@ -80,18 +81,32 @@ const StickyRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   ...iconSwap(['&:hover']),
 }));
 
-// The same lines as the grid layer, locked to their sticky row so the compositor carries them
-// with position: sticky. The grid layer paints below the rows' opaque backing.
-const StickyRowLine = styled.span(({ theme }) => ({
+// Softens the edge where rows scroll under the stack. Its mask cuts a 1px column over each
+// indent line that continues below, so the lines pass through at full strength; the columns
+// derive from the stack's own composition, which only changes when the sticky rows do.
+const StickyShadow = styled.span({
   position: 'absolute',
-  top: 0,
-  bottom: 0,
-  width: 1,
+  top: '100%',
+  left: 0,
+  right: 0,
+  height: SECTION_GAP,
   pointerEvents: 'none',
-  backgroundColor: theme.appBorderColor,
-  opacity: `var(${INDENT_LINE_OPACITY_VAR}, 0)`,
-  transition: 'opacity 150ms ease',
-}));
+  background: 'linear-gradient(to bottom, var(--sticky-row-background), transparent)',
+});
+
+// The lines under the stack sit at levels 1 to the deepest sticky row's child level, which is
+// the number of sticky rows: the chain starts at depth 0 and has one row per depth.
+function shadowMask(stackSize: number): string {
+  const stops: string[] = [];
+  let previous = 0;
+  for (let level = 1; level <= stackSize; level += 1) {
+    const x = indentLineX(level);
+    stops.push(`black ${previous}px ${x}px`, `transparent ${x}px ${x + 1}px`);
+    previous = x + 1;
+  }
+  stops.push(`black ${previous}px 100%`);
+  return `linear-gradient(to right, ${stops.join(', ')})`;
+}
 
 // position: relative lifts the content above the row's ::before hover highlight, which a
 // positioned pseudo-element would otherwise paint over.
@@ -221,9 +236,12 @@ export function TreeStickyRows({
       treeTopWithin(scroller, wrapper) + rows.offsets[index] - slot * TREE_ROW_HEIGHT;
   };
 
+  const mask = shadowMask(ids.length);
+
   return (
     <StickyAnchor aria-hidden="true">
       <StickyStack data-testid="sticky-overlay">
+        <StickyShadow style={{ maskImage: mask, WebkitMaskImage: mask }} />
         {ids.map((id, slot) => {
           const entry = data[id];
           const rowIndex = rowsRef.current?.indexById.get(id);
@@ -241,14 +259,7 @@ export function TreeStickyRows({
               tabIndex={-1}
               onClick={() => scrollIntoSlot(id, slot)}
             >
-              {Array.from({ length: level }, (_, i) => (
-                <StickyRowLine
-                  key={i}
-                  data-indent-line
-                  style={{ left: indentLineX(i + 1) }}
-                  aria-hidden="true"
-                />
-              ))}
+              <IndentLines level={level} />
               <StickyRowIcon
                 data-testid="sticky-collapse"
                 onClick={(event) => {

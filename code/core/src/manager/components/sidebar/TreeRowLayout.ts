@@ -26,6 +26,15 @@ export class TreeRowLayout extends ListLayout<object, TreeRowLayoutOptions> {
     super({ rowHeight: TREE_ROW_HEIGHT });
   }
 
+  /**
+   * Also set directly during render, so even the very first layout build uses the real section
+   * starts and the tree's reported height never under-counts — a following block would otherwise
+   * overlap the tree's rows. `layoutOptions` still carries the set, to invalidate on change.
+   */
+  setSectionStartIds(ids: ReadonlySet<string>) {
+    this.sectionStartIds = ids;
+  }
+
   update(invalidationContext: Parameters<ListLayout<object, TreeRowLayoutOptions>['update']>[0]) {
     this.sectionStartIds =
       invalidationContext.layoutOptions?.sectionStartIds ?? this.sectionStartIds;

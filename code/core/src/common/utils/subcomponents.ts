@@ -4,6 +4,12 @@ import type { CsfFile } from 'storybook/internal/csf-tools';
 export type DeclaredSubcomponent = {
   componentName: string;
   name: string;
+  /**
+   * The component expression the name was read from — the deepest node found after following
+   * in-file variable aliases, or the raw property value when none was. Feeding it to the
+   * meta-component resolver resolves the declared subcomponent to its file.
+   */
+  node: t.Node;
 };
 
 export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent[] {
@@ -26,7 +32,9 @@ export function extractDeclaredSubcomponents(csf: CsfFile): DeclaredSubcomponent
     const componentExpression = unwrapSubcomponentNode(property.value, csf._ast.program);
     const componentName = getComponentExpressionName(componentExpression) ?? directComponentName;
 
-    return name && componentName ? [{ name, componentName }] : [];
+    return name && componentName
+      ? [{ componentName, name, node: componentExpression ?? property.value }]
+      : [];
   });
 }
 

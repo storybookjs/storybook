@@ -54,10 +54,7 @@ const payloadWith = (props: CapturedProp[]): CapturePayload => ({
   capturedAt: 0,
 });
 
-const readBack = async (file: string): Promise<string> => {
-  const content = await readFile(file, 'utf-8');
-  return typeof content === 'string' ? content : content.toString();
-};
+const readBack = (file: string): Promise<string> => readFile(file, 'utf-8');
 
 describe('writeStoryFile', () => {
   it('creates a CSF file whose parsed meta and story args round-trip', async () => {

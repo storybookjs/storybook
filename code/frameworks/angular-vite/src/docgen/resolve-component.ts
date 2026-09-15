@@ -2,6 +2,7 @@ import type { MetaComponentResolution } from 'storybook/internal/common';
 import {
   createMetaComponentResolver,
   createModuleResolver,
+  extractDeclaredSubcomponents,
   jsTsSourceExtensions,
 } from 'storybook/internal/common';
 import type { CsfFile } from 'storybook/internal/csf-tools';
@@ -53,4 +54,35 @@ export function resolveStoryComponent(
   }
 
   return resolveMetaComponent(csf, storyFilePath);
+}
+
+/** One subcomponent a story file's meta declares, resolved to the component it names. */
+export interface ResolvedStorySubcomponent {
+  /** CSF object key the subcomponent is declared under. */
+  name: string;
+  /** Identifier the declaration names, as written (before default-export and alias resolution). */
+  componentName: string;
+  resolution: MetaComponentResolution;
+}
+
+/**
+ * Story file → the subcomponents its meta declares, if any.
+ *
+ * Each declared `{ key: Component }` entry resolves through the same import, namespace, and
+ * reference following as `meta.component` itself, from one parse of the file.
+ */
+export function resolveStorySubcomponents(
+  storyFilePath: string,
+  title = 'Docgen'
+): ResolvedStorySubcomponent[] {
+  const csf = parseStoryFile(storyFilePath, title);
+  if (!csf) {
+    return [];
+  }
+
+  return extractDeclaredSubcomponents(csf).map(({ name, componentName, node }) => ({
+    name,
+    componentName,
+    resolution: resolveMetaComponent(csf, storyFilePath, node),
+  }));
 }

@@ -37,7 +37,12 @@ import {
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import { StatusContext } from './StatusContext.tsx';
 import { TREE_ROW_HEIGHT, flattenRows, scrollTopWithin, treeTopWithin } from './treeGeometry.ts';
-import { INDENT_LINE_OPACITY_VAR } from './TreeIndentLines.tsx';
+import {
+  INDENT_LINE_OPACITY_VAR,
+  SelectionLineStoreContext,
+  createSelectionLineStore,
+  type SelectionLine,
+} from './TreeIndentLines.tsx';
 import { TreeRowLayout } from './TreeRowLayout.ts';
 import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
 import type { SidebarLabelContext } from './types.ts';

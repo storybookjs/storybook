@@ -49,7 +49,6 @@ import {
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
-import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
@@ -341,16 +340,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const areProjectAnnotationRequired = await requiresProjectAnnotations(
-        nonMutableInputConfig.test,
-        finalOptions
-      );
-
+      // Both setup files are always injected. Project annotations compose additively, so a
+      // leftover user setup file applying the same annotations is redundant but harmless.
       const internalSetupFiles = [
         '@storybook/addon-vitest/internal/setup-file',
-        areProjectAnnotationRequired &&
-          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-      ].filter(Boolean) as string[];
+        '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+      ];
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),

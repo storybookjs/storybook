@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
@@ -74,7 +74,7 @@ async function getPluginConfig(invokingRoot: string) {
     throw new Error('The plugin config hook returned no test config');
   }
 
-  return { root: config.root, test: config.test };
+  return { root: config.root, test: config.test, optimizeDeps: config.optimizeDeps };
 }
 
 describe('story test patterns', () => {
@@ -94,5 +94,17 @@ describe('story test patterns', () => {
 
     expect(config.root).toBe(PACKAGE_ROOT);
     expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
+  });
+});
+
+describe('dependency optimization', () => {
+  it('prebundles the automatically injected setup files', async () => {
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
+    assert(Array.isArray(config.test.setupFiles));
+    expect(config.test.setupFiles).toContain(
+      '@storybook/addon-vitest/internal/setup-file-with-project-annotations'
+    );
+    expect(config.optimizeDeps?.include).toEqual(expect.arrayContaining(config.test.setupFiles));
   });
 });

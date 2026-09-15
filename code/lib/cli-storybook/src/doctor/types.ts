@@ -11,6 +11,11 @@ export interface ProjectDoctorData {
   packageManager: JsPackageManager;
   storybookVersion?: string;
   mainConfig: StorybookConfigRaw;
+  /**
+   * Error thrown while gathering project data (e.g. main config evaluation). When set, it is
+   * reported instead of the generic version-detection failure.
+   */
+  configurationError?: { title: string; message: string };
 }
 
 export enum DiagnosticType {
@@ -45,9 +50,14 @@ export interface DoctorCheckResult {
   project: DiagnosticDoctorData;
 }
 
+export interface DiagnosticMessage {
+  title: string;
+  message: string;
+}
+
 export interface ProjectDoctorResults {
   configDir: string;
   status: 'healthy' | 'has_issues' | 'check_error';
   diagnostics: Record<DiagnosticType, DiagnosticStatus>;
-  messages: Record<DiagnosticType, string>;
+  messages: Record<DiagnosticType, DiagnosticMessage>;
 }

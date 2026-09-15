@@ -1,4 +1,11 @@
-import type { FC, PropsWithChildren, ReactElement, ReactNode, RefObject } from 'react';
+import type {
+  FC,
+  PropsWithChildren,
+  ReactElement,
+  ReactNode,
+  RefObject,
+  SyntheticEvent,
+} from 'react';
 
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
@@ -454,30 +461,37 @@ export interface Addon_TestProviderType {
   clear?: () => void;
 }
 
-export interface Addon_ContextMenuRenderOptions {
-  /** The index entry (story, docs, component, group or root) the context menu was opened for. */
+export interface Addon_ContextMenuItem {
+  /** The unique id of the menu item within this addon's contribution. */
+  id: string;
+  /** The label of the menu item. */
+  title: string;
+  /** Icon rendered before the title. */
+  icon?: ReactNode;
+  disabled?: boolean;
+  /** Called when the user selects the item; the context menu closes afterwards. */
+  onClick: (event: SyntheticEvent) => void;
+}
+
+export interface Addon_ContextMenuOptions {
+  /** The index entry (story, docs, component, group or root) the context menu is opened for. */
   context: API_HashEntry;
   /**
    * Ref to the button that opens the context menu. Use it to anchor floating UI to the menu's
    * origin, e.g. by passing it as `triggerRef` to a React Aria Components Popover.
    */
   triggerRef: RefObject<HTMLButtonElement | null>;
-  /** Closes the context menu. */
-  onHide: () => void;
 }
 
 export interface Addon_ContextMenuType {
   type: Addon_TypesEnum.experimental_CONTEXT_MENU;
-  /** The unique id of the context menu entry. */
+  /** The unique id of the context menu contribution. */
   id: string;
   /**
-   * Return the content to add to the context menu of the given index entry, or a nullish value to
-   * add nothing.
-   *
-   * Called during React rendering, so it must not use hooks itself; use them in the components it
-   * returns instead.
+   * Return the menu items to add to the context menu of the given index entry, or an empty array
+   * to add nothing.
    */
-  render: (options: Addon_ContextMenuRenderOptions) => ReactNode;
+  items: (options: Addon_ContextMenuOptions) => Addon_ContextMenuItem[];
 }
 
 type Addon_TypeBaseNames = Exclude<

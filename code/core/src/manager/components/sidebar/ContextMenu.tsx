@@ -5,7 +5,7 @@ import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components'
 import {
   type API_HashEntry,
   type Addon_Collection,
-  type Addon_ContextMenuRenderOptions,
+  type Addon_ContextMenuOptions,
   type Addon_ContextMenuType,
   type Addon_TestProviderType,
   Addon_TypesEnum,
@@ -123,11 +123,11 @@ export const useContextMenu = (
     if (hoverCount) {
       return [
         ...generateTestProviderLinks(registeredTestProviders, context),
-        ...generateAddonContextMenuLinks(registeredContextMenus, {
-          context,
-          triggerRef,
-          onHide: handlers.onClose,
-        }),
+        ...generateAddonContextMenuLinks(
+          registeredContextMenus,
+          { context, triggerRef },
+          handlers.onClose
+        ),
       ];
     }
     return [];
@@ -189,15 +189,15 @@ export const useContextMenu = (
  * addons and test providers.
  */
 const LiveContextMenu: FC<
-  { context: API_HashEntry } & Omit<Addon_ContextMenuRenderOptions, 'context'> &
-    ComponentProps<typeof TooltipLinkList>
+  Addon_ContextMenuOptions & { onHide: () => void } & ComponentProps<typeof TooltipLinkList>
 > = ({ context, links, triggerRef, onHide, ...rest }) => {
   const api = useStorybookApi();
   const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
   const addonLinks: Link[] = generateAddonContextMenuLinks(
     api.getElements(Addon_TypesEnum.experimental_CONTEXT_MENU),
-    { context, triggerRef, onHide }
+    { context, triggerRef },
+    onHide
   );
 
   /**
@@ -238,20 +238,17 @@ export function generateTestProviderLinks(
 
 export function generateAddonContextMenuLinks(
   registeredContextMenus: Addon_Collection<Addon_ContextMenuType>,
-  options: Addon_ContextMenuRenderOptions
+  options: Addon_ContextMenuOptions,
+  onHide: () => void
 ): Link[] {
-  return Object.entries(registeredContextMenus)
-    .map(([contextMenuId, addon]) => {
-      const content = addon?.render(options);
-
-      if (!content) {
-        return null;
-      }
-
-      return {
-        id: contextMenuId,
-        content,
-      };
-    })
-    .filter(Boolean as unknown as ExcludesNull);
+  return Object.values(registeredContextMenus).flatMap((addon) =>
+    (addon?.items(options) ?? []).map(({ id, onClick, ...item }) => ({
+      ...item,
+      id: `${addon.id}-${id}`,
+      onClick: (event: SyntheticEvent) => {
+        onClick(event);
+        onHide();
+      },
+    }))
+  );
 }

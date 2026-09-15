@@ -336,17 +336,15 @@ const contextMenuAddonManagerContext: any = {
           'my-addon/context-menu': {
             type: Addon_TypesEnum.experimental_CONTEXT_MENU,
             id: 'my-addon/context-menu',
-            render: ({ context, triggerRef, onHide }) => (
-              <button
-                type="button"
-                onClick={() => {
+            items: ({ context, triggerRef }) => [
+              {
+                id: 'annotate',
+                title: 'ADDON_CONTEXT_MENU_ITEM',
+                onClick: () => {
                   contextMenuEntryAction(context.id, triggerRef.current?.dataset.testid);
-                  onHide();
-                }}
-              >
-                ADDON_CONTEXT_MENU_CONTENT
-              </button>
-            ),
+                },
+              },
+            ],
           },
         } satisfies Addon_Collection<Addon_ContextMenuType>;
       }
@@ -380,7 +378,7 @@ export const WithContextMenuAddon: Story = {
     await expect(popover).toBeVisible();
     expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
 
-    const entry = within(popover).getByRole('button', { name: 'ADDON_CONTEXT_MENU_CONTENT' });
+    const entry = within(popover).getByRole('button', { name: 'ADDON_CONTEXT_MENU_ITEM' });
     await userEvent.click(entry);
 
     await expect(contextMenuEntryAction).toHaveBeenCalledWith(

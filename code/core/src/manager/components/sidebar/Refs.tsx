@@ -22,17 +22,13 @@ export interface RefProps {
   selectedStoryId: string | null;
 }
 
-const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
-  // Each tree is a bounded flex child, because its virtualizer scrolls itself. The main tree also
-  // grows into the free space. A ref tree keeps its natural height and shrinks only when the
-  // column runs out of room.
-  flex: isMain ? '1 1 auto' : '0 1 auto',
-  minHeight: 0,
+// Every block takes its natural height and stacks in the sidebar's one scroll area, so a block
+// can never be squeezed to nothing or come to rest below the visible area.
+const Wrapper = styled.div({
   display: 'flex',
   flexDirection: 'column',
   position: 'relative',
-  marginTop: isMain ? undefined : 0,
-}));
+});
 
 const RefHead = styled.div(({ theme }) => ({
   position: 'relative',
@@ -150,7 +146,7 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
         </RefHead>
       )}
       {isExpanded && (
-        <Wrapper data-title={title} isMain={isMain}>
+        <Wrapper data-title={title}>
           {/* @ts-expect-error (non strict) */}
           {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
           {/* @ts-expect-error (non strict) */}

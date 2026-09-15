@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
 import { TooltipNote } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
@@ -22,11 +22,9 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { transparentize } from 'polished';
 import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import type { ContextMenuTrigger } from './ContextMenu.tsx';
@@ -36,75 +34,34 @@ import {
   createContextMenuStore,
   type ContextMenuStore,
 } from './ContextMenuStore.tsx';
+import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import { StatusContext } from './StatusContext.tsx';
 import { INDENT_LINE_OPACITY_VAR, useIndentLines, type HoveredRow } from './TreeIndentLines.tsx';
 import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
 import type { SidebarLabelContext } from './types.ts';
 import { useExpanded } from './useExpanded.ts';
-import { TREE_ROW_HEIGHT, flattenRows } from './treeGeometry.ts';
+import { TREE_ROW_HEIGHT, flattenRows, scrollTopWithin, treeTopWithin } from './treeGeometry.ts';
 
-const StyledAriaTree = styled(AriaTree)(({ theme }) => ({
+// The tree takes its natural height and scrolls with the sidebar's one scroll area. The
+// virtualizer still only renders the rows near the visible area: react-aria's scroll view tracks
+// an ancestor scroller as well as its own element.
+const StyledAriaTree = styled(AriaTree)({
   listStyle: 'none',
   padding: 0,
   margin: 0,
   outline: 'none',
-  // The virtualizer makes the tree its own scroll container; the parent must bound its height.
-  height: '100%',
-  overflow: 'auto',
-  // Reserve room under the floating sidebar-bottom widget (its measured height, published as a
-  // CSS variable) so the last rows can scroll clear of it. 0 when no widget is mounted.
-  paddingBottom: 'var(--sidebar-bottom-height, 0px)',
+});
 
-  // Match the ScrollArea look: a thin muted thumb on a transparent track, only visible while
-  // hovering or keyboard-focused inside the tree.
-  scrollbarWidth: 'thin',
-  scrollbarColor: 'transparent transparent',
-  '&::-webkit-scrollbar': {
-    width: 6,
-    background: 'transparent',
-  },
-  '&::-webkit-scrollbar-thumb': {
-    borderRadius: 6,
-    backgroundColor: 'transparent',
-  },
-  '&:hover, &:focus-within': {
-    scrollbarColor: `${transparentize(0.5, theme.textMutedColor)} transparent`,
-  },
-  '&:hover::-webkit-scrollbar-thumb, &:focus-within::-webkit-scrollbar-thumb': {
-    backgroundColor: transparentize(0.5, theme.textMutedColor),
-  },
-  '&::-webkit-scrollbar-thumb:hover': {
-    backgroundColor: transparentize(0.2, theme.textMutedColor),
-  },
-}));
-
-const TreeWrapper = styled.div(({ theme }) => ({
+const TreeWrapper = styled.div({
   position: 'relative',
-  height: '100%',
-  minHeight: 0,
   // Contain the z-index of the overlays, so that UI outside the tree still paints above them.
   isolation: 'isolate',
-  '--sticky-row-background': theme.background.content,
   // Show the indent lines only while the pointer is over the tree, or while a row holds keyboard
   // focus. The selection line has its own path and ignores this.
   '&:hover, &:has(:focus-visible)': {
     [INDENT_LINE_OPACITY_VAR]: 1,
   },
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    '--sticky-row-background': theme.background.app,
-  },
-  // Soft fade at the bottom of the scroll area, easing the cut-off into the rest of the UI.
-  '&::after': {
-    content: '""',
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 16,
-    pointerEvents: 'none',
-    background: 'linear-gradient(to top, var(--sticky-row-background), transparent)',
-  },
-}));
+});
 
 // Without CSS anchor positioning the note cannot follow the focused row, and without
 // `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
@@ -145,6 +102,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
   const treeWrapperRef = useRef<HTMLDivElement>(null);
+  // The sidebar's one scroll area, shared with every other tree block.
+  const scrollerRef = useContext(ScrollAreaContext);
   const api = useStorybookApi();
   const { isMobile } = useLayout();
   const labelContext = useMemo<SidebarLabelContext>(
@@ -408,7 +367,8 @@ export const Tree = React.memo<TreeProps>(function Tree({
   const hoveredRowRef = useRef<HoveredRow | null>(null);
 
   const { layer: indentLines, redraw: redrawIndentLines } = useIndentLines({
-    scrollerRef: containerRef,
+    scrollerRef,
+    wrapperRef: treeWrapperRef,
     rowsRef,
     stickyIdsRef,
     hoveredRowRef,
@@ -419,8 +379,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Recompute the sticky rows and the indent lines on every scroll, and whenever the geometry
   // changes. A resize alone can reveal rows, so the scroller is observed as well.
   useEffect(() => {
-    const scroller = containerRef.current;
-    if (!scroller) {
+    const scroller = scrollerRef?.current;
+    const wrapper = treeWrapperRef.current;
+    if (!scroller || !wrapper) {
       return;
     }
     let frame: number | null = null;
@@ -429,7 +390,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       const stickyRowIds = getStickyRowIds(
         rowsRef.current,
         hoistedDataRef.current,
-        scroller.scrollTop
+        scrollTopWithin(scroller, wrapper)
       );
       stickyIdsRef.current = stickyRowIds;
       setStickyIds((current) =>
@@ -454,7 +415,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
         cancelAnimationFrame(frame);
       }
     };
-  }, [rows, redrawIndentLines]);
+  }, [rows, redrawIndentLines, scrollerRef]);
 
   // One delegated listener for everything the hovered row drives: the accent indent line, and the
   // preload of the first story of a branch. It sits on the wrapper, so it also sees the sticky
@@ -502,37 +463,43 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
   // sticky rows cover the top of the viewport, so the target lands below the stack it would
   // produce (its own ancestors).
-  const scrollRowIntoView = useCallback((itemId: string, block: ScrollLogicalPosition): boolean => {
-    const scroller = containerRef.current;
-    if (!scroller) {
-      return false;
-    }
-    const { offsets, indexById } = rowsRef.current;
-    const index = indexById.get(itemId);
-    if (index === undefined) {
-      return false;
-    }
-    const offset = offsets[index];
-    // The sticky rows cover `stack` px at the top. The floating sidebar-bottom widget covers
-    // `bottomInset` px at the bottom, reserved as the scroller's padding-bottom. A row is fully
-    // visible only between them.
-    const stack = getAncestorIds(hoistedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
-    const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
-    if (block === 'center') {
-      const half = Math.max((scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT) / 2, stack);
-      scroller.scrollTop = offset - half;
+  const scrollRowIntoView = useCallback(
+    (itemId: string, block: ScrollLogicalPosition): boolean => {
+      const scroller = scrollerRef?.current;
+      const wrapper = treeWrapperRef.current;
+      if (!scroller || !wrapper) {
+        return false;
+      }
+      const { offsets, indexById } = rowsRef.current;
+      const index = indexById.get(itemId);
+      if (index === undefined) {
+        return false;
+      }
+      // Rows are placed inside this tree, and the scroll area holds every tree, so the row's place
+      // in the scroll content starts at the top of this tree.
+      const offset = treeTopWithin(scroller, wrapper) + offsets[index];
+      // The sticky rows cover `stack` px at the top. The floating sidebar-bottom widget covers
+      // `bottomInset` px at the bottom, reserved as the scroller's padding-bottom. A row is fully
+      // visible only between them.
+      const stack = getAncestorIds(hoistedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
+      const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
+      if (block === 'center') {
+        const half = Math.max((scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT) / 2, stack);
+        scroller.scrollTop = offset - half;
+        return true;
+      }
+      const viewTop = scroller.scrollTop + stack;
+      const viewBottom = scroller.scrollTop + scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT;
+      if (offset < viewTop) {
+        scroller.scrollTop = offset - stack;
+      } else if (offset > viewBottom) {
+        // Reveal the row just above the widget, rather than jumping it to the top.
+        scroller.scrollTop = offset + TREE_ROW_HEIGHT + bottomInset - scroller.clientHeight;
+      }
       return true;
-    }
-    const viewTop = scroller.scrollTop + stack;
-    const viewBottom = scroller.scrollTop + scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT;
-    if (offset < viewTop) {
-      scroller.scrollTop = offset - stack;
-    } else if (offset > viewBottom) {
-      // Reveal the row just above the widget, rather than jumping it to the top.
-      scroller.scrollTop = offset + TREE_ROW_HEIGHT + bottomInset - scroller.clientHeight;
-    }
-    return true;
-  }, []);
+    },
+    [scrollerRef]
+  );
 
   // Keep the keyboard-focused row clear of the sticky rows and of the floating bottom widget.
   // React-aria scrolls a focused row inside the raw viewport only, so a row behind either overlay
@@ -678,6 +645,17 @@ export const Tree = React.memo<TreeProps>(function Tree({
     <StatusContext.Provider value={statusContextValue}>
       <ContextMenuStoreContext.Provider value={contextMenuStoreRef.current}>
         <TreeWrapper ref={treeWrapperRef}>
+          {/* First child, so that it sticks from the top of this tree rather than from its end. */}
+          <TreeStickyRows
+            ids={stickyIds}
+            data={hoistedData}
+            api={api}
+            labelContext={labelContext}
+            scrollerRef={scrollerRef}
+            wrapperRef={treeWrapperRef}
+            rowsRef={rowsRef}
+            onCollapse={collapseStickyRow}
+          />
           <Virtualizer layout={treeLayout}>
             <StyledAriaTree
               ref={containerRef}
@@ -697,15 +675,6 @@ export const Tree = React.memo<TreeProps>(function Tree({
               </Collection>
             </StyledAriaTree>
           </Virtualizer>
-          <TreeStickyRows
-            ids={stickyIds}
-            data={hoistedData}
-            api={api}
-            labelContext={labelContext}
-            scrollerRef={containerRef}
-            rowsRef={rowsRef}
-            onCollapse={collapseStickyRow}
-          />
           {indentLines}
         </TreeWrapper>
         {focusedItemShortcutLabel && (

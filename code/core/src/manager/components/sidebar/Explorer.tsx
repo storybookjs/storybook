@@ -3,6 +3,7 @@ import React, { useRef } from 'react';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { Ref } from './Refs.tsx';
+import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 
 export interface ExplorerProps {
@@ -45,15 +46,17 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
       <h2 id="storybook-explorer-tree-heading" className="sb-sr-only">
         Stories
       </h2>
-      {dataset.entries.map(([refId, ref]) => (
-        <Ref
-          {...ref}
-          key={refId}
-          isLoading={isLoading}
-          hasEntries={hasEntries}
-          selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
-        />
-      ))}
+      <SidebarScrollArea>
+        {dataset.entries.map(([refId, ref]) => (
+          <Ref
+            {...ref}
+            key={refId}
+            isLoading={isLoading}
+            hasEntries={hasEntries}
+            selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
+          />
+        ))}
+      </SidebarScrollArea>
     </nav>
   );
 });

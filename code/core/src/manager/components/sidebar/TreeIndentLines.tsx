@@ -8,6 +8,7 @@ import {
   TREE_INDENT_STEP,
   TREE_ROW_HEIGHT,
   findFirstRowBelow,
+  scrollTopWithin,
   type FlatRows,
 } from './treeGeometry.ts';
 
@@ -28,6 +29,7 @@ const IndentLineLayer = styled.svg(({ theme }) => ({
   inset: 0,
   width: '100%',
   height: '100%',
+  overflow: 'visible',
   // Above the shadow of the sticky overlay.
   zIndex: 4,
   pointerEvents: 'none',
@@ -55,8 +57,10 @@ export interface HoveredRow {
 }
 
 interface IndentLinesOptions {
-  /** The element that scrolls the rows. */
-  scrollerRef: RefObject<HTMLElement | null>;
+  /** The sidebar's one scroll area. */
+  scrollerRef: RefObject<HTMLElement | null> | null;
+  /** The tree's own box, which the lines are drawn over. */
+  wrapperRef: RefObject<HTMLElement | null>;
   /** Geometry of the visible rows. */
   rowsRef: RefObject<FlatRows>;
   /** Ids of the sticky rows, from the top slot down. */
@@ -77,6 +81,7 @@ interface IndentLinesOptions {
  */
 export function useIndentLines({
   scrollerRef,
+  wrapperRef,
   rowsRef,
   stickyIdsRef,
   hoveredRowRef,
@@ -92,16 +97,21 @@ export function useIndentLines({
   selectedParentIdRef.current = selectedParentId;
 
   const redraw = useCallback(() => {
-    const scroller = scrollerRef.current;
+    const scroller = scrollerRef?.current;
+    const wrapper = wrapperRef.current;
     const rows = rowsRef.current;
-    if (!scroller || !rows) {
+    if (!scroller || !wrapper || !rows) {
       return;
     }
     const { offsets, depths, indexById, subtreeBottoms } = rows;
     const stickyIds = stickyIdsRef.current ?? [];
-    const scrollTop = scroller.scrollTop;
+    // Every y below is a distance from the top of this tree, because the layer covers the tree
+    // rather than the scroll area. `scrollTop` is how far this tree has scrolled past the top of
+    // the visible area, and it is negative while the tree still starts below that edge.
+    const scrollTop = scrollTopWithin(scroller, wrapper);
     const viewportHeight = scroller.clientHeight;
     const stickyHeight = stickyIds.length * TREE_ROW_HEIGHT;
+    const stickyBottom = scrollTop + stickyHeight;
 
     // A line sits at the start of its own indent level, just left of the icons. The half pixel
     // keeps the 1px stroke on the device pixel grid.
@@ -122,16 +132,17 @@ export function useIndentLines({
     stickyIds.forEach((id, slot) => {
       const rowIndex = indexById.get(id);
       if (rowIndex !== undefined) {
-        rowLines(grid, rowIndex, slot * TREE_ROW_HEIGHT, (slot + 1) * TREE_ROW_HEIGHT);
+        const top = scrollTop + slot * TREE_ROW_HEIGHT;
+        rowLines(grid, rowIndex, top, top + TREE_ROW_HEIGHT);
       }
     });
     // The sticky rows are opaque, so the first scrolling row to draw is the first one below them.
-    for (let i = findFirstRowBelow(rows, scrollTop + stickyHeight); i < offsets.length; i += 1) {
-      const top = offsets[i] - scrollTop;
-      if (top >= viewportHeight) {
+    for (let i = findFirstRowBelow(rows, stickyBottom); i < offsets.length; i += 1) {
+      const top = offsets[i];
+      if (top >= scrollTop + viewportHeight) {
         break;
       }
-      rowLines(grid, i, Math.max(top, stickyHeight), top + TREE_ROW_HEIGHT);
+      rowLines(grid, i, Math.max(top, stickyBottom), top + TREE_ROW_HEIGHT);
     }
     gridPathRef.current?.setAttribute('d', grid.join(''));
 
@@ -145,13 +156,14 @@ export function useIndentLines({
         return;
       }
       if (slot >= 0) {
-        rowLines(accent, rowIndex, slot * TREE_ROW_HEIGHT, (slot + 1) * TREE_ROW_HEIGHT);
+        const top = scrollTop + slot * TREE_ROW_HEIGHT;
+        rowLines(accent, rowIndex, top, top + TREE_ROW_HEIGHT);
         return;
       }
-      const top = offsets[rowIndex] - scrollTop;
+      const top = offsets[rowIndex];
       const bottom = top + TREE_ROW_HEIGHT;
-      if (bottom > stickyHeight && top < viewportHeight) {
-        rowLines(accent, rowIndex, Math.max(top, stickyHeight), bottom);
+      if (bottom > stickyBottom && top < scrollTop + viewportHeight) {
+        rowLines(accent, rowIndex, Math.max(top, stickyBottom), bottom);
       }
     };
     const hovered = hoveredRowRef.current;
@@ -177,19 +189,19 @@ export function useIndentLines({
       firstChildIndex !== undefined &&
       depths[firstChildIndex] === depths[parentIndex] + 1
     ) {
-      const top = offsets[firstChildIndex] - scrollTop;
-      const bottom = (subtreeBottoms.get(parentId) ?? 0) - scrollTop;
-      if (bottom > stickyHeight && top < viewportHeight) {
+      const top = offsets[firstChildIndex];
+      const bottom = subtreeBottoms.get(parentId) ?? 0;
+      if (bottom > stickyBottom && top < scrollTop + viewportHeight) {
         line(
           selection,
           depths[firstChildIndex],
-          Math.max(top, stickyHeight),
-          Math.min(bottom, viewportHeight)
+          Math.max(top, stickyBottom),
+          Math.min(bottom, scrollTop + viewportHeight)
         );
       }
     }
     selectionPathRef.current?.setAttribute('d', selection.join(''));
-  }, [scrollerRef, rowsRef, stickyIdsRef, hoveredRowRef]);
+  }, [scrollerRef, wrapperRef, rowsRef, stickyIdsRef, hoveredRowRef]);
 
   // Keyboard focus and selection move without a scroll event.
   useEffect(redraw, [redraw, keyboardFocusedItemId, selectedParentId]);

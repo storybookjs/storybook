@@ -19,6 +19,7 @@ import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
+import { SidebarScrollArea } from './SidebarScrollArea.tsx';
 import { Tree } from './Tree.tsx';
 
 /**
@@ -141,7 +142,9 @@ const meta = {
       <ManagerContext.Provider value={managerContext}>
         <LayoutProvider>
           <IconSymbols />
-          <div style={{ maxWidth: 280 }}>{storyFn()}</div>
+          <div style={{ maxWidth: 280, height: 400, display: 'flex' }}>
+            <SidebarScrollArea>{storyFn()}</SidebarScrollArea>
+          </div>
         </LayoutProvider>
       </ManagerContext.Provider>
     ),

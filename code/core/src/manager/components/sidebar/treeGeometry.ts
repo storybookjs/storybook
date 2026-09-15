@@ -86,3 +86,16 @@ export function findFirstRowBelow({ ids, offsets }: FlatRows, y: number): number
   }
   return found;
 }
+
+/**
+ * How far a tree has scrolled past the top of the scroll area, in px. The value is negative while
+ * the tree still starts below that edge, and it grows as the tree scrolls up.
+ */
+export function scrollTopWithin(scroller: HTMLElement, tree: HTMLElement): number {
+  return scroller.getBoundingClientRect().top - tree.getBoundingClientRect().top;
+}
+
+/** Distance from the top of the scroll content to the top of a tree, in px. */
+export function treeTopWithin(scroller: HTMLElement, tree: HTMLElement): number {
+  return scroller.scrollTop - scrollTopWithin(scroller, tree);
+}

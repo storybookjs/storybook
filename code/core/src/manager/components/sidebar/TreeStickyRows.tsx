@@ -14,16 +14,25 @@ import {
   TREE_INDENT_STEP,
   TREE_ROW_HEIGHT,
   findFirstRowBelow,
+  treeTopWithin,
   type FlatRows,
 } from './treeGeometry.ts';
 
-const StickyOverlay = styled.div({
+// Sticks to the top of the sidebar's scroll area while this tree is on screen, and scrolls away
+// with the tree. It must be the tree's first child, so that it sticks from the tree's own top, and
+// it takes no height of its own, so that it never pushes the rows down.
+const StickyAnchor = styled.div({
+  position: 'sticky',
+  top: 0,
+  height: 0,
+  zIndex: 3,
+});
+
+const StickyStack = styled.div({
   position: 'absolute',
   top: 0,
   left: 0,
   right: 0,
-  // Under the indent lines, so that the gradient below does not cut a line in two.
-  zIndex: 3,
   '&::after': {
     content: '""',
     position: 'absolute',
@@ -130,8 +139,10 @@ interface StickyRowsProps {
   api: API;
   /** Passed to `renderLabel`, so that a sticky row reads the same as the row it covers. */
   labelContext: SidebarLabelContext;
-  /** The element that scrolls the rows. */
-  scrollerRef: RefObject<HTMLElement | null>;
+  /** The sidebar's one scroll area. */
+  scrollerRef: RefObject<HTMLElement | null> | null;
+  /** The tree's own box, used to place its rows inside the scroll content. */
+  wrapperRef: RefObject<HTMLElement | null>;
   /** Geometry of the visible rows. */
   rowsRef: RefObject<FlatRows>;
   /** Collapse a branch after the user presses its chevron. */
@@ -152,6 +163,7 @@ export function TreeStickyRows({
   api,
   labelContext,
   scrollerRef,
+  wrapperRef,
   rowsRef,
   onCollapse,
 }: StickyRowsProps) {
@@ -162,57 +174,63 @@ export function TreeStickyRows({
   // Scroll the real row to the exact position its sticky copy holds, so that nothing appears to
   // move under the pointer.
   const scrollIntoSlot = (id: string, slot: number) => {
-    const scroller = scrollerRef.current;
+    const scroller = scrollerRef?.current;
+    const wrapper = wrapperRef.current;
     const rows = rowsRef.current;
     const index = rows?.indexById.get(id);
-    if (!scroller || !rows || index === undefined) {
+    if (!scroller || !wrapper || !rows || index === undefined) {
       return;
     }
-    scroller.scrollTop = rows.offsets[index] - slot * TREE_ROW_HEIGHT;
+    scroller.scrollTop =
+      treeTopWithin(scroller, wrapper) + rows.offsets[index] - slot * TREE_ROW_HEIGHT;
   };
 
   return (
-    <StickyOverlay data-testid="sticky-overlay" aria-hidden="true">
-      {ids.map((id, slot) => {
-        const entry = data[id];
-        const rowIndex = rowsRef.current?.indexById.get(id);
-        if (!entry || rowIndex === undefined) {
-          return null;
-        }
-        return (
-          <StickyRow
-            key={id}
-            $level={rowsRef.current!.depths[rowIndex]}
-            data-sticky-item-id={id}
-            type="button"
-            tabIndex={-1}
-            onClick={() => scrollIntoSlot(id, slot)}
-          >
-            <StickyRowIcon
-              data-testid="sticky-collapse"
-              onClick={(event) => {
-                event.stopPropagation();
-                onCollapse(id);
-                scrollIntoSlot(id, slot);
-              }}
+    <StickyAnchor aria-hidden="true">
+      <StickyStack data-testid="sticky-overlay">
+        {ids.map((id, slot) => {
+          const entry = data[id];
+          const rowIndex = rowsRef.current?.indexById.get(id);
+          if (!entry || rowIndex === undefined) {
+            return null;
+          }
+          return (
+            <StickyRow
+              key={id}
+              $level={rowsRef.current!.depths[rowIndex]}
+              data-sticky-item-id={id}
+              type="button"
+              tabIndex={-1}
+              onClick={() => scrollIntoSlot(id, slot)}
             >
-              {entry.type === 'root' ? (
-                <CollapseIcon isExpanded />
-              ) : (
-                <>
-                  <span className="hover-only">
-                    <CollapseIcon isExpanded />
-                  </span>
-                  <span className="static-only">
-                    <TypeIconWithSymbol item={entry} />
-                  </span>
-                </>
-              )}
-            </StickyRowIcon>
-            <StickyLabel>{entry.renderLabel?.(entry, api, labelContext) || entry.name}</StickyLabel>
-          </StickyRow>
-        );
-      })}
-    </StickyOverlay>
+              <StickyRowIcon
+                data-testid="sticky-collapse"
+                onClick={(event) => {
+                  event.stopPropagation();
+                  onCollapse(id);
+                  scrollIntoSlot(id, slot);
+                }}
+              >
+                {entry.type === 'root' ? (
+                  <CollapseIcon isExpanded />
+                ) : (
+                  <>
+                    <span className="hover-only">
+                      <CollapseIcon isExpanded />
+                    </span>
+                    <span className="static-only">
+                      <TypeIconWithSymbol item={entry} />
+                    </span>
+                  </>
+                )}
+              </StickyRowIcon>
+              <StickyLabel>
+                {entry.renderLabel?.(entry, api, labelContext) || entry.name}
+              </StickyLabel>
+            </StickyRow>
+          );
+        })}
+      </StickyStack>
+    </StickyAnchor>
   );
 }

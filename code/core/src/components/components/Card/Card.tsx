@@ -53,9 +53,8 @@ const spin = keyframes({
 });
 
 // Half the layer width plus half the layer height is exactly one hue cycle along the 45° gradient
-// axis, so the loop repeats without a seam at any card size. The animation moves transform, which
-// the compositor handles. An animation on background-position repaints on the main thread for
-// every frame.
+// axis, so the loop repeats without a seam at any card size. The animation uses transform to avoid
+// main-thread repaint.
 const slide = keyframes({
   to: {
     transform: 'translate(-50%, 50%)',
@@ -104,7 +103,7 @@ const CardOutline = styled.div<{
     opacity: 1,
 
     ...(animation === 'rainbow' && {
-      // The layer is larger than the card, so the card stays covered during the diagonal slide.
+      // Oversized so the card stays covered throughout the diagonal slide.
       width: '1000%',
       height: '200%',
       top: '-100%',
@@ -114,8 +113,8 @@ const CardOutline = styled.div<{
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
       willChange: 'transform, opacity',
 
-      // The static ring is softened to the purple-orange span at low opacity: a full-strength
-      // rainbow reads nearly as loud as the motion it replaces.
+      // The static ring is softened to a simpler gradient in reduced motion, as the
+      // original rainbow gradient would be too visually loud.
       '@media (prefers-reduced-motion: reduce)': {
         width: '100%',
         height: '100%',
@@ -148,7 +147,7 @@ const CardOutline = styled.div<{
               : `conic-gradient(transparent 90deg, #b6a7ff 150deg, #d8aeff 210deg, transparent 270deg)`
             : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
 
-      // Frozen at 0deg, the conic arc rests along the card's bottom edge as a dimmed glow.
+      // Frozen at 0deg, showing a dim glow on the bottom edge of the card.
       '@media (prefers-reduced-motion: reduce)': {
         animation: 'none',
         opacity: 0.6,

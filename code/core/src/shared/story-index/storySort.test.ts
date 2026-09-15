@@ -265,7 +265,7 @@ describe('preview.storySort', () => {
         fixture.actions,
         fixture.components_actions_login,
         fixture.components_actions_logout,
-      ].sort(sortFn);
+      ].sort(sortFn as (a: StoryIndexEntry, b: StoryIndexEntry) => number);
 
       expect(sorted).toEqual([
         fixture.components_actions_login,

@@ -35,7 +35,8 @@ const nextOrderList = (order: unknown[], name: string): unknown[] => {
   if (index === -1) {
     index = order.indexOf('*');
   }
-  return index !== -1 && Array.isArray(order[index + 1]) ? order[index + 1] : [];
+  const next = order[index + 1];
+  return index !== -1 && Array.isArray(next) ? next : [];
 };
 
 const configureOrAlphabeticalSort =

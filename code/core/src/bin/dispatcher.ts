@@ -23,8 +23,7 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  * - Init is routed to the create-storybook package via the detected package manager
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli the same way
  */
-const [major, minor, patch] = process.versions.node.split('.').map(Number);
-if (!isNodeVersionSupported(major, minor, patch)) {
+if (!isNodeVersionSupported(process.versions.node)) {
   logger.error(
     dedent`To run Storybook, you need Node.js version ${MIN_SUPPORTED_NODE_DESCRIPTION}.
     You are currently running Node.js ${process.version}. Please upgrade your Node.js installation.`

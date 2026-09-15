@@ -327,7 +327,10 @@ function extractSourceMapJson(js: string): LocatedSourceMap {
   if (index === -1) {
     return null;
   }
-  const mapUrl = js.slice(index + marker.length).split('\n')[0].trim();
+  const mapUrl = js
+    .slice(index + marker.length)
+    .split('\n')[0]
+    .trim();
   try {
     if (mapUrl.startsWith('data:')) {
       const commaIndex = mapUrl.indexOf(',');

@@ -42,7 +42,9 @@ export function getFiberFromElement(element: Element): FiberLike | null {
   }
   const fiber: unknown = (element as unknown as Record<string, unknown>)[key];
   // Boundary validation: it must at least look like a fiber before we walk it.
-  return typeof fiber === 'object' && fiber !== null && 'type' in fiber ? (fiber as FiberLike) : null;
+  return typeof fiber === 'object' && fiber !== null && 'type' in fiber
+    ? (fiber as FiberLike)
+    : null;
 }
 
 /** Nearest fiber whose type is a function component, walking up the tree. */

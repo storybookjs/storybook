@@ -170,9 +170,7 @@ describe('regime 2 — React >= 19.2 (component stacks)', () => {
     (componentFiber._debugStack as { stack: string }).stack = stack;
     const hostFiber: FiberLike = { type: 'section', _debugOwner: componentFiber };
 
-    const result = await resolveSource(hostFiber, {}, () =>
-      Promise.resolve(transformedModule)
-    );
+    const result = await resolveSource(hostFiber, {}, () => Promise.resolve(transformedModule));
     expect(result).toEqual({
       file: 'code/lib/devtools-spike/demo/react-19/src/App.tsx',
       line: 20, // sourceLine 19 (0-based) + 1

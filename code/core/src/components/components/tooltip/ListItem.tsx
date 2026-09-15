@@ -138,11 +138,9 @@ const Item = styled.button<ItemProps>(
       paddingLeft: 10,
     },
 
-    // Inset the outline. A rounded list with `overflow: hidden`, such as TooltipLinkList, clips
-    // an outline that is drawn outside the item.
     '&:focus-visible': {
       outline: `2px solid ${theme.color.secondary}`,
-      outlineOffset: -2,
+      outlineOffset: 0,
     },
   }),
   ({ theme, href, onClick }) =>

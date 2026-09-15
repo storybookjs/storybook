@@ -7,6 +7,15 @@ import { styled } from 'storybook/theming';
 import { Button } from '../Button/Button.tsx';
 import { ToggleButton } from '../ToggleButton/ToggleButton.tsx';
 
+const StyledButton = styled(Button)(({ size }) => ({
+  gap: size === 'small' ? 6 : 8,
+
+  '&:focus-visible': {
+    // Prevent focus outline from being cut off by overflow: hidden
+    outlineOffset: -2,
+  },
+}));
+
 const ActionListItem = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
@@ -16,6 +25,7 @@ const ActionListItem = styled.li<{
     alignItems: 'center',
     justifyContent: 'space-between',
     flex: '0 0 auto',
+    overflow: 'hidden',
     minHeight: 32,
     gap: 4,
 
@@ -119,7 +129,7 @@ const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof But
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <Button {...{ ...props, variant, padding, size, ref }} />;
+    return <StyledButton {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 

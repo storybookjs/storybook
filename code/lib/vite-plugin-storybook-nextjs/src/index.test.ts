@@ -132,6 +132,18 @@ describe('VitePlugin', () => {
     });
   });
 
+  it('resolves styled-jsx through Next.js during dependency optimization', async () => {
+    const { default: VitePlugin } = await import('./index.ts');
+
+    const plugins = VitePlugin({ dir: '/root' });
+    const configPlugin = plugins[1];
+    const config = await configPlugin?.config?.({});
+
+    expect(
+      config?.optimizeDeps?.include?.filter((dependency) => dependency.includes('styled-jsx'))
+    ).toEqual(['next > styled-jsx', 'next > styled-jsx/style']);
+  });
+
   it('uses native tsconfig paths support on Vite 8 and newer', async () => {
     getViteMajorVersionMock.mockReturnValue(8);
 

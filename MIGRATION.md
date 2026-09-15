@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Raised browser support floors](#raised-browser-support-floors)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
@@ -16,7 +17,6 @@
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
-
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -549,6 +549,7 @@
 
 ## From version 10.x to 11.0.0
 
+  - [Raised browser support floors](#raised-browser-support-floors)
 ### Node.js 22.12 or higher
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
@@ -566,6 +567,19 @@ nodeLinker: node-modules
 ```
 
 Remove `--use-pnp` from any `storybook init` or `create storybook` commands. The `detectPnp` utility is also no longer exported from `storybook/internal/cli`; remove imports of that utility from custom tooling.
+
+### Raised browser support floors
+
+Storybook 11 requires these browsers for the manager UI:
+
+- Chrome 147+
+- Edge 150+
+- Firefox 152+
+- Safari 26.5+
+
+Android Chrome matches the Chrome floor. iOS Safari matches the Safari floor. Opera is no longer a listed target.
+
+If you need older browsers, stay on Storybook 10 or use [`--preview-only`](https://storybook.js.org/docs/sharing/publish-storybook#build-storybook-for-older-browsers).
 
 ### Top-level `setConfig` layout and UI options removed
 

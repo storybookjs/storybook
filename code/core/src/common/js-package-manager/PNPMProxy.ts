@@ -17,7 +17,7 @@ import { type Document, parseDocument } from 'yaml';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
-import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
+import { getPackageDetails, JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
 import type { InstallationMetadata, PackageMetadata } from './types.ts';
 import {
@@ -231,6 +231,33 @@ export class PNPMProxy extends JsPackageManager {
     };
   }
 
+  override addDependencies(
+    options: Parameters<JsPackageManager['addDependencies']>[0],
+    dependencies: string[]
+  ) {
+    if (!options.skipInstall) {
+      return super.addDependencies(options, dependencies);
+    }
+
+    const packageJsonInfo = options.packageJsonInfo ?? this.primaryPackageJson;
+    const declaredDependencies = packageJsonInfo.packageJson[options.type] ?? {};
+    const catalogEntries = dependencies.flatMap((dependency) => {
+      const [packageName, version] = getPackageDetails(dependency);
+      const catalogName = this.#getCatalogName(declaredDependencies[packageName]);
+      return catalogName === null || version === undefined
+        ? []
+        : [{ packageName, version, catalogName }];
+    });
+    const updatedCatalogs = this.#updateCatalogEntries(catalogEntries);
+    const catalogAwareDependencies = dependencies.map((dependency) => {
+      const [packageName] = getPackageDetails(dependency);
+      const catalogName = updatedCatalogs.get(packageName);
+      return catalogName === undefined ? dependency : `${packageName}@catalog:${catalogName}`;
+    });
+
+    return super.addDependencies(options, catalogAwareDependencies);
+  }
+
   override async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
     const specifier = await super.getDeclaredVersionSpecifier(packageName);
     if (specifier) {
@@ -316,6 +343,45 @@ export class PNPMProxy extends JsPackageManager {
       return ['catalogs', catalogName];
     }
     return doc.hasIn(['catalogs', 'default']) ? ['catalogs', 'default'] : ['catalog'];
+  }
+
+  #updateCatalogEntries(
+    entries: Array<{ packageName: string; version: string; catalogName: string }>
+  ): Map<string, string> {
+    if (entries.length === 0) {
+      return new Map();
+    }
+
+    const workspace = this.#readWorkspaceYaml();
+    if (!workspace) {
+      return new Map();
+    }
+
+    try {
+      const updatedCatalogs = new Map<string, string>();
+      let changed = false;
+      for (const { packageName, version, catalogName } of entries) {
+        const keyPath = [...this.#catalogKeyPath(workspace.doc, catalogName), packageName];
+        const currentVersion = workspace.doc.getIn(keyPath);
+        if (typeof currentVersion !== 'string' && typeof currentVersion !== 'number') {
+          continue;
+        }
+
+        updatedCatalogs.set(packageName, catalogName);
+        if (version !== String(currentVersion)) {
+          workspace.doc.setIn(keyPath, version);
+          changed = true;
+        }
+      }
+
+      if (changed) {
+        writeFileSync(workspace.path, workspace.doc.toString(), 'utf8');
+      }
+      return updatedCatalogs;
+    } catch (e) {
+      logger.warn(`Could not update pnpm catalog in ${workspace.path}: ${String(e)}`);
+      return new Map();
+    }
   }
 
   /**

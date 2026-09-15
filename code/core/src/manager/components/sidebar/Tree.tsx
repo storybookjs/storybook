@@ -169,9 +169,14 @@ export const Tree = React.memo<TreeProps>(function Tree({
   onSelectStoryIdRef.current = onSelectStoryIdProp;
   const onSelectStoryId = useCallback((id: string) => onSelectStoryIdRef.current(id), []);
 
-  // The row that holds keyboard focus. The context-menu shortcut and the indent lines follow it.
+  // The row that holds DOM focus, which the context-menu shortcut acts on. React-aria keeps this
+  // on a row that a pointer press focused, so it is not the row the user is looking at.
   const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
   const focusedItemIdRef = useRef<string | null>(null);
+
+  // The row that holds keyboard focus. React-aria marks it with data-focus-visible, which a
+  // pointer press never sets, so the indent lines mark it and no other row.
+  const [keyboardFocusedItemId, setKeyboardFocusedItemId] = useState<string | null>(null);
 
   // Rewrite the dataset to place the single child story in place of the component.
   const hoistedData = useMemo(() => hoistSingleStoryComponents(data), [data]);
@@ -348,35 +353,42 @@ export const Tree = React.memo<TreeProps>(function Tree({
   }, []);
   const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
 
-  // Track the focused row with one MutationObserver: react-aria marks it with data-focused.
+  // Track both focus marks with one MutationObserver. React-aria sets data-focused on the row
+  // that holds DOM focus, and data-focus-visible only while the focus came from the keyboard.
   useEffect(() => {
     const container = containerRef.current;
     if (!container) {
       return;
     }
-
-    const focusedElement = container.querySelector<HTMLElement>(
-      '[data-focused="true"][data-item-id]'
-    );
-    updateFocusedItemId(focusedElement?.getAttribute('data-item-id') ?? null);
+    const idOf = (selector: string) =>
+      container.querySelector<HTMLElement>(selector)?.getAttribute('data-item-id') ?? null;
+    updateFocusedItemId(idOf('[data-focused="true"][data-item-id]'));
+    setKeyboardFocusedItemId(idOf('[data-focus-visible][data-item-id]'));
 
     const observer = new MutationObserver((mutations) => {
       for (const mutation of mutations) {
-        if (!(mutation.target instanceof HTMLElement)) {
+        const row = mutation.target;
+        if (!(row instanceof HTMLElement)) {
           continue;
         }
-        const itemId = mutation.target.getAttribute('data-item-id');
-        if (mutation.target.getAttribute('data-focused') === 'true') {
-          updateFocusedItemId(itemId);
-        } else if (focusedItemIdRef.current === itemId) {
-          updateFocusedItemId(null);
+        const itemId = row.getAttribute('data-item-id');
+        if (mutation.attributeName === 'data-focused') {
+          if (row.getAttribute('data-focused') === 'true') {
+            updateFocusedItemId(itemId);
+          } else if (focusedItemIdRef.current === itemId) {
+            updateFocusedItemId(null);
+          }
+        } else if (row.hasAttribute('data-focus-visible')) {
+          setKeyboardFocusedItemId(itemId);
+        } else {
+          setKeyboardFocusedItemId((current) => (current === itemId ? null : current));
         }
       }
     });
 
     observer.observe(container, {
       attributes: true,
-      attributeFilter: ['data-focused'],
+      attributeFilter: ['data-focused', 'data-focus-visible'],
       subtree: true,
     });
 
@@ -400,7 +412,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
     rowsRef,
     stickyIdsRef,
     hoveredRowRef,
-    focusedItemId,
+    keyboardFocusedItemId,
     selectedParentId,
   });
 

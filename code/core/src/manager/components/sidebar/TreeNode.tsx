@@ -69,13 +69,15 @@ const StyledTreeItem = styled(TreeItem)<{
   // Base colors.
   color: $textColor ?? theme.color.defaultText,
 
-  // Hover colors: data-focused is set by RAC on hovered items (it mixes hover/focus states).
-  '&:hover, &[data-focused="true"]': {
+  // Hover colors. React-aria keeps data-focused on a row that a pointer press focused, long after
+  // the pointer has left it, so the highlight follows the pointer and the keyboard focus ring
+  // instead: data-focus-visible marks keyboard focus only.
+  '&:hover, &[data-focus-visible]': {
     color: $textColor ?? theme.barHoverColor,
     outline: 'none',
     svg: { color: 'currentColor' },
   },
-  '&:hover::before, &[data-focused="true"]::before': {
+  '&:hover::before, &[data-focus-visible]::before': {
     background: theme.background.hoverable,
   },
 

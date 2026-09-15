@@ -13,7 +13,7 @@ import type {
   TestEntry,
 } from 'storybook/manager-api';
 import { ManagerContext } from 'storybook/manager-api';
-import { expect, fn, userEvent, within } from 'storybook/test';
+import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
@@ -203,6 +203,17 @@ export const ExpandOnClick: Story = {
     await userEvent.click(group);
     await expect(await canvas.findByText('Button')).toBeInTheDocument();
     await expect(args.onSelectStoryId).not.toHaveBeenCalled();
+
+    // React-aria keeps data-focused on the row the click focused. Only the pointer and keyboard
+    // focus may highlight a row, so the row must lose its highlight once the pointer leaves it.
+    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${groupItem.id}"]`)!;
+    await expect(row).toHaveAttribute('data-focused', 'true');
+    await expect(row).not.toHaveAttribute('data-focus-visible');
+    await userEvent.unhover(row);
+    await waitFor(() => {
+      const highlight = getComputedStyle(row, '::before').backgroundColor;
+      expect(highlight).toMatch(/^(transparent|rgba\(0, 0, 0, 0\))$/);
+    });
   },
 };
 

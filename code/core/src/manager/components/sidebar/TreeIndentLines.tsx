@@ -63,8 +63,8 @@ interface IndentLinesOptions {
   stickyIdsRef: RefObject<string[]>;
   /** The row under the pointer, or null. */
   hoveredRowRef: RefObject<HoveredRow | null>;
-  /** The row that holds keyboard focus, or null. */
-  focusedItemId: string | null;
+  /** The row that holds keyboard focus, or null. A pointer press does not set it. */
+  keyboardFocusedItemId: string | null;
   /** Parent of the selected story. Its children share the selection line. */
   selectedParentId: string | null;
 }
@@ -80,14 +80,14 @@ export function useIndentLines({
   rowsRef,
   stickyIdsRef,
   hoveredRowRef,
-  focusedItemId,
+  keyboardFocusedItemId,
   selectedParentId,
 }: IndentLinesOptions) {
   const gridPathRef = useRef<SVGPathElement>(null);
   const accentPathRef = useRef<SVGPathElement>(null);
   const selectionPathRef = useRef<SVGPathElement>(null);
-  const focusedItemIdRef = useRef(focusedItemId);
-  focusedItemIdRef.current = focusedItemId;
+  const keyboardFocusedItemIdRef = useRef(keyboardFocusedItemId);
+  keyboardFocusedItemIdRef.current = keyboardFocusedItemId;
   const selectedParentIdRef = useRef(selectedParentId);
   selectedParentIdRef.current = selectedParentId;
 
@@ -158,7 +158,7 @@ export function useIndentLines({
     if (hovered) {
       accentRow(hovered.id);
     }
-    const focused = focusedItemIdRef.current;
+    const focused = keyboardFocusedItemIdRef.current;
     if (focused && focused !== hovered?.id) {
       accentRow(focused);
     }
@@ -192,7 +192,7 @@ export function useIndentLines({
   }, [scrollerRef, rowsRef, stickyIdsRef, hoveredRowRef]);
 
   // Keyboard focus and selection move without a scroll event.
-  useEffect(redraw, [redraw, focusedItemId, selectedParentId]);
+  useEffect(redraw, [redraw, keyboardFocusedItemId, selectedParentId]);
 
   const layer = (
     <IndentLineLayer aria-hidden="true" data-testid="indent-lines">

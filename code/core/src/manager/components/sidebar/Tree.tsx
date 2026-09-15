@@ -63,7 +63,7 @@ const TreeWrapper = styled.div({
   // Contain the z-index of the overlays, so that UI outside the tree still paints above them.
   isolation: 'isolate',
   // Show the indent lines only while the pointer is over the tree, or while a row holds keyboard
-  // focus. The selection line has its own path and ignores this.
+  // focus. The selection line ignores this.
   '&:hover, &:has(:focus-visible)': {
     [INDENT_LINE_OPACITY_VAR]: 1,
   },

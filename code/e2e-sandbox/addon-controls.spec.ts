@@ -118,6 +118,31 @@ test.describe('addon-controls', () => {
     await expect(sbPage.panelContent().getByText('children').first()).toBeVisible();
   });
 
+  test('should use a text control for React node props', async ({ page }) => {
+    test.skip(!isReactSandbox(templateName), 'This is a React only feature');
+
+    await page.goto(`${storybookUrl}?path=/story/stories-renderers-react-jsx-docgen--node-value`);
+
+    const sbPage = new SbPage(page, expect);
+    await sbPage.waitUntilLoaded();
+    await sbPage.viewAddonPanel('Controls');
+
+    // React.ReactNode props are extracted as node types and default to the text control
+    const children = sbPage.panelContent().locator('textarea[name="children"]');
+    await expect(children).toBeVisible();
+    await expect(children).toHaveValue('Node prop edited with the text control');
+
+    // Typing updates the story on the canvas
+    await children.fill('Typed into the node control');
+    await expect(sbPage.previewRoot().getByText('Typed into the node control')).toBeVisible();
+
+    // The value survives a reload through the URL args round-trip
+    await page.waitForURL((url) => url.search.includes('args=children:'));
+    await page.reload();
+    await sbPage.waitUntilLoaded();
+    await expect(sbPage.previewRoot().getByText('Typed into the node control')).toBeVisible();
+  });
+
   test('should render boolean control with explicit forced-colors styling', async ({ page }) => {
     await page.emulateMedia({ forcedColors: 'active' });
     await page.goto(`${storybookUrl}?path=/story/example-button--primary`);

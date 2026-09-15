@@ -280,6 +280,12 @@ Numeric data types will default to a `number` control unless additional configur
 
 </Callout>
 
+<Callout variant="info" icon="💡">
+
+In React projects, `node` props such as `children: React.ReactNode` or `PropTypes.node` default to a `text` control, since any string is a valid value for them. Use a [custom `argType`](../api/arg-types.mdx) to pick a different control, and [mapping](../writing-stories/args.mdx#mapping-to-complex-arg-values) for richer (non-serializable) values such as JSX elements.
+
+</Callout>
+
 ### Parameters
 
 Controls supports the following configuration [parameters](../writing-stories/parameters.mdx), either globally or on a per-story basis:

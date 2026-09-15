@@ -1,6 +1,7 @@
 import type { ArgTypesExtractor, PropDef } from 'storybook/internal/docs-tools';
 import type { StrictArgTypes } from 'storybook/internal/types';
 
+import { isTextNodeValue } from './componentManifest/reactDocgen/textNodeValues.ts';
 import { extractProps } from './extractProps.ts';
 
 export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | null => {
@@ -21,7 +22,9 @@ export const extractArgTypes: ArgTypesExtractor = (component): StrictArgTypes | 
         acc[name] = {
           name,
           description,
-          type: { required, ...sbType },
+          type: isTextNodeValue(sbType)
+            ? { required, name: 'node' as const, renderer: 'react' }
+            : { required, ...sbType },
           table: {
             type: type ?? undefined,
             jsDocTags,

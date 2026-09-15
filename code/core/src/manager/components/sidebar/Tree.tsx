@@ -5,7 +5,7 @@ import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/c
 
 import { Collection } from 'react-aria-components/Collection';
 import { Tree as AriaTree } from 'react-aria-components/Tree';
-import { ListLayout, Virtualizer } from 'react-aria-components/Virtualizer';
+import { Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
   getAncestorIds,
@@ -37,6 +37,7 @@ import {
 import { ScrollAreaContext } from './SidebarScrollArea.tsx';
 import { StatusContext } from './StatusContext.tsx';
 import { INDENT_LINE_OPACITY_VAR, useIndentLines, type HoveredRow } from './TreeIndentLines.tsx';
+import { TreeRowLayout } from './TreeRowLayout.ts';
 import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
 import type { SidebarLabelContext } from './types.ts';
 import { useExpanded } from './useExpanded.ts';
@@ -625,9 +626,11 @@ export const Tree = React.memo<TreeProps>(function Tree({
     ]
   );
 
-  // Rows are fixed-height except section starts, which carry the gap as padding; the layout
-  // measures rendered rows against this estimate.
-  const treeLayout = useMemo(() => new ListLayout({ estimatedRowHeight: TREE_ROW_HEIGHT }), []);
+  const treeLayout = useMemo(() => new TreeRowLayout(), []);
+  const treeLayoutOptions = useMemo(
+    () => ({ sectionStartIds: rows.sectionStartIds }),
+    [rows.sectionStartIds]
+  );
 
   // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
   // every TreeNode through the context.
@@ -656,7 +659,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
             rowsRef={rowsRef}
             onCollapse={collapseStickyRow}
           />
-          <Virtualizer layout={treeLayout}>
+          <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
             <StyledAriaTree
               ref={containerRef}
               aria-label="Stories"

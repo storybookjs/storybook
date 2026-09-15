@@ -124,6 +124,48 @@ export const Full: Story = {
 };
 
 /**
+ * The virtualizer must place rows exactly where the geometry model puts them: a 28px pitch, plus
+ * the section gap a row carries as top padding when it starts a new top-level section. Estimated
+ * heights would let unmeasured rows drift from the model after deep links, misplacing the sticky
+ * rows, the indent lines, and scroll targeting.
+ */
+export const RowsMatchModelPitch: Story = {
+  args: {
+    refId: DEFAULT_REF_ID,
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    // Expand the first branch so a later top-level section follows deeper rows and gets the gap.
+    const firstRow = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
+    await waitFor(() => {
+      expect(getComputedStyle(firstRow).pointerEvents).not.toBe('none');
+    });
+    await userEvent.click(firstRow);
+
+    await waitFor(() => {
+      const rows = Array.from(canvasElement.querySelectorAll<HTMLElement>('[data-item-id]'))
+        .map((el) => ({ el, top: el.getBoundingClientRect().top }))
+        .sort((a, b) => a.top - b.top);
+      expect(rows.length).toBeGreaterThan(2);
+      let sawSectionGap = false;
+      for (let i = 1; i < rows.length; i += 1) {
+        // The section gap is padding inside the section-starting row's own box, so it widens the
+        // step from that row to the next one.
+        const gap = parseFloat(getComputedStyle(rows[i - 1].el).paddingBlockStart);
+        sawSectionGap ||= gap > 0;
+        expect(rows[i].top - rows[i - 1].top).toBe(TREE_ROW_HEIGHT + gap);
+      }
+      expect(sawSectionGap).toBe(true);
+    });
+  },
+};
+
+/**
  * Escape pressed on a focused row must reach ancestors unconsumed. The mobile menu drawer hosts
  * the tree in a modal that closes on an unconsumed Escape, and react-aria would otherwise swallow
  * the key on every press to clear a selection that is controlled and never empty.

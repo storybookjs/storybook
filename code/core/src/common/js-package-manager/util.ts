@@ -211,10 +211,10 @@ export const getErrorLogs = (error: unknown): string => {
 export const INSTALL_ERROR_TAIL_LINES = 15;
 
 /**
- * The tail of a failed package install's captured output (see `getErrorLogs`). Unbounded output is
- * truncated to the last `lines` lines — package managers print their own error summary (e.g. an
- * npm ERESOLVE explanation) at the end. Returns '' when there is no additional output beyond the
- * error's own message, so the tail is only ever additive.
+ * The tail of a failed package install's captured output (see `getErrorLogs`). Output longer than
+ * `lines` lines is truncated to the last `lines` — package managers print their own error summary
+ * (e.g. an npm ERESOLVE explanation) at the end. Returns '' only when there is no captured output
+ * at all; short outputs are returned in full so they are still logged and folded into the error.
  */
 export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERROR_TAIL_LINES) => {
   const output = getErrorLogs(error).trimEnd();
@@ -223,8 +223,5 @@ export const getInstallErrorTail = (error: unknown, lines: number = INSTALL_ERRO
   }
 
   const allLines = output.split('\n');
-  const tail = allLines.slice(-lines).join('\n').trim();
-
-  // Nothing additive when the whole output fits (or the error message is already the tail).
-  return tail.length < output.trim().length ? tail : '';
+  return allLines.slice(-lines).join('\n').trim();
 };

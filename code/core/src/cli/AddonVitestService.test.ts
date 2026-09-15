@@ -164,6 +164,18 @@ describe('AddonVitestService', () => {
       );
     });
 
+    it('falls back instead of blowing up collectDependencies on a pnpm catalog @types/node', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        '@types/node': 'catalog:', // pnpm catalog reference; unparseable as a semver range
+      });
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('vitest@^4');
+      expect(deps).toContain('@vitest/browser-playwright@^4');
+    });
+
     it('installs latest Vitest when no vitest is declared and no peer conflict exists', async () => {
       vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
@@ -207,6 +219,12 @@ describe('AddonVitestService', () => {
     it('allows latest when the @types/node range intersects the latest peer range', () => {
       expect(canInstallLatestVitest({ '@types/node': '^22' })).toBe(true);
       expect(canInstallLatestVitest({ '@types/node': '>=20' })).toBe(true);
+    });
+
+    it('falls back instead of throwing on unparseable specifiers like pnpm catalog references', () => {
+      expect(() => canInstallLatestVitest({ '@types/node': 'catalog:' })).not.toThrow();
+      expect(canInstallLatestVitest({ '@types/node': 'catalog:' })).toBe(false);
+      expect(canInstallLatestVitest({ '@types/node': 'workspace:*' })).toBe(false);
     });
   });
 

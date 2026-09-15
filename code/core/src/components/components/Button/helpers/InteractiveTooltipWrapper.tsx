@@ -18,9 +18,11 @@ export const InteractiveTooltipWrapper: React.FC<{
       return undefined;
     }
 
-    // Read the flag from the DOM instead of the manager API. Button is public API and can be
-    // imported in MDX, where the addons singleton is not available. The flag does not change in
-    // the app's lifecycle, so it's safe to use without reactivity.
+    // We read from document despite the lack of reactivity, because this
+    // option isn't changeable in the UI. If it was, we'd need to fetch the
+    // addons singleton. This component is used in Buttons, etc., which are
+    // public API and can be imported in MDX. So We rely on a declarative
+    // DOM attribute instead of relying on the manager API.
     const hasShortcuts = document?.body?.getAttribute('data-shortcuts-enabled') !== 'false';
     if (!hasShortcuts) {
       return undefined;
@@ -29,8 +31,8 @@ export const InteractiveTooltipWrapper: React.FC<{
     return shortcutToHumanString(shortcut);
   }, [shortcut]);
 
-  // Show a tooltip for the shortcut alone. When a Button sets no `tooltip`, we still
-  // need to show it for the shortcut to be discoverable.
+  // A shortcut alone still warrants a tooltip: buttons with visible text pass no `tooltip`
+  // but their shortcut is only discoverable here.
   return tooltip || shortcutLabel ? (
     <TooltipProvider
       placement={tooltipPlacement}

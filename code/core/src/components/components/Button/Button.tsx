@@ -122,8 +122,8 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     };
 
     useEffect(() => {
-      // Start the timer only while the animation runs. An unconditional timeout creates one
-      // timer for each mounted Button, and the sidebar mounts one Button per visible tree row.
+      // Only arm the timer while animating: an unconditional timeout costs one timer per
+      // mounted Button, which adds up fast (the sidebar mounts one per visible tree row).
       if (!isAnimating) {
         return undefined;
       }

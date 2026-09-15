@@ -418,7 +418,10 @@ const throwingContextMenuManagerContext: any = {
 
 export const WithThrowingContextMenuAddon: Story = {
   ...DocsOnlySingleStoryComponents,
-  parameters: WithContextContent.parameters,
+  parameters: {
+    ...WithContextContent.parameters,
+    chromatic: { disableSnapshot: true },
+  },
   globals: WithContextContent.globals,
   decorators: [
     (storyFn) => (

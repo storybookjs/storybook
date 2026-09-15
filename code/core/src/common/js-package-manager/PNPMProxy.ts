@@ -1,6 +1,5 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
@@ -206,37 +205,7 @@ export class PNPMProxy extends JsPackageManager {
     }
   }
 
-  // TODO: Remove pnp compatibility code in SB11
   public async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (pnpapiPath) {
-      try {
-        const pnpApi = await import(pathToFileURL(pnpapiPath).href);
-
-        const resolvedPath = pnpApi.resolveToUnqualified(packageName, this.cwd, {
-          considerBuiltins: false,
-        });
-
-        const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
-        const pkg = pnpApi.getPackageInformation(pkgLocator);
-
-        const packageJSON = JSON.parse(
-          readFileSync(join(pkg.packageLocation, 'package.json'), 'utf-8')
-        );
-
-        return packageJSON;
-      } catch (error: any) {
-        if (error.code !== 'MODULE_NOT_FOUND') {
-          console.error('Error while fetching package version in PNPM PnP mode:', error);
-        }
-        return null;
-      }
-    }
-
     const wantedPath = join('node_modules', packageName, 'package.json');
     const packageJsonPath = find.up(wantedPath, {
       cwd: this.primaryPackageJson.operationDir,

@@ -20,6 +20,7 @@ import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
 import type { InstallationMetadata } from './types.ts';
+import { getInstallErrorTail } from './util.ts';
 import { getVitePlusVersions } from './vite-plus-versions.ts';
 
 export enum PackageManagerName {
@@ -185,12 +186,26 @@ export abstract class JsPackageManager {
   }
 
   async installDependencies(options?: { force?: boolean }) {
-    await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
-      id: 'install-dependencies',
-      intro: 'Installing dependencies...',
-      error: 'Installation of dependencies failed!',
-      success: 'Dependencies installed',
-    });
+    try {
+      await prompt.executeTaskWithSpinner(() => this.runInstall(options), {
+        id: 'install-dependencies',
+        intro: 'Installing dependencies...',
+        error: 'Installation of dependencies failed!',
+        success: 'Dependencies installed',
+      });
+    } catch (error) {
+      // The spinner only shows a generic message, and callers like the init flow continue without
+      // printing the thrown error. Surface the captured output tail so package-manager errors
+      // (e.g. an npm ERESOLVE) name themselves instead of surfacing later as a missing binary.
+      const tail = getInstallErrorTail(error);
+      if (tail) {
+        logger.error(tail);
+        if (error instanceof Error && !error.message.includes(tail)) {
+          error.message = `${error.message}\n\n${tail}`;
+        }
+      }
+      throw error;
+    }
 
     // Clear installed version cache after installation
     this.clearInstalledVersionCache();
@@ -720,8 +735,7 @@ export abstract class JsPackageManager {
     options?: { depth: number }
   ): Promise<InstallationMetadata | undefined>;
 
-  // TODO: Remove pnp compatibility code in SB11
-  /** Returns the installed (within node_modules or pnp zip) version of a specified package */
+  /** Returns the installed version of a specified package */
   public async getInstalledVersion(packageName: string): Promise<string | null> {
     const cacheKey = packageName;
 

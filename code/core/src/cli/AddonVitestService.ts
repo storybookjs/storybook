@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import os from 'node:os';
 
-import { canUpdateVitestConfigFile, canUpdateVitestWorkspaceFile } from 'storybook/internal/babel';
+import { canUpdateVitestConfigFile } from 'storybook/internal/babel';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
@@ -9,11 +9,15 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import * as find from 'empathic/find';
-import { coerce, minVersion, satisfies, validRange } from 'semver';
+import { coerce, intersects, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';
-import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
+import {
+  LATEST_VITEST_TYPES_NODE_PEER,
+  SUPPORTED_FRAMEWORKS,
+  VITEST_FALLBACK_SPECIFIER,
+} from './AddonVitestService.constants.ts';
 
 type Result = {
   compatible: boolean;
@@ -25,6 +29,24 @@ export interface AddonVitestCompatibilityOptions {
   framework?: SupportedFramework | null;
   projectRoot?: string;
 }
+
+/**
+ * Whether an unpinned `latest` Vitest install can resolve for this project. The latest Vitest
+ * major declares LATEST_VITEST_TYPES_NODE_PEER as an optional `@types/node` peer; a project whose
+ * own `@types/node` range never intersects that range (e.g. create-next-app scaffolds pinning
+ * `@types/node@^20`) hard-fails npm's peer resolution, so `latest` must be skipped in favor of
+ * VITEST_FALLBACK_SPECIFIER. No declared `@types/node` at all means nothing to conflict with.
+ * Unparseable specifiers (pnpm `catalog:` references) cannot be checked for peer compatibility,
+ * so they also fall back rather than risk an ERESOLVE — or throw on an invalid comparator.
+ */
+export const canInstallLatestVitest = (allDependencies: Record<string, string>): boolean => {
+  const typesNodeRange = allDependencies['@types/node'];
+  if (!typesNodeRange) {
+    return true;
+  }
+  const range = validRange(typesNodeRange);
+  return range ? intersects(range, LATEST_VITEST_TYPES_NODE_PEER) : false;
+};
 
 /**
  * Centralized service for @storybook/addon-vitest dependency collection and compatibility
@@ -68,7 +90,13 @@ export class AddonVitestService {
 
     // Resolve the Vitest version/range to keep the derived `@vitest/*` packages on a compatible
     // major. The package manager owns the resolution (e.g. reading a pnpm `catalog:` reference).
-    const vitestVersionSpecifier = await this.packageManager.getDeclaredVersionSpecifier('vitest');
+    // Projects declaring no Vitest at all install `latest`, unless the project's `@types/node`
+    // range conflicts with the latest Vitest major's `@types/node` peer (e.g. create-next-app's
+    // `@types/node@^20` vs. Vitest 5's `^22.0.0 || >=24.0.0`) — those fall back to the Vitest 4
+    // family, which is what the addon's devDependencies are tested against.
+    const vitestVersionSpecifier =
+      (await this.packageManager.getDeclaredVersionSpecifier('vitest')) ??
+      (canInstallLatestVitest(allDeps) ? 'latest' : VITEST_FALLBACK_SPECIFIER);
 
     // only install these dependencies if they are not already installed
     const basePackages = ['vitest', 'playwright', '@vitest/browser-playwright'];
@@ -88,10 +116,6 @@ export class AddonVitestService {
 
     if (!v8Version && !istanbulVersion) {
       dependencies.push('@vitest/coverage-v8');
-    }
-
-    if (!vitestVersionSpecifier) {
-      return dependencies;
     }
 
     // Pin the vitest-related packages to the resolved vitest version, letting the package manager
@@ -293,21 +317,6 @@ export class AddonVitestService {
   async validateConfigFiles(directory: string): Promise<Result> {
     const reasons: string[] = [];
     const projectRoot = getProjectRoot();
-
-    // Check projects files
-    const vitestProjectsFile = find.any(
-      ['ts', 'js', 'json'].map((ex) => `vitest.projects.${ex}`),
-      { cwd: directory, last: projectRoot }
-    );
-
-    if (vitestProjectsFile?.endsWith('.json')) {
-      reasons.push(`Cannot auto-update JSON projects file: ${vitestProjectsFile}`);
-    } else if (vitestProjectsFile) {
-      const fileContents = await fs.readFile(vitestProjectsFile, 'utf8');
-      if (!canUpdateVitestWorkspaceFile(fileContents)) {
-        reasons.push(`Found an invalid projects config file: ${vitestProjectsFile}`);
-      }
-    }
 
     // Check config files
     const vitestConfigFile = find.any(

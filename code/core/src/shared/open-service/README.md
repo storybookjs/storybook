@@ -110,18 +110,18 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
   narrowed to it. An outcome's `data` may carry more than this declares; only the declared shape
   reaches the wire
 - `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
-  effects and telemetry
+  effects and the usage report
 
 `handler` returns a `ToolsetOutcome<TSuccess, TFailure = TSuccess>` — a discriminated union of
-`{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, written as plain object
-literals (no factory helpers). The failure model is one line each: could not do the job →
+`{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, each with an optional
+`telemetry` usage report, written as plain object literals (no factory helpers). The failure model is one line each: could not do the job →
 **throw**; did the job and the answer is bad news (a failed test run, a not-found lookup) →
 **return `{ ok: false, data, markdown }`**. Infallible methods declare `TFailure = never`.
 
 One handler owns data and rendering because one MCP reply carries `content` (text) and
 `structuredContent` (JSON) at once and both must come from a single run — re-running a method with
-side effects would repeat them. Usage telemetry reports inline in the handler with the rendered
-text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
+side effects would repeat them. The usage report is part of the returned outcome, built with the
+rendered text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
 from `markdown`, `structuredContent` from `data`, MCP `isError` (and later CLI exit codes) from
 `ok` — and must not re-derive meaning from the data. `markdown` may be `string | string[]`:
 the CLI joins the blocks with blank lines, and its `--json` flag means "print `data`, skip
@@ -131,7 +131,7 @@ An error whose message speaks to the agent and names its own recovery declares `
 (a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
 property — never by keeping a class list, which misclassifies across bundle copies.
 
-`ctx` is `{ transport: 'cli' | 'mcp' | 'sdk', origin?, getService, telemetry? }`. `origin` is the complete
+`ctx` is `{ transport: 'cli' | 'mcp' | 'sdk', origin?, getService }`. `origin` is the complete
 Storybook UI base URL, including a deployment subpath; the MCP adapter derives it from the request.
 Descriptions that name a sibling tool must render it through `getToolName(ctx)` rather than hardcoding
 a spelling, so the same sentence reads as the derived MCP tool name, the CLI command, or the SDK
@@ -151,8 +151,14 @@ Adapters resolve one toolset with `getToolset(id)` or take the whole set via
 consume them today.
 
 Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
-definition. Use `reportToolsetTelemetry` so a rejected analytics sink cannot fail a tool call.
-Third-party toolsets do not need to participate in Storybook's telemetry taxonomy.
+definition. A handler returns at most one usage report on its outcome, `telemetry: { payload }`.
+`invokeToolsetMethod` — the one way every surface runs a method — names the report after the
+registration: `toolset`, `tool` in CLI spelling, and the generated `event`
+(`tool:stories_findByComponent`). The CLI and SDK forward that report as their `tools-command`
+record. The MCP adapter forwards it as its `addon-mcp` event, but under the pre-toolset event name
+the addon keeps per tool (`tool:getStoriesByComponent`), so MCP usage data stays continuous across
+versions. Toolsets never name events themselves. Third-party toolsets do not need to participate in
+Storybook's telemetry taxonomy.
 
 Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
 channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the

@@ -177,7 +177,6 @@ export default defineGeneratorModule({
       ...extraAngularDeps,
       ...(isVite
         ? [
-            angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
             angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
             `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',

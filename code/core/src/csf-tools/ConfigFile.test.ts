@@ -13,12 +13,12 @@ expect.addSnapshotSerializer({
 
 const getField = (path: string[], source: string) => {
   const config = loadConfig(source).parse();
-  return config.getFieldValue(path);
+  return config.getValue(path);
 };
 
 const setField = (path: string[], value: any, source: string) => {
   const config = loadConfig(source).parse();
-  config.setFieldValue(path, value);
+  expect(config.set(path, value)).toMatchObject({ ok: true });
   return printConfig(config).code;
 };
 
@@ -35,6 +35,139 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  it.each([
+    `export default { parameters: { viewport: { disable: true } } };`,
+    `export default definePreview({ parameters: { viewport: { disable: true } } });`,
+    `export const parameters = { viewport: { disable: true } };`,
+    `export default {};`,
+  ])('keeps nested fields readable and removable after setting them in %s', (source) => {
+    const config = loadConfig(source).parse();
+
+    config.set(['parameters', 'viewport', 'options'], {});
+    expect(config.getValue(['parameters', 'viewport', 'options'])).toEqual({});
+    if (source.includes('disable: true')) {
+      expect(config.getValue(['parameters', 'viewport', 'disable'])).toBe(true);
+    }
+    config.removeField(['parameters', 'viewport', 'disable']);
+    config.set(['parameters', 'viewport', 'disabled'], true);
+
+    const reparsed = loadConfig(printConfig(config).code).parse();
+    expect(config.getValue(['parameters'])).toEqual({
+      viewport: { options: {}, disabled: true },
+    });
+    expect(reparsed.getValue(['parameters'])).toEqual(config.getValue(['parameters']));
+  });
+
+  describe('callArguments', () => {
+    it('finds binding-safe method calls on aliased named imports', () => {
+      const config = loadConfig(dedent`
+        import { addons as managerAddons } from 'storybook/manager-api';
+
+        managerAddons.setConfig({ showNav: false });
+        managerAddons['setConfig']({ showPanel: false });
+
+        function configure(managerAddons: { setConfig: (value: unknown) => void }) {
+          managerAddons.setConfig({ showToolbar: false });
+        }
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api', '@storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
+
+      calls[0].group(['layout'], ['showNav']);
+      expect(config.changed).toBe(true);
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(printConfig(config).code).toContain('layout: {');
+      expect(calls[0].getValue(['layout', 'showNav'])).toBe(false);
+    });
+
+    it('ignores other modules and type-only imports', () => {
+      const config = loadConfig(dedent`
+        import { addons } from 'other-package';
+        import type { addons as typeAddons } from 'storybook/manager-api';
+        addons.setConfig({ showNav: false });
+        typeAddons.setConfig({ showPanel: false });
+      `).parse();
+
+      expect(
+        config.callArguments({
+          importedName: 'addons',
+          methodName: 'setConfig',
+          moduleNames: ['storybook/manager-api'],
+        })
+      ).toHaveLength(0);
+    });
+
+    it('finds binding-safe method calls on destructured CommonJS imports', () => {
+      const config = loadConfig(dedent`
+        const { addons: managerAddons } = require('storybook/manager-api');
+
+        managerAddons.setConfig({ showNav: false });
+
+        function configure(managerAddons) {
+          managerAddons.setConfig({ showPanel: false });
+        }
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+    });
+
+    it('finds same-named imported bindings in different scopes', () => {
+      const config = loadConfig(dedent`
+        import { addons } from 'storybook/manager-api';
+
+        addons.setConfig({ showNav: false });
+
+        function configure() {
+          const { addons } = require('storybook/manager-api');
+          addons.setConfig({ showPanel: false });
+        }
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
+    });
+
+    it('ignores other bindings from the same CommonJS destructuring', () => {
+      const config = loadConfig(dedent`
+        const { addons, unrelated } = require('storybook/manager-api');
+
+        addons.setConfig({ showNav: false });
+        unrelated.setConfig({ showPanel: false });
+      `).parse();
+
+      const calls = config.callArguments({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+    });
+  });
+
   describe('getField', () => {
     describe('named exports', () => {
       it('missing export', () => {
@@ -308,12 +441,12 @@ describe('ConfigFile', () => {
           }>();
         `;
         const config = loadConfig(source).parse();
-        expect(config.getFieldValue(['parameters', 'foo'])).toEqual('bar');
+        expect(config.getValue(['parameters', 'foo'])).toEqual('bar');
       });
     });
   });
 
-  describe('setField', () => {
+  describe('set', () => {
     describe('named exports', () => {
       it('missing export', () => {
         expect(
@@ -511,12 +644,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: 'baz'
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -1013,12 +1146,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: 'baz'
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -1105,7 +1238,7 @@ describe('ConfigFile', () => {
         expect(config.getNameFromPath(['otherField'])).toEqual('foo');
       });
 
-      it(`supports pnp wrapped names`, () => {
+      it(`supports wrapped names`, () => {
         const source = dedent`
           import type { StorybookConfig } from '@storybook/react-webpack5';
 
@@ -1808,7 +1941,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a preset-style object entry', () => {
@@ -1819,10 +1952,10 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
-    it('removes a pnp-wrapped string entry', () => {
+    it('removes a wrapped string entry', () => {
       const source = dedent`
         export default {
           addons: ['a', getAbsolutePath('b'), 'c'],
@@ -1830,10 +1963,10 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
-    it('removes a pnp-wrapped object entry', () => {
+    it('removes a wrapped object entry', () => {
       const source = dedent`
         export default {
           addons: ['a',  { name: getAbsolutePath('b'), options: {} }, 'c'],
@@ -1841,7 +1974,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('throws when entry is missing', () => {

@@ -5,6 +5,9 @@ import type { Plugin } from 'vite';
 import { generateProjectAnnotationsCode } from '../codegen-project-annotations.ts';
 import { getResolvedVirtualModuleId } from '../virtual-file-names.ts';
 
+// Renaming this breaks TurboSnap: chromaui/chromatic-cli finds the preview subgraph in
+// preview-stats.json by this exact name. A rename needs a chromaui/chromatic-cli release that
+// accepts both spellings first.
 export const VIRTUAL_ID = 'virtual:/@storybook/builder-vite/project-annotations.js';
 const RESOLVED_VIRTUAL_ID = getResolvedVirtualModuleId(VIRTUAL_ID);
 

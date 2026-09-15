@@ -34,6 +34,14 @@ import { useLastViewed } from './useLastViewed.ts';
 
 export const DEFAULT_REF_ID = 'storybook_internal';
 
+const SearchResultsContainer = styled.div({
+  overflowY: 'auto',
+  flex: '1 1 auto',
+  minHeight: 0,
+  // Reserve room under sidebar to match the height of the TestProvider.
+  paddingBottom: 'var(--sidebar-bottom-height, 0px)',
+});
+
 const Container = styled.header(({ theme }) => ({
   position: 'absolute',
   zIndex: 1,
@@ -236,7 +244,7 @@ export const Sidebar = React.memo(function Sidebar({
               {isSearchResultRendered && (
                 // The search results need their own scroll container. The sidebar has no outer
                 // scroller.
-                <div style={{ overflowY: 'auto', flex: '1 1 auto', minHeight: 0 }}>
+                <SearchResultsContainer>
                   <SearchResults
                     query={query}
                     results={results}
@@ -248,7 +256,7 @@ export const Sidebar = React.memo(function Sidebar({
                     isLoading={isLoading}
                     clearLastViewed={lastViewedProps.clearLastViewed}
                   />
-                </div>
+                </SearchResultsContainer>
               )}
             </>
           )}

@@ -102,33 +102,57 @@ const StickyLabel = styled.span({
 /**
  * The rows to keep at the top of the tree for a given scroll offset, from the top slot down.
  *
- * The list holds the ancestors of the row on the top line, and that row itself while its own
- * subtree continues below it. A row keeps its slot only while its own row is above that slot, and
- * while its subtree still reaches below the bottom edge of the slot. The second rule drops the
- * deepest sticky rows when the header of the next section reaches the stack, so that the incoming
- * header is never covered. Both rules fail from the deepest row upward, so the rows that stay keep
- * their slot index.
+ * A row holds the slot at its own indent depth, and it takes that slot as soon as the scroll
+ * reaches the slot — not when the scroll reaches the row. The two positions are the same at that
+ * moment, so the row stops where it already is and the rows below carry on past it. A rule keyed
+ * to the row itself would only catch it once the rows above had covered it, and it would then
+ * reappear a row further down.
+ *
+ * A row keeps its slot while its own row is above the slot, and while its subtree still reaches
+ * below the bottom edge of the slot. The second rule drops the deepest rows when the header of the
+ * next section reaches the stack, so that the incoming header is never covered.
+ *
+ * A row at one depth rules out every other row at that depth, and a row can only take a slot when
+ * its parent has taken the slot above, so the result is one row per depth with no gaps.
  */
 export function getStickyRowIds(rows: FlatRows, data: IndexHash, scrollTop: number): string[] {
-  const { ids, offsets, indexById, subtreeBottoms } = rows;
+  const { ids, offsets, depths, indexById, subtreeBottoms } = rows;
   const topIndex = findFirstRowBelow(rows, scrollTop);
   if (topIndex >= ids.length) {
     return [];
   }
-  const topId = ids[topIndex];
-  const ancestorIds = [...getAncestorIds(data, topId)].reverse();
-  const nextId = ids[topIndex + 1];
-  if (nextId && getAncestorIds(data, nextId).includes(topId)) {
-    ancestorIds.push(topId);
+  const slotTop = (depth: number) => scrollTop + depth * TREE_ROW_HEIGHT;
+
+  // The ancestors of the row on the top line, and the rows below it that have reached a slot of
+  // their own. A row can be up to its own depth in rows below the top line and still have reached
+  // its slot, and the walk stops as soon as one row has not: the gap to a row's own slot never
+  // grows as the walk goes down.
+  const candidates = [...getAncestorIds(data, ids[topIndex])]
+    .map((id) => indexById.get(id))
+    .filter((index): index is number => index !== undefined);
+  for (
+    let index = topIndex;
+    index < ids.length && offsets[index] < slotTop(depths[index]);
+    index++
+  ) {
+    candidates.push(index);
   }
-  return ancestorIds.filter((id, slot) => {
-    const index = indexById.get(id);
-    return (
-      index !== undefined &&
-      offsets[index] < scrollTop + slot * TREE_ROW_HEIGHT &&
-      (subtreeBottoms.get(id) ?? 0) > scrollTop + (slot + 1) * TREE_ROW_HEIGHT
-    );
-  });
+
+  const byDepth: string[] = [];
+  for (const index of candidates) {
+    const top = slotTop(depths[index]);
+    const holdsSlot =
+      offsets[index] < top && (subtreeBottoms.get(ids[index]) ?? 0) > top + TREE_ROW_HEIGHT;
+    if (holdsSlot) {
+      byDepth[depths[index]] = ids[index];
+    }
+  }
+
+  const sticky: string[] = [];
+  for (let depth = 0; depth < byDepth.length && byDepth[depth] !== undefined; depth++) {
+    sticky.push(byDepth[depth]);
+  }
+  return sticky;
 }
 
 interface StickyRowsProps {

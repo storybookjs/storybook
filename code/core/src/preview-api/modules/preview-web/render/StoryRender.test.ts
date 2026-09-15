@@ -2,7 +2,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
-import { STORY_FINISHED } from 'storybook/internal/core-events';
+import { STORY_FINISHED, STORY_RENDER_PHASE_CHANGED } from 'storybook/internal/core-events';
 import type {
   PreparedStory,
   Renderer,
@@ -302,6 +302,7 @@ describe('StoryRender', () => {
       reporters: [],
       status: 'success',
       storyId: 'id',
+      renderId: render.renderId,
     });
   });
 
@@ -347,7 +348,79 @@ describe('StoryRender', () => {
       reporters: [],
       status: 'error',
       storyId: 'id',
+      renderId: render.renderId,
     });
+  });
+
+  it('preserves render context across remounts', async () => {
+    const renderContext = { requestId: 'request-1' };
+    const channel = new Channel({});
+    const emitSpy = vi.spyOn(channel, 'emit');
+    const render = new StoryRender(
+      channel,
+      buildStore(),
+      vi.fn() as any,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory()
+    );
+
+    await render.renderToElement({} as any);
+    emitSpy.mockClear();
+
+    await render.remount(renderContext);
+
+    expect(emitSpy).toHaveBeenCalledWith(
+      STORY_RENDER_PHASE_CHANGED,
+      expect.objectContaining({
+        storyId: 'component--a',
+        renderId: render.renderId,
+        newPhase: 'loading',
+        renderContext,
+      })
+    );
+    expect(emitSpy).toHaveBeenCalledWith(STORY_FINISHED, {
+      storyId: 'id',
+      status: 'success',
+      reporters: [],
+      renderId: render.renderId,
+      renderContext,
+    });
+  });
+
+  it('does not retain render context for unrelated rerenders', async () => {
+    const renderContext = { requestId: 'request-1' };
+    const channel = new Channel({});
+    const emitSpy = vi.spyOn(channel, 'emit');
+    const render = new StoryRender(
+      channel,
+      buildStore(),
+      vi.fn() as any,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      buildStory()
+    );
+
+    await render.renderToElement({} as any);
+    emitSpy.mockClear();
+    await render.remount(renderContext);
+    emitSpy.mockClear();
+
+    await render.rerender();
+
+    expect(emitSpy).toHaveBeenCalledWith(STORY_FINISHED, {
+      storyId: 'id',
+      status: 'success',
+      reporters: [],
+      renderId: render.renderId,
+    });
+    expect(emitSpy.mock.calls).not.toContainEqual(
+      expect.arrayContaining([expect.anything(), expect.objectContaining({ renderContext })])
+    );
   });
 
   describe('teardown', () => {

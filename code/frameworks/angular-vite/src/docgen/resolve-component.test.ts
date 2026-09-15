@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import { resolveStoryComponent } from './resolve-component.ts';
+import { resolveStoryComponent, resolveStorySubcomponents } from './resolve-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
 

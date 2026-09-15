@@ -5,8 +5,8 @@ import {
   STORY_ARGS_UPDATED,
   UPDATE_QUERY_PARAMS,
 } from 'storybook/internal/core-events';
-import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { NavigateOptions } from 'storybook/internal/router';
+import { buildArgsParam, queryFromLocation } from 'storybook/internal/router';
 import type { API_Layout, API_UI, API_ViewMode, Args } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -60,7 +60,16 @@ const mergeSerializedParams = (params: string, extraParams: string) => {
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
 // passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
 // identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
-const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPanel', 'tabs', 'path'];
+const LAYOUT_QUERY_PARAM_KEYS = [
+  'full',
+  'panel',
+  'nav',
+  'shortcuts',
+  'addonPanel',
+  'tabs',
+  'toolbar',
+  'path',
+];
 
 /** Single source of truth for the custom (non-layout) query params derived from the URL. */
 export const getCustomQueryParams = (
@@ -74,6 +83,7 @@ export const getCustomQueryParams = (
 //     - full: 0/1 -- show fullscreen
 //     - panel: bottom/right/0 -- set addons panel position (or hide)
 //     - nav: 0/1 -- show or hide the story list
+//     - toolbar: 0/1 -- show or hide the toolbar
 //
 //   We also support legacy URLs from storybook <5
 let prevParams: QueryParams;
@@ -81,7 +91,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel, tabs, toolbar } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -118,6 +128,7 @@ const initialUrlSupport = ({
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
     showTabs: parseBoolean(tabs),
+    showToolbar: parseBoolean(toolbar),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),

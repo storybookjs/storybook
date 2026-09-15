@@ -51,6 +51,9 @@ export { ScrollArea } from './components/ScrollArea/ScrollArea.tsx';
 export { Zoom } from './components/Zoom/Zoom.tsx';
 export type { ActionItem } from './components/ActionBar/ActionBar.tsx';
 export { ErrorFormatter } from './components/ErrorFormatter/ErrorFormatter.tsx';
+export { EmptyState } from './components/State/EmptyState.tsx';
+export { ErrorState } from './components/State/ErrorState.tsx';
+export type { ErrorSeverity } from './components/State/StateShell.tsx';
 
 // Buttons
 export { Button, IconButton } from './components/Button/Button.tsx';

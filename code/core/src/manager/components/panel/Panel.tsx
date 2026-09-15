@@ -1,5 +1,4 @@
-import type { ReactNode } from 'react';
-import React, { Component, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 
 import {
   Button,
@@ -17,6 +16,7 @@ import { BottomBarIcon, CloseIcon, DocumentIcon, SidebarAltIcon } from '@storybo
 import type { State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { TabErrorBoundary } from '../../../components/components/Tabs/TabErrorBoundary.tsx';
 import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
@@ -25,42 +25,6 @@ export interface SafeTabProps {
   title: Addon_BaseType['title'];
   id: string;
   children: Addon_BaseType['render'];
-}
-
-interface ErrorBoundaryProps {
-  children: ReactNode;
-}
-
-class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean }> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('Error rendering addon panel');
-    console.error(error);
-    console.error(info.componentStack);
-  }
-
-  render() {
-    const { hasError } = this.state;
-    if (hasError) {
-      return (
-        <EmptyTabContent
-          title="This addon has errors"
-          description="Check your browser logs and addon code to pinpoint what went wrong. This issue was not caused by Storybook."
-        />
-      );
-    }
-
-    const { children } = this.props;
-    return children;
-  }
 }
 
 const Aside = styled.aside({

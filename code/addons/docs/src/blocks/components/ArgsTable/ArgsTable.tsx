@@ -2,7 +2,7 @@ import type { FC } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { once } from 'storybook/internal/client-logger';
-import { Button, Link, ResetWrapper } from 'storybook/internal/components';
+import { Button, ErrorState, Link, ResetWrapper } from 'storybook/internal/components';
 import { includeConditionalArg } from 'storybook/internal/csf';
 
 import { DocumentIcon, UndoIcon } from '@storybook/icons';
@@ -195,6 +195,21 @@ export enum ArgsTableError {
   NOT_A_STORY_COMPONENT = 'No docs found for this component on this page. Import the story file whose meta.component is this component, or pass `of={ComponentStories}`.',
 }
 
+const argsTableErrorCopy: Record<ArgsTableError, { title: string; summary?: string }> = {
+  [ArgsTableError.NO_COMPONENT]: {
+    title: 'No component found',
+  },
+  [ArgsTableError.ARGS_UNSUPPORTED]: {
+    title: 'Args unsupported',
+    summary: 'See the Args documentation for your framework.',
+  },
+  [ArgsTableError.NOT_A_STORY_COMPONENT]: {
+    title: 'No docs found for this component',
+    summary:
+      'Import the story file whose meta.component is this component, or pass `of={ComponentStories}`.',
+  },
+};
+
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
 type SortFn = (a: ArgType, b: ArgType) => number;
 
@@ -368,12 +383,19 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
 
   if ('error' in props) {
     const { error } = props;
+    const { title, summary } = argsTableErrorCopy[error];
     return (
       <EmptyBlock>
-        {error}&nbsp;
-        <Link href="http://storybook.js.org/docs/?ref=ui" target="_blank" withArrow>
-          <DocumentIcon /> Read the docs
-        </Link>
+        <ErrorState
+          severity="negative"
+          title={title}
+          summary={summary}
+          actions={
+            <Link href="https://storybook.js.org/docs/?ref=ui" target="_blank" withArrow>
+              <DocumentIcon /> Read the docs
+            </Link>
+          }
+        />
       </EmptyBlock>
     );
   }

@@ -166,7 +166,7 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -206,7 +206,7 @@ export const CustomFooter = {
 </Story>
 ```
 
-```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next"
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
 

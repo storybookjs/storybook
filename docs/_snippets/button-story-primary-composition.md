@@ -70,7 +70,7 @@ export const Secondary = meta.story({
 <Story name="Secondary" args={{...primaryArgs, primary: false}} />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -134,7 +134,7 @@ export const Secondary = {
 <Story name="Secondary" args={{...primaryArgs, primary: false}} />
 ```
 
-```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next"
+```svelte filename="Button.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
 

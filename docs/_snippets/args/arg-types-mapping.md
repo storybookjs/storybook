@@ -32,7 +32,7 @@
 {/snippet}
 ```
 
-```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next"
+```svelte filename="Example.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
 
@@ -100,7 +100,7 @@
 {/snippet}
 ```
 
-```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next"
+```svelte filename="Example.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
 <script module>
   import preview from '../.storybook/preview';
 

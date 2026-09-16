@@ -29,7 +29,7 @@ describe('dev-only client injection (transformIndexHtml behavior)', () => {
 
 describe('plugin shape', () => {
   it('resolves only the devtools virtual module to the client entry', () => {
-    const plugin = devtoolsSpikePlugin();
+    const plugin = devtoolsSpikePlugin({ storiesGlob: 'src/**' });
     expect(plugin.name).toBe('storybook:devtools-spike');
     expect(plugin.resolveId).toBe(resolveClientEntry);
     const resolved = resolveClientEntry('virtual:sb-devtools-client');

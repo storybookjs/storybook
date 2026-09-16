@@ -1,6 +1,10 @@
 import { fileURLToPath } from 'node:url';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 
 import type { Plugin } from 'vite';
+
+import type { CaptureResponse } from '../types.ts';
+import { CaptureRequestError, handleCapture, type PathRoots } from './capture-handler.ts';
 
 const VIRTUAL_CLIENT_ID = 'virtual:sb-devtools-client';
 
@@ -11,6 +15,12 @@ const VIRTUAL_CLIENT_ID = 'virtual:sb-devtools-client';
 const CLIENT_ENTRY_PATH = fileURLToPath(new URL('../client/entry.ts', import.meta.url));
 
 const CLIENT_SCRIPT_TAG = `<script type="module" src="/@id/${VIRTUAL_CLIENT_ID}"></script>`;
+
+/** The repo's `code/` directory — source.file paths are relativized against it. */
+const CODE_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+
+/** Where the embed-host Storybook dev server listens by default. */
+export const DEFAULT_STORYBOOK_URL = 'http://localhost:6006';
 
 /**
  * Pure injection behavior of transformIndexHtml: the client script is added
@@ -38,11 +48,18 @@ export function resolveClientEntry(source: string): string | undefined {
   return source === VIRTUAL_CLIENT_ID ? CLIENT_ENTRY_PATH : undefined;
 }
 
+export interface DevtoolsSpikePluginOptions {
+  /** Story files may only be written inside this glob (relative to the app using the plugin). */
+  storiesGlob: string;
+  /** Where the embed-host Storybook dev server listens (the storybook-probe target). */
+  storybookUrl?: string;
+}
+
 /**
- * Devtools spike Vite plugin — dev-only client injection. The capture
- * middleware registers under /__sb-devtools/capture in serve mode only.
+ * Devtools spike Vite plugin — dev-only client injection plus the capture
+ * middleware under /__sb-devtools (serve mode only).
  */
-export function devtoolsSpikePlugin(): Plugin {
+export function devtoolsSpikePlugin(options: DevtoolsSpikePluginOptions): Plugin {
   let command: string | undefined;
 
   return {
@@ -57,19 +74,102 @@ export function devtoolsSpikePlugin(): Plugin {
     },
     resolveId: resolveClientEntry,
     configureServer(server) {
-      // Stage-0 stub. The real middleware (parse CapturePayload → serialize →
-      // csf-tools story write → respond { storyId, flagged }) lands in the
-      // follow-up task. Client code must see an explicit marker, not a 404.
-      server.middlewares.use('/__sb-devtools/capture', (_req, res) => {
-        res.statusCode = 501;
-        res.setHeader('content-type', 'application/json');
-        res.end(
-          JSON.stringify({
-            error: 'not_implemented',
-            message: 'capture middleware arrives with the story-generation task',
-          })
-        );
+      const roots: PathRoots = { codeRoot: CODE_ROOT, cwd: process.cwd() };
+      server.middlewares.use('/__sb-devtools', (req, res, next) => {
+        void routeDevtoolsRequest(req, res, next, options, roots);
       });
     },
   };
+}
+
+/**
+ * The spike's whole "backend": POST /__sb-devtools/capture runs the
+ * parse → serialize → write pipeline; GET /__sb-devtools/storybook-probe
+ * answers whether the embed-host Storybook dev server is reachable and has
+ * indexed a story id (probed server-side so the browser never fights CORS).
+ */
+async function routeDevtoolsRequest(
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: () => void,
+  options: DevtoolsSpikePluginOptions,
+  roots: PathRoots
+): Promise<void> {
+  if (req.method === 'POST' && req.url?.startsWith('/capture')) {
+    await captureRoute(req, res, options, roots);
+    return;
+  }
+  if (req.method === 'GET' && req.url?.startsWith('/storybook-probe')) {
+    await probeRoute(res, req.url, options.storybookUrl ?? DEFAULT_STORYBOOK_URL);
+    return;
+  }
+  next();
+}
+
+function respondJson(res: ServerResponse, status: number, body: CaptureResponse): void {
+  res.statusCode = status;
+  res.setHeader('content-type', 'application/json');
+  res.end(JSON.stringify(body));
+}
+
+async function captureRoute(
+  req: IncomingMessage,
+  res: ServerResponse,
+  options: DevtoolsSpikePluginOptions,
+  roots: PathRoots
+): Promise<void> {
+  let body = '';
+  for await (const chunk of req) {
+    body += chunk;
+  }
+  try {
+    const result = await handleCapture(body, { storiesGlob: options.storiesGlob, roots });
+    respondJson(res, 200, result);
+  } catch (error) {
+    if (error instanceof CaptureRequestError) {
+      respondJson(res, error.kind === 'write_failed' ? 500 : 400, {
+        error: error.kind,
+        message: error.message,
+        filePath: error.filePath,
+      });
+    } else {
+      respondJson(res, 500, {
+        error: 'write_failed',
+        message: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+}
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null;
+
+interface StorybookProbe {
+  reachable: boolean;
+  indexed: boolean;
+}
+
+/**
+ * Server-side probe of the embed host: reachable = the Storybook dev server
+ * answers; indexed = its /index.json already lists the story id (Storybook's
+ * HMR picked the generated file up). Always answers 200 — the client decides
+ * what to render.
+ */
+async function probeRoute(res: ServerResponse, url: string, storybookUrl: string): Promise<void> {
+  const storyId = new URL(url, 'http://localhost').searchParams.get('storyId') ?? '';
+  try {
+    const response = await fetch(`${storybookUrl}/index.json`);
+    if (!response.ok) {
+      respondJson(res, 200, { reachable: true, indexed: false } satisfies StorybookProbe);
+      return;
+    }
+    const index: unknown = await response.json();
+    const entries = isRecord(index) && isRecord(index.entries) ? index.entries : {};
+    respondJson(res, 200, {
+      reachable: true,
+      indexed: storyId.length > 0 && storyId in entries,
+    } satisfies StorybookProbe);
+  } catch {
+    respondJson(res, 200, { reachable: false, indexed: false } satisfies StorybookProbe);
+  }
 }

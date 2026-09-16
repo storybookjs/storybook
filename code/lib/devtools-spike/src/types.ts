@@ -49,3 +49,29 @@ export interface StoryGenerationResult {
   argTypes: Record<string, ArgTypeDef>; // control types for flagged props
   flagged: FlaggedProp[]; // surfaced in the panel, never silent
 }
+
+/**
+ * Response contract of POST /__sb-devtools/capture. Failures are explicit —
+ * the panel renders the message (and the attempted path, when known) rather
+ * than failing silently.
+ */
+export type CaptureErrorKind =
+  | 'invalid_payload'
+  | 'source_unknown'
+  | 'component_not_found'
+  | 'write_failed';
+
+export interface CaptureFailureResponse {
+  error: CaptureErrorKind;
+  message: string;
+  filePath?: string; // the story file the failure is about, when known
+}
+
+export interface CaptureSuccessResponse {
+  storyId: string; // toId(title, storyName) — the embed navigates ?id=<storyId>
+  storyName: string;
+  filePath: string; // where the story was written (cwd-relative for display)
+  flagged: FlaggedProp[];
+}
+
+export type CaptureResponse = CaptureSuccessResponse | CaptureFailureResponse;

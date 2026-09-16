@@ -4,5 +4,5 @@ import { defineConfig } from 'vite';
 import { devtoolsSpikePlugin } from '../../src/node/vite-plugin.ts';
 
 export default defineConfig({
-  plugins: [react(), devtoolsSpikePlugin()],
+  plugins: [react(), devtoolsSpikePlugin({ storiesGlob: 'src/components/**' })],
 });

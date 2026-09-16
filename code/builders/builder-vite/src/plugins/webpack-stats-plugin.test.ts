@@ -68,9 +68,28 @@ describe('pluginWebpackStats', () => {
     });
 
     expect(names).toEqual([
+      '/virtual:/@storybook/builder-vite/vite-app.js',
       '/virtual:/@storybook/builder-vite/storybook-stories.js',
       '/virtual:/@storybook/builder-vite/project-annotations.js',
     ]);
+  });
+
+  it('records an entry module that nothing imports', () => {
+    const stats = getStats({ '/project/iframe.html': [] });
+
+    expect(stats.modules).toEqual([{ id: './iframe.html', name: './iframe.html', reasons: [] }]);
+  });
+
+  it('keeps the importers of a module that is parsed after its importer', () => {
+    const importers = getImporters(
+      {
+        '/project/src/Button.stories.tsx': ['/project/src/Button.tsx'],
+        '/project/src/Button.tsx': [],
+      },
+      './src/Button.tsx'
+    );
+
+    expect(importers).toEqual(['./src/Button.stories.tsx']);
   });
 
   it('keeps a commonjs proxy as a node of its own', () => {
@@ -82,6 +101,7 @@ describe('pluginWebpackStats', () => {
     });
 
     expect(names).toEqual([
+      './src/Button.tsx',
       '\0./node_modules/react/index.js?commonjs-es-import',
       './node_modules/react/index.js',
     ]);
@@ -95,7 +115,11 @@ describe('pluginWebpackStats', () => {
       '/project/src/Foo.vue': ['/project/src/Foo.vue?vue&type=style&index=0&lang.css'],
     });
 
-    expect(names).toEqual(['./src/Foo.vue', './src/Foo.vue?vue&type=style&index=0&lang.css']);
+    expect(names).toEqual([
+      './src/Foo.stories.ts',
+      './src/Foo.vue',
+      './src/Foo.vue?vue&type=style&index=0&lang.css',
+    ]);
   });
 
   it('keeps ids that have no path of their own', () => {
@@ -103,7 +127,11 @@ describe('pluginWebpackStats', () => {
       '/project/node_modules/react/index.js': ['\0commonjsHelpers.js', '\0vite/preload-helper.js'],
     });
 
-    expect(names).toEqual(['\0commonjsHelpers.js', '\0vite/preload-helper.js']);
+    expect(names).toEqual([
+      './node_modules/react/index.js',
+      '\0commonjsHelpers.js',
+      '\0vite/preload-helper.js',
+    ]);
   });
 
   it('connects a story to react through the proxy modules that vite inserts', () => {

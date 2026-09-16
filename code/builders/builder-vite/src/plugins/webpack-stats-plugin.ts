@@ -75,6 +75,12 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
     moduleParsed: function (mod) {
+      // Entry modules have no importer, so they are only recorded here.
+      const modId = normalize(mod.id);
+      if (!statsMap.has(modId)) {
+        statsMap.set(modId, createStatsMapModule(modId));
+      }
+
       // Proxy and virtual modules are the only path from a component to its dependencies, so every
       // edge is kept.
       mod.importedIds.concat(mod.dynamicallyImportedIds).forEach((depIdUnsafe) => {

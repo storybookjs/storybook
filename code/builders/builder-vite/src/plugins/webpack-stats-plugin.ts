@@ -1,17 +1,11 @@
-// This plugin is a direct port of https://github.com/IanVS/vite-plugin-turbosnap
-import { relative } from 'node:path';
+// Writes the bundler's module graph as webpack-style stats for TurboSnap.
+import { isAbsolute, relative } from 'node:path';
 
 import type { BuilderStats } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import type { Plugin } from 'vite';
-
-import {
-  SB_VIRTUAL_FILES,
-  getOriginalVirtualModuleId,
-  getResolvedVirtualModuleId,
-} from '../virtual-file-names.ts';
 
 /*
  * Reason, Module are copied from chromatic types
@@ -31,63 +25,33 @@ type WebpackStatsPluginOptions = {
   workingDir: string;
 };
 
-/**
- * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with
- * git.
- */
-function stripQueryParams(filePath: string): string {
-  return filePath.split('?')[0];
-}
-
-/** We only care about user code and the node_modules it depends on. Not vite files, or (most) virtual files. */
-function isUserCode(moduleName: string) {
-  if (!moduleName) {
-    return false;
-  }
-
-  // keep Storybook's virtual files because they import the story files, so they are essential to the module graph
-  if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(moduleName))) {
-    return true;
-  }
-
-  return Boolean(
-    !moduleName.startsWith('vite/') &&
-    !moduleName.startsWith('\0') &&
-    moduleName !== 'react/jsx-runtime'
-  );
-}
+const ROLLUP_VIRTUAL_PREFIX = '\0';
 
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
 export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
-  /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
+  // Query params and rollup's `\0` prefix stay in the name so the stats have the same nodes as the
+  // bundler's graph; the consumer decides how to merge them.
   function normalize(filename: string) {
-    // Do not try to resolve virtual files
-    if (filename.startsWith('virtual:')) {
-      // We have to append a forward slash because otherwise we break turbosnap.
-      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
-      // we can remove adding the forward slash here
-      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
-      return `/${filename}`;
-    }
-    // ! Maintain backwards compatibility with the old virtual file names
-    // ! to ensure that the stats file doesn't change between the versions
-    // ! Turbosnap is also only compatible with the old virtual file names
-    // ! the old virtual file names did not start with the obligatory \0 character
-    if (Object.values(SB_VIRTUAL_FILES).includes(getOriginalVirtualModuleId(filename))) {
-      // We have to append a forward slash because otherwise we break turbosnap.
-      // As soon as the chromatic-cli supports `virtual:` id's without a starting forward slash,
-      // we can remove adding the forward slash here
-      // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
-      return `/${getOriginalVirtualModuleId(filename)}`;
+    const virtualPrefix = filename.startsWith(ROLLUP_VIRTUAL_PREFIX) ? ROLLUP_VIRTUAL_PREFIX : '';
+    const id = filename.slice(virtualPrefix.length);
+
+    // Turbosnap matches virtual modules by name, and expects the leading forward slash.
+    // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
+    if (id.startsWith('virtual:')) {
+      return `/${id}`;
     }
 
-    // Otherwise, we need them in the format `./path/to/file.js`.
-    else {
-      const relativePath = relative(workingDir, stripQueryParams(filename));
-      // This seems hacky, got to be a better way to add a `./` to the start of a path.
-      return `./${slash(relativePath)}`;
+    const queryIndex = id.indexOf('?');
+    const path = queryIndex === -1 ? id : id.slice(0, queryIndex);
+    const query = queryIndex === -1 ? '' : id.slice(queryIndex);
+
+    // Ids without a path of their own, such as rollup helpers, are connectivity only.
+    if (!isAbsolute(path)) {
+      return filename;
     }
+
+    return `${virtualPrefix}./${slash(relative(workingDir, path))}${query}`;
   }
 
   /** Helper to create Reason objects out of a list of string paths */
@@ -111,27 +75,23 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
     moduleParsed: function (mod) {
-      if (!isUserCode(mod.id)) {
-        return;
-      }
-      mod.importedIds
-        .concat(mod.dynamicallyImportedIds)
-        .filter((name) => isUserCode(name))
-        .forEach((depIdUnsafe) => {
-          const depId = normalize(depIdUnsafe);
-          if (!statsMap.has(depId)) {
-            statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
-            return;
-          }
-          const m = statsMap.get(depId);
-          if (!m) {
-            return;
-          }
-          m.reasons = (m.reasons ?? [])
-            .concat(createReasons([mod.id]))
-            .filter((r) => r.moduleName !== depId);
-          statsMap.set(depId, m);
-        });
+      // Proxy and virtual modules are the only path from a component to its dependencies, so every
+      // edge is kept.
+      mod.importedIds.concat(mod.dynamicallyImportedIds).forEach((depIdUnsafe) => {
+        const depId = normalize(depIdUnsafe);
+        if (!statsMap.has(depId)) {
+          statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
+          return;
+        }
+        const m = statsMap.get(depId);
+        if (!m) {
+          return;
+        }
+        m.reasons = (m.reasons ?? [])
+          .concat(createReasons([mod.id]))
+          .filter((r) => r.moduleName !== depId);
+        statsMap.set(depId, m);
+      });
     },
 
     storybookGetStats() {

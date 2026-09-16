@@ -1,5 +1,5 @@
 import type { ComponentProps, FC, SyntheticEvent } from 'react';
-import React, { memo, useCallback, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -14,7 +14,7 @@ import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 import type { API } from 'storybook/manager-api';
 import { useStorybookApi } from 'storybook/manager-api';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import type { Link, NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 
 import { Shortcut } from '../Shortcut.tsx';
@@ -103,7 +103,7 @@ export const ContextMenu: FC<{
     });
 
     const topLinks = useMemo<Link[]>(() => {
-      const defaultLinks: Link[] = [];
+      const defaultLinks: NormalLink[] = [];
 
       const shortcutKeys = api.getShortcutKeys();
 
@@ -152,6 +152,13 @@ export const ContextMenu: FC<{
         });
       }
 
+      // Focus the first item on a keyboard open, so the menu is operable without a Tab press. A
+      // pointer open keeps focus on the dialog container, because a focused item makes screen
+      // readers announce it twice. React honors autoFocus on the buttons these links render as.
+      if (openedBy === 'keyboard' && defaultLinks[0]) {
+        defaultLinks[0].autoFocus = true;
+      }
+
       return defaultLinks;
     }, [api, onSelectStoryId, context, copyText, copyButtonProps, openedBy, setIsOpen]);
 
@@ -180,7 +187,7 @@ export const ContextMenu: FC<{
         defaultVisible={false}
         visible={isOpen}
         onVisibleChange={setIsOpen}
-        popover={<ContextMenuContent context={context} links={topLinks} openedBy={openedBy} />}
+        popover={<ContextMenuContent context={context} links={topLinks} />}
         hasChrome={true}
         padding={0}
       >
@@ -209,27 +216,12 @@ ContextMenu.displayName = 'ContextMenu';
 const ContextMenuContent: FC<
   {
     context: API_HashEntry;
-    openedBy?: ContextMenuTrigger;
   } & ComponentProps<typeof TooltipLinkList>
-> = ({ context, links, openedBy, ...rest }) => {
+> = ({ context, links, ...rest }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
-
-  // Move focus to the first actionable item when the menu opens from the keyboard, so the user
-  // can operate the menu without a Tab press. An open from the pointer keeps focus on the popover
-  // container, because a focused item there makes screen readers announce the item twice.
-  const containerRef = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (openedBy !== 'keyboard') {
-      return;
-    }
-    const firstItem = containerRef.current?.querySelector<HTMLElement>(
-      'button:not([disabled]), [href], [tabindex]:not([tabindex="-1"])'
-    );
-    firstItem?.focus();
-  }, [openedBy]);
 
   /**
    * The context menu can take a list of lists of links, so that the links are grouped and separated
@@ -241,12 +233,7 @@ const ContextMenuContent: FC<
 
   const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
 
-  // The wrapper scopes the focus query. display: contents keeps the wrapper out of the layout.
-  return (
-    <div ref={containerRef} style={{ display: 'contents' }}>
-      <TooltipLinkList {...rest} links={all} />
-    </div>
-  );
+  return <TooltipLinkList {...rest} links={all} />;
 };
 
 type ExcludesNull = <T>(x: T | null) => x is T;

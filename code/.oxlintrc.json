@@ -14,6 +14,7 @@
     "built-storybooks",
     "ember-output",
     "**/__testfixtures__",
+    "**/__tsx-testfixtures__",
     "**/__mockdata__",
     "core/assets",
     "core/report",

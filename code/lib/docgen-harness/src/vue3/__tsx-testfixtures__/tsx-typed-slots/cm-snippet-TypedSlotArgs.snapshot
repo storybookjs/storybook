@@ -1,0 +1,6 @@
+<template>
+  <TypedSlots label="Card">
+    <template #default="{ content }"><p v-bind="content" /></template>
+    <template #header="{ title }"><h2 v-bind="title" /></template>
+  </TypedSlots>
+</template>

@@ -39,15 +39,34 @@ test.describe('sidebar scrolling', () => {
     await scrollArea.evaluate((area) => {
       area.scrollTop = area.scrollHeight;
     });
-    const clearance = await page.evaluate(() => {
+    // The virtualizer mounts rows near the visible area only, so right after the jump the
+    // deepest mounted row is not yet the final row. Poll until the deepest row settles.
+    const deepestRowId = () =>
+      scrollArea.evaluate((area) => {
+        const rows = [...area.querySelectorAll<HTMLElement>('[data-item-id]')];
+        return rows.length === 0
+          ? null
+          : rows.reduce((a, b) =>
+              a.getBoundingClientRect().bottom >= b.getBoundingClientRect().bottom ? a : b
+            ).dataset.itemId!;
+      });
+    let lastRowId: string | null = null;
+    await expect
+      .poll(async () => {
+        const deepest = await deepestRowId();
+        const settled = deepest !== null && deepest === lastRowId;
+        lastRowId = deepest;
+        return settled;
+      })
+      .toBe(true);
+    const clearance = await page.evaluate((rowId) => {
       const widget = document.querySelector('#sidebar-bottom-wrapper');
-      const rows = [...document.querySelectorAll('[data-item-id]')];
-      const lastRow = rows[rows.length - 1];
+      const lastRow = document.querySelector(`[data-item-id="${CSS.escape(rowId)}"]`);
       if (!widget || !lastRow) {
         return null;
       }
       return lastRow.getBoundingClientRect().bottom <= widget.getBoundingClientRect().top;
-    });
+    }, lastRowId!);
     expect(clearance).not.toBeNull();
     expect(clearance).toBe(true);
   });

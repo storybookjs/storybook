@@ -429,9 +429,24 @@ export const Tree = React.memo<TreeProps>(function Tree({
     scroller.addEventListener('scroll', scheduleUpdate, { passive: true });
     const resizeObserver = new ResizeObserver(scheduleUpdate);
     resizeObserver.observe(scroller);
+    // Content above this tree in the shared scroller (another block expanding, loading or
+    // collapsing) moves the wrapper without resizing the scroller or firing a scroll. Observe
+    // the scroller's direct children too, and refresh that set when blocks mount or unmount.
+    const observeChildren = () => {
+      for (const child of scroller.children) {
+        resizeObserver.observe(child);
+      }
+    };
+    observeChildren();
+    const mutationObserver = new MutationObserver(() => {
+      observeChildren();
+      scheduleUpdate();
+    });
+    mutationObserver.observe(scroller, { childList: true });
     return () => {
       scroller.removeEventListener('scroll', scheduleUpdate);
       resizeObserver.disconnect();
+      mutationObserver.disconnect();
       if (frame !== null) {
         cancelAnimationFrame(frame);
       }

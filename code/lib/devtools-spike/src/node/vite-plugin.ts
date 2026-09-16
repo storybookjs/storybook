@@ -110,7 +110,11 @@ async function routeDevtoolsRequest(
   next();
 }
 
-function respondJson(res: ServerResponse, status: number, body: CaptureResponse): void {
+function respondJson(
+  res: ServerResponse,
+  status: number,
+  body: CaptureResponse | StorybookProbe
+): void {
   res.statusCode = status;
   res.setHeader('content-type', 'application/json');
   res.end(JSON.stringify(body));

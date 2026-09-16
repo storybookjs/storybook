@@ -16,7 +16,7 @@ import {
   writeStoryFile,
   type ComponentImport,
 } from '../story-writer/write-story.ts';
-import type { CapturePayload, CaptureSuccessResponse, StoryGenerationResult } from '../types.ts';
+import type { CaptureFailureResponse, CapturePayload, CaptureSuccessResponse, StoryGenerationResult } from '../types.ts';
 
 /**
  * Request-level failure carrying the panel-facing error kind. The middleware

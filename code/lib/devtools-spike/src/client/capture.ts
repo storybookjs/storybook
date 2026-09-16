@@ -66,12 +66,14 @@ export function classifyProp(name: string, value: unknown): CapturedProp {
         kind: 'function',
         preview: `ƒ ${value.name.length > 0 ? value.name : 'anonymous'}`,
       };
-    case 'symbol':
+    case 'symbol': {
+      const symbolDescription = value.description ?? '';
       return {
         name,
         kind: 'symbol',
-        preview: value.description.length > 0 ? `Symbol(${value.description})` : 'Symbol()',
+        preview: symbolDescription.length > 0 ? `Symbol(${symbolDescription})` : 'Symbol()',
       };
+    }
     case 'bigint':
       return { name, kind: 'unknown', preview: `${value}n` };
     case 'object': {

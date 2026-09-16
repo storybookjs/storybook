@@ -13,8 +13,8 @@ import {
 } from './examples.ts';
 
 export function discoveryStepStrict(
-  projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
+  _projectInfo: ProjectInfo,
+  _ctx: InstructionsContext
 ): { title: string; body: string } {
   return {
     title: 'Discover the runtime (≤12 reads)',
@@ -22,14 +22,14 @@ export function discoveryStepStrict(
       Identify, in this order, using Glob/Grep first then targeted Reads:
 
     - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
-    - entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports
-    - \`App.${tsx}\` — top-level layout, router usage, providers it consumes
-    - providers / context files — what they expose
+    - application entry file — framework initialization, shared services or providers, root CSS imports
+    - root component — top-level layout, router usage, shared state and services it consumes
+    - shared state / service configuration — what it exposes
     - root CSS — global styles, CSS variables, theme tokens (both JS-imported CSS **and** anything linked from \`index.html\`)
-    - data hooks — \`fetch(...)\`, \`useQuery\`, \`axios\`, etc. (capture base URL + endpoints actually called during render)
+    - data fetching — network clients, services, and query utilities (capture base URL + endpoints actually called during render)
     - browser state actually read at render — \`localStorage\`/\`sessionStorage\`/cookie keys
-    - portal targets — \`createPortal(...)\` and the DOM ids it mounts to (e.g. \`#modal-root\`)
-    - 1–2 real page or feature components (your story source-of-truth for JSX patterns)
+    - portal targets — content rendered outside the component root and the DOM ids it targets (e.g. \`#modal-root\`)
+    - 1–2 real page or feature components (your story source-of-truth for component usage patterns)
 
     Stop reading once you can answer: *"What providers, CSS, browser state, and network calls must the preview supply for a typical page to render?"*
   `,
@@ -37,8 +37,8 @@ export function discoveryStepStrict(
 }
 
 export function discoveryStepRelaxed(
-  projectInfo: ProjectInfo,
-  { tsx }: InstructionsContext
+  _projectInfo: ProjectInfo,
+  _ctx: InstructionsContext
 ): { title: string; body: string } {
   return {
     title: 'Discover the runtime (≤40 reads)',
@@ -46,14 +46,14 @@ export function discoveryStepRelaxed(
       Identify, in this order, using Glob/Grep first then targeted Reads:
 
     - \`index.html\` — \`<link rel="stylesheet">\` tags, inline \`<style>\` blocks, fonts, and any \`<div id="...">\` mount or portal roots that aren't created by JS
-    - entry file (\`main.${tsx}\` / \`index.${tsx}\`) — providers wrapping \`<App />\`, root CSS imports
-    - \`App.${tsx}\` — top-level layout, router usage, providers it consumes
-    - providers / context files — what they expose
+    - application entry file — framework initialization, shared services or providers, root CSS imports
+    - root component — top-level layout, router usage, shared state and services it consumes
+    - shared state / service configuration — what it exposes
     - root CSS — global styles, CSS variables, theme tokens (both JS-imported CSS **and** anything linked from \`index.html\`)
-    - data hooks — \`fetch(...)\`, \`useQuery\`, \`axios\`, etc. (capture base URL + endpoints actually called during render)
+    - data fetching — network clients, services, and query utilities (capture base URL + endpoints actually called during render)
     - browser state actually read at render — \`localStorage\`/\`sessionStorage\`/cookie keys
-    - portal targets — \`createPortal(...)\` and the DOM ids it mounts to (e.g. \`#modal-root\`)
-    - 1–20 real page or feature components (your story source-of-truth for JSX patterns)
+    - portal targets — content rendered outside the component root and the DOM ids it targets (e.g. \`#modal-root\`)
+    - 1–20 real page or feature components (your story source-of-truth for component usage patterns)
 
     Stop reading once you can answer: *"What providers, CSS, browser state, and network calls must the preview supply for a typical page to render? What surrounding context do components need to render?"*
   `,
@@ -156,7 +156,7 @@ export function buildSharedPreviewStep(
 
     Rules for the preview:
 
-    - Use the **real** provider tree and the **real** root CSS import. Don't invent providers.
+    - Use the **real** application setup and the **real** root CSS import. Configure shared services, plugins, routing, and state using the installed framework's setup APIs. Don't invent providers.
     - If the app's CSS is loaded via \`<link>\` in \`index.html\` (rather than imported in JS), import the same file from preview so stories render with the same styles.
     - Seed only the specific browser-state keys the app actually reads. Do **not** clear all of \`localStorage\`/\`sessionStorage\`/cookies, and do not reset Storybook's own state.
     - Use \`mockdate\` only when render output depends on the date.
@@ -171,7 +171,7 @@ export function buildPortalStep(
 ): { title: string; body: string } {
   return {
     title: 'Portals (in a decorator, not \`preview-body.html\`)',
-    body: dedent`If you found \`createPortal(..., document.getElementById('foo'))\` in discovery, **add a decorator in \`${configDir}/preview.${tsx}\` that creates the portal root** before the story renders. Do not use \`preview-body.html\`.
+    body: dedent`If you found content rendered into a separate DOM target in discovery, **add a decorator in \`${configDir}/preview.${tsx}\` that creates the portal root** before the story renders. Do not use \`preview-body.html\`.
 
     ${getPortalDecoratorExample(projectInfo)}
 
@@ -241,7 +241,7 @@ export function writeStoriesStep(
 
     **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
 
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy JSX patterns from real pages/routes/tests.
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy component usage patterns from real pages/routes/tests.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes. This way, anything not yet verified — including stories you ran out of time to fix — stays correctly marked.
 
@@ -259,13 +259,13 @@ export function writeStoriesStep(
 
     Why it's mandatory: \`toBeVisible\` passes on an unstyled component. A concrete \`getComputedStyle\` value is the only proof that the shared preview actually loaded the app's CSS — without it, you have no idea whether your stories are rendering correctly.
 
-    How: read a real styling value from the component's source (e.g. a hex color in styled-components, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
+    How: read a real styling value from the component's source (e.g. a hex color in a stylesheet, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
 
     \`\`\`${tsx}
-    export const CssCheck: Story = {
-      args: { children: 'Submit' },
+    export const CssCheck${projectInfo.language === 'ts' ? ': Story' : ''} = {
+      ...Primary,
       play: async ({ canvas }) => {
-        const button = canvas.getByRole('button', { name: /submit/i });
+        const button = canvas.getByRole('button');
         // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
         await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
       },
@@ -290,7 +290,7 @@ export function writeStoriesWithAllowedFailuresStep(
 
     **Substep a — pick targets and write the files.** Pick ~10 meaningful targets from the real codebase (low-level reusable → page components). Skip subcomponents, hooks, contexts, helpers, and \`App\` itself when real page components exist.
 
-    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy JSX patterns from real pages/routes/tests.
+    Each story file: ~3 exports for typical components, up to ~10 when warranted by real usage. Copy component usage patterns from real pages/routes/tests.
 
     **Tag every new story file with \`['ai-generated', 'needs-work']\` from the start.** You will remove \`'needs-work'\` only after vitest confirms the file passes, and you will leave the tag if the file is not fully functional at the end of your self-healing loop.
 
@@ -308,13 +308,13 @@ export function writeStoriesWithAllowedFailuresStep(
 
     Why it's mandatory: \`toBeVisible\` passes on an unstyled component. A concrete \`getComputedStyle\` value is the only proof that the shared preview actually loaded the app's CSS — without it, you have no idea whether your stories are rendering correctly.
 
-    How: read a real styling value from the component's source (e.g. a hex color in styled-components, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
+    How: read a real styling value from the component's source (e.g. a hex color in a stylesheet, a Tailwind class like \`bg-blue-600\`, a CSS variable from the theme), and assert the resolved \`getComputedStyle\` value:
 
     \`\`\`${tsx}
-    export const CssCheck: Story = {
-      args: { children: 'Submit' },
+    export const CssCheck${projectInfo.language === 'ts' ? ': Story' : ''} = {
+      ...Primary,
       play: async ({ canvas }) => {
-        const button = canvas.getByRole('button', { name: /submit/i });
+        const button = canvas.getByRole('button');
         // PrimaryButton uses bg-blue-600 — fails if Tailwind / global CSS did not load.
         await expect(getComputedStyle(button).backgroundColor).toBe('rgb(37, 99, 235)');
       },

@@ -1,5 +1,7 @@
 # Writing User Interfaces
 
+Use the configured framework (`{{FRAMEWORK}}`) and renderer (`{{RENDERER}}`). Follow the project’s component syntax, story format, imports, and setup conventions. Use examples for this framework when consulting documentation.
+
 When writing UI, prefer breaking larger components up into smaller parts.
 
 ALWAYS write a Storybook story for any component written. If editing a component, ensure appropriate changes have been made to stories for that component.
@@ -142,7 +144,7 @@ play: async ({ canvas }) => {
 ### Key Requirements
 
 - **Node.js 20+**, **TypeScript 4.9+**
-- React Native uses `.rnstorybook` directory
+{{RENDERER_REQUIREMENTS}}
 
 ## Story Linking Agent Behavior
 

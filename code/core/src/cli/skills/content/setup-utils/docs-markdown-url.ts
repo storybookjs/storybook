@@ -8,7 +8,7 @@ export function getDocsMarkdownUrl(
   path: string,
   projectInfo?: Pick<ProjectInfo, 'majorVersion' | 'renderer' | 'language'>
 ): string {
-  const { majorVersion, renderer = 'react', language = 'ts' } = projectInfo ?? {};
+  const { majorVersion, renderer, language = 'ts' } = projectInfo ?? {};
   const versionSegment = majorVersion ? `/${majorVersion}` : '';
   const params = new URLSearchParams();
   if (renderer) {

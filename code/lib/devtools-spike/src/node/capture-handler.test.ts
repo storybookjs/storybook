@@ -49,7 +49,7 @@ const bodyOf = (overrides: Record<string, unknown> = {}): string =>
 
 const options = (glob = join(root, 'components', '**')) => ({
   storiesGlob: glob,
-  roots: { codeRoot: root, cwd: root },
+  roots: { workspaceRoot: root, codeRoot: root, cwd: root },
 });
 
 describe('parseCaptureBody', () => {
@@ -80,26 +80,48 @@ describe('resolveComponentFile', () => {
 
   it('accepts an absolute source path when it exists', () => {
     expect(
-      resolveComponentFile('/exists/Button.tsx', { codeRoot: '/code', cwd: '/cwd' }, fileExists)
+      resolveComponentFile(
+        '/exists/Button.tsx',
+        { workspaceRoot: '/ws', codeRoot: '/code', cwd: '/cwd' },
+        fileExists
+      )
     ).toBe('/exists/Button.tsx');
   });
 
-  it('resolves relative paths against the demo cwd before the code root', () => {
+  it('resolves relative paths against the demo cwd before other roots', () => {
     expect(
       resolveComponentFile(
         'components/Button.tsx',
-        { codeRoot: '/code', cwd: '/exists' },
+        { workspaceRoot: '/ws', codeRoot: '/code', cwd: '/exists' },
         fileExists
       )
     ).toBe(join('/exists', 'components', 'Button.tsx'));
   });
 
+  it('resolves workspace-root-relative client paths (the relativizeWorkspacePath form)', () => {
+    expect(
+      resolveComponentFile(
+        'demo/react-19/src/components/Button.tsx',
+        { workspaceRoot: '/exists', codeRoot: '/code', cwd: '/cwd' },
+        fileExists
+      )
+    ).toBe(join('/exists', 'demo', 'react-19', 'src', 'components', 'Button.tsx'));
+  });
+
   it('falls back to the code root, then null — never a guess', () => {
     expect(
-      resolveComponentFile('lib/x/Button.tsx', { codeRoot: '/exists', cwd: '/cwd' }, fileExists)
+      resolveComponentFile(
+        'lib/x/Button.tsx',
+        { workspaceRoot: '/ws', codeRoot: '/exists', cwd: '/cwd' },
+        fileExists
+      )
     ).toBe(join('/exists', 'lib', 'x', 'Button.tsx'));
     expect(
-      resolveComponentFile('nowhere/Button.tsx', { codeRoot: '/code', cwd: '/cwd' }, fileExists)
+      resolveComponentFile(
+        'nowhere/Button.tsx',
+        { workspaceRoot: '/ws', codeRoot: '/code', cwd: '/cwd' },
+        fileExists
+      )
     ).toBeNull();
   });
 });

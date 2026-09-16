@@ -5,7 +5,12 @@
  * never fails silently.
  */
 
-import type { CapturedProp, CapturePayload, FlaggedProp } from '../types.ts';
+import type {
+  CapturedProp,
+  CapturePayload,
+  FlaggedProp,
+  UnserializableSentinel,
+} from '../types.ts';
 
 export const CAPTURE_ENDPOINT = '/__sb-devtools/capture';
 
@@ -74,7 +79,7 @@ export function classifyProp(name: string, value: unknown): CapturedProp {
         return { name, kind: 'primitive', value: null };
       }
       if (Array.isArray(value)) {
-        return { name, kind: 'array', value };
+        return { name, kind: 'array', value: sanitizeContainerValue(value) };
       }
       if (isReactElement(value)) {
         const type = (value as Record<'type', unknown>).type;
@@ -94,12 +99,77 @@ export function classifyProp(name: string, value: unknown): CapturedProp {
           preview: `${typeof ctorName === 'string' && ctorName.length > 0 ? ctorName : 'anonymous'} {…}`,
         };
       }
-      return { name, kind: 'object', value };
+      return { name, kind: 'object', value: sanitizeContainerValue(value) };
     }
     default:
       // string | number | boolean
       return { name, kind: 'primitive', value };
   }
+}
+
+const elementLabel = (value: object): string => {
+  const type = (value as Record<'type', unknown>).type;
+  if (typeof type === 'function' && typeof (type as { name?: unknown }).name === 'string') {
+    return `<${type.name} />`;
+  }
+  return typeof type === 'string' ? `<${type} />` : 'a React element';
+};
+
+const sentinel = (
+  kind: UnserializableSentinel['__sbDevtools'],
+  label: string
+): UnserializableSentinel => ({ __sbDevtools: kind, label });
+
+/**
+ * Replaces values that cannot cross JSON with tagged sentinels, recursively
+ * for containers. Live props reach here raw — React elements carry circular
+ * fiber references that would make JSON.stringify throw, and nested
+ * functions/undefined would be dropped or corrupted silently. The node-side
+ * serializer maps sentinels back to precise flagged-props.
+ */
+export function sanitizeContainerValue(value: unknown, ancestors: readonly object[] = []): unknown {
+  if (typeof value === 'function') {
+    const name = (value as { name?: unknown }).name;
+    return sentinel(
+      'function',
+      `a function${typeof name === 'string' && name.length > 0 ? ` (ƒ ${name})` : ''}`
+    );
+  }
+  if (typeof value === 'symbol') {
+    return sentinel('symbol', `a symbol${value.description ? ` (${value.description})` : ''}`);
+  }
+  if (typeof value === 'bigint') {
+    return sentinel('bigint', `the bigint ${value}n`);
+  }
+  if (typeof value === 'undefined') {
+    return sentinel('unknown', 'an undefined value');
+  }
+  if (typeof value === 'number' && !Number.isFinite(value)) {
+    return sentinel('unknown', `the non-finite number ${value}`);
+  }
+  if (typeof value !== 'object' || value === null) {
+    return value; // string | number | boolean — JSON-safe as-is
+  }
+  if (isReactElement(value)) {
+    return sentinel('react-element', elementLabel(value));
+  }
+  if (ancestors.includes(value)) {
+    return sentinel('unknown', 'a circular reference');
+  }
+  const seen = [...ancestors, value];
+  if (Array.isArray(value)) {
+    return value.map((element) => sanitizeContainerValue(element, seen));
+  }
+  if (isPlainObject(value)) {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, child]) => [key, sanitizeContainerValue(child, seen)])
+    );
+  }
+  const ctorName = (value as { constructor?: { name?: unknown } }).constructor?.name;
+  return sentinel(
+    'class-instance',
+    `a ${typeof ctorName === 'string' && ctorName.length > 0 ? ctorName : 'anonymous'} class instance`
+  );
 }
 
 /**

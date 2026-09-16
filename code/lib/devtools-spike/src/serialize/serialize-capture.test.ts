@@ -202,3 +202,53 @@ describe('serializeCapture', () => {
     });
   });
 });
+
+describe('transport sentinels', () => {
+  const sentinel = (kind: string, label: string) => ({ __sbDevtools: kind, label });
+
+  it('flags a JSX-children array the way the client shipped it', () => {
+    // Card's children arrive as a JSON-safe array whose leaves are sentinels —
+    // the live elements could not cross the transport.
+    const result = serializeCapture(
+      payloadWith([
+        prop('children', 'array', [
+          sentinel('react-element', '<h2 />'),
+          sentinel('react-element', '<p />'),
+        ]),
+      ])
+    );
+
+    expect(result.args).toEqual({});
+    expect(result.flagged).toHaveLength(1);
+    expect(result.flagged[0]).toMatchObject({ name: 'children', reason: 'unknown' });
+    expect(result.flagged[0]?.guidance).toContain('<h2 />');
+    expect(result.argTypes.children).toEqual({
+      control: false,
+      description: result.flagged[0]?.guidance,
+    });
+  });
+
+  it('maps sentinel kinds to their flag reasons', () => {
+    const result = serializeCapture(
+      payloadWith([
+        prop('onSelect', 'object', {
+          handler: sentinel('function', 'a function (ƒ handleSelect)'),
+        }),
+        prop('cache', 'object', { store: sentinel('class-instance', 'a Map class instance') }),
+      ])
+    );
+
+    expect(result.flagged).toHaveLength(2);
+    expect(result.flagged[0]).toMatchObject({ name: 'onSelect', reason: 'function' });
+    expect(result.flagged[1]).toMatchObject({ name: 'cache', reason: 'class-instance' });
+  });
+
+  it('keeps serializable siblings inside a container as args is impossible — the prop flags whole', () => {
+    const result = serializeCapture(
+      payloadWith([prop('items', 'array', ['alpha', sentinel('unknown', 'a circular reference')])])
+    );
+
+    expect(result.args).toEqual({});
+    expect(result.flagged[0]?.guidance).toContain('circular');
+  });
+});

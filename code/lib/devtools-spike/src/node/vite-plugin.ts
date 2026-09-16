@@ -17,8 +17,10 @@ const CLIENT_ENTRY_PATH = fileURLToPath(new URL('../client/entry.ts', import.met
 
 const CLIENT_SCRIPT_TAG = `<script type="module" src="/@id/${VIRTUAL_CLIENT_ID}"></script>`;
 
-/** The repo's `code/` directory — source.file paths are relativized against it. */
+/** The repo's `code/` directory. */
 const CODE_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
+/** The workspace root — the client relativizes source.file paths against it. */
+const WORKSPACE_ROOT = fileURLToPath(new URL('../../../../../', import.meta.url));
 
 /**
  * Pure injection behavior of transformIndexHtml: the client script is added
@@ -72,7 +74,11 @@ export function devtoolsSpikePlugin(options: DevtoolsSpikePluginOptions): Plugin
     },
     resolveId: resolveClientEntry,
     configureServer(server) {
-      const roots: PathRoots = { codeRoot: CODE_ROOT, cwd: process.cwd() };
+      const roots: PathRoots = {
+        workspaceRoot: WORKSPACE_ROOT,
+        codeRoot: CODE_ROOT,
+        cwd: process.cwd(),
+      };
       server.middlewares.use('/__sb-devtools', (req, res, next) => {
         void routeDevtoolsRequest(req, res, next, options, roots);
       });

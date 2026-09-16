@@ -9,7 +9,7 @@ import type { CapturePayload, SourceLocation } from '../types.ts';
 import type { FlaggedProp } from '../types.ts';
 
 import { buildCapturePayload } from './capture.ts';
-import { resolveSource, type FiberLike } from './source-location.ts';
+import { componentNameOf, resolveSource, type FiberLike } from './source-location.ts';
 import { ISLAND_ID } from './panel.ts';
 
 export interface PropPreview {
@@ -84,18 +84,6 @@ export function findComponentFiber(fiber: FiberLike): FiberLike | null {
 }
 
 const DEBUG_WALK_LIMIT = 25;
-
-/** displayName ?? function name — the spec's component naming rule. */
-export function componentNameOf(fiber: FiberLike): string | null {
-  if (typeof fiber.type !== 'function') {
-    return null;
-  }
-  const component = fiber.type as { displayName?: unknown; name?: unknown };
-  if (typeof component.displayName === 'string' && component.displayName.length > 0) {
-    return component.displayName;
-  }
-  return typeof component.name === 'string' && component.name.length > 0 ? component.name : null;
-}
 
 function previewValue(value: unknown): string {
   if (value === null) {

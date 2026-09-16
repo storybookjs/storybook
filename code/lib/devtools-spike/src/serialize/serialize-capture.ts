@@ -1,4 +1,10 @@
-import type { CapturedProp, CapturePayload, FlaggedProp, StoryGenerationResult } from '../types.ts';
+import type {
+  CapturedProp,
+  CapturePayload,
+  FlaggedProp,
+  StoryGenerationResult,
+  UnserializableSentinel,
+} from '../types.ts';
 
 export interface SerializeOptions {
   existingStoryNames?: readonly string[];
@@ -17,6 +23,22 @@ const isPlainObject = (value: object): boolean => {
 
 const isReactElement = (value: object): boolean =>
   '$$typeof' in value && 'props' in value && 'type' in value;
+
+/**
+ * Client-transport sentinels stand in for values that could not cross JSON.
+ * Each maps back to the same flag the live value would have produced.
+ */
+const SENTINEL_REASONS: Record<UnserializableSentinel['__sbDevtools'], FlaggedProp['reason']> = {
+  function: 'function',
+  symbol: 'symbol',
+  'class-instance': 'class-instance',
+  'react-element': 'unknown',
+  bigint: 'unknown',
+  unknown: 'unknown',
+};
+
+const isSentinel = (value: object): value is UnserializableSentinel =>
+  '__sbDevtools' in value && 'label' in value;
 
 /**
  * Find the first reason a captured value cannot round-trip as a story arg.
@@ -45,6 +67,9 @@ const inspect = (value: unknown, at: string, ancestors: readonly object[]): Bloc
     }
   }
   const object = value;
+  if (isSentinel(object)) {
+    return { reason: SENTINEL_REASONS[object.__sbDevtools], what: object.label, at };
+  }
   if (isReactElement(object)) {
     return { reason: 'unknown', what: 'a React element', at };
   }

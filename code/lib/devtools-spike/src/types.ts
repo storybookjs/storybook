@@ -33,6 +33,17 @@ export interface FlaggedProp {
 }
 
 /**
+ * Transport sentinel: values that cannot cross JSON (React elements, nested
+ * functions, class instances, circular references, bigints, undefined) are
+ * replaced by the client with this tagged shape. The serializer maps it back
+ * to a precise flag instead of failing transport or inventing a value.
+ */
+export interface UnserializableSentinel {
+  __sbDevtools: 'function' | 'symbol' | 'react-element' | 'class-instance' | 'bigint' | 'unknown';
+  label: string; // human phrase for the guidance text, e.g. 'a React element (<h2 />)'
+}
+
+/**
  * Minimal argType definition for flagged props. Guidance is always present —
  * the visible-degradation rule forbids a silent argType. Control mirrors the
  * relevant slice of Storybook's `Control` union (core/src/csf/story.ts): a

@@ -69,7 +69,9 @@ export function parseCaptureBody(text: string): CapturePayload {
 }
 
 export interface PathRoots {
-  /** The repo's `code/` directory — the client relativizes source paths against it. */
+  /** The workspace root — the client's `relativizeWorkspacePath` output. */
+  workspaceRoot: string;
+  /** The repo's `code/` directory. */
   codeRoot: string;
   /** The dev server's working directory (the demo app root). */
   cwd: string;
@@ -77,9 +79,8 @@ export interface PathRoots {
 
 /**
  * Locate the component file on disk. Source locations arrive absolute,
- * demo-cwd relative, or code-root-relative (the client's workspace
- * relativization); the first existing candidate wins, else null — never a
- * guess.
+ * demo-cwd relative, workspace-root relative, or code-root-relative; the
+ * first existing candidate wins, else null — never a guess.
  */
 export function resolveComponentFile(
   sourceFile: string,
@@ -88,7 +89,11 @@ export function resolveComponentFile(
 ): string | null {
   const candidates = isAbsolute(sourceFile)
     ? [sourceFile]
-    : [resolve(roots.cwd, sourceFile), resolve(roots.codeRoot, sourceFile)];
+    : [
+        resolve(roots.cwd, sourceFile),
+        resolve(roots.workspaceRoot, sourceFile),
+        resolve(roots.codeRoot, sourceFile),
+      ];
   return candidates.find((candidate) => fileExists(candidate)) ?? null;
 }
 

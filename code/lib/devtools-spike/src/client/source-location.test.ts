@@ -5,6 +5,7 @@ import {
   decodeMappings,
   firstAppFrame,
   findNearestDebugOrigin,
+  findOwnRenderFrame,
   parseStackFrames,
   readLegacySource,
   relativizeWorkspacePath,
@@ -68,8 +69,9 @@ describe('stack frame parsing', () => {
         url: 'http://localhost:5173/node_modules/.vite/deps/react_jsx-dev-runtime.js',
         line: 1,
         column: 1,
+        functionName: 'UnknownOwner',
       },
-      { url: 'http://localhost:5173/src/App.tsx', line: 33, column: 9 },
+      { url: 'http://localhost:5173/src/App.tsx', line: 33, column: 9, functionName: 'Card' },
       { url: 'http://localhost:5173/src/main.tsx', line: 10, column: 3 },
     ]);
   });
@@ -85,6 +87,7 @@ describe('stack frame parsing', () => {
       url: 'http://localhost:5173/src/App.tsx',
       line: 33,
       column: 9,
+      functionName: 'Card',
     });
   });
 
@@ -246,5 +249,122 @@ describe('relativizeWorkspacePath', () => {
 
   it('leaves non-workspace paths untouched rather than fabricating locality', () => {
     expect(relativizeWorkspacePath('/etc/hosts')).toBe('/etc/hosts');
+  });
+});
+
+describe('parseStackFrames function names', () => {
+  it('keeps the function name from named V8 frames', () => {
+    const frames = parseStackFrames('    at Button (http://localhost:5173/src/Button.tsx:3:26)');
+    expect(frames).toEqual([
+      { url: 'http://localhost:5173/src/Button.tsx', line: 3, column: 26, functionName: 'Button' },
+    ]);
+  });
+
+  it('leaves bare frames unnamed rather than inventing a function', () => {
+    const frames = parseStackFrames('    at http://localhost:5173/src/index.js:1:1');
+    expect(frames).toEqual([{ url: 'http://localhost:5173/src/index.js', line: 1, column: 1 }]);
+  });
+});
+
+describe('findOwnRenderFrame', () => {
+  it('prefers the child frame created by the component over the owner frame', () => {
+    // react@19.2.8 semantics: the function fiber's _debugStack points at where
+    // the element was created (the owner's JSX site, App.tsx), while the
+    // rendered child's _debugStack starts with `at <ComponentName>` in the
+    // component's own file.
+    const buttonFn = function Button(): null {
+      return null;
+    };
+    const componentFiber: FiberLike = {
+      type: buttonFn,
+      _debugStack: { stack: '    at App (http://localhost:5173/src/App.tsx:16:21)' },
+    };
+    componentFiber.child = {
+      type: 'button',
+      _debugStack: { stack: '    at Button (http://localhost:5173/src/Button.tsx:3:26)' },
+    };
+
+    const frame = findOwnRenderFrame(componentFiber, 'Button');
+    expect(frame?.functionName).toBe('Button');
+    expect(frame?.url).toBe('http://localhost:5173/src/Button.tsx');
+  });
+
+  it('searches siblings and depth when the first child is not the match', () => {
+    const listFn = function List(): null {
+      return null;
+    };
+    const componentFiber: FiberLike = {
+      type: listFn,
+      _debugStack: { stack: '    at App (http://localhost:5173/src/App.tsx:16:21)' },
+    };
+    const itemHost: FiberLike = {
+      type: 'li',
+      _debugStack: { stack: '    at Item (http://localhost:5173/src/List.tsx:12:10)' },
+    };
+    componentFiber.child = {
+      type: 'ul',
+      _debugStack: { stack: '    at List (http://localhost:5173/src/List.tsx:16:4)' },
+      child: itemHost,
+    };
+
+    expect(findOwnRenderFrame(componentFiber, 'List')?.line).toBe(16);
+    expect(findOwnRenderFrame(componentFiber, 'Item')?.line).toBe(12);
+  });
+
+  it('returns null when no child carries the component frame', () => {
+    const componentFiber: FiberLike = {
+      type: function Orphan(): null {
+        return null;
+      },
+    };
+    componentFiber.child = {
+      type: 'div',
+      _debugStack: { stack: '    at App (http://localhost:5173/src/App.tsx:16:21)' },
+    };
+    expect(findOwnRenderFrame(componentFiber, 'Orphan')).toBeNull();
+  });
+});
+
+describe('resolveSource regime 2 — own render over creation site', () => {
+  it('resolves the component file, not the owner file, when both symbolicate', async () => {
+    // Regression: capture used to send App.tsx (the owner's creation site)
+    // for a Button hover, which the write-glob guard then rejected.
+    const buttonMap = JSON.stringify({
+      version: 3,
+      sources: ['components/Button.tsx'],
+      file: WORKSPACE_FILE,
+      // Frame (3, 26) in the transformed module → Button.tsx line 9.
+      mappings: ';;' + encodeSegment([25, 0, 8, 0]),
+    });
+    const appMap = JSON.stringify({
+      version: 3,
+      sources: ['App.tsx'],
+      file: WORKSPACE_FILE,
+      // Frame (16, 21) in the transformed module → App.tsx line 13.
+      mappings: ';;;;;;;;;;;;;;;' + encodeSegment([20, 0, 12, 6]),
+    });
+    const inline = (json: string): string =>
+      `//# sourceMappingURL=data:application/json;base64,${Buffer.from(json).toString('base64')}`;
+    const loader = (url: string): Promise<string | null> =>
+      Promise.resolve(url.includes('Button') ? inline(buttonMap) : inline(appMap));
+
+    const buttonFn = function Button(): null {
+      return null;
+    };
+    const componentFiber: FiberLike = {
+      type: buttonFn,
+      _debugStack: { stack: '    at App (http://localhost:5173/src/App.tsx:16:21)' },
+    };
+    componentFiber.child = {
+      type: 'button',
+      _debugStack: {
+        stack: '    at Button (http://localhost:5173/src/components/Button.tsx:3:26)',
+      },
+    };
+
+    const result = await resolveSource(componentFiber, {}, loader);
+    expect(result?.file).toBe('code/lib/devtools-spike/demo/react-19/src/components/Button.tsx');
+    expect(result?.line).toBe(9);
+    expect(result?.regime).toBe('componentStack');
   });
 });

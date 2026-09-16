@@ -42,6 +42,8 @@ export interface RawStackFrame {
   line: number;
   /** 1-based column in the served (transformed) module. */
   column: number;
+  /** The function name from the `at <name> (…)` frame, when present. */
+  functionName?: string;
 }
 
 /** The slice of a source map this module consumes. */
@@ -70,6 +72,8 @@ export interface FiberLike {
   tag?: number;
   key?: unknown;
   return?: FiberLike | null;
+  child?: FiberLike | null;
+  sibling?: FiberLike | null;
   _debugOwner?: FiberLike | null;
   /** React >= 19.2: source object or Error captured at JSX creation. */
   _debugStack?: unknown;
@@ -131,6 +135,51 @@ export function findNearestDebugOrigin(
   return null;
 }
 
+/** displayName ?? function name — the spec's component naming rule. */
+export function componentNameOf(fiber: FiberLike): string | null {
+  if (typeof fiber.type !== 'function') {
+    return null;
+  }
+  const component = fiber.type as { displayName?: unknown; name?: unknown };
+  if (typeof component.displayName === 'string' && component.displayName.length > 0) {
+    return component.displayName;
+  }
+  return typeof component.name === 'string' && component.name.length > 0 ? component.name : null;
+}
+
+/**
+ * Finds the stack frame created by the component's own render.
+ *
+ * A function-component fiber's `_debugStack` is the Error captured at the JSX
+ * site where the component's *element* was created — i.e. the OWNER's
+ * location (verified against react@19.2.8: `Button`'s fiber points at
+ * App.tsx:16). The component's own render location lives one level down: the
+ * `_debugStack` of the elements it rendered starts with
+ * `at <ComponentName> (component-file:…)`. Walks the fiber's subtree (depth
+ * first, bounded) for that frame; null when no child carries it.
+ */
+export function findOwnRenderFrame(fiber: FiberLike, componentName: string): RawStackFrame | null {
+  let visited = 0;
+  const pending: (FiberLike | null)[] = [fiber.child ?? null];
+  while (pending.length > 0 && visited < DEBUG_WALK_LIMIT) {
+    const current = pending.pop();
+    if (!current) {
+      continue;
+    }
+    visited += 1;
+    const debugStack: unknown = current._debugStack;
+    if (isErrorWithStack(debugStack)) {
+      const frame = firstAppFrame(debugStack.stack);
+      if (frame && frame.functionName === componentName) {
+        return frame;
+      }
+    }
+    // Children first, then siblings — depth-first order.
+    pending.push(current.child ?? null, current.sibling ?? null);
+  }
+  return null;
+}
+
 /**
  * Reads regime 1's compiled-in location: the element's `_source` first, then
  * the fiber's `_debugSource`.
@@ -155,9 +204,21 @@ export function readLegacySource(
 export function parseStackFrames(stack: string): RawStackFrame[] {
   const frames: RawStackFrame[] = [];
   for (const line of stack.split('\n')) {
-    const match = line.match(/at (?:.*?\s)?\(?([^\s()]+?):(\d+):(\d+)\)?\s*$/);
-    if (match) {
-      frames.push({ url: match[1], line: Number(match[2]), column: Number(match[3]) });
+    // V8 frames: `at Name (url:line:col)` — or bare `at url:line:col` when
+    // the function is anonymous.
+    const named = line.match(/^\s*at\s+(.+?)\s+\((.+):(\d+):(\d+)\)\s*$/);
+    if (named) {
+      frames.push({
+        url: named[2],
+        line: Number(named[3]),
+        column: Number(named[4]),
+        functionName: named[1],
+      });
+      continue;
+    }
+    const bare = line.match(/^\s*at\s+(.+):(\d+):(\d+)\s*$/);
+    if (bare) {
+      frames.push({ url: bare[1], line: Number(bare[2]), column: Number(bare[3]) });
     }
   }
   return frames;
@@ -460,8 +521,15 @@ export async function resolveSource(
       regime: 'debugSource',
     };
   }
-  // Regime 2 — React >= 19.2: component-stack debug data, symbolicated when
-  // it is a captured Error rather than a direct source object.
+  // Regime 2 — React >= 19.2: component-stack debug data. Prefer the frame
+  // created by the component's own render (its file is where the story is
+  // written); fall back to the element-creation walk when no child carries
+  // the component's frame.
+  const componentName = componentNameOf(fiber);
+  const ownFrame = componentName ? findOwnRenderFrame(fiber, componentName) : null;
+  if (ownFrame) {
+    return symbolicateFrame(ownFrame, loadSource);
+  }
   const origin = findNearestDebugOrigin(fiber);
   if (!origin) {
     return null;

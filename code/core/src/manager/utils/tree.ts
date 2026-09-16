@@ -93,86 +93,85 @@ export const isStoryHoistable = (storyName: string, componentName: string) =>
   removeNoiseFromName(storyName) === removeNoiseFromName(componentName);
 
 export const hoistSingleStoryComponents = (data: IndexHash): IndexHash => {
-  {
-    // Collect the components that must collapse into their only child.
-    const singleStoryComponents: ComponentEntry[] = Object.values(data).filter(
-      (entry): entry is ComponentEntry => {
-        if (entry.type !== 'component') {
-          return false;
-        }
-
-        const { children = [], name } = entry;
-
-        if (children.length !== 1) {
-          return false;
-        }
-
-        const onlyChild = data[children[0]];
-
-        if (onlyChild.type === 'docs') {
-          return true;
-        }
-
-        if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
-          return isStoryHoistable(onlyChild.name, name);
-        }
+  // Collect the components that must collapse into their only child.
+  const singleStoryComponents: ComponentEntry[] = Object.values(data).filter(
+    (entry): entry is ComponentEntry => {
+      if (entry.type !== 'component') {
         return false;
       }
-    );
 
-    return singleStoryComponents.reduce(
-      (acc, entry) => {
-        const { children, parent, name } = entry;
-        const [childId] = children;
-        if (parent) {
-          // Read from the accumulator, not from the source data. An earlier collapse can
-          // already have rewritten the children of this parent, and the source copy is stale.
-          const parentEntry = acc[parent] as GroupEntry;
-          const siblings = [...parentEntry.children];
-          siblings[siblings.indexOf(entry.id)] = childId;
-          acc[parent] = { ...parentEntry, children: siblings };
-        }
-        acc[childId] = {
-          ...(data[childId] as StoryEntry),
-          name,
-          // A hoisted story that replaces a top-level component has no parent. The API type
-          // declares `parent` as required for a story, so this cast is necessary.
-          parent: parent as StoryEntry['parent'],
-          depth: data[childId].depth - 1,
-        };
-        // Move the subtree of the hoisted story, for example its test entries, up as well.
-        // Without this, its rows indent one level too deep and report the wrong aria level.
-        const hoistDescendants = (ids?: string[]) => {
-          for (const id of ids ?? []) {
-            const descendant = acc[id];
-            if (!descendant) {
-              continue;
-            }
-            acc[id] = { ...descendant, depth: descendant.depth - 1 };
-            hoistDescendants((descendant as { children?: string[] }).children);
+      const { children = [], name } = entry;
+
+      if (children.length !== 1) {
+        return false;
+      }
+
+      const onlyChild = data[children[0]];
+
+      if (onlyChild.type === 'docs') {
+        return true;
+      }
+
+      if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
+        return isStoryHoistable(onlyChild.name, name);
+      }
+      return false;
+    }
+  );
+
+  return singleStoryComponents.reduce(
+    (acc, entry) => {
+      const { children, parent, name } = entry;
+      const [childId] = children;
+      if (parent) {
+        // Read from the accumulator, not from the source data. An earlier collapse can
+        // already have rewritten the children of this parent, and the source copy is stale.
+        const parentEntry = acc[parent] as GroupEntry;
+        const siblings = [...parentEntry.children];
+        siblings[siblings.indexOf(entry.id)] = childId;
+        acc[parent] = { ...parentEntry, children: siblings };
+      }
+      acc[childId] = {
+        ...(data[childId] as StoryEntry),
+        name,
+        // A hoisted story that replaces a top-level component has no parent. The API type
+        // declares `parent` as required for a story, so this cast is necessary.
+        parent: parent as StoryEntry['parent'],
+        depth: data[childId].depth - 1,
+      };
+      // Move the subtree of the hoisted story, for example its test entries, up as well.
+      // Without this, its rows indent one level too deep and report the wrong aria level.
+      const hoistDescendants = (ids?: string[]) => {
+        for (const id of ids ?? []) {
+          const descendant = acc[id];
+          if (!descendant) {
+            continue;
           }
-        };
-        hoistDescendants((data[childId] as { children?: string[] }).children);
-        // Remove the replaced component. indexToTree resolves rows from the parent pointers, so
-        // an entry that remains renders an extra row next to the hoisted story.
-        delete acc[entry.id];
-        return acc;
-      },
-      { ...data }
-    );
-  }
+          acc[id] = { ...descendant, depth: descendant.depth - 1 };
+          hoistDescendants((descendant as { children?: string[] }).children);
+        }
+      };
+      hoistDescendants((data[childId] as { children?: string[] }).children);
+      // Remove the replaced component. indexToTree resolves rows from the parent pointers, so
+      // an entry that remains renders an extra row next to the hoisted story.
+      delete acc[entry.id];
+      return acc;
+    },
+    { ...data }
+  );
 };
 
-/**
- * The `IndexTree` is a hierarchical representation of the `IndexHash`. Navigation goes from the
- * roots to the leaves. Use it to render a tree from the index, for example the sidebar Tree.
- */
 /** Whether an entry is a branch: it has at least one child row. */
 export function isBranch<T extends HashEntry>(entry: T): entry is T & { children: string[] } {
   return 'children' in entry && Array.isArray(entry.children) && entry.children.length > 0;
 }
 
 export type TreeEntry = HashEntry & { resolvedChildren?: TreeEntry[] };
+
+/**
+ * A hierarchical representation of the `IndexHash`. Navigation goes from the roots to the leaves.
+ * Use it to render a tree from the index, for example the sidebar Tree.
+ */
 export type IndexTree = TreeEntry[];
 
 export const indexToTree = (index: IndexHash): IndexTree => {

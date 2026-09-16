@@ -1,5 +1,5 @@
 import type { Dispatch, Reducer } from 'react';
-import { useCallback, useEffect, useMemo, useReducer } from 'react';
+import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 
 import { STORIES_COLLAPSE_ALL, STORIES_EXPAND_ALL } from 'storybook/internal/core-events';
 
@@ -94,6 +94,21 @@ export const useExpanded = ({
       setExpanded({ ids: getAncestorIds(data, selectedStoryId), append: true, value: true });
     }
   }, [data, selectedStoryId]);
+
+  // A default root that appears after mount (a ref index arriving, a new section in dev) started
+  // collapsed: the reducer initialized before the root existed. Expand each default root when it
+  // is first seen, and only then, so that a root the user collapsed afterwards stays collapsed.
+  const seenRootsRef = useRef<Set<string> | null>(null);
+  seenRootsRef.current ??= new Set(initialExpanded);
+  useEffect(() => {
+    const seenRoots = seenRootsRef.current!;
+    const newRoots = [...initialExpanded].filter((id) => !seenRoots.has(id));
+    if (newRoots.length === 0) {
+      return;
+    }
+    newRoots.forEach((id) => seenRoots.add(id));
+    setExpanded({ ids: newRoots, append: true, value: true });
+  }, [initialExpanded]);
 
   // Handlers for the global collapse-all and expand-all keyboard shortcuts. Collapse-all keeps
   // the default root sections open, as on first load. A collapse of the roots too would reduce

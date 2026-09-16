@@ -4,8 +4,11 @@
  * lives here; source resolution stays in source-location.ts (pure).
  */
 
-import type { SourceLocation } from '../types.ts';
+import type { CapturePayload, SourceLocation } from '../types.ts';
 
+import type { FlaggedProp } from '../types.ts';
+
+import { buildCapturePayload } from './capture.ts';
 import { resolveSource, type FiberLike } from './source-location.ts';
 import { ISLAND_ID } from './panel.ts';
 
@@ -27,11 +30,32 @@ export interface InspectorPanel {
   setCard(data: InspectCardData | null): void;
   setArmed(armed: boolean): void;
   onToggle(handler: () => void): void;
+  onGenerate(handler: () => void): void;
+  setCaptureState(state: CaptureUiState): void;
 }
+
+export type EmbedTarget =
+  | { kind: 'iframe'; url: string } // navigated after HMR indexing confirmed
+  | { kind: 'unreachable'; command: string }; // Storybook dev server down
+
+/** Panel-side states of the generate flow — every one is rendered, none silent. */
+export type CaptureUiState =
+  | { status: 'idle' }
+  | { status: 'generating' }
+  | {
+      status: 'success';
+      storyName: string;
+      filePath: string;
+      flagged: FlaggedProp[];
+      embed: EmbedTarget;
+    }
+  | { status: 'error'; message: string; filePath?: string };
 
 export interface Inspector {
   toggle(): void;
   dispose(): void;
+  /** Builds a CapturePayload from the last inspected component, or null. */
+  capture(): Promise<CapturePayload | null>;
 }
 
 /** Reads the React fiber off a DOM node via the `__reactFiber$*` instance key. */
@@ -138,6 +162,12 @@ export function createInspector(panel: InspectorPanel): Inspector {
   let rafHandle = 0;
   let pendingTarget: Element | null = null;
   let hoverToken = 0;
+  // The last component actually inspected (element + fiber) — what Generate captures.
+  let lastInspection: {
+    element: Element;
+    componentFiber: FiberLike;
+    componentName: string;
+  } | null = null;
 
   function setOverlayFor(element: Element | null): void {
     if (!element) {
@@ -158,10 +188,12 @@ export function createInspector(panel: InspectorPanel): Inspector {
     const componentFiber = fiber ? findComponentFiber(fiber) : null;
     const componentName = componentFiber ? componentNameOf(componentFiber) : null;
     if (!componentFiber || !componentName) {
+      lastInspection = null;
       panel.setCard(null);
       setOverlayFor(null);
       return;
     }
+    lastInspection = { element: target, componentFiber, componentName };
     const props =
       componentFiber.memoizedProps ?? componentFiber.pendingProps ?? componentFiber.props ?? null;
     const card: InspectCardData = {
@@ -225,6 +257,35 @@ export function createInspector(panel: InspectorPanel): Inspector {
       document.removeEventListener('pointermove', handlePointerMove, true);
       document.removeEventListener('keydown', handleKeyDown, true);
       overlay.remove();
+    },
+    async capture(): Promise<CapturePayload | null> {
+      if (!lastInspection) {
+        return null;
+      }
+      // Re-walk from the retained element: the fiber may have re-rendered
+      // since the hover, so props are read fresh at generate time.
+      const fiber = getFiberFromElement(lastInspection.element);
+      const componentFiber = fiber ? findComponentFiber(fiber) : lastInspection.componentFiber;
+      const componentName = componentFiber
+        ? componentNameOf(componentFiber)
+        : lastInspection.componentName;
+      if (!componentFiber || !componentName) {
+        return null;
+      }
+      const props =
+        componentFiber.memoizedProps ?? componentFiber.pendingProps ?? componentFiber.props ?? null;
+      const source = await resolveSource(componentFiber, lastInspection.element);
+      return buildCapturePayload({
+        componentName,
+        source,
+        props,
+        reactVersion:
+          source === null
+            ? 'unknown'
+            : source.regime === 'debugSource'
+              ? 'react<19.2 (_debugSource)'
+              : 'react>=19.2 (component stack)',
+      });
     },
   };
 

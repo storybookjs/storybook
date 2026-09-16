@@ -264,3 +264,32 @@ Read from `scripts/dangerfile.ts` this session:
   monorepo, none introduced here; the two `import(extensions)` errors this
   work initially caused were fixed); `yarn fmt:check` → all files correctly
   formatted.
+
+## 8. Stage 1 — capture middleware, panel embed, end-to-end flow (this task)
+
+- Capture middleware: `POST /__sb-devtools/capture` in the Vite plugin's
+  `configureServer` — parse/validate the CapturePayload, locate the component
+  file on disk (demo cwd first, then the code root; null, never a guess),
+  serialize props, write/append the story next to the component constrained
+  to the plugin's `storiesGlob`, respond `{ storyId, storyName, filePath,
+  flagged }`. Failures are explicit contracts: `invalid_payload`,
+  `source_unknown`, `component_not_found`, and `write_failed` carrying the
+  attempted file path — the panel renders them, nothing is silent.
+- Same-origin `GET /__sb-devtools/storybook-probe?storyId=…`: the middleware
+  fetches the embed host's `/index.json` server-side (no CORS from the
+  browser) and answers `{ reachable, indexed }`. After a successful write the
+  panel polls this until Storybook's HMR has indexed the generated story,
+  then navigates the embed; unreachable → banner.
+- Embed host: **strategy A** — `.storybook/main.ts` inside the spike package,
+  framework `@storybook/react-vite` from workspace sources, stories glob
+  `../demo/react-19/src/components/**/*.stories.@(ts|tsx)`. Started with the
+  dispatcher command in the file header (core + builder + framework dists
+  already built). Strategy B (generated sandbox) was not needed.
+- Embed navigation: the panel iframe navigates
+  `http://localhost:6006/iframe.html?id=<storyId>&viewMode=story&embed=true`
+  — client-enforced params per preview-web (see section 3 and the citations
+  in `src/client/embed-url.ts`); the URL builder is unit-tested.
+- Panel: Generate button (event-delegated; disabled while generating),
+  flagged-props list (name, reason, guidance) on success, and the two
+  recovery states — Storybook-unreachable banner with the start command, and
+  write-failure error with the attempted path.

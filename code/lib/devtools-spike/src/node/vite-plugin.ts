@@ -4,6 +4,7 @@ import type { IncomingMessage, ServerResponse } from 'node:http';
 import type { Plugin } from 'vite';
 
 import type { CaptureResponse } from '../types.ts';
+import { DEFAULT_EMBED_STORYBOOK_URL } from '../client/embed-url.ts';
 import { CaptureRequestError, handleCapture, type PathRoots } from './capture-handler.ts';
 
 const VIRTUAL_CLIENT_ID = 'virtual:sb-devtools-client';
@@ -18,9 +19,6 @@ const CLIENT_SCRIPT_TAG = `<script type="module" src="/@id/${VIRTUAL_CLIENT_ID}"
 
 /** The repo's `code/` directory — source.file paths are relativized against it. */
 const CODE_ROOT = fileURLToPath(new URL('../../../../', import.meta.url));
-
-/** Where the embed-host Storybook dev server listens by default. */
-export const DEFAULT_STORYBOOK_URL = 'http://localhost:6006';
 
 /**
  * Pure injection behavior of transformIndexHtml: the client script is added
@@ -100,7 +98,7 @@ async function routeDevtoolsRequest(
     return;
   }
   if (req.method === 'GET' && req.url?.startsWith('/storybook-probe')) {
-    await probeRoute(res, req.url, options.storybookUrl ?? DEFAULT_STORYBOOK_URL);
+    await probeRoute(res, req.url, options.storybookUrl ?? DEFAULT_EMBED_STORYBOOK_URL);
     return;
   }
   next();

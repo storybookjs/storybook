@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/vue3';
 
-import { expect, within } from 'storybook/test';
+import { expect, waitFor } from 'storybook/test';
 
 import Component from './template-slots/component.vue';
 
@@ -22,11 +22,15 @@ export const StringSlots: Story = {
     named: 'Hello named transport',
   },
   play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-
-    // Under experimentalDocgenServer the slot-categorized args render inside the slot outlets;
-    // before the transport fix they landed as unrecognized props and never reached the DOM.
-    expect(canvas.getByText('Hello transport')).toBeTruthy();
-    expect(canvas.getByText('Hello named transport')).toBeTruthy();
+    // Slot args render as raw text nodes (Vue slot semantics — no wrapper element), so element
+    // matchers like getByText cannot see them. Under experimentalDocgenServer the payload can
+    // also arrive just after the first render, so wait for the categorized re-render to land.
+    await waitFor(
+      () => {
+        expect(canvasElement.textContent).toContain('Hello transport');
+        expect(canvasElement.textContent).toContain('Hello named transport');
+      },
+      { timeout: 5000 }
+    );
   },
 };

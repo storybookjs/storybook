@@ -1,6 +1,6 @@
 import { h } from 'vue';
 
-import type { Meta, StoryObj } from '@storybook/vue3';
+import type { Meta, StoryObj } from '@storybook/vue3-vite';
 
 import TypedSlots from './TypedSlots.tsx';
 
@@ -16,7 +16,10 @@ type Story = StoryObj<typeof meta>;
 export const TypedSlotArgs: Story = {
   args: {
     label: 'Card',
-    default: ({ content }: { content: string }) => h('p', content),
-    header: ({ title }: { title: string }) => h('h2', title),
+    // Optional slot members give the payload a `| undefined` union, so slot functions that
+    // want vue-tsc-clean typing must either tolerate it or ignore the payload entirely.
+    // The payload contract is asserted in extractArgTypes.test.ts.
+    default: () => [h('p', 'fallback content')],
+    header: () => [h('h2', 'fallback title')],
   },
 };

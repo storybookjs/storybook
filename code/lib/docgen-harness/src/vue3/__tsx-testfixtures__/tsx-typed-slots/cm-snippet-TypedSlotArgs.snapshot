@@ -1,6 +1,6 @@
 <template>
   <TypedSlots label="Card">
-    <template #default="{ content }"><p v-bind="content" /></template>
-    <template #header="{ title }"><h2 v-bind="title" /></template>
+    <p>fallback content</p>
+    <template #header><h2>fallback title</h2></template>
   </TypedSlots>
 </template>

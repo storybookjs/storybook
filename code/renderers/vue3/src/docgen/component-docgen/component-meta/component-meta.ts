@@ -424,10 +424,36 @@ function hasTemplateSlotGap(
   return /<slot[\s/>]/.test(source ?? '');
 }
 
+/**
+ * A dynamic `:name` binding is reported by vue-docgen-api as a slot named after the raw
+ * expression, alongside a pseudo-binding literally named "name" (static `name` attributes never
+ * produce one). The conventional `expr ?? 'literal'` shape folds to its fallback literal — the
+ * slot name the author expects — and every other dynamic name is dropped: merged raw, it would
+ * ship an argType key no story arg can address, and a wrong key is worse than no key.
+ */
+const FOLDABLE_SLOT_NAME = /^\s*[\w$][\w$.]*\s*\?\?\s*(?:'([^']+)'|"([^"]+)")\s*$/;
+
+type TemplateSlotDoc = NonNullable<ComponentDoc['slots']>[number];
+
+function resolveTemplateSlotName(slot: TemplateSlotDoc): string | undefined {
+  const isDynamic = slot.bindings?.some((binding) => binding.name === 'name') ?? false;
+  if (!isDynamic) {
+    return slot.name;
+  }
+
+  const fallback = slot.name.match(FOLDABLE_SLOT_NAME);
+  return fallback?.[1] || fallback?.[2];
+}
+
 /** Merges template-derived slots into the meta: descriptions onto known slots, missing slots whole. */
 function mergeTemplateSlots(meta: ComponentMeta, slots: ComponentDoc['slots']): void {
   for (const slot of slots ?? []) {
-    const existing = meta.slots.find((candidate) => candidate.name === slot.name);
+    const slotName = resolveTemplateSlotName(slot);
+    if (!slotName) {
+      continue;
+    }
+
+    const existing = meta.slots.find((candidate) => candidate.name === slotName);
     if (existing) {
       if (!existing.description && slot.description) {
         existing.description = slot.description;
@@ -435,12 +461,13 @@ function mergeTemplateSlots(meta: ComponentMeta, slots: ComponentDoc['slots']): 
       continue;
     }
 
+    // The "name" pseudo-binding marks a dynamic `:name` attribute, not a scoped slot prop.
     const bindings = (slot.bindings ?? [])
-      .filter((binding) => binding.name)
+      .filter((binding) => binding.name && binding.name !== 'name')
       .map((binding) => `${binding.name}: ${binding.type?.name ?? 'unknown'}`);
     const type = bindings.length > 0 ? `{ ${bindings.join('; ')} }` : '{}';
     meta.slots.push({
-      name: slot.name,
+      name: slotName,
       description: slot.description ?? '',
       type,
       schema: type,

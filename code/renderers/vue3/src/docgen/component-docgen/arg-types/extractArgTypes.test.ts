@@ -22,10 +22,10 @@ vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
 
 // What each engine extracts from a real component is recorded per fixture in
 // @storybook/docgen-harness, which runs both Vue docgen pipelines end to end. Only the
-// docgen-less guard is unit-tested here, because no fixture can produce it. The TSX slot
-// tests below pin the argTypes contract with metadata shapes taken from direct
-// vue-component-meta invocation on a .tsx `defineComponent` (see the tsx fixtures in the
-// harness for the end-to-end equivalent).
+// docgen-less guard is unit-tested here, because no fixture can produce it. The TSX slot and
+// dynamic-slot-name tests below pin the argTypes contract with synthetic meta so each case
+// only states its actual inputs (see the tsx/template fixtures in the harness for the
+// end-to-end equivalent).
 describe('extractArgTypes', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -63,6 +63,33 @@ describe('extractArgTypes', () => {
       summary: 'User',
       detail: 'User {\n  name: string\n}',
     });
+  });
+
+  it('should key a folded dynamic slot argType by its resolved fallback name', () => {
+    (hasDocgen as unknown as Mock).mockReturnValue(true);
+    // mergeTemplateSlots has already folded `slotName ?? 'default'` to `default` upstream
+    const slotMeta = {
+      name: 'default',
+      description: '',
+    } as unknown as VueDocgenInfoEntry<'vue-docgen-api', 'slots'>;
+    (extractComponentProps as Mock).mockImplementation((_component: unknown, section: string) =>
+      section === 'slots' ? [{ docgenInfo: slotMeta, propDef: { defaultValue: undefined } }] : []
+    );
+
+    const argTypes = extractArgTypes({ __docgenInfo: { slots: [slotMeta] } } as any);
+
+    expect(Object.keys(argTypes ?? {})).toEqual(['default']);
+    expect(argTypes?.default).toMatchObject({ name: 'default', table: { category: 'slots' } });
+  });
+
+  it('should emit no slot argType when a dynamic name was skipped upstream', () => {
+    (hasDocgen as unknown as Mock).mockReturnValue(true);
+    // mergeTemplateSlots drops unresolvable dynamic names, so no slot entry reaches conversion
+    (extractComponentProps as Mock).mockImplementation(() => []);
+
+    const argTypes = extractArgTypes({ __docgenInfo: { slots: [] } } as any);
+
+    expect(argTypes).toEqual({});
   });
 
   it('should not invoke the named-type resolver for the legacy vue-docgen-api extraction', () => {

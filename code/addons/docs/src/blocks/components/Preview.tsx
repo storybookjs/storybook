@@ -84,6 +84,12 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
 const ActionBar = styled(Bar)({
   marginTop: -40,
   marginBottom: 40,
+  // `Bar` clips overflow and `innerStyle` below zeroes its padding, so the first
+  // action's focus ring (2px at a 2px offset) falls outside the clip box and is
+  // cut off. Reserve those 4px here — on the clip box itself, not via
+  // `innerStyle` — and cancel them so the actions stay aligned with the preview.
+  paddingInline: 4,
+  marginInline: -4,
 });
 
 const TrailingSnippetWarning = styled(SnippetWarning)({

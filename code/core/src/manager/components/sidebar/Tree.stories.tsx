@@ -932,12 +932,19 @@ export const StickyKeyboardReveal: Story = {
 
     // Each ArrowUp moves focus to the row above, all the way into the rows the stack covers.
     const visited: string[] = [];
+    let previous = stickyStoryId;
     for (let i = 0; i < 4; i += 1) {
       await userEvent.keyboard('{ArrowUp}');
-      await waitFor(() => expect(focusedRow()).not.toBeNull());
-      visited.push(focusedRow()!.getAttribute('data-item-id')!);
+      await waitFor(() => expect(focusedRow()?.getAttribute('data-item-id')).not.toBe(previous));
+      previous = focusedRow()!.getAttribute('data-item-id')!;
+      visited.push(previous);
     }
-    expect(new Set(visited).size).toBe(visited.length);
+    expect(visited).toEqual([
+      'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
+      'webapp-screens-marketing-featuresscreens-documentscreen--base',
+      'webapp-screens-marketing-featuresscreens-documentscreen',
+      'webapp-screens-marketing-featuresscreens',
+    ]);
   },
 };
 

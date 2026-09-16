@@ -92,30 +92,6 @@ describe('useUniversalStore - Manager', () => {
     expect(secondState).toEqual({ count: 1 });
   });
 
-  it('should not re-render when the state is replaced with a deeply equal state', async () => {
-    // Arrange - create a store
-    const store = UniversalStore.create({
-      id: 'env1:test',
-      leader: true,
-      initialState: { count: 0 },
-    });
-    const renderCounter = vi.fn();
-
-    // Act - render the hook
-    const { result } = renderHook(() => {
-      renderCounter();
-      return useUniversalStoreManager(store);
-    });
-    const [firstState] = result.current;
-
-    // Act - replace the state with a new object of identical content
-    act(() => store.setState({ count: 0 }));
-
-    // Assert - the component should not re-render and the state should keep its identity
-    expect(renderCounter).toHaveBeenCalledTimes(1);
-    expect(result.current[0]).toBe(firstState);
-  });
-
   it('should only re-render when the selected state changes', async () => {
     // Arrange - create a store
     const store = UniversalStore.create({

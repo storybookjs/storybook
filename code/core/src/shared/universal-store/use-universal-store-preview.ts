@@ -7,8 +7,6 @@ import type { UniversalStore } from './index.ts';
  * A hook to use a UniversalStore in a rendered preview. This hook will react to changes in the
  * store state and re-render when the store changes.
  *
- * A state update that is deeply equal to the previous (selected) state does not cause a re-render.
- *
  * @param universalStore The UniversalStore instance to use.
  * @param selector An optional selector function to select a subset of the store state.
  * @remark This hook is intended for use in the preview. For use in the manager UI, import from
@@ -43,8 +41,12 @@ export const useUniversalStore: {
 
   useEffect(() => {
     return universalStore.onStateChange((nextState, previousState) => {
-      const selectedNextState = selector ? selector(nextState) : nextState;
-      const selectedPreviousState = selector ? selector(previousState) : previousState;
+      if (!selector) {
+        setState(nextState);
+        return;
+      }
+      const selectedNextState = selector(nextState);
+      const selectedPreviousState = selector(previousState);
 
       const hasChanges = !isEqual(selectedNextState, selectedPreviousState);
       if (hasChanges) {

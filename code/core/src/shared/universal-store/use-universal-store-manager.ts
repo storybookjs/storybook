@@ -8,8 +8,6 @@ import type { UniversalStore } from './index.ts';
  * A hook to use a UniversalStore in the manager UI (eg. in an addon panel). This hook will react to
  * changes in the store state and re-render when the store changes.
  *
- * A state update that is deeply equal to the previous (selected) state does not cause a re-render.
- *
  * @param universalStore The UniversalStore instance to use.
  * @param selector An optional selector function to select a subset of the store state.
  * @remark This hook is intended for use in the manager UI. For use in the preview, import from
@@ -45,8 +43,13 @@ export const useUniversalStore: {
   const subscribe = React.useCallback<Parameters<(typeof React)['useSyncExternalStore']>[0]>(
     (listener) =>
       universalStore.onStateChange((state, previousState) => {
-        const selectedState = selector ? selector(state) : state;
-        const selectedPreviousState = selector ? selector(previousState) : previousState;
+        if (!selector) {
+          snapshotRef.current = state;
+          listener();
+          return;
+        }
+        const selectedState = selector(state);
+        const selectedPreviousState = selector(previousState);
 
         const hasChanges = !isEqual(selectedState, selectedPreviousState);
         if (hasChanges) {

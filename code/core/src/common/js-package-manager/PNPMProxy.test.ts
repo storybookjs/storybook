@@ -57,7 +57,7 @@ describe('PNPM Proxy', () => {
   });
 
   describe('getRegistryURL', () => {
-    it('uses npm 12-compatible workspace flags', async () => {
+    it('should return the configured registry URL', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
         stdout: 'https://registry.npmjs.org/',
       } as Awaited<ReturnType<typeof executeCommand>>);
@@ -66,8 +66,9 @@ describe('PNPM Proxy', () => {
 
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
-          command: 'npm',
-          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+          command: 'pnpm',
+          cwd: process.cwd(),
+          args: ['config', 'get', 'registry', '--location=project'],
         })
       );
     });

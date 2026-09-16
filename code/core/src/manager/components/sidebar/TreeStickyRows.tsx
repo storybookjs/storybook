@@ -239,6 +239,20 @@ export function TreeStickyRows({
       treeTopWithin(scroller, wrapper) + rows.offsets[index] - slot * TREE_ROW_HEIGHT;
   };
 
+  // Hand focus to the real row after an activation. The sticky copy is aria-hidden and unmounts
+  // as the stack changes, so focus left on it would fall back to the body and break arrow-key
+  // navigation. The virtualizer can mount the real row a frame after the scroll, hence retries.
+  const focusRealRow = (id: string, attempt = 0) => {
+    const row = wrapperRef.current?.querySelector<HTMLElement>(
+      `[data-item-id="${CSS.escape(id)}"]`
+    );
+    if (row) {
+      row.focus({ preventScroll: true });
+    } else if (attempt < 10) {
+      requestAnimationFrame(() => focusRealRow(id, attempt + 1));
+    }
+  };
+
   const mask = shadowMask(ids.length);
 
   return (
@@ -260,7 +274,10 @@ export function TreeStickyRows({
               data-accent={id === accentId || undefined}
               type="button"
               tabIndex={-1}
-              onClick={() => scrollIntoSlot(id, slot)}
+              onClick={() => {
+                scrollIntoSlot(id, slot);
+                focusRealRow(id);
+              }}
             >
               <IndentLines
                 level={level}
@@ -272,6 +289,7 @@ export function TreeStickyRows({
                   event.stopPropagation();
                   onCollapse(id);
                   scrollIntoSlot(id, slot);
+                  focusRealRow(id);
                 }}
               >
                 {entry.type === 'root' ? (

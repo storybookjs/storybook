@@ -16,7 +16,12 @@ import {
   writeStoryFile,
   type ComponentImport,
 } from '../story-writer/write-story.ts';
-import type { CaptureFailureResponse, CapturePayload, CaptureSuccessResponse, StoryGenerationResult } from '../types.ts';
+import type {
+  CaptureFailureResponse,
+  CapturePayload,
+  CaptureSuccessResponse,
+  StoryGenerationResult,
+} from '../types.ts';
 
 /**
  * Request-level failure carrying the panel-facing error kind. The middleware
@@ -176,7 +181,9 @@ export async function handleCapture(
   let generation: StoryGenerationResult;
   try {
     existing = await readExistingStories(storyPath);
-    generation = serializeCapture(payload, { existingStoryNames: existing.storyNames });
+    generation = serializeCapture(payload, {
+      existingStoryNames: existing.storyNames,
+    });
     if (existing.exists) {
       await appendVariant(storyPath, generation, {
         storiesGlob: options.storiesGlob,

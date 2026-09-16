@@ -13,10 +13,7 @@ import type { StorybookConfig } from '@storybook/react-vite';
  *   node code/core/dist/bin/dispatcher.js dev --port 6006 \
  *     --config-dir code/lib/devtools-spike/.storybook
  */
-const demoRoot = path.join(
-  path.dirname(fileURLToPath(import.meta.url)),
-  '../demo/react-19'
-);
+const demoRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), '../demo/react-19');
 
 const config: StorybookConfig = {
   stories: ['../demo/react-19/src/components/**/*.stories.@(ts|tsx)'],

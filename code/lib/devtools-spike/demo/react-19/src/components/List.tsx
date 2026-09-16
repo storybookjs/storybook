@@ -7,7 +7,7 @@ export interface ItemProps {
 
 // Nested shape: Item is rendered by List and takes a function prop — the
 // flagged/degradation case for story generation.
-export function Item({ item, itemTemplate }: ItemProps) {
+export function Item({ item, itemTemplate = (i: string): ReactNode => i }: ItemProps) {
   return <li>{itemTemplate(item)}</li>;
 }
 

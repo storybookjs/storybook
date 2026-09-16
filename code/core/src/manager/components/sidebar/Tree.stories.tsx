@@ -793,7 +793,8 @@ export const StickyAncestors: Story = {
     // tree is not hovered.
     const selectionSpan = canvasElement.querySelector('[data-indent-line][data-selection-line]')!;
     expect(selectionSpan).not.toBeNull();
-    expect(getComputedStyle(selectionSpan).opacity).toBe('1');
+    // The line fades in, so wait for the opacity to settle instead of sampling mid-transition.
+    await waitFor(() => expect(getComputedStyle(selectionSpan).opacity).toBe('1'));
 
     // The overlay membership must not change on a single-pixel scroll. It derives from the row
     // offsets alone, never from the rows that are already sticky.

@@ -48,6 +48,7 @@ export class TabErrorBoundary extends Component<TabErrorBoundaryProps, { hasErro
             severity="negative"
             title="Addon panel failed to render"
             summary="An error in this addon prevented the panel from rendering. Check the browser console for more details."
+            showBadge={false}
           />
         </Fallback>
       );

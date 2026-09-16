@@ -48,7 +48,8 @@ describe('TabErrorBoundary', () => {
         base
       );
       expect(screen.getByText('Addon panel failed to render')).toBeDefined();
-      expect(screen.getByText('Error')).toBeDefined();
+      // Panel fallbacks show the title alone; the severity badge is suppressed per design review.
+      expect(screen.queryByText('Error')).toBeNull();
       expect(screen.queryByText('Boom')).toBeNull();
     }
   );

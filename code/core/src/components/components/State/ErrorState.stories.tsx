@@ -49,3 +49,13 @@ export const WithActions: Story = {
     ),
   },
 };
+
+export const WithoutBadge: Story = {
+  args: {
+    severity: 'negative',
+    title: 'Addon panel failed to render',
+    summary:
+      'An error in this addon prevented the panel from rendering. Check the browser console for more details.',
+    showBadge: false,
+  },
+};

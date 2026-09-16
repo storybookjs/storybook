@@ -9,11 +9,19 @@ interface ErrorStateProps {
   title: ReactNode;
   summary?: ReactNode;
   actions?: ReactNode;
+  /** See `StateShellProps.showBadge`; addon panels and full-screen pages omit the badge. */
+  showBadge?: boolean;
 }
 
 /**
  * Renders a failure state. Requires a severity; use `EmptyState` for guidance.
  */
-export const ErrorState = ({ severity, title, summary, actions }: ErrorStateProps) => (
-  <StateShell severity={severity} title={title} summary={summary} actions={actions} />
+export const ErrorState = ({ severity, title, summary, actions, showBadge }: ErrorStateProps) => (
+  <StateShell
+    severity={severity}
+    title={title}
+    summary={summary}
+    actions={actions}
+    showBadge={showBadge}
+  />
 );

@@ -62,4 +62,16 @@ describe('ErrorState', () => {
     );
     expect(container.querySelectorAll('button')).toHaveLength(0);
   });
+
+  it.each(['light', 'dark'] as const)(
+    'hides the severity badge with showBadge={false} in the %s theme',
+    (base) => {
+      themed(
+        <ErrorState severity="negative" title="Addon panel failed to render" showBadge={false} />,
+        base
+      );
+      expect(screen.queryByText('Error')).toBeNull();
+      expect(screen.getByText('Addon panel failed to render')).toBeDefined();
+    }
+  );
 });

@@ -18,6 +18,12 @@ interface StateShellProps {
   title: ReactNode;
   summary?: ReactNode;
   actions?: ReactNode;
+  /**
+   * Severity badges render on surfaces where failures are scanned among items
+   * (docs tables, lists). Compact surfaces like addon panels and full-screen
+   * pages show the title alone, per design review.
+   */
+  showBadge?: boolean;
 }
 
 const Shell = styled.div({
@@ -59,11 +65,17 @@ const Actions = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,
 }));
 
-export const StateShell = ({ severity, title, summary, actions }: StateShellProps) => (
+export const StateShell = ({
+  severity,
+  title,
+  summary,
+  actions,
+  showBadge = true,
+}: StateShellProps) => (
   <Shell>
     <Copy>
       <TitleRow>
-        {severity && <Badge status={severity}>{severityLabels[severity]}</Badge>}
+        {severity && showBadge && <Badge status={severity}>{severityLabels[severity]}</Badge>}
         <Title>{title}</Title>
       </TitleRow>
       {summary && <Summary>{summary}</Summary>}

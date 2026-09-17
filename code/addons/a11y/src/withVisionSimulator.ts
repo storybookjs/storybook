@@ -6,7 +6,11 @@ import { useCallback, useEffect } from 'storybook/preview-api';
 import { filterDefs, filters } from './visionSimulatorFilters.ts';
 
 const knownFilters = Object.values(filters).map((f) => f.filter);
-const knownFiltersRegExp = new RegExp(`\\b(${knownFilters.join('|')})\\b`, 'g');
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+const knownFiltersRegExp = new RegExp(
+  `(?:^|\\s)(?:${knownFilters.map(escapeRegExp).join('|')})(?=\\s|$)`,
+  'g'
+);
 
 export const withVisionSimulator: DecoratorFunction = (StoryFn, { globals }) => {
   const { vision } = globals;

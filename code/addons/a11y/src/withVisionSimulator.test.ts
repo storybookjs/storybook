@@ -77,6 +77,14 @@ describe('withVisionSimulator', () => {
     expect(mockedWarn).not.toHaveBeenCalled();
   });
 
+  it('removes an existing vision filter when globals.vision is unavailable', () => {
+    document.body.style.filter = `${filters.protanopia.filter} brightness(80%)`;
+
+    runDecorator('protanomaly');
+
+    expect(document.body.style.filter).toBe('brightness(80%)');
+  });
+
   it('does not warn when globals.vision references an available simulation', () => {
     runDecorator('protanopia');
 

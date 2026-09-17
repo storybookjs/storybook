@@ -7,7 +7,7 @@ export * from './build-dev.ts';
 export * from './build-index.ts';
 export * from './withTelemetry.ts';
 export { default as build } from './standalone.ts';
-export { mapStaticDir } from './utils/server-statics.ts';
+export { mapStaticDir, useStatics } from './utils/server-statics.ts';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
 export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config.ts';
 export { generateStoryFile } from './utils/generate-story.ts';
@@ -118,8 +118,15 @@ export type {
 export { ChangeDetectionService } from './change-detection/change-detection-service.ts';
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
-export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
+export {
+  getServerChannel,
+  prepareHeadlessUniversalStores,
+  type UpgradeEmitter,
+} from './utils/get-server-channel.ts';
 export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
+export { getWsToken } from './presets/wsToken.ts';
+export { registerIndexJsonRoute } from './utils/index-json.ts';
+export { doTelemetry } from './utils/doTelemetry.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

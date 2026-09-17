@@ -5,17 +5,8 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { Focusable } from 'react-aria-components/Focusable';
 import { TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components/Tooltip';
-import { styled } from 'storybook/theming';
 
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
-
-// An overlay mounts at the viewport origin and only moves once react-aria computes its placement.
-// Hold it invisible until then, so no frame paints a tooltip at the top-left corner.
-const PositionedTooltip = styled(TooltipUpstream)({
-  '&:not([data-placement])': {
-    visibility: 'hidden',
-  },
-});
 
 export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
@@ -87,59 +78,13 @@ const TooltipProvider = ({
   }
 
   const [isOpen, setIsOpen] = useState(defaultVisible ?? startOpen ?? false);
-  const triggerRef = useRef<HTMLElement | null>(null);
-  const isPointerOverTrigger = useRef(false);
-  const showTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
-  useEffect(() => {
-    const trigger = triggerRef.current;
-    if (!trigger) {
-      return;
-    }
-    const enter = () => {
-      isPointerOverTrigger.current = true;
-    };
-    const leave = () => {
-      isPointerOverTrigger.current = false;
-    };
-    trigger.addEventListener('pointerenter', enter);
-    trigger.addEventListener('pointerleave', leave);
-    return () => {
-      trigger.removeEventListener('pointerenter', enter);
-      trigger.removeEventListener('pointerleave', leave);
-    };
-  }, []);
-  // While any tooltip is "warm" (one showed recently), react-aria opens every other tooltip with
-  // no delay, so a pointer sweeping across a series of triggers flashes each one's tooltip for a
-  // few frames. Gate each open on a short dwell instead, and drop it when the pointer (or focus)
-  // has already left the trigger by the time it elapses. Closes stay immediate.
   const onOpenChange = useCallback(
-    (nextOpen: boolean) => {
-      clearTimeout(showTimer.current);
-      if (!nextOpen) {
-        setIsOpen(false);
-        onVisibleChange?.(false);
-        return;
-      }
-      showTimer.current = setTimeout(() => {
-        const trigger = triggerRef.current;
-        if (trigger) {
-          const engaged =
-            isPointerOverTrigger.current ||
-            trigger.matches(':hover, :focus-within') ||
-            trigger.contains(document.activeElement);
-          // A trigger without a box was hidden mid-dwell; positioning against it would place
-          // the tooltip at the viewport origin.
-          if (!engaged || trigger.getBoundingClientRect().width === 0) {
-            return;
-          }
-        }
-        setIsOpen(true);
-        onVisibleChange?.(true);
-      }, 100);
+    (isOpen: boolean) => {
+      setIsOpen(isOpen);
+      onVisibleChange?.(isOpen);
     },
     [onVisibleChange]
   );
-  useEffect(() => () => clearTimeout(showTimer.current), []);
 
   // Hide the tooltip on any pointer press in the document. react-aria hides the tooltip only when
   // the pointer leaves the trigger or presses it. A press elsewhere can hide or replace the
@@ -165,6 +110,7 @@ const TooltipProvider = ({
   // Hide the tooltip the moment its trigger loses its box, such as a row-action button that is
   // display: none unless its row is hovered. An open tooltip is positioned against the trigger's
   // rect, and a collapsed rect places it at the viewport origin for the rest of the close delay.
+  const triggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const el = triggerRef.current;
     if (!isTooltipShown || !el) {
@@ -224,7 +170,7 @@ const TooltipProvider = ({
           first mount (before the overlay container exists) strands it there forever: a permanent
           unpositioned tooltip at the viewport origin. An unmounted child has no exit state. */}
       {isTooltipShown ? (
-        <PositionedTooltip
+        <TooltipUpstream
           data-testid="tooltip"
           placement={placement}
           offset={offset}
@@ -233,7 +179,7 @@ const TooltipProvider = ({
           {...props}
         >
           {tooltip}
-        </PositionedTooltip>
+        </TooltipUpstream>
       ) : (
         <></>
       )}

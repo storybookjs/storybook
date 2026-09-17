@@ -583,8 +583,8 @@ describe('PNPM Proxy', () => {
       mockedExecuteCommand
         .mockResolvedValueOnce({ stdout: '1440\n' } as any)
         .mockResolvedValueOnce({ stdout: '[]' } as any)
-        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any)
-        .mockResolvedValueOnce({ stdout: JSON.stringify(packageTimeMap) } as any);
+        .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify([packageTimeMap]) } as any);
       vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
 
       const rerunPromise = pnpmProxy.precheckStorybookPackageInstall({

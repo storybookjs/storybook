@@ -2194,7 +2194,7 @@ If the value is not a static object, move the fields yourself. This includes a v
 
 ### Addon A11y: Removed anomaly vision simulations
 
-The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. If a story sets one of these values through `globals.vision`, remove that global or change it to one of the remaining supported values.
+The Vision Simulator no longer offers `protanomaly`, `deuteranomaly`, or `tritanomaly`. Each condition covers a range of severities, so a single fixed matrix cannot represent it accurately. No automigration is provided because none of the remaining simulations is semantically equivalent. If a story sets one of these values through `globals.vision`, remove that global or choose a remaining value based on the intended test. Unsupported values now produce a warning that lists the available values.
 
 The remaining color-vision simulations also render differently: `protanopia`, `deuteranopia`, and `tritanopia` now use the Machado matrices in `linearRGB`, while the existing `achromatopsia` matrix also runs in `linearRGB`. Existing visual snapshots that use any of these `globals.vision` values will therefore produce intentional diffs.
 

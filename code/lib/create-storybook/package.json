@@ -47,7 +47,6 @@
     "commander": "^14.0.2",
     "empathic": "^2.0.0",
     "picocolors": "^1.1.0",
-    "process-ancestry": "patch:process-ancestry@npm%3A0.0.2#~/.yarn/patches/process-ancestry-npm-0.0.2-a5c4b74866.patch",
     "react": "^18.2.0",
     "tiny-invariant": "^1.3.1",
     "ts-dedent": "^2.0.0",

@@ -5,6 +5,7 @@ import {
   isCI,
   isCorePackage,
   resolveStorybookVersionSpecifier,
+  getProcessAncestry,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -23,7 +24,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import { getProcessAncestry } from 'process-ancestry';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 

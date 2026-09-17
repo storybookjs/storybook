@@ -6,10 +6,6 @@ import { styled } from 'storybook/theming';
 
 import { getAncestorIds } from '../../utils/tree.ts';
 import { CollapseIcon } from './CollapseIcon.tsx';
-import { IndentLines, indentLineX, type SelectionLine } from './TreeIndentLines.tsx';
-import { TypeIconWithSymbol } from './TypeIcon.tsx';
-import type { SidebarLabelContext } from './types.ts';
-import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 import {
   SECTION_GAP,
   TREE_CONTENT_INSET,
@@ -19,6 +15,10 @@ import {
   treeTopWithin,
   type FlatRows,
 } from './treeGeometry.ts';
+import { IndentLines, indentLineX, type SelectionLine } from './TreeIndentLines.tsx';
+import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
+import type { SidebarLabelContext } from './types.ts';
 
 // Sticks to the top of the sidebar's scroll area while this tree is on screen, and scrolls away
 // with the tree. It must be the tree's first child, so that it sticks from the tree's own top, and
@@ -81,9 +81,9 @@ const StickyRow = styled.button<{ $level: number }>(({ $level, theme }) => ({
   ...iconSwap(['&:hover']),
 }));
 
-// Softens the edge where rows scroll under the stack. Its mask cuts a 1px column over each
-// indent line that continues below, so the lines pass through at full strength; the columns
-// derive from the stack's own composition, which only changes when the sticky rows do.
+// Gradient sitting under the stack to help users separate the sticky header from TreeNodes.
+// We use a clip mask to cut off the gradient/shadow where indent lines are, so the lines
+// look continuous.
 const StickyShadow = styled.span({
   position: 'absolute',
   top: '100%',
@@ -94,8 +94,7 @@ const StickyShadow = styled.span({
   background: 'linear-gradient(to bottom, var(--sticky-row-background), transparent)',
 });
 
-// The lines under the stack sit at levels 1 to the deepest sticky row's child level, which is
-// the number of sticky rows: the chain starts at depth 0 and has one row per depth.
+// Computes the clip mask, mirroring the logic used to draw indent lines.
 function shadowMask(stackSize: number): string {
   const stops: string[] = [];
   let previous = 0;

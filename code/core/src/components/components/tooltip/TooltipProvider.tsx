@@ -5,8 +5,17 @@ import { deprecate } from 'storybook/internal/client-logger';
 
 import { Focusable } from 'react-aria-components/Focusable';
 import { TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components/Tooltip';
+import { styled } from 'storybook/theming';
 
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
+
+// An overlay mounts at the viewport origin and only moves once react-aria computes its placement.
+// Hold it invisible until then, so no frame paints a tooltip at the top-left corner.
+const PositionedTooltip = styled(TooltipUpstream)({
+  '&:not([data-placement])': {
+    visibility: 'hidden',
+  },
+});
 
 export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
@@ -165,16 +174,24 @@ const TooltipProvider = ({
           >['children']
         }
       </Focusable>
-      <TooltipUpstream
-        data-testid="tooltip"
-        placement={placement}
-        offset={offset}
-        onOpenChange={onOpenChange}
-        style={{ outline: 'none' }}
-        {...props}
-      >
-        {tooltip}
-      </TooltipUpstream>
+      {/* Render the tooltip element only while shown. A closing react-aria tooltip stays mounted
+          in an "exiting" state that only an animation's end can leave, and a close racing the
+          first mount (before the overlay container exists) strands it there forever: a permanent
+          unpositioned tooltip at the viewport origin. An unmounted child has no exit state. */}
+      {isTooltipShown ? (
+        <PositionedTooltip
+          data-testid="tooltip"
+          placement={placement}
+          offset={offset}
+          onOpenChange={onOpenChange}
+          style={{ outline: 'none' }}
+          {...props}
+        >
+          {tooltip}
+        </PositionedTooltip>
+      ) : (
+        <></>
+      )}
     </TooltipTrigger>
   );
 };

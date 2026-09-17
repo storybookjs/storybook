@@ -580,6 +580,50 @@ export const ContextMenuEnterOnTrigger: Story = {
   },
 };
 
+/**
+ * Dismissing the context menu with a click outside returns the row to its resting state.
+ * react-aria restores focus to the row on close, which would keep the ⋯ trigger on screen; a
+ * pointer dismissal drops that focus, so the status icon takes the slot back.
+ */
+export const ContextMenuOutsideDismiss: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
+    await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
+    await userEvent.click(row);
+    await waitFor(() => {
+      const active = canvasElement.ownerDocument.activeElement;
+      expect(active?.closest('[data-item-id]')).toBeTruthy();
+    });
+    const openMenuHandler = managerContext.api.on.mock.calls
+      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
+      .at(-1)?.[1];
+    openMenuHandler();
+    const popover = await screen.findByRole('dialog');
+    await expect(popover).toBeVisible();
+    const trigger = await within(row).findByTestId('context-menu');
+
+    const outside = canvasElement.querySelector<HTMLElement>(
+      '[data-testid="sidebar-scroll-area"]'
+    )!;
+    await userEvent.click(outside);
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
+
+    await userEvent.unhover(row);
+    await waitFor(() => expect(getComputedStyle(trigger).display).toBe('none'));
+  },
+};
+
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
     'storybook/vitest': {

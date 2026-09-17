@@ -1,4 +1,11 @@
-import React, { useCallback, useContext, useMemo, useSyncExternalStore } from 'react';
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useSyncExternalStore,
+} from 'react';
 
 import type { StatusValue } from 'storybook/internal/types';
 
@@ -240,16 +247,61 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   const isContextMenuOpen = openedBy !== undefined;
   const stopRowPress = useCallback((event: React.SyntheticEvent) => event.stopPropagation(), []);
 
+  // Record how the open menu is dismissed. The tree's own modality listeners cannot see the
+  // dismissal: an outside click lands beyond the tree, and Escape lands in the portaled popover.
+  const dismissedByPointerRef = useRef(false);
+  useEffect(() => {
+    if (!isContextMenuOpen) {
+      return;
+    }
+    const doc = globalThis.document;
+    const onPointerDown = () => (dismissedByPointerRef.current = true);
+    const onKeyDown = () => (dismissedByPointerRef.current = false);
+    doc.addEventListener('pointerdown', onPointerDown, true);
+    doc.addEventListener('keydown', onKeyDown, true);
+    return () => {
+      doc.removeEventListener('pointerdown', onPointerDown, true);
+      doc.removeEventListener('keydown', onKeyDown, true);
+    };
+  }, [isContextMenuOpen]);
+
   // Toggles the context menu open/close, suitable as the `setIsOpen` parameter for the popover.
   // The entry method (pointer vs keyboard) is derived by the tree from the last input modality,
   // so Enter/Space on the ⋯ button count as keyboard entry while a mouse click counts as pointer.
+  //
+  // When the closing popover held focus, react-aria restores it to the row or the ⋯ trigger,
+  // even after the focus already left for the body. That restore is right for Escape, which
+  // returns keyboard users to the row, and wrong for a pointer dismissal, where it keeps the row
+  // in its focused look although the user pressed elsewhere. The restore lands after an
+  // animation frame of react-aria's own, so a pointer dismissal watches for it through focusin
+  // and blurs it as it arrives.
   const handleContextMenuOpenChange = useCallback(
     (open: boolean) => {
       if (open) {
         openContextMenu?.(item.id);
-      } else {
-        closeContextMenu?.();
+        return;
       }
+      closeContextMenu?.();
+      if (!dismissedByPointerRef.current) {
+        return;
+      }
+      const doc = globalThis.document;
+      const row = doc.querySelector(`[data-item-id="${CSS.escape(item.id)}"]`);
+      const cancel = () => {
+        doc.removeEventListener('focusin', onFocusIn, true);
+        clearTimeout(timer);
+      };
+      const onFocusIn = (event: FocusEvent) => {
+        // Layered focus scopes restore more than once, so stay armed for the whole window and
+        // stand down only when focus lands somewhere else on purpose.
+        if (event.target instanceof HTMLElement && row?.contains(event.target)) {
+          event.target.blur();
+          return;
+        }
+        cancel();
+      };
+      doc.addEventListener('focusin', onFocusIn, true);
+      const timer = setTimeout(cancel, 500);
     },
     [openContextMenu, closeContextMenu, item.id]
   );

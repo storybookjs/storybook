@@ -123,20 +123,19 @@ const StickyLabel = styled.span({
 });
 
 /**
- * The rows to pin above the tree for a given scroll offset, from the top slot down.
+ * Computes the IDs of TreeNodes that need to be made into sticky rows, given a scroll offset.
  *
- * The slot for a row of depth `d` is the viewport's row `d`: sticky ancestors stack in depth
- * order, one row high each. A row pins the moment the scroll brings its slot down to the row's
- * own position, so it stops in place while the rows below scroll on past it, and it unpins the
- * same way on the way back up.
+ * Finds the first TreeNode below the current scroll offset, then finds all of its ancestors.
  *
- * A row holds its slot while its own position is above the slot and its subtree still reaches
- * below the slot. The subtree rule releases the deepest rows as the end of their section
- * approaches, so the stack never covers the header of the next section.
+ * The function performs further filtering to handle edge cases during transitions in the
+ * sticky tree. There's a gap between the moment a new TreeNode branch scrolls to the bottom
+ * of the sticky tree and to the top of scroll area. We need to move the sticky rows' content
+ * out of the way as that new branch scrolls up so it doesn't disappear, but not all at the
+ * same time so the tree's vertical position doesn't jump around.
  *
- * Only one row per depth can hold the slot at a time, and a row can only hold a slot while its
- * parent holds the one above, so the result is one row per depth with no gaps.
+ * It's okay to find this function hard to understand. It is.
  */
+
 export function getStickyRowIds(rows: FlatRows, data: IndexHash, scrollTop: number): string[] {
   const { ids, offsets, depths, indexById, subtreeBottoms } = rows;
   const topIndex = findFirstRowBelow(rows, scrollTop);

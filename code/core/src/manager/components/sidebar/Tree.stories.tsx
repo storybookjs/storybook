@@ -624,6 +624,40 @@ export const ContextMenuOutsideDismiss: Story = {
   },
 };
 
+/**
+ * Opening the row menu retires the trigger's own tooltip: it is redundant next to the open menu,
+ * and a tooltip held open across the menu's focus churn is what lingered at the viewport origin.
+ * The menu opens through the shortcut event, so no pointer press closes the tooltip on the way.
+ */
+export const ContextMenuOpenClosesTooltip: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const row = canvasElement.querySelector<HTMLElement>(`[data-item-id="${dualSlotStoryId}"]`)!;
+    await waitFor(() => expect(getComputedStyle(row).pointerEvents).not.toBe('none'));
+    await userEvent.hover(row);
+    const trigger = await within(row).findByTestId('context-menu');
+    await userEvent.hover(trigger);
+    await expect(await screen.findByTestId('tooltip')).toBeVisible();
+
+    const openMenuHandler = managerContext.api.on.mock.calls
+      .filter(([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU)
+      .at(-1)?.[1];
+    openMenuHandler();
+    await screen.findByRole('dialog');
+    await waitFor(() => expect(screen.queryByTestId('tooltip')).not.toBeInTheDocument());
+  },
+};
+
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
     'storybook/vitest': {

@@ -12,6 +12,15 @@ export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
   triggerOnFocusOnly?: boolean;
 
+  /**
+   * Whether the tooltip is prevented from opening. Turning this on closes an open tooltip.
+   *
+   * Prefer this over `visible={false}` for temporary suppression: a controlled `visible` also
+   * stops react-aria from reporting state changes, and the tooltip can reopen unprompted when
+   * control is released.
+   */
+  disabled?: boolean;
+
   /** Distance between the trigger and tooltip. Customize only if you have a good reason to. */
   offset?: number;
 
@@ -48,6 +57,7 @@ export interface TooltipProviderProps {
 
 const TooltipProvider = ({
   triggerOnFocusOnly = false,
+  disabled = false,
   placement: placementProp = 'top',
   offset = 8,
   tooltip,
@@ -89,6 +99,14 @@ const TooltipProvider = ({
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [isTooltipShown, onOpenChange]);
 
+  // react-aria consumes isDisabled in the trigger interactions only: it stops new opens, and it
+  // leaves a tooltip that is already open on screen. Close that one here.
+  useEffect(() => {
+    if (disabled && isTooltipShown) {
+      onOpenChange(false);
+    }
+  }, [disabled, isTooltipShown, onOpenChange]);
+
   // Hide the tooltip the moment its trigger loses its box, such as a row-action button that is
   // display: none unless its row is hovered. An open tooltip is positioned against the trigger's
   // rect, and a collapsed rect places it at the viewport origin for the rest of the close delay.
@@ -127,6 +145,7 @@ const TooltipProvider = ({
     <TooltipTrigger
       delay={delayShow}
       closeDelay={delayHide}
+      isDisabled={disabled}
       isOpen={visible ?? isOpen}
       onOpenChange={onOpenChange}
       trigger={triggerOnFocusOnly ? 'focus' : undefined}

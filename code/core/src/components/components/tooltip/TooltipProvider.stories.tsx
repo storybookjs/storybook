@@ -225,6 +225,46 @@ export const HiddenTriggerCloses = meta.story({
   },
 });
 
+/**
+ * `disabled` closes an open tooltip and blocks new opens, while react-aria keeps reporting state
+ * changes. The toggle is activated with the keyboard, so the close can only come from the
+ * `disabled` prop and not from the document-level pointerdown fallback.
+ */
+export const DisabledClosesOpenTooltip = meta.story({
+  args: {
+    delayShow: 0,
+    tooltip: <SampleTooltip />,
+    children: <Trigger>Hover me!</Trigger>,
+  },
+  render: function Render(args) {
+    const [disabled, setDisabled] = React.useState(false);
+    return (
+      <>
+        <TooltipProvider {...args} disabled={disabled} />
+        <button onClick={() => setDisabled(true)}>disable tooltips</button>
+      </>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = canvas.getByText('Hover me!');
+    await userEvent.hover(trigger);
+    await expect(await screen.findByText('Lorem ipsum dolor sit')).toBeInTheDocument();
+
+    const toggle = canvas.getByText('disable tooltips');
+    toggle.focus();
+    await userEvent.keyboard('{Enter}');
+    await waitFor(() =>
+      expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument()
+    );
+
+    await userEvent.unhover(trigger);
+    await userEvent.hover(trigger);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await expect(screen.queryByText('Lorem ipsum dolor sit')).not.toBeInTheDocument();
+  },
+});
+
 export const WithVisibilityCallback = meta.story({
   args: {
     onVisibleChange: fn(),

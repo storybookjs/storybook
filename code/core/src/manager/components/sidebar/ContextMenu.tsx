@@ -199,6 +199,7 @@ export const ContextMenu: FC<{
           onClick={handleOpen}
           shortcut={api.getShortcutKeys()?.contextMenu}
           tooltipPlacement="bottom-end"
+          disableAllTooltips={isOpen}
         >
           <EllipsisIcon />
         </ContextMenuButton>

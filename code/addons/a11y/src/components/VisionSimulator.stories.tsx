@@ -22,7 +22,7 @@ const meta = preview.meta({
   title: 'Vision Simulator',
   component: VisionSimulator,
   decorators: [
-    (Story: any, context) => (
+    (Story, context) => (
       <ManagerContext.Provider
         value={{
           ...managerContext,

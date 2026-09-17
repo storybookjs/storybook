@@ -198,9 +198,6 @@ export const ContextMenu: FC<{
           type="button"
           onClick={handleOpen}
           shortcut={api.getShortcutKeys()?.contextMenu}
-          // TEMPORARY DEBUG PROBE: identify which row's tooltip appears by showing the entry
-          // instead of the action label. Revert before merge.
-          tooltip={'title' in context ? `${context.title} — ${context.name}` : context.name}
           tooltipPlacement="bottom-end"
           disableAllTooltips={isOpen}
         >

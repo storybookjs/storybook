@@ -182,7 +182,7 @@ export function getAbsolutePathWrapperAsCallExpression(
   t.addComment(
     functionDeclaration,
     'leading',
-    '*\n * This function is used to resolve the absolute path of a package.\n * It is needed in projects that use Yarn PnP or are set up within a monorepo.\n'
+    '*\n * This function is used to resolve the absolute path of a package.\n * It is needed in projects that are set up within a monorepo.\n'
   );
 
   return functionDeclaration;

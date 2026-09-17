@@ -1,0 +1,106 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-union-jsdoc.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Button with typed visual variants.",
+          "name": "LitUnionJsdoc",
+          "members": [
+            {
+              "kind": "field",
+              "name": "variant",
+              "type": {
+                "text": "'primary' | 'secondary' | 'ghost'"
+              },
+              "default": "'primary'",
+              "description": "Visual variant.",
+              "attribute": "variant"
+            },
+            {
+              "kind": "field",
+              "name": "oldLabel",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Old label field.",
+              "deprecated": "Use label instead.",
+              "attribute": "old-label"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Union label'",
+              "description": "Current label.",
+              "attribute": "label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "variant",
+              "type": {
+                "text": "'primary' | 'secondary' | 'ghost'"
+              },
+              "default": "'primary'",
+              "description": "Visual variant.",
+              "fieldName": "variant"
+            },
+            {
+              "name": "old-label",
+              "type": {
+                "text": "string"
+              },
+              "default": "''",
+              "description": "Old label field.",
+              "deprecated": "Use label instead.",
+              "fieldName": "oldLabel"
+            },
+            {
+              "name": "label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Union label'",
+              "description": "Current label.",
+              "fieldName": "label"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "deprecated": "Use lit-basic-attributes instead.",
+          "summary": "Compact variant fixture.",
+          "tagName": "lit-union-jsdoc",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitUnionJsdoc",
+          "declaration": {
+            "name": "LitUnionJsdoc",
+            "module": "lit-union-jsdoc.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-union-jsdoc",
+          "declaration": {
+            "name": "LitUnionJsdoc",
+            "module": "lit-union-jsdoc.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

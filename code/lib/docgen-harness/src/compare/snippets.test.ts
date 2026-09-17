@@ -364,3 +364,53 @@ describe('compareSnippet (vue3)', () => {
     expect(vue(baseline, candidate)).toEqual([]);
   });
 });
+
+describe('compareSnippet (web-components)', () => {
+  const webComponents = (baseline: string, candidate: string) =>
+    compareSnippet({ framework: 'web-components', baseline, candidate });
+
+  it.each([
+    {
+      name: 'passes when an empty args-story snippet stays empty',
+      baseline: '<lit-basic-attributes></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes></lit-basic-attributes>',
+      expected: [],
+    },
+    {
+      name: 'passes on formatting-only differences',
+      baseline: '<lit-basic-attributes label="Save" count="3" is-open></lit-basic-attributes>',
+      candidate:
+        '<lit-basic-attributes  is-open count=\'3\'\n  label="Save"></lit-basic-attributes>',
+      expected: [],
+    },
+    {
+      name: 'fails when an attribute disappears',
+      baseline: '<lit-basic-attributes label="Save" count="3"></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes label="Save"></lit-basic-attributes>',
+      expected: [expect.objectContaining({ arg: 'count', kind: 'lost-representation' })],
+    },
+    {
+      name: 'fails when a bare attribute disappears',
+      baseline: '<lit-basic-attributes is-open></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes></lit-basic-attributes>',
+      expected: [
+        expect.objectContaining({ arg: 'is-open', kind: 'lost-attribute' }),
+        expect.objectContaining({ arg: 'is-open', kind: 'lost-representation' }),
+      ],
+    },
+    {
+      name: 'accepts a bare attribute that gains a value',
+      baseline: '<lit-basic-attributes is-open></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes is-open="true"></lit-basic-attributes>',
+      expected: [],
+    },
+    {
+      name: 'fails when the root element changes',
+      baseline: '<lit-basic-attributes label="Save"></lit-basic-attributes>',
+      candidate: '<other-element label="Save"></other-element>',
+      expected: [expect.objectContaining({ arg: 'snippet', kind: 'changed-root' })],
+    },
+  ])('$name', ({ baseline, candidate, expected }) => {
+    expect(webComponents(baseline, candidate)).toEqual(expected);
+  });
+});

@@ -22,7 +22,7 @@ import * as resolve from 'empathic/resolve';
  *    `"./*"` wildcard never affects) and walk up to the package root.
  *
  * `empathic/resolve` wraps Node's `createRequire().resolve()`, so both passes
- * stay correct under hoisted monorepos and Yarn PnP.
+ * stay correct under hoisted monorepos.
  *
  * @param directory Directory to resolve `dependency` from (Node module resolution).
  * @param dependency Bare package name, e.g. `react` or `@scope/pkg`.

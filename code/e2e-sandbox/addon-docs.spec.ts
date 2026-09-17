@@ -229,8 +229,6 @@ test.describe('addon-docs', () => {
       expectedReactVersionRange = /^17/;
     } else if (templateName.includes('react16')) {
       expectedReactVersionRange = /^16/;
-    } else if (templateName.includes('preact-vite/default')) {
-      expectedReactVersionRange = /^16/;
     } else if (templateName.includes('preact-vite/prerelease')) {
       expectedReactVersionRange = /^18/;
     } else if (

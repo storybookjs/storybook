@@ -329,11 +329,16 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     const storyIdChanged = this.currentSelection?.storyId !== storyId;
     const viewModeChanged = this.currentRender?.type !== entry.type;
 
-    // Show a spinner while we load the next story
-    if (entry.type === 'story') {
-      this.view.showPreparingStory({ immediate: viewModeChanged });
-    } else {
-      this.view.showPreparingDocs({ immediate: viewModeChanged });
+    // Show a spinner while we load the next story, but only when actually changing story or
+    // view mode. On a same-story re-render (e.g. after an HMR update) the previous content
+    // must stay visible until the new render commits: the preparing mode hides every element
+    // on the page, which collapses the document and clamps the scroll position to 0 (#22057).
+    if (storyIdChanged || viewModeChanged) {
+      if (entry.type === 'story') {
+        this.view.showPreparingStory({ immediate: viewModeChanged });
+      } else {
+        this.view.showPreparingDocs({ immediate: viewModeChanged });
+      }
     }
 
     // If the last render is still preparing, let's drop it right now. Either
@@ -417,14 +422,14 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
     // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
     // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
-
-    // Wait for the previous render to leave the page. NOTE: this will wait to ensure anything async
-    // is properly aborted, which (in some cases) can lead to the whole screen being refreshed.
     if (lastRender) {
-      await this.teardownRender(lastRender, { viewModeChanged });
+      await this.teardownRender(lastRender, {
+        viewModeChanged,
+        // On a same-story re-render, the previous DOM stays mounted until the new render
+        // replaces it in place, so the document never collapses and scroll is preserved.
+        keepRenderedDom: !storyIdChanged && !viewModeChanged,
+      });
     }
-
-    // If we are rendering something new (as opposed to re-rendering the same or first story), emit
 
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
     if (lastSelection && (storyIdChanged || viewModeChanged)) {
@@ -487,7 +492,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       invariant(!!render.story);
       this.storyRenders.push(render as StoryRender<TRenderer>);
       (this.currentRender as StoryRender<TRenderer>).renderToElement(
-        this.view.prepareForStory(render.story)
+        this.view.prepareForStory(render.story, {
+          scrollReset: storyIdChanged || viewModeChanged,
+        })
       );
     } else {
       this.currentRender.renderToElement(
@@ -500,10 +507,13 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
 
   async teardownRender(
     render: PossibleRender<TRenderer>,
-    { viewModeChanged = false }: { viewModeChanged?: boolean } = {}
+    {
+      viewModeChanged = false,
+      keepRenderedDom = false,
+    }: { viewModeChanged?: boolean; keepRenderedDom?: boolean } = {}
   ) {
     this.storyRenders = this.storyRenders.filter((r) => r !== render);
-    await render?.teardown?.({ viewModeChanged });
+    await render?.teardown?.({ viewModeChanged, keepRenderedDom });
   }
 
   // UTILITIES

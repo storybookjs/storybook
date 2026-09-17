@@ -1,5 +1,5 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
@@ -89,6 +89,40 @@ const TooltipProvider = ({
     return () => document.removeEventListener('pointerdown', onPointerDown, true);
   }, [isTooltipShown, onOpenChange]);
 
+  // Hide the tooltip the moment its trigger loses its box, such as a row-action button that is
+  // display: none unless its row is hovered. An open tooltip is positioned against the trigger's
+  // rect, and a collapsed rect places it at the viewport origin for the rest of the close delay.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = triggerRef.current;
+    if (!isTooltipShown || !el) {
+      return;
+    }
+    const closeWhenBoxless = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        onOpenChange(false);
+      }
+    };
+    closeWhenBoxless();
+    const resizeObserver = new ResizeObserver(closeWhenBoxless);
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+  }, [isTooltipShown, onOpenChange]);
+
+  const childRef =
+    parseInt(React.version, 10) < 19
+      ? (child as unknown as { ref?: React.Ref<HTMLElement> }).ref
+      : (child.props as { ref?: React.Ref<HTMLElement> }).ref;
+  const setTriggerRef = (node: HTMLElement | null) => {
+    triggerRef.current = node;
+    if (typeof childRef === 'function') {
+      childRef(node);
+    } else if (childRef && typeof childRef === 'object') {
+      (childRef as React.MutableRefObject<HTMLElement | null>).current = node;
+    }
+  };
+
   return (
     <TooltipTrigger
       delay={delayShow}
@@ -100,7 +134,9 @@ const TooltipProvider = ({
     >
       {/* We don't let react-aria set an aria-describedby attribute because it clashes with our intention to explicitly set an aria-label that can be different from the tooltip copy. Some screenreaders would announce the label AND description if we also allowed aria-describedby, which would decrease usability. */}
       {/* @ts-expect-error: We have to nullify aria-describedby and this is the only way we can do it (undefined won't work and an empty string will result in DOM pollution). */}
-      <Focusable>{React.cloneElement(child, { 'aria-describedby': null })}</Focusable>
+      <Focusable>
+        {React.cloneElement(child, { 'aria-describedby': null, ref: setTriggerRef })}
+      </Focusable>
       <TooltipUpstream
         data-testid="tooltip"
         placement={placement}

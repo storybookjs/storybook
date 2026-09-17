@@ -1,0 +1,17 @@
+diff --git a/dist/index.js b/dist/index.js
+index 6f8eaacd3c1c9251ed0744019905fd7273028f77..17ad8d3e882252f702fa7f1764369e7710dd8dd6 100644
+--- a/dist/index.js
++++ b/dist/index.js
+@@ -62,8 +62,11 @@ function getProcessInfo2(pid) {
+       `wmic process where (ProcessId=${pid}) get ProcessId,ParentProcessId,CommandLine /format:csv`,
+       {
+         encoding: "utf8",
+-        timeout: 1e4
++        timeout: 1e4,
+         // 10 second timeout (wmic can be slower)
++        // wmic prints "No Instance(s) Available." to stderr for exited/system
++        // ancestors; silence it so CLI commands don't inherit the noise.
++        stdio: ["ignore", "pipe", "ignore"]
+       }
+     );
+     if (!output) {

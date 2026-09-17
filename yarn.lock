@@ -9719,7 +9719,7 @@ __metadata:
     memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
-    process-ancestry: "npm:^0.0.2"
+    process-ancestry: "patch:process-ancestry@npm%3A0.0.2#~/.yarn/patches/process-ancestry-npm-0.0.2-a5c4b74866.patch"
     semver: "npm:^7.7.3"
     slash: "npm:^5.0.0"
     storybook: "workspace:*"
@@ -17602,7 +17602,7 @@ __metadata:
     commander: "npm:^14.0.2"
     empathic: "npm:^2.0.0"
     picocolors: "npm:^1.1.0"
-    process-ancestry: "npm:^0.0.2"
+    process-ancestry: "patch:process-ancestry@npm%3A0.0.2#~/.yarn/patches/process-ancestry-npm-0.0.2-a5c4b74866.patch"
     react: "npm:^18.2.0"
     semver: "npm:^7.7.3"
     storybook: "workspace:*"
@@ -29394,10 +29394,17 @@ __metadata:
   languageName: node
   linkType: hard
 
-"process-ancestry@npm:^0.0.2":
+"process-ancestry@npm:0.0.2":
   version: 0.0.2
   resolution: "process-ancestry@npm:0.0.2"
   checksum: 10c0/bca0290b7d3bd35da3a30bb958b2b0f2724f468b80d1b41e58d9a6a49fc42ff466faf49c2d085e94b7b660fee654be26e047b43f6b6065613ca123432bd409a9
+  languageName: node
+  linkType: hard
+
+"process-ancestry@patch:process-ancestry@npm%3A0.0.2#~/.yarn/patches/process-ancestry-npm-0.0.2-a5c4b74866.patch":
+  version: 0.0.2
+  resolution: "process-ancestry@patch:process-ancestry@npm%3A0.0.2#~/.yarn/patches/process-ancestry-npm-0.0.2-a5c4b74866.patch::version=0.0.2&hash=f76811"
+  checksum: 10c0/b40b18f20bfdbef9d1fc14f4ab20ccc8cbc64351c6c6d0b3b965d0b60ae43750f24910ebe7d5021e555e77a8831dc2a532048df3f2ff2b8171f2bd9d904136c4
   languageName: node
   linkType: hard
 
@@ -33022,7 +33029,7 @@ __metadata:
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"
     pretty-hrtime: "npm:^1.0.3"
-    process-ancestry: "npm:^0.0.2"
+    process-ancestry: "patch:process-ancestry@npm%3A0.0.2#~/.yarn/patches/process-ancestry-npm-0.0.2-a5c4b74866.patch"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
     react-aria: "npm:^3.52.1"

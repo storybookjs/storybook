@@ -1,6 +1,8 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 
+import { flushSync } from 'react-dom';
+
 import { deprecate } from 'storybook/internal/client-logger';
 
 import { Focusable } from 'react-aria-components/Focusable';
@@ -108,8 +110,11 @@ const TooltipProvider = ({
   }, [disabled, isTooltipShown, onOpenChange]);
 
   // Hide the tooltip the moment its trigger loses its box, such as a row-action button that is
-  // display: none unless its row is hovered. An open tooltip is positioned against the trigger's
-  // rect, and a collapsed rect places it at the viewport origin for the rest of the close delay.
+  // display: none unless its row is hovered. react-aria also observes the trigger and repositions
+  // the open tooltip against the collapsed rect by writing the overlay's style directly in the
+  // same ResizeObserver tick, which paints the tooltip at the viewport origin with its stale
+  // content. The close must therefore commit synchronously in that same tick — an async state
+  // update lands after the repaint and lets that frame show.
   const triggerRef = useRef<HTMLElement | null>(null);
   useEffect(() => {
     const el = triggerRef.current;
@@ -119,7 +124,7 @@ const TooltipProvider = ({
     const closeWhenBoxless = () => {
       const rect = el.getBoundingClientRect();
       if (rect.width === 0 && rect.height === 0) {
-        onOpenChange(false);
+        flushSync(() => onOpenChange(false));
       }
     };
     closeWhenBoxless();

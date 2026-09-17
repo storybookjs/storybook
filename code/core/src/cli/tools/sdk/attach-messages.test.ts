@@ -9,6 +9,7 @@ import {
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
+  formatProtocolMismatch,
   formatUnknownInstallation,
 } from './attach-messages.ts';
 
@@ -35,6 +36,8 @@ const sibling: StorybookInstanceRecord = {
   url: 'http://localhost:6007',
   port: 6007,
 };
+
+const SAME_INSTALLATION = '/work/my app/node_modules/storybook';
 
 const mismatch = {
   callerPath: '/work/my app/node_modules/storybook',
@@ -111,6 +114,55 @@ describe('attach failure messages', () => {
       - running instance: \`/home/user/.npm/_npx/a1b2c3/node_modules/storybook\` (version 10.7.0; config dir \`/work/my app/.storybook\`)
       - this CLI: \`/work/my app/node_modules/storybook\` (version 10.5.2)
       They must be the same installation. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
+    `);
+  });
+
+  it('asks to restart the running instance when it is the older side of a protocol mismatch', () => {
+    expect(
+      formatProtocolMismatch({
+        instancePath: SAME_INSTALLATION,
+        instanceVersion: '10.5.1',
+        instanceProtocol: 1,
+        callerVersion: '10.5.2',
+        callerProtocol: 2,
+      })
+    ).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI run different builds of \`/work/my app/node_modules/storybook\` and cannot exchange service messages:
+      - running instance: version 10.5.1, service protocol 1
+      - this CLI: version 10.5.2, service protocol 2
+      The running instance is the older side. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
+    `);
+  });
+
+  it('asks to restart the CLI when it is the older side of a protocol mismatch', () => {
+    expect(
+      formatProtocolMismatch({
+        instancePath: SAME_INSTALLATION,
+        instanceVersion: '10.5.2',
+        instanceProtocol: 2,
+        callerVersion: '10.5.1',
+        callerProtocol: 1,
+      })
+    ).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI run different builds of \`/work/my app/node_modules/storybook\` and cannot exchange service messages:
+      - running instance: version 10.5.2, service protocol 2
+      - this CLI: version 10.5.1, service protocol 1
+      This CLI is the older side: it was loaded before the running instance was started from the updated package. Start this command (or the tools host that created it) again and retry."
+    `);
+  });
+
+  it('treats a record that predates the protocol field as the older side without guessing its protocol', () => {
+    expect(
+      formatProtocolMismatch({
+        instancePath: SAME_INSTALLATION,
+        callerVersion: '10.5.2',
+        callerProtocol: 1,
+      })
+    ).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI run different builds of \`/work/my app/node_modules/storybook\` and cannot exchange service messages:
+      - running instance: version unknown, service protocol not reported (started before this CLI's build)
+      - this CLI: version 10.5.2, service protocol 1
+      The running instance is the older side. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
     `);
   });
 

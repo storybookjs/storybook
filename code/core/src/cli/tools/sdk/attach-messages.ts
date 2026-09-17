@@ -64,6 +64,36 @@ export function formatInstallationMismatch({
   ].join('\n');
 }
 
+// Same installation path, different build: one side kept running while the package was updated
+// or rebuilt. Every envelope would fail the other side's schema in silence, so the advice names
+// which side is older. A record without the field comes from a server that predates it, so that
+// server is the older side; whether its envelopes still match is unknown and attach never guesses.
+export function formatProtocolMismatch({
+  instancePath,
+  instanceVersion,
+  instanceProtocol,
+  callerVersion,
+  callerProtocol,
+}: {
+  instancePath: string;
+  instanceVersion?: string;
+  instanceProtocol?: number;
+  callerVersion: string;
+  callerProtocol: number;
+}): string {
+  const instanceIsOlder = instanceProtocol === undefined || instanceProtocol < callerProtocol;
+  return [
+    `The running Storybook and this CLI run different builds of \`${instancePath}\` and cannot exchange service messages:`,
+    `- running instance: version ${instanceVersion ?? 'unknown'}, service protocol ${
+      instanceProtocol ?? "not reported (started before this CLI's build)"
+    }`,
+    `- this CLI: version ${callerVersion}, service protocol ${callerProtocol}`,
+    instanceIsOlder
+      ? `The running instance is the older side. ${RESTART_GUIDANCE}`
+      : 'This CLI is the older side: it was loaded before the running instance was started from the updated package. Start this command (or the tools host that created it) again and retry.',
+  ].join('\n');
+}
+
 export function formatUnknownInstallation(): string {
   return `Could not verify that the running Storybook and this CLI are the same \`storybook\` installation. ${RESTART_GUIDANCE}`;
 }

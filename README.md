@@ -187,17 +187,27 @@ Storybook is organized as a monorepo. Useful scripts include:
 
 #### `yarn lint`
 
-> boolean check if code conforms to linting rules - uses remark & eslint
+> Checks JavaScript and TypeScript files in `code/` with oxlint
 
-- `yarn lint:js` - will check js
-- `yarn lint:md` - will check markdown + code samples
-- `yarn lint:js --fix` - will automatically fix js
+- `yarn lint` checks the `code/` workspace
+- `yarn --cwd code lint:js --fix` fixes the `code/` workspace
+- `yarn --cwd code lint:js:cmd <file-relative-to-code-folder> --fix` fixes a specific file
+- `yarn --cwd scripts lint` checks the `scripts/` workspace
+
+#### `yarn docs:check`
+
+> Checks MDX documentation links and conventions
+
+- `yarn fmt:check` checks formatting across the repository
+- `yarn fmt:write` fixes formatting across the repository
 
 #### `yarn test`
 
-> boolean check if unit tests all pass - uses jest
+> Runs unit tests with Vitest
 
-- `yarn run test --core --watch` - will run core tests in watch-mode
+- `yarn test:watch` runs unit tests in watch mode
+- `yarn test:watch --project core` runs core unit tests in watch mode
+- `yarn storybook:vitest` runs Storybook tests in watch mode
 
 ### Sponsors
 

@@ -295,6 +295,12 @@ export type Middleware<T extends IncomingMessage = IncomingMessage> = (
   next: (err?: string | Error) => Promise<void> | void
 ) => Promise<void> | void;
 
+/** The router subset every core consumer needs; satisfied by both connect and polka. */
+export interface MiddlewareHost<T extends IncomingMessage = IncomingMessage> {
+  use(path: string, handler: Middleware<T>): unknown;
+  use(handler: Middleware<T>): unknown;
+}
+
 export interface ServerApp<T extends IncomingMessage = IncomingMessage> {
   server: NetServer;
 
@@ -317,7 +323,7 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   start: (args: {
     options: Options;
     startTime: ReturnType<typeof process.hrtime>;
-    router: ServerApp;
+    router: MiddlewareHost;
     server: HttpServer;
     channel: ChannelLike;
   }) => Promise<void | {

@@ -18,7 +18,7 @@ export const viteInjectMockerRuntime = (options: {
     name: 'vite:storybook-inject-mocker-runtime',
     enforce: 'pre',
     buildStart() {
-      if (viteConfig.command === 'build') {
+      if (viteConfig?.command === 'build') {
         this.emitFile({
           type: 'chunk',
           id: mockerRuntimePath,
@@ -54,11 +54,11 @@ export const viteInjectMockerRuntime = (options: {
       const headTag = html.match(/<head[^>]*>/);
 
       if (headTag) {
-        // Use a relative path for production builds so the script loads
-        // correctly when artifacts are hosted at non-root paths (e.g.,
-        // GitHub Pages subdirectories).  In dev mode, the absolute path
-        // is required so Vite's dev server can match it in resolveId.
-        const src = viteConfig.command === 'build' ? `.${ENTRY_PATH}` : ENTRY_PATH;
+        // build output must load when hosted under a sub-path, so the entry is relative there
+        const src =
+          viteConfig?.command === 'build'
+            ? `.${ENTRY_PATH}`
+            : `${viteConfig?.base ?? '/'}${ENTRY_PATH.slice(1)}`;
         const entryCode = `<script type="module" src="${src}"></script>`;
         const headTagIndex = html.indexOf(headTag[0]);
         const newHtml =

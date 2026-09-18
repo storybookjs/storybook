@@ -1,6 +1,6 @@
 import { existsSync, statSync } from 'node:fs';
 import { readFile, stat } from 'node:fs/promises';
-import { basename, dirname, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
+import { basename, isAbsolute, join, posix, resolve, sep, win32 } from 'node:path';
 
 import {
   getDirectoryFromWorkingDir,
@@ -8,11 +8,10 @@ import {
   resolvePathInStorybookCache,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger, once } from 'storybook/internal/node-logger';
-import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
+import type { MiddlewareHost, Options, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { relative } from 'pathe';
 import picocolors from 'picocolors';
-import type { Polka } from 'polka';
 import sirv from 'sirv';
 import { dedent } from 'ts-dedent';
 
@@ -37,7 +36,7 @@ const faviconWrapperPath = join(
   '/assets/browser/favicon-wrapper.svg'
 );
 
-export const prepareNestedSvg = (svg: string) => {
+export const prepareNestedSvg = (svg: string): string => {
   const [, openingTag, contents, closingTag] = svg?.match(/(<svg[^>]*>)(.*?)(<\/svg>)/s) ?? [];
   if (!openingTag || !contents || !closingTag) {
     return svg;
@@ -71,7 +70,7 @@ export const prepareNestedSvg = (svg: string) => {
   return modifiedTag + contents + closingTag;
 };
 
-export async function useStatics(app: Polka, options: Options): Promise<void> {
+export async function useStatics(app: MiddlewareHost, options: Options): Promise<void> {
   const staticDirs = (await options.presets.apply('staticDirs')) ?? [];
   const faviconPath = await options.presets.apply<string>('favicon');
 
@@ -80,7 +79,7 @@ export async function useStatics(app: Polka, options: Options): Promise<void> {
   const faviconDir = resolve(faviconPath, '..');
   const faviconFile = basename(faviconPath);
   app.use(`/${faviconFile}`, async (req, res, next) => {
-    const status = req.query.status;
+    const status = new URL(req.url ?? '/', 'http://localhost').searchParams.get('status');
     if (
       status &&
       faviconFile.endsWith('.svg') &&

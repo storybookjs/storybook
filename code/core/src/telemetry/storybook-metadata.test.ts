@@ -3,7 +3,12 @@ import path from 'node:path';
 import type { MockInstance } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStorybookInfo, isCI } from 'storybook/internal/common';
+import {
+  getInterpretedFile,
+  getStorybookInfo,
+  isCI,
+  loadMainConfig,
+} from 'storybook/internal/common';
 import {
   type PackageJson,
   type StorybookConfig,
@@ -15,12 +20,12 @@ import {
 import { detect } from 'package-manager-detector';
 
 import { type Settings, globalSettings } from '../cli/globalSettings.ts';
-import { detectAgent } from './detect-agent.ts';
+import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getApplicationFileCount } from '../telemetry/get-application-file-count.ts';
 import { analyzeEcosystemPackages } from '../telemetry/get-known-packages.ts';
-import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from '../telemetry/get-package-manager-info.ts';
 import { getPortableStoriesFileCount } from '../telemetry/get-portable-stories-usage.ts';
+import { detectAgent } from './detect-agent.ts';
 import {
   getActualPackageJson,
   getActualPackageVersion,
@@ -29,8 +34,10 @@ import {
 import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
 import {
   computeStorybookMetadata,
+  getStorybookMetadata,
   metaFrameworks,
   sanitizeAddonName,
+  setTelemetryVitePlugin,
 } from './storybook-metadata.ts';
 
 vi.mock(import('../cli/globalSettings.ts'), { spy: true });
@@ -891,6 +898,26 @@ describe('storybook-metadata', () => {
           },
         }
       `);
+    });
+  });
+
+  describe('setTelemetryVitePlugin', () => {
+    beforeEach(() => {
+      vi.mocked(loadMainConfig).mockResolvedValue(mainJsMock);
+      vi.mocked(getInterpretedFile).mockReturnValue(undefined);
+    });
+
+    afterEach(() => {
+      setTelemetryVitePlugin(false);
+    });
+
+    it('marks metadata with vitePlugin: true, including previously cached metadata', async () => {
+      expect((await getStorybookMetadata('.storybook')).vitePlugin).toBeUndefined();
+
+      setTelemetryVitePlugin();
+
+      // The second call is served from the metadata cache; the flag must still apply.
+      expect((await getStorybookMetadata('.storybook')).vitePlugin).toBe(true);
     });
   });
 });

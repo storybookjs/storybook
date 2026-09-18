@@ -37,14 +37,13 @@
     "task": "yarn --cwd ../scripts task"
   },
   "browserslist": [
-    "chrome >= 131",
-    "android >= 131",
-    "and_chr >= 131",
-    "edge >= 134",
-    "firefox >= 136",
-    "safari >= 18.3",
-    "ios_saf >= 18.3",
-    "opera >= 117",
+    "chrome >= 147",
+    "android >= 147",
+    "and_chr >= 147",
+    "edge >= 150",
+    "firefox >= 152",
+    "safari >= 26.5",
+    "ios_saf >= 26.5",
     "node >= 20"
   ],
   "dependencies": {

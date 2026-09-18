@@ -7,6 +7,7 @@ import AnsiToHtml from 'ansi-to-html';
 import { parse } from 'picoquery';
 import { dedent } from 'ts-dedent';
 
+import { isReduceMotionEnabled } from '../../../shared/utils/is-reduced-motion-enabled.ts';
 import type { View } from './View.ts';
 
 const { document } = global;
@@ -117,7 +118,7 @@ export class WebView implements View<HTMLElement> {
     // getElementById instead of querySelector: anchor ids (e.g. story ids) may contain
     // characters that are invalid in CSS selectors.
     const element = document.getElementById(decodeURIComponent(hash.substring(1)));
-    element?.scrollIntoView({ behavior: 'smooth' });
+    element?.scrollIntoView({ behavior: isReduceMotionEnabled() ? 'instant' : 'smooth' });
   }
 
   applyLayout(layout: Layout = 'padded') {

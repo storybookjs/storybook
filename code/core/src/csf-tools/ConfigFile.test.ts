@@ -35,6 +35,22 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  it('infers quotes from the source recast feeds the parser, not the raw code', () => {
+    // Recast rebuilds the string it hands the parser, joining lines with
+    // `os.EOL` (CRLF on Windows), so token offsets align with that
+    // reconstruction rather than the original code, whose line endings are
+    // whatever the checkout had (LF, via git's `* -text`). Parsing a CRLF
+    // source on Linux reproduces the same misalignment in reverse, making this
+    // a cross-platform regression test for quote inference.
+    const source = "export default {\n  addons: ['@storybook/addon-essentials'],\n};\n".replace(
+      /\n/g,
+      '\r\n'
+    );
+    const config = loadConfig(source).parse();
+    config.set(['addons'], ['@storybook/addon-essentials', '@storybook/addon-links']);
+    expect(printConfig(config).code).toContain("addons: ['@storybook/addon-essentials'");
+  });
+
   it.each([
     `export default { parameters: { viewport: { disable: true } } };`,
     `export default definePreview({ parameters: { viewport: { disable: true } } });`,

@@ -254,6 +254,12 @@ If you're using Svelte CSF, the `name` property is usually fairly descriptive an
 
 Your story will now be shown in the sidebar with the given text.
 
+<Callout variant="info">
+
+The `name` value is read statically as part of the build process, so it must be a plain string literal. A variable, a template literal, a cast such as `name: 'I am the primary' as const`, or an assignment made after the export such as `Primary.name = 'I am the primary'` cannot be read statically, and the sidebar keeps the name derived from the export.
+
+</Callout>
+
 </If>
 
 {/* Maintaining a prior heading */}

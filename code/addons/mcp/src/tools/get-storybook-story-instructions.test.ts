@@ -1,15 +1,15 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
+import { McpServer } from 'tmcp';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { AddonContext } from '../types.ts';
 import {
   addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
 } from './get-storybook-story-instructions.ts';
-import type { AddonContext } from '../types.ts';
 import {
-  PREVIEW_STORIES_TOOL_NAME,
   GET_CHANGED_STORIES_TOOL_NAME,
   GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
+  PREVIEW_STORIES_TOOL_NAME,
 } from './tool-names.ts';
 
 // Review/addon-vitest availability now resolve through core's `getReviewStatus`/
@@ -198,9 +198,8 @@ describe('getUIBuildingInstructionsTool', () => {
     // Check that no placeholders remain
     expect(instructions).not.toContain('{{FRAMEWORK}}');
     expect(instructions).not.toContain('{{RENDERER}}');
-    expect(instructions).not.toContain('{{PREVIEW_STORIES_TOOL_NAME}}');
+    expect(instructions).not.toContain('{{PREVIEW_LINK_GUIDANCE}}');
     expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
-    expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
     expect(instructions).not.toContain('{{FINAL_LINKS_GUIDANCE}}');
     expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
   });
@@ -300,7 +299,7 @@ describe('getUIBuildingInstructionsTool', () => {
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
     expect(instructions).toContain('Feed the discovered IDs into **review-create**');
-    expect(instructions).not.toContain('first, then use `stories-preview`');
+    expect(instructions).not.toContain(PREVIEW_STORIES_TOOL_NAME);
   });
 
   // The per-request context override must win over the feature-flag gate:
@@ -340,6 +339,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     expect(instructions).toContain('## 👀 Review your changes');
     expect(instructions).toContain('Feed the discovered IDs into **review-create**');
+    expect(instructions).not.toContain(PREVIEW_STORIES_TOOL_NAME);
   });
 
   it('tells the agent to include preview URLs when review is disabled', async () => {
@@ -376,6 +376,7 @@ describe('getUIBuildingInstructionsTool', () => {
     const instructions = response.result?.content[0].text as string;
 
     expect(instructions).toContain('include every returned preview URL');
+    expect(instructions).toContain(PREVIEW_STORIES_TOOL_NAME);
     expect(instructions).not.toContain('## 👀 Review your changes');
     expect(instructions).not.toContain('present links in this order');
   });

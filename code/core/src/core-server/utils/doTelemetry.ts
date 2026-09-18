@@ -1,7 +1,6 @@
 import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
 import type { CoreConfig, Options } from 'storybook/internal/types';
 
-import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
 import type { StoryIndexGenerator } from './StoryIndexGenerator.ts';
@@ -9,11 +8,10 @@ import { summarizeIndex } from './summarizeIndex.ts';
 import { versionStatus } from './versionStatus.ts';
 
 export async function doTelemetry(
-  app: Polka,
   core: CoreConfig,
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>,
   options: Options
-) {
+): Promise<void> {
   const { versionCheck, versionUpdates } = options;
   invariant(
     !versionUpdates || (versionUpdates && versionCheck),

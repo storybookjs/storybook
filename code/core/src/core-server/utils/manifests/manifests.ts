@@ -2,10 +2,9 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import { selectComponentEntriesByComponentId } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { Manifests, Presets } from 'storybook/internal/types';
+import type { Manifests, Middleware, MiddlewareHost, Presets } from 'storybook/internal/types';
 
 import { join } from 'pathe';
-import type { Polka } from 'polka';
 import invariant from 'tiny-invariant';
 
 import { getService } from '../../../shared/open-service/server.ts';
@@ -377,48 +376,54 @@ export async function writeManifests(outputDir: string, presets: Presets) {
  * When `experimentalDocgenServer` is enabled, `components.json` is not served (404) and
  * `components.html` is rendered from the docgen service instead of the inline manifest.
  */
-export function registerManifests({ app, presets }: { app: Polka; presets: Presets }) {
+export function registerManifests({
+  app,
+  presets,
+}: {
+  app: MiddlewareHost;
+  presets: Presets;
+}): void {
   let useDocgenServerPromise: Promise<boolean> | undefined;
 
-  const isDocgenServerEnabled = () => {
+  const isDocgenServerEnabled = (): Promise<boolean> => {
     useDocgenServerPromise ??= presets
       .apply('features')
       .then((features) => isDocgenServerManifestMode(features ?? {}));
     return useDocgenServerPromise;
   };
 
-  app.get('/manifests/:name.json', async (req, res) => {
+  const renderManifestJson = async (
+    name: string,
+    res: Parameters<Middleware>[1]
+  ): Promise<void> => {
     try {
-      if (
-        (await isDocgenServerEnabled()) &&
-        (req.params.name === 'components' || req.params.name === 'docs')
-      ) {
+      if ((await isDocgenServerEnabled()) && (name === 'components' || name === 'docs')) {
         res.statusCode = 404;
         res.end(
-          `Manifest "${req.params.name}" is not available in dev when experimentalDocgenServer is enabled`
+          `Manifest "${name}" is not available in dev when experimentalDocgenServer is enabled`
         );
         return;
       }
 
       const manifestEntries = await getManifestEntries(presets);
       const manifests = await getManifests(presets, manifestEntries, { watch: true });
-      const manifest = manifests[req.params.name];
+      const manifest = manifests[name];
 
       if (manifest) {
         res.setHeader('Content-Type', 'application/json');
         res.end(JSON.stringify(manifest));
       } else {
         res.statusCode = 404;
-        res.end(`Manifest "${req.params.name}" not found`);
+        res.end(`Manifest "${name}" not found`);
       }
     } catch (e) {
       logger.error(e instanceof Error ? e : String(e));
       res.statusCode = 500;
       res.end(e instanceof Error ? e.toString() : String(e));
     }
-  });
+  };
 
-  app.get('/manifests/components.html', async (req, res) => {
+  const renderComponentsHtml = async (res: Parameters<Middleware>[1]): Promise<void> => {
     try {
       const manifestEntries = await getManifestEntries(presets);
       const manifests = await getManifests(presets, manifestEntries, { watch: true });
@@ -452,5 +457,23 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
       res.setHeader('Content-Type', 'text/html; charset=utf-8');
       res.end(`<pre>${e instanceof Error ? e.stack : String(e)}</pre>`);
     }
+  };
+
+  app.use('/manifests', async (req, res, next) => {
+    if (req.method !== 'GET' && req.method !== 'HEAD') {
+      return next();
+    }
+
+    const { pathname } = new URL(req.url ?? '/', 'http://localhost');
+    if (pathname === '/components.html') {
+      return renderComponentsHtml(res);
+    }
+
+    const manifestMatch = /^\/([^/]+)\.json$/.exec(pathname);
+    if (manifestMatch) {
+      return renderManifestJson(manifestMatch[1], res);
+    }
+
+    return next();
   });
 }

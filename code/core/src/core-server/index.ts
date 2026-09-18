@@ -127,6 +127,7 @@ export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from 
 export { getWsToken } from './presets/wsToken.ts';
 export { registerIndexJsonRoute } from './utils/index-json.ts';
 export { doTelemetry } from './utils/doTelemetry.ts';
+export { registerManifests } from './utils/manifests/manifests.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

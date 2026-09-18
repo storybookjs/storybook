@@ -1,0 +1,52 @@
+{
+  "content": {
+    "defaultValue": undefined,
+    "description": "Body text rendered inside the card.",
+    "name": "content",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "density": {
+    "defaultValue": undefined,
+    "description": "@default: "comfortable"<br><br>Visual density of the card.",
+    "name": "density",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": ""comfortable" | "compact"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "comfortable",
+        "compact",
+      ],
+    },
+  },
+  "header": {
+    "description": "",
+    "name": "header",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+}

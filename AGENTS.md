@@ -2,7 +2,7 @@
 
 Keep this file, `AGENTS.md`, up to date when Storybook's architecture, tooling, workflows, or contributor guidance changes.
 
-This file is the canonical instruction source for coding agents. Files like `CLAUDE.md` should point here instead of duplicating instructions.
+This file is the canonical instruction source for coding agents.
 
 ## Repository Overview
 
@@ -191,8 +191,6 @@ Before writing or editing any code file, read [`.agents/guidelines/comments-and-
 - Each linked document is canonical for its topic. Update that document, not
   this file, when its topic changes. If a topic disappears, remove the
   document and its pointer together.
-- Keep `CLAUDE.md` and other agent entrypoints as thin references to
-  `AGENTS.md`.
 - `.github/workflows/claude.yml` `--disallowed-tools` mirrors the Commands To
   Avoid section; update both together.
 - Do not reintroduce duplicated instruction files when a reference will do.

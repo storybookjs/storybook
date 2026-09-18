@@ -45,6 +45,13 @@ export const StorybookInstanceRecordSchema = v.object({
    * Storybooks lack it, which makes attach refuse.
    */
   storybookPath: v.optional(v.string()),
+  /**
+   * Wire-format version of the `services:*` envelopes the running server speaks. Attach refuses
+   * when it differs from this CLI's own `SERVICE_PROTOCOL_VERSION`. Optional: records written by
+   * Storybooks older than the field lack it; attach refuses those too rather than guess whether
+   * their envelopes still match.
+   */
+  servicesProtocolVersion: v.optional(v.number()),
   startedAt: v.optional(v.string()),
   updatedAt: v.optional(v.string()),
   mcp: v.object({

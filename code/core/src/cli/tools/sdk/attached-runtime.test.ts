@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NodeChannelConnection } from './node-channel.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
+import { SERVICE_PROTOCOL_VERSION } from '../../../shared/open-service/service-channel.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
 
@@ -25,6 +26,7 @@ const RECORD: StorybookInstanceRecord = {
   token: 'secret',
   storybookVersion: '10.2.0',
   storybookPath: STORYBOOK_PATH,
+  servicesProtocolVersion: SERVICE_PROTOCOL_VERSION,
   mcp: { status: 'ready' },
 };
 
@@ -362,6 +364,81 @@ describe('bootstrapAttachedRuntime', () => {
 
     await expect(failure).rejects.toThrow(EnvironmentMismatchError);
     await expect(failure).rejects.toThrow('Could not verify');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses the same installation when the running server is the older side, asking to restart it', async () => {
+    const stale: StorybookInstanceRecord = {
+      ...RECORD,
+      storybookVersion: '10.1.0',
+      servicesProtocolVersion: SERVICE_PROTOCOL_VERSION - 1,
+    };
+    const { deps } = makeRuntimeDeps([stale], { version: '10.2.0' });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('different builds');
+    await expect(failure).rejects.toThrow(STORYBOOK_PATH);
+    await expect(failure).rejects.toThrow('version 10.1.0');
+    await expect(failure).rejects.toThrow('version 10.2.0');
+    await expect(failure).rejects.toThrow('running instance is the older side');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+    expect(deps.setDelegatedMode).not.toHaveBeenCalled();
+  });
+
+  it('refuses the same installation when this CLI is the older side, asking to restart the CLI', async () => {
+    const newer: StorybookInstanceRecord = {
+      ...RECORD,
+      storybookVersion: '10.3.0',
+      servicesProtocolVersion: SERVICE_PROTOCOL_VERSION + 1,
+    };
+    const { deps } = makeRuntimeDeps([newer], { version: '10.2.0' });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('This CLI is the older side');
+    await expect(failure).rejects.not.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses a record that predates the service protocol field, even when auto-spawn is on', async () => {
+    const { deps } = makeRuntimeDeps([{ ...RECORD, servicesProtocolVersion: undefined }]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('not reported');
+    await expect(failure).rejects.toThrow('running instance is the older side');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses on protocol inside a child host too, which shares the installation it was spawned from', async () => {
+    const { deps } = makeRuntimeDeps([{ ...RECORD, servicesProtocolVersion: undefined }], {
+      isChildHost: true,
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('different builds');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('spawns from a different installation before looking at the protocol', async () => {
+    const foreign: StorybookInstanceRecord = {
+      ...RECORD,
+      storybookPath: FOREIGN_STORYBOOK_PATH,
+      servicesProtocolVersion: undefined,
+    };
+    const { deps } = makeRuntimeDeps([foreign]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    expect(result.kind).toBe('spawn');
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 

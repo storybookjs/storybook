@@ -7,6 +7,7 @@ import {
   createNodeChannel as connectNodeChannel,
   type NodeChannelConnection,
 } from './node-channel.ts';
+import { SERVICE_PROTOCOL_VERSION } from '../../../shared/open-service/service-channel.ts';
 import { setDelegatedMode } from '../../../shared/open-service/service-registry.ts';
 import type { ToolsetGetService } from '../../../shared/open-service/toolset-definition.ts';
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
@@ -21,6 +22,7 @@ import {
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
+  formatProtocolMismatch,
   formatUnknownInstallation,
 } from './attach-messages.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
@@ -127,6 +129,23 @@ export async function bootstrapAttachedRuntime(
               configDir: record.configDir,
             })
           : formatUnknownInstallation(),
+    });
+  }
+
+  // Same installation, but is it the same build? A side that kept running while the package was
+  // updated or rebuilt underneath it speaks the envelopes of the build that loaded it; the other
+  // side's envelopes fail its schemas and are dropped in silence. The record carries the server's
+  // protocol version; a record without it predates the field, and whether that server's envelopes
+  // still match is unknown, so attach refuses rather than guess (one restart after the upgrade).
+  if (record.servicesProtocolVersion !== SERVICE_PROTOCOL_VERSION) {
+    throw new EnvironmentMismatchError({
+      reason: formatProtocolMismatch({
+        instancePath: installation.callerPath,
+        instanceVersion: record.storybookVersion,
+        instanceProtocol: record.servicesProtocolVersion,
+        callerVersion,
+        callerProtocol: SERVICE_PROTOCOL_VERSION,
+      }),
     });
   }
 

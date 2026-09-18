@@ -78,6 +78,16 @@ paired record's port pinned so the child re-resolves to that exact instance. The
 server's installation, so it attaches as the twin the caller is not; the parent proxies
 `describe` / `call` / `close`. Two processes never attach across installations.
 
+The same installation path does not imply the same build: a side that kept running while its
+`storybook` package was updated or rebuilt speaks the `services:*` envelopes of the build that
+loaded it, and the other side's envelopes fail its schemas and are dropped in silence — no
+sync-start reply, no command ack, only a timeout on the requester. The dev server therefore also
+records `servicesProtocolVersion` (`SERVICE_PROTOCOL_VERSION` in `service-channel.ts`, bumped
+whenever an envelope changes shape; a test pins the envelope shapes to it) and attach refuses a
+record whose value differs from the caller's own, naming both builds and which side is the older
+one to restart. A record without the field comes from a server that predates it; whether its
+envelopes still match is unknown, so it is refused the same way — one restart after upgrading.
+
 The gate refuses — `EnvironmentMismatchError { reason }` — when it cannot verify or may not
 respawn: a record without `storybookPath` (older server) or a recorded root gone from disk (wiped
 `node_modules`) gets restart guidance; a mismatch under `autoSpawn: false`, or seen by a process

@@ -22,7 +22,10 @@ describe('preview', () => {
   beforeAll(() => {
     mockAddons.getChannel.mockReturnValue(channel as any);
   });
-  beforeEach(channel.emit.mockReset);
+  beforeEach(() => {
+    channel.emit.mockReset();
+    window.history.replaceState({}, '', 'http://localhost/iframe.html');
+  });
   describe('linkTo()', () => {
     it('should select the title and name provided', () => {
       const handler = linkTo('title', 'name');
@@ -85,12 +88,38 @@ describe('preview', () => {
       const href = await hrefTo('title', 'name');
       expect(href).toContain('?path=/story/title--name');
     });
+
+    it('should fall back to query.path when title is omitted', async () => {
+      window.history.replaceState(
+        {},
+        '',
+        'http://localhost/iframe.html?path=/story/current-title--current'
+      );
+
+      // @ts-expect-error (not strict)
+      const href = await hrefTo(undefined, 'next-name');
+
+      expect(href).toContain('?path=/story/current-title--next-name');
+    });
   });
 
   describe('hrefToSync()', () => {
     it('should return story href synchronously', () => {
       const href = hrefToSync('title', 'name');
       expect(href).toContain('?path=/story/title--name');
+    });
+
+    it('should fall back to query.path when title is omitted', () => {
+      window.history.replaceState(
+        {},
+        '',
+        'http://localhost/iframe.html?path=/story/current-title--current'
+      );
+
+      // @ts-expect-error (not strict)
+      const href = hrefToSync(undefined, 'next-name');
+
+      expect(href).toContain('?path=/story/current-title--next-name');
     });
   });
 });

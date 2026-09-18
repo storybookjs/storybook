@@ -298,7 +298,7 @@ export const AboutFocusTrapped: Story = {
     await waitFor(() => expect(backButton).toHaveFocus());
 
     await userEvent.tab();
-    await expect(screen.getByRole('link', { name: 'Github' })).toHaveFocus();
+    await expect(screen.getByRole('link', { name: 'GitHub' })).toHaveFocus();
     await userEvent.tab();
     await expect(screen.getByRole('link', { name: 'Documentation' })).toHaveFocus();
     // The package manager tabs are a single stop with a roving tabindex.

@@ -174,13 +174,13 @@ export const Active: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
-    await expect(button).toHaveTextContent('Showing new and modified stories');
+    await expect(button).toHaveTextContent('Show new and modified stories');
     await expect(button).toHaveAttribute('aria-checked', 'true');
     await expect(canvas.getByRole('button', { name: 'Clear' })).toBeVisible();
   },
 };
 
-/** Only 'status-value:new' is filtered on, which is not the full toggle state. */
+/** Any active change-detection filter means the CTA is already in its toggled-on state. */
 export const PartialFilter: Story = {
   parameters: {
     contextOptions: {
@@ -192,8 +192,9 @@ export const PartialFilter: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     const button = await canvas.findByRole('switch');
-    await expect(button).toHaveAttribute('aria-checked', 'false');
-    await expect(button.textContent).toMatch(/^Show /);
+    await expect(button).toHaveTextContent('Show new and modified stories');
+    await expect(button).toHaveAttribute('aria-checked', 'true');
+    await expect(canvas.getByRole('button', { name: 'Clear' })).toBeVisible();
   },
 };
 

@@ -16,6 +16,14 @@ const StyledButton = styled(Button)(({ size }) => ({
   },
 }));
 
+const StyledToggleButton = styled(ToggleButton)(({ size }) => ({
+  gap: size === 'small' ? 6 : 8,
+
+  '&:focus-visible': {
+    outlineOffset: -2,
+  },
+}));
+
 const ActionListItem = styled.li<{
   active?: boolean;
   transitionStatus?: TransitionStatus;
@@ -138,7 +146,7 @@ const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof Tog
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <ToggleButton {...{ ...props, variant, padding, size, ref }} />;
+    return <StyledToggleButton {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 

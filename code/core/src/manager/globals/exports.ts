@@ -56,6 +56,7 @@ export default {
     'version',
   ],
   'react-dom/client': ['createRoot', 'hydrateRoot'],
+  'react-aria/FocusScope': ['FocusScope', 'useFocusManager'],
   '@storybook/icons': [
     'AccessibilityAltIcon',
     'AccessibilityIcon',
@@ -520,7 +521,6 @@ export default {
     'EmptyTabContent',
     'ErrorFormatter',
     'FlexBar',
-    'FocusScope',
     'Form',
     'H1',
     'H2',

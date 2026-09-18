@@ -6,7 +6,7 @@ import {
   resolveStorybookVersionSpecifier,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, once } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import * as scaffoldModule from '../scaffold-new-project.ts';
@@ -53,6 +53,7 @@ describe('PreflightCheckCommand', () => {
       configurable: true,
     });
     vi.clearAllMocks();
+    once.clear();
     vi.mocked(resolveStorybookVersionSpecifier).mockReturnValue(undefined);
   });
 
@@ -109,6 +110,46 @@ describe('PreflightCheckCommand', () => {
       await command.execute({ force: false, skipInstall: true } as any);
 
       expect(scaffoldModule.scaffoldNewProject).toHaveBeenCalledWith('npm', expect.any(Object));
+
+      // Exactly one Yarn 1 warning total: the npm-fallback notice. The best-effort warning must
+      // not fire on this path because the manager was forced to npm.
+      const warnMessages = vi.mocked(logger.warn).mock.calls.map(([message]) => String(message));
+      const yarn1Warnings = warnMessages.filter((message) => /yarn/i.test(message));
+
+      expect(yarn1Warnings).toHaveLength(1);
+      expect(yarn1Warnings[0]).toContain('Falling back to npm');
+      expect(warnMessages.some((message) => message.includes('best-effort'))).toBe(false);
+    });
+
+    it('warns on a best-effort basis for Yarn 1 and continues init', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.type = PackageManagerName.YARN1;
+
+      const result = await command.execute({ force: false } as any);
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('Yarn Classic (v1) is supported on a best-effort basis')
+      );
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining('https://storybook.js.org/docs/get-started/install')
+      );
+      // Init continues past the preflight instead of blocking.
+      expect(result.packageManager).toBe(mockPackageManager);
+      expect(mockPackageManager.precheckStorybookPackageInstall).toHaveBeenCalled();
+    });
+
+    it.each([
+      PackageManagerName.NPM,
+      PackageManagerName.YARN2,
+      PackageManagerName.PNPM,
+      PackageManagerName.BUN,
+    ])('does not emit the best-effort warning for %s', async (packageManagerType) => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockPackageManager.type = packageManagerType;
+
+      await command.execute({ force: false } as any);
+
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
     });
 
     it('should skip scaffolding when force is true', async () => {

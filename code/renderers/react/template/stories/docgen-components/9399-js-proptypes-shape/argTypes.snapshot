@@ -1,0 +1,35 @@
+{
+  "areas": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "areas",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": "[object]",
+        "summary": "object[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "required": true,
+      "value": {
+        "name": "object",
+        "value": {
+          "names": {
+            "name": "array",
+            "value": {
+              "name": "string",
+            },
+          },
+          "position": {
+            "name": "string",
+          },
+        },
+      },
+    },
+  },
+}

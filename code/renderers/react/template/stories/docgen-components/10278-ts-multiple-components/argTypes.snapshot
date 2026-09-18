@@ -1,0 +1,22 @@
+{
+  "aProperty": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "aProperty",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "any",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "any",
+    },
+  },
+}

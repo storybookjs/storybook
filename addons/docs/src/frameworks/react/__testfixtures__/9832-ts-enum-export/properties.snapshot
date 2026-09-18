@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 9832-ts-enum-export 1`] = `
-Object {
-  "rows": Array [],
-}
-`;

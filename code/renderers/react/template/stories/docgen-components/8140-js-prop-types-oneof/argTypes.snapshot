@@ -1,0 +1,123 @@
+{
+  "blank": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "No background or border if static alert",
+    "name": "blank",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "bool",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "icon": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Allows icon override, accepts material icon name",
+    "name": "icon",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "message": {
+    "control": {
+      "type": "text",
+    },
+    "description": "",
+    "name": "message",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "mode": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "",
+    "name": "mode",
+    "options": [
+      "static",
+      "timed",
+    ],
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'static'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "'static' | 'timed'",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "static",
+        "timed",
+      ],
+    },
+  },
+  "type": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "",
+    "name": "type",
+    "options": [
+      "success",
+      "warning",
+      "error",
+      "primary",
+    ],
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'warning'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "'success' | 'warning' | 'error' | 'primary'",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": false,
+      "value": [
+        "success",
+        "warning",
+        "error",
+        "primary",
+      ],
+    },
+  },
+}

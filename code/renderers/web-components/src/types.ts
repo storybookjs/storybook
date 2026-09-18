@@ -1,0 +1,24 @@
+import type { StoryContext as StoryContextBase, WebRenderer } from 'storybook/internal/types';
+
+import type { SVGTemplateResult, TemplateResult } from 'lit';
+
+export type StoryFnHtmlReturnType =
+  | string
+  | Node
+  | DocumentFragment
+  | TemplateResult
+  | SVGTemplateResult;
+
+export type StoryContext = StoryContextBase<WebComponentsRenderer>;
+
+export interface WebComponentsRenderer extends WebRenderer {
+  component: string;
+  storyResult: StoryFnHtmlReturnType;
+}
+
+export interface ShowErrorArgs {
+  title: string;
+  description: string;
+}
+
+export interface WebComponentsTypes extends WebComponentsRenderer {}

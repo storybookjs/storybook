@@ -1,505 +1,60 @@
 version: 2.1
 
-executors:
-  sb_node_10_classic:
-    parameters:
-      class:
-        description: The Resource class
-        type: enum
-        enum: [ 'small', 'medium', 'large', 'xlarge' ]
-        default: 'medium'
-    working_directory: /tmp/storybook
-    docker:
-      - image: circleci/node:10
-        environment:
-          NODE_OPTIONS: --max_old_space_size=3076
-    resource_class: <<parameters.class>>
-  sb_node_10_browsers:
-    parameters:
-      class:
-        description: The Resource class
-        type: enum
-        enum: ['small', 'medium', 'large', 'xlarge']
-        default: 'medium'
-    working_directory: /tmp/storybook
-    docker:
-      - image: circleci/node:10-browsers
-        environment:
-          NODE_OPTIONS: --max_old_space_size=3076
-    resource_class: <<parameters.class>>
-  sb_node_12_browsers:
-    parameters:
-      class:
-        description: The Resource class
-        type: enum
-        enum: ['small', 'medium', 'large', 'xlarge']
-        default: 'medium'
-    working_directory: /tmp/storybook
-    docker:
-      - image: circleci/node:12-browsers
-        environment:
-          NODE_OPTIONS: --max_old_space_size=3076
-    resource_class: <<parameters.class>>
+# https://circleci.com/docs/guides/orchestrate/dynamic-config/
+setup: true
 
 orbs:
-  git-shallow-clone: guitarrapc/git-shallow-clone@2.0.3
+  git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
+  continuation: circleci/continuation@2.0.1
+  node: circleci/node@7.2.1
 
-commands:
-  ensure-pr-is-labeled-with:
-    description: 'A command looking for the labels set on the PR associated to this workflow and checking it contains the label given as parameter'
-    parameters:
-      label:
-        type: string
-    steps:
-      - run:
-          name: Check if PR is labeled with "<< parameters.label >>"
-          command: |
-            sudo apt-get install jq
-
-            PR_NUMBER=$(echo "$CIRCLE_PULL_REQUEST" | sed "s/.*\/pull\///")
-            echo "PR_NUMBER: $PR_NUMBER"
-
-            API_GITHUB="https://api.github.com/repos/$CIRCLE_PROJECT_USERNAME/$CIRCLE_PROJECT_REPONAME"
-            PR_REQUEST_URL="$API_GITHUB/pulls/$PR_NUMBER"
-            PR_RESPONSE=$(curl -H "Authorization: token $GITHUB_TOKEN_STORYBOOK_BOT_READ_REPO" "$PR_REQUEST_URL")
-
-
-            if [ $(echo $PR_RESPONSE | jq '.labels | map(select(.name == "<< parameters.label >>")) | length') -ge 1 ] ||
-               ( [ $(echo $PR_RESPONSE | jq '.labels | length') -ge 1 ] && [ "<< parameters.label >>" == "*" ])
-            then
-              echo "🚀 The PR is labelled with '<< parameters.label >>', job will continue!"
-            else
-              echo "🏁 The PR isn't labelled with '<< parameters.label >>' so this job will end at the current step."
-              circleci-agent step halt
-            fi
+parameters:
+  ghBaseBranch:
+    default: next
+    description: The name of the base branch (the target of the PR)
+    type: string
+  ghPrNumber:
+    default: ''
+    description: The PR number
+    type: string
+  ghTrustedAuthor:
+    default: 'false'
+    description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
+    type: string
+  workflow:
+    default: skipped
+    description: Which workflow to run
+    enum:
+      - normal
+      - merged
+      - daily
+      - skipped
+      - docs
+    type: enum
 
 jobs:
-  build:
+  generate-and-run-config:
     executor:
-      class: large
-      name: sb_node_10_classic
+      name: node/default
+      resource_class: large
     steps:
+      - node/install:
+          install-yarn: true
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - restore_cache:
-          name: Restore Yarn cache
-          keys:
-            - build-yarn-cache-v4--{{ checksum "yarn.lock" }}
+          clone_options: '--depth 1'
       - run:
           name: Install dependencies
-          command: yarn install --frozen-lockfile --cache-folder ~/.cache/yarn
+          command: yarn workspaces focus @storybook/scripts
       - run:
-          name: Bootstrap
-          command: yarn bootstrap --core
-      - save_cache:
-          name: Save Yarn cache
-          key: build-yarn-cache-v4--{{ checksum "yarn.lock" }}
-          paths:
-            - ~/.cache/yarn
-      - persist_to_workspace:
-          root: .
-          paths:
-            - examples
-            - node_modules
-            - addons
-            - dev-kits
-            - app
-            - lib
-  chromatic:
-    executor: sb_node_10_browsers
-    parallelism: 4
-    steps:
-      # Keep using default checkout because Chromatic needs some git history to work properly
-      - checkout
-      - attach_workspace:
-          at: .
-      - run:
-          name: examples
+          name: Generate config
           command: |
-            yarn run-chromatics
-  packtracker:
-    executor:
-      class: medium
-      name: sb_node_10_browsers
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Report webpack stats for manager of official storybook
-          command: |
-            cd examples/official-storybook
-            yarn packtracker
-  examples:
-    executor:
-      class: medium
-      name: sb_node_10_browsers
-    parallelism: 4
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: examples
-          command: |
-            yarn build-storybooks
-      - persist_to_workspace:
-          root: .
-          paths:
-            - built-storybooks
-  publish:
-    executor:
-      class: medium
-      name: sb_node_10_classic
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: running local registry
-          command: yarn local-registry --publish
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .verdaccio-cache
-  e2e-tests-node-10:
-    executor:
-      class: medium
-      name: sb_node_10_browsers
-    working_directory: /tmp/storybook
-    parallelism: 4
-    steps:
-      - when:
-          condition:
-            and:
-              - not:
-                  equal: [ master, << pipeline.git.branch >> ]
-              - not:
-                  equal: [ next, << pipeline.git.branch >> ]
-          steps:
-            - ensure-pr-is-labeled-with:
-                label: "run e2e extended test suite"
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: running local registry
-          command: yarn local-registry --port 6000 --open
-          background: true
-      - run:
-          name: wait for registry
-          command: yarn wait-on http://localhost:6000
-      - run:
-          name: set registry
-          command: yarn config set registry http://localhost:6000/
-      - run:
-          name: test local registry
-          command: yarn info @storybook/core
-      - run:
-          name: Install Cypress binary
-          command: yarn cypress install
-      - run:
-          name: run e2e tests
-          command: yarn test:e2e-framework --skip preact
-      - store_artifacts:
-          path: /tmp/storybook/cypress
-          destination: cypress
-  e2e-tests-node-12:
-    executor:
-      class: medium
-      name: sb_node_12_browsers
-    working_directory: /tmp/storybook
-    steps:
-      - when:
-          condition:
-            and:
-              - not:
-                  equal: [ master, << pipeline.git.branch >> ]
-              - not:
-                  equal: [ next, << pipeline.git.branch >> ]
-          steps:
-            - ensure-pr-is-labeled-with:
-                label: "run e2e extended test suite"
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Running local registry
-          command: yarn local-registry --port 6000 --open
-          background: true
-      - run:
-          name: Wait for registry
-          command: yarn wait-on http://localhost:6000
-      - run:
-          name: Set registry
-          command: yarn config set registry http://localhost:6000/
-      - run:
-          name: Test local registry
-          command: yarn info @storybook/core
-      - run:
-          name: Install Cypress binary
-          command: yarn cypress install
-      - run:
-          name: Run E2E tests
-          command: yarn test:e2e-framework preact
-      - store_artifacts:
-          path: /tmp/storybook/cypress
-          destination: cypress
-  e2e-tests-cra-bench:
-    executor:
-      class: medium
-      name: sb_node_12_browsers
-    working_directory: /tmp/storybook
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Running local registry
-          command: yarn local-registry --port 6000 --open
-          background: true
-      - run:
-          name: Wait for registry
-          command: yarn wait-on http://localhost:6000
-      - run:
-          name: Set registry
-          command: yarn config set registry http://localhost:6000/
-      - run:
-          name: Test local registry
-          command: yarn info @storybook/core
-      - run:
-          name: Install Cypress binary
-          command: yarn cypress install
-      - run:
-          name: Run @storybook/bench on a CRA project
-          command: yarn test:e2e-framework cra_bench
-      - store_artifacts:
-          path: /tmp/storybook/cypress
-          destination: cypress
-  e2e-tests-yarn-2-pnp:
-    executor:
-      class: medium
-      name: sb_node_10_browsers
-    working_directory: /tmp/storybook
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: running local registry
-          command: yarn local-registry --port 6000 --open
-          background: true
-      - run:
-          name: wait for registry
-          command: yarn wait-on http://localhost:6000
-      - run:
-          name: set registry
-          command: yarn config set registry http://localhost:6000/
-      - run:
-          name: test local registry
-          command: yarn info @storybook/core
-      - run:
-          name: Install Cypress binary
-          command: yarn cypress install
-      - run:
-          name: run e2e tests
-          command: yarn test:e2e-framework --use-yarn-2-pnp sfcVue cra
-      - store_artifacts:
-          path: /tmp/storybook/cypress
-          destination: cypress
-  e2e-tests-examples:
-    working_directory: /tmp/storybook
-    docker:
-      - image: cypress/included:4.12.1
-        environment:
-          TERM: xterm
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: running example
-          command: yarn serve-storybooks
-          background: true
-      - run:
-          name: await running examples
-          command: yarn await-serve-storybooks
-      - run:
-          name: cypress run
-          command: yarn test:e2e-examples
-      - store_artifacts:
-          path: /tmp/storybook/cypress
-          destination: cypress
-  smoke-tests:
-    executor:
-      class: medium
-      name: sb_node_10_browsers
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Run react kitchen-sink (smoke test)
-          command: |
-            cd examples/cra-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run react typescript kitchen-sink (smoke test)
-          command: |
-            cd examples/cra-ts-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run vue kitchen-sink (smoke test)
-          command: |
-            cd examples/vue-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run svelte kitchen-sink (smoke test)
-          command: |
-            cd examples/svelte-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run angular-cli (smoke test)
-          command: |
-            cd examples/angular-cli
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run ember-cli (smoke test)
-          command: |
-            cd examples/ember-cli
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run marko-cli (smoke test)
-          command: |
-            cd examples/marko-cli
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run official-storybook (smoke test)
-          command: |
-            cd examples/official-storybook
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run mithril kitchen-sink (smoke test)
-          command: |
-            cd examples/mithril-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run riot kitchen-sink (smoke test)
-          command: |
-            cd examples/riot-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run preact kitchen-sink (smoke test)
-          command: |
-            cd examples/preact-kitchen-sink
-            yarn storybook --smoke-test --quiet
-      - run:
-          name: Run cra reac15 (smoke test)
-          command: |
-            cd examples/cra-react15
-            yarn storybook --smoke-test --quiet
-  frontpage:
-    executor: sb_node_10_browsers
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - run:
-          name: Install dependencies
-          command: yarn bootstrap --install
-      - run:
-          name: Trigger build
-          command: ./scripts/build-frontpage.js
-  lint:
-    executor:
-      class: small
-      name: sb_node_10_classic
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Lint
-          command: yarn lint
-  unit-tests:
-    executor: sb_node_10_browsers
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Test
-          command: yarn test --coverage --runInBand --ci
-      - persist_to_workspace:
-          root: .
-          paths:
-            - coverage
-  coverage:
-    executor:
-      class: small
-      name: sb_node_10_browsers
-    steps:
-      - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1 --verbose'
-      - attach_workspace:
-          at: .
-      - run:
-          name: Upload coverage
-          command: yarn coverage
-
+            yarn dlx jiti ./scripts/ci/main.ts \
+              --workflow=<< pipeline.parameters.workflow >> \
+              --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
+      - continuation/continue:
+          configuration_path: .circleci/config.generated.yml
 workflows:
-  test:
+  setup:
     jobs:
-      - build
-      - lint:
-          requires:
-            - build
-      - examples:
-          requires:
-            - build
-      - e2e-tests-examples:
-          requires:
-            - examples
-      - smoke-tests:
-          requires:
-            - build
-      - packtracker:
-          requires:
-            - build
-      - unit-tests:
-          requires:
-            - build
-      - coverage:
-          requires:
-            - unit-tests
-      - chromatic:
-          requires:
-            - examples
-      - publish:
-          requires:
-            - build
-      - e2e-tests-node-10:
-          requires:
-            - publish
-      - e2e-tests-node-12:
-          requires:
-            - publish
-      - e2e-tests-yarn-2-pnp:
-          requires:
-            - publish
-      - e2e-tests-cra-bench:
-          requires:
-            - publish
-  deploy:
-    jobs:
-      - frontpage
+      - generate-and-run-config
+    when: pipeline.parameters.workflow != "skipped"

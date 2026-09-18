@@ -1,0 +1,686 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import type { TestResult } from 'vitest/node';
+
+import { Tag, experimental_MockUniversalStore } from 'storybook/internal/core-server';
+import type {
+  Options,
+  StatusStoreByTypeId,
+  StoryIndex,
+  TestProviderStoreById,
+} from 'storybook/internal/types';
+
+import path from 'pathe';
+import type { Report } from 'storybook/preview-api';
+
+import {
+  STATUS_TYPE_ID_A11Y,
+  STATUS_TYPE_ID_COMPONENT_TEST,
+  STORYBOOK_TEST_PROVIDE_KEY,
+  storeOptions,
+} from '../constants.ts';
+import type { StoreEvent, StoreState } from '../types.ts';
+import { TestManager, type TestManagerOptions } from './test-manager.ts';
+import { DOUBLE_SPACES } from './vitest-manager.ts';
+
+const setTestNamePattern = vi.hoisted(() => vi.fn());
+const vitest = vi.hoisted(() => ({
+  projects: [{}],
+  init: vi.fn(),
+  close: vi.fn(),
+  onCancel: vi.fn(),
+  logger: {
+    clearHighlightCache: vi.fn(),
+  },
+  provide: vi.fn(),
+  runTestSpecifications: vi.fn(),
+  cancelCurrentRun: vi.fn(),
+  globTestSpecifications: vi.fn(),
+  getModuleProjects: vi.fn(() => []),
+  setGlobalTestNamePattern: setTestNamePattern,
+  vite: {
+    watcher: {
+      removeAllListeners: vi.fn(),
+      on: vi.fn(),
+    },
+    moduleGraph: {
+      getModulesByFile: () => [],
+      invalidateModule: vi.fn(),
+    },
+  },
+  config: {
+    coverage: { enabled: false },
+  },
+}));
+
+const mockCreateVitest = vi.fn();
+
+vi.mock('vitest/node', () => ({
+  createVitest: mockCreateVitest,
+}));
+
+// Use the mock function directly
+const createVitest = mockCreateVitest;
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  mockStore.setState(() => ({
+    ...storeOptions.initialState,
+    index: mockIndex,
+  }));
+  vitest.projects = [{}];
+  vitest.config.coverage.enabled = false;
+  createVitest.mockResolvedValue(vitest);
+});
+
+const mockIndex = {
+  v: 5,
+  entries: {
+    'story--one': {
+      type: 'story',
+      subtype: 'story',
+      id: 'story--one',
+      name: 'One',
+      title: 'story/one',
+      importPath: 'path/to/file',
+      tags: [Tag.TEST],
+    },
+    'another--one': {
+      type: 'story',
+      subtype: 'story',
+      id: 'another--one',
+      name: 'One',
+      title: 'another/one',
+      importPath: 'path/to/another/file',
+      tags: [Tag.TEST],
+    },
+    'story--two': {
+      type: 'story',
+      subtype: 'story',
+      id: 'story--two',
+      name: 'Two',
+      title: 'story/two',
+      importPath: 'path/to/file',
+      tags: [Tag.TEST],
+    },
+    'another--two': {
+      type: 'story',
+      subtype: 'story',
+      id: 'another--two',
+      name: 'Two B',
+      title: 'another/two',
+      importPath: 'path/to/another/file',
+      tags: [Tag.TEST],
+    },
+    'parent--story': {
+      type: 'story',
+      subtype: 'story',
+      id: 'parent--story',
+      name: 'Parent story',
+      title: 'parent/story',
+      importPath: 'path/to/parent/file',
+      tags: [Tag.TEST],
+    },
+    'parent--story:test': {
+      type: 'story',
+      subtype: Tag.TEST,
+      id: 'parent--story:test',
+      name: 'Test name',
+      title: 'parent/story',
+      parent: 'parent--story',
+      importPath: 'path/to/parent/file',
+      tags: [Tag.TEST, Tag.TEST_FN],
+    },
+  },
+} as StoryIndex;
+
+const mockStore = new experimental_MockUniversalStore<StoreState, StoreEvent>(
+  {
+    ...storeOptions,
+    initialState: {
+      ...storeOptions.initialState,
+      index: mockIndex,
+    },
+  },
+  vi
+);
+const mockComponentTestStatusStore: StatusStoreByTypeId = {
+  set: vi.fn(),
+  getAll: vi.fn(),
+  onAllStatusChange: vi.fn(),
+  onSelect: vi.fn(),
+  unset: vi.fn(),
+  typeId: STATUS_TYPE_ID_COMPONENT_TEST,
+};
+const mockA11yStatusStore: StatusStoreByTypeId = {
+  set: vi.fn(),
+  getAll: vi.fn(),
+  onAllStatusChange: vi.fn(),
+  onSelect: vi.fn(),
+  unset: vi.fn(),
+  typeId: STATUS_TYPE_ID_A11Y,
+};
+const mockTestProviderStore: TestProviderStoreById = {
+  getState: vi.fn(),
+  setState: vi.fn(),
+  settingsChanged: vi.fn(),
+  onRunAll: vi.fn(),
+  onClearAll: vi.fn(),
+  runWithState: vi.fn((callback) => callback()),
+  testProviderId: 'test-provider-id',
+};
+
+const tests = [
+  {
+    project: {
+      config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } },
+    },
+    moduleId: path.join(process.cwd(), 'path/to/file'),
+  },
+  {
+    project: {
+      config: { env: { __STORYBOOK_URL__: 'http://localhost:6006' } },
+    },
+    moduleId: path.join(process.cwd(), 'path/to/another/file'),
+  },
+];
+
+const options: TestManagerOptions = {
+  store: mockStore,
+  componentTestStatusStore: mockComponentTestStatusStore,
+  a11yStatusStore: mockA11yStatusStore,
+  testProviderStore: mockTestProviderStore,
+  onError: (message, error) => {
+    throw error;
+  },
+  onReady: vi.fn(),
+  storybookOptions: {
+    configDir: '.storybook',
+  } as Options,
+};
+
+describe('TestManager', () => {
+  it('should create a vitest instance', async () => {
+    new TestManager(options);
+    await vi.waitFor(() => {
+      expect(createVitest).toHaveBeenCalled();
+    });
+  });
+
+  it('should call onReady callback', async () => {
+    new TestManager(options);
+    await vi.waitFor(() => {
+      expect(options.onReady).toHaveBeenCalled();
+    });
+  });
+
+  it('TestManager.start should start vitest and resolve when ready', async () => {
+    const testManager = await TestManager.start(options);
+
+    expect(testManager).toBeInstanceOf(TestManager);
+    expect(createVitest).toHaveBeenCalled();
+  });
+
+  it('should handle run request', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    expect(vitest.provide).toHaveBeenCalledWith(STORYBOOK_TEST_PROVIDE_KEY, {
+      coverage: false,
+      a11y: false,
+    });
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
+  });
+
+  it('should provide merged config override before running tests', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'external:actor',
+        configOverride: {
+          coverage: false,
+          a11y: true,
+          customFlag: 'custom-value',
+        },
+      },
+    });
+
+    expect(vitest.provide).toHaveBeenLastCalledWith(STORYBOOK_TEST_PROVIDE_KEY, {
+      coverage: false,
+      a11y: true,
+      customFlag: 'custom-value',
+    });
+  });
+
+  it('should refresh provided config before watch-triggered reruns', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    vitest.projects = [
+      {
+        config: {
+          env: { __STORYBOOK_URL__: 'http://localhost:6006' },
+          root: process.cwd(),
+          setupFiles: [],
+        },
+        matchesTestGlob: vi.fn(),
+        vite: {
+          moduleGraph: {
+            getModuleById: vi.fn(),
+            getModulesByFile: vi.fn(() => []),
+            invalidateModule: vi.fn(),
+          },
+          transformRequest: vi.fn(),
+        },
+      },
+    ] as any;
+
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    vitest.provide.mockClear();
+    mockStore.setState((s) => ({
+      ...s,
+      watching: true,
+      config: { coverage: false, a11y: true },
+    }));
+
+    vi.spyOn(testManager.vitestManager as any, 'getTestDependencies').mockResolvedValue(new Set());
+
+    await testManager.vitestManager.runAffectedTestsAfterChange(tests[0].moduleId, 'change');
+
+    expect(vitest.provide).toHaveBeenCalledWith(STORYBOOK_TEST_PROVIDE_KEY, {
+      coverage: false,
+      a11y: true,
+    });
+    expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(tests.slice(0, 1), false);
+  });
+
+  it('should persist all reports on TEST_RUN_COMPLETED without writing them into currentRun', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+          reports: [
+            {
+              type: 'a11y',
+              status: 'passed',
+              result: { id: 'a11y-report' },
+            } as Report,
+            {
+              type: 'custom',
+              status: 'passed',
+              result: { id: 'custom-report' },
+            } as Report,
+          ],
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 1,
+          unhandledErrors: [],
+        });
+      },
+    });
+
+    const completed = vi
+      .mocked(mockStore.send)
+      .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED');
+    expect(completed?.[0]).toEqual(
+      expect.objectContaining({
+        type: 'TEST_RUN_COMPLETED',
+        payload: expect.objectContaining({
+          reports: {
+            'story--one': [
+              { type: 'a11y', status: 'passed', result: { id: 'a11y-report' } },
+              { type: 'custom', status: 'passed', result: { id: 'custom-report' } },
+            ],
+          },
+        }),
+      })
+    );
+    expect(mockStore.getState().currentRun.reports).toEqual({});
+  });
+
+  it('keeps per-flush synced state bounded and materializes full results at run end', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one', 'story--two'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+          reports: [{ type: 'a11y', status: 'passed', result: { id: 'a11y-1' } } as Report],
+        });
+        testManager.throttledFlushTestCaseResults.flush();
+
+        expect(mockStore.getState().currentRun.componentTestStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.a11yStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.reports).toEqual({});
+        expect(mockStore.getState().currentRun.a11yReports).toEqual({});
+        expect(mockStore.getState().currentRun.componentTestCount.success).toBe(1);
+
+        testManager.onTestCaseResult({
+          storyId: 'story--two',
+          testResult: passedResult,
+        });
+        testManager.throttledFlushTestCaseResults.flush();
+
+        expect(mockStore.getState().currentRun.componentTestStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.componentTestCount.success).toBe(2);
+
+        testManager.onTestRunEnd({ totalTestCount: 2, unhandledErrors: [] });
+      },
+    });
+
+    const { currentRun } = mockStore.getState();
+    expect(currentRun.componentTestStatuses).toHaveLength(0);
+    expect(currentRun.a11yStatuses).toHaveLength(0);
+    expect(currentRun.reports).toEqual({});
+    expect(currentRun.a11yReports).toEqual({});
+
+    const completed = vi
+      .mocked(mockStore.send)
+      .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED');
+    expect(completed?.[0]).toEqual(
+      expect.objectContaining({
+        type: 'TEST_RUN_COMPLETED',
+        payload: expect.objectContaining({
+          componentTestStatuses: [
+            expect.objectContaining({ storyId: 'story--one' }),
+            expect.objectContaining({ storyId: 'story--two' }),
+          ],
+          a11yStatuses: [expect.objectContaining({ storyId: 'story--one' })],
+          reports: { 'story--one': [expect.objectContaining({ type: 'a11y' })] },
+          a11yReports: { 'story--one': [{ id: 'a11y-1' }] },
+        }),
+      })
+    );
+  });
+
+  it('should describe failures with the source-mapped frames rather than the raw browser stack', async () => {
+    const testManager = await TestManager.start(options);
+    const failedResult = {
+      state: 'failed',
+      errors: [
+        {
+          message:
+            '\n\x1B[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/story--one\x1B[39m\n\nexpect(element).toBeInTheDocument()',
+          stack:
+            'Error: expect(element).toBeInTheDocument()\n    at Proxy.expectWrapper (http://localhost:6006/deps/storybook_test.js?v=8c5dc1d5:13691:16)',
+          stacks: [
+            {
+              method: 'toBeInTheDocument',
+              file: '/project/src/stories/Page.stories.ts',
+              line: 30,
+              column: 60,
+            },
+          ],
+        },
+      ],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({ storyId: 'story--one', testResult: failedResult });
+        testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith([
+      expect.objectContaining({
+        storyId: 'story--one',
+        description:
+          'expect(element).toBeInTheDocument()\n    at toBeInTheDocument (/project/src/stories/Page.stories.ts:30:60)',
+      }),
+    ]);
+  });
+
+  it('should filter tests', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one'],
+        triggeredBy: 'global',
+      },
+    });
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+  });
+
+  it('should trigger a single story render test', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['another--one'],
+        triggeredBy: 'global',
+      },
+    });
+    // regex should be exact match of the story name
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
+  });
+
+  it('should trigger a single story test', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['parent--story:test'],
+        triggeredBy: 'global',
+      },
+    });
+    // regex should be Parent Story Name + Test Name
+    expect(setTestNamePattern).toHaveBeenCalledWith(
+      new RegExp(`^Parent story${DOUBLE_SPACES} Test name$`)
+    );
+  });
+
+  it('should trigger all tests of a story', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['parent--story'],
+        triggeredBy: 'global',
+      },
+    });
+    expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^Parent story${DOUBLE_SPACES}`));
+  });
+
+  it('should trigger only selected stories in the same file', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one', 'story--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests.slice(0, 1), true);
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+
+    expect(regex).toBeDefined();
+    expect(regex?.test('One')).toBe(true);
+    expect(regex?.test('Two')).toBe(true);
+    expect(regex?.test('Parent story  Test name')).toBe(false);
+  });
+
+  it('should trigger only selected stories across multiple files', async () => {
+    vitest.globTestSpecifications.mockImplementation(() => tests);
+    const testManager = await TestManager.start(options);
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one', 'another--two'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(vitest.runTestSpecifications).toHaveBeenCalledWith(tests, true);
+
+    const regex = setTestNamePattern.mock.calls.find(([arg]) => arg instanceof RegExp)?.[0] as
+      | RegExp
+      | undefined;
+
+    expect(regex).toBeDefined();
+    expect(regex?.test('One')).toBe(true);
+    expect(regex?.test('Two B')).toBe(true);
+    expect(regex?.test('Two')).toBe(false);
+  });
+
+  it('should ignore non-requested same-name story results after run', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one', 'another--two'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+        });
+        testManager.onTestCaseResult({
+          storyId: 'another--one',
+          testResult: passedResult,
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 2,
+          unhandledErrors: [],
+        });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ storyId: 'story--one' })])
+    );
+    expect(mockComponentTestStatusStore.set).not.toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ storyId: 'another--one' })])
+    );
+    expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
+  });
+
+  it('should keep child test results when parent story is requested', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['parent--story'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'parent--story:test',
+          testResult: passedResult,
+        });
+        testManager.onTestRunEnd({
+          totalTestCount: 1,
+          unhandledErrors: [],
+        });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith(
+      expect.arrayContaining([expect.objectContaining({ storyId: 'parent--story:test' })])
+    );
+    expect(mockStore.getState().currentRun.totalTestCount).toBe(1);
+  });
+
+  it('should restart Vitest before a test run if coverage is enabled', async () => {
+    const testManager = await TestManager.start(options);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    createVitest.mockClear();
+
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    expect(createVitest).toHaveBeenCalledWith(
+      Tag.TEST,
+      expect.objectContaining({
+        coverage: expect.objectContaining({ enabled: true }),
+      })
+    );
+  });
+
+  it('should not restart with coverage enabled Vitest before a focused test run', async () => {
+    const testManager = await TestManager.start(options);
+    expect(createVitest).toHaveBeenCalledTimes(1);
+    createVitest.mockClear();
+
+    mockStore.setState((s) => ({
+      ...s,
+      config: { coverage: true, a11y: false },
+    }));
+
+    await testManager.handleTriggerRunEvent({
+      type: 'TRIGGER_RUN',
+      payload: {
+        storyIds: ['story--one'],
+        triggeredBy: 'global',
+      },
+    });
+
+    expect(createVitest).not.toHaveBeenCalled();
+  });
+});

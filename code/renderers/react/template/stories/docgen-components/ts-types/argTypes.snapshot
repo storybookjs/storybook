@@ -1,0 +1,652 @@
+{
+  "aliasesUnion": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "aliasesUnion",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'foo'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "any": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "any",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'Any value'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "arrayOfComplexObject": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "arrayOfComplexObject",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "[{ text: 'foo', value: 'bar' }]",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "arrayOfPrimitive": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "arrayOfPrimitive",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "['foo', 'bar']",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "bool": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "bool",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "true",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "defaultEnum": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "defaultEnum",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "DefaultEnum.TopRight",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "enumUnion": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "enumUnion",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "DefaultEnum.TopLeft",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "funcWithArgsAndReturns": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "funcWithArgsAndReturns",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "function concat(a: string, b: string): string {
+  return a + b;
+}",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "genericAlias": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "genericAlias",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ value: 'foo' }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "genericInterface": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "genericInterface",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ value: 'A string value' }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "inlinedNumericLiteralUnion": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "inlinedNumericLiteralUnion",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "1",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "inlinedStringLiteralUnion": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "inlinedStringLiteralUnion",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'bottom-right'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "interface": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "interface",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar' }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "intersectionType": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "intersectionType",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar', name: 'foo-bar' }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "intersectionWithInlineType": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "intersectionWithInlineType",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar', inlineValue: 'this is inlined' }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "namedNumericLiteralUnion": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "namedNumericLiteralUnion",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "0",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "namedStringLiteralUnion": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "namedStringLiteralUnion",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'top-right'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "nullableComplexTypeUndefinedDefaultValue": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "nullableComplexTypeUndefinedDefaultValue",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "number": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "number",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "5",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "numericEnum": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "numericEnum",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "NumericEnum.TopRight",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "recordOfComplexObject": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "recordOfComplexObject",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ foo: { text: 'bar', value: 'bar2' } }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "recordOfPrimitive": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "recordOfPrimitive",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ foo: 1, bar: 2 }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "string": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "string",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'A string value'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "stringEnum": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "stringEnum",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "StringEnum.TopRight",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "symbol": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "symbol",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "Symbol('Default symbol')",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "tupleOfPrimitive": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "tupleOfPrimitive",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "['string value', 5]",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "tupleWithComplexType": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "tupleWithComplexType",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "['string value', { text: 'foo', value: 'bar' }]",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "typeAlias": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "typeAlias",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'foo'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "unionOfComplexType": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "unionOfComplexType",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar' }",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "unionOfPrimitive": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "unionOfPrimitive",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'A string value'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "voidFunc": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "voidFunc",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "() => {}",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+}

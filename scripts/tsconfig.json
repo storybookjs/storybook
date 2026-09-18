@@ -1,19 +1,34 @@
 {
-  "extends": "../tsconfig.json",
+  "compileOnSave": false,
   "compilerOptions": {
-    "baseUrl": ".",
-    "types": ["node", "jest"],
-    "strict": false,
+    "customConditions": ["code"],
+    "noEmit": true,
+    "incremental": false,
+    "noImplicitAny": true,
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "react",
+    "moduleResolution": "bundler",
+    "target": "ESNext",
+    "module": "Preserve",
+    // Required for native Node TS execution (node file.ts) — we are migrating from jiti to native node
+    "allowImportingTsExtensions": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "strictBindCallApply": true,
+    "lib": ["ESNext"],
+    "types": ["node"],
+    "strict": true,
     "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,
-    "noUnusedLocals": false,
+    "noUnusedLocals": true,
     "noUnusedParameters": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-    "resolveJsonModule": true,
-    "paths": {
-      "verdaccio": ["./typings.d.ts"]
-    }
+    "resolveJsonModule": true
   },
-  "include": ["./**/*"]
+  "exclude": ["dist", "**/dist", "node_modules", "**/node_modules"],
+  "include": ["./**/*", "./.eslintrc.cjs"]
 }

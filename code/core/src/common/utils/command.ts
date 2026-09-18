@@ -1,0 +1,270 @@
+import { logger, prompt } from 'storybook/internal/node-logger';
+import { existsSync } from 'node:fs';
+import { delimiter, join } from 'node:path';
+
+// eslint-disable-next-line depend/ban-dependencies
+import {
+  type Options,
+  type ResultPromise,
+  type SyncOptions,
+  execa,
+  execaCommandSync,
+  execaNode,
+} from 'execa';
+
+import { categorizeExecaError } from './categorize-execa-error.ts';
+
+const COMMON_ENV_VARS = {
+  COREPACK_ENABLE_STRICT: '0',
+  COREPACK_ENABLE_AUTO_PIN: '0',
+  NO_UPDATE_NOTIFIER: 'true',
+};
+
+export type ExecuteCommandOptions = Omit<Options, 'cancelSignal'> & {
+  command: string;
+  args?: string[];
+  cwd?: string;
+  ignoreError?: boolean;
+  env?: Record<string, string>;
+  signal?: AbortSignal; // Alias for cancelSignal (execa v9 uses cancelSignal)
+};
+
+function attachCategorizedExecaFailureHandler(
+  execaProcess: ResultPromise,
+  context: { command: string; args: string[] }
+) {
+  const categorize = (error: unknown) => categorizeExecaError(error, context);
+  const originalThen = execaProcess.then.bind(execaProcess);
+  const originalCatch = execaProcess.catch.bind(execaProcess);
+
+  execaProcess.then = ((onFulfilled, onRejected) =>
+    originalThen(
+      onFulfilled,
+      typeof onRejected === 'function'
+        ? (error) => onRejected(categorize(error))
+        : (error) => {
+            throw categorize(error);
+          }
+    )) as ResultPromise['then'];
+
+  execaProcess.catch = ((onRejected) =>
+    originalCatch((error) => {
+      throw categorize(error);
+    }).catch(typeof onRejected === 'function' ? onRejected : undefined)) as ResultPromise['catch'];
+}
+
+function getExecaOptions({
+  stdio,
+  cwd,
+  env,
+  signal,
+  ...execaOptions
+}: ExecuteCommandOptions): Options {
+  return {
+    cwd,
+    stdio: stdio ?? prompt.getPreferredStdio(),
+    encoding: 'utf8' as const,
+    cleanup: true,
+    env: {
+      ...COMMON_ENV_VARS,
+      ...env,
+    },
+    ...(signal && { cancelSignal: signal }), // Map signal to cancelSignal for execa v9
+    ...execaOptions,
+  };
+}
+
+export function executeCommand(options: ExecuteCommandOptions): ResultPromise {
+  const { command, args = [], ignoreError = false } = options;
+  logger.debug(`Executing command: ${command} ${args.join(' ')}`);
+
+  const commandVariations = resolveCommand(command);
+  const execaProcess = tryCommandVariations(commandVariations, args, getExecaOptions(options));
+
+  if (ignoreError) {
+    execaProcess.catch(() => {
+      // Silently ignore errors when ignoreError is true
+    });
+  } else {
+    attachCategorizedExecaFailureHandler(execaProcess, { command, args });
+  }
+
+  return execaProcess;
+}
+
+export function executeCommandSync(options: ExecuteCommandOptions): string {
+  const { command, args = [], ignoreError = false } = options;
+  try {
+    const commandVariations = resolveCommand(command);
+    return tryCommandVariationsSync(
+      commandVariations,
+      args,
+      getExecaOptions(options) as SyncOptions
+    );
+  } catch (err) {
+    if (!ignoreError) {
+      throw categorizeExecaError(err, { command, args });
+    }
+    return '';
+  }
+}
+
+export function executeNodeCommand({
+  scriptPath,
+  args,
+  options,
+}: {
+  scriptPath: string;
+  args?: string[];
+  options?: Options;
+}): ResultPromise {
+  return execaNode(scriptPath, args, {
+    ...options,
+  });
+}
+
+/**
+ * Check if an error is a "command not found" error on Windows. This happens when trying to execute
+ * a command that doesn't exist.
+ *
+ * @param error - The error to check
+ * @returns True if the error is a "command not found" error
+ */
+function isCommandNotFoundError(error: any): boolean {
+  if (!error) {
+    return false;
+  }
+
+  const stderr = error.stderr || '';
+  return stderr.includes('is not recognized as an internal or external command');
+}
+
+/** Helper to check if we should continue trying command variations. */
+function shouldRetry(error: any, isLastVariation: boolean): boolean {
+  return isCommandNotFoundError(error) && !isLastVariation;
+}
+
+/**
+ * Check if a command is available in PATH by looking for the file directly.
+ * This avoids spawning a process just to check existence.
+ */
+function isExecutableInPath(command: string): boolean {
+  const pathDirs = (process.env.PATH || '').split(delimiter);
+  return pathDirs.some((dir) => existsSync(join(dir, command)));
+}
+
+function tryCommandVariations(
+  commandVariations: string[],
+  args: string[],
+  options: Options
+): ResultPromise {
+  if (commandVariations.length <= 1) {
+    return execa(commandVariations[0], args, options);
+  }
+
+  // Resolve the best variation synchronously via PATH lookup
+  for (const cmd of commandVariations.slice(0, -1)) {
+    if (isExecutableInPath(cmd)) {
+      logger.debug(`Resolved command variation: ${cmd}`);
+      return execa(cmd, args, options);
+    }
+  }
+
+  // Fallback to the last variation (bare command name)
+  return execa(commandVariations[commandVariations.length - 1], args, options);
+}
+
+/**
+ * Synchronously try executing a command with multiple variations until one succeeds.
+ *
+ * @param commandVariations - Array of command variations to try
+ * @param args - Command arguments
+ * @param options - Execa sync options
+ * @returns Stdout from the successful command
+ */
+function tryCommandVariationsSync(
+  commandVariations: string[],
+  args: string[],
+  options: SyncOptions
+): string {
+  let lastError: any;
+
+  for (let i = 0; i < commandVariations.length; i++) {
+    const cmd = commandVariations[i];
+    try {
+      const commandResult = execaCommandSync([cmd, ...args].join(' '), options);
+      return typeof commandResult.stdout === 'string' ? commandResult.stdout : '';
+    } catch (error: any) {
+      lastError = error;
+
+      if (!shouldRetry(error, i === commandVariations.length - 1)) {
+        throw error;
+      }
+
+      logger.debug(`Command "${cmd}" not found, trying next variation...`);
+    }
+  }
+
+  throw lastError;
+}
+
+/**
+ * Resolve the actual executable name for a given command on the current platform.
+ *
+ * Why this exists:
+ *
+ * - Many Node-based CLIs (npm, npx, pnpm, yarn, vite, eslint, anything in node_modules/.bin) do NOT
+ *   ship as real executables on Windows.
+ * - Instead, they install *.cmd and *.ps1 "shim" files.
+ * - When using execa/child_process with `shell: false` (our default), Node WILL NOT resolve these
+ *   shims. -> calling execa("npx") throws ENOENT on Windows.
+ * - HOWEVER, package managers like pnpm can be installed via system tools (Mise, Scoop) as native
+ *   executables (.exe), not as Node packages. In these cases, the .cmd shim doesn't exist.
+ *
+ * This helper normalizes command names so they can be spawned cross-platform without using `shell:
+ * true`.
+ *
+ * Rules:
+ *
+ * - If on Windows:
+ *
+ *   - For known shim-based commands, return an array of variations to try in order: [command.exe,
+ *       command.cmd, command.ps1, command]
+ *   - For everything else, return the name unchanged.
+ * - On non-Windows, return command unchanged.
+ *
+ * Open for extension:
+ *
+ * - Add new commands to `WINDOWS_SHIM_COMMANDS` as needed.
+ * - If Storybook adds new internal commands later, extend the list.
+ *
+ * @param {string} command - The executable name passed into executeCommand.
+ * @returns {string[]} - Array of command variations to try (most specific first).
+ */
+function resolveCommand(command: string): string[] {
+  // Commands known to require .cmd on Windows (node-based & shim-installed)
+  const WINDOWS_SHIM_COMMANDS = new Set([
+    'npm',
+    'npx',
+    'pnpm',
+    'yarn',
+    'ng',
+    // Anything installed via node_modules/.bin (vite, eslint, prettier, etc)
+    // can be added here as needed. Do NOT list native executables.
+  ]);
+
+  if (process.platform !== 'win32') {
+    return [command];
+  }
+
+  if (WINDOWS_SHIM_COMMANDS.has(command)) {
+    // On Windows, try multiple variations in order of likelihood:
+    // 1. .cmd - CMD shim (most common: npm-installed packages, corepack, PowerShell script)
+    // 2. .exe - native executable (less common: Scoop/Mise installations)
+    // 3. .ps1 - PowerShell shim (rare but possible)
+    // 4. bare command - fallback
+    return [`${command}.cmd`, `${command}.exe`, `${command}.ps1`, command];
+  }
+
+  return [command];
+}

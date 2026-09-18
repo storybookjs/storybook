@@ -1,0 +1,28 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "Specify icon="search" or icon={IconComponent}",
+      "name": "icon",
+      "required": true,
+      "sbType": {
+        "name": "union",
+        "raw": "React.ReactNode | string",
+        "value": [
+          {
+            "name": "other",
+            "raw": "React.ReactNode",
+            "value": "ReactReactNode",
+          },
+          {
+            "name": "string",
+          },
+        ],
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "union",
+      },
+    },
+  ],
+}

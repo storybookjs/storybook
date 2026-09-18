@@ -1,0 +1,13 @@
+
+export default {
+  title: "Welcome",
+};
+
+export const Welcome = {
+  name: "Welcome",
+  parameters: {
+    server: {
+      id: "welcome/welcome"
+    }
+  }
+};

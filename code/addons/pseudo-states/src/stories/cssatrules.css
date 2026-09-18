@@ -1,0 +1,32 @@
+@layer base {
+  .button {
+    display: inline-block;
+    cursor: pointer;
+    border: 0;
+    border-radius: 3em;
+    background-color: #1ea7fd;
+    padding: 11px 20px;
+    color: white;
+    font-weight: 700;
+    font-size: 14px;
+    line-height: 1;
+    font-family: 'Nunito Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  }
+
+  @supports (display: flex) {
+    @media hover {
+      .button:hover {
+        text-decoration: underline;
+      }
+    }
+
+    .button:focus {
+      outline: 0;
+      box-shadow: inset 0 0 0 2px #0006;
+    }
+
+    .button:active {
+      background-color: #077fc9;
+    }
+  }
+}

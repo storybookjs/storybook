@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`Storyshots Async with 5ms timeout simulating async operation 1`] = `
-<h1>
-  THIS IS SO DONE
-</h1>
-`;

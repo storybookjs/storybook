@@ -1,3 +1,49 @@
 {
-  "deepscan.enable": true
+  "editor.formatOnSave": true,
+  "[mdx]": {
+    "editor.formatOnSave": false
+  },
+  // We're defining the language-specific settings separately here,
+  // because using the multi-language syntax like "[javascript][typescript]" doesn't override user settings that are specified for single languages.
+  "[javascript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[javascriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[jsonc]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "oxc.oxc-vscode",
+    "editor.formatOnSave": true
+  },
+  "editor.codeActionsOnSave": {
+    "source.fixAll.oxc": "explicit",
+    "source.organizeImports": "never",
+    "source.sortImports": "explicit"
+  },
+  "editor.tabSize": 2,
+  "files.associations": {
+    "*.js": "javascriptreact",
+    ".oxfmtrc.json": "json"
+  },
+  "javascript.preferences.importModuleSpecifier": "relative",
+  "javascript.preferences.quoteStyle": "single",
+  "js/ts.implicitProjectConfig.target": "ESNext",
+  "storyExplorer.storybookConfigDir": "./code/.storybook",
+  "typescript.format.enable": false,
+  "typescript.preferences.importModuleSpecifier": "relative",
+  "typescript.preferences.preferTypeOnlyAutoImports": true,
+  "typescript.preferences.quoteStyle": "single",
+  "typescript.preferGoToSourceDefinition": true,
+  "typescript.tsdk": "./node_modules/typescript/lib",
+  "oxc.fmt.configPath": ".oxfmtrc.json",
+  "oxc.enable.oxlint": true
 }

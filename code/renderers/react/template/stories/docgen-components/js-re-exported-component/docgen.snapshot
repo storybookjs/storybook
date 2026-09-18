@@ -1,0 +1,1 @@
+export { component } from '../js-function-component/input.jsx';

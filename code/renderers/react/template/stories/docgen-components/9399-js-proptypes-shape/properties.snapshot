@@ -1,0 +1,31 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "areas",
+      "required": true,
+      "sbType": {
+        "name": "array",
+        "value": {
+          "name": "object",
+          "value": {
+            "names": {
+              "name": "array",
+              "value": {
+                "name": "string",
+              },
+            },
+            "position": {
+              "name": "string",
+            },
+          },
+        },
+      },
+      "type": {
+        "detail": "[object]",
+        "summary": "object[]",
+      },
+    },
+  ],
+}

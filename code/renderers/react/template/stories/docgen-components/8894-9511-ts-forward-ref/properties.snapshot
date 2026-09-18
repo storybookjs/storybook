@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "description": undefined,
+      "name": "disabled",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'small'",
+      },
+      "description": undefined,
+      "name": "variant",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+  ],
+}

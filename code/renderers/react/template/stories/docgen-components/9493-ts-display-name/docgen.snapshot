@@ -1,0 +1,44 @@
+import React from 'react';
+/** This message should show up in the Docs panel if everything works fine. */
+export const EmpireAlert = ({
+  title = 'Code Yellow',
+  message
+}) => /*#__PURE__*/React.createElement("div", null, /*#__PURE__*/React.createElement("h1", null, title), /*#__PURE__*/React.createElement("p", null, message));
+EmpireAlert.displayName = 'SomeOtherDisplayName';
+export const component = EmpireAlert;
+EmpireAlert.__docgenInfo = {
+  "description": "This message should show up in the Docs panel if everything works fine.",
+  "methods": [],
+  "displayName": "SomeOtherDisplayName",
+  "props": {
+    "title": {
+      "defaultValue": {
+        "value": "'Code Yellow'",
+        "computed": false
+      },
+      "required": false,
+      "tsType": {
+        "name": "union",
+        "raw": "'Code Red' | 'Code Yellow' | 'Code Green'",
+        "elements": [{
+          "name": "literal",
+          "value": "'Code Red'"
+        }, {
+          "name": "literal",
+          "value": "'Code Yellow'"
+        }, {
+          "name": "literal",
+          "value": "'Code Green'"
+        }]
+      },
+      "description": "A title that brings attention to the alert."
+    },
+    "message": {
+      "required": true,
+      "tsType": {
+        "name": "string"
+      },
+      "description": "A message alerting about Empire activities."
+    }
+  }
+};

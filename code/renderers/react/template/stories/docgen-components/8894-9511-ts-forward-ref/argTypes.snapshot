@@ -1,0 +1,44 @@
+{
+  "disabled": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "disabled",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+  "variant": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "variant",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'small'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+}

@@ -1,0 +1,13 @@
+{
+	"permissions": {
+		"allow": [
+			"mcp__storybook-addon-mcp__stories-preview",
+			"mcp__storybook-addon-mcp__get-storybook-story-instructions",
+			"mcp__storybook-addon-mcp__docs-list",
+			"mcp__storybook-addon-mcp__docs-show",
+			"mcp__storybook-mcp__docs-list",
+			"mcp__storybook-mcp__test-run"
+		]
+	},
+	"enabledMcpjsonServers": ["storybook-addon-mcp", "storybook-mcp"]
+}

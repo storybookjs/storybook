@@ -1,0 +1,24 @@
+{
+  "color": {
+    "control": {
+      "type": "text",
+    },
+    "description": "",
+    "name": "color",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'primary'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

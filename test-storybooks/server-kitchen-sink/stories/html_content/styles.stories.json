@@ -1,0 +1,28 @@
+{
+  "stories": [
+    {
+      "name": "Head Inline",
+      "parameters": {
+        "server": { "id": "styles/head_inline" }
+      }
+    },
+    {
+      "name": "Head Src",
+      "parameters": {
+        "server": { "id": "styles/head_src" }
+      }
+    },
+    {
+      "name": "Body Inline",
+      "parameters": {
+        "server": { "id": "styles/body_inline" }
+      }
+    },
+    {
+      "name": "Body Src",
+      "parameters": {
+        "server": { "id": "styles/body_src" }
+      }
+    }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'this is the default :)'",
+      },
+      "description": "",
+      "name": "title",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "foo",
+      "required": true,
+      "sbType": {
+        "name": "boolean",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "boolean",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "bar",
+      "required": false,
+      "sbType": {
+        "name": "array",
+        "raw": "string[]",
+        "value": [
+          {
+            "name": "string",
+          },
+        ],
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string[]",
+      },
+    },
+  ],
+}

@@ -1,0 +1,45 @@
+{
+  "id": "args-references",
+  "name": "ArgsReferencesButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-args-references--identifier-arg": {
+      "description": undefined,
+      "id": "forms-args-references--identifier-arg",
+      "name": "Identifier Arg",
+      "snippet": "<script lang="ts" setup>
+import ArgsReferencesButton from './ArgsReferencesButton.vue';
+</script>
+
+<template>
+  <ArgsReferencesButton label="Declared label" />
+</template>",
+      "summary": undefined,
+    },
+    "forms-args-references--spread-object-arg": {
+      "description": undefined,
+      "id": "forms-args-references--spread-object-arg",
+      "name": "Spread Object Arg",
+      "snippet": "<script lang="ts" setup>
+import ArgsReferencesButton from './ArgsReferencesButton.vue';
+
+const options = {
+  size: 'md',
+  tone: 'neutral'
+};
+</script>
+
+<template>
+  <ArgsReferencesButton :options="options" />
+</template>",
+      "summary": undefined,
+    },
+    "forms-args-references--unreadable-spread-arg": {
+      "description": undefined,
+      "id": "forms-args-references--unreadable-spread-arg",
+      "name": "Unreadable Spread Arg",
+      "summary": undefined,
+      "warning": "No static snippet: `options: { ...buildOptions(), tone: 'neutral' }`, `...buildOptions()` could not be resolved statically.",
+    },
+  },
+}

@@ -1,0 +1,21 @@
+{
+  "spacing": {
+    "control": {
+      "type": "number",
+    },
+    "description": "",
+    "name": "spacing",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": true,
+    },
+  },
+}

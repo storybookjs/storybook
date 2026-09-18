@@ -1,0 +1,28 @@
+{
+  "name": "@storybook/mcp-eval-template-vite-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "imports": {
+    "#test-utils": "./__agent_eval__/test-utils.ts"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "typecheck": "tsc --noEmit --project ./tsconfig.app.json"
+  },
+  "dependencies": {
+    "react": "19.2.0",
+    "react-dom": "19.2.0"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "@types/react": "19.2.6",
+    "@types/react-dom": "19.2.3",
+    "@vercel/agent-eval": "1.2.0",
+    "@vitejs/plugin-react-swc": "4.2.2",
+    "typescript": "5.9.3",
+    "vite": "7.2.2",
+    "vitest": "4.0.6"
+  }
+}

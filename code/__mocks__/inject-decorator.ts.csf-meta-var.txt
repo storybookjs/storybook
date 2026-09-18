@@ -1,0 +1,15 @@
+import React from "react";
+import { action } from "storybook/actions";
+import { Button } from "@storybook/react/demo";
+
+const meta = {
+  title: "Button",
+  excludeStories: ["text"],
+  includeStories: /emoji.*/
+};
+
+export default meta;
+
+export const text = () => (
+  <Button onClick={action("clicked")}>Hello Button</Button>
+);

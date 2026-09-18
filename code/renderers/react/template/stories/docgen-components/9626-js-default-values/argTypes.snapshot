@@ -1,0 +1,23 @@
+{
+  "title": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "title",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'Beta'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+}

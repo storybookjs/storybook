@@ -1,0 +1,254 @@
+import { cp, mkdir } from 'node:fs/promises';
+import { rm } from 'node:fs/promises';
+
+import { Channel } from 'storybook/internal/channels';
+import {
+  loadAllPresets,
+  loadMainConfig,
+  logConfig,
+  resolveAddonName,
+} from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
+import { getPrecedingUpgrade, telemetry } from 'storybook/internal/telemetry';
+import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+
+import { global } from '@storybook/global';
+
+import { join, relative, resolve } from 'pathe';
+import picocolors from 'picocolors';
+
+import {
+  getRegisteredServices,
+  writeOpenServiceStaticFiles,
+} from '../shared/open-service/server.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
+import { resolvePackageDir } from '../shared/utils/module.ts';
+import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { buildOrThrow } from './utils/build-or-throw.ts';
+import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
+import { getBuilders } from './utils/get-builders.ts';
+import { writeIndexJson } from './utils/index-json.ts';
+import { writeManifests } from './utils/manifests/manifests.ts';
+import { extractStorybookMetadata } from './utils/metadata.ts';
+import { outputStats } from './utils/output-stats.ts';
+import { summarizeIndex } from './utils/summarizeIndex.ts';
+
+export type BuildStaticStandaloneOptions = CLIOptions &
+  LoadOptions &
+  BuilderOptions & { outputDir: string };
+
+export async function buildStaticStandalone(options: BuildStaticStandaloneOptions) {
+  options.configType = 'PRODUCTION';
+
+  if (options.outputDir === '') {
+    throw new Error("Won't remove current directory. Check your outputDir!");
+  }
+
+  options.outputDir = resolve(options.outputDir);
+  options.configDir = resolve(options.configDir);
+
+  logger.step(`Cleaning outputDir: ${picocolors.cyan(relative(process.cwd(), options.outputDir))}`);
+  if (options.outputDir === '/') {
+    throw new Error("Won't remove directory '/'. Check your outputDir!");
+  }
+  await rm(options.outputDir, { recursive: true, force: true }).catch(() => {});
+  await mkdir(options.outputDir, { recursive: true });
+
+  const config = await loadMainConfig(options);
+  const { framework } = config;
+  const corePresets = [];
+
+  const frameworkName = typeof framework === 'string' ? framework : framework?.name;
+  if (frameworkName) {
+    corePresets.push(join(frameworkName, 'preset'));
+  } else if (!options.ignorePreview) {
+    logger.warn(`you have not specified a framework in your ${options.configDir}/main.js`);
+  }
+
+  const commonPreset = join(
+    resolvePackageDir('storybook'),
+    'dist/core-server/presets/common-preset.js'
+  );
+  const commonOverridePreset = import.meta
+    .resolve('storybook/internal/core-server/presets/common-override-preset');
+
+  logger.step('Loading presets');
+
+  // no-op channel, as it's only relevant in dev mode
+  const channel = new Channel({});
+  let presets = await loadAllPresets({
+    corePresets: [commonPreset, ...corePresets],
+    overridePresets: [commonOverridePreset],
+    isCritical: true,
+    channel,
+    ...options,
+  });
+
+  const { renderer } = await presets.apply('core', {});
+  const build = await presets.apply('build', {});
+  const [previewBuilder, managerBuilder] = await getBuilders({
+    ...options,
+    presets,
+    build,
+    channel,
+  });
+
+  const resolvedRenderer = renderer
+    ? resolveAddonName(options.configDir, renderer, options)
+    : undefined;
+  presets = await loadAllPresets({
+    corePresets: [
+      commonPreset,
+      ...(managerBuilder.corePresets || []),
+      ...(previewBuilder.corePresets || []),
+      ...(resolvedRenderer ? [resolvedRenderer] : []),
+      ...corePresets,
+    ],
+    overridePresets: [...(previewBuilder.overridePresets || []), commonOverridePreset],
+    build,
+    channel,
+    ...options,
+  });
+
+  const [features, core, staticDirs] = await Promise.all([
+    presets.apply('features'),
+    presets.apply('core'),
+    presets.apply('staticDirs'),
+  ]);
+
+  const invokedBy = process.env.STORYBOOK_INVOKED_BY;
+  if (invokedBy) {
+    // NOTE: we don't await this event to avoid slowing things down.
+    // This could result in telemetry events being lost.
+    telemetry('test-run', { runner: invokedBy, watch: false }, { configDir: options.configDir });
+  }
+
+  const fullOptions: Options = {
+    ...options,
+    channel,
+    presets,
+    features,
+    build,
+  };
+
+  const effects: Promise<void>[] = [];
+
+  global.FEATURES = features;
+  await applyServicesPresetOnce(presets);
+
+  if (!options.previewOnly) {
+    await buildOrThrow(async () =>
+      managerBuilder.build({ startTime: process.hrtime(), options: fullOptions })
+    );
+  }
+
+  if (staticDirs) {
+    effects.push(
+      copyAllStaticFilesRelativeToMain(staticDirs, options.outputDir, options.configDir)
+    );
+  }
+
+  const coreServerPublicDir = join(resolvePackageDir('storybook'), 'assets/browser');
+  effects.push(cp(coreServerPublicDir, options.outputDir, { recursive: true, force: true }));
+
+  const hasRegisteredServices = getRegisteredServices().length > 0;
+  const shouldWriteManifests = !options.ignorePreview && features?.componentsManifest;
+
+  if (hasRegisteredServices || shouldWriteManifests) {
+    effects.push(
+      (async () => {
+        if (hasRegisteredServices) {
+          logger.info('Building open services..');
+          await writeOpenServiceStaticFiles(options.outputDir);
+        }
+
+        if (shouldWriteManifests) {
+          // Ref-based components.json reads docgen snapshots from outputDir/services/ — manifests
+          // must run after open-service static files are written.
+          await writeManifests(options.outputDir, presets);
+        }
+      })()
+    );
+  }
+
+  let storyIndexGeneratorPromise: Promise<StoryIndexGenerator | undefined> =
+    Promise.resolve(undefined);
+  if (!options.ignorePreview) {
+    storyIndexGeneratorPromise = presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+    effects.push(
+      writeIndexJson(
+        join(options.outputDir, 'index.json'),
+        storyIndexGeneratorPromise as Promise<StoryIndexGenerator>
+      )
+    );
+  }
+
+  if (!core?.disableProjectJson) {
+    effects.push(
+      extractStorybookMetadata(join(options.outputDir, 'project.json'), options.configDir)
+    );
+  }
+
+  if (options.debugWebpack) {
+    logConfig('Preview webpack config', await previewBuilder.getConfig(fullOptions));
+  }
+
+  if (options.ignorePreview) {
+    logger.info(`Not building preview`);
+  } else {
+    logger.info('Building preview..');
+  }
+
+  const startTime = process.hrtime();
+  await Promise.all([
+    ...(options.ignorePreview
+      ? []
+      : [
+          previewBuilder
+            .build({
+              startTime,
+              options: fullOptions,
+            })
+            .then(async (previewStats) => {
+              logger.trace({ message: 'Preview built', time: process.hrtime(startTime) });
+
+              const statsOption = options.webpackStatsJson || options.statsJson;
+              if (statsOption) {
+                const target = statsOption === true ? options.outputDir : statsOption;
+                await outputStats(target, previewStats);
+              }
+            })
+            .catch((error) => {
+              logger.error('Failed to build the preview');
+              process.exitCode = 1;
+              throw error;
+            }),
+        ]),
+    ...effects,
+  ]);
+
+  // Now the code has successfully built, we can count this as a 'build' event.
+  // NOTE: we don't send the 'build' event for test runs as we want to be as fast as possible.
+  if (!options.test) {
+    try {
+      const generator = await storyIndexGeneratorPromise;
+      const storyIndex = await generator?.getIndex();
+      const payload: any = {
+        precedingUpgrade: await getPrecedingUpgrade(),
+      };
+      if (storyIndex) {
+        Object.assign(payload, {
+          storyIndex: summarizeIndex(storyIndex),
+        });
+      }
+
+      await telemetry('build', payload, { configDir: options.configDir });
+    } catch (e) {
+      // Telemetry failures should not fail the build process
+      logger.debug?.(`Build telemetry failed: ${e instanceof Error ? e.message : String(e)}`);
+    }
+  }
+
+  logger.step(`Output directory: ${options.outputDir}`);
+}

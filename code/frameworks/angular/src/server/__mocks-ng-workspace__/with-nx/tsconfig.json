@@ -1,0 +1,14 @@
+{
+  "include": ["./src"],
+  "compilerOptions": {
+    "sourceMap": true,
+    "moduleResolution": "node",
+    "emitDecoratorMetadata": true,
+    "experimentalDecorators": true,
+    "allowSyntheticDefaultImports": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es5",
+    "lib": ["es2017", "dom"]
+  }
+}

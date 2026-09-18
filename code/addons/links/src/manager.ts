@@ -1,0 +1,10 @@
+import { addons } from 'storybook/manager-api';
+
+import EVENTS, { ADDON_ID } from './constants.ts';
+
+addons.register(ADDON_ID, (api) => {
+  api.on(EVENTS.REQUEST, ({ kind, name }) => {
+    const id = api.storyId(kind, name);
+    api.emit(EVENTS.RECEIVE, id);
+  });
+});

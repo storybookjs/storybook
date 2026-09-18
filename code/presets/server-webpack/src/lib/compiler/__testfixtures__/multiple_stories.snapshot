@@ -1,0 +1,31 @@
+
+export default {
+  title: "Demo",
+};
+
+export const Heading = {
+  name: "Heading",
+  parameters: {
+    server: {
+      id: "demo/heading"
+    }
+  }
+};
+
+export const Headings = {
+  name: "Headings",
+  parameters: {
+    server: {
+      id: "demo/headings"
+    }
+  }
+};
+
+export const Button = {
+  name: "Button",
+  parameters: {
+    server: {
+      id: "demo/button"
+    }
+  }
+};

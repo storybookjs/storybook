@@ -1,1 +1,4 @@
-.yarn/releases/yarn-*.js linguist-generated=true
+/**/.yarn/** linguist-generated
+* -text
+
+.github/workflows/*.lock.yml linguist-generated=true merge=ours

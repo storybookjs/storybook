@@ -1,0 +1,14 @@
+title: Demo YML
+stories:
+  - name: Heading
+    parameters:
+      server:
+        id: yaml/heading
+  - name: Headings
+    parameters:
+      server:
+        id: yaml/headings
+  - name: Button
+    parameters:
+      server:
+        id: yaml/button

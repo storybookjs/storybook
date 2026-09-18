@@ -1,0 +1,674 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { logger, prompt } from 'storybook/internal/node-logger';
+import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
+
+import { executeCommand, executeCommandSync } from '../utils/command.ts';
+import { JsPackageManager } from './JsPackageManager.ts';
+import { PNPMProxy } from './PNPMProxy.ts';
+
+vi.mock('storybook/internal/node-logger', () => ({
+  prompt: {
+    executeTaskWithSpinner: vi.fn(),
+    getPreferredStdio: vi.fn(() => 'inherit'),
+    select: vi.fn(),
+  },
+  logger: {
+    debug: vi.fn(),
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  },
+}));
+
+vi.mock(import('../utils/command.ts'), { spy: true });
+const mockedExecuteCommand = vi.mocked(executeCommand);
+const mockedExecuteCommandSync = vi.mocked(executeCommandSync);
+
+const mockPnpmVersion = (version: string) => {
+  mockedExecuteCommandSync.mockImplementation((options) => {
+    if (options.command === 'pnpm' && options.args?.[0] === '--version') {
+      return version;
+    }
+    return '';
+  });
+};
+const expectedMinimumReleaseAgeExcludePackages = [
+  'react',
+  'webpack',
+  'storybook',
+  '@storybook/*',
+  'eslint-plugin-storybook',
+  '@chromatic-com/storybook',
+];
+
+describe('PNPM Proxy', () => {
+  let pnpmProxy: PNPMProxy;
+
+  beforeEach(() => {
+    mockPnpmVersion('11.18.0');
+    pnpmProxy = new PNPMProxy();
+    JsPackageManager.clearLatestVersionCache();
+    vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+  });
+
+  it('type should be pnpm', () => {
+    expect(pnpmProxy.type).toEqual('pnpm');
+  });
+
+  describe('getRegistryURL', () => {
+    it('uses npm 12-compatible workspace flags', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'https://registry.npmjs.org/',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'npm',
+          args: ['config', 'get', 'registry', '--workspaces=false', '--include-workspace-root'],
+        })
+      );
+    });
+  });
+
+  describe('installDependencies', () => {
+    it('should run `pnpm install`', async () => {
+      // sort of un-mock part of the function so executeCommand (also mocked) is called
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
+
+      await pnpmProxy.installDependencies();
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({ command: 'pnpm', args: ['install'] })
+      );
+    });
+
+    it('should rethrow minimum-release-age install errors as handled errors', async () => {
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (fn: any) => {
+        await Promise.resolve(fn());
+      });
+      const originalError = new Error(
+        'ERR_PNPM_NO_MATURE_MATCHING_VERSION Version 10.4.0-alpha.17 (released 1 minute ago) of storybook does not meet the minimumReleaseAge constraint'
+      );
+      mockedExecuteCommand.mockRejectedValueOnce(originalError);
+
+      const error = await pnpmProxy.installDependencies().then(
+        () => null,
+        (caughtError) => caughtError
+      );
+
+      expect(error).toBeInstanceOf(MinimumReleaseAgeHandledError);
+      expect(error).toMatchObject({ cause: originalError });
+      expect(error?.message).toContain('minimumReleaseAge');
+      expect(error?.message).toContain('minimumReleaseAgeExclude');
+    });
+  });
+
+  describe('runScript', () => {
+    it('should execute script `pnpm exec compodoc -- -e json -d .`', () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.1.0' } as any);
+
+      pnpmProxy.runPackageCommand({ args: ['compodoc', '-e', 'json', '-d', '.'] });
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['exec', 'compodoc', '-e', 'json', '-d', '.'],
+        })
+      );
+    });
+
+    describe('useRemotePkg (dlx)', () => {
+      describe('on pnpm >= 10.2', () => {
+        beforeEach(() => {
+          mockPnpmVersion('10.2.0');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('should pass --allow-build=esbuild before dlx', () => {
+          const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+          pnpmProxy.runPackageCommand({
+            args: ['create-storybook@10.5.5', '-y'],
+            useRemotePkg: true,
+          });
+
+          expect(executeCommandSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              command: 'pnpm',
+              args: ['--allow-build=esbuild', 'dlx', 'create-storybook@10.5.5', '-y'],
+            })
+          );
+        });
+      });
+
+      describe('on pnpm < 10.2', () => {
+        beforeEach(() => {
+          mockPnpmVersion('9.15.9');
+          pnpmProxy = new PNPMProxy();
+        });
+
+        it('should not pass --allow-build on dlx', () => {
+          const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '' } as any);
+
+          pnpmProxy.runPackageCommand({
+            args: ['create-storybook@10.5.5', '-y'],
+            useRemotePkg: true,
+          });
+
+          expect(executeCommandSpy).toHaveBeenCalledWith(
+            expect.objectContaining({
+              command: 'pnpm',
+              args: ['dlx', 'create-storybook@10.5.5', '-y'],
+            })
+          );
+        });
+      });
+    });
+  });
+
+  describe('addDependencies', () => {
+    it('with devDep it should run `pnpm add -D storybook`', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '6.0.0' } as any);
+
+      await pnpmProxy.addDependencies({ type: 'devDependencies' }, ['storybook']);
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['add', '-D', 'storybook'],
+        })
+      );
+    });
+  });
+
+  describe('removeDependencies', () => {
+    it('should only change package.json without running install', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '7.0.0' } as any);
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation((args) => {
+        return {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/manager-webpack5': 'x.x.x',
+            '@storybook/react': 'x.x.x',
+          },
+        };
+      });
+
+      await pnpmProxy.removeDependencies(['@storybook/manager-webpack5']);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          dependencies: {},
+          devDependencies: {
+            '@storybook/react': 'x.x.x',
+          },
+        },
+        expect.any(String)
+      );
+      expect(executeCommandSpy).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('latestVersion', () => {
+    it('without constraint it returns the latest version', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
+
+      const version = await pnpmProxy.latestVersion('storybook');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['info', 'storybook', 'version'],
+        })
+      );
+      expect(version).toEqual('5.3.19');
+    });
+
+    it('with constraint it returns the latest version satisfying the constraint', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: '["4.25.3","5.3.19","6.0.0-beta.23"]',
+      } as any);
+
+      const version = await pnpmProxy.latestVersion('storybook', '5.X');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['info', 'storybook', 'versions', '--json'],
+        })
+      );
+      expect(version).toEqual('5.3.19');
+    });
+
+    it('with constraint it throws an error if command output is not a valid JSON', async () => {
+      mockedExecuteCommand.mockResolvedValue({ stdout: 'NOT A JSON' } as any);
+
+      await expect(pnpmProxy.latestVersion('storybook', '5.X')).resolves.toBe(null);
+    });
+  });
+
+  describe('getVersion', () => {
+    it('with a Storybook package listed in versions.json it returns the version', async () => {
+      const storybookAngularVersion = (await import('../versions.ts')).default[
+        '@storybook/angular'
+      ];
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({ stdout: '5.3.19' } as any);
+
+      const version = await pnpmProxy.getVersion('@storybook/angular');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['info', '@storybook/angular', 'version'],
+        })
+      );
+      expect(version).toEqual(`^${storybookAngularVersion}`);
+    });
+
+    it('with a Storybook package not listed in versions.json it returns the latest version', async () => {
+      const packageVersion = '5.3.19';
+      const executeCommandSpy = mockedExecuteCommand.mockResolvedValue({
+        stdout: `${packageVersion}`,
+      } as any);
+
+      const version = await pnpmProxy.getVersion('@storybook/react-native');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: ['info', '@storybook/react-native', 'version'],
+        })
+      );
+      expect(version).toEqual(`^${packageVersion}`);
+    });
+  });
+
+  describe('addPackageResolutions', () => {
+    it('adds resolutions to package.json and account for existing resolutions', async () => {
+      const basePackageAttributes = {
+        dependencies: {},
+        devDependencies: {},
+      };
+
+      const writePackageSpy = vi.spyOn(pnpmProxy, 'writePackageJson').mockImplementation(vi.fn());
+
+      vi.spyOn(JsPackageManager, 'getPackageJson').mockImplementation(() => ({
+        dependencies: {},
+        devDependencies: {},
+        overrides: {
+          bar: 'x.x.x',
+        },
+      }));
+
+      const versions = {
+        foo: 'x.x.x',
+      };
+      pnpmProxy.addPackageResolutions(versions);
+
+      expect(writePackageSpy).toHaveBeenCalledWith(
+        {
+          ...basePackageAttributes,
+          overrides: {
+            ...versions,
+            bar: 'x.x.x',
+          },
+        },
+        expect.any(String)
+      );
+    });
+  });
+
+  describe('mapDependencies', () => {
+    it('should display duplicated dependencies based on pnpm output', async () => {
+      // pnpm list "@storybook/*" "storybook" --depth 10 --json
+      mockedExecuteCommand.mockResolvedValue({
+        stdout: `
+        [
+          {
+            "peerDependencies": {
+              "unrelated-and-should-be-filtered": {
+                "version": "1.0.0",
+                "from": "",
+                "resolved": ""
+              }
+            },
+            "dependencies": {
+              "@storybook/addon-example": {
+                "from": "@storybook/addon-example",
+                "version": "7.0.0-beta.13",
+                "resolved": "https://registry.npmjs.org/@storybook/addon-example/-/addon-example-7.0.0-beta.13.tgz",
+                "dependencies": {
+                  "@storybook/package": {
+                    "from": "@storybook/package",
+                    "version": "7.0.0-beta.13",
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-beta.13.tgz"
+                  }
+                }
+              }
+            },
+            "devDependencies": {
+              "@storybook/jest": {
+                "from": "@storybook/jest",
+                "version": "0.0.11-next.0",
+                "resolved": "https://registry.npmjs.org/@storybook/jest/-/jest-0.0.11-next.0.tgz",
+                "dependencies": {
+                  "@storybook/package": {
+                    "from": "@storybook/package",
+                    "version": "7.0.0-rc.7",
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-rc.7.tgz"
+                  }
+                }
+              },
+              "@storybook/testing-library": {
+                "from": "@storybook/testing-library",
+                "version": "0.0.14-next.1",
+                "resolved": "https://registry.npmjs.org/@storybook/testing-library/-/testing-library-0.0.14-next.1.tgz",
+                "dependencies": {
+                  "@storybook/package": {
+                    "from": "@storybook/package",
+                    "version": "7.0.0-rc.7",
+                    "resolved": "https://registry.npmjs.org/@storybook/package/-/package-7.0.0-rc.7.tgz"
+                  }
+                }
+              },
+              "@storybook/nextjs": {
+                "from": "@storybook/nextjs",
+                "version": "7.0.0-beta.13",
+                "resolved": "https://registry.npmjs.org/@storybook/nextjs/-/nextjs-7.0.0-beta.13.tgz",
+                "dependencies": {
+                  "@storybook/builder-webpack5": {
+                    "from": "@storybook/builder-webpack5",
+                    "version": "7.0.0-beta.13",
+                    "resolved": "https://registry.npmjs.org/@storybook/builder-webpack5/-/builder-webpack5-7.0.0-beta.13.tgz",
+                    "dependencies": {
+                      "@storybook/addons": {
+                        "from": "@storybook/addons",
+                        "version": "7.0.0-beta.13",
+                        "resolved": "https://registry.npmjs.org/@storybook/addons/-/addons-7.0.0-beta.13.tgz"
+                      }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        ]      
+      `,
+      } as any);
+
+      const installations = await pnpmProxy.findInstallations(['@storybook/*']);
+
+      expect(installations).toMatchInlineSnapshot(`
+        {
+          "dedupeCommand": "pnpm dedupe",
+          "dependencies": {
+            "@storybook/addon-example": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/addons": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/builder-webpack5": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/jest": [
+              {
+                "location": "",
+                "version": "0.0.11-next.0",
+              },
+            ],
+            "@storybook/nextjs": [
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/package": [
+              {
+                "location": "",
+                "version": "7.0.0-rc.7",
+              },
+              {
+                "location": "",
+                "version": "7.0.0-beta.13",
+              },
+            ],
+            "@storybook/testing-library": [
+              {
+                "location": "",
+                "version": "0.0.14-next.1",
+              },
+            ],
+          },
+          "duplicatedDependencies": {
+            "@storybook/package": [
+              "7.0.0-rc.7",
+              "7.0.0-beta.13",
+            ],
+          },
+          "infoCommand": "pnpm list --depth=1",
+        }
+      `);
+    });
+  });
+
+  describe('precheckStorybookPackageInstall', () => {
+    beforeEach(() => {
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-05-11T12:00:00.000Z'));
+    });
+
+    afterEach(() => {
+      vi.useRealTimers();
+    });
+
+    it('should update minimumReleaseAgeExclude in non-interactive mode when minimumReleaseAge blocks Storybook', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
+        .mockResolvedValueOnce({ stdout: '' } as any);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
+        await factory();
+      });
+
+      await pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: true,
+        installContext: 'create',
+      });
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: [
+            'config',
+            'set',
+            '--location=project',
+            '--json',
+            'minimumReleaseAgeExclude',
+            JSON.stringify(expectedMinimumReleaseAgeExcludePackages),
+          ],
+        })
+      );
+    });
+
+    it('should let the user update minimumReleaseAgeExclude interactively', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify(['react', '@storybook/preset-react-webpack']),
+        } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any)
+        .mockResolvedValueOnce({ stdout: JSON.stringify(['react', 'webpack']) } as any)
+        .mockResolvedValueOnce({ stdout: '' } as any);
+      vi.mocked(prompt.select).mockResolvedValue('exclude' as never);
+      vi.mocked(prompt.executeTaskWithSpinner).mockImplementationOnce(async (factory: any) => {
+        await factory();
+      });
+
+      await pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: false,
+        installContext: 'create',
+      });
+
+      expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'pnpm minimumReleaseAge will block storybook@10.4.0-alpha.17 from being installed'
+        )
+      );
+      expect(vi.mocked(prompt.select)).toHaveBeenCalledWith(
+        expect.objectContaining({
+          options: expect.arrayContaining([
+            expect.objectContaining({
+              label: 'Update pnpm config to exclude Storybook packages',
+            }),
+            expect.objectContaining({
+              label: 'Stop now and rerun with the most recent allowed release: storybook@10.3.2',
+            }),
+          ]),
+        }),
+        expect.objectContaining({
+          onCancel: expect.any(Function),
+        })
+      );
+      expect(vi.mocked(logger.info)).not.toHaveBeenCalledWith(
+        'Added Storybook core packages to pnpm minimumReleaseAgeExclude for this project.'
+      );
+
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'pnpm',
+          args: [
+            'config',
+            'set',
+            '--location=project',
+            '--json',
+            'minimumReleaseAgeExclude',
+            JSON.stringify(expectedMinimumReleaseAgeExcludePackages),
+          ],
+        })
+      );
+    });
+
+    it('should tell create-storybook users how to rerun when they choose rerun', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]' } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any);
+      vi.mocked(prompt.select).mockResolvedValue('rerun' as never);
+
+      const rerunPromise = pnpmProxy.precheckStorybookPackageInstall({
+        storybookVersion: '10.4.0-alpha.17',
+        nonInteractive: false,
+        installContext: 'create',
+      });
+
+      await expect(rerunPromise).rejects.toThrow(
+        /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
+      );
+
+      await expect(rerunPromise).rejects.not.toThrow(
+        /choose one of these options|Update pnpm to exclude Storybook packages/
+      );
+    });
+
+    it('should show the same rerun guidance when the prompt is cancelled', async () => {
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({ stdout: '[]' } as any)
+        .mockResolvedValueOnce({ stdout: '"2026-05-11T11:59:00.000Z"' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify({
+            created: '2025-01-01T00:00:00.000Z',
+            modified: '2026-05-11T12:00:00.000Z',
+            '10.4.0-alpha.17': '2026-05-11T11:59:00.000Z',
+            '10.3.2': '2026-05-01T00:00:00.000Z',
+          }),
+        } as any);
+      vi.mocked(prompt.select).mockImplementationOnce(async (_options: any, promptOptions: any) => {
+        promptOptions.onCancel();
+        return 'exclude';
+      });
+
+      await expect(
+        pnpmProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'create',
+        })
+      ).rejects.toThrow(
+        /Please rerun Storybook creation with:[\s\S]*npx create-storybook@10\.3\.2/
+      );
+    });
+
+    it('should skip the precheck when Storybook packages are already excluded', async () => {
+      const updateSpy = vi.spyOn(pnpmProxy as any, 'updateMinimumReleaseAgeExclude');
+      mockedExecuteCommand
+        .mockResolvedValueOnce({ stdout: '1440\n' } as any)
+        .mockResolvedValueOnce({
+          stdout: JSON.stringify([
+            'storybook',
+            '@storybook/*',
+            'eslint-plugin-storybook',
+            '@chromatic-com/storybook',
+          ]),
+        } as any);
+
+      await expect(
+        pnpmProxy.precheckStorybookPackageInstall({
+          storybookVersion: '10.4.0-alpha.17',
+          nonInteractive: false,
+          installContext: 'upgrade',
+        })
+      ).resolves.toBeUndefined();
+
+      expect(vi.mocked(prompt.select)).not.toHaveBeenCalled();
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+      expect(updateSpy).not.toHaveBeenCalled();
+    });
+  });
+});

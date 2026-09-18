@@ -1,0 +1,118 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "ColorPickerComponent",
+      "id": "component-ColorPickerComponent-ee805ddb7f60da308cdcc8df0001da2e5a083f17f41e20836c705aea547615150fda99a5fd1a529c7916959272247b37e65a7aad6e078224274403e7f3a9f84b",
+      "file": "color-picker.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "cp",
+      "styleUrls": [],
+      "styles": [],
+      "template": "",
+      "templateUrl": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "name": "color",
+          "defaultValue": "'#345F92'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 5,
+          "modifierKind": [125, 148],
+          "required": false
+        },
+        {
+          "name": "showText",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "boolean",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 7,
+          "required": true
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "color",
+          "defaultValue": "'#345F92'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 5,
+          "modifierKind": [125, 148],
+          "required": false
+        },
+        {
+          "name": "showText",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "boolean",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 7,
+          "required": true
+        }
+      ],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, model } from '@angular/core';\n\n@Component({ selector: 'cp', template: '' })\nexport class ColorPickerComponent {\n  public readonly color = model<string>('#345F92');\n\n  showText = model.required<boolean>();\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": []
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "color-picker.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "ColorPickerComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/5",
+        "status": "low"
+      }
+    ]
+  }
+}

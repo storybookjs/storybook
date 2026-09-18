@@ -1,0 +1,352 @@
+import type { CleanupCallback } from 'storybook/internal/csf';
+import {
+  CalledExtractOnStoreError,
+  MissingStoryFromCsfFileError,
+} from 'storybook/internal/preview-errors';
+import type {
+  CSFFile,
+  IndexEntry,
+  ModuleExports,
+  ModuleImportFn,
+  NormalizedProjectAnnotations,
+  Path,
+  PreparedMeta,
+  PreparedStory,
+  ProjectAnnotations,
+  Renderer,
+  StoryContextForEnhancers,
+  StoryId,
+  StoryIndex,
+} from 'storybook/internal/types';
+
+import { omitBy, pick } from 'es-toolkit/object';
+import memoize from 'memoizerific';
+
+import { HooksContext } from '../addons/index.ts';
+import { ArgsStore } from './ArgsStore.ts';
+import { GlobalsStore } from './GlobalsStore.ts';
+import { StoryIndexStore } from './StoryIndexStore.ts';
+import {
+  composeProjectAnnotationsWithCore,
+  normalizeProjectAnnotations,
+  prepareContext,
+  prepareMeta,
+  prepareStory,
+  processCSFFile,
+} from './csf/index.ts';
+import { ReporterAPI } from './reporter-api.ts';
+
+export function picky<T extends Record<string, any>, K extends keyof T>(
+  obj: T,
+  keys: K[]
+): Partial<Pick<T, K>> {
+  return omitBy(pick(obj, keys), (v) => v === undefined);
+}
+
+/**
+ * Compose and normalize the project annotations for the store, prepending the core annotations via
+ * {@link composeProjectAnnotationsWithCore} (CSF4 previews are detected and not double-composed).
+ */
+function composeProjectAnnotations<TRenderer extends Renderer>(
+  projectAnnotations: ProjectAnnotations<TRenderer>
+): NormalizedProjectAnnotations<TRenderer> {
+  return normalizeProjectAnnotations(composeProjectAnnotationsWithCore([projectAnnotations]));
+}
+
+// TODO -- what are reasonable values for these?
+const CSF_CACHE_SIZE = 1000;
+const STORY_CACHE_SIZE = 10000;
+
+export class StoryStore<TRenderer extends Renderer> {
+  public storyIndex: StoryIndexStore;
+
+  projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
+
+  userGlobals: GlobalsStore;
+
+  args: ArgsStore;
+
+  hooks: Record<StoryId, HooksContext<TRenderer>>;
+
+  cleanupCallbacks: Record<StoryId, CleanupCallback[] | undefined>;
+
+  cachedCSFFiles?: Record<Path, CSFFile<TRenderer>>;
+
+  processCSFFileWithCache: typeof processCSFFile;
+
+  prepareMetaWithCache: typeof prepareMeta;
+
+  prepareStoryWithCache: typeof prepareStory;
+
+  constructor(
+    storyIndex: StoryIndex,
+
+    public importFn: ModuleImportFn,
+
+    projectAnnotations: ProjectAnnotations<TRenderer>
+  ) {
+    this.storyIndex = new StoryIndexStore(storyIndex);
+
+    this.projectAnnotations = composeProjectAnnotations(projectAnnotations);
+    const { initialGlobals, globalTypes } = this.projectAnnotations;
+
+    this.args = new ArgsStore();
+    this.userGlobals = new GlobalsStore({ globals: initialGlobals, globalTypes });
+    this.hooks = {};
+    this.cleanupCallbacks = {};
+
+    // We use a cache for these two functions for two reasons:
+    //  1. For performance
+    //  2. To ensure that when the same story is prepared with the same inputs you get the same output
+    this.processCSFFileWithCache = memoize(CSF_CACHE_SIZE)(processCSFFile) as typeof processCSFFile;
+    this.prepareMetaWithCache = memoize(CSF_CACHE_SIZE)(prepareMeta) as typeof prepareMeta;
+    this.prepareStoryWithCache = memoize(STORY_CACHE_SIZE)(prepareStory) as typeof prepareStory;
+  }
+
+  setProjectAnnotations(projectAnnotations: ProjectAnnotations<TRenderer>) {
+    // By changing `this.projectAnnotations, we implicitly invalidate the `prepareStoryWithCache`
+    // NOTE: unlike the constructor, this does not prepend the core annotations: the project
+    // annotations passed here (from `getProjectAnnotations()`) are only ever re-normalized, never
+    // re-composed with core, so there's no risk of doubling them on HMR updates.
+    this.projectAnnotations = normalizeProjectAnnotations(projectAnnotations);
+    const { initialGlobals, globalTypes } = projectAnnotations;
+    this.userGlobals.set({ globals: initialGlobals, globalTypes });
+  }
+
+  // This means that one of the CSF files has changed.
+  // If the `importFn` has changed, we will invalidate both caches.
+  // If the `storyIndex` data has changed, we may or may not invalidate the caches, depending
+  // on whether we've loaded the relevant files yet.
+  async onStoriesChanged({
+    importFn,
+    storyIndex,
+  }: {
+    importFn?: ModuleImportFn;
+    storyIndex?: StoryIndex;
+  }) {
+    if (importFn) {
+      this.importFn = importFn;
+    }
+    // The index will always be set before the initialization promise returns
+    // The index will always be set before the initialization promise returns
+
+    // The index will always be set before the initialization promise returns
+    if (storyIndex) {
+      this.storyIndex.entries = storyIndex.entries;
+    }
+
+    if (this.cachedCSFFiles) {
+      await this.cacheAllCSFFiles();
+    }
+  }
+
+  // Get an entry from the index, waiting on initialization if necessary
+  async storyIdToEntry(storyId: StoryId): Promise<IndexEntry> {
+    // The index will always be set before the initialization promise returns
+    return this.storyIndex.storyIdToEntry(storyId);
+  }
+
+  // To load a single CSF file to service a story we need to look up the importPath in the index
+  async loadCSFFileByStoryId(storyId: StoryId): Promise<CSFFile<TRenderer>> {
+    const { importPath, title } = this.storyIndex.storyIdToEntry(storyId);
+    const moduleExports = await this.importFn(importPath);
+
+    // We pass the title in here as it may have been generated by autoTitle on the server.
+    return this.processCSFFileWithCache(moduleExports, importPath, title);
+  }
+
+  async loadAllCSFFiles(): Promise<StoryStore<TRenderer>['cachedCSFFiles']> {
+    const importPaths: Record<Path, StoryId> = {};
+    Object.entries(this.storyIndex.entries).forEach(([storyId, { importPath }]) => {
+      importPaths[importPath] = storyId;
+    });
+
+    const list = await Promise.all(
+      Object.entries(importPaths).map(async ([importPath, storyId]) => ({
+        importPath,
+        csfFile: await this.loadCSFFileByStoryId(storyId),
+      }))
+    );
+
+    return list.reduce(
+      (acc, { importPath, csfFile }) => {
+        acc[importPath] = csfFile;
+        return acc;
+      },
+      {} as Record<Path, CSFFile<TRenderer>>
+    );
+  }
+
+  async cacheAllCSFFiles(): Promise<void> {
+    this.cachedCSFFiles = await this.loadAllCSFFiles();
+  }
+
+  preparedMetaFromCSFFile({ csfFile }: { csfFile: CSFFile<TRenderer> }): PreparedMeta<TRenderer> {
+    const componentAnnotations = csfFile.meta;
+
+    return this.prepareMetaWithCache(
+      componentAnnotations,
+      this.projectAnnotations,
+      csfFile.moduleExports.default
+    );
+  }
+
+  // Load the CSF file for a story and prepare the story from it and the project annotations.
+  async loadStory({ storyId }: { storyId: StoryId }): Promise<PreparedStory<TRenderer>> {
+    const csfFile = await this.loadCSFFileByStoryId(storyId);
+    return this.storyFromCSFFile({ storyId, csfFile });
+  }
+
+  // This function is synchronous for convenience -- often times if you have a CSF file already
+  // it is easier not to have to await `loadStory`.
+  storyFromCSFFile({
+    storyId,
+    csfFile,
+  }: {
+    storyId: StoryId;
+    csfFile: CSFFile<TRenderer>;
+  }): PreparedStory<TRenderer> {
+    const storyAnnotations = csfFile.stories[storyId];
+
+    if (!storyAnnotations) {
+      throw new MissingStoryFromCsfFileError({ storyId });
+    }
+
+    const componentAnnotations = csfFile.meta;
+
+    const story = this.prepareStoryWithCache(
+      storyAnnotations,
+      componentAnnotations,
+      csfFile.projectAnnotations ?? this.projectAnnotations
+    );
+    this.args.setInitial(story);
+    this.hooks[story.id] = this.hooks[story.id] || new HooksContext();
+    return story;
+  }
+
+  // If we have a CSF file we can get all the stories from it synchronously
+  componentStoriesFromCSFFile({
+    csfFile,
+  }: {
+    csfFile: CSFFile<TRenderer>;
+  }): PreparedStory<TRenderer>[] {
+    return Object.keys(this.storyIndex.entries)
+      .filter((storyId: StoryId) => !!csfFile.stories[storyId])
+      .map((storyId: StoryId) => this.storyFromCSFFile({ storyId, csfFile }));
+  }
+
+  async loadEntry(id: StoryId) {
+    const entry = await this.storyIdToEntry(id);
+
+    const storyImports = entry.type === 'docs' ? entry.storiesImports : [];
+
+    const [entryExports, ...csfFiles] = (await Promise.all([
+      this.importFn(entry.importPath),
+      ...storyImports.map((storyImportPath) => {
+        const firstStoryEntry = this.storyIndex.importPathToEntry(storyImportPath);
+        return this.loadCSFFileByStoryId(firstStoryEntry.id);
+      }),
+    ])) as [ModuleExports, ...CSFFile<TRenderer>[]];
+
+    return { entryExports, csfFiles };
+  }
+
+  // A prepared story does not include args, globals or hooks. These are stored in the story store
+  // and updated separately to the (immutable) story.
+  getStoryContext(story: PreparedStory<TRenderer>, { forceInitialArgs = false } = {}) {
+    const userGlobals = this.userGlobals.get();
+    const { initialGlobals } = this.userGlobals;
+    const reporting = new ReporterAPI();
+    return prepareContext({
+      ...story,
+      args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
+      initialGlobals,
+      globalTypes: this.projectAnnotations.globalTypes,
+      userGlobals,
+      reporting,
+      globals: {
+        ...userGlobals,
+        ...story.storyGlobals,
+      },
+      hooks: this.hooks[story.id] as unknown,
+    });
+  }
+
+  addCleanupCallbacks(story: PreparedStory<TRenderer>, ...callbacks: CleanupCallback[]) {
+    this.cleanupCallbacks[story.id] = (this.cleanupCallbacks[story.id] || []).concat(callbacks);
+  }
+
+  async cleanupStory(story: PreparedStory<TRenderer>): Promise<void> {
+    this.hooks[story.id].clean();
+
+    const callbacks = this.cleanupCallbacks[story.id];
+
+    if (callbacks) {
+      for (const callback of [...callbacks].reverse()) {
+        await callback();
+      }
+    }
+
+    delete this.cleanupCallbacks[story.id];
+  }
+
+  extract(
+    options: { includeDocsOnly?: boolean } = { includeDocsOnly: false }
+  ): Record<StoryId, StoryContextForEnhancers<TRenderer>> {
+    const { cachedCSFFiles } = this;
+
+    console.log('extract: extracting stories', cachedCSFFiles);
+
+    if (!cachedCSFFiles) {
+      throw new CalledExtractOnStoreError();
+    }
+
+    const stories = Object.entries(this.storyIndex.entries).reduce(
+      (acc, [storyId, entry]) => {
+        if (entry.type === 'docs') {
+          return acc;
+        }
+
+        const csfFile = cachedCSFFiles[entry.importPath];
+        const story = this.storyFromCSFFile({ storyId, csfFile });
+
+        if (!options.includeDocsOnly && story.parameters.docsOnly) {
+          return acc;
+        }
+
+        acc[storyId] = Object.entries(story).reduce(
+          (storyAcc, [key, value]) => {
+            if (key === 'story' && entry.subtype === 'test') {
+              return { ...storyAcc, story: entry.parentName };
+            }
+            if (key === 'moduleExport') {
+              return storyAcc;
+            }
+            if (typeof value === 'function') {
+              return storyAcc;
+            }
+            if (Array.isArray(value)) {
+              return Object.assign(storyAcc, { [key]: value.slice().sort() });
+            }
+            return Object.assign(storyAcc, { [key]: value });
+          },
+          {
+            args: story.initialArgs,
+            globals: {
+              ...this.userGlobals.initialGlobals,
+              ...this.userGlobals.globals,
+              ...story.storyGlobals,
+            },
+            storyId: entry.parent ? entry.parent : storyId,
+          }
+        );
+        return acc;
+      },
+      {} as Record<string, any>
+    );
+
+    console.log('extract: stories', stories);
+
+    return stories;
+  }
+}

@@ -1,0 +1,78 @@
+export interface Project {
+  name: string;
+  repo: string;
+  branch: string;
+  githubSlug: string;
+  projectDir?: string;
+  description?: string;
+}
+
+export const PROJECTS: Project[] = [
+  {
+    name: 'mealdrop',
+    repo: 'https://github.com/storybook-tmp/mealdrop',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/mealdrop',
+    description: 'Styled components, Redux, React Router',
+  },
+  {
+    name: 'edgy',
+    repo: 'https://github.com/storybook-tmp/edgy',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/edgy',
+    description: 'Tailwind, HeadlessUI, React Router',
+  },
+  {
+    name: 'wikitok',
+    repo: 'https://github.com/storybook-tmp/wikitok',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/wikitok',
+    projectDir: 'frontend',
+    description: 'Simple project with Tailwind',
+  },
+  {
+    name: 'baklava',
+    repo: 'https://github.com/storybook-tmp/baklava',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/baklava',
+    description: 'Component library with Zustand',
+  },
+  {
+    name: 'echarts',
+    repo: 'https://github.com/storybook-tmp/echarts-react',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/echarts-react',
+    description: 'ECharts React wrapper',
+  },
+  {
+    name: 'evergreen-ci',
+    repo: 'https://github.com/storybook-tmp/ui',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/ui',
+    projectDir: 'packages/lib',
+    description: 'GraphQL',
+  },
+  {
+    name: 'excalidraw',
+    repo: 'https://github.com/storybook-tmp/excalidraw',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/excalidraw',
+    projectDir: 'excalidraw-app',
+    description: 'Monorepo with canvas based drawing app',
+  },
+  {
+    name: 'bluesky',
+    repo: 'https://github.com/storybook-tmp/bluesky',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/bluesky',
+    description: 'React Native + React app with highly complex providers setup',
+  },
+  {
+    name: 'react-spectrum',
+    repo: 'https://github.com/storybook-tmp/react-spectrum',
+    branch: 'main',
+    githubSlug: 'storybook-tmp/react-spectrum',
+    projectDir: 'packages/react-aria-components',
+    description: 'React headless UI library in a Lerna monorepo with shared utils',
+  },
+];

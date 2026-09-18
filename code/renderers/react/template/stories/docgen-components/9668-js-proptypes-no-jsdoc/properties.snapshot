@@ -1,0 +1,31 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "heads",
+      "required": true,
+      "sbType": {
+        "name": "array",
+        "value": undefined,
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "array",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "onAddClick",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+  ],
+}

@@ -1,0 +1,23 @@
+{
+  "size": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "size",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'a'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+}

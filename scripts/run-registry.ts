@@ -1,121 +1,176 @@
-import { exec } from 'child_process';
-import chalk from 'chalk';
-import path from 'path';
-import program from 'commander';
-import detectFreePort from 'detect-port';
-import dedent from 'ts-dedent';
-import fs from 'fs';
-import yaml from 'js-yaml';
-import nodeCleanup from 'node-cleanup';
+import { exec } from 'node:child_process';
+import { access, mkdir, readFile, rm } from 'node:fs/promises';
+import http from 'node:http';
+import type { Server } from 'node:http';
+import { join, resolve as resolvePath } from 'node:path';
 
-import startVerdaccioServer from 'verdaccio';
+import { program } from 'commander';
 import pLimit from 'p-limit';
-// @ts-ignore
-import { maxConcurrentTasks } from './utils/concurrency';
-import { listOfPackages, Package } from './utils/list-packages';
+import picocolors from 'picocolors';
+import { parseConfigFile, runServer } from 'verdaccio';
+
+import { npmAuth } from './npm-auth.ts';
+import { maxConcurrentTasks } from './utils/concurrency.ts';
+import { PACKS_DIRECTORY, ROOT_DIRECTORY } from './utils/constants.ts';
+import { killPort } from './utils/port.ts';
+import { getCodeWorkspaces } from './utils/workspace.ts';
 
 program
   .option('-O, --open', 'keep process open')
-  .option('-P, --publish', 'should publish packages')
-  .option('-p, --port <port>', 'port to run https server on');
+  .option('-P, --publish', 'should publish packages');
 
 program.parse(process.argv);
 
 const logger = console;
 
-const freePort = (port?: number) => port || detectFreePort(port);
+const root = resolvePath(__dirname, '..');
 
-const startVerdaccio = (port: number) => {
-  let resolved = false;
+const opts = program.opts();
+
+const pathExists = async (p: string) => {
+  try {
+    await access(p);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+type Servers = { close: () => Promise<void> };
+const startVerdaccio = async () => {
+  // Kill Verdaccio related processes if they are already running
+  await killPort(6001);
+  await killPort(6002);
+
+  const ready = {
+    proxy: false,
+    verdaccio: false,
+  };
   return Promise.race([
     new Promise((resolve) => {
-      const cache = path.join(__dirname, '..', '.verdaccio-cache');
+      /**
+       * The proxy server will sit in front of verdaccio and tunnel traffic to either verdaccio or
+       * the actual npm global registry We do this because tunneling all traffic through verdaccio
+       * is slow (this might get fixed in verdaccio) With this heuristic we get the best of both
+       * worlds:
+       *
+       * - Verdaccio for storybook packages (including unscoped packages such as `storybook` and `sb`)
+       * - Npm global registry for all other packages
+       * - The best performance for both
+       *
+       * The proxy server listens on port 6001 and verdaccio on port 6002
+       *
+       * If you want to access the verdaccio UI, you can do so by visiting http://localhost:6002
+       */
+      const proxy = http.createServer((req, res) => {
+        // if request contains "storybook" redirect to verdaccio
+        if (req.url?.includes('storybook') || req.url?.includes('/sb') || req.method === 'PUT') {
+          res.writeHead(302, { Location: 'http://localhost:6002' + req.url });
+          res.end();
+        } else {
+          // forward to npm registry
+          res.writeHead(302, { Location: 'https://registry.npmjs.org' + req.url });
+          res.end();
+        }
+      });
+
+      let verdaccioApp: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>;
+
+      const servers = {
+        close: async () => {
+          console.log('🛬 Closing servers running on port 6001 and 6002');
+          await Promise.all([
+            new Promise<void>((resolve) => {
+              verdaccioApp?.close(() => resolve());
+            }),
+            new Promise<void>((resolve) => {
+              proxy?.close(() => resolve());
+            }),
+          ]);
+        },
+      };
+
+      proxy.listen(6001, () => {
+        ready.proxy = true;
+        if (ready.verdaccio) {
+          resolve(servers);
+        }
+      });
+      const cache = join(__dirname, '..', '.verdaccio-cache');
       const config = {
-        ...(yaml.safeLoad(
-          fs.readFileSync(path.join(__dirname, 'verdaccio.yaml'), 'utf8')
-        ) as Record<string, any>),
+        ...parseConfigFile(join(__dirname, 'verdaccio.yaml')),
         self_path: cache,
       };
 
-      const onReady = (webServer: any) => {
-        webServer.listen(port, () => {
-          resolved = true;
-          resolve(webServer);
-        });
-      };
+      // @ts-expect-error (verdaccio's interface is wrong)
+      runServer(config).then((app: Server) => {
+        verdaccioApp = app;
 
-      startVerdaccioServer(config, 6000, cache, '1.0.0', 'verdaccio', onReady);
+        app.listen(6002, () => {
+          ready.verdaccio = true;
+          if (ready.proxy) {
+            resolve(servers);
+          }
+        });
+      });
     }),
     new Promise((_, rej) => {
       setTimeout(() => {
-        if (!resolved) {
-          resolved = true;
+        if (!ready.verdaccio || !ready.proxy) {
           rej(new Error(`TIMEOUT - verdaccio didn't start within 10s`));
         }
       }, 10000);
     }),
-  ]);
-};
-const registryUrl = (command: string, url?: string) =>
-  new Promise<string>((res, rej) => {
-    const args = url ? ['config', 'set', 'registry', url] : ['config', 'get', 'registry'];
-    exec(`${command} ${args.join(' ')}`, (e, stdout) => {
-      if (e) {
-        rej(e);
-      } else {
-        res(url || stdout.toString().trim());
-      }
-    });
-  });
-
-const registriesUrl = (yarnUrl?: string, npmUrl?: string) =>
-  Promise.all([registryUrl('yarn', yarnUrl), registryUrl('npm', npmUrl || yarnUrl)]);
-
-const applyRegistriesUrl = (
-  yarnUrl: string,
-  npmUrl: string,
-  originalYarnUrl: string,
-  originalNpmUrl: string
-) => {
-  logger.log(`↪️  changing system config`);
-  nodeCleanup(() => {
-    registriesUrl(originalYarnUrl, originalNpmUrl);
-
-    logger.log(dedent`
-      Your registry config has been restored from:
-      npm: ${npmUrl} to ${originalNpmUrl} 
-      yarn: ${yarnUrl} to ${originalYarnUrl} 
-    `);
-  });
-
-  return registriesUrl(yarnUrl, npmUrl);
+  ]) as Promise<Servers>;
 };
 
 const currentVersion = async () => {
-  const { version } = (await import('../lerna.json')).default;
+  const content = await readFile(join(__dirname, '..', 'code', 'package.json'), 'utf-8');
+  const { version } = JSON.parse(content);
   return version;
 };
 
-const publish = (packages: { name: string; location: string }[], url: string) => {
+const publish = async (packages: { name: string; location: string }[], url: string) => {
   logger.log(`Publishing packages with a concurrency of ${maxConcurrentTasks}`);
 
   const limit = pLimit(maxConcurrentTasks);
   let i = 0;
 
+  /**
+   * We need to "pack" our packages before publishing to npm because our package.json files contain
+   * yarn specific version "ranges". such as "workspace:*"
+   *
+   * We can't publish to npm if the package.json contains these ranges. So with `yarn pack` we
+   * create a tarball that we can publish.
+   *
+   * However this bug exists in NPM: https://github.com/npm/cli/issues/4533! Which causes the NPM
+   * CLI to disregard the tarball CLI argument and instead re-create a tarball. But NPM doesn't
+   * replace the yarn version ranges.
+   *
+   * So we create the tarball ourselves and move it to another location on the FS. Then we
+   * change-directory to that directory and publish the tarball from there.
+   */
+  await mkdir(PACKS_DIRECTORY, { recursive: true }).catch(() => {});
+
   return Promise.all(
     packages.map(({ name, location }) =>
       limit(
         () =>
-          new Promise((res, rej) => {
-            logger.log(`🛫 publishing ${name} (${location})`);
-            const command = `cd ${location} && npm publish --registry ${url} --force --access restricted --ignore-scripts`;
+          new Promise((resolve, reject) => {
+            const loggedLocation = location.replace(resolvePath(join(__dirname, '..')), '.');
+            const resolvedLocation = resolvePath('../code', location);
+
+            logger.log(`🛫 publishing ${name} (${loggedLocation})`);
+
+            const tarballFilename = `${name.replace('@', '').replace('/', '-')}.tgz`;
+            const command = `cd "${resolvedLocation}" && yarn pack --out="${PACKS_DIRECTORY}/${tarballFilename}" && cd "${PACKS_DIRECTORY}" && npm publish "./${tarballFilename}" --registry ${url} --force --tag="xyz" --ignore-scripts`;
             exec(command, (e) => {
               if (e) {
-                rej(e);
+                reject(e);
               } else {
                 i += 1;
                 logger.log(`${i}/${packages.length} 🛬 successful publish of ${name}!`);
-                res(undefined);
+                resolve(undefined);
               }
             });
           })
@@ -124,55 +179,68 @@ const publish = (packages: { name: string; location: string }[], url: string) =>
   );
 };
 
+let servers: Servers | undefined;
+
 const run = async () => {
-  const port = await freePort(program.port);
-  logger.log(`🌏 found a open port: ${port}`);
-
-  const verdaccioUrl = `http://localhost:${port}`;
-
-  logger.log(`🔖 reading current registry settings`);
-  let [originalYarnRegistryUrl, originalNpmRegistryUrl] = await registriesUrl();
-  if (
-    originalYarnRegistryUrl.includes('localhost') ||
-    originalNpmRegistryUrl.includes('localhost')
-  ) {
-    originalYarnRegistryUrl = 'https://registry.npmjs.org/';
-    originalNpmRegistryUrl = 'https://registry.npmjs.org/';
-  }
+  const verdaccioUrl = `http://localhost:6001`;
 
   logger.log(`📐 reading version of storybook`);
   logger.log(`🚛 listing storybook packages`);
+
+  if (opts.publish) {
+    // when running e2e locally, clear cache to avoid EPUBLISHCONFLICT errors
+    const verdaccioCache = join(ROOT_DIRECTORY, '.verdaccio-cache');
+    if (await pathExists(verdaccioCache)) {
+      logger.log(`🗑 cleaning up cache`);
+      await rm(verdaccioCache, { force: true, recursive: true });
+    }
+  }
+
   logger.log(`🎬 starting verdaccio (this takes ±5 seconds, so be patient)`);
 
-  const [verdaccioServer, packages, version] = await Promise.all<any, Package[], string>([
-    startVerdaccio(port),
-    listOfPackages(),
+  const [_servers, packages, version] = await Promise.all([
+    startVerdaccio(),
+    getCodeWorkspaces(false),
     currentVersion(),
   ]);
+  servers = _servers;
 
   logger.log(`🌿 verdaccio running on ${verdaccioUrl}`);
 
-  await applyRegistriesUrl(
-    verdaccioUrl,
-    verdaccioUrl,
-    originalYarnRegistryUrl,
-    originalNpmRegistryUrl
+  logger.log(`👤 add temp user to verdaccio`);
+  // Use npmAuth helper to authenticate to the local Verdaccio registry
+  // This will create a .npmrc file in the root directory
+  await npmAuth({
+    username: 'foo',
+    password: 's3cret',
+    email: 'test@test.com',
+    registry: 'http://localhost:6002',
+    outputDir: root,
+  });
+
+  logger.log(
+    `📦 found ${packages.length} storybook packages at version ${picocolors.blue(version)}`
   );
 
-  // await addUser(verdaccioUrl);
-
-  logger.log(`📦 found ${packages.length} storybook packages at version ${chalk.blue(version)}`);
-
-  if (program.publish) {
-    await publish(packages, verdaccioUrl);
+  if (opts.publish) {
+    try {
+      await publish(packages, 'http://localhost:6002');
+    } finally {
+      await rm(join(root, '.npmrc'), { force: true });
+    }
   }
 
-  if (!program.open) {
-    verdaccioServer.close();
+  if (!opts.open) {
+    await servers?.close();
+    process.exit(0);
   }
 };
 
-run().catch((e) => {
-  logger.error(e);
-  process.exit(1);
+run().catch(async (e) => {
+  try {
+    await servers?.close();
+  } finally {
+    await rm(join(root, '.npmrc'), { force: true });
+    throw e;
+  }
 });

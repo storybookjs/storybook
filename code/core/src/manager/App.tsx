@@ -1,0 +1,107 @@
+import type { ComponentProps } from 'react';
+import React, { useEffect } from 'react';
+
+import Events from 'storybook/internal/core-events';
+import type { Addon_PageType } from 'storybook/internal/types';
+
+import { addons } from 'storybook/manager-api';
+import { Global, createGlobal } from 'storybook/theming';
+
+import { global } from '@storybook/global';
+
+import { isReviewFeatureEnabled } from '../shared/review/features.ts';
+import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBoundary.tsx';
+import { Layout } from './components/layout/Layout.tsx';
+import { useLayout } from './components/layout/LayoutProvider.tsx';
+import { ReviewPersistentLayer } from './components/review/components/ReviewPersistentLayer.tsx';
+import { ReviewProvider } from './components/review/components/ReviewProvider.tsx';
+import { useReviewContext } from './components/review/review-context.ts';
+import Panel from './container/Panel.tsx';
+import Preview from './container/Preview.tsx';
+import Sidebar from './container/Sidebar.tsx';
+
+/**
+ * The main preview, unmounted while the review summary covers the content cell. Keeping it mounted
+ * there would leave the previously selected story's iframe alive, so it flashes through for a frame
+ * when navigating to a curated story. Unmounting makes each such navigation boot a fresh preview.
+ */
+const MainPreview = () => {
+  const { isSummaryVisible } = useReviewContext();
+  return isSummaryVisible ? null : <Preview id="main" withLoader />;
+};
+
+type Props = {
+  managerLayoutState: ComponentProps<typeof Layout>['managerLayoutState'];
+  setManagerLayoutState: ComponentProps<typeof Layout>['setManagerLayoutState'];
+  pages: Addon_PageType[];
+  hasTab: boolean;
+};
+
+export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }: Props) => {
+  const { setMobileAboutOpen } = useLayout();
+
+  /**
+   * Lets us tell the UI whether or not keyboard shortcuts are enabled, in places where it's not
+   * convenient to load the addons singleton to figure it out.
+   */
+  const { enableShortcuts = true } = addons.getConfig();
+  useEffect(() => {
+    document.body.setAttribute('data-shortcuts-enabled', enableShortcuts ? 'true' : 'false');
+  }, [enableShortcuts]);
+
+  /**
+   * Detects when our component library has enabled a focus trap. By convention, react-aria sets the
+   * document root to `inert` when a focus trap is enabled. We observe that attribute and inform the
+   * preview iframe when to respect the focus trap, via a channel event. This is necessary because
+   * inert is no longer propagated into iframes as per https://github.com/whatwg/html/issues/7605,
+   * and the replacement permission policy is not yet widely available
+   * (https://github.com/w3c/webappsec-permissions-policy/issues/273).
+   */
+  useEffect(() => {
+    const rootElement = document.getElementById('root');
+    if (!rootElement) {
+      return;
+    }
+
+    const observer = new MutationObserver(() => {
+      const hasInert = rootElement.hasAttribute('inert');
+      addons.getChannel().emit(Events.MANAGER_INERT_ATTRIBUTE_CHANGED, hasInert);
+    });
+
+    observer.observe(rootElement, {
+      attributes: true,
+      attributeFilter: ['inert'],
+    });
+
+    return () => observer.disconnect();
+  }, []);
+
+  const isReviewEnabled = isReviewFeatureEnabled(global.FEATURES);
+
+  const layout = (
+    <Layout
+      hasTab={hasTab}
+      managerLayoutState={managerLayoutState}
+      setManagerLayoutState={setManagerLayoutState}
+      slotOverlay={isReviewEnabled ? <ReviewPersistentLayer /> : undefined}
+      slotMain={<MainPreview />}
+      slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
+      slotPanel={<Panel />}
+      slotPages={pages.map(({ id, render: Content }) => (
+        <Content key={id} />
+      ))}
+    />
+  );
+
+  return (
+    <>
+      <Global styles={createGlobal} />
+      <ManagerErrorBoundary>
+        {/* The provider wraps the whole layout so the sidebar, toolbar, and content
+            overlay share one review context. Feature-off mounts no provider: consumers
+            fall back to the context default and never touch the review service. */}
+        {isReviewEnabled ? <ReviewProvider>{layout}</ReviewProvider> : layout}
+      </ManagerErrorBoundary>
+    </>
+  );
+};

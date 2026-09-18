@@ -1,0 +1,68 @@
+{
+  "bar": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "bar",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "raw": "string[]",
+      "required": false,
+      "value": [
+        {
+          "name": "string",
+        },
+      ],
+    },
+  },
+  "foo": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "",
+    "name": "foo",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": true,
+    },
+  },
+  "title": {
+    "control": {
+      "type": "text",
+    },
+    "description": "",
+    "name": "title",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'this is the default :)'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

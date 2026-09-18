@@ -1,0 +1,15 @@
+import React from "react";
+import { action } from "storybook/actions";
+import { Button } from "@storybook/react/demo";
+
+export default {
+  title: "Button",
+};
+
+export const Basic = {};
+
+export const Emoji = {
+  args: {
+    children: '😀 😎 👍 💯'
+  }
+};

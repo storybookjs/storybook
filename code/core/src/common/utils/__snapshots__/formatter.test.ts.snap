@@ -1,0 +1,33 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`formatter > withPrettierConfig > prettier > formats content with prettier 1`] = `
+"
+import type { Meta, StoryObj } from '@storybook/nextjs'
+
+import Component from './foo';
+
+  const meta = {
+    component: Component
+  } satisfies Meta<typeof Component>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+"
+`;
+
+exports[`formatter > withoutPrettierConfigAndWithEditorConfig > prettier-v3 > formats content with prettier 1`] = `
+"
+import type { Meta, StoryObj } from '@storybook/nextjs'
+
+import Component from './foo';
+
+  const meta = {
+    component: Component
+  } satisfies Meta<typeof Component>;
+
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+"
+`;

@@ -1,0 +1,378 @@
+---
+title: features
+sidebar:
+  order: 11
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type:
+
+<If renderer="react">
+
+```ts
+{
+  actions?: boolean;
+  argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
+  backgrounds?: boolean;
+  changeDetection?: boolean;
+  componentsManifest?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  experimentalCodeExamples?: boolean;
+  experimentalDocgenServer?: boolean;
+  experimentalReview?: boolean;
+  experimentalTestSyntax?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
+}
+```
+
+</If>
+
+<If renderer="angular">
+
+```ts
+{
+  actions?: boolean;
+  angularFilterNonInputControls?: boolean;
+  argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
+  backgrounds?: boolean;
+  changeDetection?: boolean;
+  componentsManifest?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  experimentalDocgenServer?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
+}
+```
+
+</If>
+
+<If renderer="vue">
+
+```ts
+{
+  actions?: boolean;
+  argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
+  backgrounds?: boolean;
+  changeDetection?: boolean;
+  componentsManifest?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  experimentalDocgenServer?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
+}
+```
+
+</If>
+
+<If notRenderer={['react','angular','vue']}>
+
+```ts
+{
+  actions?: boolean;
+  argTypeTargetsV7?: boolean;
+  babelRemoveBugfixes?: boolean; // webpack only
+  backgrounds?: boolean;
+  changeDetection?: boolean;
+  controls?: boolean;
+  developmentModeForBuild?: boolean;
+  highlight?: boolean;
+  interactions?: boolean;
+  legacyDecoratorFileOrder?: boolean;
+  measure?: boolean;
+  outline?: boolean;
+  sidebarOnboardingChecklist?: boolean;
+  menuOnboardingChecklist?: boolean;
+  toolbars?: boolean;
+  viewport?: boolean;
+}
+```
+
+</If>
+
+Enables Storybook's additional features.
+
+## `actions`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Actions](../../essentials/actions.mdx) feature.
+
+<If renderer="angular">
+
+## `angularFilterNonInputControls`
+
+Type: `boolean`
+
+Filter non-input controls in Angular.
+
+On `@storybook/angular-vite` this feature is deprecated in favor of the [`propsTable` framework option](../../get-started/frameworks/angular-vite.mdx#propstable): `true` maps to `propsTable: 'inputs'` and `false` maps to `propsTable: 'all'`.
+The option's third value, `'api'`, needs the `experimentalDocgenServer` feature.
+Setting both leaves `propsTable` in charge.
+`@storybook/angular` still reads this feature and is unaffected.
+
+</If>
+
+## `argTypeTargetsV7`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `true`
+
+Filter args with a "target" on the type from the render function.
+
+<CodeSnippets path="main-config-features-arg-type-targets-v7.md" />
+
+## `babelRemoveBugfixes`
+
+(⚠️ **Webpack builder only**)
+
+Type: `boolean`
+
+Disable the `bugfixes` option in `@babel/preset-env` for Webpack builder. This option was removed in Babel 8 and now causes Babel to throw an error. Set this to `true` if you use Babel 8 and Storybook fails to detect your Babel version.
+
+## `backgrounds`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Backgrounds](../../essentials/backgrounds.mdx) feature.
+
+## `changeDetection`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable [change detection](../../configure/user-interface/change-detection.mdx). When enabled, Storybook monitors your git working tree and the builder's module graph to show which stories are new, modified, or related to code changes. Changed stories are displayed with status icons in the sidebar.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-features-change-detection.md" />
+
+{/* prettier-ignore-end */}
+
+<If renderer={['react','angular','vue']}>
+
+## `componentsManifest`
+
+Type: `boolean`
+
+Default: `false`
+
+Generate [manifests](../../ai/manifests.mdx), used by the [MCP server](../../ai/mcp/overview.mdx).
+
+</If>
+
+<If renderer="react">
+
+When combined with [`experimentalDocgenServer`](#experimentaldocgenserver), manifests use a ref-based format with per-component JSON snapshots for faster MCP loading.
+
+</If>
+
+<If renderer="angular">
+
+Manifests are generated by [`@storybook/angular-vite`](../../get-started/frameworks/angular-vite.mdx), which reads your component API from your TypeScript sources because it turns on [`experimentalDocgenServer`](#experimentaldocgenserver) itself.
+The Webpack-based `@storybook/angular` does not generate manifests, and setting this feature there has no effect.
+
+</If>
+
+<If renderer="vue">
+
+Manifests are generated by `@storybook/vue3-vite`, and additionally require [`experimentalDocgenServer`](#experimentaldocgenserver), which is not enabled by default.
+Other Vue setups, including `@nuxtjs/storybook`, do not generate manifests.
+
+</If>
+
+<CodeSnippets path="main-config-features-components-manifest.md" />
+
+## `controls`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Controls](../../essentials/controls.mdx) feature.
+
+## `developmentModeForBuild`
+
+Type: `boolean`
+
+Set `NODE_ENV` to `'development'` in built Storybooks for better testing and debugging capabilities.
+
+<CodeSnippets path="main-config-features-development-mode-for-build.md" />
+
+<If renderer="react">
+
+## `experimentalCodeExamples`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Prefer [`experimentalDocgenServer`](#experimentaldocgenserver), which supersedes this flag and provides the same static snippet behavior along with faster, more accurate docgen.
+
+Enable the new code example generation method for React components (as seen in the story previews in an [autodocs](../../writing-docs/autodocs.mdx) page).
+
+Unlike the current implementation, this method reads the actual stories source file, which is faster to generate, more readable, and more accurate. However, they are not dynamic: they won't update if you change values in the Controls table.
+
+<CodeSnippets path="main-config-features-experimental-code-examples.md" />
+
+</If>
+
+<If renderer={['react','angular','vue']}>
+
+## `experimentalDocgenServer`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`, except on [`@storybook/angular-vite`](../../get-started/frameworks/angular-vite.mdx#component-documentation), which turns it on from its own configuration.
+
+Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+
+Snippets are static: they won't update if you change values in the Controls table.
+
+Support is rolling out per framework, and we [welcome feedback on the RFC](https://github.com/storybookjs/storybook/discussions/35333).
+
+</If>
+
+<If renderer="react">
+
+When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) because snippet generation is handled by the server-side story-docs service.
+
+</If>
+
+<If renderer={['react','vue']}>
+
+Opt in with the configuration below.
+
+<CodeSnippets path="main-config-features-experimental-docgen-server.md" />
+
+</If>
+
+<If renderer="react">
+
+## `experimentalReview`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Default: `false`
+
+Enable the [experimental agentic review](../../ai/agentic-review.mdx) feature, which allows you to review the work an AI agent has done in your Storybook.
+
+Builds on [`changeDetection`](#changedetection), which must also be enabled (it is, by default).
+
+<CodeSnippets path="main-config-features-experimental-review.md" />
+
+## `experimentalTestSyntax`
+
+(⚠️ **Experimental**)
+
+Type: `boolean`
+
+Enable the [experimental `.test` method with the CSF Next format](../csf/csf-next.mdx#storytest).
+
+<CodeSnippets path="main-config-features-experimental-test-syntax.md" />
+
+</If>
+
+## `highlight`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Highlight](../../essentials/highlight.mdx) feature.
+
+## `interactions`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Interactions](../../writing-tests/interaction-testing.mdx#debugging-interaction-tests) feature.
+
+## `legacyDecoratorFileOrder`
+
+Type: `boolean`
+
+Apply decorators from preview.js before decorators from addons or frameworks. [More information](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#changed-decorator-order-between-previewjs-and-addonsframeworks).
+
+<CodeSnippets path="main-config-features-legacy-decorator-file-order.md" />
+
+## `measure`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Measure](../../essentials/measure-and-outline.mdx#measure) feature.
+
+## `menuOnboardingChecklist`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable a link to the onboarding guide in the menu.
+
+## `outline`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Outline](../../essentials/measure-and-outline.mdx#outline) feature.
+
+## `sidebarOnboardingChecklist`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the onboarding checklist sidebar widget.
+
+## `viewport`
+
+Type: `boolean`
+
+Default: `true`
+
+Enable the [Viewport](../../essentials/viewport.mdx) feature.

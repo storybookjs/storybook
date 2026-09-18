@@ -1,0 +1,85 @@
+import type { InterceptReason, StorybookInstanceRecord } from '../../tools/instances/types.ts';
+
+/**
+ * Repair-instruction markdown returned when `storybook ai` cannot reach a usable MCP endpoint
+ * (no matching instance, port mismatch, missing addon, or MCP not ready).
+ */
+const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;
+
+const quotePath = (path: string) => (/\s/.test(path) ? `"${path}"` : path);
+
+const buildNoInstanceWithCandidates = (records: StorybookInstanceRecord[]) => {
+  const instances = records.map((r) => {
+    const configDir = r.configDir ? `, config dir \`${r.configDir}\`` : '';
+    return `- cwd \`${r.cwd}\`${configDir} (${r.url})`;
+  });
+  // One concrete invocation per instance, built from its recorded values so the agent can copy it
+  // verbatim. Prefer `--config-dir` when recorded: a bare `--cwd` retry fails for instances whose
+  // config is not at `<cwd>/.storybook`, because command metadata loads from there first.
+  const examples = [
+    ...new Set(
+      records.map((r) =>
+        r.configDir
+          ? `- \`storybook ai --config-dir ${quotePath(r.configDir)} <command> [args...]\``
+          : `- \`storybook ai --cwd ${quotePath(r.cwd)} <command> [args...]\``
+      )
+    ),
+  ];
+
+  return `No running Storybook matches this project (neither its cwd nor its Storybook config dir). Either start \`storybook dev\` from this project, or retry with \`--cwd\` or \`--config-dir\` pointing at one of the running Storybooks below. Both flags must be placed BEFORE the command name.
+
+Running Storybooks:
+${instances.join('\n')}
+
+Retry examples (replace \`<command>\` with the command you ran):
+${examples.join('\n')}`;
+};
+
+const buildPortMismatch = (port: number | undefined, records: StorybookInstanceRecord[]) =>
+  `No running Storybook is on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by project (cwd/config dir).
+
+Running Storybooks:
+${records.map((r) => `- port \`${r.port}\` (${r.url}, status: \`${r.mcp.status}\`)`).join('\n')}`;
+
+const ADDON_MISSING = `Storybook is running but does not provide these commands. The \`@storybook/addon-mcp\` addon is missing.
+
+Install it:
+\`\`\`
+npx storybook add @storybook/addon-mcp
+\`\`\`
+
+Restart Storybook, then retry the command.`;
+
+const MCP_STARTING = `Storybook is running but its command server is still starting up. Wait a moment and retry the command.`;
+
+const MCP_ERROR = `Storybook is running but its command server reported an error. Inspect the Storybook terminal output, fix the underlying issue, then retry the command.`;
+
+export type InterceptExtras = {
+  records?: StorybookInstanceRecord[];
+  port?: number;
+};
+
+export function getInterceptMarkdown(
+  reason: InterceptReason,
+  extras: InterceptExtras = {}
+): string {
+  const { records, port } = extras;
+  switch (reason) {
+    case 'no-instance':
+      return records && records.length > 0
+        ? buildNoInstanceWithCandidates(records)
+        : NO_INSTANCE_EMPTY;
+    case 'port-mismatch':
+      return buildPortMismatch(port, records ?? []);
+    case 'addon-missing':
+      return ADDON_MISSING;
+    case 'mcp-starting':
+      return MCP_STARTING;
+    case 'mcp-error':
+      return MCP_ERROR;
+    default: {
+      const unhandled: never = reason;
+      throw new Error(`Unhandled intercept reason: ${unhandled as string}`);
+    }
+  }
+}

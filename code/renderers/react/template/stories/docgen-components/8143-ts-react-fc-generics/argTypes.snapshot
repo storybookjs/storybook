@@ -1,0 +1,23 @@
+{
+  "padding": {
+    "control": {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "padding",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'0'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "required": false,
+    },
+  },
+}

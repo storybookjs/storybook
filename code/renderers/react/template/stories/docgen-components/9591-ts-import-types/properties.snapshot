@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "other",
+      "required": false,
+      "sbType": {
+        "name": "number",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "number",
+      },
+    },
+  ],
+}

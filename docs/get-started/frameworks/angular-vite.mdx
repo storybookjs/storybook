@@ -1,0 +1,570 @@
+---
+title: Storybook for Angular with Vite
+hideRendererSelector: true
+sidebar:
+  order: 1
+  title: Angular (Vite)
+---
+
+Storybook for Angular with Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses [Vite](https://vitejs.dev/) for faster builds, better performance, and [Storybook Testing](../../writing-tests/index.mdx) support. The Vite transform pipeline is powered by the [AnalogJS Vite plugin](https://analogjs.org).
+
+<Callout variant="info" icon="🧪">
+
+`@storybook/angular-vite` is currently in [preview](../../releases/features.mdx#preview) and is planned to be marked [stable](../../releases/features.mdx#stable) in Storybook 11. The framework is feature-complete for the documented use cases, but APIs and defaults may change based on feedback before then. Please report issues and share feedback on [GitHub](https://github.com/storybookjs/storybook/issues).
+
+</Callout>
+
+## Install
+
+To install Storybook in an existing Angular project, run this command in your project's root directory:
+
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
+
+### Requirements
+
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Angular',
+      range: '≥ 21',
+      icon: '/images/logos/renderers/logo-angular.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 8',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
+
+## Choose between Vite and Webpack
+
+`@storybook/angular-vite` is the Vite-based Angular framework. Use it when you want:
+
+- Faster builds and HMR than the Webpack-based [`@storybook/angular`](./angular.mdx) framework
+- Full support for the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) and in-browser component testing
+- A simpler configuration without Babel and a smaller dependency footprint
+
+Use [`@storybook/angular`](./angular.mdx) (Webpack 5) if your project requires Angular ≤ 20 or has custom Webpack configurations you cannot migrate.
+
+## Run Storybook
+
+You can run Storybook either with the standard Storybook CLI or, like `@storybook/angular`, through Angular CLI builders. Both paths share the same configuration.
+
+### With the Storybook CLI
+
+<CodeSnippets path="storybook-run-dev.md" />
+
+To build:
+
+<CodeSnippets path="build-storybook-production-mode.md" />
+
+The output lands in the configured `outputDir` (default `storybook-static`).
+
+### With the Angular CLI
+
+Register the `start-storybook` and `build-storybook` builders in `angular.json`:
+
+```jsonc title="angular.json"
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+          "builder": "@storybook/angular-vite:start-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "port": 6006,
+          },
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular-vite:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "outputDir": "dist/storybook/your-project",
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+Then run them with `ng run your-project:storybook` and `ng run your-project:build-storybook`.
+
+<Callout variant="info">
+
+Unlike the Webpack-based `@storybook/angular`, these builders do not take a `browserTarget`. Vite resolves your project's TypeScript and assets directly, so no Angular build target reference is required. Builder schemas live alongside the source: [`start-storybook`](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular-vite/src/builders/start-storybook/schema.json), [`build-storybook`](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular-vite/src/builders/build-storybook/schema.json).
+
+</Callout>
+
+## Configure
+
+The authoring surface (stories, decorators, parameters, `moduleMetadata`, and `applicationConfig`) is identical to `@storybook/angular`. Existing stories migrate without changes. [Component documentation](#component-documentation) is the one place the two frameworks differ. The sections below describe every configuration option available in this framework.
+
+### Component documentation
+
+JSDoc comments above your components, and above their `@Input` and `@Output` members, become descriptions in [automatic documentation](../../writing-docs/autodocs.mdx) and in the [controls](../../essentials/controls.mdx) table.
+
+Two engines can read them, and which one you get depends on a single feature flag:
+
+|                       | [`experimentalDocgenServer`](../../api/main-config/main-config-features.mdx#experimentaldocgenserver) on, the default here | flag off                             |
+| --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Reads your components | on the Storybook server, from your TypeScript sources                                                                      | in the browser, from Compodoc output |
+| Compodoc              | never runs, and is not a dependency                                                                                        | runs on demand                       |
+| `documentation.json`  | never generated, never read                                                                                                | generated and read                   |
+| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx)                                   | controls and autodocs                |
+
+`@storybook/angular-vite` turns the flag on from its own configuration, so server-side extraction is what you get unless you turn it off. The Webpack-based [`@storybook/angular`](./angular.mdx) is unaffected and always uses Compodoc.
+
+The flag-off column is temporary. It exists so that a project upgrading to 10.6 can keep the setup it already has while it migrates, and it is planned to be [deprecated](../../releases/features.mdx#deprecated) in Storybook 11 and removed in Storybook 12. From then on `@storybook/angular-vite` reads your components from source and nothing else. Plan on the default path rather than opting out.
+
+#### Server-side extraction (default)
+
+Nothing to set up. `npx storybook@latest init` neither installs Compodoc nor writes any Compodoc wiring for this framework, and there is no `documentation.json` to generate or keep current.
+
+Because your sources are read directly, editing a component updates its controls and descriptions without restarting Storybook.
+
+See [Known limitations](#known-limitations) for what this path does not yet do.
+
+#### Using Compodoc instead
+
+<Callout variant="warning" icon="⚠️">
+
+This path is a migration aid, not a supported long-term configuration. Turning `experimentalDocgenServer` off on `@storybook/angular-vite` is planned to be deprecated in Storybook 11 and removed in Storybook 12, along with the `compodoc` and `compodocArgs` framework options and the `setCompodocJson` wiring. Use it to keep an existing project working while you migrate, and plan on the default path.
+
+</Callout>
+
+Turn the feature off in your `.storybook/main.ts`:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  features: {
+    experimentalDocgenServer: false,
+  },
+};
+
+export default config;
+```
+
+Then install [Compodoc](https://compodoc.app/):
+
+```sh
+npm install --save-dev @compodoc/compodoc
+```
+
+And hand its output to the preview:
+
+```ts title=".storybook/preview.ts"
+import { setCompodocJson } from '@storybook/addon-docs/angular';
+
+import docJson from '../documentation.json';
+
+setCompodocJson(docJson);
+```
+
+Storybook generates `documentation.json` itself, once per run: every `storybook dev`, every `storybook build`, and every Vitest run. Compodoc scans the whole project in one pass, so this is all-or-nothing: there is no per-component regeneration.
+
+- **Editing a component while Storybook is running does not update its metadata.** Controls, descriptions and JSDoc tags come from the documentation generated at startup. Restart Storybook to pick up your changes.
+- **Running tests from a running Storybook reuses that Storybook's documentation** rather than scanning again, so the test run starts quickly. A Vitest run started on its own generates its own.
+- **Two files appear next to the output**: `.compodoc.lock` while a run is in progress, and `.compodoc.run` recording which run produced the current documentation. Together they let several Storybook processes share a single Compodoc run instead of each starting their own. Both are safe to add to your `.gitignore`.
+- **Only `documentation.json` is published** into the output directory. If your `compodocArgs` also produce Compodoc's browsable HTML site, generate that with a separate `compodoc` invocation.
+
+Generation is controlled by the [`compodoc`](#compodoc) and [`compodocArgs`](#compodocargs) framework options.
+
+#### Upgrading a project that already uses Compodoc
+
+`npx storybook automigrate` removes the setup that no longer does anything: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` call and the imports that fed it, the same two options on your `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency. It skips any project that sets `experimentalDocgenServer: false`.
+
+If you keep the wiring instead of running the automigration, nothing breaks:
+
+- `setCompodocJson` returns without storing anything and logs a warning once per session, so a stale `documentation.json` can never reach the controls table.
+- The `import docJson from '../documentation.json'` that `storybook init` used to write resolves to an empty object when the file is genuinely absent, so your preview still builds. This applies only to that import inside your Storybook configuration folder; a `documentation.json` you import anywhere else is your own file and still fails to resolve if it is missing.
+
+#### Supported invocation paths
+
+- **`ng run app:storybook`**: Uses `angular.json` for Angular build settings. With Compodoc enabled, the framework runs it at start-up so `documentation.json` is generated before stories render.
+- **Vitest addon panel** (inside a running `storybook dev`): The addon-vitest child process inherits builder options from the parent process automatically; no extra configuration is needed.
+- **Standalone `yarn vitest`** (without a parent `storybook dev`): Supported via `storybookAngularVitest` from `@storybook/angular-vite/vitest`. Add it to the same `plugins` array as `storybookTest` in your `vitest.config.ts`; it forwards your Angular build options (styles, stylePreprocessorOptions, assets, zoneless) into the channel the framework already reads. If the env var is already set (e.g. a parent `storybook dev` is running), the existing value wins and a warning is logged so you know which options are active.
+
+### Application-wide providers
+
+If your component relies on application-wide providers (such as those returned by `provide`-style functions or set up by any module using the `forRoot` pattern), apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to supply them via the [bootstrapApplication](https://angular.dev/api/platform-browser/bootstrapApplication) function.
+
+<CodeSnippets path="angular-vite-application-providers-in-meta-and-story.md" />
+
+### Angular dependencies
+
+If your component has dependencies on other Angular directives and modules, supply them using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
+
+<CodeSnippets path="angular-vite-modulemetadata-in-meta.md" />
+
+### Zoneless change detection
+
+By default, this framework runs with zoneless change detection (`zoneless: true`). To opt into Zone.js-based change detection, set the `zoneless` option to `false` on the Storybook builder target in your `angular.json`:
+
+```jsonc title="angular.json"
+"storybook": {
+  "builder": "@storybook/angular-vite:start-storybook",
+  "options": {
+    "zoneless": false,
+  },
+},
+```
+
+When `zoneless` is `false`, `zone.js` is automatically imported at the start of the preview.
+
+### Custom Vite configuration
+
+You can extend the Vite configuration used by Storybook in your `.storybook/main.ts` file via [`viteFinal`](../../api/main-config/main-config-vite-final.mdx):
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    const { mergeConfig } = await import('vite');
+    return mergeConfig(config, {
+      // your overrides
+    });
+  },
+};
+
+export default config;
+```
+
+### TypeScript paths
+
+Unlike the Webpack-based `@storybook/angular`, this framework does not automatically map your `tsconfig.json` `paths` aliases into Vite's module resolver. Vite resolves modules on disk and does not read the `paths` compiler option, so imports such as `@app/shared` will fail unless you register them yourself.
+
+The simplest fix is the [`vite-tsconfig-paths`](https://github.com/aleclarson/vite-tsconfig-paths) plugin, which reads `baseUrl` and `paths` from your `tsconfig.json` and adds the matching aliases:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    const { mergeConfig } = await import('vite');
+    const { default: tsconfigPaths } = await import('vite-tsconfig-paths');
+    return mergeConfig(config, {
+      plugins: [tsconfigPaths()],
+    });
+  },
+};
+
+export default config;
+```
+
+Install it as a dev dependency first: `npm install --save-dev vite-tsconfig-paths`. If you prefer not to add a plugin, you can instead declare the aliases explicitly under [`resolve.alias`](https://vite.dev/config/shared-options.html#resolve-alias) in the same `viteFinal` hook.
+
+### SCSS include paths
+
+Like `paths`, SCSS search paths from your application's `build` target in `angular.json` are not inherited. Configure them on the Storybook builder target instead, using `stylePreprocessorOptions`. Both the Angular-style `includePaths` and the dart-sass/Vite spelling `loadPaths` are accepted, and paths are resolved relative to the workspace root:
+
+```jsonc title="angular.json"
+"storybook": {
+  "builder": "@storybook/angular-vite:start-storybook",
+  "options": {
+    "stylePreprocessorOptions": {
+      "includePaths": ["src/styles"],
+    },
+  },
+},
+```
+
+When running through the Storybook CLI (`storybook dev` / `storybook build`) rather than the Angular builders, there is no `angular.json` builder context to read from. In that case set the search paths directly in `.storybook/main.ts`:
+
+```ts title=".storybook/main.ts"
+async viteFinal(config) {
+  const { mergeConfig } = await import('vite');
+  return mergeConfig(config, {
+    css: { preprocessorOptions: { scss: { loadPaths: ['src/styles'] } } },
+  });
+},
+```
+
+## Known limitations
+
+These apply to the default server-side extraction path, which is what you get unless you [turn the feature off](#using-compodoc-instead). They are not opt-in: if you use `@storybook/angular-vite`, they apply to you.
+
+### Code snippets do not follow your controls
+
+The snippets shown in autodocs and the Code panel are generated from your story's source, so they show the story as you wrote it. Changing a value in the controls table updates the rendered component but not the snippet next to it.
+
+### An input typed `T | undefined` falls back to an object control
+
+An input whose type explicitly includes `undefined` is not narrowed to its members, so the controls table offers an object editor rather than the radio buttons or select you would expect:
+
+```ts
+export type BadgeVariant = 'accent' | 'danger' | 'primary';
+
+@Component({ selector: 'sb-badge', template: '' })
+export class BadgeComponent {
+  @Input() withUndefined: BadgeVariant | undefined = undefined; // object editor
+  @Input() optional?: BadgeVariant; // radio buttons, as expected
+}
+```
+
+Marking the input optional with `?` instead of widening its type gives you the control you want. Failing that, you can [declare the control yourself](../../api/arg-types.mdx) in `argTypes`. Either way the full type still appears in the props table, so the information is lost from the control only.
+
+## Migration from `@storybook/angular`
+
+### Automatic migration
+
+Run the Storybook automigration command to update your project automatically:
+
+```bash
+npx storybook automigrate
+```
+
+<Callout variant="info">
+
+Two things the automigration cannot do for you: a `webpackFinal` hook has to be [rewritten as `viteFinal`](../../builders/vite.mdx#migrating-from-webpack), and direct `.md` imports need Vite's [`?raw` suffix](../../builders/vite.mdx#importing-markdown-files-as-strings).
+
+</Callout>
+
+### Manual migration
+
+First, install the framework:
+
+<CodeSnippets path="angular-vite-install.md" />
+
+Then, update your `.storybook/main.ts` to change the framework property:
+
+<CodeSnippets path="angular-vite-add-framework.md" />
+
+If your existing `angular.json` already declares Storybook architect targets, update the builder references to use the new framework and drop the `browserTarget` option ([see why](#with-the-angular-cli)):
+
+```diff title="angular.json"
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+-          "builder": "@storybook/angular:start-storybook",
++          "builder": "@storybook/angular-vite:start-storybook",
+          "options": {
+-            "browserTarget": "your-project:build",
+            //... other options
+          },
+        },
+        "build-storybook": {
+-          "builder": "@storybook/angular:build-storybook",
++          "builder": "@storybook/angular-vite:build-storybook",
+          "options": {
+-            "browserTarget": "your-project:build",
+            //... other options
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+If you would rather invoke Storybook directly, you can also remove the architect entries entirely and switch to `storybook dev` and `storybook build`.
+
+If your configuration contains a `webpackFinal` hook, you will need to [migrate it to `viteFinal`](../../builders/vite.mdx#migrating-from-webpack).
+
+Finally, if your stories or components import Markdown files directly, append Vite's `?raw` suffix to those imports.
+Webpack turned `.md` imports into strings for you; Vite needs to be told.
+See [Importing Markdown files as strings](../../builders/vite.mdx#importing-markdown-files-as-strings).
+
+## Vitest integration
+
+Because `@storybook/angular-vite` is a Vite-based framework, it supports the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx) for running component tests directly inside Storybook.
+
+### Install the addon
+
+Run the following command to install and configure the addon automatically:
+
+<CodeSnippets path="addon-test-install.md" />
+
+This will install `@storybook/addon-vitest`, configure Vitest in browser mode using Playwright's Chromium browser, and set up the Vitest plugin. For Angular projects, the installer also scaffolds `storybookAngularVitest({})` next to `storybookTest()` in your `vitest.config.ts` so standalone `yarn vitest` runs pick up your Angular build options automatically.
+
+Refer to the [Vitest addon guide](../../writing-tests/integrations/vitest-addon/index.mdx) for the full configuration reference.
+
+### Standalone `yarn vitest` (without Storybook dev)
+
+When you run `yarn vitest` outside of a running `storybook dev`, the `storybookAngularVitest` helper from `@storybook/angular-vite/vitest` forwards your Angular build options (styles, stylePreprocessorOptions, assets, zoneless) into the channel the framework reads. Place it in the same `plugins` array as `storybookTest`:
+
+```ts title="vitest.config.ts"
+import { storybookAngularVitest } from '@storybook/angular-vite/vitest';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  test: {
+    projects: [
+      {
+        plugins: [
+          // Bridge Angular build options into standalone vitest runs.
+          // When a parent `storybook dev` is running, the existing env var
+          // wins and a warning is logged; options here are ignored in that run.
+          storybookAngularVitest({
+            // styles: ['src/styles.css'],
+            // stylePreprocessorOptions: { includePaths: ['src'] },
+            // assets: [{ glob: '**/*', input: 'src/assets', output: 'assets' }],
+            // zoneless: true,
+          }),
+          storybookTest({ configDir: '.storybook' }),
+        ],
+        test: {
+          browser: {
+            enabled: true,
+            provider: 'playwright',
+            instances: [{ browser: 'chromium' }],
+          },
+        },
+      },
+    ],
+  },
+});
+```
+
+If you use a Vitest workspace file or a setup other than `storybookTest()`, follow the [Analog Storybook integration docs](https://analogjs.org/docs/integrations/storybook) instead.
+
+## FAQ
+
+### Does this framework support Angular CLI builders?
+
+Yes. `@storybook/angular-vite` ships `start-storybook` and `build-storybook` builders so you can run `ng run your-project:storybook` and `ng run your-project:build-storybook`. See [Run Storybook → With the Angular CLI](#with-the-angular-cli) for the `angular.json` setup. You can also invoke Storybook directly with `storybook dev` / `storybook build`.
+
+### Can I use this with Angular 20 or earlier?
+
+No. This framework requires Angular 21. For earlier Angular versions, use [`@storybook/angular`](./angular.mdx).
+
+### Are my existing stories compatible?
+
+Yes. The story format (CSF), decorators (`moduleMetadata`, `applicationConfig`, `componentWrapperDecorator`) and parameters are identical between `@storybook/angular` and `@storybook/angular-vite`. Stories files will only require changes to the framework import paths ([handled automatically during migration](#automatic-migration)). Your stories do not change, but [where their documentation comes from does](#component-documentation): this framework reads your components directly instead of through Compodoc.
+
+### Should I use `@storybook/angular` or `@storybook/angular-vite`?
+
+Use `@storybook/angular-vite` if you are on Angular 21 and want faster builds and the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx). Use [`@storybook/angular`](./angular.mdx) if you need Angular 18–20 or existing Webpack-based tooling you cannot migrate. Both frameworks support Angular CLI builders.
+
+## API
+
+### Options
+
+You can pass an options object for additional configuration:
+
+<CodeSnippets path="angular-vite-framework-options.md" />
+
+The available options are:
+
+#### `builder`
+
+Type: `Record<string, any>`
+
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). Available options can be found in the [Vite builder docs](../../builders/vite.mdx).
+
+#### `jit`
+
+Type: `boolean`
+
+Default: `true`
+
+Whether to use Angular's JIT compiler. Passed to the AnalogJS Vite plugin.
+
+#### `liveReload`
+
+Type: `boolean`
+
+Default: `false`
+
+Whether to enable live-reload in the AnalogJS Vite plugin.
+
+#### `tsconfig`
+
+Type: `string`
+
+Default: `./.storybook/tsconfig.json`
+
+Path to the TypeScript configuration file, relative to the workspace root. Passed to the AnalogJS Vite plugin.
+
+#### `inlineStylesExtension`
+
+Type: `string`
+
+Default: `'css'`
+
+File extension used for inline component styles. Passed to the AnalogJS Vite plugin.
+
+#### `compodoc`
+
+Type: `boolean`
+
+Default: `true`
+
+Whether to run [Compodoc](https://compodoc.app/) to generate `documentation.json`. When `true`, the framework runs Compodoc once per Storybook run, replacing the previous `documentation.json`. Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
+
+This option only takes effect with [`experimentalDocgenServer: false`](#using-compodoc-instead). On the default path Compodoc never runs whatever this is set to.
+
+It controls the Compodoc run and nothing else. Setting it to `false` does not turn off component documentation: on the default path your components are still read from their TypeScript sources.
+
+Planned to be deprecated in Storybook 11 and removed in Storybook 12, together with the opt-out it depends on.
+
+#### `compodocArgs`
+
+Type: `string[]`
+
+Default: `['-e', 'json', '-d', '.']`
+
+Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.
+
+Like `compodoc`, this is only read when [`experimentalDocgenServer` is off](#using-compodoc-instead), and is planned for removal on the same schedule.
+
+#### `propsTable`
+
+Type: `'all' | 'api' | 'inputs'`
+
+Default: `'api'`
+
+Which of your component's members the props table renders.
+The three values are a ladder, each one a subset of the one above it:
+
+| Value      | Renders                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `'all'`    | Every member of every section: properties, inputs, outputs and methods.   |
+| `'api'`    | The same four sections, narrowed to your component's template-facing API. |
+| `'inputs'` | The inputs section only.                                                  |
+
+`'api'` keeps every declared input and output, whatever its TypeScript visibility.
+
+Everywhere else, `'api'` drops TypeScript `private` members, ECMAScript private `#` members, and anything tagged `@internal`.
+A `private` property or method cannot be reached from any template, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API.
+Injected services are the common case:
+
+```ts
+@Component({ selector: 'my-button', template: '<button>{{ label }}</button>' })
+export class ButtonComponent {
+  // Kept by 'api': a parent template can bind any declared input.
+  @Input() private label = '';
+
+  // Dropped by 'api': no template can reach it.
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  // Kept by 'api': the component's own template can read protected members.
+  protected pressed = false;
+}
+```
+
+`protected` members are deliberately kept, because Angular templates can bind them and they are therefore part of what a reader needs to know.
+
+To drop a single member that `'api'` keeps, tag it `@ignore`:
+
+```ts
+/** @ignore */
+protected internalHelper = 0;
+```
+
+`'api'` needs the `experimentalDocgenServer` feature, which this framework turns on by default, so it works without any extra configuration.
+If you have [turned that feature off](#using-compodoc-instead), Storybook reads your components through Compodoc, whose visibility data Storybook cannot interpret reliably, so only `'all'` and `'inputs'` apply.
+Asking for `'api'` then logs a warning rather than silently changing what you see.

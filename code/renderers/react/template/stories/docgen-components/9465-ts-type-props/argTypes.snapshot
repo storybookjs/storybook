@@ -1,0 +1,24 @@
+{
+  "disabled": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "",
+    "name": "disabled",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+}

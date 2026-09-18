@@ -1,0 +1,448 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "demo-wc-card.js",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "demo-wc-card",
+          "declaration": {
+            "name": "DemoWcCard",
+            "module": "/src/stories/misc/to-update/DemoWcCard.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/typings.d.ts",
+      "declarations": [],
+      "exports": []
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/components/sb-button.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "SbButton",
+          "cssProperties": [
+            {
+              "description": "Controls the color of bar",
+              "name": "--sb-primary-color",
+              "default": "#1ea7fd"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "primary",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "Set button in primary mode",
+              "privacy": "public"
+            },
+            {
+              "kind": "field",
+              "name": "backgroundColor",
+              "type": {
+                "text": "string"
+              },
+              "privacy": "public"
+            },
+            {
+              "kind": "field",
+              "name": "size",
+              "type": {
+                "text": "'small' | 'medium' | 'large'"
+              },
+              "default": "'medium'",
+              "privacy": "public"
+            },
+            {
+              "kind": "field",
+              "name": "label",
+              "default": "''",
+              "privacy": "public"
+            },
+            {
+              "kind": "method",
+              "name": "onClick",
+              "privacy": "private"
+            }
+          ],
+          "events": [
+            {
+              "name": "sb-button:click",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Custom event send when the button is clicked"
+            }
+          ],
+          "attributes": [
+            {
+              "type": {
+                "text": "string"
+              },
+              "description": "Label of the button",
+              "name": "label"
+            },
+            {
+              "type": {
+                "text": "string"
+              },
+              "description": "Size of the button, can be \"small\", \"medium\" or \"large\"; default is \"medium\".",
+              "name": "size"
+            },
+            {
+              "type": {
+                "text": "string"
+              },
+              "description": "Color of the button's background",
+              "name": "backgroundColor"
+            },
+            {
+              "name": "label",
+              "fieldName": "label"
+            },
+            {
+              "name": "primary",
+              "fieldName": "primary"
+            },
+            {
+              "name": "size",
+              "fieldName": "size"
+            },
+            {
+              "name": "backgroundColor",
+              "fieldName": "backgroundColor"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sb-button",
+          "summary": "This is a simple Storybook Button",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SbButton",
+          "declaration": {
+            "name": "SbButton",
+            "module": "src/components/sb-button.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "sb-button",
+          "declaration": {
+            "name": "SbButton",
+            "module": "src/components/sb-button.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/components/sb-header.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "SbHeader",
+          "members": [
+            {
+              "kind": "field",
+              "name": "user",
+              "type": {
+                "text": "{}"
+              },
+              "privacy": "public"
+            },
+            {
+              "kind": "method",
+              "name": "dispatchCustomEvent",
+              "privacy": "private",
+              "parameters": [
+                {
+                  "name": "eventName",
+                  "type": {
+                    "text": "string"
+                  }
+                }
+              ]
+            },
+            {
+              "kind": "method",
+              "name": "logInOutButton",
+              "privacy": "private"
+            }
+          ],
+          "events": [
+            {
+              "type": {
+                "text": "CustomEvent"
+              }
+            },
+            {
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Event send when user clicks on create account button",
+              "name": "sb-header:createAccount"
+            },
+            {
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Event send when user clicks on login button",
+              "name": "sb-header:login"
+            },
+            {
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Event send when user clicks on logout button",
+              "name": "sb-header:logout"
+            }
+          ],
+          "attributes": [
+            {
+              "type": {
+                "text": "Object"
+              },
+              "description": "User of the app",
+              "name": "user"
+            },
+            {
+              "name": "user",
+              "fieldName": "user"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sb-header",
+          "summary": "This is a simple Storybook Header",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SbHeader",
+          "declaration": {
+            "name": "SbHeader",
+            "module": "src/components/sb-header.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "sb-header",
+          "declaration": {
+            "name": "SbHeader",
+            "module": "src/components/sb-header.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/components/sb-page.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "SbPage",
+          "members": [
+            {
+              "kind": "field",
+              "name": "user",
+              "type": {
+                "text": "{}"
+              },
+              "privacy": "public"
+            }
+          ],
+          "attributes": [
+            {
+              "type": {
+                "text": "Object"
+              },
+              "description": "User of the app",
+              "name": "user"
+            },
+            {
+              "name": "user",
+              "fieldName": "user"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "sb-page",
+          "summary": "This is a simple Storybook Page",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "SbPage",
+          "declaration": {
+            "name": "SbPage",
+            "module": "src/components/sb-page.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "sb-page",
+          "declaration": {
+            "name": "SbPage",
+            "module": "src/components/sb-page.ts"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/stories/misc/to-update/DemoWcCard.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "This is a container looking like a card with a back and front side you can switch",
+          "name": "DemoWcCard",
+          "cssProperties": [
+            {
+              "description": "Header font size",
+              "name": "--demo-wc-card-header-font-size"
+            },
+            {
+              "description": "Font color for front",
+              "name": "--demo-wc-card-front-color"
+            },
+            {
+              "description": "Font color for back",
+              "name": "--demo-wc-card-back-color"
+            }
+          ],
+          "cssParts": [
+            {
+              "description": "Front of the card",
+              "name": "front"
+            },
+            {
+              "description": "Back of the card",
+              "name": "back"
+            }
+          ],
+          "slots": [
+            {
+              "description": "This is an unnamed slot (the default slot)",
+              "name": ""
+            }
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "name": "toggle"
+            },
+            {
+              "kind": "field",
+              "name": "backSide",
+              "privacy": "public",
+              "description": "Indicates that the back of the card is shown",
+              "default": "false"
+            },
+            {
+              "kind": "field",
+              "name": "header",
+              "privacy": "public",
+              "description": "Header message",
+              "default": "'Your Message'"
+            },
+            {
+              "kind": "field",
+              "name": "rows",
+              "privacy": "public",
+              "description": "Data rows",
+              "default": "[]"
+            }
+          ],
+          "events": [
+            {
+              "name": "side-changed",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Fires whenever it switches between front/back"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "back-side",
+              "fieldName": "backSide"
+            },
+            {
+              "name": "header",
+              "fieldName": "header"
+            },
+            {
+              "name": "rows",
+              "fieldName": "rows"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "demo-wc-card",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "DemoWcCard",
+          "declaration": {
+            "name": "DemoWcCard",
+            "module": "src/stories/misc/to-update/DemoWcCard.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "src/stories/misc/to-update/demoWcCardStyle.css.js",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "demoWcCardStyle"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "demoWcCardStyle",
+          "declaration": {
+            "name": "demoWcCardStyle",
+            "module": "src/stories/misc/to-update/demoWcCardStyle.css.js"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "folders": [
+    {
+      "path": ".",
+    },
+    {
+      "path": "../storybook-sandboxes",
+    },
+  ],
+  "settings": {
+    "files.associations": {
+      "*.js": "javascriptreact",
+    },
+    "js/ts.implicitProjectConfig.target": "ESNext",
+    "js/ts.preferGoToSourceDefinition": true,
+    "vitest.workspaceConfig": "./code/vitest.workspace.ts",
+    "vitest.rootConfig": "./code/vitest.workspace.ts",
+  },
+}

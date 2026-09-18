@@ -1,0 +1,19 @@
+---
+title: webpackFinal
+sidebar:
+  order: 25
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type: `async (config: Config, options: WebpackOptions) => Config`
+
+Customize Storybook's Webpack setup when using the [webpack builder](../../builders/webpack.mdx).
+
+<CodeSnippets path="main-config-webpack-final.md" />
+
+## `Options`
+
+Type: `{ configType?: 'DEVELOPMENT' | 'PRODUCTION' }`
+
+There are other options that are difficult to document here. Please introspect the type definition for more information.

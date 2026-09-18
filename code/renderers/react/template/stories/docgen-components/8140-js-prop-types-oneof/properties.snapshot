@@ -1,0 +1,85 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'static'",
+      },
+      "description": "",
+      "name": "mode",
+      "required": false,
+      "sbType": {
+        "name": "enum",
+        "value": [
+          "static",
+          "timed",
+        ],
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "'static' | 'timed'",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'warning'",
+      },
+      "description": "",
+      "name": "type",
+      "required": false,
+      "sbType": {
+        "name": "enum",
+        "value": [
+          "success",
+          "warning",
+          "error",
+          "primary",
+        ],
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "'success' | 'warning' | 'error' | 'primary'",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "message",
+      "required": true,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "No background or border if static alert",
+      "name": "blank",
+      "required": false,
+      "sbType": {
+        "name": "boolean",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "bool",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Allows icon override, accepts material icon name",
+      "name": "icon",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+  ],
+}

@@ -1,0 +1,4 @@
+{
+  "installDependencies": true,
+  "startCommand": "yarn storybook"
+}

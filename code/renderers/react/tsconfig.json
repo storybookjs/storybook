@@ -1,0 +1,9 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "paths": {
+      "@storybook/react": ["./src"]
+    }
+  },
+  "include": ["src/**/*", "template/**/*"]
+}

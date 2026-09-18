@@ -1,0 +1,57 @@
+{
+  "parameters": {
+    "options": { "selectedPanel": "storybook/controls/panel" }
+  },
+  "stories": [
+    {
+      "name": "Simple",
+      "parameters": {
+        "server": { "id": "addons/controls/simple" }
+      },
+      "args": { "name": "John Doe", "age": 44 }
+    },
+    {
+      "name": "CSS transitions",
+      "parameters": {
+        "server": { "id": "addons/controls/css" }
+      },
+      "args": { "name": "John Doe", "color": "orangered" },
+      "argTypes": {
+        "color": { "control": { "type": "color" } }
+      }
+    },
+    {
+      "name": "All Controls",
+      "parameters": {
+        "server": { "id": "addons/controls/all" }
+      },
+      "args": {
+        "name": "Jane",
+        "stock": 20,
+        "fruit": "apples",
+        "price": 2.25,
+        "colour": "deeppink",
+        "today": "Jan 20 2017 GMT+0",
+        "items": ["Laptop", "Book", "Whiskey"],
+        "nice": true,
+        "other": { "hair": "brown", "eyes": "blue" }
+      },
+      "argTypes": {
+        "stock": { "control": { "type": "range", "min": 0, "max": 30, "step": 5 } },
+        "fruit": {
+          "options": ["apples", "bananas", "cherries"],
+          "control": {
+            "type": "select",
+            "labels": {
+              "apples": "Apple",
+              "bananas": "Banana",
+              "cherries": "Cherry"
+            }
+          }
+        },
+        "colour": { "control": { "type": "color" } },
+        "today": { "control": { "type": "date" } }
+      }
+    }
+  ]
+}

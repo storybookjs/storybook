@@ -1,0 +1,34 @@
+import MagicString from 'magic-string';
+import type { Plugin } from 'vite';
+
+/**
+ * This plugin removes HMR `accept` calls in story files. Stories should not be treated as hmr
+ * boundaries, but vite has a bug which causes them to be treated as boundaries
+ * (https://github.com/vitejs/vite/issues/9869).
+ */
+export async function stripStoryHMRBoundary() {
+  const { createFilter } = await import('vite');
+
+  const include = /\.stories\.(tsx?|jsx?|svelte|vue)$/;
+  const filter = createFilter(include);
+  return {
+    name: 'storybook:strip-hmr-boundary-plugin',
+    enforce: 'post',
+    transform: {
+      filter: { id: include },
+      async handler(src, id) {
+        if (!filter(id)) {
+          return undefined;
+        }
+
+        const s = new MagicString(src);
+        s.replace(/import\.meta\.hot\.accept\w*/, '(function hmrBoundaryNoop(){})');
+
+        return {
+          code: s.toString(),
+          map: s.generateMap({ hires: true, source: id }).toString(),
+        };
+      },
+    },
+  } satisfies Plugin;
+}

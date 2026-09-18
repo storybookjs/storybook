@@ -1,0 +1,23 @@
+{
+  "bar": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "bar",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "Foo['bar']",
+      },
+    },
+    "type": {
+      "name": "other",
+      "raw": "Foo['bar']",
+      "required": true,
+      "value": "Foo['bar']",
+    },
+  },
+}

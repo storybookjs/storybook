@@ -1,0 +1,22 @@
+{
+  "stories": [
+    {
+      "name": "Heading",
+      "parameters": {
+        "server": { "id": "demo/heading" }
+      }
+    },
+    {
+      "name": "Headings",
+      "parameters": {
+        "server": { "id": "demo/headings" }
+      }
+    },
+    {
+      "name": "Button",
+      "parameters": {
+        "server": { "id": "demo/button" }
+      }
+    }
+  ]
+}

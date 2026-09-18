@@ -1,0 +1,26 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "The size (replaces width)",
+      "name": "size",
+      "required": true,
+      "sbType": {
+        "name": "object",
+        "raw": "{ width: number; height: number }",
+        "value": {
+          "height": {
+            "name": "number",
+          },
+          "width": {
+            "name": "number",
+          },
+        },
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "{ width: number; height: number }",
+      },
+    },
+  ],
+}

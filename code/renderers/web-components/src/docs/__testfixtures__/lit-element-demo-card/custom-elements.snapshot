@@ -1,0 +1,89 @@
+{
+  "tags": [
+    {
+      "attributes": [
+        {
+          "default": "false",
+          "description": "Indicates that the back of the card is shown",
+          "name": "back-side",
+          "type": "boolean",
+        },
+        {
+          "default": ""Your Message"",
+          "description": "Header message",
+          "name": "header",
+          "type": "string",
+        },
+        {
+          "default": "[]",
+          "description": "Data rows",
+          "name": "rows",
+          "type": "object",
+        },
+      ],
+      "cssParts": [
+        {
+          "description": "Front of the card",
+          "name": "front",
+        },
+        {
+          "description": "Back of the card",
+          "name": "back",
+        },
+      ],
+      "cssProperties": [
+        {
+          "description": "Header font size",
+          "name": "--demo-wc-card-header-font-size",
+        },
+        {
+          "description": "Font color for front",
+          "name": "--demo-wc-card-front-color",
+        },
+        {
+          "description": "Font color for back",
+          "name": "--demo-wc-card-back-color",
+        },
+      ],
+      "description": "This is a container looking like a card with a back and front side you can switch",
+      "events": [
+        {
+          "description": "Fires whenever it switches between front/back",
+          "name": "side-changed",
+        },
+      ],
+      "name": "input",
+      "path": "dummy-path-to-component",
+      "properties": [
+        {
+          "attribute": "back-side",
+          "default": "false",
+          "description": "Indicates that the back of the card is shown",
+          "name": "backSide",
+          "type": "boolean",
+        },
+        {
+          "attribute": "header",
+          "default": ""Your Message"",
+          "description": "Header message",
+          "name": "header",
+          "type": "string",
+        },
+        {
+          "attribute": "rows",
+          "default": "[]",
+          "description": "Data rows",
+          "name": "rows",
+          "type": "object",
+        },
+      ],
+      "slots": [
+        {
+          "description": "This is an unnamed slot (the default slot)",
+          "name": "",
+        },
+      ],
+    },
+  ],
+  "version": "experimental",
+}

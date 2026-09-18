@@ -1,0 +1,80 @@
+---
+title: Storybook for React with Vite
+hideRendererSelector: true
+sidebar:
+  order: 6
+  title: React (Vite)
+---
+
+Storybook for React & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [React](https://react.dev/) applications built with [Vite](https://vitejs.dev/).
+
+## Install
+
+To install Storybook in an existing React project, run this command in your project's root directory:
+
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
+
+### Requirements
+
+<GetStartedVersions
+  versions={[
+    {
+      name: 'React',
+      range: '≥ 16.8',
+      icon: '/images/logos/renderers/logo-react.svg',
+    },
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
+
+## Run Storybook
+
+To run Storybook for a particular project, run the following:
+
+<CodeSnippets path="storybook-run-dev.md" />
+
+To build Storybook, run:
+
+<CodeSnippets path="build-storybook-production-mode.md" />
+
+You will find the output in the configured `outputDir` (default is `storybook-static`).
+
+## FAQ
+
+### How do I migrate from the React Webpack framework?
+
+The `upgrade` command should prompt you to migrate to `@storybook/react-vite` when you run it:
+
+<CodeSnippets path="storybook-upgrade.md" />
+
+In case that auto-migration does not work for your project, refer to the manual installation instructions below.
+
+### How do I manually install the React framework?
+
+First, install the framework:
+
+<CodeSnippets path="react-vite-install.md" />
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+<CodeSnippets path="react-vite-add-framework.md" />
+
+## API
+
+### Options
+
+You can pass an options object for additional configuration if needed:
+
+<CodeSnippets path="react-vite-framework-options.md" />
+
+#### `builder`
+
+Type: `Record<string, any>`
+
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).

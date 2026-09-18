@@ -1,0 +1,51 @@
+import waitOn from 'wait-on';
+
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { getPort } from '../sandbox/utils/getPort.ts';
+import { type Task } from '../task.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
+import { prepareSandbox } from '../prepare-sandbox.ts';
+
+export const PORT = process.env.STORYBOOK_SERVE_PORT
+  ? parseInt(process.env.STORYBOOK_SERVE_PORT, 10)
+  : 8001;
+
+function getServePort(key: AllTemplatesKey) {
+  return isNxTaskExecution() ? getPort({ selectedTask: 'serve', key }) : PORT;
+}
+
+export const serve: Task = {
+  description: 'Serve the build storybook for a sandbox',
+  service: true,
+  dependsOn: ['build'],
+  async ready({ key }) {
+    const port = getServePort(key);
+    try {
+      await fetch(`http://localhost:${port}/iframe.html`, { signal: AbortSignal.timeout(1000) });
+      return true;
+    } catch {
+      return false;
+    }
+  },
+  async run({ builtSandboxDir, key }, { debug, dryRun, link }) {
+    await prepareSandbox({ key, link });
+    const port = getServePort(key);
+
+    const controller = new AbortController();
+    exec(
+      `yarn http-server ${builtSandboxDir} --port ${port} -s`,
+      { cwd: ROOT_DIRECTORY },
+      { dryRun, debug, signal: controller.signal as AbortSignal }
+    ).catch((err) => {
+      // If aborted, we want to make sure the rejection is handled.
+      if (!err.killed) {
+        throw err;
+      }
+    });
+    await waitOn({ resources: [`tcp:127.0.0.1:${port}`], interval: 16, timeout: 200000 });
+
+    return controller;
+  },
+};

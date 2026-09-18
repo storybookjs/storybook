@@ -1,0 +1,30 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "label",
+      "required": true,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "onClick",
+      "required": true,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+  ],
+}

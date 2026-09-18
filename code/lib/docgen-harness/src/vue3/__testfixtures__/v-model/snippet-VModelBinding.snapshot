@@ -1,0 +1,9 @@
+<script lang="ts" setup>
+import { ref } from "vue";
+
+const modelValue = ref("typed text");
+</script>
+
+<template>
+  <VModelInput checked v-model="modelValue" />
+</template>

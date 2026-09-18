@@ -1,0 +1,33 @@
+---
+title: refs
+sidebar:
+  order: 19
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type:
+
+```ts
+{ [key: string]:
+  | { title: string; url: string; expanded?: boolean, sourceUrl?: string }
+  | (config: { title: string; url: string; expanded?: boolean, sourceUrl: string }) => { title: string; url: string; expanded?: boolean, sourceUrl?: string }
+  | { disable: boolean }
+}
+```
+
+Configures [Storybook composition](../../sharing/storybook-composition.mdx).
+
+<CodeSnippets path="main-config-refs.md" />
+
+## Using a function
+
+You can use a function to dynamically configure refs:
+
+<CodeSnippets path="main-config-refs-with-function.md" />
+
+## Disable a ref
+
+Some package dependencies automatically [compose their Storybook in yours](../../sharing/package-composition.mdx). You can disable this behavior by setting `disable` to `true` for the package name:
+
+<CodeSnippets path="main-config-refs-disable.md" />

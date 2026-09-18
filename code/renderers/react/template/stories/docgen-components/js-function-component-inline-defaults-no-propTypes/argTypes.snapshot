@@ -1,0 +1,237 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`react component properties js-function-component-inline-defaults-no-propTypes 1`] = `
+Object {
+  "arrayOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "arrayOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "['array', 'optional']",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "booleanOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "booleanOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "dateOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "dateOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "new Date('20 Jan 1983')",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "functionOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "functionOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "() => 'foo'",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "globalReference": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "globalReference",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "Date",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "importedReference": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "importedReference",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "imported",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "localReference": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "localReference",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "'local-value'",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "numberOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "numberOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "1",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "objectOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "objectOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "{ object: 'optional' }",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "stringGlobalName": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "stringGlobalName",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "'top'",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+  "stringOptional": Object {
+    "control": Object {
+      "type": "object",
+    },
+    "description": undefined,
+    "name": "stringOptional",
+    "table": Object {
+      "defaultValue": Object {
+        "detail": undefined,
+        "summary": "'stringOptional'",
+      },
+      "jsDocTags": undefined,
+      "type": Object {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    "type": Object {
+      "required": false,
+    },
+  },
+}
+`;

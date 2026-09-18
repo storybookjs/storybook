@@ -1,0 +1,68 @@
+{
+  "checked": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "",
+    "name": "checked",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "defaultChecked": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "",
+    "name": "defaultChecked",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "value": {
+    "control": {
+      "type": "object",
+    },
+    "description": "The input content value",
+    "name": "value",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "union",
+      },
+    },
+    "type": {
+      "name": "union",
+      "raw": "string | number",
+      "required": false,
+      "value": [
+        {
+          "name": "string",
+        },
+        {
+          "name": "number",
+        },
+      ],
+    },
+  },
+}

@@ -1,0 +1,24 @@
+{
+  "name": "scripts",
+  "$schema": "../node_modules/nx/schemas/project-schema.json",
+  "tags": ["library"],
+  "includedScripts": [],
+  "targets": {
+    "check": {
+      "dependsOn": [],
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn check" },
+      "inputs": ["default"],
+      "cache": true
+    },
+    "lint": {
+      "executor": "nx:run-commands",
+      "options": { "cwd": "{projectRoot}", "command": "yarn lint" },
+      "cache": true,
+      "inputs": ["default"],
+      "configurations": { "production": {} }
+    },
+    "run-registry": {},
+    "publish": {}
+  }
+}

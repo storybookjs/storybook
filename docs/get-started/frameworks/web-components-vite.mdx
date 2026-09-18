@@ -1,0 +1,69 @@
+---
+title: Storybook for Web components with Vite
+hideRendererSelector: true
+sidebar:
+  order: 13
+  title: Web components (Vite)
+---
+
+Storybook for Web components & Vite is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for applications using [Web components](https://www.webcomponents.org/introduction) built with [Vite](https://vitejs.dev/).
+
+## Install
+
+To install Storybook in an existing project, run this command in your project's root directory:
+
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
+
+### Requirements
+
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Vite',
+      range: '≥ 5',
+      icon: '/images/logos/builders/vite.svg',
+    },
+  ]}
+/>
+
+## Run Storybook
+
+To run Storybook for a particular project, run the following:
+
+<CodeSnippets path="storybook-run-dev.md" />
+
+To build Storybook, run:
+
+<CodeSnippets path="build-storybook-production-mode.md" />
+
+You will find the output in the configured `outputDir` (default is `storybook-static`).
+
+## FAQ
+
+### How do I manually install the Web Components framework?
+
+First, install the framework:
+
+<CodeSnippets path="web-components-vite-install.md" />
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+<CodeSnippets path="web-components-vite-add-framework.md" />
+
+## API
+
+### Options
+
+You can pass an options object for additional configuration if needed:
+
+<CodeSnippets path="web-components-vite-framework-options.md" />
+
+The available options are:
+
+#### `builder`
+
+Type: `Record<string, any>`
+
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Vite builder docs](../../builders/vite.mdx).

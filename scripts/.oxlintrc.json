@@ -1,0 +1,5 @@
+{
+  "$schema": "../node_modules/oxlint/configuration_schema.json",
+  "extends": ["../.oxlintrc.json"],
+  "ignorePatterns": ["**/*.vue", "**/*.svelte", "storage", "repros-generator"]
+}

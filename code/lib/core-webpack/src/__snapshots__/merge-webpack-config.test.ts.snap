@@ -1,0 +1,150 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`mergeConfigs > merges partial custom config 1`] = `
+{
+  "devtool": "source-map",
+  "entry": {
+    "bundle": "index.js",
+  },
+  "module": {
+    "rules": [
+      {
+        "use": "r1",
+      },
+      {
+        "use": "r2",
+      },
+    ],
+  },
+  "optimization": {
+    "runtimeChunk": true,
+    "splitChunks": {
+      "chunks": "all",
+    },
+  },
+  "output": {
+    "filename": "[name].js",
+  },
+  "plugins": [
+    "p1",
+    "p2",
+    "p3",
+  ],
+  "resolve": {
+    "alias": {
+      "A1": "src/B1",
+      "A2": "src/B2",
+    },
+    "enforceExtension": true,
+    "extensions": [
+      ".js",
+      ".json",
+      ".ts",
+      ".tsx",
+    ],
+  },
+}
+`;
+
+exports[`mergeConfigs > merges successfully if custom config is empty 1`] = `
+{
+  "devtool": "source-map",
+  "entry": {
+    "bundle": "index.js",
+  },
+  "module": {
+    "rules": [
+      {
+        "use": "r1",
+      },
+      {
+        "use": "r2",
+      },
+    ],
+  },
+  "optimization": {
+    "runtimeChunk": true,
+    "splitChunks": {
+      "chunks": "all",
+    },
+  },
+  "output": {
+    "filename": "[name].js",
+  },
+  "plugins": [
+    "p1",
+    "p2",
+  ],
+  "resolve": {
+    "alias": {
+      "A1": "src/B1",
+      "A2": "src/B2",
+    },
+    "enforceExtension": true,
+    "extensions": [
+      ".js",
+      ".json",
+    ],
+  },
+}
+`;
+
+exports[`mergeConfigs > merges two full configs in one 1`] = `
+{
+  "devtool": "source-map",
+  "entry": {
+    "bundle": "index.js",
+  },
+  "module": {
+    "noParse": /jquery\\|lodash/,
+    "rules": [
+      {
+        "use": "r1",
+      },
+      {
+        "use": "r2",
+      },
+      {
+        "use": "r3",
+      },
+      {
+        "use": "r4",
+      },
+    ],
+  },
+  "optimization": {
+    "minimizer": [
+      "banana",
+    ],
+    "runtimeChunk": true,
+    "splitChunks": {
+      "chunks": "all",
+    },
+  },
+  "output": {
+    "filename": "[name].js",
+  },
+  "plugins": [
+    "p1",
+    "p2",
+    "p3",
+    "p4",
+  ],
+  "profile": true,
+  "resolve": {
+    "alias": {
+      "A1": "src/B1",
+      "A2": "src/B2",
+      "A3": "src/B3",
+      "A4": "src/B4",
+    },
+    "enforceExtension": false,
+    "extensions": [
+      ".js",
+      ".json",
+      ".ts",
+      ".tsx",
+    ],
+  },
+}
+`;

@@ -1,0 +1,317 @@
+---
+title: Storybook for Angular with Webpack
+hideRendererSelector: true
+sidebar:
+  order: 2
+  title: Angular (Webpack)
+---
+
+Storybook for Angular is a [framework](../../contribute/framework.mdx) that makes it easy to develop and test UI components in isolation for [Angular](https://angular.io/) applications. It uses Angular builders and integrates with [Compodoc](https://compodoc.app/) to provide automatic documentation generation.
+
+<Callout variant="info">
+
+If you are on **Angular ≥ 21** and want faster builds and the [Vitest addon](../../writing-tests/integrations/vitest-addon/index.mdx), consider using [`@storybook/angular-vite`](./angular-vite.mdx) instead. It is a Vite-based framework with the same authoring surface and full Vitest integration support.
+
+</Callout>
+
+## Install
+
+To install Storybook in an existing Angular project, run this command in your project's root directory:
+
+<CodeSnippets
+
+path="create-command.md"
+variant="new-users"
+copyEvent="CreateCommandCopy"
+/>
+
+You can then get started [writing stories](../whats-a-story.mdx), [running tests](../../writing-tests/index.mdx) and [documenting your components](../../writing-docs/index.mdx). For more control over the installation process, refer to the [installation guide](../install.mdx).
+
+### Requirements
+
+<GetStartedVersions
+  versions={[
+    {
+      name: 'Angular',
+      range: '≥ 18.0 < 23.0',
+      icon: '/images/logos/renderers/logo-angular.svg',
+    },
+    {
+      name: 'Webpack',
+      range: '5',
+      icon: '/images/logos/builders/webpack.svg',
+    },
+  ]}
+/>
+
+## Run Storybook
+
+To run Storybook for a particular project, run the following:
+
+```sh
+ng run <your-project>:storybook
+```
+
+To build Storybook, run:
+
+```sh
+ng run <your-project>:build-storybook
+```
+
+You will find the output in the configured `outputDir` (default is `dist/storybook/<your-project>`).
+
+## Configure
+
+To make the most out of Storybook in your Angular project, you can set up Compodoc integration and Storybook [decorators](../../writing-stories/decorators.mdx) based on your project needs.
+
+### Compodoc
+
+You can include JSDoc comments above components, directives, and other parts of your Angular code to include documentation for those elements. Compodoc uses these comments to [generate documentation](../../writing-docs/autodocs.mdx) for your application. In Storybook, it is useful to add explanatory comments above `@Inputs` and `@Outputs`, since these are the main elements that Storybook displays in its user interface. The `@Inputs` and `@Outputs` are elements you can interact with in Storybook, such as [controls](../../essentials/controls.mdx).
+
+#### Automatic setup
+
+When installing Storybook via `npx storybook@latest init`, you can set up Compodoc automatically.
+
+#### Manual setup
+
+If you have already installed Storybook, you can set up Compodoc manually.
+
+Install the following dependencies:
+
+```sh
+npm install --save-dev @compodoc/compodoc
+```
+
+Add the following option to your Storybook Builder:
+
+```jsonc title="angular.json"
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            // 👇 Add these
+            "compodoc": true,
+            "compodocArgs": [
+              "-e",
+              "json",
+              "-d",
+              // Where to store the generated documentation. It's usually the root of your Angular project. It's not necessarily the root of your Angular Workspace!
+              ".",
+            ],
+          },
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            // 👇 Add these
+            "compodoc": true,
+            "compodocArgs": ["-e", "json", "-d", "."],
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+Go to your `.storybook/preview.ts` and add the following:
+
+<CodeSnippets path="angular-add-compodoc.md" />
+
+### Application-wide providers
+
+If your component relies on application-wide providers, like the ones defined by [`BrowserAnimationsModule`](https://angular.dev/api/platform-browser/animations/BrowserAnimationsModule) or any other modules that use the forRoot pattern to provide a [`ModuleWithProviders`](https://angular.dev/api/core/ModuleWithProviders), you can apply the `applicationConfig` [decorator](../../writing-stories/decorators.mdx) to all stories for that component. This will provide them with the [bootstrapApplication function](https://angular.dev/api/platform-browser/bootstrapApplication), used to bootstrap the component in Storybook.
+
+<CodeSnippets path="angular-application-providers-in-meta-and-story.md" />
+
+### Angular dependencies
+
+If your component has dependencies on other Angular directives and modules, these can be supplied using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.
+
+```ts title="YourComponent.stories.ts"
+import { Meta, moduleMetadata, StoryObj } from '@storybook/angular';
+
+import { YourComponent } from './your.component';
+
+const meta: Meta<YourComponent> = {
+  component: YourComponent,
+  decorators: [
+    // Apply metadata to all stories
+    moduleMetadata({
+      // import necessary ngModules or standalone components
+      imports: [...],
+      // declare components that are used in the template
+      declarations: [...],
+      // List of providers that should be available to the root component and all its children.
+      providers: [...],
+    }),
+  ],
+};
+export default meta;
+type Story = StoryObj<YourComponent>;
+
+export const Base: Story = {};
+
+export const WithCustomProvider: Story = {
+  decorators: [
+    // Apply metadata to a specific story
+    moduleMetadata({
+      imports: [...],
+      declarations: [...],
+      providers: [...],
+    }),
+  ],
+};
+```
+
+## FAQ
+
+### How do I manually install the Angular framework?
+
+The easiest way to install the Angular framework is to run the upgrade command, but you can also set it up manually. First, install the framework:
+
+<CodeSnippets path="angular-install.md" />
+
+Then, update your `.storybook/main.js|ts` to change the framework property:
+
+<CodeSnippets path="angular-add-framework.md" />
+
+Finally, update your `angular.json` to include the Storybook builder:
+
+```jsonc title="angular.json"
+{
+  "projects": {
+    "your-project": {
+      "architect": {
+        "storybook": {
+          "builder": "@storybook/angular:start-storybook",
+          "options": {
+            // The path to the storybook config directory
+            "configDir": ".storybook",
+            // The build target of your project
+            "browserTarget": "your-project:build",
+            // The port you want to start Storybook on
+            "port": 6006,
+            // More options available, documented here:
+            // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/start-storybook/schema.json
+          },
+        },
+        "build-storybook": {
+          "builder": "@storybook/angular:build-storybook",
+          "options": {
+            "configDir": ".storybook",
+            "browserTarget": "your-project:build",
+            "outputDir": "dist/storybook/your-project",
+            // More options available, documented here:
+            // https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular/src/builders/build-storybook/schema.json
+          },
+        },
+      },
+    },
+  },
+}
+```
+
+### How do I migrate to an Angular Storybook builder?
+
+The Storybook [Angular builder](https://angular.io/guide/glossary#builder) is a way to run Storybook in an Angular workspace. It is a drop-in replacement for running `storybook dev` and `storybook build` directly.
+
+You can run `npx storybook@latest automigrate` to let Storybook detect and automatically fix your configuration. Otherwise, you can follow the next steps to adjust your configuration manually.
+
+#### With a single project in your Angular workspace
+
+Go to your `angular.json` and add `storybook` and `build-storybook` entries in your project's `architect` section, as shown [above](#manual-setup).
+
+Then, adjust your `package.json` script section, to replace the existing Storybook scripts with the Angular CLI commands:
+
+```diff title="package.json"
+{
+  "scripts": {
+-    "storybook": "start-storybook -p 6006", // or `storybook dev -p 6006`
+-    "build-storybook": "build-storybook" // or `storybook build`
++    "storybook": "ng run <project-name>:storybook",
++    "build-storybook": "ng run <project-name>:build-storybook",
+  }
+}
+```
+
+Note that `compodoc` is now built into `@storybook/angular`; you don't have to call it explicitly. If you were running `compodoc` in your `package.json` scripts, you can remove the related script:
+
+```diff title="package.json"
+{
+  "scripts": {
+-    "docs:json": "compodoc -p tsconfig.json -e json -d ./documentation",
+-    "storybook": "npm run docs:json && start-storybook -p 6006",
+-    "build-storybook": "npm run docs:json && build-storybook"
++    "storybook": "ng run <project-name>:storybook",
++    "build-storybook": "ng run <project-name>:build-storybook",
+  }
+}
+```
+
+#### With multiple projects in your Angular workspace
+
+In case you have multiple projects, you will have to adjust your `angular.json` and `package.json` as described above for each project you want to use Storybook with. Please note that each project should have a dedicated `.storybook` folder placed at the project's root directory.
+
+You can run `npx storybook@latest init` sequentially for each project to set up Storybook for each of them to automatically create the `.storybook` folder and create the necessary configuration in your `angular.json`.
+
+You can then combine multiple Storybooks with [Storybook composition](../../sharing/storybook-composition.mdx).
+
+### How do I configure Angular's builder for Storybook?
+
+These are common options you may need for the Angular builder:
+
+| Configuration element        | Description                                                                                                                                                                                 |
+| ---------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `"browserTarget"`            | Build target to be served using the following format. <br /> `"example-project:builder:config"`                                                                                             |
+| `"debugWebpack"`             | Debug the Webpack configuration <br /> `"debugWebpack": true`                                                                                                                               |
+| `"tsConfig"`                 | Location of the TypeScript configuration file relative to the current workspace. <br /> `"tsConfig": "./tsconfig.json"`.                                                                    |
+| `"preserveSymlinks"`         | Do not use the real path when resolving modules. If true, symlinks are resolved to their real path; otherwise, they are resolved to their symlinked path. <br /> `"preserveSymlinks": true` |
+| `"port"`                     | Port used by Storybook. <br /> `"port": 6006`                                                                                                                                               |
+| `"host"`                     | Set up a custom host for Storybook. <br /> `"host": "http://my-custom-host"`                                                                                                                |
+| `"configDir"`                | Storybook configuration directory location. <br /> `"configDir": ".storybook"`                                                                                                              |
+| `"https"`                    | Starts Storybook with HTTPS enabled. <br /> `"https": true` <br /> Requires custom certificate information.                                                                                 |
+| `"sslCa"`                    | Provides an SSL certificate authority. <br /> `"sslCa": "your-custom-certificate-authority"` <br /> Optional usage with `"https"`                                                           |
+| `"sslCert"`                  | Provides an SSL certificate. <br /> `"sslCert": "your-custom-certificate"` <br /> Required for `https`                                                                                      |
+| `"sslKey"`                   | Provides an SSL key to serve Storybook. <br /> `"sslKey": "your-ssl-key"`                                                                                                                   |
+| `"smokeTest"`                | Exit Storybook after successful start. <br /> `"smokeTest": true`                                                                                                                           |
+| `"ci"`                       | Starts Storybook in CI mode (skips interactive prompts and will not open browser window). <br /> `"ci": true`                                                                               |
+| `"open"`                     | Whether to open Storybook automatically in the browser. <br /> `"open": true`                                                                                                               |
+| `"quiet"`                    | Filters Storybook verbose build output. <br /> `"quiet": true`                                                                                                                              |
+| `"enableProdMode"`           | Disable Angular's development mode, which turns off assertions and other checks within the framework. <br /> `"enableProdMode": true`                                                       |
+| `"docs"`                     | Starts Storybook in [documentation mode](../../writing-docs/build-documentation.mdx#preview-storybooks-documentation). <br /> `"docs": true`                                                |
+| `"compodoc"`                 | Execute compodoc before. <br /> `"compodoc": true`                                                                                                                                          |
+| `"compodocArgs"`             | Compodoc [options](https://compodoc.app/guides/options.html). Options `-p` with tsconfig path and `-d` with workspace root is always given. <br /> `"compodocArgs": ["-e", "json"]`         |
+| `"styles"`                   | Provide the location of the [application's styles](../../configure/styling-and-css.mdx#global-styles) to be used with Storybook. <br /> `"styles": ["src/styles.css", "src/styles.scss"]`   |
+| `"stylePreprocessorOptions"` | Provides further customization for style preprocessors resolved to the workspace root. <br /> `"stylePreprocessorOptions": { "includePaths": ["src/styles"] }`                              |
+| `"assets"`                   | List of static application assets. <br /> `"assets": ["src/assets"]`                                                                                                                        |
+| `"initialPath"`              | URL path to be appended when visiting Storybook for the first time. <br /> `"initialPath": "docs/configure-your-project--docs"`                                                             |
+| `"webpackStatsJson"`         | Write Webpack Stats JSON to disk. <br /> `"webpackStatsJson": true`                                                                                                                         |
+| `"previewUrl"`               | Disables the default storybook preview and lets you use your own. <br /> `"previewUrl": "iframe.html"`                                                                                      |
+| `"loglevel"`                 | Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent]. <br /> `"loglevel": "info"`                                                     |
+| `"sourceMap"`                | Configure [sourcemaps](https://angular.dev/reference/configs/workspace-config#source-map-configuration.). <br /> `"sourceMap": true`                                                        |
+| `"experimentalZoneless"`     | Configure [zoneless change detection](https://angular.dev/guide/zoneless). <br /> `"experimentalZoneless": true`                                                                            |
+
+The full list of options can be found in the Angular builder schemas:
+
+- [Build Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/build-schema.json)
+- [Start Storybook](https://github.com/storybookjs/storybook/blob/next/code/frameworks/angular/start-schema.json)
+
+## API
+
+### Options
+
+You can pass an options object for additional configuration if needed:
+
+<CodeSnippets path="angular-framework-options.md" />
+
+The available options are:
+
+#### `builder`
+
+Type: `Record<string, any>`
+
+Configure options for the [framework's builder](../../api/main-config/main-config-framework.mdx#optionsbuilder). For this framework, available options can be found in the [Webpack builder docs](../../builders/webpack.mdx).

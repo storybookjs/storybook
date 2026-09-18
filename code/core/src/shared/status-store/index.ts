@@ -1,0 +1,299 @@
+import { StatusTypeIdMismatchError as ManagerStatusTypeIdMismatchError } from '../../manager-errors.ts';
+import { StatusTypeIdMismatchError as PreviewStatusTypeIdMismatchError } from '../../preview-errors.ts';
+import { StatusTypeIdMismatchError as ServerStatusTypeIdMismatchError } from '../../server-errors.ts';
+import type { StoryId } from '../../types/index.ts';
+import type { UniversalStore } from '../universal-store/index.ts';
+import type { StoreOptions } from '../universal-store/types.ts';
+import type { useUniversalStore as managerUseUniversalStore } from '../universal-store/use-universal-store-manager.ts';
+
+export type StatusValue =
+  | 'status-value:pending'
+  | 'status-value:success'
+  | 'status-value:new'
+  | 'status-value:modified'
+  | 'status-value:affected'
+  | 'status-value:reviewing'
+  | 'status-value:warning'
+  | 'status-value:error'
+  | 'status-value:unknown';
+
+const STATUS_VALUE_PREFIX = 'status-value:';
+
+export const STATUS_VALUES: StatusValue[] = [
+  'status-value:pending',
+  'status-value:success',
+  'status-value:new',
+  'status-value:modified',
+  'status-value:affected',
+  'status-value:reviewing',
+  'status-value:warning',
+  'status-value:error',
+  'status-value:unknown',
+];
+
+/** Converts a short name like "error" to `"status-value:error"`. Returns undefined if invalid. */
+export const toStatusValue = (shortName: string): StatusValue | undefined => {
+  if (shortName === 'related') return 'status-value:affected';
+  const candidate = `${STATUS_VALUE_PREFIX}${shortName}` as StatusValue;
+  return STATUS_VALUES.includes(candidate) ? candidate : undefined;
+};
+
+/** Extracts the short name from a StatusValue, e.g. `"status-value:error"` → `"error"`. */
+export const statusValueShortName = (value: StatusValue): string => {
+  if (value === 'status-value:affected') return 'related';
+  return value.slice(STATUS_VALUE_PREFIX.length);
+};
+
+export const statusValueDescription = (value: StatusValue): string =>
+  ({
+    'status-value:pending': 'Stories with pending status',
+    'status-value:success': 'Stories with passing tests',
+    'status-value:new': 'Newly added stories',
+    'status-value:modified': 'Stories closely linked to code changes',
+    'status-value:affected': 'Stories likely to be affected by code changes',
+    'status-value:reviewing': 'Stories included in the active review',
+    'status-value:warning': 'Stories with warnings',
+    'status-value:error': 'Stories with failing tests',
+    'status-value:unknown': 'Stories with unknown status',
+  })[value];
+
+export type StatusTypeId = string;
+export type StatusByTypeId = Record<StatusTypeId, Status>;
+export type StatusesByStoryIdAndTypeId = Record<StoryId, StatusByTypeId>;
+
+export interface Status {
+  value: StatusValue;
+  typeId: StatusTypeId;
+  storyId: StoryId;
+  title: string;
+  description: string;
+  data?: any;
+  sidebarContextMenu?: boolean;
+}
+
+export const CHANGE_DETECTION_STATUS_TYPE_ID = 'storybook/change-detection';
+export const REVIEW_STATUS_TYPE_ID = 'storybook/review';
+
+/**
+ * Status types that are quality/meta signals rather than test results, so they're excluded from the
+ * aggregated test status that surfaces a story's most critical result. Both are excluded by the same
+ * mechanism wherever that aggregate is computed.
+ */
+export const NON_AGGREGATED_STATUS_TYPE_IDS: string[] = [
+  CHANGE_DETECTION_STATUS_TYPE_ID,
+  REVIEW_STATUS_TYPE_ID,
+];
+
+export const UNIVERSAL_STATUS_STORE_OPTIONS: StoreOptions<StatusesByStoryIdAndTypeId> = {
+  id: 'storybook/status',
+  leader: true,
+  initialState: {},
+} as const;
+
+const StatusStoreEventType = {
+  SELECT: 'select',
+} as const;
+
+export type StatusStoreEvent = {
+  type: typeof StatusStoreEventType.SELECT;
+  payload: Status[];
+};
+
+export function countStatusesByValue(
+  allStatuses: StatusesByStoryIdAndTypeId
+): Record<StatusValue, number> {
+  const counts = {} as Record<StatusValue, number>;
+  for (const statusByTypeId of Object.values(allStatuses)) {
+    for (const status of Object.values(statusByTypeId)) {
+      counts[status.value] = (counts[status.value] ?? 0) + 1;
+    }
+  }
+  return counts;
+}
+
+export type StatusStore = {
+  getAll: () => StatusesByStoryIdAndTypeId;
+  set: (statuses: Status[]) => void;
+  onAllStatusChange: (
+    listener: (
+      statuses: StatusesByStoryIdAndTypeId,
+      previousStatuses: StatusesByStoryIdAndTypeId
+    ) => void
+  ) => () => void;
+  onSelect: (listener: (selectedStatuses: Status[]) => void) => () => void;
+  unset: (storyIds?: StoryId[]) => void;
+};
+type FullStatusStore = StatusStore & {
+  selectStatuses: (statuses: Status[]) => void;
+  typeId: undefined;
+};
+export type StatusStoreByTypeId = StatusStore & {
+  typeId: StatusTypeId;
+};
+
+export type StatusStoreEnvironment = 'server' | 'manager' | 'preview';
+
+export type UseStatusStore = <T = StatusesByStoryIdAndTypeId>(
+  selector?: (statuses: StatusesByStoryIdAndTypeId) => T
+) => T;
+
+export function createStatusStore(params: {
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
+  useUniversalStore?: never;
+  environment: StatusStoreEnvironment;
+}): {
+  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
+  fullStatusStore: FullStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
+};
+export function createStatusStore(params: {
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
+  useUniversalStore: typeof managerUseUniversalStore;
+  environment: StatusStoreEnvironment;
+}): {
+  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
+  fullStatusStore: FullStatusStore;
+  useStatusStore: UseStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
+};
+export function createStatusStore({
+  universalStatusStore,
+  useUniversalStore,
+  environment,
+}: {
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
+  useUniversalStore?: typeof managerUseUniversalStore;
+  environment: StatusStoreEnvironment;
+}): {
+  getStatusStoreByTypeId: (typeId: StatusTypeId) => StatusStoreByTypeId;
+  fullStatusStore: FullStatusStore;
+  useStatusStore?: UseStatusStore;
+  universalStatusStore: UniversalStore<StatusesByStoryIdAndTypeId, StatusStoreEvent>;
+} {
+  const fullStatusStore: FullStatusStore = {
+    getAll() {
+      return universalStatusStore.getState();
+    },
+    set(statuses) {
+      universalStatusStore.setState((state) => {
+        // Create a new state object to merge with the current state
+        const newState = { ...state };
+
+        // Process each status and merge it into the appropriate storyId record
+        for (const status of statuses) {
+          const { storyId, typeId } = status;
+
+          newState[storyId] = { ...(newState[storyId] ?? {}), [typeId]: status };
+        }
+        return newState;
+      });
+    },
+    onAllStatusChange(
+      listener: (
+        statuses: StatusesByStoryIdAndTypeId,
+        prevStatuses: StatusesByStoryIdAndTypeId
+      ) => void
+    ): ReturnType<typeof universalStatusStore.onStateChange> {
+      return universalStatusStore.onStateChange((state, prevState) => {
+        listener(state, prevState);
+      });
+    },
+    onSelect(listener) {
+      return universalStatusStore.subscribe(StatusStoreEventType.SELECT, (event) => {
+        listener(event.payload);
+      });
+    },
+    selectStatuses: (statuses: Status[]) => {
+      universalStatusStore.send({ type: StatusStoreEventType.SELECT, payload: statuses });
+    },
+    unset(storyIds?: StoryId[]): void {
+      // If no storyIds are provided, remove all statuses
+      if (!storyIds) {
+        universalStatusStore.setState({});
+        return;
+      }
+
+      universalStatusStore.setState((state) => {
+        const newState = { ...state };
+        for (const storyId of storyIds) {
+          delete newState[storyId];
+        }
+        return newState;
+      });
+    },
+    typeId: undefined,
+  };
+
+  const getStatusStoreByTypeId = (typeId: StatusTypeId): StatusStoreByTypeId => ({
+    getAll: fullStatusStore.getAll,
+    set(statuses): void {
+      universalStatusStore.setState((state) => {
+        // Create a new state object to merge with the current state
+        const newState = { ...state };
+
+        // Process each status and merge it into the appropriate storyId record
+        for (const status of statuses) {
+          const { storyId } = status;
+          if (status.typeId !== typeId) {
+            // Validate that all statuses have the correct typeId
+            switch (environment) {
+              case 'server':
+                throw new ServerStatusTypeIdMismatchError({
+                  status,
+                  typeId,
+                });
+              case 'manager':
+                throw new ManagerStatusTypeIdMismatchError({
+                  status,
+                  typeId,
+                });
+              case 'preview':
+              default:
+                throw new PreviewStatusTypeIdMismatchError({
+                  status,
+                  typeId,
+                });
+            }
+          }
+
+          newState[storyId] = { ...(newState[storyId] ?? {}), [typeId]: status };
+        }
+        return newState;
+      });
+    },
+    onAllStatusChange: fullStatusStore.onAllStatusChange,
+    onSelect(listener) {
+      return universalStatusStore.subscribe(StatusStoreEventType.SELECT, (event) => {
+        if (event.payload.some((status) => status.typeId === typeId)) {
+          listener(event.payload);
+        }
+      });
+    },
+    unset(storyIds?: StoryId[]): void {
+      universalStatusStore.setState((state) => {
+        const newState = { ...state };
+        for (const storyId in newState) {
+          if (newState[storyId]?.[typeId] && (!storyIds || storyIds?.includes(storyId))) {
+            const { [typeId]: omittedStatus, ...storyStatusesWithoutTypeId } = newState[storyId];
+            newState[storyId] = storyStatusesWithoutTypeId;
+          }
+        }
+        return newState;
+      });
+    },
+    typeId,
+  });
+
+  if (!useUniversalStore) {
+    return { getStatusStoreByTypeId, fullStatusStore, universalStatusStore };
+  }
+
+  return {
+    getStatusStoreByTypeId,
+    fullStatusStore,
+    universalStatusStore,
+    useStatusStore: <T = StatusesByStoryIdAndTypeId>(
+      selector?: (statuses: StatusesByStoryIdAndTypeId) => T
+    ) => useUniversalStore(universalStatusStore, selector as any)[0] as T,
+  };
+}

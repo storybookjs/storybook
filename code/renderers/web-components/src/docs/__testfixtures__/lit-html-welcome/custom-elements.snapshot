@@ -1,0 +1,9 @@
+{
+  "tags": [
+    {
+      "name": "input",
+      "path": "dummy-path-to-component",
+    },
+  ],
+  "version": "experimental",
+}

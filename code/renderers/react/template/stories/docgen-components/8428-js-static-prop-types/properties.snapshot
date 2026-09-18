@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "Please work...",
+      "name": "test",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+  ],
+}

@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'0'",
+      },
+      "description": undefined,
+      "name": "padding",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+  ],
+}

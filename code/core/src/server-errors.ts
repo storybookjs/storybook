@@ -1,0 +1,1306 @@
+import picocolors from 'picocolors';
+import { dedent } from 'ts-dedent';
+
+import type { ValidationMeta } from './shared/open-service/errors.ts';
+import { formatIssues } from './shared/open-service/errors.ts';
+import type { ServiceId } from './shared/open-service/types.ts';
+import type { Status, StatusTypeId } from './shared/status-store/index.ts';
+import { StorybookError } from './storybook-error.ts';
+
+export { StorybookError } from './storybook-error.ts';
+
+/**
+ * If you can't find a suitable category for your error, create one based on the package name/file
+ * path of which the error is thrown. For instance: If it's from `@storybook/node-logger`, then
+ * NODE-LOGGER If it's from a package that is too broad, e.g. @storybook/cli in the init command,
+ * then use a combination like CLI_INIT
+ */
+export enum Category {
+  CLI = 'CLI',
+  CLI_INIT = 'CLI_INIT',
+  CLI_AUTOMIGRATE = 'CLI_AUTOMIGRATE',
+  CLI_UPGRADE = 'CLI_UPGRADE',
+  CLI_ADD = 'CLI_ADD',
+  CODEMOD = 'CODEMOD',
+  CORE_SERVER = 'CORE-SERVER',
+  CSF_PLUGIN = 'CSF-PLUGIN',
+  CSF_TOOLS = 'CSF-TOOLS',
+  CORE_COMMON = 'CORE-COMMON',
+  NODE_LOGGER = 'NODE-LOGGER',
+  TELEMETRY = 'TELEMETRY',
+  BUILDER_MANAGER = 'BUILDER-MANAGER',
+  BUILDER_VITE = 'BUILDER-VITE',
+  BUILDER_WEBPACK5 = 'BUILDER-WEBPACK5',
+  SOURCE_LOADER = 'SOURCE-LOADER',
+  POSTINSTALL = 'POSTINSTALL',
+  DOCS_TOOLS = 'DOCS-TOOLS',
+  CORE_WEBPACK = 'CORE-WEBPACK',
+  FRAMEWORK_ANGULAR = 'FRAMEWORK_ANGULAR',
+  FRAMEWORK_EMBER = 'FRAMEWORK_EMBER',
+  FRAMEWORK_HTML_VITE = 'FRAMEWORK_HTML-VITE',
+  FRAMEWORK_HTML_WEBPACK5 = 'FRAMEWORK_HTML-WEBPACK5',
+  FRAMEWORK_NEXTJS = 'FRAMEWORK_NEXTJS',
+  FRAMEWORK_PREACT_VITE = 'FRAMEWORK_PREACT-VITE',
+  FRAMEWORK_PREACT_WEBPACK5 = 'FRAMEWORK_PREACT-WEBPACK5',
+  FRAMEWORK_REACT_VITE = 'FRAMEWORK_REACT-VITE',
+  FRAMEWORK_REACT_WEBPACK5 = 'FRAMEWORK_REACT-WEBPACK5',
+  FRAMEWORK_SERVER_WEBPACK5 = 'FRAMEWORK_SERVER-WEBPACK5',
+  FRAMEWORK_SVELTE_VITE = 'FRAMEWORK_SVELTE-VITE',
+  FRAMEWORK_SVELTEKIT = 'FRAMEWORK_SVELTEKIT',
+  FRAMEWORK_VUE_VITE = 'FRAMEWORK_VUE-VITE',
+  FRAMEWORK_VUE_WEBPACK5 = 'FRAMEWORK_VUE-WEBPACK5',
+  FRAMEWORK_VUE3_VITE = 'FRAMEWORK_VUE3-VITE',
+  FRAMEWORK_VUE3_WEBPACK5 = 'FRAMEWORK_VUE3-WEBPACK5',
+  FRAMEWORK_WEB_COMPONENTS_VITE = 'FRAMEWORK_WEB-COMPONENTS-VITE',
+  FRAMEWORK_WEB_COMPONENTS_WEBPACK5 = 'FRAMEWORK_WEB-COMPONENTS-WEBPACK5',
+}
+
+export class NxProjectDetectedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'NxProjectDetectedError',
+      category: Category.CLI_INIT,
+      code: 1,
+      documentation: 'https://nx.dev/nx-api/storybook#generating-storybook-configuration',
+      message: dedent`
+        We have detected Nx in your project. Nx has its own Storybook initializer, so please use it instead.
+        Run "nx g @nx/storybook:configuration <your-project-name>" to add Storybook to a given Nx app or lib.`,
+    });
+  }
+}
+
+export class MissingFrameworkFieldError extends StorybookError {
+  constructor() {
+    super({
+      name: 'MissingFrameworkFieldError',
+      category: Category.CORE_COMMON,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api',
+      message: dedent`
+        Could not find a 'framework' field in Storybook config.
+        
+        Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
+  }
+}
+
+export class InvalidFrameworkNameError extends StorybookError {
+  constructor(public data: { frameworkName: string }) {
+    super({
+      name: 'InvalidFrameworkNameError',
+      category: Category.CORE_COMMON,
+      code: 2,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#new-framework-api',
+      message: dedent`
+        Invalid value of '${data.frameworkName}' in the 'framework' field of Storybook config.
+        
+        Please run 'npx storybook automigrate' to automatically fix your config.
+      `,
+    });
+  }
+}
+
+export class CouldNotEvaluateFrameworkError extends StorybookError {
+  constructor(public data: { frameworkName: string }) {
+    super({
+      name: 'CouldNotEvaluateFrameworkError',
+      category: Category.CORE_COMMON,
+      code: 3,
+      documentation: '',
+      message: dedent`
+        Could not evaluate the '${data.frameworkName}' package from the 'framework' field of Storybook config.
+        
+        Are you sure it's a valid package and is installed?`,
+    });
+  }
+}
+
+// this error is not used anymore, but we keep it to maintain unique its error code
+// which is used for telemetry
+export class ConflictingStaticDirConfigError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ConflictingStaticDirConfigError',
+      category: Category.CORE_SERVER,
+      code: 1,
+      documentation:
+        'https://storybook.js.org/docs/configure/integration/images-and-assets#serving-static-files-via-storybook-configuration',
+      message: dedent`
+        Storybook encountered a conflict when trying to serve statics. You have configured both:
+        * Storybook's option in the config file: 'staticDirs'
+        * Storybook's (deprecated) CLI flag: '--staticDir' or '-s'
+        
+        Please remove the CLI flag from your storybook script and use only the 'staticDirs' option instead.`,
+    });
+  }
+}
+
+export class InvalidStoriesEntryError extends StorybookError {
+  constructor() {
+    super({
+      name: 'InvalidStoriesEntryError',
+      category: Category.CORE_COMMON,
+      code: 4,
+      documentation:
+        'https://storybook.js.org/docs/faq#can-i-have-a-storybook-with-no-local-stories',
+      message: dedent`
+        Storybook could not index your stories.
+        Your main configuration does not contain a 'stories' field, or it resolved to an empty array.
+        
+        Please check your main configuration file and make sure it exports a 'stories' field that is not an empty array.`,
+    });
+  }
+}
+
+export class OpenServiceValidationError extends StorybookError {
+  constructor(public data: ValidationMeta) {
+    super({
+      name: 'OpenServiceValidationError',
+      category: Category.CORE_COMMON,
+      code: 5,
+      message: `Invalid ${data.phase} for ${data.kind} "${data.serviceId}.${data.name}":\n${formatIssues(
+        data.issues
+      )}`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateRegistrationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceDuplicateRegistrationError',
+      category: Category.CORE_COMMON,
+      code: 6,
+      message: `A service with id "${data.serviceId}" is already registered.`,
+    });
+  }
+}
+
+export class OpenServiceMissingServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceMissingServiceError',
+      category: Category.CORE_COMMON,
+      code: 7,
+      message: `No registered service with id "${data.serviceId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceInternalServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceInternalServiceError',
+      category: Category.CORE_COMMON,
+      code: 19,
+      message: `Service "${data.serviceId}" is internal. Pass { internal: true } to getService() only if you intentionally depend on an unstable OSA surface. Internal services may change without notice.`,
+    });
+  }
+}
+
+export class OpenServiceUnimplementedOperationError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
+    super({
+      name: 'OpenServiceUnimplementedOperationError',
+      category: Category.CORE_COMMON,
+      code: 8,
+      message: `${data.kind[0].toUpperCase()}${data.kind.slice(1)} "${data.serviceId}.${data.name}" is not implemented for this environment.`,
+    });
+  }
+}
+
+export class OpenServiceInvalidStaticPathError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; path: string }) {
+    super({
+      name: 'OpenServiceInvalidStaticPathError',
+      category: Category.CORE_COMMON,
+      code: 10,
+      message: `Invalid static path "${data.path}" for query "${data.serviceId}.${data.name}": use a relative path with forward slashes and no ".." segments.`,
+    });
+  }
+}
+
+export class OpenServiceAsyncSchemaError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: ServiceId;
+      name: string;
+      kind: 'query' | 'command';
+      phase: 'input' | 'output';
+    }
+  ) {
+    super({
+      name: 'OpenServiceAsyncSchemaError',
+      category: Category.CORE_COMMON,
+      code: 9,
+      message: `Async schema for ${data.kind} "${data.serviceId}.${data.name}" (${data.phase}): query input and output schemas must validate synchronously.`,
+    });
+  }
+}
+
+export class OpenServiceLoadedDrainExceededError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; name: string; iterations: number }) {
+    super({
+      name: 'OpenServiceLoadedDrainExceededError',
+      category: Category.CORE_COMMON,
+      code: 11,
+      message: `Query "${data.serviceId}.${data.name}".loaded(...) did not settle after ${data.iterations} drain iterations. Check for handlers that keep discovering new dependencies after every state change.`,
+    });
+  }
+}
+
+export class OpenServiceDocgenMissingComponentError extends StorybookError {
+  constructor(public data: { id: string }) {
+    super({
+      name: 'OpenServiceDocgenMissingComponentError',
+      category: Category.CORE_COMMON,
+      code: 12,
+      message: `No story or attached docs entry was found for component id "${data.id}". The docgen service can only return docs for components that are present in the story index.`,
+    });
+  }
+}
+
+export class OpenServiceMissingChannelError extends StorybookError {
+  constructor(public data: { serviceId?: ServiceId } = {}) {
+    super({
+      name: 'OpenServiceMissingChannelError',
+      category: Category.CORE_COMMON,
+      code: 13,
+      message: data.serviceId
+        ? `Cannot register service "${data.serviceId}": the Storybook addons channel is not installed in this runtime.`
+        : 'The Storybook addons channel is not installed in this runtime.',
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceRemoteCommandDisconnectedError',
+      category: Category.CORE_COMMON,
+      code: 14,
+      message: `Service "${data.serviceId}" was unregistered before a remote command resolved.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
+    super({
+      name: 'OpenServiceRemoteCommandUnhandledError',
+      category: Category.CORE_COMMON,
+      code: 15,
+      message: data.delegated
+        ? `The Storybook this runtime is attached to did not acknowledge remote command "${data.serviceId}.${data.commandName}" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
+    });
+  }
+}
+
+export class OpenServiceOperationNameCollisionError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+    super({
+      name: 'OpenServiceOperationNameCollisionError',
+      category: Category.CORE_COMMON,
+      code: 16,
+      message: `Service "${data.serviceId}" cannot register "${data.operationName}" as both a query and a command.`,
+    });
+  }
+}
+
+export class OpenServiceMissingOriginError extends StorybookError {
+  constructor(public data: { toolsetId: string; methodName: string }) {
+    super({
+      name: 'OpenServiceMissingOriginError',
+      category: Category.CORE_COMMON,
+      code: 17,
+      message: `Method "${data.toolsetId}.${data.methodName}" requires a Storybook server origin. Run it against a live Storybook so the adapter can provide ctx.origin.`,
+    });
+  }
+}
+
+/**
+ * Why a review was refused. The toolset renders this as the opening of a longer, coaching message,
+ * so it lives here rather than in both places — the two copies had already drifted apart once.
+ */
+export function describeUnknownStoryIds(unknownIds: string[]): string {
+  const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
+  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+}
+
+export class OpenServiceUnknownStoryIdsError extends StorybookError {
+  constructor(public data: { unknownIds: string[] }) {
+    const list = data.unknownIds.map((id) => `- ${id}`).join('\n');
+    super({
+      name: 'OpenServiceUnknownStoryIdsError',
+      category: Category.CORE_COMMON,
+      code: 18,
+      message: `${describeUnknownStoryIds(data.unknownIds)}\n${list}`,
+    });
+  }
+}
+
+// CORE_COMMON error code 20 was retired with the stateless core/docs OSA facade.
+export class OpenServiceTestRunTimeoutError extends StorybookError {
+  constructor(public data: { timeoutMs: number; requestId: string }) {
+    super({
+      name: 'OpenServiceTestRunTimeoutError',
+      category: Category.CORE_COMMON,
+      code: 21,
+      message: `Timed out after ${data.timeoutMs}ms waiting for addon-vitest response to test run "${data.requestId}". Ensure @storybook/addon-vitest is installed and responding.`,
+    });
+  }
+}
+
+export class OpenServiceServicesAppliedTwiceError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceServicesAppliedTwiceError',
+      category: Category.CORE_COMMON,
+      code: 22,
+      message: dedent`The "services" preset property was applied twice, but should only be applied once.
+        Multiple code paths applying it will cause service and toolset registration to fail.`,
+    });
+  }
+}
+
+export class OpenServiceMissingToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceMissingToolsetError',
+      category: Category.CORE_COMMON,
+      code: 23,
+      message: `No registered toolset with id "${data.toolsetId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceDuplicateToolsetError',
+      category: Category.CORE_COMMON,
+      code: 24,
+      message: `A toolset with id "${data.toolsetId}" is already registered. Each public toolset must be registered exactly once.`,
+    });
+  }
+}
+
+/**
+ * The story module graph cannot answer a query right now (still building, unsupported builder, or
+ * a build failure).
+ *
+ * Its `message` is written for the agent that triggered the lookup and names the recovery, which
+ * is what `agentFacing` declares: adapters surface it verbatim rather than wrapping it as an
+ * unexpected failure.
+ */
+export class OpenServiceModuleGraphUnavailableError extends StorybookError {
+  constructor(public data: { reason: string }) {
+    super({
+      name: 'OpenServiceModuleGraphUnavailableError',
+      category: Category.CORE_COMMON,
+      code: 25,
+      message: data.reason,
+      agentFacing: true,
+    });
+  }
+}
+
+/**
+ * A toolset method returned data its own published `outputSchema` rejects.
+ *
+ * Always a bug in the method: the schema is the contract adapters publish to their clients, so the
+ * mismatch is raised instead of quietly shipping unvalidated data.
+ */
+export class OpenServiceToolsetOutputMismatchError extends StorybookError {
+  constructor(public data: { issues: readonly unknown[] }) {
+    // Validation issues embed the rejected input, which can be large or circular — the diagnostic
+    // must never throw or balloon while reporting the real bug.
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(data.issues)?.slice(0, 2000) ?? String(data.issues);
+    } catch {
+      serialized = `${data.issues.length} issue(s) that could not be serialized`;
+    }
+    super({
+      name: 'OpenServiceToolsetOutputMismatchError',
+      category: Category.CORE_COMMON,
+      code: 26,
+      message: `Toolset output did not match its published output schema: ${serialized}`,
+    });
+  }
+}
+
+/** A toolset method id is not exactly `toolsetId.methodName` with non-empty parts. */
+export class OpenServiceInvalidToolsetMethodIdError extends StorybookError {
+  constructor(public data: { methodId: string }) {
+    super({
+      name: 'OpenServiceInvalidToolsetMethodIdError',
+      category: Category.CORE_COMMON,
+      code: 28,
+      message: `Invalid toolset method id "${data.methodId}". Expected exactly one separator: toolsetId.methodName.`,
+    });
+  }
+}
+
+/**
+ * Two toolset methods derive the same MCP tool name (or two methods in one toolset derive the same
+ * CLI method name).
+ */
+export class OpenServiceDuplicateToolNameError extends StorybookError {
+  constructor(
+    public data: {
+      derivedName: string;
+      first: string;
+      second: string;
+      transport: 'mcp' | 'cli';
+    }
+  ) {
+    super({
+      name: 'OpenServiceDuplicateToolNameError',
+      category: Category.CORE_COMMON,
+      code: 29,
+      message:
+        data.transport === 'mcp'
+          ? `Derived MCP tool name "${data.derivedName}" collides between "${data.first}" and "${data.second}". Rename one toolset id or method key.`
+          : `Derived CLI method name "${data.derivedName}" collides between "${data.first}" and "${data.second}" in the same toolset. Rename one method key.`,
+    });
+  }
+}
+
+export class WebpackMissingStatsError extends StorybookError {
+  constructor() {
+    super({
+      name: 'WebpackMissingStatsError',
+      category: Category.BUILDER_WEBPACK5,
+      code: 1,
+      documentation: [
+        'https://webpack.js.org/configuration/stats/',
+        'https://storybook.js.org/docs/builders/webpack#configure',
+      ],
+      message: dedent`
+        No Webpack stats found. Did you turn off stats reporting in your Webpack config?
+        Storybook needs Webpack stats (including errors) in order to build correctly.`,
+    });
+  }
+}
+
+export class WebpackInvocationError extends StorybookError {
+  constructor(
+    public data: {
+      error: Error;
+    }
+  ) {
+    super({
+      name: 'WebpackInvocationError',
+      category: Category.BUILDER_WEBPACK5,
+      code: 2,
+      message: data.error.message.trim(),
+    });
+  }
+}
+
+function removeAnsiEscapeCodes(input = '') {
+  return input.replace(/\u001B\[[0-9;]*m/g, '');
+}
+
+export class WebpackCompilationError extends StorybookError {
+  constructor(
+    public data: {
+      errors: {
+        message: string;
+        stack?: string;
+        name?: string;
+      }[];
+    }
+  ) {
+    data.errors = data.errors.map((err) => {
+      return {
+        ...err,
+        message: removeAnsiEscapeCodes(err.message),
+        stack: removeAnsiEscapeCodes(err.stack),
+        name: err.name,
+      };
+    });
+
+    super({
+      name: 'WebpackCompilationError',
+      category: Category.BUILDER_WEBPACK5,
+      code: 3,
+      // This error message is a followup of errors logged by Webpack to the user
+      message: dedent`
+        There were problems when compiling your code with Webpack.
+        Run Storybook with --debug-webpack for more information.
+      `,
+    });
+  }
+}
+
+export class MissingAngularJsonError extends StorybookError {
+  constructor(
+    public data: {
+      path: string;
+    }
+  ) {
+    super({
+      name: 'MissingAngularJsonError',
+      category: Category.CLI_INIT,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/faq#error-no-angularjson-file-found?ref=error',
+      message: dedent`
+        An angular.json file was not found in the current working directory: ${data.path}
+        Storybook needs it to work properly, so please rerun the command at the root of your project, where the angular.json file is located.`,
+    });
+  }
+}
+
+export class AngularLegacyBuildOptionsError extends StorybookError {
+  constructor() {
+    super({
+      name: 'AngularLegacyBuildOptionsError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 1,
+      documentation: [
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-drop-support-for-calling-storybook-directly',
+        'https://github.com/storybookjs/storybook/tree/next/code/frameworks/angular#how-do-i-migrate-to-an-angular-storybook-builder',
+      ],
+      message: dedent`
+        Your Storybook startup script uses a solution that is not supported anymore.
+        You must use Angular builder to have an explicit configuration on the project used in angular.json.
+        
+        Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
+  }
+}
+
+export class AngularUnresolvedStyleError extends StorybookError {
+  constructor(public data: { stylePath: string; workspaceRoot: string; extensions: string[] }) {
+    super({
+      name: 'AngularUnresolvedStyleError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: dedent`
+        Cannot resolve the stylesheet '${data.stylePath}' from the Angular workspace root '${data.workspaceRoot}'.
+
+        No file matches it there, with or without a ${data.extensions.join(', ')} extension.
+
+        Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
+    });
+  }
+}
+
+export class AngularMissingStylePreprocessorError extends StorybookError {
+  constructor(public data: { stylePath: string; install: string; alternative?: string }) {
+    super({
+      name: 'AngularMissingStylePreprocessorError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 3,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: [
+        dedent`
+          Cannot compile '${data.stylePath}': the '${data.install}' package is not installed where Vite can load it.
+
+          Add it to your project:
+
+            npm install --save-dev ${data.install}
+
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
+        data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+    });
+  }
+}
+
+export class CriticalPresetLoadError extends StorybookError {
+  constructor(
+    public data: {
+      error: Error;
+      presetName: string;
+    }
+  ) {
+    super({
+      name: 'CriticalPresetLoadError',
+      category: Category.CORE_SERVER,
+      code: 2,
+      documentation: '',
+      message: dedent`
+        Storybook failed to load the following preset: ${data.presetName}.
+        
+        Please check whether your setup is correct, the Storybook dependencies (and their peer dependencies) are installed correctly and there are no package version clashes.
+        
+        If you believe this is a bug, please open an issue on Github.
+        
+        ${data.error.stack || data.error.message}`,
+    });
+  }
+}
+
+export class MissingBuilderError extends StorybookError {
+  constructor() {
+    super({
+      name: 'MissingBuilderError',
+      category: Category.CORE_SERVER,
+      code: 3,
+      documentation: 'https://github.com/storybookjs/storybook/issues/24071',
+      message: dedent`
+        Storybook could not find a builder configuration for your project. 
+        Builders normally come from a framework package e.g. '@storybook/react-vite', or from builder packages e.g. '@storybook/builder-vite'.
+        
+        - Does your main config file contain a 'framework' field configured correctly?
+        - Is the Storybook framework package installed correctly?
+        - If you don't use a framework, does your main config contain a 'core.builder' configured correctly?
+        - Are you in a monorepo and perhaps the framework package is hoisted incorrectly?
+        
+        If you believe this is a bug, please describe your issue in detail on Github.`,
+    });
+  }
+}
+
+export class GoogleFontsDownloadError extends StorybookError {
+  constructor(public data: { fontFamily: string; url: string }) {
+    super({
+      name: 'GoogleFontsDownloadError',
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 1,
+      documentation:
+        'https://storybook.js.org/docs/get-started/frameworks/nextjs#nextjs-font-optimization',
+      message: dedent`
+        Failed to fetch \`${data.fontFamily}\` from Google Fonts with URL: \`${data.url}\``,
+    });
+  }
+}
+
+export class GoogleFontsLoadingError extends StorybookError {
+  constructor(public data: { error: unknown | Error; url: string }) {
+    super({
+      name: 'GoogleFontsLoadingError',
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 2,
+      documentation:
+        'https://storybook.js.org/docs/get-started/frameworks/nextjs#nextjs-font-optimization',
+      message: dedent`
+        An error occurred when trying to load Google Fonts with URL \`${data.url}\`.
+        
+        ${data.error instanceof Error ? data.error.message : ''}`,
+    });
+  }
+}
+
+export class SvelteViteWithSvelteKitError extends StorybookError {
+  constructor() {
+    super({
+      name: 'SvelteViteWithSvelteKitError',
+      category: Category.FRAMEWORK_SVELTE_VITE,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#sveltekit-needs-the-storybooksveltekit-framework',
+      message: dedent`
+        We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported.
+        Please use the @storybook/sveltekit framework instead.`,
+    });
+  }
+}
+
+export class NoMatchingExportError extends StorybookError {
+  constructor(public data: { error: unknown | Error }) {
+    super({
+      name: 'NoMatchingExportError',
+      category: Category.CORE_SERVER,
+      code: 4,
+      documentation: '',
+      message: dedent`
+        There was an exports mismatch error when trying to build Storybook.
+        Please check whether the versions of your Storybook packages match whenever possible, as this might be the cause.
+        
+        Problematic example:
+        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.4.5", "storybook": "7.3.0" }
+        
+        Correct example:
+        { "@storybook/react": "7.5.3", "@storybook/react-vite": "7.5.3", "storybook": "7.5.3" }
+        
+        Please run \`npx storybook doctor\` for guidance on how to fix this issue.`,
+    });
+  }
+}
+
+export class MainFileMissingError extends StorybookError {
+  constructor(public data: { location: string; source?: 'storybook' | 'vitest' }) {
+    const map = {
+      storybook: {
+        helperMessage:
+          'You can pass a --config-dir flag to tell Storybook, where your main.js|ts file is located at.',
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
+      },
+      vitest: {
+        helperMessage:
+          'You can pass a configDir plugin option to tell where your main.js|ts file is located at.',
+        // TODO: add proper docs once available
+        documentation: 'https://storybook.js.org/docs/configure?ref=error',
+      },
+    };
+    const { documentation, helperMessage } = map[data.source || 'storybook'];
+    super({
+      name: 'MainFileMissingError',
+      category: Category.CORE_SERVER,
+      code: 6,
+      documentation,
+      message: dedent`
+        No configuration files have been found in your configDir: ${picocolors.yellow(data.location)}.
+        Storybook needs a "main.js|ts" file, please add it.
+        
+        ${helperMessage}`,
+    });
+  }
+}
+
+export class MainFileEvaluationError extends StorybookError {
+  constructor(public data: { location: string; error: Error }) {
+    const errorText = picocolors.white(
+      (data.error.stack || data.error.message).replaceAll(process.cwd(), '')
+    );
+
+    super({
+      name: 'MainFileEvaluationError',
+      category: Category.CORE_SERVER,
+      code: 7,
+      message: dedent`
+        Storybook couldn't evaluate your ${picocolors.yellow(data.location)} file.
+        
+        Original error:
+        ${errorText}`,
+    });
+  }
+}
+
+export class StatusTypeIdMismatchError extends StorybookError {
+  constructor(
+    public data: {
+      status: Status;
+      typeId: StatusTypeId;
+    }
+  ) {
+    super({
+      name: 'StatusTypeIdMismatchError',
+      category: Category.CORE_SERVER,
+      code: 16,
+      message: `Status has typeId "${data.status.typeId}" but was added to store with typeId "${data.typeId}". Full status: ${JSON.stringify(
+        data.status,
+        null,
+        2
+      )}`,
+    });
+  }
+}
+
+export class NoFreePortError extends StorybookError {
+  constructor(public data: { requestedPort?: number }) {
+    super({
+      name: 'NoFreePortError',
+      category: Category.CORE_SERVER,
+      // Note: 17 is taken by OxcParseError in ../oxc-parser/errors.ts
+      code: 18,
+      message: dedent`
+        Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
+        Your environment appears to block Storybook from listening on network ports.
+        If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
+    });
+  }
+}
+
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
+    });
+  }
+}
+
+export class GenerateNewProjectOnInitError extends StorybookError {
+  constructor(
+    public data: { error: unknown | Error; packageManager: string; projectType: string }
+  ) {
+    super({
+      name: 'GenerateNewProjectOnInitError',
+      category: Category.CLI_INIT,
+      code: 3,
+      documentation: '',
+      message: dedent`
+        There was an error while using ${data.packageManager} to create a new ${
+          data.projectType
+        } project.
+        
+        ${data.error instanceof Error ? data.error.message : ''}`,
+    });
+  }
+}
+
+type MinimumReleaseAgeHandledErrorData =
+  | {
+      message: string;
+      cause?: unknown;
+    }
+  | {
+      packageManagerName: string;
+      minimumReleaseAgeConfigName: string;
+      minimumReleaseAgeConfigDocs: string;
+      minimumReleaseAgeExclusionsConfigName?: string;
+      minimumReleaseAgeExclusionsConfigDocs?: string;
+      failedPackage?: string | null;
+      cause?: unknown;
+    };
+
+function createMinimumReleaseAgeHandledErrorMessage(data: MinimumReleaseAgeHandledErrorData) {
+  if ('message' in data) {
+    return data.message;
+  }
+
+  const followUp = data.minimumReleaseAgeExclusionsConfigName
+    ? `To fix this, either wait for the configured age window to pass and rerun the command, or add the blocked packages to ${data.packageManagerName}'s ${data.minimumReleaseAgeExclusionsConfigName} setting.`
+    : 'To fix this, either wait for the configured age window to pass and rerun the command, or rerun Storybook with an older compatible release.';
+
+  return dedent`
+    ${data.packageManagerName} blocked package installation because your project uses ${data.minimumReleaseAgeConfigName}.
+    ${data.failedPackage ? `\nFailed package: ${data.failedPackage}\n` : ''}
+    ${followUp}
+  `;
+}
+
+export class MinimumReleaseAgeHandledError extends StorybookError {
+  constructor(public data: MinimumReleaseAgeHandledErrorData) {
+    super({
+      name: 'MinimumReleaseAgeHandledError',
+      category: Category.CLI,
+      isHandledError: true,
+      code: 2,
+      cause: data.cause,
+      message: createMinimumReleaseAgeHandledErrorMessage(data),
+    });
+  }
+}
+
+export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError {
+  constructor(public data: { reasons: string[] }) {
+    super({
+      name: 'AddonVitestPostinstallPrerequisiteCheckError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 4,
+      documentation: '',
+      message: 'The prerequisite check for the Vitest addon failed.',
+    });
+  }
+}
+
+export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
+  constructor(public data: { error: unknown | Error }) {
+    super({
+      name: 'AddonVitestPostinstallFailedAddonA11yError',
+      message: "The @storybook/addon-a11y couldn't be set up for the Vitest addon",
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 6,
+    });
+  }
+}
+
+export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallWorkspaceUpdateError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 8,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
+      message: dedent`
+        Could not update existing Vitest workspace file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallConfigUpdateError extends StorybookError {
+  constructor(public data: { filePath: string }) {
+    super({
+      name: 'AddonVitestPostinstallConfigUpdateError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 9,
+      documentation: `https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced`,
+      message: dedent`
+        Unable to update existing Vitest config file: ${data.filePath}
+        Please refer to the documentation to complete the setup manually.
+      `,
+    });
+  }
+}
+
+export class AddonVitestPostinstallError extends StorybookError {
+  constructor(public data: { errors: StorybookError[] }) {
+    super({
+      name: 'AddonVitestPostinstallError',
+      category: Category.CLI_INIT,
+      isHandledError: true,
+      code: 5,
+      message: 'The Vitest addon setup failed.',
+      subErrors: data.errors,
+    });
+  }
+}
+
+export class UpgradeStorybookToLowerVersionError extends StorybookError {
+  constructor(public data: { beforeVersion: string; currentVersion: string }) {
+    super({
+      name: 'UpgradeStorybookToLowerVersionError',
+      category: Category.CLI_UPGRADE,
+      code: 3,
+      message: dedent`
+        You are trying to upgrade Storybook to a lower version than the version currently installed. This is not supported.
+        
+        Storybook version ${data.beforeVersion} was detected in your project, but you are trying to "upgrade" to version ${data.currentVersion}.
+        
+        This usually happens when running the upgrade command without a version specifier, e.g. "npx storybook upgrade".
+        This will cause npm to run the globally cached storybook binary, which might be an older version.
+        
+        Instead you should always run the Storybook CLI with a version specifier to force npm to download the latest version:
+        
+        "npx storybook@latest upgrade"`,
+    });
+  }
+}
+
+export class UpgradeStorybookUnknownCurrentVersionError extends StorybookError {
+  constructor() {
+    super({
+      name: 'UpgradeStorybookUnknownCurrentVersionError',
+      category: Category.CLI_UPGRADE,
+      code: 5,
+      message: dedent`
+        We couldn't determine the current version of Storybook in your project.
+        
+        Are you running the Storybook CLI in a project without Storybook?
+        It might help if you specify your Storybook config directory with the --config-dir flag.`,
+    });
+  }
+}
+
+export class NoStatsForViteDevError extends StorybookError {
+  constructor() {
+    super({
+      name: 'NoStatsForViteDevError',
+      category: Category.BUILDER_VITE,
+      code: 1,
+      message: dedent`
+        Unable to write preview stats as the Vite builder does not support stats in dev mode.
+        
+        Please remove the \`--stats-json\` flag when running in dev mode.`,
+    });
+  }
+}
+
+export class ViteModuleGraphSubscriptionError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ViteModuleGraphSubscriptionError',
+      category: Category.BUILDER_VITE,
+      code: 2,
+      message: 'Vite module graph listeners must be registered before the builder starts.',
+    });
+  }
+}
+
+export class FindPackageVersionsError extends StorybookError {
+  constructor(
+    public data: { error: Error | unknown; packageName: string; packageManager: string }
+  ) {
+    super({
+      name: 'FindPackageVersionsError',
+      category: Category.CLI,
+      code: 1,
+      message: dedent`
+        Unable to find versions of "${data.packageName}" using ${data.packageManager}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class IncompatiblePostCssConfigError extends StorybookError {
+  constructor(public data: { error: Error }) {
+    super({
+      name: 'IncompatiblePostCssConfigError',
+      category: Category.FRAMEWORK_NEXTJS,
+      code: 3,
+      message: dedent`
+        Incompatible PostCSS configuration format detected.
+
+        Next.js uses an array-based format for plugins which is not compatible with Vite:
+        
+        // ❌ Incompatible format (used by Next.js)
+        const config = {
+          plugins: ["@tailwindcss/postcss"],
+        };
+        
+        Please transform your PostCSS config to use the object-based format, which is compatible with Next.js and Vite:
+        
+        // ✅ Compatible format (works with Next.js and Vite)
+        const config = {
+          plugins: {
+            "@tailwindcss/postcss": {},
+          },
+        };
+        
+        Original error: ${data.error.message}
+      `,
+    });
+  }
+}
+
+export class SavingGlobalSettingsFileError extends StorybookError {
+  constructor(public data: { filePath: string; error: Error | unknown }) {
+    super({
+      name: 'SavingGlobalSettingsFileError',
+      category: Category.CORE_SERVER,
+      code: 1,
+      message: dedent`
+        Unable to save global settings file to ${data.filePath}
+        ${data.error && `Reason: ${data.error}`}`,
+    });
+  }
+}
+
+export class CommonJsConfigNotSupportedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'CommonJsConfigNotSupportedError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 1,
+      documentation: 'https://storybook.js.org/docs/configure/overview?ref=error#es-modules',
+      message: dedent`
+        Support for CommonJS Storybook config files has been removed in Storybook 10.0.0.
+        Please migrate your config to a valid ESM file.
+        
+        CommonJS files (ending in .cjs, .cts, .cjsx, .ctsx) or files containing 'module.exports' are no longer supported.
+        Please convert your config to use ES modules (import/export syntax).`,
+    });
+  }
+}
+
+export class AutomigrateError extends StorybookError {
+  constructor(public data: { errors: Array<Error | unknown> }) {
+    super({
+      name: 'AutomigrateError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 2,
+      message: dedent`
+        An error occurred while running the automigrate command.
+      `,
+    });
+  }
+}
+
+export type ExecaCommandErrorData = {
+  command: string;
+  args: string[];
+  exitCode?: number | string;
+  signal?: string;
+  logs: string;
+  packageManagerErrorCode?: string;
+};
+
+export function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
+  return [data.command, ...data.args].join(' ');
+}
+
+export function formatExecaFailureDetails(data: ExecaCommandErrorData) {
+  const trimmedLogs = data.logs.trim();
+
+  if (trimmedLogs) {
+    return trimmedLogs;
+  }
+
+  if (data.exitCode != null) {
+    return `Process exited with code ${data.exitCode}`;
+  }
+
+  if (data.signal) {
+    return `Process was killed with signal ${data.signal}`;
+  }
+
+  return 'No additional output was captured.';
+}
+
+function createExecaCommandFailedMessage(data: ExecaCommandErrorData) {
+  return dedent`
+    Command failed: ${formatExecaCommand(data)}
+
+    ${formatExecaFailureDetails(data)}`;
+}
+
+export class ExecaCommandFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'ExecaCommandFailedError',
+      category: Category.CLI,
+      code: 3,
+      cause: data.cause,
+      message: createExecaCommandFailedMessage(data),
+    });
+  }
+}
+
+export class PackageInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 10,
+      cause: data.cause,
+      message: dedent`
+        Failed to install dependencies using ${data.command}.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallDependencyConflictError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallDependencyConflictError',
+      category: Category.CLI_INIT,
+      code: 11,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because of a version conflict.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallMissingManifestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallMissingManifestError',
+      category: Category.CLI_INIT,
+      code: 12,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because no package.json was found in the current directory.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmIgnoredBuildsError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmIgnoredBuildsError',
+      category: Category.CLI_INIT,
+      code: 13,
+      cause: data.cause,
+      message: dedent`
+        pnpm blocked postinstall scripts for one or more packages.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmNoTtyModulesDirError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmNoTtyModulesDirError',
+      category: Category.CLI_INIT,
+      code: 14,
+      cause: data.cause,
+      message: dedent`
+        pnpm aborted while removing the modules directory because no TTY was available.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageManagerBinaryNotFoundError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageManagerBinaryNotFoundError',
+      category: Category.CLI_INIT,
+      code: 15,
+      cause: data.cause,
+      message: dedent`
+        Storybook could not find the "${data.command}" command on your PATH.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PlaywrightInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PlaywrightInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 16,
+      cause: data.cause,
+      message: dedent`
+        Failed to install Playwright browser binaries.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class NuxtModuleAddFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'NuxtModuleAddFailedError',
+      category: Category.CLI_INIT,
+      code: 17,
+      cause: data.cause,
+      message: dedent`
+        Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class AutomigrateAddonA11yTestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'AutomigrateAddonA11yTestError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 3,
+      cause: data.cause,
+      message: dedent`
+        Failed while running the addon-a11y-addon-test automigration.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}

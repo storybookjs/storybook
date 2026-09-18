@@ -1,0 +1,32 @@
+{
+  "icon": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Specify icon="search" or icon={IconComponent}",
+    "name": "icon",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "union",
+      },
+    },
+    "type": {
+      "name": "union",
+      "raw": "React.ReactNode | string",
+      "required": true,
+      "value": [
+        {
+          "name": "other",
+          "raw": "React.ReactNode",
+          "value": "ReactReactNode",
+        },
+        {
+          "name": "string",
+        },
+      ],
+    },
+  },
+}

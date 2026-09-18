@@ -1,0 +1,9 @@
+{
+  "name": "portable-stories-kitchen-sink/react-vitest-3",
+  "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "targets": {
+    "e2e-ui": {}
+  },
+  "tags": ["ci:normal", "ci:merged", "ci:daily"]
+}

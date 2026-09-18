@@ -1,0 +1,1018 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "Simple description.",
+      "name": "case1",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Multi lines description",
+      "name": "case2",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "_description_ **with** `formatting`",
+      "name": "case3",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Simple description and dummy JSDoc tag.",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case4",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case5",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Simple description with a @.",
+      "name": "case6",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "case7",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Func with a simple description.",
+      "name": "case8",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case9",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with name",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case10",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with name & type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case11",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event: SyntheticEvent)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with name, type & description",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": "React's original event",
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case12",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event: SyntheticEvent)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with type",
+      "name": "case13",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with type & description",
+      "name": "case14",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with name & description",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": "React's original event",
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case15",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Autofix event-",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": "React's original event",
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case16",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Autofix event.",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "string",
+          },
+        },
+      },
+      "name": "case17",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event) => string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With an empty param.",
+      "name": "case18",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With multiple empty params.",
+      "name": "case19",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With arg alias.",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case20",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With argument alias.",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case21",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With multiple params.",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "event",
+          },
+          {
+            "description": null,
+            "name": "stringValue",
+          },
+          {
+            "description": null,
+            "name": "numberValue",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case22",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event: SyntheticEvent, stringValue: string, numberValue: number)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With an empty returns",
+      "name": "case23",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With a returns with a type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
+          },
+        },
+      },
+      "name": "case24",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => SyntheticEvent",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "With a returns with a type & description",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": "React's original event",
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
+          },
+        },
+      },
+      "name": "case25",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => SyntheticEvent",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Single param and a returns",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "stringValue",
+          },
+        ],
+        "returns": {
+          "description": "React's original event",
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
+          },
+        },
+      },
+      "name": "case26",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(stringValue: string) => SyntheticEvent",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Multiple params and a returns",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "stringValue",
+          },
+          {
+            "description": null,
+            "name": "numberValue",
+          },
+        ],
+        "returns": {
+          "description": "React's original event",
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "SyntheticEvent",
+          },
+        },
+      },
+      "name": "case27",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(stringValue: string, numberValue: number) => SyntheticEvent",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Multiple returns",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": "Second returns",
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "string",
+          },
+        },
+      },
+      "name": "case28",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param with unsupported JSDoc tags",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": "React's original event",
+            "name": "event",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case29",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(event: SyntheticEvent)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param record type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case30",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: ({a: number; b: string}))",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param array type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case31",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: string[])",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param union type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case32",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: number|boolean)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param any type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case33",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: any)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Param repeatable type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case34",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: ...number)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Optional param",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case35",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: number)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Optional param",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "myType",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case36",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(myType: number)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Dot in param name",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": [
+          {
+            "description": null,
+            "name": "my.type",
+          },
+        ],
+        "returns": null,
+      },
+      "name": "case37",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "(my.type: number)",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Returns record type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "elements": [
+              {
+                "key": "a",
+                "meta": {
+                  "quote": undefined,
+                },
+                "optional": false,
+                "readonly": false,
+                "right": {
+                  "type": "JsdocTypeName",
+                  "value": "number",
+                },
+                "type": "JsdocTypeObjectField",
+              },
+              {
+                "key": "b",
+                "meta": {
+                  "quote": undefined,
+                },
+                "optional": false,
+                "readonly": false,
+                "right": {
+                  "type": "JsdocTypeName",
+                  "value": "string",
+                },
+                "type": "JsdocTypeObjectField",
+              },
+            ],
+            "meta": {
+              "separator": "semicolon",
+            },
+            "type": "JsdocTypeObject",
+          },
+        },
+      },
+      "name": "case38",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => ({a: number; b: string})",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Returns array type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "elements": [
+              {
+                "type": "JsdocTypeName",
+                "value": "string",
+              },
+            ],
+            "left": {
+              "type": "JsdocTypeName",
+              "value": "Array",
+            },
+            "meta": {
+              "brackets": "square",
+              "dot": false,
+            },
+            "type": "JsdocTypeGeneric",
+          },
+        },
+      },
+      "name": "case39",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => string[]",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Returns union type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "elements": [
+              {
+                "type": "JsdocTypeName",
+                "value": "number",
+              },
+              {
+                "type": "JsdocTypeName",
+                "value": "boolean",
+              },
+            ],
+            "type": "JsdocTypeUnion",
+          },
+        },
+      },
+      "name": "case40",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => number|boolean",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Returns any type",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "any",
+          },
+        },
+      },
+      "name": "case41",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => any",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Returns primitive",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "string",
+          },
+        },
+      },
+      "name": "case42",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => string",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "Returns void",
+      "jsDocTags": {
+        "deprecated": null,
+        "ignore": false,
+        "params": undefined,
+        "returns": {
+          "description": null,
+          "getTypeName": [Function],
+          "type": {
+            "type": "JsdocTypeName",
+            "value": "void",
+          },
+        },
+      },
+      "name": "case43",
+      "required": false,
+      "sbType": {
+        "name": "function",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "() => void",
+      },
+    },
+  ],
+}

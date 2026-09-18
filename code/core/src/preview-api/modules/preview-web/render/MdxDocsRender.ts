@@ -1,0 +1,176 @@
+import type { Channel } from 'storybook/internal/channels';
+import { DOCS_RENDERED } from 'storybook/internal/core-events';
+import type { Renderer, StoryId } from 'storybook/internal/types';
+import type { CSFFile, ModuleExports, PreparedStory } from 'storybook/internal/types';
+import type { IndexEntry } from 'storybook/internal/types';
+import type { RenderContextCallbacks } from 'storybook/internal/types';
+
+import { Tag } from '../../../../shared/constants/tags.ts';
+import { isMdxEntry } from '../../../../shared/utils/story-index-filters.ts';
+import type { StoryStore } from '../../store/index.ts';
+import { DocsContext } from '../docs-context/DocsContext.ts';
+import type { DocsContextProps } from '../docs-context/DocsContextProps.ts';
+import type { DocsRenderFunction } from '../docs-context/DocsRenderFunction.ts';
+import type { Render, RenderType } from './Render.ts';
+import { PREPARE_ABORTED } from './Render.ts';
+
+/**
+ * A MdxDocsRender is a render of a docs entry that comes from a true MDX file, that is a `.mdx`
+ * file that doesn't get compiled to a CSF file.
+ *
+ * A MDX render can reference (import) zero or more CSF files that contain stories.
+ *
+ * Use cases:
+ *
+ * - *.mdx file that may or may not reference a specific CSF file with `<Meta of={} />`
+ */
+
+export class MdxDocsRender<TRenderer extends Renderer> implements Render<TRenderer> {
+  public readonly renderId: number;
+
+  public readonly type: RenderType = 'docs';
+
+  public readonly subtype = 'mdx';
+
+  public readonly id: StoryId;
+
+  private exports?: ModuleExports;
+
+  public rerender?: () => Promise<void>;
+
+  public teardownRender?: (options: { viewModeChanged?: boolean }) => Promise<void>;
+
+  public torndown = false;
+
+  public readonly disableKeyListeners = false;
+
+  public preparing = false;
+
+  public csfFiles?: CSFFile<TRenderer>[];
+
+  public attachedCsfFile?: CSFFile<TRenderer>;
+
+  public attachedStory?: PreparedStory<TRenderer>;
+
+  constructor(
+    protected channel: Channel,
+    protected store: StoryStore<TRenderer>,
+    public entry: IndexEntry,
+    private callbacks: RenderContextCallbacks<TRenderer>
+  ) {
+    this.id = entry.id;
+    this.renderId = Date.now();
+  }
+
+  isPreparing() {
+    return this.preparing;
+  }
+
+  async prepare() {
+    this.preparing = true;
+    const { entryExports, csfFiles = [] } = await this.store.loadEntry(this.id);
+
+    if (this.torndown) {
+      throw PREPARE_ABORTED;
+    }
+
+    this.csfFiles = csfFiles;
+    this.exports = entryExports;
+    this.attachedCsfFile = undefined;
+    this.attachedStory = undefined;
+
+    if (this.entry.tags?.includes(Tag.ATTACHED_MDX)) {
+      this.attachedCsfFile = csfFiles[0];
+
+      const primaryStoryId = this.attachedCsfFile && Object.keys(this.attachedCsfFile.stories)[0];
+      if (this.attachedCsfFile && primaryStoryId) {
+        this.attachedStory = this.store.storyFromCSFFile({
+          storyId: primaryStoryId,
+          csfFile: this.attachedCsfFile,
+        });
+      }
+    }
+
+    this.preparing = false;
+  }
+
+  isEqual(other: Render<TRenderer>): boolean {
+    return !!(
+      this.id === other.id &&
+      this.exports &&
+      this.exports === (other as MdxDocsRender<TRenderer>).exports
+    );
+  }
+
+  docsContext(renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']) {
+    if (!this.csfFiles) {
+      throw new Error('Cannot render docs before preparing');
+    }
+
+    const docsContext = new DocsContext<TRenderer>(
+      this.channel,
+      this.store,
+      renderStoryToElement,
+      this.csfFiles
+    );
+
+    if (this.attachedCsfFile) {
+      docsContext.attachCSFFile(this.attachedCsfFile);
+    }
+
+    // MDX pages let the author choose what `<Primary />` / `<Controls />` show, so don't filter
+    // the CSF file's stories down to `autodocs`-tagged ones.
+    docsContext.filterByAutodocs = !isMdxEntry(this.entry);
+
+    return docsContext;
+  }
+
+  async renderToElement(
+    canvasElement: TRenderer['canvasElement'],
+    renderStoryToElement: DocsContextProps<TRenderer>['renderStoryToElement']
+  ) {
+    if (!this.exports || !this.csfFiles || !this.store.projectAnnotations) {
+      throw new Error('Cannot render docs before preparing');
+    }
+
+    const docsContext = this.docsContext(renderStoryToElement);
+
+    const { docs } = this.store.projectAnnotations.parameters ?? ({} as { docs: any });
+    const baseDocsParameter = this.attachedStory?.parameters?.docs ?? docs;
+
+    if (!baseDocsParameter) {
+      throw new Error(
+        `Cannot render a story in viewMode=docs if \`@storybook/addon-docs\` is not installed`
+      );
+    }
+
+    const docsParameter = { ...baseDocsParameter, page: this.exports.default };
+    const renderer = await baseDocsParameter.renderer();
+    const { render } = renderer as { render: DocsRenderFunction<TRenderer> };
+    const renderDocs = async () => {
+      try {
+        // NOTE: it isn't currently possible to use a docs renderer outside of "web" mode.
+        await render(docsContext, docsParameter, canvasElement as any);
+        this.channel.emit(DOCS_RENDERED, this.id);
+      } catch (err) {
+        this.callbacks.showException(err as Error);
+      }
+    };
+
+    this.rerender = async () => renderDocs();
+    this.teardownRender = async ({ viewModeChanged }: { viewModeChanged?: boolean } = {}) => {
+      if (!viewModeChanged || !canvasElement) {
+        return;
+      }
+      renderer.unmount(canvasElement);
+      this.torndown = true;
+    };
+
+    return renderDocs();
+  }
+
+  async teardown({ viewModeChanged }: { viewModeChanged?: boolean } = {}) {
+    this.teardownRender?.({ viewModeChanged });
+    this.torndown = true;
+  }
+}

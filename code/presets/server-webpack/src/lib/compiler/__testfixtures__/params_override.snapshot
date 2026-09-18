@@ -1,0 +1,24 @@
+
+export default {
+  title: "Params",
+  parameters: {
+    server: {
+      params: {
+        color: "red"
+      }
+    }
+  }
+};
+
+export const Override = {
+  name: "Override",
+  parameters: {
+    server: {
+      id: "params/override",
+      params: {
+        message: "Hello World",
+        color: "green"
+      }
+    }
+  }
+};

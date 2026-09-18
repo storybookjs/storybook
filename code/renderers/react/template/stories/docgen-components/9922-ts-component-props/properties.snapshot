@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "spacing",
+      "required": true,
+      "sbType": {
+        "name": "number",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "number",
+      },
+    },
+  ],
+}

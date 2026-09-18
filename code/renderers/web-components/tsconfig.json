@@ -1,0 +1,10 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "paths": {
+      "storybook/internal/*": ["../../lib/cli/core/*"]
+    }
+  },
+  "include": ["src/**/*", "template/**/*"]
+}

@@ -1,0 +1,447 @@
+import * as fs from 'node:fs/promises';
+import { writeFile } from 'node:fs/promises';
+import os from 'node:os';
+
+import { babelParse, generate, traverse } from 'storybook/internal/babel';
+import { AddonVitestService } from 'storybook/internal/cli';
+import {
+  JsPackageManagerFactory,
+  formatFileContent,
+  getProjectRoot,
+  getStorybookInfo,
+  versions,
+} from 'storybook/internal/common';
+import { CLI_COLORS } from 'storybook/internal/node-logger';
+import type { StorybookError } from 'storybook/internal/server-errors';
+import {
+  AddonVitestPostinstallConfigUpdateError,
+  AddonVitestPostinstallError,
+  AddonVitestPostinstallFailedAddonA11yError,
+  AddonVitestPostinstallPrerequisiteCheckError,
+} from 'storybook/internal/server-errors';
+import { SupportedFramework } from 'storybook/internal/types';
+
+import * as find from 'empathic/find';
+import { dirname, relative, resolve } from 'pathe';
+import { dedent } from 'ts-dedent';
+
+import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
+import {
+  injectAngularVitestIntoAst,
+  injectAngularVitestIntoConfig,
+  isAngularVitestAlreadyWired,
+} from './angular-vitest-postinstall.ts';
+import { DOCUMENTATION_LINK } from './constants.ts';
+import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
+
+const ADDON_NAME = '@storybook/addon-vitest' as const;
+const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
+const STORYBOOK_TEST_PLUGIN_SOURCE = `${ADDON_NAME}/vitest-plugin`;
+
+const addonA11yName = '@storybook/addon-a11y';
+
+/**
+ * The Vitest config templates resolve the Storybook config dir against the
+ * generated config file's own directory (`path.join(dirname, CONFIG_DIR)`).
+ * So CONFIG_DIR must be the path FROM that file's directory TO the config dir,
+ * not the cwd-relative `--config-dir` value. Otherwise, in a monorepo where the
+ * config file is created inside the project (e.g. `apps/x/vitest.config.ts`) but
+ * `--config-dir apps/x/.storybook` is passed from the repo root, the path gets
+ * doubled to `apps/x/apps/x/.storybook`.
+ */
+export const getTemplateConfigDir = (configFilePath: string, configDir: string): string =>
+  relative(dirname(configFilePath), configDir);
+
+export default async function postInstall(options: PostinstallOptions) {
+  const errors: InstanceType<typeof StorybookError>[] = [];
+  const { logger, prompt } = options;
+
+  const packageManager = JsPackageManagerFactory.getPackageManager({
+    force: options.packageManager,
+  });
+
+  const findFile = (basename: string, extensions = EXTENSIONS) =>
+    find.any(
+      extensions.map((ext) => basename + ext),
+      { last: getProjectRoot(), cwd: options.configDir }
+    );
+
+  const allDeps = packageManager.getAllDependencies();
+
+  const addonVitestService = new AddonVitestService(packageManager);
+
+  // Skip the module cache: an automigration (e.g. angular-to-angular-vite) may have rewritten the
+  // main config earlier in this same process, and the cached version would still report the old
+  // framework/builder — causing the prerequisite check below to fail incorrectly.
+  const info = await getStorybookInfo(options.configDir, undefined, { skipCache: true });
+  // only install these dependencies if they are not already installed
+
+  // Use AddonVitestService for compatibility validation
+  const compatibilityResult = await addonVitestService.validateCompatibility({
+    framework: info.framework,
+    builder: info.builder,
+  });
+
+  let result: string | null = null;
+  if (!compatibilityResult.compatible && compatibilityResult.reasons) {
+    const reasons = compatibilityResult.reasons.map((r) => `• ${CLI_COLORS.error(r)}`);
+    reasons.unshift(dedent`
+      Automated setup failed
+      The following packages have incompatibilities that prevent automated setup:
+    `);
+    reasons.push(
+      dedent`
+        You can fix these issues and rerun the command to reinstall. If you wish to roll back the installation, remove ${ADDON_NAME} from the "addons" array
+        in your main Storybook config file and remove the dependency from your package.json file.
+
+        Please check the documentation for more information about its requirements and installation:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
+      `
+    );
+
+    result = reasons.map((r) => r.trim()).join('\n\n');
+  }
+
+  if (result) {
+    logger.error(result);
+    throw new AddonVitestPostinstallPrerequisiteCheckError({
+      reasons: compatibilityResult.reasons!,
+    });
+  }
+
+  // Skip all dependency management when flag is set (called from init command)
+  if (!options.skipDependencyManagement) {
+    // Use AddonVitestService for dependency collection
+    const versionedDependencies = await addonVitestService.collectDependencies();
+
+    // Print informational messages for Next.js
+    if (info.framework === SupportedFramework.NEXTJS) {
+      const allDeps = packageManager.getAllDependencies();
+      if (!allDeps['@storybook/nextjs-vite']) {
+        // TODO: Tell people to migrate first to nextjs-vite
+      }
+    }
+
+    // Print informational message for coverage reporter
+    const v8Version = await packageManager.getInstalledVersion('@vitest/coverage-v8');
+    const istanbulVersion = await packageManager.getInstalledVersion('@vitest/coverage-istanbul');
+    if (!v8Version && !istanbulVersion) {
+      logger.step(
+        dedent`
+          You don't seem to have a coverage reporter installed. Vitest needs either V8 or Istanbul to generate coverage reports.
+
+          Adding "@vitest/coverage-v8" to enable coverage reporting.
+          Read more about Vitest coverage providers at https://vitest.dev/guide/coverage.html#coverage-providers
+        `
+      );
+    }
+
+    if (versionedDependencies.length > 0) {
+      logger.step('Adding dependencies to your package.json');
+      logger.log('  ' + versionedDependencies.join(', '));
+
+      await packageManager.addDependencies(
+        { type: 'devDependencies', skipInstall: true },
+        versionedDependencies
+      );
+    }
+
+    if (!options.skipInstall) {
+      await packageManager.installDependencies();
+    }
+  }
+
+  // Install Playwright browser binaries using AddonVitestService
+  if (!options.skipDependencyManagement) {
+    if (!options.skipInstall) {
+      await addonVitestService.installPlaywright({
+        yes: options.yes,
+        useRemotePkg: !!options.skipInstall,
+      });
+    } else {
+      const platform = os.platform();
+      const useWithDeps = platform === 'darwin' || platform === 'win32';
+      const manualCommand = useWithDeps
+        ? 'npx playwright install chromium --with-deps'
+        : 'npx playwright install chromium';
+      const linuxNote = !useWithDeps
+        ? '\n        Note: add --with-deps to the command above if you are on Debian or Ubuntu.'
+        : '';
+      logger.warn(dedent`
+        Playwright browser binaries installation skipped. Please run the following command manually later:
+        ${CLI_COLORS.cta(manualCommand)}${linuxNote}
+      `);
+    }
+  }
+
+  const fileExtension =
+    allDeps.typescript || findFile('tsconfig', [...EXTENSIONS, '.json']) ? 'ts' : 'js';
+
+  const viteConfigFile = findFile('vite.config');
+  const vitestConfigFile = findFile('vitest.config');
+  const vitestShimFile = findFile('vitest.shims.d');
+  const rootConfig = vitestConfigFile || viteConfigFile;
+
+  if (fileExtension === 'ts' && !vitestShimFile) {
+    await writeFile('vitest.shims.d.ts', '/// <reference types="@vitest/browser-playwright" />');
+  }
+
+  const isAngularVite = info.framework === SupportedFramework.ANGULAR_VITE;
+
+  /**
+   * For Angular projects, co-locate `storybookAngularVitest()` in the same nested plugins array as
+   * `storybookTest()` so standalone `vitest` runs receive the Angular build options. Reads the file
+   * back from disk so it always operates on the just-written content, formats, and writes once. On a
+   * non-locatable plugins array the injector returns `null` and we emit the manual-setup error.
+   */
+  const maybeWireAngular = async (filePath: string, content: string) => {
+    if (!isAngularVite || isAngularVitestAlreadyWired(content)) {
+      return;
+    }
+
+    const injected = injectAngularVitestIntoConfig(content);
+    if (injected === null) {
+      logger.error(dedent`
+        We configured @storybook/addon-vitest, but could not automatically add the
+        @storybook/angular-vite standalone-vitest bridge to:
+        ${filePath}
+
+        Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+        and import it from "@storybook/angular-vite/vitest". See:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+      `);
+      errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath }));
+      return;
+    }
+
+    const formattedContent = await formatFileContent(filePath, injected);
+    await writeFile(filePath, formattedContent);
+    logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+  };
+
+  // If there's an existing Vite/Vitest config, we update it to include the Storybook Addon Vitest plugin.
+  if (rootConfig) {
+    let target, updated;
+    const configFile = await fs.readFile(rootConfig, 'utf8');
+    const configFileHasTypeReference = configFile.match(
+      /\/\/\/\s*<reference\s+types=["']vitest\/config["']\s*\/>/
+    );
+
+    const alreadyConfigured = isConfigAlreadySetup(rootConfig, configFile);
+
+    if (!alreadyConfigured) {
+      const configTemplate = await loadTemplate('vitest.config.4.template', {
+        CONFIG_DIR: getTemplateConfigDir(rootConfig, options.configDir),
+      });
+
+      const source = babelParse(configTemplate);
+      target = babelParse(configFile);
+      updated = updateConfigFile(source, target);
+    }
+
+    if (alreadyConfigured) {
+      // storybookTest is already wired, but the Angular bridge may still be missing. Operate on the
+      // current on-disk content (no merge happened in this branch).
+      await maybeWireAngular(rootConfig, configFile);
+      logger.step(
+        CLI_COLORS.success('Vitest for Storybook is already properly configured. Skipping setup.')
+      );
+    } else if (target && updated) {
+      logger.step(`Updating your ${vitestConfigFile ? 'Vitest' : 'Vite'} config file:`);
+      logger.log(`  ${rootConfig}`);
+
+      // Inject the Angular bridge into the already-merged target so it co-locates with the freshly
+      // added storybookTest call, before the single generate/format/write below. Arrow-function
+      // configs are rejected by updateConfigFile (updated is falsy), so they never reach here and
+      // defer to the manual-setup error in the else branch.
+      if (isAngularVite && !isAngularVitestAlreadyWired(configFile)) {
+        if (injectAngularVitestIntoAst(target)) {
+          logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+        } else {
+          logger.error(dedent`
+            We configured @storybook/addon-vitest, but could not automatically add the
+            @storybook/angular-vite standalone-vitest bridge to:
+            ${rootConfig}
+
+            Please add storybookAngularVitest({}) to the plugins array next to storybookTest()
+            and import it from "@storybook/angular-vite/vitest". See:
+            https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+          `);
+          errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
+        }
+      }
+
+      const formattedContent = await formatFileContent(rootConfig, generate(target).code);
+      // Only add triple slash reference to vite.config files, not vitest.config files
+      // vitest.config files already have the vitest/config types available
+      const shouldAddReference = !configFileHasTypeReference && !vitestConfigFile;
+      await writeFile(
+        rootConfig,
+        shouldAddReference
+          ? '/// <reference types="vitest/config" />\n' + formattedContent
+          : formattedContent
+      );
+    } else {
+      logger.error(dedent`
+        We were unable to update your existing ${vitestConfigFile ? 'Vitest' : 'Vite'} config file.
+
+        Please refer to the documentation to complete the setup manually:
+        https://storybook.js.org/docs/writing-tests/integrations/vitest-addon#manual-setup-advanced
+      `);
+      errors.push(new AddonVitestPostinstallConfigUpdateError({ filePath: rootConfig }));
+    }
+  }
+  // If there's no existing Vitest/Vite config, we create a new Vitest config file.
+  else {
+    const parentDir = dirname(options.configDir);
+    const newConfigFile = resolve(parentDir, `vitest.config.${fileExtension}`);
+
+    const configTemplate = await loadTemplate('vitest.config.4.template', {
+      CONFIG_DIR: getTemplateConfigDir(newConfigFile, options.configDir),
+    });
+
+    logger.step(`Creating a Vitest config file:`);
+    logger.log(`${newConfigFile}`);
+
+    // For Angular, co-locate the standalone-vitest bridge in the template's storybookTest plugins
+    // array. The template always has a locatable array, so the injector never returns null here.
+    let configContent = configTemplate;
+    if (isAngularVite) {
+      const injected = injectAngularVitestIntoConfig(configTemplate);
+      if (injected !== null) {
+        configContent = injected;
+        logger.step('Added the @storybook/angular-vite standalone-vitest bridge.');
+      }
+    }
+
+    const formattedContent = await formatFileContent(newConfigFile, configContent);
+    await writeFile(newConfigFile, formattedContent);
+  }
+
+  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
+
+  if (a11yAddon) {
+    try {
+      const useRemotePkg = options.useRemotePkg ?? !!options.skipInstall;
+      const command = [
+        // A versioned spec only resolves through the ephemeral runner; the
+        // local binary is invoked by bare name.
+        useRemotePkg ? `storybook@${versions.storybook}` : `storybook`,
+        'automigrate',
+        'addon-a11y-addon-test',
+        '--loglevel',
+        'silent',
+        '--yes',
+        '--skip-doctor',
+      ];
+
+      if (options.packageManager) {
+        command.push('--package-manager', options.packageManager);
+      }
+
+      if (options.skipInstall) {
+        command.push('--skip-install');
+      }
+
+      if (options.configDir !== '.storybook') {
+        command.push('--config-dir', options.configDir);
+      }
+
+      await prompt.executeTask(
+        // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
+        () =>
+          packageManager.runPackageCommand({
+            args: command,
+            stdio: 'ignore',
+            useRemotePkg,
+          }),
+        {
+          intro: 'Setting up a11y addon for @storybook/addon-vitest',
+          error: 'Failed to setup a11y addon for @storybook/addon-vitest',
+          success: 'a11y addon setup successfully',
+        }
+      );
+    } catch (e: unknown) {
+      logger.error(dedent`
+        Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
+        Please refer to the documentation to complete the setup manually:
+        https://storybook.js.org/docs/writing-tests/accessibility-testing#integration-with-vitest-addon
+      `);
+      errors.push(new AddonVitestPostinstallFailedAddonA11yError({ error: e }));
+    }
+  }
+
+  const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;
+
+  if (errors.length === 0) {
+    logger.step(CLI_COLORS.success('@storybook/addon-vitest setup completed successfully'));
+    logger.log(dedent`
+        @storybook/addon-vitest is now configured and you're ready to run your tests!
+        Here are a couple of tips to get you started:
+
+        • You can run tests with "${CLI_COLORS.cta(runCommand)}"
+        • Vitest IDE extension shows all stories as tests in your editor!
+
+        Check the documentation for more information about its features and options at:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}
+      `);
+  } else {
+    logger.warn(
+      dedent`
+        Done, but with errors!
+        @storybook/addon-vitest was installed successfully, but there were some errors during the setup process. Please refer to the documentation to complete the setup manually and check the errors above:
+        https://storybook.js.org/docs/next/${DOCUMENTATION_LINK}#manual-setup-advanced
+      `
+    );
+    throw new AddonVitestPostinstallError({ errors });
+  }
+}
+
+function isStorybookTestPluginSource(value: string) {
+  return value === STORYBOOK_TEST_PLUGIN_SOURCE;
+}
+
+export function isConfigAlreadySetup(_configPath: string, configContent: string) {
+  let ast: ReturnType<typeof babelParse>;
+  try {
+    ast = babelParse(configContent);
+  } catch (e) {
+    return false;
+  }
+
+  const pluginIdentifiers = new Set<string>();
+
+  traverse(ast, {
+    ImportDeclaration(path) {
+      const source = path.node.source.value;
+      if (typeof source === 'string' && isStorybookTestPluginSource(source)) {
+        path.node.specifiers.forEach((specifier) => {
+          if ('local' in specifier && specifier.local?.name) {
+            pluginIdentifiers.add(specifier.local.name);
+          }
+        });
+      }
+    },
+  });
+
+  let pluginReferenced = false;
+
+  traverse(ast, {
+    CallExpression(path) {
+      if (pluginReferenced) {
+        path.stop();
+        return;
+      }
+      const callee = path.node.callee;
+      if (
+        callee.type === 'Identifier' &&
+        (pluginIdentifiers.has(callee.name) || callee.name === 'storybookTest')
+      ) {
+        pluginReferenced = true;
+        path.stop();
+      }
+    },
+  });
+
+  return pluginReferenced;
+}

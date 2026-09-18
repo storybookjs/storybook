@@ -1,0 +1,303 @@
+name: Publish
+run-name: "${{ github.event_name == 'workflow_dispatch' && inputs.skip_publish && format('Finish release bookkeeping on {0}, triggered by {1}', github.ref_name, github.triggering_actor) || format('Publish new version on {0}, triggered by {1}', github.ref_name, github.triggering_actor) }}"
+
+on:
+  push:
+    # Normal releases, major/minor/patch/prerelease
+    branches:
+      - latest-release
+      - next-release
+  workflow_dispatch:
+    inputs:
+      skip_publish:
+        description: 'Skip npm publish and finish GitHub Release / merge / Sentry / DX for an already-published version. Run this from next-release or latest-release.'
+        required: false
+        type: boolean
+        default: false
+
+env:
+  PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
+  PUPPETEER_SKIP_CHROMIUM_DOWNLOAD: 1
+
+permissions: {}
+
+concurrency:
+  # Group publish runs by branch. Never cancel an in-progress npm publish.
+  group: ${{ format('{0}-{1}', github.workflow, github.ref_name) }}
+  cancel-in-progress: false
+
+jobs:
+  publish-normal:
+    name: Publish normal version
+    runs-on: ubuntu-latest
+    if: |
+      github.repository_owner == 'storybookjs' &&
+      (github.ref_name == 'latest-release' || github.ref_name == 'next-release') &&
+      (
+        (
+          github.event_name == 'push' &&
+          contains(github.event.head_commit.message, '[skip ci]') != true
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.skip_publish == true
+        )
+      )
+    environment: Release
+    permissions:
+      contents: write
+      pull-requests: write # required for yarn release:label-patches (addLabelsToLabelable on PRs)
+      actions: write # required for yarn release:cancel-preparation-runs
+      id-token: write # required for npm provenance via yarn release:publish
+    defaults:
+      run:
+        working-directory: scripts
+    steps:
+      - name: Checkout ${{ github.ref_name }}
+        # zizmor: ignore[artipacked]  # git push origin runs at multiple steps using persisted GH_TOKEN
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          fetch-depth: 100
+          token: ${{ secrets.GH_TOKEN }}
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Cancel all release preparation runs
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release:cancel-preparation-runs
+
+      - name: Apply deferred version bump and commit
+        working-directory: .
+        env:
+          REF_NAME: ${{ github.ref_name }}
+        run: |
+          CURRENT_VERSION=$(cat ./code/package.json | jq '.version')
+          DEFERRED_NEXT_VERSION=$(cat ./code/package.json | jq '.deferredNextVersion')
+
+          if [[ "$DEFERRED_NEXT_VERSION" == "null" ]]; then
+              echo "No deferred version set, not bumping versions"
+              exit 0
+          fi
+          cd scripts
+          yarn release:version --apply --verbose
+          cd ..
+
+          git config --global user.name "storybook-bot"
+          git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
+          git add .
+          git commit -m "Bump version from $CURRENT_VERSION to $DEFERRED_NEXT_VERSION [skip ci]" --no-verify --allow-empty
+          git push origin "$REF_NAME"
+
+      - name: Get current version
+        id: version
+        run: yarn release:get-current-version
+
+      - name: Check if publish is needed
+        id: publish-needed
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: yarn release:is-version-published "$CURRENT_VERSION"
+
+      - name: Check release vs prerelease
+        id: is-prerelease
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: yarn release:is-prerelease "$CURRENT_VERSION" --verbose
+
+      - name: Publish
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+        if: |
+          steps.publish-needed.outputs.published == 'false' &&
+          !(github.event_name == 'workflow_dispatch' && inputs.skip_publish == true)
+        run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
+
+      # Bookkeeping for DX deployment tracking, not part of publishing itself, so it runs
+      # continue-on-error to avoid aborting an already-published release. Failure is alerted below.
+      - name: Register release in DX
+        id: register-dx-release
+        continue-on-error: true
+        env:
+          DX_DATACLOUD_API_KEY: ${{ secrets.DX_DATACLOUD_API_KEY }}
+          DX_DATACLOUD_URL: ${{ vars.DX_DATACLOUD_URL }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+          NPM_DIST_TAG: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+        run: |
+          COMMIT_SHA=$(git rev-parse HEAD)
+          DEPLOYED_AT=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+          SOURCE_URL="https://github.com/${REPOSITORY}/actions/runs/${RUN_ID}"
+          REFERENCE_ID="${REPOSITORY}:npm:${CURRENT_VERSION}"
+          RESPONSE_FILE=$(mktemp)
+          trap 'rm -f "$RESPONSE_FILE"' EXIT
+
+          PAYLOAD=$(jq -n \
+            --arg referenceId "$REFERENCE_ID" \
+            --arg deployedAt "$DEPLOYED_AT" \
+            --arg repository "$REPOSITORY" \
+            --arg commitSha "$COMMIT_SHA" \
+            --arg sourceUrl "$SOURCE_URL" \
+            --arg version "$CURRENT_VERSION" \
+            --arg npmDistTag "$NPM_DIST_TAG" \
+            '{
+              reference_id: $referenceId,
+              deployed_at: $deployedAt,
+              service: { identifier: "github:storybookjs:storybook" },
+              repository: $repository,
+              commit_sha: $commitSha,
+              source_url: $sourceUrl,
+              source_name: "GitHub Actions",
+              metadata: {
+                version: $version,
+                npm_dist_tag: $npmDistTag
+              },
+              success: true
+            }')
+
+          HTTP_STATUS=$(curl \
+            --silent \
+            --show-error \
+            --output "$RESPONSE_FILE" \
+            --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer ${DX_DATACLOUD_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "$PAYLOAD" \
+            "${DX_DATACLOUD_URL%/}/api/deployments.create")
+
+          if [[ "$HTTP_STATUS" != "200" ]] || [[ "$(jq -r '.ok // false' "$RESPONSE_FILE")" != "true" ]]; then
+            echo "Failed to register release in DX (HTTP $HTTP_STATUS)"
+            jq . "$RESPONSE_FILE" || true
+            exit 1
+          fi
+
+      - name: Report DX registration failure to Discord
+        continue-on-error: true
+        if: |
+          steps.register-dx-release.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
+        with:
+          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but registering the release in DX failed. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
+      - name: Get target branch
+        id: target
+        run: echo "target=${{ github.ref_name == 'next-release' && 'next' || 'main' }}" >> $GITHUB_OUTPUT
+
+      - name: Get changelog for ${{ steps.version.outputs.current-version }}
+        id: changelog
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: yarn release:get-changelog-from-file "$CURRENT_VERSION"
+
+      # tags are needed to get list of patches to label as picked
+      - name: Fetch git tags
+        if: github.ref_name == 'latest-release'
+        run: git fetch --tags origin
+
+      # When this is a patch release from main, label any patch PRs included in the release as
+      # "patch:done". This is bookkeeping for the *next* release's cherry-pick step, not part of
+      # publishing itself, so it runs continue-on-error to avoid aborting an already-published
+      # release. It must not fail silently though (a swallowed permission error previously caused
+      # released PRs to be re-picked into later patch changelogs), so failure is alerted below.
+      - name: Label patch PRs as picked
+        id: label-patches
+        if: github.ref_name == 'latest-release'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: yarn release:label-patches
+
+      - name: Report patch labeling failure to Discord
+        if: github.ref_name == 'latest-release' && steps.label-patches.outcome == 'failure'
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
+        with:
+          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but labeling patch PRs as "patch:done" failed. They must be labeled manually or they will reappear in the next patch changelog. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+
+      - name: Create GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+          REPOSITORY: ${{ github.repository }}
+          REF_NAME: ${{ github.ref_name }}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+          IS_PRERELEASE: ${{ steps.is-prerelease.outputs.prerelease == 'true' && '--prerelease' || '' }}
+        run: |
+          if gh release view "v$CURRENT_VERSION" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo "GitHub release v$CURRENT_VERSION already exists, skipping create"
+            exit 0
+          fi
+          gh release create \
+          "v$CURRENT_VERSION" \
+            --repo "$REPOSITORY" \
+            --target "$REF_NAME" \
+            --title "v$CURRENT_VERSION" \
+            --notes "$CHANGELOG" \
+            $IS_PRERELEASE
+
+      - name: Merge ${{ github.ref_name }} into ${{ steps.target.outputs.target }}
+        env:
+          REF_NAME: ${{ github.ref_name }}
+          TARGET_BRANCH: ${{ steps.target.outputs.target }}
+        run: |
+          git config --global user.name "storybook-bot"
+          git config --global user.email "32066757+storybook-bot@users.noreply.github.com"
+          git fetch origin "$TARGET_BRANCH"
+          git checkout "$TARGET_BRANCH"
+          git merge "$REF_NAME"
+          git push origin "$TARGET_BRANCH"
+
+      - name: Force push from 'next' to 'latest-release' and 'main' on minor/major releases
+        if: |
+          github.ref_name == 'next-release' &&
+          steps.is-prerelease.outputs.prerelease == 'false' &&
+          (
+            steps.publish-needed.outputs.published == 'false' ||
+            (github.event_name == 'workflow_dispatch' && inputs.skip_publish == true)
+          )
+        run: |
+          git checkout next
+          git pull
+          git push origin --force next:latest-release
+          git push origin --force next:main
+
+      - name: Sync CHANGELOG.md from `main` to `next`
+        if: steps.target.outputs.target == 'main'
+        working-directory: .
+        env:
+          CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+        run: |
+          git fetch origin next
+          git checkout next
+          git pull
+          git checkout origin/main ./CHANGELOG.md
+          git add ./CHANGELOG.md
+          git commit -m "Update CHANGELOG.md for v$CURRENT_VERSION [skip ci]" --no-verify --allow-empty
+          git push origin next
+
+      - name: Create Sentry release
+        continue-on-error: true
+        uses: getsentry/action-release@5657c9e888b4e2cc85f4d29143ea4131fde4a73a # v3.6.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          release: ${{ steps.version.outputs.current-version }}
+          environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
+
+      - name: Report job failure to Discord
+        if: failure()
+        env:
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
+        uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
+        with:
+          args: 'The GitHub Action for publishing version ${{ steps.version.outputs.current-version }} (triggered by ${{ github.triggering_actor }}) failed! See run at: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'

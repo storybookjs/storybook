@@ -1,0 +1,19 @@
+{
+  "node": {
+    "description": "Root node of the tree.",
+    "name": "node",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "TreeNode",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "TreeNode",
+    },
+  },
+}

@@ -1,0 +1,34 @@
+import React from 'react';
+const Foo = props => /*#__PURE__*/React.createElement(React.Fragment, null, JSON.stringify(props));
+export const component = Foo;
+Foo.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "Foo",
+  "props": {
+    "size": {
+      "required": true,
+      "tsType": {
+        "name": "signature",
+        "type": "object",
+        "raw": "{ width: number; height: number }",
+        "signature": {
+          "properties": [{
+            "key": "width",
+            "value": {
+              "name": "number",
+              "required": true
+            }
+          }, {
+            "key": "height",
+            "value": {
+              "name": "number",
+              "required": true
+            }
+          }]
+        }
+      },
+      "description": "The size (replaces width)"
+    }
+  }
+};

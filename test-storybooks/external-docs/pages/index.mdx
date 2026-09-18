@@ -1,0 +1,22 @@
+import Callout from 'nextra-theme-docs/callout';
+import { Title, Meta, Story, Canvas } from '@storybook/addon-docs/blocks';
+import * as AccountFormStories from '../components/AccountForm.stories';
+import * as ButtonStories from '../components/button.stories';
+
+<Title>Embedded docs demo</Title>
+
+<Meta of={AccountFormStories} />
+
+This is an example of an MDX file that embeds Doc Blocks and CSF stories.
+
+<Canvas withSource={{ language: 'html', code: '<h1>hahaha</h1>' }}>
+  <Story of={AccountFormStories.Standard} />
+</Canvas>
+
+<Story of={ButtonStories.Basic} meta={ButtonStories} />
+
+<Callout emoji="✅">
+  **MDX** (the library), at its core, transforms MDX (the syntax) to JSX. It receives an MDX string
+  and outputs a _JSX string_. It does this by parsing the MDX document to a syntax tree and then
+  generates a JSX document from that tree.
+</Callout>

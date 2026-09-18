@@ -1,0 +1,15 @@
+export enum SupportedRenderer {
+  REACT = 'react',
+  REACT_NATIVE = 'react-native',
+  VUE3 = 'vue3',
+  ANGULAR = 'angular',
+  EMBER = 'ember',
+  PREACT = 'preact',
+  SVELTE = 'svelte',
+  QWIK = 'qwik',
+  HTML = 'html',
+  WEB_COMPONENTS = 'web-components',
+  SERVER = 'server',
+  SOLID = 'solid',
+  NUXT = 'nuxt',
+}

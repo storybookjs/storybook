@@ -1,0 +1,185 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
+// TODO -- should we generate this file a second time outside of CLI?
+import storybookVersions from '../../code/core/src/common/versions.ts';
+import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { exec } from './exec.ts';
+import { preapproveLocallyPublishedPackages } from './preapprove-local-packages.ts';
+
+export type YarnOptions = {
+  cwd: string;
+  dryRun: boolean;
+  debug: boolean;
+};
+
+const logger = console;
+
+export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
+  logger.info(`🔢 Adding package resolutions:`);
+
+  if (dryRun) {
+    return;
+  }
+
+  const packageJsonPath = join(cwd, 'package.json');
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
+  packageJson.resolutions = {
+    ...packageJson.resolutions,
+    ...storybookVersions,
+    // this is for our CI test, ensure we use the same version as docker image, it should match version specified in `./code/package.json` and `.circleci/config.yml`
+    playwright: '1.58.2',
+    'playwright-core': '1.58.2',
+    '@playwright/test': '1.58.2',
+  };
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+};
+
+export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
+  await mkdir(cwd, { recursive: true });
+
+  // The published sandbox ships a lockfile and a `.yarnrc.yml` carrying the age gate.
+  // Both are deliberately kept: wiping them made every CI run resolve the whole tree
+  // from live npm, which is how a package hours old could reach a runner.
+  //
+  // Our own Storybook packages are published to Verdaccio seconds before this install,
+  // so they can never satisfy the gate. Name them instead of switching it off, exactly
+  // as sandbox generation does for the `after-storybook` install.
+  await preapproveLocallyPublishedPackages(cwd);
+
+  const command = [
+    // No `yarn set version` here: the sandbox pins Yarn through the `packageManager`
+    // field, and writing a `yarnPath` alongside it makes corepack abort on the mismatch.
+    `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
+    `yarn config set checksumBehavior ignore`,
+  ];
+
+  command.push(`yarn config set nodeLinker node-modules`);
+
+  await exec(
+    command.join(' && '),
+    { cwd },
+    {
+      dryRun,
+      debug,
+      startMessage: `🧶 Installing Yarn`,
+      errorMessage: `🚨 Installing Yarn failed`,
+    }
+  );
+};
+
+export const isViteSandbox = (key?: AllTemplatesKey) => {
+  return allTemplates[key as AllTemplatesKey]?.expected.builder === '@storybook/builder-vite';
+};
+
+export const addWorkaroundResolutions = async ({
+  cwd,
+  dryRun,
+  key,
+}: YarnOptions & { key?: AllTemplatesKey }) => {
+  logger.info(`🔢 Adding resolutions for workarounds`);
+
+  if (dryRun) {
+    return;
+  }
+
+  const packageJsonPath = join(cwd, 'package.json');
+  const content = await readFile(packageJsonPath, 'utf-8');
+  const packageJson = JSON.parse(content);
+
+  let additionalResolutions = {};
+
+  // add additional resolutions for React 19
+  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+    additionalResolutions = {
+      react: '^19.0.0',
+      'react-dom': '^19.0.0',
+    };
+  }
+
+  if (key === 'react-webpack/prerelease-ts') {
+    additionalResolutions = {
+      ...additionalResolutions,
+      react: packageJson.dependencies.react,
+      'react-dom': packageJson.dependencies['react-dom'],
+    };
+  }
+
+  if (key === 'react-rsbuild/default-ts') {
+    additionalResolutions = {
+      ...additionalResolutions,
+      'react-docgen': '^8.0.2',
+    };
+  }
+
+  packageJson.resolutions = {
+    ...packageJson.resolutions,
+    '@testing-library/dom': '^9.3.4',
+    '@testing-library/jest-dom': '6.9.1',
+    '@testing-library/user-event': '^14.5.2',
+    ...additionalResolutions,
+  };
+
+  await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
+};
+
+export const configureYarn2ForVerdaccio = async ({
+  cwd,
+  dryRun,
+  debug,
+  key,
+}: YarnOptions & { key: AllTemplatesKey }) => {
+  // On NX Cloud agents, we use the global cache to avoid duplicating .yarn/cache across sandboxes.
+  // Stale @storybook/* packages are cleaned from the global cache in the agent init step (agents.yaml).
+  // Locally and on CircleCI, we disable the global cache to avoid stale packages from previous runs.
+  const useGlobalCache = Boolean(process.env.STORYBOOK_NX_CLOUD_AGENT);
+
+  const command = [
+    `yarn config set enableGlobalCache ${useGlobalCache}`,
+    `yarn config set enableMirror false`,
+    // ⚠️ Need to set registry because Yarn 2 is not using the conf of Yarn 1 (URL is hardcoded in CircleCI config.yml)
+    `yarn config set npmRegistryServer "http://localhost:6001/"`,
+    // Some required magic to be able to fetch deps from local registry
+    `yarn config set unsafeHttpWhitelist "localhost"`,
+    // We need to be able to update lockfile when bootstrapping the examples
+    `yarn config set enableImmutableInstalls false`,
+  ];
+
+  if (
+    key.includes('svelte-kit') ||
+    // React prereleases will have INCOMPATIBLE_PEER_DEPENDENCY errors because of transitive dependencies not allowing v19 betas
+    key.includes('nextjs') ||
+    key.includes('react-vite/prerelease') ||
+    key.includes('react-webpack/prerelease') ||
+    key.includes('react-rsbuild/default-ts') ||
+    key.includes('vue-rsbuild/default-ts') ||
+    key.includes('html-rsbuild/default-ts') ||
+    key.includes('web-components-rsbuild/default-ts')
+  ) {
+    // Don't error with INCOMPATIBLE_PEER_DEPENDENCY for SvelteKit sandboxes, it is expected to happen with @sveltejs/vite-plugin-svelte
+    command.push(
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"}]"`
+    );
+  } else if (key.includes('nuxt')) {
+    // Nothing to do for Nuxt
+  } else {
+    // Discard all YN0013 - FETCH_NOT_CACHED messages
+    // Error on YN0060 - INCOMPATIBLE_PEER_DEPENDENCY
+    command.push(
+      `yarn config set logFilters --json "[{\\"code\\":\\"YN0013\\",\\"level\\":\\"discard\\"},{\\"code\\":\\"YN0060\\",\\"level\\":\\"discard\\"}]"`
+    );
+  }
+
+  await exec(
+    command.join(' && '),
+    { cwd },
+    {
+      dryRun,
+      debug,
+      startMessage: `🎛 Configuring Yarn 2`,
+      errorMessage: `🚨 Configuring Yarn 2 failed`,
+    }
+  );
+};

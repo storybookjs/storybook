@@ -1,0 +1,31 @@
+import React from 'react';
+const Button = ({
+  children,
+  onClick
+}) => /*#__PURE__*/React.createElement("button", {
+  onClick: onClick,
+  type: "button"
+}, children);
+const WrappedButton = ({
+  spacing,
+  ...buttonProps
+}) => /*#__PURE__*/React.createElement("div", {
+  style: {
+    padding: spacing
+  }
+}, /*#__PURE__*/React.createElement(Button, buttonProps));
+export const component = WrappedButton;
+WrappedButton.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "WrappedButton",
+  "props": {
+    "spacing": {
+      "required": true,
+      "tsType": {
+        "name": "number"
+      },
+      "description": ""
+    }
+  }
+};

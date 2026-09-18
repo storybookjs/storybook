@@ -1,0 +1,25 @@
+---
+title: staticDirs
+sidebar:
+  order: 20
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type: `(string | { from: string; to: string })[]`
+
+Sets a list of directories of [static files](../../configure/integration/images-and-assets.mdx#serving-static-files-via-storybook-configuration) to be loaded by Storybook.
+
+<CodeSnippets path="main-config-static-dirs.md" />
+
+<Callout variant="info">
+
+When using Vite-based frameworks, the files in Vite's [`publicDir`](https://vite.dev/guide/assets#the-public-directory) are served and copied automatically, as if it were the first entry of `staticDirs`. Storybook's own files, such as `index.json`, and your `staticDirs` take precedence when file names conflict.
+
+</Callout>
+
+## With configuration objects
+
+You can also use a configuration object to define the directories:
+
+<CodeSnippets path="main-config-static-dirs-with-object.md" />

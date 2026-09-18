@@ -1,0 +1,54 @@
+{
+  "message": {
+    "control": {
+      "type": "text",
+    },
+    "description": "A message alerting about Empire activities.",
+    "name": "message",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "title": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "A title that brings attention to the alert.",
+    "name": "title",
+    "options": [
+      "Code Red",
+      "Code Yellow",
+      "Code Green",
+    ],
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'Code Yellow'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "union",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "raw": "'Code Red' | 'Code Yellow' | 'Code Green'",
+      "required": false,
+      "value": [
+        "Code Red",
+        "Code Yellow",
+        "Code Green",
+      ],
+    },
+  },
+}

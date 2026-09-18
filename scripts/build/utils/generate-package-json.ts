@@ -1,0 +1,59 @@
+import { readFile, rename, writeFile } from 'node:fs/promises';
+
+import { join } from 'pathe';
+import sortPackageJson from 'sort-package-json';
+
+import type { BuildEntries } from './entry-utils.ts';
+
+export async function generatePackageJsonFile(cwd: string, data: BuildEntries) {
+  const location = join(cwd, 'package.json');
+  const raw = await readFile(location, { encoding: 'utf8' });
+  const pkgJson = JSON.parse(raw);
+
+  const { entries } = data;
+
+  // Add the package.json file to the exports, so we can use it to `require.resolve` the package's root easily
+  pkgJson.exports = {
+    './package.json': './package.json',
+    ...data.extraOutputs,
+  };
+
+  for (const entry of Object.values(entries).flat()) {
+    for (const exportEntry of entry.exportEntries ?? []) {
+      const dtsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.d.ts');
+      const jsPath = entry.entryPoint.replace('src', 'dist').replace(/\.tsx?/, '.js');
+
+      if (entry.dts === undefined) {
+        pkgJson.exports[exportEntry] = {
+          code: entry.entryPoint,
+          types: dtsPath,
+          default: jsPath,
+        };
+      } else {
+        pkgJson.exports[exportEntry] = jsPath;
+      }
+    }
+  }
+
+  pkgJson.exports = sortObject(pkgJson.exports);
+
+  const updated = `${sortPackageJson(JSON.stringify(pkgJson, null, 2))}\n`;
+  if (updated === raw) {
+    return;
+  }
+
+  // Package builds run concurrently, and every build's boot resolves modules
+  // under every other package's directory (entry-configs.ts imports each
+  // package's build-config.ts), which makes Node's ESM loader read these
+  // package.json files for package-scope detection. A plain writeFile briefly
+  // truncates the file, and a concurrent reader then crashes with
+  // ERR_INVALID_PACKAGE_CONFIG. Write-then-rename keeps the file valid at
+  // every instant.
+  const tempLocation = join(cwd, `.package.json.${process.pid}.tmp`);
+  await writeFile(tempLocation, updated);
+  await rename(tempLocation, location);
+}
+
+function sortObject(obj: Record<string, any>) {
+  return Object.fromEntries(Object.entries(obj).sort(([a], [b]) => a.localeCompare(b)));
+}

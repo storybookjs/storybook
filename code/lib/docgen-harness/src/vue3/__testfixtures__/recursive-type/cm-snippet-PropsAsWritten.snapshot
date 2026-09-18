@@ -1,0 +1,15 @@
+<script lang="ts" setup>
+const node = {
+  "value": "root",
+  "children": [
+    {
+      "value": "leaf",
+      "children": []
+    }
+  ]
+};
+</script>
+
+<template>
+  <RecursiveTree :node="node" />
+</template>

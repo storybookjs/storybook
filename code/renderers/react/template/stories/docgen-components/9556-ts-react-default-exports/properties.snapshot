@@ -1,0 +1,20 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "description": "",
+      "name": "isDisabled",
+      "required": false,
+      "sbType": {
+        "name": "boolean",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "boolean",
+      },
+    },
+  ],
+}

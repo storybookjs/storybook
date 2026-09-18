@@ -1,0 +1,236 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`react component properties js-function-component 1`] = `
+"import React from 'react';
+import PropTypes from 'prop-types';
+import { imported } from '../imported';
+const local = 'local-value';
+/**
+ * A component that renders its props
+ */
+
+export const PropsWriter = props => /*#__PURE__*/React.createElement(\\"pre\\", null, JSON.stringify(props));
+PropsWriter.propTypes = {
+  numberRequired: PropTypes.number.isRequired,
+  numberOptional: PropTypes.number,
+  stringRequired: PropTypes.string.isRequired,
+  stringOptional: PropTypes.string,
+  booleanRequired: PropTypes.bool.isRequired,
+  booleanOptional: PropTypes.bool,
+  arrayRequired: PropTypes.arrayOf(PropTypes.string.isRequired).isRequired,
+  arrayOptional: PropTypes.arrayOf(PropTypes.string.isRequired),
+  objectRequired: PropTypes.shape({}).isRequired,
+  objectOptional: PropTypes.shape({}),
+  functionRequired: PropTypes.func.isRequired,
+  functionOptional: PropTypes.func,
+  dateRequired: PropTypes.instanceOf(Date).isRequired,
+  dateOptional: PropTypes.instanceOf(Date),
+  localReference: PropTypes.string,
+  importedReference: PropTypes.string,
+  globalReference: PropTypes.any,
+  stringGlobalName: PropTypes.string
+};
+PropsWriter.defaultProps = {
+  numberOptional: 1,
+  stringOptional: 'stringOptional',
+  booleanOptional: false,
+  arrayOptional: ['array', 'optional'],
+  objectOptional: {
+    object: 'optional'
+  },
+  functionOptional: () => 'foo',
+  dateOptional: new Date('20 Jan 1983'),
+  localReference: local,
+  importedReference: imported,
+  globalReference: Date,
+  stringGlobalName: 'top'
+};
+export const component = PropsWriter;
+PropsWriter.__docgenInfo = {
+  \\"description\\": \\"A component that renders its props\\",
+  \\"methods\\": [],
+  \\"displayName\\": \\"PropsWriter\\",
+  \\"props\\": {
+    \\"numberOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"1\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"number\\"
+      },
+      \\"required\\": false
+    },
+    \\"stringOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'stringOptional'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"booleanOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"false\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"bool\\"
+      },
+      \\"required\\": false
+    },
+    \\"arrayOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"['array', 'optional']\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"string\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"objectOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ object: 'optional' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {}
+      },
+      \\"required\\": false
+    },
+    \\"functionOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"() => 'foo'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"dateOptional\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"new Date('20 Jan 1983')\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"instanceOf\\",
+        \\"value\\": \\"Date\\"
+      },
+      \\"required\\": false
+    },
+    \\"localReference\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'local-value'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"importedReference\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"imported\\",
+        \\"computed\\": true
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"globalReference\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"Date\\",
+        \\"computed\\": true
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"any\\"
+      },
+      \\"required\\": false
+    },
+    \\"stringGlobalName\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'top'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"numberRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"number\\"
+      },
+      \\"required\\": true
+    },
+    \\"stringRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": true
+    },
+    \\"booleanRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"bool\\"
+      },
+      \\"required\\": true
+    },
+    \\"arrayRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"string\\"
+        }
+      },
+      \\"required\\": true
+    },
+    \\"objectRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {}
+      },
+      \\"required\\": true
+    },
+    \\"functionRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": true
+    },
+    \\"dateRequired\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"instanceOf\\",
+        \\"value\\": \\"Date\\"
+      },
+      \\"required\\": true
+    }
+  }
+};"
+`;

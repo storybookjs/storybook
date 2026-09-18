@@ -1,0 +1,162 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "demo-wc-card/index.js",
+      "declarations": [],
+      "exports": [
+        {
+          "kind": "custom-element-definition",
+          "name": "demo-wc-card",
+          "declaration": {
+            "name": "DemoWcCard",
+            "module": "demo-wc-card/DemoWcCard.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "demo-wc-card/DemoWcCard.js",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "This is a container looking like a card with a back and front side you can switch",
+          "name": "DemoWcCard",
+          "cssProperties": [
+            {
+              "description": "Header font size",
+              "name": "--demo-wc-card-header-font-size"
+            },
+            {
+              "description": "Font color for front",
+              "name": "--demo-wc-card-front-color"
+            },
+            {
+              "description": "Font color for back",
+              "name": "--demo-wc-card-back-color"
+            }
+          ],
+          "cssParts": [
+            {
+              "description": "Front of the card",
+              "name": "front"
+            },
+            {
+              "description": "Back of the card",
+              "name": "back"
+            }
+          ],
+          "slots": [
+            {
+              "name": "prefix",
+              "description": "Label prefix"
+            }
+          ],
+          "members": [
+            {
+              "kind": "method",
+              "name": "toggle"
+            },
+            {
+              "kind": "field",
+              "name": "backSide",
+              "type": {
+                "text": "boolean"
+              },
+              "description": "Indicates that the back of the card is shown",
+              "default": "false",
+              "privacy": "public",
+              "attribute": "back-side",
+              "reflects": true
+            },
+            {
+              "kind": "field",
+              "name": "header",
+              "type": {
+                "text": "string"
+              },
+              "description": "Header message",
+              "default": "'Your Message'",
+              "privacy": "public",
+              "attribute": "header"
+            },
+            {
+              "kind": "field",
+              "name": "rows",
+              "type": {
+                "text": "array"
+              },
+              "description": "Data rows",
+              "default": "[]",
+              "privacy": "public",
+              "attribute": "rows"
+            }
+          ],
+          "events": [
+            {
+              "name": "side-changed",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Fires whenever it switches between front/back"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "back-side",
+              "fieldName": "backSide"
+            },
+            {
+              "name": "header",
+              "fieldName": "header"
+            },
+            {
+              "name": "rows",
+              "fieldName": "rows"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "demo-wc-card",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "DemoWcCard",
+          "declaration": {
+            "name": "DemoWcCard",
+            "module": "demo-wc-card/DemoWcCard.js"
+          }
+        }
+      ]
+    },
+    {
+      "kind": "javascript-module",
+      "path": "demo-wc-card/demoWcCardStyle.css.js",
+      "declarations": [
+        {
+          "kind": "variable",
+          "name": "demoWcCardStyle",
+          "default": "css`\n  :host {\n    display: block;\n    position: relative;\n    width: 250px;\n    height: 200px;\n    border-radius: 10px;\n    transform-style: preserve-3d;\n    transition: all 0.8s ease;\n  }\n\n  .header {\n    font-weight: bold;\n    font-size: var(--demo-wc-card-header-font-size, 16px);\n    text-align: center;\n  }\n\n  .content {\n    padding: 20px 10px 0 10px;\n    flex-grow: 1;\n  }\n\n  .footer {\n    display: flex;\n  }\n\n  dl {\n    margin: 0;\n    text-align: left;\n  }\n\n  dd {\n    margin-left: 15px;\n  }\n\n  button {\n    border-radius: 15px;\n    width: 30px;\n    height: 30px;\n    background: #fff;\n    border: 1px solid #ccc;\n    color: #000;\n    font-size: 21px;\n    line-height: 27px;\n    font-weight: bold;\n    cursor: pointer;\n    margin: 5px;\n  }\n\n  .note {\n    flex-grow: 1;\n    color: #666;\n    font-size: 16px;\n    font-weight: bold;\n    text-align: left;\n    padding-top: 15px;\n  }\n\n  :host([back-side]) {\n    transform: rotateY(180deg);\n  }\n\n  #front,\n  #back {\n    position: absolute;\n    width: 250px;\n    box-sizing: border-box;\n    box-shadow: #ccc 3px 3px 2px 1px;\n    padding: 10px;\n    display: flex;\n    flex-flow: column;\n    top: 0;\n    left: 0;\n    height: 100%;\n    border-radius: 10px;\n    backface-visibility: hidden;\n    overflow: hidden;\n  }\n\n  #front {\n    background: linear-gradient(141deg, #aaa 25%, #eee 40%, #ddd 55%);\n    color: var(--demo-wc-card-front-color, #000);\n  }\n\n  #back {\n    background: linear-gradient(141deg, #333 25%, #aaa 40%, #666 55%);\n    color: var(--demo-wc-card-back-color, #fff);\n    text-align: center;\n    transform: rotateY(180deg) translate3d(0px, 0, 1px);\n  }\n\n  #back .note {\n    color: #fff;\n  }\n`"
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "demoWcCardStyle",
+          "declaration": {
+            "name": "demoWcCardStyle",
+            "module": "demo-wc-card/demoWcCardStyle.css.js"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`react component properties 8279-js-styled-docgen 1`] = `
-Object {
-  "rows": Array [],
-}
-`;

@@ -1,0 +1,62 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { StorybookConfig } from 'storybook/internal/types';
+
+import { getFrameworkInfo } from './get-framework-info.ts';
+
+vi.mock('storybook/internal/common', () => ({
+  getStorybookInfo: vi.fn(),
+}));
+
+describe('getFrameworkInfo', () => {
+  const defaultInfo = {
+    frameworkPackage: '@storybook/react',
+    rendererPackage: '@storybook/react',
+    builderPackage: '@storybook/builder-vite',
+  };
+
+  beforeEach(async () => {
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    vi.mocked(getStorybookInfo).mockResolvedValue(defaultInfo as any);
+  });
+
+  it('returns framework/builder/renderer with empty options when no framework provided', async () => {
+    const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
+    expect(result).toEqual({
+      framework: { name: defaultInfo.frameworkPackage, options: {} },
+      builder: defaultInfo.builderPackage,
+      renderer: defaultInfo.rendererPackage,
+    });
+  });
+
+  it('passes configDir to getStorybookInfo', async () => {
+    const configDir = '/my/project/.storybook';
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    await getFrameworkInfo({} as StorybookConfig, configDir);
+    expect(getStorybookInfo).toHaveBeenCalledWith(configDir);
+  });
+
+  it('decodes pnpm virtual-store paths so no version-bearing fragment leaks', async () => {
+    const { getStorybookInfo } = await import('storybook/internal/common');
+    vi.mocked(getStorybookInfo).mockResolvedValue({
+      frameworkPackage: '/repo/node_modules/.pnpm/@storybook+react-vite@9.0.0',
+      rendererPackage: '/repo/node_modules/.pnpm/@storybook+react@9.0.0_typescript@5.0.0',
+      builderPackage: '/repo/node_modules/.pnpm/@storybook+builder-vite@9.0.0',
+    } as any);
+
+    const result = await getFrameworkInfo({} as StorybookConfig, '/tmp/.storybook');
+
+    expect(result.framework.name).toBe('@storybook/react-vite');
+    expect(result.renderer).toBe('@storybook/react');
+    expect(result.builder).toBe('@storybook/builder-vite');
+  });
+
+  it('returns provided framework options when object is passed', async () => {
+    const options = { foo: 'bar' } as any;
+    const result = await getFrameworkInfo(
+      { framework: { name: '@storybook/react', options } } as any,
+      '/tmp/.storybook'
+    );
+    expect(result.framework.options).toEqual(options);
+  });
+});

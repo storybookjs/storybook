@@ -1,0 +1,37 @@
+{
+  "label": {
+    "control": {
+      "type": "text",
+    },
+    "description": "",
+    "name": "label",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "onClick": {
+    "description": "",
+    "name": "onClick",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    "type": {
+      "name": "function",
+      "required": true,
+    },
+  },
+}

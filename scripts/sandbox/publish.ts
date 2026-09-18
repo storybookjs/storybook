@@ -1,0 +1,146 @@
+import { cp, mkdir, readdir, rm, writeFile } from 'node:fs/promises';
+
+import { program } from 'commander';
+// eslint-disable-next-line depend/ban-dependencies
+import { execaCommand } from 'execa';
+import { existsSync } from 'fs';
+// eslint-disable-next-line depend/ban-dependencies
+import { glob } from 'glob';
+import { dirname, join, relative } from 'path';
+
+import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
+import { REPROS_DIRECTORY } from '../utils/constants.ts';
+import { commitAllToGit } from './utils/git.ts';
+import {
+  ensureLockfilePublishRules,
+  sanitizePublishedSandboxes,
+} from './utils/sanitize-published-sandbox.ts';
+import { getTemplatesData, renderTemplate } from './utils/template.ts';
+
+export const logger = console;
+
+const emptyDir = async (dir: string): Promise<void> => {
+  await mkdir(dir, { recursive: true });
+
+  const names = await readdir(dir);
+  await Promise.all(names.map((name) => rm(join(dir, name), { recursive: true, force: true })));
+};
+
+interface PublishOptions {
+  remote?: string;
+  push?: boolean;
+  branch?: string;
+}
+
+const publish = async (options: PublishOptions & { tmpFolder: string }) => {
+  const { branch: inputBranch, remote, push, tmpFolder } = options;
+
+  const scriptPath = __dirname;
+  const branch = inputBranch || 'next';
+  const templatesData = await getTemplatesData(branch === 'main' ? 'main' : 'next');
+
+  logger.log(`👯‍♂️ Cloning the repository ${remote} in branch ${branch}`);
+  await execaCommand(`git clone ${remote} .`, { cwd: tmpFolder, cleanup: true });
+  await execaCommand(`git checkout ${branch}`, { cwd: tmpFolder, cleanup: true });
+
+  // otherwise old files will stick around and result inconsistent states
+  logger.log(`🗑 Delete existing template dirs from clone`);
+
+  // empty all existing directories for sandboxes that have a successful after-storybook directory
+  await Promise.all(
+    // find all successfully generated after-storybook/README.md files
+    // eg. /home/repros/react-vite/default-ts/after-storybook/README.md
+    // README.md being the last file generated, thus representing a successful generation
+    (await glob(join(REPROS_DIRECTORY, '**', 'after-storybook/README.md'))).map((readmePath) => {
+      // get the after-storybook path relative to the source 'repros' directory
+      // eg. ./react-vite/default-ts/after-storybook
+      const pathRelativeToSource = relative(REPROS_DIRECTORY, dirname(readmePath));
+      // get the actual path to the corresponding sandbox directory in the clone
+      // eg. /home/sandboxes-clone/react-vite/default-ts
+      const sandboxDirectoryToEmpty = join(tmpFolder, pathRelativeToSource, '..');
+      return emptyDir(sandboxDirectoryToEmpty);
+    })
+  );
+
+  logger.log(`🚚 Moving template files into the repository`);
+
+  const templatePath = join(scriptPath, 'templates', 'root.ejs');
+  const templateData = { data: templatesData, version: branch === 'main' ? 'latest' : 'next' };
+
+  const output = await renderTemplate(templatePath, templateData);
+
+  await writeFile(join(tmpFolder, 'README.md'), output);
+
+  logger.log(`🚛 Moving all the repros into the repository`);
+  await cp(REPROS_DIRECTORY, tmpFolder, { recursive: true });
+
+  logger.log(`🧼 Sanitizing published sandboxes (after-storybook .yarnrc.yml + install artifacts)`);
+  const sanitizeResult = await sanitizePublishedSandboxes(tmpFolder);
+  logger.log(
+    `🧼 Sanitize summary: stripped ${sanitizeResult.strippedKeyCount} key(s) from ` +
+      `${sanitizeResult.filteredYarnrcCount} .yarnrc.yml file(s); removed ${sanitizeResult.removedPaths} excluded path(s)`
+  );
+
+  const gitignoreUpdated = await ensureLockfilePublishRules(tmpFolder);
+  logger.log(
+    gitignoreUpdated
+      ? `🧼 Added the before-storybook lockfile exception to .gitignore`
+      : `🧼 .gitignore already publishes the before-storybook lockfile`
+  );
+
+  await commitAllToGit({ cwd: tmpFolder, branch });
+
+  logger.info(`
+     🙌 All the examples were bootstrapped:
+        - in ${tmpFolder}
+        - using the '${branch}' version of Storybook CLI
+        - and committed on the '${branch}' branch of a local Git repository
+
+     Also all the files in the 'templates' folder were copied at the root of the Git repository.
+    `);
+
+  if (push) {
+    await execaCommand(`git push --set-upstream origin ${branch}`, {
+      cwd: tmpFolder,
+    });
+    const remoteRepoUrl = `${remote.replace('.git', '')}/tree/${branch}`;
+    logger.info(`🚀 Everything was pushed on ${remoteRepoUrl}`);
+  } else {
+    logger.info(`
+       To publish these examples you just need to:
+          - push the branch: 'git push --set-upstream origin ${branch}
+      `);
+  }
+};
+
+program
+  .description('Create a sandbox from a set of possible templates')
+  .option('--remote <remote>', 'Choose the remote to push the contents to')
+  .option('--branch <branch>', 'Choose which branch on the remote')
+  .option('--push', 'Whether to push the contents to the remote', false)
+  .option('--force-push', 'Whether to force push the changes into the repros repository', false);
+
+program.parse(process.argv);
+
+if (!existsSync(REPROS_DIRECTORY)) {
+  throw Error("Couldn't find sandbox directory. Did you forget to run generate-sandboxes?");
+}
+
+async function main() {
+  const tmpFolder = await temporaryDirectory();
+  logger.log(`⏱ Created tmp folder: ${tmpFolder}`);
+
+  const options = program.opts() as PublishOptions;
+
+  publish({ ...options, tmpFolder }).catch(async (e) => {
+    logger.error(e);
+
+    if (existsSync(tmpFolder)) {
+      logger.log('🚮 Removing the temporary folder..');
+      await rm(tmpFolder, { force: true, recursive: true });
+    }
+    process.exit(1);
+  });
+}
+
+main();

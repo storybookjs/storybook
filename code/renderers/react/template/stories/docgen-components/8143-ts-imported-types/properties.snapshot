@@ -1,0 +1,19 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "bar",
+      "required": true,
+      "sbType": {
+        "name": "other",
+        "raw": "Foo['bar']",
+        "value": "Foo['bar']",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "Foo['bar']",
+      },
+    },
+  ],
+}

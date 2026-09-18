@@ -1,0 +1,39 @@
+/**
+ * Set of resolutions from the root package.json that should NOT be copied to sandbox package.json.
+ * These are the "existing" resolutions that Storybook maintains, as opposed to resolutions that
+ * might be injected by ecosystem-ci repos.
+ *
+ * This set must stay in sync with the resolutions in the root package.json. Run the test in
+ * before-test.test.ts to verify they match.
+ */
+export const EXISTING_RESOLUTIONS = new Set([
+  '@ai-sdk/anthropic',
+  '@babel/runtime',
+  '@babel/traverse',
+  '@babel/types',
+  '@playwright/test',
+  '@testing-library/jest-dom',
+  '@testing-library/user-event@npm:^14.4.0',
+  '@testing-library/user-event@npm:^14.6.3',
+  '@types/babel__traverse@npm:*',
+  '@types/babel__traverse@npm:^7.18.0',
+  '@types/node',
+  '@types/react',
+  '@typescript-eslint/types',
+  '@vercel/agent-eval-playground/react',
+  '@vercel/agent-eval-playground/react-dom',
+  '@vercel/agent-eval@npm:1.2.0',
+  '@vitest/expect@npm:3.2.4',
+  'agent-eval/typescript',
+  'aria-query@5.3.0',
+  'esbuild',
+  'playwright',
+  'playwright-core',
+  'polka@npm:1.0.0-next.28/@polka/url',
+  'radix-ui@npm:^1.4.3',
+  'react',
+  'rxjs',
+  'react-joyride/type-fest',
+  'typescript',
+  'valibot',
+]);

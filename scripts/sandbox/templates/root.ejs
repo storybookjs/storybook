@@ -1,0 +1,27 @@
+<h1>Storybook Reproduction Templates</h1>
+
+<img alt="Storybook <%= version %> Badge" src="https://img.shields.io/npm/v/@storybook/react/<%= version %>" />
+
+<p>The following repros have been generated with the `<%= version %>` version of Storybook.</p>
+
+<% if (typeof data !== 'undefined' && Object.keys(data).length) { %>
+  <p>Preview any repro live on <a href="http://stackblitz.com/">StackBlitz:</a></p>
+  <% for (var groupName in data) { %>
+    <% if (data[groupName] !== undefined) { %>
+      <details>
+        <summary><b><%- (groupName) %></b></summary>
+        <ul>
+        <% for (var exampleName in data[groupName]) { %>
+          <% if (data[groupName][exampleName] !== undefined) { %>
+            <li>
+              <a href="<%=data[groupName][exampleName]['stackblitzUrl']%>">
+                <%=data[groupName][exampleName]['name']%>
+              </a>
+            </li>
+          <% } %>
+        <% } %>
+        </ul>
+      </details>
+    <% } %>
+  <% } %>
+<% } %>

@@ -1,9 +1,0 @@
-{
-  "extends": "./tsconfig.json",
-  "compilerOptions": {
-    "types": ["webpack-env", "jest", "node"],
-    "typeRoots": ["../../node_modules/@types", "node_modules/@types"],
-    "allowJs": true
-  },
-  "include": ["**/*.test.ts", "**/*.d.ts", "setup-jest.ts"]
-}

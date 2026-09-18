@@ -1,0 +1,1770 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`react component properties js-proptypes 1`] = `
+"import React from 'react';
+import PropTypes, { string, shape } from 'prop-types';
+import { PRESET_SHAPE, SOME_PROP_TYPES } from './ext';
+const NAMED_OBJECT = {
+  text: PropTypes.string.isRequired,
+  value: PropTypes.string.isRequired
+};
+const ANOTHER_OBJECT = {
+  foo: PropTypes.string,
+  bar: PropTypes.string
+};
+const NAMED_SHAPE = PropTypes.shape({
+  foo: PropTypes.string
+});
+export const POSITIONS = ['top-left', 'top-right', 'top-center'];
+
+const FunctionalComponent = () => {
+  return /*#__PURE__*/React.createElement(\\"div\\", null, \\"FunctionalComponent!\\");
+};
+
+class ClassComponent extends React.PureComponent {
+  render() {
+    return /*#__PURE__*/React.createElement(\\"div\\", null, \\"ClassComponent!\\");
+  }
+
+}
+
+function concat(a, b) {
+  return a + b;
+}
+
+function customPropType() {
+  return null;
+}
+
+const nestedCustomPropType = {
+  custom: customPropType
+};
+const SOME_INLINE_PROP_TYPES = {
+  /**
+   * Hey Hey!
+   */
+  inlineString: PropTypes.string,
+  inlineBool: PropTypes.bool,
+  inlineNumber: PropTypes.number,
+  inlineObj: PropTypes.shape({
+    foo: PropTypes.string
+  }),
+  inlineArray: PropTypes.arrayOf(PropTypes.number),
+  inlineArrayOfObjects: PropTypes.arrayOf({
+    foo: PropTypes.string
+  }),
+  inlineFunctionalElement: PropTypes.element,
+  inlineFunctionalElementInline: PropTypes.element,
+  inlineFunctionalElementInlineReturningNull: PropTypes.element,
+  inlineHtmlElement: PropTypes.element,
+  inlineFunctionalElementInlineWithProps: PropTypes.element,
+  inlineFunctionalElementNamedInline: PropTypes.element,
+  inlineClassElement: PropTypes.element,
+  inlineClassElementWithProps: PropTypes.element,
+  inlineClassElementWithChildren: PropTypes.element,
+  inlineClassElementInline: PropTypes.element,
+  inlineFunc: PropTypes.func
+};
+const SOME_INLINE_DEFAULT_PROPS = {
+  inlineString: 'Inline prop default value',
+  inlineBool: true,
+  inlineNumber: 10,
+  inlineObj: {
+    foo: 'bar'
+  },
+  inlineArray: [1, 2, 3],
+  inlineArrayOfObjects: [{
+    foo: 'bar'
+  }, {
+    foo: 'bar'
+  }, {
+    foo: 'bar'
+  }, {
+    foo: 'bar'
+  }, {
+    foo: 'bar'
+  }],
+  inlineFunctionalElement: /*#__PURE__*/React.createElement(FunctionalComponent, null),
+  inlineFunctionalElementInline: () => {
+    return /*#__PURE__*/React.createElement(\\"div\\", null, \\"Inlined FunctionalComponent!\\");
+  },
+  inlineFunctionalElementInlineReturningNull: () => {
+    return null;
+  },
+  inlineHtmlElement: /*#__PURE__*/React.createElement(\\"div\\", null, \\"Hey!\\"),
+  inlineFunctionalElementInlineWithProps: ({
+    foo
+  }) => {
+    return /*#__PURE__*/React.createElement(\\"div\\", null, foo);
+  },
+  inlineFunctionalElementNamedInline: function InlinedFunctionalComponent() {
+    return /*#__PURE__*/React.createElement(\\"div\\", null, \\"Inlined FunctionalComponent!\\");
+  },
+  inlineClassElement: /*#__PURE__*/React.createElement(ClassComponent, null),
+  inlineClassElementWithProps: /*#__PURE__*/React.createElement(ClassComponent, {
+    className: \\"toto\\"
+  }),
+  inlineClassElementWithChildren: /*#__PURE__*/React.createElement(ClassComponent, null, /*#__PURE__*/React.createElement(\\"div\\", null, \\"hey!\\")),
+  inlineClassElementInline: class InlinedClassComponent extends React.PureComponent {
+    render() {
+      return /*#__PURE__*/React.createElement(\\"div\\", null, \\"Inlined ClassComponent!\\");
+    }
+
+  },
+  inlineFunc: function add(a, b) {
+    return a + b;
+  }
+};
+export const PropTypesProps = () => /*#__PURE__*/React.createElement(\\"div\\", null, \\"PropTypes!\\");
+PropTypesProps.propTypes = {
+  any: PropTypes.any,
+  bool: PropTypes.bool,
+  string: PropTypes.string,
+  func: PropTypes.func,
+
+  /**
+   * A function with JSDoc tags.
+   *
+   * @param {string} foo - A foo value.
+   * @param {number} bar - A bar value.
+   * @returns {ComplexObject} - Returns a complex object.
+   */
+  funcWithJsDoc: PropTypes.func,
+
+  /**
+   * @param {string} foo - A foo value.
+   * @param {number} bar - A bar value.
+   * @param {number} bar1 - A bar value.
+   * @param {number} bar2 - A bar value.
+   * @param {number} bar3 - A bar value.
+   * @param {number} bar4 - A bar value.
+   * @param {number} bar5 - A bar value.
+   * @returns {ComplexObject} - Returns a complex object.
+   */
+  semiLongFuncWithJsDoc: PropTypes.func,
+
+  /**
+   * @param {string} foo - A foo value.
+   * @param {number} bar - A bar value.
+   * @param {number} bar1 - A bar value.
+   * @param {number} bar2 - A bar value.
+   * @param {number} bar3 - A bar value.
+   * @param {number} bar4 - A bar value.
+   * @param {number} bar5 - A bar value.
+   * @param {number} bar6 - A bar value.
+   * @param {number} bar7 - A bar value.
+   * @param {number} bar8 - A bar value.
+   * @param {number} bar9 - A bar value.
+   * @param {number} bar10 - A bar value.
+   * @returns {ComplexObject} - Returns a complex object.
+   */
+  veryLongFuncWithJsDoc: PropTypes.func,
+  namedDefaultFunc: PropTypes.func,
+  number: PropTypes.number,
+
+  /**
+   * Plain object propType (use shape!!)
+   */
+  obj: PropTypes.object,
+  symbol: PropTypes.symbol,
+  node: PropTypes.node,
+  useCustomPropType: customPropType,
+  useNestedCustomPropType: nestedCustomPropType.custom,
+  functionalElement: PropTypes.element,
+  functionalElementInline: PropTypes.element,
+  functionalElementNamedInline: PropTypes.element,
+  classElement: PropTypes.element,
+  classElementInline: PropTypes.element,
+  functionalElementType: PropTypes.elementType,
+  classElementType: PropTypes.elementType,
+  elementWithProps: PropTypes.elementType,
+
+  /**
+   * \`instanceOf\` is also supported and the custom type will be shown instead of \`instanceOf\`
+   */
+  instanceOf: PropTypes.instanceOf(Set),
+
+  /**
+   * \`oneOf\` is basically an Enum which is also supported but can be pretty big.
+   */
+  oneOfString: PropTypes.oneOf(['News', 'Photos']),
+  oneOfNumeric: PropTypes.oneOf([0, 1, 2, 3]),
+  oneOfShapes: PropTypes.oneOf([PropTypes.shape({
+    foo: PropTypes.string
+  }), PropTypes.shape({
+    bar: PropTypes.number
+  })]),
+  oneOfComplexShapes: PropTypes.oneOf([PropTypes.shape({
+    /**
+     *  Just an internal propType for a shape.
+     *  It's also required, and as you can see it supports multi-line comments!
+     */
+    id: PropTypes.number.isRequired,
+
+    /**
+     *  A simple non-required function
+     */
+    func: PropTypes.func,
+
+    /**
+     * An \`arrayOf\` shape
+     */
+    arr: PropTypes.arrayOf(PropTypes.shape({
+      /**
+       * 5-level deep propType definition and still works.
+       */
+      index: PropTypes.number.isRequired
+    }))
+  }), shape({
+    bar: PropTypes.number
+  })]),
+  oneOfComplexType: PropTypes.oneOf([NAMED_OBJECT, ANOTHER_OBJECT]),
+  oneOfComponents: PropTypes.oneOf([FunctionalComponent, ClassComponent]),
+  oneOfEval: PropTypes.oneOf((() => ['News', 'Photos'])()),
+  oneOfVar: PropTypes.oneOf(POSITIONS),
+  oneOfNested: PropTypes.oneOf(['News', ['bottom-left', 'bottom-center', 'bottom-right']]),
+  oneOfNestedSimpleInlineObject: PropTypes.oneOf(['News', [{
+    foo: PropTypes.string
+  }]]),
+  oneOfNestedComplexInlineObject: PropTypes.oneOf(['News', [{
+    nested: {
+      foo: PropTypes.string
+    }
+  }]]),
+  oneOfNestedComplexShape: PropTypes.oneOf(['News', [{
+    nested: PropTypes.shape({
+      foo: PropTypes.string
+    })
+  }]]),
+
+  /**
+   *  A multi-type prop is also valid and is displayed as \`Union<String|Message>\`
+   */
+  oneOfType: PropTypes.oneOfType([PropTypes.string, PropTypes.instanceOf(Set)]),
+
+  /**
+   * array of a primitive type
+   */
+  arrayOfPrimitive: PropTypes.arrayOf(PropTypes.number),
+  arrayOfNamedObject: PropTypes.arrayOf(NAMED_OBJECT),
+  arrayOfShortInlineObject: PropTypes.arrayOf({
+    foo: PropTypes.string
+  }),
+  arrayOfInlineObject: PropTypes.arrayOf({
+    text: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired
+  }),
+  arrayOfComplexInlineObject: PropTypes.arrayOf({
+    text: PropTypes.string.isRequired,
+    value: PropTypes.string.isRequired,
+    shape: {
+      id: PropTypes.string.isRequired,
+      age: PropTypes.number.isRequired
+    }
+  }),
+  arrayOfShortShape: PropTypes.arrayOf(PropTypes.shape({
+    bar: PropTypes.string
+  })),
+  arrayOfComplexShape: PropTypes.arrayOf(PropTypes.shape({
+    /**
+     *  Just an internal propType for a shape.
+     *  It's also required, and as you can see it supports multi-line comments!
+     */
+    id: PropTypes.number.isRequired,
+
+    /**
+     *  A simple non-required function
+     */
+    func: PropTypes.func,
+
+    /**
+     * An \`arrayOf\` shape
+     */
+    arr: PropTypes.arrayOf(PropTypes.shape({
+      /**
+       * 5-level deep propType definition and still works.
+       */
+      index: PropTypes.number.isRequired
+    }))
+  })),
+  arrayExternalShape: PropTypes.arrayOf(PropTypes.shape(PRESET_SHAPE)),
+
+  /**
+   *  A simple \`objectOf\` propType.
+   */
+  simpleObjectOf: PropTypes.objectOf(PropTypes.number),
+  objectOfShortInlineObject: PropTypes.objectOf({
+    foo: PropTypes.string
+  }),
+  objectOfInlineObject: PropTypes.objectOf({
+    foo: PropTypes.string,
+    bar: PropTypes.string,
+    barry: PropTypes.string
+  }),
+  objectOfShortShape: PropTypes.objectOf(PropTypes.shape({
+    foo: string
+  })),
+
+  /**
+   *  A very complex \`objectOf\` propType.
+   */
+  objectOfComplexShape: PropTypes.objectOf(PropTypes.shape({
+    /**
+     *  Just an internal propType for a shape.
+     *  It's also required, and as you can see it supports multi-line comments!
+     */
+    id: PropTypes.number.isRequired,
+
+    /**
+     *  A simple non-required function
+     */
+    func: PropTypes.func,
+
+    /**
+     * An \`arrayOf\` shape
+     */
+    arr: PropTypes.arrayOf(PropTypes.shape({
+      /**
+       * 5-level deep propType definition and still works.
+       */
+      index: PropTypes.number.isRequired
+    }))
+  })),
+  namedObjectOf: PropTypes.objectOf(NAMED_OBJECT),
+  shapeShort: PropTypes.shape({
+    foo: string
+  }),
+  shapeLong: PropTypes.shape({
+    foo: string,
+    prop1: string,
+    prop2: string,
+    prop3: string,
+    prop4: string,
+    prop5: string,
+    prop6: string,
+    prop7: string
+  }),
+
+  /**
+   * propType for shape with nested arrayOf
+   *
+   * Also, multi-line description
+   */
+  shapeComplex: PropTypes.shape({
+    /**
+     *  Just an internal propType for a shape.
+     *  It's also required, and as you can see it supports multi-line comments!
+     */
+    id: PropTypes.number.isRequired,
+
+    /**
+     *  A simple non-required function
+     */
+    func: PropTypes.func,
+
+    /**
+     * An \`arrayOf\` shape
+     */
+    arr: PropTypes.arrayOf(PropTypes.shape({
+      /**
+       * 5-level deep propType definition and still works.
+       */
+      index: PropTypes.number.isRequired
+    })),
+    shape: PropTypes.shape({
+      shape: PropTypes.shape({
+        foo: PropTypes.string,
+        oneOf: PropTypes.oneOf(['one', 'two'])
+      })
+    }),
+    oneOf: PropTypes.oneOf(['one', 'two'])
+  }),
+  shapeWithArray: PropTypes.shape({
+    arr: PropTypes.arrayOf({
+      foo: PropTypes.string
+    })
+  }),
+  namedShape: NAMED_SHAPE,
+  namedObjectInShape: PropTypes.shape(NAMED_OBJECT),
+  exact: PropTypes.exact({
+    name: PropTypes.string,
+    quantity: PropTypes.number
+  }),
+  namedExact: PropTypes.exact(NAMED_OBJECT),
+
+  /**
+   * test string with a comment that has
+   * two identical lines
+   * two identical lines
+   */
+  optionalString: PropTypes.string,
+  requiredString: PropTypes.string.isRequired,
+  nullDefaultValue: PropTypes.string,
+  undefinedDefaultValue: PropTypes.string,
+  ...SOME_INLINE_PROP_TYPES,
+  ...SOME_PROP_TYPES
+};
+PropTypesProps.defaultProps = {
+  any: 'Default any',
+  bool: false,
+  string: 'Default string',
+  func: () => {},
+  funcWithJsDoc: (foo, bar) => {
+    // eslint-disable-next-line
+    const yo = window.document; // eslint-disable-next-line
+
+    const pouf = souffle;
+    return {
+      foo,
+      bar
+    };
+  },
+  namedDefaultFunc: concat,
+  number: 5,
+  obj: {
+    key: 'value'
+  },
+  symbol: Symbol('Default symbol'),
+  node: /*#__PURE__*/React.createElement(\\"div\\", null, \\"Hello!\\"),
+  functionalElement: /*#__PURE__*/React.createElement(FunctionalComponent, {
+    className: \\"toto\\"
+  }),
+  functionalElementInline: () => {
+    return /*#__PURE__*/React.createElement(\\"div\\", null, \\"Inlined FunctionalComponent!\\");
+  },
+  functionalElementNamedInline: function InlinedFunctionalComponent() {
+    return /*#__PURE__*/React.createElement(\\"div\\", null, \\"Inlined FunctionalComponent!\\");
+  },
+  classElement: /*#__PURE__*/React.createElement(ClassComponent, null),
+  classElementInline: class InlinedClassComponent extends React.PureComponent {
+    render() {
+      return /*#__PURE__*/React.createElement(\\"div\\", null, \\"Inlined ClassComponent!\\");
+    }
+
+  },
+  functionalElementType: FunctionalComponent,
+  classElementType: ClassComponent,
+  elementWithProps: /*#__PURE__*/React.createElement(ClassComponent, {
+    className: \\"w8 h8 fill-marine-500\\"
+  }),
+  instanceOf: new Set(),
+  oneOfString: 'News',
+  oneOfNumeric: 1,
+  oneOfShapes: {
+    foo: 'bar'
+  },
+  oneOfComplexShapes: {
+    thing: {
+      id: 2,
+      func: () => {},
+      arr: []
+    }
+  },
+  oneOfComplexType: {
+    text: 'foo',
+    value: 'bar'
+  },
+  oneOfComponents: /*#__PURE__*/React.createElement(FunctionalComponent, null),
+  oneOfEval: 'Photos',
+  oneOfVar: 'top-right',
+  oneOfNested: 'top-right',
+  oneOfType: 'hello',
+  arrayOfPrimitive: [1, 2, 3],
+  arrayOfString: ['0px', '0px'],
+  arrayOfNamedObject: [{
+    text: 'foo',
+    value: 'bar'
+  }],
+  arrayOfShortInlineObject: [{
+    foo: 'bar'
+  }],
+  arrayOfInlineObject: [{
+    text: 'foo',
+    value: 'bar'
+  }],
+  arrayOfComplexInlineObject: [{
+    text: 'foo',
+    value: 'bar'
+  }],
+  arrayOfShortShape: [{
+    bar: 'foo'
+  }],
+  arrayOfComplexShape: [{
+    thing: {
+      id: 2,
+      func: () => {},
+      arr: []
+    }
+  }],
+  simpleObjectOf: {
+    key: 1
+  },
+  objectOfShortInlineObject: {
+    foo: 'bar'
+  },
+  objectOfInlineObject: {
+    foo: 'bar',
+    bar: 'foo'
+  },
+  objectOfShortShape: {
+    foo: 'bar'
+  },
+  objectOfComplexShape: {
+    thing: {
+      id: 2,
+      func: () => {},
+      arr: []
+    }
+  },
+  namedObjectOf: {
+    text: 'foo',
+    value: 'bar'
+  },
+  shapeShort: {
+    foo: 'bar'
+  },
+  shapeComplex: {
+    id: 3,
+    func: () => {},
+    arr: [],
+    shape: {
+      shape: {
+        foo: 'bar'
+      }
+    }
+  },
+  namedShape: {
+    foo: 'bar'
+  },
+  namedObjectInShape: {
+    text: 'foo',
+    value: 'bar'
+  },
+  exact: {
+    name: 'foo',
+    quantity: 2
+  },
+  namedExact: {
+    text: 'foo',
+    value: 'bar'
+  },
+  optionalString: 'Default String',
+  nullDefaultValue: null,
+  undefinedDefaultValue: undefined,
+  ...SOME_INLINE_DEFAULT_PROPS
+};
+export const component = PropTypesProps;
+PropTypesProps.__docgenInfo = {
+  \\"description\\": \\"\\",
+  \\"methods\\": [],
+  \\"displayName\\": \\"PropTypesProps\\",
+  \\"props\\": {
+    \\"any\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'Default any'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"any\\"
+      },
+      \\"required\\": false
+    },
+    \\"bool\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"false\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"bool\\"
+      },
+      \\"required\\": false
+    },
+    \\"string\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'Default string'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"func\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"() => {}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"funcWithJsDoc\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"(foo, bar) => {\\\\n  // eslint-disable-next-line\\\\n  const yo = window.document;\\\\n  // eslint-disable-next-line\\\\n  const pouf = souffle;\\\\n\\\\n  return { foo, bar };\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"A function with JSDoc tags.\\\\n\\\\n@param {string} foo - A foo value.\\\\n@param {number} bar - A bar value.\\\\n@returns {ComplexObject} - Returns a complex object.\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"namedDefaultFunc\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"function concat(a, b) {\\\\n  return a + b;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"number\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"5\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"number\\"
+      },
+      \\"required\\": false
+    },
+    \\"obj\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{\\\\n  key: 'value',\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"Plain object propType (use shape!!)\\",
+      \\"type\\": {
+        \\"name\\": \\"object\\"
+      },
+      \\"required\\": false
+    },
+    \\"symbol\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"Symbol('Default symbol')\\",
+        \\"computed\\": true
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"symbol\\"
+      },
+      \\"required\\": false
+    },
+    \\"node\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<div>Hello!</div>\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"node\\"
+      },
+      \\"required\\": false
+    },
+    \\"functionalElement\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<FunctionalComponent className=\\\\\\"toto\\\\\\" />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"functionalElementInline\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"() => {\\\\n  return <div>Inlined FunctionalComponent!</div>;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"functionalElementNamedInline\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"function InlinedFunctionalComponent() {\\\\n  return <div>Inlined FunctionalComponent!</div>;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"classElement\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<ClassComponent />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"classElementInline\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"class InlinedClassComponent extends React.PureComponent {\\\\n  render() {\\\\n    return <div>Inlined ClassComponent!</div>;\\\\n  }\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"functionalElementType\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"() => {\\\\n  return <div>FunctionalComponent!</div>;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"elementType\\"
+      },
+      \\"required\\": false
+    },
+    \\"classElementType\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"class ClassComponent extends React.PureComponent {\\\\n  render() {\\\\n    return <div>ClassComponent!</div>;\\\\n  }\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"elementType\\"
+      },
+      \\"required\\": false
+    },
+    \\"elementWithProps\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<ClassComponent className=\\\\\\"w8 h8 fill-marine-500\\\\\\" />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"elementType\\"
+      },
+      \\"required\\": false
+    },
+    \\"instanceOf\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"new Set()\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\`instanceOf\` is also supported and the custom type will be shown instead of \`instanceOf\`\\",
+      \\"type\\": {
+        \\"name\\": \\"instanceOf\\",
+        \\"value\\": \\"Set\\"
+      },
+      \\"required\\": false
+    },
+    \\"oneOfString\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'News'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\`oneOf\` is basically an Enum which is also supported but can be pretty big.\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"'News'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"'Photos'\\",
+          \\"computed\\": false
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfNumeric\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"1\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"0\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"1\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"2\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"3\\",
+          \\"computed\\": false
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfShapes\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"PropTypes.shape({ foo: PropTypes.string })\\",
+          \\"computed\\": true
+        }, {
+          \\"value\\": \\"PropTypes.shape({ bar: PropTypes.number })\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfComplexShapes\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{\\\\n  thing: {\\\\n    id: 2,\\\\n    func: () => {},\\\\n    arr: [],\\\\n  },\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"PropTypes.shape({\\\\n  /**\\\\n   *  Just an internal propType for a shape.\\\\n   *  It's also required, and as you can see it supports multi-line comments!\\\\n   */\\\\n  id: PropTypes.number.isRequired,\\\\n  /**\\\\n   *  A simple non-required function\\\\n   */\\\\n  func: PropTypes.func,\\\\n  /**\\\\n   * An \`arrayOf\` shape\\\\n   */\\\\n  arr: PropTypes.arrayOf(\\\\n    PropTypes.shape({\\\\n      /**\\\\n       * 5-level deep propType definition and still works.\\\\n       */\\\\n      index: PropTypes.number.isRequired,\\\\n    })\\\\n  ),\\\\n})\\",
+          \\"computed\\": true
+        }, {
+          \\"value\\": \\"shape({ bar: PropTypes.number })\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfComplexType\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ text: 'foo', value: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"{\\\\n  text: PropTypes.string.isRequired,\\\\n  value: PropTypes.string.isRequired,\\\\n}\\",
+          \\"computed\\": true
+        }, {
+          \\"value\\": \\"{\\\\n  foo: PropTypes.string,\\\\n  bar: PropTypes.string,\\\\n}\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfComponents\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<FunctionalComponent />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"() => {\\\\n  return <div>FunctionalComponent!</div>;\\\\n}\\",
+          \\"computed\\": true
+        }, {
+          \\"value\\": \\"class ClassComponent extends React.PureComponent {\\\\n  render() {\\\\n    return <div>ClassComponent!</div>;\\\\n  }\\\\n}\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfEval\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'Photos'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"computed\\": true,
+        \\"value\\": \\"(() => ['News', 'Photos'])()\\"
+      },
+      \\"required\\": false
+    },
+    \\"oneOfVar\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'top-right'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"'top-left'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"'top-right'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"'top-center'\\",
+          \\"computed\\": false
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfNested\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'top-right'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"'News'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"['bottom-left', 'bottom-center', 'bottom-right']\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfType\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'hello'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"A multi-type prop is also valid and is displayed as \`Union<String|Message>\`\\",
+      \\"type\\": {
+        \\"name\\": \\"union\\",
+        \\"value\\": [{
+          \\"name\\": \\"string\\"
+        }, {
+          \\"name\\": \\"instanceOf\\",
+          \\"value\\": \\"Set\\"
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfPrimitive\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[1, 2, 3]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"array of a primitive type\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"number\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfString\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"['0px', '0px']\\",
+        \\"computed\\": false
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfNamedObject\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[{ text: 'foo', value: 'bar' }]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"NAMED_OBJECT\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfShortInlineObject\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[{ foo: 'bar' }]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"{\\\\n  foo: PropTypes.string,\\\\n}\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfInlineObject\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[{ text: 'foo', value: 'bar' }]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"{\\\\n  text: PropTypes.string.isRequired,\\\\n  value: PropTypes.string.isRequired,\\\\n}\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfComplexInlineObject\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[{ text: 'foo', value: 'bar' }]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"{\\\\n  text: PropTypes.string.isRequired,\\\\n  value: PropTypes.string.isRequired,\\\\n  shape: {\\\\n    id: PropTypes.string.isRequired,\\\\n    age: PropTypes.number.isRequired,\\\\n  },\\\\n}\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfShortShape\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[{ bar: 'foo' }]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"shape\\",
+          \\"value\\": {
+            \\"bar\\": {
+              \\"name\\": \\"string\\",
+              \\"required\\": false
+            }
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"arrayOfComplexShape\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[\\\\n  {\\\\n    thing: {\\\\n      id: 2,\\\\n      func: () => {},\\\\n      arr: [],\\\\n    },\\\\n  },\\\\n]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"shape\\",
+          \\"value\\": {
+            \\"id\\": {
+              \\"name\\": \\"number\\",
+              \\"description\\": \\"Just an internal propType for a shape.\\\\n It's also required, and as you can see it supports multi-line comments!\\",
+              \\"required\\": true
+            },
+            \\"func\\": {
+              \\"name\\": \\"func\\",
+              \\"description\\": \\"A simple non-required function\\",
+              \\"required\\": false
+            },
+            \\"arr\\": {
+              \\"name\\": \\"arrayOf\\",
+              \\"value\\": {
+                \\"name\\": \\"shape\\",
+                \\"value\\": {
+                  \\"index\\": {
+                    \\"name\\": \\"number\\",
+                    \\"description\\": \\"5-level deep propType definition and still works.\\",
+                    \\"required\\": true
+                  }
+                }
+              },
+              \\"description\\": \\"An \`arrayOf\` shape\\",
+              \\"required\\": false
+            }
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"simpleObjectOf\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ key: 1 }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"A simple \`objectOf\` propType.\\",
+      \\"type\\": {
+        \\"name\\": \\"objectOf\\",
+        \\"value\\": {
+          \\"name\\": \\"number\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"objectOfShortInlineObject\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"objectOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"{\\\\n  foo: PropTypes.string,\\\\n}\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"objectOfInlineObject\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar', bar: 'foo' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"objectOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"{\\\\n  foo: PropTypes.string,\\\\n  bar: PropTypes.string,\\\\n  barry: PropTypes.string,\\\\n}\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"objectOfShortShape\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"objectOf\\",
+        \\"value\\": {
+          \\"name\\": \\"shape\\",
+          \\"value\\": {
+            \\"foo\\": {
+              \\"name\\": \\"string\\",
+              \\"required\\": false
+            }
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"objectOfComplexShape\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{\\\\n  thing: {\\\\n    id: 2,\\\\n    func: () => {},\\\\n    arr: [],\\\\n  },\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"A very complex \`objectOf\` propType.\\",
+      \\"type\\": {
+        \\"name\\": \\"objectOf\\",
+        \\"value\\": {
+          \\"name\\": \\"shape\\",
+          \\"value\\": {
+            \\"id\\": {
+              \\"name\\": \\"number\\",
+              \\"description\\": \\"Just an internal propType for a shape.\\\\n It's also required, and as you can see it supports multi-line comments!\\",
+              \\"required\\": true
+            },
+            \\"func\\": {
+              \\"name\\": \\"func\\",
+              \\"description\\": \\"A simple non-required function\\",
+              \\"required\\": false
+            },
+            \\"arr\\": {
+              \\"name\\": \\"arrayOf\\",
+              \\"value\\": {
+                \\"name\\": \\"shape\\",
+                \\"value\\": {
+                  \\"index\\": {
+                    \\"name\\": \\"number\\",
+                    \\"description\\": \\"5-level deep propType definition and still works.\\",
+                    \\"required\\": true
+                  }
+                }
+              },
+              \\"description\\": \\"An \`arrayOf\` shape\\",
+              \\"required\\": false
+            }
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"namedObjectOf\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ text: 'foo', value: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"objectOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"NAMED_OBJECT\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"shapeShort\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {
+          \\"foo\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"shapeComplex\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{\\\\n  id: 3,\\\\n  func: () => {},\\\\n  arr: [],\\\\n  shape: {\\\\n    shape: {\\\\n      foo: 'bar',\\\\n    },\\\\n  },\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"propType for shape with nested arrayOf\\\\n\\\\nAlso, multi-line description\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {
+          \\"id\\": {
+            \\"name\\": \\"number\\",
+            \\"description\\": \\"Just an internal propType for a shape.\\\\n It's also required, and as you can see it supports multi-line comments!\\",
+            \\"required\\": true
+          },
+          \\"func\\": {
+            \\"name\\": \\"func\\",
+            \\"description\\": \\"A simple non-required function\\",
+            \\"required\\": false
+          },
+          \\"arr\\": {
+            \\"name\\": \\"arrayOf\\",
+            \\"value\\": {
+              \\"name\\": \\"shape\\",
+              \\"value\\": {
+                \\"index\\": {
+                  \\"name\\": \\"number\\",
+                  \\"description\\": \\"5-level deep propType definition and still works.\\",
+                  \\"required\\": true
+                }
+              }
+            },
+            \\"description\\": \\"An \`arrayOf\` shape\\",
+            \\"required\\": false
+          },
+          \\"shape\\": {
+            \\"name\\": \\"shape\\",
+            \\"value\\": {
+              \\"shape\\": {
+                \\"name\\": \\"shape\\",
+                \\"value\\": {
+                  \\"foo\\": {
+                    \\"name\\": \\"string\\",
+                    \\"required\\": false
+                  },
+                  \\"oneOf\\": {
+                    \\"name\\": \\"enum\\",
+                    \\"value\\": [{
+                      \\"value\\": \\"'one'\\",
+                      \\"computed\\": false
+                    }, {
+                      \\"value\\": \\"'two'\\",
+                      \\"computed\\": false
+                    }],
+                    \\"required\\": false
+                  }
+                },
+                \\"required\\": false
+              }
+            },
+            \\"required\\": false
+          },
+          \\"oneOf\\": {
+            \\"name\\": \\"enum\\",
+            \\"value\\": [{
+              \\"value\\": \\"'one'\\",
+              \\"computed\\": false
+            }, {
+              \\"value\\": \\"'two'\\",
+              \\"computed\\": false
+            }],
+            \\"required\\": false
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"namedShape\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"custom\\",
+        \\"raw\\": \\"NAMED_SHAPE\\"
+      },
+      \\"required\\": false
+    },
+    \\"namedObjectInShape\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ text: 'foo', value: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {
+          \\"text\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": true
+          },
+          \\"value\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": true
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"exact\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ name: 'foo', quantity: 2 }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"exact\\",
+        \\"value\\": {
+          \\"name\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"quantity\\": {
+            \\"name\\": \\"number\\",
+            \\"required\\": false
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"namedExact\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ text: 'foo', value: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"exact\\",
+        \\"value\\": {
+          \\"text\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": true
+          },
+          \\"value\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": true
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"optionalString\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'Default String'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"test string with a comment that has\\\\ntwo identical lines\\\\ntwo identical lines\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"nullDefaultValue\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"null\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"undefinedDefaultValue\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"undefined\\",
+        \\"computed\\": true
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineString\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"'Inline prop default value'\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"Hey Hey!\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineBool\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"true\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"bool\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineNumber\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"10\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"number\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineObj\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"{ foo: 'bar' }\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {
+          \\"foo\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"inlineArray\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[1, 2, 3]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"number\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"inlineArrayOfObjects\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"[\\\\n  { foo: 'bar' },\\\\n  { foo: 'bar' },\\\\n  { foo: 'bar' },\\\\n  { foo: 'bar' },\\\\n  { foo: 'bar' },\\\\n]\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"custom\\",
+          \\"raw\\": \\"{ foo: PropTypes.string }\\"
+        }
+      },
+      \\"required\\": false
+    },
+    \\"inlineFunctionalElement\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<FunctionalComponent />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineFunctionalElementInline\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"() => {\\\\n  return <div>Inlined FunctionalComponent!</div>;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineFunctionalElementInlineReturningNull\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"() => {\\\\n  return null;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineHtmlElement\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<div>Hey!</div>\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineFunctionalElementInlineWithProps\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"({ foo }) => {\\\\n  return <div>{foo}</div>;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineFunctionalElementNamedInline\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"function InlinedFunctionalComponent() {\\\\n  return <div>Inlined FunctionalComponent!</div>;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineClassElement\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<ClassComponent />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineClassElementWithProps\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<ClassComponent className=\\\\\\"toto\\\\\\" />\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineClassElementWithChildren\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"<ClassComponent>\\\\n  <div>hey!</div>\\\\n</ClassComponent>\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineClassElementInline\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"class InlinedClassComponent extends React.PureComponent {\\\\n  render() {\\\\n    return <div>Inlined ClassComponent!</div>;\\\\n  }\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"element\\"
+      },
+      \\"required\\": false
+    },
+    \\"inlineFunc\\": {
+      \\"defaultValue\\": {
+        \\"value\\": \\"function add(a, b) {\\\\n  return a + b;\\\\n}\\",
+        \\"computed\\": false
+      },
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"semiLongFuncWithJsDoc\\": {
+      \\"description\\": \\"@param {string} foo - A foo value.\\\\n@param {number} bar - A bar value.\\\\n@param {number} bar1 - A bar value.\\\\n@param {number} bar2 - A bar value.\\\\n@param {number} bar3 - A bar value.\\\\n@param {number} bar4 - A bar value.\\\\n@param {number} bar5 - A bar value.\\\\n@returns {ComplexObject} - Returns a complex object.\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"veryLongFuncWithJsDoc\\": {
+      \\"description\\": \\"@param {string} foo - A foo value.\\\\n@param {number} bar - A bar value.\\\\n@param {number} bar1 - A bar value.\\\\n@param {number} bar2 - A bar value.\\\\n@param {number} bar3 - A bar value.\\\\n@param {number} bar4 - A bar value.\\\\n@param {number} bar5 - A bar value.\\\\n@param {number} bar6 - A bar value.\\\\n@param {number} bar7 - A bar value.\\\\n@param {number} bar8 - A bar value.\\\\n@param {number} bar9 - A bar value.\\\\n@param {number} bar10 - A bar value.\\\\n@returns {ComplexObject} - Returns a complex object.\\",
+      \\"type\\": {
+        \\"name\\": \\"func\\"
+      },
+      \\"required\\": false
+    },
+    \\"useCustomPropType\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"custom\\",
+        \\"raw\\": \\"customPropType\\"
+      },
+      \\"required\\": false
+    },
+    \\"useNestedCustomPropType\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"custom\\",
+        \\"raw\\": \\"nestedCustomPropType.custom\\"
+      },
+      \\"required\\": false
+    },
+    \\"oneOfNestedSimpleInlineObject\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"'News'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"[{ foo: PropTypes.string }]\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfNestedComplexInlineObject\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"'News'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"[{ nested: { foo: PropTypes.string } }]\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"oneOfNestedComplexShape\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"enum\\",
+        \\"value\\": [{
+          \\"value\\": \\"'News'\\",
+          \\"computed\\": false
+        }, {
+          \\"value\\": \\"[{ nested: PropTypes.shape({ foo: PropTypes.string }) }]\\",
+          \\"computed\\": true
+        }]
+      },
+      \\"required\\": false
+    },
+    \\"arrayExternalShape\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"arrayOf\\",
+        \\"value\\": {
+          \\"name\\": \\"shape\\",
+          \\"value\\": \\"import { PRESET_SHAPE, SOME_PROP_TYPES } from './ext';\\",
+          \\"computed\\": true
+        }
+      },
+      \\"required\\": false
+    },
+    \\"shapeLong\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {
+          \\"foo\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop1\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop2\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop3\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop4\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop5\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop6\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          },
+          \\"prop7\\": {
+            \\"name\\": \\"string\\",
+            \\"required\\": false
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"shapeWithArray\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"shape\\",
+        \\"value\\": {
+          \\"arr\\": {
+            \\"name\\": \\"arrayOf\\",
+            \\"value\\": {
+              \\"name\\": \\"custom\\",
+              \\"raw\\": \\"{ foo: PropTypes.string }\\"
+            },
+            \\"required\\": false
+          }
+        }
+      },
+      \\"required\\": false
+    },
+    \\"requiredString\\": {
+      \\"description\\": \\"\\",
+      \\"type\\": {
+        \\"name\\": \\"string\\"
+      },
+      \\"required\\": true
+    }
+  },
+  \\"composes\\": [\\"./ext\\"]
+};"
+`;

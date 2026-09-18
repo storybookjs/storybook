@@ -1,0 +1,63 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'primary'",
+      },
+      "description": "",
+      "name": "variant",
+      "required": false,
+      "sbType": {
+        "name": "string",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "description": "",
+      "name": "dismissible",
+      "required": false,
+      "sbType": {
+        "name": "boolean",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "bool",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "icon",
+      "required": false,
+      "sbType": {
+        "name": "other",
+        "value": "elementType",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "elementType",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "classes",
+      "required": true,
+      "sbType": {
+        "name": "object",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "object",
+      },
+    },
+  ],
+}

@@ -1,0 +1,210 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { ProjectType } from 'storybook/internal/cli';
+import { telemetry } from 'storybook/internal/telemetry';
+import { Feature } from 'storybook/internal/types';
+
+import { getProcessAncestry } from 'process-ancestry';
+
+import { TelemetryService } from './TelemetryService.ts';
+
+vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('process-ancestry', { spy: true });
+
+describe('TelemetryService', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+  });
+
+  describe('when telemetry is enabled', () => {
+    let telemetryService: TelemetryService;
+
+    beforeEach(() => {
+      telemetryService = new TelemetryService();
+    });
+
+    it('should track new user check', async () => {
+      await telemetryService.trackNewUserCheck(true);
+
+      expect(telemetry).toHaveBeenCalledWith('init-step', {
+        step: 'new-user-check',
+        newUser: true,
+      });
+    });
+
+    it('should track install type', async () => {
+      await telemetryService.trackInstallType('recommended');
+
+      expect(telemetry).toHaveBeenCalledWith('init-step', {
+        step: 'install-type',
+        installType: 'recommended',
+      });
+    });
+
+    it('should track init event', async () => {
+      const data = {
+        projectType: ProjectType.REACT,
+        features: {
+          dev: true,
+          docs: true,
+          test: false,
+          onboarding: true,
+          ai: false,
+        },
+        newUser: true,
+        versionSpecifier: '8.0.0',
+        cliIntegration: 'sv create',
+      };
+
+      await telemetryService.trackInit(data);
+
+      expect(telemetry).toHaveBeenCalledWith('init', data, { configDir: undefined });
+    });
+
+    it('should track scaffolded event', async () => {
+      const data = {
+        packageManager: 'npm',
+        projectType: 'react-vite-ts',
+      };
+
+      await telemetryService.trackScaffolded(data);
+
+      expect(telemetry).toHaveBeenCalledWith('scaffolded-empty', data);
+    });
+
+    it('should track ai-prompt-nudge event with context when prompt was shown', async () => {
+      await telemetryService.trackAiSetupNudge({ skipPrompt: false });
+
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'setup',
+        origin: 'init',
+        context: { skipPrompt: false },
+      });
+    });
+
+    it('should track ai-prompt-nudge event with context when prompt was skipped', async () => {
+      await telemetryService.trackAiSetupNudge({ skipPrompt: true });
+
+      expect(telemetry).toHaveBeenCalledWith('ai-prompt-nudge', {
+        id: 'setup',
+        origin: 'init',
+        context: { skipPrompt: true },
+      });
+    });
+
+    it('should track prompt cancellation', async () => {
+      await telemetryService.trackPromptCancel('new-user-check');
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'canceled',
+        { eventType: 'init', prompt: 'new-user-check' },
+        { stripMetadata: true, immediate: true }
+      );
+    });
+  });
+
+  describe('trackInitWithContext', () => {
+    it('should track init with version and CLI integration from ancestry', async () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set([Feature.DOCS, Feature.TEST]);
+
+      vi.mocked(getProcessAncestry).mockReturnValue([
+        { command: 'npx storybook@8.0.5 init' },
+      ] as any);
+
+      await telemetryService.trackInitWithContext(
+        ProjectType.REACT,
+        selectedFeatures,
+        true,
+        '.rnstorybook'
+      );
+
+      expect(getProcessAncestry).toHaveBeenCalled();
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        {
+          projectType: ProjectType.REACT,
+          features: {
+            dev: true,
+            docs: true,
+            test: true,
+            onboarding: false,
+            ai: false,
+          },
+          newUser: true,
+          versionSpecifier: '8.0.5',
+          cliIntegration: undefined,
+        },
+        { configDir: '.rnstorybook' }
+      );
+    });
+
+    it('should handle ancestry errors gracefully', async () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set([]);
+
+      vi.mocked(getProcessAncestry).mockImplementation(() => {
+        throw new Error('Ancestry error');
+      });
+
+      await telemetryService.trackInitWithContext(ProjectType.VUE3, selectedFeatures, false);
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        {
+          projectType: ProjectType.VUE3,
+          features: {
+            dev: true,
+            docs: false,
+            test: false,
+            onboarding: false,
+            ai: false,
+          },
+          newUser: false,
+          versionSpecifier: undefined,
+          cliIntegration: undefined,
+        },
+        { configDir: undefined }
+      );
+    });
+
+    it('should detect CLI integration from ancestry', async () => {
+      const telemetryService = new TelemetryService();
+      const selectedFeatures = new Set([]);
+
+      vi.mocked(getProcessAncestry).mockReturnValue([{ command: 'sv create my-app' }] as any);
+
+      await telemetryService.trackInitWithContext(ProjectType.NEXTJS, selectedFeatures, false);
+
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        expect.objectContaining({
+          cliIntegration: 'sv create',
+        }),
+        { configDir: undefined }
+      );
+    });
+
+    describe('when AI feature is selected', () => {
+      beforeEach(() => {
+        vi.mocked(getProcessAncestry).mockReturnValue([]);
+      });
+
+      it('should set ai: true when AI feature is selected', async () => {
+        const telemetryService = new TelemetryService();
+        const selectedFeatures = new Set([Feature.AI]);
+
+        await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+
+        expect(telemetry).toHaveBeenCalledWith(
+          'init',
+          expect.objectContaining({
+            features: expect.objectContaining({ ai: true }),
+          }),
+          { configDir: undefined }
+        );
+      });
+    });
+  });
+});

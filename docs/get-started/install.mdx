@@ -1,0 +1,363 @@
+---
+title: Install Storybook
+sidebar:
+  order: 2
+  title: Install
+---
+
+Use the Storybook CLI to install it in a single command. Run this inside your project’s root directory:
+
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+
+<Callout
+  variant="info"
+  icon="🤖"
+  action={{
+    label: 'Copy prompt',
+    copy: 'Set up Storybook for me with npm create storybook@latest and follow its instructions precisely',
+    event: 'PromptInstallCopy',
+  }}
+>
+
+Ask your AI agent to [set up Storybook for you](../ai/setup.mdx).
+
+</Callout>
+
+Storybook will look into your project's dependencies during its install process and provide you with the best configuration available.
+
+<YouTubeCallout id="CtfU1UnizHU" title="New Storybook" style={{ marginTop: '1em' }} />
+
+## Project requirements
+
+Storybook is designed to work with a variety of frameworks and environments. If your project is using one of the packages listed here, please ensure that you have the following versions installed:
+
+<div style={{ columns: 2, marginBottom: "1.5rem" }}>
+
+- Angular 18+
+- Lit 3+
+- Next.js 14+
+- Node.js 20+
+- npm 10+
+- pnpm 9+
+- Preact 8+
+- React Native 0.72+
+- React Native Web 0.19+
+- Svelte 5+
+- SvelteKit 1+
+- TypeScript 4.9+
+- Vite 5+
+- Vitest 3+
+- Vue 3+
+- Webpack 5+
+- Yarn 4+
+
+</div>
+
+Additionally, the Storybook app supports the following browsers:
+
+- Chrome 131+
+- Edge 134+
+- Firefox 136+
+- Safari 18.3+
+- Opera 117+
+
+<details>
+<summary>How do I use Storybook with older browsers?</summary>
+
+You can use Storybook with older browsers in two ways:
+
+1. Use a version of Storybook prior to `9.0.0`, which will have less strict requirements.
+2. Develop or build your Storybook in ["preview-only" mode](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers), which can be used in older, unsupported browsers.
+
+</details>
+
+## Installation
+
+Run this command inside your project's root directory to install the latest version of Storybook:
+
+<CodeSnippets path="create-command.md" variant="new-users" copyEvent="CreateCommandCopy" />
+
+<details id="custom-storybook-version">
+<summary>Install a specific version</summary>
+
+To install Storybook 8.3 or newer, you can use the `create` command with a specific version:
+
+<CodeSnippets path="create-command-custom-version.md" />
+
+To install a Storybook version prior to 8.3, you must use the `init` command:
+
+<CodeSnippets path="init-command-custom-version.md" />
+
+For either command, you can specify either an npm tag such as `latest` or `next`, or a (partial) version number. For example:
+
+- `storybook@latest init` will initialize the latest version
+- `storybook@7.6.10 init` will initialize `7.6.10`
+- `storybook@7 init` will initialize the newest `7.x.x` version
+
+</details>
+
+When installing, Storybook will present you with a series of interactive prompts to help customize your installation:
+
+**New to Storybook?**
+
+Storybook will ask if you're new to Storybook. If you select "Yes":
+
+- You will be welcomed with an interactive tour
+- Example stories will be created to help you learn
+
+If you're experienced with Storybook, you can skip the onboarding to get a minimal setup.
+
+**What configuration should we install?**
+
+Storybook will ask what type of configuration you want to install:
+
+- **Recommended**: Includes component development, [documentation](../writing-docs/autodocs.mdx), [testing](../writing-tests/integrations/vitest-addon/index.mdx), and [accessibility](../writing-tests/accessibility-testing.mdx) features
+- **Minimal**: Just the essentials for component development
+
+You can also manually select these features using the `--features` flag. For example:
+
+```bash
+npm create storybook@latest --features docs test a11y
+```
+
+After completing the prompts, the command above will make the following changes to your local environment:
+
+- 📦 Install the required dependencies.
+- 🛠 Set up the necessary scripts to run and build Storybook.
+- 🛠 Add the default Storybook configuration.
+- 📝 Add some boilerplate stories to get you started.
+- 📡 Set up telemetry to help us improve Storybook. Read more about it [here](../configure/telemetry.mdx).
+
+<If renderer="react">
+
+## Run the Setup Wizard
+
+If all goes well, you should see a setup wizard that will help you get started with Storybook introducing you to the main concepts and features, including how the UI is organized, how to write your first story, and how to test your components' response to various inputs utilizing [controls](../essentials/controls.mdx).
+
+![Storybook onboarding](../_assets/get-started/example-onboarding-wizard.png)
+
+If you skipped the wizard, you can always run it again by adding the `?path=/onboarding` query parameter to the URL of your Storybook instance, provided that the example stories are still available.
+
+</If>
+
+## Start Storybook
+
+Storybook comes with a built-in development server featuring everything you need for project development. Depending on your system configuration, running the `storybook` command will start the local development server, output the address for you, and automatically open the address in a new browser tab where a welcome screen greets you.
+
+<CodeSnippets path="storybook-run-dev.md" />
+
+<Callout variant="info">
+
+Storybook collects completely anonymous data to help us improve user experience. Participation is optional, and you may [opt-out](../configure/telemetry.mdx#how-to-opt-out) if you'd not like to share any information.
+
+</Callout>
+
+![Storybook welcome screen](../_assets/get-started/example-welcome.png)
+
+There are some noteworthy items here:
+
+- A collection of useful links for more in-depth configuration and customization options you have at your disposal.
+- A second set of links for you to expand your Storybook knowledge and get involved with the ever-growing Storybook community.
+- A few example stories to get you started.
+
+<details>
+<summary>
+<h3 id="troubleshooting">Troubleshooting</h3>
+</summary>
+#### Run Storybook with other package managers
+
+The Storybook CLI includes support for the industry's popular package managers (e.g., [Yarn](https://yarnpkg.com/), [npm](https://www.npmjs.com/), and [pnpm](https://pnpm.io/)) automatically detecting the one you are using when you initialize Storybook. However, if you want to use a specific package manager as the default, add the `--package-manager` flag to the installation command. For example:
+
+<CodeSnippets path="create-command-custom-package-manager.md" />
+
+#### The CLI doesn't detect my framework
+
+If auto‑detection fails or you’re using a custom setup, pass the project type explicitly with `--type` when running the initializer. The allowed values are:
+
+| Type                   | Framework            |
+| ---------------------- | -------------------- |
+| `angular`              | Angular              |
+| `ember`                | Ember                |
+| `html`                 | HTML                 |
+| `nextjs`               | Next.js              |
+| `nuxt`                 | Nuxt                 |
+| `preact`               | Preact               |
+| `qwik`                 | Qwik                 |
+| `react`                | React                |
+| `react_native`         | React Native         |
+| `react_native_web`     | React Native Web     |
+| `react_native_and_rnw` | React Native (+ Web) |
+| `react_project`        | React Project        |
+| `server`               | Server renderer      |
+| `solid`                | Solid                |
+| `svelte`               | Svelte               |
+| `sveltekit`            | SvelteKit            |
+| `vue3`                 | Vue 3                |
+| `web_components`       | Web Components       |
+
+<CodeSnippets path="create-command-manual-framework.md" />
+
+#### Run Storybook with Webpack 4
+
+If you previously installed Storybook in a project that uses Webpack 4, it will no longer work. This is because Storybook now uses Webpack 5 by default. To solve this issue, we recommend you upgrade your project to Webpack 5 and then run the following command to migrate your project to the latest version of Storybook:
+
+<CodeSnippets path="storybook-automigrate.md" />
+
+<If notRenderer="angular">
+
+#### Storybook doesn't work with an empty directory
+
+By default, Storybook is configured to detect whether you're initializing it on an empty directory or an existing project. However, if you attempt to initialize Storybook, select a Vite-based framework (e.g., [React](./frameworks/react-vite.mdx)) in a directory that only contains a `package.json` file, you may run into issues with [Yarn Modern](https://yarnpkg.com/getting-started). This is due to how Yarn handles peer dependencies and how Storybook is set up to work with Vite-based frameworks, as it requires the [Vite](https://vitejs.dev/) package to be installed. To solve this issue, you must install Vite manually and initialize Storybook.
+
+</If>
+
+<If renderer="angular">
+
+#### Storybook doesn't work with my Angular project using the Angular CLI
+
+Out of the box, adding Storybook to an Angular project using the Angular CLI requires you to run the installation command from the root of the project or, if you're working with a monorepo environment, from the directory where the Angular configuration file (i.e., `angular.json`) is located as it will be used to set up the builder configuration necessary to run Storybook. However, if you need, you can extend the builder configuration to customize Storybook's behavior. To learn more about the available options, see the [Angular framework documentation](./frameworks/angular.mdx#how-do-i-configure-angulars-builder-for-storybook).
+
+</If>
+
+<If renderer="ember">
+
+#### The CLI doesn't support my Ember version
+
+The Ember framework relies on an auxiliary package named [`@storybook/ember-cli-storybook`](https://www.npmjs.com/package/@storybook/ember-cli-storybook) to help you set up Storybook in your project. During the installation process you might run into the following warning message in your terminal:
+
+```shell
+The ember generate entity-name command requires an entity name to be specified.
+For more details, use ember help.
+```
+
+It may be the case that you're using an outdated version of the package and you need to update it to the latest version to solve this issue.
+
+</If>
+
+<If renderer="vue">
+
+#### Storybook doesn't work with my Vue 2 project
+
+Vue 2 entered [End of Life](https://v2.vuejs.org/lts/) (EOL) on December 31st, 2023, and is no longer maintained by the Vue team. As a result, Storybook no longer supports Vue 2. We recommend you upgrade your project to Vue 3, which Storybook fully supports. If that's not an option, you can still use Storybook with Vue 2 by installing the latest version of Storybook 7 with the following command:
+
+<CodeSnippets path="storybook-init-v7.md" />
+
+</If>
+
+<If renderer="svelte">
+
+#### Writing native Svelte stories
+
+Storybook provides a Svelte [addon](https://storybook.js.org/addons/@storybook/addon-svelte-csf) maintained by the community, enabling you to write stories for your Svelte components using the template syntax. Starting with Storybook 8.2, the addon is automatically installed and configured when you initialize your project with the Svelte framework. However, if you installed a [specific version](#custom-storybook-version) of Storybook, you'll need to take additional steps to enable this feature.
+
+Run the following command to install the addon.
+
+<CodeSnippets path="svelte-csf-addon-install.md" />
+
+<Callout variant="info">
+
+The CLI's [`add`](../api/cli-options.mdx#add) command automates the addon's installation and setup. To install it manually, see our [documentation](../addons/install-addons.mdx#manual-installation) on how to install addons.
+
+</Callout>
+
+Update your Storybook configuration file (i.e., `.storybook/main.js|ts`) to enable support for this format.
+
+<CodeSnippets path="main-config-svelte-csf-register.md" />
+
+<Callout variant="info" style={{ marginBottom: "2rem" }}>
+
+The community actively maintains the Svelte CSF addon but still lacks some features currently available in the official Storybook Svelte framework support. For more information, see the [addon's documentation](https://github.com/storybookjs/addon-svelte-csf).
+
+</Callout>
+
+</If>
+
+#### The installation process seems flaky and keeps failing
+
+If you're still running into some issues during the installation process, we encourage you to check out the following resources:
+
+<If renderer="angular">
+
+- Storybook's Angular [framework documentation](./frameworks/angular.mdx) for more information on how to set up Storybook in your Angular project.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="ember">
+
+- [Storybook's Ember README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/ember) for more information on how to set up Storybook in your Ember project.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="html">
+
+- [Storybook's HTML Vite README](https://github.com/storybookjs/storybook/tree/next/code/frameworks/html-vite) for more information on how to set up Storybook in your HTML project with Vite.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="preact">
+
+- Storybook's Preact Vite [framework documentation](./frameworks/preact-vite.mdx) for more information on how to set up Storybook in your Preact project with Vite.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="qwik">
+
+- [Storybook's Qwik README](https://github.com/literalpie/storybook-framework-qwik) for more information on how to set up Storybook in your Qwik project.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="react">
+
+- Storybook's React Vite [framework documentation](./frameworks/react-vite.mdx) for more information on how to set up Storybook in your React project with Vite.
+- Storybook's React Webpack [framework documentation](./frameworks/react-webpack5.mdx) for more information on how to set up Storybook in your React project with Webpack 5.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="solid">
+
+- [Storybook's SolidJS README](https://github.com/solidjs-community/storybook) for more information on how to set up Storybook in your SolidJS project.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="svelte">
+
+- Storybook's SvelteKit [framework documentation](./frameworks/sveltekit.mdx) for more information on how to set up Storybook in your SvelteKit project.
+- Storybook's Svelte Vite [framework documentation](./frameworks/svelte-vite.mdx) for more information on how to set up Storybook in your Svelte project with Vite.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="vue">
+
+- Storybook's Vue 3 Vite [framework documentation](./frameworks/vue3-vite.mdx) for more information on how to set up Storybook in your Vue 3 project with Vite.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+<If renderer="web-components">
+
+- Storybook's Web Components Vite [framework documentation](./frameworks/web-components-vite.mdx) for more information on how to set up Storybook in your Web Components project with Vite.
+- [Storybook's help documentation](https://storybook.js.org/community#support) to contact the community and ask for help.
+
+</If>
+
+</details>
+
+<If renderer="react">
+
+Now that you have successfully installed Storybook and understood how it works, let's continue where you left off in the [setup wizard](#run-the-setup-wizard) and delve deeper into writing stories.
+
+</If>
+
+<If renderer={['angular', 'vue', 'web-components', 'ember', 'html', 'svelte', 'preact', 'qwik', 'solid' ]}>
+
+Now that you installed Storybook successfully, let’s take a look at a story that was written for us.
+
+</If>

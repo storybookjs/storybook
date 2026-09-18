@@ -1,0 +1,18 @@
+{
+  "rows": [
+    {
+      "defaultValue": null,
+      "description": "",
+      "name": "aProperty",
+      "required": true,
+      "sbType": {
+        "name": "other",
+        "value": "any",
+      },
+      "type": {
+        "detail": undefined,
+        "summary": "any",
+      },
+    },
+  ],
+}

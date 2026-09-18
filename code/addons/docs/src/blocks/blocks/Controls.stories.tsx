@@ -1,0 +1,237 @@
+/** Custom docs page: {@link ./Controls.mdx} (attached via `<Meta of={...} />`). */
+import React from 'react';
+
+import type { PlayFunctionContext } from 'storybook/internal/csf';
+
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+import { expect, userEvent, waitFor, within } from 'storybook/test';
+
+import * as ExampleStories from '../examples/ControlsParameters.stories';
+import * as SubcomponentsExampleStories from '../examples/ControlsWithSubcomponentsParameters.stories';
+import * as EmptyArgTypesStories from '../examples/EmptyArgTypes.stories';
+import { Controls } from './Controls';
+
+const meta = {
+  component: Controls,
+  parameters: {
+    layout: 'fullscreen',
+    relativeCsfPaths: [
+      '../examples/ControlsParameters.stories',
+      '../examples/EmptyArgTypes.stories',
+      '../examples/ControlsWithSubcomponentsParameters.stories',
+    ],
+    docsStyles: true,
+  },
+} satisfies Meta<typeof Controls>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {};
+
+export const OfStory: Story = {
+  args: {
+    of: ExampleStories.NoParameters,
+  },
+};
+
+// NOTE: this will throw with no of prop
+export const OfStoryUnattached: Story = {
+  parameters: { attached: false },
+  args: {
+    of: ExampleStories.NoParameters,
+  },
+};
+
+export const OfUndefined: Story = {
+  args: {
+    // @ts-expect-error this is supposed to be undefined
+    of: ExampleStories.NotDefined,
+  },
+  parameters: { chromatic: { disableSnapshot: true } },
+  tags: ['!test'],
+};
+
+export const IncludeProp: Story = {
+  args: {
+    of: ExampleStories.NoParameters,
+    include: ['a'],
+  },
+};
+
+export const IncludeParameter: Story = {
+  args: {
+    of: ExampleStories.Include,
+  },
+};
+
+export const ExcludeProp: Story = {
+  args: {
+    of: ExampleStories.NoParameters,
+    exclude: ['a'],
+  },
+};
+
+export const ExcludeParameter: Story = {
+  args: {
+    of: ExampleStories.Exclude,
+  },
+};
+
+export const SortProp: Story = {
+  args: {
+    of: ExampleStories.NoParameters,
+    sort: 'alpha',
+  },
+};
+
+export const SortParameter: Story = {
+  args: {
+    of: ExampleStories.Sort,
+  },
+};
+
+export const Categories: Story = {
+  args: {
+    of: ExampleStories.Categories,
+  },
+};
+
+const findSubcomponentTabs = async (
+  canvas: ReturnType<typeof within>,
+  step: PlayFunctionContext['step']
+) => {
+  let subcomponentATab: HTMLElement | null = null;
+  let subcomponentBTab: HTMLElement | null = null;
+  await step('should have tabs for the subcomponents', async () => {
+    subcomponentATab = await canvas.findByText('SubcomponentA');
+    subcomponentBTab = await canvas.findByText('SubcomponentB');
+  });
+  return { subcomponentATab, subcomponentBTab };
+};
+
+export const SubcomponentsOfStory: Story = {
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    await findSubcomponentTabs(canvas, step);
+  },
+};
+
+/**
+ * When a component declares subcomponents, editing a control on the main component tab should not
+ * remount the input and drop focus. This verifies the fix for
+ * https://github.com/storybookjs/storybook/issues/29028
+ */
+export const SubcomponentsRetainControlFocus: Story = {
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+  },
+  beforeEach: async ({ canvasElement }) => {
+    return async () => {
+      const canvas = within(canvasElement);
+      const input = canvas.queryByDisplayValue('bx') ?? canvas.queryByDisplayValue('b');
+      if (!input) {
+        return;
+      }
+      await userEvent.clear(input);
+      await userEvent.type(input, 'b');
+    };
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const input = await canvas.findByDisplayValue('b');
+    await userEvent.click(input);
+    await userEvent.type(input, 'x');
+    await waitFor(() => {
+      expect(document.activeElement).toBe(input);
+    });
+  },
+};
+
+export const SubcomponentsIncludeProp: Story = {
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+    include: ['a', 'f'],
+  },
+  play: async ({ canvasElement, step }) => {
+    const canvas = within(canvasElement);
+    const { subcomponentBTab } = await findSubcomponentTabs(canvas, step);
+    if (subcomponentBTab) {
+      await (subcomponentBTab as HTMLElement & { click: () => Promise<void> }).click();
+    }
+  },
+};
+
+export const SubcomponentsExcludeProp: Story = {
+  ...SubcomponentsIncludeProp,
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+    exclude: ['a', 'c', 'f', 'g'],
+  },
+};
+
+export const SubcomponentsSortProp: Story = {
+  ...SubcomponentsIncludeProp,
+  args: {
+    of: SubcomponentsExampleStories.NoParameters,
+    sort: 'alpha',
+  },
+};
+
+/**
+ * When a story is defined without any argTypes or args, the Docs UI should not display the control
+ * component.
+ */
+export const EmptyArgTypes: Story = {
+  args: {
+    of: EmptyArgTypesStories.Default,
+  },
+};
+
+/**
+ * When multiple Controls blocks for different stories are on the same docs page, each control
+ * should have a unique id attribute (scoped by storyId). This verifies the fix for
+ * https://github.com/storybookjs/storybook/issues/26144
+ */
+export const MultipleControlsOnSamePage: Story = {
+  render: () => (
+    <>
+      <Controls of={ExampleStories.NoParameters} />
+      <Controls of={ExampleStories.Include} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
+      (el) => el.id
+    );
+    const uniqueIds = new Set(allIds);
+    await expect(allIds.length).toBeGreaterThan(0);
+    await expect(uniqueIds.size).toBe(allIds.length);
+  },
+};
+
+/**
+ * When multiple Controls blocks for the SAME story are on the same docs page, each control should
+ * still have a unique id (and unique name across blocks, so that radio button groups remain
+ * independent). This verifies the fix for https://github.com/storybookjs/storybook/issues/29295.
+ */
+export const MultipleControlsForSameStoryOnSamePage: Story = {
+  render: () => (
+    <>
+      <Controls of={ExampleStories.NoParameters} />
+      <Controls of={ExampleStories.NoParameters} />
+    </>
+  ),
+  play: async ({ canvasElement }) => {
+    const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
+      (el) => el.id
+    );
+    const uniqueIds = new Set(allIds);
+    await expect(allIds.length).toBeGreaterThan(0);
+    await expect(uniqueIds.size).toBe(allIds.length);
+  },
+};

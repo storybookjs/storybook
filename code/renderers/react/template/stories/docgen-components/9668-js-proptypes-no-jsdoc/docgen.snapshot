@@ -1,0 +1,29 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+const CCTable = props => /*#__PURE__*/React.createElement(React.Fragment, null, JSON.stringify(props));
+CCTable.propTypes = {
+  heads: PropTypes.array.isRequired,
+  onAddClick: PropTypes.func
+};
+export const component = CCTable;
+CCTable.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "CCTable",
+  "props": {
+    "heads": {
+      "description": "",
+      "type": {
+        "name": "array"
+      },
+      "required": true
+    },
+    "onAddClick": {
+      "description": "",
+      "type": {
+        "name": "func"
+      },
+      "required": false
+    }
+  }
+};

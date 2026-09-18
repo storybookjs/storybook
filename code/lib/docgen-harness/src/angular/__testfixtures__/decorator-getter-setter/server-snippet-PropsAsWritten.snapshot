@@ -1,0 +1,9 @@
+import { Component } from '@angular/core';
+import { DecoratorGetterSetterComponent } from './decorator-getter-setter.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [DecoratorGetterSetterComponent],
+  template: `<sb-decorator-getter-setter [volume]="7" />`,
+})
+export class DemoComponent {}

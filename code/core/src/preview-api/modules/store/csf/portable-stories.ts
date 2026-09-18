@@ -1,0 +1,366 @@
+import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
+import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
+import type {
+  Args,
+  Canvas,
+  ComponentAnnotations,
+  ComposeStoryFn,
+  ComposedStoryFn,
+  LegacyStoryAnnotationsOrFn,
+  NamedOrDefaultProjectAnnotations,
+  NormalizedProjectAnnotations,
+  Parameters,
+  PreparedStory,
+  ProjectAnnotations,
+  RenderContext,
+  Renderer,
+  Store_CSFExports,
+  StoryContext,
+  StrictArgTypes,
+} from 'storybook/internal/types';
+
+import type { UserEventObject } from 'storybook/test';
+
+import { HooksContext } from '../../../addons.ts';
+import {
+  isTestEnvironment,
+  pauseAnimations,
+  waitForAnimations,
+} from '../../preview-web/render/animation-utils.ts';
+import { ReporterAPI } from '../reporter-api.ts';
+import { composeConfigs } from './composeConfigs.ts';
+import { composeProjectAnnotationsWithCore } from './composeProjectAnnotationsWithCore.ts';
+import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
+import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
+import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
+import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
+import { normalizeStory } from './normalizeStory.ts';
+import { prepareContext, prepareStory } from './prepareStory.ts';
+
+// TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
+declare global {
+  var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
+  var defaultProjectAnnotations: ProjectAnnotations<any>;
+}
+
+export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
+  _defaultProjectAnnotations: ProjectAnnotations<TRenderer>
+) {
+  // Use a variable once we figure out the ESM/CJS issues
+  globalThis.defaultProjectAnnotations = _defaultProjectAnnotations;
+}
+
+const DEFAULT_STORY_TITLE = 'ComposedStory';
+const DEFAULT_STORY_NAME = 'Unnamed Story';
+
+export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
+  projectAnnotations:
+    | NamedOrDefaultProjectAnnotations<TRenderer>
+    | NamedOrDefaultProjectAnnotations<TRenderer>[]
+): NormalizedProjectAnnotations<TRenderer> {
+  const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
+  // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
+  // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps
+  // those, and `composeProjectAnnotationsWithCore` detects the CSF4 marker (set by `definePreview`,
+  // which is what e.g. addon-vitest passes here) so core annotations are never applied twice.
+  globalThis.globalProjectAnnotations = composeProjectAnnotationsWithCore<TRenderer>([
+    globalThis.defaultProjectAnnotations ?? {},
+    ...annotations,
+  ]);
+
+  return globalThis.globalProjectAnnotations ?? {};
+}
+
+const cleanups: CleanupCallback[] = [];
+
+export function composeStory<TRenderer extends Renderer = Renderer, TArgs extends Args = Args>(
+  storyAnnotations: LegacyStoryAnnotationsOrFn<TRenderer>,
+  componentAnnotations: ComponentAnnotations<TRenderer, TArgs>,
+  projectAnnotations?: ProjectAnnotations<TRenderer>,
+  defaultConfig?: ProjectAnnotations<TRenderer>,
+  exportsName?: string
+): ComposedStoryFn<TRenderer, Partial<TArgs>> {
+  if (storyAnnotations === undefined) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error('Expected a story but received undefined.');
+  }
+
+  // @TODO: Support auto title
+
+  componentAnnotations.title = componentAnnotations.title ?? DEFAULT_STORY_TITLE;
+  const normalizedComponentAnnotations =
+    normalizeComponentAnnotations<TRenderer>(componentAnnotations);
+
+  const storyName =
+    exportsName ||
+    storyAnnotations.storyName ||
+    storyAnnotations.story?.name ||
+    storyAnnotations.name ||
+    DEFAULT_STORY_NAME;
+
+  const normalizedStory = normalizeStory<TRenderer>(
+    storyName,
+    storyAnnotations,
+    normalizedComponentAnnotations
+  );
+
+  const normalizedProjectAnnotations = normalizeProjectAnnotations<TRenderer>(
+    composeConfigs([
+      defaultConfig ?? globalThis.globalProjectAnnotations ?? {},
+      projectAnnotations ?? {},
+    ])
+  );
+
+  const story = prepareStory<TRenderer>(
+    normalizedStory,
+    normalizedComponentAnnotations,
+    normalizedProjectAnnotations
+  );
+
+  const globalsFromGlobalTypes = getValuesFromGlobalTypes(normalizedProjectAnnotations.globalTypes);
+
+  const globals = {
+    ...globalsFromGlobalTypes,
+    ...normalizedProjectAnnotations.initialGlobals,
+    ...story.storyGlobals,
+  };
+
+  const reporting = new ReporterAPI();
+
+  const initializeContext = () => {
+    const context: StoryContext<TRenderer> = prepareContext({
+      hooks: new HooksContext(),
+      globals,
+      args: { ...story.initialArgs },
+      viewMode: 'story',
+      reporting,
+      loaded: {},
+      abortSignal: new AbortController().signal,
+      step: (label, play) => story.runStep(label, play, context),
+      canvasElement: null!,
+      canvas: {} as Canvas,
+      userEvent: {} as UserEventObject,
+      globalTypes: normalizedProjectAnnotations.globalTypes,
+      ...story,
+      context: null!,
+      mount: null!,
+    });
+
+    context.parameters.__isPortableStory = true;
+
+    context.context = context;
+
+    if (story.renderToCanvas) {
+      context.renderToCanvas = async () => {
+        // TODO: Consolidate this renderContext with Context in SB 10.0
+        // Change renderToCanvas function to only use the context object
+        // and to make the renderContext an internal implementation detail
+        // wasn't possible so far because showError and showException are not part of the story context (yet)
+        const unmount = await story.renderToCanvas?.(
+          {
+            componentId: story.componentId,
+            title: story.title,
+            id: story.id,
+            name: story.name,
+            tags: story.tags,
+            showMain: () => {},
+            showError: (error): void => {
+              throw new Error(`${error.title}\n${error.description}`);
+            },
+            showException: (error): void => {
+              throw error;
+            },
+            forceRemount: true,
+            storyContext: context,
+            storyFn: () => story.unboundStoryFn(context),
+            unboundStoryFn: story.unboundStoryFn,
+          } as RenderContext<TRenderer>,
+          context.canvasElement
+        );
+        if (unmount) {
+          cleanups.push(unmount);
+        }
+        // `hooks` is loosely typed (`unknown`) on the portable story context.
+        const hooks = context.hooks as HooksContext<TRenderer>;
+        // Register the hook teardown BEFORE flushing so a throwing effect can't skip it: `clean()`
+        // runs the effect destroy fns on the next run/explicit cleanup (mirroring
+        // `StoryStore.cleanupStory`), so the applied effects survive through play + the a11y
+        // `afterEach` of this run.
+        cleanups.push(() => hooks.clean());
+        // In the browser (PreviewWeb) path, preview-api `useEffect` callbacks registered during
+        // render are flushed when `StoryRender` emits `STORY_RENDERED`, whose listener also detaches
+        // the hooks context. The portable path never emits that event, so invoke the same listener
+        // directly here (after the render resolves, before play + the a11y `afterEach` observe the
+        // DOM): it triggers the effects (e.g. `@storybook/addon-themes` setting `data-theme` on
+        // `<html>`), clears the current context, and removes the now-stale render listener. (Effect-
+        // only decorators; preview-api state updates that re-render are a separate, unsupported case.)
+        hooks.renderListener(context.id);
+      };
+    }
+
+    context.mount = story.mount(context);
+
+    return context;
+  };
+
+  let loadedContext: StoryContext<TRenderer> | undefined;
+
+  const play = async (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+    const context = initializeContext();
+    context.canvasElement ??= globalThis?.document?.body;
+    if (loadedContext) {
+      context.loaded = loadedContext.loaded;
+    }
+    Object.assign(context, extraContext);
+    return story.playFunction!(context);
+  };
+
+  const run = (extraContext?: Partial<StoryContext<TRenderer, Partial<TArgs>>>) => {
+    const context = initializeContext();
+    Object.assign(context, extraContext);
+    return runStory(story, context);
+  };
+
+  const playFunction = story.playFunction ? play : undefined;
+
+  const composedStory: ComposedStoryFn<TRenderer, Partial<TArgs>> = Object.assign(
+    function storyFn(extraArgs?: Partial<TArgs>) {
+      const context = initializeContext();
+      if (loadedContext) {
+        context.loaded = loadedContext.loaded;
+      }
+      context.args = {
+        ...context.initialArgs,
+        ...extraArgs,
+      };
+      return story.unboundStoryFn(context);
+    },
+    {
+      id: story.id,
+      storyName,
+      load: async () => {
+        // First run any registered cleanup function
+
+        // First run any registered cleanup function
+        for (const callback of [...cleanups].reverse()) {
+          await callback();
+        }
+        cleanups.length = 0;
+
+        const context = initializeContext();
+
+        context.loaded = await story.applyLoaders(context);
+
+        cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+
+        loadedContext = context;
+      },
+      globals,
+      args: story.initialArgs as Partial<TArgs>,
+      parameters: story.parameters as Parameters,
+      argTypes: story.argTypes as StrictArgTypes<TArgs>,
+      play: playFunction!,
+      run,
+      reporting,
+      tags: story.tags,
+    }
+  );
+
+  return composedStory;
+}
+
+const defaultComposeStory: ComposeStoryFn = (story, component, project, exportsName) =>
+  composeStory(story, component, project, {}, exportsName);
+
+export function composeStories<TModule extends Store_CSFExports>(
+  storiesImport: TModule,
+  globalConfig: ProjectAnnotations<Renderer>,
+  composeStoryFn: ComposeStoryFn = defaultComposeStory
+) {
+  const { default: metaExport, __esModule, __namedExportsOrder, ...stories } = storiesImport;
+  let meta = metaExport;
+
+  const composedStories = Object.entries(stories).reduce(
+    (storiesMap, [exportsName, story]: [string, any]) => {
+      const { story: storyAnnotations, meta: componentAnnotations } =
+        getCsfFactoryAnnotations(story);
+      if (!meta && componentAnnotations) {
+        meta = componentAnnotations;
+      }
+
+      if (!isExportStory(exportsName, meta)) {
+        return storiesMap;
+      }
+      const result = Object.assign(storiesMap, {
+        [exportsName]: composeStoryFn(storyAnnotations, meta, globalConfig, exportsName),
+      });
+      return result;
+    },
+    {}
+  );
+
+  return composedStories;
+}
+
+// TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.
+// Will make a follow up PR for that
+async function runStory<TRenderer extends Renderer>(
+  story: PreparedStory<TRenderer>,
+  context: StoryContext<TRenderer>
+) {
+  for (const callback of [...cleanups].reverse()) {
+    await callback();
+  }
+  cleanups.length = 0;
+
+  if (!context.canvasElement) {
+    const container = document.createElement('div');
+    globalThis?.document?.body?.appendChild(container);
+    context.canvasElement = container;
+    cleanups.push(() => {
+      if (globalThis?.document?.body?.contains(container)) {
+        globalThis?.document?.body?.removeChild(container);
+      }
+    });
+  }
+
+  context.loaded = await story.applyLoaders(context);
+
+  if (context.abortSignal.aborted) {
+    return;
+  }
+
+  cleanups.push(...(await story.applyBeforeEach(context)).filter(Boolean));
+
+  const playFunction = story.playFunction;
+
+  const isMountDestructured = story.usesMount;
+
+  if (!isMountDestructured) {
+    await context.mount();
+  }
+
+  if (context.abortSignal.aborted) {
+    return;
+  }
+
+  if (playFunction) {
+    if (!isMountDestructured) {
+      context.mount = async () => {
+        throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
+      };
+    }
+    await playFunction(context);
+  }
+
+  let cleanUp: CleanupCallback | undefined;
+  if (isTestEnvironment()) {
+    cleanUp = pauseAnimations();
+  } else {
+    await waitForAnimations(context.abortSignal);
+  }
+
+  await story.applyAfterEach(context);
+
+  await cleanUp?.();
+}

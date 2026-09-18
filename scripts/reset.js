@@ -1,18 +1,20 @@
-import fs from 'fs';
-import { remove } from 'fs-extra';
-import { spawn } from 'child_process';
+// @ts-nocheck
+import { spawn } from 'node:child_process';
+import { appendFile, writeFileSync } from 'node:fs';
+import { rm } from 'node:fs/promises';
+
 import trash from 'trash';
 
 const logger = console;
 
-fs.writeFileSync('reset.log', '');
+writeFileSync('reset.log', '');
 
 const cleaningProcess = spawn('git', [
   'clean',
   '-xdf',
   '-n',
-  '--exclude=".vscode"',
-  '--exclude=".idea"',
+  '--exclude="/.vscode"',
+  '--exclude="/.idea"',
 ]);
 
 cleaningProcess.stdout.on('data', (data) => {
@@ -31,7 +33,7 @@ cleaningProcess.stdout.on('data', (data) => {
             uri.match(/\.cache/) ||
             uri.match(/dll/)
           ) {
-            remove(uri).then(() => {
+            rm(uri, { force: true, recursive: true }).then(() => {
               logger.log(`deleted ${uri}`);
             });
           } else {
@@ -41,13 +43,15 @@ cleaningProcess.stdout.on('data', (data) => {
               })
               .catch((e) => {
                 logger.log('failed to trash, will try permanent delete');
-                remove(uri);
+                rm(uri, { force: true, recursive: true }).then(() => {
+                  logger.log(`deleted ${uri}`);
+                });
               });
           }
         }
       });
   }
-  fs.appendFile('reset.log', data, (err) => {
+  appendFile('reset.log', data, (err) => {
     if (err) {
       throw err;
     }

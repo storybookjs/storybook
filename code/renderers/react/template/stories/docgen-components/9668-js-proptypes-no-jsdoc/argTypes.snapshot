@@ -1,0 +1,38 @@
+{
+  "heads": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "heads",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "array",
+      },
+    },
+    "type": {
+      "name": "array",
+      "required": true,
+      "value": undefined,
+    },
+  },
+  "onAddClick": {
+    "description": "",
+    "name": "onAddClick",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "func",
+      },
+    },
+    "type": {
+      "name": "function",
+      "required": false,
+    },
+  },
+}

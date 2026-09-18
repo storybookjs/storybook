@@ -1,0 +1,104 @@
+title: '[RFC] '
+labels: ['RFC']
+body:
+  - type: markdown
+    attributes:
+      value: |
+        # Request For Comments
+        Welcome! 👋
+
+        If you are interested in proposing a new feature or improvement to Storybook, then you are in the right place! 
+        This template is designed to help users and contributors propose a solution to a problem, receive feedback, and finally gain alignment.
+        Thank you for taking the time to improve Storybook.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: |
+        A brief, 1-5 sentences explanation of the RFC.
+    validations:
+      required: true
+  - type: markdown
+    attributes:
+      value: |
+        ## The Problem
+  - type: textarea
+    id: problem-statement
+    attributes:
+      label: Problem Statement
+      description: |
+        A few sentences or bullets summarizing the problem we are trying to solve. Non-core members should be able to read this and understand why we are doing this.
+      placeholder: |
+        Doing X is hard because combining Y and Z makes Storybook go 💥...
+    validations:
+      required: true
+  - type: textarea
+    id: non-goals
+    attributes:
+      label: Non-goals
+      description: |
+        Key bullets explicitly outlining what is not in-scope.
+      placeholder: |
+        Making Y work with W is not part of this proposal because...
+  - type: markdown
+    attributes:
+      value: |
+        ## 🚀 Proposed Solution
+        Here is where you can get technical!
+        The goal of this section is to outline the technical changes necessary for the proposed solution.
+        In most cases, the content of this section will evolve as discussions take place.
+  - type: textarea
+    id: implementation
+    attributes:
+      label: Implementation
+      description: |
+        What are the high level technical (architecture, data structure, UI, etc) changes? Diagrams can be very helpful here.
+      placeholder: |
+        I propose a new API for integrating Y with Z to achieve X. The API will be...
+    validations:
+      required: true
+  - type: textarea
+    id: prior-art
+    attributes:
+      label: Prior Art
+      description: |
+        Has this been done before, maybe in the broader ecosystem?
+      placeholder: |
+        Project A has done something similar for a long time, and the B addon supports this by...
+  - type: textarea
+    id: deliverables
+    attributes:
+      label: Deliverables
+      description: |
+        List out the high-level deliverables that make up this body of work.
+        Each deliverable should be small enough to be reliably estimable but large enough to represent a meaningful delivery, usually one cycle (2 weeks) worth of work.
+      placeholder: |
+        1. Restructure Y to support incoming Z
+        2. Integrate Z into Y
+        3. Build V on top of Y and Z
+  - type: textarea
+    id: risks
+    attributes:
+      label: Risks
+      description: |
+        What risks might be introduced by this set of changes? How can we mitigate these risks?
+      placeholder: |
+        - This will make it harder to use X in this scenario because...
+  - type: textarea
+    id: unresolved-questions
+    attributes:
+      label: Unresolved Questions
+      description: |
+        Questions we hope to answer as part of this proposal review process.
+      value: |
+        - [ ] Using a to do list makes it easy to resolve the questions as we move the RFC along.
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / Abandoned Ideas
+      description: |
+        Describe alternative approaches that have been considered and why they have been dropped.
+
+        As we discuss this project, it is common for some ideas to be abandoned. Instead of deleting them, let's document the rationale. This way, when people review this proposal in the future, they can avoid the same thinking path and pitfalls we have already learned from.
+      placeholder: |
+        I've considered combining U and I, but that is a worse solution because...

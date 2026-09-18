@@ -1,0 +1,74 @@
+{
+  "name": "storybook-addon-pseudo-states",
+  "version": "11.0.0-alpha.0",
+  "description": "Storybook Pseudo-states addon: Manipulate CSS pseudo states",
+  "keywords": [
+    "storybook",
+    "storybook-addon",
+    "css",
+    "pseudo states",
+    "style",
+    "test",
+    "component",
+    "components",
+    "react",
+    "vue",
+    "angular",
+    "svelte",
+    "web-components"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/addons/pseudo-states",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/addons/pseudo-states"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./manager": "./dist/manager.js",
+    "./package.json": "./package.json",
+    "./preview": {
+      "types": "./dist/preview.d.ts",
+      "code": "./src/preview.ts",
+      "default": "./dist/preview.js"
+    }
+  },
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "dist/**/*",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "@storybook/icons": "^2.0.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "storybook": {
+    "displayName": "Pseudo States",
+    "icon": "https://user-images.githubusercontent.com/321738/105224055-f6c29c00-5b5c-11eb-83c9-ba28a7fbadf2.gif",
+    "unsupportedFrameworks": [
+      "react-native"
+    ]
+  }
+}

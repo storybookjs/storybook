@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`Storyshots Issues/11839 undefined boolean Primary 1`] = `
-<div>
-  Disabled: false
-</div>
-`;

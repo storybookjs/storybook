@@ -1,0 +1,323 @@
+import type { Stats } from 'node:fs';
+import * as fsp from 'node:fs/promises';
+
+import { beforeAll, describe, expect, it, vi } from 'vitest';
+
+import { Feature, SupportedLanguage, SupportedRenderer } from 'storybook/internal/types';
+
+import { dedent } from 'ts-dedent';
+
+import { configureMain, configurePreview } from './configure.ts';
+
+vi.mock('node:fs/promises');
+
+describe('configureMain', () => {
+  beforeAll(() => {
+    vi.clearAllMocks();
+    vi.mocked(fsp.stat).mockRejectedValue({});
+  });
+
+  it('should generate main.js', async () => {
+    await configureMain({
+      language: SupportedLanguage.JAVASCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/react-vite',
+      frameworkPackage: '@storybook/react-vite',
+      features: new Set([]),
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [mainConfigPath, mainConfigContent] = calls[0];
+
+    expect(mainConfigPath).toEqual('./.storybook/main.js');
+    expect(mainConfigContent).toMatchInlineSnapshot(`
+      "
+
+      /** @type { import('@storybook/react-vite').StorybookConfig } */
+      const config = {
+        "stories": [
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [],
+        "framework": "@storybook/react-vite"
+      };
+      export default config;"
+    `);
+  });
+
+  it('promotes framework to { name, options } when frameworkOptions are provided', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/angular-vite',
+      frameworkPackage: '@storybook/angular-vite',
+      features: new Set([]),
+      frameworkOptions: { compodoc: false },
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [, mainConfigContent] = calls[calls.length - 1];
+
+    expect(mainConfigContent).toContain('"framework": {');
+    expect(mainConfigContent).toContain('"name": "@storybook/angular-vite"');
+    expect(mainConfigContent).toContain('"compodoc": false');
+  });
+
+  it('leaves framework as a string when no frameworkOptions are provided', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/angular-vite',
+      frameworkPackage: '@storybook/angular-vite',
+      features: new Set([]),
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [, mainConfigContent] = calls[calls.length - 1];
+
+    expect(mainConfigContent).toContain('"framework": "@storybook/angular-vite"');
+  });
+
+  it('should generate main.ts with docs feature', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/react-vite',
+      frameworkPackage: '@storybook/react-vite',
+      features: new Set([Feature.DOCS]),
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [mainConfigPath, mainConfigContent] = calls[0];
+
+    expect(mainConfigPath).toEqual('./.storybook/main.ts');
+    expect(mainConfigContent).toMatchInlineSnapshot(`
+      "import type { StorybookConfig } from '@storybook/react-vite';
+
+      const config: StorybookConfig = {
+        "stories": [
+          "../stories/**/*.mdx",
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [],
+        "framework": "@storybook/react-vite"
+      };
+      export default config;"
+    `);
+  });
+
+  it('should generate main.ts without docs feature', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/react-vite',
+      frameworkPackage: '@storybook/react-vite',
+      features: new Set([]),
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [mainConfigPath, mainConfigContent] = calls[0];
+
+    expect(mainConfigPath).toEqual('./.storybook/main.ts');
+    expect(mainConfigContent).toMatchInlineSnapshot(`
+      "import type { StorybookConfig } from '@storybook/react-vite';
+
+      const config: StorybookConfig = {
+        "stories": [
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [],
+        "framework": "@storybook/react-vite"
+      };
+      export default config;"
+    `);
+  });
+
+  it('should handle resolved paths in pnp', async () => {
+    await configureMain({
+      language: SupportedLanguage.JAVASCRIPT,
+      prefixes: [],
+      addons: [
+        "%%path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json')))%%",
+        "%%path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))%%",
+      ],
+      storybookConfigFolder: '.storybook',
+      framework:
+        "%%path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))%%",
+      frameworkPackage: '@storybook/react-webpack5',
+      features: new Set([Feature.DOCS]),
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [mainConfigPath, mainConfigContent] = calls[0];
+
+    expect(mainConfigPath).toEqual('./.storybook/main.js');
+    expect(mainConfigContent).toMatchInlineSnapshot(`
+      "import path from 'node:path';
+
+      /** @type { import('@storybook/react-webpack5').StorybookConfig } */
+      const config = {
+        "stories": [
+          "../stories/**/*.mdx",
+          "../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)"
+        ],
+        "addons": [
+          path.dirname(require.resolve(path.join('@storybook/addon-essentials', 'package.json'))),
+          path.dirname(require.resolve(path.join('@storybook/addon-links', 'package.json')))
+        ],
+        "framework": path.dirname(require.resolve(path.join('@storybook/react-webpack5', 'package.json')))
+      };
+      export default config;"
+    `);
+  });
+});
+
+describe('configurePreview', () => {
+  it('should generate preview.jsx for react-like renderers', async () => {
+    await configurePreview({
+      language: SupportedLanguage.JAVASCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.REACT_NATIVE,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath, previewConfigContent] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.jsx');
+    expect(previewConfigContent).toMatchInlineSnapshot(`
+      "/** @type { import('@storybook/react-vite').Preview } */
+      const preview = {
+        parameters: {
+          controls: {
+            matchers: {
+             color: /(background|color)$/i,
+             date: /Date$/i,
+            },
+          },
+        },
+      };
+
+      export default preview;"
+    `);
+  });
+
+  it('should generate preview.js for non-react renderers', async () => {
+    await configurePreview({
+      language: SupportedLanguage.JAVASCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.VUE3,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.js');
+  });
+
+  it('should generate preview.tsx for TypeScript and react-like renderers', async () => {
+    await configurePreview({
+      language: SupportedLanguage.TYPESCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.PREACT,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath, previewConfigContent] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.tsx');
+    expect(previewConfigContent).toMatchInlineSnapshot(`
+      "import type { Preview } from '@storybook/react-vite'
+
+      const preview: Preview = {
+        parameters: {
+          controls: {
+            matchers: {
+             color: /(background|color)$/i,
+             date: /Date$/i,
+            },
+          },
+        },
+      };
+
+      export default preview;"
+    `);
+  });
+
+  it('should generate preview.ts for TypeScript and non-react renderers', async () => {
+    await configurePreview({
+      language: SupportedLanguage.TYPESCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.ANGULAR,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.ts');
+  });
+
+  it('should not do anything if the framework template already included a preview', async () => {
+    vi.mocked(fsp.stat).mockResolvedValueOnce({} as Stats);
+    await configurePreview({
+      language: SupportedLanguage.TYPESCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/react-vite',
+      renderer: SupportedRenderer.NUXT,
+    });
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('should add prefix if frameworkParts are passed', async () => {
+    await configurePreview({
+      language: SupportedLanguage.TYPESCRIPT,
+      storybookConfigFolder: '.storybook',
+      frameworkPackage: '@storybook/angular',
+      frameworkPreviewParts: {
+        prefix: dedent`
+        import { setCompodocJson } from "@storybook/addon-docs/angular";
+        import docJson from "../documentation.json";
+        setCompodocJson(docJson);
+      `,
+      },
+      renderer: SupportedRenderer.SVELTE,
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [previewConfigPath, previewConfigContent] = calls[0];
+
+    expect(previewConfigPath).toEqual('./.storybook/preview.ts');
+    expect(previewConfigContent).toMatchInlineSnapshot(`
+      "import type { Preview } from '@storybook/angular'
+      import { setCompodocJson } from "@storybook/addon-docs/angular";
+      import docJson from "../documentation.json";
+      setCompodocJson(docJson);
+
+      const preview: Preview = {
+        parameters: {
+          controls: {
+            matchers: {
+             color: /(background|color)$/i,
+             date: /Date$/i,
+            },
+          },
+        },
+      };
+
+      export default preview;"
+    `);
+  });
+});

@@ -1,0 +1,825 @@
+import * as fs from 'node:fs/promises';
+import os from 'node:os';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager } from 'storybook/internal/common';
+import { getProjectRoot } from 'storybook/internal/common';
+import { logger, prompt } from 'storybook/internal/node-logger';
+
+import * as find from 'empathic/find';
+// eslint-disable-next-line depend/ban-dependencies
+import type { ResultPromise } from 'execa';
+
+import { SupportedBuilder, SupportedFramework } from '../types/index.ts';
+import { AddonVitestService } from './AddonVitestService.ts';
+
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('node:os', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('empathic/find', { spy: true });
+
+describe('AddonVitestService', () => {
+  let service: AddonVitestService;
+  let mockPackageManager: JsPackageManager;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockPackageManager = {
+      getAllDependencies: vi.fn(),
+      getInstalledVersion: vi.fn(),
+      runPackageCommand: vi.fn(),
+      getPackageCommand: vi.fn(),
+      getDeclaredVersionSpecifier: vi.fn().mockResolvedValue(null),
+      // Default to the base-class behavior (pin each package directly).
+      applyVersionToRelatedPackages: vi.fn((packages: string[], version: string) =>
+        packages.map((pkg) => `${pkg}@${version}`)
+      ),
+    } as Partial<JsPackageManager> as JsPackageManager;
+
+    service = new AddonVitestService(mockPackageManager);
+    vi.mocked(getProjectRoot).mockReturnValue('/test/project');
+
+    // Setup default mocks for logger and prompt
+    vi.mocked(logger.info).mockImplementation(() => {});
+    vi.mocked(logger.log).mockImplementation(() => {});
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    vi.mocked(prompt.executeTask).mockResolvedValue(undefined);
+    vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+    vi.mocked(prompt.confirm).mockResolvedValue(true);
+  });
+
+  describe('collectDeps', () => {
+    beforeEach(() => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
+      // getInstalledVersion is only used here for the coverage reporters (v8 / istanbul).
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue(null);
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+    });
+
+    it('should collect base packages when not installed', async () => {
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('vitest');
+      // The addon always installs the Vitest 4 browser provider
+      expect(deps).toContain('@vitest/browser-playwright');
+      expect(deps).toContain('playwright');
+      expect(deps).toContain('@vitest/coverage-v8');
+    });
+
+    it('should not include base packages if already installed', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        vitest: '4.0.0',
+        '@vitest/browser-playwright': '4.0.0',
+        playwright: '1.0.0',
+      });
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('4.0.0');
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).not.toContain('vitest');
+      expect(deps).not.toContain('@vitest/browser');
+      expect(deps).not.toContain('playwright');
+    });
+
+    // Note: collectDependencies doesn't add framework-specific packages
+    // It only collects base vitest packages
+    it('should collect base packages without framework-specific additions', async () => {
+      const deps = await service.collectDependencies();
+
+      // Should only contain base packages, not framework-specific ones
+      expect(deps).toContain('vitest');
+      // The addon always installs the Vitest 4 browser provider
+      expect(deps).toContain('@vitest/browser-playwright');
+      expect(deps).toContain('playwright');
+      expect(deps).toContain('@vitest/coverage-v8');
+      expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
+    });
+
+    it('should not add @storybook/nextjs-vite for non-Next.js frameworks', async () => {
+      const deps = await service.collectDependencies();
+
+      expect(deps.every((d) => !d.includes('nextjs-vite'))).toBe(true);
+    });
+
+    it('should not add coverage reporter if v8 already installed', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
+        .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
+
+      const deps = await service.collectDependencies();
+
+      expect(deps.every((d) => !d.includes('coverage'))).toBe(true);
+    });
+
+    it('skips coverage if istanbul', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // @vitest/coverage-v8
+        .mockResolvedValueOnce('3.0.0'); // @vitest/coverage-istanbul
+
+      const deps = await service.collectDependencies();
+
+      expect(deps.every((d) => !d.includes('coverage'))).toBe(true);
+    });
+
+    it('pins vitest-related packages to the resolved version via the package manager', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('4.0.0');
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('vitest@4.0.0');
+      expect(deps).toContain('@vitest/browser-playwright@4.0.0');
+      expect(deps).toContain('@vitest/coverage-v8@4.0.0');
+      expect(deps).toContain('playwright'); // playwright is versioned independently
+      // Only the vitest-related packages are handed to the package manager for version pinning.
+      expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
+        ['vitest', '@vitest/browser-playwright', '@vitest/coverage-v8'],
+        '4.0.0',
+        'vitest'
+      );
+    });
+
+    it('does not pin anything when the vitest version cannot be resolved', async () => {
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(null);
+
+      const deps = await service.collectDependencies();
+
+      expect(deps).toContain('@vitest/coverage-v8');
+      expect(deps.every((d) => !d.includes('@catalog:') && !d.includes('@3.'))).toBe(true);
+      expect(mockPackageManager.applyVersionToRelatedPackages).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('getComparableVersion', () => {
+    it('returns undefined for empty input', () => {
+      expect(AddonVitestService.getComparableVersion(null)).toBeUndefined();
+      expect(AddonVitestService.getComparableVersion(undefined)).toBeUndefined();
+    });
+
+    it('passes through an exact version', () => {
+      expect(AddonVitestService.getComparableVersion('3.2.1')).toBe('3.2.1');
+    });
+
+    it('reduces a range to its lower bound', () => {
+      expect(AddonVitestService.getComparableVersion('^3.2.0')).toBe('3.2.0');
+      expect(AddonVitestService.getComparableVersion('>=4.1.0 <5.0.0')).toBe('4.1.0');
+    });
+
+    it('strips the prerelease tag so a beta compares by its release major', () => {
+      // minVersion() alone keeps `4.0.0-beta.1`, which fails `>=4.0.0`; coercing to `4.0.0` fixes the
+      // major check and keeps it consistent with the postinstall template selection.
+      expect(AddonVitestService.getComparableVersion('4.0.0-beta.1')).toBe('4.0.0');
+    });
+  });
+
+  describe('validatePackageVersions', () => {
+    it('should return incompatible when vitest 3.x is used', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('Vitest 4.0.0 or higher'))).toBe(true);
+    });
+
+    it('should return compatible when vitest prerelease >= 4.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0-beta.1') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
+    it('should return compatible when vitest canary is used', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('0.0.0-833c515fa25cef20905a7f9affb156dfa6f151ab') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
+    it('should return compatible when vitest >=4.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+      expect(result.reasons).toBeUndefined();
+    });
+
+    it('should return incompatible when vitest <4.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.5.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.some((r) => r.includes('Vitest 4.0.0 or higher'))).toBe(true);
+    });
+
+    it('should return compatible when msw >=2.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce('2.0.0'); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should return incompatible when msw <2.0.0', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce('1.9.0'); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.some((r) => r.includes('MSW'))).toBe(true);
+    });
+
+    it('should return compatible when msw not installed', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should return compatible when vitest is not installed', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce(null) // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should handle multiple validation failures', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.0.0') // vitest <4.0.0
+        .mockResolvedValueOnce('1.0.0'); // msw <2.0.0
+
+      const result = await service.validatePackageVersions();
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.length).toBe(2);
+    });
+  });
+
+  describe('validateCompatibility', () => {
+    beforeEach(() => {
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue('4.0.0');
+      vi.mocked(find.any).mockReturnValue(undefined);
+    });
+
+    it('should return compatible for valid Vite-based framework', async () => {
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
+      });
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should return compatible for react-vite with Vite builder', async () => {
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
+      });
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should return incompatible for non-Vite builder (except Next.js)', async () => {
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.REACT_WEBPACK5,
+        builder: SupportedBuilder.WEBPACK5,
+      });
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('Non-Vite builder'))).toBe(true);
+    });
+
+    it('should return incompatible for Next.js with webpack builder', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.NEXTJS,
+        builder: SupportedBuilder.WEBPACK5,
+      });
+
+      // Test addon requires Vite builder, even for Next.js
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('Non-Vite builder'))).toBe(true);
+    });
+
+    it('should return incompatible for unsupported framework', async () => {
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.ANGULAR,
+        builder: SupportedBuilder.VITE,
+      });
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('cannot yet be used'))).toBe(true);
+    });
+
+    // Note: validateCompatibility currently doesn't validate Next.js installation
+    // It only validates builder, framework support, package versions, and config files
+    it('should return compatible for Next.js framework with valid setup', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('4.0.0') // vitest
+        .mockResolvedValueOnce(null); // msw
+
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.NEXTJS_VITE,
+        builder: SupportedBuilder.VITE,
+      });
+
+      // NEXTJS_VITE framework is in SUPPORTED_FRAMEWORKS and Vite builder is compatible
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate config files when configDir provided', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.cjs');
+
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
+        projectRoot: '.storybook',
+      });
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('CommonJS config'))).toBe(true);
+    });
+
+    it('should skip config file validation when no configDir provided', async () => {
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.REACT_VITE,
+        builder: SupportedBuilder.VITE,
+      });
+
+      expect(result.compatible).toBe(true);
+      expect(find.any).not.toHaveBeenCalled();
+    });
+
+    it('should accumulate multiple validation failures', async () => {
+      vi.mocked(mockPackageManager.getInstalledVersion)
+        .mockResolvedValueOnce('2.0.0') // vitest <4.0.0
+        .mockResolvedValueOnce('1.0.0'); // msw <2.0.0
+
+      const result = await service.validateCompatibility({
+        framework: SupportedFramework.ANGULAR,
+        builder: SupportedBuilder.WEBPACK5,
+      });
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.length).toBeGreaterThan(2);
+    });
+  });
+
+  describe('installPlaywright', () => {
+    beforeEach(() => {
+      // Mock the logger methods used in installPlaywright
+      vi.mocked(logger.log).mockImplementation(() => {});
+      vi.mocked(logger.warn).mockImplementation(() => {});
+      // Mock getPackageCommand to return a string
+      vi.mocked(mockPackageManager.getPackageCommand).mockReturnValue(
+        'npx playwright install chromium'
+      );
+    });
+
+    it('should install Playwright successfully', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+
+      const { errors } = await service.installPlaywright();
+
+      expect(errors).toEqual([]);
+      expect(prompt.confirm).toHaveBeenCalledWith({
+        message: 'Do you want to install Playwright with Chromium now?',
+        initialValue: true,
+      });
+      expect(prompt.executeTaskWithSpinner).toHaveBeenCalledWith(expect.any(Function), {
+        id: 'playwright-installation',
+        intro: 'Installing Playwright browser binaries (press "c" to abort)',
+        error: expect.stringContaining('An error occurred'),
+        success: 'Playwright browser binaries installed successfully',
+        abortable: true,
+      });
+    });
+
+    it('should execute playwright install command', async () => {
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            // Simulate the child process completion
+            commandFactory();
+          }
+        );
+
+        await service.installPlaywright();
+
+        expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+          args: ['playwright', 'install', 'chromium'],
+          signal: undefined,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it('should warn about missing system dependencies after install on Linux', async () => {
+      const originalCI = process.env.CI;
+      delete process.env.CI;
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            const commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        const { result } = await service.installPlaywright();
+
+        expect(result).toBe('installed');
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('installed without system dependencies')
+        );
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('run Storybook Test from the Storybook UI')
+        );
+      } finally {
+        if (originalCI !== undefined) {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it('should execute playwright install command with --with-deps in CI', async () => {
+      const originalCI = process.env.CI;
+      process.env.CI = 'true';
+      vi.mocked(os.platform).mockReturnValue('linux');
+      try {
+        type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+        let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+        vi.mocked(prompt.confirm).mockResolvedValue(true);
+        vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+          async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+            commandFactory = Array.isArray(factory) ? factory[0] : factory;
+            commandFactory();
+          }
+        );
+
+        await service.installPlaywright();
+
+        expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+          args: ['playwright', 'install', 'chromium', '--with-deps'],
+          signal: undefined,
+          stdio: ['inherit', 'pipe', 'pipe'],
+        });
+      } finally {
+        if (originalCI === undefined) {
+          delete process.env.CI;
+        } else {
+          process.env.CI = originalCI;
+        }
+      }
+    });
+
+    it.each(['darwin', 'win32'] as const)(
+      'should execute playwright install command with --with-deps on %s',
+      async (platform) => {
+        const originalCI = process.env.CI;
+        delete process.env.CI;
+        vi.mocked(os.platform).mockReturnValue(platform);
+        try {
+          type ChildProcessFactory = (signal?: AbortSignal) => ResultPromise;
+          let commandFactory: ChildProcessFactory | ChildProcessFactory[];
+          vi.mocked(prompt.confirm).mockResolvedValue(true);
+          vi.mocked(prompt.executeTaskWithSpinner).mockImplementation(
+            async (factory: ChildProcessFactory | ChildProcessFactory[]) => {
+              commandFactory = Array.isArray(factory) ? factory[0] : factory;
+              commandFactory();
+            }
+          );
+
+          await service.installPlaywright();
+
+          expect(mockPackageManager.runPackageCommand).toHaveBeenCalledWith({
+            args: ['playwright', 'install', 'chromium', '--with-deps'],
+            signal: undefined,
+            stdio: ['inherit', 'pipe', 'pipe'],
+          });
+        } finally {
+          if (originalCI !== undefined) {
+            process.env.CI = originalCI;
+          }
+        }
+      }
+    );
+
+    it('should capture error stack when installation fails', async () => {
+      const error = new Error('Installation failed');
+      error.stack = 'Error stack trace';
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
+
+      const { errors } = await service.installPlaywright();
+
+      expect(errors).toEqual(['Error stack trace']);
+    });
+
+    it('should capture error message when installation fails without stack', async () => {
+      const error = new Error('Installation failed');
+      error.stack = undefined;
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue(error);
+
+      const { errors } = await service.installPlaywright();
+
+      expect(errors).toEqual(['Installation failed']);
+    });
+
+    it('should convert non-Error exceptions to string', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockRejectedValue('String error');
+
+      const { errors } = await service.installPlaywright();
+
+      expect(errors).toEqual(['String error']);
+    });
+
+    it('should skip installation when user declines', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(false);
+
+      const { errors } = await service.installPlaywright();
+
+      expect(errors).toEqual([]);
+      expect(prompt.executeTaskWithSpinner).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith('Playwright installation skipped');
+    });
+
+    it('should not skip installation by default', async () => {
+      vi.mocked(prompt.confirm).mockResolvedValue(true);
+      vi.mocked(prompt.executeTaskWithSpinner).mockResolvedValue(undefined);
+
+      await service.installPlaywright();
+
+      expect(prompt.confirm).toHaveBeenCalled();
+      expect(prompt.executeTaskWithSpinner).toHaveBeenCalled();
+    });
+  });
+
+  describe('validateConfigFiles', () => {
+    beforeEach(() => {
+      vi.mocked(find.any).mockReset();
+      vi.mocked(find.any).mockReturnValue(undefined);
+    });
+
+    it('should return compatible when no config files found', async () => {
+      vi.mocked(find.any).mockReturnValue(undefined);
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should reject CommonJS config files (.cts)', async () => {
+      vi.mocked(find.any).mockReset();
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.cts'); // config
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons).toBeDefined();
+      expect(result.reasons!.length).toBeGreaterThan(0);
+      expect(result.reasons!.some((r) => r.includes('CommonJS config'))).toBe(true);
+    });
+
+    it('should reject CommonJS config files (.cjs)', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.cjs'); // config
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('CommonJS config'))).toBe(true);
+    });
+
+    it('should validate non-CommonJS config files', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue('export default defineConfig({ test: {} })');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept plain export default {}', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue('export default {}');
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should reject arrow function vitest config with dynamic control flow (unsupported)', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      // A callback config that returns object literals directly is supported; one with branching
+      // control flow in a block body is not, and must be rejected.
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `import { defineConfig } from 'vitest/config';
+export default defineConfig(({ mode }) => {
+  if (mode === 'production') {
+    return { test: { name: 'prod' } };
+  }
+  return { test: { name: 'dev' } };
+})`
+      );
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
+    });
+
+    it('should validate config with projects array in test', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default defineConfig({ test: { projects: [] } })'
+      );
+
+      const result = await service.validateConfigFiles('.storybook');
+
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate mergeConfig with plain object literal', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default mergeConfig(viteConfig, { test: { name: "node" } })'
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate mergeConfig with defineConfig call', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default mergeConfig(viteConfig, defineConfig({ test: { name: "node" } }))'
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should validate mergeConfig with multiple plain objects', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        'export default mergeConfig({ test: {} }, { plugins: [] })'
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineConfig(mergeConfig(...)) pattern', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node', environment: 'happy-dom' },
+          })
+        )`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineConfig(mergeConfig(...) satisfies ViteUserConfig) pattern', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default defineConfig(
+          mergeConfig(viteConfig, {
+            test: { name: 'node' },
+          }) satisfies ViteUserConfig
+        )`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig(...) as ViteUserConfig pattern', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import type { ViteUserConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        export default mergeConfig(viteConfig, {
+          test: { name: 'node' },
+        }) as ViteUserConfig`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with shorthand test variable', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const test = { name: 'node', environment: 'happy-dom' };
+        export default mergeConfig(viteConfig, { test })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept mergeConfig with external vitestConfig variable', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const vitestConfig = { test: { name: 'node' } };
+        export default mergeConfig(viteConfig, vitestConfig)`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept const config = mergeConfig(...); export default config pattern', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineConfig, mergeConfig } from 'vitest/config';
+        import viteConfig from './vite.config';
+        const config = mergeConfig(
+          viteConfig,
+          defineConfig({ test: { name: 'node' } })
+        );
+        export default config`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+
+    it('should accept defineProject({}) pattern', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(fs.readFile).mockResolvedValue(
+        `
+        import { defineProject } from 'vitest/config';
+        export default defineProject({
+          test: { name: 'node', environment: 'happy-dom' },
+        })`
+      );
+      const result = await service.validateConfigFiles('.storybook');
+      expect(result.compatible).toBe(true);
+    });
+  });
+});

@@ -1,0 +1,25 @@
+
+export default {
+  title: "Addons/Actions",
+  parameters: {
+    options: {
+      selectedPanel: "storybook/actions/panel"
+    }
+  }
+};
+
+export const Multiple_actions_config = {
+  name: "Multiple actions + config",
+  parameters: {
+    actions: [
+      "click",
+      "contextmenu",
+      {
+        clearOnStoryChange: false
+      }
+    ],
+    server: {
+      id: "addons/actions/story3"
+    }
+  }
+};

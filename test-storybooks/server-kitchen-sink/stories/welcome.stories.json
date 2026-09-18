@@ -1,0 +1,12 @@
+{
+  "stories": [
+    {
+      "name": "Welcome",
+      "parameters": {
+        "server": {
+          "id": "welcome/welcome"
+        }
+      }
+    }
+  ]
+}

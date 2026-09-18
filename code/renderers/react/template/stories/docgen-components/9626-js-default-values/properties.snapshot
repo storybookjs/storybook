@@ -1,0 +1,17 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'Beta'",
+      },
+      "description": undefined,
+      "name": "title",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+  ],
+}

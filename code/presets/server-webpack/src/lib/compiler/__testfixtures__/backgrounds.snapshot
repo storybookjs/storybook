@@ -1,0 +1,26 @@
+
+export default {
+  title: "Addons/Backgrounds",
+  parameters: {
+    backgrounds: [
+      {
+        name: "light",
+        value: "#eeeeee"
+      },
+      {
+        name: "dark",
+        value: "#222222",
+        default: true
+      }
+    ]
+  }
+};
+
+export const Story_1 = {
+  name: "Story 1",
+  parameters: {
+    server: {
+      id: "addons/backgrounds/story1"
+    }
+  }
+};

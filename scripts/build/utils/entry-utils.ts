@@ -1,0 +1,122 @@
+import { builtinModules } from 'node:module';
+import { join } from 'node:path';
+import { pathToFileURL } from 'node:url';
+
+import type * as esbuild from 'esbuild';
+
+export type EntryType = 'node' | 'browser' | 'runtime' | 'globalizedRuntime';
+
+export type BuildEntry = {
+  exportEntries?: ('.' | `./${string}`)[]; // the keys in the package.json's export map, e.g. ["./internal/manager-api", "./manager-api"]
+  entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
+  external?: string[]; // the list of external dependencies to exclude from the bundle
+  dts?: false; // default to generating d.ts files for all entries, except if set to false
+  /**
+   * Bundle this entry's d.ts in an isolated single-entry pass, producing one flat self-contained
+   * file instead of sharing type chunks with the package's other entries. For entries other
+   * packages bundle into their own dist, where a shared chunk would drag unrelated type surfaces
+   * along. `external` lists the only imports the flat file may keep — packages every consumer of
+   * the entry declares itself (it only affects this d.ts pass, never the JS bundle). A producer-side
+   * test guards each portable artifact: flatness, the import allowlist (kept there as a deliberate
+   * second copy, so widening it is a reviewer-visible edit), and a size budget.
+   */
+  portable?: { external: string[] };
+};
+export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
+
+export type EsbuildContextOptions = Parameters<(typeof esbuild)['context']>[0];
+
+export type BuildEntries = {
+  /**
+   * The map of entry points by platform
+   *
+   * Each platform is optional
+   */
+  entries: BuildEntriesByPlatform;
+  /**
+   * Override the d.ts bundler for this package (defaults to the --dts-bundler
+   * CLI flag). Use 'rolldown' to emit declarations with the TypeScript 6 JS
+   * API instead of the TypeScript 7 native compiler for packages where the
+   * native emit misbehaves.
+   */
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
+  /**
+   * The map of extra outputs to be added to the package.json's exports
+   *
+   * This can be useful to expose non-compiled/non-js files such as Svelte components,
+   */
+  extraOutputs?: Record<string, any>;
+  /**
+   * The function to run before the build
+   *
+   * @note this runs only **once** when watch-mode is enabled
+   */
+  prebuild?: (cwd: string) => Promise<void>;
+  /**
+   * The function to run after each successful build (works with watch-mode)
+   *
+   * @note this runs **after** each successful build, even in watch-mode
+   */
+  postbuild?: (cwd: string) => Promise<void>;
+};
+
+export type BuildEntriesByPackageName = Record<string, BuildEntries>;
+
+export const measure = async (fn: () => Promise<void>) => {
+  const start = process.hrtime();
+  await fn();
+  return process.hrtime(start);
+};
+
+export const getExternal = async (cwd: string) => {
+  const { default: packageJson } = await import(pathToFileURL(join(cwd, 'package.json')).href, {
+    with: { type: 'json' },
+  });
+
+  const runtimeExternalInclude: string[] = [
+    'react',
+    'use-sync-external-store',
+    'react-dom',
+    'react-dom/client',
+    '@storybook/icons',
+
+    /**
+     * @note This is not a real package, it's a hack to allow `frameworks/nextjs` to be able to alias
+     * whilst also able to use the nextjs version
+     *
+     * @see `code/frameworks/nextjs/src/images/next-image.tsx`
+     */
+    'sb-original',
+    packageJson.name,
+    ...Object.keys(packageJson.dependencies || {}),
+    ...Object.keys(packageJson.peerDependencies || {}),
+  ];
+  const runtimeExternalExclude = [
+    '@testing-library/jest-dom',
+    '@testing-library/user-event',
+    'chai',
+    '@vitest/expect',
+    '@vitest/mocker',
+    '@vitest/spy',
+    '@vitest/utils',
+  ];
+  const runtimeExternal = runtimeExternalInclude.filter(
+    (dep) => !runtimeExternalExclude.includes(dep)
+  );
+  const typesExternal = [
+    ...runtimeExternalInclude,
+    'ast-types',
+    // react-syntax-highlighter ships no type declarations and TS 6.0 no longer falls back to
+    // @types/react-syntax-highlighter for its deep ESM entrypoints. Keep it out of the d.ts
+    // bundle so rollup-plugin-dts doesn't walk its (CJS) source (which fails on refractor/core
+    // and exhausts the heap). It stays bundled in the JS output, like ast-types.
+    'react-syntax-highlighter',
+    // typescript ships CommonJS dts that rolldown-plugin-dts cannot bundle. It is only
+    // reachable through devDep type imports (e.g. react-docgen-typescript); keeping it
+    // external lets treeshaking drop the import when the kept types don't use it.
+    'typescript',
+    ...builtinModules.flatMap((m: string) => [m, `node:${m}`]),
+  ];
+
+  return { runtimeExternal, typesExternal };
+};

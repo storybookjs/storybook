@@ -1,0 +1,30 @@
+import React from 'react';
+const Avatar = ({
+  icon
+}) => {
+  return /*#__PURE__*/React.createElement("div", {
+    className: "hello"
+  }, "Hello Component ", icon);
+};
+export const component = Avatar;
+Avatar.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "Avatar",
+  "props": {
+    "icon": {
+      "required": true,
+      "tsType": {
+        "name": "union",
+        "raw": "React.ReactNode | string",
+        "elements": [{
+          "name": "ReactReactNode",
+          "raw": "React.ReactNode"
+        }, {
+          "name": "string"
+        }]
+      },
+      "description": "Specify icon=\"search\" or icon={IconComponent}"
+    }
+  }
+};

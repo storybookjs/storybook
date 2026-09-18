@@ -1,0 +1,37 @@
+import React from 'react';
+import PropTypes from 'prop-types';
+function Button({
+  label,
+  onClick
+}) {
+  return /*#__PURE__*/React.createElement("button", {
+    onClick: onClick
+  }, label);
+}
+Button.propTypes = {
+  label: PropTypes.string.isRequired,
+  onClick: PropTypes.func.isRequired
+};
+const MemoButton = /*#__PURE__*/React.memo(Button);
+export const component = MemoButton;
+Button.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "Button",
+  "props": {
+    "label": {
+      "description": "",
+      "type": {
+        "name": "string"
+      },
+      "required": true
+    },
+    "onClick": {
+      "description": "",
+      "type": {
+        "name": "func"
+      },
+      "required": true
+    }
+  }
+};

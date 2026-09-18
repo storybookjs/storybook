@@ -1,0 +1,406 @@
+{
+  "rows": [
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'Any value'",
+      },
+      "description": undefined,
+      "name": "any",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'A string value'",
+      },
+      "description": undefined,
+      "name": "string",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "true",
+      },
+      "description": undefined,
+      "name": "bool",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "5",
+      },
+      "description": undefined,
+      "name": "number",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "() => {}",
+      },
+      "description": undefined,
+      "name": "voidFunc",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "function concat(a: string, b: string): string {
+  return a + b;
+}",
+      },
+      "description": undefined,
+      "name": "funcWithArgsAndReturns",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "Symbol('Default symbol')",
+      },
+      "description": undefined,
+      "name": "symbol",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar' }",
+      },
+      "description": undefined,
+      "name": "interface",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ value: 'A string value' }",
+      },
+      "description": undefined,
+      "name": "genericInterface",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "['foo', 'bar']",
+      },
+      "description": undefined,
+      "name": "arrayOfPrimitive",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "[{ text: 'foo', value: 'bar' }]",
+      },
+      "description": undefined,
+      "name": "arrayOfComplexObject",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "['string value', 5]",
+      },
+      "description": undefined,
+      "name": "tupleOfPrimitive",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "['string value', { text: 'foo', value: 'bar' }]",
+      },
+      "description": undefined,
+      "name": "tupleWithComplexType",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "DefaultEnum.TopRight",
+      },
+      "description": undefined,
+      "name": "defaultEnum",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "NumericEnum.TopRight",
+      },
+      "description": undefined,
+      "name": "numericEnum",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "StringEnum.TopRight",
+      },
+      "description": undefined,
+      "name": "stringEnum",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "DefaultEnum.TopLeft",
+      },
+      "description": undefined,
+      "name": "enumUnion",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ foo: 1, bar: 2 }",
+      },
+      "description": undefined,
+      "name": "recordOfPrimitive",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ foo: { text: 'bar', value: 'bar2' } }",
+      },
+      "description": undefined,
+      "name": "recordOfComplexObject",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar', name: 'foo-bar' }",
+      },
+      "description": undefined,
+      "name": "intersectionType",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar', inlineValue: 'this is inlined' }",
+      },
+      "description": undefined,
+      "name": "intersectionWithInlineType",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'A string value'",
+      },
+      "description": undefined,
+      "name": "unionOfPrimitive",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ text: 'foo', value: 'bar' }",
+      },
+      "description": undefined,
+      "name": "unionOfComplexType",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": null,
+      "description": undefined,
+      "name": "nullableComplexTypeUndefinedDefaultValue",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'foo'",
+      },
+      "description": undefined,
+      "name": "typeAlias",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'foo'",
+      },
+      "description": undefined,
+      "name": "aliasesUnion",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "{ value: 'foo' }",
+      },
+      "description": undefined,
+      "name": "genericAlias",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'top-right'",
+      },
+      "description": undefined,
+      "name": "namedStringLiteralUnion",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'bottom-right'",
+      },
+      "description": undefined,
+      "name": "inlinedStringLiteralUnion",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "0",
+      },
+      "description": undefined,
+      "name": "namedNumericLiteralUnion",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+    {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "1",
+      },
+      "description": undefined,
+      "name": "inlinedNumericLiteralUnion",
+      "required": false,
+      "type": {
+        "detail": undefined,
+        "summary": "unknown",
+      },
+    },
+  ],
+}

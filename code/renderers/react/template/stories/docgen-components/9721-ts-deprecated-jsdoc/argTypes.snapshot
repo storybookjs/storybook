@@ -1,0 +1,30 @@
+{
+  "size": {
+    "control": {
+      "type": "object",
+    },
+    "description": "The size (replaces width)",
+    "name": "size",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "{ width: number; height: number }",
+      },
+    },
+    "type": {
+      "name": "object",
+      "raw": "{ width: number; height: number }",
+      "required": true,
+      "value": {
+        "height": {
+          "name": "number",
+        },
+        "width": {
+          "name": "number",
+        },
+      },
+    },
+  },
+}

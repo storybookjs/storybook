@@ -1,0 +1,85 @@
+{
+  "classes": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "classes",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "object",
+      },
+    },
+    "type": {
+      "name": "object",
+      "required": true,
+    },
+  },
+  "dismissible": {
+    "control": {
+      "type": "boolean",
+    },
+    "description": "",
+    "name": "dismissible",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "false",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "bool",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "icon": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "icon",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "elementType",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "elementType",
+    },
+  },
+  "variant": {
+    "control": {
+      "type": "text",
+    },
+    "description": "",
+    "name": "variant",
+    "table": {
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "'primary'",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

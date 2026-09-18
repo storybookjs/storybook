@@ -1,0 +1,31 @@
+
+export default {
+  title: "Demo YAML",
+};
+
+export const Heading = {
+  name: "Heading",
+  parameters: {
+    server: {
+      id: "yaml/heading"
+    }
+  }
+};
+
+export const Headings = {
+  name: "Headings",
+  parameters: {
+    server: {
+      id: "yaml/headings"
+    }
+  }
+};
+
+export const Button = {
+  name: "Button",
+  parameters: {
+    server: {
+      id: "yaml/button"
+    }
+  }
+};

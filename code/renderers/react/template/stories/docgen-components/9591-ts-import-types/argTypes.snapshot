@@ -1,0 +1,21 @@
+{
+  "other": {
+    "control": {
+      "type": "number",
+    },
+    "description": "",
+    "name": "other",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+}

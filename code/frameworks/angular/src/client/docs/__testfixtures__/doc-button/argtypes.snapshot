@@ -1,0 +1,441 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`angular component properties doc-button 1`] = `
+Object {
+  "_inputValue": Object {
+    "defaultValue": "some value",
+    "description": "",
+    "name": "_inputValue",
+    "table": Object {
+      "category": "properties",
+      "defaultValue": Object {
+        "summary": "some value",
+      },
+      "type": Object {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": Object {
+      "name": "string",
+    },
+  },
+  "_value": Object {
+    "defaultValue": "Private hello",
+    "description": "
+Private value.",
+    "name": "_value",
+    "table": Object {
+      "category": "properties",
+      "defaultValue": Object {
+        "summary": "Private hello",
+      },
+      "type": Object {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": Object {
+      "name": "string",
+    },
+  },
+  "accent": Object {
+    "defaultValue": undefined,
+    "description": "
+Specify the accent-type of the button",
+    "name": "accent",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "ButtonAccent",
+      },
+    },
+    "type": Object {
+      "name": "object",
+    },
+  },
+  "appearance": Object {
+    "defaultValue": "secondary",
+    "description": "
+Appearance style of the button.",
+    "name": "appearance",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": "secondary",
+      },
+      "type": Object {
+        "required": true,
+        "summary": "\\"primary\\" | \\"secondary\\"",
+      },
+    },
+    "type": Object {
+      "name": "enum",
+      "value": Array [
+        "primary",
+        "secondary",
+      ],
+    },
+  },
+  "buttonRef": Object {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "buttonRef",
+    "table": Object {
+      "category": "view child",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "ElementRef",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "calc": Object {
+    "defaultValue": undefined,
+    "description": "
+
+An internal calculation method which adds \`x\` and \`y\` together.
+
+",
+    "name": "calc",
+    "table": Object {
+      "category": "methods",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": false,
+        "summary": "(x: number, y: string | number) => number",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "focus": Object {
+    "defaultValue": false,
+    "description": "",
+    "name": "focus",
+    "table": Object {
+      "category": "properties",
+      "defaultValue": Object {
+        "summary": false,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "",
+      },
+    },
+    "type": Object {
+      "name": "boolean",
+    },
+  },
+  "inputValue": Object {
+    "defaultValue": undefined,
+    "description": "
+Setter for \`inputValue\` that is also an \`@Input\`.",
+    "name": "inputValue",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": Object {
+      "name": "string",
+    },
+  },
+  "internalProperty": Object {
+    "defaultValue": "Public hello",
+    "description": "
+Public value.",
+    "name": "internalProperty",
+    "table": Object {
+      "category": "properties",
+      "defaultValue": Object {
+        "summary": "Public hello",
+      },
+      "type": Object {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": Object {
+      "name": "string",
+    },
+  },
+  "isDisabled": Object {
+    "defaultValue": false,
+    "description": "
+Sets the button to a disabled state.",
+    "name": "isDisabled",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": false,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": Object {
+      "name": "boolean",
+    },
+  },
+  "item": Object {
+    "defaultValue": undefined,
+    "description": undefined,
+    "name": "item",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "T[]",
+      },
+    },
+    "type": Object {
+      "name": "object",
+    },
+  },
+  "label": Object {
+    "defaultValue": undefined,
+    "description": "
+
+The inner text of the button.
+
+",
+    "name": "label",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": Object {
+      "name": "string",
+    },
+  },
+  "onClick": Object {
+    "action": "onClick",
+    "defaultValue": undefined,
+    "description": "
+
+Handler to be called when the button is clicked by a user.
+
+Will also block the emission of the event if \`isDisabled\` is true.
+",
+    "name": "onClick",
+    "table": Object {
+      "category": "outputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "EventEmitter",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "onClickListener": Object {
+    "defaultValue": undefined,
+    "description": undefined,
+    "name": "onClickListener",
+    "table": Object {
+      "category": "methods",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": false,
+        "summary": "(btn: ) => void",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "privateMethod": Object {
+    "defaultValue": undefined,
+    "description": "
+
+A private method.
+
+",
+    "name": "privateMethod",
+    "table": Object {
+      "category": "methods",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": false,
+        "summary": "(password: string) => void",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "processedItem": Object {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "processedItem",
+    "table": Object {
+      "category": "properties",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "T[]",
+      },
+    },
+    "type": Object {
+      "name": "object",
+    },
+  },
+  "protectedMethod": Object {
+    "defaultValue": undefined,
+    "description": "
+
+A protected method.
+
+",
+    "name": "protectedMethod",
+    "table": Object {
+      "category": "methods",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": false,
+        "summary": "(id?: number) => void",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "publicMethod": Object {
+    "defaultValue": undefined,
+    "description": "
+A public method using an interface.",
+    "name": "publicMethod",
+    "table": Object {
+      "category": "methods",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": false,
+        "summary": "(things: ISomeInterface) => void",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "showKeyAlias": Object {
+    "defaultValue": undefined,
+    "description": undefined,
+    "name": "showKeyAlias",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "",
+      },
+    },
+    "type": Object {
+      "name": "void",
+    },
+  },
+  "size": Object {
+    "defaultValue": "medium",
+    "description": "
+Size of the button.",
+    "name": "size",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": "medium",
+      },
+      "type": Object {
+        "required": true,
+        "summary": "ButtonSize",
+      },
+    },
+    "type": Object {
+      "name": "object",
+    },
+  },
+  "someDataObject": Object {
+    "defaultValue": undefined,
+    "description": "
+Specifies some arbitrary object",
+    "name": "someDataObject",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": undefined,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "ISomeInterface",
+      },
+    },
+    "type": Object {
+      "name": "object",
+    },
+  },
+  "somethingYouShouldNotUse": Object {
+    "defaultValue": false,
+    "description": "
+
+Some input you shouldn't use.
+
+",
+    "name": "somethingYouShouldNotUse",
+    "table": Object {
+      "category": "inputs",
+      "defaultValue": Object {
+        "summary": false,
+      },
+      "type": Object {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": Object {
+      "name": "boolean",
+    },
+  },
+}
+`;

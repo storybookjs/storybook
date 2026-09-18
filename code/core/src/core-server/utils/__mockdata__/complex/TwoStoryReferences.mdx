@@ -1,0 +1,9 @@
+{/* References AStories first, but is attached to B */}
+import * as AStories from '../src/A.stories';
+import * as BStories from '../src/B.stories';
+
+<Meta of={BStories}/>
+
+# This file references two story files
+
+It is important that B.stories is the first listed in `storiesImports` (so we can tell what it is attached to)

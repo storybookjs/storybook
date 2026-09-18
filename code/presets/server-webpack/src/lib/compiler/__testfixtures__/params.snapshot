@@ -1,0 +1,29 @@
+
+export default {
+  title: "Params",
+  parameters: {
+    server: {
+      params: {
+        color: "red"
+      },
+      1200x600: {
+        viewport: {
+          width: 1200,
+          height: 600
+        }
+      }
+    }
+  }
+};
+
+export const Story = {
+  name: "Story",
+  parameters: {
+    server: {
+      id: "params/story",
+      params: {
+        message: "Hello World"
+      }
+    }
+  }
+};

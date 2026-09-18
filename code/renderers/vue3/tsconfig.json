@@ -1,0 +1,11 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {
+    "allowJs": true
+  },
+  "include": ["src/**/*", "src/**/*.vue", "template/**/*", "template/**/*.vue"],
+  "exclude": ["src/docgen/__testfixtures__/**"],
+  "vueCompilerOptions": {
+    "target": 3
+  }
+}

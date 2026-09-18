@@ -1,0 +1,13 @@
+diff --git a/index.d.ts b/index.d.ts
+index d6cccce88c306f0bd3c2ff529b0cdbda86a0d3e1..1d3f1b3f1c6a19cf8dffe490aaa097939d6f7f9a 100644
+--- a/index.d.ts
++++ b/index.d.ts
+@@ -1,6 +1,6 @@
+ import * as t from "@babel/types";
+-export import Node = t.Node;
+-export import RemovePropertiesOptions = t.RemovePropertiesOptions;
++import { Node, RemovePropertiesOptions } from "@babel/types";
++export { Node, RemovePropertiesOptions }
+ 
+ declare const traverse: {
+     <S>(parent: Node, opts: TraverseOptions<S>, scope: Scope | undefined, state: S, parentPath?: NodePath): void;

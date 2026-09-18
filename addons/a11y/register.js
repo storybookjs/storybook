@@ -1,1 +1,0 @@
-require('./dist/esm/register');

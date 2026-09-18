@@ -3527,7 +3527,7 @@ See [the RC announcement](https://gist.github.com/shilman/0332090b63f1798a58ed8d
 - UI: Fix ie 11 ([#5599](https://github.com/storybookjs/storybook/pull/5599))
 - CLI: Fix for when outputDir is an absolute path ([#5573](https://github.com/storybookjs/storybook/pull/5573))
 - CLI: Avoid false-negative checks for port ([#5565](https://github.com/storybookjs/storybook/pull/5565))
-- Core: Prioritise programatic configuration ([#5564](https://github.com/storybookjs/storybook/pull/5564))
+- Core: Prioritise programmatic configuration ([#5564](https://github.com/storybookjs/storybook/pull/5564))
 - UI: FIX clear search ([#5550](https://github.com/storybookjs/storybook/pull/5550))
 - Core: Transpile safe-eval package ([#5498](https://github.com/storybookjs/storybook/pull/5498))
 - UI: Add default backgrounds to official example ([#5585](https://github.com/storybookjs/storybook/pull/5585))
@@ -5258,7 +5258,7 @@ NOTE: As part of the generic addon decorators, we've reversed the order of addon
 #### Features
 
 - Storybook for Marko [#3504](https://github.com/storybookjs/storybook/pull/3504)
-- Storybook addon Jest angular suport [#3532](https://github.com/storybookjs/storybook/pull/3532)
+- Storybook addon Jest angular support [#3532](https://github.com/storybookjs/storybook/pull/3532)
 - Storybook for HTML snippets [#3475](https://github.com/storybookjs/storybook/pull/3475)
 - Feature/config custom chrome executable path [#3518](https://github.com/storybookjs/storybook/pull/3518)
 - Channel-postmessage: handle events from the same window [#3519](https://github.com/storybookjs/storybook/pull/3519)
@@ -9224,7 +9224,7 @@ Minor features including a new "events" addon, as well as the usual bugfixes, cl
 
 - Fixed knobs addon editing bug [#1233](https://github.com/storybookjs/storybook/pull/1233)
 - Fix bug in addons/graphql in reIndentQuery [#1207](https://github.com/storybookjs/storybook/pull/1207)
-- Marksy initialized with mtrcConf intead of marksyConf [#1205](https://github.com/storybookjs/storybook/pull/1205)
+- Marksy initialized with mtrcConf instead of marksyConf [#1205](https://github.com/storybookjs/storybook/pull/1205)
 
 #### Documentation
 

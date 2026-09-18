@@ -1,7 +1,0 @@
-// Jest Snapshot v1, https://goo.gl/fbAQLP
-
-exports[`Storyshots Core/Loaders Story 1`] = `
-<div>
-  Loaded Value is undefined
-</div>
-`;

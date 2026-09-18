@@ -1,0 +1,86 @@
+import type { ChangeEvent, FC } from 'react';
+import React, { useCallback, useState } from 'react';
+
+import { Button, Form } from 'storybook/internal/components';
+
+import { styled } from 'storybook/theming';
+
+import { getControlId, getControlSetterButtonId } from './helpers';
+import type { ControlProps, TextConfig, TextValue } from './types';
+
+export type TextProps = ControlProps<TextValue | undefined> & TextConfig;
+
+const Wrapper = styled.label({
+  display: 'flex',
+});
+
+const MaxLength = styled.div<{ isMaxed: boolean }>(({ isMaxed }) => ({
+  marginLeft: '0.75rem',
+  paddingTop: '0.35rem',
+  color: isMaxed ? 'red' : undefined,
+}));
+
+export const TextControl: FC<TextProps> = ({
+  name,
+  storyId,
+  controlsId,
+  value,
+  onChange,
+  onFocus,
+  onBlur,
+  maxLength,
+  argType,
+  required,
+}) => {
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    onChange(event.target.value);
+  };
+
+  const readonly = !!argType?.table?.readonly;
+
+  const [forceVisible, setForceVisible] = useState(false);
+
+  const onForceVisible = useCallback(() => {
+    onChange('');
+    setForceVisible(true);
+  }, [setForceVisible]);
+
+  if (value === undefined) {
+    return (
+      <Button
+        ariaLabel={false}
+        variant="outline"
+        size="medium"
+        disabled={readonly}
+        id={getControlSetterButtonId(name, storyId, controlsId)}
+        onClick={onForceVisible}
+      >
+        Set string
+      </Button>
+    );
+  }
+
+  const isValid = typeof value === 'string';
+
+  return (
+    <Wrapper>
+      <Form.Textarea
+        id={getControlId(name, storyId, controlsId)}
+        maxLength={maxLength}
+        onChange={handleChange}
+        disabled={readonly}
+        size="flex"
+        placeholder="Edit string..."
+        autoFocus={forceVisible}
+        aria-required={required || undefined}
+        valid={isValid ? undefined : 'error'}
+        {...{ name, value: isValid ? value : '', onFocus, onBlur }}
+      />
+      {maxLength && (
+        <MaxLength isMaxed={value?.length === maxLength}>
+          {value?.length ?? 0} / {maxLength}
+        </MaxLength>
+      )}
+    </Wrapper>
+  );
+};

@@ -1,0 +1,129 @@
+import type { Channel } from 'storybook/internal/channels';
+
+import type { Parameters, Renderer, StoryContext, StoryId, StoryName } from './csf.ts';
+import type {
+  CSFFile,
+  ModuleExport,
+  ModuleExports,
+  NormalizedProjectAnnotations,
+  PreparedMeta,
+  PreparedStory,
+  RenderContext,
+} from './story.ts';
+
+export type RenderContextCallbacks<TRenderer extends Renderer> = Pick<
+  RenderContext<TRenderer>,
+  'showMain' | 'showError' | 'showException'
+>;
+
+export type StoryRenderOptions = {
+  autoplay?: boolean;
+  forceInitialArgs?: boolean;
+};
+
+export type ResolvedModuleExportType = 'component' | 'meta' | 'story';
+
+/**
+ * What do we know about an of={} call?
+ *
+ * Technically, the type names aren't super accurate:
+ *
+ * - Meta === `CSFFile`
+ * - Story === `PreparedStory` But these shorthands capture the idea of what is being talked about
+ */
+export type ResolvedModuleExportFromType<
+  TType extends ResolvedModuleExportType,
+  TRenderer extends Renderer = Renderer,
+> = TType extends 'component'
+  ? {
+      type: 'component';
+      component: TRenderer['component'];
+      projectAnnotations: NormalizedProjectAnnotations<Renderer>;
+    }
+  : TType extends 'meta'
+    ? { type: 'meta'; csfFile: CSFFile<TRenderer>; preparedMeta: PreparedMeta }
+    : { type: 'story'; story: PreparedStory<TRenderer> };
+
+export type ResolvedModuleExport<TRenderer extends Renderer = Renderer> = {
+  type: ResolvedModuleExportType;
+} & (
+  | ResolvedModuleExportFromType<'component', TRenderer>
+  | ResolvedModuleExportFromType<'meta', TRenderer>
+  | ResolvedModuleExportFromType<'story', TRenderer>
+);
+
+export interface DocsContextProps<TRenderer extends Renderer = Renderer> {
+  /**
+   * Register a CSF file that this docs entry uses. Used by the `<Meta of={} />` block to attach,
+   * and the `<Story meta={} />` bloc to reference
+   */
+  referenceMeta: (metaExports: ModuleExports, attach: boolean) => void;
+
+  /**
+   * Find a component, meta or story object from the direct export(s) from the CSF file. This is the
+   * API that drives the `of={}` syntax.
+   */
+  resolveOf<TType extends ResolvedModuleExportType>(
+    moduleExportOrType: ModuleExport | TType,
+    validTypes?: TType[]
+  ): ResolvedModuleExportFromType<TType, TRenderer>;
+
+  /**
+   * Find a story's id from the name of the story. This is primarily used by the `<Story name={} />
+   * block. Note that the story must be part of the primary CSF file of the docs entry.
+   */
+  storyIdByName: (storyName: StoryName) => StoryId;
+  /**
+   * Syncronously find a story by id (if the id is not provided, this will look up the primary story
+   * in the CSF file, if such a file exists).
+   */
+  storyById: (id?: StoryId) => PreparedStory<TRenderer>;
+  /** Syncronously find all stories of the component referenced by the CSF file. */
+  componentStories: () => PreparedStory<TRenderer>[];
+
+  /**
+   * Resolve the component id (the CSF title id) for a component object referenced by a docs entry.
+   *
+   * Returns the id of the first referenced CSF file whose `meta.component` is the given component,
+   * or `undefined` when no referenced CSF file declares it. Used by blocks like `<ArgTypes
+   * of={Component} />` to key service lookups that are addressed by component id.
+   */
+  getComponentId: (component: TRenderer['component']) => string | undefined;
+
+  /** Syncronously find all stories by CSF file. */
+  componentStoriesFromCSFFile: (csfFile: CSFFile<TRenderer>) => PreparedStory<TRenderer>[];
+
+  /** Get the story context of the referenced story. */
+  getStoryContext: (
+    story: PreparedStory<TRenderer>
+  ) => Omit<StoryContext<TRenderer>, 'abortSignal' | 'canvasElement' | 'step' | 'context'>;
+  /** Asyncronously load an arbitrary story by id. */
+  loadStory: (id: StoryId) => Promise<PreparedStory<TRenderer>>;
+
+  /** Render a story to a given HTML element and keep it up to date across context changes */
+  renderStoryToElement: (
+    story: PreparedStory<TRenderer>,
+    element: HTMLElement,
+    callbacks: RenderContextCallbacks<TRenderer>,
+    options: StoryRenderOptions
+  ) => () => Promise<void>;
+
+  /** Storybook channel -- use for low level event watching/emitting */
+  channel: Channel;
+
+  /** Project annotations -- can be read to get the project's global annotations */
+  projectAnnotations: NormalizedProjectAnnotations<TRenderer>;
+
+  /**
+   * When true, `<Primary />` and `<Controls />` filter the CSF file's stories to those tagged
+   * `autodocs`. The docs render sets it: true for autodocs pages, false for MDX docs entries, so
+   * that on an MDX page the page author's story selection is respected. Unset is treated as true.
+   */
+  filterByAutodocs?: boolean;
+}
+
+export type DocsRenderFunction<TRenderer extends Renderer> = (
+  docsContext: DocsContextProps<TRenderer>,
+  docsParameters: Parameters,
+  element: HTMLElement
+) => Promise<void>;

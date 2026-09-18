@@ -1,0 +1,18 @@
+import React from 'react';
+export const FooComponent = foo => /*#__PURE__*/React.createElement(React.Fragment, null, JSON.stringify(foo));
+export const component = FooComponent;
+FooComponent.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "FooComponent",
+  "props": {
+    "bar": {
+      "required": true,
+      "tsType": {
+        "name": "Foo['bar']",
+        "raw": "Foo['bar']"
+      },
+      "description": ""
+    }
+  }
+};

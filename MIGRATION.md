@@ -8,6 +8,7 @@
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
+  - [Vite: `preview-stats.json` contains the full bundler graph](#vite-preview-statsjson-contains-the-full-bundler-graph)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
@@ -645,6 +646,16 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 - etc.
 
 For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
+
+### Vite: `preview-stats.json` contains the full bundler graph
+
+The `preview-stats.json` file that `@storybook/builder-vite` writes for `storybook build --stats-json` now contains the full bundler graph. In previous versions the builder dropped some nodes before it wrote the file. It now also writes:
+
+- Virtual modules such as `/virtual:/@storybook/builder-vite/project-annotations.js` and their edges
+- Proxy modules that Vite and Rollup insert between your code and its dependencies, for example `\0./node_modules/react/index.js?commonjs-es-import`
+- Sub-modules with a query string, for example `./src/Button.vue?vue&type=style&index=0&lang.css` next to `./src/Button.vue`
+
+Chromatic TurboSnap reads this file. It needs a `chromatic-cli` release that merges these nodes, or a changed Vue or Svelte component can trace to zero stories. Upgrade to the latest version of `chromatic-cli` before you upgrade Storybook.
 
 ### Next.js: Require v15 and up
 

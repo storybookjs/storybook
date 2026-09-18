@@ -1,4 +1,12 @@
-import React, { createContext, useRef, type ReactNode, type RefObject } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type ReactNode,
+  type RefObject,
+} from 'react';
 
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
@@ -23,15 +31,17 @@ const Scroller = styled.div(({ theme }) => ({
   // CSS variable) so the last rows can scroll clear of it. 0 when no widget is mounted.
   paddingBottom: 'var(--sidebar-bottom-height, 0px)',
 
-  // A thin muted thumb on a transparent track, visible only while the pointer is over the sidebar
-  // or a row inside it holds keyboard focus. The thumb color goes through a custom property for
-  // two reasons: Chromium repaints ::-webkit-scrollbar-* styles on hover only when the hover
-  // state also changes a style on the element itself, and Firefox reads the same value through
-  // scrollbar-color. That standard property must stay scoped to engines without
-  // ::-webkit-scrollbar support: its presence switches the others to native overlay scrollbars
-  // that ignore the rules below, appear only while scrolling, and thicken under the pointer.
+  // A thin muted thumb on a transparent track, shown while the pointer is over the sidebar or a
+  // row inside it holds keyboard focus, and for a grace period after leaving. The reveal is
+  // driven from JS state rather than :hover because the delayed hide needs a timer: Chromium
+  // repaints ::-webkit-scrollbar-* styles when an attribute or class changes on the element, but
+  // never for a transitioned custom property, so CSS cannot express the delay. The thumb color
+  // still goes through a custom property so Firefox reads the same value through scrollbar-color.
+  // That standard property must stay scoped to engines without ::-webkit-scrollbar support: its
+  // presence switches the others to native overlay scrollbars that ignore the rules below,
+  // appear only while scrolling, and thicken under the pointer.
   '--scrollbar-thumb': 'transparent',
-  '&:hover, &:focus-within': {
+  '&[data-scrollbar-shown="true"]': {
     '--scrollbar-thumb': transparentize(0.5, theme.textMutedColor),
   },
   '@supports not selector(::-webkit-scrollbar)': {
@@ -75,12 +85,49 @@ const Frame = styled.div(({ theme }) => ({
   },
 }));
 
+const SCROLLBAR_HIDE_DELAY = 200;
+
 /** Wraps the tree blocks in the sidebar's one scroll area and shares it with them. */
 export function SidebarScrollArea({ children, ...props }: { children: ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
+  const [isScrollbarShown, setScrollbarShown] = useState(false);
+  const isPointerOver = useRef(false);
+  const isFocusWithin = useRef(false);
+  const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const updateScrollbar = useCallback(() => {
+    clearTimeout(hideTimer.current);
+    if (isPointerOver.current || isFocusWithin.current) {
+      setScrollbarShown(true);
+    } else {
+      hideTimer.current = setTimeout(() => setScrollbarShown(false), SCROLLBAR_HIDE_DELAY);
+    }
+  }, []);
+  useEffect(() => () => clearTimeout(hideTimer.current), []);
+
   return (
     <Frame>
-      <Scroller ref={scrollerRef} data-testid="sidebar-scroll-area" {...props}>
+      <Scroller
+        ref={scrollerRef}
+        data-testid="sidebar-scroll-area"
+        data-scrollbar-shown={isScrollbarShown ? 'true' : undefined}
+        onPointerEnter={() => {
+          isPointerOver.current = true;
+          updateScrollbar();
+        }}
+        onPointerLeave={() => {
+          isPointerOver.current = false;
+          updateScrollbar();
+        }}
+        onFocus={() => {
+          isFocusWithin.current = true;
+          updateScrollbar();
+        }}
+        onBlur={(event) => {
+          isFocusWithin.current = event.currentTarget.contains(event.relatedTarget);
+          updateScrollbar();
+        }}
+        {...props}
+      >
         <ScrollAreaContext.Provider value={scrollerRef}>{children}</ScrollAreaContext.Provider>
       </Scroller>
     </Frame>

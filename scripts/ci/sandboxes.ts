@@ -39,9 +39,9 @@ function getDocgenBaselineSteps(templateKey: string) {
   ];
 }
 
-function getSandboxSetupSteps(template: string) {
+export function getSandboxSetupSteps(template: TemplateKey) {
   const extraSteps = [];
-  const templateData = sandboxTemplates.allTemplates[template as TemplateKey];
+  const templateData = sandboxTemplates.allTemplates[template];
 
   if (templateData.extraCiSteps?.ensureMinNodeVersion) {
     extraSteps.push({
@@ -54,6 +54,34 @@ function getSandboxSetupSteps(template: string) {
   }
 
   return extraSteps;
+}
+
+export function getGenerateSandboxSteps(template: TemplateKey) {
+  const data = sandboxTemplates.allTemplates[template];
+
+  if (!('inDevelopment' in data) || !data.inDevelopment) {
+    return [];
+  }
+
+  return [
+    {
+      run: {
+        name: 'Install npm with min-release-age support',
+        command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+      },
+    },
+    {
+      run: {
+        name: 'Generate Sandbox',
+        command: `yarn task generate --template ${template} --no-link -s generate --debug`,
+        environment: {
+          STORYBOOK_SANDBOX_GENERATE: 1,
+          STORYBOOK_TELEMETRY_DEBUG: 1,
+          STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
+        },
+      },
+    },
+  ];
 }
 
 /**
@@ -83,7 +111,7 @@ function defineSandboxJob_dev({
   directory: string;
   name: string;
   requires: JobOrNoOpJob[];
-  template: string;
+  template: TemplateKey;
   options: {
     e2e: boolean;
     resourceClass: 'large' | 'xlarge';
@@ -150,9 +178,9 @@ function defineSandboxJob_dev({
   );
 }
 
-export function defineSandboxFlow<Key extends string>(key: Key) {
+export function defineSandboxFlow(key: TemplateKey) {
   const id = toId(key);
-  const data = sandboxTemplates.allTemplates[key as keyof typeof sandboxTemplates.allTemplates];
+  const data = sandboxTemplates.allTemplates[key];
   const { skipTasks = [], name } = data;
 
   const path = key.replace('/', '-');
@@ -188,29 +216,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             ].join('\n'),
           },
         },
-        ...('inDevelopment' in data && data.inDevelopment
-          ? [
-              {
-                run: {
-                  name: 'Install npm with min-release-age support',
-                  // Node's bundled npm is older and silently ignores NPM_CONFIG_MIN_RELEASE_AGE
-                  // during scaffold; `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
-                  command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
-                },
-              },
-              {
-                run: {
-                  name: 'Generate Sandbox',
-                  command: `yarn task generate --template ${key} --no-link -s generate --debug`,
-                  environment: {
-                    STORYBOOK_SANDBOX_GENERATE: 1,
-                    STORYBOOK_TELEMETRY_DEBUG: 1,
-                    STORYBOOK_TELEMETRY_URL: 'http://127.0.0.1:6007/event-log',
-                  },
-                },
-              },
-            ]
-          : []),
+        ...getGenerateSandboxSteps(key),
         {
           run: {
             name: 'Create Sandbox',

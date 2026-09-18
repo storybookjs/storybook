@@ -26,6 +26,7 @@ parameters:
     description: Which workflow to run
     enum:
       - normal
+      - focus
       - merged
       - daily
       - skipped
@@ -43,6 +44,14 @@ jobs:
       - git-shallow-clone/checkout_advanced:
           clone_options: '--depth 1'
       - run:
+          name: Fetch base branch for focused CI
+          command: |
+            if [ "<< pipeline.parameters.workflow >>" = "focus" ]; then
+              git fetch origin \
+                << pipeline.parameters.ghBaseBranch >>:refs/remotes/origin/<< pipeline.parameters.ghBaseBranch >> \
+                --deepen=500
+            fi
+      - run:
           name: Install dependencies
           command: yarn workspaces focus @storybook/scripts
       - run:
@@ -50,6 +59,7 @@ jobs:
           command: |
             yarn dlx jiti ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
+              --base-ref=origin/<< pipeline.parameters.ghBaseBranch >> \
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>
       - continuation/continue:
           configuration_path: .circleci/config.generated.yml

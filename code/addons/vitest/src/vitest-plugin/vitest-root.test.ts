@@ -49,7 +49,7 @@ afterEach(() => {
 });
 
 /** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
-async function getPluginConfig(invokingRoot: string) {
+async function getPluginConfig(invokingRoot: string, userTestConfig?: Record<string, unknown>) {
   const plugins = await storybookTest({ configDir: CONFIG_DIR });
   const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
 
@@ -66,7 +66,7 @@ async function getPluginConfig(invokingRoot: string) {
         throw new Error(String(message));
       },
     },
-    { root: invokingRoot },
+    { root: invokingRoot, test: userTestConfig },
     { command: 'serve', mode: 'development' }
   );
 
@@ -94,5 +94,31 @@ describe('story test patterns', () => {
 
     expect(config.root).toBe(PACKAGE_ROOT);
     expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
+  });
+});
+
+describe('internal setup files', () => {
+  // Since Storybook 10.3 the addon provisions preview annotations itself. It used to skip that
+  // when a user setup file mentioned `setProjectAnnotations`; now both setup files are injected
+  // unconditionally and leftover user calls compose additively.
+  it('always injects both internal setup files, ahead of any user setup files', async () => {
+    const withoutUserSetupFiles = await getPluginConfig(PACKAGE_ROOT);
+
+    expect(withoutUserSetupFiles.test.setupFiles).toEqual([
+      '@storybook/addon-vitest/internal/setup-file',
+      '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+    ]);
+
+    // A string `setupFiles` is the case the plugin itself must carry over (arrays are merged
+    // in later by Vitest's deep-merge); it must come after the internal ones.
+    const withUserSetupFile = await getPluginConfig(PACKAGE_ROOT, {
+      setupFiles: './my-own-setup.ts',
+    });
+
+    expect(withUserSetupFile.test.setupFiles).toEqual([
+      '@storybook/addon-vitest/internal/setup-file',
+      '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+      './my-own-setup.ts',
+    ]);
   });
 });

@@ -377,6 +377,6 @@ export const WithErrorBoundary = {
     await userEvent.click(errorTab);
 
     // Check that the error boundary message is displayed
-    await expect(await canvas.findByText('This addon has errors')).toBeInTheDocument();
+    await expect(await canvas.findByText('Addon panel failed to render')).toBeInTheDocument();
   },
 } satisfies Story;

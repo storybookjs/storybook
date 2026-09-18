@@ -2,7 +2,7 @@ import type { ComponentProps, FunctionComponent } from 'react';
 import React from 'react';
 
 import type { SupportedLanguage, SyntaxHighlighterProps } from 'storybook/internal/components';
-import { SyntaxHighlighter } from 'storybook/internal/components';
+import { EmptyState, ErrorState, SyntaxHighlighter } from 'storybook/internal/components';
 
 import {
   ThemeProvider,
@@ -34,7 +34,7 @@ const StyledSyntaxHighlighter: React.FunctionComponent<SyntaxHighlighterProps> =
 
 export enum SourceError {
   NO_STORY = 'There\u2019s no story here.',
-  SOURCE_UNAVAILABLE = 'Oh no! The source is not available.',
+  SOURCE_UNAVAILABLE = 'Source not available',
 }
 
 export interface SourceCodeProps {
@@ -120,7 +120,19 @@ const Source: FunctionComponent<SourceProps> = ({
     return <SourceSkeleton />;
   }
   if (error) {
-    return <EmptyBlock>{error}</EmptyBlock>;
+    return (
+      <EmptyBlock>
+        {error === SourceError.NO_STORY ? (
+          <EmptyState title={error} />
+        ) : (
+          <ErrorState
+            severity="negative"
+            title={error}
+            summary="Storybook could not determine the code to display for this story."
+          />
+        )}
+      </EmptyBlock>
+    );
   }
 
   const highlighter = (

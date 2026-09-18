@@ -24,22 +24,27 @@ const Scroller = styled.div(({ theme }) => ({
   paddingBottom: 'var(--sidebar-bottom-height, 0px)',
 
   // A thin muted thumb on a transparent track, visible only while the pointer is over the sidebar
-  // or a row inside it holds keyboard focus.
-  scrollbarWidth: 'thin',
-  scrollbarColor: 'transparent transparent',
+  // or a row inside it holds keyboard focus. The thumb color goes through a custom property for
+  // two reasons: Chromium repaints ::-webkit-scrollbar-* styles on hover only when the hover
+  // state also changes a style on the element itself, and Firefox reads the same value through
+  // scrollbar-color. That standard property must stay scoped to engines without
+  // ::-webkit-scrollbar support: its presence switches the others to native overlay scrollbars
+  // that ignore the rules below, appear only while scrolling, and thicken under the pointer.
+  '--scrollbar-thumb': 'transparent',
+  '&:hover, &:focus-within': {
+    '--scrollbar-thumb': transparentize(0.5, theme.textMutedColor),
+  },
+  '@supports not selector(::-webkit-scrollbar)': {
+    scrollbarWidth: 'thin',
+    scrollbarColor: 'var(--scrollbar-thumb) transparent',
+  },
   '&::-webkit-scrollbar': {
     width: 6,
     background: 'transparent',
   },
   '&::-webkit-scrollbar-thumb': {
     borderRadius: 6,
-    backgroundColor: 'transparent',
-  },
-  '&:hover, &:focus-within': {
-    scrollbarColor: `${transparentize(0.5, theme.textMutedColor)} transparent`,
-  },
-  '&:hover::-webkit-scrollbar-thumb, &:focus-within::-webkit-scrollbar-thumb': {
-    backgroundColor: transparentize(0.5, theme.textMutedColor),
+    backgroundColor: 'var(--scrollbar-thumb)',
   },
   '&::-webkit-scrollbar-thumb:hover': {
     backgroundColor: transparentize(0.2, theme.textMutedColor),

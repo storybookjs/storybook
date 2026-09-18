@@ -24,6 +24,17 @@ import {
 } from './CsfObject.ts';
 import { unwrapExpression } from './story-shape/utils.ts';
 
+/**
+ * Recast augments the parsed File node's source location with the `Lines`
+ * object it used to rebuild the parser input; that augmentation is not part
+ * of babel's `SourceLocation` type.
+ */
+type RecastFileLocation = {
+  lines?: {
+    toString(options: { reuseWhitespace: boolean; useTabs: boolean }): string;
+  };
+};
+
 export interface CallArgumentsOptions {
   importedName: string;
   methodName: string;
@@ -787,11 +798,18 @@ export class ConfigFile implements CsfObject {
 
   _inferQuotes() {
     if (!this._quotes) {
+      // Recast rebuilds the string it hands the parser (`Lines.toString`),
+      // joining lines with `os.EOL` — CRLF on Windows. Token offsets align with
+      // that reconstruction, not with `this._code`, whose line endings are
+      // whatever the checkout had (LF, via git's `* -text`). Counting quote
+      // characters against the reconstruction keeps inference platform-stable.
+      const { lines } = (this._ast.loc ?? {}) as RecastFileLocation;
+      const source = lines?.toString({ reuseWhitespace: false, useTabs: false }) ?? this._code;
       // first 500 tokens for efficiency
       const occurrences = (this._ast.tokens || []).slice(0, 500).reduce(
         (acc, token) => {
           if (token.type.label === 'string') {
-            acc[this._code[token.start]] += 1;
+            acc[source[token.start]] += 1;
           }
           return acc;
         },

@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
@@ -16,7 +17,6 @@
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
-
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -549,6 +549,44 @@
 
 ## From version 10.x to 11.0.0
 
+### `parameters.componentSubtitle` removed
+
+The deprecated `parameters.componentSubtitle` fallback was removed. Move subtitles to
+`parameters.docs.subtitle`.
+
+When you upgrade to Storybook 11, the upgrade command offers to move directly declared properties
+in preview configuration and CSF files when it can preserve their behavior. To run this
+automigration directly from your project root without the post-migration health check, use:
+
+```sh
+npx storybook@11 automigrate component-subtitle --skip-doctor
+```
+
+Use `--config-dir <path>` if the Storybook configuration is not in the root `.storybook` directory.
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+If `parameters.docs` already exists, add `subtitle` without replacing its other options:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
+    docs: {
++     subtitle: 'Button variants',
+      source: { type: 'code' },
+    },
+  },
+};
+```
+
 ### Node.js 22.12 or higher
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
@@ -566,6 +604,7 @@ nodeLinker: node-modules
 ```
 
 Remove `--use-pnp` from any `storybook init` or `create storybook` commands. The `detectPnp` utility is also no longer exported from `storybook/internal/cli`; remove imports of that utility from custom tooling.
+
 
 ### Top-level `setConfig` layout and UI options removed
 

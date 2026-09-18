@@ -9,6 +9,7 @@ vi.mock('../paths.ts', { spy: true });
 import {
   findTsconfigPathForFile,
   findTsconfigPathForPath,
+  findTsconfigPathOwningFile,
   getTsconfigPathsBaseDir,
 } from '../tsconfig.ts';
 import * as paths from '../paths.ts';
@@ -183,6 +184,27 @@ describe('findTsconfigPathForFile', () => {
     expect(findTsconfigPathForFile(dir, join(dir, 'src/utils/helper.ts'))).toBe(
       join(dir, 'tsconfig.json')
     );
+  });
+});
+
+describe('findTsconfigPathOwningFile', () => {
+  it('follows the references of a root config that is not the discoverable one', () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({ files: [], include: [] }),
+      'packages/ui/tsconfig.build.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }],
+      }),
+      'packages/ui/tsconfig.app.json': JSON.stringify({ include: ['src'] }),
+      'packages/ui/src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    expect(
+      findTsconfigPathOwningFile(
+        join(dir, 'packages/ui/tsconfig.build.json'),
+        join(dir, 'packages/ui/src/Button.tsx')
+      )
+    ).toBe(join(dir, 'packages/ui/tsconfig.app.json'));
   });
 });
 

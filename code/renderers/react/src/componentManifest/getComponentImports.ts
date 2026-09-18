@@ -10,8 +10,6 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
-import type { ParserOptions } from 'react-docgen-typescript';
-
 import { getImportTag, getReactDocgen, matchPath } from './reactDocgen.ts';
 import {
   type ComponentDocWithExportName,
@@ -19,7 +17,7 @@ import {
   matchComponentDoc,
   parseWithReactDocgenTypescript,
 } from './reactDocgenTypescript.ts';
-import type { ComponentRef } from './types.ts';
+import type { ComponentRef, ReactDocgenTypescriptOptions } from './types.ts';
 import { cachedResolveImport } from './utils.ts';
 
 export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
@@ -27,7 +25,7 @@ export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-c
 
 export interface TypescriptOptions extends TypescriptOptionsBase {
   reactDocgen: ReactDocgenConfig;
-  reactDocgenTypescriptOptions: ParserOptions;
+  reactDocgenTypescriptOptions: ReactDocgenTypescriptOptions;
 }
 
 export type { ComponentRef } from './types.ts';

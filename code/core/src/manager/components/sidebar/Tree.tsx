@@ -1,839 +1,801 @@
-import type { MutableRefObject } from 'react';
-import React, { useCallback, useMemo, useRef } from 'react';
+import React, { useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 
-import { Button, ListItem } from 'storybook/internal/components';
-import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
+import { TooltipNote } from 'storybook/internal/components';
+import { PRELOAD_ENTRIES, SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+
+import { Collection } from 'react-aria-components/Collection';
+import { Tree as AriaTree } from 'react-aria-components/Tree';
+import { Virtualizer } from 'react-aria-components/Virtualizer';
 
 import {
-  CHANGE_DETECTION_STATUS_TYPE_ID,
-  REVIEW_STATUS_TYPE_ID,
-  type API_HashEntry,
-  type StatusByTypeId,
-  type StatusesByStoryIdAndTypeId,
+  getAncestorIds,
+  hoistSingleStoryComponents,
+  indexToTree,
+  isBranch,
+  type TreeEntry,
+} from '../../utils/tree.ts';
+import { TreeNode, type TreeNodeProps } from './TreeNode.tsx';
+
+import {
+  Addon_TypesEnum,
   type StatusValue,
-  type StoryId,
+  type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { CollapseIcon as CollapseIconSvg, ExpandAltIcon } from '@storybook/icons';
+import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
+import { styled } from 'storybook/theming';
 
-import { internal_fullStatusStore as fullStatusStore } from '#manager-stores';
-import { darken } from 'polished';
-import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
-import type {
-  API,
-  ComponentEntry,
-  GroupEntry,
-  StoriesHash,
-  StoryEntry,
-} from 'storybook/manager-api';
-import { styled, useTheme } from 'storybook/theming';
-
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
-import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
-import {
-  getChangeDetectionStatus,
-  getGroupDualStatus,
-  getGroupStatus,
-  getMostCriticalStatusValue,
-  getSidebarVisibleStatus,
-  getStatus,
-  shouldShowChangeStatus,
-  statusPriority,
-} from '../../utils/status.tsx';
-import {
-  createId,
-  getAncestorIds,
-  getDescendantIds,
-  getLink,
-  isStoryHoistable,
-} from '../../utils/tree.ts';
+import { getGroupDualStatus } from '../../utils/status.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { useContextMenu } from './ContextMenu.tsx';
-import { StatusButton } from './StatusButton.tsx';
-import { StatusContext } from './StatusContext.tsx';
+import type { ContextMenuTrigger } from './ContextMenu.tsx';
+import { hasContextMenu, hasProviderMenuEntriesFor } from './ContextMenu.tsx';
 import {
-  ComponentNode,
-  DocumentNode,
-  GroupNode,
-  RootNode,
-  StoryBranchNode,
-  StoryLeafNode,
-  TestNode,
-} from './TreeNode.tsx';
-import { CollapseIcon } from './components/CollapseIcon.tsx';
-import type { Highlight, Item } from './types.ts';
-import type { ExpandAction, ExpandedState } from './useExpanded.ts';
+  ContextMenuStoreContext,
+  createContextMenuStore,
+  type ContextMenuStore,
+} from './ContextMenuStore.tsx';
+import { ScrollAreaContext } from './SidebarScrollArea.tsx';
+import { StatusContext } from './StatusContext.tsx';
+import { TREE_ROW_HEIGHT, flattenRows, scrollTopWithin, treeTopWithin } from './treeGeometry.ts';
+import {
+  INDENT_LINE_OPACITY_VAR,
+  SelectionLineStoreContext,
+  createSelectionLineStore,
+  type SelectionLine,
+} from './TreeIndentLines.tsx';
+import { TreeRowLayout } from './TreeRowLayout.ts';
+import { TreeStickyRows, getStickyRowIds } from './TreeStickyRows.tsx';
+import type { SidebarLabelContext } from './types.ts';
 import { useExpanded } from './useExpanded.ts';
 
-export type ExcludesNull = <T>(x: T | null) => x is T;
+// The tree takes its natural height and scrolls with the sidebar's one scroll area. The
+// virtualizer still only renders the rows near the visible area: react-aria's scroll view tracks
+// an ancestor scroller as well as its own element.
+const StyledAriaTree = styled(AriaTree)({
+  listStyle: 'none',
+  padding: 0,
+  margin: 0,
+  outline: 'none',
+});
 
-const CollapseButton = styled(Button)(({ theme }) => ({
-  fontSize: `${theme.typography.size.s1 - 1}px`,
-  fontWeight: theme.typography.weight.bold,
-  letterSpacing: '0.16em',
-  textTransform: 'uppercase',
-  color: theme.textMutedColor,
-  padding: '0 8px',
-}));
-
-export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
+const TreeWrapper = styled.div({
   position: 'relative',
-  display: 'flex',
-  justifyContent: 'space-between',
-  alignItems: 'flex-start',
-  color: theme.color.defaultText,
-  background: 'transparent',
-  minHeight: 28,
-  borderRadius: 4,
-  overflow: 'hidden',
-  '--tree-node-background-hover': theme.background.content,
-
-  [MEDIA_DESKTOP_BREAKPOINT]: {
-    '--tree-node-background-hover': theme.background.app,
+  // Contain the z-index of the overlays, so that UI outside the tree still paints above them.
+  isolation: 'isolate',
+  // Show the indent lines only while the pointer is over the tree, or while a row holds keyboard
+  // focus. The selection line ignores this.
+  '&:hover, &:has(:focus-visible)': {
+    [INDENT_LINE_OPACITY_VAR]: 1,
   },
-
-  '&:hover, &:focus': {
-    '--tree-node-background-hover': theme.background.hoverable,
-    background: 'var(--tree-node-background-hover)',
-    outline: 'none',
-  },
-
-  '& [data-displayed="off"]': {
-    visibility: 'hidden',
-  },
-
-  '&:hover [data-displayed="off"]': {
-    visibility: 'visible',
-  },
-
-  '& [data-displayed="on"] + *': {
-    visibility: 'hidden',
-  },
-
-  '&:hover [data-displayed="off"] + *': {
-    visibility: 'hidden',
-  },
-
-  '&[data-selected="true"]': {
-    color: theme.color.lightest,
-    background: theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
-    fontWeight: theme.typography.weight.bold,
-
-    '&&:hover, &&:focus': {
-      background:
-        theme.base === 'dark' ? darken(0.18, theme.color.secondary) : theme.color.secondary,
-    },
-    svg: { color: theme.color.lightest },
-  },
-
-  a: { color: 'currentColor' },
-}));
-
-const SkipToContentLink = styled(Button)(({ theme }) => ({
-  display: 'none',
-  '@media (min-width: 600px)': {
-    display: 'block',
-    fontSize: '10px',
-    overflow: 'hidden',
-    width: 1,
-    height: '20px',
-    boxSizing: 'border-box',
-    opacity: 0,
-    padding: 0,
-
-    '&:focus': {
-      opacity: 1,
-      padding: '5px 10px',
-      background: 'white',
-      color: theme.color.secondary,
-      width: 'auto',
-    },
-  },
-}));
-
-const StatusSlots = styled.div({
-  display: 'flex',
-  alignItems: 'center',
 });
 
-export const ContextMenu = {
-  ListItem,
-};
+// Without CSS anchor positioning the note cannot follow the focused row, and without
+// `position-visibility` (not yet in Chrome) nothing hides it while no row holds the anchor
+// (mouse focus is not :focus-visible) — either way it would sit as a stray pill over the
+// sidebar, so it only renders where both work.
+const supportsAnchorPositioning =
+  typeof CSS !== 'undefined' &&
+  !!CSS.supports?.('anchor-name: --sb-probe') &&
+  !!CSS.supports?.('position-visibility: anchors-valid');
 
-const getStatusLabel = (status: StatusValue) =>
-  status.split(':')[1].replace(/^./, (char) => char.toUpperCase());
-
-interface NodeProps {
-  item: Item;
-  refId: string;
-  docsMode: boolean;
-  isOrphan: boolean;
-  isDisplayed: boolean;
-  isSelected: boolean;
-  isFullyExpanded?: boolean;
-  isExpanded: boolean;
-  setExpanded: (action: ExpandAction) => void;
-  setFullyExpanded?: () => void;
-  onSelectStoryId: (itemId: string) => void;
-  statuses: StatusByTypeId;
-  groupDualStatus: Record<StoryId, { change: StatusValue; test: StatusValue }>;
-  api: API;
-  collapsedData: Record<string, API_HashEntry>;
-  isModifiedFilterActive: boolean;
-}
-
-const Node = React.memo<NodeProps>(function Node(props) {
-  const {
-    item,
-    statuses,
-    groupDualStatus,
-    refId,
-    docsMode,
-    isOrphan,
-    isDisplayed,
-    isSelected,
-    isFullyExpanded,
-    setFullyExpanded,
-    isExpanded,
-    setExpanded,
-    onSelectStoryId,
-    api,
-    isModifiedFilterActive,
-  } = props;
-  const theme = useTheme();
-  const { isDesktop, isMobile } = useLayout();
-
-  const statusLinks = useMemo<Link[]>(() => {
-    if (item.type === 'story' || item.type === 'docs') {
-      return Object.entries(statuses)
-        .filter(([, status]) => status.sidebarContextMenu !== false)
-        .filter(([, status]) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-        .sort((a, b) => statusPriority.indexOf(a[1].value) - statusPriority.indexOf(b[1].value))
-        .map(([typeId, status]) => ({
-          id: typeId,
-          title: status.title,
-          description: status.description,
-          'aria-label': `Test status for ${status.title}: ${status.value}`,
-          icon: getStatus(theme, status.value).icon,
-          onClick: () => {
-            onSelectStoryId(item.id);
-            fullStatusStore.selectStatuses([status]);
-          },
-        }));
-    }
-
-    return [];
-  }, [item.id, item.type, onSelectStoryId, statuses, theme]);
-
-  const visibleStatus = useMemo(
-    () =>
-      getSidebarVisibleStatus({
-        theme,
-        item,
-        statuses,
-        groupDualStatus,
-        isModifiedFilterActive,
-      }),
-    [theme, item, statuses, groupDualStatus, isModifiedFilterActive]
-  );
-
-  let contextMenu = useContextMenu(item, statusLinks, api, visibleStatus);
-  if (refId !== 'storybook_internal') {
-    contextMenu = { node: null, onMouseEnter: () => {} };
-  }
-
-  const id = createId(item.id, refId);
-
-  if (
-    (item.type === 'story' &&
-      !('children' in item && item.children) &&
-      (!('subtype' in item) || item.subtype !== 'test')) ||
-    item.type === 'docs'
-  ) {
-    const LeafNode = item.type === 'docs' ? DocumentNode : StoryLeafNode;
-
-    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses || {});
-    const leafChangeIcon = shouldShowChangeStatus(changeStatus, isModifiedFilterActive)
-      ? getStatus(theme, changeStatus).icon
-      : null;
-    const { icon: testIcon } = getStatus(theme, testStatus);
-    const overallStoryStatus = getMostCriticalStatusValue([changeStatus, testStatus]);
-    const { textColor } = getStatus(theme, overallStoryStatus);
-
-    return (
-      <LeafNodeStyleWrapper
-        key={id}
-        className="sidebar-item"
-        data-selected={isSelected}
-        data-ref-id={refId}
-        data-item-id={item.id}
-        data-parent-id={item.parent}
-        data-nodetype={item.type === 'docs' ? 'document' : 'story'}
-        data-highlightable={isDisplayed}
-        onMouseEnter={contextMenu.onMouseEnter}
-      >
-        <LeafNode
-          // @ts-expect-error (non strict)
-          style={isSelected ? {} : { color: textColor }}
-          href={getLink(item, refId)}
-          id={id}
-          depth={isOrphan ? item.depth : item.depth - 1}
-          onClick={(event) => {
-            event.preventDefault();
-            onSelectStoryId(item.id);
-
-            if (isMobile) {
-              api.setMobileNavigation(false);
-            }
-          }}
-          {...(item.type === 'docs' && { docsMode })}
-        >
-          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-            item.name}
-        </LeafNode>
-        {isSelected && (
-          <SkipToContentLink asChild ariaLabel={false}>
-            <a href="#storybook-preview-wrapper">Skip to content</a>
-          </SkipToContentLink>
-        )}
-        {contextMenu.node}
-        {leafChangeIcon && testIcon ? (
-          <StatusSlots>
-            <StatusButton
-              ariaLabel={`Change status: ${getStatusLabel(changeStatus)}`}
-              data-testid="tree-change-status-button"
-              type="button"
-              status={changeStatus}
-              selectedItem={isSelected}
-            >
-              {leafChangeIcon}
-            </StatusButton>
-            <StatusButton
-              ariaLabel={`Test status: ${getStatusLabel(testStatus)}`}
-              data-testid="tree-status-button"
-              type="button"
-              status={testStatus}
-              selectedItem={isSelected}
-            >
-              {testIcon}
-            </StatusButton>
-          </StatusSlots>
-        ) : leafChangeIcon ? (
-          <StatusButton
-            ariaLabel={`Change status: ${getStatusLabel(changeStatus)}`}
-            data-testid="tree-change-status-button"
-            type="button"
-            status={changeStatus}
-            selectedItem={isSelected}
-          >
-            {leafChangeIcon}
-          </StatusButton>
-        ) : testIcon ? (
-          <StatusButton
-            ariaLabel={`Test status: ${getStatusLabel(testStatus)}`}
-            data-testid="tree-status-button"
-            type="button"
-            status={testStatus}
-            selectedItem={isSelected}
-          >
-            {testIcon}
-          </StatusButton>
-        ) : null}
-      </LeafNodeStyleWrapper>
-    );
-  }
-
-  if (item.type === 'root') {
-    return (
-      <RootNode
-        key={id}
-        id={id}
-        className="sidebar-subheading"
-        data-ref-id={refId}
-        data-item-id={item.id}
-        data-nodetype="root"
-      >
-        <CollapseButton
-          variant="ghost"
-          ariaLabel={isExpanded ? 'Collapse' : 'Expand'}
-          data-action="collapse-root"
-          onClick={(event) => {
-            event.preventDefault();
-            setExpanded({ ids: [item.id], value: !isExpanded });
-          }}
-          aria-expanded={isExpanded}
-        >
-          <CollapseIcon isExpanded={isExpanded} />
-          {item.renderLabel?.(item, api) || item.name}
-        </CollapseButton>
-        {isExpanded && (
-          <Button
-            padding="small"
-            variant="ghost"
-            className="sidebar-subheading-action"
-            ariaLabel={isFullyExpanded ? 'Collapse all' : 'Expand all'}
-            data-action="expand-all"
-            data-expanded={isFullyExpanded}
-            onClick={(event) => {
-              event.preventDefault();
-              // @ts-expect-error (non strict)
-              setFullyExpanded();
-            }}
-          >
-            {isFullyExpanded ? <CollapseIconSvg /> : <ExpandAltIcon />}
-          </Button>
-        )}
-      </RootNode>
-    );
-  }
-
-  if (
-    item.type === 'component' ||
-    item.type === 'group' ||
-    (item.type === 'story' && 'children' in item && item.children)
-  ) {
-    const { children = [] } = item;
-    const BranchNode = { component: ComponentNode, group: GroupNode, story: StoryBranchNode }[
-      item.type
-    ];
-
-    const { changeStatus: localChange, testStatus: localTest } = getChangeDetectionStatus(
-      statuses || {}
-    );
-    const groupDual = groupDualStatus?.[item.id] || {
-      change: 'status-value:unknown' as StatusValue,
-      test: 'status-value:unknown' as StatusValue,
-    };
-    const branchChange = getMostCriticalStatusValue([localChange, groupDual.change]);
-    const branchTest = getMostCriticalStatusValue([localTest, groupDual.test]);
-
-    const branchChangeIcon = shouldShowChangeStatus(branchChange, isModifiedFilterActive)
-      ? getStatus(theme, branchChange).icon
-      : null;
-    const branchTestIcon = getStatus(theme, branchTest).icon;
-
-    const overallStatus = getMostCriticalStatusValue([branchChange, branchTest]);
-    const color = overallStatus ? getStatus(theme, overallStatus).textColor : null;
-
-    return (
-      <LeafNodeStyleWrapper
-        key={id}
-        className="sidebar-item"
-        data-selected={isSelected}
-        data-ref-id={refId}
-        data-item-id={item.id}
-        data-parent-id={item.parent}
-        data-nodetype={item.type}
-        data-highlightable={isDisplayed}
-        onMouseEnter={contextMenu.onMouseEnter}
-      >
-        <BranchNode
-          id={id}
-          style={color && !isSelected ? { color } : {}}
-          aria-controls={children.join(' ')}
-          aria-expanded={isExpanded}
-          depth={isOrphan ? item.depth : item.depth - 1}
-          isExpandable={children.length > 0}
-          isExpanded={isExpanded}
-          onClick={(event) => {
-            event.preventDefault();
-            if (item.type === 'story') {
-              onSelectStoryId(item.id);
-              if (!isExpanded || isSelected) {
-                setExpanded({ ids: [item.id], value: !isExpanded });
-              }
-            } else if (item.type === 'component') {
-              if (!isExpanded && isDesktop) {
-                onSelectStoryId(item.id);
-              }
-              setExpanded({ ids: [item.id], value: !isExpanded });
-            } else {
-              setExpanded({ ids: [item.id], value: !isExpanded });
-            }
-          }}
-          onMouseEnter={() => {
-            if (item.type === 'component' || item.type === 'story') {
-              api.emit(PRELOAD_ENTRIES, {
-                ids: [children[0]],
-                options: { target: refId },
-              });
-            }
-          }}
-        >
-          {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-            item.name}
-        </BranchNode>
-        {isSelected && (
-          <SkipToContentLink asChild ariaLabel={false}>
-            <a href="#storybook-preview-wrapper">Skip to content</a>
-          </SkipToContentLink>
-        )}
-        {contextMenu.node}
-        {branchChangeIcon && branchTestIcon ? (
-          <StatusSlots>
-            <StatusButton
-              ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
-              data-testid="tree-change-status-button"
-              type="button"
-              status={branchChange}
-              selectedItem={isSelected}
-            >
-              {branchChangeIcon}
-            </StatusButton>
-            <StatusButton
-              ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
-              data-testid="tree-status-button"
-              type="button"
-              status={branchTest}
-              selectedItem={isSelected}
-            >
-              {branchTestIcon}
-            </StatusButton>
-          </StatusSlots>
-        ) : branchChangeIcon ? (
-          <StatusButton
-            ariaLabel={`Change status: ${getStatusLabel(branchChange)}`}
-            data-testid="tree-change-status-button"
-            type="button"
-            status={branchChange}
-            selectedItem={isSelected}
-          >
-            {branchChangeIcon}
-          </StatusButton>
-        ) : branchTestIcon ? (
-          <StatusButton
-            ariaLabel={`Test status: ${getStatusLabel(branchTest)}`}
-            data-testid="tree-status-button"
-            type="button"
-            status={branchTest}
-            selectedItem={isSelected}
-          >
-            {branchTestIcon}
-          </StatusButton>
-        ) : null}
-      </LeafNodeStyleWrapper>
-    );
-  }
-
-  const isTest = item.type === 'story' && item.subtype === 'test';
-  const LeafNode = isTest ? TestNode : { docs: DocumentNode, story: StoryLeafNode }[item.type];
-  const nodeType = isTest ? 'test' : { docs: 'document', story: 'story' }[item.type];
-
-  // For leaf nodes, filter out change detection statuses (except "new")
-  // because change detection statuses should appear at the branch/component level instead
-  const leafStatuses = Object.fromEntries(
-    Object.entries(statuses || {}).filter(
-      ([, status]) =>
-        status.typeId !== CHANGE_DETECTION_STATUS_TYPE_ID || status.value === 'status-value:new'
-    )
-  );
-  const leafStatus = getMostCriticalStatusValue(Object.values(leafStatuses).map((s) => s.value));
-  const { icon: leafIcon, textColor: leafColor } = getStatus(theme, leafStatus);
-  const leafStatusButton = leafIcon ? (
-    <StatusButton
-      ariaLabel={`Status: ${getStatusLabel(leafStatus)}`}
-      data-testid="tree-status-button"
-      role="status"
-      type="button"
-      status={leafStatus}
-      selectedItem={isSelected}
-    >
-      {leafIcon}
-    </StatusButton>
-  ) : null;
-
-  return (
-    <LeafNodeStyleWrapper
-      key={id}
-      className="sidebar-item"
-      data-selected={isSelected}
-      data-ref-id={refId}
-      data-item-id={item.id}
-      data-parent-id={item.parent}
-      data-nodetype={nodeType}
-      data-highlightable={isDisplayed}
-      onMouseEnter={contextMenu.onMouseEnter}
-    >
-      <LeafNode
-        style={leafColor && !isSelected ? { color: leafColor } : {}}
-        href={getLink(item, refId)}
-        id={id}
-        depth={isOrphan ? item.depth : item.depth - 1}
-        onClick={(event) => {
-          event.preventDefault();
-          onSelectStoryId(item.id);
-
-          if (isMobile) {
-            api.setMobileNavigation(false);
-          }
-        }}
-      >
-        {(item.renderLabel as (i: typeof item, api: API) => React.ReactNode)?.(item, api) ||
-          item.name}
-      </LeafNode>
-      {isSelected && (
-        <SkipToContentLink ariaLabel={false} asChild>
-          <a href="#storybook-preview-wrapper">Skip to content</a>
-        </SkipToContentLink>
-      )}
-      {contextMenu.node}
-      {leafStatusButton}
-    </LeafNodeStyleWrapper>
-  );
+const FocusTooltipNote = styled(TooltipNote)({
+  marginBlockStart: 8,
+  marginInlineEnd: -4,
+  position: 'fixed',
+  zIndex: 2,
+  positionAnchor: '--focused-treenode',
+  positionArea: 'span-x-start y-end',
+  positionVisibility: 'anchors-valid',
 });
 
-const Root = React.memo<NodeProps & { expandableDescendants: string[] }>(function Root({
-  setExpanded,
-  isFullyExpanded,
-  expandableDescendants,
-  ...props
-}) {
-  const setFullyExpanded = useCallback(
-    () => setExpanded({ ids: expandableDescendants, value: !isFullyExpanded }),
-    [setExpanded, isFullyExpanded, expandableDescendants]
-  );
-  return (
-    <Node
-      {...props}
-      setExpanded={setExpanded}
-      isFullyExpanded={isFullyExpanded}
-      setFullyExpanded={setFullyExpanded}
-    />
-  );
-});
-
-export const Tree = React.memo<{
-  isBrowsing: boolean;
-  isMain: boolean;
+interface TreeProps {
   allStatuses?: StatusesByStoryIdAndTypeId;
+  /** Active inclusive status filters; passed as a prop so Tree doesn't subscribe to all state. */
+  includedStatusFilters?: StatusValue[];
   refId: string;
-  data: StoriesHash;
-  docsMode: boolean;
-  highlightedRef: MutableRefObject<Highlight>;
-  setHighlightedItemId: (itemId: string) => void;
+  data: IndexHash;
   selectedStoryId: string | null;
   onSelectStoryId: (storyId: string) => void;
-}>(function Tree({
-  isBrowsing,
+}
+
+export const Tree = React.memo<TreeProps>(function Tree({
+  allStatuses: allStatusesProp,
+  includedStatusFilters,
   refId,
-  data,
-  allStatuses,
-  docsMode,
-  highlightedRef,
-  setHighlightedItemId,
+  data: dataProp,
   selectedStoryId,
-  onSelectStoryId,
+  onSelectStoryId: onSelectStoryIdProp,
 }) {
   const containerRef = useRef<HTMLDivElement>(null);
+  const treeWrapperRef = useRef<HTMLDivElement>(null);
+  // The sidebar's one scroll area, shared with every other tree block.
+  const scrollerRef = useContext(ScrollAreaContext);
   const api = useStorybookApi();
-  const includedStatusFilters = useStorybookState().includedStatusFilters ?? [];
-  const isModifiedFilterActive = includedStatusFilters.includes('status-value:modified');
-
-  // Find top-level nodes and group them so we can hoist any orphans and expand any roots.
-  const [rootIds, orphanIds, initialExpanded] = useMemo(
-    () =>
-      Object.keys(data).reduce<[string[], string[], ExpandedState]>(
-        (acc, id) => {
-          const item = data[id];
-
-          if (item.type === 'root') {
-            acc[0].push(id);
-          } else if (!item.parent) {
-            acc[1].push(id);
-          }
-
-          if (item.type === 'root' && item.startCollapsed) {
-            acc[2][id] = false;
-          }
-          return acc;
-        },
-        [[], [], {}]
-      ),
-    [data]
+  const { isMobile } = useLayout();
+  const labelContext = useMemo<SidebarLabelContext>(
+    () => ({ isMobile, location: 'sidebar' }),
+    [isMobile]
   );
+  const isModifiedFilterActive = (includedStatusFilters ?? []).includes('status-value:modified');
+  // Whether any test provider is registered: gates the context menu on group/component rows.
+  const hasTestProviders =
+    Object.keys(api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER)).length > 0;
 
-  // Create a map of expandable descendants for each root/orphan item, which is needed later.
-  // Doing that here is a performance enhancement, as it avoids traversing the tree again later.
-  const { expandableDescendants } = useMemo(() => {
-    return [...orphanIds, ...rootIds].reduce(
-      (acc, nodeId) => {
-        acc.expandableDescendants[nodeId] = getDescendantIds(data, nodeId, false).filter(
-          (d) => !['story', 'docs'].includes(data[d].type)
-        );
-        return acc;
-      },
-      { orphansFirst: [] as string[], expandableDescendants: {} as Record<string, string[]> }
-    );
-  }, [data, rootIds, orphanIds]);
+  // The manager recreates the index and status records on unrelated state ticks. Their
+  // identities feed the react-aria collection (items + dependencies) and the status context,
+  // where a fresh identity re-renders every row in the tree — seconds when fully expanded.
+  // Reuse the previous identity while the entries themselves are unchanged.
+  const data = useStableIdentity(dataProp);
+  const allStatuses = useStableIdentity(allStatusesProp);
 
-  // Create a list of component IDs which should be collapsed into their (only) child.
-  // That is:
-  //  - components with a single story child with the same name
-  //  - components with only a single docs child
-  const singleStoryComponentIds = useMemo(() => {
-    return Object.keys(data).filter((id) => {
-      const entry = data[id];
+  // Keep the selection callback identity stable for the same reason: it feeds the memoized
+  // row renderer.
+  const onSelectStoryIdRef = useRef(onSelectStoryIdProp);
+  onSelectStoryIdRef.current = onSelectStoryIdProp;
+  const onSelectStoryId = useCallback((id: string) => onSelectStoryIdRef.current(id), []);
 
-      if (entry.type !== 'component') {
-        return false;
-      }
+  // The row that holds DOM focus, which the context-menu shortcut acts on. React-aria keeps this
+  // on a row that a pointer press focused, so it is not the row the user is looking at.
+  const [focusedItemId, setFocusedItemId] = useState<string | null>(null);
+  const focusedItemIdRef = useRef<string | null>(null);
 
-      const { children = [], name } = entry;
-
-      if (children.length !== 1) {
-        return false;
-      }
-
-      const onlyChild = data[children[0]];
-
-      if (onlyChild.type === 'docs') {
-        return true;
-      }
-
-      if (onlyChild.type === 'story' && onlyChild.subtype === 'story') {
-        return isStoryHoistable(onlyChild.name, name);
-      }
-      return false;
-    });
-  }, [data]);
-
-  // Omit single-story components from the list of nodes.
-  const collapsedItems = useMemo(
-    () => Object.keys(data).filter((id) => !singleStoryComponentIds.includes(id)),
-    [data, singleStoryComponentIds]
-  );
+  // The row that holds keyboard focus. React-aria marks it with data-focus-visible, which a
+  // pointer press never sets, so the indent lines mark it and no other row.
+  const [keyboardFocusedItemId, setKeyboardFocusedItemId] = useState<string | null>(null);
 
   // Rewrite the dataset to place the single child story in place of the component.
-  // TODO: Move this to the `transformStoryIndexToStoriesHash` util.
-  const collapsedData = useMemo(() => {
-    return singleStoryComponentIds.reduce(
-      (acc, id) => {
-        const { children, parent, name } = data[id] as ComponentEntry;
-        const [childId] = children;
-        if (parent) {
-          const siblings = [...(data[parent] as GroupEntry).children];
-          siblings[siblings.indexOf(id)] = childId;
-          acc[parent] = { ...data[parent], children: siblings } as GroupEntry;
-        }
-        acc[childId] = {
-          ...data[childId],
-          name,
-          parent,
-          depth: data[childId].depth - 1,
-        } as StoryEntry;
-        return acc;
-      },
-      { ...data }
-    );
-  }, [data, singleStoryComponentIds]);
+  const hoistedData = useMemo(() => hoistSingleStoryComponents(data), [data]);
 
-  const ancestry = useMemo(() => {
-    return collapsedItems.reduce(
-      (acc, id) => Object.assign(acc, { [id]: getAncestorIds(collapsedData, id) }),
-      {} as { [key: string]: string[] }
-    );
-  }, [collapsedItems, collapsedData]);
+  // Switch to a tree structure from now on.
+  const tree = useMemo(() => indexToTree(hoistedData), [hoistedData]);
 
   // Track expanded nodes, keep it in sync with props and enable keyboard shortcuts.
   const [expanded, setExpanded] = useExpanded({
-    // @ts-expect-error (non strict)
-    containerRef,
-    isBrowsing,
-    refId,
-    data: collapsedData,
-    initialExpanded,
-    rootIds,
-    highlightedRef,
-    setHighlightedItemId,
+    data: hoistedData,
     selectedStoryId,
-    onSelectStoryId,
   });
 
-  const groupStatus = useMemo(
-    () => getGroupStatus(collapsedData, allStatuses ?? {}),
-    [collapsedData, allStatuses]
-  );
-
   const groupDualStatus = useMemo(
-    () => getGroupDualStatus(collapsedData, allStatuses ?? {}),
-    [collapsedData, allStatuses]
+    () => getGroupDualStatus(hoistedData, allStatuses ?? {}),
+    [hoistedData, allStatuses]
   );
 
-  const treeItems = useMemo(() => {
-    return collapsedItems.map((itemId) => {
-      const item = collapsedData[itemId];
-      const id = createId(itemId, refId);
+  const contextMenuShortcut = useMemo(() => {
+    const shortcutKeys = api.getShortcutKeys();
+    if (!shortcutKeys?.contextMenu) {
+      return undefined;
+    }
 
-      if (item.type === 'root') {
-        const descendants = expandableDescendants[item.id];
-        const isFullyExpanded = descendants.every((d: string) => expanded[d]);
-        return (
-          // @ts-expect-error (TODO)
-          <Root
-            api={api}
-            key={id}
-            item={item}
-            refId={refId}
-            collapsedData={collapsedData}
-            isOrphan={false}
-            isDisplayed
-            isSelected={selectedStoryId === itemId}
-            isExpanded={!!expanded[itemId]}
-            setExpanded={setExpanded}
-            isFullyExpanded={isFullyExpanded}
-            expandableDescendants={descendants}
-            onSelectStoryId={onSelectStoryId}
-            isModifiedFilterActive={isModifiedFilterActive}
-          />
-        );
+    return shortcutToHumanString(shortcutKeys.contextMenu);
+  }, [api]);
+
+  // The note that tells the user which shortcut opens the actions of the focused row. Rows compute
+  // the same availability for their own ⋯ button (see TreeNode).
+  const focusedItemShortcutLabel = useMemo(() => {
+    if (!supportsAnchorPositioning || !focusedItemId || !contextMenuShortcut) {
+      return null;
+    }
+
+    const item = hoistedData[focusedItemId];
+    if (!item) {
+      return null;
+    }
+
+    if (!hasContextMenu(item, hasProviderMenuEntriesFor(api, item, hasTestProviders))) {
+      return null;
+    }
+
+    const itemStatus = groupDualStatus?.[focusedItemId];
+    const changeStatus = itemStatus?.change.value ?? 'status-value:unknown';
+    const testStatus = itemStatus?.test.value ?? 'status-value:unknown';
+
+    return changeStatus !== 'status-value:unknown' || testStatus !== 'status-value:unknown'
+      ? 'Status and actions'
+      : 'Actions';
+  }, [focusedItemId, contextMenuShortcut, hoistedData, groupDualStatus, hasTestProviders, api]);
+
+  // React-aria expects a Set for selectedKeys. Memoize so Tree's children see a stable ref.
+  const selectedKeys = useMemo(
+    () => (selectedStoryId ? new Set([selectedStoryId]) : EMPTY_KEYS),
+    [selectedStoryId]
+  );
+
+  // The children of this row share the selection line.
+  const selectedParentId = useMemo(() => {
+    const entry = selectedStoryId ? hoistedData[selectedStoryId] : undefined;
+    return !entry || entry.type === 'root' ? null : (entry.parent ?? null);
+  }, [selectedStoryId, hoistedData]);
+
+  // Stable handlers so children (especially TreeNode) can rely on prop identity.
+  const handleExpandedChange = useCallback(
+    (keys: Set<React.Key>) => {
+      setExpanded({ ids: Array.from(keys).map(String) });
+    },
+    [setExpanded]
+  );
+
+  // react-aria's selectionBehavior="replace" makes selection follow focus, so onSelectionChange
+  // fires as focus moves (arrow keys, Tab, programmatic focus) — not only on genuine activation.
+  // Acting on those would expand/collapse a branch or navigate a story merely because focus
+  // landed on the row. This flag is true only while a pointer press or Space keypress is being
+  // handled on the tree, so handleSelectionChange can ignore focus-driven changes. Enter and
+  // double-click activate through onAction, which fires regardless.
+  const isActivatingRef = useRef(false);
+  // The modality of the last input inside the tree. The ⋯ button opens its menu through
+  // react-aria's press handling, which doesn't tell us whether it was a click or Enter/Space, so
+  // the capture-phase listeners below record it: opening the menu via keyboard autofocuses the
+  // first item, while a mouse click does not.
+  const lastInputModalityRef = useRef<ContextMenuTrigger>('pointer');
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+    const onInputStart = (event: PointerEvent | KeyboardEvent) => {
+      lastInputModalityRef.current = event.type === 'pointerdown' ? 'pointer' : 'keyboard';
+      if (event.type === 'pointerdown' || (event as KeyboardEvent).key === ' ') {
+        isActivatingRef.current = true;
       }
+    };
+    const onInputEnd = () => {
+      isActivatingRef.current = false;
+    };
+    container.addEventListener('pointerdown', onInputStart, { capture: true });
+    container.addEventListener('keydown', onInputStart, { capture: true });
+    // pointerup can land outside the row (or the tree) after a drag, so listen on the window.
+    window.addEventListener('pointerup', onInputEnd, { capture: true });
+    container.addEventListener('keyup', onInputEnd, { capture: true });
+    return () => {
+      container.removeEventListener('pointerdown', onInputStart, { capture: true });
+      container.removeEventListener('keydown', onInputStart, { capture: true });
+      window.removeEventListener('pointerup', onInputEnd, { capture: true });
+      container.removeEventListener('keyup', onInputEnd, { capture: true });
+    };
+  }, []);
 
-      const isDisplayed = !item.parent || ancestry[itemId].every((a: string) => expanded[a]);
+  // Use refs so the callbacks below can read the latest values without re-creating.
+  const expandedRef = useRef(expanded);
+  expandedRef.current = expanded;
+  const hoistedDataRef = useRef(hoistedData);
+  hoistedDataRef.current = hoistedData;
+  const selectedStoryIdRef = useRef(selectedStoryId);
+  selectedStoryIdRef.current = selectedStoryId;
 
-      if (isDisplayed === false) {
-        return null;
+  const updateFocusedItemId = useCallback((itemId: string | null) => {
+    focusedItemIdRef.current = itemId;
+    setFocusedItemId(itemId);
+  }, []);
+
+  // A branch toggles its own expansion. A leaf navigates to its story or docs page.
+  const activateRow = useCallback(
+    (itemId: string) => {
+      const item = hoistedDataRef.current[itemId];
+      if (item && isBranch(item)) {
+        setExpanded({ ids: [itemId], append: true, value: !expandedRef.current.has(itemId) });
+      } else {
+        onSelectStoryId(itemId);
       }
+    },
+    [onSelectStoryId, setExpanded]
+  );
 
-      return (
-        <Node
-          api={api}
-          collapsedData={collapsedData}
-          key={id}
-          item={item}
-          statuses={allStatuses?.[itemId] ?? {}}
-          groupDualStatus={groupDualStatus}
-          refId={refId}
-          docsMode={docsMode}
-          isOrphan={orphanIds.some((oid) => itemId === oid || itemId.startsWith(`${oid}-`))}
-          isDisplayed={isDisplayed}
-          isSelected={selectedStoryId === itemId}
-          isExpanded={!!expanded[itemId]}
-          setExpanded={setExpanded}
-          onSelectStoryId={onSelectStoryId}
-          isModifiedFilterActive={isModifiedFilterActive}
-        />
-      );
+  // A pointer click and Space both reach the tree as a selection change.
+  const handleSelectionChange = useCallback(
+    (keys: 'all' | Set<React.Key>) => {
+      if (keys === 'all') {
+        return;
+      }
+      // Ignore selection changes that merely follow focus (arrow keys, Tab, programmatic focus):
+      // only a pointer press or Space activates a row. Otherwise navigating past a branch would
+      // toggle its expansion. See isActivatingRef.
+      if (!isActivatingRef.current) {
+        return;
+      }
+      const selectedKey = Array.from(keys)[0];
+      if (typeof selectedKey === 'string') {
+        activateRow(selectedKey);
+      }
+    },
+    [activateRow]
+  );
+
+  // Enter and a double click reach the tree as an action.
+  const handleAction = useCallback((key: React.Key) => activateRow(String(key)), [activateRow]);
+
+  // The open menu lives in a store rather than in React state: the tree renders nothing from it,
+  // and only the row that opens or closes its menu needs to re-render (see ContextMenuStore).
+  const contextMenuStoreRef = useRef<ContextMenuStore | null>(null);
+  contextMenuStoreRef.current ??= createContextMenuStore();
+
+  // Open or close the context menu. Stable callbacks for children. When the caller does not name an
+  // opener (the ⋯ button), take the last input modality, so that Enter and Space open the menu with
+  // keyboard semantics and a mouse click opens it with pointer semantics.
+  const openContextMenu = useCallback((itemId: string, openedBy?: ContextMenuTrigger) => {
+    contextMenuStoreRef.current!.setState({
+      itemId,
+      openedBy: openedBy ?? lastInputModalityRef.current,
     });
-  }, [
-    ancestry,
-    api,
-    collapsedData,
-    collapsedItems,
-    docsMode,
-    expandableDescendants,
-    expanded,
-    groupDualStatus,
-    isModifiedFilterActive,
-    onSelectStoryId,
-    orphanIds,
-    refId,
-    selectedStoryId,
-    setExpanded,
-    allStatuses,
-  ]);
+  }, []);
+  const closeContextMenu = useCallback(() => contextMenuStoreRef.current!.setState(null), []);
+
+  // Track both focus marks with one MutationObserver. React-aria sets data-focused on the row
+  // that holds DOM focus, and data-focus-visible only while the focus came from the keyboard.
+  useEffect(() => {
+    const container = containerRef.current;
+    if (!container) {
+      return;
+    }
+    const idOf = (selector: string) =>
+      container.querySelector<HTMLElement>(selector)?.getAttribute('data-item-id') ?? null;
+    updateFocusedItemId(idOf('[data-focused="true"][data-item-id]'));
+    setKeyboardFocusedItemId(idOf('[data-focus-visible][data-item-id]'));
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        const row = mutation.target;
+        if (!(row instanceof HTMLElement)) {
+          continue;
+        }
+        const itemId = row.getAttribute('data-item-id');
+        if (mutation.attributeName === 'data-focused') {
+          if (row.getAttribute('data-focused') === 'true') {
+            updateFocusedItemId(itemId);
+          } else if (focusedItemIdRef.current === itemId) {
+            updateFocusedItemId(null);
+          }
+        } else if (row.hasAttribute('data-focus-visible')) {
+          setKeyboardFocusedItemId(itemId);
+        } else {
+          setKeyboardFocusedItemId((current) => (current === itemId ? null : current));
+        }
+      }
+    });
+
+    observer.observe(container, {
+      attributes: true,
+      attributeFilter: ['data-focused', 'data-focus-visible'],
+      subtree: true,
+    });
+
+    return () => observer.disconnect();
+  }, [updateFocusedItemId]);
+
+  // Geometry of the visible rows, in render order.
+  const rows = useMemo(() => flattenRows(tree, expanded), [tree, expanded]);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
+  // The ancestors of the top row, kept in view above the tree.
+  const [stickyIds, setStickyIds] = useState<string[]>([]);
+  const stickyIdsRef = useRef<string[]>([]);
+
+  // The row under the pointer, tracked so a branch's first story preloads once per hover.
+  const hoveredRowRef = useRef<{ id: string; sticky: boolean } | null>(null);
+
+  // The rows that carry the selection line: every row of the selected parent's subtree, at the
+  // level of its direct children. Distributed through a store, so only rows entering or leaving
+  // the selection re-render when it moves.
+  const selectionLine = useMemo<SelectionLine | null>(() => {
+    const { ids, offsets, depths, indexById, subtreeBottoms } = rows;
+    const parentIndex = selectedParentId === null ? undefined : indexById.get(selectedParentId);
+    if (parentIndex === undefined) {
+      return null;
+    }
+    const firstChildIndex = parentIndex + 1;
+    if (depths[firstChildIndex] !== depths[parentIndex] + 1) {
+      return null;
+    }
+    const bottom = subtreeBottoms.get(selectedParentId!) ?? 0;
+    const rowIds = new Set<string>();
+    for (let index = firstChildIndex; index < ids.length && offsets[index] < bottom; index += 1) {
+      rowIds.add(ids[index]);
+    }
+    return { level: depths[firstChildIndex], rowIds };
+  }, [rows, selectedParentId]);
+  const selectionLineStoreRef = useRef(createSelectionLineStore());
+  useEffect(() => {
+    selectionLineStoreRef.current.setState(selectionLine);
+  }, [selectionLine]);
+
+  // Recompute the sticky rows on every scroll and whenever the geometry changes. A resize alone
+  // can reveal rows, so the scroller is observed as well. The indent lines never take part: they
+  // live in the scrolled content and in the sticky rows themselves.
+  useEffect(() => {
+    const scroller = scrollerRef?.current;
+    const wrapper = treeWrapperRef.current;
+    if (!scroller || !wrapper) {
+      return;
+    }
+    let frame: number | null = null;
+    const update = () => {
+      frame = null;
+      const stickyRowIds = getStickyRowIds(
+        rowsRef.current,
+        hoistedDataRef.current,
+        scrollTopWithin(scroller, wrapper)
+      );
+      stickyIdsRef.current = stickyRowIds;
+      setStickyIds((current) =>
+        current.length === stickyRowIds.length &&
+        current.every((id, index) => id === stickyRowIds[index])
+          ? current
+          : stickyRowIds
+      );
+    };
+    const scheduleUpdate = () => {
+      frame ??= requestAnimationFrame(update);
+    };
+    update();
+    scroller.addEventListener('scroll', scheduleUpdate, { passive: true });
+    const resizeObserver = new ResizeObserver(scheduleUpdate);
+    resizeObserver.observe(scroller);
+    // Content above this tree in the shared scroller (another block expanding, loading or
+    // collapsing) moves the wrapper without resizing the scroller or firing a scroll. Observe
+    // the scroller's direct children too, and refresh that set when blocks mount or unmount.
+    const observeChildren = () => {
+      for (const child of scroller.children) {
+        resizeObserver.observe(child);
+      }
+    };
+    observeChildren();
+    const mutationObserver = new MutationObserver(() => {
+      observeChildren();
+      scheduleUpdate();
+    });
+    mutationObserver.observe(scroller, { childList: true });
+    return () => {
+      scroller.removeEventListener('scroll', scheduleUpdate);
+      resizeObserver.disconnect();
+      mutationObserver.disconnect();
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, [rows, scrollerRef]);
+
+  // One delegated listener preloads a hovered branch's first story. It sits on the wrapper, so
+  // it also sees the sticky rows, which are outside the scroller.
+  useEffect(() => {
+    const wrapper = treeWrapperRef.current;
+    if (!wrapper) {
+      return;
+    }
+    let preloadedId: string | null = null;
+    const setHovered = (next: { id: string; sticky: boolean } | null) => {
+      const previous = hoveredRowRef.current;
+      if (previous?.id === next?.id && previous?.sticky === next?.sticky) {
+        return;
+      }
+      hoveredRowRef.current = next;
+
+      const item = next && !next.sticky ? hoistedDataRef.current[next.id] : undefined;
+      if (item && next!.id !== preloadedId && isBranch(item)) {
+        preloadedId = next!.id;
+        // The preview has then usually started to load by the time the user clicks.
+        api.emit(PRELOAD_ENTRIES, { ids: [item.children[0]], options: { target: refId } });
+      }
+    };
+    const onOver = (event: Event) => {
+      const target = event.target as Element | null;
+      const sticky = target?.closest?.('[data-sticky-item-id]');
+      if (sticky) {
+        setHovered({ id: sticky.getAttribute('data-sticky-item-id')!, sticky: true });
+        return;
+      }
+      const row = target?.closest?.('[data-item-id]');
+      setHovered(row ? { id: row.getAttribute('data-item-id')!, sticky: false } : null);
+    };
+    const onLeave = () => setHovered(null);
+    wrapper.addEventListener('mouseover', onOver, { passive: true });
+    wrapper.addEventListener('mouseleave', onLeave);
+    return () => {
+      wrapper.removeEventListener('mouseover', onOver);
+      wrapper.removeEventListener('mouseleave', onLeave);
+    };
+  }, [api, refId]);
+
+  // Scroll a row into view arithmetically: virtualized rows may not exist in the DOM, and the
+  // sticky rows cover the top of the viewport, so the target lands below the stack it would
+  // produce (its own ancestors).
+  const scrollRowIntoView = useCallback(
+    (itemId: string, block: ScrollLogicalPosition): boolean => {
+      const scroller = scrollerRef?.current;
+      const wrapper = treeWrapperRef.current;
+      if (!scroller || !wrapper) {
+        return false;
+      }
+      const { offsets, indexById } = rowsRef.current;
+      const index = indexById.get(itemId);
+      if (index === undefined) {
+        return false;
+      }
+      // Rows are placed inside this tree, and the scroll area holds every tree, so the row's place
+      // in the scroll content starts at the top of this tree.
+      const offset = treeTopWithin(scroller, wrapper) + offsets[index];
+      // The sticky rows cover `stack` px at the top. The floating sidebar-bottom widget covers
+      // `bottomInset` px at the bottom, reserved as the scroller's padding-bottom. A row is fully
+      // visible only between them.
+      const stack = getAncestorIds(hoistedDataRef.current, itemId).length * TREE_ROW_HEIGHT;
+      const bottomInset = parseFloat(getComputedStyle(scroller).paddingBottom) || 0;
+      if (block === 'center') {
+        const half = Math.max((scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT) / 2, stack);
+        scroller.scrollTop = offset - half;
+        return true;
+      }
+      const viewTop = scroller.scrollTop + stack;
+      const viewBottom = scroller.scrollTop + scroller.clientHeight - bottomInset - TREE_ROW_HEIGHT;
+      if (offset < viewTop) {
+        scroller.scrollTop = offset - stack;
+      } else if (offset > viewBottom) {
+        // Reveal the row just above the widget, rather than jumping it to the top.
+        scroller.scrollTop = offset + TREE_ROW_HEIGHT + bottomInset - scroller.clientHeight;
+      }
+      return true;
+    },
+    [scrollerRef]
+  );
+
+  // Keep the keyboard-focused row clear of the sticky rows and of the floating bottom widget.
+  // React-aria scrolls a focused row inside the raw viewport only, so a row behind either overlay
+  // counts as visible and no scroll happens. The user then has to keep pressing until focus clears
+  // the stack. A pointer click must not jump-scroll the row it lands on, so this runs for keyboard
+  // navigation only.
+  useEffect(() => {
+    if (focusedItemId && lastInputModalityRef.current === 'keyboard') {
+      scrollRowIntoView(focusedItemId, 'nearest');
+    }
+  }, [focusedItemId, scrollRowIntoView]);
+
+  // Open the context menu for the right row when the global shortcut fires. Prefer the focused
+  // row, and fall back to the selected story when focus is outside the tree.
+  useEffect(() => {
+    let frame: number | null = null;
+    const handler = () => {
+      // Every tree receives the event, one per composed ref. Fall back to the selected story of
+      // this tree only when no row anywhere holds DOM focus. Otherwise the tree that owns the
+      // focused row and the tree that owns the selection would both open a menu.
+      const focusInAnyTree = !!document.activeElement?.closest('[data-item-id]');
+      const itemId =
+        focusedItemIdRef.current ?? (focusInAnyTree ? null : selectedStoryIdRef.current);
+      if (!itemId) {
+        return;
+      }
+      // The popover anchors to the ⋯ button of the row and takes its position once, when it
+      // opens. A row outside the viewport is therefore scrolled into view first, because a
+      // virtualized row mounts only near the viewport, and the menu opens on the next frame.
+      const scroller = containerRef.current;
+      const row = scroller?.querySelector(`[data-item-id="${CSS.escape(itemId)}"]`);
+      const rowRect = row?.getBoundingClientRect();
+      const scrollerRect = scroller?.getBoundingClientRect();
+      if (
+        rowRect &&
+        scrollerRect &&
+        rowRect.top >= scrollerRect.top &&
+        rowRect.bottom <= scrollerRect.bottom
+      ) {
+        openContextMenu(itemId, 'keyboard');
+        return;
+      }
+      scrollRowIntoView(itemId, 'center');
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        openContextMenu(itemId, 'keyboard');
+      });
+    };
+    api.on(SIDEBAR_OPEN_CONTEXT_MENU, handler);
+    return () => {
+      api.off(SIDEBAR_OPEN_CONTEXT_MENU, handler);
+      if (frame !== null) {
+        cancelAnimationFrame(frame);
+      }
+    };
+  }, [api, openContextMenu, scrollRowIntoView]);
+
+  // Scroll the selected story into view when it changes. A newly selected row may not be in the
+  // DOM yet, because its ancestors expand in the same commit but render on the next one. The
+  // effect therefore retries on every expansion change, and stops once the row exists.
+  const lastScrolledIdRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (!selectedStoryId || lastScrolledIdRef.current === selectedStoryId) {
+      return;
+    }
+    if (scrollRowIntoView(selectedStoryId, 'nearest')) {
+      lastScrolledIdRef.current = selectedStoryId;
+    }
+  }, [selectedStoryId, expanded, scrollRowIntoView]);
+
+  // Center the selected story once, when the tree mounts with a selection already made (a deep
+  // link). A selection that arrives after a selection-less mount is a click on a visible row,
+  // where a center scroll would pull the row out from under the pointer.
+  const needsInitialCenterRef = useRef(selectedStoryId != null);
+  useEffect(() => {
+    if (!needsInitialCenterRef.current || !selectedStoryId) {
+      return;
+    }
+    if (scrollRowIntoView(selectedStoryId, 'center')) {
+      needsInitialCenterRef.current = false;
+      lastScrolledIdRef.current = selectedStoryId;
+    }
+  }, [selectedStoryId, expanded, scrollRowIntoView]);
+
+  // One dependencies array shared by every Collection level, so react-aria's cached nodes are
+  // invalidated consistently — a drifted copy at one level renders stale rows. Deliberately
+  // minimal: invalidating the collection re-renders every row in the tree, which takes seconds
+  // on fully-expanded trees. The open context menu reaches rows through ContextMenuStore
+  // instead, and the statuses through StatusContext. hasTestProviders is baked into cached row
+  // elements, so it must invalidate them when a provider registers.
+  const collectionDependencies = useMemo(
+    () => [expanded, hasTestProviders],
+    [expanded, hasTestProviders]
+  );
+
+  // Memoize renderNode's returned closure so Collection receives a stable children prop
+  // as long as the relevant inputs are stable.
+  const nodeRenderer = useMemo(
+    () =>
+      renderNode({
+        api,
+        refId,
+        onSelectStoryId,
+        expanded,
+        sectionStartIds: rows.sectionStartIds,
+        labelContext,
+        openContextMenu,
+        closeContextMenu,
+        hasTestProviders,
+        collectionDependencies,
+      }),
+    [
+      api,
+      refId,
+      onSelectStoryId,
+      expanded,
+      rows.sectionStartIds,
+      labelContext,
+      openContextMenu,
+      closeContextMenu,
+      hasTestProviders,
+      collectionDependencies,
+    ]
+  );
+
+  const treeLayout = useMemo(() => new TreeRowLayout(), []);
+  treeLayout.setRows(rows);
+  const treeLayoutOptions = useMemo(() => ({ rows }), [rows]);
+
+  // Memoized so unrelated Tree re-renders (focus tracking, context-menu state) don't re-render
+  // every TreeNode through the context.
+  const statusContextValue = useMemo(
+    () => ({ groupDualStatus, isModifiedFilterActive }),
+    [groupDualStatus, isModifiedFilterActive]
+  );
+
+  const collapseStickyRow = useCallback(
+    (itemId: string) => setExpanded({ ids: [itemId], append: true, value: false }),
+    [setExpanded]
+  );
+
   return (
-    <StatusContext.Provider value={{ data, allStatuses, groupStatus }}>
-      <div ref={containerRef}>{treeItems}</div>
+    <StatusContext.Provider value={statusContextValue}>
+      <ContextMenuStoreContext.Provider value={contextMenuStoreRef.current}>
+        <SelectionLineStoreContext.Provider value={selectionLineStoreRef.current}>
+          <TreeWrapper ref={treeWrapperRef}>
+            {/* First child, so that it sticks from the top of this tree rather than from its end. */}
+            <TreeStickyRows
+              ids={stickyIds}
+              data={hoistedData}
+              api={api}
+              labelContext={labelContext}
+              scrollerRef={scrollerRef}
+              wrapperRef={treeWrapperRef}
+              rowsRef={rowsRef}
+              accentId={keyboardFocusedItemId}
+              selectionLine={selectionLine}
+              onCollapse={collapseStickyRow}
+            />
+            <Virtualizer layout={treeLayout} layoutOptions={treeLayoutOptions}>
+              <StyledAriaTree
+                ref={containerRef}
+                aria-label="Stories"
+                selectionMode="single"
+                // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
+                // selection exists; 'replace' keeps Enter firing onAction on every row.
+                selectionBehavior="replace"
+                // The selection mirrors the current story, so it is never empty and clearing it
+                // must not be offered.
+                disallowEmptySelection
+                // Stop react-aria from consuming Escape to clear the selection, which swallowed
+                // the key before ancestors (like the mobile menu drawer) could act on it.
+                escapeKeyBehavior="none"
+                expandedKeys={expanded}
+                onExpandedChange={handleExpandedChange}
+                selectedKeys={selectedKeys}
+                onSelectionChange={handleSelectionChange}
+                onAction={handleAction}
+              >
+                <Collection items={tree} dependencies={collectionDependencies}>
+                  {nodeRenderer}
+                </Collection>
+              </StyledAriaTree>
+            </Virtualizer>
+          </TreeWrapper>
+          {focusedItemShortcutLabel && (
+            <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
+          )}
+        </SelectionLineStoreContext.Provider>
+      </ContextMenuStoreContext.Provider>
     </StatusContext.Provider>
   );
 });
+
+// Stable module-level constant so empty-state props don't bust React.memo equality checks.
+const EMPTY_KEYS: Set<string> = new Set();
+
+function shallowEqualRecords(
+  a: Record<string, unknown> | undefined,
+  b: Record<string, unknown> | undefined
+): boolean {
+  if (a === b) {
+    return true;
+  }
+  if (!a || !b) {
+    return false;
+  }
+  const aKeys = Object.keys(a);
+  return aKeys.length === Object.keys(b).length && aKeys.every((key) => a[key] === b[key]);
+}
+
+/** Reuse the previous object identity while its entries are shallow-equal (same value refs). */
+function useStableIdentity<T extends Record<string, any> | undefined>(value: T): T {
+  const ref = useRef(value);
+  if (ref.current !== value && !shallowEqualRecords(ref.current, value)) {
+    ref.current = value;
+  }
+  return ref.current;
+}
+
+interface RenderNodeProps extends Pick<
+  TreeNodeProps,
+  'api' | 'refId' | 'onSelectStoryId' | 'labelContext'
+> {
+  expanded: Set<string>;
+  /** Section-start rows that carry the inter-section gap as padding. */
+  sectionStartIds: Set<string>;
+  openContextMenu: NonNullable<TreeNodeProps['openContextMenu']>;
+  closeContextMenu: NonNullable<TreeNodeProps['closeContextMenu']>;
+  hasTestProviders: boolean;
+  /** Shared with every Collection level so react-aria invalidates its node cache consistently. */
+  collectionDependencies: unknown[];
+}
+
+function renderNode({
+  expanded,
+  sectionStartIds,
+  openContextMenu,
+  closeContextMenu,
+  hasTestProviders,
+  collectionDependencies,
+  ...props
+}: RenderNodeProps) {
+  const renderNodeLevel = (item: TreeEntry) => {
+    return (
+      <TreeNode
+        {...props}
+        key={item.id}
+        item={item}
+        isExpanded={expanded.has(item.id)}
+        startsSection={sectionStartIds.has(item.id)}
+        openContextMenu={openContextMenu}
+        closeContextMenu={closeContextMenu}
+        hasTestProviders={hasTestProviders}
+      >
+        {item.resolvedChildren && (
+          <Collection items={item.resolvedChildren} dependencies={collectionDependencies}>
+            {renderNodeLevel}
+          </Collection>
+        )}
+      </TreeNode>
+    );
+  };
+  return renderNodeLevel;
+}

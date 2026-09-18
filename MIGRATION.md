@@ -548,8 +548,6 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
-
-  - [Raised browser support floors](#raised-browser-support-floors)
 ### Node.js 22.12 or higher
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.

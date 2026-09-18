@@ -5,7 +5,6 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 import { global } from '@storybook/global';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { vi } from 'vitest';
 
 import { MemoryRouter } from 'storybook/internal/router';
 import { ManagerContext, internal_fullStatusStore } from 'storybook/manager-api';
@@ -118,8 +117,11 @@ const meta = {
   beforeEach: async () => {
     await reviewService.commands.dismissReview(undefined);
     sessionStorage.clear();
-    vi.stubGlobal('FEATURES', { ...global.FEATURES, changeDetection: true });
-    return () => vi.unstubAllGlobals();
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, changeDetection: true };
+    return () => {
+      global.FEATURES = features;
+    };
   },
 } satisfies Meta<typeof ShowChangesButton>;
 
@@ -301,9 +303,10 @@ export const HiddenWhenFeatureOff: Story = {
   },
   beforeEach: () => {
     const cleanup = setChangeStatuses({ s1: 'status-value:new' });
-    vi.stubGlobal('FEATURES', { ...global.FEATURES, changeDetection: false });
+    const features = global.FEATURES;
+    global.FEATURES = { ...features, changeDetection: false };
     return () => {
-      vi.unstubAllGlobals();
+      global.FEATURES = features;
       cleanup();
     };
   },

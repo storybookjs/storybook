@@ -35,6 +35,21 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  it('infers quotes and prints LF output for CRLF sources', () => {
+    const source = [
+      "import { addons } from 'storybook/manager-api';",
+      '',
+      'export const tags = [];',
+    ].join('\r\n');
+    const config = loadConfig(source).parse();
+    config.setFieldValue(['tags'], ['autodocs']);
+
+    const result = printConfig(config);
+    expect(result.code).not.toContain('\r');
+    expect(result.code).toContain("'autodocs'");
+    expect(result.code).not.toContain('"autodocs"');
+  });
+
   describe('findNamedImportMethodCalls', () => {
     it('finds binding-safe method calls on aliased named imports', () => {
       const config = loadConfig(dedent`

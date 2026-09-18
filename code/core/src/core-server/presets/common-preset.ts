@@ -265,7 +265,13 @@ export const csfIndexer: Indexer = {
       logger.debug(`The file ${fileName} is empty. Skipping indexing.`);
       return [];
     }
-    return loadCsf(code, { ...options, fileName }).parse().indexInputs;
+    const indexInputs = loadCsf(code, { ...options, fileName }).parse().indexInputs;
+
+    if (indexInputs.length === 0) {
+      logger.warn(`No stories found in ${fileName}`);
+    }
+
+    return indexInputs;
   },
 };
 

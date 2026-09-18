@@ -2,8 +2,8 @@
   "name": "822-upgrade-from-stable",
   "type": "module",
   "scripts": {
-    "storybook": "storybook dev",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "storybook": "storybook dev"
   },
   "devDependencies": {
     "@storybook/react": "10.4.0",

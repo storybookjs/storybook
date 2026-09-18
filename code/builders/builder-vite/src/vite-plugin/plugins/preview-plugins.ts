@@ -1,0 +1,41 @@
+import type { Options } from 'storybook/internal/types';
+
+import type { Plugin, PluginOption } from 'vite';
+import { codeGeneratorPlugin } from '../../plugins/code-generator-plugin.ts';
+import { csfPlugin } from '../../plugins/csf-plugin.ts';
+import { injectExportOrderPlugin } from '../../plugins/inject-export-order-plugin.ts';
+import { storybookExternalGlobalsPlugin } from '../../plugins/storybook-external-globals-plugin.ts';
+import { stripStoryHMRBoundary } from '../../plugins/strip-story-hmr-boundaries.ts';
+import { transformIframeHtml } from '../../transform-iframe-html.ts';
+
+export async function getPreviewPlugins(
+  options: Options,
+  basePath: string
+): Promise<PluginOption[]> {
+  const corePlugins = await options.presets.apply<PluginOption[]>('viteCorePlugins', []);
+  const entryPlugins = await getEntryPlugins(options, basePath);
+
+  const globalsPlugin = await storybookExternalGlobalsPlugin(options);
+
+  return [...corePlugins, globalsPlugin, await csfPlugin(options), ...entryPlugins];
+}
+
+async function getEntryPlugins(options: Options, basePath: string): Promise<Plugin[]> {
+  const baseCodeGenPlugin = codeGeneratorPlugin(options);
+
+  const adaptedCodeGenPlugin: Plugin = {
+    ...baseCodeGenPlugin,
+    async transformIndexHtml(html, ctx) {
+      if (ctx.server) {
+        return undefined;
+      }
+      const expectedPath = `${basePath}iframe.html`;
+      if (ctx.path !== expectedPath && ctx.path !== '/iframe.html') {
+        return undefined;
+      }
+      return transformIframeHtml(html, options);
+    },
+  };
+
+  return [adaptedCodeGenPlugin, await injectExportOrderPlugin(), await stripStoryHMRBoundary()];
+}

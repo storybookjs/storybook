@@ -99,7 +99,7 @@ export const objectProperty = (
   for (const property of object.properties) {
     if (
       ctx.ts.isPropertyAssignment(property) &&
-      ctx.ts.isIdentifier(property.name) &&
+      (ctx.ts.isIdentifier(property.name) || ctx.ts.isStringLiteralLike(property.name)) &&
       property.name.text === key
     ) {
       return property.initializer;

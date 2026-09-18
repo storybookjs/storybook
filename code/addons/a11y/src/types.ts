@@ -11,6 +11,12 @@ export interface A11yParameters {
    * @see https://storybook.js.org/docs/writing-tests/accessibility-testing
    */
   a11y?: A11yParams;
+
+  /** Vision Simulator configuration. */
+  visionSimulator?: {
+    /** Whether to hide the Vision Simulator toolbar control. */
+    disable?: boolean;
+  };
 }
 
 export interface A11yGlobals {

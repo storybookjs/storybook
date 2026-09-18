@@ -19,12 +19,7 @@ export {
 export default Channel;
 
 export { PostMessageTransport } from './postmessage/index.ts';
-export {
-  WebsocketTransport,
-  HEARTBEAT_INTERVAL,
-  HEARTBEAT_MAX_LATENCY,
-  SERVER_CHANNEL_PATH,
-} from './websocket/index.ts';
+export { WebsocketTransport, HEARTBEAT_INTERVAL, SERVER_CHANNEL_PATH } from './websocket/index.ts';
 export type { ChannelWebSocket } from './websocket/index.ts';
 
 type Options = Config & {

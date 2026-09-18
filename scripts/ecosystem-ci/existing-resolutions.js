@@ -32,6 +32,8 @@ export const EXISTING_RESOLUTIONS = new Set([
   'polka@npm:1.0.0-next.28/@polka/url',
   'radix-ui@npm:^1.4.3',
   'react',
+  'react-aria',
+  'react-stately',
   'rxjs',
   'react-joyride/type-fest',
   'typescript',

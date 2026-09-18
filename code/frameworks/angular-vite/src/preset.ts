@@ -349,9 +349,10 @@ const SPECIAL_QUERY_ID = /[?&](?:worker|sharedworker|raw|url)\b/;
 
 // Asks whether the package is present, not whether its entry point resolves: this check aborts the
 // build, and Vite loads preprocessors with its own conditions, so an `exports` map without a
-// `require` condition resolves for Vite and throws here. The `createRequire` arm is only for Yarn
-// PnP, which has no `node_modules` to walk; `import.meta.resolve` cannot replace it, because its
-// `parent` argument is silently ignored without `--experimental-import-meta-resolve`.
+// `require` condition resolves for Vite and throws here. When the manual `node_modules` walk
+// finds nothing, fall back to Node's own resolver via `createRequire`; `import.meta.resolve`
+// cannot replace it, because its `parent` argument is silently ignored without
+// `--experimental-import-meta-resolve`.
 const isPackagePresentFrom = (pkg: string, fromDir: string) => {
   let dir = resolve(fromDir);
   while (true) {

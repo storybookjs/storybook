@@ -1,21 +1,31 @@
 ---
-title: Addon migration guide for Storybook 10.0
+title: Addon migration guide for Storybook 11.0
 sidebar:
   order: 9
-  title: Migrate addons to 10.0
+  title: Migrate addons to 11.0
 ---
 
-We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 10.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 9.x to 10.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 9.0](../../../release-9-1/docs/addons/addon-migration-guide.mdx).
+We sincerely appreciate the dedication and effort addon creators put into keeping the Storybook ecosystem vibrant and up-to-date. As Storybook evolves to version 11.0, bringing new features and improvements, this guide is here to assist you in migrating your addons from 10.x to 11.0. If you need to migrate your addon from an earlier version of Storybook, please first refer to the [Addon migration guide for Storybook 10.0](../../../release-10-6/docs/addons/addon-migration-guide.mdx).
 
 <Callout variant="info">
+  We also have a general [Storybook migration guide](../releases/migration-guide.mdx) that covers
+  updates to your Storybook instance rather than your addon code.
+</Callout>
 
-We also have a general [Storybook migration guide](../releases/migration-guide.mdx) that covers updates to your Storybook instance rather than your addon code.
-
+<Callout
+  variant="prompt"
+  action={{
+    label: 'Copy prompt',
+    event: 'copy_addon_migration_prompt',
+    copy: 'In this repository, you will find a Storybook addon package. Migrate the addon to Storybook 11 using [addon migration guide](https://storybook.js.org/docs/11/addons/addon-migration-guide.md). Addon repositories usually contain a local Storybook instance. Migrate it using [Storybook migration guide](https://storybook.js.org/docs/11/releases/migration-guide.md). In case the local repository does not align well with the content of the migration guide, use the [Addon Kit](https://github.com/storybookjs/addon-kit) repository as a reference implementation. Create a PR for the user to review.',
+  }}
+>
+  Use this prompt with your AI assistant to migrate your addon.
 </Callout>
 
 ## Dependency updates
 
-You will need to update your Storybook dependencies. Peer dependencies must point to `^10.0.0` to ensure broad compatibility for your end users. Development dependencies can be set to `^10.0.0`, or to `next` if you want to try the latest prerelease all year round.
+You will need to update your Storybook dependencies. Peer dependencies must point to `^11.0.0` to ensure broad compatibility for your end users. Development dependencies can be set to `^11.0.0`, or to `next` if you want to try the latest prerelease all year round.
 
 ```jsonc title="package.json"
 {
@@ -25,12 +35,10 @@ You will need to update your Storybook dependencies. Peer dependencies must poin
     "storybook": "next",
   },
   "peerDependencies": {
-    "storybook": "^10.0.0",
+    "storybook": "^11.0.0",
   },
 }
 ```
-
-If you still have `@storybook/addon-essentials`, `@storybook/addon-interactions`, `@storybook/addon-links`, or `@storybook/blocks` in your dependencies, you will need to remove them. These packages are empty since Storybook 9 and will no longer be published going forward.
 
 ### Supporting earlier versions
 
@@ -40,261 +48,76 @@ If your addon supports multiple major versions of Storybook, you can specify a w
 {
   "name": "your-storybook-addon",
   "peerDependencies": {
-    "storybook": "^9.0.0 || ^10.0.0",
+    "storybook": "^10.0.0 || ^11.0.0",
   },
   "devDependencies": {
-    "storybook": ">=10.0.0-0 <11.0.0-0", // For local development
+    "storybook": ">=11.0.0-0 <12.0.0-0", // For local development
   },
 }
 ```
 
-However, we recommend releasing a new major version of your addon alongside new major versions of Storybook. This practice:
+However, we recommend releasing a new major version of your addon alongside new major versions of Storybook:
 
-1. Makes it easier to maintain your code
-2. Allows you to take advantage of new features and improvements
-3. Provides a clearer upgrade path for your users
+1. It makes it easier to maintain your code
+2. It allows you to take advantage of new features and improvements
+3. It provides a clearer upgrade path for your users
 
 ## Key changes for addons
 
-Here are the changes in version 10.0 that impact addon development.
+Here are the changes in version 11.0 that impact addon development.
 
-### ESM-only builds
+### Minimum version bumps
 
-Storybook 10 requires all addons to be built as ESM-only. This change simplifies the build process and reduces maintenance overhead. You'll need to make many changes to `tsup.config.ts`, so it can be easier to copy the reference file in the [`addon-kit` repository](https://github.com/storybookjs/addon-kit/blob/main/tsup.config.ts).
+#### Node.js
 
-This update brings the following changes:
-
-- The Node target moves from Node 20.0 to Node 20.19
-- You no longer need to build CJS files
-- You no longer need to pass `globalManagerPackages` and `globalPreviewPackages`
-- The `bundler` config in `package.json` no longer needs to be manually typed
-- We recommend you stop using `exportEntries` and switch exported entries to `previewEntries` and `managerEntries` instead based on where they are consumed by your users
-
-```diff title="tsup.config.ts"
-- import { readFile } from "node:fs/promises";
-
-import { defineConfig, type Options } from "tsup";
-
-- import { globalPackages as globalManagerPackages } from "storybook/internal/manager/globals";
-- import { globalPackages as globalPreviewPackages } from "storybook/internal/preview/globals";
-
-- const NODE_TARGET: Options["target"] = "node20";
-+ const NODE_TARGET = "node20.19"; // Minimum Node version supported by Storybook 10
-
-- type BundlerConfig = {
--   bundler?: {
--     exportEntries?: string[];
--     nodeEntries?: string[];
--     managerEntries?: string[];
--     previewEntries?: string[];
--   };
-- };
-
-export default defineConfig(async (options) => {
-  // reading the three types of entries from package.json, which has the following structure:
-  // {
-  //  ...
-  //   "bundler": {
--  //     "exportEntries": ["./src/index.ts"],
-  //     "managerEntries": ["./src/manager.ts"],
--  //     "previewEntries": ["./src/preview.ts"],
-+  //     "previewEntries": ["./src/preview.ts", "./src/index.ts"],
-  //     "nodeEntries": ["./src/preset.ts"]
-  //   }
-  // }
--   const packageJson = (await readFile("./package.json", "utf8").then(
--     JSON.parse,
--   )) as BundlerConfig;
-+   const packageJson = (
-+     await import("./package.json", { with: { type: "json" } })
-+   ).default;
-+
-  const {
-    bundler: {
--      exportEntries = [],
-      managerEntries = [],
-      previewEntries = [],
-      nodeEntries = [],
--    } = {},
-+    },
-  } = packageJson;
-
-  const commonConfig: Options = {
--    splitting: false,
-+    splitting: true,
-+    format: ["esm"],
--    minify: !options.watch,
-    treeshake: true,
--    sourcemap: true,
-    // keep this line commented until https://github.com/egoist/tsup/issues/1270 is resolved
-    // clean: options.watch ? false : true,
-    clean: false,
-+    // The following packages are provided by Storybook and should always be externalized
-+    // Meaning they shouldn't be bundled with the addon, and they shouldn't be regular dependencies either
-+    external: ["react", "react-dom", "@storybook/icons"],
-  };
-
-  const configs: Options[] = [];
--
--   // export entries are entries meant to be manually imported by the user
--   // they are not meant to be loaded by the manager or preview
--   // they'll be usable in both node and browser environments, depending on which features and modules they depend on
--   if (exportEntries.length) {
--     configs.push({
--       ...commonConfig,
--       entry: exportEntries,
--       dts: {
--         resolve: true,
--       },
--       format: ["esm", "cjs"],
--       platform: "neutral",
--       target: NODE_TARGET,
--       external: [...globalManagerPackages, ...globalPreviewPackages],
--     });
--   }
-
-  // manager entries are entries meant to be loaded into the manager UI
-  // they'll have manager-specific packages externalized and they won't be usable in node
-  // they won't have types generated for them as they're usually loaded automatically by Storybook
-  if (managerEntries.length) {
-    configs.push({
-      ...commonConfig,
-      entry: managerEntries,
--      format: ["esm"],
-      platform: "browser",
--      target: BROWSER_TARGETS,
-+      target: "esnext", // we can use esnext for manager entries since Storybook will bundle the addon's manager entries again anyway
--      external: globalManagerPackages,
-    });
-  }
-
-  // preview entries are entries meant to be loaded into the preview iframe
-  // they'll have preview-specific packages externalized and they won't be usable in node
-  // they'll have types generated for them so they can be imported when setting up Portable Stories
-  if (previewEntries.length) {
-    configs.push({
-      ...commonConfig,
-      entry: previewEntries,
--      dts: {
--        resolve: true,
--      },
--      format: ["esm", "cjs"],
-      platform: "browser",
--      target: BROWSER_TARGETS,
-+      target: "esnext", // we can use esnext for preview entries since Storybook will bundle the addon's preview entries again anyway
--      external: globalPreviewPackages,
-+      dts: true,
-    });
-  }
-
-  // node entries are entries meant to be used in node-only
-  // this is useful for presets, which are loaded by Storybook when setting up configurations
-  // they won't have types generated for them as they're usually loaded automatically by Storybook
-  if (nodeEntries.length) {
-    configs.push({
-      ...commonConfig,
-      entry: nodeEntries,
--      format: ["cjs"],
-      platform: "node",
-      target: NODE_TARGET,
-    });
-```
-
-Next, update the `exports` field in your `package.json` to remove mentions of CJS files.
+Storybook 11 targets Node.js 22.12 or higher. See the [Node.js migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2212-or-higher) for environment updates and prerelease support. Update the types package in your `package.json` to `^22.12.0`.
 
 ```diff title="package.json"
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
--      "import": "./dist/index.js",
--      "require": "./dist/index.cjs"
-+      "default": "./dist/index.js"
-    },
-    "./preview": {
--      "types": "./dist/index.d.ts",
--      "import": "./dist/preview.js",
--      "require": "./dist/preview.cjs"
-+      "types": "./dist/preview.d.ts",
-+      "default": "./dist/preview.js"
-    },
--    "./preset": "./dist/preset.cjs",
-+    "./preset": "./dist/preset.js",
-    "./manager": "./dist/manager.js",
-    "./package.json": "./package.json"
-  },
+-    "@types/node": "^20",
++    "@types/node": "^22.12.0",
 ```
 
-Update `tsconfig.json`.
+Change your CI to build and test your addon against this version and more recent stable versions. Use the opportunity to improve your workflow security by pinning action versions to specific commit SHAs:
+
+```diff title=".github/workflows/build.yml"
+     strategy:
+       matrix:
+-        node-version: [20.19, 22.12]
++        node-version: [22.12, 24.21]
+     steps:
+       - name: Checkout
+-        uses: actions/checkout@v4
++        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+         with:
+           fetch-depth: 0
+
+       - name: Install pnpm
+-        uses: pnpm/action-setup@v4
++        uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413 # v6.1.0
+
+       - name: Use Node.js ${{ matrix.node-version }}
+-        uses: actions/setup-node@v4
++        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+```
+
+#### TypeScript
+
+The minimum supported TypeScript version is now 5. Update your TypeScript dependency and remove deprecated configuration from your `tsconfig.json`.
 
 ```diff title="tsconfig.json"
-{
-  "compilerOptions": {
-    // …
-+    "moduleResolution": "bundler",
-    // …
--    "module": "commonjs",
-+    "module": "preserve",
-    // …
--    "target": "ES2020",
-+    "target": "esnext",
-    // …
--    "lib": ["es2020", "dom", "dom.iterable"],
-+    "lib": ["esnext", "dom", "dom.iterable"],
-    // …
--    "rootDir": "./src",
-+    "rootDir": ".",
-  },
--  "include": ["src/**/*"]
-+  "include": ["src/**/*", "tsup.config.ts"]
- }
+     "target": "esnext",
+     "allowJs": true,
+     ...
+     "lib": ["esnext", "dom", "dom.iterable"],
+-    "baseUrl": ".",
+     "rootDir": "."
 ```
 
-Finally, change the `preset.js` file at the top-level of your addon to be ESM. This file used to be CJS because the Storybook Node app only supported CJS.
+### CSF Next support
 
-```diff title="preset.js"
--// this file is slightly misleading. It needs to be CJS, and thus in this "type": "module" package it should be named preset.cjs
--// but Storybook won't pick that filename up so we have to name it preset.js instead
--
--module.exports = require('./dist/preset.cjs');
-+export * from './dist/preset.js';
-```
+[CSF Next](https://storybook.js.org/docs/api/csf/csf-next) becomes the default CSF format in Storybook 11. Your users will need your addon to support CSF Next to get type safety benefits. You will need to update your `src/index.ts` file to export a `definePreviewAddon` callback. Users will call it in their `preview.ts` file to register your addon's preview annotations.
 
-### Local addon loading
-
-Because addons are now ESM-only, you must change how you load your own addon in your development Storybook instance. Imports and exports must now follow ESM syntax, and relative paths must use `import.meta.resolve`.
-
-Remove `.storybook/local-preset.cjs` and create `.storybook/local-preset.ts` with the following content:
-
-```ts title=".storybook/local-preset.ts"
-import { fileURLToPath } from 'node:url';
-
-export function previewAnnotations(entry = []) {
-  return [...entry, fileURLToPath(import.meta.resolve('../dist/preview.js'))];
-}
-
-export function managerEntries(entry = []) {
-  return [...entry, fileURLToPath(import.meta.resolve('../dist/manager.js'))];
-}
-
-export * from '../dist/preset.js';
-```
-
-Next, update your `main.ts` to reference the new preset file:
-
-```diff title=".storybook/main.ts"
-- addons: ["@storybook/addon-docs", "./local-preset.cjs"],
-+ addons: ["@storybook/addon-docs", import.meta.resolve("./local-preset.ts")],
-```
-
-## Optional changes
-
-The following changes are not strictly required yet, but we recommend making them to improve your users' experience.
-
-### CSF Factories support
-
-To support CSF Factories annotations in your addon, you will need to update your `src/index.ts` file to use the new `definePreviewAddon`. This feature will be part of [CSF Next](../api/csf/csf-next.mdx). This change is highly recommended, as it will help your own users reap the benefits of CSF Factories.
-
-With CSF Factories, users can chain their preview configuration and benefit from better typing and more flexibility. Addons must export annotations to be compatible with this new syntax. CSF Factories will be the default way to write stories in Storybook 11.
+If you haven't done so already when porting to Storybook 10, apply the following change:
 
 ```diff title="src/index.ts"
 - // make it work with --isolatedModules
@@ -305,72 +128,145 @@ With CSF Factories, users can chain their preview configuration and benefit from
 + export default () => definePreviewAddon(addonAnnotations);
 ```
 
-### Removal of exportEntries
+Make sure to also update your installation instructions to tell users to call that callback in their `preview.ts` file. Below is an example you can use:
 
-The `exportEntries` property in `package.json`'s `bundler` was used to produce the `index.js` build output from `src/index.ts`. It was compatible with Node.js, rather than strictly with browsers. This build configuration could cause subtle bugs when addon authors exported code in `index.js` for use in the Storybook preview or manager.
+````md title="README.md"
+Register the addon's preview annotations in `.storybook/preview.ts`.
 
-In the Storybook 10 [addon-kit](https://github.com/storybookjs/addon-kit), we removed `exportEntries` from the `bundler` config, and we moved `src/index.ts` to be part of `previewEntries` instead. This way, any code exported from `src/index.ts` is bundled for browsers and usable with CSF Next. If you need to export additional code to run in the preview (such as optional decorators), you can add them to `src/index.ts`.
+```ts
+// .storybook/preview.ts
 
-If you need to export code for the manager (such as a `renderLabel` function for the sidebar), you can create a new `src/manager-helpers.ts` file and add it to `managerEntries`, like so:
+// Replace your-framework with the framework you are using (e.g., react-vite, nextjs-vite)
+import { definePreview } from '@storybook/your-framework';
 
-```diff title="package.json"
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js"
-    },
-    "./preview": {
-      "types": "./dist/preview.d.ts",
-      "default": "./dist/preview.js"
-    },
-    "./preset": "./dist/preset.js",
-    "./manager": "./dist/manager.js",
-+    "./manager-helpers": "./dist/manager-helpers.js",
-    "./package.json": "./package.json"
-  },
-  "bundler": {
-    "managerEntries": [
-+      "src/manager-helpers.ts",
-      "src/manager.tsx"
-    ]
-  }
+import myAddon from 'my-addon';
+
+export default definePreview({
+  // ...rest of preview
+  addons: [myAddon()], // 👈 register the addon here
+});
+```
+````
+
+### Addon API changes
+
+#### Manager layout configuration
+
+Move deprecated top-level `addons.setConfig` layout options into `layout`, and move `enableShortcuts` into `ui`. The old top-level values are no longer applied. See the [setConfig migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed) for an example and automigration instructions.
+
+#### Internal API changes
+
+If your addon imports internal Storybook APIs, review these additional changes:
+
+- [Removed WebSocket heartbeat controls](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-websocket-heartbeat-controls-removed)
+- [Removed Vitest workspace configuration helper](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
+- [Toolset telemetry returned with the outcome](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-toolset-telemetry-now-returns-with-the-outcome)
+
+#### Tab UI type removed
+
+The `TAB` addon UI type has been removed. It was not possible for us to build an accessible keyboard navigation experience in the Storybook toolbar with tabs present in the toolbar.
+
+Addons may now only create `PANEL`, `TOOL` or `TOOLEXTRA` types. We recommend you replace any existing use of this type by a `PANEL`, or by a `TOOL` that opens a `Modal`.
+
+#### Changes to story index
+
+In the early days of Storybook docs support, unattached `docs` pages in the story index were wrapped in a fake `component` entry. This anachronism has survived over the years, and [is being fixed in Storybook 11](https://github.com/storybookjs/storybook/issues/35513). Unattached MDX pages will now be allowed to be top-level entries in the index, without a `component` wrapper.
+
+In very rare cases, this can affect addons that parse the index. If relevant to your addon, make sure it continues to correctly identify unattached docs entries in Storybook 11. If you use `useStorybookState().index`, you are likely to be impacted.
+
+The `StoriesHash` type has been renamed to `IndexHash` in previous versions. The legacy `StoriesHash` type is now removed. Rename any usage of `StoriesHash` to `IndexHash`.
+
+#### Removed components
+
+The `storybook/internal/components` package has had deprecated components since Storybook 10.1. Those are now removed. You may find a full list of removed components and alternatives in the Storybook 10 section of the [Migration.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#api-and-component-changes) file.
+
+#### Icons package imports must be named
+
+The `@storybook/icons` package has moved from a default barrel file export to named exports in previous versions. The default barrel export will be removed in Storybook 11 or 12.
+
+Review your usage of the `@storybook/icons` package and ensure you import individual icons via named imports.
+
+#### `useThemeParameters` removal
+
+The `useThemeParameters` hook is removed in Storybook 11. You may instead directly access the theme from the `StoryContext` object that the hook took as a parameter:
+
+```diff
+- const { themeOverride } = useThemeParameters(context);
++ const { themeOverride } = context.parameters.themes ?? {};
 ```
 
-### Build file cleanup
+## Optional changes
 
-We recommend removing your old build files as you build. This will avoid your `dist` folder growing with expired JS chunks. You may add the following to your `package.json` scripts:
+### Port your local Storybook to use CSF Next
 
-```diff title="package.json"
-{
-  "scripts": {
-+    "prebuild": "node -e \"fs.rmSync('./dist', { recursive: true, force: true })\"",
-  }
-}
+You may load your own preview annotations in your local Storybook instance, to test that they work as intended:
+
+```diff title=".storybook/preview.ts"
+-import type { Preview } from '@storybook/react-vite';
++import { definePreview } from '@storybook/react-vite';
++import addonDocs from '@storybook/addon-docs';
++import yourOwnAddon from '../dist/index.js';
+
+-const preview: Preview = {
++const preview = definePreview({
++  addons: [addonDocs(), yourOwnAddon()],
+   parameters: {
+     // ...
+   },
+   initialGlobals: {
+     // ...
+   },
+-};
++});
 ```
 
-### Package keyword changes
+Change all your stories to use the [factory functions](https://storybook.js.org/docs/api/csf/csf-next) (e.g. `preview.meta()`, `meta.story()`) and check for any type errors that become visible with CSF Next's type safety.
 
-We've updated default keywords for addons in the Storybook `addon-kit` template.
+### NPM Trusted Publishing
 
-```diff title="package.json"
-  "keywords": [
--    "storybook-addons",
-+    "storybook-addon",
-  ],
+We strongly recommend you use [NPM Trusted Publishing](https://docs.npmjs.com/trusted-publishers) to keep your users secure. You will first need to change your package settings on npmjs.com. Then, in the release workflow, ensure you use Node 24 (minimum supported version for Trusted Publishing) and that you no longer pass a NPM token:
+
+```diff title=".github/workflows/release.yml"
+    if: "!contains(github.event.head_commit.message, 'ci skip') && !contains(github.event.head_commit.message, 'skip ci') && github.repository != 'storybookjs/addon-kit'"
++    permissions:
++      contents: write
++      issues: write
++      pull-requests: write
++      id-token: write
+    steps:
+
+-      - name: Use Node.js 20.x
+-        uses: actions/setup-node@v4
++      - name: Use Node.js 24.x
++        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+         with:
+-          node-version: 20.x
++          node-version: 24.x
+           cache: 'pnpm'
++          registry-url: 'https://registry.npmjs.org'
+
+       - name: Install dependencies
+@@ -28,6 +28,5 @@ jobs:
+       - name: Create Release
+         env:
+           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+         run: |
+           pnpm run release
 ```
 
-## 10.0.0 full migration guide
+## 11.0.0 full migration guide
 
-For a full list of changes, please visit the [Migration.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-9x-to-1000) file
+For a full list of changes, please visit the [Migration.md](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#from-version-10x-to-1100) file.
 
 ## Migration example
 
-For a complete example of an addon updated to support Storybook 10.0, refer to the [Addon Kit migration PR](https://github.com/storybookjs/addon-kit/pull/82).
-Once merged, it will demonstrate all the necessary and recommended changes for Storybook 10.
+For a complete example of an addon updated to support Storybook 11.0, refer to the [Addon Kit migration PR](https://github.com/storybookjs/addon-kit/pull/94).
+Once merged, it will demonstrate all the necessary and recommended changes for Storybook 11.
 
 ## Releasing
 
-To support Storybook 10.0, we encourage you to release a new major version of your addon. For experimental features or testing, use the `next` tag. This allows you to gather feedback before releasing a stable version.
+To support Storybook 11.0, we encourage you to release a new major version of your addon. For experimental features or testing, use the `next` tag. This allows you to gather feedback before releasing a stable version.
 
 ## Support
 

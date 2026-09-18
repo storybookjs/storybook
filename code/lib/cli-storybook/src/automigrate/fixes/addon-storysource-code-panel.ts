@@ -77,7 +77,7 @@ export const addonStorysourceCodePanel: Fix<StorysourceOptions> = {
       if (previewConfigPath) {
         try {
           await updateMainConfig({ mainConfigPath: previewConfigPath, dryRun }, (previewConfig) => {
-            previewConfig.setFieldValue(['parameters', 'docs', 'codePanel'], true);
+            previewConfig.set(['parameters', 'docs', 'codePanel'], true);
           });
         } catch (error) {
           console.log(error);

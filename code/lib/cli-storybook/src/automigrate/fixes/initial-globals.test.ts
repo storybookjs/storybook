@@ -34,3 +34,7 @@ it('initialGlobals setting', async () => {
 it('globals setting', async () => {
   await expect(check(`export default { globals: { a:  1 } }`)).resolves.toBeTruthy();
 });
+
+it('preview with a spread but no globals', async () => {
+  await expect(check(`export default { ...basePreview, tags: ['a'] }`)).resolves.toBeFalsy();
+});

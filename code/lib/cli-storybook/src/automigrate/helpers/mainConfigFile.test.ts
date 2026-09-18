@@ -1,9 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { loadConfig, readConfig, writeConfig } from 'storybook/internal/csf-tools';
 
 import {
   getBuilderPackageName,
   getFrameworkPackageName,
   getRendererName,
+  updateMainConfig,
 } from './mainConfigFile.ts';
 
 describe('getBuilderPackageName', () => {
@@ -186,5 +189,45 @@ describe('getRendererName', () => {
 
     const rendererName = getRendererName(mainConfig as any);
     expect(rendererName).toBeUndefined();
+  });
+});
+
+vi.mock('storybook/internal/csf-tools', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/csf-tools')>()),
+  readConfig: vi.fn(),
+  writeConfig: vi.fn(),
+}));
+
+describe('updateMainConfig', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it.each([false, true])(
+    'writes successful mutations only outside dry runs (%s)',
+    async (dryRun) => {
+      const config = loadConfig("export default { addons: ['addon'] };").parse();
+      vi.mocked(readConfig).mockResolvedValue(config);
+
+      await updateMainConfig({ mainConfigPath: 'main.ts', dryRun }, (main) => {
+        main.rename(['addons'], 'deviceAddons');
+      });
+
+      expect(writeConfig).toHaveBeenCalledTimes(dryRun ? 0 : 1);
+      expect(config.get(['deviceAddons'])).toMatchObject({ type: 'ArrayExpression' });
+    }
+  );
+
+  it('does not write a partial migration after an occupied destination', async () => {
+    vi.mocked(readConfig).mockResolvedValue(
+      loadConfig(
+        "export default { docs: {}, addons: ['old'], deviceAddons: ['existing'] };"
+      ).parse()
+    );
+
+    await updateMainConfig({ mainConfigPath: 'main.ts', dryRun: false }, (main) => {
+      main.remove(['docs']);
+      main.rename(['addons'], 'deviceAddons');
+    });
+
+    expect(writeConfig).not.toHaveBeenCalled();
   });
 });

@@ -45,26 +45,29 @@ export async function build(options: Options) {
 
   const finalConfig = (await presets.apply('viteFinal', config, options)) as InlineConfig;
 
-  // Add a plugin to enforce Storybook's outDir after all other plugins.
-  // This prevents frameworks like Nitro from redirecting
-  // build output to their own directories (e.g., .output/public/).
-  // The 'enforce: post' ensures this runs after all other config hooks.
+  // Add a plugin to enforce key build properties that may be overwritten
+  // by framework plugins like Nitro or Adonis. We run in `enforce: 'post'`
+  // both for `config` and `configEnvironment` to ensure we run last.
   finalConfig.plugins?.push({
-    name: 'storybook:enforce-output-dir',
+    name: 'storybook:enforce-build-options',
     enforce: 'post',
     config: () => ({
       build: {
+        emptyOutDir: false,
         outDir: options.outputDir,
       },
     }),
-    // configEnvironment is a new method in Vite 6
-    // It is used to configure configs based on the environment
-    // E.g. Nitro uses this method to set the output directory to .output/public/
-    configEnvironment: () => ({
-      build: {
-        outDir: options.outputDir,
-      },
-    }),
+    // Our builds only touch the client environment. No need to change build
+    // config for other environments at the expense of third-party plugins.
+    configEnvironment: (name) =>
+      name === 'client'
+        ? {
+            build: {
+              emptyOutDir: false,
+              outDir: options.outputDir,
+            },
+          }
+        : null,
   });
 
   if (options.features?.developmentModeForBuild) {

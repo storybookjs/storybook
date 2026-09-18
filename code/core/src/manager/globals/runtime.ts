@@ -1,4 +1,5 @@
 import * as REACT from 'react';
+import * as REACT_ARIA_FOCUS_SCOPE from 'react-aria/FocusScope';
 import * as REACT_DOM from 'react-dom';
 import * as REACT_DOM_CLIENT from 'react-dom/client';
 
@@ -24,6 +25,7 @@ export const globalsNameValueMap: Required<Record<keyof typeof globalsNameRefere
   react: REACT,
   'react-dom': REACT_DOM,
   'react-dom/client': REACT_DOM_CLIENT,
+  'react-aria/FocusScope': REACT_ARIA_FOCUS_SCOPE,
   '@storybook/icons': ICONS,
 
   'storybook/manager-api': MANAGER_API,

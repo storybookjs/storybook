@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'fs';
 import { tmpdir } from 'os';
 import path from 'path';
+import { stripVTControlCharacters } from 'util';
 import { afterAll, describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
@@ -110,6 +111,30 @@ afterAll(() => {
     rmSync(fixtureRoot, { recursive: true, force: true });
   }
 });
+
+/**
+ * Fixture roots are temporary directories and errors are colorized, so raw output would make
+ * snapshots machine-specific. Normalizing both keeps them reviewable as the migration's real
+ * output.
+ */
+function normalize(output: string) {
+  return stripVTControlCharacters(output).replaceAll(fixtureRoot, '<fixture>');
+}
+
+/** Reads a fixture file and normalizes it for snapshotting. */
+function readFixture(filePath: string) {
+  return normalize(readFileSync(path.join(fixtureRoot, filePath), 'utf8'));
+}
+
+/** Runs the migration and returns the error message it refuses with. */
+async function runAndCaptureError(result: unknown) {
+  try {
+    await vitestSetupFile.run?.({ result, dryRun: false } as any);
+  } catch (error) {
+    return normalize(String(error instanceof Error ? error.message : error));
+  }
+  throw new Error('Expected the migration to refuse, but it succeeded');
+}
 
 describe('vitestSetupFile', () => {
   describe('check', () => {
@@ -243,8 +268,14 @@ describe('vitestSetupFile', () => {
 
       expect(existsSync(setupFilePath)).toBe(false);
 
-      const updatedConfig = readFileSync(configPath, 'utf8');
-      expect(updatedConfig).not.toContain('vitest.setup');
+      const updatedConfig = readFixture('vitest.config.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+
+        export default defineConfig({
+          test: {},
+        });"
+      `);
       // The rewritten config must still be a valid Vitest config
       loadConfig(updatedConfig, configPath);
     });
@@ -265,9 +296,16 @@ describe('vitestSetupFile', () => {
       } as any);
       await vitestSetupFile.run?.({ result: result!, dryRun: false } as any);
 
-      const updatedConfig = readFileSync(path.join(fixtureRoot, 'vitest.config.ts'), 'utf8');
-      expect(updatedConfig).toContain("'./other-setup.ts'");
-      expect(updatedConfig).not.toContain('vitest.setup');
+      const updatedConfig = readFixture('vitest.config.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+
+        export default defineConfig({
+          test: {
+            setupFiles: ['./other-setup.ts'],
+          },
+        });"
+      `);
     });
 
     it('removes entries from defineWorkspace configs', async () => {
@@ -283,9 +321,18 @@ describe('vitestSetupFile', () => {
       } as any);
       await vitestSetupFile.run?.({ result: result!, dryRun: false } as any);
 
-      const updatedConfig = readFileSync(path.join(fixtureRoot, 'vitest.workspace.ts'), 'utf8');
-      expect(updatedConfig).not.toContain('setupFiles');
-      expect(updatedConfig).toContain("name: 'storybook'");
+      const updatedConfig = readFixture('vitest.workspace.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineWorkspace } from 'vitest/config';
+
+        export default defineWorkspace([
+          {
+            test: {
+              name: 'storybook'
+            },
+          },
+        ]);"
+      `);
       loadConfig(updatedConfig, path.join(fixtureRoot, 'vitest.workspace.ts'));
     });
 
@@ -302,8 +349,20 @@ describe('vitestSetupFile', () => {
       } as any);
       await vitestSetupFile.run?.({ result: result!, dryRun: false } as any);
 
-      const updatedConfig = readFileSync(path.join(fixtureRoot, 'vitest.config.ts'), 'utf8');
-      expect(updatedConfig).not.toContain('setupFiles');
+      const updatedConfig = readFixture('vitest.config.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+
+        export default defineConfig({
+          test: {
+            projects: [
+              {
+                test: {},
+              },
+            ],
+          },
+        });"
+      `);
       loadConfig(updatedConfig, path.join(fixtureRoot, 'vitest.config.ts'));
     });
 
@@ -323,8 +382,14 @@ describe('vitestSetupFile', () => {
       } as any);
       await vitestSetupFile.run?.({ result: result!, dryRun: false } as any);
 
-      const updatedConfig = readFileSync(path.join(fixtureRoot, 'vitest.config.ts'), 'utf8');
-      expect(updatedConfig).not.toContain('setupFiles');
+      const updatedConfig = readFixture('vitest.config.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+
+        export default defineConfig({
+          test: {},
+        });"
+      `);
       loadConfig(updatedConfig, path.join(fixtureRoot, 'vitest.config.ts'));
     });
 
@@ -343,7 +408,23 @@ describe('vitestSetupFile', () => {
       await vitestSetupFile.run?.({ result: result!, dryRun: true } as any);
 
       expect(existsSync(setupFilePath)).toBe(true);
-      expect(readFileSync(path.join(fixtureRoot, 'vitest.config.ts'), 'utf8')).toBe(originalConfig);
+      expect(readFixture('vitest.config.ts')).toBe(normalize(originalConfig));
+      // Unchanged, and snapshotted so the untouched inputs are reviewable next to the rewrites
+      expect(readFixture('vitest.config.ts')).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+
+        export default defineConfig({
+          test: {
+            setupFiles: ['./.storybook/vitest.setup.ts'],
+          },
+        });"
+      `);
+      expect(readFixture('.storybook/vitest.setup.ts')).toMatchInlineSnapshot(`
+        "import { setProjectAnnotations } from '@storybook/react-vite';
+        import * as projectAnnotations from './preview';
+
+        setProjectAnnotations([projectAnnotations]);"
+      `);
     });
 
     it('throws manual instructions for unsafe shapes and leaves files untouched', async () => {
@@ -359,11 +440,27 @@ describe('vitestSetupFile', () => {
         packageManager,
       } as any);
 
-      await expect(
-        vitestSetupFile.run?.({ result: result!, dryRun: false } as any)
-      ).rejects.toThrow(/couldn't migrate your Vitest setup file\(s\) automatically/);
+      const error = await runAndCaptureError(result!);
+      expect(error).toMatchInlineSnapshot(`
+        "The vitest-setup-file automigration couldn't migrate your Vitest setup file(s) automatically, but here are instructions for doing it yourself:
+
+        1) <fixture>/.storybook/vitest.setup.ts: it must contain a single "setProjectAnnotations" call and nothing else
+
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to setProjectAnnotations compose additively, so nothing breaks, but the boilerplate is redundant:
+
+        - setProjectAnnotations([projectAnnotations]);
+
+        For each file listed above:
+          1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
+          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
+      `);
+
+      // The refusal must be inert: the setup file and the config survive untouched
       expect(existsSync(setupFilePath)).toBe(true);
-      expect(readFileSync(path.join(fixtureRoot, 'vitest.config.ts'), 'utf8')).toBe(originalConfig);
+      expect(readFixture('vitest.config.ts')).toBe(normalize(originalConfig));
     });
 
     it('numbers all unsafe files in the error message', async () => {
@@ -382,9 +479,24 @@ describe('vitestSetupFile', () => {
         packageManager,
       } as any);
 
-      await expect(
-        vitestSetupFile.run?.({ result: result!, dryRun: false } as any)
-      ).rejects.toThrow(/1\).*2\)/s);
+      expect(await runAndCaptureError(result!)).toMatchInlineSnapshot(`
+        "The vitest-setup-file automigration couldn't migrate your Vitest setup file(s) automatically, but here are instructions for doing it yourself:
+
+        1) <fixture>/.storybook/vitest.setup.ts: it must contain a single "setProjectAnnotations" call and nothing else
+
+        2) <fixture>/src/other-vitest.setup.ts: the call passes inline objects or addon annotation modules
+
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to setProjectAnnotations compose additively, so nothing breaks, but the boilerplate is redundant:
+
+        - setProjectAnnotations([projectAnnotations]);
+
+        For each file listed above:
+          1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
+          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
+      `);
     });
 
     it('explains that custom annotations compose with the automatic ones', async () => {
@@ -399,9 +511,22 @@ describe('vitestSetupFile', () => {
         packageManager,
       } as any);
 
-      await expect(
-        vitestSetupFile.run?.({ result: result!, dryRun: false } as any)
-      ).rejects.toThrow(/compose additively/);
+      expect(await runAndCaptureError(result!)).toMatchInlineSnapshot(`
+        "The vitest-setup-file automigration couldn't migrate your Vitest setup file(s) automatically, but here are instructions for doing it yourself:
+
+        1) <fixture>/.storybook/vitest.setup.ts: it imports "../addons/a11y-preview", which is not part of the generated boilerplate
+
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to setProjectAnnotations compose additively, so nothing breaks, but the boilerplate is redundant:
+
+        - setProjectAnnotations([projectAnnotations]);
+
+        For each file listed above:
+          1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
+          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
+      `);
     });
   });
 });

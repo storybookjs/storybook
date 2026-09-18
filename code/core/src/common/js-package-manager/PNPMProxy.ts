@@ -624,7 +624,7 @@ export class PNPMProxy extends JsPackageManager {
   private async getPackageReleaseTime(packageName: string, version: string): Promise<Date | null> {
     const result = await this.runInternalCommand(
       'view',
-      ['--json', packageName, `time[${version}]`],
+      ['--json', packageName, 'time'],
       undefined,
       'pipe'
     );
@@ -634,7 +634,8 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
 
-    return parseReleaseTime(JSON.parse(normalizedValue));
+    const timeMap = parsePackageTimeMap(JSON.parse(normalizedValue));
+    return parseReleaseTime(timeMap?.[version]);
   }
 
   private async getLatestStableVersionAdheringToMinimumReleaseAge(

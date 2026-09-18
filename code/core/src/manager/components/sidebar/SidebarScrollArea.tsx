@@ -3,7 +3,6 @@ import React, {
   useCallback,
   useEffect,
   useRef,
-  useState,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -32,18 +31,15 @@ const Scroller = styled.div(({ theme }) => ({
   paddingBottom: 'var(--sidebar-bottom-height, 0px)',
 
   // A thin muted thumb on a transparent track, shown while the pointer is over the sidebar or a
-  // row inside it holds keyboard focus, and for a grace period after leaving. The reveal is
-  // driven from JS state rather than :hover because the delayed hide needs a timer: Chromium
-  // repaints ::-webkit-scrollbar-* styles when an attribute or class changes on the element, but
-  // never for a transitioned custom property, so CSS cannot express the delay. The thumb color
-  // still goes through a custom property so Firefox reads the same value through scrollbar-color.
-  // That standard property must stay scoped to engines without ::-webkit-scrollbar support: its
+  // row inside it holds keyboard focus, and for a grace period after leaving. The component
+  // steps the alpha custom property from JS because neither the delayed hide nor the fade can
+  // live in CSS: Chromium repaints ::-webkit-scrollbar-* styles when an inline style, attribute
+  // or class changes on the element, but never for a transitioned or registered custom property.
+  // The color is derived here so Firefox reads the same value through scrollbar-color. That
+  // standard property must stay scoped to engines without ::-webkit-scrollbar support: its
   // presence switches the others to native overlay scrollbars that ignore the rules below,
   // appear only while scrolling, and thicken under the pointer.
-  '--scrollbar-thumb': 'transparent',
-  '&[data-scrollbar-shown="true"]': {
-    '--scrollbar-thumb': transparentize(0.5, theme.textMutedColor),
-  },
+  '--scrollbar-thumb': `color-mix(in srgb, ${theme.textMutedColor} calc(var(--scrollbar-thumb-alpha, 0) * 100%), transparent)`,
   '@supports not selector(::-webkit-scrollbar)': {
     scrollbarWidth: 'thin',
     scrollbarColor: 'var(--scrollbar-thumb) transparent',
@@ -86,30 +82,69 @@ const Frame = styled.div(({ theme }) => ({
 }));
 
 const SCROLLBAR_HIDE_DELAY = 200;
+// Duration and easing of the shared ScrollArea component's thumb transition (0.2s ease-out).
+const SCROLLBAR_FADE_DURATION = 200;
+// The shown thumb is the muted text color at half opacity, like the shared ScrollArea thumb.
+const SCROLLBAR_THUMB_ALPHA = 0.5;
 
 /** Wraps the tree blocks in the sidebar's one scroll area and shares it with them. */
 export function SidebarScrollArea({ children, ...props }: { children: ReactNode }) {
   const scrollerRef = useRef<HTMLDivElement>(null);
-  const [isScrollbarShown, setScrollbarShown] = useState(false);
   const isPointerOver = useRef(false);
   const isFocusWithin = useRef(false);
   const hideTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const fadeFrame = useRef<number | undefined>(undefined);
+  const thumbAlpha = useRef(0);
+
+  const fadeThumbTo = useCallback((target: number) => {
+    if (fadeFrame.current !== undefined) {
+      cancelAnimationFrame(fadeFrame.current);
+    }
+    const from = thumbAlpha.current;
+    if (from === target) {
+      return;
+    }
+    const start = performance.now();
+    const step = () => {
+      const scroller = scrollerRef.current;
+      if (!scroller) {
+        return;
+      }
+      const progress = Math.min(1, (performance.now() - start) / SCROLLBAR_FADE_DURATION);
+      const eased = progress * (2 - progress);
+      thumbAlpha.current = from + (target - from) * eased;
+      scroller.style.setProperty('--scrollbar-thumb-alpha', String(thumbAlpha.current));
+      if (progress < 1) {
+        fadeFrame.current = requestAnimationFrame(step);
+      }
+    };
+    step();
+  }, []);
+
   const updateScrollbar = useCallback(() => {
     clearTimeout(hideTimer.current);
     if (isPointerOver.current || isFocusWithin.current) {
-      setScrollbarShown(true);
+      fadeThumbTo(SCROLLBAR_THUMB_ALPHA);
     } else {
-      hideTimer.current = setTimeout(() => setScrollbarShown(false), SCROLLBAR_HIDE_DELAY);
+      hideTimer.current = setTimeout(() => fadeThumbTo(0), SCROLLBAR_HIDE_DELAY);
     }
-  }, []);
-  useEffect(() => () => clearTimeout(hideTimer.current), []);
+  }, [fadeThumbTo]);
+
+  useEffect(
+    () => () => {
+      clearTimeout(hideTimer.current);
+      if (fadeFrame.current !== undefined) {
+        cancelAnimationFrame(fadeFrame.current);
+      }
+    },
+    []
+  );
 
   return (
     <Frame>
       <Scroller
         ref={scrollerRef}
         data-testid="sidebar-scroll-area"
-        data-scrollbar-shown={isScrollbarShown ? 'true' : undefined}
         onPointerEnter={() => {
           isPointerOver.current = true;
           updateScrollbar();

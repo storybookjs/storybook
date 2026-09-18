@@ -9719,7 +9719,6 @@ __metadata:
     memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
-    process-ancestry: "npm:^0.0.2"
     semver: "npm:^7.7.3"
     slash: "npm:^5.0.0"
     storybook: "workspace:*"
@@ -17602,7 +17601,6 @@ __metadata:
     commander: "npm:^14.0.2"
     empathic: "npm:^2.0.0"
     picocolors: "npm:^1.1.0"
-    process-ancestry: "npm:^0.0.2"
     react: "npm:^18.2.0"
     semver: "npm:^7.7.3"
     storybook: "workspace:*"
@@ -29370,13 +29368,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"process-ancestry@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "process-ancestry@npm:0.0.2"
-  checksum: 10c0/bca0290b7d3bd35da3a30bb958b2b0f2724f468b80d1b41e58d9a6a49fc42ff466faf49c2d085e94b7b660fee654be26e047b43f6b6065613ca123432bd409a9
-  languageName: node
-  linkType: hard
-
 "process-nextick-args@npm:~2.0.0":
   version: 2.0.1
   resolution: "process-nextick-args@npm:2.0.1"
@@ -32998,7 +32989,6 @@ __metadata:
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"
     pretty-hrtime: "npm:^1.0.3"
-    process-ancestry: "npm:^0.0.2"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
     react-aria: "npm:^3.52.1"

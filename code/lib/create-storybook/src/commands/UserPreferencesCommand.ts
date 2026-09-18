@@ -1,4 +1,4 @@
-import type { ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
 import { globalSettings } from 'storybook/internal/cli';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -74,11 +74,22 @@ export class UserPreferencesCommand {
       };
     }
 
+    // React Native-only projects don't have differentiated install workflows yet
+    // (see #34873): skip the install-type prompt and always use the minimal
+    // ("light") configuration for React Native.
+    const isReactNativeOnly = options.projectType === ProjectType.REACT_NATIVE;
+
     // Get install type
-    const installType: InstallType =
-      !newUser && !this.commandOptions.features
-        ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
-        : 'recommended';
+    let installType: InstallType;
+    if (isReactNativeOnly) {
+      installType = 'light';
+      await this.telemetryService.trackInstallType(installType);
+    } else {
+      installType =
+        !newUser && !this.commandOptions.features
+          ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
+          : 'recommended';
+    }
 
     // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
     const useAiForSetup = options.isAiSetupAvailable ? await this.promptAiSetup(skipPrompt) : false;

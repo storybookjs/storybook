@@ -1,0 +1,36 @@
+{
+  "name": "@storybook/devtools-spike",
+  "version": "11.0.0-alpha.0",
+  "private": true,
+  "description": "Dev-only spike: runtime-hook component inspection and live story generation. Never published.",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/devtools-spike",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/devtools-spike"
+  },
+  "license": "MIT",
+  "author": "Storybook",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "code": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3",
+    "vite": "^7.0.4"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  }
+}

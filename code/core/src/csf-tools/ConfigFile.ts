@@ -787,11 +787,14 @@ export class ConfigFile implements CsfObject {
 
   _inferQuotes() {
     if (!this._quotes) {
+      // recast normalizes CRLF to LF when parsing, but `this._code` keeps the
+      // original line endings, which misaligns token offsets on CRLF sources.
+      const code = this._code.replace(/\r\n/g, '\n');
       // first 500 tokens for efficiency
       const occurrences = (this._ast.tokens || []).slice(0, 500).reduce(
         (acc, token) => {
           if (token.type.label === 'string') {
-            acc[this._code[token.start]] += 1;
+            acc[code[token.start]] += 1;
           }
           return acc;
         },
@@ -1431,7 +1434,12 @@ export const formatConfig = (config: ConfigFile): string => {
 };
 
 export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(config._ast, { quote: config._inferQuotes(), ...options });
+  return recast.print(config._ast, {
+    quote: config._inferQuotes(),
+    // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+    lineTerminator: '\n',
+    ...options,
+  });
 };
 
 export const readConfig = async (fileName: string) => {

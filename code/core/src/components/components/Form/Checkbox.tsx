@@ -60,8 +60,6 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   { indeterminate = false, ...props },
   ref
 ) {
-  // Writing to this ref also writes through to `ref`, so the component can reach the input while
-  // still handing it to the caller.
   const inputRef = useObjectRef(ref);
 
   // `indeterminate` is a DOM property without an HTML attribute, so React cannot set it for us.

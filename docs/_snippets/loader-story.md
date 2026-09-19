@@ -418,6 +418,8 @@ export const Primary = meta.story({
 ```
 
 ```js filename="TodoItem.stories.js" renderer="web-components" language="js" tabTitle="CSF 3"
+import { html } from 'lit';
+
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/api/csf
@@ -425,7 +427,8 @@ export const Primary = meta.story({
  */
 export default {
   component: 'demo-todo-item',
-  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+  render: (args, { loaded: { todo } }) =>
+    html`<demo-todo-item title=${todo.title} ?completed=${todo.completed}></demo-todo-item>`,
 };
 
 export const Primary = {
@@ -440,6 +443,8 @@ export const Primary = {
 ```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts" tabTitle="CSF 3"
 import type { Meta, StoryObj } from '@storybook/web-components-vite';
 
+import { html } from 'lit';
+
 /*
  *👇 Render functions are a framework specific feature to allow you control on how the component renders.
  * See https://storybook.js.org/docs/api/csf
@@ -447,7 +452,8 @@ import type { Meta, StoryObj } from '@storybook/web-components-vite';
  */
 const meta: Meta = {
   component: 'demo-todo-item',
-  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+  render: (args, { loaded: { todo } }) =>
+    html`<demo-todo-item title=${todo.title} ?completed=${todo.completed}></demo-todo-item>`,
 };
 
 export default meta;
@@ -463,6 +469,8 @@ export const Primary: Story = {
 ```
 
 ```ts filename="TodoItem.stories.ts" renderer="web-components" language="ts" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
 import preview from '../.storybook/preview';
 
 /*
@@ -472,7 +480,8 @@ import preview from '../.storybook/preview';
  */
 const meta = preview.meta({
   component: 'demo-todo-item',
-  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+  render: (args, { loaded: { todo } }) =>
+    html`<demo-todo-item title=${todo.title} ?completed=${todo.completed}></demo-todo-item>`,
 });
 
 export const Primary = meta.story({
@@ -485,6 +494,8 @@ export const Primary = meta.story({
 ```
 
 ```js filename="TodoItem.stories.js" renderer="web-components" language="js" tabTitle="CSF Next 🧪"
+import { html } from 'lit';
+
 import preview from '../.storybook/preview';
 
 /*
@@ -494,7 +505,8 @@ import preview from '../.storybook/preview';
  */
 const meta = preview.meta({
   component: 'demo-todo-item',
-  render: (args, { loaded: { todo } }) => TodoItem({ ...args, ...todo }),
+  render: (args, { loaded: { todo } }) =>
+    html`<demo-todo-item title=${todo.title} ?completed=${todo.completed}></demo-todo-item>`,
 });
 
 export const Primary = meta.story({

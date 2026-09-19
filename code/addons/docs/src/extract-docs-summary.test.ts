@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { extractDocsSummary } from './extract-docs-summary.ts';
 
-// Ported from:
-// https://github.com/storybookjs/mcp/blob/main/packages/mcp/src/utils/manifest-formatter/extract-docs-summary.test.ts
+// Keep coverage aligned with
+// `code/lib/mcp/src/utils/manifest-formatter/extract-docs-summary.test.ts`.
 describe('extractDocsSummary', () => {
   describe('import statement removal', () => {
     it('should remove single import statements', () => {

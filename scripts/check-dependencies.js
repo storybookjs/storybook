@@ -28,7 +28,7 @@ const checkDependencies = async () => {
         if (code !== 0) {
           rej();
         } else {
-          res();
+          res(undefined);
         }
       });
     }).catch(() => {

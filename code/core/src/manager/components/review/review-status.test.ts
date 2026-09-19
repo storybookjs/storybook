@@ -1,13 +1,13 @@
-import { describe, expect, it, vi } from 'vitest';
 import type { Status, StatusStoreByTypeId } from 'storybook/internal/types';
 import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
+import { describe, expect, it, vi } from 'vitest';
 
 import type { ReviewState } from './review-state.ts';
 import {
   REVIEWING_STATUS_VALUE,
+  applyReviewStatuses,
   clearReviewStatuses,
   collectReviewStoryIds,
-  syncReviewStatuses,
 } from './review-status.ts';
 
 const sampleReview: ReviewState = {
@@ -64,13 +64,14 @@ describe('collectReviewStoryIds', () => {
   });
 });
 
-describe('syncReviewStatuses', () => {
+describe('applyReviewStatuses', () => {
   it('sets reviewing statuses for every story in the review', () => {
     const { store, statuses } = createMockStatusStore();
     const storyIds = collectReviewStoryIds(sampleReview);
 
-    syncReviewStatuses(store, storyIds, new Set());
+    applyReviewStatuses(store, storyIds);
 
+    expect(store.unset).toHaveBeenCalledOnce();
     expect(store.set).toHaveBeenCalledOnce();
     expect([...statuses.keys()].sort()).toEqual([
       'button--primary',
@@ -83,22 +84,29 @@ describe('syncReviewStatuses', () => {
     });
   });
 
-  it('removes reviewing statuses for stories no longer in the review', () => {
+  it('clears orphaned reviewing statuses when a new review replaces the old one', () => {
     const { store, statuses } = createMockStatusStore();
-    const initial = syncReviewStatuses(store, collectReviewStoryIds(sampleReview), new Set());
-    const nextReviewIds = new Set(['button--primary']);
+    applyReviewStatuses(store, collectReviewStoryIds(sampleReview));
 
-    syncReviewStatuses(store, nextReviewIds, initial);
+    applyReviewStatuses(store, new Set(['button--primary']));
 
-    expect(store.unset).toHaveBeenCalledWith(['button--secondary', 'form--default']);
     expect([...statuses.keys()]).toEqual(['button--primary']);
+  });
+
+  it('clears all reviewing statuses when the review has no stories', () => {
+    const { store, statuses } = createMockStatusStore();
+    applyReviewStatuses(store, collectReviewStoryIds(sampleReview));
+
+    applyReviewStatuses(store, new Set());
+
+    expect(statuses.size).toBe(0);
   });
 });
 
 describe('clearReviewStatuses', () => {
   it('clears all review statuses from the typed store', () => {
     const { store, statuses } = createMockStatusStore();
-    syncReviewStatuses(store, collectReviewStoryIds(sampleReview), new Set());
+    applyReviewStatuses(store, collectReviewStoryIds(sampleReview));
 
     clearReviewStatuses(store);
 

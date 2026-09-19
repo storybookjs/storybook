@@ -11,8 +11,24 @@ import {
 import { logger } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
+import invariant from 'tiny-invariant';
 
 import type { PrintResultType } from './PrintResultType.ts';
+import { createConfigObject } from './ConfigObject.ts';
+import {
+  type CsfMutationDiagnostic,
+  type CsfMutationResult,
+  type CsfObject,
+  type CsfValue,
+  createCsfObject,
+} from './CsfObject.ts';
+import { unwrapExpression } from './story-shape/utils.ts';
+
+export interface CallArgumentsOptions {
+  importedName: string;
+  methodName: string;
+  moduleNames: Iterable<string>;
+}
 
 const getCsfParsingErrorMessage = ({
   expectedType,
@@ -112,32 +128,209 @@ const _findVarInitialization = (identifier: string, program: t.Program) => {
   return declarator?.init;
 };
 
-const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
-  if (path.length === 0) {
-    return value;
-  }
-  const [first, ...rest] = path;
-  const innerExpression = _makeObjectExpression(rest, value);
-  return t.objectExpression([t.objectProperty(t.identifier(first), innerExpression)]);
-};
+export class ConfigFile implements CsfObject {
+  /**
+   * Identify the config, meta, story, annotation, or call argument this editor represents.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default {};').parse();
+   * object.target; // { kind: 'config' }
+   * ```
+   */
+  readonly target = { kind: 'config' } as const;
+  // No member may be private: core resolves this class from both src and dist, and any private
+  // member makes the emitted class type nominal, so the two identities stop being assignable.
+  _changed = false;
+  _mutationDiagnostics: CsfMutationDiagnostic[] = [];
 
-const _updateExportNode = (path: string[], expr: t.Expression, existing: t.ObjectExpression) => {
-  const [first, ...rest] = path;
-  const existingField = (existing.properties as t.ObjectProperty[]).find(
-    (p) => propKey(p) === first
-  ) as t.ObjectProperty;
-  if (!existingField) {
-    existing.properties.push(
-      t.objectProperty(t.identifier(first), _makeObjectExpression(rest, expr))
+  /**
+   * Report whether this editor has applied a mutation. Reads and no-op edits leave it unchanged.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default {};').parse();
+   * object.changed; // false
+   * object.set(['tags'], ['autodocs']);
+   * object.changed; // true
+   * ```
+   */
+  get changed() {
+    return this._changed;
+  }
+
+  /**
+   * Read diagnostics from unsupported discovery, reads, or mutations. `writeConfig` refuses to
+   * write a config with diagnostics, even if another edit succeeded.
+   *
+   * @example
+   * ```ts
+   * const config = loadConfig('export default { old: 1, current: 2 };').parse();
+   * config.rename(['old'], 'current');
+   * config.mutationDiagnostics.map(({ code }) => code); // ['occupied-destination']
+   * config.changed; // false
+   * ```
+   */
+  get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
+    return [...this._mutationDiagnostics];
+  }
+
+  /**
+   * Read a copy of the Babel expression at a property path. Missing fields return `undefined`.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { tags: ['docs'] };").parse();
+   * object.get(['tags'])?.type; // 'ArrayExpression'
+   * object.get(['missing']); // undefined
+   * ```
+   */
+  get(path: readonly string[]): t.Expression | undefined {
+    const editor = this._editor();
+    return editor.ok ? editor.object.get(path) : undefined;
+  }
+
+  /**
+   * Read plain values without executing code. Missing fields return `undefined`; unresolved
+   * expressions also return `undefined` and add a mutation diagnostic.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { tags: ['docs'], enabled: true };").parse();
+   * object.getValue(['tags']); // ['docs']
+   * object.getValue(['enabled']); // true
+   * object.getValue(['missing']); // undefined
+   * ```
+   */
+  getValue(path: readonly string[]): CsfValue {
+    const editor = this._editor();
+    return editor.ok ? editor.object.getValue(path) : undefined;
+  }
+
+  /**
+   * Set a plain value or Babel expression, creating missing parents. Accepts nested arrays and
+   * objects; top-level expression-shaped objects are interpreted as AST nodes.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default {};').parse();
+   * object.set(['parameters', 'a11y'], { test: 'todo', enabled: true });
+   * // { ok: true, changed: true }
+   * object.getValue(['parameters']); // { a11y: { test: 'todo', enabled: true } }
+   * ```
+   */
+  set(path: readonly string[], value: CsfValue | t.Expression): CsfMutationResult {
+    return this._mutate((object) => object.set(path, value));
+  }
+
+  /**
+   * Replace a value using its live Babel expression. Reused nodes preserve their source formatting.
+   * Return a new node, or `undefined` to leave the value unchanged. Do not mutate or retain the input
+   * node: such changes bypass change tracking and diagnostics.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { tags: ['docs'] };").parse();
+   * object.transform(['tags'], (value) =>
+   *   t.arrayExpression([t.spreadElement(value), t.stringLiteral('autodocs')])
+   * ); // { ok: true, changed: true }
+   * object.getValue(['tags']); // ['docs', 'autodocs']
+   * ```
+   */
+  transform(
+    path: readonly string[],
+    derive: (value: t.Expression) => t.Expression | undefined
+  ): CsfMutationResult {
+    return this._mutate((object) => object.transform(path, derive));
+  }
+
+  /**
+   * Remove a property and recursively clean up empty parents. Missing fields are a no-op.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { parameters: { a11y: { disable: true } } };').parse();
+   * object.remove(['parameters', 'a11y', 'disable']); // { ok: true, changed: true }
+   * object.getValue(['parameters']); // undefined
+   * object.remove(['parameters']); // { ok: true, changed: false }
+   * ```
+   */
+  remove(path: readonly string[]): CsfMutationResult {
+    return this._mutate((object) => object.remove(path));
+  }
+
+  /**
+   * Rename a property within its parent. An occupied destination produces a diagnostic
+   * and leaves the source unchanged.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { a11y: { element: '#root' } };").parse();
+   * object.rename(['a11y', 'element'], 'context'); // { ok: true, changed: true }
+   * object.getValue(['a11y']); // { context: '#root' }
+   * ```
+   */
+  rename(path: readonly string[], name: string): CsfMutationResult {
+    return this._mutate((object) => object.rename(path, name));
+  }
+
+  /**
+   * Move a property to another path, creating missing destination parents and cleaning up
+   * empty source parents. Rejects occupied destinations. Use `group` when nesting siblings must
+   * preserve expression evaluation order.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig("export default { globals: { theme: 'dark' } };").parse();
+   * object.move(['globals'], ['initialGlobals']); // { ok: true, changed: true }
+   * object.getValue(['initialGlobals']); // { theme: 'dark' }
+   * object.getValue(['globals']); // undefined
+   * ```
+   */
+  move(from: readonly string[], to: readonly string[]): CsfMutationResult {
+    return this._mutate((object) => object.move(from, to));
+  }
+
+  /**
+   * Nest named sibling properties under a destination, retaining their source order. Rejects
+   * conflicts and relocations that could change evaluation order. Missing source fields are ignored.
+   *
+   * @example
+   * ```ts
+   * const object = loadConfig('export default { showNav: false, showPanel: true };').parse();
+   * object.group(['layout'], ['showNav', 'showPanel']); // { ok: true, changed: true }
+   * object.getValue(['layout']); // { showNav: false, showPanel: true }
+   * object.getValue(['showNav']); // undefined
+   * ```
+   */
+  group(path: readonly string[], names: readonly string[]): CsfMutationResult {
+    return this._mutate((object) => object.group(path, names));
+  }
+
+  _mutate(operation: (object: CsfObject) => CsfMutationResult): CsfMutationResult {
+    const editor = this._editor();
+    return editor.ok === true
+      ? operation(editor.object)
+      : { ok: false, changed: false, diagnostic: editor.diagnostic };
+  }
+
+  _editor() {
+    const editor = createConfigObject(
+      this,
+      (diagnostic) => this._mutationDiagnostics.push(diagnostic),
+      () => {
+        this._changed = true;
+        this._exports = {};
+        this._exportDecls = {};
+        this.parse();
+      }
     );
-  } else if (t.isObjectExpression(existingField.value) && rest.length > 0) {
-    _updateExportNode(rest, expr, existingField.value);
-  } else {
-    existingField.value = _makeObjectExpression(rest, expr);
+    if (editor.ok === false) {
+      this._mutationDiagnostics.push(editor.diagnostic);
+    }
+    return editor;
   }
-};
 
-export class ConfigFile {
   _ast: t.File;
 
   _code: string;
@@ -250,6 +443,7 @@ export class ConfigFile {
             if (t.isIdentifier(decl.id)) {
               const { name: exportName } = decl.id;
               self._exportDecls[exportName] = decl;
+              self._exports[exportName] = t.toExpression(t.cloneNode(decl));
             }
           } else if (node.specifiers) {
             // export { X };
@@ -257,15 +451,32 @@ export class ConfigFile {
               if (
                 t.isExportSpecifier(spec) &&
                 t.isIdentifier(spec.local) &&
-                t.isIdentifier(spec.exported)
+                (t.isIdentifier(spec.exported) || t.isStringLiteral(spec.exported))
               ) {
                 const { name: localName } = spec.local;
-                const { name: exportName } = spec.exported;
+                const exportName = t.isIdentifier(spec.exported)
+                  ? spec.exported.name
+                  : spec.exported.value;
 
-                const decl = _findVarDeclarator(localName, parent as t.Program) as any;
+                const decl =
+                  _findVarDeclarator(localName, self._ast.program) ??
+                  self._ast.program.body.find(
+                    (statement): statement is t.FunctionDeclaration =>
+                      t.isFunctionDeclaration(statement) && statement.id?.name === localName
+                  );
                 // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
                 if (decl) {
-                  self._exports[exportName] = self._resolveDeclaration(decl.init, parent);
+                  const value = t.isFunctionDeclaration(decl)
+                    ? t.toExpression(t.cloneNode(decl))
+                    : decl.init
+                      ? self._resolveDeclaration(decl.init, parent)
+                      : undefined;
+                  if (exportName === 'default' && t.isObjectExpression(value)) {
+                    self.hasDefaultExport = true;
+                    self._parseExportsObject(value);
+                    return;
+                  }
+                  self._exports[exportName] = value;
                   self._exportDecls[exportName] = decl;
                 }
               }
@@ -353,85 +564,6 @@ export class ConfigFile {
     return _getPathProperties(rest, exported);
   }
 
-  getFieldValue<T = any>(path: string[]): T | undefined {
-    const node = this.getFieldNode(path);
-    if (node) {
-      const { code } = generate(node, {});
-
-      const value = (0, eval)(`(() => (${code}))()`);
-      return value;
-    }
-    return undefined;
-  }
-
-  getSafeFieldValue(path: string[]) {
-    try {
-      return this.getFieldValue(path);
-    } catch (e) {
-      //
-    }
-    return undefined;
-  }
-
-  setFieldNode(path: string[], expr: t.Expression) {
-    const [first, ...rest] = path;
-    const exportNode = this._exports[first];
-
-    // First check if we have a direct path in the exports
-    if (this._exportsObject) {
-      const properties = this._exportsObject.properties as t.ObjectProperty[];
-      const existingProp = properties.find((p) => propKey(p) === first);
-
-      // If the property exists and is an identifier, follow the reference
-      if (existingProp && t.isIdentifier(existingProp.value)) {
-        const varDecl = _findVarDeclarator(existingProp.value.name, this._ast.program);
-        if (varDecl && t.isObjectExpression(varDecl.init)) {
-          _updateExportNode(rest, expr, varDecl.init);
-          return;
-        }
-      }
-
-      // Otherwise update the export object directly
-      _updateExportNode(path, expr, this._exportsObject);
-      this._exports[path[0]] = expr;
-      return;
-    }
-
-    if (exportNode && t.isObjectExpression(exportNode) && rest.length > 0) {
-      _updateExportNode(rest, expr, exportNode);
-      return;
-    }
-
-    // If no direct path found, try variable declarations
-    const varDecl = _findVarDeclarator(first, this._ast.program);
-    if (varDecl && t.isObjectExpression(varDecl.init)) {
-      _updateExportNode(rest, expr, varDecl.init);
-      return;
-    }
-
-    if (exportNode && rest.length === 0 && this._exportDecls[path[0]]) {
-      const decl = this._exportDecls[path[0]];
-      if (t.isVariableDeclarator(decl)) {
-        decl.init = _makeObjectExpression([], expr);
-      }
-    } else if (this.hasDefaultExport) {
-      // This means the main.js of the user has a default export that is not an object expression, therefore we can't change the AST.
-      throw new Error(
-        `Could not set the "${path.join(
-          '.'
-        )}" field as the default export is not an object in this file.`
-      );
-    } else {
-      // create a new named export and add it to the top level
-      const exportObj = _makeObjectExpression(rest, expr);
-      const newExport = t.exportNamedDeclaration(
-        t.variableDeclaration('const', [t.variableDeclarator(t.identifier(first), exportObj)])
-      );
-      this._exports[first] = exportObj;
-      this._ast.program.body.push(newExport);
-    }
-  }
-
   /**
    * @example
    *
@@ -482,7 +614,7 @@ export class ConfigFile {
     return pathNames;
   }
 
-  _getPnpWrappedValue(node: t.Node) {
+  _getWrappedValue(node: t.Node) {
     if (t.isCallExpression(node)) {
       const arg = node.arguments[0];
       if (t.isStringLiteral(arg)) {
@@ -513,7 +645,7 @@ export class ConfigFile {
           if (t.isStringLiteral(prop.value)) {
             value = prop.value.value;
           } else {
-            value = this._getPnpWrappedValue(prop.value);
+            value = this._getWrappedValue(prop.value);
           }
         }
 
@@ -528,7 +660,7 @@ export class ConfigFile {
         }
       });
     } else if (t.isCallExpression(node)) {
-      value = this._getPnpWrappedValue(node);
+      value = this._getWrappedValue(node);
     }
 
     if (!value) {
@@ -614,7 +746,7 @@ export class ConfigFile {
   appendNodeToArray(path: string[], node: t.Expression) {
     const current = this.getFieldNode(path);
     if (!current) {
-      this.setFieldNode(path, t.arrayExpression([node]));
+      this.set(path, t.arrayExpression([node]));
     } else if (t.isArrayExpression(current)) {
       current.elements.push(node);
     } else {
@@ -641,7 +773,7 @@ export class ConfigFile {
           const name = this._getPresetValue(element, 'name');
           return name === value;
         }
-        return this._getPnpWrappedValue(element as t.Node) === value;
+        return this._getWrappedValue(element as t.Node) === value;
       });
       if (index >= 0) {
         current.elements.splice(index, 1);
@@ -655,11 +787,14 @@ export class ConfigFile {
 
   _inferQuotes() {
     if (!this._quotes) {
+      // recast normalizes CRLF to LF when parsing, but `this._code` keeps the
+      // original line endings, which misaligns token offsets on CRLF sources.
+      const code = this._code.replace(/\r\n/g, '\n');
       // first 500 tokens for efficiency
       const occurrences = (this._ast.tokens || []).slice(0, 500).reduce(
         (acc, token) => {
           if (token.type.label === 'string') {
-            acc[this._code[token.start]] += 1;
+            acc[code[token.start]] += 1;
           }
           return acc;
         },
@@ -699,16 +834,148 @@ export class ConfigFile {
     return valueNode;
   }
 
-  setFieldValue(path: string[], value: any) {
-    const valueNode = this.valueToNode(value);
-    if (!valueNode) {
-      throw new Error(`Unexpected value ${JSON.stringify(value)}`);
-    }
-    this.setFieldNode(path, valueNode);
-  }
-
   getBodyDeclarations(): t.Statement[] {
     return this._ast.program.body;
+  }
+
+  /**
+   * Edit the first object argument of method calls on a named import, including CommonJS aliases.
+   * Unsupported arguments add mutation diagnostics; calls without arguments are ignored.
+   *
+   * @example
+   * ```ts
+   * const manager = loadConfig(`
+   *   import { addons } from 'storybook/manager-api';
+   *   addons.setConfig({ showNav: false });
+   * `).parse();
+   * const [object] = manager.callArguments({
+   *   importedName: 'addons',
+   *   methodName: 'setConfig',
+   *   moduleNames: ['storybook/manager-api'],
+   * });
+   * object.group(['layout'], ['showNav']);
+   * object.getValue(['layout']); // { showNav: false }
+   * manager.changed; // true
+   * ```
+   */
+  callArguments({
+    importedName,
+    methodName,
+    moduleNames,
+  }: CallArgumentsOptions): readonly CsfObject[] {
+    const modules = new Set(moduleNames);
+    const imports = new Map<string, Set<t.Node>>();
+
+    traverse(this._ast, {
+      ImportDeclaration(path) {
+        if (!modules.has(path.node.source.value) || path.node.importKind === 'type') {
+          return;
+        }
+
+        for (const specifier of path.node.specifiers) {
+          if (
+            t.isImportSpecifier(specifier) &&
+            specifier.importKind !== 'type' &&
+            t.isIdentifier(specifier.imported, { name: importedName })
+          ) {
+            const bindingNodes = imports.get(specifier.local.name) ?? new Set<t.Node>();
+            bindingNodes.add(specifier);
+            imports.set(specifier.local.name, bindingNodes);
+          }
+        }
+      },
+      VariableDeclarator(path) {
+        const { id, init } = path.node;
+        if (
+          !t.isObjectPattern(id) ||
+          !t.isCallExpression(init) ||
+          !t.isIdentifier(init.callee, { name: 'require' }) ||
+          path.scope.getBinding('require') !== undefined ||
+          init.arguments.length !== 1 ||
+          !t.isStringLiteral(init.arguments[0]) ||
+          !modules.has(init.arguments[0].value)
+        ) {
+          return;
+        }
+
+        for (const property of id.properties) {
+          if (
+            t.isObjectProperty(property) &&
+            !property.computed &&
+            ((t.isIdentifier(property.key) && property.key.name === importedName) ||
+              (t.isStringLiteral(property.key) && property.key.value === importedName)) &&
+            t.isIdentifier(property.value)
+          ) {
+            const bindingNodes = imports.get(property.value.name) ?? new Set<t.Node>();
+            bindingNodes.add(path.node);
+            imports.set(property.value.name, bindingNodes);
+          }
+        }
+      },
+    });
+
+    const objects: CsfObject[] = [];
+    const report = (diagnostic: CsfMutationDiagnostic) =>
+      this._mutationDiagnostics.push(diagnostic);
+    const markChanged = () => {
+      this._changed = true;
+    };
+
+    traverse(this._ast, {
+      CallExpression(path) {
+        const { callee } = path.node;
+        if (
+          !t.isMemberExpression(callee) ||
+          !t.isIdentifier(callee.object) ||
+          !(
+            (t.isIdentifier(callee.property) &&
+              !callee.computed &&
+              callee.property.name === methodName) ||
+            (t.isStringLiteral(callee.property) && callee.property.value === methodName)
+          )
+        ) {
+          return;
+        }
+
+        const bindingNode = path.scope.getBinding(callee.object.name)?.path.node;
+        if (bindingNode && imports.get(callee.object.name)?.has(bindingNode)) {
+          const argument = path.node.arguments[0];
+          if (!argument) {
+            return;
+          }
+          const value = unwrapExpression(argument);
+          const target = { kind: 'call-argument', importedName, methodName } as const;
+          const binding = path.scope.getBinding(callee.object.name);
+          if (!binding?.constant || !t.isObjectExpression(value)) {
+            report({
+              code: !binding?.constant ? 'ambiguous-binding' : 'unsupported-initializer',
+              target,
+              path: [],
+              message: !binding?.constant
+                ? 'the imported binding is reassigned'
+                : 'the call argument is not an object literal',
+              ...(argument.loc ? { loc: argument.loc } : {}),
+            });
+            return;
+          }
+          objects.push(
+            createCsfObject(
+              target,
+              {
+                node: value,
+                scope: path.scope,
+                buildCodeFrameError: path.buildCodeFrameError.bind(path),
+              },
+              [],
+              report,
+              markChanged
+            )
+          );
+        }
+      },
+    });
+
+    return objects;
   }
 
   setBodyDeclaration(declaration: t.Declaration) {
@@ -1167,7 +1434,12 @@ export const formatConfig = (config: ConfigFile): string => {
 };
 
 export const printConfig = (config: ConfigFile, options: RecastOptions = {}): PrintResultType => {
-  return recast.print(config._ast, options);
+  return recast.print(config._ast, {
+    quote: config._inferQuotes(),
+    // Recast defaults this to `os.EOL`, which would carriage-return printed files on Windows.
+    lineTerminator: '\n',
+    ...options,
+  });
 };
 
 export const readConfig = async (fileName: string) => {
@@ -1176,6 +1448,8 @@ export const readConfig = async (fileName: string) => {
 };
 
 export const writeConfig = async (config: ConfigFile, fileName?: string) => {
+  const [diagnostic] = config.mutationDiagnostics;
+  invariant(!diagnostic, diagnostic?.message);
   const fname = fileName || config.fileName;
 
   if (!fname) {

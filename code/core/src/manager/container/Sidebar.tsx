@@ -20,6 +20,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       viewMode,
       storyId,
       refId,
+      location,
       layout: { showToolbar },
       // FIXME: This is the actual `index.json` index where the `index` below
       // is actually the stories hash. We should fix this up and make it consistent.
@@ -44,6 +45,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       refs,
       storyId,
       refId,
+      anchor: location?.hash ? location.hash.slice(1) : undefined,
       viewMode,
       showToolbar,
       isPanelShown: api.getIsPanelShown(),

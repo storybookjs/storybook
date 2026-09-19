@@ -1,0 +1,67 @@
+{
+  "count": {
+    "description": undefined,
+    "name": "count",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": true,
+    },
+  },
+  "disabled": {
+    "description": undefined,
+    "name": "disabled",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "increment": {
+    "description": undefined,
+    "name": "increment",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": 1,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "label": {
+    "description": "Visible caption next to the control.",
+    "name": "label",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

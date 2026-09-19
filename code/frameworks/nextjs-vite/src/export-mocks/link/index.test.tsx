@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
@@ -67,5 +67,61 @@ describe('next/link mock', () => {
     getAnchorOnClick({ href: '/about', onClick: mergedOnClick })(makeClickEvent());
 
     expect(userOnClick).toHaveBeenCalledTimes(1);
+  });
+
+  describe('trailingSlash', () => {
+    afterEach(() => {
+      vi.unstubAllEnvs();
+    });
+
+    it('appends a trailing slash when `trailingSlash` is enabled', () => {
+      vi.stubEnv('__NEXT_TRAILING_SLASH', 'true');
+
+      expect(renderHref({ href: '/about' })).toBe('/about/');
+      expect(renderHref({ href: '/users/[id]', as: '/users/123' })).toBe('/users/123/');
+      expect(renderHref({ href: { pathname: '/about' } })).toBe('/about/');
+    });
+
+    it('keeps the slash before the query and hash', () => {
+      vi.stubEnv('__NEXT_TRAILING_SLASH', 'true');
+
+      expect(renderHref({ href: '/about?ref=nav' })).toBe('/about/?ref=nav');
+      expect(renderHref({ href: '/about#team' })).toBe('/about/#team');
+      expect(renderHref({ href: '/about?ref=nav#team' })).toBe('/about/?ref=nav#team');
+    });
+
+    it('does not append a slash to a path that looks like a file', () => {
+      vi.stubEnv('__NEXT_TRAILING_SLASH', 'true');
+
+      expect(renderHref({ href: '/logo.png' })).toBe('/logo.png');
+      expect(renderHref({ href: '/logo.png/' })).toBe('/logo.png');
+    });
+
+    it('does not touch the root path or double up an existing slash', () => {
+      vi.stubEnv('__NEXT_TRAILING_SLASH', 'true');
+
+      expect(renderHref({ href: '/' })).toBe('/');
+      expect(renderHref({ href: '/about/' })).toBe('/about/');
+    });
+
+    it('strips a trailing slash when `trailingSlash` is disabled', () => {
+      expect(renderHref({ href: '/about/' })).toBe('/about');
+      expect(renderHref({ href: '/' })).toBe('/');
+    });
+
+    it('is a no-op when `skipTrailingSlashRedirect` is enabled', () => {
+      vi.stubEnv('__NEXT_TRAILING_SLASH', 'true');
+      vi.stubEnv('__NEXT_MANUAL_TRAILING_SLASH', 'true');
+
+      expect(renderHref({ href: '/about' })).toBe('/about');
+      expect(renderHref({ href: '/about/' })).toBe('/about/');
+    });
+
+    it('leaves hrefs that are not absolute paths alone', () => {
+      vi.stubEnv('__NEXT_TRAILING_SLASH', 'true');
+
+      expect(renderHref({ href: 'https://example.com/about' })).toBe('https://example.com/about');
+      expect(renderHref({ href: '#section' })).toBe('#section');
+    });
   });
 });

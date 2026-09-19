@@ -25,6 +25,12 @@ export interface StoryDoc {
   snippet?: string;
   description?: string;
   summary?: string;
+  /**
+   * What a static pass could not resolve, in the source text it was written as. Next to a
+   * `snippet` it marks the example as partial; on its own it says why no static snippet could be
+   * produced at all. An `error` means the provider itself failed.
+   */
+  warning?: string;
   error?: StoryDocsError;
 }
 
@@ -34,16 +40,20 @@ export type StoryDocsById = Record<string, StoryDoc>;
 /**
  * Story-docs payload returned by `core/story-docs`'s `storyDocs` query.
  *
- * Carries per-story snippets and descriptions plus file-level import statements. Import snippets
- * do not currently honor the component `@import` JSDoc override tag — see the story-docs service
- * README for details.
+ * Carries per-story snippets and descriptions. A provider either sets `import` or emits snippets
+ * that already carry their own imports — see the story-docs service README for details.
  */
 export interface StoryDocsPayload {
   id: string;
   name: string;
   /** CSF story file import path from the index entry. */
   path: string;
-  /** Suggested import statement(s) prepended to story snippets in docs. */
+  /**
+   * Import statement(s) prepended to every story snippet in docs.
+   *
+   * Left unset by providers whose snippets are self-contained, which is what new providers should
+   * do; prepending to such a snippet would put an import block above source that already imports.
+   */
   import?: string;
   stories: StoryDocsById;
   error?: StoryDocsError;

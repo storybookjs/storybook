@@ -3,10 +3,13 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
-import { ROOT_DIRECTORY } from '../../utils/constants';
-import type { BuildEntries } from './entry-utils';
+import type { BuildEntries } from './entry-utils.ts';
 
-const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+// Computed locally instead of importing scripts/utils/constants.ts: that
+// module must stay CJS-compatible for Playwright consumers, while this one
+// runs as native ESM.
+const ROOT_DIRECTORY = join(import.meta.dirname, '..', '..', '..');
+const DIR_CODE = join(ROOT_DIRECTORY, 'code');
 
 const MAX_DTS_ATTEMPTS = 2;
 const RETRY_DELAY_MS = 500;
@@ -32,6 +35,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
       return limited(async () => {
         for (let attempt = 1; attempt <= MAX_DTS_ATTEMPTS; attempt++) {
           let timer: ReturnType<typeof setTimeout> | undefined;
+          let killTimer: ReturnType<typeof setTimeout> | undefined;
           const dtsProcess = spawn(
             `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
             [`"${join(import.meta.dirname, 'dts-process.ts')}"`, `"${entryPoint}"`],
@@ -63,18 +67,22 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
                 resolve(void 0);
               });
             }),
-            new Promise((resolve) => {
+            new Promise<void>(() => {
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
-
-                dtsProcess.kill(408); // timed out
-                resolve(void 0);
+                dtsProcess.kill('SIGTERM');
+                killTimer = setTimeout(() => {
+                  dtsProcess.kill('SIGKILL');
+                }, 5000);
               }, 120000);
             }),
           ]);
 
           if (timer) {
             clearTimeout(timer);
+          }
+          if (killTimer) {
+            clearTimeout(killTimer);
           }
 
           if (dtsProcess.exitCode !== 0) {

@@ -138,7 +138,6 @@ export const components = typography.components;
 const resetComponents: Record<string, ElementType> = {};
 
 Object.keys(typography.components).forEach((key) => {
-  // eslint-disable-next-line react/display-name
   resetComponents[key] = forwardRef((props, ref) => createElement(key, { ...props, ref }));
 });
 

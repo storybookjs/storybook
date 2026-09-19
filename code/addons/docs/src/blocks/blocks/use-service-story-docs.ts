@@ -2,7 +2,12 @@ import { useCallback } from 'react';
 
 import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import { type QueryState, selectSnippetForStory, selectStoryDoc } from 'storybook/open-service';
+import {
+  type QueryState,
+  selectSnippetForStory,
+  selectStoryDoc,
+  selectWarningForStory,
+} from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -24,7 +29,7 @@ export function useServiceStory<TSelected>(
   selector: (payload: StoryDocsPayload | undefined, storyId: string) => TSelected
 ): QueryState<TSelected> {
   const componentId = storyId.split('--')[0]!;
-  const service = getService('core/story-docs');
+  const service = getService('core/story-docs', { internal: true });
 
   // Kept stable (selectors are compared by reference on the subscription) so we don't re-subscribe
   // every render.
@@ -51,4 +56,9 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
 /** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
 export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
   return useServiceStory(storyId, selectSnippetForStory);
+}
+
+/** Convenience hook returning why one story's snippet is an incomplete example, when it is one. */
+export function useServiceStoryWarning(storyId: string): QueryState<string | undefined> {
+  return useServiceStory(storyId, selectWarningForStory);
 }

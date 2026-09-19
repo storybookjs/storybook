@@ -1,189 +1,89 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import {
+  createStoryArgsResolver,
+  type CsfFile,
+  type ImportRef,
+  metaObjectPath,
+  normalizeStoryDeclaration,
+  type ReferenceContext,
+  type RenderResolution,
+  resolveRenderFunction,
+  type StoryArgsResolver,
+} from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
+
+function renderFunctionOf(resolution: RenderResolution) {
+  if (resolution.kind === 'resolved') {
+    return resolution.path;
+  }
+  return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
+}
+
+/** A story's snippet, and what showing it as a complete example still depends on. */
+export interface CodeSnippet {
+  node: t.VariableDeclaration | t.FunctionDeclaration;
+  /** Imports the snippet needs beyond the component, from arg values that kept a name. */
+  imports: ImportRef[];
+  /** What a static pass could not read, in the source text it was written as. */
+  unresolved: string[];
+}
 
 export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
-  componentName?: string
+  componentName?: string,
+  resolver: StoryArgsResolver = createStoryArgsResolver(csf)
+): CodeSnippet {
+  const { args, imports, unresolved } = resolver.resolve(storyName);
+  return {
+    node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
+    imports,
+    unresolved,
+  };
+}
+
+function buildSnippetNode(
+  csf: CsfFile,
+  storyName: string,
+  componentName: string | undefined,
+  merged: Record<string, t.Node>,
+  ctx: ReferenceContext
 ): t.VariableDeclaration | t.FunctionDeclaration {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
-  const metaObj = csf._metaNode;
 
   if (!storyDeclaration) {
     const message = 'Expected story to be a function or variable declaration';
     throw csf._storyPaths[storyName]?.buildCodeFrameError(message) ?? message;
   }
 
-  // Normalize to NodePath<Function | Expression>
-  let storyPath: NodePath<t.FunctionDeclaration | t.Expression>;
-  if (storyDeclaration.isFunctionDeclaration()) {
-    storyPath = storyDeclaration;
-  } else if (storyDeclaration.isVariableDeclarator()) {
-    const init = storyDeclaration.get('init');
-    invariant(
-      init.isExpression(),
-      () =>
-        storyDeclaration.buildCodeFrameError('Expected story initializer to be an expression')
-          .message
-    );
-    storyPath = init;
-  } else {
-    throw storyDeclaration.buildCodeFrameError(
-      'Expected story to be a function or variable declaration'
-    );
-  }
-
-  let normalizedPath: NodePath<t.FunctionDeclaration | t.Expression> = storyPath;
-
-  // Handle Template.bind(...) or factory(story)
-  if (storyPath.isCallExpression()) {
-    const callee = storyPath.get('callee');
-    if (callee.isMemberExpression()) {
-      const obj = callee.get('object');
-      const prop = callee.get('property');
-      const isBind =
-        (prop.isIdentifier() && prop.node.name === 'bind') ||
-        (t.isStringLiteral(prop.node) && prop.node.value === 'bind');
-
-      if (obj.isIdentifier() && isBind) {
-        const resolved = resolveIdentifierInit(storyDeclaration, obj);
-
-        if (resolved) {
-          normalizedPath = resolved;
-        }
-      }
-    }
-
-    if (storyPath === normalizedPath) {
-      const args = storyPath.get('arguments');
-      // Allow meta.story() with zero args (CSF4)
-      if (args.length === 0) {
-        // Leave normalizedPath as the CallExpression; we'll treat it as an empty story config later
-      } else {
-        invariant(
-          args.length === 1,
-          () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
-        );
-        const storyArg = args[0];
-        invariant(
-          storyArg.isExpression(),
-          () => storyPath.buildCodeFrameError('Could not evaluate story expression').message
-        );
-        normalizedPath = storyArg;
-      }
-    }
-  }
-
-  // Strip TS `satisfies` / `as`
-  normalizedPath = normalizedPath.isTSSatisfiesExpression()
-    ? normalizedPath.get('expression')
-    : normalizedPath.isTSAsExpression()
-      ? normalizedPath.get('expression')
-      : normalizedPath;
+  const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
 
   // Find a function (explicit story fn or render())
   let storyFn:
-    | NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>
+    | NodePath<
+        t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
+      >
     | undefined;
 
-  if (
-    normalizedPath.isArrowFunctionExpression() ||
-    normalizedPath.isFunctionExpression() ||
-    normalizedPath.isFunctionDeclaration()
-  ) {
-    storyFn = normalizedPath;
-  } else if (!normalizedPath.isObjectExpression()) {
-    // Allow CSF4 meta.story() without arguments, which is equivalent to an empty object story config
-    if (
-      normalizedPath.isCallExpression() &&
-      Array.isArray(normalizedPath.node.arguments) &&
-      normalizedPath.node.arguments.length === 0
-    ) {
-      // No-op: treat as an object story with no properties
-    } else {
-      throw normalizedPath.buildCodeFrameError(
-        'Expected story to be csf factory, function or an object expression'
-      );
-    }
+  if (normalizedStory.type === 'fn') {
+    storyFn = normalizedStory.path;
   }
 
-  const storyProps = normalizedPath.isObjectExpression()
-    ? normalizedPath.get('properties').filter((p) => p.isObjectProperty())
-    : [];
+  const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
 
-  const metaPath = pathForNode(csf._file.path, metaObj);
-  const metaProps = metaPath?.isObjectExpression()
-    ? metaPath.get('properties').filter((p) => p.isObjectProperty())
-    : [];
-
-  // Tri-state render resolution: distinguishes "no render property" from
-  // "render exists but couldn't be resolved" so that an unresolvable story-level
-  // render (e.g. `render: ImportedTemplate`) doesn't incorrectly fall back to meta's render.
-  type RenderResolution =
-    | { kind: 'missing' }
-    | {
-        kind: 'resolved';
-        path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>;
-      }
-    | { kind: 'unresolved' };
-
-  const getRenderPath = (object: NodePath<t.ObjectProperty>[]): RenderResolution => {
-    const renderPath = object.find((p) => keyOf(p.node) === 'render')?.get('value');
-
-    if (!renderPath) {
-      return { kind: 'missing' };
-    }
-
-    // If render is an identifier (e.g. `render: Template`), try to resolve it
-    if (renderPath.isIdentifier()) {
-      const resolved = resolveIdentifierInit(storyDeclaration, renderPath);
-      if (
-        resolved &&
-        (resolved.isArrowFunctionExpression() ||
-          resolved.isFunctionExpression() ||
-          resolved.isFunctionDeclaration())
-      ) {
-        return { kind: 'resolved', path: resolved };
-      }
-      // Render property exists but couldn't be resolved — don't fall back to meta's render
-      return { kind: 'unresolved' };
-    }
-
-    if (!(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())) {
-      throw renderPath.buildCodeFrameError(
-        'Expected render to be an arrow function or function expression'
-      );
-    }
-
-    return { kind: 'resolved', path: renderPath };
-  };
-
-  const metaRender = getRenderPath(metaProps);
-  const storyRender = getRenderPath(storyProps);
+  const metaRender = resolveRenderFunction(metaObjectPath(csf), storyDeclaration, ctx);
+  const storyRender = resolveRenderFunction(storyConfigPath, storyDeclaration, ctx);
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
+  // A render shadowed by a later spread is still the best static guess for this manifest,
+  // which degrades to synthesis rather than suppressing snippets.
   if (!storyFn) {
     storyFn =
-      storyRender.kind === 'resolved'
-        ? storyRender.path
-        : storyRender.kind === 'missing' && metaRender.kind === 'resolved'
-          ? metaRender.path
-          : undefined;
+      renderFunctionOf(storyRender) ??
+      (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
-
-  // Collect args
-  const metaArgs = metaArgsRecord(metaObj ?? null);
-  const storyArgsPath = storyProps
-    .filter((p) => keyOf(p.node) === 'args')
-    .map((p) => p.get('value'))
-    .find((v) => v.isObjectExpression());
-  const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const storyAssignedArgsPath = storyArgsAssignmentPath(csf._file.path, storyName);
-  const storyAssignedArgs = argsRecordFromObjectPath(storyAssignedArgsPath);
-  const merged: Record<string, t.Node> = { ...metaArgs, ...storyArgs, ...storyAssignedArgs };
 
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
@@ -199,20 +99,25 @@ export function getCodeSnippet(
       const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
       const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
       if (spreadRes.changed || inlineRes.changed) {
-        const newFn = t.arrowFunctionExpression([], inlineRes.node, fn.async);
+        const newFn = t.arrowFunctionExpression(
+          remainingParams(fn, inlineRes.node),
+          inlineRes.node,
+          fn.async
+        );
         return t.variableDeclaration('const', [
           t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
       }
     }
 
-    const stmts = t.isFunctionDeclaration(fn)
-      ? fn.body.body
-      : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
+    const stmts =
+      t.isFunctionDeclaration(fn) || t.isObjectMethod(fn)
         ? fn.body.body
-        : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+        : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
           ? fn.body.body
-          : undefined;
+          : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+            ? fn.body.body
+            : undefined;
 
     if (stmts) {
       let changed = false;
@@ -233,18 +138,14 @@ export function getCodeSnippet(
       });
 
       if (changed) {
+        const body = t.blockStatement(newBody);
+        const params = remainingParams(fn, body);
         return t.isFunctionDeclaration(fn)
-          ? t.functionDeclaration(
-              t.identifier(storyName),
-              [],
-              t.blockStatement(newBody),
-              fn.generator,
-              fn.async
-            )
+          ? t.functionDeclaration(t.identifier(storyName), params, body, fn.generator, fn.async)
           : t.variableDeclaration('const', [
               t.variableDeclarator(
                 t.identifier(storyName),
-                t.arrowFunctionExpression([], t.blockStatement(newBody), fn.async)
+                t.arrowFunctionExpression(params, body, fn.async)
               ),
             ]);
       }
@@ -252,7 +153,12 @@ export function getCodeSnippet(
 
     return t.isFunctionDeclaration(fn)
       ? t.functionDeclaration(t.identifier(storyName), fn.params, fn.body, fn.generator, fn.async)
-      : t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
+      : t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier(storyName),
+            t.isObjectMethod(fn) ? t.arrowFunctionExpression(fn.params, fn.body, fn.async) : fn
+          ),
+        ]);
   }
 
   // No function: synthesize `<Component {...attrs}/>`
@@ -276,6 +182,43 @@ export function getCodeSnippet(
   return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
 }
 
+type StoryFunction =
+  | t.ArrowFunctionExpression
+  | t.FunctionExpression
+  | t.FunctionDeclaration
+  | t.ObjectMethod;
+
+/**
+ * Parameters the rewritten story function still needs.
+ *
+ * Inlining the args removes the reason the story took an `args` parameter, so the snippet drops it
+ * - unless something the rewrite could not inline still reads from it, which would leave the
+ * snippet naming a binding it no longer declares.
+ */
+function remainingParams(fn: StoryFunction, body: t.Node): StoryFunction['params'] {
+  return readsArgs(body) ? fn.params : [];
+}
+
+function readsArgs(node: t.Node): boolean {
+  // A key or a member name spelled `args` names a property, not the parameter.
+  const named = new Set<t.Node>();
+  let reads = false;
+
+  t.traverseFast(node, (current) => {
+    if (t.isMemberExpression(current) && !current.computed) {
+      named.add(current.property);
+    }
+    if ((t.isObjectProperty(current) || t.isObjectMethod(current)) && !current.computed) {
+      named.add(current.key);
+    }
+    if (t.isIdentifier(current) && current.name === 'args' && !named.has(current)) {
+      reads = true;
+    }
+  });
+
+  return reads;
+}
+
 /** Build a spread `{...{k: v}}` for props that aren't valid JSX attributes. */
 function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpreadAttribute | null {
   if (entries.length === 0) {
@@ -287,69 +230,7 @@ function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpre
   return t.jsxSpreadAttribute(t.objectExpression(objectProps));
 }
 
-const keyOf = (p: t.ObjectProperty): string | null =>
-  t.isIdentifier(p.key) ? p.key.name : t.isStringLiteral(p.key) ? p.key.value : null;
-
 const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
-
-const argsRecordFromObjectPath = (objPath?: NodePath<t.ObjectExpression> | null) =>
-  objPath
-    ? Object.fromEntries(
-        objPath
-          .get('properties')
-          .filter((p) => p.isObjectProperty())
-          .map((p) => [keyOf(p.node), p.get('value').node])
-          .filter((e) => Boolean(e[0]))
-      )
-    : {};
-
-/** Find `StoryName.args = { ... }` assignment and return the right-hand ObjectExpression if present. */
-function storyArgsAssignmentPath(
-  program: NodePath<t.Program>,
-  storyName: string
-): NodePath<t.ObjectExpression> | null {
-  let found: NodePath<t.ObjectExpression> | null = null;
-  program.traverse({
-    AssignmentExpression(p) {
-      const left = p.get('left');
-      const right = p.get('right');
-      if (left.isMemberExpression()) {
-        const obj = left.get('object');
-        const prop = left.get('property');
-        const isStoryIdent = obj.isIdentifier() && obj.node.name === storyName;
-        const isArgsProp =
-          (prop.isIdentifier() && prop.node.name === 'args' && !left.node.computed) ||
-          (t.isStringLiteral(prop.node) && left.node.computed && prop.node.value === 'args');
-        if (isStoryIdent && isArgsProp && right.isObjectExpression()) {
-          found = right as NodePath<t.ObjectExpression>;
-        }
-      }
-    },
-  });
-  return found;
-}
-
-const argsRecordFromObjectNode = (obj?: t.ObjectExpression | null) =>
-  obj
-    ? Object.fromEntries(
-        obj.properties
-          .filter((p): p is t.ObjectProperty => t.isObjectProperty(p))
-          .map((p) => [keyOf(p), p.value])
-          .filter((e) => Boolean(e[0]))
-      )
-    : {};
-
-const metaArgsRecord = (meta?: t.ObjectExpression | null) => {
-  if (!meta) {
-    return {};
-  }
-  const argsProp = meta.properties.find(
-    (p): p is t.ObjectProperty => t.isObjectProperty(p) && keyOf(p) === 'args'
-  );
-  return argsProp && t.isObjectExpression(argsProp.value)
-    ? argsRecordFromObjectNode(argsProp.value)
-    : {};
-};
 
 const toAttr = (key: string, value: t.Node) => {
   if (t.isBooleanLiteral(value)) {
@@ -578,73 +459,4 @@ function transformArgsSpreadsInJsx(
   });
 
   return { node: t.jsxFragment(node.openingFragment, node.closingFragment, fragChildren), changed };
-}
-
-/** Resolve the initializer for an identifier (e.g. `Template.bind({})` or `render: Template`). */
-function resolveIdentifierInit(storyPath: NodePath<t.Node>, identifier: NodePath<t.Identifier>) {
-  const programPath = storyPath.findParent((p) => p.isProgram()) as NodePath<t.Program> | null;
-
-  if (!programPath) {
-    return null;
-  }
-
-  // Check for function declarations: `function Template(args) { ... }` or `export function Template(args) { ... }`
-  for (const stmt of programPath.get('body')) {
-    if (stmt.isFunctionDeclaration() && stmt.node.id?.name === identifier.node.name) {
-      return stmt;
-    }
-    if (stmt.isExportNamedDeclaration()) {
-      const decl = stmt.get('declaration');
-      if (decl.isFunctionDeclaration() && decl.node.id?.name === identifier.node.name) {
-        return decl;
-      }
-    }
-  }
-
-  // Check for variable declarations: `const Template = (args) => ...`
-  const declarators = programPath.get('body').flatMap((stmt) => {
-    if (stmt.isVariableDeclaration()) {
-      return stmt.get('declarations');
-    }
-    if (stmt.isExportNamedDeclaration()) {
-      const decl = stmt.get('declaration');
-
-      if (decl && decl.isVariableDeclaration()) {
-        return decl.get('declarations');
-      }
-    }
-    return [];
-  });
-
-  const match = declarators.find((d) => {
-    const id = d.get('id');
-    return id.isIdentifier() && id.node.name === identifier.node.name;
-  });
-
-  if (!match) {
-    return null;
-  }
-  const init = match.get('init');
-  return init && init.isExpression() ? init : null;
-}
-
-export function pathForNode<T extends t.Node>(
-  program: NodePath<t.Program>,
-  target: T | undefined
-): NodePath<T> | undefined {
-  if (!target) {
-    return undefined;
-  }
-  let found: NodePath<T> | undefined;
-
-  program.traverse({
-    enter(p) {
-      if (p.node && p.node === target) {
-        found = p as NodePath<T>;
-        p.stop(); // bail as soon as we have it
-      }
-    },
-  });
-
-  return found;
 }

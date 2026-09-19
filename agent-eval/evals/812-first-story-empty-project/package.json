@@ -1,0 +1,25 @@
+{
+  "name": "812-first-story-empty-project",
+  "type": "module",
+  "scripts": {
+    "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook",
+    "postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
+    "storybook": "storybook dev",
+    "build-storybook": "storybook build"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "next",
+    "@storybook/addon-docs": "next",
+    "@storybook/addon-mcp": "file:./local-packages/addon-mcp",
+    "@storybook/addon-vitest": "next",
+    "@storybook/mcp": "file:./local-packages/mcp",
+    "@storybook/react": "next",
+    "@storybook/react-vite": "next",
+    "@vitest/browser-playwright": "4.0.6",
+    "playwright": "1.56.1",
+    "storybook": "next"
+  },
+  "evals": {
+    "template": "vite-app"
+  }
+}

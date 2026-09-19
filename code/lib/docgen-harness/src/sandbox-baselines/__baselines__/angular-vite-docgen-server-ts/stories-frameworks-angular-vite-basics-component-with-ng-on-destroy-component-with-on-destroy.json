@@ -1,0 +1,63 @@
+{
+  "argTypes": {
+    "interval": {
+      "name": "interval",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "ngOnDestroy": {
+      "name": "ngOnDestroy",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "ngOnInit": {
+      "name": "ngOnInit",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "time": {
+      "name": "time",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-ng-on-destroy-component-with-on-destroy",
+  "jsDocTags": {},
+  "name": "OnDestroyComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-ng-on-destroy/component-with-on-destroy.stories.ts"
+}

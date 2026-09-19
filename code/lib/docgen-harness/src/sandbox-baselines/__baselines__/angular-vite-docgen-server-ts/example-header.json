@@ -1,0 +1,69 @@
+{
+  "argTypes": {
+    "onCreateAccount": {
+      "action": "onCreateAccount",
+      "name": "onCreateAccount",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "onLogin": {
+      "action": "onLogin",
+      "name": "onLogin",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "onLogout": {
+      "action": "onLogout",
+      "name": "onLogout",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "user": {
+      "name": "user",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": null
+        },
+        "type": {
+          "summary": "User | null"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    }
+  },
+  "id": "example-header",
+  "jsDocTags": {},
+  "name": "HeaderComponent",
+  "path": "./src/stories/header.stories.ts"
+}

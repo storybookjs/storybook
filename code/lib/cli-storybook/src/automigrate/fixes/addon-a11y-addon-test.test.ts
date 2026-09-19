@@ -159,7 +159,7 @@ describe('addonA11yAddonTest', () => {
       });
     });
 
-    it.skip('should return previewFile and transformedPreviewCode if preview file exists', async () => {
+    it('should return previewFile and transformedPreviewCode if preview file exists', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
@@ -191,8 +191,45 @@ describe('addonA11yAddonTest', () => {
         transformedPreviewCode: expect.any(String),
         transformedSetupCode: null,
         skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
+        skipVitestSetupTransformation: true,
       });
+    });
+
+    it('should return null if vitest.setup file does not exist and preview file has the necessary transformations', async () => {
+      vi.mocked(getAddonNames).mockReturnValue([
+        '@storybook/addon-a11y',
+        '@storybook/addon-vitest',
+      ]);
+      vi.mocked(existsSync).mockImplementation((p) => {
+        if (p.toString().includes('preview')) {
+          return true;
+        } else {
+          return false;
+        }
+      });
+      vi.mocked(readFileSync).mockImplementation((p) => {
+        if (p.toString().includes('preview')) {
+          return `
+            export default {
+              parameters: {
+                a11y: {
+                  test: 'todo'
+                }
+              }
+            }
+          `;
+        } else {
+          return '';
+        }
+      });
+
+      const result = await addonA11yAddonTest.check({
+        mainConfig: {
+          framework: '@storybook/react-vite',
+        },
+        configDir,
+      } as any);
+      expect(result).toBeNull();
     });
 
     it('should return setupFile and null transformedSetupCode if transformation fails', async () => {
@@ -265,7 +302,7 @@ describe('addonA11yAddonTest', () => {
         transformedPreviewCode: null,
         transformedSetupCode: null,
         skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
+        skipVitestSetupTransformation: true,
       });
     });
 

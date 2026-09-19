@@ -1,0 +1,18 @@
+{
+  "value": {
+    "description": "The current value.",
+    "name": "value",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

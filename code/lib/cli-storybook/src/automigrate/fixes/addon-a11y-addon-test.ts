@@ -10,6 +10,7 @@ import { dedent } from 'ts-dedent';
 // Relative path import to avoid dependency to storybook/test
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
+import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 
 export const fileExtensions = [
   '.js',
@@ -72,19 +73,31 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
         .map((ext) => path.join(configDir, `preview${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    let skipVitestSetupTransformation = hasCsfFactoryPreview;
+    // Without a setup file there is nothing to transform: since Storybook 10.3
+    // the vitest plugin auto-provisions preview annotations (including addon-a11y's).
+    let skipVitestSetupTransformation = hasCsfFactoryPreview || !vitestSetupFile;
     let skipPreviewTransformation = false;
 
-    if (vitestSetupFile && previewFile) {
-      const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
-      const previewSetupSource = readFileSync(previewFile, 'utf8');
-
-      skipVitestSetupTransformation ||= vitestSetupSource.includes('@storybook/addon-a11y');
-      skipPreviewTransformation ||= !shouldPreviewFileBeTransformed(previewSetupSource);
-
-      if (skipVitestSetupTransformation && skipPreviewTransformation) {
-        return null;
+    if (vitestSetupFile && !skipVitestSetupTransformation) {
+      try {
+        const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
+        skipVitestSetupTransformation = vitestSetupSource.includes('@storybook/addon-a11y');
+      } catch {
+        // leave the flag as-is; getTransformedSetupCode handles unreadable files
       }
+    }
+
+    if (previewFile) {
+      try {
+        const previewSetupSource = readFileSync(previewFile, 'utf8');
+        skipPreviewTransformation = !shouldPreviewFileBeTransformed(previewSetupSource);
+      } catch {
+        // leave the flag as-is; getTransformedPreviewCode handles unreadable files
+      }
+    }
+
+    if (skipVitestSetupTransformation && skipPreviewTransformation) {
+      return null;
     }
 
     const getTransformedSetupCode = () => {
@@ -95,7 +108,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       try {
         const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
         return transformSetupFile(vitestSetupSource);
-      } catch (e) {
+      } catch {
         return null;
       }
     };
@@ -108,7 +121,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       try {
         const previewSetupSource = readFileSync(previewFile, 'utf8');
         return transformPreviewFile(previewSetupSource, previewFile);
-      } catch (e) {
+      } catch {
         return null;
       }
     };
@@ -237,7 +250,8 @@ export function transformPreviewFile(source: string, filePath: string) {
 
   const previewConfig = loadConfig(source).parse();
 
-  previewConfig.setFieldValue(['parameters', 'a11y', 'test'], 'todo');
+  previewConfig.set(['parameters', 'a11y', 'test'], 'todo');
+  assertConfigMutationSuccess(previewConfig);
 
   const formattedPreviewConfig = formatConfig(previewConfig);
   const lines = formattedPreviewConfig.split('\n');
@@ -263,7 +277,8 @@ export function transformPreviewFile(source: string, filePath: string) {
 
 export function shouldPreviewFileBeTransformed(source: string) {
   const previewConfig = loadConfig(source).parse();
-  const parametersA11yTest = previewConfig.getFieldNode(['parameters', 'a11y', 'test']);
+  const parametersA11yTest = previewConfig.get(['parameters', 'a11y', 'test']);
+  assertConfigMutationSuccess(previewConfig);
 
   if (parametersA11yTest) {
     return false;

@@ -1,5 +1,6 @@
 // This file requires many imports from `../code`, which requires both an install and bootstrap of
 // the repo to work properly. So we load it async in the task runner *after* those steps.
+import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
 import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
@@ -11,16 +12,13 @@ import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 
+import { SupportedLanguage } from 'storybook/internal/types';
 import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
 import { JsPackageManagerFactory } from '../../code/core/src/common/js-package-manager/index.ts';
 import storybookPackages from '../../code/core/src/common/versions.ts';
 import type { ConfigFile } from '../../code/core/src/csf-tools/index.ts';
-import {
-  readConfig as csfReadConfig,
-  formatConfig,
-  writeConfig,
-} from '../../code/core/src/csf-tools/index.ts';
-import { SupportedLanguage } from '../../code/core/src/types/index.ts';
+import { readConfig as csfReadConfig, writeConfig } from '../../code/core/src/csf-tools/index.ts';
+
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
@@ -328,11 +326,6 @@ export const init: Task['run'] = async (
     '--preserve-symlinks-main',
   ].filter(Boolean);
 
-  const pnp = await pathExists(join(cwd, '.pnp.cjs')).catch(() => {});
-  if (pnp && !nodeOptions.find((s) => s.includes('--require'))) {
-    nodeOptions.push('--require ./.pnp.cjs');
-  }
-
   const nodeOptionsString = nodeOptions.join(' ');
   const prefix = `NODE_OPTIONS='${nodeOptionsString}' STORYBOOK_TELEMETRY_URL="http://localhost:6007/event-log"`;
 
@@ -345,6 +338,12 @@ export const init: Task['run'] = async (
     case '@storybook/angular':
     case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
+      break;
+    case '@storybook/nextjs':
+    case '@storybook/nextjs-vite':
+      if (!dryRun) {
+        await prepareNextjsSandbox(cwd);
+      }
       break;
     default:
   }
@@ -408,7 +407,7 @@ function addEsbuildLoaderToStories(mainConfig: ConfigFile) {
       ],
     },
   })`;
-  mainConfig.setFieldNode(
+  mainConfig.set(
     ['webpackFinal'],
     // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
     babelParse(webpackFinalCode).program.body[0].expression
@@ -448,13 +447,13 @@ function setSandboxViteFinal(mainConfig: ConfigFile, template: TemplateKey) {
     ${temporaryAliasWorkaround}
   })`;
   // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-  mainConfig.setFieldNode(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
+  mainConfig.set(['viteFinal'], babelParse(viteFinalCode).program.body[0].expression);
 }
 
 // Update the stories field to ensure that no TS files
 // that are linked from the renderer are picked up in non-TS projects
 function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
-  const stories = mainConfig.getFieldValue(['stories']) as string[];
+  const stories = mainConfig.getValue(['stories']) as string[];
 
   // If the project is a JS project, let's make sure any linked in TS stories from the
   // renderer inside src|stories are simply ignored.
@@ -463,7 +462,7 @@ function updateStoriesField(mainConfig: ConfigFile, isJs: boolean) {
     ? stories.map((specifier) => specifier.replace('|ts|tsx', ''))
     : stories;
 
-  mainConfig.setFieldValue(['stories'], [...updatedStories]);
+  mainConfig.set(['stories'], [...updatedStories]);
 }
 
 // Add a stories field entry for the passed symlink
@@ -473,7 +472,7 @@ function addStoriesEntry(
   disableDocs: boolean,
   skipMocking: boolean
 ) {
-  const stories = mainConfig.getFieldValue(['stories']) as string[];
+  const stories = mainConfig.getValue(['stories']) as string[];
 
   const basePattern = disableDocs
     ? '**/*.stories.@(js|jsx|mjs|ts|tsx)'
@@ -490,7 +489,7 @@ function addStoriesEntry(
     files,
   };
 
-  mainConfig.setFieldValue(['stories'], [...stories, entry]);
+  mainConfig.set(['stories'], [...stories, entry]);
 }
 
 function getStoriesFolderWithVariant(variant?: string, folder = 'stories') {
@@ -591,9 +590,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const opts = { cwd: sandboxDir };
   const viteConfigFile = await findFirstPath(['vite.config.ts', 'vite.config.js'], opts);
   const vitestConfigFile = await findFirstPath(['vitest.config.ts', 'vitest.config.js'], opts);
-  const workspaceFile = await findFirstPath(['vitest.workspace.ts', 'vitest.workspace.js'], opts);
 
-  const configFile = workspaceFile || vitestConfigFile || viteConfigFile;
+  const configFile = vitestConfigFile || viteConfigFile;
   if (!configFile) {
     throw new Error(`No Vitest or Vite config file found in sandbox: ${sandboxDir}`);
   }
@@ -601,10 +599,10 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
 
   // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to
-  // plugins. Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }]). Anchored
-  // on the `plugins:` key (injecting before it) instead of matching the whole array: plugin code
-  // may contain `]` (e.g. the regex literal in the sveltekit template), which a bracket-counting
-  // regex like `\[[^\]]*\]` would cut short, splicing the injection into the middle of it.
+  // plugins. Anchored on the `plugins:` key (injecting before it) instead of matching the whole
+  // array: plugin code may contain `]` (e.g. the regex literal in the sveltekit template), which a
+  // bracket-counting regex like `\[[^\]]*\]` would cut short, splicing the injection into the
+  // middle of it.
   fileContent = fileContent.replace(/^([ \t]*)plugins\s*:/m, (match, indent) => {
     let injected = `${indent}resolve: {\n${indent}  preserveSymlinks: true\n${indent}},\n`;
 
@@ -635,7 +633,7 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   await writeFile(join(sandboxDir, configFile), fileContent);
   // Only run story tests which are tagged with 'vitest'
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
-  previewConfig.setFieldValue(['tags'], ['vitest']);
+  previewConfig.set(['tags'], ['vitest']);
   await writeConfig(previewConfig);
 }
 
@@ -735,7 +733,8 @@ export const addStories: Task['run'] = async (
     template.expected.renderer.startsWith('@storybook/') &&
     template.expected.renderer !== '@storybook/server';
 
-  const sandboxSpecificStoriesFolder = key.replaceAll('/', '-');
+  const sandboxSpecificStoriesFolder =
+    template.modifications?.storiesVariant ?? key.replaceAll('/', '-');
   const storiesVariantFolder = getStoriesFolderWithVariant(sandboxSpecificStoriesFolder);
 
   if (isCoreRenderer) {
@@ -828,9 +827,8 @@ export const addStories: Task['run'] = async (
     });
   }
 
-  const mainAddons = (mainConfig.getSafeFieldValue(['addons']) || []).reduce(
-    (acc: string[], addon: any) => {
-      const name = typeof addon === 'string' ? addon : addon.name;
+  const mainAddons = (mainConfig.getNamesFromPath(['addons']) || []).reduce(
+    (acc: string[], name: string) => {
       const match = /@storybook\/addon-(.*)/.exec(name);
 
       if (!match) {
@@ -890,6 +888,10 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   const templateConfig: any = isFunction(template.modifications?.mainConfig)
     ? template.modifications?.mainConfig(mainConfig)
     : template.modifications?.mainConfig || {};
+  const addonsToEdit = template.modifications?.editAddons
+    ? (mainConfig.getValue(['addons']) ?? [])
+    : [];
+  assert(Array.isArray(addonsToEdit), 'Expected addons to be an array');
   const configToAdd = {
     ...templateConfig,
     features: {
@@ -897,7 +899,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     },
     ...(template.modifications?.editAddons
       ? {
-          addons: template.modifications?.editAddons(mainConfig.getFieldValue(['addons']) || []),
+          addons: template.modifications?.editAddons(addonsToEdit),
         }
       : {}),
     core: {
@@ -907,7 +909,9 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     },
   };
 
-  Object.entries(configToAdd).forEach(([field, value]) => mainConfig.setFieldValue([field], value));
+  Object.entries(configToAdd).forEach(([field, value]) =>
+    mainConfig.set([field], t.valueToNode(value))
+  );
 
   const previewHeadCode = `
     (head) => \`
@@ -934,21 +938,22 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
       </style>
     \``;
   // @ts-expect-error (Property 'expression' does not exist on type 'BlockStatement')
-  mainConfig.setFieldNode(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
+  mainConfig.set(['previewHead'], babelParse(previewHeadCode).program.body[0].expression);
 
   // Simulate Storybook Lite
   if (disableDocs) {
-    const addons = mainConfig.getFieldValue(['addons']);
+    const addons = mainConfig.getValue(['addons']);
+    assert(Array.isArray(addons), 'Expected addons to be an array');
     const addonsNoDocs = addons.filter((addon: any) => addon !== '@storybook/addon-docs');
-    mainConfig.setFieldValue(['addons'], addonsNoDocs);
+    mainConfig.set(['addons'], addonsNoDocs);
 
     // remove the docs options so that docs tags are ignored
-    mainConfig.setFieldValue(['docs'], {});
-    mainConfig.setFieldValue(['typescript'], { reactDocgen: false });
+    mainConfig.set(['docs'], {});
+    mainConfig.set(['typescript'], { reactDocgen: false });
 
-    let updatedStories = mainConfig.getFieldValue(['stories']) as string[];
+    let updatedStories = mainConfig.getValue(['stories']) as string[];
     updatedStories = updatedStories.filter((specifier) => !specifier.endsWith('.mdx'));
-    mainConfig.setFieldValue(['stories'], updatedStories);
+    mainConfig.set(['stories'], updatedStories);
   }
 
   if (template.expected.builder === '@storybook/builder-vite') {
@@ -957,9 +962,50 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
   await writeConfig(mainConfig);
 };
 
+export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
+  if (!isViteSandbox(key)) {
+    return;
+  }
+
+  logger.log('📝 Adding static dirs');
+  const publicDir = join(sandboxDir, 'public');
+  const storybookStaticDir = join(sandboxDir, '.storybook', 'static');
+  await mkdir(publicDir, { recursive: true });
+  await mkdir(storybookStaticDir, { recursive: true });
+
+  await writeFile(
+    join(publicDir, 'index.json'),
+    '{ "description": "index.json from Vite\'s public directory" }'
+  );
+  await writeFile(join(publicDir, 'from-public.txt'), "from Vite's public directory");
+  await writeFile(join(publicDir, 'override.txt'), "from Vite's public directory");
+  await writeFile(join(storybookStaticDir, 'override.txt'), 'from storybook');
+
+  const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
+  mainConfig.set(['staticDirs'], [{ from: '../public', to: '/foo' }, './static']);
+  await writeConfig(mainConfig);
+};
+
 export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
+
+  // `storybook init` writes the Compodoc wiring for the Webpack builder only, since
+  // `@storybook/angular-vite` extracts the metadata itself. A sandbox that opts back out of the
+  // docgen server exists to cover the browser docgen path, and nothing feeds that path without the
+  // wiring an opting-out user adds by hand.
+  if (template.expected.framework === '@storybook/angular-vite') {
+    const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
+    if (mainConfig.getValue(['features', 'experimentalDocgenServer']) === false) {
+      previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
+      previewConfig.setImport('docJson', '../documentation.json');
+      previewConfig._ast.program.body.push(
+        t.expressionStatement(
+          t.callExpression(t.identifier('setCompodocJson'), [t.identifier('docJson')])
+        )
+      );
+    }
+  }
 
   if (template.modifications?.useCsfFactory) {
     const storiesDir = (await pathExists(join(sandboxDir, 'src/stories')))
@@ -977,7 +1023,7 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   }
 
   if (template.expected.builder.includes('vite')) {
-    previewConfig.setFieldValue(['tags'], ['vitest']);
+    previewConfig.set(['tags'], ['vitest']);
   }
 
   const isCoreRenderer =
@@ -990,27 +1036,23 @@ export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   }
 
   previewConfig.setImport(['sb'], 'storybook/test');
-  let config = formatConfig(previewConfig);
 
-  const mockBlock = [
-    "sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');",
-    "sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });",
-    "sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');",
-    "sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });",
-    "sb.mock(import('lodash-es'));",
-    "sb.mock(import('lodash-es/add'));",
-    "sb.mock(import('lodash-es/sum'));",
-    "sb.mock(import('uuid'));",
-    '',
-  ].join('\n');
+  const mockStatements = babelParse(`
+    sb.mock('../template-stories/core/test/ModuleMocking.utils.ts');
+    sb.mock('../template-stories/core/test/ModuleSpyMocking.utils.ts', { spy: true });
+    sb.mock('../template-stories/core/test/ModuleAutoMocking.utils.ts');
+    sb.mock('../template-stories/core/test/ClearModuleMocksMocking.api.ts', { spy: true });
+    sb.mock(import('lodash-es'));
+    sb.mock(import('lodash-es/add'));
+    sb.mock(import('lodash-es/sum'));
+    sb.mock(import('uuid'));
+  `).program.body;
 
-  // find last import statement and append sb.mock calls
-  config = config.replace(
-    'import { sb } from "storybook/test";',
-    `import { sb } from 'storybook/test';\n\n${mockBlock}`
-  );
+  const body = previewConfig._ast.program.body;
+  const lastImportIndex = body.findLastIndex((node) => t.isImportDeclaration(node));
+  body.splice(lastImportIndex + 1, 0, ...mockStatements);
 
-  await writeFile(previewConfig.fileName, config);
+  await writeConfig(previewConfig);
 };
 
 export const runMigrations: Task['run'] = async ({ sandboxDir, template }, { dryRun, debug }) => {
@@ -1048,6 +1090,64 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   }
 }
 
+// Env fixtures for nextjs template EnvironmentVariables stories.
+async function prepareNextjsSandbox(cwd: string) {
+  const envPath = join(cwd, '.env');
+  let envSource = '';
+  try {
+    envSource = await readFile(envPath, 'utf8');
+  } catch (e: any) {
+    if (e?.code !== 'ENOENT') {
+      throw e;
+    }
+  }
+
+  const upsertEnv = (source: string, key: string, value: string) => {
+    const line = `${key}=${value}`;
+    const pattern = new RegExp(`^${key}=.*$`, 'm');
+    if (pattern.test(source)) {
+      return source.replace(pattern, line);
+    }
+    return source.length === 0 || source.endsWith('\n')
+      ? `${source}${line}\n`
+      : `${source}\n${line}\n`;
+  };
+
+  envSource = upsertEnv(envSource, 'NEXT_PUBLIC_EXAMPLE1', 'example1');
+  envSource = upsertEnv(envSource, 'EXAMPLE2', 'example2');
+  await writeFile(envPath, envSource);
+
+  const relativeConfigPath = await findFirstPath(
+    ['next.config.ts', 'next.config.mjs', 'next.config.js'],
+    { cwd }
+  );
+  if (!relativeConfigPath) {
+    return;
+  }
+
+  const configPath = join(cwd, relativeConfigPath);
+  const source = await readFile(configPath, 'utf8');
+  if (source.includes('nextConfigEnv')) {
+    return;
+  }
+
+  if (/\benv\s*:/.test(source)) {
+    return;
+  }
+
+  if (!/nextConfig\s*(?::\s*NextConfig\s*)?=\s*\{/.test(source)) {
+    return;
+  }
+
+  await writeFile(
+    configPath,
+    source.replace(
+      /(nextConfig\s*(?::\s*NextConfig\s*)?=\s*\{)/,
+      `$1\n  env: { nextConfigEnv: 'next-config-env' },`
+    )
+  );
+}
+
 async function getConfigFile(names: string[], cwd: string) {
   const firstPath = await findFirstPath(names, { cwd });
 
@@ -1066,7 +1166,7 @@ async function prepareSvelteSandbox(cwd: string) {
 
   // Enable async components
   // see https://svelte.dev/docs/svelte/await-expressions
-  svelteConfig.setFieldValue(['compilerOptions', 'experimental', 'async'], true);
+  svelteConfig.set(['compilerOptions', 'experimental', 'async'], true);
 
   await writeConfig(svelteConfig);
 }

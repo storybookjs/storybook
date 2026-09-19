@@ -1,10 +1,10 @@
-import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
+import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { selectSnippetForStory } from './snippet.ts';
+import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
@@ -22,7 +22,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
 
   const service = (() => {
     try {
-      return getService('core/story-docs');
+      return getService('core/story-docs', { internal: true });
     } catch {
       return undefined;
     }
@@ -49,7 +49,13 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       if (source === undefined) {
         return;
       }
-      return emitTransformCode(source, context);
+      const warning = selectWarningForStory(payload, storyId);
+
+      return emitTransformCode(
+        source,
+        context,
+        snippet === undefined && warning ? `${warning} Showing the story source instead.` : warning
+      );
     });
 
   return () => {

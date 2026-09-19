@@ -1,0 +1,27 @@
+{
+  "id": "template-unset-args",
+  "name": "TemplateUnsetArgs",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-unset-args--primary": {
+      "description": undefined,
+      "id": "forms-template-unset-args--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+import TemplateUnsetArgs from './TemplateUnsetArgs.vue';
+
+const modelValue = ref();
+</script>
+
+<template>
+  <TemplateUnsetArgs
+    label="Ready"
+    hint="Optional hint"
+    v-model="modelValue"
+  />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

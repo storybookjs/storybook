@@ -38,7 +38,7 @@ const SkipToSidebarLink = styled(Button)(({ theme }) => ({
 
 const whenSidebarIsVisible = ({ api, state }: Combo) => ({
   isFullscreen: api.getIsFullscreen(),
-  isNavShown: api.getIsNavShown(),
+  isNavShown: api.getNavAvailability() === 'shown',
   selectedStoryId: state.storyId,
 });
 

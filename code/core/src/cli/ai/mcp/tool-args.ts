@@ -96,22 +96,6 @@ export function parseToolArgs(
   return { ok: true, help, args: { ...jsonArgs, ...flagArgs } };
 }
 
-export function parsePort(
-  rawPort: string | undefined
-): { ok: true; port: number | undefined } | { ok: false; error: string } {
-  if (rawPort === undefined) {
-    return { ok: true, port: undefined };
-  }
-  const port = Number(rawPort);
-  if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    return {
-      ok: false,
-      error: `\`--port\` must be a port number (1-65535), got \`${rawPort}\`.`,
-    };
-  }
-  return { ok: true, port };
-}
-
 function coerceValue(raw: string): unknown {
   try {
     return JSON.parse(raw);

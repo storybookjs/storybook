@@ -1,0 +1,20 @@
+{
+  "id": "cross-file-composed-utility",
+  "name": "UtilityComposedProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-cross-file-composed-utility--props-as-written": {
+      "description": undefined,
+      "id": "forms-cross-file-composed-utility--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import UtilityComposedProps from './UtilityComposedProps.vue';
+</script>
+
+<template>
+  <UtilityComposedProps label="Picked" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

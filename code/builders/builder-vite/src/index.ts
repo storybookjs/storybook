@@ -8,6 +8,7 @@ import type { Builder, Middleware, Options } from 'storybook/internal/types';
 import type { ViteDevServer } from 'vite';
 
 import { build as viteBuild } from './build.ts';
+import { createHeadlessViteChangeDetectionAdapter } from './change-detection-adapter/headless.ts';
 import { createViteChangeDetectionAdapter } from './change-detection-adapter/index.ts';
 import type { ViteBuilder } from './types.ts';
 import { createViteServer } from './vite-server.ts';
@@ -40,19 +41,25 @@ export async function bail(): Promise<void> {
 }
 
 /**
- * Returns a {@link ChangeDetectionAdapter} bound to the Vite dev server created by `start()`.
+ * Returns a {@link ChangeDetectionAdapter} bound to the Vite dev server created by `start()`, or —
+ * when `options` are passed by a consumer that runs without a dev server (the `storybook tools`
+ * CLI) — a headless adapter that resolves the same config server-lessly.
  *
- * Throws if called before `start()` has resolved (i.e. before the Vite dev server exists).
+ * Throws if called without options before `start()` has resolved (i.e. before the Vite dev server
+ * exists).
  */
-export const changeDetectionAdapter: NonNullable<
-  Builder<Options>['changeDetectionAdapter']
-> = () => {
-  if (!server) {
-    throw new Error(
-      'builder-vite: changeDetectionAdapter() called before start(); the Vite dev server is not ready yet.'
-    );
+export const changeDetectionAdapter: NonNullable<Builder<Options>['changeDetectionAdapter']> = (
+  options
+) => {
+  if (server) {
+    return createViteChangeDetectionAdapter(server);
   }
-  return createViteChangeDetectionAdapter(server);
+  if (options) {
+    return createHeadlessViteChangeDetectionAdapter(options);
+  }
+  throw new Error(
+    'builder-vite: changeDetectionAdapter() called before start(); the Vite dev server is not ready yet.'
+  );
 };
 
 export const start: ViteBuilder['start'] = async ({

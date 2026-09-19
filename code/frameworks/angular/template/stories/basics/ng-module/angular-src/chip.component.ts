@@ -6,9 +6,9 @@ import { CHIP_COLOR } from './chip-color.token';
   selector: 'storybook-chip',
   template: `
     <span class="text">{{ displayText | chipText }}</span>
-<div class="remove" (click)="removeClicked.emit()">
-  <span class="x">✕</span>
-</div>
+    <div class="remove" (click)="removeClicked.emit()">
+      <span class="x">✕</span>
+    </div>
   `,
   styles: [
     `

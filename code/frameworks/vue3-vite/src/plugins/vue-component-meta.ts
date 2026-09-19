@@ -1,33 +1,25 @@
-import { readFile, stat } from 'node:fs/promises';
-import { join, parse } from 'node:path';
-
-import { getProjectRoot } from 'storybook/internal/common';
-import { parseLocalBindings } from 'storybook/internal/oxc-parser';
+import { parseDefaultImports, parseLocalBindings } from 'storybook/internal/oxc-parser';
 
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
-import {
-  type ComponentMeta,
-  type MetaCheckerOptions,
-  type PropertyMetaSchema,
-  TypeMeta,
-  createChecker,
-  createCheckerByJson,
-} from 'vue-component-meta';
-import { parseMulti } from 'vue-docgen-api';
 
-type MetaSource = {
-  exportName: string;
-  displayName: string;
-  sourceFiles: string;
-} & ComponentMeta &
-  MetaCheckerOptions['schema'];
+import type { experimental_vueDocgenEngine } from '@storybook/vue3/preset';
 
-export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<Plugin> {
+/** The renderer's shared vue-component-meta engine, applied through the preset chain. */
+export type VueDocgenEngine = Awaited<ReturnType<typeof experimental_vueDocgenEngine>>;
+
+export async function vueComponentMeta(
+  engine: VueDocgenEngine,
+  tsconfigPath = 'tsconfig.json'
+): Promise<Plugin> {
+  const { collectComponentMetaSources, createVueComponentMetaChecker } =
+    await engine.componentMeta();
   const { createFilter } = await import('vite');
 
-  // exclude stories, virtual modules and storybook internals
-  const exclude = /\.stories\.(ts|tsx|js|jsx)$|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
+  // exclude stories, ids carrying a query (e.g. plugin-vue's `?vue&type=script&lang.ts`
+  // sub-requests, which end in `.ts` but are not files), virtual modules and storybook internals
+  const exclude =
+    /\.stories\.(ts|tsx|js|jsx)$|\?|^\0\/virtual:|^\/virtual:|\.storybook\/.*\.(ts|js)$/;
   const include = /\.(vue|ts|js|tsx|jsx)$/;
   const filter = createFilter(include, exclude);
 
@@ -44,70 +36,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
         }
 
         try {
-          const exportNames = checker.getExportNames(id);
-          let componentsMeta = exportNames.map((name) => checker.getComponentMeta(id, name));
-          componentsMeta = await applyTempFixForEventDescriptions(id, componentsMeta);
-
-          const metaSources: MetaSource[] = [];
-
-          componentsMeta.forEach((meta, index) => {
-            // filter out empty meta
-            const isEmpty =
-              !meta.props.length &&
-              !meta.events.length &&
-              !meta.slots.length &&
-              !meta.exposed.length;
-
-            if (isEmpty || meta.type === TypeMeta.Unknown) {
-              return;
-            }
-
-            const exportName = exportNames[index];
-
-            // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
-            // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
-            // it also reduced the bundle size when running "storybook build" when such schemas are used
-            (['props', 'events', 'slots', 'exposed'] as const).forEach((key) => {
-              meta[key].forEach((value) => {
-                if (Array.isArray(value.schema)) {
-                  value.schema.forEach((eventSchema) => removeNestedSchemas(eventSchema));
-                } else {
-                  removeNestedSchemas(value.schema);
-                }
-              });
-            });
-
-            const exposed =
-              // the meta also includes duplicated entries in the "exposed" array with "on"
-              // prefix (e.g. onClick instead of click), so we need to filter them out here
-              meta.exposed
-                .filter((expose) => {
-                  let nameWithoutOnPrefix = expose.name;
-
-                  if (nameWithoutOnPrefix.startsWith('on')) {
-                    nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
-                  }
-
-                  const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
-                  return !hasEvent;
-                })
-                // remove unwanted duplicated "$slots" expose
-                .filter((expose) => {
-                  if (expose.name === '$slots') {
-                    const slotNames = meta.slots.map((slot) => slot.name);
-                    return !slotNames.every((slotName) => expose.type.includes(slotName));
-                  }
-                  return true;
-                });
-
-            metaSources.push({
-              exportName,
-              displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
-              ...meta,
-              exposed,
-              sourceFiles: id,
-            });
-          });
+          const metaSources = await collectComponentMetaSources(checker, id);
 
           // if there is no component meta, return undefined
           if (metaSources.length === 0) {
@@ -122,11 +51,18 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
           // here, so attaching to them would reference an undefined variable at runtime.
           const localBindings = await parseLocalBindings(id, src);
 
+          // Production SFCs can import `_sfc_main` from their virtual script module
+          // instead of declaring it locally.
+          const sfcMainImportSource = (await parseDefaultImports(id, src)).get('_sfc_main');
+          const sfcMainQuery = new URLSearchParams(sfcMainImportSource?.split('?')[1]);
+          const hasImportedSfcMain =
+            id.endsWith('.vue') && sfcMainQuery.has('vue') && sfcMainQuery.get('type') === 'script';
+
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
 
-            if (!localBindings.has(name)) {
+            if (!localBindings.has(name) && !(isDefaultExport && hasImportedSfcMain)) {
               return;
             }
 
@@ -144,7 +80,7 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
 
           return {
             code: s.toString(),
-            map: s.generateMap({ hires: true, source: id }),
+            map: s.generateMap({ hires: true, source: id }).toString(),
           };
         } catch (e) {
           return undefined;
@@ -166,142 +102,4 @@ export async function vueComponentMeta(tsconfigPath = 'tsconfig.json'): Promise<
       return [];
     },
   };
-}
-
-/**
- * Creates the `vue-component-meta` checker to use for extracting component meta/docs. Considers the
- * given tsconfig file (will use a fallback checker if it does not exist or is not supported).
- */
-async function createVueComponentMetaChecker(tsconfigPath = 'tsconfig.json') {
-  const checkerOptions: MetaCheckerOptions = {
-    forceUseTs: true,
-    noDeclarations: true,
-    printer: { newLine: 1 },
-  };
-
-  const projectRoot = getProjectRoot();
-
-  const projectTsConfigPath = join(projectRoot, tsconfigPath);
-
-  const defaultChecker = createCheckerByJson(projectRoot, { include: ['**/*'] }, checkerOptions);
-
-  // prefer the tsconfig.json file of the project to support alias resolution etc.
-  if (await fileExists(projectTsConfigPath)) {
-    // vue-component-meta does currently not resolve tsconfig references (see https://github.com/vuejs/language-tools/issues/3896)
-    // so we will return the defaultChecker if references are used.
-    // Otherwise vue-component-meta might not work at all for the Storybook docgen.
-    const references = await getTsConfigReferences(projectTsConfigPath);
-
-    if (references.length > 0) {
-      return defaultChecker;
-    }
-    return createChecker(projectTsConfigPath, checkerOptions);
-  }
-
-  return defaultChecker;
-}
-
-/** Gets the filename without file extension. */
-function getFilenameWithoutExtension(filename: string) {
-  return parse(filename).name;
-}
-
-/** Lowercases the first letter. */
-function lowercaseFirstLetter(string: string) {
-  return string.charAt(0).toLowerCase() + string.slice(1);
-}
-
-/** Checks whether the given file path exists. */
-async function fileExists(fullPath: string) {
-  try {
-    await stat(fullPath);
-    return true;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * Applies a temporary workaround/fix for missing event descriptions because Volar is currently not
- * able to extract them. Will modify the events of the passed meta. Performance note: Based on some
- * quick tests, calling "parseMulti" only takes a few milliseconds (8-20ms) so it should not
- * decrease performance that much. Especially because it is only execute if the component actually
- * has events.
- *
- * Check status of this Volar issue: https://github.com/vuejs/language-tools/issues/3893 and
- * update/remove this workaround once Volar supports it:
- *
- * - Delete this function
- * - Uninstall vue-docgen-api dependency
- */
-async function applyTempFixForEventDescriptions(filename: string, componentMeta: ComponentMeta[]) {
-  // do not apply temp fix if no events exist for performance reasons
-  const hasEvents = componentMeta.some((meta) => meta.events.length);
-
-  if (!hasEvents) {
-    return componentMeta;
-  }
-
-  try {
-    const parsedComponentDocs = await parseMulti(filename);
-
-    // add event descriptions to the existing Volar meta if available
-    componentMeta.map((meta, index) => {
-      const eventsWithDescription = parsedComponentDocs[index].events;
-
-      if (!meta.events.length || !eventsWithDescription?.length) {
-        return meta;
-      }
-
-      meta.events = meta.events.map((event) => {
-        const description = eventsWithDescription.find((i) => i.name === event.name)?.description;
-        if (description) {
-          (event as typeof event & { description: string }).description = description;
-        }
-        return event;
-      });
-
-      return meta;
-    });
-  } catch {
-    // noop
-  }
-
-  return componentMeta;
-}
-
-/**
- * Gets a list of tsconfig references for the given tsconfig This is only needed for the temporary
- * workaround/fix for: https://github.com/vuejs/language-tools/issues/3896
- */
-async function getTsConfigReferences(tsConfigPath: string) {
-  try {
-    const content = JSON.parse(await readFile(tsConfigPath, 'utf-8'));
-
-    if (!('references' in content) || !Array.isArray(content.references)) {
-      return [];
-    }
-    return content.references as unknown[];
-  } catch {
-    // invalid project tsconfig
-    return [];
-  }
-}
-
-/**
- * Removes any nested schemas from the given main schema (e.g. from a prop, event, slot or exposed).
- * Useful to drastically reduce build size and prevent out of memory issues when large schemas (e.g.
- * HTMLElement, MouseEvent) are used.
- */
-function removeNestedSchemas(schema: PropertyMetaSchema) {
-  if (typeof schema !== 'object') {
-    return;
-  }
-  if (schema.kind === 'enum') {
-    // for enum types, we do not want to remove the schemas because otherwise the controls will be missing
-    // instead we remove the nested schemas for the enum entries to prevent out of memory errors for types like "HTMLElement | MouseEvent"
-    schema.schema?.forEach((enumSchema) => removeNestedSchemas(enumSchema));
-    return;
-  }
-  delete schema.schema;
 }

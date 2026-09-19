@@ -453,8 +453,10 @@ export type ServiceDefinition<
   id: TId;
   description?: string;
   /**
-   * When true, hides this service from `listServices()` output. Defaults to false. Does not disable
-   * the service at runtime — callers can still resolve it through `getService()`.
+   * When true, hides this service from `listServices()` output and requires
+   * `getService(id, { internal: true })` to resolve it. Defaults to false.
+   * Internal services are unstable: Storybook may break their ids, state, and operations without
+   * a public semver bump. Prefer public toolsets (`defineToolset`) for MCP/CLI surfaces.
    */
   internal?: boolean;
   /**
@@ -500,10 +502,21 @@ export type ServiceInstanceOf<TDefinition extends AnyServiceDefinition> =
     ? ServiceInstance<TState, TQueries, TCommands>
     : never;
 
+export type GetServiceOptions = {
+  /**
+   * Required when the target service is marked `internal: true`. Internal OSA surfaces are unstable
+   * and may change without a semver bump — only pass this when you intentionally accept that risk.
+   */
+  internal?: boolean;
+};
+
 export interface ServiceRegistryApi {
   listServices(): Promise<ServiceSummary[]>;
   describeService(serviceId: ServiceId): Promise<ServiceDescriptor>;
-  getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance;
+  getService<TInstance = RuntimeService>(
+    serviceId: ServiceId,
+    options?: GetServiceOptions
+  ): TInstance;
 }
 
 export type RuntimeService = ServiceInstance<unknown, Queries<unknown>, Commands<unknown>> &

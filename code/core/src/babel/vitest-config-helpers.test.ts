@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  canUpdateVitestConfigFile,
-  canUpdateVitestWorkspaceFile,
-} from './vitest-config-helpers.ts';
+import { canUpdateVitestConfigFile } from './vitest-config-helpers.ts';
 
 describe('canUpdateVitestConfigFile', () => {
   it('returns true for plain export default object literal', () => {
@@ -291,66 +288,5 @@ describe('canUpdateVitestConfigFile', () => {
     expect(canUpdateVitestConfigFile('export default function config() { return {}; }')).toBe(
       false
     );
-  });
-});
-
-// ─── canUpdateVitestWorkspaceFile ────────────────────────────────────────────
-
-describe('canUpdateVitestWorkspaceFile', () => {
-  // ----- Supported patterns (should return true) -----
-
-  it('returns true for plain array workspace', () => {
-    expect(canUpdateVitestWorkspaceFile('export default ["project1", "project2"]')).toBe(true);
-  });
-
-  it('returns true for array with object entries', () => {
-    expect(canUpdateVitestWorkspaceFile('export default [{ test: {} }, "project"]')).toBe(true);
-  });
-
-  it('returns true for empty array', () => {
-    expect(canUpdateVitestWorkspaceFile('export default []')).toBe(true);
-  });
-
-  it('returns true for defineWorkspace([...]) pattern', () => {
-    expect(
-      canUpdateVitestWorkspaceFile(
-        `
-        import { defineWorkspace } from 'vitest/config';
-        export default defineWorkspace(['project1', 'project2'])
-        `
-      )
-    ).toBe(true);
-  });
-
-  it('returns true for defineWorkspace with object entries', () => {
-    expect(
-      canUpdateVitestWorkspaceFile(
-        `
-        import { defineWorkspace } from 'vitest/config';
-        export default defineWorkspace([{ test: { name: 'unit' } }])
-        `
-      )
-    ).toBe(true);
-  });
-
-  // ----- Unsupported patterns (should return false) -----
-
-  it('returns false when there is no export default', () => {
-    expect(canUpdateVitestWorkspaceFile('const projects = ["a"];')).toBe(false);
-  });
-
-  it('returns false for defineWorkspace with a non-array argument', () => {
-    expect(
-      canUpdateVitestWorkspaceFile(
-        `
-        import { defineWorkspace } from 'vitest/config';
-        export default defineWorkspace('glob/**')
-        `
-      )
-    ).toBe(false);
-  });
-
-  it('returns false for syntax errors', () => {
-    expect(canUpdateVitestWorkspaceFile('this is not valid syntax !!!')).toBe(false);
   });
 });

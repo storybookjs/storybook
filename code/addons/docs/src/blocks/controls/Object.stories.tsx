@@ -85,7 +85,8 @@ export const DelayedObject: Story = {
     withRawArg: false,
   },
   play: async ({ canvas }) => {
-    await canvas.findByText('"Michael"');
+    // The value renders after a 1s delay, which races findByText's default 1s timeout
+    await canvas.findByText('"Michael"', undefined, { timeout: 5000 });
     await waitFor(() => {
       expect(
         canvas.queryByRole('textbox', { name: 'Edit object as JSON' })

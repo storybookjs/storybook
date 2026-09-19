@@ -1,12 +1,3 @@
-/**
- * Main-thread client for the long-lived docgen worker.
- *
- * Owns a single worker (docgen extraction serializes on one warm TypeScript program, so a pool
- * would only duplicate multi-second program builds and memory). Spawned once per process when the
- * compiled worker script is present; when it is missing — e.g. running from source without a build —
- * {@link createDocgenWorkerClient} returns `undefined` and the caller skips docgen registration
- * rather than silently extracting on the main thread.
- */
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
@@ -19,10 +10,7 @@ import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
-/**
- * Package-relative specifier for the compiled worker. Resolved via the package export map (not a
- * hard-coded dist path) so strict package managers like pnpm resolve it correctly.
- */
+// Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
@@ -34,11 +22,9 @@ interface Pending {
 }
 
 export interface DocgenWorkerClient {
-  /** Extracts docgen for one component entry off the main thread. */
   extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
 }
 
-/** Rebuild an Error from a worker {@link ErrorLike} so the original name/message/stack survive. */
 function errorLikeToError(errorLike: ErrorLike): Error {
   const error = new Error(errorLike.message);
   if (errorLike.name) {
@@ -50,15 +36,16 @@ function errorLikeToError(errorLike: ErrorLike): Error {
   return error;
 }
 
+// One worker, never a pool: extraction serializes on a single warm TypeScript program, so extra
+// threads would only duplicate multi-second program builds and their memory.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly ready: Promise<void>;
-  // Captured from the `ready` promise executor (which runs synchronously) so `fail()` can settle
-  // `ready` if the worker dies before sending `init`. No-op default keeps TS definite-assignment happy.
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
-  private dead = false;
+  private death: Error | undefined;
+  private served = false;
 
   constructor(
     scriptPath: string,
@@ -66,12 +53,10 @@ class DocgenWorker implements DocgenWorkerClient {
     private readonly taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS
   ) {
     this.worker = new Worker(scriptPath);
-    // Never let an idle worker keep the process alive.
-    this.worker.unref();
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
     this.worker.on('error', (error) => this.fail(error));
     this.worker.on('exit', (code) => {
-      if (!this.dead) {
+      if (!this.death) {
         this.fail(new Error(`docgen worker exited unexpectedly with code ${code}`));
       }
     });
@@ -91,15 +76,33 @@ class DocgenWorker implements DocgenWorkerClient {
       };
       this.worker.on('message', onMessage);
     });
-    // Surface late init rejections instead of leaving an unhandled rejection.
+    // Prevents an unhandled rejection; `extract` still awaits `ready` and surfaces the error.
     this.ready.catch(() => undefined);
 
-    this.post({ type: 'init', descriptors });
+    // Spawn is lazy, so an extract is always imminent: stay referenced until `ready` settles.
+    this.ready.finally(() => this.keepProcessAliveWhileBusy()).catch(() => undefined);
+
+    this.post({ type: 'init', descriptors, logLevel: logger.getLogLevel() });
+  }
+
+  /**
+   * Whether a fresh worker would be worth spawning in this one's place.
+   *
+   * Only once it has served an extract: a worker that died without ever answering died of something
+   * a replacement would hit again, and respawning would rebuild a multi-second TypeScript program
+   * per request to fail the same way.
+   */
+  get replaceable(): boolean {
+    return this.death !== undefined && this.served;
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
-    if (this.dead) {
-      throw new Error('docgen worker is no longer running');
+    if (this.death) {
+      // Carries the death forward: the crash itself is one event, but every later extract fails on
+      // it, so a bare "no longer running" is the only thing anyone downstream ever sees.
+      throw new Error(`docgen worker is no longer running: ${this.death.message}`, {
+        cause: this.death,
+      });
     }
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
@@ -108,13 +111,23 @@ class DocgenWorker implements DocgenWorkerClient {
       if (this.taskTimeoutMs > 0) {
         pending.timer = setTimeout(() => {
           this.pending.delete(id);
+          this.keepProcessAliveWhileBusy();
           reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
         }, this.taskTimeoutMs);
         pending.timer.unref?.();
       }
       this.pending.set(id, pending);
+      this.keepProcessAliveWhileBusy();
       this.post({ type: 'extract', id, entry });
     });
+  }
+
+  private keepProcessAliveWhileBusy(): void {
+    if (this.pending.size > 0) {
+      this.worker.ref();
+    } else {
+      this.worker.unref();
+    }
   }
 
   private post(msg: DocgenWorkerRequest): void {
@@ -133,6 +146,8 @@ class DocgenWorker implements DocgenWorkerClient {
       clearTimeout(pending.timer);
     }
     this.pending.delete(msg.id);
+    this.served = true;
+    this.keepProcessAliveWhileBusy();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
@@ -140,15 +155,13 @@ class DocgenWorker implements DocgenWorkerClient {
     }
   }
 
-  /** Reject everything in flight and tear the worker down; used on fatal worker failure. */
   private fail(error: Error): void {
-    if (this.dead) {
+    if (this.death) {
       return;
     }
-    logger.debug(`docgen worker failure: ${error.message}`);
-    this.dead = true;
-    // If the worker dies before `init`, `ready` would otherwise never settle and an in-flight
-    // `extract` awaiting it would hang. Rejecting is a no-op once `ready` has already settled.
+    logger.warn(`docgen worker died, so component docs are unavailable: ${error.message}`);
+    this.death = error;
+    // Without this, an `extract` awaiting `ready` hangs when the worker dies before `init`.
     this.rejectReady(error);
     this.rejectAllPending(error);
     this.worker.terminate().catch(() => 0);
@@ -162,6 +175,7 @@ class DocgenWorker implements DocgenWorkerClient {
       pending.reject(error);
     }
     this.pending.clear();
+    this.worker.unref();
   }
 }
 
@@ -174,16 +188,8 @@ function resolveWorkerScriptPath(): string | undefined {
   }
 }
 
-/**
- * Creates the docgen worker client for `descriptors`. Returns `undefined` when the compiled worker
- * script is unavailable (no fallback — the caller skips docgen registration). The worker lives for the
- * process lifetime and is torn down with it, so there is nothing to dispose explicitly.
- *
- * The worker thread is spawned lazily on the first {@link DocgenWorkerClient.extract}, not here:
- * spawning the thread and importing the provider module graph is CPU work, and extraction is gated
- * until a story renders, so there is nothing to keep warm at dev-server boot — spawning eagerly would
- * only contend with Vite's cold start.
- */
+// The thread is spawned on the first extract, not here: nothing extracts until a story renders, so
+// an eager spawn would only contend with the dev server's cold start.
 export function createDocgenWorkerClient(
   descriptors: DocgenProviderDescriptor[]
 ): DocgenWorkerClient | undefined {
@@ -199,6 +205,10 @@ export function createDocgenWorkerClient(
 
   return {
     async extract(entry) {
+      if (worker?.replaceable) {
+        logger.debug('docgen worker died after serving requests; spawning a replacement');
+        worker = undefined;
+      }
       worker ??= new DocgenWorker(scriptPath, descriptors);
       return worker.extract(entry);
     },

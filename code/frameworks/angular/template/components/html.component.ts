@@ -6,7 +6,9 @@ import { DomSanitizer } from '@angular/platform-browser';
 @Component({
   standalone: false,
   selector: 'storybook-html',
-  template: `<div [innerHTML]="safeContent"></div>`,
+  template: `
+    <div [innerHTML]="safeContent"></div>
+  `,
 })
 export default class HtmlComponent {
   /**

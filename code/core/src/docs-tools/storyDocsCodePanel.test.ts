@@ -16,6 +16,16 @@ describe('storyDocsCodePanel', () => {
     it('skips non-args stories', () => {
       expect(shouldSkipStoryDocsEmit({ __isArgsStory: false })).toBe(true);
     });
+
+    it('skips portable stories even when the source would otherwise render dynamically', () => {
+      expect(
+        shouldSkipStoryDocsEmit({
+          __isArgsStory: true,
+          __isPortableStory: true,
+          docs: { source: { type: SourceType.DYNAMIC } },
+        })
+      ).toBe(true);
+    });
   });
 
   describe('shouldWaitForServiceSnippet', () => {

@@ -51,6 +51,7 @@ import type {
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { global } from '@storybook/global';
+import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
@@ -81,6 +82,7 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
+const STATUS_CHANGE_REBUILD_THROTTLE = 500;
 
 const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
 
@@ -143,7 +145,7 @@ export interface SubAPI {
   selectStory: (
     kindOrId?: string,
     story?: StoryId,
-    obj?: { ref?: string; viewMode?: API_ViewMode }
+    obj?: { ref?: string; viewMode?: API_ViewMode; scrollTo?: string }
   ) => void;
   /**
    * Returns the current story's data, including its ID, kind, name, and parameters.
@@ -317,12 +319,22 @@ export interface SubAPI {
   /**
    * Updates the filtering of the index.
    *
+   * @deprecated Use `experimental_setFilters` instead.
    * @param {string} addonId - The ID of the addon to update.
    * @param {API_FilterFunction} filterFunction - A function that returns a boolean based on the
    *   story, index and status.
    * @returns {Promise<void>} A promise that resolves when the state has been updated.
    */
   experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
+  /**
+   * Updates the filtering of the index for multiple filters at once, then re-applies the index
+   * (and the indexes of composed refs) so the new filters take effect.
+   *
+   * @param {Record<string, API_FilterFunction>} filters - A map of filter IDs to filter functions.
+   *   Each function returns a boolean based on the story, index and status.
+   * @returns {Promise<void>} A promise that resolves when the state has been updated.
+   */
+  experimental_setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
 
   /** Resets tag filters in the sidebar to the default filters. */
   resetTagFilters(): Promise<void>;
@@ -626,14 +638,14 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       navigateWithQueryParams('/');
     },
     selectStory: (titleOrId = undefined, name = undefined, options = {}) => {
-      const { ref } = options;
+      const { ref, scrollTo } = options;
       const { storyId, index, filteredIndex, refs, settings } = store.getState();
 
       const gotoStory = (entry?: API_HashEntry) => {
         if (entry?.type === 'docs' || entry?.type === 'story') {
           store.setState({ settings: { ...settings, lastTrackedStoryId: entry.id } });
           navigateWithQueryParams(
-            `/${entry.type}/${entry.refId ? `${entry.refId}_${entry.id}` : entry.id}`
+            `/${entry.type}/${entry.refId ? `${entry.refId}_${entry.id}` : entry.id}${scrollTo ? `#${scrollTo}` : ''}`
           );
           return true;
         }
@@ -832,6 +844,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
+        // Cache the runtime enrichment on the ref so it survives index (re)builds in `setRef` and is
+        // applied even when it arrives before the ref index is first composed (the deep-link race in
+        // #34553, where the preview sends STORY_PREPARED once, before the index has been composed).
+        const storyUpdates = {
+          ...ref.storyUpdates,
+          [storyId]: { ...ref.storyUpdates?.[storyId], ...update },
+        };
         if (index && index[storyId]) {
           index[storyId] = {
             ...index[storyId],
@@ -844,7 +863,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
             ...update,
           } as API_StoryEntry;
         }
-        await fullAPI.updateRef(refId, { index, filteredIndex });
+        await fullAPI.updateRef(refId, { index, filteredIndex, storyUpdates });
       }
     },
     updateDocs: async (
@@ -871,15 +890,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         }
       } else {
         const { id: refId, index, filteredIndex }: any = ref;
-        index[docsId] = {
-          ...index[docsId],
-          ...update,
-        } as API_DocsEntry;
-        filteredIndex[docsId] = {
-          ...filteredIndex[docsId],
-          ...update,
-        } as API_DocsEntry;
-        await fullAPI.updateRef(refId, { index, filteredIndex });
+        const storyUpdates = {
+          ...ref.storyUpdates,
+          [docsId]: { ...ref.storyUpdates?.[docsId], ...update },
+        };
+        if (index && index[docsId]) {
+          index[docsId] = {
+            ...index[docsId],
+            ...update,
+          } as API_DocsEntry;
+        }
+        if (filteredIndex && filteredIndex[docsId]) {
+          filteredIndex[docsId] = {
+            ...filteredIndex[docsId],
+            ...update,
+          } as API_DocsEntry;
+        }
+        await fullAPI.updateRef(refId, { index, filteredIndex, storyUpdates });
       }
     },
     setPreviewInitialized: async (ref) => {
@@ -891,22 +918,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
 
     experimental_setFilter: async (id, filterFunction) => {
-      await store.setState((state) => ({ filters: { ...state.filters, [id]: filterFunction } }));
+      await api.experimental_setFilters({ [id]: filterFunction });
+    },
 
-      const { internal_index: index } = store.getState();
-
-      if (!index) {
+    experimental_setFilters: async (filters) => {
+      await store.setState((state) => ({ filters: { ...state.filters, ...filters } }));
+      if (!(await applyCurrentFilters())) {
         return;
       }
-      // apply new filters by setting the index again
-      await api.setIndex(index);
 
-      const refs = await fullAPI.getRefs();
-      for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
-        await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+      for (const id of Object.keys(filters)) {
+        provider.channel?.emit(SET_FILTER, { id });
       }
-
-      provider.channel?.emit(SET_FILTER, { id });
     },
 
     resetTagFilters: async () => {
@@ -1018,20 +1041,69 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     },
   };
 
+  const applyCurrentFilters = async () => {
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return false;
+    }
+
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+      await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    }
+
+    return true;
+  };
+
+  // Simple queue so status-filter rebuilds never overlap.
+  let statusFilterRebuildQueued = false;
+  let statusFilterRebuildInFlight = false;
+
+  const flushStatusFilterRebuild = async () => {
+    if (statusFilterRebuildInFlight) {
+      return;
+    }
+    statusFilterRebuildInFlight = true;
+    try {
+      while (statusFilterRebuildQueued) {
+        statusFilterRebuildQueued = false;
+        try {
+          await applyCurrentFilters();
+        } catch (error) {
+          logger.warn('Failed to rebuild story index after status change:', error);
+        }
+      }
+    } finally {
+      statusFilterRebuildInFlight = false;
+      if (statusFilterRebuildQueued) {
+        void flushStatusFilterRebuild();
+      }
+    }
+  };
+
+  const requestStatusFilterRebuild = () => {
+    statusFilterRebuildQueued = true;
+    void flushStatusFilterRebuild();
+  };
+
   const recomputeTagsFilter = () => {
     const { includedTagFilters, excludedTagFilters } = store.getState();
-    return api.experimental_setFilter(
-      TAGS_FILTER,
-      computeTagsFilterFn(includedTagFilters, excludedTagFilters)
-    );
+    return api.experimental_setFilters({
+      [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
+    });
   };
 
   const recomputeStatusFilter = () => {
     const { includedStatusFilters, excludedStatusFilters } = store.getState();
-    return api.experimental_setFilter(
-      STATUS_FILTER,
-      computeStatusFilterFn(includedStatusFilters ?? [], excludedStatusFilters ?? [])
-    );
+    return api.experimental_setFilters({
+      [STATUS_FILTER]: computeStatusFilterFn(
+        includedStatusFilters ?? [],
+        excludedStatusFilters ?? []
+      ),
+    });
   };
 
   // On initial load, the local iframe will select the first story (or other "selection specifier")
@@ -1249,7 +1321,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     api.setPreviewInitialized(ref);
   });
 
-  provider.channel?.on(SET_CONFIG, () => {
+  provider.channel?.on(SET_CONFIG, async () => {
     const config = provider.getConfig();
     const configFilters = config?.sidebar?.filters || {};
     const {
@@ -1261,34 +1333,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     } = store.getState();
 
     // Config sidebar filters first, then our managed filters override any conflicts
-    store.setState({
-      filters: {
-        ...store.getState().filters,
-        ...configFilters,
-        [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
-        [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
-        [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
-      },
+    await api.experimental_setFilters({
+      ...configFilters,
+      [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
+      [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
+      [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
     });
   });
 
-  fullStatusStore.onAllStatusChange(async () => {
-    // re-apply the filters when the statuses change
-    recomputeStatusFilter();
-
-    const { internal_index: index } = store.getState();
-
-    if (!index) {
-      return;
-    }
-    // apply new filters by setting the index again
-    await api.setIndex(index);
-
-    const refs = await fullAPI.getRefs();
-    Object.entries(refs).forEach(([refId, { internal_index, ...ref }]) => {
-      fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-    });
-  });
+  fullStatusStore.onAllStatusChange(
+    throttle(requestStatusFilterRebuild, STATUS_CHANGE_REBUILD_THROTTLE, {
+      edges: ['leading', 'trailing'],
+    })
+  );
 
   const config = provider.getConfig();
   const configFilters = config?.sidebar?.filters || {};

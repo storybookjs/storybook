@@ -1,0 +1,130 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "SignalModelComponent",
+      "id": "component-SignalModelComponent-1c9a845afd4327b5fd4636f5cecbf8dd8a111b79ee305c2f108001703c3227485d75f5c1cc17ed3ca96f355fe565b1d1da726069554224565394db53066724d6",
+      "file": "signal-model.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-signal-model",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span>{{ value() }} {{ checked() }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "name": "checked",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "boolean",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 11,
+          "rawdescription": "\n",
+          "required": true
+        },
+        {
+          "name": "value",
+          "coverageIgnore": false,
+          "defaultValue": "'start'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "<p>Current text value of the field.</p>\n",
+          "line": 9,
+          "rawdescription": "\nCurrent text value of the field.",
+          "required": false
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "checked",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "boolean",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 11,
+          "rawdescription": "\n",
+          "required": true
+        },
+        {
+          "name": "value",
+          "coverageIgnore": false,
+          "defaultValue": "'start'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "<p>Current text value of the field.</p>\n",
+          "line": 9,
+          "rawdescription": "\nCurrent text value of the field.",
+          "required": false
+        }
+      ],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import { Component, model } from '@angular/core';\n\n@Component({\n  selector: 'sb-signal-model',\n  template: '<span>{{ value() }} {{ checked() }}</span>',\n})\nexport class SignalModelComponent {\n  /** Current text value of the field. */\n  value = model('start');\n\n  checked = model.required<boolean>();\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 40,
+    "status": "medium",
+    "files": [
+      {
+        "filePath": "signal-model.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "SignalModelComponent",
+        "coveragePercent": 40,
+        "coverageCount": "2/5",
+        "status": "medium"
+      }
+    ]
+  }
+}

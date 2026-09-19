@@ -192,6 +192,7 @@ const StyledButton = styled(Button)({
 export enum ArgsTableError {
   NO_COMPONENT = 'No component found.',
   ARGS_UNSUPPORTED = 'Args unsupported. See Args documentation for your framework.',
+  NOT_A_STORY_COMPONENT = 'No docs found for this component on this page. Import the story file whose meta.component is this component, or pass `of={ComponentStories}`.',
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';

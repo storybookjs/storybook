@@ -471,7 +471,7 @@ export const mixedVisibilityServiceDef = defineService({
 
 export type HiddenServiceState = { secret: boolean };
 
-/** Hidden from listServices while remaining reachable through getService. */
+/** Hidden from listServices; reachable only via getService(id, { internal: true }). */
 export const hiddenServiceDef = defineService({
   id: 'internal-fixture/hidden-service',
   internal: true,

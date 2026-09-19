@@ -1,47 +1,37 @@
 import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
-import {
-  createFileSystemCache,
-  getFrameworkName,
-  loadPreviewOrConfigFile,
-  resolvePathInStorybookCache,
-} from 'storybook/internal/common';
-import {
-  type StoryIndexGenerator,
-  experimental_UniversalStore,
-  experimental_getTestProviderStore,
-} from 'storybook/internal/core-server';
+import { getFrameworkName, resolvePathInStorybookCache } from 'storybook/internal/common';
+import { type StoryIndexGenerator, registerToolset } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
-import type {
-  Options,
-  PresetPropertyFn,
-  PreviewAnnotation,
-  StoryId,
-} from 'storybook/internal/types';
+import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
-import { isEqual } from 'es-toolkit/predicate';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import {
-  ADDON_ID,
   COVERAGE_DIRECTORY,
   STORE_CHANNEL_EVENT_NAME,
   STORYBOOK_ADDON_TEST_CHANNEL,
-  TRIGGER_TEST_RUN_REQUEST,
-  TRIGGER_TEST_RUN_RESPONSE,
-  type TriggerTestRunRequestPayload,
-  type TriggerTestRunResponsePayload,
-  storeOptions,
 } from './constants.ts';
 import { log } from './logger.ts';
 import { runTestRunner } from './node/boot-test-runner.ts';
-import type { CachedState, ErrorLike, StoreState } from './types.ts';
-import type { StoreEvent } from './types.ts';
+import {
+  ensureTestRunnerStore,
+  resolvePreviewBuilderName,
+  wireTestRunResponder,
+} from './node/test-run-responder.ts';
+import { createTestToolset } from './node/toolset/definition.ts';
+import type { StoreState } from './types.ts';
+
+/**
+ * Preset marker: true exactly when this addon is enabled, since only enabled addons' presets load.
+ * addon-mcp's availability gate reads it through `presets.apply('isAddonVitestEnabled', false)`.
+ */
+export const isAddonVitestEnabled = true;
 
 type Event =
   | {
@@ -58,18 +48,44 @@ type Event =
       payload: StoreState['currentRun'];
     };
 
+/**
+ * Registers the public `test` toolset and wires the responder that answers its requests.
+ *
+ * This addon owns the toolset because running stories needs its channel protocol, but it must
+ * register from the `services` hook rather than `experimental_serverChannel`: consumers resolve
+ * the toolset for its descriptions and schemas alone, and the two places that do so — `storybook
+ * ai` metadata generation (which never starts a dev server) and a non-Vite dev server (where the
+ * channel hook returns early) — would otherwise ask for a toolset that was never registered and
+ * fail hard. Registering here matches the availability gate that decides whether the tool is
+ * offered at all: that gate reads the `isAddonVitestEnabled` marker this preset exports, which is
+ * true exactly when the addon is enabled — the same condition under which this hook runs.
+ *
+ * The responder is wired here too — adjacent to the registration, behind the same gate — so every
+ * consumer that can offer the tool can also answer it, dev server or not: this is what lets
+ * `storybook tools test run` work without a running Storybook. The listener is cheap; the runner
+ * machinery boots on first request.
+ */
+export const services = async (_value: void, options: Options): Promise<void> => {
+  const getIndex = () =>
+    options.presets
+      .apply<StoryIndexGenerator>('storyIndexGenerator')
+      .then((generator) => generator.getIndex());
+
+  registerToolset(
+    createTestToolset({
+      channel: options.channel as Channel,
+      storyIndex: { getIndex },
+      a11yEnabled: await options.presets.apply('isAddonA11yEnabled', false),
+    })
+  );
+
+  await wireTestRunResponder({ channel: options.channel as Channel | undefined, options });
+};
+
 export const experimental_serverChannel = async (channel: Channel, options: Options) => {
   const core = await options.presets.apply('core');
 
-  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
-  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
-    'previewAnnotations',
-    [],
-    options
-  );
-
-  const resolvedPreviewBuilder =
-    typeof core?.builder === 'string' ? core.builder : core?.builder?.name;
+  const resolvedPreviewBuilder = resolvePreviewBuilderName(core);
   const framework = await getFrameworkName(options);
 
   // Only boot the test runner if the builder is vite, else just provide interactions functionality
@@ -91,34 +107,11 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
   const storyIndexGenerator =
     await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
 
-  const fsCache = createFileSystemCache({
-    basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
-    ns: 'storybook',
-    ttl: 14 * 24 * 60 * 60 * 1000, // 14 days
-  });
-  const cachedState: CachedState = await fsCache.get<CachedState>('state', {
-    config: storeOptions.initialState.config,
-  });
-
-  const selectCachedState = (s: Partial<StoreState>): Partial<CachedState> => ({
-    config: s.config,
-  });
-  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
-    ...storeOptions,
-    initialState: {
-      ...storeOptions.initialState,
-      previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
-      index: await storyIndexGenerator.getIndex(),
-      ...selectCachedState(cachedState),
-    },
-    leader: true,
-  });
-  store.onStateChange((state, previousState) => {
-    if (!isEqual(selectCachedState(state), selectCachedState(previousState))) {
-      fsCache.set('state', selectCachedState(state));
-    }
-  });
-  const testProviderStore = experimental_getTestProviderStore(ADDON_ID);
+  // The request listener answering test-run requests is wired by the `services` hook; the runner
+  // machinery it sets up lazily is run eagerly here because the manager UI needs the store
+  // immediately. What follows are the dev-server extras: index invalidation refresh, watch mode,
+  // and addon telemetry.
+  const store = await ensureTestRunnerStore({ channel, options });
 
   storyIndexGenerator.onInvalidated(async () => {
     try {
@@ -130,21 +123,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     }
   });
 
-  store.subscribe('TRIGGER_RUN', (event, eventInfo) => {
-    testProviderStore.setState('test-provider-state:running');
-    store.setState((s) => ({
-      ...s,
-      fatalError: undefined,
-    }));
-    runTestRunner({
-      channel,
-      store,
-      initEvent: STORE_CHANNEL_EVENT_NAME,
-      initArgs: [{ event, eventInfo }],
-      options,
-      configLoader: configLoader || undefined,
-    });
-  });
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
     store.setState((s) => ({
       ...s,
@@ -168,103 +146,6 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       });
     }
   });
-  store.subscribe('FATAL_ERROR', (event) => {
-    const { message, error } = event.payload;
-    const name = error.name || 'Error';
-    log(`${name}: ${message}`);
-    if (error.stack) {
-      log(error.stack);
-    }
-
-    function logErrorWithCauses(err: ErrorLike) {
-      if (!err) {
-        return;
-      }
-
-      log(`Caused by: ${err.name ?? 'Error'}: ${err.message}`);
-
-      if (err.stack) {
-        log(err.stack);
-      }
-
-      if (err.cause) {
-        logErrorWithCauses(err.cause);
-      }
-    }
-
-    if (error.cause) {
-      logErrorWithCauses(error.cause);
-    }
-    store.setState((s) => ({
-      ...s,
-      fatalError: {
-        message,
-        error,
-      },
-    }));
-    testProviderStore.setState('test-provider-state:crashed');
-  });
-  testProviderStore.onClearAll(() => {
-    store.setState((s) => ({
-      ...s,
-      currentRun: { ...s.currentRun, coverageSummary: undefined, unhandledErrors: [] },
-    }));
-  });
-
-  // Programmatic test run trigger API
-  channel.on(TRIGGER_TEST_RUN_REQUEST, async (payload: TriggerTestRunRequestPayload) => {
-    const { requestId, actor, storyIds, config: configOverride } = payload;
-
-    const sendResponse = (response: Omit<TriggerTestRunResponsePayload, 'requestId'>) => {
-      channel.emit(TRIGGER_TEST_RUN_RESPONSE, { requestId, ...response });
-    };
-
-    await store.untilReady();
-
-    const {
-      currentRun: { startedAt, finishedAt },
-      config,
-    } = store.getState();
-    if (startedAt && !finishedAt) {
-      sendResponse({
-        status: 'error',
-        error: { message: 'Tests are already running' },
-      });
-      return;
-    }
-
-    const unsubscribe = store.subscribe((event) => {
-      switch (event.type) {
-        case 'TEST_RUN_COMPLETED': {
-          unsubscribe();
-          sendResponse({ status: 'completed', result: event.payload });
-          return;
-        }
-        case 'FATAL_ERROR': {
-          unsubscribe();
-          sendResponse({ status: 'error', error: event.payload });
-          return;
-        }
-        case 'CANCEL_RUN': {
-          unsubscribe();
-          sendResponse({ status: 'cancelled' });
-          return;
-        }
-      }
-    });
-
-    store.send({
-      type: 'TRIGGER_RUN',
-      payload: {
-        storyIds,
-        triggeredBy: `external:${actor}`,
-        ...(configOverride && {
-          configOverride: { ...config, ...configOverride },
-        }),
-      },
-    });
-  });
-
   const enableCrashReports = core?.enableCrashReports || options.enableCrashReports;
 
   channel.on(STORYBOOK_ADDON_TEST_CHANNEL, (event: Event) => {

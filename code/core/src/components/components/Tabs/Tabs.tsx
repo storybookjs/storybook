@@ -1,4 +1,4 @@
-/* eslint-disable react/destructuring-assignment */
+/* oxlint-disable react-classic/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, forwardRef, memo, useMemo } from 'react';
 
@@ -185,90 +185,93 @@ class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean
   }
 }
 
-export const Tabs: FC<TabsProps> = memo(
-  ({
-    children,
-    selected = null,
-    actions,
-    absolute = false,
-    bordered = false,
-    tools = null,
-    backgroundColor,
-    id: htmlId = null,
-    menuName = 'Tabs',
-    emptyState,
-    showToolsWhenEmpty,
-  }) => {
-    deprecate('The `Tabs` component is deprecated. Use `TabsView` instead.');
+// Function declaration so esbuild minifySyntax cannot emit
+// `var TabErrorBoundary = class extends ..., Tabs = memo(...)`.
+// Webpack innerGraph drops the memo binding from that joined var.
+function TabsImpl({
+  children,
+  selected,
+  actions,
+  absolute = false,
+  bordered = false,
+  tools = null,
+  backgroundColor,
+  id: htmlId,
+  menuName = 'Tabs',
+  emptyState,
+  showToolsWhenEmpty,
+}: TabsProps) {
+  deprecate('The `Tabs` component is deprecated. Use `TabsView` instead.');
 
-    const list = useMemo(
-      () =>
-        childrenToList(children).map((i, index) => ({
-          ...i,
-          active: selected ? i.id === selected : index === 0,
-        })),
-      [children, selected]
-    );
+  const list = useMemo(
+    () =>
+      childrenToList(children).map((i, index) => ({
+        ...i,
+        active: selected ? i.id === selected : index === 0,
+      })),
+    [children, selected]
+  );
 
-    const { visibleList, tabBarRef, tabRefs, AddonTab } = useList(list);
+  const { visibleList, tabBarRef, tabRefs, AddonTab } = useList(list);
 
-    const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
+  const EmptyContent = emptyState ?? <EmptyTabContent title="Nothing found" />;
 
-    if (!showToolsWhenEmpty && list.length === 0) {
-      return EmptyContent;
-    }
-
-    return (
-      // @ts-expect-error (non strict)
-      <Wrapper data-deprecated="Tabs" absolute={absolute} bordered={bordered} id={htmlId}>
-        <FlexBar scrollable={false} border backgroundColor={backgroundColor}>
-          {/* @ts-expect-error (non strict) */}
-          <TabBar style={{ whiteSpace: 'normal' }} ref={tabBarRef} role="tablist">
-            {visibleList.map(({ title, id, active, color }, index) => {
-              const indexId = `index-${index}`;
-
-              return (
-                <TabButton
-                  id={`tabbutton-${sanitize(id) ?? indexId}`}
-                  ref={(ref: HTMLButtonElement) => {
-                    tabRefs.current.set(id, ref);
-                  }}
-                  className={`tabbutton ${active ? 'tabbutton-active' : ''}`}
-                  type="button"
-                  key={id}
-                  active={active}
-                  textColor={color}
-                  onClick={(e: SyntheticEvent) => {
-                    e.preventDefault();
-                    // @ts-expect-error (non strict)
-                    actions.onSelect(id);
-                  }}
-                  role="tab"
-                  aria-selected={active}
-                >
-                  {typeof title === 'function' ? <title /> : title}
-                </TabButton>
-              );
-            })}
-            <AddonTab menuName={menuName} actions={actions} />
-          </TabBar>
-          {tools}
-        </FlexBar>
-        <Content id="panel-tab-content" bordered={bordered} absolute={absolute}>
-          {list.length
-            ? list.map(({ id, active, render }) => {
-                return (
-                  <TabErrorBoundary key={id} active={active}>
-                    {React.createElement(render, { active }, null)}
-                  </TabErrorBoundary>
-                );
-              })
-            : EmptyContent}
-        </Content>
-      </Wrapper>
-    );
+  if (!showToolsWhenEmpty && list.length === 0) {
+    return EmptyContent;
   }
-);
+
+  return (
+    <Wrapper data-deprecated="Tabs" absolute={absolute} bordered={bordered} id={htmlId}>
+      <FlexBar scrollable={false} border backgroundColor={backgroundColor}>
+        {/* @ts-expect-error (non strict) */}
+        <TabBar style={{ whiteSpace: 'normal' }} ref={tabBarRef} role="tablist">
+          {visibleList.map(({ title, id, active, color }, index) => {
+            const indexId = `index-${index}`;
+
+            return (
+              // oxlint-disable-next-line jsx-a11y/interactive-supports-focus -- deprecated code, no need to maintain it
+              <TabButton
+                id={`tabbutton-${sanitize(id) ?? indexId}`}
+                ref={(ref: HTMLButtonElement) => {
+                  tabRefs.current.set(id, ref);
+                }}
+                className={`tabbutton ${active ? 'tabbutton-active' : ''}`}
+                type="button"
+                key={id}
+                active={active}
+                textColor={color}
+                onClick={(e: SyntheticEvent) => {
+                  e.preventDefault();
+                  // @ts-expect-error (non strict)
+                  actions.onSelect(id);
+                }}
+                role="tab"
+                aria-selected={active}
+              >
+                {typeof title === 'function' ? <title /> : title}
+              </TabButton>
+            );
+          })}
+          <AddonTab menuName={menuName} actions={actions} />
+        </TabBar>
+        {tools}
+      </FlexBar>
+      <Content id="panel-tab-content" bordered={bordered} absolute={absolute}>
+        {list.length
+          ? list.map(({ id, active, render }) => {
+              return (
+                <TabErrorBoundary key={id} active={active}>
+                  {React.createElement(render, { active }, null)}
+                </TabErrorBoundary>
+              );
+            })
+          : EmptyContent}
+      </Content>
+    </Wrapper>
+  );
+}
+
+export const Tabs: FC<TabsProps> = memo(TabsImpl);
 Tabs.displayName = 'Tabs';
 
 export interface TabsStateProps {

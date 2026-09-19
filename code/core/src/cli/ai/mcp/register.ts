@@ -9,6 +9,8 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
+import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
+import type { CommandFailureHandler } from '../../tools/register.ts';
 import {
   type AiCommandOutcome,
   type AiToolRunResult,
@@ -16,7 +18,6 @@ import {
   runAiTool,
   runAiToolHelp,
 } from './run-tool.ts';
-import { resolveStorybookConfigDir } from './local-metadata.ts';
 
 /**
  * The `storybook ai <tool>` MCP passthrough is experimental (storybookjs/storybook#35124) and only
@@ -28,9 +29,9 @@ export function isAiCliFeatureEnabled(env: NodeJS.ProcessEnv = process.env): boo
 
 const CWD_DESCRIPTION = 'Project directory of the target Storybook; place before the command name';
 const CONFIG_DIR_DESCRIPTION =
-  'Storybook config directory for help and local commands; place before the command name';
+  'Storybook config directory of the target Storybook; place before the command name';
 const PORT_DESCRIPTION =
-  'Port of the target Storybook for runtime commands; place before the command name';
+  'Port of a running Storybook; runtime commands target that instance directly. Place before the command name';
 
 type AiPassthroughOptions = {
   cwd?: string;
@@ -44,11 +45,6 @@ type AiPassthroughOptions = {
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
   logfile?: string | boolean;
 };
-
-/** `handleAiCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
-export type CommandFailureHandler = (
-  logFilePath: string | boolean | undefined
-) => (error: unknown) => Promise<never>;
 
 /**
  * Register the passthrough on the `ai` command: a generic `[command] [args...]` argument pair that
@@ -80,7 +76,7 @@ export function registerAiMcpPassthrough(
     )
     .option('--cwd <path>', CWD_DESCRIPTION)
     .option('-c, --config-dir <dir-name>', CONFIG_DIR_DESCRIPTION)
-    .option('--port <number>', PORT_DESCRIPTION)
+    .option('-p, --port <number>', PORT_DESCRIPTION)
     .option(
       '--json <object>',
       'Raw JSON object with the command arguments (escape hatch for complex values)'

@@ -17,7 +17,7 @@ export const Page = () => {
       />
 
       <View style={styles.section}>
-        <Text role="heading" style={styles.h2}>
+        <Text role="heading" aria-level={2} style={styles.h2}>
           Pages in Storybook
         </Text>
         <Text style={styles.p}>

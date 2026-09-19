@@ -1,0 +1,13 @@
+import { Component } from '@angular/core';
+import { ShapeButtonComponent } from './shape-button.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [ShapeButtonComponent],
+  template: `<sb-shape-button [count]="1" (clicked)="clicked($event)" />`,
+})
+export class DemoComponent {
+  clicked(event: unknown) {}
+}
+
+warning: Incomplete snippet: `render: (args: { count?: number; }) => { if (args.count) { return { template: '<sb-shape-button first></sb-shape-button>' }; } return { template: '<sb-shape-button second></sb-shape-button>' }; }` could not be resolved statically.

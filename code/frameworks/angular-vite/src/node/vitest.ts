@@ -1,8 +1,34 @@
+import { existsSync } from 'node:fs';
+import { dirname, join, resolve } from 'node:path';
+
 import { logger } from 'storybook/internal/node-logger';
 
-import type { Plugin, UserConfig } from 'vite';
+import { type Plugin, type UserConfig, normalizePath } from 'vite';
 
 const ENV_KEY = 'STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON';
+
+/**
+ * Collect every ancestor directory of `startDir` (inclusive) that contains a `node_modules` folder,
+ * normalized to Vite's forward-slash convention. All are kept rather than stopping at the first
+ * because Storybook's cache creates a `node_modules/.cache` in the project directory, which would
+ * otherwise shadow the real workspace root (e.g. an Angular workspace, where dependencies live at
+ * the root above `projects/<lib>/`).
+ */
+export const findNodeModulesRoots = (startDir: string): string[] => {
+  const roots: string[] = [];
+  let dir = resolve(startDir);
+  for (;;) {
+    if (existsSync(join(dir, 'node_modules'))) {
+      roots.push(normalizePath(dir));
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+  return roots;
+};
 
 /**
  * Storybook renders Angular with the JIT compiler, so `@angular/compiler` must be registered before
@@ -72,5 +98,24 @@ export function storybookAngularVitest(options: AngularVitestOptions = {}): Plug
     // Vitest augments Vite's `UserConfig` with `test`; assert the shape here rather than import
     // Vitest's types, which would pull its whole type graph into the framework's d.ts build.
     config: () => ({ test: { setupFiles: [COMPILER_SETUP] } }) as unknown as UserConfig,
+    // In an Angular workspace library the Vite dev-server root is `projects/<lib>/`, but
+    // `node_modules` (with `@angular/compiler`) lives at the workspace root. Vite only treats
+    // `pnpm-workspace.yaml`, `lerna.json`, or a `workspaces` field as workspace-root markers, so a
+    // plain Angular workspace resolves the root to the library folder — and the `@angular/compiler`
+    // setup file above falls outside `server.fs.allow`, failing to load in the browser with
+    // "Failed to fetch dynamically imported module". Allow every ancestor that contains
+    // `node_modules`. `configureServer` is required: Vitest builds the browser server's allow-list
+    // itself, so entries added via the `config` hook or static config never reach it.
+    configureServer(server) {
+      // Vitest always populates `fs.allow` today; initialize it defensively so the workspace root
+      // is still allowed if that ever changes.
+      const fs = server.config.server.fs as { allow?: string[] };
+      fs.allow ??= [];
+      for (const nodeModulesRoot of findNodeModulesRoots(server.config.root)) {
+        if (!fs.allow.includes(nodeModulesRoot)) {
+          fs.allow.push(nodeModulesRoot);
+        }
+      }
+    },
   };
 }

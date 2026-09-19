@@ -32,11 +32,14 @@ const vitestModulePath = fileURLToPath(importMetaResolve('@storybook/addon-vites
 // Events that were triggered before Vitest was ready are queued up and resent once it's ready
 const eventQueue: { type: string; args?: any[] }[] = [];
 
+type UniversalStoreBridge = {
+  eventName: string;
+  subscribe: (listener: (event: any, eventInfo: EventInfo) => void) => () => void;
+};
+
 let child: null | ChildProcess;
 let ready = false;
-let unsubscribeStore: () => void;
-let unsubscribeStatusStore: () => void;
-let unsubscribeTestProviderStore: () => void;
+let unsubscribeBridges: Array<() => void> = [];
 
 const forwardUniversalStoreEvent =
   (storeEventName: string) => (event: any, eventInfo: EventInfo) => {
@@ -58,11 +61,28 @@ const bootTestRunner = async ({
   options: Options;
   configLoader?: BuilderOptions['configLoader'];
 }) => {
+  const universalStoreBridges: UniversalStoreBridge[] = [
+    {
+      eventName: STORE_CHANNEL_EVENT_NAME,
+      subscribe: (listener) => store.subscribe(listener),
+    },
+    {
+      eventName: STATUS_STORE_CHANNEL_EVENT_NAME,
+      subscribe: (listener) => internal_universalStatusStore.subscribe(listener),
+    },
+    {
+      eventName: TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+      subscribe: (listener) => internal_universalTestProviderStore.subscribe(listener),
+    },
+  ];
+  const bridgedEventNames = new Set(universalStoreBridges.map((bridge) => bridge.eventName));
+
   let stderr: string[] = [];
   const killChild = () => {
-    unsubscribeStore?.();
-    unsubscribeStatusStore?.();
-    unsubscribeTestProviderStore?.();
+    for (const unsubscribe of unsubscribeBridges) {
+      unsubscribe();
+    }
+    unsubscribeBridges = [];
     child?.kill();
     child = null;
   };
@@ -106,12 +126,8 @@ const bootTestRunner = async ({
         }
       });
 
-      unsubscribeStore = store.subscribe(forwardUniversalStoreEvent(STORE_CHANNEL_EVENT_NAME));
-      unsubscribeStatusStore = internal_universalStatusStore.subscribe(
-        forwardUniversalStoreEvent(STATUS_STORE_CHANNEL_EVENT_NAME)
-      );
-      unsubscribeTestProviderStore = internal_universalTestProviderStore.subscribe(
-        forwardUniversalStoreEvent(TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME)
+      unsubscribeBridges = universalStoreBridges.map((bridge) =>
+        bridge.subscribe(forwardUniversalStoreEvent(bridge.eventName))
       );
 
       child.on('message', (event: any) => {
@@ -128,6 +144,10 @@ const bootTestRunner = async ({
             payload: event.payload,
           });
           reject();
+        } else if (bridgedEventNames.has(event.type)) {
+          // Give the event to local store listeners only. emit() would also send it to browsers,
+          // and the store leader already forwards that copy once.
+          channel.receive(event);
         } else {
           channel.emit(event.type, ...event.args);
         }

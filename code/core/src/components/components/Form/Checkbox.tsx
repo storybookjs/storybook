@@ -1,5 +1,6 @@
-import React, { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
+import React, { forwardRef, useEffect } from 'react';
 
+import { useObjectRef } from 'react-aria/useObjectRef';
 import { color, styled } from 'storybook/theming';
 
 const Input = styled.input(({ theme }) => ({
@@ -59,15 +60,16 @@ export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Che
   { indeterminate = false, ...props },
   ref
 ) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  useImperativeHandle(ref, () => inputRef.current as HTMLInputElement);
+  // Writing to this ref also writes through to `ref`, so the component can reach the input while
+  // still handing it to the caller.
+  const inputRef = useObjectRef(ref);
 
   // `indeterminate` is a DOM property without an HTML attribute, so React cannot set it for us.
   useEffect(() => {
     if (inputRef.current) {
       inputRef.current.indeterminate = indeterminate;
     }
-  }, [indeterminate]);
+  }, [indeterminate, inputRef]);
 
   return <Input {...props} ref={inputRef} type="checkbox" />;
 });

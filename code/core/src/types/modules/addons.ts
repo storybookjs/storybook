@@ -9,8 +9,8 @@ import type {
 
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
-import type { API_Layout, API_LayoutCustomisations, API_SidebarOptions, API_UI } from './api.ts';
 import type { API_HashEntry, API_StoryEntry } from './api-stories.ts';
+import type { API_Layout, API_LayoutCustomisations, API_SidebarOptions, API_UI } from './api.ts';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -470,17 +470,22 @@ export interface Addon_ContextMenuItemClickOptions {
 }
 
 export interface Addon_ContextMenuItem {
-  /** The unique id of the menu item within this addon's contribution. */
+  /** The unique id of the menu item within this addon's menu entries. */
   id: string;
-  /** The label of the menu item. */
+  /** The human-visible label of the menu item. */
   title: string;
-  /** Icon rendered before the title. */
+  /** Optional icon rendered before the title. */
   icon?: ReactNode;
+  /**
+   * Whether the menu item is disabled. Use only when necessary as we cannot advertise
+   * why the item is disabled. It needs to be obvious to users from the surrounding context.
+   */
   disabled?: boolean;
-  /** Called when the user selects the item; the context menu closes afterwards. */
+  /** Called when the user selects the menu item; the context menu closes afterwards. */
   onClick: (event: SyntheticEvent, options: Addon_ContextMenuItemClickOptions) => void;
 }
 
+/** Options received in the handler that decides what menu entries to inject into the context menu. */
 export interface Addon_ContextMenuOptions {
   /** The index entry (story, docs, component, group or root) the context menu is opened for. */
   context: API_HashEntry;
@@ -488,11 +493,10 @@ export interface Addon_ContextMenuOptions {
 
 export interface Addon_ContextMenuType {
   type: Addon_TypesEnum.experimental_CONTEXT_MENU;
-  /** The unique id of the context menu contribution. */
+  /** A unique id for this addon's menu entries, to prevent collisions with other addons. */
   id: string;
   /**
-   * Return the menu items to add to the context menu of the given index entry, or an empty array
-   * to add nothing.
+   * Return the menu items to add to the context menu of a given index entry.
    */
   items: (options: Addon_ContextMenuOptions) => Addon_ContextMenuItem[];
 }

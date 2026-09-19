@@ -53,8 +53,12 @@ describe('globals API', () => {
   it('set global args on SET_GLOBALS', () => {
     const channel = new EventEmitter();
     const store = createMockStore();
+    const fullAPI = {
+      getRefs: () => ({}),
+    } as unknown as API;
     const { state } = initModule({
       store,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState(state);
@@ -77,8 +81,12 @@ describe('globals API', () => {
     channel.on(UPDATE_GLOBALS, listener);
 
     const store = createMockStore();
+    const fullAPI = {
+      getRefs: () => ({}),
+    } as unknown as API;
     const { state } = initModule({
       store,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState({
@@ -110,8 +118,12 @@ describe('globals API', () => {
     channel.on(UPDATE_GLOBALS, listener);
 
     const store = createMockStore();
+    const fullAPI = {
+      getRefs: () => ({}),
+    } as unknown as API;
     const { state } = initModule({
       store,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState({
@@ -131,11 +143,14 @@ describe('globals API', () => {
 
   it('ignores SET_STORIES from other refs', () => {
     const channel = new EventEmitter();
-    const api = { findRef: vi.fn() };
+    const fullAPI = {
+      findRef: vi.fn(),
+      getRefs: () => ({}),
+    } as unknown as API;
     const store = createMockStore();
     const { state } = initModule({
       store,
-      fullAPI: api,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState(state);
@@ -151,12 +166,15 @@ describe('globals API', () => {
   });
 
   it('ignores SET_GLOBALS from other refs', () => {
-    const api = { findRef: vi.fn() };
+    const fullAPI = {
+      findRef: vi.fn(),
+      getRefs: () => ({}),
+    } as unknown as API;
     const channel = new EventEmitter();
     const store = createMockStore();
     const { state } = initModule({
       store,
-      fullAPI: api,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState(state);
@@ -176,11 +194,14 @@ describe('globals API', () => {
 
   it('updates the state when the preview emits GLOBALS_UPDATED', () => {
     const channel = new EventEmitter();
-    const api = { findRef: vi.fn() };
+    const fullAPI = {
+      findRef: vi.fn(),
+      getRefs: () => ({}),
+    } as unknown as API;
     const store = createMockStore();
     const { state } = initModule({
       store,
-      fullAPI: api,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState(state);
@@ -228,11 +249,14 @@ describe('globals API', () => {
 
   it('ignores GLOBALS_UPDATED from other refs', () => {
     const channel = new EventEmitter();
-    const api = { findRef: vi.fn() };
+    const fullAPI = {
+      findRef: vi.fn(),
+      getRefs: () => ({}),
+    } as unknown as API;
     const store = createMockStore();
     const { state } = initModule({
       store,
-      fullAPI: api,
+      fullAPI,
       provider: { channel },
     } as unknown as ModuleArgs);
     store.setState(state);
@@ -256,7 +280,9 @@ describe('globals API', () => {
 
   it('emits UPDATE_GLOBALS when updateGlobals is called', () => {
     const channel = new EventEmitter();
-    const fullAPI = {} as unknown as API;
+    const fullAPI = {
+      getRefs: () => ({}),
+    } as unknown as API;
     const store = createMockStore();
     const listener = vi.fn();
     channel.on(UPDATE_GLOBALS, listener);
@@ -267,6 +293,37 @@ describe('globals API', () => {
     expect(listener).toHaveBeenCalledWith({
       globals: { a: 'b' },
       options: { target: 'storybook-preview-iframe' },
+    });
+  });
+
+  it('emits UPDATE_GLOBALS to composed refs that are previewInitialized', () => {
+    const channel = new EventEmitter();
+    const fullAPI = {
+      getRefs: () => ({
+        ref1: { id: 'ref1', previewInitialized: true },
+        ref2: { id: 'ref2', previewInitialized: false },
+        ref3: { id: 'ref3', previewInitialized: true },
+      }),
+    } as unknown as API;
+    const store = createMockStore();
+    const listener = vi.fn();
+    channel.on(UPDATE_GLOBALS, listener);
+
+    const { api } = initModule({ store, fullAPI, provider: { channel } } as unknown as ModuleArgs);
+    (api as SubAPI).updateGlobals({ a: 'b' });
+
+    expect(listener).toHaveBeenCalledTimes(3);
+    expect(listener).toHaveBeenCalledWith({
+      globals: { a: 'b' },
+      options: { target: 'storybook-preview-iframe' },
+    });
+    expect(listener).toHaveBeenCalledWith({
+      globals: { a: 'b' },
+      options: { target: 'storybook-ref-ref1' },
+    });
+    expect(listener).toHaveBeenCalledWith({
+      globals: { a: 'b' },
+      options: { target: 'storybook-ref-ref3' },
     });
   });
 });

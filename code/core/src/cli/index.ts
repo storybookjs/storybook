@@ -1,4 +1,3 @@
-export * from './detect.ts';
 export * from './helpers.ts';
 export * from './angular/helpers.ts';
 export * from './dirs.ts';

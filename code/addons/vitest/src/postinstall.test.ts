@@ -117,20 +117,6 @@ describe('Angular bridge wiring (postinstall integration)', () => {
     expect(out).toContain('The plugin will run tests for the stories');
   });
 
-  it('fresh-create v3.2: co-locates the bridge in the template plugins array (case 5)', async () => {
-    const template = await loadTemplate('vitest.config.3.2.template', { CONFIG_DIR: '.storybook' });
-    const out = injectAngularVitestIntoConfig(template);
-    expect(out).not.toBeNull();
-    expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
-  });
-
-  it('fresh-create base: co-locates the bridge in the template plugins array (case 5)', async () => {
-    const template = await loadTemplate('vitest.config.template', { CONFIG_DIR: '.storybook' });
-    const out = injectAngularVitestIntoConfig(template);
-    expect(out).not.toBeNull();
-    expect(pluginCalleesInSameArray(out!)).toEqual([ANGULAR_VITEST_PLUGIN_CALL, 'storybookTest']);
-  });
-
   it('existing-config sequencing: merge storybookTest, then co-locate the bridge (case 4)', async () => {
     // Mirrors postinstall's existing-config branch: updateConfigFile merges the template into the
     // user's vite config, then injectAngularVitestIntoAst runs on the SAME (merged) target.

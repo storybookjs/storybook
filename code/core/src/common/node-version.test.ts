@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('empathic/find', { spy: true });
 vi.mock('node:fs', { spy: true });
@@ -29,8 +29,8 @@ describe('node-version', () => {
   });
 
   describe('isNodeVersionSupported', () => {
-    it('accepts exact minimum version (20.19.0)', () => {
-      expect(isNodeVersionSupported(20, 19, 0)).toBe(true);
+    it('rejects 20.19.0 (below minimum major)', () => {
+      expect(isNodeVersionSupported(20, 19, 0)).toBe(false);
     });
 
     it('accepts exact minimum version (22.12.0)', () => {
@@ -45,12 +45,12 @@ describe('node-version', () => {
       expect(isNodeVersionSupported(18, 0, 0)).toBe(false);
     });
 
-    it('accepts version above minimum minor (20.20.0)', () => {
-      expect(isNodeVersionSupported(20, 20, 0)).toBe(true);
+    it('rejects 20.20.0 (below minimum major)', () => {
+      expect(isNodeVersionSupported(20, 20, 0)).toBe(false);
     });
 
-    it('accepts odd major between ranges (21.0.0)', () => {
-      expect(isNodeVersionSupported(21, 0, 0)).toBe(true);
+    it('rejects 21.0.0 (below minimum major)', () => {
+      expect(isNodeVersionSupported(21, 0, 0)).toBe(false);
     });
 
     it('accepts future major above highest defined (24.0.0)', () => {
@@ -75,8 +75,8 @@ describe('node-version', () => {
   });
 
   describe('MIN_SUPPORTED_NODE_DESCRIPTION', () => {
-    it('formats current minimums as human-readable string', () => {
-      expect(MIN_SUPPORTED_NODE_DESCRIPTION).toBe('20.19+ or 22.12+');
+    it('formats current minimum as human-readable string', () => {
+      expect(MIN_SUPPORTED_NODE_DESCRIPTION).toBe('22.12+');
     });
   });
 });

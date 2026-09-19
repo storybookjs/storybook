@@ -1,4 +1,4 @@
-import { parseAttributes, parseRootElement } from './parse-element.ts';
+import { compareRootStructure, parseAttributes, parseRootElement } from './parse-element.ts';
 import type { SnippetGrammar, Violation } from './types.ts';
 
 // A binding name runs to its closing delimiter because an `@Input`/`@Output` alias is an arbitrary
@@ -75,32 +75,13 @@ export function assertGatableAngularSnippet(snippet: string): void {
 }
 
 // An Angular snippet's root element IS the component selector, so unlike the other frameworks its
-// comparison gates the root as well as the represented names.
-function compareRootElement(
+// comparison gates the root as well as the represented names. Bare attributes carry the mangled
+// attribute-selector part of the component's selector: a candidate may add a value, but dropping
+// the attribute changes which component is matched.
+const compareRootElement = (
   baseline: ParsedAngularSnippet,
   candidate: ParsedAngularSnippet
-): Violation[] {
-  const violations: Violation[] = [];
-  if (baseline.tag !== candidate.tag) {
-    violations.push({
-      arg: 'snippet',
-      kind: 'changed-root',
-      message: `the baseline renders <${baseline.tag}> but the candidate renders <${candidate.tag}>`,
-    });
-  }
-  // Bare attributes carry the mangled attribute-selector part of the component's selector; a
-  // candidate may add a value, but dropping the attribute changes which component is matched.
-  for (const bareAttribute of [...baseline.bareAttributes].sort()) {
-    if (!candidate.attributeNames.has(bareAttribute)) {
-      violations.push({
-        arg: bareAttribute,
-        kind: 'lost-attribute',
-        message: 'a bare attribute on the baseline root element is missing from the candidate',
-      });
-    }
-  }
-  return violations;
-}
+): Violation[] => compareRootStructure(baseline, candidate);
 
 export const angularSnippetGrammar: SnippetGrammar<ParsedAngularSnippet> = {
   parse: parseAngularSnippet,

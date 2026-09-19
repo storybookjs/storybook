@@ -17,21 +17,3 @@ export default defineConfig({
   },
 });
 ```
-
-```ts filename="vitest.workspace.ts" renderer="common" tabTitle="Vitest 3"
-export default defineWorkspace([
-  // ...
-  {
-    // ...
-    {
-      plugins: [
-        storybookTest({
-        // ...
-         // 👇 Use the environment variable you passed
-         storybookUrl: process.env.SB_URL
-        }),
-      ],
-    },
-  },
-]);
-```

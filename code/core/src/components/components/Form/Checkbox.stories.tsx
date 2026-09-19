@@ -42,7 +42,7 @@ export const Checkbox: Story = {
       </div>
 
       <small id="row-indeterminate">Indeterminate:</small>
-      <Component aria-labelledby="col-custom row-indeterminate" data-indeterminate />
+      <Component aria-labelledby="col-custom row-indeterminate" indeterminate />
       <div>
         <input
           aria-labelledby="col-native row-indeterminate"
@@ -71,11 +71,7 @@ export const Checkbox: Story = {
       </div>
 
       <small id="row-disabled-indeterminate">Disabled, indeterminate:</small>
-      <Component
-        aria-labelledby="col-custom row-disabled-indeterminate"
-        disabled
-        data-indeterminate
-      />
+      <Component aria-labelledby="col-custom row-disabled-indeterminate" disabled indeterminate />
       <div>
         <input
           aria-labelledby="col-native row-disabled-indeterminate"
@@ -99,6 +95,7 @@ export const Checkbox: Story = {
     </div>
   ),
   afterEach: async ({ canvasElement }) => {
+    // Native checkboxes still need the DOM property set by hand; Checkbox takes `indeterminate`.
     canvasElement.querySelectorAll<HTMLInputElement>('[data-indeterminate]').forEach((checkbox) => {
       checkbox.indeterminate = true;
     });

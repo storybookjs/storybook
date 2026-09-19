@@ -46,6 +46,27 @@ Use this boilerplate code to add a new `Tab` to Storybook's UI:
 
 <CodeSnippets path="storybook-addon-tab-example.md" />
 
+### Context menu entries
+
+Context menu addons allow you to add your own entries to the menu that opens from the ellipsis button of a sidebar item, so your addon can act on the story, docs entry, component, or group the user picked.
+
+<Callout variant="info" icon="🧪">
+
+This addon type is [experimental](../releases/features.mdx#experimental).
+Its API may change in future releases, and we welcome feedback to help shape it.
+
+</Callout>
+
+Use this boilerplate code to add your own entries to the sidebar context menu:
+
+<CodeSnippets path="storybook-addon-context-menu-example.md" />
+
+Storybook calls `items` with the sidebar entry the menu belongs to, and renders the array you return. Return an empty array for the entries you don't want to extend. Each item is declarative rather than a component you render yourself, which keeps your entries consistent with Storybook's own: you control the `title`, `icon`, and `disabled` state, and Storybook handles the rest.
+
+When the user selects an item, Storybook calls its `onClick` handler and closes the menu. The handler also receives `triggerRef`, a ref to the button that opened the menu. Use it to anchor your own floating UI, such as a dialog or a popover, next to the sidebar entry the user acted on.
+
+Sidebar context menus are only available while running Storybook in development mode, and Storybook does not render them for entries coming from a [composed Storybook](../sharing/storybook-composition.mdx).
+
 <Callout variant="info">
 
 Learn how to write your own addon that includes these UI elements [here](./writing-addons.mdx).

@@ -4,12 +4,13 @@ import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { formatIssues } from '../../../shared/open-service/errors.ts';
-import type {
-  AnyToolsetDefinition,
-  AnyToolsetMethod,
-  AnyToolsetOutcome,
-  ToolsetCtx,
-  ToolsetTransport,
+import {
+  invokeToolsetMethod,
+  type AnyToolsetDefinition,
+  type AnyToolsetMethod,
+  type InvokedToolsetOutcome,
+  type ToolsetCtx,
+  type ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { projectPathsEqual } from '../instances/project-path.ts';
@@ -18,12 +19,7 @@ import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { toCatalogEntry } from './catalog.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
-import {
-  reportSdkAttachGate,
-  reportSdkInvocation,
-  resolveCallTelemetry,
-  toolsCommandDimensions,
-} from './command-telemetry.ts';
+import { reportSdkAttachGate, reportSdkInvocation } from './command-telemetry.ts';
 import {
   AttachUnavailableError,
   SpawnFailedError,
@@ -378,11 +374,12 @@ function createToolsHost(args: {
     ref: string,
     input: Record<string, unknown>,
     options: ToolsCallOptions
-  ): Promise<AnyToolsetOutcome> => {
+  ): Promise<InvokedToolsetOutcome> => {
     options.signal?.throwIfAborted();
 
     const { toolsetId, methodName } = splitRef(ref);
-    const method = findMethod(findToolset(runtime, toolsetId), methodName);
+    const toolset = findToolset(runtime, toolsetId);
+    const method = findMethod(toolset, methodName);
 
     if (mode === 'local' && method.requiresDevServer) {
       throw new AttachUnavailableError({
@@ -403,21 +400,12 @@ function createToolsHost(args: {
 
     return raceAbort(
       options.signal,
-      method.handler(validation.value, {
+      invokeToolsetMethod(toolset, methodName, validation.value, {
         ...baseCtx,
         ...(options.origin !== undefined ? { origin: options.origin } : {}),
-        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
       })
     );
   };
-
-  const dimensions = toolsCommandDimensions({
-    clientInfo,
-    requestedMode,
-    resolvedMode: mode,
-    host,
-    fallbackReason: args.fallbackReason,
-  });
 
   return {
     mode,
@@ -443,21 +431,13 @@ function createToolsHost(args: {
       ref: string,
       input: Record<string, unknown> = {},
       options: ToolsCallOptions = {}
-    ): Promise<AnyToolsetOutcome> {
+    ): Promise<InvokedToolsetOutcome> {
       assertOpen();
-      const telemetry = resolveCallTelemetry(options, dimensions, {
-        clientInfo,
-        configDir: runtime.configDir,
-      });
-      const callOptions: ToolsCallOptions = {
-        ...options,
-        ...(telemetry ? { telemetry } : {}),
-      };
       const start = Date.now();
       try {
         const outcome = args.disconnected
-          ? await Promise.race([invoke(ref, input, callOptions), args.disconnected])
-          : await invoke(ref, input, callOptions);
+          ? await Promise.race([invoke(ref, input, options), args.disconnected])
+          : await invoke(ref, input, options);
         await reportSdkInvocation({
           ref,
           clientInfo,
@@ -466,6 +446,7 @@ function createToolsHost(args: {
           host,
           fallbackReason: args.fallbackReason,
           result: outcome,
+          report: outcome.telemetry,
           duration: Date.now() - start,
           configDir: runtime.configDir,
         });

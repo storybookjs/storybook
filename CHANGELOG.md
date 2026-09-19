@@ -1,3 +1,11 @@
+## 10.6.1
+
+- Addon A11y: Fix vision simulator color filters in Firefox - [#36153](https://github.com/storybookjs/storybook/pull/36153), thanks @ghengeveld!
+- Addon Vitest: Support Vitest 5 browser tests - [#36270](https://github.com/storybookjs/storybook/pull/36270), thanks @valentinpalkovic!
+- Core: Fix build crash when ref reachability check fails mid-request - [#36181](https://github.com/storybookjs/storybook/pull/36181), thanks @shilman!
+- Core: Restore the change-detection CTA in the sidebar - [#36214](https://github.com/storybookjs/storybook/pull/36214), thanks @ghengeveld!
+- Telemetry: One tools-command record per invocation with CLI toolset and tool names - [#36210](https://github.com/storybookjs/storybook/pull/36210), thanks @kasperpeulen!
+
 ## 10.6.0
 
 > New skills architecture for agentic workflows

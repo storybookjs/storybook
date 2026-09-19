@@ -147,8 +147,6 @@ function VitePlugin({ dir = process.cwd(), image }: PluginOptions = {}): PluginO
               'next/dist/client/head-manager.js',
               'next/dist/client/components/is-next-router-error.js',
               'next/dist/shared/lib/segment.js',
-              'styled-jsx',
-              'styled-jsx/style',
               'sb-original/image-context',
               'sb-original/default-loader',
               'next/dist/compiled/react',
@@ -158,6 +156,7 @@ function VitePlugin({ dir = process.cwd(), image }: PluginOptions = {}): PluginO
               // Required for pnpm setups, since styled-jsx is a transitive dependency of Next.js and not directly listed.
               // Refer to this pnpm issue for more details:
               // https://github.com/vitejs/vite/issues/16293
+              'next > styled-jsx',
               'next > styled-jsx/style',
               ...(nextConfig.compiler?.emotion ? ['@emotion/react/jsx-dev-runtime'] : []),
               ...(isNext16orNewer ? [] : ['next/config']),

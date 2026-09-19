@@ -181,7 +181,7 @@ export class ProjectTypeService {
     try {
       const detectedType = await this.detectProjectType(options);
 
-      // messaging and prompting for undetected projects is handled by the command layer
+      // prompting handled by command layer
       if (detectedType === ProjectType.UNDETECTED || detectedType === null) {
         return ProjectType.UNDETECTED;
       }

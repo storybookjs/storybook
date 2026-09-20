@@ -623,6 +623,48 @@ describe('mcpServerHandler', () => {
     });
     expect(toolNames).not.toContain('review-create');
   });
+
+  it('streams the GET notification channel instead of waiting for its body to end', async () => {
+    const { response, getResponseData } = createMockServerResponse();
+
+    // Not awaited: a GET only settles when the client disconnects, which is what is being asserted.
+    void mcpServerHandler({
+      req: createMockIncomingMessage({
+        method: 'GET',
+        headers: { accept: 'text/event-stream', host: 'localhost:6016' },
+      }),
+      res: response,
+      options: createMockOptions({ port: 6016 }) as any,
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth: new CompositionAuth(),
+    });
+
+    await vi.waitFor(() => expect(getResponseData().body).toContain(': connected'));
+    expect(getResponseData().status).toBe(200);
+    expect(getResponseData().headers.get('content-type')).toBe('text/event-stream');
+  });
+
+  it('replaces a POST response with 401 when a tool hit an auth error', async () => {
+    const { response, getResponseData } = createMockServerResponse();
+
+    await mcpServerHandler({
+      req: createMockIncomingMessage({
+        method: 'POST',
+        headers: { 'content-type': 'application/json', host: 'localhost:6017' },
+        body: createMCPInitializeRequest(),
+      }),
+      res: response,
+      options: createMockOptions({ port: 6017 }) as any,
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth: {
+        hadAuthError: () => true,
+        buildWwwAuthenticate: () => 'Bearer error="unauthorized"',
+      } as unknown as CompositionAuth,
+    });
+
+    expect(getResponseData().status).toBe(401);
+    expect(getResponseData().body).toBe('401 - Unauthorized');
+  });
 });
 
 describe('getToolsets', () => {

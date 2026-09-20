@@ -161,6 +161,13 @@ export const mcpServerHandler = async ({
 
   const response = await transport!.respond(webRequest, addonContext);
   if (response) {
+    // The GET response is the session's notification channel, which ends only when the client
+    // leaves, so the buffering below would never answer it.
+    if (webRequest.method !== 'POST') {
+      await webResponseToServerResponse(response, res);
+      return;
+    }
+
     // Buffer body first — tool execution happens lazily during stream consumption
     // (tmcp's transport fires handle() without awaiting it). Only after the body
     // is fully consumed can we check whether a tool hit an auth error.

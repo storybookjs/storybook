@@ -6,6 +6,7 @@ import {
   getToolsets,
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
 
@@ -50,7 +51,9 @@ function createMockServerResponse(): {
   const headers = new Map<string, string>();
   const chunks: Uint8Array[] = [];
 
-  const mockResponse = {
+  // A real `ServerResponse` is an EventEmitter and the handler listens for `close` on it, so the
+  // mock has to be one too.
+  const mockResponse = Object.assign(new EventEmitter(), {
     statusCode: 0,
     setHeader: vi.fn((key: string, value: string) => {
       headers.set(key, value);
@@ -59,7 +62,7 @@ function createMockServerResponse(): {
       chunks.push(chunk);
     }),
     end: vi.fn(),
-  } as unknown as ServerResponse;
+  }) as unknown as ServerResponse;
 
   return {
     response: mockResponse,
@@ -196,6 +199,34 @@ describe('mcp-handler conversion utilities', () => {
 
       const { status } = getResponseData();
       expect(status).toBe(500);
+    });
+
+    it('releases a stream that is still open when the client disconnects', async () => {
+      const onCancel = vi.fn();
+      // Like the GET notification channel: it produces nothing until the client leaves.
+      const body = new ReadableStream({
+        pull: () => new Promise(() => undefined),
+        cancel: onCancel,
+      });
+
+      const { response } = createMockServerResponse();
+      const written = webResponseToServerResponse(new Response(body), response);
+
+      response.emit('close');
+
+      // Cancelling resolves the parked read, so the handler settles instead of hanging.
+      await written;
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(response.end).toHaveBeenCalled();
+    });
+
+    it('removes its disconnect listener once the response has been written', async () => {
+      const { response, getResponseData } = createMockServerResponse();
+
+      await webResponseToServerResponse(new Response('Hello World'), response);
+
+      expect(getResponseData().body).toBe('Hello World');
+      expect(response.listenerCount('close')).toBe(0);
     });
   });
 });

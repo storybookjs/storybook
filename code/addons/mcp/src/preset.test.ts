@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { EventEmitter } from 'node:events';
 import type { Options } from 'storybook/internal/types';
 import { getToolAvailability } from 'storybook/internal/core-server';
 import { experimental_devServer } from './preset.ts';
@@ -613,13 +614,14 @@ describe('experimental_devServer', () => {
       },
     } as any;
 
-    const mockRes = {
+    // The MCP handler listens for `close` on the response, so the mock needs to be an emitter.
+    const mockRes = Object.assign(new EventEmitter(), {
       writeHead: vi.fn(),
       write: vi.fn(),
       end: vi.fn(),
       setHeader: vi.fn(),
       statusCode: 0,
-    } as any;
+    }) as any;
 
     await mcpHandler(mockReq, mockRes);
 
@@ -706,13 +708,14 @@ describe('experimental_devServer', () => {
       },
     } as any;
 
-    const mockRes = {
+    // The MCP handler listens for `close` on the response, so the mock needs to be an emitter.
+    const mockRes = Object.assign(new EventEmitter(), {
       writeHead: vi.fn(),
       write: vi.fn(),
       end: vi.fn(),
       setHeader: vi.fn(),
       statusCode: 0,
-    } as any;
+    }) as any;
 
     await getMcpHandler(mockReq, mockRes);
 

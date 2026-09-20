@@ -222,6 +222,16 @@ export async function webResponseToServerResponse(
   // Stream response body
   if (webResponse.body) {
     const reader = webResponse.body.getReader();
+    // A GET body is the session's notification channel, so the loop below only ends once the client
+    // leaves. Cancelling is what runs the transport's stream `cancel()` hook, which unregisters the
+    // session; an abandoned channel that stays registered makes the client's next GET for the same
+    // session id fail with "Conflict: Only one SSE stream is allowed per session".
+    const cancel = () => {
+      reader.cancel().catch(() => {
+        // the stream was already closed or errored, so there is nothing left to release
+      });
+    };
+    nodeResponse.once('close', cancel);
     try {
       while (true) {
         const { done, value } = await reader.read();
@@ -229,6 +239,7 @@ export async function webResponseToServerResponse(
         nodeResponse.write(value);
       }
     } finally {
+      nodeResponse.off('close', cancel);
       reader.releaseLock();
     }
   }

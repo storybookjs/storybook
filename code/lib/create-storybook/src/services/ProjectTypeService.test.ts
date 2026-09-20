@@ -272,9 +272,9 @@ describe('ProjectTypeService', () => {
       // @ts-expect-error private method spy
       vi.spyOn(service, 'isNxProject').mockReturnValue(false);
 
-      await expect(
-        service.autoDetectProjectType({ html: false } as CommandOptions)
-      ).resolves.toBe(ProjectType.UNDETECTED);
+      await expect(service.autoDetectProjectType({ html: false } as CommandOptions)).resolves.toBe(
+        ProjectType.UNDETECTED
+      );
     });
   });
 

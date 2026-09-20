@@ -35,6 +35,7 @@ export * from './utils/paths.ts';
 export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
 export * from './utils/resolve-meta-component.ts';
+export * from './utils/subcomponents.ts';
 export * from './utils/remove.ts';
 export * from './utils/resolve-path-in-sb-cache.ts';
 export * from './utils/symlinks.ts';
@@ -62,6 +63,7 @@ export * from './utils/get-addon-names.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';
 export * from './utils/file-lock.ts';
+export * from './utils/process-ancestry.ts';
 export * from './node-version.ts';
 
 export { versions };

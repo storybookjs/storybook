@@ -25,7 +25,8 @@ function getAllStoryFiles() {
 
   return storyFiles.map((filePath) => {
     const storyFile = require(filePath);
-    return { filePath, storyFile };
+    const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
+    return { filePath, storyFile, componentName };
   });
 }
 
@@ -113,7 +114,8 @@ function getAllStoryFiles() {
 
   return storyFiles.map((filePath) => {
     const storyFile = require(filePath);
-    return { filePath, storyFile };
+    const componentName = path.basename(filePath).replace(/\.(stories|story)\.[^/.]+$/, '');
+    return { filePath, storyFile, componentName };
   });
 }
 

@@ -3,7 +3,9 @@ import { join } from 'node:path';
 
 import {
   allTemplates,
+  type FocusPathKind,
   type SkippableTask,
+  type Template,
   type TemplateKey,
 } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { installWithCache } from './common-jobs.ts';
@@ -19,75 +21,11 @@ const REQUIRED_FOCUS_TASKS = [
   'chromatic',
 ] as const satisfies readonly SkippableTask[];
 
-type FocusSandboxRule = {
-  prefix: string;
-  sandbox: TemplateKey;
-};
-
-const frameworkFocusSandboxRules = [
-  {
-    prefix: 'code/frameworks/angular-vite/',
-    sandbox: 'angular-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/angular/',
-    sandbox: 'angular-cli/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/nextjs-vite/',
-    sandbox: 'nextjs-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/nextjs/',
-    sandbox: 'nextjs/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/react-webpack5/',
-    sandbox: 'react-webpack/18-ts',
-  },
-  {
-    prefix: 'code/frameworks/vue3-vite/',
-    sandbox: 'vue3-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/svelte-vite/',
-    sandbox: 'svelte-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/preact-vite/',
-    sandbox: 'preact-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/html-vite/',
-    sandbox: 'html-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/web-components-vite/',
-    sandbox: 'lit-vite/default-ts',
-  },
-  {
-    prefix: 'code/frameworks/react-native-web-vite/',
-    sandbox: 'react-native-web-vite/expo-ts',
-  },
-  {
-    prefix: 'code/frameworks/react-vite/',
-    sandbox: DEFAULT_FOCUS_SANDBOX,
-  },
-] as const satisfies readonly FocusSandboxRule[];
-
-const rendererFocusSandboxRules = [
-  { prefix: 'code/renderers/vue3/', sandbox: 'vue3-vite/default-ts' },
-  { prefix: 'code/renderers/svelte/', sandbox: 'svelte-vite/default-ts' },
-  { prefix: 'code/renderers/preact/', sandbox: 'preact-vite/default-ts' },
-  { prefix: 'code/renderers/html/', sandbox: 'html-vite/default-ts' },
-  { prefix: 'code/renderers/web-components/', sandbox: 'lit-vite/default-ts' },
-  { prefix: 'code/renderers/react/', sandbox: DEFAULT_FOCUS_SANDBOX },
-] as const satisfies readonly FocusSandboxRule[];
-
-const builderFocusSandboxRules = [
-  { prefix: 'code/builders/builder-webpack5/', sandbox: 'react-webpack/18-ts' },
-  { prefix: 'code/builders/builder-vite/', sandbox: DEFAULT_FOCUS_SANDBOX },
-] as const satisfies readonly FocusSandboxRule[];
+const FOCUS_PATH_PRIORITY = [
+  'framework',
+  'renderer',
+  'builder',
+] as const satisfies readonly FocusPathKind[];
 
 function supportsFocusTasks(template: TemplateKey): boolean {
   const skippedTasks = allTemplates[template].skipTasks ?? [];
@@ -96,15 +34,18 @@ function supportsFocusTasks(template: TemplateKey): boolean {
 }
 
 export function selectFocusSandbox(changedFiles: readonly string[]): TemplateKey {
-  for (const rules of [
-    frameworkFocusSandboxRules,
-    rendererFocusSandboxRules,
-    builderFocusSandboxRules,
-  ]) {
-    const sandbox = rules.find(
-      ({ prefix, sandbox }) =>
-        supportsFocusTasks(sandbox) && changedFiles.some((file) => file.startsWith(prefix))
-    )?.sandbox;
+  for (const kind of FOCUS_PATH_PRIORITY) {
+    const sandbox = (Object.entries(allTemplates) as [TemplateKey, Template][]).find(
+      ([template, { focusPathPrefixes }]) => {
+        const prefix = focusPathPrefixes?.[kind];
+
+        return (
+          prefix !== undefined &&
+          supportsFocusTasks(template) &&
+          changedFiles.some((file) => file.startsWith(prefix))
+        );
+      }
+    )?.[0];
 
     if (sandbox) {
       return sandbox;

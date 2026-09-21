@@ -1,16 +1,151 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import * as v from 'valibot';
 
 import { OpenServiceMissingChannelError } from '../../server-errors.ts';
-import { mutableRecordLookupServiceDef } from './fixtures.ts';
+import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
+import {
+  awaitedPreloadValueServiceDef,
+  mutableRecordLookupServiceDef,
+  noInputSchema,
+  voidOutputSchema,
+} from './fixtures.ts';
+import { defineService } from './service-definition.ts';
 import {
   SERVICE_PATCHES,
   SERVICE_SYNC_START_REPLY,
   SERVICE_SYNC_START,
 } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
-import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
+
+type RecorderBroadcastState = { a: number; b: number; n: number; count: number };
+
+const gate = {
+  opened: Promise.resolve() as Promise<void>,
+  open: () => {},
+  reached: () => {},
+};
+
+function armGate(): Promise<void> {
+  gate.opened = new Promise<void>((resolve) => {
+    gate.open = resolve;
+  });
+  return new Promise<void>((resolve) => {
+    gate.reached = resolve;
+  });
+}
+
+const recorderBroadcastServiceDef = defineService({
+  id: 'internal-fixture/recorder-broadcast',
+  description: 'Exercises per-setState entry authoring.',
+  initialState: { a: 0, b: 0, n: 0, count: 0 } satisfies RecorderBroadcastState,
+  queries: {
+    snapshot: {
+      description: 'Returns the full state.',
+      input: noInputSchema,
+      output: v.object({ a: v.number(), b: v.number(), n: v.number(), count: v.number() }),
+      handler: (_input, ctx) => ({
+        a: ctx.self.state.a,
+        b: ctx.self.state.b,
+        n: ctx.self.state.n,
+        count: ctx.self.state.count,
+      }),
+    },
+  },
+  commands: {
+    noop: {
+      description: 'Resolves without writing.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: () => undefined,
+    },
+    sameN: {
+      description: 'Writes n to its current value.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.n = state.n;
+        });
+      },
+    },
+    setB: {
+      description: 'Writes b.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.b = 2;
+        });
+      },
+    },
+    outer: {
+      description: 'Writes a then delegates to setB.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.a = 1;
+        });
+        await ctx.self.commands.setB();
+      },
+    },
+    setA: {
+      description: 'Writes a.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.a = 1;
+        });
+      },
+    },
+    writeAThenThrow: {
+      description: 'Writes a, awaits, then throws before writing b.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.a = 1;
+        });
+        await Promise.resolve();
+        throw new Error('boom');
+      },
+    },
+    countOneThenZero: {
+      description: 'Writes count to 1, waits for the gate, then writes count to 0.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: async (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.count = 1;
+        });
+        gate.reached();
+        await gate.opened;
+        ctx.self.setState((state) => {
+          state.count = 0;
+        });
+      },
+    },
+    countTwo: {
+      description: 'Writes count to 2.',
+      input: noInputSchema,
+      output: voidOutputSchema,
+      handler: (_input, ctx) => {
+        ctx.self.setState((state) => {
+          state.count = 2;
+        });
+      },
+    },
+  },
+});
+
+function patchFrames(channel: ReturnType<typeof createTestChannel>) {
+  return channel.emit.mock.calls
+    .filter(([event]) => event === SERVICE_PATCHES)
+    .map(([, payload]) => payload as { version: number; state: RecorderBroadcastState });
+}
 
 const createMockChannel = createTestChannel;
 const installChannel = installTestChannel;
@@ -84,6 +219,87 @@ describe('server: command push', () => {
       (patches[0][1] as { runtimeId: string }).runtimeId
     );
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: '2' });
+  });
+
+  it('emits no sync frame and does not bump the stamp for a setState that writes nothing', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(recorderBroadcastServiceDef);
+
+    await service.commands.noop();
+    await service.commands.sameN();
+
+    expect(patchFrames(channel)).toHaveLength(0);
+
+    await service.commands.setA();
+
+    const frames = patchFrames(channel);
+    expect(frames).toHaveLength(1);
+    expect(frames[0].version).toBe(1);
+    expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 0, n: 0, count: 0 });
+  });
+
+  it('emits one frame per setState, including writes from nested commands', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(recorderBroadcastServiceDef);
+
+    await service.commands.outer();
+
+    const frames = patchFrames(channel);
+    expect(frames.map((frame) => frame.version)).toEqual([1, 2]);
+    expect(frames[0].state).toEqual({ a: 1, b: 0, n: 0, count: 0 });
+    expect(frames[1].state).toEqual({ a: 1, b: 2, n: 0, count: 0 });
+    expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 2, n: 0, count: 0 });
+  });
+
+  it('has already emitted the writes made before a command throws', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(recorderBroadcastServiceDef);
+
+    await expect(service.commands.writeAThenThrow()).rejects.toThrow('boom');
+
+    const frames = patchFrames(channel);
+    expect(frames).toHaveLength(1);
+    expect(frames[0].state).toEqual(service.queries.snapshot.get());
+  });
+
+  it('keeps peers and the author equal when two commands interleave around an await', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(recorderBroadcastServiceDef);
+
+    const reached = armGate();
+    const slow = service.commands.countOneThenZero();
+    await reached;
+    await service.commands.countTwo();
+    gate.open();
+    await slow;
+
+    const frames = patchFrames(channel);
+    expect(frames.map((frame) => frame.state.count)).toEqual([1, 2, 0]);
+    expect(frames.at(-1)?.state).toEqual(service.queries.snapshot.get());
+  });
+
+  it('emits a frame for a write made by a command inside a reactive load', async () => {
+    const channel = createMockChannel();
+    installChannel(channel);
+
+    const service = registerService(awaitedPreloadValueServiceDef);
+    const unsubscribe = service.queries.preloadedValue.subscribe({ entryId: 'entry-a' }, () => {});
+
+    await vi.waitFor(() =>
+      expect(channel.emit).toHaveBeenCalledWith(
+        SERVICE_PATCHES,
+        expect.objectContaining({ state: { 'entry-a': 'preloaded' }, version: 1 })
+      )
+    );
+    unsubscribe();
   });
 });
 

@@ -147,66 +147,57 @@ async function main() {
     });
   } else {
     const commentBody = `${MARKER}\nagent-eval merge-gate experiment thread. Created by tmp-thread-experiment.yml on a disposable PR.`;
-    // Attempt A: minimal payload — body, path, subject_type FILE. No commit_id, no line.
-    let r = await rest('POST', `/repos/${REPO}/pulls/${PR_NUMBER}/comments`, {
-      body: commentBody,
-      path: ANCHOR_PATH,
-      subject_type: 'FILE',
-    });
-    record('create-comment-minimal', {
-      request: 'POST /repos/{owner}/{repo}/pulls/{n}/comments {body, path, subject_type:"FILE"} — no commit_id, no line',
-      permissions: PERMS,
-      status: r.status,
-      ok: r.status < 300,
-      error: r.status < 300 ? null : trim(r.json?.message ?? JSON.stringify(r.json)),
-      responseFields:
-        r.status < 300
-          ? {
-              id: r.json?.id ?? null,
-              hasNodeId: !!r.json?.node_id,
-              path: r.json?.path ?? null,
-              line: r.json?.line ?? null,
-              subjectType: r.json?.subject_type ?? null,
-              commitIdEcho: r.json?.commit_id ? String(r.json.commit_id).slice(0, 10) : null,
-              author: r.json?.user?.login ?? null,
-            }
-          : null,
-    });
-    if (r.status >= 300) {
-      // Attempt B: add commit_id (PR head SHA).
-      r = await rest('POST', `/repos/${REPO}/pulls/${PR_NUMBER}/comments`, {
-        body: commentBody,
-        commit_id: HEAD_SHA,
-        path: ANCHOR_PATH,
-        subject_type: 'FILE',
-      });
-      record('create-comment-with-commit-id', {
-        request: 'POST /pulls/{n}/comments {body, commit_id: headSha, path, subject_type:"FILE"}',
+    // The endpoint schema is a oneOf and rejects uppercase subject_type:"FILE" with a
+    // 422 hinting at `positioning` and lowercase ["line","file"] values. Probe modern
+    // file-level payloads first, then legacy fallbacks; stop at the first success.
+    const attempts = [
+      {
+        label: 'positioning-file-no-commit',
+        payload: { body: commentBody, path: ANCHOR_PATH, positioning: 'file' },
+      },
+      {
+        label: 'positioning-file-with-commit',
+        payload: { body: commentBody, path: ANCHOR_PATH, positioning: 'file', commit_id: HEAD_SHA },
+      },
+      {
+        label: 'subject-type-lowercase-no-commit',
+        payload: { body: commentBody, path: ANCHOR_PATH, subject_type: 'file' },
+      },
+      {
+        label: 'subject-type-lowercase-with-commit',
+        payload: { body: commentBody, path: ANCHOR_PATH, subject_type: 'file', commit_id: HEAD_SHA },
+      },
+      {
+        label: 'line-anchored-fallback',
+        payload: { body: commentBody, path: ANCHOR_PATH, positioning: 'line', line: 1, side: 'RIGHT', commit_id: HEAD_SHA },
+      },
+    ];
+    let r = null;
+    for (const a of attempts) {
+      r = await rest('POST', `/repos/${REPO}/pulls/${PR_NUMBER}/comments`, a.payload);
+      record(`create-comment:${a.label}`, {
+        request: JSON.stringify({ ...a.payload, body: '<body with marker>' }),
         permissions: PERMS,
         status: r.status,
         ok: r.status < 300,
         error: r.status < 300 ? null : trim(r.json?.message ?? JSON.stringify(r.json)),
+        responseFields:
+          r.status < 300
+            ? {
+                id: r.json?.id ?? null,
+                hasNodeId: !!r.json?.node_id,
+                path: r.json?.path ?? null,
+                line: r.json?.line ?? null,
+                subjectTypeEcho: r.json?.subject_type ?? null,
+                positioningEcho: r.json?.positioning ?? null,
+                commitIdEcho: r.json?.commit_id ? String(r.json.commit_id).slice(0, 10) : null,
+                author: r.json?.user?.login ?? null,
+              }
+            : null,
       });
-      if (r.status >= 300) {
-        // Attempt C: last resort — anchor to line 1 so a thread exists at all.
-        r = await rest('POST', `/repos/${REPO}/pulls/${PR_NUMBER}/comments`, {
-          body: commentBody,
-          commit_id: HEAD_SHA,
-          path: ANCHOR_PATH,
-          subject_type: 'FILE',
-          line: 1,
-          side: 'RIGHT',
-        });
-        record('create-comment-with-line', {
-          request: 'POST /pulls/{n}/comments {body, commit_id, path, subject_type:"FILE", line:1, side:"RIGHT"}',
-          permissions: PERMS,
-          status: r.status,
-          ok: r.status < 300,
-          error: r.status < 300 ? null : trim(r.json?.message ?? JSON.stringify(r.json)),
-        });
-      }
+      if (r.status < 300) break;
     }
-    if (r.status < 300 && r.json) {
+    if (r && r.status < 300 && r.json) {
       markerCommentDbId = r.json.id;
     }
   }

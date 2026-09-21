@@ -22,11 +22,14 @@ export const buildFrameworkGlobalsFromOptions = async (options: Options) => {
   // has to serialize the events it emits (e.g. UPDATE_STORY_ARGS) with the same telejson
   // options. Otherwise `core.channelOptions` is ignored for manager -> preview events and
   // deeply nested args get truncated at the default maxDepth. See #24818.
-  globals.CHANNEL_OPTIONS = {
-    ...channelOptions,
-    // The websocket channel only exists in development, and so does its token.
-    wsToken: options.configType === 'DEVELOPMENT' ? channelOptions?.wsToken : undefined,
-  };
+  const managerChannelOptions = { ...channelOptions };
+
+  // The websocket channel only exists in development, and so does its token.
+  if (options.configType !== 'DEVELOPMENT') {
+    delete managerChannelOptions.wsToken;
+  }
+
+  globals.CHANNEL_OPTIONS = managerChannelOptions;
   globals.STORYBOOK_BUILDER = builder;
   globals.STORYBOOK_FRAMEWORK = framework;
   globals.STORYBOOK_RENDERER = renderer;

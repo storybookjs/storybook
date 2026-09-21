@@ -76,13 +76,19 @@ describe('vue3 declared subcomponents', () => {
     expect(Object.keys(payload!.subcomponents!.Header!.argTypes!)).not.toContain('content');
   });
 
-  it('records the child’s apiDescription markdown', async () => {
+  it('records the child’s own apiDescription markdown', async () => {
     const payload = await docgenFor('declared-subcomponents', 'Example/Card');
 
-    // Vue deliberately populates apiDescription per child — this is the text the MCP docs tool
-    // renders under `## Subcomponents`, with its headings demoted.
+    // This is the child's OWN apiDescription: it documents CardHeader alone and carries no
+    // `## Subcomponents` of its own, because the payload record is flat rather than recursive.
+    // Core's `formatSubcomponentsSection` synthesizes that heading and demotes the headings
+    // below to render this text under `## Subcomponents` › `### CardHeader`.
     await expect(payload?.subcomponents?.Header?.apiDescription).toMatchFileSnapshot(
-      join(fixturesDir, 'declared-subcomponents', 'subcomponent-Header-api-description.snapshot')
+      join(
+        fixturesDir,
+        'declared-subcomponents',
+        'subcomponent-Header-own-api-description.snapshot'
+      )
     );
   });
 

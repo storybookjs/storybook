@@ -446,14 +446,16 @@ describe('vitestSetupFile', () => {
 
         1) <fixture>/.storybook/vitest.setup.ts: it must contain a single "setProjectAnnotations" call and nothing else
 
-        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to setProjectAnnotations compose additively, so nothing breaks, but the boilerplate is redundant:
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, and its setup file runs before yours. Because setProjectAnnotations replaces the project annotations instead of adding to them, a leftover call discards what the addon applied:
 
         - setProjectAnnotations([projectAnnotations]);
 
         For each file listed above:
           1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
-          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          2. If you pass extra annotations (e.g. from an addon's preview), move them into your .storybook preview and then remove the call. setProjectAnnotations replaces the annotations set by the addon instead of adding to them, so a leftover call silently drops them.
           3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        For any setupFiles entry listed above: check where it points. If it resolves to a setup file that only re-applies your preview, delete that file and remove the entry.
 
         Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
       `);
@@ -486,20 +488,22 @@ describe('vitestSetupFile', () => {
 
         2) <fixture>/src/other-vitest.setup.ts: the call passes inline objects or addon annotation modules
 
-        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to setProjectAnnotations compose additively, so nothing breaks, but the boilerplate is redundant:
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, and its setup file runs before yours. Because setProjectAnnotations replaces the project annotations instead of adding to them, a leftover call discards what the addon applied:
 
         - setProjectAnnotations([projectAnnotations]);
 
         For each file listed above:
           1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
-          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          2. If you pass extra annotations (e.g. from an addon's preview), move them into your .storybook preview and then remove the call. setProjectAnnotations replaces the annotations set by the addon instead of adding to them, so a leftover call silently drops them.
           3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        For any setupFiles entry listed above: check where it points. If it resolves to a setup file that only re-applies your preview, delete that file and remove the entry.
 
         Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
       `);
     });
 
-    it('explains that custom annotations compose with the automatic ones', async () => {
+    it('explains how to preserve custom annotations the addon would otherwise lose', async () => {
       const { configDir, packageManager } = createFixture({
         '.storybook/vitest.setup.ts': ADDON_ANNOTATIONS_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
@@ -516,17 +520,142 @@ describe('vitestSetupFile', () => {
 
         1) <fixture>/.storybook/vitest.setup.ts: it imports "../addons/a11y-preview", which is not part of the generated boilerplate
 
-        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to setProjectAnnotations compose additively, so nothing breaks, but the boilerplate is redundant:
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, and its setup file runs before yours. Because setProjectAnnotations replaces the project annotations instead of adding to them, a leftover call discards what the addon applied:
 
         - setProjectAnnotations([projectAnnotations]);
 
         For each file listed above:
           1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
-          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          2. If you pass extra annotations (e.g. from an addon's preview), move them into your .storybook preview and then remove the call. setProjectAnnotations replaces the annotations set by the addon instead of adding to them, so a leftover call silently drops them.
           3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        For any setupFiles entry listed above: check where it points. If it resolves to a setup file that only re-applies your preview, delete that file and remove the entry.
 
         Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
       `);
+    });
+    it('resolves path.join(import.meta.dirname, ...) entries like literals', async () => {
+      const { configDir, setupFilePath, packageManager } = createFixture({
+        '.storybook/vitest.setup.ts': STANDARD_SETUP_FILE,
+        'vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+          import path from 'path';
+
+          export default defineConfig({
+            test: {
+              setupFiles: [path.join(import.meta.dirname, '.storybook/vitest.setup.ts')],
+            },
+          });
+        `,
+      });
+
+      const result = await vitestSetupFile.check({
+        configDir,
+        hasCsfFactoryPreview: false,
+        packageManager,
+      } as any);
+      await vitestSetupFile.run?.({ result: result!, dryRun: false } as any);
+
+      expect(existsSync(setupFilePath)).toBe(false);
+
+      const updatedConfig = readFixture('vitest.config.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+        import path from 'path';
+
+        export default defineConfig({
+          test: {},
+        });"
+      `);
+      loadConfig(updatedConfig, path.join(fixtureRoot, 'vitest.config.ts'));
+    });
+
+    it('resolves __dirname and template-literal entries', async () => {
+      const { configDir, setupFilePath, packageManager } = createFixture({
+        '.storybook/vitest.setup.ts': STANDARD_SETUP_FILE,
+        'vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+          import path from 'path';
+
+          export default defineConfig({
+            test: {
+              setupFiles: [
+                path.resolve(__dirname, \`./.storybook/vitest.setup.ts\`),
+                './other-setup.ts',
+              ],
+            },
+          });
+        `,
+      });
+
+      const result = await vitestSetupFile.check({
+        configDir,
+        hasCsfFactoryPreview: false,
+        packageManager,
+      } as any);
+      await vitestSetupFile.run?.({ result: result!, dryRun: false } as any);
+
+      expect(existsSync(setupFilePath)).toBe(false);
+
+      const updatedConfig = readFixture('vitest.config.ts');
+      expect(updatedConfig).toMatchInlineSnapshot(`
+        "import { defineConfig } from 'vitest/config';
+        import path from 'path';
+
+        export default defineConfig({
+          test: {
+            setupFiles: ['./other-setup.ts'],
+          },
+        });"
+      `);
+      loadConfig(updatedConfig, path.join(fixtureRoot, 'vitest.config.ts'));
+    });
+
+    it('reports entries it cannot resolve instead of silently skipping them', async () => {
+      const { configDir, setupFilePath, packageManager } = createFixture({
+        '.storybook/vitest.setup.ts': STANDARD_SETUP_FILE,
+        'vitest.config.ts': dedent`
+          import { defineConfig } from 'vitest/config';
+
+          const setupFile = process.env.CI ? './ci-setup.ts' : './.storybook/vitest.setup.ts';
+
+          export default defineConfig({
+            test: {
+              setupFiles: [setupFile],
+            },
+          });
+        `,
+      });
+      const originalConfig = readFileSync(path.join(fixtureRoot, 'vitest.config.ts'), 'utf8');
+
+      const result = await vitestSetupFile.check({
+        configDir,
+        hasCsfFactoryPreview: false,
+        packageManager,
+      } as any);
+
+      expect(await runAndCaptureError(result!)).toMatchInlineSnapshot(`
+        "The vitest-setup-file automigration couldn't migrate your Vitest setup file(s) automatically, but here are instructions for doing it yourself:
+
+        1) <fixture>/vitest.config.ts: the setupFiles entry setupFile is computed at runtime, so it can't be matched without executing your config
+
+        Since Storybook 10.3, @storybook/addon-vitest applies your project annotations automatically. From Storybook 11.0 it always does, and its setup file runs before yours. Because setProjectAnnotations replaces the project annotations instead of adding to them, a leftover call discards what the addon applied:
+
+        - setProjectAnnotations([projectAnnotations]);
+
+        For each file listed above:
+          1. If the setProjectAnnotations call only re-applies your .storybook preview, remove the call — the addon now does this for you.
+          2. If you pass extra annotations (e.g. from an addon's preview), move them into your .storybook preview and then remove the call. setProjectAnnotations replaces the annotations set by the addon instead of adding to them, so a leftover call silently drops them.
+          3. If nothing else remains in the file, delete it and remove its entry from the setupFiles array in your Vitest config.
+
+        For any setupFiles entry listed above: check where it points. If it resolves to a setup file that only re-applies your preview, delete that file and remove the entry.
+
+        Read more: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-project-annotations-are-always-applied"
+      `);
+
+      // The refusal must be inert: a dynamic entry could be the reference to this very file
+      expect(existsSync(setupFilePath)).toBe(true);
+      expect(readFixture('vitest.config.ts')).toBe(normalize(originalConfig));
     });
   });
 });

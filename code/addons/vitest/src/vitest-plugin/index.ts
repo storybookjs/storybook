@@ -340,8 +340,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const projectId = oneWayHash(finalOptions.configDir);
 
-      // Both setup files are always injected. Project annotations compose additively, so a
-      // leftover user setup file applying the same annotations is redundant but harmless.
+      // Both setup files are always injected, ahead of any user setup files. `setProjectAnnotations`
+      // is last-call-wins, so a leftover user setup file re-applying annotations overwrites these —
+      // the `vitest-setup-file` automigration removes that boilerplate.
       const internalSetupFiles = [
         '@storybook/addon-vitest/internal/setup-file',
         '@storybook/addon-vitest/internal/setup-file-with-project-annotations',

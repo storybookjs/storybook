@@ -100,7 +100,8 @@ describe('story test patterns', () => {
 describe('internal setup files', () => {
   // Since Storybook 10.3 the addon provisions preview annotations itself. It used to skip that
   // when a user setup file mentioned `setProjectAnnotations`; now both setup files are injected
-  // unconditionally and leftover user calls compose additively.
+  // unconditionally, and ordering matters: `setProjectAnnotations` is last-call-wins, so a
+  // leftover user call would overwrite the addon's annotations rather than add to them.
   it('always injects both internal setup files, ahead of any user setup files', async () => {
     const withoutUserSetupFiles = await getPluginConfig(PACKAGE_ROOT);
 

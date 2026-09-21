@@ -31,9 +31,17 @@ interface VitestSetupFileInfo {
   reason: string | null;
 }
 
+/** A `setupFiles` entry whose path could not be determined without executing the config. */
+interface UnresolvedSetupEntry {
+  configFile: string;
+  expression: string;
+}
+
 interface VitestSetupFileOptions {
   setupFiles: VitestSetupFileInfo[];
   configFiles: string[];
+  /** Entries we refuse to guess at; surfaced to the user instead of being silently skipped. */
+  unresolvedEntries: UnresolvedSetupEntry[];
 }
 
 /**
@@ -73,13 +81,18 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     }
 
     // Setup files can also live outside configDir, referenced from `test.setupFiles` entries
+    const unresolvedEntries: UnresolvedSetupEntry[] = [];
+    const entriesByConfigFile = new Map<string, SetupFileEntry[]>();
     for (const configFile of candidateConfigFiles) {
       try {
         const source = readFileSync(configFile, 'utf8');
-        for (const entry of extractSetupFileEntries(source)) {
-          const resolvedPath = path.resolve(path.dirname(configFile), entry);
-          if (existsSync(resolvedPath)) {
-            candidateSetupFiles.add(resolvedPath);
+        const entries = extractSetupFileEntries(source, configFile);
+        entriesByConfigFile.set(configFile, entries);
+        for (const entry of entries) {
+          if (entry.kind === 'unresolved') {
+            unresolvedEntries.push({ configFile, expression: entry.expression });
+          } else if (existsSync(entry.path)) {
+            candidateSetupFiles.add(entry.path);
           }
         }
       } catch {
@@ -109,18 +122,13 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
     const setupFilePaths = new Set(setupFiles.map((setupFile) => setupFile.path));
 
-    const configFiles = candidateConfigFiles.filter((configFile) => {
-      try {
-        const source = readFileSync(configFile, 'utf8');
-        return extractSetupFileEntries(source).some((entry) =>
-          setupFilePaths.has(path.resolve(path.dirname(configFile), entry))
-        );
-      } catch {
-        return false;
-      }
-    });
+    const configFiles = candidateConfigFiles.filter((configFile) =>
+      entriesByConfigFile
+        .get(configFile)
+        ?.some((entry) => entry.kind === 'resolved' && setupFilePaths.has(entry.path))
+    );
 
-    return { setupFiles, configFiles };
+    return { setupFiles, configFiles, unresolvedEntries };
   },
 
   prompt() {
@@ -128,16 +136,22 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
   },
 
   async run({ result, dryRun }) {
-    const { setupFiles, configFiles } = result;
+    const { setupFiles, configFiles, unresolvedEntries } = result;
 
-    const nonRewritableFiles = setupFiles.filter((setupFile) => !setupFile.isRewritable);
-    if (nonRewritableFiles.length > 0) {
-      const files = nonRewritableFiles.map(
-        (setupFile, index) =>
-          dedent`
-          ${index + 1}) ${picocolors.cyan(setupFile.path)}: ${setupFile.reason}
-        `
-      );
+    const problems = [
+      ...setupFiles
+        .filter((setupFile) => !setupFile.isRewritable)
+        .map((setupFile) => `${picocolors.cyan(setupFile.path)}: ${setupFile.reason}`),
+      // An entry we couldn't resolve may well be the reference to a file we are about to delete,
+      // so we stop rather than leave the config pointing at a missing setup file.
+      ...unresolvedEntries.map(
+        (entry) =>
+          `${picocolors.cyan(entry.configFile)}: the ${picocolors.cyan('setupFiles')} entry ${picocolors.gray(entry.expression)} is computed at runtime, so it can't be matched without executing your config`
+      ),
+    ];
+
+    if (problems.length > 0) {
+      const files = problems.map((problem, index) => `${index + 1}) ${problem}`);
 
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(
@@ -146,14 +160,16 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
         ${files.join('\n\n')}
 
-        Since Storybook 10.3, ${picocolors.cyan(VITEST_ADDON_NAME)} applies your project annotations automatically. From Storybook 11.0 it always does, so your setup file runs in addition to that. Calls to ${picocolors.cyan('setProjectAnnotations')} compose additively, so nothing breaks, but the boilerplate is redundant:
+        Since Storybook 10.3, ${picocolors.cyan(VITEST_ADDON_NAME)} applies your project annotations automatically. From Storybook 11.0 it always does, and its setup file runs before yours. Because ${picocolors.cyan('setProjectAnnotations')} replaces the project annotations instead of adding to them, a leftover call discards what the addon applied:
 
         ${picocolors.gray('- setProjectAnnotations([projectAnnotations]);')}
 
         For each file listed above:
           1. If the ${picocolors.cyan('setProjectAnnotations')} call only re-applies your ${picocolors.cyan('.storybook')} preview, remove the call — the addon now does this for you.
-          2. If you pass extra annotations (e.g. from an addon's preview), keep them: they compose with the automatic ones.
+          2. If you pass extra annotations (e.g. from an addon's preview), move them into your ${picocolors.cyan('.storybook')} preview and then remove the call. ${picocolors.cyan('setProjectAnnotations')} replaces the annotations set by the addon instead of adding to them, so a leftover call silently drops them.
           3. If nothing else remains in the file, delete it and remove its entry from the ${picocolors.cyan('setupFiles')} array in your Vitest config.
+
+        For any ${picocolors.cyan('setupFiles')} entry listed above: check where it points. If it resolves to a setup file that only re-applies your preview, delete that file and remove the entry.
 
         Read more: ${this.link}
       `
@@ -169,10 +185,8 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     for (const configFile of configFiles) {
       const source = readFileSync(configFile, 'utf8');
 
-      const { code, changed } = removeSetupFileEntries(source, (entry) =>
-        setupFiles.some(
-          (setupFile) => path.resolve(path.dirname(configFile), entry) === setupFile.path
-        )
+      const { code, changed } = removeSetupFileEntries(source, configFile, (resolvedPath) =>
+        setupFiles.some((setupFile) => resolvedPath === setupFile.path)
       );
 
       if (!changed) {
@@ -283,41 +297,220 @@ function analyzeSetupFileShape(source: string): {
   return { isRewritable: true, reason: null };
 }
 
-/** Collects the string entries of every `setupFiles` array in a Vitest/Vite/workspace config. */
-export function extractSetupFileEntries(source: string): string[] {
+/**
+ * A single `setupFiles` entry. Entries are expressions, not necessarily literals, so an entry is
+ * either statically resolved to an absolute path or reported verbatim as unresolved — never
+ * silently dropped, because a skipped entry can leave a deleted setup file referenced.
+ */
+export type SetupFileEntry =
+  | { kind: 'resolved'; path: string }
+  | { kind: 'unresolved'; expression: string };
+
+/**
+ * Collects the entries of every `setupFiles` value in a Vitest/Vite/workspace config, resolving
+ * each against the config's directory.
+ *
+ * Only these forms are recognized: string literals, template literals without substitutions, and
+ * `path.join`/`path.resolve`/`path.dirname` chains over them anchored on `import.meta.dirname`,
+ * `__dirname`, or `fileURLToPath(...)` of `import.meta.url`. Everything else — a variable, a
+ * function call, a conditional, a spread — is returned as `unresolved` rather than matched,
+ * because resolving it would mean executing the user's config.
+ */
+export function extractSetupFileEntries(source: string, configFile: string): SetupFileEntry[] {
   const j = jscodeshift.withParser('ts');
-  const entries: string[] = [];
+  const entries: SetupFileEntry[] = [];
+
+  const collect = (node: jscodeshift.ASTNode) => {
+    entries.push(toSetupFileEntry(j, node, configFile));
+  };
 
   j(source)
     .find(j.ObjectProperty)
     .filter((propertyPath) => isSetupFilesPropertyKey(propertyPath.value.key))
     .forEach((propertyPath) => {
       const value = propertyPath.value.value;
-      if (value.type === 'StringLiteral') {
-        entries.push(value.value);
+      if (value.type === 'ArrayExpression') {
+        value.elements.forEach((element) => element && collect(element));
         return;
       }
-      if (value.type === 'ArrayExpression') {
-        value.elements.forEach((element) => {
-          if (element?.type === 'StringLiteral') {
-            entries.push(element.value);
-          }
-        });
-      }
+      collect(value);
     });
 
   return entries;
 }
 
+/** Resolves one entry node, falling back to its printed source when it can't be resolved. */
+function toSetupFileEntry(
+  j: jscodeshift.JSCodeshift,
+  node: jscodeshift.ASTNode,
+  configFile: string
+): SetupFileEntry {
+  const resolved = resolveStaticPath(node, configFile);
+  if (resolved !== null) {
+    return { kind: 'resolved', path: path.resolve(path.dirname(configFile), resolved) };
+  }
+  return { kind: 'unresolved', expression: printExpression(j, node) };
+}
+
+/** Prints an expression back to source so unresolved entries can be quoted to the user. */
+function printExpression(j: jscodeshift.JSCodeshift, node: jscodeshift.ASTNode): string {
+  try {
+    return j(node).toSource();
+  } catch {
+    return String(node.type);
+  }
+}
+
 /**
- * Removes entries resolving to one of the setup files from every `setupFiles` array in the
- * config, and drops the property entirely when a string-valued `setupFiles` or an emptied array
- * pointed at them. Recast preserves the surrounding formatting.
+ * Statically evaluates the path-building idioms commonly found in `setupFiles`, without executing
+ * any user code. Returns null as soon as any part of the expression is not statically known.
  */
-export function removeSetupFileEntries(source: string, isTargetEntry: (entry: string) => boolean) {
+function resolveStaticPath(
+  node: jscodeshift.ASTNode | null | undefined,
+  configFile: string
+): string | null {
+  if (!node) {
+    return null;
+  }
+
+  const configDir = path.dirname(configFile);
+
+  if (node.type === 'StringLiteral') {
+    return node.value;
+  }
+
+  // `\`./.storybook/vitest.setup.ts\`` — but not once a substitution makes it dynamic
+  if (node.type === 'TemplateLiteral') {
+    if (node.expressions.length > 0 || node.quasis.length !== 1) {
+      return null;
+    }
+    return node.quasis[0].value.cooked ?? node.quasis[0].value.raw;
+  }
+
+  // `__dirname`
+  if (node.type === 'Identifier' && node.name === '__dirname') {
+    return configDir;
+  }
+
+  // `import.meta.dirname` / `import.meta.url`
+  if (node.type === 'MemberExpression' && isImportMeta(node.object)) {
+    if (node.property.type === 'Identifier' && node.property.name === 'dirname') {
+      return configDir;
+    }
+    // `import.meta.url` is only a path once passed through `fileURLToPath`, handled below
+    return null;
+  }
+
+  if (node.type !== 'CallExpression') {
+    return null;
+  }
+
+  // `fileURLToPath(import.meta.url)` and `fileURLToPath(new URL('.', import.meta.url))`
+  if (isCalleeNamed(node.callee, 'fileURLToPath')) {
+    const [argument] = node.arguments;
+    if (node.arguments.length !== 1 || !argument) {
+      return null;
+    }
+    if (isImportMetaUrl(argument)) {
+      return configFile;
+    }
+    if (argument.type === 'NewExpression' && isCalleeNamed(argument.callee, 'URL')) {
+      const [relative, base] = argument.arguments;
+      if (argument.arguments.length !== 2 || !isImportMetaUrl(base)) {
+        return null;
+      }
+      const relativePath = resolveStaticPath(relative, configFile);
+      return relativePath === null ? null : path.resolve(configDir, relativePath);
+    }
+    return null;
+  }
+
+  // `path.join(...)` / `path.resolve(...)` / `path.dirname(...)`
+  const pathMethod = getPathMethodName(node.callee);
+  if (!pathMethod) {
+    return null;
+  }
+
+  const segments: string[] = [];
+  for (const argument of node.arguments) {
+    const segment = resolveStaticPath(argument, configFile);
+    if (segment === null) {
+      return null;
+    }
+    segments.push(segment);
+  }
+
+  if (pathMethod === 'dirname') {
+    return segments.length === 1 ? path.dirname(segments[0]) : null;
+  }
+  if (segments.length === 0) {
+    return null;
+  }
+  return pathMethod === 'join' ? path.join(...segments) : path.resolve(...segments);
+}
+
+function isImportMeta(node: jscodeshift.ASTNode | null | undefined): boolean {
+  return node?.type === 'MetaProperty' || (node?.type === 'Identifier' && node.name === 'import');
+}
+
+function isImportMetaUrl(node: jscodeshift.ASTNode | null | undefined): boolean {
+  return (
+    node?.type === 'MemberExpression' &&
+    isImportMeta(node.object) &&
+    node.property?.type === 'Identifier' &&
+    node.property.name === 'url'
+  );
+}
+
+/** Matches a bare `fn(...)` or an imported-namespace `ns.fn(...)` callee. */
+function isCalleeNamed(callee: jscodeshift.ASTNode | null | undefined, name: string): boolean {
+  if (callee?.type === 'Identifier') {
+    return callee.name === name;
+  }
+  return (
+    callee?.type === 'MemberExpression' &&
+    callee.property.type === 'Identifier' &&
+    callee.property.name === name
+  );
+}
+
+/** Matches `path.join`-style callees, including `node:path` default and namespace imports. */
+function getPathMethodName(
+  callee: jscodeshift.ASTNode | null | undefined
+): 'join' | 'resolve' | 'dirname' | null {
+  if (callee?.type !== 'MemberExpression' || callee.property?.type !== 'Identifier') {
+    return null;
+  }
+  const method = callee.property.name;
+  if (method !== 'join' && method !== 'resolve' && method !== 'dirname') {
+    return null;
+  }
+  // Accept any single-identifier namespace (`path`, `nodePath`, ...); a wrong guess still only
+  // produces a path string, which must match an existing setup file to have any effect.
+  return callee.object?.type === 'Identifier' ? method : null;
+}
+
+/**
+ * Removes entries resolving to one of the setup files from every `setupFiles` value in the
+ * config, and drops the property entirely when a single-valued `setupFiles` or an emptied array
+ * pointed at them. Recast preserves the surrounding formatting.
+ *
+ * Only statically resolvable entries are matched — see {@link extractSetupFileEntries}. Entries
+ * that cannot be resolved are left in place and reported to the user by the caller.
+ */
+export function removeSetupFileEntries(
+  source: string,
+  configFile: string,
+  isTargetPath: (resolvedPath: string) => boolean
+) {
   const j = jscodeshift.withParser('ts');
   const root = j(source);
   let changed = false;
+
+  const isTargetNode = (node: jscodeshift.ASTNode) => {
+    const entry = toSetupFileEntry(j, node, configFile);
+    return entry.kind === 'resolved' && isTargetPath(entry.path);
+  };
 
   root
     .find(j.ObjectProperty)
@@ -325,30 +518,20 @@ export function removeSetupFileEntries(source: string, isTargetEntry: (entry: st
     .forEach((propertyPath) => {
       const value = propertyPath.value.value;
 
-      if (value.type === 'StringLiteral') {
-        if (isTargetEntry(value.value)) {
+      if (value.type !== 'ArrayExpression') {
+        if (isTargetNode(value)) {
           propertyPath.prune();
           changed = true;
         }
         return;
       }
 
-      if (value.type !== 'ArrayExpression') {
-        return;
-      }
-
       const elements = value.elements;
-      if (
-        !elements.some(
-          (element) => element?.type === 'StringLiteral' && isTargetEntry(element.value)
-        )
-      ) {
+      if (!elements.some((element) => element && isTargetNode(element))) {
         return;
       }
 
-      value.elements = elements.filter(
-        (element) => !(element?.type === 'StringLiteral' && isTargetEntry(element.value))
-      );
+      value.elements = elements.filter((element) => !(element && isTargetNode(element)));
       changed = true;
 
       if (value.elements.length === 0) {

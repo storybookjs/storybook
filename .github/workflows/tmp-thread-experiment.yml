@@ -1,0 +1,29 @@
+name: tmp thread experiment (disposable)
+
+on:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+
+permissions:
+  pull-requests: write
+
+concurrency:
+  group: tmp-thread-experiment-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+jobs:
+  experiment:
+    name: review-thread mechanics probe
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Probe review-thread APIs
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ANCHOR_PATH: tmp-experiment-review-thread-gate.md
+          WORKFLOW_PERMS: 'pull-requests: write'
+        run: node .github/workflows/tmp-thread-experiment.mjs

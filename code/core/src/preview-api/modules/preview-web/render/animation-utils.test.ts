@@ -230,4 +230,50 @@ describe('waitForAnimations', () => {
     await vi.advanceTimersByTimeAsync(0);
     await expect(pending).resolves.toBeUndefined();
   });
+
+  test('waits for finite plain WAAPI animations on a document timeline', async () => {
+    vi.useFakeTimers();
+    let resolveFinished!: () => void;
+    const animation = {
+      playState: 'running' as AnimationPlayState,
+      timeline: new TestDocumentTimeline(),
+      effect: new TestKeyframeEffect(),
+      finished: new Promise<void>((resolve) => {
+        resolveFinished = resolve;
+      }),
+    };
+    stubAnimations(document, [animation]);
+
+    const pending = waitForAnimations();
+    await vi.advanceTimersByTimeAsync(100);
+
+    // Must still be pending while the animation runs; the 100 ms check cycle alone must not
+    // resolve the wait.
+    let resolved = false;
+    void pending.then(() => {
+      resolved = true;
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    expect(resolved).toBe(false);
+
+    animation.playState = 'finished';
+    resolveFinished();
+    await vi.advanceTimersByTimeAsync(0);
+    await expect(pending).resolves.toBeUndefined();
+  });
+
+  test('does not wait for infinite plain WAAPI animations', async () => {
+    vi.useFakeTimers();
+    const animation = {
+      playState: 'running' as AnimationPlayState,
+      timeline: new TestDocumentTimeline(),
+      effect: new TestKeyframeEffect(Infinity),
+      finished: new Promise(() => {}),
+    };
+    stubAnimations(document, [animation]);
+
+    const pending = waitForAnimations();
+    await vi.advanceTimersByTimeAsync(100);
+    await expect(pending).resolves.toBeUndefined();
+  });
 });

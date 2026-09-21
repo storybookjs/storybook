@@ -99,12 +99,14 @@ export async function waitForAnimations(signal?: AbortSignal) {
           if (timedOut || signal?.aborted) {
             return;
           }
+          // Wait for finite WAAPI animations (parity with next); infinite WAAPI animations and
+          // scroll/view timelines are skipped since they never finish.
           const runningAnimations = [globalThis.document, ...getShadowRoots(globalThis.document)]
             .flatMap((root) => root?.getAnimations?.() || [])
             .filter(
               (animation) =>
                 animation.playState === 'running' &&
-                isDocumentAnimation(animation) &&
+                animation.timeline instanceof DocumentTimeline &&
                 isFiniteAnimation(animation)
             );
           if (runningAnimations.length > 0) {
@@ -146,8 +148,6 @@ function isDocumentAnimation(anim: Animation) {
 
 function isFiniteAnimation(anim: Animation) {
   return !(
-    anim instanceof CSSAnimation &&
-    anim.effect instanceof KeyframeEffect &&
-    anim.effect.getTiming().iterations === Infinity
+    anim.effect instanceof KeyframeEffect && anim.effect.getTiming().iterations === Infinity
   );
 }

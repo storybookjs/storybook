@@ -53,6 +53,52 @@ describe('ChangeDetectionResolverFactory', () => {
     });
   });
 
+  describe('TypeScript ESM extension aliases (moduleResolution node16/nodenext)', () => {
+    // Under node16/nodenext TypeScript requires the emitted extension in relative
+    // imports, so `button.tsx` is imported as `./button.js`. The reverse index has
+    // to follow that edge or `stories-find-by-component` misses every story in
+    // such a project.
+    it('resolves a .js specifier to the .tsx source', async () => {
+      const story = write('src/button.stories.tsx');
+      const component = write('src/button.tsx');
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(story, './button.js')).toBe(component);
+    });
+
+    it('resolves a .js specifier to the .ts source', async () => {
+      const a = write('src/a.ts');
+      const util = write('src/util.ts');
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(a, './util.js')).toBe(util);
+    });
+
+    it('still resolves a real .js file when one exists', async () => {
+      const a = write('src/a.ts');
+      const plain = write('src/plain.js');
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(a, './plain.js')).toBe(plain);
+    });
+
+    it('prefers the TypeScript source when both .ts and .js exist', async () => {
+      const a = write('src/a.ts');
+      const ts = write('src/both.ts');
+      write('src/both.js');
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(a, './both.js')).toBe(ts);
+    });
+
+    it('resolves .jsx, .mjs and .cjs specifiers to their TypeScript sources', async () => {
+      const a = write('src/a.ts');
+      const tsx = write('src/view.tsx');
+      const mts = write('src/esm.mts');
+      const cts = write('src/cjs.cts');
+      const r = new ChangeDetectionResolverFactory({ projectRoot: dir });
+      expect(await r.resolve(a, './view.jsx')).toBe(tsx);
+      expect(await r.resolve(a, './esm.mjs')).toBe(mts);
+      expect(await r.resolve(a, './cjs.cjs')).toBe(cts);
+    });
+  });
+
   describe('explicit alias (Record form)', () => {
     it('resolves alias to absolute path', async () => {
       const target = write('src/utils/index.ts');

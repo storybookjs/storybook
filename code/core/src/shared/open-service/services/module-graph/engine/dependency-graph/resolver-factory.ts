@@ -102,6 +102,16 @@ export class ChangeDetectionResolverFactory {
       alias,
       conditionNames,
       extensions: DEFAULT_EXTENSIONS,
+      // TypeScript ESM projects (moduleResolution node16/nodenext) must write
+      // `./button.js` to import `button.tsx`; without an alias table oxc-resolver
+      // reports the specifier as missing and the edge never enters the reverse
+      // index, so `stories-find-by-component` finds nothing for those projects.
+      extensionAlias: {
+        '.js': ['.ts', '.tsx', '.d.ts', '.js'],
+        '.jsx': ['.tsx', '.jsx'],
+        '.mjs': ['.mts', '.mjs'],
+        '.cjs': ['.cts', '.cjs'],
+      },
     });
 
     this.projectRootEntry = join(config.projectRoot, '__sb_resolver_root__.ts');

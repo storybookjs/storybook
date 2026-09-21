@@ -72,14 +72,15 @@ Internal tests and implementation code may import from the individual modules di
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
 - [patch-recorder.ts](./patch-recorder.ts): recording proxy over deepsignal state that captures the paths a `setState` recipe touched
-- [plain-object.ts](./plain-object.ts): the by-value copy every object takes on its way into state, and the prototype-pollution key list
+- [plain-object.ts](./plain-object.ts): the by-value copy every object takes on its way into state, plus the reserved-key and plain-object guards the sync modules share
 - [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, the runtime-wide delegated-mode flag, and the shared registry API passed into runtimes — used identically by server, manager, and preview
-- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
+- [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, RFC 6902 entry schemas, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
-- [service-transport.ts](./service-transport.ts): shared channel transport — installs the entry author that broadcasts each `setState` write, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
-- [service-sync.ts](./service-sync.ts): last-write-wins ordering, `applyStatePatch` structural state application, and the per-service snapshot reconciler
+- [service-transport.ts](./service-transport.ts): shared channel transport — installs the entry author that emits a `services:entry` for each `setState` write, wires the sync-start initialization + entry listeners (hub or leaf), and runs the remote-command-execution protocol
+- [json-patch.ts](./json-patch.ts): RFC 6902 apply-by-path used only by the reconciler (`add`/`replace` upsert, `remove` of missing is a no-op)
+- [service-sync.ts](./service-sync.ts): last-write-wins snapshot ordering, Vector + seen-stamp entry dedup, `applyStatePatch` for bootstrap/static snapshots, and the per-service reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
 - [fixtures.ts](./fixtures.ts): scenario fixtures used by the test suite
@@ -538,7 +539,7 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
 - `setState((state) => …)` mutates the proxy **in place** inside a batch, so one call notifies
   subscribers once, and only the fields it actually changed are invalidated. The recipe writes
   through a recording proxy, and **one `setState` call is one sync entry**: when the recipe returns,
-  the paths it touched are recorded and an entry is authored and broadcast at once. A recipe must be
+  the paths it touched are recorded and emitted at once as one `services:entry`. A recipe must be
   synchronous, and the runtime throws if it returns a promise or if the draft is written to after
   the recipe returned, so nothing can run between a write and its entry and the local state always
   equals what peers have applied. Inside a recipe, `state` is a recording draft. Compare drafts with
@@ -638,7 +639,7 @@ flowchart TD
 
 ## Client Architecture (Multi-Master)
 
-Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a sync-start initialization + patch-broadcast protocol.
+Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using a sync-start initialization + `services:entry` protocol.
 
 ```text
 ┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
@@ -668,8 +669,8 @@ Creates a local `ServiceRuntime` from the service definition (identical across r
 
 1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
 2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
-3. **After each `setState` that writes** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync. A recipe that touches nothing emits nothing.
-4. **On incoming patches** — applies the received state into the local runtime via the runtime's `applyLocal`, which triggers fine-grained signal updates and re-renders subscribed components.
+3. **After each `setState` that writes** — emits `services:entry` `{ serviceId, stamp: { runtimeId, counter }, command, patch }` where `patch` is an RFC 6902 document of the paths that recipe touched. A recipe that touches nothing emits nothing.
+4. **On incoming entries** — applies the patch by path via the runtime's `applyLocal`, which triggers fine-grained signal updates and re-renders subscribed components.
 
 ### Loop prevention
 
@@ -677,16 +678,33 @@ Every channel event that names a writer carries a `runtimeId` generated per `reg
 Loop prevention is not a single self-id check:
 
 - `services:sync-start` is ignored when its `runtimeId` matches the listener's own, so a runtime does not reply to itself.
-- `services:patches` and `services:sync-start-reply` drop echoes through last-write-wins stamp ordering (`isNewer`). A relay may re-emit a patch under an adopted peer `runtimeId`; that copy is still dropped when the stamp is not strictly newer.
+- `services:entry` drops a stamp that was already seen, or whose `counter` is at or below that writer's Vector (the highest contiguous counter applied). A hub that accepted the entry forwards the original payload object in receipt order; duplicates and entries it could not apply are not forwarded. The server websocket transport still echoes the author's own entry back once as one small frame, which the Vector drops.
+- `services:sync-start-reply` drops echoes through last-write-wins stamp ordering (`isNewer`). A relay hub that adopts a bootstrap snapshot forwards the original reply payload.
 - Command replies correlate on `callId`, not on `runtimeId`.
 
 ### State application without re-broadcast
 
-Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.applyLocal(...)`, which mutates the state in one batch without recording, so no entry is authored and nothing is broadcast for received state. Only `setState` inside a command authors entries, through the author installed with `attachEntryAuthor` when the runtime is wired to the channel.
+Incoming state (from sync-start-reply or entries) is applied via `serviceRuntime.applyLocal(...)`, which mutates the state in one batch without recording, so no entry is authored and nothing is broadcast for received state. Only `setState` inside a command authors entries, through the author installed with `attachEntryAuthor` when the runtime is wired to the channel.
 
-### `applyStatePatch`
+### `applyJsonPatch` and `applyStatePatch`
 
-Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `applyStatePatch` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer sync passes `false` so deletions propagate from full snapshots; static JSON loading passes `true` because each static file is a partial snapshot. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
+Entries apply through `applyJsonPatch` (in [json-patch.ts](./json-patch.ts)), which walks RFC 6901 pointers on the live state object. Incoming values are cloned. Deviations from RFC 6902:
+
+- `add` and `replace` both upsert.
+- `remove` of a missing key is a no-op with a debug log.
+- A missing parent rolls the entry back inside its batch and warns, naming the service, stamp, path, and command.
+
+The schema accepts only `add`, `replace`, and `remove`. It rejects:
+
+- `move`, `copy`, and `test`
+- malformed `~` escapes
+- `$`-prefixed segments, which deepsignal reserves for signal accessors at every level of state, so no service can hold such a key
+- the segments `__proto__`, `constructor`, and `prototype`
+- the root pointer `''`, since an op on the whole state would replace the object every signal subscribes to, and the recorder never emits one
+
+The applier treats those same pointers as a missing parent, so a schema bypass cannot throw or leave a partial apply. Unknown envelope fields are ignored.
+
+Bootstrap snapshots and static JSON still use `applyStatePatch` (in [service-sync.ts](./service-sync.ts)): it recursively merges plain-object values in place so subscriptions stay attached. Arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer snapshot replies pass `false` so deletions propagate; static JSON loading passes `true` because each static file is a partial snapshot. Static snapshot loading never touches the entry reconciler.
 
 ### State sync sequence
 
@@ -704,13 +722,13 @@ registerService()
 
 service.commands.foo()
   └─ local runtime mutates
-  └─ emit patches ─────────────────────────────────────────────►
-                                                  └─ apply state
+  └─ emit entry ───────────────────────────────────────────────►
+                                                  └─ apply patch
 ```
 
 ### Server participation
 
-The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it broadcasts each `setState` write, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it emits a `services:entry` for each `setState` write, responds to sync-starts, applies incoming entries by path, and forwards every accepted entry (original payload, receipt order) so peers on its other transports (each connected manager tab) converge. Duplicates and entries it could not apply are not forwarded. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
 ## Remote Command Execution
 
@@ -787,15 +805,15 @@ service.commands.example(...)
                                                   └─ emit command-ack ──┐
   ◄───────────────────────────────────────────────────────────────────┘
                                                   └─ run command locally
-                                                       └─ mutate + emit patches ──►
-  ◄── apply patches (state converges) ───────────────────────────────────
+                                                       └─ mutate + emit entry ──►
+  ◄── apply entry (state converges) ─────────────────────────────────────
                                                   └─ emit command-result ──┐
   ◄───────────────────────────────────────────────────────────────────────┘
   └─ promise resolves with result
 ```
 
-State still flows through the normal patch-broadcast path, so the requester gets the new state via
-`services:patches` and the resolved value via `services:command-result` — two independent channels of
+State still flows through the normal entry path, so the requester gets the new state via
+`services:entry` and the resolved value via `services:command-result` — two independent channels of
 truth that both converge.
 
 ### Awaiting
@@ -831,7 +849,8 @@ across implementers would require electing a single executor per call, which thi
 ### Topology limits and timeouts
 
 Replies travel back over the same channel the invoke went out on, and command events are **not**
-relayed across a hub's other transports (unlike `services:patches`, which a relay hub re-broadcasts).
+relayed across a hub's other transports (unlike `services:entry`, which a relay hub forwards when it
+accepted the entry).
 The manager is connected to both the dev server and the preview, so it can invoke a command implemented
 in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
 calls through the manager, or implement the command on a directly-connected peer.
@@ -1019,6 +1038,8 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
 - Touched-path recording belongs in [patch-recorder.test.ts](./patch-recorder.test.ts)
+- RFC 6901 pointer helpers and the `services:entry` schema belong in [service-channel.test.ts](./service-channel.test.ts); apply-by-path in [json-patch.test.ts](./json-patch.test.ts)
+- Wire cost of the entry protocol (frame bytes, relay bytes, no `structuredClone` per write) belongs in [sync-wire.test.ts](./sync-wire.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
 - Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)

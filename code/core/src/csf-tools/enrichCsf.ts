@@ -10,24 +10,19 @@ export interface EnrichCsfOptions {
 }
 
 const isMetaStoryFactory = (storyExport: t.Node, csfSource: CsfFile) =>
+  csfSource._metaIsFactory &&
   t.isCallExpression(storyExport) &&
   t.isMemberExpression(storyExport.callee) &&
   t.isIdentifier(storyExport.callee.object) &&
+  t.isIdentifier(storyExport.callee.property) &&
+  storyExport.callee.property.name === 'story' &&
   storyExport.callee.object.name === csfSource._metaVariableName;
 
-// A base declared in this same file (e.g. `Primary` in `Primary.extend(...)`) is only
-// trusted as a CSF factory if `CsfFile` itself recognized it as one; bases we can't
-// resolve locally (e.g. imported from another file) default to trusting `.extend()`.
-const isLocalNonFactoryStory = (csfSource: CsfFile, name: string) =>
-  name in csfSource._stories && !csfSource._stories[name].__stats?.factory;
-
-const isStoryExtendFactory = (storyExport: t.Node, csfSource: CsfFile) =>
+const isStoryExtend = (storyExport: t.Node) =>
   t.isCallExpression(storyExport) &&
   t.isMemberExpression(storyExport.callee) &&
   t.isIdentifier(storyExport.callee.property) &&
-  storyExport.callee.property.name === 'extend' &&
-  t.isIdentifier(storyExport.callee.object) &&
-  !isLocalNonFactoryStory(csfSource, storyExport.callee.object.name);
+  storyExport.callee.property.name === 'extend';
 
 export const enrichCsfStory = (
   csf: CsfFile,
@@ -36,76 +31,76 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
-  const isCsfFactory =
-    isMetaStoryFactory(storyExport, csfSource) || isStoryExtendFactory(storyExport, csfSource);
+  const isCsfFactory = isMetaStoryFactory(storyExport, csfSource);
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
-  const parameters = [];
-  // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
-  const baseStoryObject = isCsfFactory
-    ? t.memberExpression(t.identifier(key), t.identifier('input'))
-    : t.identifier(key);
-  const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));
-  parameters.push(t.spreadElement(originalParameters));
-  const optionalDocs = t.optionalMemberExpression(
-    originalParameters,
-    t.identifier('docs'),
-    false,
-    true
-  );
-  const extraDocsParameters = [];
-
-  // docs: { source: { originalSource: %%source%% } },
-  if (source) {
-    const optionalSource = t.optionalMemberExpression(
-      optionalDocs,
-      t.identifier('source'),
-      false,
-      true
-    );
-
-    extraDocsParameters.push(
-      t.objectProperty(
-        t.identifier('source'),
-        t.objectExpression([
-          t.objectProperty(t.identifier('originalSource'), t.stringLiteral(source)),
-          t.spreadElement(optionalSource),
-        ])
-      )
-    );
-  }
-
-  // docs: { description: { story: %%description%% } },
-  if (description) {
-    const optionalDescription = t.optionalMemberExpression(
-      optionalDocs,
-      t.identifier('description'),
-      false,
-      true
-    );
-    extraDocsParameters.push(
-      t.objectProperty(
-        t.identifier('description'),
-        t.objectExpression([
-          t.objectProperty(t.identifier('story'), t.stringLiteral(description)),
-          t.spreadElement(optionalDescription),
-        ])
-      )
-    );
-  }
-
-  if (extraDocsParameters.length > 0) {
-    parameters.push(
-      t.objectProperty(
+  if (source || description) {
+    const addParameter = (baseStoryObject: t.Expression) => {
+      const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));
+      const optionalDocs = t.optionalMemberExpression(
+        originalParameters,
         t.identifier('docs'),
-        t.objectExpression([t.spreadElement(optionalDocs), ...extraDocsParameters])
-      )
+        false,
+        true
+      );
+      const docsParameters = [];
+      if (source) {
+        docsParameters.push(
+          t.objectProperty(
+            t.identifier('source'),
+            t.objectExpression([
+              t.objectProperty(t.identifier('originalSource'), t.stringLiteral(source)),
+              t.spreadElement(
+                t.optionalMemberExpression(optionalDocs, t.identifier('source'), false, true)
+              ),
+            ])
+          )
+        );
+      }
+      if (description) {
+        docsParameters.push(
+          t.objectProperty(
+            t.identifier('description'),
+            t.objectExpression([
+              t.objectProperty(t.identifier('story'), t.stringLiteral(description)),
+              t.spreadElement(
+                t.optionalMemberExpression(optionalDocs, t.identifier('description'), false, true)
+              ),
+            ])
+          )
+        );
+      }
+      return t.expressionStatement(
+        t.assignmentExpression(
+          '=',
+          originalParameters,
+          t.objectExpression([
+            t.spreadElement(originalParameters),
+            t.objectProperty(
+              t.identifier('docs'),
+              t.objectExpression([t.spreadElement(optionalDocs), ...docsParameters])
+            ),
+          ])
+        )
+      );
+    };
+    const story = t.identifier(key);
+    const storyInput = t.memberExpression(story, t.identifier('input'));
+    const isFactoryStory = t.binaryExpression(
+      '===',
+      t.memberExpression(story, t.identifier('_tag')),
+      t.stringLiteral('Story')
     );
-    const addParameter = t.expressionStatement(
-      t.assignmentExpression('=', originalParameters, t.objectExpression(parameters))
+    csf._ast.program.body.push(
+      isStoryExtend(storyExport) && !isCsfFactory
+        ? t.ifStatement(
+            isFactoryStory,
+            t.blockStatement([addParameter(storyInput)]),
+            t.blockStatement([addParameter(story)])
+          )
+        : addParameter(isCsfFactory ? storyInput : story)
     );
-    csf._ast.program.body.push(addParameter);
   }
 };
 

@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "No component file found for the component declared in meta.component.\n   8 | });\n   9 |\n> 10 | export default {\n     | ^\n  11 |   component: Button,\n  12 | };\n  13 |\n\n./src/stories/renderers/vue3_vue3-vite-default-ts/mount-in-play.stories.ts:\nimport type { StoryObj } from '@storybook/vue3';\n\nimport { defineComponent } from 'vue';\n\nconst Button = defineComponent({\n  template: '<button :disabled=\"disabled\">{{label}}</button>',\n  props: ['disabled', 'label'],\n});\n\nexport default {\n  component: Button,\n};\n\nexport const Basic: StoryObj<typeof Button> = {\n  args: {\n    disabled: true,\n  },\n  async play({ mount, args }) {\n    await mount(Button, { props: { ...args, label: 'set in play' } });\n  },\n};\n",
+    "name": "No component import found"
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-mount-in-play",
+  "jsDocTags": {},
+  "name": "Button",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/mount-in-play.stories.ts"
+}

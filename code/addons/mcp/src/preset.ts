@@ -3,9 +3,11 @@ import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/ty
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
 import {
+  createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
-} from './utils/get-tool-availability.ts';
+  loadManifests,
+} from 'storybook/internal/core-server';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
@@ -14,7 +16,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
-import { createDocgenServerManifestAccess } from './manifests/in-process-provider.ts';
+import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
   existingAnnotations = []
@@ -39,15 +41,19 @@ export const experimental_devServer: PresetPropertyFn<
 
   const { refs, compositionAuth, sources, multiSource } = await resolveCompositionSources(options);
 
-  // Single source of truth for manifest access. In `experimentalDocgenServer` mode the
-  // local Storybook's `/manifests/*.json` are 404'd by core, so its manifest data is read
-  // in-process from the open services instead of over loopback HTTP. This access is created
-  // here (the one place that owns provider selection) and reused for both the standalone
-  // local source and the local branch of the composition provider.
+  // Composition (multi-source) is the only remaining consumer of the manifest-provider plumbing:
+  // single-source docs tools read the registered docs toolset instead. In docgen-server mode core
+  // 404s the local `/manifests/*.json`, so the local source reads this Storybook in-process
+  // through the same registration-based access selection the dev server uses when it is not
+  // composed — the docgen services when they actually registered, the inline manifests otherwise.
   const rawAvailability = await getToolAvailability(options);
-  const docgenServerAccess = rawAvailability.docgenServer
-    ? createDocgenServerManifestAccess(options)
-    : undefined;
+  const localAccess =
+    rawAvailability.docgenServer && refs.length > 0
+      ? createLocalDocsAccess({
+          storyIndex: { getIndex: () => getStoryIndex(options) },
+          getManifests: () => loadManifests(options.presets),
+        })
+      : undefined;
 
   let createManifestProvider: ((req: IncomingMessage) => ManifestProvider) | undefined;
 
@@ -59,22 +65,14 @@ export const experimental_devServer: PresetPropertyFn<
 
     logger.info(`Sources: ${(sources ?? []).map((s) => s.id).join(', ')}`);
 
-    // Composition provider fetches remote sources over HTTP; the local source delegates
-    // to the in-process docgen-server access when that mode is on.
-    createManifestProvider = () =>
-      compositionAuth.createManifestProvider(origin, docgenServerAccess?.manifestProvider);
+    // Remote sources are fetched over HTTP; the local one is read through `localAccess` when
+    // docgen-server mode is on, and over HTTP from this origin otherwise.
+    createManifestProvider = () => compositionAuth.createManifestProvider(origin);
   }
 
-  // Resolves the manifest access passed to `mcpServerHandler` for one request: the
-  // composition provider when refs are configured, otherwise the in-process provider when
-  // docgen-server mode is on, otherwise core's default HTTP provider (undefined). The
-  // in-process `resolveEntry` is always forwarded — the doc tools only consult it for the
-  // local source, so it is harmless in multi-source mode.
   const manifestAccessFor = (req: IncomingMessage) => ({
-    manifestProvider: createManifestProvider
-      ? createManifestProvider(req)
-      : docgenServerAccess?.manifestProvider,
-    resolveEntry: docgenServerAccess?.resolveEntry,
+    manifestProvider: createManifestProvider?.(req),
+    localAccess,
   });
 
   // Serve .well-known/oauth-protected-resource for MCP auth
@@ -157,8 +155,16 @@ export const experimental_devServer: PresetPropertyFn<
 
     let docsNotice = '';
     if (!docsHasManifests) {
-      docsNotice = `<div class="toolset-notice">
-				This toolset is only supported in React-based setups.
+      // Manifests come from the React frameworks, angular-vite and vue3-vite. If the feature is
+      // already on and there is still no manifest, the framework is the reason, not the config.
+      docsNotice = docsFeatureEnabled
+        ? `<div class="toolset-notice">
+				This toolset requires a components manifest, which your framework does not generate. On <code>@storybook/vue3-vite</code>, also enable <code>experimentalDocgenServer</code>.
+				<a target="_blank" href="https://storybook.js.org/docs/ai/mcp/overview#framework-support">See which frameworks are supported</a>
+			</div>`
+        : `<div class="toolset-notice">
+				This toolset requires a components manifest, which is generated by the React frameworks, <code>@storybook/angular-vite</code> and <code>@storybook/vue3-vite</code>. Enable the <code>componentsManifest</code> feature, plus <code>experimentalDocgenServer</code> on <code>@storybook/vue3-vite</code>.
+				<a target="_blank" href="https://storybook.js.org/docs/ai/mcp/overview#framework-support">Learn how to enable it</a>
 			</div>`;
     } else if (!docsFeatureEnabled) {
       docsNotice = `<div class="toolset-notice">
@@ -181,10 +187,10 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `get-stories-by-component`, `get-changed-stories`, and `display-review` are gated
-    // independently of the `dev` toolset — `get-stories-by-component` needs the dependency
-    // graph, `get-changed-stories` needs the `changeDetection` feature flag, and
-    // `display-review` additionally needs the opt-in `experimentalReview` feature flag —
+    // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
+    // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
+    // graph, `stories-changed` needs the `changeDetection` feature flag, and
+    // `review-create` additionally needs the opt-in `experimentalReview` feature flag —
     // so each shows its own badge.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
     // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
@@ -192,13 +198,13 @@ export const experimental_devServer: PresetPropertyFn<
       ? [`The <code>dev</code> toolset is disabled via addon options.`]
       : [
           !moduleGraphSupported &&
-            `<code>get-stories-by-component</code> requires a dev server with a builder that supports the module graph (e.g. Vite).`,
+            `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
           !changeDetectionEnabled &&
-            `<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
+            `<code>stories-changed</code> requires enabling the <code>changeDetection</code> feature flag.`,
           !reviewEnabled &&
             (reviewEnabledForCli
-              ? `<code>display-review</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
-              : `<code>display-review</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
+              ? `<code>review-create</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
+              : `<code>review-create</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`

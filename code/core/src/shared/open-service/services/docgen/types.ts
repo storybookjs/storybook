@@ -1,4 +1,7 @@
-import type { StrictArgTypes } from '../../../../types/modules/csf.ts';
+// From the defining module, not the `types/modules/csf.ts` barrel: that barrel re-exports through
+// the bare `storybook/internal/csf` specifier, which the portable `toolsets-docs` d.ts (this file
+// is in its closure) must not reference — its guard allows no `storybook/*` imports.
+import type { StrictArgTypes } from '../../../../csf/story.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
 
 /**
@@ -38,6 +41,14 @@ export interface DocgenPayload {
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
   argTypes?: StrictArgTypes;
+  /**
+   * Framework-authored API documentation in Markdown, rendered verbatim in place of the props
+   * section. Prefer `##` level headings for sections (Inputs, Outputs, Props, Events, Slots) and TS
+   * types for structured data.
+   */
+  apiDescription?: string;
+  /** Renderer id (e.g. `angular`), so a consumer knows which template syntax the component takes. */
+  renderer?: string;
   subcomponents?: Record<string, DocgenSubcomponent>;
   error?: DocgenError;
   [key: string]: unknown;
@@ -53,6 +64,10 @@ export interface DocgenSubcomponent {
   jsDocTags: DocgenJsDocTags;
   /** Renderer-converted argTypes derived from integration-specific docgen data at write time. */
   argTypes?: StrictArgTypes;
+  /** See {@link DocgenPayload.apiDescription}. */
+  apiDescription?: string;
+  /** See {@link DocgenPayload.renderer}. */
+  renderer?: string;
   error?: DocgenError;
   [key: string]: unknown;
 }

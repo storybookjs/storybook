@@ -7,7 +7,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(value: string) => string"
         }
       },

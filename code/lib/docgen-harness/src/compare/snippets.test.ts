@@ -51,12 +51,72 @@ describe('compareSnippet (angular)', () => {
     ]);
   });
 
-  it('does not read mangled selector attributes as representations', () => {
+  it('does not read mangled selector attributes as representations, but requires them to survive', () => {
     // buildTemplate mangles attribute selectors to bare attributes: button[sb-harness-action]
-    // renders as <button sb-harness-action ...>. Only [x]="..." and (y)="..." count.
+    // renders as <button sb-harness-action ...>. The marker is not a binding name, but dropping
+    // it changes which component the template matches.
     const baseline = '<button sb-harness-action [emphasis]="true"></button>';
-    const candidate = '<button [emphasis]="true"></button>';
-    expect(angular(baseline, candidate)).toEqual([]);
+    expect(angular(baseline, baseline)).toEqual([]);
+    expect(angular(baseline, '<button [emphasis]="true"></button>')).toEqual([
+      expect.objectContaining({ arg: 'sb-harness-action', kind: 'lost-attribute' }),
+    ]);
+    // The attribute may gain a value without counting as lost.
+    expect(angular(baseline, '<button sb-harness-action="x" [emphasis]="true"></button>')).toEqual(
+      []
+    );
+  });
+
+  it('fails when the root element changes even though every binding survives', () => {
+    const baseline = '<sb-cmp [count]="3" (clicked)="clicked($event)"></sb-cmp>';
+    const candidate = '<a href="#" [count]="3" (clicked)="clicked($event)"></a>';
+    expect(angular(baseline, candidate)).toEqual([
+      expect.objectContaining({ arg: 'snippet', kind: 'changed-root' }),
+    ]);
+  });
+
+  it('represents binding names with colons, @, %, and non-ASCII characters', () => {
+    // @Input/@Output aliases are arbitrary strings, so [attr.xlink:href]-style bindings are
+    // legal Angular and must not be invisible to the grammar.
+    const names = [
+      'attr.xlink:href',
+      'xlink:href',
+      'svg:width',
+      '@fadeIn',
+      'style.width.%',
+      'über',
+      'data✨',
+    ];
+    for (const name of names) {
+      const baseline = `<sb-cmp [${name}]="value"></sb-cmp>`;
+      expect(angular(baseline, '<sb-cmp></sb-cmp>')).toEqual([
+        expect.objectContaining({ arg: name, kind: 'lost-representation' }),
+      ]);
+      expect(angular(baseline, baseline)).toEqual([]);
+    }
+    const eventBaseline = '<sb-cmp (@fadeIn.done)="onDone($event)"></sb-cmp>';
+    expect(angular(eventBaseline, '<sb-cmp></sb-cmp>')).toEqual([
+      expect.objectContaining({ arg: '@fadeIn.done', kind: 'lost-representation' }),
+    ]);
+  });
+
+  it('throws when a baseline root has binding-shaped attributes in its child content', () => {
+    // The grammar reads only the root element; a multi-element baseline would silently weaken
+    // the gate, so it must break the corpus loudly instead.
+    const baseline = '<sb-cmp [count]="3"><inner (evt)="e($event)"></inner></sb-cmp>';
+    expect(() => angular(baseline, baseline)).toThrow(/child content/);
+  });
+
+  it('throws when only the candidate root has binding-shaped attributes in its child content', () => {
+    const baseline = '<sb-cmp [count]="3"></sb-cmp>';
+    const candidate = '<sb-cmp [count]="3"><inner (evt)="e($event)"></inner></sb-cmp>';
+    expect(() => angular(baseline, candidate)).toThrow(/candidate snippet.*child content/s);
+  });
+
+  it('does not throw for plain text or binding-free elements in baseline child content', () => {
+    const textChild = '<sb-cmp [count]="3">plain text</sb-cmp>';
+    expect(angular(textChild, textChild)).toEqual([]);
+    const plainChild = '<sb-cmp [count]="3"><span class="x">y</span></sb-cmp>';
+    expect(angular(plainChild, plainChild)).toEqual([]);
   });
 
   it('does not read binding-shaped text inside attribute values as representations', () => {
@@ -302,5 +362,55 @@ describe('compareSnippet (vue3)', () => {
     ].join('\n');
     const candidate = '<template>\n  <Widget label="x" />\n</template>';
     expect(vue(baseline, candidate)).toEqual([]);
+  });
+});
+
+describe('compareSnippet (web-components)', () => {
+  const webComponents = (baseline: string, candidate: string) =>
+    compareSnippet({ framework: 'web-components', baseline, candidate });
+
+  it.each([
+    {
+      name: 'passes when an empty args-story snippet stays empty',
+      baseline: '<lit-basic-attributes></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes></lit-basic-attributes>',
+      expected: [],
+    },
+    {
+      name: 'passes on formatting-only differences',
+      baseline: '<lit-basic-attributes label="Save" count="3" is-open></lit-basic-attributes>',
+      candidate:
+        '<lit-basic-attributes  is-open count=\'3\'\n  label="Save"></lit-basic-attributes>',
+      expected: [],
+    },
+    {
+      name: 'fails when an attribute disappears',
+      baseline: '<lit-basic-attributes label="Save" count="3"></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes label="Save"></lit-basic-attributes>',
+      expected: [expect.objectContaining({ arg: 'count', kind: 'lost-representation' })],
+    },
+    {
+      name: 'fails when a bare attribute disappears',
+      baseline: '<lit-basic-attributes is-open></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes></lit-basic-attributes>',
+      expected: [
+        expect.objectContaining({ arg: 'is-open', kind: 'lost-attribute' }),
+        expect.objectContaining({ arg: 'is-open', kind: 'lost-representation' }),
+      ],
+    },
+    {
+      name: 'accepts a bare attribute that gains a value',
+      baseline: '<lit-basic-attributes is-open></lit-basic-attributes>',
+      candidate: '<lit-basic-attributes is-open="true"></lit-basic-attributes>',
+      expected: [],
+    },
+    {
+      name: 'fails when the root element changes',
+      baseline: '<lit-basic-attributes label="Save"></lit-basic-attributes>',
+      candidate: '<other-element label="Save"></other-element>',
+      expected: [expect.objectContaining({ arg: 'snippet', kind: 'changed-root' })],
+    },
+  ])('$name', ({ baseline, candidate, expected }) => {
+    expect(webComponents(baseline, candidate)).toEqual(expected);
   });
 });

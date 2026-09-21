@@ -52,7 +52,14 @@ src/
 │   └── __testfixtures__/<case>/  # component, stories, compodoc-input.json, aot-cmp.ts (signal cases),
 │                                 # argtypes.snapshot, argtypes-filtered.snapshot, snippet-<story>.snapshot
 ├── svelte/                       # planned
-├── web-components/               # planned
+├── web-components/
+│   ├── web-components-baselines.test.ts
+│   ├── web-components-legacy-gaps.test.ts
+│   ├── web-components-render.test.ts
+│   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
+│                                 # optional custom-elements.v2.json/custom-elements.wca.json,
+│                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
+│                                 # snippet-<story>.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
     ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
@@ -67,19 +74,32 @@ src/
 - argTypes: every baseline key, description, default value, and type must survive.
   A type may only change by normalized deep equality or a clear improvement - a catch-all becoming structured, a literal union gaining members.
   About half the corpus records `other`, where the legacy engine parked free text it could not resolve (`TreeNode`, `Array([object Object])`, `{ theme: string; dense: boolean }`).
-  Such a stub accepts a candidate that adds structure or resolves it to the scalar it already named; an unrelated scalar is a lateral change and fails.
-  Only the three markers that record nothing at all accept any candidate: `empty-enum`, `undefined`, and the empty string - today's Angular and Vue spellings, so adding a framework means revisiting that list.
+  Such a stub accepts a candidate that adds populated structure (an empty enum/union/object is not an improvement) or resolves it to the scalar or single literal it already named; an unrelated scalar or literal is a lateral change and fails.
+  The markers that record nothing at all accept any candidate: `empty-enum`, `undefined`, and the empty string from today's Angular and Vue spellings, plus Web Components records with an undefined sbType `name` or a structural sbType `name` without a `value`.
+  The legacy Web Components extractor records manifest type text as the sbType `name`, so an unknown name is read as `{ name: 'other', value: <text> }` and compared by the same stub-resolution rule.
   A resolution the rule cannot recognize (legacy `TSFunctionType` becoming a `function` sbType, say) fails rather than guessing; re-record and review the diff.
-  `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared; each would lock in a recorded lie (#28706) or engine-specific vocabulary.
+  A recorded `table.type.summary` must survive (dropping it is a violation), but its text may change freely outside `strictTable`.
+  `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared (except `required` under `strictTable`); each would lock in a recorded lie (#28706) or engine-specific vocabulary.
 - Snippets: represented binding names are compared as sets, so formatting can never fail, but a lost binding does.
   Directive spelling is normalized, so `:x`/`v-bind:x`, `@x`/`v-on:x`, `#x`/`v-slot:x`, and any `.modifier` all read as the same name.
+  The Angular comparison additionally gates root-element identity: the tag name must match and bare (valueless) attributes - the mangled attribute-selector markers - must survive.
+  The Web Components comparison reads plain HTML root snippets: represented names are root attribute names lowercased as written, and the structure gate requires root tag identity plus survival of bare attributes.
 - Acceptance: there is no allowlist file.
   The committed baseline is the allowlist - accept an intentional change by re-recording with `-u` and reviewing the diff.
-- The recorders read each committed file before its snapshot call, so a `-u` re-record still compares the fresh output against the last committed text.
+- The recorders read each committed file and run every gate BEFORE the snapshot call, so a `-u` run refuses to queue a regressed recording and stays red until the code is fixed.
   Regressions fail with named violations; improvements pass.
 - The committed `argtypes*.snapshot` files are pretty-format text, not JSON.
-  `parseArgTypesSnapshot` reads them back and verifies itself by re-serializing every parse byte-for-byte; anything outside that grammar throws.
+  `parseArgTypesSnapshot` reads them back, verifies itself by re-serializing every parse byte-for-byte, and rejects any parsed string carrying the writer-ambiguous entry-boundary shape.
+  A string whose unescaped write is byte-identical to real entry boundaries cannot be detected at parse time; the recorders' parsed-vs-live proofs guard that case on normal and CI runs, and on `-u` runs against the exact bytes queued for writing.
 - Adding a framework: extend the `Framework` union and compilation fails at the switch in `snippets.ts` until the new matcher exists.
+
+### Trust model
+
+The comparator machine-checks a deliberate subset: baseline arg names, description presence, default presence, `table.type.summary` presence, and type fidelity for argTypes; represented binding names, root-element identity, and bare-attribute survival for Angular snippets.
+Everything else - description/default/summary text, `table.category`, `control`/`action`, per-arg `jsDocTags`, added args - is caught only by the byte-exact snapshot diffs reviewed at `-u` time, or by the sandbox gate's `change` findings.
+Two flags scope trust to where the baseline earns it: `legacyBaseline` (only on legs whose baseline is a legacy compodoc recording) waives the raw `false`/`NaN`/`null` defaults that pipeline invents, and `strictTable` (only on the ACM self-ratchet, whose baseline the same engine recorded) additionally gates `table.type.summary` text changes and `table.type.required` true->false flips.
+The sandbox baseline gate runs in the daily CI tier, so a whole-project regression can merge green and surface up to a day later, detached from the offending PR.
+Known-accepted blind spots: enum members whose quoted and bare spellings collide normalize to the same member (`'"small"'` reads as `small`), and `\r`/`\r\n` in extracted strings are LF-normalized by vitest at write time, so a CR-bearing extraction can never record green (perma-loud, never silent).
 
 ## The vue-component-meta recorder (vue3)
 
@@ -104,6 +124,10 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - angular: one kebab-case `<case>.component.ts` (the class name must match the compodoc capture exactly) plus `input.stories.ts` and a captured `compodoc-input.json`.
   Signal fixtures also commit an `aot-cmp.ts` with the `ɵcmp` input/output maps, captured once from real `ngc` output - JIT leaves them empty.
   Stories import their CSF types from `src/angular/csf-types.ts`; the two runtime test files are excluded from the vue-tsc program because angular-vite client source is not strict-clean.
+- web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
+  Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
+  Every story file keeps the default export's `component` as the target tag name string.
+  Optional hand-written 2.1.0 and WCA manifests live next to the capture and record under a prefix; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
 
 ### Capturing compodoc input (angular)
 
@@ -117,6 +141,26 @@ Compodoc scans everything under the nearest `package.json` and ignores tsconfig 
 4. Run `cd code && yarn fmt:write`.
 
 Nothing detects drift between a fixture's sources and its committed capture, so editing a component always means re-capturing in the same change.
+
+### Capturing the manifest (web-components)
+
+Captures are pinned to `@custom-elements-manifest/analyzer@0.11.0`.
+Re-capturing with any other version is a reviewed baseline change.
+
+From an empty staging directory, copy only the component source files - never `input.stories.ts`, never the fixture `tsconfig.json` - then run:
+
+```bash
+npx -y @custom-elements-manifest/analyzer@0.11.0 analyze --litelement
+```
+
+Drop `--litelement` for vanilla cases.
+Move the emitted `custom-elements.json` back into the fixture directory and make sure `modules[].path` records relative file names only.
+
+### Manifest shape variants (web-components)
+
+The default capture stays at CEM 1.0.0 because the analyzer still writes that version.
+The 2.1.0 variant is the same capture plus additive fields (`cssStates`, `readonly`), so a diff between `argtypes.snapshot` and `v2-argtypes.snapshot` shows exactly what a newer manifest buys.
+The WCA variant records the deprecated web-component-analyzer shape that the runtime still accepts.
 
 ## Known legacy gaps (vue3)
 
@@ -171,7 +215,25 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #9721 -> `jsdoc-tags/`: member JSDoc tags must reach `table.jsDocTags` structurally. Red marker.
 - #33779 (not reproduced) -> `decorator-union-enum/`: the reported union collapse does not occur at compodoc 2.0.0; regression baseline, no marker.
 - #29697 (not reproduced) -> `signal-io/`: aliased signal inputs record under their alias at 2.0.0; regression baseline, no marker.
-- #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ.
+- #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ. The ACM engine closes it: `propsTable: 'api'` (its default) drops private and `#` properties and methods plus `@internal` members, while keeping `protected` members and every declared input and output, so the `acm-` baselines record fewer rows than the legacy ones on purpose.
+
+## Known legacy gaps (web-components)
+
+- Reflected booleans record twice: once as the attribute and once as the property.
+- Literal unions stay as free text, and `@deprecated` / `@default` do not reach `table.jsDocTags` structurally.
+- Events record `void` as their sbType instead of structured event detail.
+- Lit default-render snippets are empty because args are assigned as properties.
+- Property-only Lit bindings are dropped from snippets without a warning.
+- Lit event listener bindings are dropped from snippets without a warning.
+- Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
+- `@summary` is recorded by the analyzer but never reaches the component description.
+- Class-level `@deprecated` never reaches the component description.
+- CEM 2.1.0 `cssStates` and `readonly` are ignored; the 1.0.0 and 2.1.0 recordings are identical.
+- The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
+- `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
+- An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
+- Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
+- `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 
 ## The performance bench
 

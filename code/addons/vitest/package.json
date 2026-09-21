@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "10.6.0-alpha.5",
+  "version": "11.0.0-alpha.0",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -52,7 +52,6 @@
     "./internal/global-setup": "./dist/vitest-plugin/global-setup.js",
     "./internal/setup-file": "./dist/vitest-plugin/setup-file.js",
     "./internal/setup-file-with-project-annotations": "./dist/vitest-plugin/setup-file-with-project-annotations.js",
-    "./internal/setup-file.browser.3": "./dist/vitest-plugin/setup-file.browser.3.js",
     "./internal/setup-file.browser.4": "./dist/vitest-plugin/setup-file.browser.4.js",
     "./internal/test-utils": "./dist/vitest-plugin/test-utils.js",
     "./manager": "./dist/manager.js",
@@ -88,8 +87,8 @@
     "@types/micromatch": "^4.0.0",
     "@types/node": "^22.19.1",
     "@types/semver": "^7.7.1",
-    "@vitest/browser-playwright": "^4.1.5",
-    "@vitest/runner": "^4.1.5",
+    "@vitest/browser-playwright": "^4.1.6",
+    "@vitest/runner": "^4.1.6",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
     "istanbul-lib-report": "^3.0.1",
@@ -105,14 +104,14 @@
     "tree-kill": "^1.2.2",
     "ts-dedent": "^2.2.0",
     "typescript": "^6.0.3",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   },
   "peerDependencies": {
-    "@vitest/browser": "^3.0.0 || ^4.0.0",
-    "@vitest/browser-playwright": "^4.0.0",
-    "@vitest/runner": "^3.0.0 || ^4.0.0",
+    "@vitest/browser": "^3.0.0 || ^4.0.0 || ^5.0.0",
+    "@vitest/browser-playwright": "^4.0.0 || ^5.0.0",
+    "@vitest/runner": "^3.0.0 || ^4.0.0 || ^5.0.0",
     "storybook": "workspace:^",
-    "vitest": "^3.0.0 || ^4.0.0"
+    "vitest": "^3.0.0 || ^4.0.0 || ^5.0.0"
   },
   "peerDependenciesMeta": {
     "@vitest/browser": {

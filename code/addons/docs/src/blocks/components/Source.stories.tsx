@@ -91,3 +91,24 @@ export const JSXSmallViewport: Story = {
     </div>
   ),
 };
+
+/**
+ * A snippet the provider flagged as an incomplete example. The caveat sits top-right, clear of the
+ * copy action bar in the bottom-right corner.
+ */
+export const IncompleteSnippet: Story = {
+  args: {
+    code: `import { Component } from '@angular/core';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LocalComponent],
+  template: \`<sb-local-component [heading]="'Declared here'"></sb-local-component>\`,
+})
+export class DemoComponent {}`,
+    language: 'typescript',
+    format: false,
+    warning:
+      'LocalComponent is declared in the story file, so the snippet references it without importing it.',
+  },
+};

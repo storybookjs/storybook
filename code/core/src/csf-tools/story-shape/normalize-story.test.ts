@@ -93,6 +93,15 @@ describe('normalizeStoryDeclaration', () => {
     `);
   });
 
+  it('rejects zero-argument calls that are not CSF factories', () => {
+    expect(() =>
+      normalize(dedent`
+        export default { title: 'Button' };
+        export const A = makeStory();
+      `)
+    ).toThrow('Expected story to be csf factory, function or an object expression');
+  });
+
   it('resolves CSF2 Template.bind({}) to a local const arrow function', () => {
     expect(
       printedShape(dedent`
@@ -122,6 +131,34 @@ describe('normalizeStoryDeclaration', () => {
       type: 'fn',
     });
   });
+
+  it('resolves CSF2 Template.bind() to its local template', () => {
+    expect(
+      printedShape(dedent`
+        export default { title: 'Button' };
+        const Template = (args) => args;
+        export const A = Template.bind();
+      `)
+    ).toMatchInlineSnapshot(`
+      {
+        "code": "(args) => args",
+        "type": "fn",
+      }
+    `);
+  });
+
+  it.each(["Template.bind({ role: 'button' })", "Template['bind']({})"])(
+    'rejects non-canonical CSF2 bind initializer %s',
+    (initializer) => {
+      expect(() =>
+        normalize(dedent`
+          export default { title: 'Button' };
+          const Template = (args) => args;
+          export const A = ${initializer};
+        `)
+      ).toThrow('Expected story to be csf factory, function or an object expression');
+    }
+  );
 
   it('normalizes plain arrow function story exports to fn', () => {
     const normalized = normalize(dedent`

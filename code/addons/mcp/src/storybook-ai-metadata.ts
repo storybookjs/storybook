@@ -2,7 +2,6 @@ import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import type { Options } from 'storybook/internal/types';
 import * as v from 'valibot';
 import { resolveServerlessCompositionSources } from './auth/resolve-composition-sources.ts';
-import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import {
   getAddonLocalTools,
@@ -13,8 +12,9 @@ import {
 import {
   getEffectiveToolAvailability,
   getToolAvailability,
-} from './utils/get-tool-availability.ts';
-import { isModuleGraphSupportedByBuilder } from './utils/module-graph.ts';
+  isModuleGraphSupportedByBuilder,
+} from 'storybook/internal/core-server';
+import { buildServerInstructions } from 'storybook/internal/skills';
 
 type StorybookAiMetadataPresetOptions = Options & AddonOptionsInput;
 
@@ -61,7 +61,7 @@ export async function buildStorybookAiMetadata(
     ...rawAvailability,
     reviewEnabled: rawAvailability.reviewEnabledForCli,
   };
-  const testEnabled = (toolsets?.test ?? true) && availability.testSupported;
+  const testSupported = (toolsets?.test ?? true) && availability.testSupported;
   const docsToolsetEnabled = toolsets?.docs ?? true;
   const multiSource = docsToolsetEnabled
     ? (await resolveServerlessCompositionSources(options)).multiSource
@@ -79,8 +79,9 @@ export async function buildStorybookAiMetadata(
     instructions: joinInstructions(
       existingMetadata?.instructions,
       buildServerInstructions({
+        transport: 'mcp',
         devEnabled,
-        testEnabled,
+        testSupported,
         docsEnabled,
         changeDetectionEnabled: availability.changeDetectionEnabled,
         moduleGraphSupported: availability.moduleGraphSupported,

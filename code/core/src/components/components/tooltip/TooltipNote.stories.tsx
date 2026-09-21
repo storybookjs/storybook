@@ -31,3 +31,16 @@ export const Base = meta.story({
     note: 'This is a note',
   },
 });
+
+export const Sentence = meta.story({
+  args: {
+    note: 'LocalComponent is declared in the story file, so the snippet references it without importing it.',
+  },
+});
+
+export const WithShortcut = meta.story({
+  args: {
+    note: 'Actions',
+    shortcut: '⌘ ⇧ U',
+  },
+});

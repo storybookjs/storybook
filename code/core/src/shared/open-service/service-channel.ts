@@ -29,6 +29,7 @@ export const SERVICE_COMMAND_INVOKE = 'services:command-invoke' as const;
 export const SERVICE_COMMAND_ACK = 'services:command-ack' as const;
 export const SERVICE_COMMAND_RESULT = 'services:command-result' as const;
 export const SERVICE_COMMAND_ERROR = 'services:command-error' as const;
+export const SERVICE_COMMAND_UNHANDLED = 'services:command-unhandled' as const;
 
 /**
  * Channel payloads are untrusted input, so each event has a Valibot schema. Listeners narrow with
@@ -99,6 +100,18 @@ export const commandAckSchema = v.object({
   clientId: v.string(),
 });
 export type CommandAckPayload = v.InferOutput<typeof commandAckSchema>;
+
+/**
+ * Emitted by a non-delegated peer that received a `services:command-invoke` it cannot dispatch —
+ * a positive config-drift report that only a delegated requester acts on (see
+ * `connectCommandTransport`).
+ */
+export const commandUnhandledSchema = v.object({
+  serviceId: v.string(),
+  callId: v.string(),
+  clientId: v.string(),
+});
+export type CommandUnhandledPayload = v.InferOutput<typeof commandUnhandledSchema>;
 
 /** Sent by an implementing peer after a remote command resolves successfully. */
 export const commandResultSchema = v.object({

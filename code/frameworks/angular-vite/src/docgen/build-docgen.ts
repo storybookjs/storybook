@@ -1,10 +1,5 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import type {
-  DocgenJsDocTags,
-  DocgenPayload,
-  DocgenProviderInput,
-  StrictArgTypes,
-} from 'storybook/internal/types';
+import type { DocgenJsDocTags, DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
@@ -12,18 +7,37 @@ import type {
   AngularClassMeta,
   AngularComponentMetaResult,
   ParsingLogger,
+  PropsTableMode,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
+import { buildApiDescription } from './api-description.ts';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
-  angularFilterNonInputControls?: boolean;
+  propsTable: PropsTableMode;
+}
+
+export interface SnippetEnum {
+  name: string;
+  members: { name: string; value?: string | number }[];
+}
+
+/** Everything the story-docs provider needs to render a component snippet. */
+export interface AngularComponentSnippetMeta {
+  name: string;
+  selector: string | undefined;
+  // `false` only for an explicit `standalone: false`; anything else is the language default.
+  standalone: boolean;
+  inputs: string[];
+  // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
+  outputs: string[];
+  enums: SnippetEnum[];
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
-  // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
-  angularComponentMeta?: AngularClassMeta;
+  // The analyzer's record for the class, never filtered by `propsTable`.
+  angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -41,20 +55,52 @@ export interface BuildDocgenContext {
   resolvePath?: (importPath: string) => string;
 }
 
-// The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
-// block would become a fabricated tag.
-const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
+const inputsOf = (entry: AngularClassMeta) =>
+  'inputsClass' in entry ? (entry.inputsClass ?? []) : [];
+
+const outputsOf = (entry: AngularClassMeta) =>
+  'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
+
+const describedBy = (text: string | undefined): string | undefined => text?.trim() || undefined;
+
+const analyzerJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
   const tags: DocgenJsDocTags = {};
   for (const tag of entry.jsdoctags ?? []) {
-    const name = tag?.tagName?.escapedText;
+    const name = tag.tagName?.escapedText;
     if (!name) {
       continue;
     }
-    // The analyzer's comments are plain text, never the Markdown-rendered HTML Compodoc produced.
     const value = tag.comment === undefined ? '' : String(tag.comment).trim();
     (tags[name] ??= []).push(value);
   }
   return tags;
+};
+
+export const metaToSnippetMeta = (
+  meta: AngularComponentMetaResult
+): AngularComponentSnippetMeta => {
+  const { entry } = meta;
+  const inputs = inputsOf(entry).map((input) => input.name);
+  const inputNames = new Set(inputs);
+  const outputs: string[] = [];
+  for (const output of outputsOf(entry)) {
+    // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
+    const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
+    if (!outputs.includes(bindingName)) {
+      outputs.push(bindingName);
+    }
+  }
+  return {
+    name: entry.name,
+    selector: entry.selector,
+    standalone: entry.standalone !== false,
+    inputs,
+    outputs,
+    enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({
+      name: enumeration.name,
+      members: enumeration.childs.map((child) => ({ name: child.name, value: child.value })),
+    })),
+  };
 };
 
 const errorPayload = (
@@ -81,8 +127,37 @@ export const buildDocgenPayload = (
   const storyFilePath = resolvePath(storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
-    logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
-    return undefined;
+    // A story file with no `component` at all documents no Angular component, so the next provider
+    // gets its turn. A `component` that is there but unreadable is this provider's failure to
+    // report: staying quiet would be indistinguishable from a story that documents nothing.
+    if (resolved.reason === 'no-meta-component') {
+      logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
+      return undefined;
+    }
+
+    const unreadableBase = {
+      id: getComponentIdFromEntry(input.entry),
+      name:
+        resolved.reason === 'unreadable-component-expression'
+          ? resolved.expression
+          : (input.entry.title.split('/').at(-1) ?? input.entry.title),
+      path: storyImportPath,
+    };
+    return errorPayload(
+      unreadableBase,
+      'AngularComponentMetaNotFound',
+      resolved.reason === 'unreadable-component-expression'
+        ? `The story file sets \`component: ${resolved.expression}\`, which does not resolve to a class.\n` +
+            `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
+            `property accesses and spreads through modules it can resolve. ` +
+            `Assign the component to a name in ${storyFilePath}.`
+        : // `meta.component` may reach this binding through another module (e.g. a spread config
+          // object), so the type-only or namespace import is not necessarily written in the story
+          // file itself - naming it here would send the reader to the wrong file.
+          `Resolving \`meta.component\` from ${storyFilePath} reached a binding that is a type-only ` +
+            `or namespace import, which carries no class to document.\n` +
+            `Import the component as a value in whichever module declares that binding.`
+    );
   }
 
   const { component } = resolved;
@@ -102,8 +177,13 @@ export const buildDocgenPayload = (
     return errorPayload(
       base,
       'AngularComponentMetaNotFound',
-      `The story file imports "${displayName}" from "${component.importId}", which did not resolve to a file.\n` +
-        `Check the import specifier (and any tsconfig path aliases it relies on) in ${storyFilePath}.`
+      // `component.importId` may be read from a module `meta.component` only reaches through a
+      // chain (e.g. a spread config object), so the import is not necessarily written in the story
+      // file itself - naming it here would send the reader to the wrong file.
+      `Storybook could not resolve the import of "${displayName}" from "${component.importId}", ` +
+        `reached while resolving \`meta.component\` from ${storyFilePath}.\n` +
+        `Check the import specifier (and any tsconfig path aliases it relies on) in whichever module ` +
+        `actually imports it.`
     );
   }
 
@@ -133,14 +213,26 @@ export const buildDocgenPayload = (
 
   const argTypes = extractArgTypesFromData(meta.entry, {
     metadataJson: meta.json,
-    filterNonInputControls: options.angularFilterNonInputControls,
+    propsTable: options.propsTable,
     logger,
-  }) as StrictArgTypes;
+  });
 
-  const jsDocTags = extractJsDocTags(meta.entry);
-  // Tags are excluded from `rawdescription`, which is why it wins over `description`.
+  // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
+  // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
+  const apiArgTypes =
+    options.propsTable === 'api'
+      ? argTypes
+      : extractArgTypesFromData(meta.entry, {
+          metadataJson: meta.json,
+          propsTable: 'api',
+          logger,
+        });
+
+  const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
   const description =
-    meta.entry.rawdescription?.trim() || (meta.entry.description ?? '').trim() || undefined;
+    describedBy(meta.jsDocInfo?.description) ??
+    describedBy(meta.entry.rawdescription) ??
+    describedBy(meta.entry.description);
 
   return {
     ...base,
@@ -150,6 +242,8 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    angularComponentMeta: meta.entry,
+    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+    renderer: 'angular',
+    angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

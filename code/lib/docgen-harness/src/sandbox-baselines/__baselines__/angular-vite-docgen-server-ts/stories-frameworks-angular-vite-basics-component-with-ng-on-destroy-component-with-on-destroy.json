@@ -6,7 +6,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },
@@ -21,7 +20,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -36,7 +34,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -51,7 +48,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

@@ -107,6 +107,11 @@ export class UniversalStore<
     MOCK: 'MOCK',
   } as const;
 
+  /** The environment this realm was prepared as, or `undefined` before `__prepare`. */
+  public static get preparedEnvironment(): EnvironmentType | undefined {
+    return UniversalStore.preparation.environment;
+  }
+
   /**
    * Internal event types used for store synchronization
    *

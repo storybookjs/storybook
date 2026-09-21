@@ -19,6 +19,7 @@ type StoryRenderInfo = {
 declare global {
   const STORYBOOK_ANGULAR_OPTIONS: {
     zoneless: boolean;
+    propsTable?: import('@storybook/angular-cm').PropsTableMode;
   };
 }
 

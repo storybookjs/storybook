@@ -34,7 +34,7 @@ const createManager = async (): Promise<AngularComponentMetaManager | undefined>
  * Build the Angular docgen middleware, holding one analyzer for the worker's lifetime so its
  * language services stay warm across components.
  */
-export const createDocgenProvider = (options: AngularDocgenOptions = {}): DocgenMiddleware => {
+export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddleware => {
   let managerPromise: Promise<AngularComponentMetaManager | undefined> | undefined;
 
   return (nextDocgen: DocgenProvider): DocgenProvider =>

@@ -1,5 +1,7 @@
 import { getProjectRoot } from 'storybook/internal/common';
 
+import { resolve } from 'node:path';
+
 import * as find from 'empathic/find';
 
 /**
@@ -12,3 +14,21 @@ import * as find from 'empathic/find';
  */
 export const findTsconfigUp = (configDir: string): string | undefined =>
   find.up('tsconfig.json', { cwd: configDir, last: getProjectRoot() });
+
+export type ResolveTsconfigOptions = {
+  workspaceRoot: string;
+  configDir: string;
+  tsConfig?: string;
+  browserTsConfig?: string;
+};
+
+export const resolveTsconfig = ({
+  workspaceRoot,
+  configDir,
+  tsConfig,
+  browserTsConfig,
+}: ResolveTsconfigOptions): string | undefined => {
+  const configured = tsConfig ?? findTsconfigUp(configDir) ?? browserTsConfig;
+
+  return configured ? resolve(workspaceRoot, configured) : undefined;
+};

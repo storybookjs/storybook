@@ -1,6 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   label?: string;
+  quotationLabel?: string;
   emptyLabel?: string;
   enabled?: boolean;
   disabled?: boolean;

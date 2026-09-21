@@ -1,6 +1,6 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import type { NodePath, types as t } from 'storybook/internal/babel';
 
-import { resolveIdentifierInit } from './utils.ts';
+import { isCanonicalCsf2BindCall, isCsfFactoryCall, resolveIdentifierInit } from './utils.ts';
 
 export type NormalizedStoryDeclaration =
   | { type: 'config'; path: NodePath<t.ObjectExpression> }
@@ -64,18 +64,16 @@ function bindInitializer(
     return null;
   }
 
+  if (!isCanonicalCsf2BindCall(storyPath.node)) {
+    return null;
+  }
+
   const callee = storyPath.get('callee');
   if (!callee.isMemberExpression()) {
     return null;
   }
-
   const obj = callee.get('object');
-  const prop = callee.get('property');
-  const isBind =
-    (prop.isIdentifier() && prop.node.name === 'bind') ||
-    (t.isStringLiteral(prop.node) && prop.node.value === 'bind');
-
-  if (!obj.isIdentifier() || !isBind) {
+  if (!obj.isIdentifier()) {
     return null;
   }
 
@@ -86,7 +84,7 @@ function bindInitializer(
 function factoryArgumentExpression(
   storyPath: StoryDeclarationExpression
 ): StoryDeclarationExpression {
-  if (!storyPath.isCallExpression()) {
+  if (!storyPath.isCallExpression() || !isCsfFactoryCall(storyPath.node)) {
     return storyPath;
   }
 
@@ -102,7 +100,7 @@ function factoryArgumentExpression(
   return args[0];
 }
 
-/** Expression inside a TypeScript `satisfies` or `as` wrapper. */
+/** Path-level unwrap for story-legal TS wrappers only; declaration normalization preserves paths. */
 function unwrapTypeExpression(storyPath: StoryDeclarationExpression): StoryDeclarationExpression {
   if (storyPath.isTSSatisfiesExpression()) {
     return storyPath.get('expression');
@@ -131,7 +129,7 @@ function classifyStoryPath(storyPath: StoryDeclarationExpression): NormalizedSto
 
   if (
     storyPath.isCallExpression() &&
-    Array.isArray(storyPath.node.arguments) &&
+    isCsfFactoryCall(storyPath.node) &&
     storyPath.node.arguments.length === 0
   ) {
     return { type: 'emptyConfig', path: storyPath };

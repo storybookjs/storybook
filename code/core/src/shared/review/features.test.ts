@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StorybookFeatures } from '../../types/modules/core-common.ts';
 import { features as defaultFeaturesPreset } from '../../core-server/presets/common-preset.ts';
-import { isReviewFeatureEnabled } from './features.ts';
+import { isReviewExplicitlyEnabled, isReviewFeatureEnabled } from './features.ts';
 
 describe('isReviewFeatureEnabled', () => {
   it('is enabled with the untouched default features preset', async () => {
@@ -38,5 +38,27 @@ describe('isReviewFeatureEnabled', () => {
       false
     );
     expect(isReviewFeatureEnabled(undefined)).toBe(false);
+  });
+});
+
+describe('isReviewExplicitlyEnabled', () => {
+  // The flag-unset default is where the two gates differ, and prose gated on the wrong one
+  // advertises `review-create` to MCP clients that cannot see it: the infrastructure gate is on
+  // by default, the direct-client gate only on explicit opt-in.
+  it('stays off when the flag is unset, unlike the infrastructure gate', () => {
+    const defaults = { changeDetection: true };
+    expect(isReviewFeatureEnabled(defaults)).toBe(true);
+    expect(isReviewExplicitlyEnabled(defaults)).toBe(false);
+  });
+
+  it('is enabled only on explicit opt-in with change detection', () => {
+    expect(isReviewExplicitlyEnabled({ changeDetection: true, experimentalReview: true })).toBe(
+      true
+    );
+    expect(isReviewExplicitlyEnabled({ changeDetection: true, experimentalReview: false })).toBe(
+      false
+    );
+    expect(isReviewExplicitlyEnabled({ experimentalReview: true })).toBe(false);
+    expect(isReviewExplicitlyEnabled(undefined)).toBe(false);
   });
 });

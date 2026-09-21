@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compareBaselines, formatFindings, stableStringify } from './compare-baselines.ts';
+import { compareBaselines, formatFindings } from './compare-baselines.ts';
 import type { SandboxBaseline } from './read-static-docgen.ts';
 
 type ArgTypes = NonNullable<SandboxBaseline['argTypes']>;
@@ -55,6 +55,52 @@ describe('compareBaselines', () => {
     expect(findings[0]).toMatchObject({ severity: 'change', kind: 'docgen-gained' });
   });
 
+  it('flags a dropped raw false or null default as a regression', () => {
+    // A raw false / null summary is a genuine default here, so losing one must read as a
+    // regression rather than as neutral drift.
+    for (const summary of [false, null]) {
+      const withDefault: ArgTypes = {
+        label: {
+          name: 'label',
+          type: { name: 'boolean' },
+          table: { category: 'inputs', defaultValue: { summary: summary as unknown as string } },
+        },
+      } as ArgTypes;
+      const findings = compareBaselines(
+        { button: documented({ argTypes: withDefault }) },
+        { button: documented({ argTypes: arg('label', { name: 'boolean' }) }) }
+      );
+
+      expect(findings).toContainEqual(
+        expect.objectContaining({
+          severity: 'regression',
+          kind: 'argtypes',
+          message: expect.stringContaining('label lost its default'),
+        })
+      );
+    }
+  });
+
+  it('names the affected arg and sub-field for neutral argTypes drift', () => {
+    const withDescription = (description: string): ArgTypes =>
+      ({
+        label: {
+          name: 'label',
+          type: { name: 'string' },
+          description,
+          table: { category: 'inputs' },
+        },
+      }) as ArgTypes;
+    const findings = compareBaselines(
+      { button: documented({ argTypes: withDescription('Old words.') }) },
+      { button: documented({ argTypes: withDescription('New words.') }) }
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: 'change', kind: 'argtypes' });
+    expect(findings[0].message).toBe('argTypes differs: label (description)');
+  });
+
   it('flags an arg present in the baseline but missing from the build', () => {
     const findings = compareBaselines(
       { button: documented({ argTypes: { ...arg('label'), ...arg('size') } }) },
@@ -63,7 +109,7 @@ describe('compareBaselines', () => {
 
     expect(findings).toHaveLength(1);
     expect(findings[0]).toMatchObject({ severity: 'regression', kind: 'argtypes' });
-    expect(findings[0].message).toContain('size');
+    expect(findings[0].message).toContain('size removed');
   });
 
   it('accepts an added arg as a change so an improvement is not read as a failure to fix', () => {
@@ -72,7 +118,23 @@ describe('compareBaselines', () => {
       { button: documented({ argTypes: { ...arg('label'), ...arg('size') } }) }
     );
 
-    expect(findings.every((finding) => finding.severity === 'change')).toBe(true);
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: 'change', kind: 'argtypes' });
+    expect(findings[0].message).toBe('argTypes differs: size (added)');
+  });
+
+  it('reports a type that gained fidelity as a change, not a regression', () => {
+    // The gate is exact-match, so even an unambiguous improvement fails and is adopted by
+    // re-recording. Calling it a regression would send a reviewer hunting for a bug that is not
+    // there.
+    const findings = compareBaselines(
+      { button: documented({ argTypes: arg('size', { name: 'other', value: 'empty-enum' }) }) },
+      { button: documented({ argTypes: arg('size', { name: 'enum', value: ['sm', 'lg'] }) }) }
+    );
+
+    expect(findings).toHaveLength(1);
+    expect(findings[0]).toMatchObject({ severity: 'change', kind: 'argtypes' });
+    expect(findings[0].message).toBe('argTypes differs: size (type)');
   });
 
   it('flags a component missing from the build as a regression', () => {
@@ -120,13 +182,5 @@ describe('formatFindings', () => {
     );
 
     expect(output.indexOf('regression(s)')).toBeLessThan(output.indexOf('change(s)'));
-  });
-});
-
-describe('stableStringify', () => {
-  it('sorts keys at every depth so a re-record diffs on content only', () => {
-    expect(stableStringify({ b: 1, a: { d: 2, c: 3 } }, 0)).toBe(
-      stableStringify({ a: { c: 3, d: 2 }, b: 1 }, 0)
-    );
   });
 });

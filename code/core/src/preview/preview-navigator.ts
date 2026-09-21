@@ -24,7 +24,7 @@ export async function maybeSetupPreviewNavigator() {
   (globalThis as any).__STORYBOOK_PREVIEW_NAVIGATOR__ = true;
 
   // TODO: custom story sort is not respected
-  const index = (await (await fetch('/index.json')).json()) as StoryIndex;
+  const index = (await (await fetch('./index.json')).json()) as StoryIndex;
 
   const currentEntryId = url.searchParams.get('id');
   if (!currentEntryId) {

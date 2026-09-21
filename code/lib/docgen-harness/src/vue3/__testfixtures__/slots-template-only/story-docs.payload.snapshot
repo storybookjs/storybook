@@ -1,6 +1,5 @@
 {
   "id": "slots-template-only",
-  "import": "import TemplateOnlySlots from './TemplateOnlySlots.vue';",
   "name": "TemplateOnlySlots",
   "path": "__PATH__",
   "stories": {
@@ -9,11 +8,24 @@
       "id": "forms-slots-template-only--scoped-bindings",
       "name": "Scoped Bindings",
       "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
     },
     "forms-slots-template-only--string-child": {
       "description": undefined,
       "id": "forms-slots-template-only--string-child",
       "name": "String Child",
+      "snippet": "<script lang="ts" setup>
+import TemplateOnlySlots from './TemplateOnlySlots.vue';
+</script>
+
+<template>
+  <TemplateOnlySlots>
+    Plain text content
+    <template #header>
+      Header text
+    </template>
+  </TemplateOnlySlots>
+</template>",
       "summary": undefined,
     },
   },

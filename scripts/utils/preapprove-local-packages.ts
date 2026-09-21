@@ -14,6 +14,7 @@ export const LOCALLY_PUBLISHED_PACKAGE_PATTERNS = [
   ...STORYBOOK_PACKAGE_PATTERNS,
   'create-storybook',
   'sb',
+  'vite-plugin-storybook-nextjs',
 ];
 
 /**

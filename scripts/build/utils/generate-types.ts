@@ -35,6 +35,7 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
       return limited(async () => {
         for (let attempt = 1; attempt <= MAX_DTS_ATTEMPTS; attempt++) {
           let timer: ReturnType<typeof setTimeout> | undefined;
+          let killTimer: ReturnType<typeof setTimeout> | undefined;
           const dtsProcess = spawn(
             `"${join(ROOT_DIRECTORY, 'node_modules', '.bin', 'jiti')}"`,
             [`"${join(import.meta.dirname, 'dts-process.ts')}"`, `"${entryPoint}"`],
@@ -66,18 +67,22 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
                 resolve(void 0);
               });
             }),
-            new Promise((resolve) => {
+            new Promise<void>(() => {
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
-
-                dtsProcess.kill(408); // timed out
-                resolve(void 0);
+                dtsProcess.kill('SIGTERM');
+                killTimer = setTimeout(() => {
+                  dtsProcess.kill('SIGKILL');
+                }, 5000);
               }, 120000);
             }),
           ]);
 
           if (timer) {
             clearTimeout(timer);
+          }
+          if (killTimer) {
+            clearTimeout(killTimer);
           }
 
           if (dtsProcess.exitCode !== 0) {

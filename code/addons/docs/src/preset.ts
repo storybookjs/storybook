@@ -231,10 +231,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     features?.componentsManifest &&
     !options.ignorePreview
   ) {
-    const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
-
     registerMdxService({
-      getIndex: () => generator.getIndex(),
+      getIndex: () =>
+        options.presets
+          .apply<StoryIndexGenerator>('storyIndexGenerator')
+          .then((generator) => generator.getIndex()),
     });
   }
 };

@@ -1,11 +1,11 @@
 /**
  * The shape the analyzer emits for every class it records, plus what the analyzer adds on top.
  *
- * The raw shape below mirrors Compodoc's own JSON schema for now, since the docgen worker feeds
- * analyzer output through the same argTypes extractor Compodoc-based docgen uses. That's an
- * implementation convenience, not a contract: this package owns these types outright and is free
- * to diverge from Compodoc's shape once there's a reason to.
+ * The raw shape below stays close to Compodoc's JSON schema, while analyzer-owned fields use the
+ * stronger contracts its successor pipeline needs. This package owns these types outright.
  */
+import type { ComponentJsDocInfo } from 'storybook/internal/component-meta';
+
 type Html = string;
 
 export interface Decorator {
@@ -30,21 +30,46 @@ export interface Method {
   args: Argument[];
   returnType: string;
   decorators?: Decorator[];
+  /** TypeScript accessibility, omitted for a public member. */
+  visibility?: 'private' | 'protected';
+  /** Whether the member carries a JSDoc `internal` tag. */
+  internal?: boolean;
   description?: Html;
   rawdescription?: string;
   jsdoctags?: JsDocTag[];
 }
 
+export type PropertyInitializer =
+  | {
+      kind: 'literal';
+      literalKind:
+        | 'string'
+        | 'number'
+        | 'boolean'
+        | 'null'
+        | 'undefined'
+        | 'bigint'
+        | 'enum'
+        | 'composite';
+      text: string;
+    }
+  | { kind: 'expression'; text: string };
+
 export interface Property {
   name: string;
   decorators?: Decorator[];
+  /** TypeScript accessibility, omitted for a public member. */
+  visibility?: 'private' | 'protected';
+  /** Whether the member carries a JSDoc `internal` tag. */
+  internal?: boolean;
   /** Omitted for members the analyzer cannot type, e.g. `@HostBinding`. */
   type?: string;
   /** Omitted for `@Input()` properties, emitted for the rest. */
   optional?: boolean;
   /** Present for signal inputs and `@Input({ required })`, absent for a plain `@Input()`. */
   required?: boolean;
-  defaultValue?: string;
+  /** Syntax-classified source initializer; expressions are metadata, not display defaults. */
+  initializer?: PropertyInitializer;
   /** 1-based line the member is declared on. */
   line?: number;
   description?: Html;
@@ -143,6 +168,8 @@ interface AnalyzerFields {
   jsdoctags?: JsDocTag[];
   /** The `@Component`/`@Directive` decorator's `selector`, when statically resolvable. */
   selector?: string;
+  /** The decorator's `standalone` value, when statically resolvable to a boolean. */
+  standalone?: boolean;
 }
 
 export type AngularDirectiveMeta = Directive & AnalyzerFields;
@@ -178,4 +205,6 @@ export interface AngularComponentMetaResult {
   entry: AngularClassMeta;
   /** Every class in the file, for the extractor's alias and enum resolution. */
   json: MetadataJson;
+  /** Omitted when extraction reaches analyzer metadata without a class symbol. */
+  jsDocInfo?: ComponentJsDocInfo;
 }

@@ -7,7 +7,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "EventEmitter"
         }
       },
@@ -23,7 +22,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "EventEmitter"
         }
       },
@@ -39,7 +37,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "EventEmitter"
         }
       },
@@ -56,7 +53,6 @@
           "summary": null
         },
         "type": {
-          "required": true,
           "summary": "User | null"
         }
       },

@@ -10,3 +10,10 @@ export interface AnalyzerContext {
   /** Rendering a type through this also files it under `miscellaneous`. */
   types: TypeIndex;
 }
+
+export const resolvedSymbol = (ctx: AnalyzerContext, node: ts.Node): ts.Symbol | undefined => {
+  const symbol = ctx.checker.getSymbolAtLocation(node);
+  return symbol && symbol.flags & ctx.ts.SymbolFlags.Alias
+    ? ctx.checker.getAliasedSymbol(symbol)
+    : symbol;
+};

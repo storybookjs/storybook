@@ -1,5 +1,7 @@
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
 import { compareArgTypes } from '../compare/argtypes.ts';
+import { deepEqual } from '../compare/deep-equal.ts';
+import type { ViolationKind } from '../compare/types.ts';
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
 export interface BaselineFinding {
@@ -15,27 +17,6 @@ export interface BaselineFinding {
   message: string;
 }
 
-/** Key-sorted JSON so a diff reflects content, never the order a producer happened to emit. */
-export function stableStringify(value: unknown, indent = 2): string {
-  const sortKeys = (input: unknown): unknown => {
-    if (Array.isArray(input)) {
-      return input.map(sortKeys);
-    }
-    if (input !== null && typeof input === 'object') {
-      return Object.fromEntries(
-        Object.entries(input)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([key, item]) => [key, sortKeys(item)])
-      );
-    }
-    return input;
-  };
-  return JSON.stringify(sortKeys(value), null, indent);
-}
-
-const equal = (a: unknown, b: unknown): boolean => stableStringify(a) === stableStringify(b);
-
-/** A component counts as documented when the provider produced props rather than an error. */
 const isDocumented = (entry: SandboxBaseline): boolean =>
   entry.error === undefined && entry.argTypes !== undefined;
 
@@ -75,26 +56,27 @@ function compareComponent(
     explained.add('argTypes').add('error');
   }
 
-  for (const violation of compareArgTypes(
-    (baseline.argTypes ?? {}) as StrictArgTypes,
-    (candidate.argTypes ?? {}) as StrictArgTypes
-  )) {
-    findings.push({
-      component,
-      severity: 'regression',
-      kind: 'argtypes',
-      message: `${violation.arg}: [${violation.kind}] ${violation.message}`,
-    });
-    explained.add('argTypes');
-  }
-
   // Anything the rules above did not already explain, reported once per field so a re-record is a
   // reviewable diff rather than an opaque "something moved".
   const fields = new Set([...Object.keys(baseline), ...Object.keys(candidate)]);
   for (const field of [...fields].sort()) {
     const before = baseline[field as keyof SandboxBaseline];
     const after = candidate[field as keyof SandboxBaseline];
-    if (equal(before, after) || explained.has(field)) {
+    if (deepEqual(before, after) || explained.has(field)) {
+      continue;
+    }
+    if (field === 'argTypes') {
+      const losses = argTypeLosses(before, after);
+      const summary = summarizeArgTypeDiff(before, after);
+      findings.push({
+        component,
+        severity: losses.length > 0 ? 'regression' : 'change',
+        kind: 'argtypes',
+        message:
+          losses.length > 0
+            ? `argTypes lost content (${losses.join('; ')}); full diff: ${summary}`
+            : `argTypes differs: ${summary}`,
+      });
       continue;
     }
     findings.push({
@@ -108,7 +90,67 @@ function compareComponent(
   return findings;
 }
 
-/** Keeps a finding readable when the field is a whole argTypes table or a multi-line message. */
+/**
+ * The violation kinds that make an argTypes difference a regression, and how a baseline finding says
+ * them.
+ *
+ * `compareArgTypes` owns what counts as a loss, so this table is only wording plus the severity
+ * split: a finding reads as one line per component, not one per violation. Every other kind it
+ * reports - a lost description, a laterally-changed type - stays neutral drift here, adopted by
+ * re-recording.
+ */
+const LOSS_WORDING: Partial<Record<ViolationKind, string>> = {
+  'lost-arg': 'removed',
+  'lost-default': 'lost its default',
+};
+
+function argTypeLosses(before: unknown, after: unknown): string[] {
+  const violations = compareArgTypes(
+    (before ?? {}) as StrictArgTypes,
+    (after ?? {}) as StrictArgTypes
+  );
+  return violations.flatMap((violation) => {
+    const wording = LOSS_WORDING[violation.kind];
+    return wording === undefined ? [] : [`${violation.arg} ${wording}`];
+  });
+}
+
+// Names the affected args and sub-fields: the two sides usually share the same arg names, so a key
+// list alone says nothing.
+function summarizeArgTypeDiff(before: unknown, after: unknown): string {
+  const beforeArgs = (before ?? {}) as Record<string, StrictInputType>;
+  const afterArgs = (after ?? {}) as Record<string, StrictInputType>;
+  const args = new Set([...Object.keys(beforeArgs), ...Object.keys(afterArgs)]);
+  const parts: string[] = [];
+  for (const arg of [...args].sort()) {
+    const beforeEntry = beforeArgs[arg];
+    const afterEntry = afterArgs[arg];
+    if (beforeEntry === undefined) {
+      parts.push(`${arg} (added)`);
+      continue;
+    }
+    if (afterEntry === undefined) {
+      parts.push(`${arg} (removed)`);
+      continue;
+    }
+    const subFields = new Set([...Object.keys(beforeEntry), ...Object.keys(afterEntry)]);
+    const changed = [...subFields]
+      .sort()
+      .filter(
+        (subField) =>
+          !deepEqual(
+            beforeEntry[subField as keyof StrictInputType],
+            afterEntry[subField as keyof StrictInputType]
+          )
+      );
+    if (changed.length > 0) {
+      parts.push(`${arg} (${changed.join(', ')})`);
+    }
+  }
+  return parts.join('; ');
+}
+
+// Keeps a finding readable when the field is a whole argTypes table or a multi-line message.
 const summarize = (value: unknown): unknown => {
   if (value === undefined) {
     return undefined;
@@ -123,7 +165,6 @@ const summarize = (value: unknown): unknown => {
   return value;
 };
 
-/** Compares a committed baseline set against a freshly-read one, component by component. */
 export function compareBaselines(
   baseline: SandboxBaselines,
   candidate: SandboxBaselines
@@ -161,7 +202,7 @@ export function compareBaselines(
   return findings;
 }
 
-/** Groups findings for the CLI report: regressions first, since they are the blocking kind. */
+// Regressions first, since they are the blocking kind.
 export function formatFindings(findings: BaselineFinding[]): string {
   const lines: string[] = [];
   for (const severity of ['regression', 'change'] as const) {

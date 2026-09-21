@@ -6,7 +6,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -20,7 +19,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },
@@ -33,11 +31,8 @@
       "name": "onChange",
       "table": {
         "category": "properties",
-        "defaultValue": {
-          "summary": "NOOP"
-        },
+        "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "(value: any) => void"
         }
       },
@@ -49,11 +44,8 @@
       "name": "onTouch",
       "table": {
         "category": "properties",
-        "defaultValue": {
-          "summary": "NOOP"
-        },
+        "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "() => void"
         }
       },
@@ -67,7 +59,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(fn: any) => void"
         }
       },
@@ -82,7 +73,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(fn: any) => void"
         }
       },
@@ -97,7 +87,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(isDisabled: boolean) => void"
         }
       },
@@ -112,7 +101,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },
@@ -127,7 +115,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(value: any) => void"
         }
       },

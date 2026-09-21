@@ -2,6 +2,11 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import ImportOverrideButton from './ImportOverrideButton.vue';
 
+/**
+ * Import override button.
+ *
+ * @import import { ImportOverride } from 'my-design-system';
+ */
 const meta = {
   component: ImportOverrideButton,
   title: 'Forms/import-override',

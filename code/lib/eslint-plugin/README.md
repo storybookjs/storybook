@@ -48,6 +48,8 @@ npm install eslint-plugin-storybook --save-dev
 yarn add eslint-plugin-storybook --dev
 ```
 
+The plugin bundles the CSF helpers it needs, so you do **not** need to install `storybook` just to load the ESLint plugin (for example in a shared monorepo ESLint preset).
+
 And finally, add this to your `.eslintignore` file:
 
 ```

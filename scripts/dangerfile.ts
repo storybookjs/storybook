@@ -246,7 +246,7 @@ const checkCoreDxApproval = async () => {
   );
 
   if (approvedLogins.length === 0) {
-    fail(failMessage);
+    fail(failMessage + ' No approvals found.');
     return;
   }
 
@@ -268,7 +268,7 @@ const checkCoreDxApproval = async () => {
     return;
   }
 
-  fail(failMessage);
+  fail(failMessage + ' No approvals from trusted teams found.');
 };
 
 checkTargetBranch();

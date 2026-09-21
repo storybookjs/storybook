@@ -1,4 +1,12 @@
 import type { ComponentDoc } from 'react-docgen-typescript';
+import type {
+  AllManifests,
+  ComponentManifest,
+  ComponentManifestMap,
+  Doc,
+  DocsManifestMap,
+  Story,
+} from 'storybook/internal/toolsets-docs';
 import * as v from 'valibot';
 
 /**
@@ -60,7 +68,7 @@ export type StorybookContext = {
    */
   sources?: Source[];
   /**
-   * Optional handler called when list-all-documentation tool is invoked.
+   * Optional handler called when the docs-list tool is invoked.
    * Receives the context and the component manifest.
    */
   onListAllDocumentation?: (params: {
@@ -71,7 +79,7 @@ export type StorybookContext = {
     sources?: SourceManifests[];
   }) => void | Promise<void>;
   /**
-   * Optional handler called when get-documentation tool is invoked.
+   * Optional handler called when the docs-show tool is invoked.
    * Receives the context, input parameters, and the found component (if any).
    */
   onGetDocumentation?: (
@@ -86,7 +94,7 @@ export type StorybookContext = {
   /**
    * Optional in-process resolver for a single component or docs entry, used in
    * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
-   * single-entry tools (`get-documentation`, `get-documentation-for-story`) call
+   * single-entry tools (`docs-show`, `docs-show-story`) call
    * this instead of fetching the (potentially all-component) manifest index, so a
    * single lookup never triggers docgen extraction for every component.
    *
@@ -105,205 +113,36 @@ export type ResolvedEntry =
   | { kind: 'component'; component: ComponentManifest }
   | { kind: 'doc'; doc: Doc };
 
-const JSDocTag = v.record(v.string(), v.array(v.string()));
-
-const ManifestError = v.object({
-  name: v.string(),
-  message: v.string(),
-});
-
-const BaseManifest = v.object({
-  name: v.string(),
-  description: v.optional(v.string()),
-  jsDocTags: v.optional(JSDocTag),
-  error: v.optional(ManifestError),
-});
-
-const Story = v.object({
-  ...BaseManifest.entries,
-  id: v.optional(v.string()),
-  snippet: v.optional(v.string()),
-  summary: v.optional(v.string()),
-});
-export type Story = v.InferOutput<typeof Story>;
-
 /**
- * A JSON Reference (`{ $ref }`) pointing at a value in another manifest document.
- * Used by the v1 (split/ref) manifest format for docgen, story-docs and MDX payloads.
+ * The manifest schemas come from Storybook's shared docs toolset, which this package bundles, so a
+ * hosted Storybook and a dev server validate the same wire format rather than two copies of it.
+ * They are re-exported here because embedders import them from this package's root.
  */
-export const JsonRef = v.object({
-  $ref: v.string(),
-});
-export type JsonRef = v.InferOutput<typeof JsonRef>;
-
-/**
- * Component documentation from react-docgen-typescript, extended with export name.
- * Matches the shape produced by Storybook's manifest generator.
- */
-export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
-
-// ---------------------------------------------------------------------------
-// Manifest formats
-//
-// Storybook writes one of two manifest formats, distinguished by the top-level
-// `v` field on `components.json` / `docs.json` (see Storybook core:
-// `renderers/react/.../componentManifest/generator.ts` emits `v: 0`,
-// `core-server/.../components-ref-manifest.ts` emits `v: 1`):
-//
-//   • v0 — inline/legacy: every component carries its docgen, stories array and
-//     attached docs (with MDX `content`) inline.
-//   • v1 — split/ref: `components.json`/`docs.json` are shallow indexes; the heavy
-//     docgen, story-docs and MDX payloads live in sibling `services/*.json` files
-//     and are referenced via `$ref`. (Storybook's in-process dev provider emits an
-//     even shallower v1 index — `docgen`/`mdx` refs omitted — because single
-//     entries are resolved in-process instead, see `StorybookContext.resolveEntry`.)
-//
-// The two formats are kept as separate schemas so each version's exact shape is
-// explicit, then combined into a `v`-discriminated union at the map level. Anything
-// that needs to branch on the version can read `map.v` or match the per-version
-// schemas directly.
-// ---------------------------------------------------------------------------
-
-// ---- v0: inline / legacy ----
-
-/** Inline (v0) docs entry: the full MDX `content` is embedded. */
-export const DocV0 = v.object({
-  id: v.string(),
-  name: v.string(),
-  title: v.optional(v.string()),
-  path: v.optional(v.string()),
-  content: v.optional(v.string()),
-  summary: v.optional(v.string()),
-  error: v.optional(ManifestError),
-});
-export type DocV0 = v.InferOutput<typeof DocV0>;
-
-const BaseInlineComponentProperties = v.object({
-  ...BaseManifest.entries,
-  path: v.optional(v.string()),
-  summary: v.optional(v.string()),
-  import: v.optional(v.string()),
-  reactDocgen: v.optional(v.any()),
-  reactDocgenTypescript: v.optional(v.any()),
-  reactComponentMeta: v.optional(v.any()),
-});
-
-export const SubcomponentManifest = v.object({
-  ...BaseInlineComponentProperties.entries,
-});
-export type SubcomponentManifest = v.InferOutput<typeof SubcomponentManifest>;
-
-/** Inline (v0) component: docgen, stories and attached docs are all embedded. */
-export const ComponentManifestV0 = v.object({
-  ...BaseInlineComponentProperties.entries,
-  id: v.string(),
-  stories: v.optional(v.array(Story)),
-  subcomponents: v.optional(v.record(v.string(), SubcomponentManifest)),
-  docs: v.optional(v.record(v.string(), DocV0)),
-});
-export type ComponentManifestV0 = v.InferOutput<typeof ComponentManifestV0>;
-
-export const ComponentManifestMapV0 = v.object({
-  v: v.literal(0),
-  components: v.record(v.string(), ComponentManifestV0),
-});
-export type ComponentManifestMapV0 = v.InferOutput<typeof ComponentManifestMapV0>;
-
-export const DocsManifestMapV0 = v.object({
-  v: v.literal(0),
-  docs: v.record(v.string(), DocV0),
-});
-export type DocsManifestMapV0 = v.InferOutput<typeof DocsManifestMapV0>;
-
-// ---- v1: split / ref ----
-
-/**
- * Shallow (v1) docs entry. The full MDX payload (title/path/content) lives behind
- * `mdx.$ref`; `mdx` is optional because Storybook's in-process dev index omits it
- * (those entries are resolved in-process via {@link StorybookContext.resolveEntry}).
- */
-export const DocV1 = v.object({
-  id: v.string(),
-  name: v.string(),
-  summary: v.optional(v.string()),
-  mdx: v.optional(JsonRef),
-  error: v.optional(ManifestError),
-});
-export type DocV1 = v.InferOutput<typeof DocV1>;
-
-/**
- * Shallow (v1) component index row. Identity + summary are inlined for cheap
- * listing; docgen and story-docs live behind `$ref`s, attached docs behind nested
- * `mdx.$ref`s. `docgen`/`stories` are optional (the in-process dev index omits
- * `docgen`, and docs-only components have neither).
- */
-export const ComponentManifestV1 = v.object({
-  id: v.string(),
-  name: v.string(),
-  description: v.optional(v.string()),
-  summary: v.optional(v.string()),
-  error: v.optional(ManifestError),
-  docgen: v.optional(JsonRef),
-  stories: v.optional(JsonRef),
-  docs: v.optional(v.record(v.string(), DocV1)),
-});
-export type ComponentManifestV1 = v.InferOutput<typeof ComponentManifestV1>;
-
-export const ComponentManifestMapV1 = v.object({
-  v: v.literal(1),
-  components: v.record(v.string(), ComponentManifestV1),
-});
-export type ComponentManifestMapV1 = v.InferOutput<typeof ComponentManifestMapV1>;
-
-export const DocsManifestMapV1 = v.object({
-  v: v.literal(1),
-  docs: v.record(v.string(), DocV1),
-});
-export type DocsManifestMapV1 = v.InferOutput<typeof DocsManifestMapV1>;
-
-// ---- discriminated unions (the wire schema for top-level manifests) ----
-
-/** `components.json`, discriminated on `v` (0 = inline, 1 = split/ref). */
-export const ComponentManifestMap = v.variant('v', [
+export {
+  ComponentManifestMap,
   ComponentManifestMapV0,
   ComponentManifestMapV1,
-]);
-export type ComponentManifestMap = v.InferOutput<typeof ComponentManifestMap>;
+  DocsManifestMap,
+  DocsManifestMapV0,
+  DocsManifestMapV1,
+  JsonRef,
+} from 'storybook/internal/toolsets-docs';
+export type {
+  AllManifests,
+  ComponentManifest,
+  ComponentManifestEntry,
+  ComponentManifestV0,
+  ComponentManifestV1,
+  Doc,
+  DocEntry,
+  DocV0,
+  DocV1,
+  Story,
+  SubcomponentManifest,
+} from 'storybook/internal/toolsets-docs';
 
-/**
- * `docs.json` for unattached/standalone documentation entries (served at
- * `/manifests/docs.json`), discriminated on `v`.
- */
-export const DocsManifestMap = v.variant('v', [DocsManifestMapV0, DocsManifestMapV1]);
-export type DocsManifestMap = v.InferOutput<typeof DocsManifestMap>;
-
-// ---- working / resolved types ----
-
-/**
- * A component index row as it appears in either format: inline (v0) or shallow
- * ref (v1). This is what {@link resolveComponentEntry} consumes before following any
- * `$ref`s.
- */
-export type ComponentManifestEntry = ComponentManifestV0 | ComponentManifestV1;
-
-/** A docs index row as it appears in either format: inline (v0) or shallow ref (v1). */
-export type DocEntry = DocV0 | DocV1;
-
-/**
- * A fully-resolved component, as consumed by the tools and formatters: inline shape
- * (stories as an array, attached docs with `content`, docgen inlined). Identical to
- * the v0 shape — v1 rows are resolved into it by following their `$ref`s
- * (`resolveComponentEntry`) or built in-process (`adaptCoreComponent`).
- */
-export type ComponentManifest = ComponentManifestV0;
-
-/** A fully-resolved docs entry (inline `content`), as consumed by tools and formatters. */
-export type Doc = DocV0;
-
-export type AllManifests = {
-  componentManifest: ComponentManifestMap;
-  docsManifest?: DocsManifestMap;
-};
+/** Component documentation from react-docgen-typescript, extended with export name. */
+export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
 /**
  * Open-service payload contracts (the "core format") that Storybook's
@@ -395,7 +234,7 @@ export const StorybookIdField = {
   storybookId: v.pipe(
     v.string(),
     v.description(
-      'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.'
+      'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See docs-list for available sources.'
     )
   ),
 };

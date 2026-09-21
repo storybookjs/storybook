@@ -6,7 +6,11 @@
  * MCP clients like VS Code to handle the OAuth flow with Chromatic.
  */
 
-import { ComponentManifestMap, DocsManifestMap, type Source } from '@storybook/mcp';
+import {
+  ComponentManifestMap,
+  DocsManifestMap,
+  type Source,
+} from 'storybook/internal/toolsets-docs';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 
@@ -36,6 +40,8 @@ interface AuthRequirement {
   resourceMetadata: OAuthResourceMetadata;
   serverMetadata: OAuthServerMetadata;
 }
+
+type NoManifestReason = 'manifest-not-found' | 'manifest-invalid';
 
 export type ManifestProvider = (
   request: Request | undefined,
@@ -73,7 +79,18 @@ export class CompositionAuth {
     for (const ref of refs) {
       try {
         const result = await this.#checkRef(ref.url);
-        if (result === 'no-manifest') continue;
+        if (result === 'manifest-not-found') {
+          logger.warn(
+            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): components manifest not found at ${ref.url}/manifests/components.json. Enable the \`componentsManifest\` feature on that Storybook to compose it into MCP.`
+          );
+          continue;
+        }
+        if (result === 'manifest-invalid') {
+          logger.warn(
+            `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): its components manifest failed validation. This usually means a version mismatch between the composed Storybook and this one — upgrade the older side.`
+          );
+          continue;
+        }
 
         this.#refsWithManifests.push(ref);
 
@@ -94,7 +111,7 @@ export class CompositionAuth {
         }
       } catch (error) {
         logger.warn(
-          `[addon-mcp] Failed to check auth for composed ref "${ref.title}" (${ref.url}): ${error instanceof Error ? error.message : String(error)}. Skipping this ref.`
+          `[addon-mcp] Skipping composed ref "${ref.title}" (${ref.url}): the ref could not be reached (${error instanceof Error ? error.message : String(error)}). Refs are only checked at dev-server boot — restart Storybook once the ref is reachable.`
         );
       }
     }
@@ -148,30 +165,19 @@ export class CompositionAuth {
   /**
    * Create a manifest provider for multi-source mode.
    *
-   * Remote sources are always fetched over HTTP (with auth + caching). The local
-   * source normally fetches from `localOrigin`, but in `experimentalDocgenServer`
-   * mode core 404s `/manifests/*.json` (the data lives in the open services), so
-   * callers pass `localManifestProvider` to read the local source in-process
-   * instead. When omitted, the local source keeps its HTTP behavior.
+   * Remote sources are fetched over HTTP with auth and caching; the local source fetches from
+   * `localOrigin`. In `experimentalDocgenServer` mode core 404s the local `/manifests/*.json`, and
+   * the composition reads that source through its own access instead of this provider.
    */
-  createManifestProvider(
-    localOrigin: string,
-    localManifestProvider?: ManifestProvider
-  ): ManifestProvider {
+  createManifestProvider(localOrigin: string): ManifestProvider {
     return async (request, path, source) => {
       const token = extractBearerToken(request?.headers.get('Authorization'));
       const remoteSource: RemoteSource | undefined = source?.url
         ? { ...source, url: source.url }
         : undefined;
 
-      // Local source in docgen-server mode: there is nothing to fetch over
-      // loopback, so read it in-process.
-      if (!remoteSource && localManifestProvider) {
-        return localManifestProvider(request, path, source);
-      }
-
       const baseUrl = remoteSource?.url ?? localOrigin;
-      const manifestUrl = `${baseUrl}${path.replace('./', '/')}`;
+      const manifestUrl = `${baseUrl}${path.replace(/^\.\//, '/')}`;
       const isRemote = !!remoteSource;
       const needsAuth = isRemote && this.#isAuthRequiredUrl(baseUrl);
       const tokenForRequest = needsAuth ? token : null;
@@ -276,9 +282,11 @@ export class CompositionAuth {
   /**
    * Check a ref to determine if it has a manifest and whether it requires auth.
    * Returns 'public' if the ref has a valid manifest without auth,
-   * 'no-manifest' if no manifest is available, or an AuthRequirement if auth is needed.
+   * an AuthRequirement if auth is needed, or the reason the ref has no usable manifest:
+   * 'manifest-not-found' for a non-OK or non-JSON response (SPA fallback pages land here),
+   * 'manifest-invalid' for real JSON that fails the manifest schema.
    */
-  async #checkRef(refUrl: string): Promise<'public' | 'no-manifest' | AuthRequirement> {
+  async #checkRef(refUrl: string): Promise<'public' | NoManifestReason | AuthRequirement> {
     const response = await fetch(`${refUrl}/manifests/components.json`, {
       headers: { Accept: 'application/json' },
     });
@@ -287,11 +295,17 @@ export class CompositionAuth {
     const authReq = await this.#parseAuthFromResponse(response);
     if (authReq) return authReq;
 
+    let noManifestReason: NoManifestReason = 'manifest-not-found';
+
     // 200 with valid manifest = public, has manifest
     if (response.ok) {
       const text = await response.text();
-      if (v.safeParse(v.pipe(v.string(), v.parseJson(), ComponentManifestMap), text).success) {
-        return 'public';
+      const json = v.safeParse(v.pipe(v.string(), v.parseJson()), text);
+      if (json.success) {
+        if (v.safeParse(ComponentManifestMap, json.output).success) {
+          return 'public';
+        }
+        noManifestReason = 'manifest-invalid';
       }
     }
 
@@ -299,8 +313,7 @@ export class CompositionAuth {
     const mcpAuth = await this.#checkMcpAuth(refUrl);
     if (mcpAuth) return mcpAuth;
 
-    // No manifest and no auth — this ref doesn't have manifests
-    return 'no-manifest';
+    return noManifestReason;
   }
 
   /** Check /mcp endpoint for 401 auth requirement. */

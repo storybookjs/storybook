@@ -26,7 +26,7 @@ it('forwards configured channel options and the dev server token to the manager'
     })
   );
 
-  expect(globals.CHANNEL_OPTIONS).toEqual({
+  expect(globals.CHANNEL_OPTIONS).toStrictEqual({
     maxDepth: 999,
     allowFunction: false,
     wsToken: 'ws-token',
@@ -41,11 +41,11 @@ it('forwards configured channel options to static builds, without the token', as
     })
   );
 
-  expect(globals.CHANNEL_OPTIONS).toEqual({ maxDepth: 999 });
+  expect(globals.CHANNEL_OPTIONS).toStrictEqual({ maxDepth: 999 });
 });
 
 it('defaults to empty channel options when none are configured', async () => {
   const globals = await buildFrameworkGlobalsFromOptions(createOptions('PRODUCTION'));
 
-  expect(globals.CHANNEL_OPTIONS).toEqual({});
+  expect(globals.CHANNEL_OPTIONS).toStrictEqual({});
 });

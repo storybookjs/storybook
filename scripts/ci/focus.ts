@@ -174,7 +174,10 @@ export function defineFocusJob(template: TemplateKey) {
       {
         run: {
           name: 'Copy sandbox for Chromatic',
-          command: `cp ${join(LINUX_ROOT_DIR, SANDBOX_DIR)} ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
+          command: [
+            `cp ${join(LINUX_ROOT_DIR, SANDBOX_DIR)} ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox')} -r --remove-destination`,
+            `rm -rf ${join(LINUX_ROOT_DIR, WORKING_DIR, 'sandbox', sandboxId, '.git')}`,
+          ].join('\n'),
         },
       },
       {

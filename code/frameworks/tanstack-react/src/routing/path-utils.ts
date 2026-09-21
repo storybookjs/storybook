@@ -49,13 +49,7 @@ export function isPathlessFileRouteId(id: string): boolean {
 
 type PathInterpolationSegment = string | readonly [1 | 2, string, string, string | undefined];
 
-// `@tanstack/router-core` <1.171.30 exposed `interpolatePath({ path, params })`
-// returning `{ interpolatedPath }`; 1.171.30 replaced it with
-// `interpolatePath(path, segments, params)` returning the string directly,
-// where `segments` are the precompiled route segments a processed route
-// carries on `_interpolation`. We don't have a processed route at this point,
-// so build the segments the new signature needs ourselves and pick a call
-// shape by arity, which differs between the two (1 vs 5).
+// the reason we have our own `interpolateStoryPath` is that although this is an exposed API from tanstack, it seems implicitly internal and signature can break accross patches.
 export function interpolateStoryPath(path: string, params: Record<string, unknown>): string {
   if (interpolatePath.length >= 2) {
     const positionalInterpolatePath = interpolatePath as unknown as (

@@ -116,7 +116,7 @@ export function defineFocusJob(template: TemplateKey) {
       {
         run: {
           name: 'Setup Corepack',
-          command: ['sudo corepack enable', 'which yarn', 'yarn --version'].join('\n'),
+          command: ['corepack enable', 'which yarn', 'yarn --version'].join('\n'),
         },
       },
       ...getGenerateSandboxSteps(template),

@@ -1,4 +1,5 @@
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
@@ -32,6 +33,40 @@ export const configureSWCLoader = async (
     rawRule.exclude = /^__barrel_optimize__/;
   }
 
+  const optimizePackageImports = nextConfig?.experimental?.optimizePackageImports ?? [];
+  const swcCacheDir = join(projectRoot, nextConfig?.distDir ?? '.next', 'cache', 'swc');
+
+  if (optimizePackageImports.length > 0) {
+    // swc implements `optimizePackageImports` by rewriting named imports of the
+    // configured packages into `__barrel_optimize__?names=…!=!<import>` requests
+    // (see `autoModularizeImports` in `next/dist/build/swc/options.js`). Next.js
+    // serves those requests with the `next-barrel-loader` it registers in its own
+    // webpack config. Without a loader the request falls through to the
+    // unoptimized barrel file, so every export of that barrel - including
+    // server-only code - ends up in the bundle and fails to resolve.
+    // https://github.com/storybookjs/storybook/issues/30126
+    const barrelLoader = fileURLToPath(
+      import.meta.resolve('next/dist/build/webpack/loaders/next-barrel-loader.js')
+    );
+
+    baseConfig.module?.rules?.unshift({
+      // Next.js registers this rule before its other rules, because the barrel
+      // loader emits code that might still need to be transformed.
+      test: /__barrel_optimize__/,
+      use: ({ resourceQuery = '' }: { resourceQuery?: string }) => {
+        const names = (resourceQuery.match(/\?names=([^&]+)/)?.[1] ?? '').split(',');
+        return [
+          {
+            loader: barrelLoader,
+            options: { names, swcCacheDir },
+            // This is part of the request value to serve as the module key.
+            ident: `next-barrel-loader:${resourceQuery}`,
+          },
+        ];
+      },
+    });
+  }
+
   const transpilePackages = nextConfig.transpilePackages ?? [];
 
   baseConfig.module?.rules?.push({
@@ -51,7 +86,7 @@ export const configureSWCLoader = async (
         jsConfig,
         nextConfig,
         supportedBrowsers: await getSupportedBrowsers(projectRoot, isDevelopment),
-        swcCacheDir: join(projectRoot, nextConfig?.distDir ?? '.next', 'cache', 'swc'),
+        swcCacheDir,
         bundleTarget: 'default',
       },
     },

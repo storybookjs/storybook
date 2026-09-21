@@ -52,7 +52,7 @@ const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 const play: PlayFunction = async ({ canvasElement, step }) => {
   await wait(3000);
 
-  await step('Verify the outline animation is finite', async () => {
+  await step('Verify the outline animation respects motion preferences', async () => {
     const cardContent = canvasElement.querySelector('#storybook-checklist-widget');
     await expect(cardContent).not.toBeNull();
 
@@ -60,8 +60,15 @@ const play: PlayFunction = async ({ canvasElement, step }) => {
     await expect(cardOutline).not.toBeNull();
 
     const styles = window.getComputedStyle(cardOutline!, '::before');
-    await expect(styles.animationIterationCount).toBe('1, 1');
-    await expect(styles.animationFillMode).toBe('forwards, forwards');
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    if (prefersReducedMotion) {
+      await expect(styles.animationName).toBe('none');
+      await expect(styles.opacity).toBe('0');
+    } else {
+      await expect(styles.animationIterationCount).toBe('1, 1');
+      await expect(styles.animationFillMode).toBe('forwards, forwards');
+    }
   });
 
   await step('Complete viewports task', () => {

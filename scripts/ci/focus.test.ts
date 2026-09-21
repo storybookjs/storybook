@@ -82,6 +82,14 @@ describe('defineFocusJob', () => {
         { run: expect.objectContaining({ name: 'Build sandbox' }) },
         { run: expect.objectContaining({ name: 'Run dev E2E tests' }) },
         { run: expect.objectContaining({ name: 'Run build E2E tests' }) },
+        {
+          run: expect.objectContaining({
+            name: 'Copy sandbox for Chromatic',
+            command: expect.stringContaining(
+              'rm -rf /tmp/project/sandbox/react-vite-default-ts/.git'
+            ),
+          }),
+        },
         { run: expect.objectContaining({ name: 'Run Chromatic' }) },
         { run: expect.objectContaining({ name: 'Wait for tests' }) },
       ])

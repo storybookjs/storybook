@@ -16,12 +16,10 @@ import { batch, untracked } from '@preact/signals-core';
 import { peek } from 'deepsignal/core';
 
 import { OpenServiceAsyncRecipeError } from '../../server-errors.ts';
-import { FORBIDDEN_KEYS, clonePlain } from './plain-object.ts';
+import { FORBIDDEN_KEYS, clonePlain, hasOwn } from './plain-object.ts';
+import { encodePointer, type JsonPatchOperation } from './service-channel.ts';
 
-export type RecordedOp =
-  | { op: 'add'; path: string; value: unknown }
-  | { op: 'replace'; path: string; value: unknown }
-  | { op: 'remove'; path: string };
+export type RecordedOp = JsonPatchOperation;
 
 type Touch = {
   segments: string[];
@@ -34,20 +32,8 @@ type ArrayRoot = {
   target: object;
 };
 
-export function toJsonPointer(segments: readonly string[]): string {
-  return `/${segments.map(escapePointerSegment).join('/')}`;
-}
-
-function escapePointerSegment(segment: string): string {
-  return segment.replaceAll('~', '~0').replaceAll('/', '~1');
-}
-
 function peekProp(obj: object, key: string): unknown {
   return peek(obj as never, key as never);
-}
-
-function hasOwn(obj: object, key: string): boolean {
-  return Object.prototype.hasOwnProperty.call(obj, key);
 }
 
 function isPrimitive(value: unknown): boolean {
@@ -100,7 +86,7 @@ export function recordPatch<T extends object>(
   const revokes: (() => void)[] = [];
 
   const note = (touch: Touch): void => {
-    const pointer = toJsonPointer(touch.segments);
+    const pointer = encodePointer(touch.segments);
     if (touches.has(pointer)) {
       return;
     }
@@ -265,7 +251,7 @@ export function recordPatch<T extends object>(
         if (index === 0) {
           return false;
         }
-        return touched.has(toJsonPointer(touch.segments.slice(0, index)));
+        return touched.has(encodePointer(touch.segments.slice(0, index)));
       });
       if (hasTouchedAncestor) {
         continue;

@@ -33,6 +33,9 @@ import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animati
 
 const { AbortController } = globalThis;
 
+// How long teardown waits for an aborted render to unwind before reloading the page.
+const ABORT_UNWIND_TIMEOUT = 500;
+
 export type RenderPhase =
   | 'preparing'
   | 'loading'
@@ -72,6 +75,8 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   private notYetRendered = true;
 
   private rerenderEnqueued = false;
+
+  private renderPromise?: Promise<void>;
 
   public disableKeyListeners = false;
 
@@ -176,7 +181,13 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     return this.store.getStoryContext(this.story, { forceInitialArgs });
   }
 
-  async render({
+  async render(options: { initial?: boolean; forceRemount?: boolean } = {}) {
+    // Keep a handle on the in-flight render so `teardown` can wait for it to unwind.
+    this.renderPromise = this.runRender(options);
+    return this.renderPromise;
+  }
+
+  private async runRender({
     initial = false,
     forceRemount = false,
   }: {
@@ -475,21 +486,25 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       await this.store.cleanupStory(this.story);
     }
 
-    // Check if we're done loading/rendering/playing. If not, we may have to reload the page.
-    // Wait several ticks that may be needed to handle the abort, then try again.
-    // Note that there's a max of 5 nested timeouts before they're no longer "instant".
-    for (let i = 0; i < 3; i += 1) {
-      if (!this.isPending()) {
-        // When the same story is about to be re-rendered (e.g. after an HMR update), keep
-        // the current DOM mounted until the new render commits: unmounting it here collapses
-        // the document, which makes the browser clamp the scroll position to 0 (#22057).
-        if (!keepRenderedDom) {
-          await this.teardownRender();
-        }
-        return;
-      }
+    // Aborting only asks the render to stop; the user code it is waiting on (loaders, play
+    // functions, the renderer itself) decides when it actually unwinds. Wait for the render to
+    // exit, up to a timeout. Polling a fixed number of ticks instead would reload the page on
+    // renders that were about to unwind perfectly well: a tick is not a unit of time, and a docs
+    // page renders all of its stories at once, so a render can stay pending for far longer than
+    // a single story's does (#29007).
+    await Promise.race([
+      this.renderPromise?.catch(() => {}),
+      new Promise((resolve) => setTimeout(resolve, ABORT_UNWIND_TIMEOUT)),
+    ]);
 
-      await new Promise((resolve) => setTimeout(resolve, 0));
+    if (!this.isPending()) {
+      // When the same story is about to be re-rendered (e.g. after an HMR update), keep
+      // the current DOM mounted until the new render commits: unmounting it here collapses
+      // the document, which makes the browser clamp the scroll position to 0 (#22057).
+      if (!keepRenderedDom) {
+        await this.teardownRender();
+      }
+      return;
     }
 
     // If we still haven't completed, reload the page (iframe) to ensure we have a clean slate

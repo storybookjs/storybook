@@ -1,5 +1,6 @@
 import * as path from 'node:path';
 
+import { extractDeclaredSubcomponents } from 'storybook/internal/common';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { vol } from 'memfs';
@@ -7,7 +8,6 @@ import ts from 'typescript';
 
 import { type StoryRef, getComponents } from '../getComponentImports.ts';
 import { findMatchingComponent } from '../resolveComponents.ts';
-import { extractDeclaredSubcomponents } from '../subcomponents.ts';
 import { ComponentMetaProject } from './ComponentMetaProject.ts';
 import { createTempProject, writeFiles } from './test-helpers.ts';
 
@@ -50,10 +50,11 @@ export async function withProject<T>(
   vol.fromNestedJSON(
     Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
   );
-  for (const fp of Object.values(filePaths)) {
-    fsFileSnapshots.delete(fp);
-  }
-  (sharedProject as any).projectVersion++;
+  // Report every rewritten path as changed: the tracker evicts its snapshots and bumps versions,
+  // which stays correct even when consecutive writes land within one mtime tick.
+  sharedProject.onFilesChanged(
+    Object.values(filePaths).map((filePath) => ({ filePath, type: 'changed' as const }))
+  );
   return fn(sharedProject, filePaths);
 }
 

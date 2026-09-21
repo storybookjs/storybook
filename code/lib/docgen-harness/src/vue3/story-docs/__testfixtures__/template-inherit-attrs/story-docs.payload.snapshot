@@ -1,0 +1,20 @@
+{
+  "id": "template-inherit-attrs",
+  "name": "InheritAttrsPanel",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-inherit-attrs--primary": {
+      "description": undefined,
+      "id": "forms-template-inherit-attrs--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import InheritAttrsPanel from './InheritAttrsPanel.vue';
+</script>
+
+<template>
+  <InheritAttrsPanel label="Panel" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

@@ -1,0 +1,26 @@
+{
+  "id": "setup-ref-plus-handler",
+  "name": "SetupRefPlusHandler",
+  "path": "__PATH__",
+  "stories": {
+    "forms-setup-ref-plus-handler--primary": {
+      "description": undefined,
+      "id": "forms-setup-ref-plus-handler--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+import SetupRefPlusHandler from './SetupRefPlusHandler.vue';
+
+const count = ref(0);
+const increment = () => {
+  count.value += 1;
+};
+</script>
+
+<template>
+  <SetupRefPlusHandler label="Count" :count="count" @increment="increment" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

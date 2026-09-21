@@ -1,3 +1,4 @@
+import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerExtractionService } from '../extraction-service.server.ts';
 import { storyDocsServiceDef } from './definition.ts';
@@ -23,6 +24,13 @@ export function registerStoryDocsService(options: RegisterStoryDocsServiceOption
     workingDir: options.workingDir ?? process.cwd(),
     getIndex: options.getIndex,
     provider: options.storyDocsProvider,
+    buildErrorPayload: ({ id, entry, error }) => ({
+      id,
+      name: entry.title,
+      path: getStoryImportPathFromEntry(entry) ?? entry.importPath,
+      stories: {},
+      error,
+    }),
     queryName: 'storyDocs',
     extractCommand: 'extractStoryDocs',
     extractAllCommand: 'extractAllStoryDocs',

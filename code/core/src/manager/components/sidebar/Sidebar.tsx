@@ -27,6 +27,7 @@ import { IconSymbols } from './IconSymbols.tsx';
 import ReviewWidget, { useActiveReviewStoryCount } from './ReviewWidget.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
+import { ShowChangesButton } from './ShowChangesButton.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
@@ -100,6 +101,7 @@ export interface SidebarProps extends API_LoadedRefData {
   menu: any[];
   storyId?: string;
   refId?: string;
+  anchor?: string;
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
@@ -111,6 +113,7 @@ export const Sidebar = React.memo(function Sidebar({
   // @ts-expect-error (non strict)
   storyId = null,
   refId = DEFAULT_REF_ID,
+  anchor,
   index,
   indexJson,
   indexError,
@@ -125,8 +128,10 @@ export const Sidebar = React.memo(function Sidebar({
   showCreateStoryButton = isDevelopment && isRendererReact,
 }: SidebarProps) {
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
-  // @ts-expect-error (non strict)
-  const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
+  const selected: Selection = useMemo(
+    () => (storyId ? { storyId, refId, anchor } : null),
+    [storyId, refId, anchor]
+  );
   const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
   const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
@@ -201,6 +206,7 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={<Filter />}
+            belowSearchContent={<ShowChangesButton />}
             {...lastViewedProps}
           >
             {({

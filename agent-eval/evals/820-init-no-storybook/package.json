@@ -1,0 +1,7 @@
+{
+  "name": "820-init-no-storybook",
+  "type": "module",
+  "evals": {
+    "template": "vite-app"
+  }
+}

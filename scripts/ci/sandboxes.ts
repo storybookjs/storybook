@@ -2,6 +2,7 @@ import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
@@ -16,6 +17,27 @@ import {
 } from './utils/helpers.ts';
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
+
+const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+
+/**
+ * Verifies the committed docgen baselines against the sandbox that was just built.
+ */
+function getDocgenBaselineSteps(templateKey: string) {
+  if (!sandboxTemplates.docgenServerTemplates().includes(templateKey as TemplateKey)) {
+    return [];
+  }
+
+  return [
+    {
+      run: {
+        name: 'Verify docgen baselines',
+        working_directory: DOCGEN_HARNESS_DIR,
+        command: `yarn baselines:sandbox --template ${templateKey}`,
+      },
+    },
+  ];
+}
 
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
@@ -170,6 +192,14 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
           ? [
               {
                 run: {
+                  name: 'Install npm with min-release-age support',
+                  // Node's bundled npm is older and silently ignores NPM_CONFIG_MIN_RELEASE_AGE
+                  // during scaffold; `ensureNpmSupportsMinReleaseAge` fails the generate task on it.
+                  command: `sudo npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`,
+                },
+              },
+              {
+                run: {
                   name: 'Generate Sandbox',
                   command: `yarn task generate --template ${key} --no-link -s generate --debug`,
                   environment: {
@@ -213,6 +243,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task build --template ${key} --no-link -s build`,
           },
         },
+        ...getDocgenBaselineSteps(key),
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.packSandbox(id),
         workspace.persist([sandboxArchive(id)]),

@@ -2,7 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
-  buildFlattenedNavEntries,
   buildReviewChangesSummaryHref,
   buildReviewShortcutHrefs,
   buildReviewStoryHref,
@@ -17,6 +16,7 @@ import {
   parseStoryIdFromPath,
   resolveActiveNavEntry,
   resolveNavIndex,
+  type ReviewNavEntry,
 } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
 
@@ -36,6 +36,15 @@ const reviewState: ReviewState = {
     },
   ],
 };
+
+// The flattened projection of `reviewState`, as served by the `core/review`
+// service's `flattenedEntries` query (covered in its server tests).
+const flattenedEntries: ReviewNavEntry[] = [
+  { storyId: 'story-a', collectionIndex: 0 },
+  { storyId: 'story-b', collectionIndex: 0 },
+  { storyId: 'story-a', collectionIndex: 1 },
+  { storyId: 'story-c', collectionIndex: 1 },
+];
 
 describe('buildReviewStoryHref', () => {
   it('builds a story URL with collection query param', () => {
@@ -65,19 +74,8 @@ describe('parseReviewStoryHref', () => {
   });
 });
 
-describe('buildFlattenedNavEntries', () => {
-  it('includes every story occurrence across collections', () => {
-    expect(buildFlattenedNavEntries(reviewState)).toEqual([
-      { storyId: 'story-a', collectionIndex: 0 },
-      { storyId: 'story-b', collectionIndex: 0 },
-      { storyId: 'story-a', collectionIndex: 1 },
-      { storyId: 'story-c', collectionIndex: 1 },
-    ]);
-  });
-});
-
 describe('resolveActiveNavEntry', () => {
-  const entries = buildFlattenedNavEntries(reviewState);
+  const entries = flattenedEntries;
 
   it('matches collection index when provided', () => {
     expect(resolveActiveNavEntry(entries, 'story-a', 1)).toEqual({
@@ -100,8 +98,7 @@ describe('resolveActiveNavEntry', () => {
 
 describe('resolveNavIndex', () => {
   it('returns the index in the flattened list', () => {
-    const entries = buildFlattenedNavEntries(reviewState);
-    expect(resolveNavIndex(entries, { storyId: 'story-a', collectionIndex: 1 })).toBe(2);
+    expect(resolveNavIndex(flattenedEntries, { storyId: 'story-a', collectionIndex: 1 })).toBe(2);
   });
 });
 
@@ -129,7 +126,7 @@ describe('path helpers', () => {
 });
 
 describe('getAdjacentReviewEntries', () => {
-  const sequence = buildFlattenedNavEntries(reviewState);
+  const sequence = flattenedEntries;
 
   it('crosses into the next collection at a collection boundary', () => {
     expect(getAdjacentReviewEntries(sequence, 1)?.next).toEqual({
@@ -158,7 +155,7 @@ describe('getAdjacentReviewEntries', () => {
 });
 
 describe('buildReviewShortcutHrefs', () => {
-  const sequence = buildFlattenedNavEntries(reviewState);
+  const sequence = flattenedEntries;
   const { collections } = reviewState;
 
   it('omits the previous target at the first story so it does not wrap', () => {

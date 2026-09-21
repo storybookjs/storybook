@@ -310,7 +310,7 @@ describe('TestManager', () => {
     expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(tests.slice(0, 1), false);
   });
 
-  it('should persist all reports in currentRun', async () => {
+  it('should persist all reports on TEST_RUN_COMPLETED without writing them into currentRun', async () => {
     const testManager = await TestManager.start(options);
     const passedResult = {
       state: 'passed',
@@ -344,9 +344,124 @@ describe('TestManager', () => {
       },
     });
 
-    expect(mockStore.getState().currentRun.reports['story--one']).toEqual([
-      { type: 'a11y', status: 'passed', result: { id: 'a11y-report' } },
-      { type: 'custom', status: 'passed', result: { id: 'custom-report' } },
+    const completed = vi
+      .mocked(mockStore.send)
+      .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED');
+    expect(completed?.[0]).toEqual(
+      expect.objectContaining({
+        type: 'TEST_RUN_COMPLETED',
+        payload: expect.objectContaining({
+          reports: {
+            'story--one': [
+              { type: 'a11y', status: 'passed', result: { id: 'a11y-report' } },
+              { type: 'custom', status: 'passed', result: { id: 'custom-report' } },
+            ],
+          },
+        }),
+      })
+    );
+    expect(mockStore.getState().currentRun.reports).toEqual({});
+  });
+
+  it('keeps per-flush synced state bounded and materializes full results at run end', async () => {
+    const testManager = await TestManager.start(options);
+    const passedResult = {
+      state: 'passed',
+      errors: [],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one', 'story--two'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({
+          storyId: 'story--one',
+          testResult: passedResult,
+          reports: [{ type: 'a11y', status: 'passed', result: { id: 'a11y-1' } } as Report],
+        });
+        testManager.throttledFlushTestCaseResults.flush();
+
+        expect(mockStore.getState().currentRun.componentTestStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.a11yStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.reports).toEqual({});
+        expect(mockStore.getState().currentRun.a11yReports).toEqual({});
+        expect(mockStore.getState().currentRun.componentTestCount.success).toBe(1);
+
+        testManager.onTestCaseResult({
+          storyId: 'story--two',
+          testResult: passedResult,
+        });
+        testManager.throttledFlushTestCaseResults.flush();
+
+        expect(mockStore.getState().currentRun.componentTestStatuses).toHaveLength(0);
+        expect(mockStore.getState().currentRun.componentTestCount.success).toBe(2);
+
+        testManager.onTestRunEnd({ totalTestCount: 2, unhandledErrors: [] });
+      },
+    });
+
+    const { currentRun } = mockStore.getState();
+    expect(currentRun.componentTestStatuses).toHaveLength(0);
+    expect(currentRun.a11yStatuses).toHaveLength(0);
+    expect(currentRun.reports).toEqual({});
+    expect(currentRun.a11yReports).toEqual({});
+
+    const completed = vi
+      .mocked(mockStore.send)
+      .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED');
+    expect(completed?.[0]).toEqual(
+      expect.objectContaining({
+        type: 'TEST_RUN_COMPLETED',
+        payload: expect.objectContaining({
+          componentTestStatuses: [
+            expect.objectContaining({ storyId: 'story--one' }),
+            expect.objectContaining({ storyId: 'story--two' }),
+          ],
+          a11yStatuses: [expect.objectContaining({ storyId: 'story--one' })],
+          reports: { 'story--one': [expect.objectContaining({ type: 'a11y' })] },
+          a11yReports: { 'story--one': [{ id: 'a11y-1' }] },
+        }),
+      })
+    );
+  });
+
+  it('should describe failures with the source-mapped frames rather than the raw browser stack', async () => {
+    const testManager = await TestManager.start(options);
+    const failedResult = {
+      state: 'failed',
+      errors: [
+        {
+          message:
+            '\n\x1B[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/story--one\x1B[39m\n\nexpect(element).toBeInTheDocument()',
+          stack:
+            'Error: expect(element).toBeInTheDocument()\n    at Proxy.expectWrapper (http://localhost:6006/deps/storybook_test.js?v=8c5dc1d5:13691:16)',
+          stacks: [
+            {
+              method: 'toBeInTheDocument',
+              file: '/project/src/stories/Page.stories.ts',
+              line: 30,
+              column: 60,
+            },
+          ],
+        },
+      ],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({ storyId: 'story--one', testResult: failedResult });
+        testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith([
+      expect.objectContaining({
+        storyId: 'story--one',
+        description:
+          'expect(element).toBeInTheDocument()\n    at toBeInTheDocument (/project/src/stories/Page.stories.ts:30:60)',
+      }),
     ]);
   });
 

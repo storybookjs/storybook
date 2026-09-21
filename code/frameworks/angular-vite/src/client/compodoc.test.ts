@@ -1,136 +1,65 @@
-import { describe, expect, it } from 'vitest';
+// How this framework's `propsTable` mode reaches the legacy Compodoc adapter. The module reads
+// `STORYBOOK_ANGULAR_OPTIONS` at evaluation time, so every case re-imports it fresh.
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { extractType, setCompodocJson } from './compodoc.ts';
-import type { CompodocJson, Decorator } from './compodoc-types.ts';
+import type { CompodocJson, Directive } from './compodoc-types.ts';
 
-const makeProperty = (compodocType?: string) => ({
-  type: compodocType,
-  name: 'dummy',
-  decorators: [] as Decorator[],
-  optional: true,
-});
-
-const getDummyCompodocJson = () => {
-  return {
-    miscellaneous: {
-      typealiases: [
-        {
-          name: 'EnumAlias',
-          ctype: 'miscellaneous',
-          subtype: 'typealias',
-          rawtype: 'EnumNumeric',
-          file: 'src/stories/component-with-enums/enums.component.ts',
-          description: '',
-          kind: 161,
-        },
-        {
-          name: 'TypeAlias',
-          ctype: 'miscellaneous',
-          subtype: 'typealias',
-          rawtype: '"Type Alias 1" | "Type Alias 2" | "Type Alias 3"',
-          file: 'src/stories/component-with-enums/enums.component.ts',
-          description: '',
-          kind: 168,
-        },
-      ],
-      enumerations: [
-        {
-          name: 'EnumNumeric',
-          childs: [
-            {
-              name: 'FIRST',
-            },
-            {
-              name: 'SECOND',
-            },
-            {
-              name: 'THIRD',
-            },
-          ],
-          ctype: 'miscellaneous',
-          subtype: 'enum',
-          description: '<p>Button Priority</p>\n',
-          file: 'src/stories/component-with-enums/enums.component.ts',
-        },
-        {
-          name: 'EnumNumericInitial',
-          childs: [
-            {
-              name: 'UNO',
-              value: '1',
-            },
-            {
-              name: 'DOS',
-            },
-            {
-              name: 'TRES',
-            },
-          ],
-          ctype: 'miscellaneous',
-          subtype: 'enum',
-          description: '',
-          file: 'src/stories/component-with-enums/enums.component.ts',
-        },
-        {
-          name: 'EnumStringValues',
-          childs: [
-            {
-              name: 'PRIMARY',
-              value: 'PRIMARY',
-            },
-            {
-              name: 'SECONDARY',
-              value: 'SECONDARY',
-            },
-            {
-              name: 'TERTIARY',
-              value: 'TERTIARY',
-            },
-          ],
-          ctype: 'miscellaneous',
-          subtype: 'enum',
-          description: '',
-          file: 'src/stories/component-with-enums/enums.component.ts',
-        },
-      ],
-    },
-  } as CompodocJson;
+const compodocJson: Partial<CompodocJson> = {
+  components: [],
+  directives: [],
+  pipes: [],
+  injectables: [],
+  classes: [],
+  miscellaneous: { typealiases: [], enumerations: [] } as never,
 };
 
-describe('extractType', () => {
-  describe('with compodoc type', () => {
-    setCompodocJson(getDummyCompodocJson());
-    it.each([
-      ['string', { name: 'string' }],
-      ['boolean', { name: 'boolean' }],
-      ['number', { name: 'number' }],
-      // ['object', { name: 'object' }], // seems to be wrong | TODO: REVISIT
-      // ['foo', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
-      [null, { name: 'other', value: 'void' }],
-      [undefined, { name: 'other', value: 'void' }],
-      // ['T[]', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
-      ['[]', { name: 'other', value: 'empty-enum' }],
-      ['"primary" | "secondary"', { name: 'enum', value: ['primary', 'secondary'] }],
-      ['TypeAlias', { name: 'enum', value: ['Type Alias 1', 'Type Alias 2', 'Type Alias 3'] }],
-      // ['EnumNumeric', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
-      // ['EnumNumericInitial', { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
-      ['EnumStringValues', { name: 'enum', value: ['PRIMARY', 'SECONDARY', 'TERTIARY'] }],
-    ])('%s', (compodocType, expected) => {
-      expect(extractType(makeProperty(compodocType), null)).toEqual(expected);
-    });
+const componentData: Partial<Directive> = {
+  name: 'ProbeComponent',
+  type: 'component',
+  inputsClass: [{ name: 'label', type: 'string', optional: false }],
+  outputsClass: [],
+  propertiesClass: [{ name: 'note', type: 'string', optional: false }],
+  methodsClass: [],
+};
+
+const extractedNames = async () => {
+  const { extractArgTypesFromData } = await import('./compodoc.ts');
+  return Object.keys(extractArgTypesFromData(componentData as never));
+};
+
+beforeEach(() => {
+  vi.resetModules();
+  vi.stubGlobal('FEATURES', { angularFilterNonInputControls: false });
+  vi.stubGlobal('__STORYBOOK_COMPODOC_JSON__', compodocJson);
+});
+
+afterEach(() => {
+  vi.unstubAllGlobals();
+});
+
+describe('resolving propsTable for the Compodoc pipeline', () => {
+  it("maps 'inputs' onto the legacy inputs-only filter", async () => {
+    vi.stubGlobal('STORYBOOK_ANGULAR_OPTIONS', { zoneless: true, propsTable: 'inputs' });
+
+    await expect(extractedNames()).resolves.toEqual(['label']);
   });
 
-  describe('without compodoc type', () => {
-    it.each([
-      ['string', { name: 'string' }],
-      ['', { name: 'string' }],
-      [false, { name: 'boolean' }],
-      [10, { name: 'number' }],
-      // [['abc'], { name: 'object' }], // seems to be wrong | TODO: REVISIT
-      // [{ foo: 1 }, { name: 'other', value: 'empty-enum' }], // seems to be wrong | TODO: REVISIT
-      [undefined, { name: 'other', value: 'void' }],
-    ])('%s', (defaultValue, expected) => {
-      expect(extractType(makeProperty(null), defaultValue)).toEqual(expected);
-    });
+  it("reads 'api' as all, because Compodoc's visibility is not interpretable here", async () => {
+    vi.stubGlobal('STORYBOOK_ANGULAR_OPTIONS', { zoneless: true, propsTable: 'api' });
+
+    await expect(extractedNames()).resolves.toEqual(['note', 'label']);
+  });
+
+  it("overrides the deprecated feature whenever a mode is defined, 'all' included", async () => {
+    vi.stubGlobal('FEATURES', { angularFilterNonInputControls: true });
+    vi.stubGlobal('STORYBOOK_ANGULAR_OPTIONS', { zoneless: true, propsTable: 'all' });
+
+    await expect(extractedNames()).resolves.toEqual(['note', 'label']);
+  });
+
+  it('falls back to the deprecated feature when the define never ran', async () => {
+    vi.stubGlobal('FEATURES', { angularFilterNonInputControls: true });
+
+    await expect(extractedNames()).resolves.toEqual(['label']);
   });
 });

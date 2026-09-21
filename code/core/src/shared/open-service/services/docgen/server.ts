@@ -1,3 +1,4 @@
+import { getStoryImportPathFromEntry } from '../../../../common/utils/select-component-entry.ts';
 import type { StoryIndex } from '../../../../types/modules/indexer.ts';
 import { registerExtractionService } from '../extraction-service.server.ts';
 import { docgenServiceDef } from './definition.ts';
@@ -20,6 +21,13 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     workingDir: options.workingDir ?? process.cwd(),
     getIndex: options.getIndex,
     provider: options.docgenProvider,
+    buildErrorPayload: ({ id, entry, error }) => ({
+      id,
+      name: entry.title,
+      path: getStoryImportPathFromEntry(entry) ?? entry.importPath,
+      jsDocTags: {},
+      error,
+    }),
     queryName: 'docgen',
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',

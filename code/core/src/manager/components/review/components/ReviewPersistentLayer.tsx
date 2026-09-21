@@ -3,9 +3,13 @@ import React, { type FC } from 'react';
 import { ReviewSummaryHost } from '../screens/ReviewSummaryHost.tsx';
 import { useReviewNavigationInterceptor } from '../useReviewNavigationInterceptor.ts';
 import { ReviewNotification } from './ReviewNotification.tsx';
-import { ReviewProvider } from './ReviewProvider.tsx';
 
-const ReviewNavigationLayer: FC = () => {
+/**
+ * Always-mounted review layer, rendered in the Layout's overlay slot beneath the
+ * app-level ReviewProvider. Hosts the navigation interceptor/shortcuts, the
+ * arrival notification, and the summary host so review survives story navigation.
+ */
+export const ReviewPersistentLayer: FC = () => {
   useReviewNavigationInterceptor();
 
   return (
@@ -15,14 +19,3 @@ const ReviewNavigationLayer: FC = () => {
     </>
   );
 };
-
-/**
- * Always-mounted review layer, rendered in the Layout's overlay slot. Hosts the review state
- * provider, navigation interceptor/shortcuts, and the summary host so review survives story
- * navigation. Self-gates: the provider stays dormant until a review is pushed.
- */
-export const ReviewPersistentLayer: FC = () => (
-  <ReviewProvider>
-    <ReviewNavigationLayer />
-  </ReviewProvider>
-);

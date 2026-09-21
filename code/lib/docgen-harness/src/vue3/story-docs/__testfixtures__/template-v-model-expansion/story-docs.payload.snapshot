@@ -1,0 +1,23 @@
+{
+  "id": "template-v-model-expansion",
+  "name": "TemplateVModelExpansion",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-v-model-expansion--primary": {
+      "description": undefined,
+      "id": "forms-template-v-model-expansion--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+import TemplateVModelExpansion from './TemplateVModelExpansion.vue';
+
+const modelValue = ref('Draft text');
+</script>
+
+<template>
+  <TemplateVModelExpansion label="Message" v-model="modelValue" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

@@ -73,6 +73,20 @@ In addition to running the command, we also recommend checking the [MIGRATION.md
 
 </Callout>
 
+### Experimental feature flags
+
+When an upgrade crosses into Storybook 10.5, the automigration step additionally offers to enable the experimental [`experimentalReview`](../api/main-config/main-config-features.mdx#experimentalreview) and [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver) feature flags.
+These are strictly opt-in and are never enabled on your behalf: they appear unchecked in the automigration prompt, and, unless you name them with `--features`, `--yes` skips them along with the other migrations that require a deliberate choice.
+If your configuration already sets one of them, to either `true` or `false`, that choice is left untouched and the flag is not offered.
+
+To preselect them, including on a project that is already on 10.5 or later, list them with the [`--features` flag](../api/cli-options.mdx#upgrade):
+
+```bash
+storybook@latest upgrade --features experimentalReview,experimentalDocgenServer
+```
+
+`experimentalDocgenServer` is only offered on frameworks that provide server-side docgen.
+
 ### Automatic health check
 
 The upgrade script automatically runs a health check on all detected Storybook projects after the upgrade. This verifies that the upgrade was completed successfully and checks for common issues that might arise after an upgrade, such as duplicated dependencies, incompatible addons, or mismatched versions.
@@ -97,20 +111,7 @@ The upgrade command supports several flags to customize the upgrade process:
 storybook@latest upgrade [options]
 ```
 
-### Available flags
-
-| Flag                             | Description                                                                                                                    |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `-c, --config-dir <dir-name...>` | Directory or directories to find Storybook configurations                                                                      |
-| `--debug`                        | Enable more logs for debugging (default: false)                                                                                |
-| `--disable-telemetry`            | Disable sending telemetry data                                                                                                 |
-| `--enable-crash-reports`         | Enable sending crash reports to telemetry data                                                                                 |
-| `-f, --force`                    | Force the upgrade, skipping autoblockers                                                                                       |
-| `--loglevel <level>`             | Define log level: `debug`, `error`, `info`, `silent`, `trace`, or `warn` (default: `info`)                                     |
-| `--package-manager <manager>`    | Force package manager: `npm`, `pnpm`, `yarn1`, `yarn2`, or `bun`                                                               |
-| `-s, --skip-check`               | Skip postinstall version and automigration checks                                                                              |
-| `--logfile [path]`               | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided. |
-| `-y, --yes`                      | Skip prompting the user                                                                                                        |
+See the [`upgrade` command reference](../api/cli-options.mdx#upgrade) for the full list of supported flags.
 
 ### Example usage
 

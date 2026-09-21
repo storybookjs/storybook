@@ -1,4 +1,3 @@
-import { detectPnp } from 'storybook/internal/cli';
 import {
   getAbsolutePathWrapperAsCallExpression,
   getAbsolutePathWrapperName,
@@ -17,7 +16,6 @@ import type { Fix } from '../types.ts';
 export interface WrapGetAbsolutePathRunOptions {
   storybookVersion: string;
   isStorybookInMonorepo: boolean;
-  isPnp: boolean;
   isConfigTypescript: boolean;
 }
 
@@ -27,7 +25,6 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
 
   async check({ packageManager, storybookVersion, mainConfigPath }) {
     const isStorybookInMonorepo = packageManager.isStorybookInMonorepo();
-    const isPnp = await detectPnp();
 
     if (!mainConfigPath) {
       return null;
@@ -35,7 +32,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
 
     const config = await readConfig(mainConfigPath);
 
-    if (!isStorybookInMonorepo && !isPnp) {
+    if (!isStorybookInMonorepo) {
       return null;
     }
 
@@ -49,11 +46,11 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
 
     const isConfigTypescript = mainConfigPath.endsWith('.ts') || mainConfigPath.endsWith('.tsx');
 
-    return { storybookVersion, isStorybookInMonorepo, isPnp, isConfigTypescript };
+    return { storybookVersion, isStorybookInMonorepo, isConfigTypescript };
   },
 
   prompt() {
-    return dedent`We have detected that you're using Storybook in a monorepo or PnP project. Some fields in your main config must be updated.`;
+    return dedent`We have detected that you're using Storybook in a monorepo. Some fields in your main config must be updated.`;
   },
 
   async run({ dryRun, mainConfigPath, result }) {

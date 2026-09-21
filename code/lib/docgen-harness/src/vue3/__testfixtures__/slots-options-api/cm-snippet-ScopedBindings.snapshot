@@ -1,0 +1,5 @@
+<template>
+  <OptionsApiSlots>
+    <template #item="{ entry, index }"><em>{{ index }}: {{ entry }}</em></template>
+  </OptionsApiSlots>
+</template>

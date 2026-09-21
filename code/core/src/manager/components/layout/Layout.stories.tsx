@@ -94,12 +94,19 @@ const mockManagerStore: any = {
         renderLabel,
       },
     },
+    // MobileNavigation reads the drawer's open state from `layout` and `enableShortcuts` from `ui`.
+    layout: { showMobileNavigation: false },
+    ui: { enableShortcuts: true },
   },
   api: {
     getCurrentStoryData: fn(() => {
       return mockManagerStore.state.index.someStoryId;
     }),
     getNavAvailability: fn(() => 'shown'),
+    // MobileNavigation reads the nav shortcut and resets the drawer on unmount; stub both so the
+    // mobile stories render and tear down cleanly.
+    getShortcutKeys: fn(() => ({ toggleNav: ['alt', 'S'] })),
+    setMobileNavigation: fn(),
   },
 };
 
@@ -507,6 +514,27 @@ export const MobileDocs = {
   ...Mobile,
   args: {
     managerLayoutState: { ...defaultState, viewMode: 'docs' },
+  },
+};
+
+// Pages taller than the viewport must scroll internally on mobile; the layout root hides overflow,
+// so a pages container sized by its content would leave no way to reach the rest (regression test).
+export const MobilePages: Story = {
+  ...Mobile,
+  args: {
+    managerLayoutState: { ...defaultState, viewMode: 'settings' },
+    slotPages: (
+      <div data-testid="pages" style={{ overflow: 'auto' }}>
+        <div style={{ height: 2000 }}>tall page content</div>
+      </div>
+    ),
+  },
+  play: async ({ canvas }) => {
+    const main = await canvas.findByRole('main', { name: 'Main content' });
+    expect(main.getBoundingClientRect().height).toBeLessThanOrEqual(window.innerHeight);
+
+    const pages = canvas.getByTestId('pages');
+    expect(pages.scrollHeight).toBeGreaterThan(pages.clientHeight);
   },
 };
 

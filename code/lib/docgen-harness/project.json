@@ -6,6 +6,7 @@
     "compile": {},
     "check": {
       "executor": "nx:run-commands",
+      "dependsOn": [],
       "options": { "cwd": "{projectRoot}", "command": "vue-tsc --noEmit" }
     }
   },

@@ -56,6 +56,7 @@ export default {
     'version',
   ],
   'react-dom/client': ['createRoot', 'hydrateRoot'],
+  'react-aria/FocusScope': ['FocusScope', 'useFocusManager'],
   '@storybook/icons': [
     'AccessibilityAltIcon',
     'AccessibilityIcon',
@@ -488,8 +489,8 @@ export default {
   'storybook/internal/channels': [
     'Channel',
     'HEARTBEAT_INTERVAL',
-    'HEARTBEAT_MAX_LATENCY',
     'PostMessageTransport',
+    'SERVER_CHANNEL_PATH',
     'WebsocketTransport',
     'clearChannel',
     'createBrowserChannel',

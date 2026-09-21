@@ -3,6 +3,8 @@
 // exports condition), which is authored under `strict: false` and cannot join this
 // package's strict vue-tsc program. public-types.ts and its type-only graph can.
 export type {
+  AngularRenderer,
   Meta,
+  StoryFn,
   StoryObj,
 } from '../../../../frameworks/angular-vite/src/client/public-types.ts';

@@ -23,8 +23,15 @@ export async function getCodeWorkspaces(includePrivate = true) {
     .map((it) => {
       return {
         name: it.name,
-        // strip code from the location for backwards compatibility
-        location: it.location === 'code' ? '.' : it.location.replace('code/', ''),
+        // strip code from the location for backwards compatibility; workspaces
+        // outside code/ (e.g. agent-eval) resolve via a parent-relative path so
+        // callers can keep joining locations onto the code directory
+        location:
+          it.location === 'code'
+            ? '.'
+            : it.location.startsWith('code/')
+              ? it.location.replace('code/', '')
+              : `../${it.location}`,
       };
     }) as Workspace[];
 }

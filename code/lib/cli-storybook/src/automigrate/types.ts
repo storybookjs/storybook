@@ -7,6 +7,13 @@ export interface CheckOptions {
   configDir?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
+  /** Version installed before the upgrade. Only set when running as part of `storybook upgrade`. */
+  beforeVersion?: string;
+  /**
+   * The user named this fix explicitly (`storybook automigrate <fixId>` or `storybook upgrade
+   * --features <flag>`). Opt-in fixes may treat this as consent and skip their own gating.
+   */
+  requested?: boolean;
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
@@ -76,7 +83,7 @@ export type Fix<ResultType = any> =
 export type CommandFix<ResultType = any> = {
   promptType: PromptType<ResultType, 'command'>;
   run: (options: RunOptions<ResultType>) => Promise<void>;
-} & Omit<BaseFix<ResultType>, 'versionRange' | 'check' | 'prompt'>;
+} & Omit<BaseFix<ResultType>, 'check' | 'prompt'>;
 
 export type FixId = string;
 

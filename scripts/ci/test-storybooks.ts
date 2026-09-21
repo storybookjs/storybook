@@ -3,13 +3,7 @@ import { join } from 'path/posix';
 
 import { build_linux } from './common-jobs.ts';
 import { artifact, workflow } from './utils/helpers.ts';
-import {
-  type JobOrNoOpJob,
-  type Workflow,
-  defineJob,
-  defineNoOpJob,
-  isWorkflowOrAbove,
-} from './utils/types.ts';
+import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 export function definePortableStoryTest(directory: string) {
   const working_directory = `test-storybooks/portable-stories-kitchen-sink/${directory}`;
@@ -51,13 +45,6 @@ export function definePortableStoryTest(directory: string) {
             command: 'yarn vitest',
           },
         },
-        {
-          run: {
-            name: 'Run Playwright CT tests',
-            working_directory,
-            command: 'yarn playwright-ct',
-          },
-        },
         ...(scripts['playwright-e2e']
           ? [
               {
@@ -83,53 +70,29 @@ export function definePortableStoryTest(directory: string) {
   );
 }
 
-export function definePortableStoryTestPNP() {
+export function defineMcpTestStorybook() {
   return defineJob(
-    'test-storybooks-pnp',
-    () => ({
-      executor: {
-        name: 'sb_node_22_classic',
-        class: 'medium',
-      },
-      steps: [
-        ...workflow.restoreLinux(),
-        {
-          run: {
-            name: 'Install dependencies',
-            working_directory: 'test-storybooks/yarn-pnp',
-            command: 'yarn install --no-immutable',
-            environment: {
-              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
-            },
-          },
-        },
-        {
-          run: {
-            name: 'Run Storybook smoke test',
-            working_directory: 'test-storybooks/yarn-pnp',
-            command: 'yarn storybook --smoke-test',
-          },
-        },
-      ],
-    }),
-    [testStorybooksNoOpJob]
-  );
-}
-
-export function definePortableStoryTestVitest3() {
-  return defineJob(
-    'test-storybooks-portable-vitest3',
+    'test-storybooks-mcp',
     () => ({
       executor: {
         name: 'sb_playwright',
-        class: 'medium',
+        class: 'medium+',
       },
       steps: [
         ...workflow.restoreLinux(),
         {
+          // Yarn's file: protocol checksums the whole package directory (including
+          // nested node_modules/.cache). A bloated jiti cache under code/core OOMs
+          // libzip with "Malloc failure" during resolution.
+          run: {
+            name: 'Clear nested package caches before file: install',
+            command: 'find code -type d -path "*/node_modules/.cache" -prune -exec rm -rf {} +',
+          },
+        },
+        {
           run: {
             name: 'Install dependencies',
-            working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
+            working_directory: 'test-storybooks/mcp',
             command: 'yarn install --no-immutable',
             environment: {
               YARN_ENABLE_IMMUTABLE_INSTALLS: false,
@@ -138,9 +101,16 @@ export function definePortableStoryTestVitest3() {
         },
         {
           run: {
-            name: 'Run Playwright E2E tests',
-            working_directory: 'test-storybooks/portable-stories-kitchen-sink/react-vitest-3',
-            command: 'yarn playwright-e2e',
+            name: 'Run MCP addon e2e tests',
+            working_directory: 'test-storybooks/mcp',
+            command: 'yarn vitest run --project=e2e',
+          },
+        },
+        {
+          run: {
+            name: 'Run internal Storybook story tests',
+            working_directory: 'test-storybooks/mcp',
+            command: 'yarn vitest run --project=storybook',
           },
         },
       ],
@@ -151,18 +121,12 @@ export function definePortableStoryTestVitest3() {
 
 export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
-export function getTestStorybooks(workflow: Workflow) {
+export function getTestStorybooks() {
   const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3', 'svelte', 'nextjs'].map(
     definePortableStoryTest
   );
 
-  if (isWorkflowOrAbove(workflow, 'daily')) {
-    testStorybooks.push(definePortableStoryTestPNP());
-  }
-
-  if (isWorkflowOrAbove(workflow, 'merged')) {
-    testStorybooks.push(definePortableStoryTestVitest3());
-  }
+  testStorybooks.push(defineMcpTestStorybook());
 
   return testStorybooks;
 }

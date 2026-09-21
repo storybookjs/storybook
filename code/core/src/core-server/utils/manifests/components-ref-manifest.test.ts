@@ -159,6 +159,35 @@ describe('components-ref-manifest', () => {
     expect(Object.keys(merged.stories)).toEqual(['button--primary', 'button--secondary']);
   });
 
+  it('carries a story warning into the manifest alongside its snippet', () => {
+    const docgen: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+    };
+    const storyDocs: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button />',
+          warning: 'Incomplete snippet: `...sharedArgs` could not be resolved statically.',
+        },
+      },
+    };
+
+    expect(mergeManifestPayloads(docgen, storyDocs).stories['button--primary']).toEqual({
+      id: 'button--primary',
+      name: 'Primary',
+      snippet: '<Button />',
+      warning: 'Incomplete snippet: `...sharedArgs` could not be resolved statically.',
+    });
+  });
+
   it('loads story-docs payloads from built snapshots on disk', async () => {
     const payload: StoryDocsPayload = {
       id: 'button',
@@ -201,6 +230,34 @@ describe('components-ref-manifest', () => {
   it('builds a minimal index entry (no docgen ref) when a payload is missing', () => {
     expect(toComponentManifestIndexEntries(['button'], {})).toEqual({
       button: { id: 'button', name: 'button' },
+    });
+  });
+
+  it('keeps the story-docs ref when no docgen payload was extracted', () => {
+    const storyDocs: StoryDocsPayload = {
+      id: 'abstractions-billboard',
+      name: 'Billboard',
+      path: './billboard.stories.ts',
+      stories: {
+        'abstractions-billboard--default': {
+          id: 'abstractions-billboard--default',
+          name: 'Default',
+        },
+      },
+    };
+
+    expect(
+      toComponentManifestIndexEntries(
+        ['abstractions-billboard'],
+        {},
+        { 'abstractions-billboard': storyDocs }
+      )
+    ).toEqual({
+      'abstractions-billboard': {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: { $ref: storyDocsManifestRef('abstractions-billboard') },
+      },
     });
   });
 });

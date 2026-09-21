@@ -1,0 +1,245 @@
+name: Agent eval
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - labeled
+  workflow_dispatch:
+    inputs:
+      eval_only:
+        description: 'Comma-separated eval names to run (overrides extra_evals), e.g. 803-edit-component'
+        type: string
+        default: ''
+      extra_evals:
+        description: 'Run the full 8xx eval line instead of only the default eval'
+        type: boolean
+        default: false
+      extra_models:
+        description: 'Also run evals for non-default model experiments (e.g. cc-plugin-sonnet-medium)'
+        type: boolean
+        default: false
+      storybook_latest:
+        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local build'
+        type: boolean
+        default: false
+      review:
+        description: 'Enable the experimentalReview feature flag in eval sandboxes and assert the review workflow'
+        type: boolean
+        default: false
+
+concurrency:
+  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  VERCEL_PROJECT_NAME: storybook-evals
+
+jobs:
+  eval:
+    name: Run agent eval experiments
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (!github.event.pull_request.head.repo.fork &&
+        contains(github.event.pull_request.labels.*.name, 'ci:eval'))
+    runs-on: ubuntu-latest
+    environment:
+      # Keep this rule in sync with the Resolve Vercel target step below.
+      # GitHub evaluates environment.name before step outputs exist.
+      name: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/next' && 'production' || 'preview' }}
+      url: ${{ steps.deploy_playground.outputs.url }}
+    permissions:
+      contents: read
+      deployments: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build local MCP packages
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+
+      - name: Type check agent eval config
+        run: yarn workspace agent-eval run typecheck
+
+      - name: Check playground route shims
+        run: yarn workspace agent-eval run playground:check-routes
+
+      - name: Validate Vercel credentials
+        shell: bash
+        env:
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+        run: |
+          missing=0
+
+          for name in VERCEL_PROJECT_ID VERCEL_TOKEN VERCEL_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error title=Missing Vercel secret::$name is required for Vercel Sandbox evals and the preview playground deployment."
+              missing=1
+            fi
+          done
+
+          exit "$missing"
+
+      - name: Run all experiments
+        id: run_evals
+        run: yarn workspace agent-eval run eval
+        env:
+          # PR labels (ci:extra-evals, ci:extra-models) and workflow_dispatch
+          # inputs both opt in; unlabeled ci:eval runs stay minimal.
+          EVAL_ONLY: ${{ inputs.eval_only || '' }}
+          EVAL_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
+          EVAL_EXTRA_MODELS: ${{ (inputs.extra_models || contains(github.event.pull_request.labels.*.name, 'ci:extra-models')) && '1' || '' }}
+          EVAL_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && '1' || '' }}
+          EVAL_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && '1' || '' }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+
+      - name: Check eval results
+        if: ${{ always() }}
+        id: check_results
+        shell: bash
+        run: |
+          if [[ ! -d agent-eval/results ]]; then
+            echo "::error title=Missing eval results::Expected agent-eval/results to exist before deploying the playground."
+            exit 1
+          fi
+
+          if ! find agent-eval/results -type f -print -quit | grep -q .; then
+            echo "::error title=No eval result files::Expected agent-eval/results to contain files before deploying the playground."
+            exit 1
+          fi
+
+          echo "has_result_files=true" >> "$GITHUB_OUTPUT"
+
+      - name: Archive eval results
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        # Tar before upload: result files may contain characters (e.g. the colon
+        # in test:stories output names) that actions/upload-artifact rejects.
+        run: tar -czf agent-eval-results.tgz -C agent-eval results
+
+      - name: Upload eval results
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: agent-eval-results
+          path: agent-eval-results.tgz
+          retention-days: 30
+
+      - name: Resolve Vercel target
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        id: vercel_target
+        shell: bash
+        run: |
+          # Keep this rule in sync with jobs.eval.environment.name above.
+          if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" && "$GITHUB_REF" == "refs/heads/next" ]]; then
+            echo "target=production" >> "$GITHUB_OUTPUT"
+          else
+            echo "target=preview" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Vercel CLI commands run from the repository root: the storybook-evals
+      # project's Root Directory setting is agent-eval, and in a monorepo the
+      # CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
+      # or `deploy --prebuilt` resolves trace paths against the wrong base.
+      - name: Link Vercel project
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+        run: ./agent-eval/node_modules/.bin/vercel link --yes --team "$VERCEL_TEAM_ID" --project "$VERCEL_PROJECT_NAME" --token "$VERCEL_TOKEN"
+
+      - name: Pull Vercel environment
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
+        run: |
+          if [[ "$VERCEL_TARGET" == "production" ]]; then
+            ./agent-eval/node_modules/.bin/vercel pull --yes --environment=production --token "$VERCEL_TOKEN"
+          else
+            branch="${GITHUB_HEAD_REF:-$GITHUB_REF_NAME}"
+            ./agent-eval/node_modules/.bin/vercel pull --yes --environment=preview --git-branch "$branch" --token "$VERCEL_TOKEN"
+          fi
+
+      - name: Build playground
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        id: build_playground
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
+        run: ./agent-eval/node_modules/.bin/vercel build --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN"
+
+      - name: Deploy playground
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' && steps.build_playground.outcome == 'success' }}
+        id: deploy_playground
+        shell: bash
+        env:
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
+        run: |
+          deploy_output="$(./agent-eval/node_modules/.bin/vercel deploy --prebuilt --yes --target="$VERCEL_TARGET" --token "$VERCEL_TOKEN")"
+          printf '%s\n' "$deploy_output"
+
+          url="$(
+            printf '%s\n' "$deploy_output" |
+              awk '/https:\/\/[^[:space:]]+\.vercel\.app/ { match($0, /https:\/\/[^[:space:]]+\.vercel\.app[^[:space:]]*/); if (RSTART) found=substr($0,RSTART,RLENGTH) } END { print found }'
+          )"
+
+          if [[ -z "$url" ]]; then
+            echo "::error title=Missing deployment URL::Vercel deploy did not print a deployment URL."
+            exit 1
+          fi
+
+          echo "url=$url" >> "$GITHUB_OUTPUT"
+
+      - name: Update PR description with eval results
+        if: ${{ always() && github.event_name == 'pull_request' && steps.check_results.outputs.has_result_files == 'true' }}
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          summary="$(node agent-eval/scripts/render-results-summary.mjs)"
+          body="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq '.body // ""')"
+
+          printf '%s' "$body" |
+            SUMMARY="$summary" node agent-eval/scripts/upsert-pr-eval-results.mjs |
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --field body=@- --silent
+
+      - name: Write deployment summary
+        if: ${{ always() && steps.deploy_playground.outcome == 'success' }}
+        env:
+          VERCEL_TARGET: ${{ steps.vercel_target.outputs.target }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+        run: |
+          {
+            echo "### Agent eval playground"
+            echo
+            echo "- Target: \`$VERCEL_TARGET\`"
+            echo "- Project: \`$VERCEL_PROJECT_NAME\`"
+            echo "- URL: $PLAYGROUND_URL"
+          } >> "$GITHUB_STEP_SUMMARY"

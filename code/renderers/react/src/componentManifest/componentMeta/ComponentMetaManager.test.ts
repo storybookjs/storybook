@@ -114,6 +114,43 @@ describe('multi-project management', () => {
     expect(buttonProject).not.toBe(cardProject);
   });
 
+  it('reuses parsed source files across projects', { timeout: 30_000 }, () => {
+    tempDir = createTempDir();
+
+    // Two projects that both reach shared.ts, neither having the other's component as a root file.
+    writeFiles(tempDir, {
+      'shared.ts': `export type Variant = 'primary' | 'secondary';`,
+      'app/tsconfig.json': tsconfigJSON(),
+      'app/Button.tsx': dedent`
+        import React from 'react';
+        import type { Variant } from '../shared.ts';
+        export const Button = (_props: { variant: Variant }) => <button />;
+      `,
+      'lib/tsconfig.json': tsconfigJSON(),
+      'lib/Card.tsx': dedent`
+        import React from 'react';
+        import type { Variant } from '../shared.ts';
+        export const Card = (_props: { variant: Variant }) => <div />;
+      `,
+    });
+
+    manager = new ComponentMetaManager(ts);
+
+    const buttonProject = manager.getProjectForFile(path.join(tempDir, 'app/Button.tsx'));
+    const cardProject = manager.getProjectForFile(path.join(tempDir, 'lib/Card.tsx'));
+    expect(buttonProject).not.toBe(cardProject);
+
+    const sharedPath = path.join(tempDir, 'shared.ts');
+    const fromButton = buttonProject.getSourceFile(sharedPath);
+    const fromCard = cardProject.getSourceFile(sharedPath);
+
+    expect(fromButton).toBeDefined();
+    // Identity, not equality. Without a shared DocumentRegistry each LanguageService parses its own
+    // copy of every file it reaches, and the extracted docgen is unchanged either way, so the shared
+    // instance is the only observable difference.
+    expect(fromButton).toBe(fromCard);
+  });
+
   it('falls back to inferred project when no tsconfig found', { timeout: 30_000 }, () => {
     tempDir = createTempDir();
 
@@ -202,6 +239,66 @@ describe('multi-project management', () => {
       props: { color: expect.anything() },
     });
   });
+
+  it(
+    're-extracts a rewrite whose mtime is unchanged after onFilesChanged',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Tag.tsx': dedent`
+          import React from 'react';
+          export const Tag = (_props: { text: string }) => <span />;
+        `,
+        'Tag.stories.tsx': dedent`
+          import { Tag } from './Tag';
+          export default { component: Tag };
+        `,
+      });
+
+      manager = new ComponentMetaManager(ts);
+      const tagPath = files['Tag.tsx'];
+
+      // Pin a whole-second mtime so both writes land on the identical timestamp, reproducing a
+      // second write within one mtime tick (scripted codegen, coarse-mtime filesystems).
+      const pinned = new Date(Math.floor(Date.now() / 1000) * 1000);
+      fs.utimesSync(tagPath, pinned, pinned);
+
+      const project = manager.getProjectForFile(tagPath);
+      const before: StoryRef[] = [
+        {
+          storyPath: files['Tag.stories.tsx'],
+          component: { componentName: 'Tag', importName: 'Tag', path: tagPath, isPackage: false },
+        },
+      ];
+      project.extractPropsFromStories(before);
+      expect(before[0].component?.reactComponentMeta?.props?.text).toBeDefined();
+      expect(before[0].component?.reactComponentMeta?.props?.color).toBeUndefined();
+
+      fs.writeFileSync(
+        tagPath,
+        dedent`
+          import React from 'react';
+          export const Tag = (_props: { text: string; color?: string }) => <span />;
+        `
+      );
+      fs.utimesSync(tagPath, pinned, pinned);
+      expect(fs.statSync(tagPath).mtime.valueOf()).toBe(pinned.valueOf());
+
+      manager.onFilesChanged([{ filePath: tagPath, type: 'changed' }]);
+
+      const after: StoryRef[] = [
+        {
+          storyPath: files['Tag.stories.tsx'],
+          component: { componentName: 'Tag', importName: 'Tag', path: tagPath, isPackage: false },
+        },
+      ];
+      project.extractPropsFromStories(after);
+      expect(after[0].component?.reactComponentMeta?.props?.color).toBeDefined();
+    }
+  );
 
   it('handles config change: deleted tsconfig disposes project', () => {
     tempDir = createTempDir();

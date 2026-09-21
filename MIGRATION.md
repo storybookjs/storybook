@@ -14,6 +14,7 @@
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
 
@@ -553,6 +554,8 @@
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
 
+Storybook accepts prerelease Node.js builds when their version meets this minimum. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
+
 During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
 
 ### Yarn PnP support removed
@@ -719,6 +722,21 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 ### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
 
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
+
+### Internal CSF tools use the unified mutation API
+
+If your custom migration tooling imports `ConfigFile` from `storybook/internal/csf-tools`, update its legacy field and call-expression helpers to the unified `CsfObject` mutation API:
+
+| Storybook 10 API                        | Storybook 11 replacement |
+| --------------------------------------- | ------------------------ |
+| `getFieldValue`, `getSafeFieldValue`    | `getValue`               |
+| `setFieldNode`, `setFieldValue`         | `set`                    |
+| `findNamedImportMethodCalls`            | `callArguments`          |
+| `FindNamedImportMethodCallsOptions`     | `CallArgumentsOptions`   |
+
+`getValue` reads static values without executing source code. When it cannot resolve a value, it returns `undefined` and adds a diagnostic. Mutation methods return a result that reports whether the edit succeeded and changed the file. `callArguments` returns `CsfObject` editors instead of Babel call expressions, so apply the same `get`, `getValue`, `set`, `transform`, `remove`, `rename`, `move`, and `group` methods you use for story and config objects.
+
+Before writing a transformed file, check `changed` and `mutationDiagnostics`. `writeConfig` also rejects files with mutation diagnostics to prevent partial edits.
 
 ### Internal WebSocket heartbeat controls removed
 

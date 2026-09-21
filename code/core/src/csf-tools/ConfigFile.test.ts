@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint } from 'storybook/internal/babel';
+import * as babelParser from '@babel/parser';
+import { babelPrint, parserOptions } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
-import { loadConfig, printConfig } from './ConfigFile.ts';
+import { ConfigFile, loadConfig, printConfig } from './ConfigFile.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -1163,6 +1164,23 @@ describe('ConfigFile', () => {
           };
         `);
       });
+    });
+  });
+
+  describe('quote inference under EOL reconstruction', () => {
+    it('keeps single quotes when token offsets index a CRLF reconstruction (Windows)', () => {
+      const source = `export default {\n  framework: '@storybook/react-vite',\n};\n`;
+      // On Windows, recast rebuilds the parser input with `os.EOL` before babel sees it, so
+      // babel's token offsets index a CRLF string while `_code` is the original LF source.
+      // Parsing the CRLF variant directly with @babel/parser recreates exactly that
+      // misalignment; quote inference must not depend on token offsets to survive it.
+      const ast = babelParser.parse(source.replaceAll('\n', '\r\n'), { ...parserOptions });
+      const config = new ConfigFile(ast, source);
+      config.parse();
+      config.setImport(['fileURLToPath'], 'node:url');
+      const printed = printConfig(config).code;
+      expect(printed).toContain("from 'node:url'");
+      expect(printed).not.toContain('from "node:url"');
     });
   });
 

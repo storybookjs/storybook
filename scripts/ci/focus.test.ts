@@ -71,7 +71,13 @@ describe('defineFocusJob', () => {
     expect(implementation.steps).toEqual(
       expect.arrayContaining([
         { run: expect.objectContaining({ name: 'Compile' }) },
-        { run: expect.objectContaining({ name: 'Run tests', background: true }) },
+        {
+          run: expect.objectContaining({
+            name: 'Run tests',
+            background: true,
+            command: expect.stringContaining('--testTimeout=30000'),
+          }),
+        },
         {
           run: expect.objectContaining({
             name: 'Setup Corepack',

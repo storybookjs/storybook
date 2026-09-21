@@ -1,3 +1,5 @@
+import { interpolatePath } from '@tanstack/react-router';
+
 /**
  * Utility taken from @tanstack/router-generator
  */
@@ -43,4 +45,38 @@ export function isPathlessFileRouteId(id: string): boolean {
   const segments = id.split('/').filter(Boolean);
   const lastSegment = segments[segments.length - 1];
   return lastSegment != null && isPathlessSegment(lastSegment);
+}
+
+type PathInterpolationSegment = string | readonly [1 | 2, string, string, string | undefined];
+
+// the reason we have our own `interpolateStoryPath` is that although this is an exposed API from tanstack, it seems implicitly internal and signature can break accross patches.
+export function interpolateStoryPath(path: string, params: Record<string, unknown>): string {
+  if (interpolatePath.length >= 2) {
+    const positionalInterpolatePath = interpolatePath as unknown as (
+      path: string,
+      segments: PathInterpolationSegment[],
+      params: Record<string, unknown>
+    ) => string;
+    return positionalInterpolatePath(path, toPathInterpolationSegments(path), params);
+  }
+  const legacyInterpolatePath = interpolatePath as unknown as (options: {
+    path: string;
+    params: Record<string, unknown>;
+  }) => { interpolatedPath: string };
+  return legacyInterpolatePath({ path, params }).interpolatedPath;
+}
+
+function toPathInterpolationSegments(path: string): PathInterpolationSegment[] {
+  return path
+    .split('/')
+    .filter(Boolean)
+    .map((part) => {
+      if (part === '$') {
+        return [2, '_splat', '/', undefined] as const;
+      }
+      if (part.startsWith('$')) {
+        return [1, part.slice(1), '/', ''] as const;
+      }
+      return `/${part}`;
+    });
 }

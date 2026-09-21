@@ -1,5 +1,7 @@
 import * as v from 'valibot';
 
+import type { SpiedTestChannel } from '../../channels/test-channel.ts';
+import { SERVICE_ENTRY, type EntryPayload } from './service-channel.ts';
 import { defineService } from './service-definition.ts';
 import type { ServiceInstanceOf } from './types.ts';
 
@@ -16,7 +18,25 @@ export const recordFieldsOutputSchema = v.nullable(v.record(v.string(), v.string
 /** Shared schema for nullable string payloads used by load-oriented fixtures. */
 export const preloadedValueOutputSchema = v.nullable(v.string());
 export const noInputSchema = v.void();
+
 export const voidOutputSchema = v.void();
+
+/** A `services:entry` as a peer would emit it; `extras` stands in for unknown envelope fields. */
+export function peerEntry(
+  serviceId: string,
+  patch: EntryPayload['patch'],
+  stamp: EntryPayload['stamp'],
+  extras: Record<string, unknown> = {}
+) {
+  return { serviceId, stamp, command: 'assignRecordField', patch, ...extras };
+}
+
+/** Every `services:entry` payload the channel spy saw, in emit order. */
+export function entryEmits(channel: SpiedTestChannel): EntryPayload[] {
+  return channel.emit.mock.calls
+    .filter(([event]) => event === SERVICE_ENTRY)
+    .map(([, payload]) => payload as EntryPayload);
+}
 export const booleanOutputSchema = v.boolean();
 
 export type MutableRecordState = Record<string, Record<string, string> | undefined>;

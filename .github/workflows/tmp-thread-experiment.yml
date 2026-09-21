@@ -7,7 +7,7 @@ on:
       - synchronize
 
 permissions:
-  contents: read
+  contents: write
   pull-requests: write
 
 concurrency:
@@ -30,5 +30,5 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           ANCHOR_PATH: tmp-experiment-review-thread-gate.md
-          WORKFLOW_PERMS: 'pull-requests: write (+ contents: read for checkout)'
+          WORKFLOW_PERMS: 'contents: write + pull-requests: write'
         run: node .github/workflows/tmp-thread-experiment.mjs

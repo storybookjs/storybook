@@ -7,6 +7,7 @@ on:
       - synchronize
 
 permissions:
+  contents: read
   pull-requests: write
 
 concurrency:
@@ -19,11 +20,15 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
+      - name: Check out experiment files
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: false
       - name: Probe review-thread APIs
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           ANCHOR_PATH: tmp-experiment-review-thread-gate.md
-          WORKFLOW_PERMS: 'pull-requests: write'
+          WORKFLOW_PERMS: 'pull-requests: write (+ contents: read for checkout)'
         run: node .github/workflows/tmp-thread-experiment.mjs

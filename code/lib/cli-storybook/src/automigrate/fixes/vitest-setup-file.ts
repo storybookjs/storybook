@@ -1,6 +1,6 @@
 import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
 
-import { formatFileContent, frameworkPackages } from 'storybook/internal/common';
+import { formatFileContent, frameworkPackages, rendererPackages } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
 
 import jscodeshift from 'jscodeshift';
@@ -203,11 +203,142 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
   },
 };
 
+/** Outcome of matching a statement sequence against the generated boilerplate. */
+type GeneratedShapeMatch = { matched: true } | { matched: false; reason: string };
+
+const NOT_GENERATED_SHAPE: GeneratedShapeMatch = {
+  matched: false,
+  reason: 'it must contain a single "setProjectAnnotations" call and nothing else',
+};
+
 /**
- * Recognizes the shape the pre-10.3 postinstall generated: a `setProjectAnnotations` import from
- * the framework package, an optional standard `./preview` import, and one plain call whose
- * argument is an array of identifiers (possibly empty). Anything else is left alone, because
- * rewriting it could silently drop custom annotations.
+ * The annotations entry points the generators imported `setProjectAnnotations` from. Storybook
+ * 8.6.0 also wrote renderer packages and the since-renamed Next.js package, so matching only
+ * today's framework list would leave those files unmigrated.
+ */
+function isAnnotationsImportSource(importSource: string): boolean {
+  return (
+    importSource === 'storybook' ||
+    importSource === '@storybook/experimental-nextjs-vite' ||
+    importSource in frameworkPackages ||
+    importSource in rendererPackages
+  );
+}
+
+/** `setProjectAnnotations([...])` with an array of plain identifiers, as both generators wrote. */
+function matchGeneratedCall(expression: t.Expression): GeneratedShapeMatch {
+  if (expression.type !== 'CallExpression') {
+    return {
+      matched: false,
+      reason: 'the call is conditional or wrapped, so it cannot be removed safely',
+    };
+  }
+
+  if (
+    expression.callee.type !== 'Identifier' ||
+    expression.callee.name !== 'setProjectAnnotations'
+  ) {
+    return {
+      matched: false,
+      reason: 'the call is aliased or wrapped, so it cannot be removed safely',
+    };
+  }
+
+  const [callArgument] = expression.arguments;
+  if (expression.arguments.length !== 1 || callArgument.type !== 'ArrayExpression') {
+    return {
+      matched: false,
+      reason: 'the call passes unexpected arguments (e.g. inline objects or multiple arguments)',
+    };
+  }
+
+  if (callArgument.elements.some((element) => !element || element.type !== 'Identifier')) {
+    return {
+      matched: false,
+      reason: 'the call passes inline objects or addon annotation modules',
+    };
+  }
+
+  return { matched: true };
+}
+
+/** `beforeAll(<project>.beforeAll);` — the tail of the 8.6.0 boilerplate, and nothing else. */
+function isGeneratedBeforeAllForwarding(statement: t.Statement, projectName: string): boolean {
+  if (statement.type !== 'ExpressionStatement' || statement.expression.type !== 'CallExpression') {
+    return false;
+  }
+
+  const call = statement.expression;
+  const [argument] = call.arguments;
+
+  return (
+    call.callee.type === 'Identifier' &&
+    call.callee.name === 'beforeAll' &&
+    call.arguments.length === 1 &&
+    argument.type === 'MemberExpression' &&
+    !argument.computed &&
+    argument.object.type === 'Identifier' &&
+    argument.object.name === projectName &&
+    argument.property.type === 'Identifier' &&
+    argument.property.name === 'beforeAll'
+  );
+}
+
+/**
+ * Matches the two generations of the boilerplate, which differ only in how they use the call:
+ *
+ *     setProjectAnnotations([projectAnnotations]); // 8.6.1+
+ *
+ *     const project = setProjectAnnotations([projectAnnotations]); // 8.6.0
+ *     beforeAll(project.beforeAll);
+ */
+function matchGeneratedStatements(statements: t.Program['body']): GeneratedShapeMatch {
+  if (statements.length === 1) {
+    const [statement] = statements;
+    return statement.type === 'ExpressionStatement'
+      ? matchGeneratedCall(statement.expression)
+      : NOT_GENERATED_SHAPE;
+  }
+
+  if (statements.length !== 2) {
+    return NOT_GENERATED_SHAPE;
+  }
+
+  const [declarationStatement, beforeAllStatement] = statements;
+  if (
+    declarationStatement.type !== 'VariableDeclaration' ||
+    declarationStatement.declarations.length !== 1
+  ) {
+    return NOT_GENERATED_SHAPE;
+  }
+
+  const [declarator] = declarationStatement.declarations;
+  if (
+    declarator.type !== 'VariableDeclarator' ||
+    declarator.id.type !== 'Identifier' ||
+    !declarator.init
+  ) {
+    return NOT_GENERATED_SHAPE;
+  }
+
+  const callMatch = matchGeneratedCall(declarator.init);
+  if (!callMatch.matched) {
+    return callMatch;
+  }
+
+  // Without this the captured result is used for something we don't understand, and deleting the
+  // file would drop that behaviour too.
+  return isGeneratedBeforeAllForwarding(beforeAllStatement, declarator.id.name)
+    ? { matched: true }
+    : NOT_GENERATED_SHAPE;
+}
+
+/**
+ * Recognizes the shapes the pre-10.3 postinstall generated: a `setProjectAnnotations` import from
+ * the framework or renderer package, an optional standard `./preview` import, the 8.6.0-era
+ * `beforeAll` import, and one plain call whose argument is an array of identifiers (possibly
+ * empty). Anything the user added or changed is left alone, because rewriting it could silently
+ * drop custom annotations.
  */
 function analyzeSetupFileShape(source: string): {
   isRewritable: boolean;
@@ -224,46 +355,9 @@ function analyzeSetupFileShape(source: string): {
     (statement) => statement.type !== 'ImportDeclaration' && statement.type !== 'EmptyStatement'
   );
 
-  if (nonImportStatements.length !== 1) {
-    return {
-      isRewritable: false,
-      reason: 'it must contain a single "setProjectAnnotations" call and nothing else',
-    };
-  }
-
-  const [callStatement] = nonImportStatements;
-  if (
-    callStatement.type !== 'ExpressionStatement' ||
-    callStatement.expression.type !== 'CallExpression'
-  ) {
-    return {
-      isRewritable: false,
-      reason: 'the call is conditional or wrapped, so it cannot be removed safely',
-    };
-  }
-
-  const call = callStatement.expression;
-  if (call.callee.type !== 'Identifier' || call.callee.name !== 'setProjectAnnotations') {
-    return {
-      isRewritable: false,
-      reason: 'the call is aliased or wrapped, so it cannot be removed safely',
-    };
-  }
-
-  const [callArgument] = call.arguments;
-  if (call.arguments.length !== 1 || callArgument.type !== 'ArrayExpression') {
-    return {
-      isRewritable: false,
-      reason: 'the call passes unexpected arguments (e.g. inline objects or multiple arguments)',
-    };
-  }
-
-  const elements = callArgument.elements;
-  if (elements.some((element) => !element || element.type !== 'Identifier')) {
-    return {
-      isRewritable: false,
-      reason: 'the call passes inline objects or addon annotation modules',
-    };
+  const shapeMatch = matchGeneratedStatements(nonImportStatements);
+  if (!shapeMatch.matched) {
+    return { isRewritable: false, reason: shapeMatch.reason };
   }
 
   for (const importDeclaration of importDeclarations) {
@@ -278,15 +372,20 @@ function analyzeSetupFileShape(source: string): {
       specifiers.length === 1 &&
       specifiers[0].type === 'ImportNamespaceSpecifier';
 
-    const isFrameworkImport =
+    const isNamedImportOf = (name: string) =>
       specifiers.length === 1 &&
       specifiers[0].type === 'ImportSpecifier' &&
       specifiers[0].imported.type === 'Identifier' &&
-      specifiers[0].imported.name === 'setProjectAnnotations' &&
-      specifiers[0].local.name === 'setProjectAnnotations' &&
-      (importSource === 'storybook' || importSource in frameworkPackages);
+      specifiers[0].imported.name === name &&
+      specifiers[0].local.name === name;
 
-    if (!isPreviewImport && !isFrameworkImport) {
+    const isFrameworkImport =
+      isNamedImportOf('setProjectAnnotations') && isAnnotationsImportSource(importSource);
+
+    // 8.6.0 generated `import { beforeAll } from 'vitest'` to forward `project.beforeAll`.
+    const isBeforeAllImport = importSource === 'vitest' && isNamedImportOf('beforeAll');
+
+    if (!isPreviewImport && !isFrameworkImport && !isBeforeAllImport) {
       return {
         isRewritable: false,
         reason: `it imports "${importSource}", which is not part of the generated boilerplate`,

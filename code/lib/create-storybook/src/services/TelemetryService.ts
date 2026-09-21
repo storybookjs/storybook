@@ -1,9 +1,10 @@
 import type { ProjectType } from 'storybook/internal/cli';
-import { getStorybookVersionSpecifierFromAncestry } from 'storybook/internal/common';
+import {
+  getProcessAncestry,
+  getStorybookVersionSpecifierFromAncestry,
+} from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
-
-import { getProcessAncestry } from 'process-ancestry';
 
 import { VersionService } from './VersionService.ts';
 

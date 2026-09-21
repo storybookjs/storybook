@@ -9719,7 +9719,6 @@ __metadata:
     memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
-    process-ancestry: "npm:^0.0.2"
     semver: "npm:^7.7.3"
     slash: "npm:^5.0.0"
     storybook: "workspace:*"
@@ -10059,7 +10058,7 @@ __metadata:
     babel-loader: "npm:^9.1.3"
     browserify-zlib: "npm:^0.2.0"
     buffer: "npm:^6.0.3"
-    css-loader: "npm:^6.7.3"
+    css-loader: "npm:^7.1.2"
     events: "npm:^3.3.0"
     loader-utils: "npm:^3.2.1"
     next: "npm:^15.2.3"
@@ -17602,7 +17601,6 @@ __metadata:
     commander: "npm:^14.0.2"
     empathic: "npm:^2.0.0"
     picocolors: "npm:^1.1.0"
-    process-ancestry: "npm:^0.0.2"
     react: "npm:^18.2.0"
     semver: "npm:^7.7.3"
     storybook: "workspace:*"
@@ -17668,30 +17666,6 @@ __metadata:
     webpack:
       optional: true
   checksum: 10c0/8743a8f1a0beff371d0fbeae7dbae7b079e546c734e3c936f0c5dc4603a716a576200e9261c934565584cf0e090cca444efb613efa4282ee3fcab81db4c73c7e
-  languageName: node
-  linkType: hard
-
-"css-loader@npm:^6.7.3":
-  version: 6.11.0
-  resolution: "css-loader@npm:6.11.0"
-  dependencies:
-    icss-utils: "npm:^5.1.0"
-    postcss: "npm:^8.4.33"
-    postcss-modules-extract-imports: "npm:^3.1.0"
-    postcss-modules-local-by-default: "npm:^4.0.5"
-    postcss-modules-scope: "npm:^3.2.0"
-    postcss-modules-values: "npm:^4.0.0"
-    postcss-value-parser: "npm:^4.2.0"
-    semver: "npm:^7.5.4"
-  peerDependencies:
-    "@rspack/core": 0.x || 1.x
-    webpack: ^5.0.0
-  peerDependenciesMeta:
-    "@rspack/core":
-      optional: true
-    webpack:
-      optional: true
-  checksum: 10c0/bb52434138085fed06a33e2ffbdae9ee9014ad23bf60f59d6b7ee67f28f26c6b1764024d3030bd19fd884d6ee6ee2224eaed64ad19eb18fbbb23d148d353a965
   languageName: node
   linkType: hard
 
@@ -29211,7 +29185,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"postcss@npm:8.5.23, postcss@npm:^8.2.14, postcss@npm:^8.4.33, postcss@npm:^8.4.38, postcss@npm:^8.4.40, postcss@npm:^8.4.49, postcss@npm:^8.5.15, postcss@npm:^8.5.16, postcss@npm:^8.5.6":
+"postcss@npm:8.5.23, postcss@npm:^8.2.14, postcss@npm:^8.4.38, postcss@npm:^8.4.40, postcss@npm:^8.4.49, postcss@npm:^8.5.15, postcss@npm:^8.5.16, postcss@npm:^8.5.6":
   version: 8.5.23
   resolution: "postcss@npm:8.5.23"
   dependencies:
@@ -29391,13 +29365,6 @@ __metadata:
   version: 6.1.0
   resolution: "proc-log@npm:6.1.0"
   checksum: 10c0/4f178d4062733ead9d71a9b1ab24ebcecdfe2250916a5b1555f04fe2eda972a0ec76fbaa8df1ad9c02707add6749219d118a4fc46dc56bdfe4dde4b47d80bb82
-  languageName: node
-  linkType: hard
-
-"process-ancestry@npm:^0.0.2":
-  version: 0.0.2
-  resolution: "process-ancestry@npm:0.0.2"
-  checksum: 10c0/bca0290b7d3bd35da3a30bb958b2b0f2724f468b80d1b41e58d9a6a49fc42ff466faf49c2d085e94b7b660fee654be26e047b43f6b6065613ca123432bd409a9
   languageName: node
   linkType: hard
 
@@ -33022,7 +32989,6 @@ __metadata:
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"
     pretty-hrtime: "npm:^1.0.3"
-    process-ancestry: "npm:^0.0.2"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
     react-aria: "npm:^3.52.1"

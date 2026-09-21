@@ -35,7 +35,11 @@ The rest of this guide will help you upgrade successfully, either automatically 
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+- Internal tooling changes
+  - [Update custom CSF tooling to the unified mutation API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-csf-tools-use-the-unified-mutation-api)
 - [Changes for addon authors](../addons/addon-migration-guide.mdx)
+
+Storybook accepts prerelease Node.js builds when their version meets the minimum requirement. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
 
 If any of these changes apply to your project, please read through the linked migration notes before continuing.
 

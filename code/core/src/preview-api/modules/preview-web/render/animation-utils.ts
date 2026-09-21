@@ -31,13 +31,18 @@ export function pauseAnimations(atEnd = true): CleanupCallback {
     playState: AnimationPlayState;
     currentTime: CSSNumberish | null;
   }[] = [];
+  const handledAnimations = new WeakSet<Animation>();
 
   const pauseAllAnimations = () => {
     const animationRoots = [globalThis.document, ...getShadowRoots(globalThis.document)];
     for (const animation of animationRoots.flatMap((root) => root?.getAnimations?.() || [])) {
-      if (!isDocumentAnimation(animation)) {
+      if (
+        !isDocumentAnimation(animation) ||
+        (handledAnimations.has(animation) && animation.playState !== 'running')
+      ) {
         continue;
       }
+      handledAnimations.add(animation);
       previousStates.push({
         animation,
         playState: animation.playState,

@@ -82,6 +82,16 @@ describe('pauseAnimations', () => {
     expect(transition.cancel).not.toHaveBeenCalled();
   });
 
+  test('does not process an animation again after handling its start event', () => {
+    const animation = new TestCSSAnimation();
+    stubAnimations(document, [animation]);
+
+    restore = pauseAnimations();
+    dispatchEvent(new Event('animationstart'));
+
+    expect(animation.finish).toHaveBeenCalledTimes(1);
+  });
+
   test('pauses at t=0 when atEnd is false, without cancel()', () => {
     const animation = new TestCSSAnimation();
     animation.currentTime = 120;

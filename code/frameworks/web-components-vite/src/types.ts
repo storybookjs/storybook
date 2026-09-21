@@ -10,6 +10,8 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 
 export type FrameworkOptions = {
   builder?: BuilderOptions;
+  /** Read Custom Elements Manifests from these project-relative paths. */
+  customElementsManifest?: string | string[];
 };
 
 type StorybookConfigFramework = {

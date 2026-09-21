@@ -36,7 +36,6 @@ export default {
   '@storybook/mcp': '11.0.0-alpha.0',
   '@storybook/react-dom-shim': '11.0.0-alpha.0',
   'vite-plugin-storybook-nextjs': '11.0.0-alpha.0',
-  '@storybook/preset-create-react-app': '11.0.0-alpha.0',
   '@storybook/preset-react-webpack': '11.0.0-alpha.0',
   '@storybook/preset-server-webpack': '11.0.0-alpha.0',
   '@storybook/html': '11.0.0-alpha.0',

@@ -1,11 +1,6 @@
 import * as v from 'valibot';
 
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName, type ToolsetMethodId } from '../../toolset-names.ts';
 import type { DocsAccess, ResolvedDocsEntry } from './access.ts';
 import {
@@ -111,6 +106,7 @@ function resolveShow({ entry, sourceError }: DocsShowOutput): ShowResolution {
 }
 
 type ComponentEntry = Extract<ResolvedDocsEntry, { kind: 'component' }>;
+type ComponentStory = NonNullable<ComponentEntry['component']['stories']>[number];
 
 /** The `showStory` counterpart of {@link ShowResolution}. */
 type ShowStoryResolution =
@@ -118,7 +114,7 @@ type ShowStoryResolution =
   | { kind: 'source-error'; message: string }
   | { kind: 'component-missing' }
   | { kind: 'story-missing'; component: ComponentEntry['component'] }
-  | { kind: 'found'; component: ComponentEntry['component']; storyName: string };
+  | { kind: 'found'; component: ComponentEntry['component']; story: ComponentStory };
 
 /** Whether a `showStory` input names a story at all: a story id, or a complete name pair. */
 function isShowStorySelector({ storyId, componentId, storyName }: DocsShowStoryOutput): boolean {
@@ -151,9 +147,7 @@ function resolveShowStory(data: DocsShowStoryOutput): ShowStoryResolution {
     storyId !== undefined
       ? component.stories?.find((candidate) => candidate.id === storyId)
       : component.stories?.find((candidate) => candidate.name === storyName);
-  return story
-    ? { kind: 'found', component, storyName: story.name }
-    : { kind: 'story-missing', component };
+  return story ? { kind: 'found', component, story } : { kind: 'story-missing', component };
 }
 
 /**
@@ -217,8 +211,11 @@ function formatAvailableStories(stories: ComponentEntry['component']['stories'])
 }
 
 /** Pure renderer for `showStory`. */
-function renderShowStory(data: DocsShowStoryOutput, ctx: ToolsetCtx): string {
-  const resolution = resolveShowStory(data);
+function renderShowStory(
+  resolution: ShowStoryResolution,
+  data: DocsShowStoryOutput,
+  ctx: ToolsetCtx
+): string {
   switch (resolution.kind) {
     case 'input-invalid':
       return `Provide either \`storyId\`, or both \`componentId\` and \`storyName\`. Story ids are listed by the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool with \`withStoryIds: true\` and in ${getToolName(ctx)(DOCS_METHOD_REFS.show)} output.`;
@@ -235,7 +232,7 @@ function renderShowStory(data: DocsShowStoryOutput, ctx: ToolsetCtx): string {
         : `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories}`;
     }
     case 'found':
-      return formatStoryDocumentation(resolution.component, resolution.storyName);
+      return formatStoryDocumentation(resolution.component, resolution.story.name);
     default: {
       const exhaustive: never = resolution;
       return exhaustive;
@@ -359,7 +356,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
         }),
         title: 'List All Documentation',
         description: describeList,
-        handler: async (input, ctx): Promise<ToolsetOutcome<DocsListOutput, never>> => {
+        handler: async (input): Promise<ToolsetOutcome<DocsListOutput, never>> => {
           const { withStoryIds } = input;
           const data: DocsListOutput = multiSource
             ? { withStoryIds, sources: await listSources(sources!, { withStoryIds }) }
@@ -371,17 +368,23 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           // A listing of nothing but errors is not a usage signal, so nothing is counted then.
           const counted = selectReportedManifests(data);
-          if (counted) {
-            await reportToolsetTelemetry(ctx, 'tool:listAllDocumentation', {
-              toolset: 'docs',
-              componentCount: Object.keys(counted.componentManifest.components).length,
-              docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
-              resultTokenCount: estimateTokens(markdown),
-              sourceCount: data.sources?.length,
-            });
-          }
-
-          return { ok: true, data, markdown };
+          return {
+            ok: true,
+            data,
+            markdown,
+            ...(counted
+              ? {
+                  telemetry: {
+                    payload: {
+                      componentCount: Object.keys(counted.componentManifest.components).length,
+                      docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
+                      resultTokenCount: estimateTokens(markdown),
+                      sourceCount: data.sources?.length,
+                    },
+                  },
+                }
+              : {}),
+          };
         },
       },
       [DOCS_METHOD_NAMES.show]: {
@@ -397,16 +400,16 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           const markdown = renderShow(data, ctx);
 
-          await reportToolsetTelemetry(ctx, 'tool:getDocumentation', {
-            toolset: 'docs',
-            componentId: id,
-            found: data.entry !== undefined,
-            resultTokenCount: estimateTokens(markdown),
-          });
-
+          const telemetry = {
+            payload: {
+              componentId: id,
+              found: data.entry !== undefined,
+              resultTokenCount: estimateTokens(markdown),
+            },
+          };
           return isDocsShowError(data)
-            ? { ok: false, data, markdown }
-            : { ok: true, data, markdown };
+            ? { ok: false, data, markdown, telemetry }
+            : { ok: true, data, markdown, telemetry };
         },
       },
       [DOCS_METHOD_NAMES.showStory]: {
@@ -437,11 +440,20 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
               ? { ...request, entry: await selected.access.resolve(resolveId) }
               : { ...request, sourceError: selected.sourceError };
 
-          const markdown = renderShowStory(data, ctx);
+          const resolution = resolveShowStory(data);
+          const markdown = renderShowStory(resolution, data, ctx);
 
-          return isDocsShowStoryError(data)
-            ? { ok: false, data, markdown }
-            : { ok: true, data, markdown };
+          const telemetry = {
+            payload: {
+              found: resolution.kind === 'found',
+              storyId: resolution.kind === 'found' ? resolution.story.id : storyId,
+              lookup: storyId !== undefined ? 'storyId' : 'name',
+              resultTokenCount: estimateTokens(markdown),
+            },
+          };
+          return resolution.kind === 'found'
+            ? { ok: true, data, markdown, telemetry }
+            : { ok: false, data, markdown, telemetry };
         },
       },
     },

@@ -127,6 +127,13 @@ export class Channel implements ChannelLike {
     this.removeListener(eventName, listener);
   }
 
+  /**
+   * Deliver an event to local listeners without sending it to this channel's transports.
+   */
+  receive(event: ChannelEvent) {
+    this.handleEvent(event);
+  }
+
   private handleEvent(event: ChannelEvent) {
     const listeners = this.listeners(event.type);
     if (listeners && listeners.length) {

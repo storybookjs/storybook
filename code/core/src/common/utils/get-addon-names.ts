@@ -23,8 +23,8 @@ export const normalizeAddonName = (addon: AddonEntry): string | undefined => {
   // Ensure posix paths for plugin name sniffing
   name = normalizePath(name);
 
-  // For absolute paths, pnpm and yarn pnp,
-  // Remove everything before and including "node_modules/"
+  // For absolute paths (e.g. pnpm's nested store),
+  // remove everything before and including "node_modules/"
   name = name.replace(/.*node_modules\//, '');
 
   // Further clean up package names

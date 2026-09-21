@@ -230,6 +230,40 @@ describe('transformPreviewFile', () => {
     `);
   });
 
+  it.each([
+    'export default { beforeEach() { setup(); } };',
+    'export async function beforeEach() { await setup(); }',
+    'function hook() { setup(); } export { hook as beforeEach };',
+    'export const beforeEach = () => cleanup;',
+  ])('preserves the existing hook in %s', async (source) => {
+    const output = await transformPreviewFile(source, '.storybook/preview.ts');
+    expect(output).toContain('spyOn(console, "log")');
+    if (source.includes('cleanup')) {
+      expect(output).toContain('return cleanup;');
+    } else {
+      expect(output).toContain('setup();');
+    }
+    expect(output.match(/spyOn\(console, "log"\)/g)).toHaveLength(1);
+  });
+
+  it('reports a named hook that the default export would shadow', async () => {
+    await expect(
+      transformPreviewFile(
+        'export default { parameters: {} }; export const beforeEach = async () => { await seed(); };',
+        '.storybook/preview.ts'
+      )
+    ).rejects.toThrow('beforeEach is exported separately from the default export');
+  });
+
+  it('reports a hook it cannot transform instead of replacing it', async () => {
+    await expect(
+      transformPreviewFile(
+        "import { beforeEach } from './hooks'; export default { beforeEach };",
+        '.storybook/preview.ts'
+      )
+    ).rejects.toThrow('beforeEach is not an inline function');
+  });
+
   it('should add console spies to beforeEach function', async () => {
     const source = dedent`
       import "@storybook/addon-console";

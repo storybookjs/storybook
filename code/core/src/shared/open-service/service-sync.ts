@@ -11,8 +11,8 @@
  * ## 1. `isNewer` — last-write-wins ordering
  *
  * Each synced snapshot carries a `(version, runtimeId)` stamp. `version` is a logical clock for the
- * state lineage: a runtime bumps it on every local command and adopts the incoming value when it
- * accepts a peer's snapshot. Equal versions mean concurrent writes; the lexicographically greater
+ * state lineage: a runtime bumps it on every `setState` that writes and adopts the incoming value
+ * when it accepts a peer's snapshot. Equal versions mean concurrent writes; the lexicographically greater
  * `runtimeId` wins so every runtime independently converges on the same snapshot regardless of the
  * order events arrive in.
  *
@@ -37,7 +37,7 @@
 
 /** Per-service last-write-wins stamp carried alongside every synced snapshot. */
 export type SyncStamp = {
-  /** Logical clock for the state lineage. Bumped on every local command, adopted on accept. */
+  /** Logical clock for the state lineage. Bumped on every `setState` that writes, adopted on accept. */
   version: number;
   /** Id of the runtime that produced this version; the deterministic tiebreak for equal versions. */
   runtimeId: string;
@@ -120,7 +120,7 @@ export function applyStatePatch(
   }
 }
 
-/** In-place mutation of a runtime's live state object, as exposed by `commandSelf.setState`. */
+/** In-place mutation of a runtime's live state object, as exposed by the runtime's `applyLocal`. */
 export type StateMutator = (state: Record<string, unknown>) => void;
 
 /**
@@ -149,7 +149,7 @@ export type SnapshotReconciler = {
 /**
  * Builds a {@link SnapshotReconciler} bound to one runtime's state.
  *
- * @param setState - The runtime's batched in-place mutator (`commandSelf.setState`), adapted to a
+ * @param setState - The runtime's batched in-place mutator (`applyLocal`), adapted to a
  *   plain record. Adopting goes through this rather than the wrapped commands so it never triggers
  *   a re-broadcast.
  * @param initialStamp - Starting stamp, typically `{ version: 0, runtimeId: <own id> }`.

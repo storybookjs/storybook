@@ -5,15 +5,16 @@
  * and the dev server (Node) — does the same two things with its channel: it broadcasts the state its
  * own commands author, and it listens for peers' snapshots so it can reconcile. This module owns both
  * halves so leaf registration (`service-registry.ts`, `relay: false`) and hub registration
- * (`server.ts`, `relay: true`) cannot drift apart in how they wrap commands, gate echoes, or relay
+ * (`server.ts`, `relay: true`) cannot drift apart in how they author entries, gate echoes, or relay
  * adopted state.
  *
  * - {@link connectServiceToChannel} is the single entry point `registerService` uses. It wires all
  *   three halves below against one channel, installs the channel-routed command map on the runtime
  *   (so load bodies can invoke peer-implemented commands), and returns the command map callers
  *   expose plus a combined teardown.
- * - {@link wrapCommandsForBroadcast} wraps a runtime's commands so each local call, after it resolves,
- *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot.
+ * - {@link createEntryAuthor} builds the receiver for the runtime's `setState` entries: each one
+ *   advances the last-write-wins stamp and broadcasts the full post-mutation snapshot. A recipe
+ *   that writes nothing produces no entry, so it emits nothing and does not bump the stamp.
  * - {@link connectRuntimeToChannel} attaches the sync-start initialization and patch listeners, emits
  *   the bootstrap sync-start, and returns a teardown. A `relay` hub re-broadcasts every snapshot it
  *   adopts so peers on its *other* transports converge; leaves keep `relay: false`.
@@ -61,6 +62,7 @@ import {
   syncStartSchema,
 } from './service-channel.ts';
 import { deserializeError, serializeError } from './service-error-serialization.ts';
+import type { EntryAuthor } from './service-runtime.ts';
 import type { SnapshotReconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
@@ -78,7 +80,7 @@ type RuntimeCommand = (input: unknown) => Promise<unknown>;
  * Trade-off: a peer that is merely slow (busy iframe, large payload, loaded CI) can ack past this
  * window. The responder acks-then-executes ({@link connectCommandTransport} `onInvoke`), so in that
  * case the requester rejects with `OpenServiceRemoteCommandUnhandledError` even though the command
- * still ran and broadcast its mutation. Remote command execution is therefore best-effort /
+ * still ran and broadcast its writes. Remote command execution is therefore best-effort /
  * at-least-once, not exactly-once: callers must not assume a rejection means nothing happened.
  *
  * The window assumes an ack reaches the wire promptly, which ack-then-execute alone does not
@@ -108,41 +110,28 @@ interface RuntimeTransportContext {
 }
 
 /**
- * Wraps each command so a successful local call broadcasts the full post-mutation snapshot.
+ * Builds the receiver for the entries a runtime's `setState` recipes author.
  *
- * After the wrapped command resolves we advance the stamp (making this runtime the new author) and
- * emit `services:patches`. Advancing BEFORE emitting is what makes the echo safe: the copy that
- * bounces back carries our just-advanced stamp and fails `isNewer`, so it is dropped instead of
- * re-applied. State adopted from peers flows through the reconciler's `setState`, never through these
- * wrappers, so an adopted snapshot never triggers a re-broadcast.
+ * Each entry makes this runtime the new author: advance the stamp BEFORE emitting so the broadcast
+ * bouncing back to us is recognized as not-newer (equal stamp) and dropped. State adopted from peers
+ * flows through the runtime's `applyLocal`, never through `setState`, so an adopted snapshot never
+ * authors an entry.
  */
-export function wrapCommandsForBroadcast(
-  commands: Record<string, RuntimeCommand>,
+export function createEntryAuthor(
   context: RuntimeTransportContext & { channel: ServiceChannel }
-): Record<string, RuntimeCommand> {
+): EntryAuthor {
   const { serviceId, ownRuntimeId, reconciler, getSnapshot, channel } = context;
 
-  return Object.fromEntries(
-    Object.entries(commands).map(([name, cmd]) => [
-      name,
-      async (input: unknown): Promise<unknown> => {
-        const result = await cmd(input);
+  return () => {
+    const stamp = reconciler.advanceLocal(ownRuntimeId);
 
-        // A local command makes this runtime the new author: advance the stamp BEFORE emitting so the
-        // broadcast bouncing back to us is recognized as not-newer (equal stamp) and dropped.
-        const stamp = reconciler.advanceLocal(ownRuntimeId);
-
-        channel.emit(SERVICE_PATCHES, {
-          serviceId,
-          state: getSnapshot(),
-          version: stamp.version,
-          runtimeId: stamp.runtimeId,
-        } satisfies PatchesPayload);
-
-        return result;
-      },
-    ])
-  );
+    channel.emit(SERVICE_PATCHES, {
+      serviceId,
+      state: getSnapshot(),
+      version: stamp.version,
+      runtimeId: stamp.runtimeId,
+    } satisfies PatchesPayload);
+  };
 }
 
 /**
@@ -277,8 +266,8 @@ export function connectRuntimeToChannel(
  *   first `services:command-error`.
  * - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
  *   `services:command-ack` immediately, runs the command locally on a deferred macrotask — so an
- *   async channel flushes the ack before any handler work starts (which also broadcasts the
- *   post-mutation state via the broadcast wrappers, so peers converge as usual) — then emits
+ *   async channel flushes the ack before any handler work starts (each `setState` write is
+ *   broadcast by the entry author, so peers converge as usual) — then emits
  *   `services:command-result` or `services:command-error`.
  * - **Non-implementer**: a non-delegated runtime that hosts the service but not the invoked
  *   command's handler replies `services:command-unhandled` instead of staying silent. Only a
@@ -319,7 +308,7 @@ export function connectCommandTransport(context: {
   ownRuntimeId: string;
   channel: ServiceChannel;
   /**
-   * Broadcast-wrapped local commands keyed by name. Only entries in {@link implementedCommandNames}
+   * Local runtime commands keyed by name. Only entries in {@link implementedCommandNames}
    * are runnable; the rest are present only so the map is complete.
    */
   localCommands: Record<string, RuntimeCommand>;
@@ -562,8 +551,9 @@ export function connectUnknownServiceReporter(context: {
   };
 }
 
-/** Runtime surface needed to install the channel-routed command map for load bodies. */
+/** Runtime surface the channel wiring installs into: the entry author and the routed command map. */
 type ChannelConnectedRuntime = {
+  attachEntryAuthor(author: EntryAuthor): void;
   attachChannelCommands(
     commands: Record<string, RuntimeCommand>,
     implementedCommandNames: ReadonlySet<string>
@@ -574,8 +564,8 @@ type ChannelConnectedRuntime = {
  * Wires one service runtime to the channel end to end and returns the command map callers expose plus
  * a single teardown.
  *
- * This is the one entry point `registerService` uses, so the three transport halves — command
- * broadcasting, the remote-command protocol, and the sync-start + patch listeners — are always
+ * This is the one entry point `registerService` uses, so the three transport halves — entry
+ * authoring, the remote-command protocol, and the sync-start + patch listeners — are always
  * assembled together against the same `channel` and can never drift into using different channels.
  * The channel-routed command map is also installed on the runtime so load bodies invoke
  * peer-implemented commands remotely instead of throwing locally.
@@ -610,23 +600,17 @@ export function connectServiceToChannel(
     runtime,
   } = context;
 
-  // Wrap commands so a local mutation broadcasts its post-mutation snapshot. State adopted from peers
-  // flows through the reconciler's `setState`, never these wrappers, so it never re-broadcasts.
-  const broadcastCommands = wrapCommandsForBroadcast(commands, {
-    serviceId,
-    ownRuntimeId,
-    reconciler,
-    getSnapshot,
-    channel,
-  });
+  runtime.attachEntryAuthor(
+    createEntryAuthor({ serviceId, ownRuntimeId, reconciler, getSnapshot, channel })
+  );
 
-  // Where a local handler exists, callers run it (and broadcast) via `broadcastCommands`; where it
-  // does not, the returned command routes the call to a peer that implements it.
+  // Where a local handler exists, callers run it locally; where it does not, the returned command
+  // routes the call to a peer that implements it.
   const commandTransport = connectCommandTransport({
     serviceId,
     ownRuntimeId,
     channel,
-    localCommands: broadcastCommands,
+    localCommands: commands,
     implementedCommandNames,
     commandNames,
     delegated,

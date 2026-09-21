@@ -71,12 +71,14 @@ Internal tests and implementation code may import from the individual modules di
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
+- [patch-recorder.ts](./patch-recorder.ts): recording proxy over deepsignal state that captures the paths a `setState` recipe touched
+- [plain-object.ts](./plain-object.ts): the by-value copy every object takes on its way into state, and the prototype-pollution key list
 - [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
 - [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, the runtime-wide delegated-mode flag, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
-- [service-transport.ts](./service-transport.ts): shared channel transport — wraps commands to broadcast, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
+- [service-transport.ts](./service-transport.ts): shared channel transport — installs the entry author that broadcasts each `setState` write, wires the sync-start initialization + patch listeners (hub or leaf), and runs the remote-command-execution protocol
 - [service-sync.ts](./service-sync.ts): last-write-wins ordering, `applyStatePatch` structural state application, and the per-service snapshot reconciler
 - [use-service-query.ts](./use-service-query.ts): `useServiceQuery` React hook backed by `useSyncExternalStore`
 - [use-service-command.ts](./use-service-command.ts): `useServiceCommand` React hook returning a stable command reference
@@ -447,11 +449,11 @@ When any runtime registers a service definition:
 
 1. [service-registry.ts](./service-registry.ts) merges any registration-time `staticInputs` overrides for queries and handler overrides for commands.
 2. It passes the shared registry API into [service-runtime.ts](./service-runtime.ts).
-3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from `initialState`.
-4. It builds a writable `commandSelf` reference around that state.
+3. [service-runtime.ts](./service-runtime.ts) creates a signal-backed state container from a by-value copy of `initialState`, so a reference the definition shares between two keys becomes two objects.
+4. It builds a per-invocation `self` for each command whose `setState` records and authors entries tagged with that command's name.
 5. It builds commands that validate input, run handlers, and validate output.
 6. It builds queries whose `.get()` validates input synchronously, runs the handler synchronously, and validates the output — without firing `load`. Loads fire only through `.loaded()`, an active `subscribe()`, or a dependency `.get()` read made from within a load/`.loaded()` context (deduped while in flight).
-7. [service-registry.ts](./service-registry.ts) wraps the commands to broadcast post-mutation snapshots, joins the channel sync protocol when a channel is present (as a hub or leaf), and stores the resulting instance behind the registry entry for later lookup.
+7. [service-registry.ts](./service-registry.ts) installs the entry author that broadcasts each `setState` write, joins the channel sync protocol when a channel is present (as a hub or leaf), and stores the resulting instance behind the registry entry for later lookup.
 
 ## In-flight Load Registry
 
@@ -533,8 +535,23 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
 
 - Reading a field through `ctx.self.state` tracks a fine-grained signal for exactly that field
   (including not-yet-present record keys, which fire when the key is later added).
-- `setState((state) => …)` mutates the proxy **in place** inside a batch, so one command notifies
-  subscribers once, and only the fields it actually changed are invalidated.
+- `setState((state) => …)` mutates the proxy **in place** inside a batch, so one call notifies
+  subscribers once, and only the fields it actually changed are invalidated. The recipe writes
+  through a recording proxy, and **one `setState` call is one sync entry**: when the recipe returns,
+  the paths it touched are recorded and an entry is authored and broadcast at once. A recipe must be
+  synchronous, and the runtime throws if it returns a promise or if the draft is written to after
+  the recipe returned, so nothing can run between a write and its entry and the local state always
+  equals what peers have applied. Inside a recipe, `state` is a recording draft. Compare drafts with
+  drafts, not with `ctx.self.state`.
+  A recipe that touches nothing emits no sync frame and does not bump the stamp. A command is a
+  sequence of such entries: a command with two `setState` calls around an `await` sends two frames,
+  and a command that throws after its first `setState` has already shared that write. There is no
+  rollback. Nested `ctx.self.commands.*` calls author their own entries.
+- Objects assigned inside a recipe are **copied**, including other parts of the draft. After
+  `state.selected = state.components.Button`, `state.selected` is a copy, so a later write to
+  `state.components.Button.props` changes one path, on this runtime and on every peer alike. State
+  never holds two references to one object. Store an id and look the value up in a query when you
+  need a reference.
 - The proxy is internal and does not escape:
   - Query/`.loaded()` results are the schema-validated value. For object and array schemas that
     rebuild a plain value, this also detaches the result from the proxy.
@@ -651,8 +668,8 @@ Creates a local `ServiceRuntime` from the service definition (identical across r
 
 1. **On registration** — emits `services:sync-start` so any existing peer can reply with its current snapshot.
 2. **On sync-start-reply** — applies the received snapshot into the local runtime so the new peer bootstraps from existing state.
-3. **After each local command** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync.
-4. **On incoming patches** — applies the received state into the local runtime via `commandSelf.setState`, which triggers fine-grained signal updates and re-renders subscribed components.
+3. **After each `setState` that writes** — broadcasts the full post-mutation state as `services:patches` so all peers stay in sync. A recipe that touches nothing emits nothing.
+4. **On incoming patches** — applies the received state into the local runtime via the runtime's `applyLocal`, which triggers fine-grained signal updates and re-renders subscribed components.
 
 ### Loop prevention
 
@@ -665,7 +682,7 @@ Loop prevention is not a single self-id check:
 
 ### State application without re-broadcast
 
-Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.commandSelf.setState(...)` directly — not through the wrapped commands — so no broadcast is triggered for received state.
+Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime.applyLocal(...)`, which mutates the state in one batch without recording, so no entry is authored and nothing is broadcast for received state. Only `setState` inside a command authors entries, through the author installed with `attachEntryAuthor` when the runtime is wired to the channel.
 
 ### `applyStatePatch`
 
@@ -693,7 +710,7 @@ service.commands.foo()
 
 ### Server participation
 
-The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it wraps commands to broadcast their post-mutation snapshots, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
+The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it broadcasts each `setState` write, responds to sync-starts, applies incoming patches, and re-broadcasts every adopted snapshot so peers on its other transports (each connected manager tab) converge. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
 
 ## Remote Command Execution
 
@@ -705,7 +722,7 @@ server context. The runtimes that lack the handler must still be able to invoke 
 `registerService` decides this **per command at registration time** by checking whether the resolved
 definition has a `handler`:
 
-- **Has a local handler** → the command runs locally and broadcasts its post-mutation state as usual
+- **Has a local handler** → the command runs locally and each of its `setState` writes is broadcast as usual
   (the normal multi-master path), **and** the runtime listens for invoke requests so it can run the
   command on behalf of peers that cannot.
 - **No local handler** → the command becomes a **remote invoker**: calling it sends a request over
@@ -726,8 +743,8 @@ Every registered runtime plays **both** roles at once, decided per command:
   `services:command-ack` **immediately** (before running), then executes the command locally on a
   deferred macrotask — so an async channel flushes the ack before any handler work starts, keeping
   acks within the window regardless of how long a handler's synchronous fan-out runs. Execution
-  validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
-  wrappers so every peer converges — then it emits `services:command-result` or
+  validates input and mutates state, and each `setState` write is broadcast through the normal entry
+  author so every peer converges — then it emits `services:command-result` or
   `services:command-error`.
 
 Outside [delegated mode](#delegated-mode), a runtime never requests a command it implements (it runs
@@ -1001,6 +1018,7 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 ## Testing Guidance
 
 - Runtime behavior belongs in [service-runtime.test.ts](./service-runtime.test.ts)
+- Touched-path recording belongs in [patch-recorder.test.ts](./patch-recorder.test.ts)
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
 - Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
@@ -1024,6 +1042,7 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../cli/tools/README.md) and [cli/tools/architecture.md](../../cli/tools/architecture.md).
 - If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
+- If you need to change how `setState` records touched paths, start in [patch-recorder.ts](./patch-recorder.ts).
 - If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).
 - If you need to change the React query hook, start in [use-service-query.ts](./use-service-query.ts).
 - If you need to change the React command hook, start in [use-service-command.ts](./use-service-command.ts).

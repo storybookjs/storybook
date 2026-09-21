@@ -3,6 +3,7 @@ import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
+import { UPDATE_QUERY_PARAMS } from 'storybook/internal/core-events';
 import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 import { styled } from 'storybook/theming';
@@ -28,6 +29,8 @@ interface InlineStoryProps extends CommonProps {
 interface IFrameStoryProps extends CommonProps {
   inline: false;
   height: string;
+  /** The channel is needed to keep the iframe in sync with changes to the globals query param. */
+  channel?: DocsContextProps['channel'];
 }
 
 export type StoryProps = InlineStoryProps | IFrameStoryProps;
@@ -92,29 +95,61 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => (
-  <div style={{ width: '100%', height }}>
-    <ZoomContext.Consumer>
-      {({ scale }) => {
-        return (
-          <IFrame
-            key="iframe"
-            id={`iframe--${story.id}`}
-            title={story.name}
-            src={getStoryHref(story.id, { viewMode: 'story' })}
-            allowFullScreen
-            scale={scale}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '0 none',
-            }}
-          />
-        );
-      }}
-    </ZoomContext.Consumer>
-  </div>
-);
+/**
+ * The manager renders the docs page with the selected globals (e.g. `theme:dark`) in its URL. The
+ * nested story iframe only receives the initial globals of the preview if it is given them
+ * explicitly, so read them from the current URL and let `UPDATE_QUERY_PARAMS` keep them up to date.
+ */
+const getGlobalsFromUrl = () => {
+  const searchParams = new URLSearchParams(globalThis.location?.search ?? '');
+  return searchParams.get('globals') ?? undefined;
+};
+
+const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px', channel }) => {
+  const [globals, setGlobals] = useState(getGlobalsFromUrl);
+
+  useEffect(() => {
+    if (!channel) {
+      return () => {};
+    }
+    const onUpdateQueryParams = (queryParams: Record<string, string | undefined>) => {
+      setGlobals(queryParams?.globals || undefined);
+    };
+    channel.on(UPDATE_QUERY_PARAMS, onUpdateQueryParams);
+    return () => channel.off(UPDATE_QUERY_PARAMS, onUpdateQueryParams);
+  }, [channel]);
+
+  // The IFrame component doesn't update the DOM when its props change, so a changed `globals`
+  // param is applied by remounting the iframe through its `key`.
+  const src = getStoryHref(
+    story.id,
+    globals ? { viewMode: 'story', globals } : { viewMode: 'story' }
+  );
+
+  return (
+    <div style={{ width: '100%', height }}>
+      <ZoomContext.Consumer>
+        {({ scale }) => {
+          return (
+            <IFrame
+              key={src}
+              id={`iframe--${story.id}`}
+              title={story.name}
+              src={src}
+              allowFullScreen
+              scale={scale}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: '0 none',
+              }}
+            />
+          );
+        }}
+      </ZoomContext.Consumer>
+    </div>
+  );
+};
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 

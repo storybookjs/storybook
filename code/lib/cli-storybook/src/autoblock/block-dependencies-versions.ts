@@ -97,7 +97,7 @@ export const blocker = createBlocker({
       case 'react':
       case 'react-dom':
         return {
-          title: 'React 18 support removed',
+          title: 'React 18 or newer required',
           message: dedent`
             Support for React < 18 has been removed.
             Please see the migration guide for more information:

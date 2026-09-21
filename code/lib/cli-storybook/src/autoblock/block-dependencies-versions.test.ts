@@ -251,7 +251,7 @@ describe('dependenciesVersions blocker', () => {
 
     const logged = blocker.log(result);
 
-    expect(logged.title).toBe('React 18 support removed');
+    expect(logged.title).toBe('React 18 or newer required');
     expect(logged.message).toContain('Support for React < 18 has been removed');
     expect(logged.link).toBe(
       'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up'

@@ -6,10 +6,24 @@ describe('selectFocusSandbox', () => {
   it.each([
     ['code/frameworks/angular-vite/src/preset.ts', 'angular-vite/default-ts'],
     ['code/frameworks/angular/src/server/index.ts', 'angular-cli/default-ts'],
+    ['code/frameworks/nextjs-vite/src/preset.ts', 'nextjs-vite/default-ts'],
+    ['code/frameworks/nextjs/src/preset.ts', 'nextjs/default-ts'],
     ['code/frameworks/react-webpack5/src/preset.ts', 'react-vite/default-ts'],
-    ['code/builders/builder-webpack5/src/index.ts', 'react-vite/default-ts'],
+    ['code/frameworks/vue3-vite/src/preset.ts', 'vue3-vite/default-ts'],
+    ['code/frameworks/svelte-vite/src/preset.ts', 'svelte-vite/default-ts'],
+    ['code/frameworks/preact-vite/src/preset.ts', 'react-vite/default-ts'],
+    ['code/frameworks/html-vite/src/preset.ts', 'react-vite/default-ts'],
+    ['code/frameworks/web-components-vite/src/preset.ts', 'react-vite/default-ts'],
+    ['code/frameworks/react-native-web-vite/src/preset.ts', 'react-native-web-vite/expo-ts'],
+    ['code/frameworks/react-vite/src/preset.ts', 'react-vite/default-ts'],
     ['code/renderers/vue3/src/render.ts', 'vue3-vite/default-ts'],
+    ['code/renderers/svelte/src/render.ts', 'svelte-vite/default-ts'],
+    ['code/renderers/preact/src/render.ts', 'react-vite/default-ts'],
+    ['code/renderers/html/src/render.ts', 'react-vite/default-ts'],
     ['code/renderers/web-components/src/render.ts', 'react-vite/default-ts'],
+    ['code/renderers/react/src/render.ts', 'react-vite/default-ts'],
+    ['code/builders/builder-webpack5/src/index.ts', 'react-vite/default-ts'],
+    ['code/builders/builder-vite/src/index.ts', 'react-vite/default-ts'],
   ])('maps %s to %s', (changedFile, expectedSandbox) => {
     expect(selectFocusSandbox([changedFile])).toBe(expectedSandbox);
   });
@@ -34,12 +48,6 @@ describe('selectFocusSandbox', () => {
 
   it('uses the React Vite sandbox when no renderer, builder, or framework changed', () => {
     expect(selectFocusSandbox(['docs/get-started/introduction.mdx'])).toBe('react-vite/default-ts');
-  });
-
-  it('falls back when the matching sandbox skips a required focused task', () => {
-    expect(selectFocusSandbox(['code/frameworks/html-vite/src/preset.ts'])).toBe(
-      'react-vite/default-ts'
-    );
   });
 });
 

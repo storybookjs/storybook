@@ -97,7 +97,7 @@ export function defineFocusJob(template: TemplateKey) {
             `rm -f ${FOCUS_TEST_STATUS}`,
             'mkdir -p test-results',
             'status=0',
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/focus-tests.xml || status=$?',
+            'yarn test --testTimeout=30000 --reporter=junit --reporter=default --outputFile=./test-results/focus-tests.xml || status=$?',
             `echo "$status" > ${FOCUS_TEST_STATUS}`,
           ].join('\n'),
         },

@@ -13,7 +13,7 @@ on:
   workflow_dispatch:
     inputs:
       pr_number:
-        description: 'PR number to clear/set evals:ok on (optional; inferred from the branch if omitted)'
+        description: 'PR number for the eval gate thread (optional; inferred from the branch if omitted)'
         type: string
         default: ''
       eval_only:
@@ -45,28 +45,6 @@ env:
   VERCEL_PROJECT_NAME: storybook-evals
 
 jobs:
-  # Keep `ci:eval` sticky as the "this PR needs evals" marker. New pushes
-  # invalidate prior green without re-spending; re-run by remove+re-add
-  # `ci:eval` or workflow_dispatch.
-  invalidate-evals-ok:
-    name: Invalidate evals:ok on new commits
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.action == 'synchronize' &&
-      !github.event.pull_request.head.repo.fork &&
-      contains(github.event.pull_request.labels.*.name, 'ci:eval') &&
-      contains(github.event.pull_request.labels.*.name, 'evals:ok')
-    runs-on: ubuntu-latest
-    permissions:
-      issues: write
-      pull-requests: write
-    steps:
-      - name: Remove stale evals:ok
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
-        run: gh pr edit "$PR_NUMBER" --remove-label 'evals:ok'
-
   eval:
     name: Run agent eval experiments
     # Skip synchronize: sticky `ci:eval` must not re-bill on every push.
@@ -84,18 +62,23 @@ jobs:
       name: ${{ (github.event_name == 'workflow_dispatch' || github.event_name == 'schedule') && github.ref == 'refs/heads/next' && 'production' || 'preview' }}
       url: ${{ steps.deploy_playground.outputs.url }}
     permissions:
-      contents: read
+      # resolveReviewThread/unresolveReviewThread need contents: write on top
+      # of pull-requests: write (403 with pull-requests alone; verified on a
+      # disposable PR). No issues/labels are touched by this workflow.
+      contents: write
       deployments: write
-      issues: write
       pull-requests: write
+    outputs:
+      evaluated_head_sha: ${{ steps.gate_head.outputs.evaluated_head_sha }}
+      gate_pr_number: ${{ steps.gate_pr.outputs.pr_number }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
 
-      - name: Resolve PR for evals:ok
-        id: evals_ok_pr
+      - name: Resolve PR for the eval gate thread
+        id: gate_pr
         if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
         env:
           GH_TOKEN: ${{ github.token }}
@@ -108,20 +91,38 @@ jobs:
           fi
           if [[ -z "$pr" ]]; then
             echo "pr_number=" >> "$GITHUB_OUTPUT"
-            echo "No PR for evals:ok labeling (ok for next/schedule-style runs)."
+            echo "No PR for the eval gate thread (ok for next/schedule-style runs)."
             exit 0
           fi
           echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
 
-      - name: Clear prior evals:ok
-        if: ${{ steps.evals_ok_pr.outputs.pr_number != '' }}
+      # pull_request: the PR head (checkout may be the merge commit).
+      # dispatch/schedule: the pushed ref head. Compared against the live PR
+      # head at the end of the run so a late finish never resolves the thread
+      # for a commit it did not evaluate.
+      - name: Capture evaluated head SHA
+        id: gate_head
+        env:
+          PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: echo "evaluated_head_sha=${PR_HEAD_SHA:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      # The single persistent merge-gate thread for ci:eval (first comment
+      # carries the <!-- agent-eval-gate --> marker). Created before evals run;
+      # a previously resolved thread is reopened and its body reset for this
+      # head. Fatal on failure: without the thread there is no merge proof.
+      - name: Create or update the eval gate thread
+        id: gate_thread
+        if: ${{ steps.gate_pr.outputs.pr_number != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ steps.evals_ok_pr.outputs.pr_number }}
-        run: |
-          if gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" --jq '.[].name' | grep -Fxq 'evals:ok'; then
-            gh pr edit "$PR_NUMBER" --remove-label 'evals:ok'
-          fi
+          PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
+          EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          SCOPE_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && 'ci:extra-evals' || '' }}
+          SCOPE_EXTRA_MODELS: ${{ (inputs.extra_models || contains(github.event.pull_request.labels.*.name, 'ci:extra-models')) && 'ci:extra-models' || '' }}
+          SCOPE_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && 'ci:storybook-latest' || '' }}
+          SCOPE_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && 'ci:review' || '' }}
+        run: bash agent-eval/scripts/eval-gate-thread.sh ensure
 
       - name: Setup Node.js
         uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
@@ -307,32 +308,6 @@ jobs:
             echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Sticky `ci:eval` = evals required. `evals:ok` = this head's eval run passed.
-      # Danger blocks merge when `ci:eval` is present without `evals:ok`.
-      # Tied to the eval step, not playground deploy (deploy can fail independently).
-      # PR runs and workflow_dispatch (with a resolvable PR) may set the label.
-      # Only label when the PR head is still the SHA this run evaluated (avoids a
-      # late finish stamping evals:ok onto a newer commit).
-      - name: Mark evals:ok
-        if: ${{ steps.run_evals.outcome == 'success' && steps.evals_ok_pr.outputs.pr_number != '' }}
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ steps.evals_ok_pr.outputs.pr_number }}
-          # pull_request: PR head (checkout may be the merge commit). dispatch: github.sha.
-          EVALUATED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-        run: |
-          current_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .head.sha)"
-          if [[ "$current_head" != "$EVALUATED_HEAD_SHA" ]]; then
-            echo "::warning title=Stale eval head::Evaluated $EVALUATED_HEAD_SHA but PR head is now $current_head; not adding evals:ok."
-            exit 0
-          fi
-
-          gh label create 'evals:ok' \
-            --color '0E8A16' \
-            --description 'Agent eval run passed for the current PR head' \
-            2>/dev/null || true
-          gh pr edit "$PR_NUMBER" --add-label 'evals:ok'
-
       # Weekly / next-dispatch signal to #team-storybook. Requires repo secret
       # SLACK_AGENT_EVAL_WEBHOOK_URL (Incoming Webhook into that channel).
       - name: Notify Slack
@@ -357,3 +332,56 @@ jobs:
           payload="$(jq -n --arg text "$text" '{text: $text}')"
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+
+      # Terminal gate write: resolve the thread only when the successful run
+      # evaluated the live PR head; stale, failed, cancelled, or skipped runs
+      # keep it open with a summary. Runs even when earlier steps failed
+      # (always() + !cancelled() + outcome checks) but never fails the job —
+      # a thread mutation failure after evals is a warning + step-summary
+      # note; re-dispatching the workflow retries it.
+      - name: Update the eval gate thread with the result
+        if: >-
+          always() &&
+          !cancelled() &&
+          steps.gate_thread.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
+          EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+          EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
+        run: |
+          summary_file="$(mktemp)"
+          PLAYGROUND_URL="$PLAYGROUND_URL" RUN_URL="$RUN_URL" \
+            node agent-eval/scripts/render-results-summary.mjs > "$summary_file" || true
+          SUMMARY_FILE="$summary_file" bash agent-eval/scripts/eval-gate-thread.sh result
+
+  # New push on a ci:eval PR: previous eval results no longer cover the head.
+  # Pushes do not auto-reopen resolved review threads, so explicitly reopen
+  # the gate thread WITHOUT rerunning evals (reruns stay label/dispatch-driven).
+  reopen-eval-gate:
+    name: Reopen eval gate thread on new commits
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.action == 'synchronize' &&
+      !github.event.pull_request.head.repo.fork &&
+      contains(github.event.pull_request.labels.*.name, 'ci:eval')
+    runs-on: ubuntu-latest
+    permissions:
+      # unresolveReviewThread needs contents: write + pull-requests: write.
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout eval gate script
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+          sparse-checkout: agent-eval/scripts
+
+      - name: Reopen the eval gate thread for the new head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          NEW_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: bash agent-eval/scripts/eval-gate-thread.sh reopen

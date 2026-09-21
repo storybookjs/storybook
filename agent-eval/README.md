@@ -114,7 +114,25 @@ Run a single experiment:
 yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
 ```
 
-Pull requests with the `ci:eval` label run experiments in CI (on label apply, not on every later push). The `ci:eval` / `ci:extra-*` / `ci:storybook-latest` / `ci:review` labels are applied by **humans only**. Labeled runs are expensive, so an AI agent must never add them (nor start `workflow_dispatch` eval runs). A successful PR or `workflow_dispatch` run adds `evals:ok` only if the PR head SHA still matches what was evaluated; new commits clear that proof so Danger can block merge while `ci:eval` is set without `evals:ok`. Re-run by removing and re-adding `ci:eval`, or via `workflow_dispatch` on the PR branch (optional `pr_number` input; otherwise inferred from the branch). Agents validate locally instead: only the specific evals affected by the change (or the eval being fixed), one experiment at a time, via `EVAL_ONLY`: never a full line, never multiple experiments in parallel.
+Pull requests with the `ci:eval` label run experiments in CI (on label apply, not on every later push). The `ci:eval` / `ci:extra-*` / `ci:storybook-latest` / `ci:review` labels are applied by **humans only**. Labeled runs are expensive, so an AI agent must never add them (nor start `workflow_dispatch` eval runs).
+
+### Eval merge gate (bot review thread)
+
+There is no `evals:ok` label. The Agent eval workflow owns **one persistent PR review thread** (anchored to a changed file, marked `<!-- agent-eval-gate -->`) as the merge proof for `ci:eval`: it resolves only when a successful eval run has evaluated the current PR head, and reopens otherwise.
+
+| PR state                                                     | Gate thread                                                                                      |
+| ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
+| `ci:eval` absent                                             | No gate thread; evals not required                                                               |
+| Evals pending / running                                      | Open — "evals required for head `<sha>`"                                                         |
+| Evals failed / cancelled / timed out / skipped               | Open — failure summary with run and playground links                                             |
+| Evals passed, head unchanged                                 | Body shows the pass summary (counts, tokens/cost, run + playground links); thread **resolved**   |
+| Evals passed, but a newer head was pushed meanwhile          | Body marks the result stale; thread stays open                                                   |
+| New push on a `ci:eval` PR (synchronize)                     | Thread explicitly reopened ("evals required for new head `<sha>`"); evals are **not** rerun       |
+| Weekly schedule / dispatch without a resolvable PR           | No PR thread is touched                                                                          |
+
+Merging a `ci:eval` PR requires the gate thread to be resolved — and only the workflow resolves it. This depends on the **Require conversation resolution before merging** branch-protection setting being enabled for the target branch (an admin setting; verify it is enabled on `next`).
+
+Rerun evals by removing and re-adding `ci:eval`, or via `workflow_dispatch` on the PR branch: the optional `pr_number` input selects the PR (otherwise inferred from the branch), and a dispatch run with a resolvable PR participates in the gate-thread lifecycle exactly like a labeled run. Agents validate locally instead: only the specific evals affected by the change (or the eval being fixed), one experiment at a time, via `EVAL_ONLY`: never a full line, never multiple experiments in parallel.
 
 A scheduled weekly run (Monday 08:00 UTC) always executes the full 8xx/82x line on `next` with default-model experiments, deploys the playground to the Vercel production target, and posts a summary to Slack `#team-storybook`. It does not enable `EVAL_EXTRA_MODELS`, `EVAL_STORYBOOK_LATEST`, or `EVAL_REVIEW` (use `workflow_dispatch` for those). Manual `workflow_dispatch` runs on `next` also notify Slack.
 
@@ -180,7 +198,7 @@ In CI, opt-in labels compose with `ci:eval` (same flags exist on `workflow_dispa
 | `ci:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
 | `ci:review` / `review`                     | Force `experimentalReview` on and assert the review workflow for MCP cells too   |
 
-`eval_only` (dispatch only) targets specific eval names. `pr_number` (dispatch only) selects which PR gets `evals:ok` when the branch inference is ambiguous. All of these are human-triggered spend decisions; agents never apply the labels or dispatch the workflow.
+`eval_only` (dispatch only) targets specific eval names. `pr_number` (dispatch only) selects the PR whose gate thread the run drives when the branch inference is ambiguous. All of these are human-triggered spend decisions; agents never apply the labels or dispatch the workflow.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static `VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and Vercel-issued OIDC is only refreshed automatically inside Vercel-managed runtime/build contexts.
 

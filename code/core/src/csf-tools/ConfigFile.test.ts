@@ -1,10 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint, types as t } from 'storybook/internal/babel';
+import * as babelParser from '@babel/parser';
+import { babelPrint, parserOptions } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
-import { loadConfig, printConfig } from './ConfigFile.ts';
+import { ConfigFile, loadConfig, printConfig } from './ConfigFile.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -13,12 +14,12 @@ expect.addSnapshotSerializer({
 
 const getField = (path: string[], source: string) => {
   const config = loadConfig(source).parse();
-  return config.getFieldValue(path);
+  return config.getValue(path);
 };
 
 const setField = (path: string[], value: any, source: string) => {
   const config = loadConfig(source).parse();
-  config.setFieldValue(path, value);
+  expect(config.set(path, value)).toMatchObject({ ok: true });
   return printConfig(config).code;
 };
 
@@ -35,7 +36,30 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
-  describe('findNamedImportMethodCalls', () => {
+  it.each([
+    `export default { parameters: { viewport: { disable: true } } };`,
+    `export default definePreview({ parameters: { viewport: { disable: true } } });`,
+    `export const parameters = { viewport: { disable: true } };`,
+    `export default {};`,
+  ])('keeps nested fields readable and removable after setting them in %s', (source) => {
+    const config = loadConfig(source).parse();
+
+    config.set(['parameters', 'viewport', 'options'], {});
+    expect(config.getValue(['parameters', 'viewport', 'options'])).toEqual({});
+    if (source.includes('disable: true')) {
+      expect(config.getValue(['parameters', 'viewport', 'disable'])).toBe(true);
+    }
+    config.removeField(['parameters', 'viewport', 'disable']);
+    config.set(['parameters', 'viewport', 'disabled'], true);
+
+    const reparsed = loadConfig(printConfig(config).code).parse();
+    expect(config.getValue(['parameters'])).toEqual({
+      viewport: { options: {}, disabled: true },
+    });
+    expect(reparsed.getValue(['parameters'])).toEqual(config.getValue(['parameters']));
+  });
+
+  describe('callArguments', () => {
     it('finds binding-safe method calls on aliased named imports', () => {
       const config = loadConfig(dedent`
         import { addons as managerAddons } from 'storybook/manager-api';
@@ -48,21 +72,21 @@ describe('ConfigFile', () => {
         }
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api', '@storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'managerAddons.setConfig({ showNav: false })',
-        "managerAddons['setConfig']({ showPanel: false })",
-      ]);
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
 
-      calls[0].arguments[0] = t.objectExpression([
-        t.objectProperty(t.identifier('layout'), t.objectExpression([])),
-      ]);
-      expect(printConfig(config).code).toContain('managerAddons.setConfig({\n  layout: {}\n})');
+      calls[0].group(['layout'], ['showNav']);
+      expect(config.changed).toBe(true);
+      expect(config.mutationDiagnostics).toEqual([]);
+      expect(printConfig(config).code).toContain('layout: {');
+      expect(calls[0].getValue(['layout', 'showNav'])).toBe(false);
     });
 
     it('ignores other modules and type-only imports', () => {
@@ -74,7 +98,7 @@ describe('ConfigFile', () => {
       `).parse();
 
       expect(
-        config.findNamedImportMethodCalls({
+        config.callArguments({
           importedName: 'addons',
           methodName: 'setConfig',
           moduleNames: ['storybook/manager-api'],
@@ -93,15 +117,14 @@ describe('ConfigFile', () => {
         }
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'managerAddons.setConfig({ showNav: false })',
-      ]);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
     });
 
     it('finds same-named imported bindings in different scopes', () => {
@@ -116,16 +139,15 @@ describe('ConfigFile', () => {
         }
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'addons.setConfig({ showNav: false })',
-        'addons.setConfig({ showPanel: false })',
-      ]);
+      expect(calls).toHaveLength(2);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
+      expect(calls[1].getValue(['showPanel'])).toBe(false);
     });
 
     it('ignores other bindings from the same CommonJS destructuring', () => {
@@ -136,15 +158,14 @@ describe('ConfigFile', () => {
         unrelated.setConfig({ showPanel: false });
       `).parse();
 
-      const calls = config.findNamedImportMethodCalls({
+      const calls = config.callArguments({
         importedName: 'addons',
         methodName: 'setConfig',
         moduleNames: ['storybook/manager-api'],
       });
 
-      expect(calls.map((call) => babelPrint(call))).toEqual([
-        'addons.setConfig({ showNav: false })',
-      ]);
+      expect(calls).toHaveLength(1);
+      expect(calls[0].getValue(['showNav'])).toBe(false);
     });
   });
 
@@ -421,12 +442,12 @@ describe('ConfigFile', () => {
           }>();
         `;
         const config = loadConfig(source).parse();
-        expect(config.getFieldValue(['parameters', 'foo'])).toEqual('bar');
+        expect(config.getValue(['parameters', 'foo'])).toEqual('bar');
       });
     });
   });
 
-  describe('setField', () => {
+  describe('set', () => {
     describe('named exports', () => {
       it('missing export', () => {
         expect(
@@ -624,12 +645,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: 'baz'
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -1126,12 +1147,12 @@ describe('ConfigFile', () => {
       it('more single quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', 'b', "c"]`))
           .toMatchInlineSnapshot(`
-          export const stories = ['a', 'b', "c"]
+            export const stories = ['a', 'b', "c"]
 
-          export const foo = {
-            bar: 'baz'
-          };
-        `);
+            export const foo = {
+              bar: 'baz'
+            };
+          `);
       });
       it('more double quotes', () => {
         expect(setField(['foo', 'bar'], 'baz', `export const stories = ['a', "b", "c"]`))
@@ -1143,6 +1164,23 @@ describe('ConfigFile', () => {
           };
         `);
       });
+    });
+  });
+
+  describe('quote inference under EOL reconstruction', () => {
+    it('keeps single quotes when token offsets index a CRLF reconstruction (Windows)', () => {
+      const source = `export default {\n  framework: '@storybook/react-vite',\n};\n`;
+      // On Windows, recast rebuilds the parser input with `os.EOL` before babel sees it, so
+      // babel's token offsets index a CRLF string while `_code` is the original LF source.
+      // Parsing the CRLF variant directly with @babel/parser recreates exactly that
+      // misalignment; quote inference must not depend on token offsets to survive it.
+      const ast = babelParser.parse(source.replaceAll('\n', '\r\n'), { ...parserOptions });
+      const config = new ConfigFile(ast, source);
+      config.parse();
+      config.setImport(['fileURLToPath'], 'node:url');
+      const printed = printConfig(config).code;
+      expect(printed).toContain("from 'node:url'");
+      expect(printed).not.toContain('from "node:url"');
     });
   });
 
@@ -1921,7 +1959,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a preset-style object entry', () => {
@@ -1932,7 +1970,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a wrapped string entry', () => {
@@ -1943,7 +1981,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('removes a wrapped object entry', () => {
@@ -1954,7 +1992,7 @@ describe('ConfigFile', () => {
       `;
       const config = loadConfig(source).parse();
       config.removeEntryFromArray(['addons'], 'b');
-      expect(config.getFieldValue(['addons'])).toMatchInlineSnapshot(`a,c`);
+      expect(config.getValue(['addons'])).toMatchInlineSnapshot(`a,c`);
     });
 
     it('throws when entry is missing', () => {

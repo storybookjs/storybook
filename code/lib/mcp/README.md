@@ -13,7 +13,7 @@ instead — `storybook dev` serves one at `/mcp` through `@storybook/addon-mcp`.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.12+
 - A [manifests](https://storybook.js.org/docs/next/ai/manifests) source containing:
   - `components.json` (required)
   - `docs.json` (optional)

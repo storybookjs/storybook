@@ -3,10 +3,13 @@ import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } 
 
 import { RefreshIcon } from '@storybook/icons';
 
-import { useInteractOutside } from '@react-aria/interactions';
-import { Overlay, ariaHideOutside, useOverlay, useOverlayPosition } from '@react-aria/overlays';
-import { useObjectRef } from '@react-aria/utils';
-import { useOverlayTriggerState } from '@react-stately/overlays';
+import { useInteractOutside } from 'react-aria/useInteractOutside';
+import { useOverlay } from 'react-aria/useOverlay';
+import { useOverlayPosition } from 'react-aria/useOverlayPosition';
+import { Overlay } from 'react-aria/Overlay';
+import { ariaHideOutside } from '@react-aria/overlays';
+import { useObjectRef } from 'react-aria/useObjectRef';
+import { useOverlayTriggerState } from 'react-stately/useOverlayTriggerState';
 import { darken, transparentize } from 'polished';
 import { styled, useTheme } from 'storybook/theming';
 

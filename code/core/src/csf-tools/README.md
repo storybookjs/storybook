@@ -9,6 +9,8 @@ An experimental library to read, analyze, transform, and write CSF programmatica
 
 It can parse MDX into CSF.
 
+Factory meta can reference an imported object, including named imports, namespace members, and explicit re-exports. With `fileName` set, the parser uses the shared module resolver to read its title, ID, tags, and story filters without executing the imported module. Unresolved or dynamic configurations remain unsupported by the Vitest transformer. The transformer applies the calculated title through a local object spread, leaving the imported object unchanged.
+
 ## Transforming stories
 
 `CsfFile.objects()` returns one `CsfObject` editor per mutable object it can prove safe to edit: the meta, each story export, and each CSF2 `Story.parameters` / `Story.story` annotation assignment.

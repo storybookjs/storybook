@@ -33,6 +33,9 @@ import type { PrintResultType } from './PrintResultType.ts';
 import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
+import { createStoryReferenceResolver } from './story-shape/reference-context.ts';
+import { isSelfContained, resolveArgValue } from './story-shape/resolve-arg-value.ts';
+import { resolveObjectMembers } from './story-shape/resolve-members.ts';
 import {
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
@@ -321,11 +324,8 @@ export class CsfFile {
 
   _metaFactoryCall: t.CallExpression | undefined;
 
-  /**
-   * True when the CSF factory configuration could not be resolved to an object literal in this
-   * file, so `_metaNode` is a stand-in that is not part of the AST. Writes to it are discarded.
-   */
-  _metaNodeIsSynthetic: boolean | undefined;
+  // Only local meta nodes belong to the story AST; resolved nodes are read-only snapshots.
+  _metaNodeSource: 'local' | 'resolved' | 'unresolved' = 'local';
 
   _storyStatements: Record<string, t.ExportNamedDeclaration | t.Expression> = {};
 
@@ -422,6 +422,45 @@ export class CsfFile {
 
       More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#string-literal-titles
     `);
+  }
+
+  private _resolveFactoryMeta(argument: t.Node | undefined): t.ObjectExpression | undefined {
+    if (!argument || !t.isExpression(argument) || !this._options.fileName) {
+      return undefined;
+    }
+    const references = createStoryReferenceResolver({
+      externalize: (node, context) => resolveArgValue(node, context).node,
+    })();
+    const members = resolveObjectMembers(t.objectExpression([t.spreadElement(argument)]), {
+      program: this._file.path,
+      filePath: this._options.fileName,
+      ...references,
+    });
+    if (members.unresolved.length > 0) {
+      return undefined;
+    }
+    const properties = [];
+    for (const [key, value] of Object.entries(members.properties)) {
+      if (
+        ['title', 'id', 'tags', 'includeStories', 'excludeStories'].includes(key) &&
+        !isSelfContained(value)
+      ) {
+        return undefined;
+      }
+      if (t.isObjectMethod(value)) {
+        properties.push(t.cloneNode(value, true));
+      } else if (t.isExpression(value)) {
+        properties.push(
+          t.objectProperty(
+            t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key),
+            key === 'component'
+              ? t.memberExpression(t.cloneNode(argument, true), t.identifier('component'))
+              : t.cloneNode(value, true)
+          )
+        );
+      }
+    }
+    return t.objectExpression(properties);
   }
 
   _parseMeta(declaration: t.ObjectExpression, program: t.Program) {
@@ -930,8 +969,9 @@ export class CsfFile {
                   if (t.isObjectExpression(unwrappedArgument)) {
                     self._parseMeta(unwrappedArgument, self._ast.program);
                   } else {
-                    self._metaNodeIsSynthetic = true;
-                    self._parseMeta(t.objectExpression([]), self._ast.program);
+                    const resolved = self._resolveFactoryMeta(argument);
+                    self._metaNodeSource = resolved ? 'resolved' : 'unresolved';
+                    self._parseMeta(resolved ?? t.objectExpression([]), t.program([]));
                   }
                 } else if (rootObject.name === 'preview') {
                   // Only throw if the variable is named "preview" - this indicates

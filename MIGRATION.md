@@ -760,7 +760,7 @@ Storybook renders through React's new root API (`react-dom/client`), which React
 
 `storybook upgrade` blocks the upgrade when it detects an unsupported `react` or `react-dom` version and links to this section. Upgrade React to 18 or 19 and run the upgrade again.
 
-Remove `framework.options.legacyRootApi` from `.storybook/main.*`, whether its value is `true` or `false`. This is a manual migration: `storybook upgrade` does not remove the option or migrate application code to the new root API. Projects that enabled the legacy root must verify their stories with the new root API before upgrading; automatically deleting the option cannot establish that their components support the changed rendering behavior.
+Remove `framework.options.legacyRootApi` from `.storybook/main.*`, whether its value is `true` or `false`. `storybook upgrade` blocks the upgrade while the option is still present and links to this section. This is a manual migration: `storybook upgrade` does not remove the option or migrate application code to the new root API. Projects that enabled the legacy root must verify their stories with the new root API before upgrading; automatically deleting the option cannot establish that their components support the changed rendering behavior.
 
 ## From version 10.5.x to 10.6.0
 

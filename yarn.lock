@@ -10685,6 +10685,7 @@ __metadata:
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
+    "@types/pug": "npm:2.0.10"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/compiler-dom": "npm:^3.2.47"
     "@vue/language-core": "npm:^3.2.7"
@@ -12314,6 +12315,13 @@ __metadata:
   version: 15.7.9
   resolution: "@types/prop-types@npm:15.7.9"
   checksum: 10c0/e2a7373b91a8eb30cb4e399ef5b3a14baa7d72eed1667ef5e3cb1e9400edfca9b60c20b845fefdcf7562773829f6ff60ba350b09f6313a8093e70c15b2b88f00
+  languageName: node
+  linkType: hard
+
+"@types/pug@npm:2.0.10":
+  version: 2.0.10
+  resolution: "@types/pug@npm:2.0.10"
+  checksum: 10c0/6fac37fd84ad4bcf755061caad274db70591699739070bc30c5c1b5f0aecf98646dc29ec8da11cfca82a2b7cc57d949a3ae50aba2f88bf098751ebdd25d9aaea
   languageName: node
   linkType: hard
 

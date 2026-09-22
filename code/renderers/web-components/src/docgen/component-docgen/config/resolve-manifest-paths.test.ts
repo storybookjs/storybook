@@ -5,25 +5,32 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
+import { findFilesUp } from 'storybook/internal/common';
+
 import {
   MissingCustomElementsManifestError,
   resolveManifestPaths,
 } from './resolve-manifest-paths.ts';
 
 vi.mock('node:fs', { spy: true });
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
+  findFilesUp: vi.fn(),
+}));
 
 beforeEach(() => {
   vol.reset();
   vi.mocked(existsSync).mockImplementation(memfs.existsSync);
+  vi.mocked(findFilesUp).mockReturnValue([]);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
 });
 
 describe('resolveManifestPaths', () => {
   it.each([
-    ['a framework option string', 'custom-elements.json', ['/workspace/custom-elements.json']],
+    ['a framework option string', '../custom-elements.json', ['/workspace/custom-elements.json']],
     [
       'a framework option array',
-      ['one.json', 'two.json'],
+      ['../one.json', '../two.json'],
       ['/workspace/one.json', '/workspace/two.json'],
     ],
   ])('resolves %s', (_name, customElementsManifest, expectedManifestPaths) => {
@@ -33,7 +40,7 @@ describe('resolveManifestPaths', () => {
       '/workspace/two.json': '{}',
     });
 
-    expect(resolveManifestPaths('/workspace', { customElementsManifest })).toEqual(
+    expect(resolveManifestPaths('/workspace/.storybook', { customElementsManifest })).toEqual(
       expectedManifestPaths
     );
   });
@@ -42,20 +49,42 @@ describe('resolveManifestPaths', () => {
     vol.fromNestedJSON({
       '/workspace/package.json': JSON.stringify({ customElements: 'dist/custom-elements.json' }),
     });
+    vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
 
-    expect(resolveManifestPaths('/workspace', {})).toEqual([
+    expect(resolveManifestPaths('/workspace/.storybook', {})).toEqual([
       '/workspace/dist/custom-elements.json',
     ]);
   });
 
+  it('finds package.json from a nested config directory', () => {
+    vol.fromNestedJSON({
+      '/workspace/apps/foo/package.json': JSON.stringify({
+        customElements: 'dist/custom-elements.json',
+      }),
+    });
+    vi.mocked(findFilesUp).mockReturnValue(['/workspace/apps/foo/package.json']);
+
+    expect(resolveManifestPaths('/workspace/apps/foo/config/storybook', {})).toEqual([
+      '/workspace/apps/foo/dist/custom-elements.json',
+    ]);
+    expect(findFilesUp).toHaveBeenCalledWith(
+      ['package.json'],
+      '/workspace/apps/foo/config/storybook'
+    );
+  });
+
+  it('returns an empty array without options or package.json', () => {
+    expect(resolveManifestPaths('/workspace/.storybook', {})).toEqual([]);
+  });
+
   it('throws when an explicit framework option path does not exist', () => {
-    const path = resolve('/workspace/missing.json');
+    const path = resolve('/workspace/.storybook/missing.json');
 
     expect(() =>
-      resolveManifestPaths('/workspace', { customElementsManifest: 'missing.json' })
+      resolveManifestPaths('/workspace/.storybook', { customElementsManifest: 'missing.json' })
     ).toThrowError(MissingCustomElementsManifestError);
     expect(() =>
-      resolveManifestPaths('/workspace', { customElementsManifest: 'missing.json' })
+      resolveManifestPaths('/workspace/.storybook', { customElementsManifest: 'missing.json' })
     ).toThrow(
       `The customElementsManifest framework option points to a file that does not exist: ${path}`
     );

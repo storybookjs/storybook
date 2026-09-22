@@ -1,4 +1,5 @@
 import { Category, StorybookError } from 'storybook/internal/server-errors';
+import { findFilesUp } from 'storybook/internal/common';
 
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
@@ -28,9 +29,9 @@ const asPathArray = (value: unknown): string[] => {
   return [];
 };
 
-const readPackageCustomElements = (rootDir: string): string[] => {
-  const packageJsonPath = resolve(rootDir, 'package.json');
-  if (!existsSync(packageJsonPath)) {
+const readPackageCustomElements = (configDir: string): string[] => {
+  const packageJsonPath = findFilesUp(['package.json'], configDir)[0];
+  if (!packageJsonPath) {
     return [];
   }
   const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
@@ -42,11 +43,11 @@ const readPackageCustomElements = (rootDir: string): string[] => {
 };
 
 const resolveFrameworkManifestPaths = (
-  rootDir: string,
+  configDir: string,
   frameworkOptions: WebComponentsFrameworkOptions
 ): string[] =>
   asPathArray(frameworkOptions.customElementsManifest).map((path) => {
-    const resolvedPath = resolve(rootDir, path);
+    const resolvedPath = resolve(configDir, path);
     if (!existsSync(resolvedPath)) {
       throw new MissingCustomElementsManifestError({ path: resolvedPath });
     }
@@ -54,9 +55,9 @@ const resolveFrameworkManifestPaths = (
   });
 
 export const resolveManifestPaths = (
-  rootDir: string,
+  configDir: string,
   frameworkOptions: WebComponentsFrameworkOptions
 ): string[] => [
-  ...resolveFrameworkManifestPaths(rootDir, frameworkOptions),
-  ...readPackageCustomElements(rootDir),
+  ...resolveFrameworkManifestPaths(configDir, frameworkOptions),
+  ...readPackageCustomElements(configDir),
 ];

@@ -2,7 +2,7 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
@@ -14,14 +14,18 @@ vi.mock('node:fs', { spy: true });
 
 beforeEach(() => {
   vol.reset();
+  vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
 });
 
 const STORY_PATH = '/workspace/input.stories.ts';
 
 const options: WebComponentsDocgenOptions = {
   manifestPaths: ['/workspace/custom-elements.json'],
-  rootDir: '/workspace',
 };
 
 const entry: IndexEntry = {

@@ -10,7 +10,6 @@ import { resolveStoryComponent } from './resolve-component/resolve-component.ts'
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
-  rootDir: string;
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
@@ -23,7 +22,6 @@ export type WebComponentsDocgenPayload = DocgenPayload & {
 export interface BuildDocgenContext {
   manifests: ManifestLoadResult[];
   options: WebComponentsDocgenOptions;
-  resolvePath?: (importPath: string) => string;
 }
 
 const describedBy = (text: unknown): string | undefined =>
@@ -35,21 +33,6 @@ const errorPayload = (
   message: string
 ): WebComponentsDocgenPayload => ({ ...base, jsDocTags: {}, error: { name, message } });
 
-const manifestPathForPayload = (rootDir: string, manifestPath: string): string =>
-  relative(rootDir, manifestPath);
-
-const manifestListForPayload = (options: WebComponentsDocgenOptions): string =>
-  options.manifestPaths.map((path) => manifestPathForPayload(options.rootDir, path)).join(', ');
-
-const manifestErrorMessageForPayload = (
-  options: WebComponentsDocgenOptions,
-  error: Extract<ManifestLoadResult, { error: unknown }>
-): string =>
-  error.error.message.replaceAll(error.path, manifestPathForPayload(options.rootDir, error.path));
-
-const firstManifestError = (manifests: ManifestLoadResult[]): ManifestLoadResult | undefined =>
-  manifests.find((manifest) => 'error' in manifest);
-
 export function buildDocgenPayload(
   input: DocgenProviderInput,
   context: BuildDocgenContext
@@ -59,7 +42,6 @@ export function buildDocgenPayload(
     return undefined;
   }
   const storyFilePath = resolve(process.cwd(), storyImportPath);
-  const storyFilePath = resolvePath(storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
     if (resolved.reason === 'no-meta-component') {
@@ -92,20 +74,21 @@ export function buildDocgenPayload(
 
   const declaration = resolveDeclarationForTag(context.manifests, tag);
   if (!declaration) {
-    const error = firstManifestError(context.manifests);
+    const error = context.manifests.find((manifest) => 'error' in manifest);
     if (error && 'error' in error) {
       return errorPayload(
         base,
         error.error.name,
-        manifestErrorMessageForPayload(context.options, error)
+        error.error.message.replaceAll(error.path, relative(process.cwd(), error.path))
       );
     }
 
     return errorPayload(
       base,
       'tag-not-found',
-      `No declaration for "${tag}" was found in ${manifestListForPayload(context.options)}. ` +
-        'If the element is new, rerun the custom elements manifest analyzer.'
+      `No declaration for "${tag}" was found in ${context.options.manifestPaths
+        .map((path) => relative(process.cwd(), path))
+        .join(', ')}. ` + 'If the element is new, rerun the custom elements manifest analyzer.'
     );
   }
 
@@ -117,7 +100,7 @@ export function buildDocgenPayload(
     argTypes: extractArgTypesFromDeclaration(declaration.declaration),
     renderer: 'web-components',
     customElementsManifest: {
-      manifestPath: manifestPathForPayload(context.options.rootDir, declaration.manifestPath),
+      manifestPath: relative(process.cwd(), declaration.manifestPath),
       declaration: declaration.declaration,
     },
   };

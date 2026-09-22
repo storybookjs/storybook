@@ -7,7 +7,6 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { WebComponentsDocgenOptions } from './component-docgen/build-docgen.ts';
@@ -19,9 +18,9 @@ import { DOCGEN_WORKER_SPECIFIER } from './worker-specifier.ts';
 
 export const experimental_docgenProvider = async (
   existing: DocgenProviderDescriptor[] = [],
-  options?: Options
+  options: Options
 ): Promise<DocgenProviderDescriptor[]> => {
-  const features = await options?.presets?.apply('features', {});
+  const features = await options.presets.apply('features', {});
 
   if (!features?.experimentalDocgenServer) {
     return existing;

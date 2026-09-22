@@ -1,19 +1,25 @@
 import type { Options } from 'storybook/internal/types';
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
+import { findFilesUp } from 'storybook/internal/common';
+
 import { experimental_docgenProvider, experimental_manifests } from './preset.ts';
 
 vi.mock('node:fs', { spy: true });
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
+  findFilesUp: vi.fn(),
+}));
 
 beforeEach(() => {
   vol.reset();
-  vi.mocked(existsSync).mockImplementation(memfs.existsSync);
+  vi.mocked(findFilesUp).mockReturnValue([]);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
 });
 
@@ -41,37 +47,11 @@ describe('experimental_docgenProvider', () => {
     expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
   });
 
-  it.each([
-    ['a framework option string', 'custom-elements.json', ['/workspace/custom-elements.json']],
-    [
-      'a framework option array',
-      ['one.json', 'two.json'],
-      ['/workspace/one.json', '/workspace/two.json'],
-    ],
-  ])('resolves %s', async (_name, customElementsManifest, expectedManifestPaths) => {
-    vol.fromNestedJSON({
-      '/workspace/custom-elements.json': '{}',
-      '/workspace/one.json': '{}',
-      '/workspace/two.json': '{}',
-    });
-
-    const result = await experimental_docgenProvider(
-      [],
-      optionsWith({ experimentalDocgenServer: true }, { customElementsManifest })
-    );
-
-    expect(result[0].moduleSpecifier).toContain('docgen-worker');
-    expect(result[0].options).toEqual({
-      manifestPaths: expectedManifestPaths,
-      rootDir: '/workspace',
-    });
-    expect(JSON.parse(JSON.stringify(result[0].options))).toEqual(result[0].options);
-  });
-
-  it('resolves package.json#customElements relative to the package file', async () => {
+  it('contributes the docgen worker descriptor', async () => {
     vol.fromNestedJSON({
       '/workspace/package.json': JSON.stringify({ customElements: 'dist/custom-elements.json' }),
     });
+    vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
 
     expect(
       await experimental_docgenProvider([], optionsWith({ experimentalDocgenServer: true }))
@@ -80,21 +60,9 @@ describe('experimental_docgenProvider', () => {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: ['/workspace/dist/custom-elements.json'],
-          rootDir: '/workspace',
         },
       },
     ]);
-  });
-
-  it('throws when an explicit framework option path does not exist', async () => {
-    await expect(
-      experimental_docgenProvider(
-        [],
-        optionsWith({ experimentalDocgenServer: true }, { customElementsManifest: 'missing.json' })
-      )
-    ).rejects.toThrow(
-      'The customElementsManifest framework option points to a file that does not exist: /workspace/missing.json'
-    );
   });
 });
 

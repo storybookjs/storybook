@@ -121,4 +121,81 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       }
     `);
   });
+
+  it.each([
+    ['2.0.7', '3.0.3', null],
+    ['2.0.7', '3.0.0-beta.1', null],
+    ['2.0.7', '2.0.8', '2.0.8'],
+    ['3.0.0', '3.0.3', '3.0.3'],
+  ])(
+    'handles msw-storybook-addon %s to %s',
+    async (beforeVersion, afterVersion, expectedVersion) => {
+      vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+
+      const packageManager = {
+        getAllDependencies: () => ({ 'msw-storybook-addon': beforeVersion }),
+        getInstalledVersion: async () => beforeVersion,
+        latestVersion: async () => afterVersion,
+      };
+
+      await expect(check({ packageManager })).resolves.toEqual(
+        expectedVersion === null
+          ? null
+          : {
+              upgradable: [
+                {
+                  packageName: 'msw-storybook-addon',
+                  beforeVersion,
+                  afterVersion: expectedVersion,
+                },
+              ],
+            }
+      );
+    }
+  );
+
+  it('keeps unrelated community-package major upgrades', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+
+    const packageManager = {
+      getAllDependencies: () => ({ '@example/storybook-addon': '1.0.0' }),
+      getInstalledVersion: async () => '1.0.0',
+      latestVersion: async () => '2.0.0',
+    };
+
+    await expect(check({ packageManager })).resolves.toEqual({
+      upgradable: [
+        {
+          packageName: '@example/storybook-addon',
+          beforeVersion: '1.0.0',
+          afterVersion: '2.0.0',
+        },
+      ],
+    });
+  });
+
+  it('keeps unrelated upgrades while excluding msw-storybook-addon crossings', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([]);
+
+    const packageManager = {
+      getAllDependencies: () => ({
+        'msw-storybook-addon': '2.0.7',
+        '@example/storybook-addon': '1.0.0',
+      }),
+      getInstalledVersion: async (packageName: string) =>
+        packageName === 'msw-storybook-addon' ? '2.0.7' : '1.0.0',
+      latestVersion: async (packageName: string) =>
+        packageName === 'msw-storybook-addon' ? '3.0.3' : '2.0.0',
+    };
+
+    await expect(check({ packageManager })).resolves.toEqual({
+      upgradable: [
+        {
+          packageName: '@example/storybook-addon',
+          beforeVersion: '1.0.0',
+          afterVersion: '2.0.0',
+        },
+      ],
+    });
+  });
 });

@@ -250,7 +250,6 @@ export type QueryRuntimeRefs<TState> = {
    * runtime per snapshot next to the live registry's runtime, which is where the two meet.
    */
   loadScopeId: string;
-  commandSelf: CommandSelf<TState>;
   /** Deep reactive proxy backing this service's state; reads inside a computed track fine-grained. */
   state: TState;
   registryApi: ServiceRegistryApi;

@@ -2,11 +2,6 @@ import { isEqual } from 'es-toolkit/predicate';
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { defineService } from './service-definition.ts';
-import { serviceRegistryApi } from './service-registry.ts';
-import { createServiceRuntime } from './service-runtime.ts';
-import { clearRegistry, registerService } from './server.ts';
-import type { QueryState } from './types.ts';
 import {
   type RebuiltValue,
   awaitedPreloadValueServiceDef,
@@ -15,7 +10,13 @@ import {
   fireAndForgetPreloadValueServiceDef,
   mutableRecordLookupServiceDef,
   rebuiltEqualValueOnLoadServiceDef,
+  voidOutputSchema,
 } from './fixtures.ts';
+import { defineService } from './service-definition.ts';
+import { serviceRegistryApi } from './service-registry.ts';
+import { createServiceRuntime } from './service-runtime.ts';
+import { clearRegistry, registerService } from './server.ts';
+import type { QueryState } from './types.ts';
 
 afterEach(() => {
   clearRegistry();
@@ -1597,6 +1598,105 @@ describe('service runtime', () => {
       });
 
       unsubscribe();
+    });
+  });
+
+  describe('entry authoring', () => {
+    type SlotState = { slots: Record<string, string> };
+
+    const slotServiceDef = defineService({
+      id: 'internal-fixture/slot-writes',
+      description: 'Writes slots from a command and from a nested command.',
+      initialState: { slots: {} } as SlotState,
+      queries: {},
+      commands: {
+        writeSlot: {
+          description: 'Writes one slot.',
+          input: v.object({ key: v.string(), value: v.string() }),
+          output: voidOutputSchema,
+          handler: (input, ctx) => {
+            ctx.self.setState((state) => {
+              state.slots[input.key] = input.value;
+            });
+          },
+        },
+        outer: {
+          description: 'Writes one slot then delegates to writeSlot.',
+          input: v.void(),
+          output: voidOutputSchema,
+          handler: async (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.slots.outer = 'o';
+            });
+            await ctx.self.commands.writeSlot({ key: 'inner', value: 'i' });
+          },
+        },
+      },
+    });
+
+    it('authors one entry per setState, tagged with the command that ran it', async () => {
+      const runtime = createServiceRuntime(
+        slotServiceDef,
+        { registryApi: serviceRegistryApi },
+        { slots: {} }
+      );
+      const author = vi.fn();
+      runtime.attachEntryAuthor(author);
+
+      await runtime.commands.outer();
+
+      expect(author.mock.calls.map(([entry]) => entry)).toEqual([
+        { command: 'outer', ops: [{ op: 'add', path: '/slots/outer', value: 'o' }] },
+        { command: 'writeSlot', ops: [{ op: 'add', path: '/slots/inner', value: 'i' }] },
+      ]);
+      expect(runtime.getStateSnapshot()).toEqual({ slots: { outer: 'o', inner: 'i' } });
+    });
+
+    it('copies initial state so a reference shared between two keys becomes two objects', () => {
+      const shared = { props: 3 };
+      const runtime = createServiceRuntime(
+        defineService({
+          id: 'internal-fixture/aliased-initial-state',
+          description: 'Holds one object under two keys.',
+          initialState: { a: shared, b: shared },
+          queries: {},
+          commands: {
+            bumpA: {
+              description: 'Writes a.props.',
+              input: v.void(),
+              output: voidOutputSchema,
+              handler: (_input, ctx) => {
+                ctx.self.setState((state) => {
+                  state.a.props = 4;
+                });
+              },
+            },
+          },
+        }),
+        { registryApi: serviceRegistryApi }
+      );
+
+      return runtime.commands.bumpA().then(() => {
+        expect(runtime.getStateSnapshot()).toEqual({ a: { props: 4 }, b: { props: 3 } });
+        expect(shared).toEqual({ props: 3 });
+      });
+    });
+
+    it('does not author an entry for applyLocal', () => {
+      const runtime = createServiceRuntime(
+        slotServiceDef,
+        { registryApi: serviceRegistryApi },
+        { slots: {} }
+      );
+      const author = vi.fn();
+      runtime.attachEntryAuthor(author);
+
+      runtime.applyLocal((state) => {
+        state.slots.adopted = 'x';
+      });
+
+      expect(author).not.toHaveBeenCalled();
+      expect(runtime.getStateSnapshot()).toEqual({ slots: { adopted: 'x' } });
     });
   });
 });

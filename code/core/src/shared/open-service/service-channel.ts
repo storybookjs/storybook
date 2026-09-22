@@ -57,7 +57,7 @@ export type SyncStartPayload = v.InferOutput<typeof syncStartSchema>;
 
 /**
  * A full state snapshot stamped for last-write-wins ordering. Shared by `services:patches` (broadcast
- * after every local command) and `services:sync-start-reply` (the response that bootstraps a freshly
+ * after every local `setState` that writes) and `services:sync-start-reply` (the response that bootstraps a freshly
  * registered peer). Recipients apply it only when it is strictly newer than their own (see `isNewer`
  * in `service-sync.ts`), which suppresses echoes, breaks relay cycles, and converges concurrent writes.
  */

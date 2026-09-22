@@ -284,6 +284,8 @@ If your stories use assets in the public directory and you're not using the defa
 
 The addon generates its Storybook test project with `extends: false`. This prevents it from inheriting root-level unit-test setup files, plugins, and other project configuration. Vitest 5 enables inheritance by default for inline projects, so the explicit setting also keeps the behavior consistent across Vitest versions.
 
+Coverage is a [global Vitest option](https://vitest.dev/guide/projects), so `extends: false` does not isolate it. When you run `vitest --project=storybook --coverage`, Vitest still uses the root `test.coverage` configuration.
+
 Existing configurations are not changed automatically. If your Storybook project uses `extends: true`, it inherits the root configuration. To isolate it, set `extends: false` and configure any required shared aliases or plugins explicitly on that project or through Storybook's [`viteFinal`](../../../api/main-config/main-config-vite-final.mdx). Keep unit-test setup files on the unit-test project. Examples that merge and inherit a shared Vite configuration remain an opt-in to sharing those settings.
 
 Use a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions, to define separate configurations for Storybook tests and other tests. This allows each suite to run independently or together.

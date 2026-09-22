@@ -6,12 +6,6 @@ disable-model-invocation: true
 
 # Update browser support
 
-## SB11 RC date gate
-
-Before any analytics query or browser-pin write, check the current date and the target Storybook major version. For Storybook 11, if the date is before 2026-11-03, stop: do not query fresh browser data or write new browser pins. Retain the existing values and report that the refresh is deferred until 2026-11-03.
-
-On or after 2026-11-03, continue only with explicit human invocation and follow the evidence and operator-approval requirements below. This date gate applies only to Storybook 11; it does not restrict future major releases.
-
 ## Auth
 
 Need `PLAUSIBLE_API_KEY` in the environment. How the operator supplies the key is up to them. Do not print the key.

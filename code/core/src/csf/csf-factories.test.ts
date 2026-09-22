@@ -50,6 +50,27 @@ test('addon parameters are inferred', () => {
   });
 });
 
+test('addon parameters and globals are inferred in decorator context', () => {
+  const typedMeta = preview.type<{ globals: { theme: 'light' | 'dark' } }>().meta({
+    decorators: [
+      (Story, { parameters, globals }) => {
+        parameters.foo?.value satisfies string | undefined;
+        parameters.bar?.value satisfies string | undefined;
+        globals.theme satisfies 'light' | 'dark';
+
+        // @ts-expect-error can not treat string parameter values as numbers
+        parameters.foo!.value satisfies number;
+        // @ts-expect-error can not treat typed globals as other values
+        globals.theme satisfies 'sepia';
+
+        return Story();
+      },
+    ],
+  });
+
+  typedMeta.story();
+});
+
 interface GlobalsAddonTypes {
   globals: { theme: 'light' | 'dark'; locale: 'en' | 'fr' };
 }

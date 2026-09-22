@@ -47,10 +47,7 @@ class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
   }
 }
 
-/**
- * This is exported weirdly because the coverage tool loading this uses `Cont = require(name)`. So
- * it doesn't support a default export, it has to be the "root" export as CJS
- *
- * @see https://nodejs.org/docs/latest-v20.x/api/modules.html#loading-ecmascript-modules-using-require
- */
+export default StorybookCoverageReporter;
+
+// Vitest 3 and 4 load custom coverage reporters with require(name).
 export { StorybookCoverageReporter as 'module.exports' };

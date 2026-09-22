@@ -145,6 +145,24 @@ describe('transformDocgenServer', () => {
     `);
   });
 
+  it('preserves a Vue string docgen engine', () => {
+    expect(
+      transformDocgenServer(
+        "export default { framework: { name: '@storybook/vue3-vite', options: { docgen: 'vue-docgen-api' } } };",
+        'vue'
+      )
+    ).toContain('docgenServer: false');
+  });
+
+  it('does not apply a Vue object docgen setting to React', () => {
+    expect(() =>
+      transformDocgenServer(
+        "export default { typescript: { reactDocgen: { plugin: 'custom' } } };",
+        'react'
+      )
+    ).toThrow('Cannot safely migrate dynamic typescript.reactDocgen.');
+  });
+
   it.each([
     'export default {};',
     'export default { features: { docgenServer: true }, typescript: { reactDocgen: false } };',
@@ -159,6 +177,16 @@ describe('transformDocgenServer', () => {
     expect(transformDocgenServer(input, 'other')).toBe(input);
   });
 
+  it('does not apply React legacy settings to an unsupported framework', () => {
+    const input = 'export default { typescript: { reactDocgen: false } };';
+    expect(transformDocgenServer(input, 'other')).toBe(input);
+  });
+
+  it('does not apply Vue legacy settings to an unsupported framework', () => {
+    const input = 'export default { framework: { options: { docgen: false } } };';
+    expect(transformDocgenServer(input, 'other')).toBe(input);
+  });
+
   it.each([
     'export default makeConfig();',
     'export default { ...shared };',
@@ -170,6 +198,12 @@ describe('transformDocgenServer', () => {
   ])('reports a manual migration for unsafe config: %s', (input) => {
     expect(() => transformDocgenServer(input, 'react')).toThrow(
       'Rename features.experimentalDocgenServer to features.docgenServer manually'
+    );
+  });
+
+  it('identifies the unsafe mutation in its manual-migration error', () => {
+    expect(() => transformDocgenServer('export default { ...shared };', 'react')).toThrow(
+      'Cannot mutate features.experimentalDocgenServer because the target contains spread field; Cannot mutate features.docgenServer because the target contains spread field'
     );
   });
 
@@ -212,10 +246,31 @@ describe('docgen-server migration', () => {
     ).not.toBeNull();
   });
 
+  it.each([
+    [{ framework: '@storybook/react-vite', stories: [] }, 'react'],
+    [{ framework: '@storybook/vue3-vite', stories: [] }, 'vue'],
+    [{ framework: '@storybook/svelte-vite', stories: [] }, 'other'],
+  ] as const)('selects the %s docgen migration', async (mainConfig, framework) => {
+    await expect(docgenServer.check({ ...checkOptions, mainConfig })).resolves.toEqual({
+      mainConfigPath,
+      framework,
+    });
+  });
+
   it('does not migrate a requested SB10 project', async () => {
     expect(
       await docgenServer.check({ ...checkOptions, storybookVersion: '10.6.0', requested: true })
     ).toBeNull();
+  });
+
+  it('does not offer a migration when the source already has the stable flag', async () => {
+    vol.writeFileSync(mainConfigPath, 'export default { features: { docgenServer: false } };');
+    await expect(docgenServer.check(checkOptions)).resolves.toBeNull();
+  });
+
+  it('reads config files as UTF-8 when checking', async () => {
+    await docgenServer.check(checkOptions);
+    expect(readFile).toHaveBeenCalledWith(mainConfigPath, 'utf8');
   });
 
   it('writes the checked transform and leaves a dry run unchanged', async () => {
@@ -254,6 +309,39 @@ describe('docgen-server migration', () => {
     });
     expect(vol.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(
       `"export default { stories: [], features: { docgenServer: false } };"`
+    );
+  });
+
+  it('does not rewrite an unchanged config when run with a checked result', async () => {
+    vol.writeFileSync(mainConfigPath, 'export default { features: { docgenServer: false } };');
+    await docgenServer.run!({
+      ...checkOptions,
+      mainConfigPath,
+      configDir: resolve('/project/.storybook'),
+      dryRun: false,
+      result: { mainConfigPath, framework: 'react' },
+    });
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('reads config files as UTF-8 when running', async () => {
+    await docgenServer.run!({
+      ...checkOptions,
+      mainConfigPath,
+      configDir: resolve('/project/.storybook'),
+      dryRun: true,
+      result: { mainConfigPath, framework: 'react' },
+    });
+    expect(readFile).toHaveBeenCalledWith(mainConfigPath, 'utf8');
+  });
+
+  it('exposes the migration metadata used by the upgrade prompt', () => {
+    expect(docgenServer.id).toBe('docgen-server');
+    expect(docgenServer.link).toBe(
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#docgenserver-is-stable-and-enabled-by-default'
+    );
+    expect(docgenServer.prompt()).toBe(
+      'Rename the docgenServer feature and preserve explicit legacy extraction settings'
     );
   });
 });

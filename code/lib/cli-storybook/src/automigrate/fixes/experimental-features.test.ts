@@ -226,6 +226,18 @@ describe('experimental feature flag automigrations', () => {
     );
   });
 
+  it('keeps automigration metadata available to the upgrade prompt', () => {
+    const fix = createExperimentalFeatureFix({
+      id: 'enable-test-flag',
+      name: 'experimentalReview',
+      introducedIn: '10.5.0',
+      link: 'https://example.com/test-flag',
+      prompt: 'Enable the test flag.',
+    });
+    expect(fix.defaultSelected).toBe(false);
+    expect(fix.prompt()).toBe('Enable the test flag.');
+  });
+
   describe('run', () => {
     it('writes the flag while preserving the rest of the file', async () => {
       vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });

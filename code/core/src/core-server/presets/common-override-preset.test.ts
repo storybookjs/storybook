@@ -107,6 +107,13 @@ describe('SB11 docgen server defaults', () => {
     );
   });
 
+  it('does not warn for an unsupported renderer when the feature is explicitly disabled', async () => {
+    expect(
+      await resolveFeatures('@storybook/html-vite', '@storybook/html', { docgenServer: false })
+    ).toMatchObject({ docgenServer: false });
+    expect(once.warn).not.toHaveBeenCalled();
+  });
+
   it.each([
     '/project/node_modules/@storybook/react-webpack5',
     'C:\\project\\node_modules\\@storybook\\react-vite',
@@ -195,6 +202,18 @@ describe('SB11 docgen server defaults', () => {
         }
       )
     ).toMatchObject({ docgenServer: true });
+  });
+
+  it('keeps an explicit opt-out without legacy-setting guidance', async () => {
+    expect(
+      await resolveFeatures(
+        '@storybook/react-vite',
+        '@storybook/react',
+        { docgenServer: false },
+        { reactDocgen: false }
+      )
+    ).toMatchObject({ docgenServer: false });
+    expect(once.warn).not.toHaveBeenCalled();
   });
 
   it.each(['docgenServer', 'experimentalDocgenServer'])(

@@ -256,8 +256,8 @@ Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary (prein
 The `Agent eval` GitHub Actions workflow deploys the playground to Vercel project `storybook-evals` after eval results have been written to `agent-eval/results`.
 
 - Pull requests from the main repository with the `agent-eval:eval` label create preview deployments.
-- Manual runs on non-`main` branches create preview deployments.
-- Manual runs on `main` create production deployments.
+- Manual runs on branches other than `next` create preview deployments.
+- Manual and scheduled runs on `next` create production deployments.
 
 The workflow deploys from the same runner that produced `agent-eval/results`, so failed evals can still publish a playground with partial results. The final workflow status still fails when the eval, build, or deploy step fails.
 

@@ -114,7 +114,9 @@ create_comment() {
 }
 
 update_comment() { # comment_id body -> 0/1 (callers decide fatal vs warn)
-  printf '%s' "$2" | gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/comments/$1" --input - --silent >/dev/null
+  # The PATCH endpoint takes a JSON object; raw markdown would 400.
+  jq -n --arg body "$2" '{body: $body}' \
+    | gh api --method PATCH "repos/$GITHUB_REPOSITORY/pulls/comments/$1" --input - --silent >/dev/null
 }
 
 resolve_thread() {
@@ -178,7 +180,7 @@ cmd_ensure() {
 cmd_result() {
   local pr="$PR_NUMBER" sha="$EVALUATED_HEAD_SHA" outcome="${EVAL_OUTCOME:-unknown}"
   local run_url="${RUN_URL:-}" playground="${PLAYGROUND_URL:-}"
-  local found thread_id comment_id resolved summary="" body current_head
+  local found thread_id comment_id resolved summary="" body current_head live_head
 
   if ! found="$(locate_thread "$pr")"; then
     echo "::warning title=Eval gate::Locating the gate thread on PR #$pr failed; leaving it untouched."
@@ -222,8 +224,29 @@ cmd_result() {
           echo
           echo "- The eval run passed for head \`${sha:0:7}\`, but resolving the gate thread failed. Re-dispatch the Agent eval workflow to retry (or resolve the thread manually)."
         } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
+        output "result=resolved"
+      # A synchronize run can unresolve concurrently (the dispatch and
+      # synchronize jobs have separate concurrency groups). A resolved thread
+      # must never cover an unevaluated head: re-check and reopen if stale.
+      elif ! live_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$pr" --jq .head.sha)"; then
+        echo "::warning title=Eval gate::Could not re-check the live PR head after resolving; the thread stays resolved."
+        output "result=resolved"
+      elif [[ "$live_head" != "$sha" ]]; then
+        unresolve_thread "$thread_id" \
+          || echo "::warning title=Eval gate::Could not unresolve the gate thread after a concurrent push."
+        body="$(printf '%s\n' "$MARKER" '### Agent eval gate' '' \
+          "**Status: stale — evals passed for head \`${sha:0:7}\`, but the PR head is now \`${live_head:0:7}\`.**" \
+          '' \
+          'Evals are required again for the new head. Rerun by removing and re-adding `agent-eval:eval`, or via `workflow_dispatch`.' \
+          '' \
+          "- Eval run: ${run_url:-n/a}" \
+          "- Playground: ${playground:-not deployed}")"
+        update_comment "$comment_id" "$body" \
+          || echo "::warning title=Eval gate::Could not mark the gate thread stale (comment $comment_id)."
+        output "result=stale"
+      else
+        output "result=resolved"
       fi
-      output "result=resolved"
       return 0
     fi
 

@@ -1,4 +1,4 @@
-import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
+import type { PresetProperty, PresetPropertyFn, TestBuildFlags } from 'storybook/internal/types';
 import { once } from 'storybook/internal/node-logger';
 
 import {
@@ -8,7 +8,7 @@ import {
 import { extractRenderer } from '../../common/utils/get-renderer-name.ts';
 import { removeMDXEntries } from '../utils/remove-mdx-entries.ts';
 
-export const features: PresetProperty<'features'> = async (input = {}, options) => {
+export const features: PresetPropertyFn<'features'> = async (input = {}, options) => {
   const frameworkName = extractFrameworkPackageName(await getFrameworkName(options));
   const isReact = (await extractRenderer(frameworkName)) === 'react';
   const isVue = frameworkName === '@storybook/vue3-vite';
@@ -32,7 +32,9 @@ export const features: PresetProperty<'features'> = async (input = {}, options) 
   }
 
   const typescriptOptions = isReact
-    ? await options.presets.apply('typescript', {}, options)
+    ? await options.presets.apply<{
+        reactDocgen?: false | 'react-docgen' | 'react-docgen-typescript';
+      }>('typescript', {}, options)
     : undefined;
   const frameworkOptions = isVue
     ? await options.presets.apply<{

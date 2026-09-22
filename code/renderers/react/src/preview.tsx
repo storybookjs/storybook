@@ -144,9 +144,10 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
  * provided in meta become optional in stories, while missing required args must be provided at the
  * story level.
  */
-export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-  /** @ts-expect-error ReactMeta requires two type parameters, but Meta's constraints differ */
-  extends Meta<T, MetaInput> {
+export interface ReactMeta<
+  T extends ReactTypes,
+  MetaInput extends ComponentAnnotations<T>,
+> extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.
    *

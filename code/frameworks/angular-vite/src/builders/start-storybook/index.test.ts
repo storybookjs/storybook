@@ -29,7 +29,8 @@ vi.mock('storybook/internal/telemetry', () => ({
   addToGlobalContext: vi.fn(),
 }));
 
-vi.mock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<object>()),
   getEnvConfig: vi.fn(),
   versions: { storybook: '0.0.0' },
 }));

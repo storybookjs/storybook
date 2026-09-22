@@ -58,9 +58,7 @@ export function buildDocgenPayload(
   if (!storyImportPath) {
     return undefined;
   }
-
-  const resolvePath =
-    context.resolvePath ?? ((importPath: string) => resolve(context.options.rootDir, importPath));
+  const storyFilePath = resolve(process.cwd(), storyImportPath);
   const storyFilePath = resolvePath(storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {

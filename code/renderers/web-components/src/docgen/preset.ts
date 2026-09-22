@@ -27,16 +27,15 @@ export const experimental_docgenProvider = async (
     return existing;
   }
 
-  const rootDir = dirname(options?.configDir ?? process.cwd());
+  const configDir = options.configDir;
   const frameworkOptions =
-    ((await options?.presets?.apply('frameworkOptions')) as
+    ((await options.presets.apply('frameworkOptions')) as
       | WebComponentsFrameworkOptions
       | undefined) ?? {};
   const descriptor: DocgenProviderDescriptor<WebComponentsDocgenOptions> = {
     moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
     options: {
-      manifestPaths: resolveManifestPaths(rootDir, frameworkOptions),
-      rootDir,
+      manifestPaths: resolveManifestPaths(configDir, frameworkOptions),
     },
   };
 

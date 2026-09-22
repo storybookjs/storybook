@@ -11,9 +11,8 @@ type BuilderName = CompatibleString<'@storybook/builder-vite'>;
 export type FrameworkOptions = {
   builder?: BuilderOptions;
   /**
-   * Provide paths of Custom Elements Manifest files to be used for generating documentation for web components.
-   *
-   * Resolved from the project root directory. Can be a single path or an array of paths.
+   * Paths to Custom Elements Manifest files, relative to the Storybook config directory.
+   * When omitted, Storybook reads `customElements` from the nearest `package.json`.
    */
   customElementsManifest?: string | string[];
 };

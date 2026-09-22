@@ -49,7 +49,7 @@
   ],
   "dependencies": {
     "ts-dedent": "^2.0.0",
-    "type-fest": "^5.6.0"
+    "type-fest": "4.18.1"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
@@ -62,7 +62,13 @@
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "svelte": "^5.0.0"
+    "svelte": "^5.0.0",
+    "typescript": ">= 5.1.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

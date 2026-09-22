@@ -10369,7 +10369,7 @@ __metadata:
     react-element-to-jsx-string: "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:^5.6.0"
+    type-fest: "npm:4.18.1"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
@@ -10596,12 +10596,16 @@ __metadata:
     svelte-check: "npm:^4.4.8"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:^5.6.0"
+    type-fest: "npm:4.18.1"
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
+    typescript: ">= 5.1.0"
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10667,7 +10671,7 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ">= 5.0.0"
+    typescript: ">= 5.6.0"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10684,7 +10688,7 @@ __metadata:
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/compiler-dom": "npm:^3.2.47"
     "@vue/language-core": "npm:^3.2.7"
-    type-fest: "npm:^5.6.0"
+    type-fest: "npm:4.18.1"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
     vue-component-meta: "npm:^3.3.9"
@@ -10693,7 +10697,7 @@ __metadata:
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ">= 5.0.0"
+    typescript: ">= 5.6.0"
     vue: ^3.0.0
   peerDependenciesMeta:
     typescript:
@@ -33201,7 +33205,7 @@ __metadata:
     tinyspy: "npm:^3.0.2"
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths: "npm:^4.2.0"
-    type-fest: "npm:^5.6.0"
+    type-fest: "npm:4.18.1"
     type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^6.0.3"
     unique-string: "npm:^3.0.0"
@@ -34658,6 +34662,13 @@ __metadata:
   dependencies:
     prelude-ls: "npm:^1.2.1"
   checksum: 10c0/7b3fd0ed43891e2080bf0c5c504b418fbb3e5c7b9708d3d015037ba2e6323a28152ec163bcb65212741fa5d2022e3075ac3c76440dbd344c9035f818e8ecee58
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:4.18.1":
+  version: 4.18.1
+  resolution: "type-fest@npm:4.18.1"
+  checksum: 10c0/f81c82548a1f8c107fb286661c4d0caf5ed9c9842050dc5d417326a6208ddc67e04fa30faa9f948308a7eb164497f138fe5035e3f305c87a3ba8e7e0ce2e38c6
   languageName: node
   linkType: hard
 

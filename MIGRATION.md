@@ -562,7 +562,7 @@ During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.
 
 ### TypeScript 5 or higher
 
-Storybook 11 requires TypeScript 5 or higher. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check. Your framework and other dependencies may require a newer TypeScript version.
+Storybook 11 requires TypeScript 5 or higher. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check. Vue requires TypeScript 5.6 or higher, and Svelte requires TypeScript 5.1 or higher because their toolchain types need newer compiler features. Other framework dependencies may also require a newer TypeScript version.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
 

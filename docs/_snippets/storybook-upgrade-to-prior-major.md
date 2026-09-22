@@ -1,11 +1,11 @@
 ```shell renderer="common" packageManager="npm"
-npx storybook@^7 upgrade
+npx storybook@^10 upgrade
 ```
 
 ```shell renderer="common" packageManager="pnpm"
-pnpm dlx storybook@^7 upgrade
+pnpm dlx storybook@^10 upgrade
 ```
 
 ```shell renderer="common" packageManager="yarn"
-yarn dlx storybook@^7 upgrade
+yarn dlx storybook@^10 upgrade
 ```

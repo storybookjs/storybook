@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ToolsetCtx } from '../../toolset-definition.ts';
+import { invokeToolsetMethod, type ToolsetCtx } from '../../toolset-definition.ts';
 import type { DocsAccess } from './access.ts';
 import { createDocsToolset } from './definition.ts';
 
@@ -49,7 +49,7 @@ const cliCtx: ToolsetCtx = { transport: 'cli', getService: () => ({}) as never }
 
 describe('docs.list', () => {
   it('returns the manifests from the access and renders the list Markdown', async () => {
-    const outcome = await toolset.methods.list.handler({ withStoryIds: false }, mcpCtx);
+    const outcome = await toolset.methods.list.handler({ withStoryIds: false });
 
     expect(outcome.ok).toBe(true);
     expect(Object.keys(outcome.data.manifests!.componentManifest.components)).toEqual(['button']);
@@ -59,7 +59,7 @@ describe('docs.list', () => {
   });
 
   it('includes story ids only when requested', async () => {
-    const outcome = await toolset.methods.list.handler({ withStoryIds: true }, mcpCtx);
+    const outcome = await toolset.methods.list.handler({ withStoryIds: true });
 
     expect(outcome.markdown).toContain('button--primary');
   });
@@ -272,40 +272,84 @@ describe('docs.showStory in a composition', () => {
 });
 
 describe('usage reporting', () => {
-  /** Runs a method the way a transport does; the handler reports usage inline. */
-  async function run(methodName: 'list' | 'show', input: unknown, transport: 'cli' | 'mcp') {
-    const events: Array<[string, Record<string, unknown>]> = [];
-    const ctx: ToolsetCtx = {
-      transport,
-      getService: () => ({}) as never,
-      telemetry: async (event, payload) => {
-        events.push([event, payload]);
-      },
-    };
-
-    await toolset.methods[methodName].handler(input as never, ctx);
-
-    return events;
+  async function run(methodName: 'list' | 'show' | 'showStory', input: unknown) {
+    return (await invokeToolsetMethod(toolset, methodName, input, mcpCtx)).telemetry;
   }
 
-  it.each(['cli', 'mcp'] as const)('reports a listing on %s', async (transport) => {
-    const [[event, payload] = []] = await run('list', { withStoryIds: false }, transport);
+  it('reports a listing', async () => {
+    const report = await run('list', { withStoryIds: false });
 
-    expect(event).toBe('tool:listAllDocumentation');
-    expect(payload).toMatchObject({ componentCount: 1, docsCount: 1 });
-    expect(payload!.resultTokenCount).toBeGreaterThan(0);
+    expect(report).toEqual({
+      toolset: 'docs',
+      tool: 'list',
+      event: 'tool:docs_list',
+      payload: {
+        componentCount: 1,
+        docsCount: 1,
+        resultTokenCount: expect.any(Number),
+        sourceCount: undefined,
+      },
+    });
   });
 
-  it.each(['cli', 'mcp'] as const)('reports a lookup on %s', async (transport) => {
-    const [[event, payload] = []] = await run('show', { id: 'button' }, transport);
+  it('reports a lookup', async () => {
+    const report = await run('show', { id: 'button' });
 
-    expect(event).toBe('tool:getDocumentation');
-    expect(payload).toMatchObject({ componentId: 'button', found: true });
+    expect(report).toEqual({
+      toolset: 'docs',
+      tool: 'show',
+      event: 'tool:docs_show',
+      payload: { componentId: 'button', found: true, resultTokenCount: expect.any(Number) },
+    });
   });
 
   it('reports a miss as not found', async () => {
-    const [[, payload] = []] = await run('show', { id: 'nope' }, 'mcp');
+    const report = await run('show', { id: 'nope' });
 
-    expect(payload).toMatchObject({ componentId: 'nope', found: false });
+    expect(report?.payload).toMatchObject({ componentId: 'nope', found: false });
+  });
+
+  it('reports a story lookup by id', async () => {
+    const report = await run('showStory', { storyId: 'button--primary' });
+
+    expect(report).toEqual({
+      toolset: 'docs',
+      tool: 'show-story',
+      event: 'tool:docs_showStory',
+      payload: {
+        found: true,
+        storyId: 'button--primary',
+        lookup: 'storyId',
+        resultTokenCount: expect.any(Number),
+      },
+    });
+  });
+
+  it('reports a story lookup by name with the resolved story id', async () => {
+    const report = await run('showStory', { componentId: 'button', storyName: 'Primary' });
+
+    expect(report?.payload).toEqual({
+      found: true,
+      storyId: 'button--primary',
+      lookup: 'name',
+      resultTokenCount: expect.any(Number),
+    });
+  });
+
+  it('reports a missing story with the requested id', async () => {
+    const report = await run('showStory', { storyId: 'button--nope' });
+
+    expect(report?.payload).toMatchObject({
+      found: false,
+      storyId: 'button--nope',
+      lookup: 'storyId',
+    });
+  });
+
+  it('reports a missing component without a story id', async () => {
+    const report = await run('showStory', { componentId: 'nope', storyName: 'Primary' });
+
+    expect(report?.payload).toMatchObject({ found: false, lookup: 'name' });
+    expect(report?.payload.storyId).toBeUndefined();
   });
 });

@@ -3,7 +3,6 @@ import { getAddonNames, removeAddon, transformImportFiles } from 'storybook/inte
 import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
-import { moveEssentialOptions } from './remove-essentials.utils.ts';
 
 interface AddonDocsOptions {
   hasEssentials: boolean;
@@ -176,10 +175,11 @@ export const removeEssentials: Fix<AddonDocsOptions> = {
       }
 
       if (essentialsOptions) {
-        await updateMainConfig(
-          { mainConfigPath, dryRun: !!dryRun },
-          moveEssentialOptions(dryRun, essentialsOptions)
-        );
+        await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, (main) => {
+          for (const [name, value] of Object.entries(essentialsOptions)) {
+            main.set(['features', name], value);
+          }
+        });
       }
 
       // If docs was enabled (not disabled) and not already installed, add it

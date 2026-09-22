@@ -3,14 +3,15 @@ import { describe, expect, it } from 'vitest';
 import { generateModernIframeScriptCodeFromPreviews } from './codegen-modern-iframe-script.ts';
 import { generateAddonSetupCode } from './codegen-set-addon-channel.ts';
 import { optimizeViteDeps } from './preset.ts';
+import { previewRuntimePath } from './utils/preview-runtime-path.ts';
 
 describe('generateModernIframeScriptCodeFromPreviews', () => {
   it('handle one annotation', async () => {
     const result = await generateModernIframeScriptCodeFromPreviews({
       frameworkName: 'frameworkName',
     });
-    expect(result).toMatchInlineSnapshot(`
-      "import { setup } from 'storybook/internal/preview/runtime';
+    expect(withStableRuntimePath(result)).toMatchInlineSnapshot(`
+      "import { setup } from '<PREVIEW_RUNTIME_PATH>';
 
       import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
@@ -41,8 +42,8 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     const result = await generateModernIframeScriptCodeFromPreviews({
       frameworkName: 'frameworkName',
     });
-    expect(result).toMatchInlineSnapshot(`
-      "import { setup } from 'storybook/internal/preview/runtime';
+    expect(withStableRuntimePath(result)).toMatchInlineSnapshot(`
+      "import { setup } from '<PREVIEW_RUNTIME_PATH>';
 
       import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
@@ -73,8 +74,8 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     const result = await generateModernIframeScriptCodeFromPreviews({
       frameworkName: 'frameworkName',
     });
-    expect(result).toMatchInlineSnapshot(`
-      "import { setup } from 'storybook/internal/preview/runtime';
+    expect(withStableRuntimePath(result)).toMatchInlineSnapshot(`
+      "import { setup } from '<PREVIEW_RUNTIME_PATH>';
 
       import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
@@ -105,8 +106,8 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
     const result = await generateModernIframeScriptCodeFromPreviews({
       frameworkName: 'frameworkName',
     });
-    expect(result).toMatchInlineSnapshot(`
-      "import { setup } from 'storybook/internal/preview/runtime';
+    expect(withStableRuntimePath(result)).toMatchInlineSnapshot(`
+      "import { setup } from '<PREVIEW_RUNTIME_PATH>';
 
       import 'virtual:/@storybook/builder-vite/setup-addons.js';
 
@@ -131,6 +132,18 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
         });
       };"
     `);
+  });
+
+  it('imports setup from the builder-context-resolved runtime path (SB-1981 regression guard)', async () => {
+    const result = await generateModernIframeScriptCodeFromPreviews({
+      frameworkName: 'frameworkName',
+    });
+
+    // A bare `storybook/internal/preview/runtime` specifier resolves from the user's project
+    // root, which can hold a different `storybook` copy than the builder in multi-version
+    // monorepos. The generated entry must import the builder-context-resolved absolute path.
+    expect(result).toContain(`import { setup } from '${previewRuntimePath}';`);
+    expect(result).not.toContain('storybook/internal/preview/runtime');
   });
 });
 
@@ -158,6 +171,11 @@ function extractPackageImports(code: string): string[] {
   return [...specifiers];
 }
 
+/** Inline snapshots cannot interpolate machine-specific absolute paths, so normalize them out. */
+function withStableRuntimePath(code: string): string {
+  return code.replaceAll(previewRuntimePath, '<PREVIEW_RUNTIME_PATH>');
+}
+
 describe('optimizeDeps coverage for virtual module imports', () => {
   it('every package imported in virtual module code is either in optimizeViteDeps or known to be discovered via entry crawling', async () => {
     // Collect all code generated for virtual modules — Vite's dep scanner never sees
@@ -180,6 +198,10 @@ describe('optimizeDeps coverage for virtual module imports', () => {
     const notCovered = packageImports.filter(
       (pkg) => !discoveredViaEntries.has(pkg) && !optimizeViteDeps.includes(pkg)
     );
+
+    // The iframe entry imports the preview runtime by absolute path, which extractPackageImports
+    // skips — assert the optimizer entry stays aligned with the generated import.
+    expect(optimizeViteDeps).toContain(previewRuntimePath);
 
     expect(
       notCovered,

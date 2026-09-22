@@ -47,14 +47,14 @@ env:
 jobs:
   eval:
     name: Run agent eval experiments
-    # Skip synchronize: sticky `ci:eval` must not re-bill on every push.
+    # Skip synchronize: sticky `agent-eval:eval` must not re-bill on every push.
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
         github.event.action != 'synchronize' &&
         !github.event.pull_request.head.repo.fork &&
-        contains(github.event.pull_request.labels.*.name, 'ci:eval'))
+        contains(github.event.pull_request.labels.*.name, 'agent-eval:eval'))
     runs-on: ubuntu-latest
     environment:
       # Keep this rule in sync with the Resolve Vercel target step below.
@@ -63,14 +63,17 @@ jobs:
       url: ${{ steps.deploy_playground.outputs.url }}
     permissions:
       # resolveReviewThread/unresolveReviewThread need contents: write on top
-      # of pull-requests: write (403 with pull-requests alone; verified on a
-      # disposable PR). No issues/labels are touched by this workflow.
+      # of pull-requests: write (GitHub returns 403 with pull-requests alone).
       contents: write
       deployments: write
       pull-requests: write
     outputs:
       evaluated_head_sha: ${{ steps.gate_head.outputs.evaluated_head_sha }}
       gate_pr_number: ${{ steps.gate_pr.outputs.pr_number }}
+      extra_evals: ${{ steps.conditions.outputs.extra_evals }}
+      extra_models: ${{ steps.conditions.outputs.extra_models }}
+      storybook_latest: ${{ steps.conditions.outputs.storybook_latest }}
+      review: ${{ steps.conditions.outputs.review }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -83,10 +86,9 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER_INPUT: ${{ github.event.pull_request.number || inputs.pr_number || '' }}
-          EVENT_NAME: ${{ github.event_name }}
         run: |
           pr="$PR_NUMBER_INPUT"
-          if [[ -z "$pr" && "$EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ -z "$pr" && "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
             pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REF_NAME" --json number --jq '.[0].number // empty')"
           fi
           if [[ -z "$pr" ]]; then
@@ -106,10 +108,25 @@ jobs:
           PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
         run: echo "evaluated_head_sha=${PR_HEAD_SHA:-$GITHUB_SHA}" >> "$GITHUB_OUTPUT"
 
-      # The single persistent merge-gate thread for ci:eval (first comment
-      # carries the <!-- agent-eval-gate --> marker). Created before evals run;
-      # a previously resolved thread is reopened and its body reset for this
-      # head. Fatal on failure: without the thread there is no merge proof.
+      # Which eval features run: declared in agent-eval/eval-conditions.json,
+      # activated by PR labels or workflow_dispatch inputs (scheduled runs
+      # activate every condition). Consumed below as step outputs.
+      - name: Resolve eval conditions
+        id: conditions
+        env:
+          CONFIG_FILE: agent-eval/eval-conditions.json
+          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          INPUT_EXTRA_EVALS: ${{ inputs.extra_evals || '' }}
+          INPUT_EXTRA_MODELS: ${{ inputs.extra_models || '' }}
+          INPUT_STORYBOOK_LATEST: ${{ inputs.storybook_latest || '' }}
+          INPUT_REVIEW: ${{ inputs.review || '' }}
+        run: node agent-eval/scripts/resolve-conditions.mjs
+
+      # The single persistent merge-gate thread for agent-eval:eval (first
+      # comment carries the <!-- agent-eval-gate --> marker). Created before
+      # evals run; a previously resolved thread is reopened and its body reset
+      # for this head. Fatal on failure: without the thread there is no merge
+      # proof.
       - name: Create or update the eval gate thread
         id: gate_thread
         if: ${{ steps.gate_pr.outputs.pr_number != '' }}
@@ -118,10 +135,7 @@ jobs:
           PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
           EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          SCOPE_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && 'ci:extra-evals' || '' }}
-          SCOPE_EXTRA_MODELS: ${{ (inputs.extra_models || contains(github.event.pull_request.labels.*.name, 'ci:extra-models')) && 'ci:extra-models' || '' }}
-          SCOPE_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && 'ci:storybook-latest' || '' }}
-          SCOPE_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && 'ci:review' || '' }}
+          SCOPE_LINE: ${{ steps.conditions.outputs.scope_line }}
         run: bash agent-eval/scripts/eval-gate-thread.sh ensure
 
       - name: Setup Node.js
@@ -166,13 +180,11 @@ jobs:
         id: run_evals
         run: yarn workspace agent-eval run eval
         env:
-          # Schedule always runs the full 8xx/82x line on next. PR labels and
-          # workflow_dispatch inputs opt in otherwise; unlabeled ci:eval stays minimal.
           EVAL_ONLY: ${{ inputs.eval_only || '' }}
-          EVAL_EXTRA_EVALS: ${{ (github.event_name == 'schedule' || inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
-          EVAL_EXTRA_MODELS: ${{ (inputs.extra_models || contains(github.event.pull_request.labels.*.name, 'ci:extra-models')) && '1' || '' }}
-          EVAL_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && '1' || '' }}
-          EVAL_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && '1' || '' }}
+          EVAL_EXTRA_EVALS: ${{ steps.conditions.outputs.extra_evals }}
+          EVAL_EXTRA_MODELS: ${{ steps.conditions.outputs.extra_models }}
+          EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
+          EVAL_REVIEW: ${{ steps.conditions.outputs.review }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -308,8 +320,7 @@ jobs:
             echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Weekly / next-dispatch signal to #team-storybook. Requires repo secret
-      # SLACK_AGENT_EVAL_WEBHOOK_URL (Incoming Webhook into that channel).
+      # Weekly / next-dispatch summary for the #team-storybook channel.
       - name: Notify Slack
         if: >-
           always() &&
@@ -335,10 +346,9 @@ jobs:
 
       # Terminal gate write: resolve the thread only when the successful run
       # evaluated the live PR head; stale, failed, cancelled, or skipped runs
-      # keep it open with a summary. Runs even when earlier steps failed
-      # (always() + !cancelled() + outcome checks) but never fails the job —
-      # a thread mutation failure after evals is a warning + step-summary
-      # note; re-dispatching the workflow retries it.
+      # keep it open with a summary. Never fails the job: a thread mutation
+      # failure after evals is a warning and a step-summary note, and
+      # re-dispatching the workflow retries it.
       - name: Update the eval gate thread with the result
         if: >-
           always() &&
@@ -357,16 +367,16 @@ jobs:
             node agent-eval/scripts/render-results-summary.mjs > "$summary_file" || true
           SUMMARY_FILE="$summary_file" bash agent-eval/scripts/eval-gate-thread.sh result
 
-  # New push on a ci:eval PR: previous eval results no longer cover the head.
-  # Pushes do not auto-reopen resolved review threads, so explicitly reopen
-  # the gate thread WITHOUT rerunning evals (reruns stay label/dispatch-driven).
+  # New push on an agent-eval:eval PR: previous eval results no longer cover
+  # the head. Pushes do not auto-reopen resolved review threads, so explicitly
+  # reopen the gate thread without rerunning evals.
   reopen-eval-gate:
     name: Reopen eval gate thread on new commits
     if: >-
       github.event_name == 'pull_request' &&
       github.event.action == 'synchronize' &&
       !github.event.pull_request.head.repo.fork &&
-      contains(github.event.pull_request.labels.*.name, 'ci:eval')
+      contains(github.event.pull_request.labels.*.name, 'agent-eval:eval')
     runs-on: ubuntu-latest
     permissions:
       # unresolveReviewThread needs contents: write + pull-requests: write.

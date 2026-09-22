@@ -55,9 +55,9 @@ Evals can be executed manually, but also run automatically in CI. Be conscious o
 | One eval × one experiment | `EVAL_ONLY=<eval> yarn workspace agent-eval exec agent-eval <experiment>` | USD 0.30–2   |
 | Default smoke test        | `yarn workspace agent-eval run eval`                                      | USD 1–3      |
 | Full set                  | `EVAL_EXTRA_EVALS=1 yarn workspace agent-eval run eval`                   | USD 30–45    |
-| CI, smoke test            | With label `ci:eval`                                                      | USD 1–3      |
-| CI, full set              | With label `ci:eval` + `ci:extra-evals`                                   | USD 30–45    |
-| CI, extra models          | With label `ci:eval` + `ci:extra-evals` + `ci:extra-models`               | USD 30–80    |
+| CI, smoke test            | With label `agent-eval:eval`                                                      | USD 1–3      |
+| CI, full set              | With label `agent-eval:eval` + `agent-eval:extra-evals`                                   | USD 30–45    |
+| CI, extra models          | With label `agent-eval:eval` + `agent-eval:extra-evals` + `agent-eval:extra-models`               | USD 30–80    |
 
 View local results with `yarn workspace agent-eval run playground`, or use the Vercel URL for CI runs. Note that a failed CI may still have published a playground with (perhaps partial) results.
 
@@ -114,25 +114,25 @@ Run a single experiment:
 yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
 ```
 
-Pull requests with the `ci:eval` label run experiments in CI (on label apply, not on every later push). The `ci:eval` / `ci:extra-*` / `ci:storybook-latest` / `ci:review` labels are applied by **humans only**. Labeled runs are expensive, so an AI agent must never add them (nor start `workflow_dispatch` eval runs).
+Pull requests with the `agent-eval:eval` label run experiments in CI (on label apply, not on every later push). The `agent-eval:eval` / `agent-eval:extra-*` / `agent-eval:storybook-latest` / `agent-eval:review` labels are applied by **humans only**. Labeled runs are expensive, so an AI agent must never add them (nor start `workflow_dispatch` eval runs).
 
 ### Eval merge gate (bot review thread)
 
-There is no `evals:ok` label. The Agent eval workflow owns **one persistent PR review thread** (anchored to a changed file, marked `<!-- agent-eval-gate -->`) as the merge proof for `ci:eval`: it resolves only when a successful eval run has evaluated the current PR head, and reopens otherwise.
+There is no `evals:ok` label. The Agent eval workflow owns **one persistent PR review thread** (anchored to a changed file, marked `<!-- agent-eval-gate -->`) as the merge proof for `agent-eval:eval`: it resolves only when a successful eval run has evaluated the current PR head, and reopens otherwise.
 
 | PR state                                                     | Gate thread                                                                                      |
 | ------------------------------------------------------------ | ------------------------------------------------------------------------------------------------ |
-| `ci:eval` absent                                             | No gate thread; evals not required                                                               |
+| `agent-eval:eval` absent                                             | No gate thread; evals not required                                                               |
 | Evals pending / running                                      | Open — "evals required for head `<sha>`"                                                         |
 | Evals failed / cancelled / timed out / skipped               | Open — failure summary with run and playground links                                             |
 | Evals passed, head unchanged                                 | Body shows the pass summary (counts, tokens/cost, run + playground links); thread **resolved**   |
 | Evals passed, but a newer head was pushed meanwhile          | Body marks the result stale; thread stays open                                                   |
-| New push on a `ci:eval` PR (synchronize)                     | Thread explicitly reopened ("evals required for new head `<sha>`"); evals are **not** rerun       |
+| New push on a `agent-eval:eval` PR (synchronize)                     | Thread explicitly reopened ("evals required for new head `<sha>`"); evals are **not** rerun       |
 | Weekly schedule / dispatch without a resolvable PR           | No PR thread is touched                                                                          |
 
-Merging a `ci:eval` PR requires the gate thread to be resolved — and only the workflow resolves it. This depends on the **Require conversation resolution before merging** branch-protection setting being enabled for the target branch (an admin setting; verify it is enabled on `next`).
+Merging a `agent-eval:eval` PR requires the gate thread to be resolved — and only the workflow resolves it. This depends on the **Require conversation resolution before merging** branch-protection setting being enabled for the target branch (an admin setting; verify it is enabled on `next`).
 
-Rerun evals by removing and re-adding `ci:eval`, or via `workflow_dispatch` on the PR branch: the optional `pr_number` input selects the PR (otherwise inferred from the branch), and a dispatch run with a resolvable PR participates in the gate-thread lifecycle exactly like a labeled run. Agents validate locally instead: only the specific evals affected by the change (or the eval being fixed), one experiment at a time, via `EVAL_ONLY`: never a full line, never multiple experiments in parallel.
+Rerun evals by removing and re-adding `agent-eval:eval`, or via `workflow_dispatch` on the PR branch: the optional `pr_number` input selects the PR (otherwise inferred from the branch), and a dispatch run with a resolvable PR participates in the gate-thread lifecycle exactly like a labeled run. Agents validate locally instead: only the specific evals affected by the change (or the eval being fixed), one experiment at a time, via `EVAL_ONLY`: never a full line, never multiple experiments in parallel.
 
 A scheduled weekly run (Monday 08:00 UTC) always executes the full 8xx/82x line on `next` with default-model experiments, deploys the playground to the Vercel production target, and posts a summary to Slack `#team-storybook`. It does not enable `EVAL_EXTRA_MODELS`, `EVAL_STORYBOOK_LATEST`, or `EVAL_REVIEW` (use `workflow_dispatch` for those). Manual `workflow_dispatch` runs on `next` also notify Slack.
 
@@ -189,14 +189,16 @@ workflow too:
 EVAL_REVIEW=1 yarn workspace agent-eval run eval
 ```
 
-In CI, opt-in labels compose with `ci:eval` (same flags exist on `workflow_dispatch`):
+In CI, opt-in labels compose with `agent-eval:eval` (same flags exist on `workflow_dispatch`):
 
-| Label / input                              | Effect                                                                           |
-| ------------------------------------------ | -------------------------------------------------------------------------------- |
-| `ci:extra-evals` / `extra_evals`           | Full 8xx (+ 82x on plugins) instead of the default single smoke eval             |
-| `ci:extra-models` / `extra_models`         | Also run non-default model experiments (e.g. sonnet-medium)                      |
-| `ci:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
-| `ci:review` / `review`                     | Force `experimentalReview` on and assert the review workflow for MCP cells too   |
+| Label / input                                      | Effect                                                                           |
+| -------------------------------------------------- | -------------------------------------------------------------------------------- |
+| `agent-eval:extra-evals` / `extra_evals`           | Full 8xx (+ 82x on plugins) instead of the default single smoke eval             |
+| `agent-eval:extra-models` / `extra_models`         | Also run non-default model experiments (e.g. sonnet-medium)                      |
+| `agent-eval:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
+| `agent-eval:review` / `review`                     | Force `experimentalReview` on and assert the review workflow for MCP cells too   |
+
+The conditions and their labels are declared in `agent-eval/eval-conditions.json`; the workflow resolves them in one step (scheduled runs activate every condition) and fails a run that sees an `agent-eval:` label the config does not declare, so a typo cannot silently shrink the eval scope.
 
 `eval_only` (dispatch only) targets specific eval names. `pr_number` (dispatch only) selects the PR whose gate thread the run drives when the branch inference is ambiguous. All of these are human-triggered spend decisions; agents never apply the labels or dispatch the workflow.
 
@@ -253,7 +255,7 @@ Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary (prein
 
 The `Agent eval` GitHub Actions workflow deploys the playground to Vercel project `storybook-evals` after eval results have been written to `agent-eval/results`.
 
-- Pull requests from the main repository with the `ci:eval` label create preview deployments.
+- Pull requests from the main repository with the `agent-eval:eval` label create preview deployments.
 - Manual runs on non-`main` branches create preview deployments.
 - Manual runs on `main` create production deployments.
 

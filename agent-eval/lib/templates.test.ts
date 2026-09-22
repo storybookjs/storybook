@@ -55,7 +55,7 @@ describe('enableExperimentalReview', () => {
 
   // Drift guard: EVAL_REVIEW=1 patches every sandbox `.storybook/main.ts`, so
   // each template and fixture Storybook config must keep the uniform opener
-  // the patcher anchors on — otherwise ci:review runs die in sandbox setup.
+  // the patcher anchors on — otherwise agent-eval:review runs die in sandbox setup.
   it('can patch every template and fixture Storybook main.ts', () => {
     const mainFiles = [
       ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'templates')),

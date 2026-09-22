@@ -2,21 +2,20 @@
 # Manage the bot-owned "Agent eval gate" review thread on a pull request.
 #
 # One persistent thread (located by the <!-- agent-eval-gate --> marker in its
-# first comment) is the merge proof for the `ci:eval` label: it is created or
-# reopened when evals start, resolved only by a successful run of the current
-# head, and reopened explicitly on synchronize (pushes do NOT auto-reopen
-# resolved review threads). All GitHub access goes through the `gh` CLI; no
-# additional actions are involved.
+# first comment) is the merge proof for the `agent-eval:eval` label: it is
+# created or reopened when evals start, resolved only by a successful run of
+# the current head, and reopened explicitly on synchronize (pushes do NOT
+# auto-reopen resolved review threads). All GitHub access goes through the
+# `gh` CLI; no additional actions are involved.
 #
 # Subcommands (configuration arrives via environment variables):
 #
 #   ensure   At eval start (PR runs, and dispatch runs with a resolvable PR).
 #            Creates the thread (anchored to a changed file) or updates and
 #            unresolves it. Any failure is fatal: without the thread there is
-#            no merge proof for `ci:eval`.
+#            no merge proof for `agent-eval:eval`.
 #            Env: PR_NUMBER, EVALUATED_HEAD_SHA, RUN_URL,
-#                 SCOPE_EXTRA_EVALS, SCOPE_EXTRA_MODELS, SCOPE_STORYBOOK_LATEST,
-#                 SCOPE_REVIEW (all optional, set when in effect)
+#                 SCOPE_LINE (optional; the active scope labels)
 #
 #   result   At the end of the eval job. On success for the live PR head:
 #            body -> pass summary, thread resolved. Stale or failed:
@@ -25,15 +24,11 @@
 #            Env: PR_NUMBER, EVALUATED_HEAD_SHA, RUN_URL, PLAYGROUND_URL,
 #                 EVAL_OUTCOME, SUMMARY_FILE (optional rendered markdown)
 #
-#   reopen   pull_request synchronize with ci:eval present. Unresolves the
-#            thread and marks the new head as requiring evals, without
+#   reopen   pull_request synchronize with agent-eval:eval present. Unresolves
+#            the thread and marks the new head as requiring evals, without
 #            rerunning evals. Fatal on failure: a silently stale resolved
 #            thread would count for a head that was never evaluated.
 #            Env: PR_NUMBER, NEW_HEAD_SHA
-#
-# Requires: gh (CLI), jq. GH_TOKEN needs pull-requests: write AND contents:
-# write (resolveReviewThread/unresolveReviewThread return 403 with
-# pull-requests alone; verified on disposable PR #36377).
 
 set -euo pipefail
 
@@ -106,13 +101,13 @@ pick_anchor_path() {
 }
 
 # REST create: file-level review comment. subject_type must be lowercase,
-# commit_id (PR head SHA) is REQUIRED, and no line/positioning (verified).
+# commit_id (PR head SHA) is required, and no line/positioning.
 create_comment() {
   local pr="$1" sha="$2" path="$3" body="$4" payload id
   payload="$(jq -n --arg body "$body" --arg path "$path" --arg sha "$sha" \
     '{body: $body, path: $path, commit_id: $sha, subject_type: "file"}')"
   if ! id="$(printf '%s' "$payload" | gh api --method POST "repos/$GITHUB_REPOSITORY/pulls/$pr/comments" --input - --jq '.id')"; then
-    echo "::error title=Eval gate::Creating the gate review thread on PR #$pr failed. Without it there is no merge proof for ci:eval." >&2
+    echo "::error title=Eval gate::Creating the gate review thread on PR #$pr failed. Without it there is no merge proof for agent-eval:eval." >&2
     exit 1
   fi
   printf '%s' "$id"
@@ -133,16 +128,12 @@ unresolve_thread() {
 cmd_ensure() {
   local pr="$PR_NUMBER" sha="$EVALUATED_HEAD_SHA"
   local run_url="${RUN_URL:-n/a}"
-  local scope="" scope_label found thread_id comment_id resolved body
+  local scope_label found thread_id comment_id resolved body
 
-  for label in "${SCOPE_EXTRA_EVALS:-}" "${SCOPE_EXTRA_MODELS:-}" \
-    "${SCOPE_STORYBOOK_LATEST:-}" "${SCOPE_REVIEW:-}"; do
-    [[ -n "$label" ]] && scope="${scope:+$scope + }$label"
-  done
-  if [[ -n "$scope" ]]; then
-    scope_label="\`ci:eval\` + $scope"
+  if [[ -n "${SCOPE_LINE:-}" ]]; then
+    scope_label="\`agent-eval:eval\` + $SCOPE_LINE"
   else
-    scope_label="\`ci:eval\` (default smoke)"
+    scope_label="\`agent-eval:eval\` (default smoke)"
   fi
 
   body="$(printf '%s\n' \
@@ -154,7 +145,7 @@ cmd_ensure() {
     "- Scope: $scope_label" \
     "- Eval run: $run_url" \
     '' \
-    'This bot-owned thread is the merge proof for the `ci:eval` label: it resolves only when a successful eval run has evaluated the current PR head, and it reopens when new commits land. Rerun evals by removing and re-adding `ci:eval`, or via `workflow_dispatch` (set `pr_number` if the branch is ambiguous).')"
+    'This bot-owned thread is the merge proof for the `agent-eval:eval` label: it resolves only when a successful eval run has evaluated the current PR head, and it reopens when new commits land. Rerun evals by removing and re-adding `agent-eval:eval`, or via `workflow_dispatch` (set `pr_number` if the branch is ambiguous).')"
 
   if ! found="$(locate_thread "$pr")"; then
     echo "::error title=Eval gate::Locating the gate thread on PR #$pr failed (GraphQL error)." >&2
@@ -223,7 +214,7 @@ cmd_result() {
       fi
       update_comment "$comment_id" "$body" \
         || echo "::warning title=Eval gate::Could not update the gate thread body (comment $comment_id)."
-      # Resolving an already-resolved thread is a no-op success (verified).
+      # Resolving an already-resolved thread is a no-op success.
       if ! resolve_thread "$thread_id"; then
         echo "::warning title=Eval gate::Resolving the gate thread failed (resolveReviewThread needs contents:write + pull-requests:write). Re-dispatch the Agent eval workflow to retry."
         {
@@ -240,7 +231,7 @@ cmd_result() {
     body="$(printf '%s\n' "$MARKER" '### Agent eval gate' '' \
       "**Status: stale — evals passed for head \`${sha:0:7}\`, but the PR head is now \`${current_head:0:7}\`.**" \
       '' \
-      'Evals are required again for the new head. Rerun by removing and re-adding `ci:eval`, or via `workflow_dispatch`.' \
+      'Evals are required again for the new head. Rerun by removing and re-adding `agent-eval:eval`, or via `workflow_dispatch`.' \
       '' \
       "- Eval run: ${run_url:-n/a}" \
       "- Playground: ${playground:-not deployed}")"
@@ -257,7 +248,7 @@ cmd_result() {
     "- Eval run: ${run_url:-n/a}" \
     "- Playground: ${playground:-not deployed}" \
     '' \
-    'Rerun by removing and re-adding `ci:eval`, or via `workflow_dispatch`.')"
+    'Rerun by removing and re-adding `agent-eval:eval`, or via `workflow_dispatch`.')"
   update_comment "$comment_id" "$body" \
     || echo "::warning title=Eval gate::Could not record the failure on the gate thread (comment $comment_id)."
   output "result=open"
@@ -280,7 +271,7 @@ cmd_reopen() {
   body="$(printf '%s\n' "$MARKER" '### Agent eval gate' '' \
     "**Status: evals required for new head \`${sha:0:7}\`** — a new push was detected; previous eval results no longer cover this head (evals were not rerun)." \
     '' \
-    'Rerun evals by removing and re-adding `ci:eval`, or via `workflow_dispatch` (set `pr_number` if the branch is ambiguous).')"
+    'Rerun evals by removing and re-adding `agent-eval:eval`, or via `workflow_dispatch` (set `pr_number` if the branch is ambiguous).')"
 
   update_comment "$comment_id" "$body" || {
     echo "::error title=Eval gate::Could not update the gate thread on PR #$pr after the new push." >&2

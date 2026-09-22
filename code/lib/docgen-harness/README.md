@@ -238,6 +238,8 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
 - `@summary` is recorded by the analyzer but never reaches the component description.
 - Class-level `@deprecated` never reaches the component description.
+- Component-level `jsDocTags` is always `{}` in the OSA payload; the CEM `deprecated` and `summary` fields never reach the tag map.
+- The JSDoc block above the CSF `meta` is ignored by the OSA provider, so its description and tags never reach the payload (other renderers resolve it through `extractComponentDescription`).
 - CEM 2.1.0 `cssStates` and `readonly` are ignored; the 1.0.0 and 2.1.0 recordings are identical.
 - The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.

@@ -40,14 +40,22 @@ const LEGACY_BASELINES = {
   backSideSnippet: 'demo-wc-card/snippet-Back.snapshot',
 } as const;
 
+const OSA_PAYLOADS = {
+  basicPayload: 'lit-basic-attributes/osa-payload.snapshot',
+  unionPayload: 'lit-union-jsdoc/osa-payload.snapshot',
+} as const;
+
 type ComparedBaseline = keyof ReturnType<typeof BASELINES>;
 type SnippetBaseline = keyof typeof LEGACY_BASELINES;
+type OsaPayload = keyof typeof OSA_PAYLOADS;
 
 const baseline = (key: ComparedBaseline, prefix: '' | 'osa-' = '') =>
   readFileSync(join(fixturesDir, BASELINES(prefix)[key]), 'utf-8');
 
 const snippetBaseline = (key: SnippetBaseline) =>
   readFileSync(join(fixturesDir, LEGACY_BASELINES[key]), 'utf-8');
+
+const osaPayload = (key: OsaPayload) => readFileSync(join(fixturesDir, OSA_PAYLOADS[key]), 'utf-8');
 
 const osaGapTest = (name: string) => (OSA_CLOSED.has(name) ? test : test.fails);
 
@@ -72,6 +80,7 @@ test('every baseline referenced by a red marker exists', () => {
     ...Object.values(BASELINES('')),
     ...Object.values(BASELINES('osa-')),
     ...Object.values(LEGACY_BASELINES),
+    ...Object.values(OSA_PAYLOADS),
   ]) {
     expect(existsSync(join(fixturesDir, relativePath)), relativePath).toBe(true);
   }
@@ -118,6 +127,28 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     extractArgTypes('lit-basic-attributes');
     expect(warn).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i));
     setCustomElementsManifest(undefined);
+  });
+});
+
+describe('OSA payload gaps (red until the server mapper closes them)', () => {
+  const componentTagsName = 'component-level jsDocTags carry the CEM deprecated and summary fields';
+
+  osaGapTest(componentTagsName)(componentTagsName, () => {
+    const payload = osaPayload('unionPayload');
+    expect(payload).not.toContain('"jsDocTags": {}');
+    expect(payload).toMatch(/"deprecated": \[\s*"Use lit-basic-attributes instead\."/);
+    expect(payload).toMatch(/"summary": \[\s*"Compact variant fixture\."/);
+  });
+
+  const storyMetaName = 'the story meta docblock reaches the payload description and jsDocTags';
+
+  osaGapTest(storyMetaName)(storyMetaName, () => {
+    const payload = osaPayload('basicPayload');
+    expect(payload).toContain(
+      '"description": "Story-level docs for the basic attributes fixture."'
+    );
+    expect(payload).toMatch(/"since": \[\s*"1\.2\.0"/);
+    expect(payload).toMatch(/"see": \[\s*"https:\/\/example\.com\/lit-basic-attributes"/);
   });
 });
 

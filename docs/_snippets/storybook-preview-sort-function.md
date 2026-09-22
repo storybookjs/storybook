@@ -38,6 +38,9 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -54,6 +57,9 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -68,6 +74,9 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -83,6 +92,9 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -97,6 +109,9 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -111,6 +126,9 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -126,5 +144,8 @@ export default definePreview({
         a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```

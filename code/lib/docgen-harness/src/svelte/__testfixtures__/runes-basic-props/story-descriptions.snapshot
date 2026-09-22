@@ -1,6 +1,5 @@
 {
-  "component": "Panel fixture component description.
-Captured from defineMeta comments.",
+  "component": undefined,
   "stories": {
     "AllArgs": undefined,
     "Default": "Default story docs description.",

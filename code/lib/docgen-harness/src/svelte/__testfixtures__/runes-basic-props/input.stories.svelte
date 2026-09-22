@@ -3,10 +3,6 @@
 
   import Panel from './Panel.svelte';
 
-  /**
-   * Panel fixture component description.
-   * Captured from defineMeta comments.
-   */
   const { Story } = defineMeta({
     title: 'SvelteFixtures/Panel',
     component: Panel,

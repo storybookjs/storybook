@@ -139,6 +139,7 @@ export type SyncRequestPayload = v.InferOutput<typeof syncRequestSchema>;
  */
 export const syncReplySchema = v.object({
   serviceId: v.string(),
+  runtimeId: v.string(),
   frontier: frontierSchema,
   state: stateSnapshotSchema,
 });

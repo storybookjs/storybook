@@ -113,6 +113,7 @@ describe('syncRequestSchema and syncReplySchema', () => {
     expect(
       v.safeParse(syncReplySchema, {
         serviceId: 'svc',
+        runtimeId: 'peer',
         frontier,
         state: { n: 1 },
       }).success

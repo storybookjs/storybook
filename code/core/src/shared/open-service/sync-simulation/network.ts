@@ -18,6 +18,7 @@ type DirectedLink = {
   availableAt: number;
   dropNext: number;
   duplicateNext: number;
+  held: boolean;
 };
 
 type Delivery = {
@@ -88,14 +89,31 @@ export class VirtualNetwork {
     this.link(from, to).duplicateNext += count;
   }
 
+  hold(from: NodeId, to: NodeId): void {
+    this.link(from, to).held = true;
+  }
+
+  release(from: NodeId, to: NodeId): void {
+    this.link(from, to).held = false;
+  }
+
   drain(): void {
     let steps = 0;
-    while (this.deliveries.length > 0) {
+    while (this.deliverNext()) {
       steps += 1;
       if (steps > 10_000) {
         throw new Error('VirtualNetwork drain exceeded 10000 steps');
       }
-      this.deliverNext();
+    }
+  }
+
+  drainDue(): void {
+    let steps = 0;
+    while (this.deliverDue()) {
+      steps += 1;
+      if (steps > 10_000) {
+        throw new Error('VirtualNetwork drainDue exceeded 10000 steps');
+      }
     }
   }
 
@@ -107,6 +125,7 @@ export class VirtualNetwork {
       availableAt: 0,
       dropNext: 0,
       duplicateNext: 0,
+      held: false,
     };
   }
 
@@ -143,13 +162,29 @@ export class VirtualNetwork {
     }
   }
 
-  private deliverNext(): void {
+  private deliverNext(): boolean {
     this.deliveries.sort((left, right) => left.at - right.at || left.order - right.order);
-    const delivery = this.deliveries.shift();
-    if (!delivery) {
-      return;
+    const index = this.deliveries.findIndex((delivery) => !delivery.link.held);
+    if (index < 0) {
+      return false;
     }
-    this.now = delivery.at;
+    return this.deliverAt(index);
+  }
+
+  private deliverDue(): boolean {
+    this.deliveries.sort((left, right) => left.at - right.at || left.order - right.order);
+    const index = this.deliveries.findIndex(
+      (delivery) => !delivery.link.held && delivery.at <= this.now
+    );
+    if (index < 0) {
+      return false;
+    }
+    return this.deliverAt(index);
+  }
+
+  private deliverAt(index: number): true {
+    const delivery = this.deliveries.splice(index, 1)[0];
+    this.now = Math.max(this.now, delivery.at);
     this.frames.push({
       from: delivery.link.from,
       to: delivery.link.to,
@@ -158,5 +193,6 @@ export class VirtualNetwork {
       payload: delivery.event.args[0],
     });
     this.channels.get(delivery.link.to)?.receive(delivery.event);
+    return true;
   }
 }

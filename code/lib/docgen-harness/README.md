@@ -242,6 +242,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 ## Known legacy gaps (svelte)
 
 - Component descriptions are always empty; the svelte-vite docgen plugin writes `data` and `name` only, so `<!-- @component ... -->` never reaches `description.snapshot`.
+  `runes-basic-props` records the end-to-end result: with no JSDoc above `defineMeta` the docs parameter is `undefined` too, where `runes-component-props-indexed` keeps the `defineMeta` JSDoc case.
 - No events or slots are recorded by the docgen plugin. Legacy `createEventDispatcher` and `<slot>` declarations stay absent, and Svelte `Snippet` props record as `properties`.
 - Literal unions keep raw type text in `type.name` and `table.type.summary`; literal-only unions may get `control.options`, but they do not become an `enum` sbType.
 - `table.jsDocTags` is never populated. The current recordings keep only prop description text; `@deprecated`, `@default`, `@example`, and `@internal` do not leak into descriptions.

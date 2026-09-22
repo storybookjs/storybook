@@ -15,6 +15,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 const BASELINES = {
   basicDescription: 'runes-basic-props/description.snapshot',
   basicStoryDescriptions: 'runes-basic-props/story-descriptions.snapshot',
+  modalStoryDescriptions: 'runes-component-props-indexed/story-descriptions.snapshot',
   unionArgTypes: 'runes-union-literal/argtypes.snapshot',
   snippetsArgTypes: 'runes-snippets/argtypes.snapshot',
   jsdocArgTypes: 'runes-jsdoc-tags/argtypes.snapshot',
@@ -100,10 +101,13 @@ describe('legacy behavior locked by the current recordings', () => {
   });
 
   test('Svelte CSF comments populate docs description parameters', () => {
+    expect(baseline('modalStoryDescriptions')).toContain('Modal fixture component description.');
+
     const snapshot = baseline('basicStoryDescriptions');
-    expect(snapshot).toContain('Panel fixture component description.');
     expect(snapshot).toContain('Default story docs description.');
     expect(snapshot).toContain('"AllArgs": undefined');
+    // Panel has no JSDoc above `defineMeta`, and its `<!-- @component -->` block never reaches this parameter.
+    expect(snapshot).toContain('"component": undefined');
   });
 });
 

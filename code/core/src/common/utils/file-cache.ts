@@ -5,6 +5,8 @@ import { mkdir, readFile, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { writeFileWithRetry } from './write-file-with-retry.ts';
 
 interface FileSystemCacheOptions {
@@ -42,7 +44,21 @@ export class FileSystemCache {
       options.basePath || join(tmpdir(), randomBytes(15).toString('base64').replace(/\//g, '-'));
     this.ttl = options.ttl || 0;
     createHash(this.hash_alg); // Verifies hash algorithm is available
-    mkdirSync(this.cache_dir, { recursive: true });
+    // The cache is a best-effort optimization, not mission critical. Creating the
+    // directory can fail (e.g. permissions, antivirus file locks); if it does, we
+    // degrade gracefully and let individual reads/writes fail softly later on.
+    try {
+      mkdirSync(this.cache_dir, { recursive: true });
+    } catch (e) {
+      this.logFailure('create the cache directory', e);
+    }
+  }
+
+  /** Logs a file system failure at debug level without throwing. */
+  private logFailure(action: string, error: unknown): void {
+    logger.debug(
+      `[FileSystemCache] Failed to ${action}: ${error instanceof Error ? error.message : String(error)}`
+    );
   }
 
   private generateHash(name: string): string {
@@ -87,18 +103,26 @@ export class FileSystemCache {
     orgOpts: CacheSetOptions | number = {}
   ): Promise<void> {
     const opts: CacheSetOptions = typeof orgOpts === 'number' ? { ttl: orgOpts } : orgOpts;
-    await mkdir(this.cache_dir, { recursive: true });
-    await writeFileWithRetry(this.generateHash(name), this.parseSetData(name, data, opts), {
-      encoding: opts.encoding || 'utf8',
-    });
+    try {
+      await mkdir(this.cache_dir, { recursive: true });
+      await writeFileWithRetry(this.generateHash(name), this.parseSetData(name, data, opts), {
+        encoding: opts.encoding || 'utf8',
+      });
+    } catch (e) {
+      this.logFailure(`write cache entry "${name}"`, e);
+    }
   }
 
   public setSync<T>(name: string, data: T, orgOpts: CacheSetOptions | number = {}): void {
     const opts: CacheSetOptions = typeof orgOpts === 'number' ? { ttl: orgOpts } : orgOpts;
-    mkdirSync(this.cache_dir, { recursive: true });
-    writeFileSync(this.generateHash(name), this.parseSetData(name, data, opts), {
-      encoding: opts.encoding || 'utf8',
-    });
+    try {
+      mkdirSync(this.cache_dir, { recursive: true });
+      writeFileSync(this.generateHash(name), this.parseSetData(name, data, opts), {
+        encoding: opts.encoding || 'utf8',
+      });
+    } catch (e) {
+      this.logFailure(`write cache entry "${name}"`, e);
+    }
   }
 
   public async setMany(items: CacheItem[], options?: CacheSetOptions): Promise<void> {
@@ -110,39 +134,60 @@ export class FileSystemCache {
   }
 
   public async remove(name: string): Promise<void> {
-    await rm(this.generateHash(name), { force: true });
+    try {
+      await rm(this.generateHash(name), { force: true });
+    } catch (e) {
+      this.logFailure(`remove cache entry "${name}"`, e);
+    }
   }
 
   public removeSync(name: string): void {
-    rmSync(this.generateHash(name), { force: true });
+    try {
+      rmSync(this.generateHash(name), { force: true });
+    } catch (e) {
+      this.logFailure(`remove cache entry "${name}"`, e);
+    }
   }
 
   public async clear(): Promise<void> {
-    const files = await readdir(this.cache_dir);
-    await Promise.all(
-      files
-        .filter((f) => f.startsWith(this.prefix))
-        .map((f) => rm(join(this.cache_dir, f), { force: true }))
-    );
+    try {
+      const files = await readdir(this.cache_dir);
+      await Promise.all(
+        files
+          .filter((f) => f.startsWith(this.prefix))
+          .map((f) => rm(join(this.cache_dir, f), { force: true }))
+      );
+    } catch (e) {
+      this.logFailure('clear the cache', e);
+    }
   }
 
   public clearSync(): void {
-    readdirSync(this.cache_dir)
-      .filter((f) => f.startsWith(this.prefix))
-      .forEach((f) => rmSync(join(this.cache_dir, f), { force: true }));
+    try {
+      readdirSync(this.cache_dir)
+        .filter((f) => f.startsWith(this.prefix))
+        .forEach((f) => rmSync(join(this.cache_dir, f), { force: true }));
+    } catch (e) {
+      this.logFailure('clear the cache', e);
+    }
   }
 
   public async getAll(): Promise<CacheItem[]> {
     const now = Date.now();
-    const files = await readdir(this.cache_dir);
-    const items = await Promise.all(
-      files
-        .filter((f) => f.startsWith(this.prefix))
-        .map((f) => readFile(join(this.cache_dir, f), 'utf8'))
-    );
-    return items
-      .map((data) => JSON.parse(data))
-      .filter((entry) => entry.content && !this.isExpired(entry, now));
+    try {
+      const files = await readdir(this.cache_dir);
+      const items = await Promise.all(
+        files
+          .filter((f) => f.startsWith(this.prefix))
+          .map((f) => readFile(join(this.cache_dir, f), 'utf8'))
+      );
+      return items
+        .map((data) => JSON.parse(data))
+        .filter((entry) => entry.content && !this.isExpired(entry, now));
+    } catch (e) {
+      this.logFailure('read cache entries', e);
+      return [];
+    }
   }
 
   public async load(): Promise<{ files: CacheItem[] }> {

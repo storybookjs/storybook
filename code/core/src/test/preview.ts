@@ -121,8 +121,24 @@ export const enhanceContext: LoaderFunction = async (context) => {
         Object.defineProperties(HTMLElement.prototype, {
           focus: {
             configurable: true,
-            set: (newFocus: () => void) => {
-              currentFocus = newFocus;
+            set(this: HTMLElement, newFocus: () => void) {
+              /*
+               * Only assignments to `HTMLElement.prototype.focus` itself replace the shared
+               * focus method. An assignment on an element (`el.focus = fn`) natively creates
+               * an own property scoped to that element; routing it into `currentFocus` would
+               * hijack programmatic focus for every element on the page, so mirror the native
+               * behavior with an own data property instead.
+               */
+              if (this === HTMLElement.prototype) {
+                currentFocus = newFocus;
+                return;
+              }
+              Object.defineProperty(this, 'focus', {
+                value: newFocus,
+                writable: true,
+                configurable: true,
+                enumerable: true,
+              });
             },
             get() {
               /*

@@ -198,8 +198,8 @@ export function attachReplica(options: {
   const runtime = createServiceRuntime(simServiceDef, { registryApi: serviceRegistryApi });
 
   const reconciler = createSnapshotReconciler({
+    serviceId: simServiceDef.id,
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
-    initialStamp: { version: 0, runtimeId },
     window,
   });
 

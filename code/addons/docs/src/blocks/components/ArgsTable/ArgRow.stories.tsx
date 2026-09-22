@@ -4,7 +4,7 @@ import { ResetWrapper } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, screen } from 'storybook/test';
+import { expect, screen, userEvent, within } from 'storybook/test';
 
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
@@ -411,7 +411,7 @@ export const LongEnum = {
 } satisfies StoryObj<typeof ArgRow>;
 
 const complexUnion =
-  '((a: string | SVGSVGElement) => void) | RefObject<SVGSVGElement | number> | [a|b] | {a|b}';
+  '((a: string | SVGSVGElement) => void) | RefObject<SVGSVGElement | number> | [a|b] | {a|b} | string | number | boolean | undefined | null';
 export const ComplexUnion = {
   args: {
     row: {
@@ -427,7 +427,22 @@ export const ComplexUnion = {
       },
     },
   },
-};
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    expect(canvas.getByText('((a: string | SVGSVGElement) => void)')).toBeVisible();
+    expect(canvas.getByText('RefObject<SVGSVGElement | number>')).toBeVisible();
+    expect(canvas.getByText('[a|b]')).toBeVisible();
+    expect(canvas.getByText('{a|b}')).toBeVisible();
+    expect(canvas.getByText('null')).not.toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Show 1 more...' }));
+    expect(canvas.getByText('null')).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Show less...' }));
+    expect(canvas.getByText('null')).not.toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
 
 export const Markdown = {
   args: {

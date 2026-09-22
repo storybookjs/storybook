@@ -5,9 +5,9 @@ import { PopoverProvider, SyntaxHighlighter, codeCommon } from 'storybook/intern
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
-import { uniq } from 'es-toolkit/array';
 import { styled } from 'storybook/theming';
 
+import { getSummaryItems } from './getSummaryItems.ts';
 import type { PropSummaryValue } from './types';
 
 interface ArgValueProps {
@@ -138,16 +138,6 @@ const ArgText: FC<ArgTextProps> = ({ text, simple }) => {
   return <Text simple={simple}>{text}</Text>;
 };
 
-const getSummaryItems = (summary: string) => {
-  if (!summary) {
-    return [summary];
-  }
-  const splittedItems = summary.split('|');
-  const summaryItems = splittedItems.map((value) => value.trim());
-
-  return uniq(summaryItems);
-};
-
 const renderSummaryItems = (summaryItems: string[]) => {
   return summaryItems
     .slice(0, ITEMS_BEFORE_EXPANSION)
@@ -176,13 +166,13 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   const summaryAsString = typeof summary.toString === 'function' ? summary.toString() : summary;
 
   if (detail == null) {
-    const cannotBeSafelySplitted = /[(){}[\]<>]/.test(summaryAsString);
+    const summaryItems = getSummaryItems(summaryAsString);
+    const cannotBeSafelySplit = summaryItems.length === 1 && /[(){}[\]<>]/.test(summaryAsString);
 
-    if (cannotBeSafelySplitted) {
+    if (cannotBeSafelySplit) {
       return <ArgText text={summaryAsString} />;
     }
 
-    const summaryItems = getSummaryItems(summaryAsString);
     const itemsCount = summaryItems.length;
     const hasManyItems = itemsCount > ITEMS_BEFORE_EXPANSION;
 

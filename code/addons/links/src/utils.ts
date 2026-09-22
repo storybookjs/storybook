@@ -36,7 +36,7 @@ function parseQuery(queryString: string) {
 export const navigate = (params: ParamsId | ParamsCombo) =>
   addons.getChannel().emit(SELECT_STORY, params);
 
-const generateStoryUrl = (title: ComponentTitle, name: StoryName): string => {
+const generateStoryUrl = (title: ComponentTitle | undefined, name: StoryName): string => {
   const { location } = document;
   const query = parseQuery(location.search);
   const existingId = query.id ?? query.path?.match(/^\/story\/(.+)$/)?.[1];
@@ -52,13 +52,13 @@ const generateStoryUrl = (title: ComponentTitle, name: StoryName): string => {
     .join('&')}`;
 };
 
-export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> => {
+export const hrefTo = (title: ComponentTitle | undefined, name: StoryName): Promise<string> => {
   return new Promise((resolve) => {
     resolve(generateStoryUrl(title, name));
   });
 };
 
-export const hrefToSync = (title: ComponentTitle, name: StoryName): string => {
+export const hrefToSync = (title: ComponentTitle | undefined, name: StoryName): string => {
   return generateStoryUrl(title, name);
 };
 

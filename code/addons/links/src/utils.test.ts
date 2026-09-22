@@ -24,7 +24,7 @@ describe('preview', () => {
   });
   beforeEach(() => {
     channel.emit.mockReset();
-    window.history.replaceState({}, '', 'http://localhost/iframe.html');
+    window.history.replaceState({}, '', '/iframe.html');
   });
   describe('linkTo()', () => {
     it('should select the title and name provided', () => {
@@ -90,13 +90,8 @@ describe('preview', () => {
     });
 
     it('should fall back to query.path when title is omitted', async () => {
-      window.history.replaceState(
-        {},
-        '',
-        'http://localhost/iframe.html?path=/story/current-title--current'
-      );
+      window.history.replaceState({}, '', '/iframe.html?path=/story/current-title--current');
 
-      // @ts-expect-error (not strict)
       const href = await hrefTo(undefined, 'next-name');
 
       expect(href).toContain('?path=/story/current-title--next-name');
@@ -110,13 +105,8 @@ describe('preview', () => {
     });
 
     it('should fall back to query.path when title is omitted', () => {
-      window.history.replaceState(
-        {},
-        '',
-        'http://localhost/iframe.html?path=/story/current-title--current'
-      );
+      window.history.replaceState({}, '', '/iframe.html?path=/story/current-title--current');
 
-      // @ts-expect-error (not strict)
       const href = hrefToSync(undefined, 'next-name');
 
       expect(href).toContain('?path=/story/current-title--next-name');

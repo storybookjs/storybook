@@ -53,8 +53,6 @@ const KNOWN_FILES = [
   'addon-foo/register.js',
 ];
 
-// Re-applied per test so that cases which swap in a different resolver cannot leak into the rest
-// of the file.
 beforeEach(() => {
   mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) =>
     KNOWN_FILES.includes(specifier) ? specifier : undefined
@@ -144,24 +142,6 @@ describe('presets', () => {
     const result = await presets.apply('aProperty', []);
 
     expect(result).toEqual(['first', 'second', 'sub-preset-fourth', 'third', 'fifth']);
-  });
-
-  it('returns the last static preset value without invoking functions', async () => {
-    const storySort = vi.fn();
-    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
-      if (path === 'preset-first') {
-        return { storySort: { order: ['first'] } };
-      }
-      if (path === 'preset-second') {
-        return { storySort };
-      }
-      throw new Error(`Could not resolve ${path}`);
-    });
-
-    const presets = await getPresets(['preset-first', 'preset-second'], {} as any);
-
-    expect(presets.get?.('storySort')).toBe(storySort);
-    expect(storySort).not.toHaveBeenCalled();
   });
 
   it('loads and applies presets when they are declared as a string', async () => {

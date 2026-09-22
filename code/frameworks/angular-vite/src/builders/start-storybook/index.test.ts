@@ -67,12 +67,19 @@ const mockedBuildDevStandalone = vi.mocked(
   (await import('storybook/internal/core-server')).buildDevStandalone
 );
 
-function createMockContext(browserTargetOptions: JsonObject = {}): BuilderContext {
+function createMockContext(
+  browserTargetOptions: JsonObject = {},
+  storybookTargetOptions: JsonObject = {}
+): BuilderContext {
   return {
-    target: { project: 'test-project', builder: 'test-builder', options: {} },
+    target: { project: 'test-project', target: 'start-storybook' },
     workspaceRoot: '/test/workspace',
     getProjectMetadata: vi.fn().mockResolvedValue({}),
-    getTargetOptions: vi.fn().mockResolvedValue(browserTargetOptions),
+    getTargetOptions: vi
+      .fn()
+      .mockImplementation(async (target: { target?: string }) =>
+        target.target === 'start-storybook' ? storybookTargetOptions : browserTargetOptions
+      ),
     getBuilderNameForTarget: vi.fn().mockResolvedValue('@angular-devkit/build-angular:browser'),
     validateOptions: vi.fn().mockImplementation((options: unknown) => Promise.resolve(options)),
     logger: new logging.Logger('Test'),
@@ -150,14 +157,42 @@ describe('start-storybook builder', () => {
 
   it('lets own options win over conflicting browser target options', async () => {
     mockedTargetFromTargetString.mockReturnValue({ project: 'test-project', target: 'serve' });
-    const context = createMockContext({ styles: ['src/browser.scss'] });
+    const context = createMockContext(
+      { styles: ['src/browser.scss'] },
+      { styles: ['src/own.scss'] }
+    );
 
     const standaloneOptions = await getStandaloneOptions(
-      createOptions({ browserTarget: 'test-project:serve', styles: ['src/own.scss'] }),
+      createOptions({ browserTarget: 'test-project:serve' }),
       context
     );
 
     expect(standaloneOptions.angularBuilderOptions.styles).toEqual(['src/own.scss']);
+  });
+
+  it('does not let schema-defaulted empty own options override browser target values', async () => {
+    mockedTargetFromTargetString.mockReturnValue({ project: 'test-project', target: 'serve' });
+    // Architect fills undeclared container options with schema-shaped defaults; the storybook
+    // target here declares none of them.
+    const context = createMockContext(
+      {
+        stylePreprocessorOptions: { includePaths: ['src/sass'] },
+        styles: ['src/styles.scss'],
+        assets: ['src/assets'],
+      },
+      {}
+    );
+
+    const standaloneOptions = await getStandaloneOptions(
+      createOptions({ browserTarget: 'test-project:serve' }),
+      context
+    );
+
+    expect(standaloneOptions.angularBuilderOptions).toMatchObject({
+      stylePreprocessorOptions: { includePaths: ['src/sass'] },
+      styles: ['src/styles.scss'],
+      assets: ['src/assets'],
+    });
   });
 
   it('does not resolve a browser target when none is set', async () => {

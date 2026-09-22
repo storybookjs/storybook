@@ -118,8 +118,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         options.port = parseInt(`${options.port}`, 10);
 
         const {
-          stylePreprocessorOptions,
-          styles,
           ci,
           configDir,
           docs,
@@ -133,7 +131,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           sslCert,
           sslKey,
           disableTelemetry,
-          assets,
           initialPath,
           open,
           loglevel,
@@ -148,11 +145,20 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         const packageJson =
           packageJsonPath != null ? JSON.parse(readFileSync(packageJsonPath, 'utf8')) : null;
 
+        // Architect schema-validates builder options and fills container keys the target does
+        // not declare with empty defaults (styles: [], assets: [], a schema-shaped
+        // stylePreprocessorOptions). Merging those defaults would override real browser-target
+        // values, so container options are read from what the target actually declares. Targets
+        // without a browserTarget keep the schema-validated options for unchanged behavior.
+        const declaredOptions = (
+          resolvedTarget ? await context.getTargetOptions(context.target) : options
+        ) as StorybookBuilderOptions;
+
         const angularBuilderOptions = mergeBrowserTargetOptions(
           {
-            stylePreprocessorOptions,
-            styles,
-            assets,
+            stylePreprocessorOptions: declaredOptions.stylePreprocessorOptions,
+            styles: declaredOptions.styles,
+            assets: declaredOptions.assets,
             sourceMap,
             preserveSymlinks,
             zoneless,

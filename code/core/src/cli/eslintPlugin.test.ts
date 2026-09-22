@@ -282,6 +282,72 @@ describe('configureEslintPlugin', () => {
   });
 
   describe('flat config', () => {
+    it('configures the Box CommonJS flat config without adding an ESM import', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      const mockConfigFile = dedent`
+        const { FlatCompat } = require('@eslint/eslintrc');
+        const js = require('@eslint/js');
+        const cypress = require('eslint-plugin-cypress/flat');
+
+        const compat = new FlatCompat({ recommendedConfig: js.configs.recommended });
+
+        module.exports = [
+          ...compat.extends(
+            require.resolve('@box/frontend/eslint/base'),
+            require.resolve('@box/frontend/eslint/react'),
+          ),
+          cypress.configs.recommended,
+        ];
+      `;
+
+      vi.mocked(readFile).mockResolvedValue(mockConfigFile);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
+        const storybook = require(\"eslint-plugin-storybook\");
+
+        const { FlatCompat } = require('@eslint/eslintrc');
+        const js = require('@eslint/js');
+        const cypress = require('eslint-plugin-cypress/flat');
+
+        const compat = new FlatCompat({ recommendedConfig: js.configs.recommended });
+
+        module.exports = [...compat.extends(
+          require.resolve('@box/frontend/eslint/base'),
+          require.resolve('@box/frontend/eslint/react'),
+        ), cypress.configs.recommended, ...storybook.configs[\"flat/recommended\"]];"
+      `);
+      expect(content).not.toContain('import storybook');
+    });
+
+    it('does not modify unsupported CommonJS flat config shapes', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      vi.mocked(readFile).mockResolvedValue(dedent`
+        module.exports = createConfig();
+      `);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      expect(vi.mocked(writeFile)).not.toHaveBeenCalled();
+    });
+
     it('should configure ESLint plugin correctly with default JS flat config', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),

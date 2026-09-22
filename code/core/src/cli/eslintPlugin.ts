@@ -55,7 +55,7 @@ function unwrapTSExpression(expr: any): t.Expression | null | undefined {
 export const configureFlatConfig = async (code: string) => {
   const ast = babelParse(code);
 
-  // Bail out if eslint-plugin-storybook is already imported (static or dynamic) to avoid
+  // Bail out if eslint-plugin-storybook is already imported (static, dynamic, or CommonJS) to avoid
   // referencing an undefined variable or duplicating the config spread.
   // Some configs use dynamic import() expressions (e.g. via eslint-flat-config-utils).
   let alreadyHasStorybookImport = false;
@@ -78,10 +78,74 @@ export const configureFlatConfig = async (code: string) => {
         alreadyHasStorybookImport = true;
         path.stop();
       }
+
+      if (
+        t.isIdentifier(path.node.callee, { name: 'require' }) &&
+        path.node.arguments.length > 0 &&
+        t.isStringLiteral(path.node.arguments[0]) &&
+        path.node.arguments[0].value === 'eslint-plugin-storybook'
+      ) {
+        alreadyHasStorybookImport = true;
+        path.stop();
+      }
     },
   });
   if (alreadyHasStorybookImport) {
     return code;
+  }
+
+  let commonJsConfig: t.ArrayExpression | undefined;
+  let hasUnsupportedCommonJsConfig = false;
+
+  traverse(ast, {
+    AssignmentExpression(path) {
+      if (
+        !t.isMemberExpression(path.node.left) ||
+        !t.isIdentifier(path.node.left.object, { name: 'module' }) ||
+        !t.isIdentifier(path.node.left.property, { name: 'exports' })
+      ) {
+        return;
+      }
+
+      const exportedConfig = unwrapTSExpression(path.node.right);
+      if (t.isArrayExpression(exportedConfig)) {
+        commonJsConfig = exportedConfig;
+      } else {
+        hasUnsupportedCommonJsConfig = true;
+      }
+    },
+  });
+
+  if (hasUnsupportedCommonJsConfig) {
+    return code;
+  }
+
+  if (commonJsConfig) {
+    const storybookConfig = t.memberExpression(
+      t.memberExpression(t.identifier('storybook'), t.identifier('configs')),
+      t.stringLiteral('flat/recommended'),
+      true
+    );
+    commonJsConfig.elements.push(t.spreadElement(storybookConfig));
+
+    const storybookRequire = t.variableDeclaration('const', [
+      t.variableDeclarator(
+        t.identifier('storybook'),
+        t.callExpression(t.identifier('require'), [t.stringLiteral('eslint-plugin-storybook')])
+      ),
+    ]);
+    Object.assign(storybookRequire, {
+      comments: [
+        {
+          type: 'CommentLine',
+          value:
+            ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
+        },
+      ],
+    });
+    ast.program.body.unshift(storybookRequire);
+
+    return recast.print(ast).code;
   }
 
   let tsEslintLocalName = '';

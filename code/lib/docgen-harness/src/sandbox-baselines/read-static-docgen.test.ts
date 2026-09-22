@@ -51,7 +51,7 @@ describe('readStaticDocgen', () => {
     vol.fromJSON({ [`${STATIC}/index.html`]: '<html></html>' });
 
     expect(() => readStaticDocgen({ staticDir: STATIC, sandboxDir: SANDBOX })).toThrow(
-      /experimentalDocgenServer/
+      /docgenServer/
     );
   });
 

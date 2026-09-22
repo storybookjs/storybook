@@ -45,7 +45,7 @@ function previewFrame(page: Page) {
   return page.frameLocator('#storybook-preview-iframe');
 }
 
-async function expectExperimentalDocgenServer(page: Page) {
+async function expectDocgenServer(page: Page) {
   await expect
     .poll(
       () =>
@@ -53,9 +53,9 @@ async function expectExperimentalDocgenServer(page: Page) {
           Boolean(
             (
               globalThis as {
-                FEATURES?: { experimentalDocgenServer?: boolean };
+                FEATURES?: { docgenServer?: boolean };
               }
-            ).FEATURES?.experimentalDocgenServer
+            ).FEATURES?.docgenServer
           )
         ),
       { timeout: PREVIEW_STORY_TIMEOUT }
@@ -114,7 +114,7 @@ async function expectPreviewButtonLabel(page: Page, label: string) {
 
 async function gotoCodePanelStory(page: Page) {
   await page.goto(`${storybookUrl}/?path=${storyPath}`);
-  await expectExperimentalDocgenServer(page);
+  await expectDocgenServer(page);
   await waitForPreviewReady(page);
   await expect(
     previewFrame(page)
@@ -125,7 +125,7 @@ async function gotoCodePanelStory(page: Page) {
 
 async function gotoAutodocsPage(page: Page) {
   await page.goto(`${storybookUrl}/?path=${docsPath}`);
-  await expectExperimentalDocgenServer(page);
+  await expectDocgenServer(page);
   await waitForPreviewReady(page);
 }
 

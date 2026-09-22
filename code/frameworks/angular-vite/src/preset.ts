@@ -29,14 +29,6 @@ export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 
-// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
-// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
-// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
-export const features: PresetProperty<'features'> = async (existing) => ({
-  ...existing,
-  experimentalDocgenServer: true,
-});
-
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
   options
@@ -117,7 +109,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     'features',
     {}
   );
-  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+  const docgenServer = !!resolvedFeatures?.docgenServer;
 
   // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
   // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
@@ -136,9 +128,9 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   if (resolvedFeatures?.componentsManifest && !docgenServer) {
     logger.warn(
-      `The \`componentsManifest\` feature needs the \`experimentalDocgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
+      `The \`componentsManifest\` feature needs the \`docgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
         `and MCP clients get no component API from it. ` +
-        `Turn the docgen server on with \`features: { experimentalDocgenServer: true }\` in your \`main.ts\`.`
+        `Turn the docgen server on with \`features: { docgenServer: true }\` in your \`main.ts\`.`
     );
   }
 

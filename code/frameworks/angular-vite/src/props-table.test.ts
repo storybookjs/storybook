@@ -67,7 +67,7 @@ describe('warnAboutPropsTable', () => {
   it('says the flag is ignored when propsTable is set too', () => {
     const messages = warnings(
       { propsTable: 'all' },
-      { angularFilterNonInputControls: true, experimentalDocgenServer: true }
+      { angularFilterNonInputControls: true, docgenServer: true }
     );
 
     expect(messages).toHaveLength(1);
@@ -75,7 +75,7 @@ describe('warnAboutPropsTable', () => {
   });
 
   it('stays quiet when neither the flag nor an unsupported mode is configured', () => {
-    expect(warnings({}, { experimentalDocgenServer: true })).toEqual([]);
+    expect(warnings({}, { docgenServer: true })).toEqual([]);
     expect(warnings({ propsTable: 'all' })).toEqual([]);
   });
 
@@ -83,7 +83,7 @@ describe('warnAboutPropsTable', () => {
     const messages = warnings({ propsTable: 'api' });
 
     expect(messages).toHaveLength(1);
-    expect(messages[0]).toContain('experimentalDocgenServer');
+    expect(messages[0]).toContain('docgenServer');
   });
 
   it('does not warn about the api default, which nobody asked for', () => {

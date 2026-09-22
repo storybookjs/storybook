@@ -177,10 +177,7 @@ test.describe('storybook tools attach', () => {
     );
     await page.goto(process.env.STORYBOOK_URL || 'http://localhost:6006');
     const docgenServerEnabled = await page.evaluate(() =>
-      Boolean(
-        (globalThis as { FEATURES?: { experimentalDocgenServer?: boolean } }).FEATURES
-          ?.experimentalDocgenServer
-      )
+      Boolean((globalThis as { FEATURES?: { docgenServer?: boolean } }).FEATURES?.docgenServer)
     );
     test.skip(
       !docgenServerEnabled,

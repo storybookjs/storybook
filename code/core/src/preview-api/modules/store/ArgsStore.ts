@@ -19,7 +19,7 @@ function deleteUndefined(obj: Record<string, any>) {
  * types those passes need without putting them back on the story.
  */
 const argTypesForValidation = (story: PreparedStory<any>): ArgTypes =>
-  global.FEATURES?.experimentalDocgenServer
+  global.FEATURES?.docgenServer
     ? inferArgTypes({
         id: story.id,
         argTypes: story.argTypes,

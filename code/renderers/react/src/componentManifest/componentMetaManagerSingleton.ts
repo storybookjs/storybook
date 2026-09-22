@@ -10,7 +10,7 @@ let componentMetaManagerPromise: Promise<ComponentMetaManager | undefined> | und
  * generator keeps a single set of programs (and one file-snapshot cache) hot for the lifetime of the
  * process rather than rebuilding per request.
  *
- * `experimentalDocgenServer` deliberately does NOT share this manager: its extraction runs in a
+ * `docgenServer` deliberately does NOT share this manager: its extraction runs in a
  * worker thread ({@link ../docgen/docgen-worker.ts}) with its own manager so the synchronous program
  * build stays off the main event loop. Worker threads have separate V8 heaps but share process RSS,
  * so enabling both the manifest generator and the docgen server keeps two full program sets resident

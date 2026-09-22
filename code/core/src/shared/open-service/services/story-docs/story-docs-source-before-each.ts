@@ -13,7 +13,7 @@ export { shouldSkipStoryDocsEmit };
  * {@link emitTransformCode}. Runs once per story invocation; the snippet itself is static.
  */
 export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallback | void {
-  if (!globalThis.FEATURES?.experimentalDocgenServer) {
+  if (!globalThis.FEATURES?.docgenServer) {
     return;
   }
   if (shouldSkipStoryDocsEmit(context.parameters)) {

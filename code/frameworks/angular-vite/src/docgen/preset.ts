@@ -24,7 +24,7 @@ export const experimental_docgenProvider = async (
   // is what `storybook init` and the angular-to-angular-vite automigration write on the user's
   // behalf. Decided once, statically: no descriptor means no worker module to import and no
   // per-component branch to evaluate.
-  if (!features?.experimentalDocgenServer) {
+  if (!features?.docgenServer) {
     return existing;
   }
 
@@ -47,7 +47,7 @@ export const experimental_manifests: PresetPropertyFn<
 > = async (existingManifests = {}, options) => {
   const features = await options?.presets?.apply('features', {});
 
-  if (!features?.experimentalDocgenServer || !features?.componentsManifest) {
+  if (!features?.docgenServer || !features?.componentsManifest) {
     return existingManifests as Manifests;
   }
 

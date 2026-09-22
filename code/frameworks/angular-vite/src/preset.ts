@@ -52,7 +52,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   }
 
   const docsConfig = await options.presets.apply('docs', {}, options);
-  const docsEnabled = Object.keys(docsConfig).length > 0;
+  const docsEnabled = Object.keys(docsConfig ?? {}).length > 0;
   if (docsEnabled) {
     const docsConfigPath = fileURLToPath(
       import.meta.resolve('@storybook/angular-vite/client/docs/config')

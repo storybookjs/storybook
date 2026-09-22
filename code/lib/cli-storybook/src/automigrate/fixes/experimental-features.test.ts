@@ -66,6 +66,16 @@ describe('experimental feature flag automigrations', () => {
   });
 
   describe('check', () => {
+    it.each(['11.0.0-alpha.1', '11.0.0', '12.0.0'])(
+      'does not enable the retired experimental docgen flag in %s',
+      async (storybookVersion) => {
+        expect(
+          await enableExperimentalDocgenServer.check(
+            checkOptions({ storybookVersion, requested: true })
+          )
+        ).toBeNull();
+      }
+    );
     // Each flag carries its own `introducedIn`, so a flag added in a later minor must stay hidden
     // on an upgrade that does not reach it. Both shipped flags are 10.5, so this needs its own fix.
     describe('per-feature introducedIn', () => {

@@ -649,19 +649,19 @@ export interface StorybookFeatures {
   experimentalCodeExamples?: boolean;
 
   /**
-   * Enable the experimental docgen open service.
+   * Enable server-side component metadata extraction.
    *
    * When true, Storybook registers the `core/docgen` service in the open-service registry and
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
-   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
-   * back to Compodoc.
-   *
-   * @default false // `true` when the framework is `@storybook/angular-vite`
-   * @experimental This feature is in early development and may change significantly in future releases.
+   * Defaults to true for React frameworks, Vue3-Vite and Angular-Vite. In Storybook 11, explicit
+   * legacy extractor settings preserve builder extraction unless this flag is set. Unsupported
+   * frameworks keep server-side extraction disabled.
    */
+  docgenServer?: boolean;
+
+  /** @deprecated Use `docgenServer`. This alias will be removed in Storybook 12. */
   experimentalDocgenServer?: boolean;
 
   /**

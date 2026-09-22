@@ -21,6 +21,7 @@ export interface ExperimentalFeatureFixOptions {
   name: keyof StorybookFeatures;
   /** Storybook version that added this flag. Each flag carries its own, per release. */
   introducedIn: string;
+  retiredIn?: string;
   link: string;
   /** Keep it to one line, like every other automigration prompt. */
   prompt: string;
@@ -34,6 +35,7 @@ export const createExperimentalFeatureFix = ({
   id,
   name,
   introducedIn,
+  retiredIn,
   link,
   prompt,
   requires,
@@ -52,6 +54,9 @@ export const createExperimentalFeatureFix = ({
       return null;
     }
     if (!isAtOrPastVersion(storybookVersion, introducedIn)) {
+      return null;
+    }
+    if (retiredIn && isAtOrPastVersion(storybookVersion, retiredIn)) {
       return null;
     }
     if (
@@ -91,6 +96,7 @@ export const enableExperimentalDocgenServer = createExperimentalFeatureFix({
   id: 'enable-experimental-docgen-server',
   name: 'experimentalDocgenServer',
   introducedIn: '10.5.0',
+  retiredIn: '11.0.0',
   isSupported: hasDocgenProvider,
   link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentaldocgenserver',
   prompt: 'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes.',

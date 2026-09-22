@@ -11,6 +11,7 @@ import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
+import { docgenServer } from './docgen-server.ts';
 import {
   enableExperimentalDocgenServer,
   enableExperimentalReview,
@@ -62,6 +63,7 @@ export const allFixes: Fix[] = [
   setConfigLayout,
   enableExperimentalReview,
   enableExperimentalDocgenServer,
+  docgenServer,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

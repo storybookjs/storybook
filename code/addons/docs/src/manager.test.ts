@@ -17,7 +17,7 @@ vi.mock('storybook/manager-api', () => ({
 
 const panel = vi.mocked(addons.add).mock.calls.find(([id]) => id === PANEL_ID)?.[1];
 
-if (!panel || typeof panel.disabled !== 'function') {
+if (!panel || !('disabled' in panel) || typeof panel.disabled !== 'function') {
   throw new Error('Expected the Code panel to register a disabled predicate');
 }
 const isDisabled = panel.disabled;

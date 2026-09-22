@@ -4,6 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as find from 'empathic/find';
 import { dedent } from 'ts-dedent';
+import { logger } from 'storybook/internal/node-logger';
 
 import type { PackageJsonWithDepsAndDevDeps } from '../common/index.ts';
 import type { JsPackageManager } from '../common/js-package-manager/JsPackageManager.ts';
@@ -17,6 +18,8 @@ import {
 vi.mock('empathic/find', () => ({
   up: vi.fn(),
 }));
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 vi.mock(import('node:fs/promises'), async (importOriginal) => {
   const actual = await importOriginal();
@@ -330,7 +333,38 @@ describe('configureEslintPlugin', () => {
       expect(content).not.toContain('import storybook');
     });
 
-    it('does not modify unsupported CommonJS flat config shapes', async () => {
+    it('adds the config spread when CommonJS already requires the Storybook plugin', async () => {
+      const mockPackageManager = {
+        getAllDependencies: vi.fn(),
+      } satisfies Partial<JsPackageManager>;
+
+      vi.mocked(readFile).mockResolvedValue(dedent`
+        const storybook = require('eslint-plugin-storybook');
+
+        module.exports = [
+          { rules: { 'no-console': 'error' } },
+        ];
+      `);
+
+      await configureEslintPlugin({
+        eslintConfigFile: 'eslint.config.js',
+        packageManager: mockPackageManager as any,
+        isFlatConfig: true,
+      });
+
+      const [, content] = vi.mocked(writeFile).mock.calls[0];
+      expect(content).toMatchInlineSnapshot(`
+        "const storybook = require('eslint-plugin-storybook');
+
+        module.exports = [
+          { rules: { 'no-console': 'error' } },
+          ...storybook.configs[\"flat/recommended\"]
+        ];"
+      `);
+      expect(content.match(/require\('eslint-plugin-storybook'\)/g)).toHaveLength(1);
+    });
+
+    it('warns about the required flat-config export shape for unsupported CommonJS configs', async () => {
       const mockPackageManager = {
         getAllDependencies: vi.fn(),
       } satisfies Partial<JsPackageManager>;
@@ -346,6 +380,9 @@ describe('configureEslintPlugin', () => {
       });
 
       expect(vi.mocked(writeFile)).not.toHaveBeenCalled();
+      expect(logger.warn).toHaveBeenCalledWith(
+        "Could not automatically configure eslint-plugin-storybook. CommonJS ESLint flat configs must export an array, for example: const storybook = require('eslint-plugin-storybook'); module.exports = [...storybook.configs['flat/recommended']];"
+      );
     });
 
     it('should configure ESLint plugin correctly with default JS flat config', async () => {

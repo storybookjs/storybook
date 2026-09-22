@@ -55,10 +55,8 @@ function unwrapTSExpression(expr: any): t.Expression | null | undefined {
 export const configureFlatConfig = async (code: string) => {
   const ast = babelParse(code);
 
-  // Bail out if eslint-plugin-storybook is already imported (static, dynamic, or CommonJS) to avoid
-  // referencing an undefined variable or duplicating the config spread.
-  // Some configs use dynamic import() expressions (e.g. via eslint-flat-config-utils).
   let alreadyHasStorybookImport = false;
+  let commonJsStorybookLocalName = '';
   traverse(ast, {
     ImportDeclaration(path) {
       if (path.node.source.value === 'eslint-plugin-storybook') {
@@ -85,8 +83,10 @@ export const configureFlatConfig = async (code: string) => {
         t.isStringLiteral(path.node.arguments[0]) &&
         path.node.arguments[0].value === 'eslint-plugin-storybook'
       ) {
-        alreadyHasStorybookImport = true;
-        path.stop();
+        const parent = path.parentPath?.node;
+        if (t.isVariableDeclarator(parent) && t.isIdentifier(parent.id)) {
+          commonJsStorybookLocalName = parent.id.name;
+        }
       }
     },
   });
@@ -117,33 +117,55 @@ export const configureFlatConfig = async (code: string) => {
   });
 
   if (hasUnsupportedCommonJsConfig) {
+    logger.warn(
+      "Could not automatically configure eslint-plugin-storybook. CommonJS ESLint flat configs must export an array, for example: const storybook = require('eslint-plugin-storybook'); module.exports = [...storybook.configs['flat/recommended']];"
+    );
     return code;
   }
 
   if (commonJsConfig) {
     const storybookConfig = t.memberExpression(
-      t.memberExpression(t.identifier('storybook'), t.identifier('configs')),
+      t.memberExpression(
+        t.identifier(commonJsStorybookLocalName || 'storybook'),
+        t.identifier('configs')
+      ),
       t.stringLiteral('flat/recommended'),
       true
     );
+    const alreadyHasStorybookConfig = commonJsConfig.elements.some(
+      (element) =>
+        t.isSpreadElement(element) &&
+        t.isMemberExpression(element.argument) &&
+        t.isStringLiteral(element.argument.property, { value: 'flat/recommended' }) &&
+        t.isMemberExpression(element.argument.object) &&
+        t.isIdentifier(element.argument.object.property, { name: 'configs' }) &&
+        t.isIdentifier(element.argument.object.object, {
+          name: commonJsStorybookLocalName || 'storybook',
+        })
+    );
+    if (alreadyHasStorybookConfig) {
+      return code;
+    }
     commonJsConfig.elements.push(t.spreadElement(storybookConfig));
 
-    const storybookRequire = t.variableDeclaration('const', [
-      t.variableDeclarator(
-        t.identifier('storybook'),
-        t.callExpression(t.identifier('require'), [t.stringLiteral('eslint-plugin-storybook')])
-      ),
-    ]);
-    Object.assign(storybookRequire, {
-      comments: [
-        {
-          type: 'CommentLine',
-          value:
-            ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
-        },
-      ],
-    });
-    ast.program.body.unshift(storybookRequire);
+    if (!commonJsStorybookLocalName) {
+      const storybookRequire = t.variableDeclaration('const', [
+        t.variableDeclarator(
+          t.identifier('storybook'),
+          t.callExpression(t.identifier('require'), [t.stringLiteral('eslint-plugin-storybook')])
+        ),
+      ]);
+      Object.assign(storybookRequire, {
+        comments: [
+          {
+            type: 'CommentLine',
+            value:
+              ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
+          },
+        ],
+      });
+      ast.program.body.unshift(storybookRequire);
+    }
 
     return recast.print(ast).code;
   }
@@ -152,17 +174,6 @@ export const configureFlatConfig = async (code: string) => {
   let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
 
-  /**
-   * What this supports:
-   *
-   * 1. Export default []
-   * 2. Const config; export default config
-   * 3. Export default tseslint.config()
-   *
-   * What this does NOT support:
-   *
-   * 1. Module.exports = [] Though it will add the import and a code comment that points to the docs
-   */
   traverse(ast, {
     ImportDeclaration(path) {
       if (path.node.source.value === 'typescript-eslint') {

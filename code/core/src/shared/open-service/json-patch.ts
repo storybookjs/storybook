@@ -1,7 +1,9 @@
 import { clonePlain, hasOwn, isPlainObject, isReservedKey } from './plain-object.ts';
 import { decodePointer, isRfc6901Pointer, type JsonPatchOperation } from './service-channel.ts';
 
-export type ApplyJsonPatchResult = { ok: true } | { ok: false; path: string };
+export type ApplyJsonPatchResult =
+  | { ok: true; inverse: JsonPatchOperation[] }
+  | { ok: false; path: string };
 
 function parentAt(
   root: Record<string, unknown>,
@@ -42,9 +44,10 @@ class MissingParentError extends Error {
  * Apply an RFC 6902 document onto `target` in place.
  *
  * `add` and `replace` both upsert. `remove` of a missing key calls `onMissingRemove` and continues.
- * Incoming values are cloned. A missing parent, reserved key, or invalid pointer rolls back every
- * op already applied in this call and returns `{ ok: false, path }` for that pointer. Any other
- * throw also rolls back, then rethrows.
+ * Incoming values are cloned. On success, `inverse` is reverse apply order. A missing parent, reserved
+ * key, or invalid pointer rolls back every op already applied in this call and returns
+ * `{ ok: false, path }` for that pointer. Any other throw also rolls back and reports
+ * `{ ok: false, path }` for the op that threw.
  */
 export function applyJsonPatch(
   target: Record<string, unknown>,
@@ -52,20 +55,23 @@ export function applyJsonPatch(
   onMissingRemove: (path: string) => void
 ): ApplyJsonPatchResult {
   const undo: Array<() => void> = [];
+  const inverse: JsonPatchOperation[] = [];
+  let currentPath = '';
 
   try {
     for (const operation of patch) {
-      applyOne(target, operation, undo, onMissingRemove);
+      currentPath = operation.path;
+      applyOne(target, operation, undo, inverse, onMissingRemove);
     }
-    return { ok: true };
+    return { ok: true, inverse: inverse.toReversed() };
   } catch (error) {
-    for (const revert of undo.reverse()) {
+    for (const revert of undo.toReversed()) {
       revert();
     }
     if (error instanceof MissingParentError) {
       return { ok: false, path: error.path };
     }
-    throw error;
+    return { ok: false, path: currentPath };
   }
 }
 
@@ -73,6 +79,7 @@ function applyOne(
   target: Record<string, unknown>,
   operation: JsonPatchOperation,
   undo: Array<() => void>,
+  inverse: JsonPatchOperation[],
   onMissingRemove: (path: string) => void
 ): void {
   if (!isRfc6901Pointer(operation.path)) {
@@ -102,6 +109,11 @@ function applyOne(
           delete parent[key];
         }
       });
+      if (existed) {
+        inverse.push({ op: 'replace', path: operation.path, value: previous });
+      } else {
+        inverse.push({ op: 'remove', path: operation.path });
+      }
       return;
     }
     case 'remove': {
@@ -114,6 +126,7 @@ function applyOne(
       undo.push(() => {
         parent[key] = previous;
       });
+      inverse.push({ op: 'add', path: operation.path, value: previous });
       return;
     }
     default: {

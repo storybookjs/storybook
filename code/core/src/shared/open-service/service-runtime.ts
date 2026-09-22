@@ -66,7 +66,7 @@ import {
   OpenServiceInvalidStaticPathError,
   OpenServiceUnimplementedOperationError,
 } from '../../server-errors.ts';
-import { type RecordedOp, recordPatch } from './patch-recorder.ts';
+import { type RecordedPatch, recordPatch } from './patch-recorder.ts';
 import { clonePlain } from './plain-object.ts';
 import {
   buildQueries,
@@ -99,8 +99,8 @@ import type {
   ServiceRegistryApi,
 } from './types.ts';
 
-/** Receives the ops one `setState` recipe wrote, tagged with the command that ran it. */
-export type EntryAuthor = (entry: { command: string; ops: RecordedOp[] }) => void;
+/** Receives the ops one `setState` recipe wrote and their inverse, tagged with the command that ran it. */
+export type EntryAuthor = (entry: RecordedPatch & { command: string }) => void;
 
 /**
  * Internal runtime object returned while a service instance is being assembled.
@@ -306,8 +306,8 @@ export function createServiceRuntime<
     });
   };
   const writeState = (command: string, mutate: (state: TState) => void): void => {
-    recordPatch(state as object, mutate as (draft: object) => void, (ops) =>
-      author({ command, ops })
+    recordPatch(state as object, mutate as (draft: object) => void, (recorded) =>
+      author({ command, ...recorded })
     );
   };
 

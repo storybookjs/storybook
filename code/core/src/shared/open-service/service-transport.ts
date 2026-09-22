@@ -122,8 +122,8 @@ export function createEntryAuthor(
 ): EntryAuthor {
   const { serviceId, ownRuntimeId, reconciler, channel } = context;
 
-  return ({ command, ops }) => {
-    const stamp = reconciler.advanceLocal(ownRuntimeId);
+  return ({ command, ops, inverse }) => {
+    const stamp = reconciler.advanceLocal(ownRuntimeId, { command, patch: ops, inverse });
 
     channel.emit(SERVICE_ENTRY, {
       serviceId,

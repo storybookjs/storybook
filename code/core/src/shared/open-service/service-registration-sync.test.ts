@@ -186,7 +186,7 @@ describe('server: command push', () => {
     expect(entries[0]).toEqual({
       serviceId: recordServiceId,
       command: 'assignRecordField',
-      stamp: { runtimeId: expect.any(String), counter: 1 },
+      stamp: { seq: 1, runtimeId: expect.any(String), counter: 1 },
       patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
     });
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });

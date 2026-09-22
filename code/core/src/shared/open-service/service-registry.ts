@@ -6,8 +6,8 @@
  * into the cross-peer sync protocol through the shared transport. The only thing that differs per
  * runtime is the `relay` role: the dev server and the manager are hubs (`relay: true`) that bridge
  * their other channel transports, while a preview is a leaf (`relay: false`) — a single transport has
- * nothing to forward. The handshake + patch-broadcast protocol lives in `service-transport.ts` and the
- * last-write-wins reconciliation in `service-sync.ts`; both transports drive them identically.
+ * nothing to forward. The handshake + entry protocol lives in `service-transport.ts` and the
+ * last-write-wins snapshot reconciliation in `service-sync.ts`; both transports drive them identically.
  *
  * The registry is anchored on a symbol-keyed `globalThis` slot so every module in one realm shares a
  * single registration map even if this file is reached through different import paths. Server (Node),
@@ -258,9 +258,10 @@ export const serviceRegistryApi: ServiceRegistryApi = {
 /** Channel-sync options that depend on the entrypoint rather than the service definition. */
 export interface ServiceRegisterOptions {
   /**
-   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) re-broadcast every
-   * peer snapshot they adopt so peers on their *other* channel transports converge; leaves (a preview
-   * iframe) keep the default `false` — with a single transport there is nothing to forward.
+   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) forward every
+   * accepted `services:entry` and every bootstrap snapshot they adopt so peers on their *other*
+   * channel transports converge; leaves (a preview iframe) keep the default `false` — with a single
+   * transport there is nothing to forward.
    */
   relay?: boolean;
   /**
@@ -275,10 +276,11 @@ export interface ServiceRegisterOptions {
  * Registers one service definition in the realm-global registry and returns its runtime surface.
  *
  * Registration resolves any registration-time overrides, builds the runtime that query and command
- * callers use, installs the entry author that broadcasts each `setState` write, and joins the cross-peer sync
- * protocol as a hub or leaf (`relay`). Each runtime must install the addons channel at its entry
- * boundary before calling this (builders, manager boot, server `services` preset, or Node import
- * bootstrap). Registration is idempotent by id: a repeated registration returns the existing runtime.
+ * callers use, installs the entry author that emits a `services:entry` for each `setState` write, and
+ * joins the cross-peer sync protocol as a hub or leaf (`relay`). Each runtime must install the addons
+ * channel at its entry boundary before calling this (builders, manager boot, server `services`
+ * preset, or Node import bootstrap). Registration is idempotent by id: a repeated registration
+ * returns the existing runtime.
  */
 export function registerService<
   TState,
@@ -312,8 +314,8 @@ export function registerService<
     staticLoader,
   });
 
-  // Owns the per-service last-write-wins stamp and the adopt/advance logic. Adopting a peer snapshot
-  // goes through `applyLocal`, not `setState`, so it never authors an entry of its own.
+  // Owns the per-service stamp, Vector, and adopt/advance logic. Adopting an entry or a bootstrap
+  // snapshot goes through `applyLocal`, not `setState`, so it never authors an entry of its own.
   const reconciler = createSnapshotReconciler({
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
     initialStamp: { version: 0, runtimeId: ownRuntimeId },
@@ -343,7 +345,7 @@ export function registerService<
   );
 
   // Wire the runtime to the channel end to end against the one channel captured above: install the
-  // entry author, run the remote-command protocol, and attach the sync-start + patch listeners.
+  // entry author, run the remote-command protocol, and attach the sync-start + entry listeners.
   const { commands, disconnect } = connectServiceToChannel({
     serviceId: definition.id,
     ownRuntimeId,

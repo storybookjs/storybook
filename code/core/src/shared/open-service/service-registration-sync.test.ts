@@ -5,16 +5,14 @@ import { OpenServiceMissingChannelError } from '../../server-errors.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 import {
   awaitedPreloadValueServiceDef,
+  entryEmits,
   mutableRecordLookupServiceDef,
   noInputSchema,
+  peerEntry,
   voidOutputSchema,
 } from './fixtures.ts';
 import { defineService } from './service-definition.ts';
-import {
-  SERVICE_PATCHES,
-  SERVICE_SYNC_START_REPLY,
-  SERVICE_SYNC_START,
-} from './service-channel.ts';
+import { SERVICE_ENTRY, SERVICE_SYNC_START_REPLY, SERVICE_SYNC_START } from './service-channel.ts';
 import { clearRegistry, registerService } from './server.ts';
 
 const { id: recordServiceId } = mutableRecordLookupServiceDef;
@@ -141,12 +139,6 @@ const recorderBroadcastServiceDef = defineService({
   },
 });
 
-function patchFrames(channel: ReturnType<typeof createTestChannel>) {
-  return channel.emit.mock.calls
-    .filter(([event]) => event === SERVICE_PATCHES)
-    .map(([, payload]) => payload as { version: number; state: RecorderBroadcastState });
-}
-
 const createMockChannel = createTestChannel;
 const installChannel = installTestChannel;
 
@@ -168,7 +160,7 @@ describe('registerService: channel wiring', () => {
 
     expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
     expect(channel.on).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
-    expect(channel.on).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
+    expect(channel.on).toHaveBeenCalledWith(SERVICE_ENTRY, expect.any(Function));
   });
 
   it('throws when the addons channel is not installed', () => {
@@ -181,7 +173,7 @@ describe('registerService: channel wiring', () => {
 });
 
 describe('server: command push', () => {
-  it('broadcasts the post-mutation snapshot after a local command', async () => {
+  it('emits a services:entry for a local write', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -189,22 +181,18 @@ describe('server: command push', () => {
 
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: 'v' });
 
-    const patches = channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
-    // Exactly one: the broadcast echoes back on the shared bus, but its equal stamp fails `isNewer`
-    // so it is dropped instead of re-broadcast.
-    expect(patches).toHaveLength(1);
-    expect(patches[0][1]).toEqual(
-      expect.objectContaining({
-        serviceId: recordServiceId,
-        state: expect.objectContaining({ a: { k: 'v' } }),
-        version: 1,
-        runtimeId: expect.any(String),
-      })
-    );
+    const entries = entryEmits(channel);
+    expect(entries).toHaveLength(1);
+    expect(entries[0]).toEqual({
+      serviceId: recordServiceId,
+      command: 'assignRecordField',
+      stamp: { runtimeId: expect.any(String), counter: 1 },
+      patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
+    });
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
   });
 
-  it('advances the version on each subsequent command, keeping a stable runtimeId', async () => {
+  it('advances the counter on each write, keeping a stable runtimeId', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -213,11 +201,9 @@ describe('server: command push', () => {
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: '1' });
     await service.commands.assignRecordField({ entryId: 'a', fieldKey: 'k', fieldValue: '2' });
 
-    const patches = channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
-    expect(patches.map(([, p]) => (p as { version: number }).version)).toEqual([1, 2]);
-    expect((patches[1][1] as { runtimeId: string }).runtimeId).toBe(
-      (patches[0][1] as { runtimeId: string }).runtimeId
-    );
+    const entries = entryEmits(channel);
+    expect(entries.map((entry) => entry.stamp.counter)).toEqual([1, 2]);
+    expect(entries[1].stamp.runtimeId).toBe(entries[0].stamp.runtimeId);
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: '2' });
   });
 
@@ -230,17 +216,17 @@ describe('server: command push', () => {
     await service.commands.noop();
     await service.commands.sameN();
 
-    expect(patchFrames(channel)).toHaveLength(0);
+    expect(entryEmits(channel)).toHaveLength(0);
 
     await service.commands.setA();
 
-    const frames = patchFrames(channel);
-    expect(frames).toHaveLength(1);
-    expect(frames[0].version).toBe(1);
+    const entries = entryEmits(channel);
+    expect(entries).toHaveLength(1);
+    expect(entries[0].stamp.counter).toBe(1);
     expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 0, n: 0, count: 0 });
   });
 
-  it('emits one frame per setState, including writes from nested commands', async () => {
+  it('emits one entry per setState, tagged with the command that ran it', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -248,10 +234,12 @@ describe('server: command push', () => {
 
     await service.commands.outer();
 
-    const frames = patchFrames(channel);
-    expect(frames.map((frame) => frame.version)).toEqual([1, 2]);
-    expect(frames[0].state).toEqual({ a: 1, b: 0, n: 0, count: 0 });
-    expect(frames[1].state).toEqual({ a: 1, b: 2, n: 0, count: 0 });
+    const entries = entryEmits(channel);
+    expect(entries.map((entry) => entry.stamp.counter)).toEqual([1, 2]);
+    expect(entries.map((entry) => [entry.command, entry.patch])).toEqual([
+      ['outer', [{ op: 'replace', path: '/a', value: 1 }]],
+      ['setB', [{ op: 'replace', path: '/b', value: 2 }]],
+    ]);
     expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 2, n: 0, count: 0 });
   });
 
@@ -263,9 +251,11 @@ describe('server: command push', () => {
 
     await expect(service.commands.writeAThenThrow()).rejects.toThrow('boom');
 
-    const frames = patchFrames(channel);
-    expect(frames).toHaveLength(1);
-    expect(frames[0].state).toEqual(service.queries.snapshot.get());
+    const entries = entryEmits(channel);
+    expect(entries.map((entry) => entry.patch)).toEqual([
+      [{ op: 'replace', path: '/a', value: 1 }],
+    ]);
+    expect(service.queries.snapshot.get()).toEqual({ a: 1, b: 0, n: 0, count: 0 });
   });
 
   it('keeps peers and the author equal when two commands interleave around an await', async () => {
@@ -281,9 +271,13 @@ describe('server: command push', () => {
     gate.open();
     await slow;
 
-    const frames = patchFrames(channel);
-    expect(frames.map((frame) => frame.state.count)).toEqual([1, 2, 0]);
-    expect(frames.at(-1)?.state).toEqual(service.queries.snapshot.get());
+    const entries = entryEmits(channel);
+    expect(entries.map((entry) => entry.patch)).toEqual([
+      [{ op: 'replace', path: '/count', value: 1 }],
+      [{ op: 'replace', path: '/count', value: 2 }],
+      [{ op: 'replace', path: '/count', value: 0 }],
+    ]);
+    expect(service.queries.snapshot.get().count).toBe(0);
   });
 
   it('emits a frame for a write made by a command inside a reactive load', async () => {
@@ -295,8 +289,11 @@ describe('server: command push', () => {
 
     await vi.waitFor(() =>
       expect(channel.emit).toHaveBeenCalledWith(
-        SERVICE_PATCHES,
-        expect.objectContaining({ state: { 'entry-a': 'preloaded' }, version: 1 })
+        SERVICE_ENTRY,
+        expect.objectContaining({
+          command: 'preloadValue',
+          patch: [{ op: 'add', path: '/entry-a', value: 'preloaded' }],
+        })
       )
     );
     unsubscribe();
@@ -310,14 +307,13 @@ describe('server: sync-start initialization', () => {
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    // Server adopts a peer patch: this both populates state and advances the server's stamp to the
-    // peer's (version, runtimeId).
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { a: { k: 'v' } },
-      version: 1,
-      runtimeId: 'peer-1',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/a', value: { k: 'v' } }], {
+        runtimeId: 'peer-1',
+        counter: 1,
+      })
+    );
     expect(service.queries.recordFields.get({ entryId: 'a' })).toEqual({ k: 'v' });
 
     // A different peer comes online and asks for current state; the server answers with the snapshot
@@ -356,62 +352,66 @@ describe('server: sync-start initialization', () => {
   });
 });
 
-describe('server: patch application', () => {
-  it('applies a version-gated patch from a peer', () => {
+describe('server: entry application', () => {
+  it('applies an entry from a peer', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { entry: { marker: 'set' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'set' } }], {
+        runtimeId: 'peer',
+        counter: 1,
+      })
+    );
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
   });
 
-  it('drops a stale (lower-version) patch arriving after a newer one', () => {
+  it('drops a duplicate stamp arriving after it was applied', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { entry: { marker: 'new' } },
-      version: 2,
-      runtimeId: 'peer',
-    });
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { entry: { marker: 'stale' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'new' } }], {
+        runtimeId: 'peer',
+        counter: 1,
+      })
+    );
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'stale' } }], {
+        runtimeId: 'peer',
+        counter: 1,
+      })
+    );
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'new' });
   });
 
-  it('ignores patches for a different service id', () => {
+  it('ignores entries for a different service id', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: 'some-other-service',
-      state: { entry: { x: '1' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry('some-other-service', [{ op: 'add', path: '/entry', value: { x: '1' } }], {
+        runtimeId: 'peer',
+        counter: 1,
+      })
+    );
 
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toBeNull();
   });
 
-  it('drops malformed patches without throwing or mutating state', () => {
+  it('drops malformed entries without throwing or mutating state', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -420,12 +420,17 @@ describe('server: patch application', () => {
     const malformed: unknown[] = [
       null,
       {},
-      { serviceId: recordServiceId, state: { a: { k: 'v' } }, runtimeId: 'p' },
-      { serviceId: recordServiceId, state: 'nope', version: 1, runtimeId: 'p' },
+      { serviceId: recordServiceId, patch: [{ op: 'add', path: '/a', value: { k: 'v' } }] },
+      {
+        serviceId: recordServiceId,
+        stamp: { runtimeId: 'p', counter: 0 },
+        command: 'x',
+        patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
+      },
     ];
 
     for (const payload of malformed) {
-      expect(() => channel.emitExternal(SERVICE_PATCHES, payload)).not.toThrow();
+      expect(() => channel.emitExternal(SERVICE_ENTRY, payload)).not.toThrow();
     }
 
     expect(service.queries.recordFields.get({ entryId: 'a' })).toBeNull();
@@ -433,33 +438,34 @@ describe('server: patch application', () => {
 });
 
 describe('server: teardown via clearRegistry', () => {
-  it('detaches channel listeners so later patches are ignored', () => {
+  it('detaches channel listeners so later entries are ignored', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { entry: { marker: 'set' } },
-      version: 1,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'set' } }], {
+        runtimeId: 'peer',
+        counter: 1,
+      })
+    );
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
 
     clearRegistry();
 
     expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_PATCHES, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_ENTRY, expect.any(Function));
 
-    // A strictly-newer patch after teardown must not reach the now-detached runtime.
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { entry: { marker: 'after' } },
-      version: 2,
-      runtimeId: 'peer',
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'after' } }], {
+        runtimeId: 'peer',
+        counter: 2,
+      })
+    );
     expect(service.queries.recordFields.get({ entryId: 'entry' })).toEqual({ marker: 'set' });
   });
 });
@@ -511,76 +517,65 @@ describe('server: bootstrap on registration', () => {
 });
 
 describe('server: relay role', () => {
-  // The server is always a relay hub: one dev server bridges every connected manager tab. The mock
-  // is a shared bus, so a relayed emit bounces back to the server's own onPatches; the version gate
-  // must drop that echo instead of relaying it again.
-  function patchEmits(channel: ReturnType<typeof createMockChannel>) {
-    return channel.emit.mock.calls.filter(([event]) => event === SERVICE_PATCHES);
-  }
-
-  it('re-broadcasts a peer patch it adopts, preserving the original stamp', () => {
+  it('forwards an accepted entry once, preserving the original payload object', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_PATCHES, {
-      serviceId: recordServiceId,
-      state: { entry: { marker: 'set' } },
-      version: 1,
-      runtimeId: 'peer-1',
-    });
-
-    const relays = patchEmits(channel);
-    expect(relays).toHaveLength(1);
-    expect(relays[0][1]).toEqual(
-      expect.objectContaining({
-        serviceId: recordServiceId,
-        state: expect.objectContaining({ entry: { marker: 'set' } }),
-        version: 1,
-        runtimeId: 'peer-1',
-      })
+    const payload = peerEntry(
+      recordServiceId,
+      [{ op: 'add', path: '/entry', value: { marker: 'set' } }],
+      { runtimeId: 'peer-1', counter: 1 },
+      { extra: 'keep-me' }
     );
+    channel.emitExternal(SERVICE_ENTRY, payload);
+
+    const relays = entryEmits(channel);
+    expect(relays).toHaveLength(1);
+    expect(relays[0]).toBe(payload);
   });
 
-  it('relays state it adopts during bootstrap (sync-start-reply)', () => {
+  it('relays a bootstrap snapshot it adopts as the original sync-start-reply', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    const payload = {
       serviceId: recordServiceId,
       state: { entry: { marker: 'boot' } },
       version: 4,
       runtimeId: 'peer-1',
-    });
+    };
+    channel.emitExternal(SERVICE_SYNC_START_REPLY, payload);
 
-    const relays = patchEmits(channel);
+    const relays = channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_START_REPLY);
     expect(relays).toHaveLength(1);
-    expect((relays[0][1] as { version: number }).version).toBe(4);
+    expect(relays[0][1]).toBe(payload);
   });
 
-  it('does not relay a patch it drops as stale, and terminates on the echo', () => {
+  it('does not forward a duplicate entry', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     registerService(mutableRecordLookupServiceDef);
 
-    const base = { serviceId: recordServiceId, runtimeId: 'peer-1' };
-    channel.emitExternal(SERVICE_PATCHES, {
-      ...base,
-      state: { entry: { marker: 'new' } },
-      version: 2,
-    });
-    channel.emitExternal(SERVICE_PATCHES, {
-      ...base,
-      state: { entry: { marker: 'stale' } },
-      version: 1,
-    });
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'new' } }], {
+        runtimeId: 'peer-1',
+        counter: 1,
+      })
+    );
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/entry', value: { marker: 'stale' } }], {
+        runtimeId: 'peer-1',
+        counter: 1,
+      })
+    );
 
-    const relays = patchEmits(channel);
-    expect(relays).toHaveLength(1);
-    expect((relays[0][1] as { version: number }).version).toBe(2);
+    expect(entryEmits(channel)).toHaveLength(1);
   });
 });

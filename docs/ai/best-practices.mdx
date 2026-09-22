@@ -102,7 +102,7 @@ The agent will receive the summary, if present, or the first 60 characters of th
 
 ### Prop type extraction
 
-We highly recommend using `react-docgen-typescript` for prop type extraction (set with the [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen) config option), because it provides more accurate and comprehensive information about your components' props, which will help agents use them more effectively. If manifest generation seems too slow, you can switch to `react-docgen`, which is faster but less detailed.
+Storybook uses server-side docgen by default to extract accurate, comprehensive prop information for agents. If you opt out with [`docgenServer: false`](../api/main-config/main-config-features.mdx#docgenserver), the [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen) option selects the legacy builder-based parser instead.
 
 </If>
 

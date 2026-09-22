@@ -61,9 +61,11 @@ Type: `'react-docgen' | 'react-docgen-typescript' | false`
 Default:
 
 - `false`: if `@storybook/react` is not installed
-- `'react-docgen'`: if `@storybook/react` is installed
+- `'react-docgen'`: if `@storybook/react` is installed and [`docgenServer`](./main-config-features.mdx#docgenserver) is off
 
-Configures which library, if any, Storybook uses to parse React components, [react-docgen](https://github.com/reactjs/react-docgen) or [react-docgen-typescript](https://github.com/styleguidist/react-docgen-typescript). Set to `false` to disable parsing React components. `react-docgen-typescript` invokes the TypeScript compiler, which makes it slow but generally accurate. `react-docgen` performs its own analysis, which is much faster but incomplete.
+Configures which library, if any, Storybook uses to parse React components on the legacy builder-based path: [react-docgen](https://github.com/reactjs/react-docgen) or [react-docgen-typescript](https://github.com/styleguidist/react-docgen-typescript). Set to `false` to disable parsing React components. `react-docgen-typescript` invokes the TypeScript compiler, which makes it slow but generally accurate. `react-docgen` performs its own analysis, which is much faster but incomplete.
+
+Storybook 11 enables server-side docgen for React frameworks by default. An existing `reactDocgen: false` or `reactDocgen: 'react-docgen-typescript'` setting keeps the server off during the Storybook 11 compatibility period. For an explicit, future-proof opt-out, also set `features.docgenServer: false`. If you set `docgenServer: true`, this option is ignored and Storybook warns about the conflict.
 
 <CodeSnippets path="main-config-typescript-react-docgen.md" />
 
@@ -71,7 +73,9 @@ Configures which library, if any, Storybook uses to parse React components, [rea
 
 Type: `ReactDocgenTypescriptOptions`
 
-Configures the options to pass to `react-docgen-typescript-plugin` if `react-docgen-typescript` is enabled. See docs for available options [for Webpack projects](https://github.com/hipstersmoothie/react-docgen-typescript-plugin) or [for Vite projects](https://github.com/joshwooding/vite-plugin-react-docgen-typescript).
+Configures the options to pass to `react-docgen-typescript-plugin` if `react-docgen-typescript` is enabled and [`docgenServer`](./main-config-features.mdx#docgenserver) is off. See docs for available options [for Webpack projects](https://github.com/hipstersmoothie/react-docgen-typescript-plugin) or [for Vite projects](https://github.com/joshwooding/vite-plugin-react-docgen-typescript).
+
+Server-side docgen does not translate these options. Keep `docgenServer: false` if your project depends on options such as `propFilter`.
 
 <CodeSnippets path="main-config-typescript-react-docgen-typescript-options.md" />
 

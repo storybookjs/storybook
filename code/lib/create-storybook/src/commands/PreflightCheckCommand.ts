@@ -7,12 +7,12 @@ import {
   isCI,
   invalidateProjectRootCache,
   warnOnYarn1,
+  getProcessAncestry,
 } from 'storybook/internal/common';
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { MinimumReleaseAgeHandledError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
-import { getProcessAncestry } from 'process-ancestry';
 
 import type { CommandOptions } from '../generators/types.ts';
 import { currentDirectoryIsEmpty, scaffoldNewProject } from '../scaffold-new-project.ts';

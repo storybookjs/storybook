@@ -18,6 +18,8 @@
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
   - [React: Require v18 and up](#react-require-v18-and-up)
+  - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
+  - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -761,6 +763,34 @@ Storybook renders through React's new root API (`react-dom/client`), which React
 `storybook upgrade` blocks the upgrade when it detects an unsupported `react` or `react-dom` version and links to this section. Upgrade React to 18 or 19 and run the upgrade again.
 
 Remove `framework.options.legacyRootApi` from `.storybook/main.*`, whether its value is `true` or `false`. `storybook upgrade` blocks the upgrade while the option is still present and links to this section. This is a manual migration: `storybook upgrade` does not remove the option or migrate application code to the new root API. Projects that enabled the legacy root must verify their stories with the new root API before upgrading; automatically deleting the option cannot establish that their components support the changed rendering behavior.
+
+### `@storybook/react-dom-shim` removed
+
+<!-- Pending owner integration: add the captured before-and-after upgrade fixture before opening the removal PR. -->
+
+Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. The package selected between legacy and modern React root APIs, but Storybook 11 requires React 18 or newer and no longer needs that compatibility layer. Published versions from earlier Storybook releases remain available.
+
+If the package appears only as a transitive dependency, upgrade all Storybook packages together. You don't need to replace the package or add a direct dependency.
+
+If your project or monorepo lists `@storybook/react-dom-shim` explicitly, first search every workspace package for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. You can remove exact literal preset entries such as `@storybook/react-dom-shim/preset` and exact aliases that exist only for the shim. Inspect dynamic or computed configuration, regular-expression aliases, and custom wrappers manually before changing them.
+
+There is no supported import-only replacement for third-party code that imports `renderElement` or `unmountElement` from `@storybook/react-dom-shim`. The `storybook/internal/react-dom-client` entry is an internal contract for Storybook's own packages, not a public migration target.
+
+If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
+
+### Preact: Require v10.8.0 and up
+
+<!-- Pending owner integration: verify this command against the captured Preact upgrade fixture before opening the removal PR. -->
+
+Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
+
+```sh
+npm install preact@^10.8.0
+```
+
+The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
+
+The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
 
 ## From version 10.5.x to 10.6.0
 

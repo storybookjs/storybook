@@ -208,8 +208,12 @@ export const transformStoryIndexToStoriesHash = (
       }
     }
 
-    if (Object.values(statuses).some(({ value }) => value === 'status-value:error')) {
-      // All stories with a failing status should always show up, regardless of the applied non-status filters
+    if (
+      Object.values(statuses).some(
+        ({ value }) => value === 'status-value:error' || value === 'status-value:warning'
+      )
+    ) {
+      // Stories with errors or warnings should always show up, regardless of the applied non-status filters
       return true;
     }
 

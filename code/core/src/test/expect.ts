@@ -4,11 +4,9 @@ import * as matchers from '@testing-library/jest-dom/matchers';
 import type { TestingLibraryMatchers } from '@testing-library/jest-dom/matchers';
 
 import type {
-  AsymmetricMatchersContaining,
-  ExpectStatic,
-  JestAssertion,
-  MatcherState,
-  MatchersObject,
+  ExpectStatic as VitestExpectStatic,
+  MatcherState as VitestMatcherState,
+  MatchersObject as VitestMatchersObject,
 } from '@vitest/expect';
 import {
   GLOBAL_EXPECT,
@@ -21,35 +19,84 @@ import {
 } from '@vitest/expect';
 import * as chai from 'chai';
 
-import type { PromisifyObject } from './utils.ts';
-
-type Matchers<T> = PromisifyObject<JestAssertion<T>> &
-  TestingLibraryMatchers<ReturnType<ExpectStatic['stringContaining']>, Promise<void>>;
+type ExpectedValue = string | number | boolean | bigint | symbol | object | null | undefined;
+type Matcher = (...args: ExpectedValue[]) => Promise<void>;
+type CustomMatcher = (...args: ExpectedValue[]) => { message: () => string; pass: boolean };
+type Matchers<T> = TestingLibraryMatchers<T, Promise<void>>;
 
 // We only expose the jest compatible API for now
-export interface Assertion<T> extends Matchers<T> {
+export interface ExpectAssertion<T> extends Matchers<T> {
+  toBe: Matcher;
+  toBeCalled: Matcher;
+  toBeCalledWith: Matcher;
+  toBeCloseTo: Matcher;
+  toBeDefined: Matcher;
+  toBeFalsy: Matcher;
+  toBeFunction: Matcher;
+  toBeGreaterThan: Matcher;
+  toBeGreaterThanOrEqual: Matcher;
+  toBeInstanceOf: Matcher;
+  toBeLessThan: Matcher;
+  toBeLessThanOrEqual: Matcher;
+  toBeNaN: Matcher;
+  toBeNull: Matcher;
+  toBeTruthy: Matcher;
+  toBeTypeOf: Matcher;
+  toBeUndefined: Matcher;
+  toContain: Matcher;
+  toContainEqual: Matcher;
+  toEqual: Matcher;
+  toEqualTypeOf: Matcher;
+  toHaveBeenCalled: Matcher;
+  toHaveBeenCalledExactlyOnceWith: Matcher;
+  toHaveBeenCalledTimes: Matcher;
+  toHaveBeenCalledWith: Matcher;
+  toHaveBeenLastCalledWith: Matcher;
+  toHaveBeenNthCalledWith: Matcher;
+  toHaveLength: Matcher;
+  toHaveLiveRegion: Matcher;
+  toHaveProperty: Matcher;
+  toHaveReturnedTimes: Matcher;
+  toMatch: Matcher;
+  toMatchFileSnapshot: Matcher;
+  toMatchInlineSnapshot: Matcher;
+  toMatchObject: Matcher;
+  toMatchSnapshot: Matcher;
+  toMatchTypeOf: Matcher;
+  toPass: Matcher;
+  toStrictEqual: Matcher;
+  toThrow: Matcher;
+  toThrowError: Matcher;
+  toThrowErrorMatchingInlineSnapshot: Matcher;
+  toThrowErrorMatchingSnapshot: Matcher;
   toHaveBeenCalledOnce(): Promise<void>;
   toSatisfy<E>(matcher: (value: E) => boolean, message?: string): Promise<void>;
-  resolves: Assertion<T>;
-  rejects: Assertion<T>;
-  not: Assertion<T>;
+  resolves: ExpectAssertion<T>;
+  rejects: ExpectAssertion<T>;
+  not: ExpectAssertion<T>;
 }
 
-export interface Expect extends AsymmetricMatchersContaining {
-  <T>(actual: T, message?: string): Assertion<T>;
+export interface Assertion<T> extends ExpectAssertion<T> {}
+
+export interface Expect {
+  <T>(actual: T, message?: string): ExpectAssertion<T>;
   unreachable(message?: string): Promise<never>;
-  soft<T>(actual: T, message?: string): Assertion<T>;
-  extend(expects: MatchersObject): void;
+  soft<T>(actual: T, message?: string): ExpectAssertion<T>;
+  extend(expects: Record<string, CustomMatcher>): void;
   assertions(expected: number): Promise<void>;
   hasAssertions(): Promise<void>;
-  anything(): any;
-  any(constructor: unknown): any;
-  getState(): MatcherState;
-  setState(state: Partial<MatcherState>): void;
-  not: AsymmetricMatchersContaining;
+  anything(): ExpectedValue;
+  any(constructor: abstract new (...args: never[]) => object): ExpectedValue;
+  arrayContaining<T>(array: T[]): T[];
+  objectContaining<T extends object>(object: T): T;
+  stringContaining(expected: string): string;
+  stringMatching(expected: RegExp | string): string;
+  getState(): object;
+  setState(state: object): void;
+  not: Omit<Expect, 'not'>;
 }
 
-export function createExpect() {
+export function createExpect(): Expect {
   chai.use(JestExtend);
   chai.use(JestChaiExpect);
   chai.use(JestAsymmetricMatchers);
@@ -58,17 +105,17 @@ export function createExpect() {
     const { assertionCalls } = getState(expect);
     setState({ assertionCalls: assertionCalls + 1, soft: false }, expect);
     return chai.expect(value, message);
-  }) as ExpectStatic;
+  }) as VitestExpectStatic;
 
   Object.assign(expect, chai.expect);
 
   // The below methods are added to make chai jest compatible
 
-  expect.getState = () => getState<MatcherState>(expect);
-  expect.setState = (state) => setState(state as Partial<MatcherState>, expect);
+  expect.getState = () => getState<VitestMatcherState>(expect);
+  expect.setState = (state) => setState(state as Partial<VitestMatcherState>, expect);
 
   // @ts-expect-error chai.extend is not typed
-  expect.extend = (expects: MatchersObject) => chai.expect.extend(expect, expects);
+  expect.extend = (expects: VitestMatchersObject) => chai.expect.extend(expect, expects);
 
   // @ts-ignore tsup borks here for some reason
   expect.soft = (...args) => {
@@ -118,7 +165,7 @@ export function createExpect() {
     });
   }
 
-  setState<MatcherState>(
+  setState<VitestMatcherState>(
     {
       // this should also add "snapshotState" that is added conditionally
       assertionCalls: 0,

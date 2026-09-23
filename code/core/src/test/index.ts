@@ -2,7 +2,7 @@ import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';
 
-import { Assertion } from 'chai';
+import * as chai from 'chai';
 
 import { expect as rawExpect } from './expect.ts';
 
@@ -15,7 +15,7 @@ export const { expect } = instrument(
   { expect: rawExpect },
   {
     getKeys: (obj: object, depth) => {
-      if ('constructor' in obj && obj.constructor === Assertion) {
+      if ('constructor' in obj && obj.constructor === chai.Assertion) {
         const privateApi = ['assert', '__methods', '__flags', '_obj'];
         const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
           (it) => !privateApi.includes(it)

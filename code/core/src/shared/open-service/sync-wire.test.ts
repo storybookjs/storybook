@@ -71,8 +71,8 @@ function connectLeafRuntime(channel: Channel) {
   const runtime = createServiceRuntime(definition, { registryApi: serviceRegistryApi });
 
   const reconciler = createSnapshotReconciler({
+    serviceId: definition.id,
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
-    initialStamp: { version: 0, runtimeId: ownRuntimeId },
   });
 
   const commandNames = Object.keys(definition.commands);

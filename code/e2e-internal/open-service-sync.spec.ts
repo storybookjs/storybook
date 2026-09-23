@@ -7,8 +7,9 @@ import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
  * E2E regression for the open-service sync demos (`code/core/src/shared/open-service/sync-test`).
  *
  * Validates local command execution, remote command execution, static JSON loading, unhandled remote
- * commands in static builds, manager/preview sync, dev-server reload bootstrap, cross-tab relay, and
- * forced-concurrent two-tab writes.
+ * commands in static builds, manager/preview sync, dev-server reload bootstrap, a second tab joining
+ * written state and writing back, cross-tab relay, forced-concurrent two-tab writes, and gap repair
+ * through a snapshot reply.
  */
 
 /** Internal Storybook UI (`code/.storybook`) — not a sandbox template. */
@@ -31,21 +32,38 @@ async function gotoOpenServiceStory(page: Page, storyPath: string) {
   await openOpenServicePanel(page);
 }
 
-function readEntrySeq(message: string | Buffer): number | undefined {
+type ServiceFrame = {
+  type: string;
+  serviceId?: string;
+  runtimeId?: string;
+  seq?: number;
+};
+
+function parseServiceFrame(message: string | Buffer): ServiceFrame | undefined {
   const text = typeof message === 'string' ? message : message.toString('utf8');
   try {
     const event = JSON.parse(text) as {
       type?: string;
-      args?: Array<{ stamp?: { seq?: number } }>;
+      args?: Array<{ serviceId?: string; runtimeId?: string; stamp?: { seq?: number } }>;
     };
-    if (event.type !== 'services:entry') {
+    if (typeof event.type !== 'string' || !event.type.startsWith('services:')) {
       return undefined;
     }
-    const seq = event.args?.[0]?.stamp?.seq;
-    return typeof seq === 'number' ? seq : undefined;
+    const payload = event.args?.[0];
+    return {
+      type: event.type,
+      serviceId: payload?.serviceId,
+      runtimeId: payload?.runtimeId,
+      seq: typeof payload?.stamp?.seq === 'number' ? payload.stamp.seq : undefined,
+    };
   } catch {
     return undefined;
   }
+}
+
+function readEntrySeq(message: string | Buffer): number | undefined {
+  const frame = parseServiceFrame(message);
+  return frame?.type === 'services:entry' ? frame.seq : undefined;
 }
 
 type EntryHold = {
@@ -53,6 +71,60 @@ type EntryHold = {
   release: () => void;
   seqs: () => number[];
 };
+
+type EntryDrop = {
+  arm: () => void;
+  disarm: () => void;
+  /** `runtimeId` of every `services:sync-request` for the service sent since `arm()`. */
+  requesters: () => string[];
+};
+
+// Discards `services:entry` frames the hub sends to this tab for one service while armed, and
+// records who in the tab sends `services:sync-request` for that service. A dropped entry followed
+// by a delivered one is a gap, the deterministic way to make the tab repair through a snapshot
+// reply. In development the preview opens its own websocket to the server channel next to the
+// manager's, and `routeWebSocket` sees both, so the manager runtime and the preview runtime each
+// show up once. Same route rules as `holdOutboundEntries`: install before `goto`, stay idle until
+// `arm()`.
+async function dropInboundEntries(page: Page, serviceId: string): Promise<EntryDrop> {
+  let dropping = false;
+  let requesters: string[] = [];
+
+  await page.routeWebSocket(/storybook-server-channel/, (ws) => {
+    const server = ws.connectToServer();
+    ws.onMessage((message) => {
+      const frame = parseServiceFrame(message);
+      if (
+        frame?.type === 'services:sync-request' &&
+        frame.serviceId === serviceId &&
+        frame.runtimeId !== undefined
+      ) {
+        requesters.push(frame.runtimeId);
+      }
+      server.send(message);
+    });
+    server.onMessage((message) => {
+      const frame = parseServiceFrame(message);
+      if (dropping && frame?.type === 'services:entry' && frame.serviceId === serviceId) {
+        return;
+      }
+      ws.send(message);
+    });
+  });
+
+  return {
+    arm: () => {
+      dropping = true;
+      requesters = [];
+    },
+    disarm: () => {
+      dropping = false;
+    },
+    requesters: () => [...requesters],
+  };
+}
+
+const CONCURRENT_WRITES_SERVICE_ID = 'storybook/internal/open-service-concurrent-writes-sync-demo';
 
 // Only the manager's server socket carries `services:entry` to the hub, so holding its outbound
 // entry frames keeps each tab from seeing the other's write while both still stamp locally. Equal
@@ -198,7 +270,9 @@ test.describe('open-service sync example', () => {
     }
   });
 
-  test('local command syncs across multiple open tabs', async ({ page, context }) => {
+  // The second tab opens after the first has written, so it starts from an empty vector and can
+  // only show the value through a snapshot reply. Its write back proves the joiner is a full peer.
+  test('local command syncs to a tab that joins written state', async ({ page, context }) => {
     test.skip(!runsAgainstDevServer, 'Cross-tab sync requires the dev-server relay channel.');
 
     const otherPage = await context.newPage();
@@ -207,10 +281,6 @@ test.describe('open-service sync example', () => {
     try {
       await gotoOpenServiceStory(
         page,
-        'core-shared-open-service-sync-test-local-command--local-command-sync'
-      );
-      await gotoOpenServiceStory(
-        otherPage,
         'core-shared-open-service-sync-test-local-command--local-command-sync'
       );
 
@@ -235,22 +305,25 @@ test.describe('open-service sync example', () => {
 
       await expect(firstPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
       await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-      await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-      await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
       try {
-        await firstPanelInput.fill('');
-        await expect(firstStoryInput).toHaveValue('');
-        await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
-        await expect(secondStoryInput).toHaveValue('');
-        await expect(secondRawStoryValue).toHaveText(JSON.stringify(''));
-
         await firstPanelInput.fill('local command: from first tab');
+        await expect(firstStoryInput).toHaveValue('local command: from first tab');
+        await expect(firstRawStoryValue).toHaveText(
+          JSON.stringify('local command: from first tab')
+        );
+
+        await gotoOpenServiceStory(
+          otherPage,
+          'core-shared-open-service-sync-test-local-command--local-command-sync'
+        );
+        await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+        await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+        await expect(secondPanelInput).toHaveValue('local command: from first tab');
         await expect(secondStoryInput).toHaveValue('local command: from first tab');
         await expect(secondRawStoryValue).toHaveText(
           JSON.stringify('local command: from first tab')
         );
-        await expect(secondPanelInput).toHaveValue('local command: from first tab');
 
         await secondStoryInput.fill('local command: from second tab');
         await expect(firstPanelInput).toHaveValue('local command: from second tab');
@@ -343,7 +416,7 @@ test.describe('open-service sync example', () => {
     }
   });
 
-  test('remote command syncs across multiple open tabs', async ({ page, context }) => {
+  test('remote command syncs to a tab that joins written state', async ({ page, context }) => {
     test.skip(!runsAgainstDevServer, 'Cross-tab sync requires the dev-server relay channel.');
 
     const otherPage = await context.newPage();
@@ -352,10 +425,6 @@ test.describe('open-service sync example', () => {
     try {
       await gotoOpenServiceStory(
         page,
-        'core-shared-open-service-sync-test-remote-command--remote-command-sync'
-      );
-      await gotoOpenServiceStory(
-        otherPage,
         'core-shared-open-service-sync-test-remote-command--remote-command-sync'
       );
 
@@ -380,22 +449,25 @@ test.describe('open-service sync example', () => {
 
       await expect(firstPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
       await expect(firstStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-      await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
-      await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
 
       try {
-        await firstPanelInput.fill('');
-        await expect(firstStoryInput).toHaveValue('');
-        await expect(firstRawStoryValue).toHaveText(JSON.stringify(''));
-        await expect(secondStoryInput).toHaveValue('');
-        await expect(secondRawStoryValue).toHaveText(JSON.stringify(''));
-
         await firstPanelInput.fill('remote command: from first tab');
+        await expect(firstStoryInput).toHaveValue('remote command: from first tab');
+        await expect(firstRawStoryValue).toHaveText(
+          JSON.stringify('remote command: from first tab')
+        );
+
+        await gotoOpenServiceStory(
+          otherPage,
+          'core-shared-open-service-sync-test-remote-command--remote-command-sync'
+        );
+        await expect(secondPanelInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+        await expect(secondStoryInput).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+        await expect(secondPanelInput).toHaveValue('remote command: from first tab');
         await expect(secondStoryInput).toHaveValue('remote command: from first tab');
         await expect(secondRawStoryValue).toHaveText(
           JSON.stringify('remote command: from first tab')
         );
-        await expect(secondPanelInput).toHaveValue('remote command: from first tab');
 
         await secondStoryInput.fill('remote command: from second tab');
         await expect(firstPanelInput).toHaveValue('remote command: from second tab');
@@ -509,11 +581,99 @@ test.describe('open-service sync example', () => {
     }
   });
 
-  // Without the websocket hold the hub is fast enough that tab B usually observes tab A's write
-  // before B authors, so the test would only cover sequential seq 1 then 2.
-  test.describe('two-tab concurrent writes', () => {
-    // A passing retry would hide a broken hold, so a failure here is a protocol bug, not a flake.
+  // Without a websocket route the hub is fast enough that tab B always observes tab A's write in
+  // order, so the tests would only cover sequential seq 1 then 2 and never a concurrent stamp or
+  // a gap.
+  test.describe('two-tab writes under a websocket route', () => {
+    // A passing retry would hide a broken hold or drop, so a failure here is a protocol bug, not
+    // a flake.
     test.describe.configure({ retries: 0, mode: 'serial' });
+
+    test('repairs a gap through a snapshot reply when an entry never arrives', async ({
+      page,
+      context,
+    }) => {
+      test.skip(!runsAgainstDevServer, 'Gap repair requires the dev-server relay channel.');
+
+      const otherPage = await context.newPage();
+      const drop = await dropInboundEntries(otherPage, CONCURRENT_WRITES_SERVICE_ID);
+
+      try {
+        await gotoOpenServiceStory(
+          page,
+          'core-shared-open-service-sync-test-concurrent-writes--concurrent-writes-sync'
+        );
+        await gotoOpenServiceStory(
+          otherPage,
+          'core-shared-open-service-sync-test-concurrent-writes--concurrent-writes-sync'
+        );
+
+        const first = concurrentWritesControls(page);
+        const second = concurrentWritesControls(otherPage);
+
+        await expect(first.panelSlot).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+        await expect(second.panelSlot).toBeVisible({ timeout: STORY_READY_TIMEOUT });
+
+        try {
+          await first.panelClear.click();
+          await expectSlots(first.panelRaw, {});
+          await expectSlots(second.panelRaw, {});
+
+          const lostSlot = `lost-${Date.now()}`;
+          const deliveredSlot = `delivered-${Date.now()}`;
+
+          // The first write is discarded on its way to tab B. Only the tab A surfaces can show it.
+          drop.arm();
+          await first.panelSlot.fill(lostSlot);
+          await first.panelValue.fill('L');
+          await first.panelWrite.click();
+          await expectSlots(first.panelRaw, { [lostSlot]: 'L' });
+          await expectSlots(first.storyRaw, { [lostSlot]: 'L' });
+          await expectSlots(second.panelRaw, {});
+          drop.disarm();
+          const requestersBeforeGap = drop.requesters();
+
+          // The second write reaches tab B with a counter one ahead of what it holds. That gap
+          // triggers a sync request, and the server's reply carries both slots.
+          await first.panelSlot.fill(deliveredSlot);
+          await first.panelValue.fill('D');
+          await first.panelWrite.click();
+
+          const expected = { [lostSlot]: 'L', [deliveredSlot]: 'D' };
+          await expectSlots(second.panelRaw, expected);
+          await expectSlots(second.storyRaw, expected);
+          await expectSlots(first.panelRaw, expected);
+          await expectSlots(first.storyRaw, expected);
+          const requesters = drop.requesters();
+          expect(
+            requesters.length,
+            'the lost slot can only arrive through a repair'
+          ).toBeGreaterThan(requestersBeforeGap.length);
+          const gapRequesters = requesters.slice(requestersBeforeGap.length);
+          expect(new Set(gapRequesters).size, 'one request per runtime, no storm').toBe(
+            gapRequesters.length
+          );
+
+          // The repaired tab is a full peer again: its next write lands everywhere in order.
+          const afterSlot = `after-${Date.now()}`;
+          await second.panelSlot.fill(afterSlot);
+          await second.panelValue.fill('A');
+          await second.panelWrite.click();
+          const afterRepair = { ...expected, [afterSlot]: 'A' };
+          await expectSlots(first.panelRaw, afterRepair);
+          await expectSlots(first.storyRaw, afterRepair);
+          await expectSlots(second.storyRaw, afterRepair);
+          expect(drop.requesters(), 'an in-order write needs no repair').toStrictEqual(requesters);
+        } finally {
+          drop.disarm();
+          await first.panelClear.click();
+          await expectSlots(first.panelRaw, {});
+          await expectSlots(second.panelRaw, {});
+        }
+      } finally {
+        await otherPage.close();
+      }
+    });
 
     test('keeps both keys and the same seq when two tabs write under a hold', async ({
       page,

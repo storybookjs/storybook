@@ -5,15 +5,24 @@
  * Runtime queries, subscriptions, and registry metadata live in
  * {@link ./service-runtime.test.ts} and {@link ./service-registration.test.ts}.
  */
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { logger } from 'storybook/internal/client-logger';
 
 import { entryEmits, mutableRecordLookupServiceDef, peerEntry } from './fixtures.ts';
-import { SERVICE_ENTRY, SERVICE_SYNC_START_REPLY, SERVICE_SYNC_START } from './service-channel.ts';
+import { SERVICE_ENTRY, SERVICE_SYNC_REPLY, SERVICE_SYNC_REQUEST } from './service-channel.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
+vi.mock('storybook/internal/client-logger', { spy: true });
+
 const createMockChannel = createTestChannel;
 const installChannel = installTestChannel;
+
+// The repair paths warn; nothing here asserts on them, so keep them out of the test output.
+beforeEach(() => {
+  vi.mocked(logger.warn).mockReset();
+  vi.mocked(logger.warn).mockImplementation(() => undefined);
+});
 
 afterEach(() => {
   clearRegistry();
@@ -30,8 +39,8 @@ describe('registerService (leaf)', () => {
   });
 });
 
-describe('channel: sync-start initialization (leaf)', () => {
-  it('adopts a sync-start-reply from a hub that was not listening at registration time', async () => {
+describe('channel: sync-request initialization (leaf)', () => {
+  it('adopts a sync-reply from a hub that was not listening at registration time', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -40,27 +49,30 @@ describe('channel: sync-start initialization (leaf)', () => {
     });
 
     expect(channel.emit).toHaveBeenCalledWith(
-      SERVICE_SYNC_START,
-      expect.objectContaining({ serviceId: mutableRecordLookupServiceDef.id })
+      SERVICE_SYNC_REQUEST,
+      expect.objectContaining({
+        serviceId: mutableRecordLookupServiceDef.id,
+        frontier: { vector: {}, clock: 0 },
+      })
     );
 
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
+      runtimeId: 'peer',
       state: { 'entry-late': { marker: 'synced' } },
-      version: 1,
-      runtimeId: 'manager-hub',
+      frontier: { vector: { 'manager-hub': 1 }, clock: 1 },
     });
 
     expect(preview.queries.recordFields.get({ entryId: 'entry-late' })).toEqual({
       marker: 'synced',
     });
 
-    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_START).length).toBe(
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST).length).toBe(
       1
     );
   });
 
-  it('converges via entries when a sync-start-reply carried stale v0 state', async () => {
+  it('converges via entries when a sync-reply carried empty state', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -68,11 +80,11 @@ describe('channel: sync-start initialization (leaf)', () => {
       relay: false,
     });
 
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
-      state: { 'entry-stale': { marker: 'v0' } },
-      version: 0,
-      runtimeId: 'early-hub',
+      runtimeId: 'peer',
+      state: {},
+      frontier: { vector: {}, clock: 0 },
     });
 
     channel.emitExternal(
@@ -199,30 +211,30 @@ describe('channel: entry apply', () => {
   });
 });
 
-describe('channel: multi-peer sync-start bootstrap', () => {
-  it('converges on the newest sync-start-reply when several peers answer out of order', async () => {
+describe('channel: multi-peer sync-reply bootstrap', () => {
+  it('installs dominating replies in arrival order', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
     const service = registerService(mutableRecordLookupServiceDef);
 
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
+      runtimeId: 'peer',
       state: { item: { v: '1' } },
-      version: 1,
-      runtimeId: 'p1',
+      frontier: { vector: { p1: 1 }, clock: 1 },
     });
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
+      runtimeId: 'peer',
       state: { item: { v: '3' } },
-      version: 3,
-      runtimeId: 'p3',
+      frontier: { vector: { p1: 1, p3: 2 }, clock: 3 },
     });
-    channel.emitExternal(SERVICE_SYNC_START_REPLY, {
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: mutableRecordLookupServiceDef.id,
+      runtimeId: 'peer',
       state: { item: { v: '2' } },
-      version: 2,
-      runtimeId: 'p2',
+      frontier: { vector: { p1: 1, p2: 1 }, clock: 2 },
     });
 
     await vi.waitFor(() =>
@@ -291,7 +303,7 @@ describe('channel: untrusted payloads', () => {
     expect((Object.prototype as Record<string, unknown>).polluted).toBeUndefined();
   });
 
-  it('drops malformed sync-start-reply and entry payloads without mutating state', async () => {
+  it('drops malformed sync-reply and entry payloads without mutating state', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -311,7 +323,7 @@ describe('channel: untrusted payloads', () => {
 
     for (const payload of malformed) {
       expect(() => channel.emitExternal(SERVICE_ENTRY, payload)).not.toThrow();
-      expect(() => channel.emitExternal(SERVICE_SYNC_START_REPLY, payload)).not.toThrow();
+      expect(() => channel.emitExternal(SERVICE_SYNC_REPLY, payload)).not.toThrow();
     }
 
     await new Promise<void>((resolve) => setTimeout(resolve, 10));
@@ -363,8 +375,8 @@ describe('channel: disconnect on unregister', () => {
 
     unregisterService(mutableRecordLookupServiceDef.id);
 
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START, expect.any(Function));
-    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_START_REPLY, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_REQUEST, expect.any(Function));
+    expect(channel.off).toHaveBeenCalledWith(SERVICE_SYNC_REPLY, expect.any(Function));
     expect(channel.off).toHaveBeenCalledWith(SERVICE_ENTRY, expect.any(Function));
 
     channel.emitExternal(

@@ -8,7 +8,8 @@ import {
   applyStatePatch,
   compareStamps,
   createSnapshotReconciler,
-  isNewer,
+  vectorDominates,
+  vectorsConcurrent,
   type AuthoredEntry,
 } from './service-sync.ts';
 
@@ -88,12 +89,19 @@ describe('applyStatePatch', () => {
   });
 });
 
-describe('isNewer', () => {
-  it('prefers the higher version, then the greater runtimeId, and never an equal stamp', () => {
-    expect(isNewer({ version: 2, runtimeId: 'aaa' }, { version: 1, runtimeId: 'zzz' })).toBe(true);
-    expect(isNewer({ version: 1, runtimeId: 'zzz' }, { version: 1, runtimeId: 'aaa' })).toBe(true);
-    expect(isNewer({ version: 1, runtimeId: 'aaa' }, { version: 1, runtimeId: 'zzz' })).toBe(false);
-    expect(isNewer({ version: 1, runtimeId: 'aaa' }, { version: 1, runtimeId: 'aaa' })).toBe(false);
+describe('vectorDominates', () => {
+  it('treats a non-empty vector as dominating an empty one, and not the reverse', () => {
+    expect(vectorDominates({ a: 1 }, {})).toBe(true);
+    expect(vectorDominates({}, { a: 1 })).toBe(false);
+    expect(vectorDominates({}, {})).toBe(false);
+    expect(vectorDominates({ a: 0 }, { b: 0 })).toBe(false);
+  });
+
+  it('requires every counter at least equal and at least one greater', () => {
+    expect(vectorDominates({ a: 2, b: 1 }, { a: 1, b: 1 })).toBe(true);
+    expect(vectorDominates({ a: 1, b: 1 }, { a: 1, b: 1 })).toBe(false);
+    expect(vectorDominates({ a: 2, b: 1 }, { a: 1, b: 2 })).toBe(false);
+    expect(vectorsConcurrent({ a: 2, b: 1 }, { a: 1, b: 2 })).toBe(true);
   });
 });
 
@@ -126,10 +134,10 @@ describe('createSnapshotReconciler entries', () => {
   ) {
     const state = initial;
     const reconciler = createSnapshotReconciler({
+      serviceId: 'svc',
       setState: (mutate) => {
         mutate(state);
       },
-      initialStamp: { version: 0, runtimeId: 'self' },
       window,
     });
     return { state, reconciler };
@@ -160,7 +168,7 @@ describe('createSnapshotReconciler entries', () => {
     expect(reconciler.clock).toBe(2);
   });
 
-  it('does not replay retained log entries across an adopted snapshot', () => {
+  it('drops covered log entries on install and treats their counters as duplicates', () => {
     const { state, reconciler } = createReconciler({ n: 0, extra: 0 });
     expect(
       reconciler.tryAdoptEntry({
@@ -169,28 +177,68 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 2 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(state.n).toBe(2);
 
-    expect(reconciler.tryAdopt({ version: 10, runtimeId: 'peer' }, { n: 99, extra: 0 })).toBe(true);
+    expect(reconciler.tryAdopt({ vector: { writer: 2 }, clock: 10 }, { n: 99, extra: 0 })).toBe(
+      'installed'
+    );
     expect(state).toEqual({ n: 99, extra: 0 });
     expect(reconciler.log).toEqual([]);
+    expect(reconciler.vector).toEqual({ writer: 2 });
 
     expect(
       reconciler.tryAdoptEntry({
         serviceId: 'svc',
-        stamp: stamp('other', 1, 1),
+        stamp: stamp('writer', 1, 1),
         command: 'setExtra',
         patch: [{ op: 'replace', path: '/extra', value: 1 }],
       })
-    ).toBe(false);
+    ).toBe('duplicate');
     expect(state).toEqual({ n: 99, extra: 0 });
     expect(reconciler.log).toEqual([]);
   });
 
-  it('still places an entry later than an adopted snapshot', () => {
+  it('re-applies uncovered log entries in canonical order after install', () => {
+    const { state, reconciler } = createReconciler({ n: 0, mine: 0 });
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('peer', 1, 1),
+        command: 'setN',
+        patch: [{ op: 'replace', path: '/n', value: 1 }],
+      })
+    ).toBe('accepted');
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('zzz', 2, 5),
+        command: 'setMine',
+        patch: [{ op: 'replace', path: '/mine', value: 'Z' }],
+      })
+    ).toBe('gap');
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('aaa', 2, 5),
+        command: 'setMine',
+        patch: [{ op: 'replace', path: '/mine', value: 'A' }],
+      })
+    ).toBe('gap');
+    expect(state.mine).toBe('Z');
+
+    expect(reconciler.tryAdopt({ vector: { peer: 4 }, clock: 4 }, { n: 4, mine: 0 })).toBe(
+      'installed'
+    );
+    expect(state).toEqual({ n: 4, mine: 'Z' });
+    expect(reconciler.log.map((entry) => entry.stamp.runtimeId)).toEqual(['aaa', 'zzz']);
+    expect(reconciler.vector).toEqual({ peer: 4 });
+    expect(reconciler.clock).toBe(5);
+  });
+
+  it('places an entry later than an installed snapshot', () => {
     const { state, reconciler } = createReconciler({ n: 0 });
-    expect(reconciler.tryAdopt({ version: 10, runtimeId: 'peer' }, { n: 99 })).toBe(true);
+    expect(reconciler.tryAdopt({ vector: { peer: 3 }, clock: 10 }, { n: 99 })).toBe('installed');
 
     expect(
       reconciler.tryAdoptEntry({
@@ -199,12 +247,148 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 11 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(state.n).toBe(11);
     expect(reconciler.log).toHaveLength(1);
   });
 
-  it('keeps the log when a bootstrap snapshot loses last-write-wins', () => {
+  it('places a peer entry between the reply clock and a higher local clock as an earlier insert, not beyond-window', () => {
+    const { state, reconciler } = createReconciler({});
+    // A gap entry moves the clock but not the Vector, so a reply can dominate the empty Vector
+    // while its clock trails the local one.
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('far', 2, 9),
+        command: 'setFar',
+        patch: [{ op: 'add', path: '/far', value: 1 }],
+      })
+    ).toBe('gap');
+    expect(reconciler.clock).toBe(9);
+
+    expect(reconciler.tryAdopt({ vector: { peer: 2 }, clock: 3 }, { peer: 'p' })).toBe('installed');
+    expect(state).toEqual({ peer: 'p', far: 1 });
+
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('other', 1, 5),
+        command: 'setOther',
+        patch: [{ op: 'add', path: '/other', value: 5 }],
+      })
+    ).toBe('accepted');
+    expect(state).toEqual({ peer: 'p', far: 1, other: 5 });
+  });
+
+  it('drops a delayed concurrent entry after snapshot install as beyond-window and heals from a dominating snapshot', () => {
+    const { state, reconciler } = createReconciler({ n: 'z' });
+    expect(reconciler.tryAdopt({ vector: { z: 1 }, clock: 1 }, { n: 'z' })).toBe('installed');
+
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('z', 1, 1),
+        command: 'setN',
+        patch: [{ op: 'replace', path: '/n', value: 'z' }],
+      })
+    ).toBe('duplicate');
+    expect(state.n).toBe('z');
+
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('a', 1, 1),
+        command: 'setN',
+        patch: [{ op: 'replace', path: '/n', value: 'a' }],
+      })
+    ).toBe('beyond-window');
+    expect(state.n).toBe('z');
+    expect(reconciler.vector).toEqual({ z: 1 });
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('service=svc stamps=1:a:1 paths=/n command=setN')
+    );
+
+    expect(reconciler.tryAdopt({ vector: { a: 1, z: 1 }, clock: 1 }, { n: 'z' })).toBe('installed');
+    expect(state.n).toBe('z');
+    expect(reconciler.vector).toEqual({ a: 1, z: 1 });
+  });
+
+  it('drops an uncovered gap entry at or below the reply clock on install instead of re-applying it over the snapshot', () => {
+    const gap = {
+      serviceId: 'svc',
+      stamp: stamp('w', 2, 2),
+      command: 'setX',
+      patch: [{ op: 'replace' as const, path: '/x', value: 'g' }],
+    };
+    const later = {
+      serviceId: 'svc',
+      stamp: stamp('z', 1, 3),
+      command: 'setX',
+      patch: [{ op: 'replace' as const, path: '/x', value: 'L' }],
+    };
+
+    const replier = createReconciler({ x: '0' });
+    expect(replier.reconciler.tryAdoptEntry(gap)).toBe('gap');
+    expect(replier.reconciler.tryAdoptEntry(later)).toBe('accepted');
+    expect(replier.state.x).toBe('L');
+
+    const requester = createReconciler({ x: '0' });
+    expect(requester.reconciler.tryAdoptEntry(gap)).toBe('gap');
+    expect(requester.reconciler.tryAdopt(replier.reconciler.frontier, { ...replier.state })).toBe(
+      'installed'
+    );
+
+    expect(requester.reconciler.vector).toEqual(replier.reconciler.vector);
+    expect(requester.state.x).toBe('L');
+    expect(requester.reconciler.log).toEqual([]);
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining(
+        'dropped on install. service=svc stamp=2:w:2 clock=3 paths=/x command=setX'
+      )
+    );
+    expect(requester.reconciler.tryAdoptEntry(gap)).toBe('beyond-window');
+    expect(requester.state.x).toBe('L');
+  });
+
+  it('sets the reply-clock floor to the installed reply clock, so a later reply with a lower clock reopens placeable seqs', () => {
+    const { state, reconciler } = createReconciler({ x: '0' });
+    // The first replier holds a gap at seq 10, so its clock is 10 while its vector is { a: 1 }.
+    expect(reconciler.tryAdopt({ vector: { a: 1 }, clock: 10 }, { x: 'a', g: 'g' })).toBe(
+      'installed'
+    );
+    // The second replier folded a:1 and b:1 (seq 3) and never saw seq 10.
+    expect(reconciler.tryAdopt({ vector: { a: 1, b: 1 }, clock: 3 }, { x: 'b' })).toBe('installed');
+    expect(state).toEqual({ x: 'b' });
+
+    // Everything in the state now has seq <= 3, so seq 5 sorts after all of it.
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('c', 1, 5),
+        command: 'setC',
+        patch: [{ op: 'add', path: '/c', value: 'c' }],
+      })
+    ).toBe('accepted');
+    expect(state).toEqual({ x: 'b', c: 'c' });
+  });
+
+  it('treats a redelivered beyond-window stamp as a duplicate until the next install', () => {
+    const { reconciler } = createReconciler({ x: '0' });
+    expect(reconciler.tryAdopt({ vector: { a: 1 }, clock: 5 }, { x: 'a' })).toBe('installed');
+    const stale = {
+      serviceId: 'svc',
+      stamp: stamp('b', 1, 4),
+      command: 'setX',
+      patch: [{ op: 'replace' as const, path: '/x', value: 'b' }],
+    };
+    expect(reconciler.tryAdoptEntry(stale)).toBe('beyond-window');
+    expect(reconciler.tryAdoptEntry(stale)).toBe('duplicate');
+
+    expect(reconciler.tryAdopt({ vector: { a: 1, c: 1 }, clock: 2 }, { x: 'c' })).toBe('installed');
+    expect(reconciler.tryAdoptEntry(stale)).toBe('accepted');
+  });
+
+  it('does not install a snapshot that does not dominate', () => {
     const { state, reconciler } = createReconciler({ n: 0 });
     expect(
       reconciler.tryAdoptEntry({
@@ -213,17 +397,17 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 1 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(reconciler.log).toHaveLength(1);
 
-    expect(reconciler.tryAdopt({ version: 0, runtimeId: 'stale' }, { n: 99 })).toBe(false);
+    expect(reconciler.tryAdopt({ vector: {}, clock: 0 }, { n: 99 })).not.toBe('installed');
     expect(state.n).toBe(1);
     expect(reconciler.log).toHaveLength(1);
   });
 
-  it('raises the clock to an adopted snapshot version so the next local seq is later', () => {
+  it('raises the clock to an installed frontier so the next local seq is later', () => {
     const { reconciler } = createReconciler({ value: '' });
-    expect(reconciler.tryAdopt({ version: 3, runtimeId: 'peer' }, { value: '' })).toBe(true);
+    expect(reconciler.tryAdopt({ vector: { peer: 2 }, clock: 3 }, { value: '' })).toBe('installed');
     expect(reconciler.clock).toBe(3);
 
     const local = reconciler.advanceLocal(
@@ -247,7 +431,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setValue',
         patch: [{ op: 'replace', path: '/value', value: 'from panel' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(
       server.reconciler.tryAdoptEntry({
         serviceId: 'svc',
@@ -255,7 +439,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setValue',
         patch: [{ op: 'replace', path: '/value', value: 'from story' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(
       server.reconciler.tryAdoptEntry({
         serviceId: 'svc',
@@ -263,13 +447,13 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setValue',
         patch: [{ op: 'replace', path: '/value', value: '' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(server.state.value).toBe('');
 
     const joining = createReconciler({ value: '' });
     expect(
-      joining.reconciler.tryAdopt(server.reconciler.stamp, { value: server.state.value })
-    ).toBe(true);
+      joining.reconciler.tryAdopt(server.reconciler.frontier, { value: server.state.value })
+    ).toBe('installed');
 
     const local = joining.reconciler.advanceLocal(
       'new-preview',
@@ -288,11 +472,11 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setValue',
         patch: [{ op: 'replace', path: '/value', value: 'before reload' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(server.state.value).toBe('before reload');
   });
 
-  it('keeps snapshot version at least the clock after a gapped seq so a joiner writes later', () => {
+  it('seeds a joiner clock from the installed frontier so its next seq is later', () => {
     const server = createReconciler({ n: 0 });
     expect(
       server.reconciler.tryAdoptEntry({
@@ -301,12 +485,13 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 1 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(server.reconciler.clock).toBe(100);
-    expect(server.reconciler.stamp.version).toBeGreaterThanOrEqual(100);
 
     const joining = createReconciler({ n: 0 });
-    expect(joining.reconciler.tryAdopt(server.reconciler.stamp, { n: server.state.n })).toBe(true);
+    expect(joining.reconciler.tryAdopt(server.reconciler.frontier, { n: server.state.n })).toBe(
+      'installed'
+    );
     expect(joining.reconciler.clock).toBeGreaterThanOrEqual(100);
 
     const local = joining.reconciler.advanceLocal(
@@ -326,38 +511,25 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 2 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(server.state.n).toBe(2);
   });
 
-  it('advances the clock from a rejected older bootstrap stamp', () => {
-    const { reconciler } = createReconciler({ n: 0 });
-    for (const runtimeId of ['aaa', 'mmm', 'zzz']) {
-      expect(
-        reconciler.tryAdoptEntry({
-          serviceId: 'svc',
-          stamp: stamp(runtimeId, 1, 1),
-          command: 'setN',
-          patch: [{ op: 'replace', path: '/n', value: runtimeId }],
-        })
-      ).toBe(true);
-    }
-    expect(reconciler.clock).toBe(1);
-    expect(reconciler.stamp.version).toBe(3);
+  it('drops a concurrent snapshot and warns with both frontiers', () => {
+    const { state, reconciler } = createReconciler({ n: 0, m: 0 });
+    expect(
+      reconciler.tryAdoptEntry({
+        serviceId: 'svc',
+        stamp: stamp('aaa', 1, 1),
+        command: 'setN',
+        patch: [{ op: 'replace', path: '/n', value: 1 }],
+      })
+    ).toBe('accepted');
 
-    expect(reconciler.tryAdopt({ version: 2, runtimeId: 'peer' }, { n: 'stale' })).toBe(false);
-    expect(reconciler.clock).toBe(2);
-    expect(reconciler.stamp.version).toBe(3);
-
-    const local = reconciler.advanceLocal(
-      'self',
-      authored(
-        'setN',
-        [{ op: 'replace', path: '/n', value: 'local' }],
-        [{ op: 'replace', path: '/n', value: 'zzz' }]
-      )
-    );
-    expect(local.seq).toBe(3);
+    const reply = { vector: { zzz: 1 }, clock: 2 };
+    expect(reconciler.tryAdopt(reply, { n: 0, m: 9 })).toBe('concurrent');
+    expect(state).toEqual({ n: 1, m: 0 });
+    expect(reconciler.frontier.clock).toBe(2);
   });
 
   it('drops a duplicate stamp including the local echo, and still advances the clock', () => {
@@ -379,7 +551,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 99 }],
       })
-    ).toBe(false);
+    ).toBe('duplicate');
     expect(state.n).toBe(1);
     expect(reconciler.clock).toBe(1);
 
@@ -390,7 +562,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 99 }],
       })
-    ).toBe(false);
+    ).toBe('duplicate');
     expect(state.n).toBe(1);
     expect(reconciler.clock).toBe(9);
   });
@@ -404,7 +576,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setA',
         patch: [{ op: 'add', path: '/a', value: 1 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(
       reconciler.tryAdoptEntry({
         serviceId: 'svc',
@@ -412,7 +584,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setA',
         patch: [{ op: 'add', path: '/a', value: 9 }],
       })
-    ).toBe(false);
+    ).toBe('duplicate');
     expect(state).toEqual({ a: 1 });
   });
 
@@ -431,10 +603,10 @@ describe('createSnapshotReconciler entries', () => {
       });
 
       for (const counter of order) {
-        expect(reconciler.tryAdoptEntry(entry(counter))).toBe(true);
+        expect(reconciler.tryAdoptEntry(entry(counter))).not.toBe('duplicate');
       }
       for (const counter of order) {
-        expect(reconciler.tryAdoptEntry(entry(counter))).toBe(false);
+        expect(reconciler.tryAdoptEntry(entry(counter))).toBe('duplicate');
       }
       expect(state).toEqual({ k1: 1, k2: 2, k3: 3 });
     }
@@ -449,7 +621,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setA',
         patch: [{ op: 'add', path: '/a', value: 1 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(state).toEqual({ a: 1 });
     expect(reconciler.log.map((entry) => entry.stamp)).toEqual([stamp('w', 1, 1)]);
     expect(reconciler.clock).toBe(1);
@@ -462,12 +634,12 @@ describe('createSnapshotReconciler entries', () => {
       b: string;
     };
     const reconciler = createSnapshotReconciler({
+      serviceId: 'svc',
       setState: (mutate) => {
         batch(() => {
           mutate(state);
         });
       },
-      initialStamp: { version: 0, runtimeId: 'self' },
     });
 
     let transitions = 0;
@@ -485,7 +657,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setB',
         patch: [{ op: 'replace', path: '/b', value: 'B' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(transitions - afterSubscribe).toBe(1);
 
     expect(
@@ -495,7 +667,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setA',
         patch: [{ op: 'replace', path: '/a', value: 'A' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
 
     expect(transitions - afterSubscribe).toBe(2);
     expect({ a: state.a, b: state.b }).toEqual({ a: 'A', b: 'B' });
@@ -513,7 +685,7 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 'later' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(
       reconciler.tryAdoptEntry({
         serviceId: 'svc',
@@ -521,12 +693,42 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setN',
         patch: [{ op: 'replace', path: '/n', value: 'earlier' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
 
     expect(state.n).toBe('later');
   });
 
-  it('applies a gap without advancing the vector so the skipped counter still applies', () => {
+  it('treats a redelivered gap that the window already evicted as beyond-window', () => {
+    vi.useFakeTimers();
+    try {
+      const { state, reconciler } = createReconciler({}, { maxAgeMs: 0, maxEntries: 1 });
+      const gap = {
+        serviceId: 'svc',
+        stamp: stamp('w', 2, 2),
+        command: 'setB',
+        patch: [{ op: 'add' as const, path: '/b', value: 'first' }],
+      };
+      expect(reconciler.tryAdoptEntry(gap)).toBe('gap');
+      vi.advanceTimersByTime(1);
+      expect(
+        reconciler.tryAdoptEntry({
+          serviceId: 'svc',
+          stamp: stamp('w', 3, 3),
+          command: 'setC',
+          patch: [{ op: 'add', path: '/c', value: 3 }],
+        })
+      ).toBe('gap');
+      expect(reconciler.log.map((entry) => entry.stamp.counter)).toEqual([3]);
+
+      state.b = 'changed locally';
+      expect(reconciler.tryAdoptEntry(gap)).toBe('beyond-window');
+      expect(state).toEqual({ b: 'changed locally', c: 3 });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it('applies a gap without advancing the vector so the skipped counter still applies, and warns', () => {
     const { state, reconciler } = createReconciler();
 
     expect(
@@ -536,10 +738,12 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setB',
         patch: [{ op: 'add', path: '/b', value: 2 }],
       })
-    ).toBe(true);
+    ).toBe('gap');
     expect(state).toEqual({ b: 2 });
     expect(reconciler.vector).toEqual({});
-    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('service=svc stamps=2:w:2 paths=/b command=setB')
+    );
 
     expect(
       reconciler.tryAdoptEntry({
@@ -548,27 +752,26 @@ describe('createSnapshotReconciler entries', () => {
         command: 'setA',
         patch: [{ op: 'add', path: '/a', value: 1 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(state).toEqual({ b: 2, a: 1 });
     expect(reconciler.vector).toEqual({ w: 2 });
-    expect(vi.mocked(logger.warn)).not.toHaveBeenCalled();
   });
 
-  it('warns with service, stamp, path, and command on missing parent and keeps the entry as a no-op', () => {
+  it('warns with service, stamp, path, and command on missing parent and keeps the entry as an unapplied no-op', () => {
     const { state, reconciler } = createReconciler({ a: 1 });
 
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('writer', 1),
         command: 'setNested',
         patch: [{ op: 'add', path: '/missing/y', value: 3 }],
       })
-    ).toBe(true);
+    ).toBe('unapplied');
     expect(state).toEqual({ a: 1 });
     expect(reconciler.has(stamp('writer', 1))).toBe(true);
     expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('service=demo stamp=1:writer:1 path=/missing/y command=setNested')
+      expect.stringContaining('service=svc stamp=1:writer:1 path=/missing/y command=setNested')
     );
   });
 
@@ -577,23 +780,23 @@ describe('createSnapshotReconciler entries', () => {
 
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('writer', 2, 2),
         command: 'setNested',
         patch: [{ op: 'add', path: '/parent/y', value: 3 }],
       })
-    ).toBe(true);
+    ).toBe('gap');
     expect(state).toEqual({});
     expect(reconciler.has(stamp('writer', 2, 2))).toBe(true);
 
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('writer', 1, 1),
         command: 'addParent',
         patch: [{ op: 'add', path: '/parent', value: {} }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(state).toEqual({ parent: { y: 3 } });
   });
 
@@ -602,15 +805,15 @@ describe('createSnapshotReconciler entries', () => {
 
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('writer', 1),
         command: 'clearM',
         patch: [{ op: 'remove', path: '/m' }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(state).toEqual({ n: 1 });
     expect(vi.mocked(logger.debug)).toHaveBeenCalledWith(
-      expect.stringContaining('service=demo stamp=1:writer:1 path=/m command=clearM')
+      expect.stringContaining('service=svc stamp=1:writer:1 path=/m command=clearM')
     );
   });
 
@@ -619,42 +822,42 @@ describe('createSnapshotReconciler entries', () => {
 
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('w', 1, 1),
         command: 'setA',
         patch: [{ op: 'add', path: '/a', value: 1 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('w', 2, 2),
         command: 'setB',
         patch: [{ op: 'add', path: '/b', value: 2 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('w', 3, 3),
         command: 'setC',
         patch: [{ op: 'add', path: '/c', value: 3 }],
       })
-    ).toBe(true);
+    ).toBe('accepted');
 
     expect(reconciler.log.map((entry) => entry.stamp.seq)).toEqual([2, 3]);
 
     expect(
       reconciler.tryAdoptEntry({
-        serviceId: 'demo',
+        serviceId: 'svc',
         stamp: stamp('other', 1, 1),
         command: 'setZ',
         patch: [{ op: 'add', path: '/z', value: 9 }],
       })
-    ).toBe(false);
+    ).toBe('beyond-window');
     expect(state).toEqual({ a: 1, b: 2, c: 3 });
     expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('service=demo stamps=1:other:1,1:w:1 paths=/z command=setZ')
+      expect.stringContaining('service=svc stamps=1:other:1,1:w:1 paths=/z command=setZ')
     );
   });
 });
@@ -673,8 +876,8 @@ describe('log window eviction', () => {
   it('keeps entries younger than the age bound even past the count floor', () => {
     const state: Record<string, unknown> = { n: 0 };
     const reconciler = createSnapshotReconciler({
+      serviceId: 'svc',
       setState: (mutate) => mutate(state),
-      initialStamp: { version: 0, runtimeId: 'self' },
       window: { maxAgeMs: 15_000, maxEntries: 2 },
     });
 
@@ -693,8 +896,8 @@ describe('log window eviction', () => {
   it('evicts entries that are both older than the age bound and outside the newest N', () => {
     const state: Record<string, unknown> = { n: 0 };
     const reconciler = createSnapshotReconciler({
+      serviceId: 'svc',
       setState: (mutate) => mutate(state),
-      initialStamp: { version: 0, runtimeId: 'self' },
       window: { maxAgeMs: 15_000, maxEntries: 2 },
     });
 
@@ -722,7 +925,7 @@ describe('log window eviction', () => {
     const state: Record<string, unknown> = {};
     const reconciler = createSnapshotReconciler({
       setState: (mutate) => mutate(state),
-      initialStamp: { version: 0, runtimeId: 'self' },
+      serviceId: 'svc',
       window: { maxAgeMs: 15_000, maxEntries: 2 },
     });
     const entry = (writer: string, counter: number, seq = counter) => ({
@@ -740,9 +943,9 @@ describe('log window eviction', () => {
     reconciler.tryAdoptEntry(entry('b', 1));
     expect(stamps()).toEqual(['1:b', '4:a', '5:a']);
 
-    expect(reconciler.tryAdoptEntry(entry('a', 3))).toBe(false);
-    expect(reconciler.tryAdoptEntry(entry('c', 1, 2))).toBe(false);
-    expect(reconciler.tryAdoptEntry(entry('c', 1, 3))).toBe(true);
+    expect(reconciler.tryAdoptEntry(entry('a', 3))).toBe('beyond-window');
+    expect(reconciler.tryAdoptEntry(entry('c', 1, 2))).toBe('beyond-window');
+    expect(reconciler.tryAdoptEntry(entry('c', 1, 3))).toBe('accepted');
     expect(stamps()).toEqual(['1:b', '3:c', '4:a', '5:a']);
   });
 });

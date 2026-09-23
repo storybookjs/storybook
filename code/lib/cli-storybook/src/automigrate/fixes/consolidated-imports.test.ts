@@ -140,7 +140,7 @@ describe('transformPackageJsonFiles', () => {
       },
     });
     const filePath = 'test/package.json';
-    const packageManager = { writePackageJson: vi.fn() } as unknown as JsPackageManager;
+    const packageManager = { writePackageJson: vi.fn() };
 
     vi.mocked(readFile).mockResolvedValueOnce(contents);
 

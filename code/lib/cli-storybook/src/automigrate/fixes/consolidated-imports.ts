@@ -65,7 +65,7 @@ function transformPackageJson(content: string): string | null {
 export const transformPackageJsonFiles = async (
   files: string[],
   dryRun: boolean,
-  packageManager?: JsPackageManager
+  packageManager?: Pick<JsPackageManager, 'writePackageJson'>
 ) => {
   const errors: Array<{ file: string; error: Error }> = [];
 

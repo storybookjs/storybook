@@ -52,7 +52,7 @@ describe('setupAddonInConfig', () => {
     expect(mockMain.appendNodeToArray).not.toHaveBeenCalled();
     expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
-      trailingComma: { arrays: true },
+      trailingComma: true,
       wrapColumn: 0,
     });
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
@@ -89,7 +89,7 @@ describe('setupAddonInConfig', () => {
     );
     expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
-      trailingComma: { arrays: true },
+      trailingComma: true,
       wrapColumn: 0,
     });
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
@@ -115,7 +115,7 @@ describe('setupAddonInConfig', () => {
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
-      trailingComma: { arrays: true },
+      trailingComma: true,
       wrapColumn: 0,
     });
   });
@@ -134,7 +134,7 @@ describe('setupAddonInConfig', () => {
     ).resolves.not.toThrow();
 
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
-      trailingComma: { arrays: true },
+      trailingComma: true,
       wrapColumn: 0,
     });
     expect(syncModule.syncStorybookAddons).toHaveBeenCalled();
@@ -152,7 +152,7 @@ describe('setupAddonInConfig', () => {
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
-      trailingComma: { arrays: true },
+      trailingComma: true,
       wrapColumn: 0,
     });
     // syncStorybookAddons will be called with undefined, which is fine

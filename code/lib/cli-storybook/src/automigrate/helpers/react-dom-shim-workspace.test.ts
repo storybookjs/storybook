@@ -315,7 +315,7 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
       diagnostics: expect.arrayContaining([
-        '/project/src/load.mjs: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/src/load.mjs: contains a react-dom-shim import, re-export, or module load',
       ]),
     });
   });
@@ -344,6 +344,8 @@ describe('analyzeReactDomShimWorkspace', () => {
       '/project/package.json': `${JSON.stringify({ dependencies: { react: '19.1.1', 'react-dom': '19.1.1', '@storybook/react-dom-shim': '10.5.10' }, imports: { '#shim': '@storybook/react-dom-shim/react-16' } })}\n`,
       '/project/src/load.mjs':
         "import { createRequire } from 'node:module';\nconst load = createRequire(import.meta.url);\nload('@storybook/' + 'react-dom-shim');\n",
+      '/project/.storybook/main.ts':
+        "export default { addons: ['@storybook/' + 'react-dom-shim/preset'] };\n",
       '/project/tsconfig.json': `${JSON.stringify({ compilerOptions: { paths: { '@storybook/react-dom-shim': ['@storybook/react-dom-shim/dist/react-16'] } } })}\n`,
     });
 
@@ -351,6 +353,7 @@ describe('analyzeReactDomShimWorkspace', () => {
       kind: 'manual',
       diagnostics: expect.arrayContaining([
         '/project/package.json: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/.storybook/main.ts: uses a non-literal Storybook presets or addons entry',
         '/project/src/load.mjs: contains a react-dom-shim import, re-export, or module load',
         '/project/tsconfig.json: contains a react-dom-shim reference that cannot be removed safely',
       ]),

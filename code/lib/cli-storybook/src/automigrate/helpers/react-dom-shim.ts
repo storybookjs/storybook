@@ -22,6 +22,19 @@ type CommentedNode = t.Node & { comments?: t.Comment[] | null };
 const isShimSource = (value: string) =>
   value === REACT_DOM_SHIM || value.startsWith(`${REACT_DOM_SHIM}/`);
 
+const staticString = (node: t.Node | undefined): string | undefined => {
+  if (t.isStringLiteral(node)) return node.value;
+  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked;
+  }
+  if (t.isBinaryExpression(node, { operator: '+' })) {
+    const left = staticString(node.left);
+    const right = staticString(node.right);
+    return left === undefined || right === undefined ? undefined : left + right;
+  }
+  return undefined;
+};
+
 const propertyName = (property: t.ObjectProperty): string | undefined => {
   if (property.computed) {
     return undefined;
@@ -198,11 +211,7 @@ const hasUnsupportedModuleUse = (program: t.Program): boolean => {
         return;
       }
       const [argument] = path.node.arguments;
-      const value = t.isStringLiteral(argument)
-        ? argument.value
-        : t.isTemplateLiteral(argument) && argument.expressions.length === 0
-          ? argument.quasis[0]?.value.cooked
-          : undefined;
+      const value = staticString(argument);
       unsupported ||= !value || isShimSource(value);
     },
     ImportExpression(path) {
@@ -228,7 +237,11 @@ const hasShimLiteral = (program: t.Program): boolean => {
       found ||= isShimSource(path.node.value);
     },
     TemplateLiteral(path) {
-      const value = path.node.expressions.length === 0 ? path.node.quasis[0]?.value.cooked : null;
+      const value = staticString(path.node);
+      found ||= Boolean(value && isShimSource(value));
+    },
+    BinaryExpression(path) {
+      const value = staticString(path.node);
       found ||= Boolean(value && isShimSource(value));
     },
   });

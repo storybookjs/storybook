@@ -10,6 +10,7 @@ const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte|mdx)$/;
+const DATA_FILE = /\.json$/;
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const DEPENDENCY_SECTIONS = [
   'dependencies',
@@ -136,8 +137,25 @@ const staticString = (
   if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
     return node.quasis[0]?.value.cooked ?? undefined;
   }
+  if (t.isBinaryExpression(node, { operator: '+' })) {
+    const left = staticString(node.left);
+    const right = staticString(node.right);
+    return left === undefined || right === undefined ? undefined : left + right;
+  }
   return undefined;
 };
+
+const hasShimReference = (value: JsonValue): boolean => {
+  if (typeof value === 'string') return value.includes(SHIM);
+  if (Array.isArray(value)) return value.some(hasShimReference);
+  return value !== null && typeof value === 'object' && Object.values(value).some(hasShimReference);
+};
+
+const hasManifestShimReference = (manifest: Manifest): boolean =>
+  Object.entries(manifest).some(
+    ([key, value]) =>
+      !DEPENDENCY_SECTIONS.some((section) => section === key) && hasShimReference(value)
+  );
 
 const moduleLoad = (
   callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee']
@@ -162,17 +180,22 @@ const moduleLoadDiagnostic = (
   arguments_: (t.Expression | t.SpreadElement | t.JSXNamespacedName | t.ArgumentPlaceholder)[],
   filePath: string
 ): string | undefined => {
-  const kind = moduleLoad(callee);
-  if (!kind) return undefined;
   const [argument] = arguments_;
   const value = staticString(argument);
   if (value && isShimSource(value)) {
     return `${filePath}: contains a react-dom-shim import, re-export, or module load`;
   }
+  const kind = moduleLoad(callee);
+  if (!kind) return undefined;
   return kind === 'unresolved' || !value
     ? `${filePath}: contains an unresolved module load`
     : undefined;
 };
+
+const dataDiagnostic = (source: string, filePath: string): string | undefined =>
+  source.includes(SHIM)
+    ? `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
+    : undefined;
 
 const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
   try {
@@ -208,6 +231,17 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
         if (value && isShimSource(value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
         else if (!value) diagnostic ??= `${filePath}: contains an unresolved module load`;
+      },
+      StringLiteral(path) {
+        if (!CONFIG_FILE.test(filePath) && isShimSource(path.node.value)) {
+          diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
+        }
+      },
+      TemplateLiteral(path) {
+        const value = staticString(path.node);
+        if (!CONFIG_FILE.test(filePath) && value && isShimSource(value)) {
+          diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
+        }
       },
       ObjectProperty(path) {
         if (CONFIG_FILE.test(filePath) && path.node.computed) {
@@ -332,7 +366,12 @@ export const analyzeReactDomShimWorkspace = async (
   const pnpmWorkspacePaths = files
     .filter((filePath) => basename(filePath) === 'pnpm-workspace.yaml')
     .sort();
-  const sources = files.filter((filePath) => SOURCE_FILE.test(filePath)).sort();
+  const sources = files
+    .filter(
+      (filePath) =>
+        SOURCE_FILE.test(filePath) || (DATA_FILE.test(filePath) && basename(filePath) !== MANIFEST)
+    )
+    .sort();
   const diagnostics: string[] = [];
   const manifests: Array<{ filePath: string; source: string; manifest: Manifest }> = [];
   const rootSource = await reads(join(workspaceRoot, MANIFEST));
@@ -371,6 +410,11 @@ export const analyzeReactDomShimWorkspace = async (
         diagnostics.push(`${filePath}: is outside the declared workspace packages`);
       }
     }
+    if (hasManifestShimReference(manifest)) {
+      diagnostics.push(
+        `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
+      );
+    }
     manifests.push({ filePath, source, manifest });
   }
 
@@ -389,7 +433,9 @@ export const analyzeReactDomShimWorkspace = async (
       diagnostics.push(`${filePath}: cannot read source during workspace scan`);
       continue;
     }
-    const sourceIssue = sourceDiagnostic(source, filePath);
+    const sourceIssue = DATA_FILE.test(filePath)
+      ? dataDiagnostic(source, filePath)
+      : sourceDiagnostic(source, filePath);
     if (sourceIssue) {
       diagnostics.push(sourceIssue);
       continue;

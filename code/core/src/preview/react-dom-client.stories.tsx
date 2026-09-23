@@ -1,4 +1,4 @@
-import React, { useLayoutEffect, useState } from 'react';
+import React, { useId, useLayoutEffect, useState } from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
@@ -28,23 +28,38 @@ type Story = StoryObj<typeof meta>;
 export const Lifecycle: Story = {
   play: async ({ canvas }) => {
     const element = document.createElement('div');
+    const layoutEffectElement = document.createElement('div');
     document.body.appendChild(element);
+    document.body.appendChild(layoutEffectElement);
 
     let instanceCount = 0;
     const Stateful = () => {
       const [instanceId] = useState(() => ++instanceCount);
-      return <div>instance {instanceId}</div>;
+      const id = useId();
+      return (
+        <div data-id={id} data-testid="stateful">
+          instance {instanceId}
+        </div>
+      );
     };
 
     await expect(canvas.getByText('committed')).toBeInTheDocument();
 
     try {
-      await renderElement(<LayoutEffectContent />, element);
-      await expect(element).toHaveTextContent('committed');
+      await renderElement(<LayoutEffectContent />, layoutEffectElement);
+      await expect(layoutEffectElement).toHaveTextContent('committed');
 
-      await renderElement(<Stateful />, element, { identifierPrefix: 'first' });
+      await renderElement(<Stateful />, element, { identifierPrefix: 'first-' });
+      const firstIdentifier = element
+        .querySelector('[data-testid="stateful"]')
+        ?.getAttribute('data-id');
+      await expect(firstIdentifier).toContain('first-');
+
       await renderElement(<Stateful />, element, { identifierPrefix: 'second' });
       await expect(element).toHaveTextContent('instance 1');
+      await expect(element.querySelector('[data-testid="stateful"]')?.getAttribute('data-id')).toBe(
+        firstIdentifier
+      );
 
       unmountElement(element);
       unmountElement(element);
@@ -52,7 +67,9 @@ export const Lifecycle: Story = {
       await expect(element).toHaveTextContent('instance 2');
     } finally {
       unmountElement(element);
+      unmountElement(layoutEffectElement);
       element.remove();
+      layoutEffectElement.remove();
     }
   },
 };

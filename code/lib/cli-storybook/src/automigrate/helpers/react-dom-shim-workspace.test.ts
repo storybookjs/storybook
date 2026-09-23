@@ -375,4 +375,31 @@ describe('analyzeReactDomShimWorkspace', () => {
       ]),
     });
   });
+
+  it('refuses residual static shim expressions in configs and source without partial edits', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/.storybook/main.ts':
+        "export default { addons: ['@storybook/react-dom-shim/preset'], resolve: { alias: { shim: '@storybook/' + 'react-dom-shim' } } };\n",
+      '/project/vite.config.ts':
+        "export default { resolve: { alias: { '@storybook/react-dom-shim': '@storybook/react-dom-shim/react-16', shim: `@storybook/react-dom-shim` } } };\n",
+      '/project/vitest.config.ts':
+        "export default { resolve: { alias: { shim: '@storybook/' + 'react-dom-shim' } } };\n",
+      '/project/src/shim.ts': "export const shim = '@storybook/' + 'react-dom-shim';\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/.storybook/main.ts: contains another react-dom-shim reference that cannot be removed safely',
+        '/project/vite.config.ts: contains another react-dom-shim reference that cannot be removed safely',
+        '/project/vitest.config.ts: uses react-dom-shim outside a supported config entry',
+        '/project/src/shim.ts: contains a react-dom-shim reference that cannot be removed safely',
+      ]),
+    });
+  });
 });

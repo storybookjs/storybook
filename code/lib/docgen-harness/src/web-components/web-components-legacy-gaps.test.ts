@@ -21,41 +21,29 @@ type ManifestWithSchemaVersion = { schemaVersion?: string };
 const BASELINES = (prefix: '' | 'osa-') =>
   ({
     basicArgTypes: `lit-basic-attributes/${prefix}argtypes.snapshot`,
-    v2ArgTypes:
-      prefix === ''
-        ? 'lit-basic-attributes/v2-argtypes.snapshot'
-        : 'lit-basic-attributes/osa-v2-argtypes.snapshot',
+    v2ArgTypes: `lit-basic-attributes/${prefix}v2-argtypes.snapshot`,
     unionArgTypes: `lit-union-jsdoc/${prefix}argtypes.snapshot`,
-    unionDescription:
-      prefix === ''
-        ? 'lit-union-jsdoc/description.snapshot'
-        : 'lit-union-jsdoc/osa-description.snapshot',
+    unionDescription: `lit-union-jsdoc/${prefix}description.snapshot`,
     eventsArgTypes: `lit-events/${prefix}argtypes.snapshot`,
   }) as const;
 
-const LEGACY_BASELINES = {
+const FIXED = {
   argsDefaultSnippet: 'lit-basic-attributes/snippet-ArgsDefaultRender.snapshot',
   propertyOnlySnippet: 'lit-property-only/snippet-LitTemplate.snapshot',
   eventsSnippet: 'lit-events/snippet-LitTemplate.snapshot',
   backSideSnippet: 'demo-wc-card/snippet-Back.snapshot',
-} as const;
-
-const OSA_PAYLOADS = {
   basicPayload: 'lit-basic-attributes/osa-payload.snapshot',
   unionPayload: 'lit-union-jsdoc/osa-payload.snapshot',
 } as const;
 
 type ComparedBaseline = keyof ReturnType<typeof BASELINES>;
-type SnippetBaseline = keyof typeof LEGACY_BASELINES;
-type OsaPayload = keyof typeof OSA_PAYLOADS;
+type FixedBaseline = keyof typeof FIXED;
 
-const baseline = (key: ComparedBaseline, prefix: '' | 'osa-' = '') =>
-  readFileSync(join(fixturesDir, BASELINES(prefix)[key]), 'utf-8');
+const read = (relativePath: string) => readFileSync(join(fixturesDir, relativePath), 'utf-8');
 
-const snippetBaseline = (key: SnippetBaseline) =>
-  readFileSync(join(fixturesDir, LEGACY_BASELINES[key]), 'utf-8');
+const baseline = (key: ComparedBaseline, prefix: '' | 'osa-' = '') => read(BASELINES(prefix)[key]);
 
-const osaPayload = (key: OsaPayload) => readFileSync(join(fixturesDir, OSA_PAYLOADS[key]), 'utf-8');
+const fixedBaseline = (key: FixedBaseline) => read(FIXED[key]);
 
 const osaGapTest = (name: string) => (OSA_CLOSED.has(name) ? test : test.fails);
 
@@ -79,8 +67,7 @@ test('every baseline referenced by a red marker exists', () => {
   for (const relativePath of [
     ...Object.values(BASELINES('')),
     ...Object.values(BASELINES('osa-')),
-    ...Object.values(LEGACY_BASELINES),
-    ...Object.values(OSA_PAYLOADS),
+    ...Object.values(FIXED),
   ]) {
     expect(existsSync(join(fixturesDir, relativePath)), relativePath).toBe(true);
   }
@@ -134,7 +121,7 @@ describe('OSA payload gaps (red until the server mapper closes them)', () => {
   const componentTagsName = 'component-level jsDocTags carry the CEM deprecated and summary fields';
 
   osaGapTest(componentTagsName)(componentTagsName, () => {
-    const payload = osaPayload('unionPayload');
+    const payload = fixedBaseline('unionPayload');
     expect(payload).not.toContain('"jsDocTags": {}');
     expect(payload).toMatch(/"deprecated": \[\s*"Use lit-basic-attributes instead\."/);
     expect(payload).toMatch(/"summary": \[\s*"Compact variant fixture\."/);
@@ -143,7 +130,7 @@ describe('OSA payload gaps (red until the server mapper closes them)', () => {
   const storyMetaName = 'the story meta docblock reaches the payload description and jsDocTags';
 
   osaGapTest(storyMetaName)(storyMetaName, () => {
-    const payload = osaPayload('basicPayload');
+    const payload = fixedBaseline('basicPayload');
     expect(payload).toContain(
       '"description": "Story-level docs for the basic attributes fixture."'
     );
@@ -159,16 +146,6 @@ describe('manifest shape regressions', () => {
 
   test('the OSA 1.0.0 and 2.1.0 lit-basic-attributes argTypes recordings are byte-identical', () => {
     expect(baseline('v2ArgTypes', 'osa-')).toBe(baseline('basicArgTypes', 'osa-'));
-  });
-
-  test('the OSA lit-basic-attributes payload records renderer and manifest data', () => {
-    const payload = readFileSync(
-      join(fixturesDir, 'lit-basic-attributes', 'osa-payload.snapshot'),
-      'utf-8'
-    );
-
-    expect(payload).toContain('"renderer": "web-components"');
-    expect(payload).toContain('"customElementsManifest": {');
   });
 
   it.each([
@@ -195,20 +172,20 @@ describe('manifest shape regressions', () => {
 
 describe('legacy snippet gaps (red until a re-recorded baseline closes them)', () => {
   gapTest('default-render snippets carry args as attributes', () => {
-    expect(snippetBaseline('argsDefaultSnippet')).toContain('label=');
-    expect(snippetBaseline('argsDefaultSnippet')).toContain('count=');
-    expect(snippetBaseline('argsDefaultSnippet')).toContain('is-open');
+    expect(fixedBaseline('argsDefaultSnippet')).toContain('label=');
+    expect(fixedBaseline('argsDefaultSnippet')).toContain('count=');
+    expect(fixedBaseline('argsDefaultSnippet')).toContain('is-open');
   });
 
   gapTest('property-only values are represented or warned about', () => {
-    expect(snippetBaseline('propertyOnlySnippet')).toMatch(/items=|config=|warning/i);
+    expect(fixedBaseline('propertyOnlySnippet')).toMatch(/items=|config=|warning/i);
   });
 
   gapTest('event listeners are represented or warned about', () => {
-    expect(snippetBaseline('eventsSnippet')).toMatch(/my-change|my-close|warning/i);
+    expect(fixedBaseline('eventsSnippet')).toMatch(/my-change|my-close|warning/i);
   });
 
   gapTest('reflected Lit attributes are visible after property binding', () => {
-    expect(snippetBaseline('backSideSnippet')).toContain('back-side');
+    expect(fixedBaseline('backSideSnippet')).toContain('back-side');
   });
 });

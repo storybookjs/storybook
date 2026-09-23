@@ -12,10 +12,7 @@ import { findFilesUp } from 'storybook/internal/common';
 import { experimental_docgenProvider, experimental_manifests } from './preset.ts';
 
 vi.mock('node:fs', { spy: true });
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  findFilesUp: vi.fn(),
-}));
+vi.mock('storybook/internal/common', { spy: true });
 
 beforeEach(() => {
   vol.reset();
@@ -26,8 +23,8 @@ beforeEach(() => {
 const optionsWith = (
   features: Record<string, unknown>,
   frameworkOptions: Record<string, unknown> = {}
-) =>
-  ({
+) => {
+  const options = {
     configDir: resolve('/workspace/.storybook'),
     presets: {
       apply: async (key: string) => {
@@ -40,7 +37,9 @@ const optionsWith = (
         return undefined;
       },
     },
-  }) as unknown as Options;
+  } as Options;
+  return options;
+};
 
 describe('experimental_docgenProvider', () => {
   it('contributes no descriptor when the docgen server flag is off', async () => {
@@ -68,28 +67,22 @@ describe('experimental_docgenProvider', () => {
 
 describe('experimental_manifests', () => {
   it.each([
-    ['docgen server flag off', { componentsManifest: true }, false],
-    ['components manifest flag off', { experimentalDocgenServer: true }, false],
-    ['both flags on', { experimentalDocgenServer: true, componentsManifest: true }, true],
-  ])('%s', async (_name, features, contributes) => {
+    ['docgen server flag off', { componentsManifest: true }, {}],
+    ['components manifest flag off', { experimentalDocgenServer: true }, {}],
+    [
+      'both flags on',
+      { experimentalDocgenServer: true, componentsManifest: true },
+      {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'custom-elements-manifest', durationMs: 0 },
+        },
+      },
+    ],
+  ])('%s', async (_name, features, expected) => {
     const result = await experimental_manifests({}, optionsWith(features) as never);
 
-    if (contributes) {
-      expect(result).toMatchInlineSnapshot(`
-        {
-          "components": {
-            "components": {},
-            "meta": {
-              "docgen": "custom-elements-manifest",
-              "durationMs": 0,
-            },
-            "v": 0,
-          },
-        }
-      `);
-    } else {
-      expect(result).toEqual({});
-    }
-    expect(Boolean((result as { components?: unknown }).components)).toBe(contributes);
+    expect(result).toEqual(expected);
   });
 });

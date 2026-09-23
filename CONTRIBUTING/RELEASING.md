@@ -11,6 +11,7 @@
   - [Patch Releases](#patch-releases)
   - [Non-patch Releases](#non-patch-releases)
   - [Publishing](#publishing)
+    - [Syncing the skills](#syncing-the-skills)
 - [👉 How to Release](#-how-to-release)
   - [1. Find the Prepared Pull Request](#1-find-the-prepared-pull-request)
   - [2. Freeze the Pull Request and run CI](#2-freeze-the-pull-request-and-run-ci)
@@ -226,8 +227,26 @@ When either a non-patch release or a patch release branch is merged into `latest
 5. Create a new GitHub Release, including a version tag in the release branch (`latest-release` or `next-release`).
 6. Merge the release branch into the core branch (`main` or `next`).
 7. (If this is a patch release, copy the `CHANGELOG.md` changes from `main` to `next`.)
+8. Copy the skills to [`storybookjs/skills`](https://github.com/storybookjs/skills) and tag them `v<version>` (see below).
 
 The publish workflow runs in the "release" GitHub environment, which has the npm token required to publish packages to the `@storybook` npm organization. For security reasons, this environment can only be accessed from the four "core" branches: `main`, `next`, `latest-release` and `next-release`.
+
+#### Syncing the skills
+
+From 11.0, the Storybook CLI installs the official skills from [`storybookjs/skills`](https://github.com/storybookjs/skills) at the tag that matches the running Storybook version. Only the publish workflow writes to that repository. Nobody edits it by hand: a skill change ships with the next Storybook release.
+
+Step 8 runs [`scripts/release/sync-skills.sh`](../scripts/release/sync-skills.sh), which:
+
+1. Clones `storybookjs/skills`: `next` for a prerelease, `main` for a release.
+2. Replaces its `skills/` directory with [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/) as committed on the release branch.
+3. Commits only when something changed.
+4. Tags the branch head `v<version>` and pushes branch and tag together.
+
+The tag is the version; there is no version file. A release without a skill change adds a tag and no commit.
+
+The push uses the `SKILLS_SYNC_TOKEN` secret in the "release" environment: a fine-grained personal access token created by an org admin, with resource owner `storybookjs`, repository access limited to `storybookjs/skills`, and the single permission **Contents: Read and write**. When it expires, create a new one with the same scope and replace the secret.
+
+The step runs last, after npm publish, the GitHub Release and the merges, so a failure turns the publish workflow red and triggers the usual Discord failure message without skipping any other release task. It runs on every run of the workflow, including re-runs and the "skip publish" dispatch, because syncing twice is harmless: an unchanged tree adds no commit and an existing tag stays where it is. So when it fails, fix the cause (usually the token) and re-run the workflow. Check the result with `git ls-remote --tags https://github.com/storybookjs/skills refs/tags/v<version>`, which should print the head of `next` (prerelease) or `main` (release).
 
 ## 👉 How to Release
 

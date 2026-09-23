@@ -25,10 +25,10 @@ export const experimental_docgenProvider = async (
     return existing;
   }
 
-  const frameworkOptions = await options.presets.apply<WebComponentsFrameworkOptions>(
-    'frameworkOptions',
-    {}
-  );
+  const frameworkOptions =
+    (await options.presets.apply<WebComponentsFrameworkOptions | null | undefined>(
+      'frameworkOptions'
+    )) ?? {};
   const descriptor: DocgenProviderDescriptor<WebComponentsDocgenOptions> = {
     moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
     options: {

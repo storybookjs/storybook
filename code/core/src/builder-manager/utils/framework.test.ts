@@ -18,7 +18,7 @@ const createOptions = (configType: Options['configType'], core: Record<string, a
     },
   }) as unknown as Options;
 
-it('forwards configured channel options and the dev server token to the manager', async () => {
+it('forwards the resolved channel options and the dev server token to the manager', async () => {
   const globals = await buildFrameworkGlobalsFromOptions(
     createOptions('DEVELOPMENT', {
       builder: '@storybook/builder-vite',
@@ -33,11 +33,11 @@ it('forwards configured channel options and the dev server token to the manager'
   });
 });
 
-it('forwards configured channel options to static builds, without the token', async () => {
+it('forwards the resolved channel options of a static build, which carry no dev server token', async () => {
   const globals = await buildFrameworkGlobalsFromOptions(
     createOptions('PRODUCTION', {
       builder: '@storybook/builder-vite',
-      channelOptions: { maxDepth: 999, wsToken: 'ws-token' },
+      channelOptions: { maxDepth: 999 },
     })
   );
 

@@ -147,7 +147,7 @@ describe('delegated command dispatch', () => {
     });
     channel.emitExternal(SERVICE_ENTRY, {
       serviceId: mutableRecordLookupServiceDef.id,
-      stamp: { runtimeId: 'peer', counter: 1 },
+      stamp: { seq: 1, runtimeId: 'peer', counter: 1 },
       command: 'assignRecordField',
       patch: [{ op: 'add', path: '/a', value: { k: 'v' } }],
     });
@@ -285,7 +285,7 @@ describe('delegated thin loads', () => {
     });
     channel.emitExternal(SERVICE_ENTRY, {
       serviceId: thinLoadServiceDef.id,
-      stamp: { runtimeId: 'peer', counter: 1 },
+      stamp: { seq: 1, runtimeId: 'peer', counter: 1 },
       command: 'extractDocgen',
       patch: [{ op: 'add', path: '/components/button', value: 'extracted-on-peer' }],
     });

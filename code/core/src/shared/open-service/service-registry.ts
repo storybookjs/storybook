@@ -24,7 +24,7 @@ import {
 } from '../../server-errors.ts';
 import { type ServiceChannel, generateRuntimeId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
-import { createSnapshotReconciler } from './service-sync.ts';
+import { createSnapshotReconciler, type LogWindow } from './service-sync.ts';
 import { connectServiceToChannel, connectUnknownServiceReporter } from './service-transport.ts';
 import type { StaticLoader } from './static-fetch.ts';
 import type {
@@ -270,6 +270,8 @@ export interface ServiceRegisterOptions {
    * omits this so static builds still run real loads to generate files.
    */
   staticLoader?: StaticLoader;
+  /** Bounds for the retained entry Log. Defaults keep an entry while younger than 15 s or among the newest 256. */
+  window?: Partial<LogWindow>;
 }
 
 /**
@@ -289,7 +291,7 @@ export function registerService<
 >(
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
-  { relay = false, staticLoader }: ServiceRegisterOptions = {}
+  { relay = false, staticLoader, window }: ServiceRegisterOptions = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
   assertUniqueOperationNames(definition as AnyServiceDefinition);
 
@@ -314,11 +316,13 @@ export function registerService<
     staticLoader,
   });
 
-  // Owns the per-service stamp, Vector, and adopt/advance logic. Adopting an entry or a bootstrap
-  // snapshot goes through `applyLocal`, not `setState`, so it never authors an entry of its own.
+  // Owns the per-service stamp, Vector, Clock, ordered Log, and adopt/advance logic. Adopting an
+  // entry or a bootstrap snapshot goes through `applyLocal`, not `setState`, so it never authors an
+  // entry of its own.
   const reconciler = createSnapshotReconciler({
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
     initialStamp: { version: 0, runtimeId: ownRuntimeId },
+    window,
   });
 
   const getSnapshot = (): Record<string, unknown> =>

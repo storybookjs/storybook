@@ -1646,8 +1646,16 @@ describe('service runtime', () => {
       await runtime.commands.outer();
 
       expect(author.mock.calls.map(([entry]) => entry)).toEqual([
-        { command: 'outer', ops: [{ op: 'add', path: '/slots/outer', value: 'o' }] },
-        { command: 'writeSlot', ops: [{ op: 'add', path: '/slots/inner', value: 'i' }] },
+        {
+          command: 'outer',
+          ops: [{ op: 'add', path: '/slots/outer', value: 'o' }],
+          inverse: [{ op: 'remove', path: '/slots/outer' }],
+        },
+        {
+          command: 'writeSlot',
+          ops: [{ op: 'add', path: '/slots/inner', value: 'i' }],
+          inverse: [{ op: 'remove', path: '/slots/inner' }],
+        },
       ]);
       expect(runtime.getStateSnapshot()).toEqual({ slots: { outer: 'o', inner: 'i' } });
     });

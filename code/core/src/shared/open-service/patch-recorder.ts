@@ -3,7 +3,8 @@
  *
  * A recipe is synchronous, so one call is one transaction: the recipe writes through a proxy over
  * the live deepsignal state, and when it returns the recorder hands the touched paths with their
- * final values to `author`. Zero ops means `author` is not called.
+ * final values to `author`, with the inverse ops that restore the pre-recipe values. Zero ops means
+ * `author` is not called.
  *
  * Output is [RFC 6902 JSON Patch](https://datatracker.ietf.org/doc/html/rfc6902) with
  * [RFC 6901 JSON Pointer](https://datatracker.ietf.org/doc/html/rfc6901) paths.
@@ -20,6 +21,9 @@ import { FORBIDDEN_KEYS, clonePlain, hasOwn } from './plain-object.ts';
 import { encodePointer, type JsonPatchOperation } from './service-channel.ts';
 
 export type RecordedOp = JsonPatchOperation;
+
+/** Forward ops of one recipe and the inverse that restores the state from before it. */
+export type RecordedPatch = { ops: RecordedOp[]; inverse: RecordedOp[] };
 
 type Touch = {
   segments: string[];
@@ -40,11 +44,9 @@ function isPrimitive(value: unknown): boolean {
   return value === null || typeof value !== 'object';
 }
 
-function firstTouchValue(existed: boolean, current: unknown): unknown {
-  if (!existed || !isPrimitive(current)) {
-    return undefined;
-  }
-  return current;
+function ownValue(inner: object, name: string): Pick<Touch, 'existed' | 'firstValue'> {
+  const existed = hasOwn(inner, name);
+  return { existed, firstValue: existed ? clonePlain(peekProp(inner, name)) : undefined };
 }
 
 function readPath(root: object, segments: readonly string[]): { found: boolean; value: unknown } {
@@ -75,7 +77,7 @@ function readPath(root: object, segments: readonly string[]): { found: boolean; 
 export function recordPatch<T extends object>(
   state: T,
   mutate: (state: T) => void,
-  author: (ops: RecordedOp[]) => void
+  author: (recorded: RecordedPatch) => void
 ): void {
   const root: object = state;
   const touches = new Map<string, Touch>();
@@ -85,21 +87,61 @@ export function recordPatch<T extends object>(
   const targetByWrapper = new WeakMap<object, object>();
   const revokes: (() => void)[] = [];
 
-  const note = (touch: Touch): void => {
-    const pointer = encodePointer(touch.segments);
+  // A touch under an already-touched ancestor is subsumed, so the ancestor's first value has to be
+  // the whole pre-recipe subtree. Rebuild it from the live value by undoing descendant touches
+  // newest first, instead of cloning every ancestor of every write up front.
+  const preRecipeValue = (
+    segments: readonly string[]
+  ): { existed: boolean; firstValue: unknown } => {
+    const { found, value } = readPath(root, segments);
+    if (!found) {
+      return { existed: false, firstValue: undefined };
+    }
+    const snapshot = clonePlain(value);
+    const prefix = encodePointer(segments);
+    for (const pointer of order.toReversed()) {
+      if (!pointer.startsWith(`${prefix}/`)) {
+        continue;
+      }
+      const descendant = touches.get(pointer)!;
+      let parent: unknown = snapshot;
+      const relative = descendant.segments.slice(segments.length);
+      for (const segment of relative.slice(0, -1)) {
+        parent =
+          parent !== null && typeof parent === 'object'
+            ? (parent as Record<string, unknown>)[segment]
+            : undefined;
+      }
+      if (parent === null || typeof parent !== 'object') {
+        continue;
+      }
+      const key = relative[relative.length - 1];
+      if (descendant.existed) {
+        (parent as Record<string, unknown>)[key] = clonePlain(descendant.firstValue);
+      } else {
+        delete (parent as Record<string, unknown>)[key];
+      }
+    }
+    return { existed: true, firstValue: snapshot };
+  };
+
+  // `capture` runs only on a path's first touch, so repeated writes to one key clone nothing.
+  const note = (segments: string[], capture: () => Pick<Touch, 'existed' | 'firstValue'>): void => {
+    const pointer = encodePointer(segments);
     if (touches.has(pointer)) {
       return;
     }
-    touches.set(pointer, touch);
+    const prefix = `${pointer}/`;
+    const subsumesEarlierTouch = order.some((recorded) => recorded.startsWith(prefix));
+    touches.set(pointer, {
+      segments,
+      ...(subsumesEarlierTouch ? preRecipeValue(segments) : capture()),
+    });
     order.push(pointer);
   };
 
   const noteArray = (arrayRoot: ArrayRoot): void => {
-    note({
-      segments: arrayRoot.path,
-      firstValue: undefined,
-      existed: true,
-    });
+    note(arrayRoot.path, () => ({ existed: true, firstValue: clonePlain(arrayRoot.target) }));
   };
 
   // Assigned objects are copied, drafts included, so state never holds two paths to one object
@@ -168,11 +210,8 @@ export function recordPatch<T extends object>(
         if (name.startsWith('$')) {
           // deepsignal swaps the field's signal, which changes the plain key's value.
           const plain = name.slice(1);
-          const existed = hasOwn(inner, plain);
-          const firstValue = firstTouchValue(existed, existed ? peekProp(inner, plain) : undefined);
-          const done = Reflect.set(inner, key, value);
-          note({ segments: path.concat(plain), firstValue, existed });
-          return done;
+          note(path.concat(plain), () => ownValue(inner, plain));
+          return Reflect.set(inner, key, value);
         }
 
         if (isUnchangedAssignment(inner, name, value)) {
@@ -184,18 +223,16 @@ export function recordPatch<T extends object>(
           return Reflect.set(inner, name, storedValue(value));
         }
 
-        const existed = hasOwn(inner, name);
-        const firstValue = firstTouchValue(existed, existed ? peekProp(inner, name) : undefined);
-
+        const segments = path.concat(name);
         if (value === undefined) {
-          if (existed) {
-            note({ segments: path.concat(name), firstValue, existed });
+          if (hasOwn(inner, name)) {
+            note(segments, () => ownValue(inner, name));
             return Reflect.deleteProperty(inner, name);
           }
           return true;
         }
 
-        note({ segments: path.concat(name), firstValue, existed });
+        note(segments, () => ownValue(inner, name));
         return Reflect.set(inner, name, storedValue(value));
       },
 
@@ -221,11 +258,7 @@ export function recordPatch<T extends object>(
           return Reflect.deleteProperty(inner, name);
         }
 
-        note({
-          segments: path.concat(name),
-          firstValue: firstTouchValue(true, peekProp(inner, name)),
-          existed: true,
-        });
+        note(path.concat(name), () => ownValue(inner, name));
         return Reflect.deleteProperty(inner, name);
       },
     });
@@ -236,9 +269,10 @@ export function recordPatch<T extends object>(
     return proxy as T;
   };
 
-  const flush = (): RecordedOp[] => {
+  const flush = (): RecordedPatch => {
     const touched = new Set(order);
     const ops: RecordedOp[] = [];
+    const inverse: RecordedOp[] = [];
 
     for (const pointer of order) {
       const touch = touches.get(pointer);
@@ -261,6 +295,7 @@ export function recordPatch<T extends object>(
       if (!found) {
         if (touch.existed) {
           ops.push({ op: 'remove', path: pointer });
+          inverse.push({ op: 'add', path: pointer, value: touch.firstValue });
         }
         continue;
       }
@@ -273,9 +308,14 @@ export function recordPatch<T extends object>(
         path: pointer,
         value: clonePlain(value),
       });
+      inverse.push(
+        touch.existed
+          ? { op: 'replace', path: pointer, value: touch.firstValue }
+          : { op: 'remove', path: pointer }
+      );
     }
 
-    return ops;
+    return { ops, inverse };
   };
 
   // Authored inside the batch, so a subscriber that reacts to this write never sees state that is
@@ -295,9 +335,9 @@ export function recordPatch<T extends object>(
         for (const revoke of revokes) {
           revoke();
         }
-        const ops = flush();
-        if (ops.length > 0) {
-          author(ops);
+        const recorded = flush();
+        if (recorded.ops.length > 0) {
+          author(recorded);
         }
       }
     });

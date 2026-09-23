@@ -25,10 +25,16 @@ export const voidOutputSchema = v.void();
 export function peerEntry(
   serviceId: string,
   patch: EntryPayload['patch'],
-  stamp: EntryPayload['stamp'],
+  stamp: Omit<EntryPayload['stamp'], 'seq'> & { seq?: number },
   extras: Record<string, unknown> = {}
 ) {
-  return { serviceId, stamp, command: 'assignRecordField', patch, ...extras };
+  return {
+    serviceId,
+    stamp: { seq: stamp.seq ?? stamp.counter, runtimeId: stamp.runtimeId, counter: stamp.counter },
+    command: 'assignRecordField',
+    patch,
+    ...extras,
+  };
 }
 
 /** Every `services:entry` payload the channel spy saw, in emit order. */

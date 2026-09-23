@@ -143,7 +143,7 @@ describe('channel: entry apply', () => {
     });
   });
 
-  it('applies same-path writes in arrival order', async () => {
+  it('applies same-path writes in canonical stamp order, not arrival order', async () => {
     const channel = createMockChannel();
     installChannel(channel);
 
@@ -153,16 +153,16 @@ describe('channel: entry apply', () => {
       SERVICE_ENTRY,
       peerEntry(
         mutableRecordLookupServiceDef.id,
-        [{ op: 'add', path: '/item', value: { color: 'red' } }],
-        { runtimeId: 'aaa', counter: 1 }
+        [{ op: 'add', path: '/item', value: { color: 'blue' } }],
+        { runtimeId: 'zzz', counter: 1, seq: 1 }
       )
     );
     channel.emitExternal(
       SERVICE_ENTRY,
       peerEntry(
         mutableRecordLookupServiceDef.id,
-        [{ op: 'replace', path: '/item', value: { color: 'blue' } }],
-        { runtimeId: 'zzz', counter: 1 }
+        [{ op: 'replace', path: '/item', value: { color: 'red' } }],
+        { runtimeId: 'aaa', counter: 1, seq: 1 }
       )
     );
 
@@ -276,7 +276,7 @@ describe('channel: untrusted payloads', () => {
     expect(() =>
       channel.emitExternal(SERVICE_ENTRY, {
         serviceId: mutableRecordLookupServiceDef.id,
-        stamp: { runtimeId: 'attacker', counter: 1 },
+        stamp: { seq: 1, runtimeId: 'attacker', counter: 1 },
         command: 'assignRecordField',
         patch: [
           { op: 'add', path: '/good', value: { k: 'v' } },

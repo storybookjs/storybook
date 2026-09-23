@@ -2,16 +2,17 @@ import { effect, signal } from '@preact/signals-core';
 import { deepSignal } from 'deepsignal/core';
 import { describe, expect, it, vi } from 'vitest';
 
+import { applyJsonPatch } from './json-patch.ts';
 import { OpenServiceAsyncRecipeError, OpenServiceCyclicStateError } from '../../server-errors.ts';
-import { type RecordedOp, recordPatch } from './patch-recorder.ts';
+import { type RecordedOp, type RecordedPatch, recordPatch } from './patch-recorder.ts';
 
 function record<T extends object>(initial: T, mutate: (state: T) => void) {
   const state = deepSignal(initial) as T;
-  let ops: RecordedOp[] = [];
-  recordPatch(state, mutate, (recorded) => {
-    ops = recorded;
+  let recorded: RecordedPatch = { ops: [], inverse: [] };
+  recordPatch(state, mutate, (patch) => {
+    recorded = patch;
   });
-  return { ops, state, raw: initial };
+  return { ops: recorded.ops, inverse: recorded.inverse, state, raw: initial };
 }
 
 describe('patch recorder', () => {
@@ -381,7 +382,10 @@ describe('patch recorder', () => {
       )
     ).toThrow(OpenServiceAsyncRecipeError);
 
-    expect(author).toHaveBeenCalledWith([{ op: 'replace', path: '/a', value: 1 }]);
+    expect(author).toHaveBeenCalledWith({
+      ops: [{ op: 'replace', path: '/a', value: 1 }],
+      inverse: [{ op: 'replace', path: '/a', value: 0 }],
+    });
   });
 
   it('authors the entry before a subscriber reacts, so reaction entries come after it', () => {
@@ -408,7 +412,7 @@ describe('patch recorder', () => {
     );
     dispose();
 
-    expect(author.mock.calls.map(([ops]) => ops)).toEqual([
+    expect(author.mock.calls.map(([recorded]) => recorded.ops)).toEqual([
       [{ op: 'replace', path: '/obj', value: {} }],
       [{ op: 'add', path: '/obj/x', value: 1 }],
     ]);
@@ -542,7 +546,7 @@ describe('patch recorder', () => {
         s.components.Button.props = 4;
       },
       (recorded) => {
-        ops = recorded;
+        ops = recorded.ops;
       }
     );
 
@@ -566,7 +570,58 @@ describe('patch recorder', () => {
       )
     ).toThrow('boom');
 
-    expect(author).toHaveBeenCalledWith([{ op: 'replace', path: '/a', value: 1 }]);
+    expect(author).toHaveBeenCalledWith({
+      ops: [{ op: 'replace', path: '/a', value: 1 }],
+      inverse: [{ op: 'replace', path: '/a', value: 0 }],
+    });
     expect(state.a).toBe(1);
+  });
+
+  it('computes inverses from first-touch values with children before parents', () => {
+    const { ops, inverse } = record(
+      { n: 0, child: { x: 1 } } as { n: number; child?: { x: number } },
+      (s) => {
+        s.n = 1;
+        delete s.child;
+      }
+    );
+
+    expect({ ops, inverse }).toEqual({
+      ops: [
+        { op: 'replace', path: '/n', value: 1 },
+        { op: 'remove', path: '/child' },
+      ],
+      inverse: [
+        { op: 'replace', path: '/n', value: 0 },
+        { op: 'add', path: '/child', value: { x: 1 } },
+      ],
+    });
+  });
+
+  it('restores the pre-command ancestor subtree when a later ancestor delete subsumes a child delete', () => {
+    const recorded = record({ a: { b: { x: 0 } } } as { a?: { b?: { x: number } } }, (s) => {
+      delete s.a!.b;
+      delete s.a;
+    });
+    expect({ ops: recorded.ops, inverse: recorded.inverse }).toEqual({
+      ops: [{ op: 'remove', path: '/a' }],
+      inverse: [{ op: 'add', path: '/a', value: { b: { x: 0 } } }],
+    });
+
+    const restored: Record<string, unknown> = {};
+    expect(applyJsonPatch(restored, recorded.inverse, () => undefined).ok).toBe(true);
+    expect(restored).toEqual({ a: { b: { x: 0 } } });
+  });
+
+  it('rebuilds an ancestor by undoing descendant touches newest first', () => {
+    const recorded = record({ a: { b: { c: 0 } } } as { a?: { b?: { c: number } } }, (s) => {
+      s.a!.b = { c: 1 };
+      s.a!.b!.c = 2;
+      delete s.a;
+    });
+    expect({ ops: recorded.ops, inverse: recorded.inverse }).toEqual({
+      ops: [{ op: 'remove', path: '/a' }],
+      inverse: [{ op: 'add', path: '/a', value: { b: { c: 0 } } }],
+    });
   });
 });

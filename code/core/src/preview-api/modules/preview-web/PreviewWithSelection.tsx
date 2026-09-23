@@ -36,6 +36,7 @@ import type {
 
 import invariant from 'tiny-invariant';
 
+import { getErrorMetadata } from '../../../classified-error.ts';
 import { Tag } from '../../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../../shared/utils/story-index-filters.ts';
 import type { StorySpecifier } from '../store/StoryIndexStore.ts';
@@ -547,7 +548,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   renderException(storyId: StoryId, error: Error) {
     const { name = 'Error', message = String(error), stack } = error;
     const renderId = this.currentRender?.renderId;
-    this.channel.emit(STORY_THREW_EXCEPTION, { name, message, stack });
+    // Forward StorybookError structure (category, errorCode, docsUrl) alongside the folded
+    // name/message/stack, so consumers can classify without re-deriving it.
+    this.channel.emit(STORY_THREW_EXCEPTION, { name, message, stack, ...getErrorMetadata(error) });
     this.channel.emit(STORY_RENDER_PHASE_CHANGED, { newPhase: 'errored', renderId, storyId });
 
     this.view.showErrorDisplay(error);

@@ -250,12 +250,15 @@ describe('docgen-server migration', () => {
     [{ framework: '@storybook/react-vite', stories: [] }, 'react'],
     [{ framework: '@storybook/vue3-vite', stories: [] }, 'vue'],
     [{ framework: '@storybook/svelte-vite', stories: [] }, 'other'],
-  ] as const)('selects the %s docgen migration', async (mainConfig, framework) => {
-    await expect(docgenServer.check({ ...checkOptions, mainConfig })).resolves.toEqual({
-      mainConfigPath,
-      framework,
-    });
-  });
+  ] satisfies [CheckOptions['mainConfig'], string][])(
+    'selects the %s docgen migration',
+    async (mainConfig, framework) => {
+      await expect(docgenServer.check({ ...checkOptions, mainConfig })).resolves.toEqual({
+        mainConfigPath,
+        framework,
+      });
+    }
+  );
 
   it('does not migrate a requested SB10 project', async () => {
     expect(

@@ -210,6 +210,20 @@ export default config;
     `);
   });
 
+  it.each([
+    "const shim = import('@storybook/' + 'react-dom-shim');",
+    "const shim = require('@storybook/' + 'react-dom-shim');",
+    "const name = 'react-dom-shim'; const shim = import(`@storybook/${name}`);",
+  ])('refuses computed module loads before removing a preset: %s', (moduleLoad) => {
+    const source = `${moduleLoad}\nexport default { addons: ['@storybook/react-dom-shim/preset'] };`;
+    const result = analyzeReactDomShimConfig(source, '.storybook/main.ts');
+
+    expect(result).toMatchObject({ kind: 'manual', source });
+    if (result.kind === 'manual') {
+      expect(result.diagnostic).toContain('.storybook/main.ts');
+    }
+  });
+
   it('is idempotent and preserves unrelated source', () => {
     const source = `export default {
   addons: ['@storybook/react-dom-shim/preset', '@storybook/addon-a11y'],

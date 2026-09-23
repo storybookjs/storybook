@@ -300,4 +300,42 @@ describe('analyzeReactDomShimWorkspace', () => {
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'none' });
   });
+
+  it('refuses shim references loaded through createRequire aliases', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/src/load.mjs':
+        "import { createRequire } from 'node:module';\nconst load = createRequire(import.meta.url);\nload('@storybook/react-dom-shim');\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/src/load.mjs: contains a react-dom-shim reference that cannot be removed safely',
+      ]),
+    });
+  });
+
+  it('refuses shim aliases in unsupported webpack configuration', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/webpack.config.js':
+        "module.exports = { resolve: { alias: { '@storybook/react-dom-shim': '@storybook/react-dom-shim/dist/react-16' } } };\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/webpack.config.js: contains a react-dom-shim reference that cannot be removed safely',
+      ]),
+    });
+  });
 });

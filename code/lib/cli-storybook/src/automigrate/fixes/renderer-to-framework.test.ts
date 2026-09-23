@@ -5,12 +5,18 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { removeRendererInPackageJson, transformSourceFiles } from './renderer-to-framework.ts';
+import {
+  packageUsesRenderer,
+  removeRendererInPackageJson,
+  transformSourceFiles,
+} from './renderer-to-framework.ts';
 import { rendererToFramework } from './renderer-to-framework.ts';
+
+const { mockGlobby } = vi.hoisted(() => ({ mockGlobby: vi.fn() }));
 
 vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
-  globby: vi.fn(),
+  globby: mockGlobby,
 }));
 vi.mock('p-limit', () => ({
   default: vi.fn(() => vi.fn((fn) => fn())),
@@ -142,6 +148,41 @@ describe('removeRendererInPackageJson', () => {
     `);
   });
 
+  it('removes the renderer on the first run and is unchanged on the second', async () => {
+    let contents = JSON.stringify(mockPackageJson);
+    const packageManager = {
+      writePackageJson: vi.fn((packageJson) => {
+        contents = JSON.stringify(packageJson);
+      }),
+    };
+
+    vi.mocked(readFile).mockImplementation(() => Promise.resolve(contents));
+
+    await expect(
+      removeRendererInPackageJson('test/package.json', '@storybook/react', false, packageManager)
+    ).resolves.toBe(true);
+    await expect(
+      removeRendererInPackageJson('test/package.json', '@storybook/react', false, packageManager)
+    ).resolves.toBe(false);
+
+    expect(packageManager.writePackageJson).toHaveBeenCalledTimes(1);
+    expect(packageManager.writePackageJson).toHaveBeenCalledWith(
+      {
+        dependencies: {
+          '@storybook/react-vite': '^9.0.0',
+          react: '^18.0.0',
+        },
+        devDependencies: {
+          '@storybook/addon-essentials': '^9.0.0',
+          '@storybook/manager-api': '^9.0.0',
+          typescript: '^5.0.0',
+        },
+      },
+      'test'
+    );
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it('should remove renderer packages from devDependencies', async () => {
     const contents = JSON.stringify({
       ...mockPackageJson,
@@ -191,6 +232,21 @@ describe('removeRendererInPackageJson', () => {
   });
 });
 
+describe('packageUsesRenderer', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('keeps a renderer used through a subpath import', async () => {
+    mockGlobby.mockResolvedValue(['test/preview.ts']);
+    vi.mocked(readFile).mockResolvedValue(
+      `import type { Preview } from '@storybook/react/preview';`
+    );
+
+    await expect(packageUsesRenderer('test/package.json', '@storybook/react')).resolves.toBe(true);
+  });
+});
+
 describe('check', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -209,9 +265,13 @@ describe('check', () => {
     const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toEqual({
-      frameworks: ['@storybook/react-vite'],
-      renderers: ['@storybook/react'],
-      packageJsonFiles: ['package.json'],
+      migrations: [
+        {
+          framework: '@storybook/react-vite',
+          renderer: '@storybook/react',
+          packageJsonFiles: ['package.json'],
+        },
+      ],
     });
   });
 
@@ -233,9 +293,49 @@ describe('check', () => {
     const result = await rendererToFramework.check({ packageManager: mockPackageManager } as any);
 
     expect(result).toEqual({
-      frameworks: ['@storybook/react-vite', '@storybook/vue3-vite'],
-      renderers: ['@storybook/react', '@storybook/vue3'],
-      packageJsonFiles: ['package.json', 'packages/app/package.json'],
+      migrations: [
+        {
+          framework: '@storybook/react-vite',
+          renderer: '@storybook/react',
+          packageJsonFiles: ['package.json'],
+        },
+        {
+          framework: '@storybook/vue3-vite',
+          renderer: '@storybook/vue3',
+          packageJsonFiles: ['packages/app/package.json'],
+        },
+      ],
+    });
+  });
+
+  it('keeps a renderer in a package without its replacement framework', async () => {
+    const packageJsonFiles = ['package.json', 'packages/shared/package.json'];
+    const mockPackageManager = {
+      packageJsonPaths: packageJsonFiles,
+    };
+
+    vi.mocked(readFile)
+      .mockResolvedValueOnce(JSON.stringify(mockPackageJson))
+      .mockResolvedValueOnce(
+        JSON.stringify({
+          dependencies: {
+            '@storybook/react': '^9.0.0',
+          },
+        })
+      );
+
+    const options = { packageManager: mockPackageManager } as Parameters<
+      typeof rendererToFramework.check
+    >[0];
+
+    await expect(rendererToFramework.check(options)).resolves.toEqual({
+      migrations: [
+        {
+          framework: '@storybook/react-vite',
+          renderer: '@storybook/react',
+          packageJsonFiles: ['package.json'],
+        },
+      ],
     });
   });
 

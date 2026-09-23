@@ -100,6 +100,7 @@ describe('analyzeReactDomShimWorkspace', () => {
     expect(await analyzeReactDomShimWorkspace('/project/packages/app')).toMatchInlineSnapshot(`
       {
         "diagnostics": [
+          "/project/packages/app/.storybook/main.ts: react and react-dom must both support React 18 or later",
           "/project/packages/app/nested/package.json: nested workspace declarations are not supported",
           "/project/packages/app/package.json: react and react-dom must both support React 18 or later",
         ],
@@ -136,8 +137,7 @@ describe('analyzeReactDomShimWorkspace', () => {
         'react-dom': '19.1.1',
         '@storybook/react-dom-shim': '10.5.10',
       }),
-      '/project/src/require.cjs':
-        "require.resolve('@storybook/react-dom-shim/dist/react-16');\n",
+      '/project/src/require.cjs': "require.resolve('@storybook/react-dom-shim/dist/react-16');\n",
       '/project/dist/consumer.mjs':
         "export { renderElement } from '@storybook/react-dom-shim/dist/react-16';\n",
     });
@@ -165,6 +165,20 @@ describe('analyzeReactDomShimWorkspace', () => {
     });
   });
 
+  it('refuses invalid child React ranges with file-specific guidance', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': `${JSON.stringify({ private: true, workspaces: ['packages/*'], dependencies: { react: '19.1.1', 'react-dom': '19.1.1' } })}\n`,
+      '/project/packages/app/package.json': `${JSON.stringify({ dependencies: { react: 'not-a-range', 'react-dom': '^19.0.0', '@storybook/react-dom-shim': '10.5.10' } })}\n`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project/packages/app')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: [
+        '/project/packages/app/package.json: react and react-dom must both support React 18 or later',
+      ],
+    });
+  });
+
   it('discovers pnpm workspace siblings and MDX consumers', async () => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({ react: '19.1.1', 'react-dom': '19.1.1' }),
@@ -181,6 +195,32 @@ describe('analyzeReactDomShimWorkspace', () => {
         '/project/packages/docs/guide.mdx: contains a react-dom-shim import, re-export, or module load',
       ],
     });
+  });
+
+  it('refuses unsupported pnpm workspace declarations', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ react: '19.1.1', 'react-dom': '19.1.1' }),
+      '/project/pnpm-workspace.yaml': 'packages: packages/*\n',
+      '/project/packages/app/package.json': packageJson({ '@storybook/react-dom-shim': '10.5.10' }),
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project/packages/app')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: ['/project/packages/app: no supported package.json workspace root was found'],
+    });
+  });
+
+  it('matches workspace double-star patterns without treating nested packages as external', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': `${JSON.stringify({ private: true, workspaces: ['packages/**'], dependencies: { react: '19.1.1', 'react-dom': '19.1.1' } })}\n`,
+      '/project/packages/nested/app/package.json': packageJson({
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+    });
+
+    await expect(
+      analyzeReactDomShimWorkspace('/project/packages/nested/app')
+    ).resolves.toMatchObject({ kind: 'safe' });
   });
 
   it('returns a config-only safe plan when React support is established', async () => {

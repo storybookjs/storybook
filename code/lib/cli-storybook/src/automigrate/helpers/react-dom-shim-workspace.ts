@@ -1,5 +1,5 @@
 import { readdir, readFile } from 'node:fs/promises';
-import { dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import { minVersion } from 'semver';
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
@@ -8,8 +8,8 @@ import { analyzeReactDomShimConfig } from './react-dom-shim.ts';
 
 const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
-const SKIPPED_DIRECTORIES = new Set(['.git', 'dist', 'node_modules', 'storybook-static']);
-const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte)$/;
+const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
+const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte|mdx)$/;
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const DEPENDENCY_SECTIONS = [
   'dependencies',
@@ -28,6 +28,7 @@ type Manifest = {
 };
 
 type Edit = { filePath: string; original: string; replacement: string };
+type WorkspaceRoot = { directory: string; patterns: string[] };
 
 export type ReactDomShimWorkspaceAnalysis =
   | { kind: 'none'; workspaceRoot: string }
@@ -77,44 +78,80 @@ const workspacePatterns = (manifest: Manifest): string[] | undefined => {
 const hasShim = (manifest: Manifest): boolean =>
   DEPENDENCY_SECTIONS.some((section) => Boolean(manifest[section]?.[SHIM]));
 
+const isShimSource = (value: string) => value === SHIM || value.startsWith(`${SHIM}/`);
+
 const matchesPattern = (path: string, pattern: string): boolean => {
-  const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replaceAll('**', '.*')
-    .replaceAll('*', '[^/]*');
-  return new RegExp(`^${escaped}$`).test(path);
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('**', '\\0');
+  const glob = escaped.replaceAll('*', '[^/]*').replaceAll('\\0', '.*');
+  return new RegExp(`^${glob}$`).test(path);
 };
+
+const pnpmWorkspacePatterns = (source: string): string[] | undefined => {
+  const lines = source.split('\n');
+  const packagesIndex = lines.findIndex((line) => /^packages:\s*(?:#.*)?$/.test(line));
+  if (packagesIndex === -1) return undefined;
+
+  const patterns: string[] = [];
+  for (const line of lines.slice(packagesIndex + 1)) {
+    if (!line.trim() || /^\s*#/.test(line)) continue;
+    const match = /^\s+-\s+(?:['"]([^'"]+)['"]|([^\s#]+))\s*(?:#.*)?$/.exec(line);
+    if (match) {
+      patterns.push(match[1] ?? match[2]!);
+      continue;
+    }
+    if (/^\S/.test(line)) break;
+    return undefined;
+  }
+  return patterns.length ? patterns : undefined;
+};
+
+const staticString = (
+  node: t.Node | t.Expression | t.SpreadElement | undefined
+): string | undefined => {
+  if (t.isStringLiteral(node)) return node.value;
+  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked ?? undefined;
+  }
+  return undefined;
+};
+
+const isModuleLoad = (callee: t.CallExpression['callee']): boolean =>
+  t.isImport(callee) ||
+  t.isIdentifier(callee, { name: 'require' }) ||
+  (t.isMemberExpression(callee) &&
+    !callee.computed &&
+    t.isIdentifier(callee.object, { name: 'require' }) &&
+    t.isIdentifier(callee.property, { name: 'resolve' }));
 
 const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
   try {
     let diagnostic: string | undefined;
     traverse(babelParse(source), {
       ImportDeclaration(path) {
-        if (path.node.source.value === SHIM)
+        if (isShimSource(path.node.source.value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
       },
       ExportNamedDeclaration(path) {
-        if (path.node.source?.value === SHIM)
+        if (path.node.source && isShimSource(path.node.source.value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
       },
       ExportAllDeclaration(path) {
-        if (path.node.source.value === SHIM)
+        if (isShimSource(path.node.source.value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
       },
       CallExpression(path) {
-        if (!t.isImport(path.node.callee) && !t.isIdentifier(path.node.callee, { name: 'require' }))
-          return;
+        if (!isModuleLoad(path.node.callee)) return;
         const [argument] = path.node.arguments;
-        if (t.isStringLiteral(argument) && argument.value === SHIM)
+        const value = staticString(argument);
+        if (value && isShimSource(value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-        else if (!t.isStringLiteral(argument))
-          diagnostic ??= `${filePath}: contains an unresolved module load`;
+        else if (!value) diagnostic ??= `${filePath}: contains an unresolved module load`;
       },
       ImportExpression(path) {
-        if (t.isStringLiteral(path.node.source) && path.node.source.value === SHIM)
+        const value = staticString(path.node.source);
+        if (value && isShimSource(value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-        else if (!t.isStringLiteral(path.node.source))
-          diagnostic ??= `${filePath}: contains an unresolved module load`;
+        else if (!value) diagnostic ??= `${filePath}: contains an unresolved module load`;
       },
       ObjectProperty(path) {
         if (CONFIG_FILE.test(filePath) && path.node.computed) {
@@ -153,51 +190,53 @@ const filePaths = async (directory: string): Promise<string[] | undefined> => {
   return files;
 };
 
-const enclosingManifest = async (projectDirectory: string): Promise<string | undefined> => {
+const supportedWorkspaceRoot = async (
+  projectDirectory: string
+): Promise<WorkspaceRoot | undefined> => {
   let directory = resolve(projectDirectory);
+  let fallback: string | undefined;
   while (true) {
-    const candidate = join(directory, MANIFEST);
-    if (await reads(candidate)) return candidate;
+    const manifestPath = join(directory, MANIFEST);
+    const manifestSource = await reads(manifestPath);
+    const manifest = manifestSource && parseManifest(manifestSource);
+    if (manifestSource !== undefined && !manifest) return undefined;
+    if (manifest) {
+      fallback ??= directory;
+      const patterns = workspacePatterns(manifest);
+      if (patterns === undefined) return undefined;
+      if (manifest.workspaces) return { directory, patterns };
+    }
+
+    const pnpmSource = await reads(join(directory, 'pnpm-workspace.yaml'));
+    if (pnpmSource !== undefined && !pnpmWorkspacePatterns(pnpmSource)) return undefined;
+    const pnpmPatterns = pnpmSource && pnpmWorkspacePatterns(pnpmSource);
+    if (pnpmPatterns) return { directory, patterns: pnpmPatterns };
+
     const parent = dirname(directory);
-    if (parent === directory) return undefined;
+    if (parent === directory) return fallback ? { directory: fallback, patterns: [] } : undefined;
     directory = parent;
   }
 };
 
-const supportedWorkspaceRoot = async (projectDirectory: string): Promise<string | undefined> => {
-  let manifestPath = await enclosingManifest(projectDirectory);
-  const projectManifestPath = manifestPath;
-  while (manifestPath) {
-    const source = await reads(manifestPath);
-    const manifest = source && parseManifest(source);
-    if (!manifest) return undefined;
-    if (workspacePatterns(manifest) === undefined) return undefined;
-    if (manifest.workspaces) return dirname(manifestPath);
-    manifestPath = await enclosingManifest(dirname(dirname(manifestPath)));
+const dependencyRange = (manifest: Manifest, dependency: string): string | undefined =>
+  DEPENDENCY_SECTIONS.map((section) => manifest[section]?.[dependency]).find(
+    (range): range is string => range !== undefined
+  );
+
+const hasSupportedRange = (range: string | undefined): boolean => {
+  if (!range) return false;
+  try {
+    return (minVersion(range)?.major ?? 0) >= 18;
+  } catch {
+    return false;
   }
-  return projectManifestPath ? dirname(projectManifestPath) : undefined;
 };
 
-const hasSupportedReact = (manifest: Manifest): boolean => {
-  const react =
-    manifest.dependencies?.react ??
-    manifest.devDependencies?.react ??
-    manifest.optionalDependencies?.react ??
-    manifest.peerDependencies?.react;
-  const reactDom =
-    manifest.dependencies?.['react-dom'] ??
-    manifest.devDependencies?.['react-dom'] ??
-    manifest.optionalDependencies?.['react-dom'] ??
-    manifest.peerDependencies?.['react-dom'];
-  return Boolean(
-    react &&
-    reactDom &&
-    minVersion(react)?.major &&
-    minVersion(reactDom)?.major &&
-    minVersion(react)!.major >= 18 &&
-    minVersion(reactDom)!.major >= 18
+const hasSupportedReact = (manifest: Manifest, rootManifest: Manifest): boolean =>
+  hasSupportedRange(dependencyRange(manifest, 'react') ?? dependencyRange(rootManifest, 'react')) &&
+  hasSupportedRange(
+    dependencyRange(manifest, 'react-dom') ?? dependencyRange(rootManifest, 'react-dom')
   );
-};
 
 const manifestEdit = (filePath: string, source: string, manifest: Manifest): Edit => {
   for (const section of DEPENDENCY_SECTIONS) delete manifest[section]?.[SHIM];
@@ -207,8 +246,8 @@ const manifestEdit = (filePath: string, source: string, manifest: Manifest): Edi
 export const analyzeReactDomShimWorkspace = async (
   projectDirectory: string
 ): Promise<ReactDomShimWorkspaceAnalysis> => {
-  const workspaceRoot = await supportedWorkspaceRoot(projectDirectory);
-  if (!workspaceRoot) {
+  const workspace = await supportedWorkspaceRoot(projectDirectory);
+  if (!workspace) {
     return {
       kind: 'manual',
       workspaceRoot: resolve(projectDirectory),
@@ -217,6 +256,7 @@ export const analyzeReactDomShimWorkspace = async (
       sources: [],
     };
   }
+  const { directory: workspaceRoot, patterns } = workspace;
 
   const files = await filePaths(workspaceRoot);
   if (!files) {
@@ -228,17 +268,19 @@ export const analyzeReactDomShimWorkspace = async (
       sources: [],
     };
   }
-  const manifestPaths = files.filter((filePath) => filePath.endsWith(`/${MANIFEST}`)).sort();
+  const manifestPaths = files.filter((filePath) => basename(filePath) === MANIFEST).sort();
+  const pnpmWorkspacePaths = files
+    .filter((filePath) => basename(filePath) === 'pnpm-workspace.yaml')
+    .sort();
   const sources = files.filter((filePath) => SOURCE_FILE.test(filePath)).sort();
   const diagnostics: string[] = [];
   const manifests: Array<{ filePath: string; source: string; manifest: Manifest }> = [];
   const rootSource = await reads(join(workspaceRoot, MANIFEST));
   const rootManifest = rootSource && parseManifest(rootSource);
-  const patterns = rootManifest && workspacePatterns(rootManifest);
-  if (!rootManifest || !patterns)
+  if (!rootManifest)
     diagnostics.push(`${join(workspaceRoot, MANIFEST)}: unsupported workspace declaration`);
   if (
-    patterns?.some(
+    patterns.some(
       (pattern) =>
         pattern.startsWith('!') || pattern.startsWith('/') || pattern.split('/').includes('..')
     )
@@ -246,6 +288,11 @@ export const analyzeReactDomShimWorkspace = async (
     diagnostics.push(
       `${join(workspaceRoot, MANIFEST)}: has an unsupported external workspace pattern`
     );
+  }
+  for (const filePath of pnpmWorkspacePaths) {
+    if (filePath !== join(workspaceRoot, 'pnpm-workspace.yaml')) {
+      diagnostics.push(`${filePath}: nested workspace declarations are not supported`);
+    }
   }
 
   for (const filePath of manifestPaths) {
@@ -258,7 +305,7 @@ export const analyzeReactDomShimWorkspace = async (
     if (filePath !== join(workspaceRoot, MANIFEST) && manifest.workspaces) {
       diagnostics.push(`${filePath}: nested workspace declarations are not supported`);
     }
-    if (filePath !== join(workspaceRoot, MANIFEST) && patterns && !manifest.workspaces) {
+    if (filePath !== join(workspaceRoot, MANIFEST) && !manifest.workspaces) {
       const path = relative(workspaceRoot, dirname(filePath)).split(sep).join('/');
       if (!patterns.some((pattern) => matchesPattern(path, pattern))) {
         diagnostics.push(`${filePath}: is outside the declared workspace packages`);
@@ -270,13 +317,12 @@ export const analyzeReactDomShimWorkspace = async (
   const shimManifests = manifests.filter(({ manifest }) => hasShim(manifest));
 
   for (const item of shimManifests) {
-    if (!hasSupportedReact(item.manifest) && !(rootManifest && hasSupportedReact(rootManifest))) {
+    if (!rootManifest || !hasSupportedReact(item.manifest, rootManifest)) {
       diagnostics.push(`${item.filePath}: react and react-dom must both support React 18 or later`);
     }
   }
 
   const sourceEdits: Edit[] = [];
-  const affectedSources: string[] = [];
   for (const filePath of sources) {
     const source = await reads(filePath);
     if (source === undefined) {
@@ -285,20 +331,28 @@ export const analyzeReactDomShimWorkspace = async (
     }
     const sourceIssue = sourceDiagnostic(source, filePath);
     if (sourceIssue) {
-      affectedSources.push(filePath);
       diagnostics.push(sourceIssue);
       continue;
     }
     if (!CONFIG_FILE.test(filePath)) {
       continue;
     }
+    const owner = manifests
+      .filter(({ filePath: manifestPath }) => {
+        const packageDirectory = dirname(manifestPath);
+        const path = relative(packageDirectory, filePath);
+        return path && !path.startsWith(`..${sep}`) && path !== '..';
+      })
+      .sort((left, right) => right.filePath.length - left.filePath.length)[0];
+    if (!owner || !rootManifest || !hasSupportedReact(owner.manifest, rootManifest)) {
+      diagnostics.push(`${filePath}: react and react-dom must both support React 18 or later`);
+      continue;
+    }
     const analysis = analyzeReactDomShimConfig(source, filePath);
     if (analysis.kind === 'manual') {
-      affectedSources.push(filePath);
       diagnostics.push(analysis.diagnostic);
     }
     if (analysis.kind === 'changed') {
-      affectedSources.push(filePath);
       sourceEdits.push({ filePath, original: source, replacement: analysis.source });
     }
   }
@@ -309,10 +363,10 @@ export const analyzeReactDomShimWorkspace = async (
       workspaceRoot,
       diagnostics: diagnostics.sort(),
       manifests: manifestPaths,
-      sources: affectedSources.sort(),
+      sources,
     };
   }
-  if (!shimManifests.length) return { kind: 'none', workspaceRoot };
+  if (!shimManifests.length && !sourceEdits.length) return { kind: 'none', workspaceRoot };
   return {
     kind: 'safe',
     workspaceRoot,

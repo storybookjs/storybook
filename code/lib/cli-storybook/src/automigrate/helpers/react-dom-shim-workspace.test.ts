@@ -241,4 +241,51 @@ describe('analyzeReactDomShimWorkspace', () => {
       ],
     });
   });
+
+  it('refuses TypeScript external module references and computed require resolution', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/src/external.ts': "import shim = require('@storybook/react-dom-shim');\n",
+      '/project/src/resolve.cjs': "require['resolve']('@storybook/react-dom-shim');\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/src/external.ts: contains a react-dom-shim import, re-export, or module load',
+        '/project/src/resolve.cjs: contains a react-dom-shim import, re-export, or module load',
+      ]),
+    });
+  });
+
+  it('refuses conflicting React ranges from every dependency section', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': `${JSON.stringify({ devDependencies: { react: '^19.0.0', 'react-dom': '^19.0.0' }, peerDependencies: { react: '^17.0.0', 'react-dom': '^17.0.0', '@storybook/react-dom-shim': '10.5.10' } })}\n`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: [
+        '/project/package.json: react and react-dom must both support React 18 or later',
+      ],
+    });
+  });
+
+  it('returns none for non-React projects without shim usage', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/.storybook/main.ts': "export default { framework: '@storybook/vue3-vite' };\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
+      {
+        "kind": "none",
+        "workspaceRoot": "/project",
+      }
+    `);
+  });
 });

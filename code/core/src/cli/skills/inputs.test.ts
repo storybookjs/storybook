@@ -12,6 +12,7 @@ function createMockOptions({
   features?: Record<string, unknown>;
 } = {}): Options {
   return {
+    configDir: '/project/.storybook',
     presets: {
       apply: vi.fn(async (key: string, defaultValue?: unknown) => {
         if (key === 'framework') {
@@ -93,4 +94,30 @@ describe('resolveSkillInputs', () => {
     expect(inputs.changeDetectionEnabled).toBe(true);
     expect(options.presets.apply).not.toHaveBeenCalledWith('features', expect.anything());
   });
+});
+
+it('resolves instruction snippets using the normalized framework', async () => {
+  const options = createMockOptions({ framework: '/repo/node_modules/@storybook/vue3-vite' });
+  const apply = vi.mocked(options.presets.apply);
+  const original = apply.getMockImplementation()!;
+  apply.mockImplementation(async (...args: Parameters<typeof original>) => {
+    if (args[0] === 'experimental_aiInstructions') {
+      return { story: 'Vue story' };
+    }
+    return original(...args);
+  });
+  const result = await resolveSkillInputs(options);
+  expect(result.aiInstructions).toEqual({ story: 'Vue story' });
+  expect(apply).toHaveBeenCalledWith(
+    'experimental_aiInstructions',
+    {},
+    {
+      aiContext: {
+        framework: '@storybook/vue3-vite',
+        configDir: '/project/.storybook',
+        language: 'ts',
+        hasCsfFactoryPreview: false,
+      },
+    }
+  );
 });

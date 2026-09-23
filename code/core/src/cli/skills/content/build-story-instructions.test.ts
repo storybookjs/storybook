@@ -208,3 +208,21 @@ describe('buildStoryInstructions test toolset and a11y', () => {
     expect(instructions).not.toContain('### Accessibility Violations');
   });
 });
+
+it.each(['mcp', 'cli'] as const)(
+  'includes resolved snippets in %s story instructions',
+  (transport) => {
+    const output = buildStoryInstructions({
+      ...baseInputs,
+      transport,
+      aiInstructions: {
+        story: 'Framework story',
+        preview: 'Framework preview',
+        additionalGuidance: 'Framework guidance',
+      },
+    });
+    expect(output).toContain('Framework story');
+    expect(output).toContain('Framework preview');
+    expect(output).toContain('Framework guidance');
+  }
+);

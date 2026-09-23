@@ -21,3 +21,4 @@ export * from './modules/webpack.ts';
 export * from './modules/builders.ts';
 export * from './modules/features.ts';
 export * from './modules/languages.ts';
+export * from './modules/ai-instructions.ts';

@@ -106,3 +106,15 @@ the fields to change and provide migration-specific error guidance.
   `storybook/internal/skills`; addon-mcp consumes the same builders.
 - Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
   `core-server`. Lint rules enforce both boundaries.
+
+- Renderers and frameworks contribute Markdown story and preview examples through
+  `experimental_aiInstructions`. Its `AIInstructionsPreset` type receives the accumulated
+  `AIInstructionSnippets` and an `aiContext` with the configured framework import, language,
+  config directory, and preview format. Renderer presets supply defaults; framework presets and
+  `main.ts` can override individual fields while preserving the others with `...existing`.
+- Resolve that hook outside the pure content builders, through `cli/skills/ai-instructions.ts`.
+  Setup includes the resolved snippets in `ProjectInfo`; story instructions receive them through
+  `resolveSkillInputs` for both CLI and MCP. Missing snippets use generic guidance.
+- Keep snippet implementations and tests beside their renderer or framework. Angular's two
+  framework presets share the implementation in `frameworks/angular/src/ai-instructions.ts`;
+  bundling includes it in each package without adding a runtime dependency between them.

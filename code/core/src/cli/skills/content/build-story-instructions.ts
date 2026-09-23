@@ -1,3 +1,4 @@
+import type { AIInstructionSnippets } from '../../../types/index.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 
 import { getFinalLinksGuidance } from './build-server-instructions.ts';
@@ -9,6 +10,7 @@ import type { SkillTransport } from './skill-refs.ts';
 
 export type StoryInstructionsInputs = {
   transport: SkillTransport;
+  aiInstructions?: AIInstructionSnippets;
   framework: string;
   /** Renderer package name; defaults to `framework` when unmapped (today's behavior). */
   renderer?: string;
@@ -21,6 +23,7 @@ export type StoryInstructionsInputs = {
 
 export function buildStoryInstructions({
   transport,
+  aiInstructions,
   framework,
   renderer,
   changeDetectionEnabled,
@@ -91,5 +94,14 @@ This Storybook exposes component documentation tools. Before creating or changin
     }
   }
 
+  for (const [title, content] of [
+    ['Story example', aiInstructions?.story],
+    ['Preview example', aiInstructions?.preview],
+    ['Framework guidance', aiInstructions?.additionalGuidance],
+  ]) {
+    if (content) {
+      uiInstructions += `\n\n## ${title}\n\n${content}`;
+    }
+  }
   return uiInstructions;
 }

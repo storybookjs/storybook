@@ -78,6 +78,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should include testing and a11y description when available', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
       },
@@ -104,6 +105,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should exclude testing and a11y description when test toolset is disabled', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
       },
@@ -130,6 +132,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should include testing but exclude a11y description when a11y is disabled', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
       },
@@ -157,6 +160,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should return UI building instructions with framework placeholders replaced', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
@@ -210,6 +214,7 @@ describe('getUIBuildingInstructionsTool', () => {
   // docs-workflow trigger whenever the documentation tools are registered.
   it('includes the docs workflow guidance when the docs tools are available', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
@@ -232,6 +237,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('omits the docs workflow guidance when the docs toolset is disabled', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
@@ -256,6 +262,7 @@ describe('getUIBuildingInstructionsTool', () => {
   // "show one set of links — never both" server rule.
   it('tells the agent to show only the review section when review is enabled', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
@@ -309,6 +316,7 @@ describe('getUIBuildingInstructionsTool', () => {
   // is off.
   it('uses the review instructions when the request context enables review despite the flag being unset', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
@@ -344,6 +352,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('tells the agent to include preview URLs when review is disabled', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') return '@storybook/react-vite';
@@ -382,6 +391,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should not mention changed stories workflow when change detection is disabled', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) => {
           if (presetName === 'framework') {
@@ -424,6 +434,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should handle Vue framework', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn().mockResolvedValue('@storybook/vue3-vite'),
       },
@@ -458,6 +469,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('should handle framework as object with name property', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn().mockResolvedValue({
           name: '@storybook/nextjs',
@@ -497,6 +509,7 @@ describe('getUIBuildingInstructionsTool', () => {
     const { telemetry } = await import('storybook/internal/telemetry');
 
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn().mockResolvedValue('@storybook/react-vite'),
       },
@@ -567,6 +580,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
   it('carries the docs steering exactly when the docs tools are available', async () => {
     const mockOptions = {
+      configDir: '/project/.storybook',
       presets: {
         apply: vi.fn(async (presetName: string) =>
           presetName === 'framework' ? '@storybook/react-vite' : undefined
@@ -586,4 +600,24 @@ describe('getUIBuildingInstructionsTool', () => {
     expect(withoutDocs).not.toContain('## Using library components');
     expect(withoutDocs).not.toContain('docs-list');
   });
+});
+
+it('includes preset snippets in MCP story instructions', async () => {
+  const options = {
+    configDir: '/project/.storybook',
+    presets: {
+      apply: vi.fn(async (key: string, fallback?: unknown) => {
+        if (key === 'framework') {
+          return '@storybook/vue3-vite';
+        }
+        if (key === 'experimental_aiInstructions') {
+          return { story: 'Vue preset story', preview: 'Vue preset preview' };
+        }
+        return fallback;
+      }),
+    },
+  } as unknown as Parameters<typeof buildStorybookStoryInstructions>[0];
+  const output = await buildStorybookStoryInstructions(options);
+  expect(output).toContain('Vue preset story');
+  expect(output).toContain('Vue preset preview');
 });

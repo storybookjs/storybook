@@ -1,3 +1,4 @@
+export { experimental_aiInstructions } from './ai-instructions.ts';
 import { fileURLToPath } from 'node:url';
 
 import type { ImportParser } from 'storybook/internal/core-server';

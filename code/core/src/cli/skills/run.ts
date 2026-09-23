@@ -194,6 +194,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   return buildStoryInstructions({
     transport: 'cli',
     framework: inputs.framework,
+    aiInstructions: inputs.aiInstructions,
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,
     reviewEnabled,

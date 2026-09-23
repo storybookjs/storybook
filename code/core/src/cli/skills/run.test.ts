@@ -1,3 +1,4 @@
+import type { AIInstructionSnippets } from '../../types/index.ts';
 import { describe, expect, it, vi } from 'vitest';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
@@ -6,6 +7,7 @@ import { resolveSkillsIntent, runSkillsCommand } from './run.ts';
 const deps = () => ({
   loadStorybook: vi.fn().mockResolvedValue({ presets: { apply: vi.fn() } }),
   resolveSkillInputs: vi.fn().mockResolvedValue({
+    aiInstructions: {} as AIInstructionSnippets,
     framework: '@storybook/react-vite',
     renderer: '@storybook/react',
     changeDetectionEnabled: true,
@@ -181,4 +183,16 @@ describe('runSkillsCommand', () => {
     expect(result.output).toBe('');
     expect(result.errorOutput).toContain('Cannot find module .storybook/main.ts');
   });
+});
+
+it('includes preset snippets in CLI story instructions', async () => {
+  const d = deps();
+  d.resolveSkillInputs.mockResolvedValue({
+    ...(await d.resolveSkillInputs()),
+    aiInstructions: { story: 'Vue preset story', preview: 'Vue preset preview' },
+  });
+  const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+  expect(result.exitCode).toBe(0);
+  expect(result.output).toContain('Vue preset story');
+  expect(result.output).toContain('Vue preset preview');
 });

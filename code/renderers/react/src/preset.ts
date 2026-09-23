@@ -1,3 +1,4 @@
+export { experimental_aiInstructions } from './ai-instructions.ts';
 import path, { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 

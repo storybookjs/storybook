@@ -87,6 +87,8 @@ export async function getSetupMarkdownOutput(projectInfo: ProjectInfo): Promise<
     ${getProjectOverview(projectInfo)}
 
     ${content}
+
+    ${projectInfo.aiInstructions?.additionalGuidance ?? ''}
   `,
     prompt: name,
   };

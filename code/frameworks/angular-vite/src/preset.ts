@@ -1,3 +1,4 @@
+export { experimental_aiInstructions } from '../../angular/src/ai-instructions.ts';
 import { findConfigFile } from 'storybook/internal/common';
 import {
   babelParser,

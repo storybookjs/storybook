@@ -59,18 +59,22 @@ describe.each(['ts', 'js'] as const)('setup instructions in %s projects', (langu
     }
   });
 
-  it.each(['@storybook/react-vite', '@storybook/nextjs-vite'])(
-    'preserves React examples for %s',
-    async (framework) => {
-      vi.stubEnv('EVAL_SETUP_PROMPT', '');
-      const { markdown } = await getSetupMarkdownOutput({ ...projectInfo, framework, language });
-
-      expect(markdown).toContain(`preview.${language}x`);
-      expect(markdown).toContain('<SessionProvider>');
-      expect(markdown).toContain('<Story />');
-      expect(markdown).toContain("children: 'Order now'");
-    }
-  );
+  it('uses contributed snippets without interpreting their contents', async () => {
+    const { markdown } = await getSetupMarkdownOutput({
+      ...projectInfo,
+      language,
+      aiInstructions: {
+        story: 'CUSTOM_STORY_EXAMPLE',
+        preview: 'CUSTOM_PREVIEW_EXAMPLE',
+        additionalGuidance: 'CUSTOM_FRAMEWORK_GUIDANCE',
+      },
+    });
+    expect(markdown).toContain('CUSTOM_STORY_EXAMPLE');
+    expect(markdown).toContain('CUSTOM_PREVIEW_EXAMPLE');
+    expect(markdown).toContain('CUSTOM_FRAMEWORK_GUIDANCE');
+    expect(markdown).not.toContain('SessionProvider');
+    expect(markdown).not.toContain("children: 'Order now'");
+  });
 });
 
 it.each([false, true])(

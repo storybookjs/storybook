@@ -1,3 +1,8 @@
+import type {
+  AIInstructionContext,
+  AIInstructionSnippets,
+  AIInstructionsPreset,
+} from './ai-instructions.ts';
 // should be node:http, but that caused the ui/manager to fail to build, might be able to switch this back once ui/manager is in the core
 import type { ChannelLike } from 'storybook/internal/channels';
 import type { FileSystemCache } from 'storybook/internal/common';
@@ -93,6 +98,11 @@ interface DirectoryMapping {
 }
 
 export interface Presets {
+  apply(
+    extension: 'experimental_aiInstructions',
+    config: AIInstructionSnippets,
+    args: { aiContext: AIInstructionContext }
+  ): Promise<AIInstructionSnippets>;
   apply(
     extension: 'typescript',
     config: TypescriptOptions,
@@ -698,6 +708,7 @@ export interface StorybookConfigRaw {
   experimental_enrichCsf?: CsfEnricher;
   experimental_docgenProvider?: DocgenProviderDescriptor[];
   experimental_storyDocsProvider?: StoryDocsProvider;
+  experimental_aiInstructions?: AIInstructionSnippets;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
   features?: StorybookFeatures;
@@ -888,6 +899,9 @@ export interface StorybookConfig {
   experimental_storyDocsProvider?: PresetValue<
     StorybookConfigRaw['experimental_storyDocsProvider']
   >;
+
+  /** Supply story and preview examples for the configured framework. */
+  experimental_aiInstructions?: AIInstructionSnippets | AIInstructionsPreset;
 }
 
 export type PresetValue<T> = T | ((config: T, options: Options) => T | Promise<T>);

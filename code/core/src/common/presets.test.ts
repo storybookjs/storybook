@@ -779,3 +779,47 @@ describe('loadPreset', () => {
     `);
   });
 });
+
+it('lets frameworks override renderer snippets while retaining other contributions', async () => {
+  mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+    if (path === 'renderer-preset') {
+      return {
+        experimental_aiInstructions: () => ({
+          story: 'Renderer story',
+          preview: 'Renderer preview',
+        }),
+      };
+    }
+    return {
+      experimental_aiInstructions: async (
+        existing: Record<string, string>,
+        { aiContext }: { aiContext: { framework: string } }
+      ) => ({
+        ...existing,
+        story: `Story for ${aiContext.framework}`,
+        additionalGuidance: 'Framework guidance',
+      }),
+    };
+  });
+  const presets = await getPresets(['renderer-preset', 'framework-preset'], {
+    configDir: '.storybook',
+  });
+  expect(
+    await presets.apply(
+      'experimental_aiInstructions',
+      {},
+      {
+        aiContext: {
+          framework: '@custom/framework',
+          language: 'ts',
+          configDir: '.storybook',
+          hasCsfFactoryPreview: false,
+        },
+      }
+    )
+  ).toEqual({
+    story: 'Story for @custom/framework',
+    preview: 'Renderer preview',
+    additionalGuidance: 'Framework guidance',
+  });
+});

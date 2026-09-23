@@ -154,6 +154,7 @@ export async function buildStorybookStoryInstructions(
   return buildStoryInstructions({
     transport: 'mcp',
     framework: inputs.framework,
+    aiInstructions: inputs.aiInstructions,
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,
     reviewEnabled: reviewEnabledOverride ?? inputs.reviewEnabled,

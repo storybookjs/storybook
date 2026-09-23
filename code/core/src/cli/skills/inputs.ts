@@ -1,4 +1,4 @@
-import type { Options } from '../../types/index.ts';
+import type { AIInstructionSnippets, Options } from '../../types/index.ts';
 import { extractFrameworkPackageName } from '../../common/utils/get-framework-name.ts';
 
 import {
@@ -6,9 +6,14 @@ import {
   type GetToolAvailabilityOptions,
   type ToolAvailability,
 } from './availability.ts';
+import { resolveAIInstructions } from './ai-instructions.ts';
 import { frameworkToRendererMap } from './content/framework-renderer.ts';
 
-export type SkillInputs = ToolAvailability & { framework: string; renderer?: string };
+export type SkillInputs = ToolAvailability & {
+  framework: string;
+  renderer?: string;
+  aiInstructions?: AIInstructionSnippets;
+};
 
 /**
  * The one probing path for skill-content assembly: everything the pure builders need, resolved
@@ -26,5 +31,11 @@ export async function resolveSkillInputs(
   const framework = extractFrameworkPackageName(
     typeof frameworkPreset === 'string' ? frameworkPreset : (frameworkPreset?.name ?? '')
   );
-  return { ...availability, framework, renderer: frameworkToRendererMap[framework] };
+  const aiInstructions = await resolveAIInstructions(options, framework);
+  return {
+    ...availability,
+    framework,
+    renderer: frameworkToRendererMap[framework],
+    aiInstructions,
+  };
 }

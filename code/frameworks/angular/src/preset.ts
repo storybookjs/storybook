@@ -1,3 +1,4 @@
+export { experimental_aiInstructions } from './ai-instructions.ts';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';

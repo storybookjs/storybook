@@ -1,13 +1,16 @@
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
-import type { SupportedRenderer } from 'storybook/internal/types';
+import type { AIInstructionSnippets, SupportedRenderer } from 'storybook/internal/types';
 import { SupportedLanguage } from 'storybook/internal/types';
 
+import { loadStorybook } from '../../core-server/load.ts';
+import { resolveAIInstructions } from './ai-instructions.ts';
 import { detectLanguage } from '../detectLanguage.ts';
 import { getStorybookData } from '../getStorybookData.ts';
 import { getMonorepoType, type MonorepoType } from '../../shared/utils/get-monorepo-type.ts';
 
 export interface ProjectInfo {
+  aiInstructions?: AIInstructionSnippets;
   storybookVersion: string | undefined;
   majorVersion: number | undefined;
   framework: string | null;
@@ -89,6 +92,13 @@ export async function getProjectInfo(opts: {
       monorepoType: getMonorepoType(),
     };
 
+    const options = await loadStorybook({ configDir: data.configDir });
+    projectInfo.aiInstructions = await resolveAIInstructions(options, data.frameworkPackage, {
+      framework: data.frameworkPackage,
+      configDir: data.configDir,
+      language,
+      hasCsfFactoryPreview: data.hasCsfFactoryPreview,
+    });
     return { ok: true, projectInfo };
   } catch (err) {
     return {

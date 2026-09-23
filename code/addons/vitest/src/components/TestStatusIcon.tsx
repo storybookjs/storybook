@@ -35,8 +35,11 @@ export const TestStatusIcon = styled.div<{
     },
   ({ status, theme }) =>
     status === 'critical' && {
-      '--status-color': theme.color.defaultText,
-      '--status-background': `${theme.color.defaultText}66`,
+      // The critical red lives on borderColor.critical in both themes —
+      // bgColor.critical is a transparent placeholder in dark and
+      // fgColor.critical is white (text on a filled critical surface).
+      '--status-color': theme.borderColor.critical,
+      '--status-background': `${theme.borderColor.critical}66`,
     },
   ({ status, theme }) =>
     status === 'unknown' && {

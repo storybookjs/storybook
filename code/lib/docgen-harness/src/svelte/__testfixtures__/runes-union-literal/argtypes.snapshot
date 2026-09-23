@@ -1,0 +1,93 @@
+{
+  "level": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Numeric level.",
+    "name": "level",
+    "options": [
+      1,
+      2,
+      3,
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "1 | 2 | 3",
+      },
+    },
+    "type": {
+      "name": "1 | 2 | 3",
+      "required": true,
+    },
+  },
+  "mode": {
+    "description": "Automatic mode.",
+    "name": "mode",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "boolean | "auto"",
+      },
+    },
+    "type": {
+      "name": "boolean | "auto"",
+      "required": false,
+    },
+  },
+  "size": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Size variant.",
+    "name": "size",
+    "options": [
+      "small",
+      "medium",
+      "large",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""medium"",
+      },
+      "type": {
+        "summary": ""small" | "medium" | "large"",
+      },
+    },
+    "type": {
+      "name": ""small" | "medium" | "large"",
+      "required": false,
+    },
+  },
+  "tone": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Tone variant.",
+    "name": "tone",
+    "options": [
+      "info",
+      "warn",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": ""info" | "warn"",
+      },
+    },
+    "type": {
+      "name": ""info" | "warn"",
+      "required": false,
+    },
+  },
+}

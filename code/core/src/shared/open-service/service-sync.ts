@@ -1,52 +1,8 @@
 /**
- * Shared sync primitives for the open-service multi-master protocol.
- *
- * Every runtime — server (Node), manager (top window), preview (iframe) — runs a full
- * `ServiceRuntime` and reconciles incoming state here. Command broadcasts carry a Lamport stamp
- * `{ seq, runtimeId, counter }` and an RFC 6902 patch. Each replica keeps an ordered Log, a
- * per-writer Vector, and a Clock. Snapshots are bootstrap and repair only. The transport that
- * moves entries and snapshots lives in `service-transport.ts`.
- *
- * ## 1. Entries — Clock, Vector, ordered Log
- *
- * Each `services:entry` carries `{ seq, runtimeId, counter }`. `seq` is the Lamport order key.
- * One comparator orders the Log ascending on `seq`, then on `runtimeId` by plain string
- * comparison. Incoming cases, checked in this order:
- *
- * - Duplicate: in the Log, or counter at or below the Vector. Dropped; the Clock still advances.
- * - Beyond window: `seq` at or below the last installed frontier clock, or sorts at or before the
- *   newest evicted stamp. Dropped with a warning.
- * - Later: sorts after every retained entry. Applied and appended.
- * - Earlier: undo newer entries newest-first, apply, redo them from their stored forward ops, all
- *   inside one `setState` batch.
- * - Gap: a counter more than one above the Vector. Placed as later or earlier with a warning; the
- *   Vector stays.
- *
- * Gap, beyond-window, and a failed apply ask the transport to send `sync-request`. An entry whose
- * apply fails, on a missing parent or a throw, stays in the Log as a no-op with an empty inverse, so
- * every replica folds the same stamps; an earlier insert that supplies the parent makes it apply on redo. The
- * Vector never evicts. Log eviction is lazy on append: an entry is retained while younger than 15 s or
- * among the newest 256.
- *
- * ## 2. Snapshots — Frontier install
- *
- * A `services:sync-reply` carries `{ frontier: { vector, clock }, state }`. Install only if the
- * reply's vector dominates the replica's: every counter at least equal, at least one greater, or
- * the replica's vector is empty and the reply's is not. Inside one `setState` batch: merge
- * `state` onto the live proxy; `clock = max(clock, reply.clock)`; take the reply's vector;
- * drop log entries that vector covers; re-apply the rest in canonical order, recomputing
- * inverses (which also fills in writers the snapshot lacked). Keep the reply's clock as an
- * ordering floor so a delayed concurrent entry at or below it cannot apply over snapshot state. A
- * concurrent reply — each side has writes the other lacks — is dropped with a
- * warning naming both frontiers.
- *
- * ## 3. `applyStatePatch` — structural merge for snapshots
- *
- * Applies incoming snapshot state onto the live state object in place so that deep-signal
- * subscriptions only re-fire for the fields that actually changed. Full peer snapshots delete
- * keys absent from the source so deletions propagate; partial static snapshots preserve missing
- * keys. Arrays are replaced wholesale, primitives are assigned only when changed, and the
- * dangerous `__proto__`/`constructor`/`prototype` keys are skipped on both read and delete.
+ * Sync primitives for the open-service multi-master protocol: the per-service reconciler (ordered
+ * Log, Vector, Clock, snapshot install), vector domination, and `applyStatePatch`, the structural
+ * merge for snapshots and static JSON. The rules are in the README's State Sync section; the
+ * transport that moves entries and snapshots is `service-transport.ts`.
  */
 
 import { logger } from 'storybook/internal/client-logger';
@@ -474,10 +430,8 @@ export function createSnapshotReconciler(options: {
         return vectorsConcurrent(frontier.vector, localVector) ? 'concurrent' : 'not-ahead';
       }
 
-      // The floor is the reply's clock, not the local one: a local uncovered write may have pushed
-      // the clock higher, and a peer's entry between the two is an ordinary earlier insert. It is
-      // this reply's clock, not the max with an older floor: after install the state is this
-      // replier's fold, so an entry above this clock sorts after everything in it.
+      // The floor is this reply's clock: after install the state is the replier's fold, so an entry
+      // above it sorts after everything in it, even when the local clock is higher.
       snapshotSeq = frontier.clock;
 
       // An uncovered entry at or below the reply clock belongs inside the snapshot's history,

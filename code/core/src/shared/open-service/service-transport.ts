@@ -1,15 +1,11 @@
 /**
  * Shared channel-transport helpers for the open-service multi-master protocol.
  *
- * Every runtime that participates in cross-peer sync — the manager (top window), a preview iframe,
- * and the dev server (Node) — does the same two things with its channel: it emits an entry for each
- * write its own `setState` recipes make, and it applies peers' entries and bootstrap snapshots. This
- * module owns both halves so leaf registration (`service-registry.ts`, `relay: false`) and hub registration
- * (`server.ts`, `relay: true`) cannot drift apart in how they author entries, gate echoes, or relay
- * adopted state.
+ * `registerService` in `service-registry.ts` uses this module in every runtime, hub or leaf, so entry
+ * authoring, the sync listeners, and the command transport cannot drift apart between runtimes.
  *
- * - {@link connectServiceToChannel} is the single entry point `registerService` uses. It wires all
- *   three halves below against one channel, installs the channel-routed command map on the runtime
+ * - {@link connectServiceToChannel} is the single entry point `registerService` uses. It wires the
+ *   three parts below against one channel, installs the channel-routed command map on the runtime
  *   (so load bodies can invoke peer-implemented commands), and returns the command map callers
  *   expose plus a combined teardown.
  * - {@link createEntryAuthor} builds the receiver for the runtime's `setState` entries: each one
@@ -110,7 +106,7 @@ type PendingRemoteCommand = {
 interface RuntimeTransportContext {
   /** Id of the service these helpers act for; stamped on every emitted envelope. */
   serviceId: ServiceId;
-  /** This runtime's stable id, used to drop its own bootstrap request and its own echoes. */
+  /** This runtime's stable id; it stamps this runtime's entries and drops its own `sync-request`. */
   ownRuntimeId: string;
   /** The reconciler owning this runtime's Log, Vector, Clock, and adopt/advance transitions. */
   reconciler: SnapshotReconciler;
@@ -152,10 +148,9 @@ export function createEntryAuthor(
  * - entry → place by the five-case rule (and, on a relay hub, forward when logged or dropped as
  *   beyond-window for the first time).
  *
- * A `relay` hub re-emits every entry it logged and every snapshot reply it installed, using the
- * original payload object so unknown fields survive the hop. It never forwards a request. Leaves
- * keep `relay: false`. The request policy (one outstanding, {@link SYNC_REQUEST_SILENCE_MS} of
- * silence, one queued repair) is in the README's state sync sequence.
+ * A hub forwards the original payload object so unknown fields survive the hop. Leaves keep
+ * `relay: false`. The request policy (one outstanding, {@link SYNC_REQUEST_SILENCE_MS} of silence,
+ * one queued repair) is in the README's Bootstrap and repair section.
  */
 export function connectRuntimeToChannel(
   context: RuntimeTransportContext & { channel: ServiceChannel; relay: boolean }

@@ -2,8 +2,8 @@
  * Unified service registry for the open-service multi-master architecture.
  *
  * One implementation backs every runtime — the dev server (Node), the manager (top window), and each
- * preview iframe. Registration builds a local `ServiceRuntime` and, when a channel is present, wires it
- * into the cross-peer sync protocol through the shared transport. The only thing that differs per
+ * preview iframe. Registration builds a local `ServiceRuntime` and wires it into the cross-peer sync
+ * protocol through the installed channel and the shared transport. The only thing that differs per
  * runtime is the `relay` role: the dev server and the manager are hubs (`relay: true`) that bridge
  * their other channel transports, while a preview is a leaf (`relay: false`) — a single transport has
  * nothing to forward. The request/reply + entry protocol lives in `service-transport.ts` and the
@@ -259,10 +259,10 @@ export const serviceRegistryApi: ServiceRegistryApi = {
 /** Channel-sync options that depend on the entrypoint rather than the service definition. */
 export interface ServiceRegisterOptions {
   /**
-   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) forward every
-   * accepted `services:entry` and every bootstrap snapshot they adopt so peers on their *other*
-   * channel transports converge; leaves (a preview iframe) keep the default `false` — with a single
-   * transport there is nothing to forward.
+   * Whether this runtime acts as a relay hub. Hubs (the dev server, the manager) forward accepted
+   * entries, first-time beyond-window entries, and installed replies to their *other* channel
+   * transports; leaves (a preview iframe) keep the default `false`, since a single transport has
+   * nothing to forward.
    */
   relay?: boolean;
   /**
@@ -298,11 +298,8 @@ export function registerService<
 
   const registry = getRegistry();
 
-  // Registration is idempotent by id. Re-registering an already-registered service returns the
-  // existing runtime instead of throwing. This deliberately swallows duplicate-id collisions, which is
-  // the right trade-off: core services register from a `beforeAll` annotation that CSF4 composes twice
-  // (once in `definePreview`, once in `StoryStore`), and `beforeAll` also re-runs on HMR. A second
-  // registration is a no-op rather than a crash.
+  // Idempotent by id: core services register from a `beforeAll` that CSF4 composes twice (in
+  // `definePreview` and in `StoryStore`) and that HMR re-runs.
   const existingEntry = registry.get(definition.id);
   if (existingEntry) {
     return existingEntry.instance as unknown as ServiceInstance<TState, TQueries, TCommands> &

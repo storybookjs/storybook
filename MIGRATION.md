@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
@@ -550,6 +551,26 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Docs Code panel enabled by default
+
+When `@storybook/addon-docs` is installed, the Code panel is now available for stories without setting `parameters.docs.codePanel` to `true`.
+
+To hide it for all stories, set `parameters.docs.codePanel` to `false` in `.storybook/preview.ts`:
+
+```ts
+export default {
+  parameters: {
+    docs: {
+      codePanel: false,
+    },
+  },
+};
+```
+
+You can also set this parameter at the component or story level. An explicit `true` enables the panel when a broader configuration disables it.
+
+No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
 
 ### Node.js 22.12 or higher
 

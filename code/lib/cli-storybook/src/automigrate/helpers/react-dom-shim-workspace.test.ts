@@ -251,6 +251,8 @@ describe('analyzeReactDomShimWorkspace', () => {
       }),
       '/project/src/external.ts': "import shim = require('@storybook/react-dom-shim');\n",
       '/project/src/resolve.cjs': "require['resolve']('@storybook/react-dom-shim');\n",
+      '/project/src/optional.cjs':
+        "require['resolve']?.('@storybook/react-dom-shim'); require?.['resolve']('@storybook/react-dom-shim');\n",
     });
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
@@ -258,6 +260,7 @@ describe('analyzeReactDomShimWorkspace', () => {
       diagnostics: expect.arrayContaining([
         '/project/src/external.ts: contains a react-dom-shim import, re-export, or module load',
         '/project/src/resolve.cjs: contains a react-dom-shim import, re-export, or module load',
+        '/project/src/optional.cjs: contains a react-dom-shim import, re-export, or module load',
       ]),
     });
   });
@@ -287,5 +290,14 @@ describe('analyzeReactDomShimWorkspace', () => {
         "workspaceRoot": "/project",
       }
     `);
+  });
+
+  it('does not treat known non-loader require members as module loads', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/src/require.cjs': "require.hasOwnProperty('resolve');\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'none' });
   });
 });

@@ -19,6 +19,8 @@ const DEPENDENCY_SECTIONS = [
 ] as const;
 
 type DependencyMap = Record<string, string>;
+type JsonValue = boolean | JsonRecord | JsonValue[] | null | number | string;
+type JsonRecord = Record<string, JsonValue>;
 type Manifest = {
   dependencies?: DependencyMap;
   devDependencies?: DependencyMap;
@@ -51,11 +53,33 @@ const reads = async (filePath: string): Promise<string | undefined> => {
 
 const parseManifest = (source: string): Manifest | undefined => {
   try {
-    return JSON.parse(source) as Manifest;
+    const manifest: JsonValue = JSON.parse(source);
+    if (!isJsonRecord(manifest)) return undefined;
+    if (!DEPENDENCY_SECTIONS.every((section) => isDependencyMap(manifest[section]))) {
+      return undefined;
+    }
+    if (!isWorkspaceDeclaration(manifest.workspaces)) return undefined;
+    return manifest as Manifest;
   } catch {
     return undefined;
   }
 };
+
+const isJsonRecord = (value: JsonValue | undefined): value is JsonRecord =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const isDependencyMap = (value: JsonValue | undefined): boolean =>
+  value === undefined ||
+  (isJsonRecord(value) &&
+    Object.values(value).every((dependency) => typeof dependency === 'string'));
+
+const isWorkspaceDeclaration = (value: JsonValue | undefined): boolean =>
+  value === undefined ||
+  (Array.isArray(value) && value.every((pattern) => typeof pattern === 'string')) ||
+  (isJsonRecord(value) &&
+    (value.packages === undefined ||
+      (Array.isArray(value.packages) &&
+        value.packages.every((pattern) => typeof pattern === 'string'))));
 
 const workspacePatterns = (manifest: Manifest): string[] | undefined => {
   if (!manifest.workspaces) return [];
@@ -115,13 +139,40 @@ const staticString = (
   return undefined;
 };
 
-const isModuleLoad = (callee: t.CallExpression['callee']): boolean =>
-  t.isImport(callee) ||
-  t.isIdentifier(callee, { name: 'require' }) ||
-  (t.isMemberExpression(callee) &&
-    !callee.computed &&
-    t.isIdentifier(callee.object, { name: 'require' }) &&
-    t.isIdentifier(callee.property, { name: 'resolve' }));
+const moduleLoad = (
+  callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee']
+): 'known' | 'unresolved' | undefined => {
+  if (t.isImport(callee) || t.isIdentifier(callee, { name: 'require' })) return 'known';
+  if (
+    (!t.isMemberExpression(callee) && !t.isOptionalMemberExpression(callee)) ||
+    !t.isIdentifier(callee.object, { name: 'require' })
+  ) {
+    return undefined;
+  }
+  const property = callee.computed
+    ? staticString(callee.property)
+    : t.isIdentifier(callee.property)
+      ? callee.property.name
+      : undefined;
+  return property === undefined ? 'unresolved' : property === 'resolve' ? 'known' : undefined;
+};
+
+const moduleLoadDiagnostic = (
+  callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee'],
+  arguments_: (t.Expression | t.SpreadElement | t.JSXNamespacedName | t.ArgumentPlaceholder)[],
+  filePath: string
+): string | undefined => {
+  const kind = moduleLoad(callee);
+  if (!kind) return undefined;
+  const [argument] = arguments_;
+  const value = staticString(argument);
+  if (value && isShimSource(value)) {
+    return `${filePath}: contains a react-dom-shim import, re-export, or module load`;
+  }
+  return kind === 'unresolved' || !value
+    ? `${filePath}: contains an unresolved module load`
+    : undefined;
+};
 
 const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
   try {
@@ -139,13 +190,18 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
         if (isShimSource(path.node.source.value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
       },
-      CallExpression(path) {
-        if (!isModuleLoad(path.node.callee)) return;
-        const [argument] = path.node.arguments;
-        const value = staticString(argument);
-        if (value && isShimSource(value))
+      TSImportEqualsDeclaration(path) {
+        const reference = path.node.moduleReference;
+        if (!t.isTSExternalModuleReference(reference)) return;
+        if (isShimSource(reference.expression.value)) {
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-        else if (!value) diagnostic ??= `${filePath}: contains an unresolved module load`;
+        }
+      },
+      CallExpression(path) {
+        diagnostic ??= moduleLoadDiagnostic(path.node.callee, path.node.arguments, filePath);
+      },
+      OptionalCallExpression(path) {
+        diagnostic ??= moduleLoadDiagnostic(path.node.callee, path.node.arguments, filePath);
       },
       ImportExpression(path) {
         const value = staticString(path.node.source);
@@ -218,10 +274,11 @@ const supportedWorkspaceRoot = async (
   }
 };
 
-const dependencyRange = (manifest: Manifest, dependency: string): string | undefined =>
-  DEPENDENCY_SECTIONS.map((section) => manifest[section]?.[dependency]).find(
-    (range): range is string => range !== undefined
-  );
+const dependencyRanges = (manifest: Manifest, dependency: string): string[] =>
+  DEPENDENCY_SECTIONS.flatMap((section) => {
+    const range = manifest[section]?.[dependency];
+    return range === undefined ? [] : [range];
+  });
 
 const hasSupportedRange = (range: string | undefined): boolean => {
   if (!range) return false;
@@ -233,9 +290,12 @@ const hasSupportedRange = (range: string | undefined): boolean => {
 };
 
 const hasSupportedReact = (manifest: Manifest, rootManifest: Manifest): boolean =>
-  hasSupportedRange(dependencyRange(manifest, 'react') ?? dependencyRange(rootManifest, 'react')) &&
-  hasSupportedRange(
-    dependencyRange(manifest, 'react-dom') ?? dependencyRange(rootManifest, 'react-dom')
+  [dependencyRanges(manifest, 'react'), dependencyRanges(manifest, 'react-dom')].every(
+    (ranges, index) => {
+      const fallback = dependencyRanges(rootManifest, index === 0 ? 'react' : 'react-dom');
+      const effectiveRanges = ranges.length ? ranges : fallback;
+      return effectiveRanges.length > 0 && effectiveRanges.every(hasSupportedRange);
+    }
   );
 
 const manifestEdit = (filePath: string, source: string, manifest: Manifest): Edit => {
@@ -337,6 +397,12 @@ export const analyzeReactDomShimWorkspace = async (
     if (!CONFIG_FILE.test(filePath)) {
       continue;
     }
+    const analysis = analyzeReactDomShimConfig(source, filePath);
+    if (analysis.kind === 'manual') {
+      diagnostics.push(analysis.diagnostic);
+      continue;
+    }
+    if (analysis.kind === 'unchanged') continue;
     const owner = manifests
       .filter(({ filePath: manifestPath }) => {
         const packageDirectory = dirname(manifestPath);
@@ -348,13 +414,7 @@ export const analyzeReactDomShimWorkspace = async (
       diagnostics.push(`${filePath}: react and react-dom must both support React 18 or later`);
       continue;
     }
-    const analysis = analyzeReactDomShimConfig(source, filePath);
-    if (analysis.kind === 'manual') {
-      diagnostics.push(analysis.diagnostic);
-    }
-    if (analysis.kind === 'changed') {
-      sourceEdits.push({ filePath, original: source, replacement: analysis.source });
-    }
+    sourceEdits.push({ filePath, original: source, replacement: analysis.source });
   }
 
   if (diagnostics.length) {

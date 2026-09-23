@@ -188,6 +188,11 @@
       "default": "./dist/preview/globals.js"
     },
     "./internal/preview/runtime": "./dist/preview/runtime.js",
+    "./internal/react-dom-client": {
+      "types": "./dist/preview/react-dom-client.d.ts",
+      "code": "./src/preview/react-dom-client.tsx",
+      "default": "./dist/preview/react-dom-client.js"
+    },
     "./internal/router": {
       "types": "./dist/router/index.d.ts",
       "code": "./src/router/index.ts",
@@ -440,6 +445,8 @@
   "peerDependencies": {
     "@types/react": "^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
+    "react": "^18.0.0 || ^19.0.0",
+    "react-dom": "^18.0.0 || ^19.0.0",
     "vite-plus": "^0.1.15 || ^0.2.0"
   },
   "peerDependenciesMeta": {
@@ -447,6 +454,12 @@
       "optional": true
     },
     "prettier": {
+      "optional": true
+    },
+    "react": {
+      "optional": true
+    },
+    "react-dom": {
       "optional": true
     },
     "vite-plus": {

@@ -792,7 +792,7 @@ Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`.
 
 ### Experimental `UniversalStore` API is now internal
 
-`experimental_UniversalStore` and `experimental_useUniversalStore` are no longer exported from `storybook/manager-api` and `storybook/internal/core-server`. The store is internal to Storybook, and `UniversalStore.create()` now throws for store ids that Storybook does not own. There is no replacement for third-party addons.
+`experimental_UniversalStore` and `experimental_useUniversalStore` are no longer exported from `storybook/manager-api` and `storybook/internal/core-server`. The store is internal to Storybook, and `UniversalStore.create()` now throws for store ids that Storybook does not own. We are working on a replacement called Open Services, but it is not ready for third-party addons yet.
 
 ### React: Require v18 and up
 

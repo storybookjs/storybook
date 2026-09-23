@@ -1,8 +1,8 @@
+import { JsPackageManagerFactory, PackageManagerName } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { NPMProxy } from '../../../../common/js-package-manager/NPMProxy.ts';
 import type { ProjectInfo } from '../../project-info.ts';
 import { frameworkToRendererMap } from '../framework-renderer.ts';
 import { DEFAULT_PROMPT_NAME, getSetupMarkdownOutput, PROMPT_NAMES } from './index.ts';
@@ -18,7 +18,7 @@ const projectInfo: ProjectInfo = {
   configDir: '.storybook',
   storiesPaths: [],
   language: 'ts',
-  packageManager: new NPMProxy(),
+  packageManager: JsPackageManagerFactory.getPackageManager({ force: PackageManagerName.NPM }),
   packageManagerName: 'npm',
   hasCsfFactoryPreview: false,
   needsUserOnboarding: false,
@@ -62,13 +62,30 @@ describe.each(['ts', 'js'] as const)('setup instructions in %s projects', (langu
   it.each(['@storybook/react-vite', '@storybook/nextjs-vite'])(
     'preserves React examples for %s',
     async (framework) => {
-      vi.stubEnv('EVAL_SETUP_PROMPT', '');
-      const { markdown } = await getSetupMarkdownOutput({ ...projectInfo, framework, language });
+      for (const name of [
+        DEFAULT_PROMPT_NAME,
+        'monorepo',
+        'relaxed-limits',
+        'monorepo-optimized-tests-relaxed-limits-no-story-deletion',
+      ]) {
+        vi.stubEnv('EVAL_SETUP_PROMPT', name);
+        const { markdown } = await getSetupMarkdownOutput({ ...projectInfo, framework, language });
 
-      expect(markdown).toContain(`preview.${language}x`);
-      expect(markdown).toContain('<SessionProvider>');
-      expect(markdown).toContain('<Story />');
-      expect(markdown).toContain("children: 'Order now'");
+        expect(markdown).toContain(`preview.${language}x`);
+        expect(markdown).toContain('<SessionProvider>');
+        expect(markdown).toContain('<Story />');
+        expect(markdown).toContain("children: 'Order now'");
+        expect(markdown).toContain(`main.${language}x`);
+        expect(markdown).toContain(`App.${language}x`);
+        expect(markdown).toContain('providers wrapping `<App />`');
+        expect(markdown).toContain('`useQuery`');
+        expect(markdown).toContain('Use the **real** provider tree');
+        expect(markdown).toContain("`createPortal(..., document.getElementById('foo'))`");
+        expect(markdown).toContain('Copy JSX patterns');
+        expect(markdown).toContain('a hex color in styled-components');
+        expect(markdown).toContain("args: { children: 'Submit' }");
+        expect(markdown).toContain("canvas.getByRole('button', { name: /submit/i })");
+      }
     }
   );
 });

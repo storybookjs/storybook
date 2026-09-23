@@ -572,6 +572,8 @@ You can also set this parameter at the component or story level. An explicit `tr
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
 
+See the [Code panel documentation](https://storybook.js.org/docs/writing-docs/code-panel) for configuration examples and supported options.
+
 ### Node.js 22.12 or higher
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
@@ -670,7 +672,6 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 - etc.
 
 For more information on upgrading Vite, see the [Vite Migration Guide](https://vite.dev/guide/migration).
-
 
 ### Next.js: Require v15 and up
 

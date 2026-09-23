@@ -247,6 +247,79 @@ describe('packageUsesRenderer', () => {
   });
 });
 
+describe('run', () => {
+  const run = rendererToFramework.run!;
+  const migrationResult = {
+    migrations: [
+      {
+        framework: '@storybook/react-vite',
+        renderer: '@storybook/react',
+        packageJsonFiles: ['/project/package.json'],
+      },
+    ],
+  };
+
+  const packageJson = JSON.stringify(mockPackageJson);
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(readFile).mockImplementation((file) =>
+      Promise.resolve(file === '/project/package.json' ? packageJson : '')
+    );
+    mockGlobby.mockImplementation((patterns, options) => {
+      if (patterns[0] === '/project/.storybook/**/*') {
+        return Promise.resolve(['/project/.storybook/preview.ts']);
+      }
+
+      return Promise.resolve(
+        options?.dot && patterns[0].includes('mdx')
+          ? ['/project/.storybook/preview.ts', '/project/stories.mdx']
+          : []
+      );
+    });
+  });
+
+  it('keeps the renderer for a subpath import in a hidden config file', async () => {
+    vi.mocked(readFile).mockImplementation((file) =>
+      Promise.resolve(
+        file === '/project/.storybook/preview.ts'
+          ? `import type { Preview } from '@storybook/react/preview';`
+          : packageJson
+      )
+    );
+    const packageManager = { writePackageJson: vi.fn() };
+
+    await run({
+      configDir: '/project/.storybook',
+      packageManager,
+      result: migrationResult,
+      storiesPaths: [],
+    } as never);
+
+    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
+  });
+
+  it('keeps the renderer for a subpath import in an MDX story', async () => {
+    vi.mocked(readFile).mockImplementation((file) =>
+      Promise.resolve(
+        file === '/project/stories.mdx'
+          ? `import type { Preview } from '@storybook/react/preview';`
+          : packageJson
+      )
+    );
+    const packageManager = { writePackageJson: vi.fn() };
+
+    await run({
+      configDir: '/project/.storybook',
+      packageManager,
+      result: migrationResult,
+      storiesPaths: ['/project/stories.mdx'],
+    } as never);
+
+    expect(packageManager.writePackageJson).not.toHaveBeenCalled();
+  });
+});
+
 describe('check', () => {
   beforeEach(() => {
     vi.clearAllMocks();

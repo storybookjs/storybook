@@ -23,7 +23,6 @@ import {
   writeRuntimeInstanceRecord,
   writeStorybookRuntimeInstanceRecord,
 } from './runtime-instance-registry.ts';
-import { SERVICE_PROTOCOL_VERSION } from '../../shared/open-service/service-channel.ts';
 
 const tempDirs: string[] = [];
 const NOW = new Date('2026-06-02T12:00:00.000Z');
@@ -213,7 +212,6 @@ describe('createRuntimeInstanceRecord', () => {
       port: 6006,
       storybookVersion: '10.5.0-alpha.0',
       storybookPath: corePackageRoot,
-      servicesProtocolVersion: SERVICE_PROTOCOL_VERSION,
       startedAt: '2026-05-18T12:00:00.000Z',
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },

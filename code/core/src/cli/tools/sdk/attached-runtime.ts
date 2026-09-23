@@ -7,7 +7,6 @@ import {
   createNodeChannel as connectNodeChannel,
   type NodeChannelConnection,
 } from './node-channel.ts';
-import { SERVICE_PROTOCOL_VERSION } from '../../../shared/open-service/service-channel.ts';
 import { setDelegatedMode } from '../../../shared/open-service/service-registry.ts';
 import type { ToolsetGetService } from '../../../shared/open-service/toolset-definition.ts';
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
@@ -22,7 +21,7 @@ import {
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
-  formatProtocolMismatch,
+  formatVersionMismatch,
   formatUnknownInstallation,
 } from './attach-messages.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
@@ -132,19 +131,17 @@ export async function bootstrapAttachedRuntime(
     });
   }
 
-  // Same installation, but is it the same build? A side that kept running while the package was
-  // updated or rebuilt underneath it speaks the envelopes of the build that loaded it; the other
-  // side's envelopes fail its schemas and are dropped in silence. The record carries the server's
-  // protocol version; a record without it predates the field, and whether that server's envelopes
-  // still match is unknown, so attach refuses rather than guess (one restart after the upgrade).
-  if (record.servicesProtocolVersion !== SERVICE_PROTOCOL_VERSION) {
+  // Same installation, but is it the same version? A side that kept running while the package was
+  // updated underneath it speaks the `services:*` envelopes of the build that loaded it; the other
+  // side's envelopes fail its schemas and are dropped in silence (no sync-start reply, no command
+  // ack, only a timeout). The record carries the server's version, so attach refuses any
+  // difference rather than guess whether the envelopes still match: one restart after an upgrade.
+  if (record.storybookVersion !== callerVersion) {
     throw new EnvironmentMismatchError({
-      reason: formatProtocolMismatch({
+      reason: formatVersionMismatch({
         instancePath: installation.callerPath,
         instanceVersion: record.storybookVersion,
-        instanceProtocol: record.servicesProtocolVersion,
         callerVersion,
-        callerProtocol: SERVICE_PROTOCOL_VERSION,
       }),
     });
   }

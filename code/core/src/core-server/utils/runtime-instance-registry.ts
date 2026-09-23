@@ -10,7 +10,6 @@ import type { StorybookConfig } from 'storybook/internal/types';
 import { join, resolve } from 'pathe';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
-import { SERVICE_PROTOCOL_VERSION } from '../../shared/open-service/service-channel.ts';
 import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
 import { detectAgent } from '../../telemetry/detect-agent.ts';
 
@@ -76,13 +75,6 @@ export type RuntimeInstanceRecord = {
    * cannot be derived, which makes attach refuse.
    */
   storybookPath?: string;
-  /**
-   * Wire-format version of the `services:*` channel envelopes this dev server speaks
-   * (`SERVICE_PROTOCOL_VERSION` of the build that started it). `storybook tools` compares it with
-   * its own before attaching in-process: the same installation path does not imply the same
-   * build once the package was updated or rebuilt under a running server.
-   */
-  servicesProtocolVersion: number;
   startedAt: string;
   updatedAt: string;
   mcp: { status: 'not-installed' } | { status: 'ready'; endpoint: string };
@@ -184,7 +176,6 @@ export function createRuntimeInstanceRecord({
     ...(agent ? { agent } : {}),
     storybookVersion,
     ...(storybookPath ? { storybookPath } : {}),
-    servicesProtocolVersion: SERVICE_PROTOCOL_VERSION,
     startedAt: timestamp,
     updatedAt: timestamp,
     mcp,

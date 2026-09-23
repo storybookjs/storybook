@@ -32,16 +32,6 @@ export const SERVICE_COMMAND_ERROR = 'services:command-error' as const;
 export const SERVICE_COMMAND_UNHANDLED = 'services:command-unhandled' as const;
 
 /**
- * Wire-format version of the `services:*` envelopes below. The dev server publishes it in its
- * runtime instance record and `storybook tools` refuses to attach to an instance whose version
- * differs from its own: a peer on another version fails every `safeParse` and drops the envelope
- * in silence (no sync-start reply, no command ack), which the requester can only report as a
- * timeout. Bump it whenever a schema in this file changes shape (a renamed or added required
- * field is a new version).
- */
-export const SERVICE_PROTOCOL_VERSION = 1;
-
-/**
  * Channel payloads are untrusted input, so each event has a Valibot schema. Listeners narrow with
  * `v.safeParse(schema, payload)`; the payload *types* are derived from the schemas so the wire shape
  * and the static type can never drift. Field-level notes:

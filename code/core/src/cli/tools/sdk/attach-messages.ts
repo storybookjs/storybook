@@ -1,3 +1,5 @@
+import { lt, valid } from 'semver';
+
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
@@ -64,30 +66,28 @@ export function formatInstallationMismatch({
   ].join('\n');
 }
 
-// Same installation path, different build: one side kept running while the package was updated
-// or rebuilt. Every envelope would fail the other side's schema in silence, so the advice names
-// which side is older. A record without the field comes from a server that predates it, so that
-// server is the older side; whether its envelopes still match is unknown and attach never guesses.
-export function formatProtocolMismatch({
+// Same installation path, different version: one side kept running while the package was updated
+// underneath it. Every envelope may fail the other side's schema in silence, so the advice names
+// which side is older. A record without a version, or one that does not parse, is treated as the
+// older side: restarting the server is the fix that always applies.
+export function formatVersionMismatch({
   instancePath,
   instanceVersion,
-  instanceProtocol,
   callerVersion,
-  callerProtocol,
 }: {
   instancePath: string;
   instanceVersion?: string;
-  instanceProtocol?: number;
   callerVersion: string;
-  callerProtocol: number;
 }): string {
-  const instanceIsOlder = instanceProtocol === undefined || instanceProtocol < callerProtocol;
+  const instanceIsOlder =
+    !instanceVersion ||
+    !valid(instanceVersion) ||
+    !valid(callerVersion) ||
+    lt(instanceVersion, callerVersion);
   return [
-    `The running Storybook and this CLI run different builds of \`${instancePath}\` and cannot exchange service messages:`,
-    `- running instance: version ${instanceVersion ?? 'unknown'}, service protocol ${
-      instanceProtocol ?? "not reported (started before this CLI's build)"
-    }`,
-    `- this CLI: version ${callerVersion}, service protocol ${callerProtocol}`,
+    `The running Storybook and this CLI are different versions of \`${instancePath}\` and cannot exchange service messages:`,
+    `- running instance: version ${instanceVersion ?? 'unknown'}`,
+    `- this CLI: version ${callerVersion}`,
     instanceIsOlder
       ? `The running instance is the older side. ${RESTART_GUIDANCE}`
       : 'This CLI is the older side: it was loaded before the running instance was started from the updated package. Start this command (or the tools host that created it) again and retry.',

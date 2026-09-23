@@ -78,15 +78,14 @@ paired record's port pinned so the child re-resolves to that exact instance. The
 server's installation, so it attaches as the twin the caller is not; the parent proxies
 `describe` / `call` / `close`. Two processes never attach across installations.
 
-The same installation path does not imply the same build: a side that kept running while its
-`storybook` package was updated or rebuilt speaks the `services:*` envelopes of the build that
-loaded it, and the other side's envelopes fail its schemas and are dropped in silence — no
-sync-start reply, no command ack, only a timeout on the requester. The dev server therefore also
-records `servicesProtocolVersion` (`SERVICE_PROTOCOL_VERSION` in `service-channel.ts`, bumped
-whenever an envelope changes shape; a test pins the envelope shapes to it) and attach refuses a
-record whose value differs from the caller's own, naming both builds and which side is the older
-one to restart. A record without the field comes from a server that predates it; whether its
-envelopes still match is unknown, so it is refused the same way — one restart after upgrading.
+The same installation path does not imply the same version: a side that kept running while its
+`storybook` package was updated speaks the `services:*` envelopes of the build that loaded it, and
+the other side's envelopes fail its schemas and are dropped in silence — no sync-start reply, no
+command ack, only a timeout on the requester. Attach therefore also compares the record's
+`storybookVersion` with the caller's own and refuses any difference, naming both versions and
+which side is the older one to restart. Most version bumps leave the envelopes untouched, so this
+is stricter than needed; it is deliberate, so that a change to the envelopes never has to be
+paired with a version bump by hand.
 
 The gate refuses — `EnvironmentMismatchError { reason }` — when it cannot verify or may not
 respawn: a record without `storybookPath` (older server) or a recorded root gone from disk (wiped

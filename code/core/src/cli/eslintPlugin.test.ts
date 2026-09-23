@@ -9,6 +9,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { PackageJsonWithDepsAndDevDeps } from '../common/index.ts';
 import type { JsPackageManager } from '../common/js-package-manager/JsPackageManager.ts';
 import {
+  configureFlatConfig,
   configureEslintPlugin,
   extractEslintInfo,
   findEslintFile,
@@ -383,6 +384,116 @@ describe('configureEslintPlugin', () => {
       expect(logger.warn).toHaveBeenCalledWith(
         "Could not automatically configure eslint-plugin-storybook. CommonJS ESLint flat configs must export an array, for example: const storybook = require('eslint-plugin-storybook'); module.exports = [...storybook.configs['flat/recommended']];"
       );
+    });
+
+    it('preserves computed CommonJS exports and warns', async () => {
+      const input = dedent`
+        module["exports"] = [{ rules: { 'no-console': 'error' } }];
+      `;
+
+      await expect(configureFlatConfig(input)).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('preserves computed exports beside a direct CommonJS export', async () => {
+      const input = dedent`
+        module.exports = [];
+        module[process.env.ESLINT_EXPORT] = [];
+      `;
+
+      await expect(configureFlatConfig(input)).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('does not reuse a nested CommonJS require binding', async () => {
+      const output = await configureFlatConfig(dedent`
+        if (process.env.CI) {
+          const nestedStorybook = require('eslint-plugin-storybook');
+        }
+
+        module.exports = [];
+      `);
+
+      expect(output).toContain('const storybook = require("eslint-plugin-storybook");');
+      expect(output).toContain('...storybook.configs["flat/recommended"]');
+      expect(output).not.toContain('...nestedStorybook.configs');
+    });
+
+    it('generates a collision-free CommonJS require binding', async () => {
+      const output = await configureFlatConfig(dedent`
+        const storybook = createConfig();
+
+        module.exports = [];
+      `);
+
+      expect(output).toContain('const _storybook = require("eslint-plugin-storybook");');
+      expect(output).toContain('..._storybook.configs["flat/recommended"]');
+    });
+
+    it('does not reuse a CommonJS require declared after its export', async () => {
+      const input = dedent`
+        module.exports = [];
+        const storybook = require('eslint-plugin-storybook');
+      `;
+      const output = await configureFlatConfig(input);
+
+      expect(output).toContain('const _storybook = require("eslint-plugin-storybook");');
+      expect(output).toContain('..._storybook.configs["flat/recommended"]');
+      await expect(configureFlatConfig(output)).resolves.toBe(output);
+    });
+
+    it('does not rewrite conditional or multiple CommonJS exports', async () => {
+      const conditionalConfig = dedent`
+        if (process.env.CI) {
+          module.exports = [];
+        }
+      `;
+      const multipleConfig = dedent`
+        module.exports = [];
+        module.exports = [];
+      `;
+
+      await expect(configureFlatConfig(conditionalConfig)).resolves.toBe(conditionalConfig);
+      await expect(configureFlatConfig(multipleConfig)).resolves.toBe(multipleConfig);
+      expect(logger.warn).toHaveBeenCalledTimes(2);
+    });
+
+    it('does not rewrite logical CommonJS export assignments', async () => {
+      const input = dedent`
+        module.exports ||= [];
+      `;
+
+      await expect(configureFlatConfig(input)).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
+    });
+
+    it('is idempotent for direct CommonJS requires', async () => {
+      const input = dedent`
+        const storybook = require('eslint-plugin-storybook');
+        module.exports = [];
+      `;
+
+      const output = await configureFlatConfig(input);
+
+      await expect(configureFlatConfig(output)).resolves.toBe(output);
+    });
+
+    it('does not duplicate direct CommonJS require config spreads', async () => {
+      const input = dedent`
+        module.exports = [...require('eslint-plugin-storybook').configs['flat/recommended']];
+      `;
+
+      await expect(configureFlatConfig(input)).resolves.toBe(input);
+    });
+
+    it('preserves destructured CommonJS requires and warns', async () => {
+      const input = dedent`
+        const { configs } = require('eslint-plugin-storybook');
+        module.exports = [];
+      `;
+
+      await expect(configureFlatConfig(input)).resolves.toBe(input);
+      expect(logger.warn).toHaveBeenCalledOnce();
     });
 
     it('should configure ESLint plugin correctly with default JS flat config', async () => {

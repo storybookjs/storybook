@@ -366,6 +366,7 @@ export async function buildDevStandalone(
         name,
         address: localAddress,
         networkAddress,
+        open: options.open ?? false,
         allowedHosts,
         managerTotalTime,
         previewTotalTime,

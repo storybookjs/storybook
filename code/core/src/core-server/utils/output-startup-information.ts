@@ -13,6 +13,7 @@ export function outputStartupInformation(options: {
   name: string;
   address: string;
   networkAddress: string;
+  open: boolean;
   allowedHosts?: string[] | true;
   managerTotalTime?: [number, number];
   previewTotalTime?: [number, number];
@@ -23,6 +24,7 @@ export function outputStartupInformation(options: {
     name,
     address,
     networkAddress,
+    open,
     allowedHosts,
     managerTotalTime,
     previewTotalTime,
@@ -40,6 +42,7 @@ export function outputStartupInformation(options: {
     `- Local:                ${address}`,
     `- On your network:      ${networkAddress}`,
     otherAllowedHosts && `- Other allowed hosts:  ${otherAllowedHosts}`,
+    ...(!open ? ['- To open in a browser: Run Storybook with --open'] : []),
   ];
 
   logger.logBox(

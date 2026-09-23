@@ -552,6 +552,21 @@
 
 ## From version 10.x to 11.0.0
 
+### `storybook dev` no longer opens a browser by default
+
+Storybook now starts the development server without automatically opening it in a browser. The CLI
+continues to print the local URL, which you can open manually.
+
+To keep opening Storybook automatically, add `--open` to your command or package script:
+
+```json
+{
+  "scripts": {
+    "storybook": "storybook dev --open"
+  }
+}
+```
+
 ### Docs Code panel enabled by default
 
 When `@storybook/addon-docs` is installed, the Code panel is now available for stories without setting `parameters.docs.codePanel` to `true`.

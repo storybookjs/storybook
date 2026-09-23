@@ -21,14 +21,29 @@ import * as chai from 'chai';
 
 type ExpectedValue = string | number | boolean | bigint | symbol | object | null | undefined;
 type Matcher = (...args: ExpectedValue[]) => Promise<void>;
-type CustomMatcher = (...args: ExpectedValue[]) => { message: () => string; pass: boolean };
+type MatcherResult = { message: () => string; pass: boolean };
+type CustomMatcher = (
+  this: MatcherState,
+  received: never,
+  ...expected: never[]
+) => MatcherResult | Promise<MatcherResult>;
 type Matchers<T> = TestingLibraryMatchers<T, Promise<void>>;
+type MockReturnValue<T> = T extends (...args: infer _Args) => infer R ? R : ExpectedValue;
+type MockParameters<T> = T extends (...args: infer Args) => infer _Return ? Args : ExpectedValue[];
+
+export interface MatcherState {
+  assertionCalls: number;
+  currentTestName?: string;
+  expectedAssertionsNumber?: number | null;
+  isExpectingAssertions?: boolean;
+  soft?: boolean;
+}
 
 // We only expose the jest compatible API for now
 export interface ExpectAssertion<T> extends Matchers<T> {
   toBe: Matcher;
   toBeCalled: Matcher;
-  toBeCalledWith: Matcher;
+  toBeCalledWith(...args: MockParameters<T>): Promise<void>;
   toBeCloseTo: Matcher;
   toBeDefined: Matcher;
   toBeFalsy: Matcher;
@@ -50,13 +65,16 @@ export interface ExpectAssertion<T> extends Matchers<T> {
   toHaveBeenCalled: Matcher;
   toHaveBeenCalledExactlyOnceWith: Matcher;
   toHaveBeenCalledTimes: Matcher;
-  toHaveBeenCalledWith: Matcher;
-  toHaveBeenLastCalledWith: Matcher;
-  toHaveBeenNthCalledWith: Matcher;
+  toHaveBeenCalledWith(...args: MockParameters<T>): Promise<void>;
+  toHaveBeenLastCalledWith(...args: MockParameters<T>): Promise<void>;
+  toHaveBeenNthCalledWith(nthCall: number, ...args: MockParameters<T>): Promise<void>;
   toHaveLength: Matcher;
   toHaveLiveRegion: Matcher;
   toHaveProperty: Matcher;
-  toHaveReturnedTimes: Matcher;
+  toHaveReturnedTimes(times: number): Promise<void>;
+  toHaveReturnedWith(value: MockReturnValue<T>): Promise<void>;
+  toHaveLastReturnedWith(value: MockReturnValue<T>): Promise<void>;
+  toHaveNthReturnedWith(nthCall: number, value: MockReturnValue<T>): Promise<void>;
   toMatch: Matcher;
   toMatchFileSnapshot: Matcher;
   toMatchInlineSnapshot: Matcher;
@@ -91,8 +109,8 @@ export interface Expect {
   objectContaining<T extends object>(object: T): T;
   stringContaining(expected: string): string;
   stringMatching(expected: RegExp | string): string;
-  getState(): object;
-  setState(state: object): void;
+  getState(): MatcherState;
+  setState(state: Partial<MatcherState>): void;
   not: Omit<Expect, 'not'>;
 }
 

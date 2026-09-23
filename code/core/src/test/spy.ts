@@ -9,6 +9,7 @@ import type { SpyInternalImpl } from 'tinyspy';
 import * as tinyspy from 'tinyspy';
 
 type Procedure = (...args: any[]) => any;
+type MockRejection = string | number | boolean | bigint | symbol | object | null | undefined;
 type MethodKeys<T> = keyof { [K in keyof T as T[K] extends Procedure ? K : never]: T[K] };
 type ClassKeys<T> = keyof {
   [K in keyof T as T[K] extends abstract new (...args: any[]) => any ? K : never]: T[K];
@@ -76,8 +77,8 @@ export interface MockInstance<T extends Procedure = Procedure> {
   mockReturnValueOnce(value: ReturnType<T>): this;
   mockResolvedValue(value: Awaited<ReturnType<T>>): this;
   mockResolvedValueOnce(value: Awaited<ReturnType<T>>): this;
-  mockRejectedValue(error: object): this;
-  mockRejectedValueOnce(error: object): this;
+  mockRejectedValue(error: MockRejection): this;
+  mockRejectedValueOnce(error: MockRejection): this;
 }
 
 export interface Mock<T extends Procedure = Procedure> extends MockInstance<T> {
@@ -146,7 +147,7 @@ export type Mocked<T> = {
 
 export const mocks: Set<MockInstance> = vitestMocks as unknown as Set<MockInstance>;
 
-export function isMockFunction(value: object): value is MockInstance {
+export function isMockFunction(value: MockRejection): value is MockInstance {
   return vitestIsMockFunction(value);
 }
 

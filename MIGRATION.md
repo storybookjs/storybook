@@ -789,8 +789,6 @@ The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applie
 
 This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
 
-`storybook upgrade` strips the flag from your main config automatically.
-
 ## From version 10.5.x to 10.6.0
 
 ### Vue 3: `vue-docgen-api` is deprecated

@@ -31,7 +31,13 @@ function renderToDom(classified: ClassifiedError): HTMLElement {
     root.appendChild(frame);
     const caret = document.createElement('span');
     caret.setAttribute('data-testid', 'code-frame-caret');
-    caret.textContent = `${classified.codeFrame.file}:${classified.codeFrame.caret.line}:${classified.codeFrame.caret.column}`;
+    caret.textContent = [
+      classified.codeFrame.file,
+      classified.codeFrame.caret.line,
+      classified.codeFrame.caret.column,
+    ]
+      .filter((part) => part !== undefined)
+      .join(':');
     root.appendChild(caret);
   }
   if (classified.docsUrl) {
@@ -112,6 +118,14 @@ describe('classifyError — one kind per audited throw site', () => {
       line: 57,
     });
     expect(classified.codeFrame?.column).toBeUndefined();
+    expect(classified.codeFrame?.caret).toEqual({ line: 57 });
+  });
+
+  it('render-exception: message-header lines ending in token:digits are not parsed as frames', () => {
+    const error = new Error('failed to load @config:12:34');
+    error.stack = `Error: failed to load @config:12:34\n    at /repo/src/stories/Button.stories.tsx:57:16`;
+    const classified = classifyError(error, 'story-render', { storyName: 'Primary' });
+    expect(classified.codeFrame?.file).toBe('/repo/src/stories/Button.stories.tsx');
   });
 
   it('story-not-found: all three audited not-found classes classify identically', () => {

@@ -42,9 +42,13 @@ export interface CodeFrame {
   file: string;
   line: number;
   column?: number;
-  /** Raw stack context around the caret, trimmed. Falls back to raw frame lines. */
+  /**
+   * The raw stack line the caret points at — the only context that exists before source maps
+   * resolve. Surfaces render `lines.join('\n')` and mark the caret; richer context extraction
+   * belongs to the renderer, not this contract.
+   */
   lines: string[];
-  caret: { line: number; column: number };
+  caret: { line: number; column?: number };
 }
 
 /**
@@ -184,6 +188,11 @@ function parseCodeFrame(stack: string): CodeFrame | undefined {
       continue;
     }
     let file = location[1];
+    // Path-like token required: message headers can end in `token:12:34`-like text without being
+    // frames.
+    if (!/[/.]/.test(file)) {
+      continue;
+    }
     const origin = globalThis.location?.origin;
     if (origin && file.startsWith(origin)) {
       file = file.slice(origin.length);
@@ -195,7 +204,7 @@ function parseCodeFrame(stack: string): CodeFrame | undefined {
       line: line_,
       ...(column === undefined ? {} : { column }),
       lines: [rawLine],
-      caret: { line: line_, column: column ?? 0 },
+      caret: { line: line_, ...(column === undefined ? {} : { column }) },
     };
   }
   return undefined;

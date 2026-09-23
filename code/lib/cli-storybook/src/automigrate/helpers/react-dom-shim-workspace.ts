@@ -252,13 +252,13 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
       },
       TemplateLiteral(path) {
         const value = staticString(path.node);
-        if (!CONFIG_FILE.test(filePath) && value && isShimSource(value)) {
+        if (value && isShimSource(value)) {
           diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
         }
       },
       BinaryExpression(path) {
         const value = staticString(path.node);
-        if (!CONFIG_FILE.test(filePath) && value && isShimSource(value)) {
+        if (value && isShimSource(value)) {
           diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
         }
       },

@@ -353,7 +353,7 @@ describe('analyzeReactDomShimWorkspace', () => {
       kind: 'manual',
       diagnostics: expect.arrayContaining([
         '/project/package.json: contains a react-dom-shim reference that cannot be removed safely',
-        '/project/.storybook/main.ts: uses a non-literal Storybook presets or addons entry',
+        '/project/.storybook/main.ts: contains a react-dom-shim reference that cannot be removed safely',
         '/project/src/load.mjs: contains a react-dom-shim import, re-export, or module load',
         '/project/tsconfig.json: contains a react-dom-shim reference that cannot be removed safely',
       ]),
@@ -395,9 +395,9 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
       diagnostics: expect.arrayContaining([
-        '/project/.storybook/main.ts: contains another react-dom-shim reference that cannot be removed safely',
-        '/project/vite.config.ts: contains another react-dom-shim reference that cannot be removed safely',
-        '/project/vitest.config.ts: uses react-dom-shim outside a supported config entry',
+        '/project/.storybook/main.ts: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/vite.config.ts: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/vitest.config.ts: contains a react-dom-shim reference that cannot be removed safely',
         '/project/src/shim.ts: contains a react-dom-shim reference that cannot be removed safely',
       ]),
     });

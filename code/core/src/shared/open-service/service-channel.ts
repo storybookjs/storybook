@@ -40,7 +40,7 @@ export const SERVICE_COMMAND_UNHANDLED = 'services:command-unhandled' as const;
  * - `state` must be a *plain* object: `v.record` accepts arrays, so a custom check rejects them
  *   (an array snapshot would corrupt the structural merge in `service-sync.ts`).
  * - `frontier` is `{ vector, clock }` — the per-writer contiguous counters plus the Lamport
- *   high-water mark. Command broadcasts use `services:entry` and `{ seq, runtimeId, counter }`.
+ *   high-water mark. Entries use `services:entry` and `{ seq, runtimeId, counter }`.
  * - `input` / `result` are optional: a `void` command input or output serializes to `undefined`,
  *   which JSON / telejson transports drop entirely, so the key is legitimately absent on the wire.
  * - Unknown fields on `services:entry` are ignored so a later envelope field is not a protocol break.

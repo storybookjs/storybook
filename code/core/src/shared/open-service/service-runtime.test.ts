@@ -569,8 +569,6 @@ describe('service runtime', () => {
         expect(service.queries.preloadedValue.get({ entryId: 'entry-a' })).toBeNull();
         await new Promise((resolve) => setTimeout(resolve, 30));
 
-        // The old bare call fired the load fire-and-forget on every read; .get() never does, so the
-        // command that the load would have invoked is never called.
         expect(preloadValueSpy).not.toHaveBeenCalled();
         expect(service.queries.preloadedValue.get({ entryId: 'entry-a' })).toBeNull();
       } finally {

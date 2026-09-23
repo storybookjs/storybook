@@ -455,7 +455,7 @@ When any runtime registers a service definition:
 4. It builds a per-invocation `self` for each command whose `setState` records and authors entries tagged with that command's name.
 5. It builds commands that validate input, run handlers, and validate output.
 6. It builds queries whose `.get()` validates input synchronously, runs the handler synchronously, and validates the output — without firing `load`. Loads fire only through `.loaded()`, an active `subscribe()`, or a dependency `.get()` read made from within a load/`.loaded()` context (deduped while in flight).
-7. [service-registry.ts](./service-registry.ts) installs the entry author that broadcasts each `setState` write, joins the channel sync protocol when a channel is present (as a hub or leaf), and stores the resulting instance behind the registry entry for later lookup.
+7. [service-registry.ts](./service-registry.ts) installs the entry author that broadcasts each `setState` write, joins the channel sync protocol as a hub or leaf, and stores the resulting instance behind the registry entry for later lookup.
 
 ## In-flight Load Registry
 
@@ -515,7 +515,7 @@ an arbitrary style choice:
 - **Reactivity.** State is wrapped in a `deepSignal` proxy for fine-grained per-field tracking, and
   `deepSignal` throws (`"this object can't be observed"`) on scalars, `null`, and `undefined` — there
   are no fields to track on a scalar.
-- **Sync.** Cross-peer reconciliation (`applyStatePatch` in [service-sync.ts](./service-sync.ts)) merges
+- **Sync.** Snapshot install (`applyStatePatch` in [service-sync.ts](./service-sync.ts)) merges
   state by walking object keys; it has no concept of replacing a whole scalar.
 
 Arrays are a special case: `deepSignal` *can* observe them, but `applyStatePatch` replaces arrays
@@ -694,9 +694,9 @@ The runtime then assigns the stamp (`seq = clock + 1`, `counter = own counter + 
 A replica checks an incoming entry against these cases, in this order:
 
 1. **Duplicate** — the stamp is in the Log, or its `counter` is at or below the writer's Vector, or it is a beyond-window stamp this replica already dropped. Ignored. The clock still moves. This drops a runtime's own echo and every relay bounce without a self-id check.
-2. **Beyond window** — `seq` is at or below the clock of the last installed snapshot, or the stamp sorts at or below the newest evicted entry. The Log can no longer place it. Dropped, warned, and a snapshot is requested.
+2. **Beyond window** — `seq` is at or below the clock of the last installed snapshot, or the stamp sorts at or below the newest evicted entry. The Log cannot place it. Dropped, warned, and a snapshot is requested.
 3. **Later** — sorts after every entry in the Log. Applied and appended.
-4. **Earlier** — sorts before some entry in the Log. The newer entries are undone newest first with their stored inverses, the incoming entry is applied, and the undone entries are redone from their stored forward ops with fresh inverses. All of it runs in one `setState` batch, so subscribers see one transition.
+4. **Earlier** — sorts before some entry in the Log. The newer entries are undone newest first with their stored inverses, the incoming entry is applied, and the undone entries are redone from their stored forward ops with fresh inverses. All of it runs in one `applyLocal` batch, so subscribers see one transition.
 5. **Gap** — `counter` is more than one above the writer's Vector. Placed as later or earlier, warned, and a snapshot is requested. The Vector does not move past the gap.
 
 An entry whose apply fails, on a missing parent or any other throw, rolls back inside its batch and stays in the Log as a no-op with an empty inverse. Every replica then folds the same stamps in the same order, and an earlier insert that supplies the parent makes the entry apply on redo. A failed apply warns and requests a snapshot, which repairs a parent that was lost rather than late.
@@ -717,7 +717,7 @@ Eviction keeps young entries, so it is not a prefix cut: an old entry in the mid
    - merge `state` onto the live state, so signals stay attached;
    - make the reply's clock the ordering floor;
    - take the reply's vector;
-   - drop the Log entries that vector covers, and the uncovered entries at or below the reply's clock, with a warning for the latter: the snapshot already folded them, or a fresh arrival would reject them;
+   - drop the Log entries that vector covers, and the uncovered entries at or below the reply's clock, with a warning for the latter: they sort inside the snapshot's history, which the Log does not hold, so a fresh arrival at that `seq` is dropped too;
    - re-apply the remaining entries in canonical order with fresh inverses. This keeps local writes the snapshot lacked and restores their writers in the Vector.
 4. A reply concurrent with the requester's vector, where each side has writes the other lacks, is not installed. The runtime warns and names both frontiers when the reply arrives within 1 s of its own request. It then asks again with its current frontier: the reply answered the frontier it sent, and its own newer write reaches the replier before the next request. Replies reach every direct peer, so a concurrent reply outside that window was meant for a peer and is dropped in silence.
 5. From then on, writes travel as entries. A gap, a beyond-window drop, or a failed apply starts repair:
@@ -778,7 +778,7 @@ Snapshots and static JSON apply through `applyStatePatch` (in [service-sync.ts](
 
 There is no open-service-specific channel install step. `getChannel()` from `storybook/internal/channels` reads the live channel: the manager sets it through `addons.setChannel`, both builders inject it into the preview iframe, and the dev server installs it in the `services` preset before any service registers. `registerService` wires the runtime to that channel at registration; there is no separate connect step. Server registration uses `relay: true`, manager registration `relay: true`, and preview registration `relay: false`.
 
-Until a channel is installed, a runtime works in isolation: all reads and writes are local. Unit tests install a mock channel with `setChannel(mock)`, or call `clearChannel()` to assert that registration fails without one.
+`registerService` throws `OpenServiceMissingChannelError` when no channel is installed. Unit tests install a mock channel with `setChannel(mock)`, or call `clearChannel()` to assert that registration fails without one.
 
 ### Where the protocol is tested
 
@@ -904,7 +904,7 @@ across implementers would require electing a single executor per call, which thi
 
 Replies travel back over the same channel the invoke went out on, and command events are **not**
 relayed across a hub's other transports (unlike `services:entry`, which a relay hub forwards when it
-accepted the entry).
+accepts the entry or first drops it as beyond-window).
 The manager is connected to both the dev server and the preview, so it can invoke a command implemented
 in either; but a preview cannot directly invoke a server-only command, and vice versa — route such
 calls through the manager, or implement the command on a directly-connected peer.

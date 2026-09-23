@@ -26,6 +26,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@vitest/expect@npm:3.2.4',
   'agent-eval/typescript',
   'aria-query@5.3.0',
+  'caniuse-lite',
   'esbuild',
   'playwright',
   'playwright-core',

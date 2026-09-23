@@ -2,7 +2,7 @@
 export default {
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 };
@@ -15,7 +15,7 @@ import type { Preview } from '@storybook/your-framework';
 const preview: Preview = {
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 };
@@ -30,7 +30,7 @@ import { definePreview } from '@storybook/your-framework';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });
@@ -45,7 +45,7 @@ import { definePreview } from '@storybook/your-framework';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });
@@ -57,7 +57,7 @@ import { definePreview } from '@storybook/vue3-vite';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });
@@ -71,7 +71,7 @@ import { definePreview } from '@storybook/vue3-vite';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });
@@ -83,7 +83,7 @@ import { definePreview } from '@storybook/angular';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });
@@ -95,7 +95,7 @@ import { definePreview } from '@storybook/web-components-vite';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });
@@ -109,7 +109,7 @@ import { definePreview } from '@storybook/web-components-vite';
 export default definePreview({
   parameters: {
     docs: {
-      codePanel: true,
+      codePanel: false,
     },
   },
 });

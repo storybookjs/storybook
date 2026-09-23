@@ -12,6 +12,7 @@ const DTS_ARTIFACTS = [
 const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = DTS_ARTIFACTS.every(existsSync);
+const REPOSITORY_ROOT = join(import.meta.dirname, '../../../..');
 const TSC_OPTIONS = [
   '--module',
   'Node16',
@@ -35,11 +36,17 @@ describe('React declaration contract', () => {
 
   it('compiles public declarations with the workspace compiler', () => {
     expect(DTS_BUILT).toBe(true);
-    execFileSync(process.execPath, [TYPESCRIPT, ...TSC_OPTIONS], { stdio: 'pipe' });
+    execFileSync(process.execPath, [TYPESCRIPT, ...TSC_OPTIONS], {
+      cwd: REPOSITORY_ROOT,
+      stdio: 'pipe',
+    });
   });
 
   it('compiles public declarations with TypeScript 5.0.4', () => {
     expect(DTS_BUILT).toBe(true);
-    execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], { stdio: 'pipe' });
+    execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], {
+      cwd: REPOSITORY_ROOT,
+      stdio: 'pipe',
+    });
   });
 });

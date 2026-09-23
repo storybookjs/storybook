@@ -1,0 +1,16 @@
+{
+  "name": "storybook-v10-upgrade-nextjs",
+  "private": true,
+  "scripts": {
+    "storybook": "storybook dev --port 6006"
+  },
+  "dependencies": {
+    "next": "15.5.4",
+    "react": "19.1.1",
+    "react-dom": "19.1.1"
+  },
+  "devDependencies": {
+    "@storybook/nextjs": "10.5.10",
+    "storybook": "10.5.10"
+  }
+}

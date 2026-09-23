@@ -1,0 +1,11 @@
+{
+  "compilerOptions": {
+    "experimentalDecorators": true,
+    "importHelpers": true,
+    "lib": ["ES2022", "dom"],
+    "module": "preserve",
+    "moduleResolution": "bundler",
+    "target": "ES2022",
+    "strict": true
+  }
+}

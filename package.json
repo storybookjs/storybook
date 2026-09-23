@@ -36,6 +36,7 @@
     "svelte-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh svelte-kit/skeleton-ts",
     "task": "yarn --cwd=./scripts task",
     "test": "NODE_OPTIONS=--max_old_space_size=4096 vitest run",
+    "test:mutation:sto-588": "stryker run stryker.sto-588.config.mjs",
     "test:watch": "NODE_OPTIONS=--max_old_space_size=4096 vitest watch",
     "upload-bench": "cd scripts; yarn upload-bench",
     "vite-ecosystem-ci:before-test": "./scripts/ecosystem-ci/before-test.sh react-vite/default-ts",
@@ -78,6 +79,8 @@
   "devDependencies": {
     "@nx/workspace": "^22.6.1",
     "@playwright/test": "^1.58.2",
+    "@stryker-mutator/core": "9.0.1",
+    "@stryker-mutator/vitest-runner": "9.0.1",
     "@types/kill-port": "^2.0.3",
     "http-server": "^14.1.1",
     "husky": "^9.1.7",

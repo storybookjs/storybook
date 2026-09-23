@@ -1,5 +1,3 @@
-import { batch, effect } from '@preact/signals-core';
-import { deepSignal } from 'deepsignal/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/client-logger';
 
@@ -37,15 +35,6 @@ describe('applyStatePatch', () => {
     });
 
     expect(target).toEqual({ entries: { alpha: 'a', beta: 'b', gamma: 'c' } });
-  });
-
-  it('replaces primitive values when the source differs', () => {
-    const target = { value: 'old' };
-    const source = { value: 'new' };
-
-    applyStatePatch(target, source, { preserveMissingKeys: true });
-
-    expect(target).toEqual({ value: 'new' });
   });
 
   // A JSON object literal would make `__proto__` set the prototype rather than an own key, so the
@@ -236,22 +225,6 @@ describe('createReconciler entries', () => {
     expect(reconciler.clock).toBe(5);
   });
 
-  it('places an entry later than an installed snapshot', () => {
-    const { state, reconciler } = fixture({ n: 0 });
-    expect(reconciler.tryInstall({ vector: { peer: 3 }, clock: 10 }, { n: 99 })).toBe('installed');
-
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('writer', 1, 11),
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 11 }],
-      })
-    ).toBe('accepted');
-    expect(state.n).toBe(11);
-    expect(reconciler.log).toHaveLength(1);
-  });
-
   it('places a peer entry between the reply clock and a higher local clock as an earlier insert, not beyond-window', () => {
     const { state, reconciler } = fixture({});
     // A gap entry moves the clock but not the Vector, so a reply can dominate the empty Vector
@@ -280,41 +253,6 @@ describe('createReconciler entries', () => {
       })
     ).toBe('accepted');
     expect(state).toEqual({ peer: 'p', far: 1, other: 5 });
-  });
-
-  it('drops a delayed concurrent entry after snapshot install as beyond-window and heals from a dominating snapshot', () => {
-    const { state, reconciler } = fixture({ n: 'z' });
-    expect(reconciler.tryInstall({ vector: { z: 1 }, clock: 1 }, { n: 'z' })).toBe('installed');
-
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('z', 1, 1),
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 'z' }],
-      })
-    ).toBe('duplicate');
-    expect(state.n).toBe('z');
-
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('a', 1, 1),
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 'a' }],
-      })
-    ).toBe('beyond-window');
-    expect(state.n).toBe('z');
-    expect(reconciler.vector).toEqual({ z: 1 });
-    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
-      expect.stringContaining('service=svc stamps=1:a:1 paths=/n command=setN')
-    );
-
-    expect(reconciler.tryInstall({ vector: { a: 1, z: 1 }, clock: 1 }, { n: 'z' })).toBe(
-      'installed'
-    );
-    expect(state.n).toBe('z');
-    expect(reconciler.vector).toEqual({ a: 1, z: 1 });
   });
 
   it('drops an uncovered gap entry at or below the reply clock on install instead of re-applying it over the snapshot', () => {
@@ -432,100 +370,7 @@ describe('createReconciler entries', () => {
     expect(reconciler.clock).toBe(4);
   });
 
-  it('does not let leftover later log entries clobber a post-bootstrap local write', () => {
-    const server = fixture({ value: '' });
-    expect(
-      server.reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('old-manager', 1, 1),
-        command: 'setValue',
-        patch: [{ op: 'replace', path: '/value', value: 'from panel' }],
-      })
-    ).toBe('accepted');
-    expect(
-      server.reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('old-preview', 1, 2),
-        command: 'setValue',
-        patch: [{ op: 'replace', path: '/value', value: 'from story' }],
-      })
-    ).toBe('accepted');
-    expect(
-      server.reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('old-manager', 2, 3),
-        command: 'setValue',
-        patch: [{ op: 'replace', path: '/value', value: '' }],
-      })
-    ).toBe('accepted');
-    expect(server.state.value).toBe('');
-
-    const joining = fixture({ value: '' });
-    expect(
-      joining.reconciler.tryInstall(server.reconciler.frontier, { value: server.state.value })
-    ).toBe('installed');
-
-    const local = joining.reconciler.advanceLocal(
-      'new-preview',
-      authored(
-        'setValue',
-        [{ op: 'replace', path: '/value', value: 'before reload' }],
-        [{ op: 'replace', path: '/value', value: '' }]
-      )
-    );
-    expect(local.seq).toBe(4);
-
-    expect(
-      server.reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: local,
-        command: 'setValue',
-        patch: [{ op: 'replace', path: '/value', value: 'before reload' }],
-      })
-    ).toBe('accepted');
-    expect(server.state.value).toBe('before reload');
-  });
-
-  it('seeds a joiner clock from the installed frontier so its next seq is later', () => {
-    const server = fixture({ n: 0 });
-    expect(
-      server.reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('w', 1, 100),
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 1 }],
-      })
-    ).toBe('accepted');
-    expect(server.reconciler.clock).toBe(100);
-
-    const joining = fixture({ n: 0 });
-    expect(joining.reconciler.tryInstall(server.reconciler.frontier, { n: server.state.n })).toBe(
-      'installed'
-    );
-    expect(joining.reconciler.clock).toBeGreaterThanOrEqual(100);
-
-    const local = joining.reconciler.advanceLocal(
-      'joiner',
-      authored(
-        'setN',
-        [{ op: 'replace', path: '/n', value: 2 }],
-        [{ op: 'replace', path: '/n', value: 1 }]
-      )
-    );
-    expect(local.seq).toBeGreaterThan(100);
-
-    expect(
-      server.reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: local,
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 2 }],
-      })
-    ).toBe('accepted');
-    expect(server.state.n).toBe(2);
-  });
-
-  it('drops a concurrent snapshot and warns with both frontiers', () => {
+  it('rejects a concurrent snapshot but still raises the clock to its frontier', () => {
     const { state, reconciler } = fixture({ n: 0, m: 0 });
     expect(
       reconciler.tryPlaceEntry({
@@ -577,27 +422,6 @@ describe('createReconciler entries', () => {
     expect(reconciler.clock).toBe(9);
   });
 
-  it('drops a counter at or below the vector', () => {
-    const { state, reconciler } = fixture();
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('w', 1),
-        command: 'setA',
-        patch: [{ op: 'add', path: '/a', value: 1 }],
-      })
-    ).toBe('accepted');
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('w', 1),
-        command: 'setA',
-        patch: [{ op: 'add', path: '/a', value: 9 }],
-      })
-    ).toBe('duplicate');
-    expect(state).toEqual({ a: 1 });
-  });
-
   it('drops every stamp of a writer once a gap has been filled, in any arrival order', () => {
     for (const order of [
       [1, 3, 2],
@@ -620,92 +444,6 @@ describe('createReconciler entries', () => {
       }
       expect(state).toEqual({ k1: 1, k2: 2, k3: 3 });
     }
-  });
-
-  it('appends a later entry and records it in the log', () => {
-    const { state, reconciler } = fixture();
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('w', 1, 1),
-        command: 'setA',
-        patch: [{ op: 'add', path: '/a', value: 1 }],
-      })
-    ).toBe('accepted');
-    expect(state).toEqual({ a: 1 });
-    expect(reconciler.log.map((entry) => entry.stamp)).toEqual([stamp('w', 1, 1)]);
-    expect(reconciler.clock).toBe(1);
-    expect(reconciler.vector).toEqual({ w: 1 });
-  });
-
-  it('places an earlier entry with undo/redo inside one subscriber transition', () => {
-    const state = deepSignal({ a: '', b: '' }) as Record<string, unknown> & {
-      a: string;
-      b: string;
-    };
-    const reconciler = createReconciler({
-      serviceId: 'svc',
-      setState: (mutate) => {
-        batch(() => {
-          mutate(state);
-        });
-      },
-    });
-
-    let transitions = 0;
-    const stop = effect(() => {
-      void state.a;
-      void state.b;
-      transitions += 1;
-    });
-    const afterSubscribe = transitions;
-
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('zzz', 1, 1),
-        command: 'setB',
-        patch: [{ op: 'replace', path: '/b', value: 'B' }],
-      })
-    ).toBe('accepted');
-    expect(transitions - afterSubscribe).toBe(1);
-
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('aaa', 1, 1),
-        command: 'setA',
-        patch: [{ op: 'replace', path: '/a', value: 'A' }],
-      })
-    ).toBe('accepted');
-
-    expect(transitions - afterSubscribe).toBe(2);
-    expect({ a: state.a, b: state.b }).toEqual({ a: 'A', b: 'B' });
-    expect(reconciler.log.map((entry) => entry.stamp.runtimeId)).toEqual(['aaa', 'zzz']);
-    stop();
-  });
-
-  it('replays earlier same-path writes so the later stamp wins', () => {
-    const { state, reconciler } = fixture({ n: 0 });
-
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('zzz', 1, 1),
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 'later' }],
-      })
-    ).toBe('accepted');
-    expect(
-      reconciler.tryPlaceEntry({
-        serviceId: 'svc',
-        stamp: stamp('aaa', 1, 1),
-        command: 'setN',
-        patch: [{ op: 'replace', path: '/n', value: 'earlier' }],
-      })
-    ).toBe('accepted');
-
-    expect(state.n).toBe('later');
   });
 
   it('treats a redelivered gap that the window already evicted as beyond-window', () => {

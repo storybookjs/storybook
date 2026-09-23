@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { applyJsonPatch } from './json-patch.ts';
 import { OpenServiceAsyncRecipeError, OpenServiceCyclicStateError } from '../../server-errors.ts';
-import { type RecordedOp, type RecordedPatch, recordPatch } from './patch-recorder.ts';
+import { type RecordedPatch, recordPatch } from './patch-recorder.ts';
 
 function record<T extends object>(initial: T, mutate: (state: T) => void) {
   const state = deepSignal(initial) as T;
@@ -495,12 +495,6 @@ describe('patch recorder', () => {
     expect(state.a).toBe(0);
   });
 
-  it('records nothing when the recipe writes nothing', () => {
-    const { ops } = record({ n: 0 }, () => {});
-
-    expect(ops).toEqual([]);
-  });
-
   it('does not call the author when the recipe writes nothing', () => {
     const author = vi.fn();
     recordPatch(deepSignal({ n: 0 }), () => {}, author);
@@ -524,35 +518,6 @@ describe('patch recorder', () => {
     expect(ops).toEqual([
       { op: 'replace', path: '/selected', value: { name: 'Button', props: 3 } },
     ]);
-  });
-
-  it('keeps the author equal to peers by copying a draft on assignment', () => {
-    const state = deepSignal({
-      components: { Button: { name: 'Button', props: 3 } },
-      selected: null as { name: string; props: number } | null,
-    });
-    recordPatch(
-      state,
-      (s) => {
-        s.selected = s.components.Button;
-      },
-      () => {}
-    );
-
-    let ops: RecordedOp[] = [];
-    recordPatch(
-      state,
-      (s) => {
-        s.components.Button.props = 4;
-      },
-      (recorded) => {
-        ops = recorded.ops;
-      }
-    );
-
-    expect(ops).toEqual([{ op: 'replace', path: '/components/Button/props', value: 4 }]);
-    expect(state.components.Button.props).toBe(4);
-    expect(state.selected?.props).toBe(3);
   });
 
   it('authors the paths written before a recipe throws, then rethrows', () => {

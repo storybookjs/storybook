@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.1",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -287,7 +287,6 @@
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "11.21.2",
-    "process-ancestry": "^0.0.2",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",
@@ -439,7 +438,7 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
-    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "@types/react": "^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
     "vite-plus": "^0.1.15 || ^0.2.0"
   },

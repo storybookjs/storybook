@@ -475,7 +475,8 @@ export interface ComponentsManifest {
       | 'react-component-meta'
       | 'vue-component-meta'
       | 'angular-component-meta'
-      | 'compodoc';
+      | 'compodoc'
+      | 'custom-elements-manifest';
     durationMs: number;
   };
 }

@@ -6,7 +6,7 @@ import {
   abortWhenClientLeaves,
   getToolsets,
 } from './mcp-handler.ts';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import type { Options } from 'storybook/internal/types';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
@@ -42,52 +42,51 @@ function createMockIncomingMessage(options: {
   }) as unknown as IncomingMessage;
 }
 
-function createMockServerResponse(): {
-  response: ServerResponse;
-  /** Report backpressure on every write, the way Node does for a client that cannot keep up. */
-  stall: () => void;
-  /** Accept chunks again and emit `drain`, which is how Node releases a backed-up writer. */
-  resume: () => void;
-  getResponseData: () => {
-    status: number;
-    headers: Map<string, string>;
-    body: string;
-  };
-} {
-  const headers = new Map<string, string>();
-  const chunks: Uint8Array[] = [];
-  let acceptsChunks = true;
+/** A response that records what was written and can report backpressure, like Node does. */
+class MockClientResponse extends EventEmitter {
+  statusCode = 0;
+  /** Whether `write` accepts the next chunk; false stands for a full send queue. */
+  private acceptsChunks = true;
+  private readonly headers = new Map<string, string>();
+  private readonly chunks: Uint8Array[] = [];
+  end = vi.fn();
 
-  // A real `ServerResponse` is an EventEmitter and the handler listens for `close` on it, so the
-  // mock has to be one too.
-  const mockResponse = Object.assign(new EventEmitter(), {
-    statusCode: 0,
-    setHeader: vi.fn((key: string, value: string) => {
-      headers.set(key, value);
-    }),
-    write: vi.fn((chunk: Uint8Array) => {
-      chunks.push(chunk);
-      // Node takes the chunk and returns false once its queue passes the high-water mark: the
-      // writer has to wait for `drain` before sending more.
-      return acceptsChunks;
-    }),
-    end: vi.fn(),
-  }) as unknown as ServerResponse;
+  setHeader(name: string, value: string) {
+    this.headers.set(name, value);
+  }
 
+  write(chunk: Uint8Array) {
+    this.chunks.push(chunk);
+    // Node takes the chunk and returns false once its queue passes the high-water mark: the
+    // writer has to wait for `drain` before sending more.
+    return this.acceptsChunks;
+  }
+
+  stall() {
+    this.acceptsChunks = false;
+  }
+
+  resume() {
+    this.acceptsChunks = true;
+    this.emit('drain');
+  }
+
+  getResponseData() {
+    return {
+      status: this.statusCode,
+      headers: this.headers,
+      body: Buffer.concat(this.chunks).toString(),
+    };
+  }
+}
+
+function createMockServerResponse() {
+  const response = new MockClientResponse();
   return {
-    response: mockResponse,
-    stall: () => {
-      acceptsChunks = false;
-    },
-    resume: () => {
-      acceptsChunks = true;
-      mockResponse.emit('drain');
-    },
-    getResponseData: () => ({
-      status: mockResponse.statusCode,
-      headers,
-      body: Buffer.concat(chunks).toString(),
-    }),
+    response,
+    stall: () => response.stall(),
+    resume: () => response.resume(),
+    getResponseData: () => response.getResponseData(),
   };
 }
 
@@ -403,7 +402,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: {
           dev: true,
@@ -479,7 +478,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: {
           dev: true,
@@ -535,7 +534,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: {
           dev: true,
@@ -582,7 +581,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: { dev: true, docs: true },
       },
@@ -605,7 +604,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listToolsReq,
       res: listResponse,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: { dev: true, docs: true },
       },
@@ -794,6 +793,11 @@ describe('mcpServerHandler', () => {
 
   it('replaces a POST response with 401 when a tool hit an auth error', async () => {
     const { response, getResponseData } = createMockServerResponse();
+    const compositionAuth = new CompositionAuth();
+    vi.spyOn(compositionAuth, 'hadAuthError').mockReturnValue(true);
+    vi.spyOn(compositionAuth, 'buildWwwAuthenticate').mockReturnValue(
+      'Bearer error="unauthorized"'
+    );
 
     await mcpServerHandler({
       req: createMockIncomingMessage({
@@ -804,10 +808,7 @@ describe('mcpServerHandler', () => {
       res: response,
       options: createMockOptions({ port: 6017 }),
       addonOptions: { toolsets: { dev: true, docs: true } },
-      compositionAuth: {
-        hadAuthError: () => true,
-        buildWwwAuthenticate: () => 'Bearer error="unauthorized"',
-      } as unknown as CompositionAuth,
+      compositionAuth,
     });
 
     expect(getResponseData().status).toBe(401);

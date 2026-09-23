@@ -4,7 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import type { Source } from 'storybook/internal/toolsets-docs';
 import type { Options } from 'storybook/internal/types';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
@@ -88,12 +88,25 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 };
 
 /**
+ * The pieces of a Node response the bridging below touches. A real `ServerResponse` satisfies it,
+ * so a caller (including a test) can supply its own response without claiming to be the class.
+ */
+type ClientAwareResponse = {
+  statusCode: number;
+  setHeader(name: string, value: string): void;
+  write(chunk: Uint8Array): boolean;
+  end(): void;
+  once(event: 'close' | 'drain', listener: () => void): unknown;
+  off(event: 'close' | 'drain', listener: () => void): unknown;
+};
+
+/**
  * Vite middleware handler that wraps the MCP handler.
  * This converts Node.js IncomingMessage/ServerResponse to Web API Request/Response.
  */
 type McpServerHandlerParams = {
   req: IncomingMessage;
-  res: ServerResponse;
+  res: ClientAwareResponse;
   options: Options;
   addonOptions: AddonOptionsOutput;
   /**
@@ -224,7 +237,7 @@ export async function incomingMessageToWebRequest(req: IncomingMessage): Promise
  * Bridges the Node response's lifecycle to an {@link AbortSignal}, so a client that leaves can be
  * noticed from wherever it matters without every layer attaching its own listener.
  */
-export function abortWhenClientLeaves(nodeResponse: ServerResponse) {
+export function abortWhenClientLeaves(nodeResponse: ClientAwareResponse) {
   const controller = new AbortController();
   const leave = () => controller.abort();
   nodeResponse.once('close', leave);
@@ -240,7 +253,7 @@ export function abortWhenClientLeaves(nodeResponse: ServerResponse) {
  * Resolves once Node accepts another chunk. A client that left never emits `drain`, so the signal
  * ends the wait instead of parking the stream forever.
  */
-function waitForDrain(nodeResponse: ServerResponse, clientGone: AbortSignal): Promise<void> {
+function waitForDrain(nodeResponse: ClientAwareResponse, clientGone: AbortSignal): Promise<void> {
   return new Promise((resolve) => {
     if (clientGone.aborted) {
       resolve();
@@ -264,7 +277,7 @@ function waitForDrain(nodeResponse: ServerResponse, clientGone: AbortSignal): Pr
  */
 export async function webResponseToServerResponse(
   webResponse: Response,
-  nodeResponse: ServerResponse,
+  nodeResponse: ClientAwareResponse,
   clientGone: AbortSignal
 ): Promise<void> {
   nodeResponse.statusCode = webResponse.status;

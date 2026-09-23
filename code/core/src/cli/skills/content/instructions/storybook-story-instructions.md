@@ -143,7 +143,8 @@ play: async ({ canvas }) => {
 
 ### Key Requirements
 
-- **Node.js 20+**, **TypeScript 4.9+**
+- **Node.js 22.12+**
+- For TypeScript projects, use a version supported by the configured Storybook framework and application framework.
 {{RENDERER_REQUIREMENTS}}
 
 ## Story Linking Agent Behavior

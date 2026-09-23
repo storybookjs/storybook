@@ -51,7 +51,10 @@ describe('setupAddonInConfig', () => {
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
     expect(mockMain.appendNodeToArray).not.toHaveBeenCalled();
     expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).not.toHaveBeenCalled();
-    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
+      trailingComma: { arrays: true },
+      wrapColumn: 0,
+    });
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
       configDir: '.storybook',
       skipCache: true,
@@ -85,7 +88,10 @@ describe('setupAddonInConfig', () => {
       mockAddonNode
     );
     expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
-    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
+      trailingComma: { arrays: true },
+      wrapColumn: 0,
+    });
     expect(loadMainConfigModule.loadMainConfig).toHaveBeenCalledWith({
       configDir: '.storybook',
       skipCache: true,
@@ -108,7 +114,10 @@ describe('setupAddonInConfig', () => {
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
-    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
+      trailingComma: { arrays: true },
+      wrapColumn: 0,
+    });
   });
 
   it('should handle sync errors gracefully', async () => {
@@ -124,7 +133,10 @@ describe('setupAddonInConfig', () => {
       })
     ).resolves.not.toThrow();
 
-    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
+      trailingComma: { arrays: true },
+      wrapColumn: 0,
+    });
     expect(syncModule.syncStorybookAddons).toHaveBeenCalled();
   });
 
@@ -139,7 +151,10 @@ describe('setupAddonInConfig', () => {
     });
 
     expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
-    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain);
+    expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
+      trailingComma: { arrays: true },
+      wrapColumn: 0,
+    });
     // syncStorybookAddons will be called with undefined, which is fine
   });
 });

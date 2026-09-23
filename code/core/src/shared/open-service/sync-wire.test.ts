@@ -7,7 +7,7 @@ import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import { SERVICE_ENTRY, generateRuntimeId } from './service-channel.ts';
 import { clearRegistry, registerService, serviceRegistryApi } from './service-registry.ts';
 import { createServiceRuntime } from './service-runtime.ts';
-import { createSnapshotReconciler } from './service-sync.ts';
+import { createReconciler } from './service-sync.ts';
 import { connectServiceToChannel } from './service-transport.ts';
 
 const COMMAND_COUNT = 50;
@@ -70,7 +70,7 @@ function connectLeafRuntime(channel: Channel) {
 
   const runtime = createServiceRuntime(definition, { registryApi: serviceRegistryApi });
 
-  const reconciler = createSnapshotReconciler({
+  const reconciler = createReconciler({
     serviceId: definition.id,
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
   });

@@ -3,7 +3,7 @@ import { logger } from 'storybook/internal/client-logger';
 
 import { createTestChannel } from '../../channels/test-channel.ts';
 import { SERVICE_ENTRY, SERVICE_SYNC_REPLY, SERVICE_SYNC_REQUEST } from './service-channel.ts';
-import { createSnapshotReconciler, formatFrontier } from './service-sync.ts';
+import { createReconciler, formatFrontier } from './service-sync.ts';
 import { connectRuntimeToChannel } from './service-transport.ts';
 
 vi.mock('storybook/internal/client-logger', { spy: true });
@@ -25,7 +25,7 @@ describe('connectRuntimeToChannel request policy', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
     const getSnapshot = vi.fn(() => ({ ...state }));
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
       window: { maxAgeMs: 0, maxEntries: 2 },
@@ -79,7 +79,7 @@ describe('connectRuntimeToChannel request policy', () => {
   it('warns about a concurrent reply inside its own reply window and ignores one outside it', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
@@ -128,7 +128,7 @@ describe('connectRuntimeToChannel request policy', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
     const getSnapshot = vi.fn(() => ({ ...state }));
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
@@ -175,7 +175,7 @@ describe('connectRuntimeToChannel request policy', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
     const getSnapshot = vi.fn(() => ({ ...state }));
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
@@ -223,7 +223,7 @@ describe('connectRuntimeToChannel request policy', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
     const getSnapshot = vi.fn(() => ({ ...state }));
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
@@ -274,11 +274,11 @@ describe('connectRuntimeToChannel request policy', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = { n: 1 };
     const getSnapshot = vi.fn(() => ({ ...state }));
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
-    reconciler.tryAdoptEntry({
+    reconciler.tryPlaceEntry({
       serviceId: SERVICE_ID,
       stamp: { seq: 1, runtimeId: 'self', counter: 1 },
       command: 'setN',
@@ -326,7 +326,7 @@ describe('connectRuntimeToChannel request policy', () => {
   it('forwards a beyond-window entry once from a relay hub and never a redelivery', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
@@ -366,11 +366,11 @@ describe('connectRuntimeToChannel request policy', () => {
     const channel = createTestChannel();
     const state: Record<string, unknown> = { n: 1 };
     const getSnapshot = vi.fn(() => ({ ...state }));
-    const reconciler = createSnapshotReconciler({
+    const reconciler = createReconciler({
       serviceId: SERVICE_ID,
       setState: (mutate) => mutate(state),
     });
-    reconciler.tryAdoptEntry({
+    reconciler.tryPlaceEntry({
       serviceId: SERVICE_ID,
       stamp: { seq: 1, runtimeId: 'self', counter: 1 },
       command: 'setN',

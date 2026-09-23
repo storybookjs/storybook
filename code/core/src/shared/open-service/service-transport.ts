@@ -65,7 +65,7 @@ import {
 } from './service-channel.ts';
 import { deserializeError, serializeError } from './service-error-serialization.ts';
 import type { EntryAuthor } from './service-runtime.ts';
-import { formatFrontier, vectorDominates, type SnapshotReconciler } from './service-sync.ts';
+import { formatFrontier, vectorDominates, type Reconciler } from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
@@ -108,8 +108,8 @@ interface RuntimeTransportContext {
   serviceId: ServiceId;
   /** This runtime's stable id; it stamps this runtime's entries and drops its own `sync-request`. */
   ownRuntimeId: string;
-  /** The reconciler owning this runtime's Log, Vector, Clock, and adopt/advance transitions. */
-  reconciler: SnapshotReconciler;
+  /** The reconciler owning this runtime's Log, Vector, and Clock. */
+  reconciler: Reconciler;
   /** Reads the runtime's current live state at emit time. */
   getSnapshot: () => Record<string, unknown>;
 }
@@ -118,8 +118,7 @@ interface RuntimeTransportContext {
  * Builds the receiver for the entries a runtime's `setState` recipes author.
  *
  * Each entry is stamped BEFORE it is emitted, so the copy that bounces back carries a stamp this
- * runtime has already seen and is dropped as a duplicate. State adopted from peers flows through the
- * runtime's `applyLocal`, never through `setState`, so an adopted entry never authors one.
+ * runtime has already seen and is dropped as a duplicate.
  */
 export function createEntryAuthor(
   context: Omit<RuntimeTransportContext, 'getSnapshot'> & { channel: ServiceChannel }
@@ -234,7 +233,7 @@ export function connectRuntimeToChannel(
       return;
     }
 
-    const outcome = reconciler.tryAdopt(snapshot.output.frontier, snapshot.output.state);
+    const outcome = reconciler.tryInstall(snapshot.output.frontier, snapshot.output.state);
     if (outcome === 'concurrent' && withinReplyWindow) {
       logger.warn(
         `Open-service sync: concurrent snapshot reply dropped. service=${serviceId} local=${formatFrontier(reconciler.frontier)} reply=${formatFrontier(snapshot.output.frontier)}`
@@ -256,7 +255,7 @@ export function connectRuntimeToChannel(
       return;
     }
 
-    const outcome = reconciler.tryAdoptEntry(parsed.output);
+    const outcome = reconciler.tryPlaceEntry(parsed.output);
 
     const logged = outcome === 'accepted' || outcome === 'gap' || outcome === 'unapplied';
     const needsRepair = outcome === 'gap' || outcome === 'beyond-window' || outcome === 'unapplied';

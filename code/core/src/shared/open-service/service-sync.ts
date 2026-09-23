@@ -25,9 +25,9 @@ export type LogWindow = {
   maxEntries: number;
 };
 
-export type SnapshotInstallOutcome = 'installed' | 'concurrent' | 'not-ahead';
+export type InstallOutcome = 'installed' | 'concurrent' | 'not-ahead';
 
-export type AdoptEntryOutcome = 'accepted' | 'gap' | 'unapplied' | 'duplicate' | 'beyond-window';
+export type PlaceEntryOutcome = 'accepted' | 'gap' | 'unapplied' | 'duplicate' | 'beyond-window';
 
 function vectorCounter(vector: Record<string, number>, runtimeId: string): number {
   return vector[runtimeId] ?? 0;
@@ -187,11 +187,11 @@ type StoredLogEntry = ReconcilerLogEntry & {
  * The per-service reconciler shared by every runtime's channel integration.
  *
  * It owns the Clock, the per-writer Vector, and the ordered Log. The entry author calls
- * {@link SnapshotReconciler.advanceLocal} before emitting. Incoming entries go through
- * {@link SnapshotReconciler.tryAdoptEntry}. Incoming snapshot replies go through
- * {@link SnapshotReconciler.tryAdopt}.
+ * {@link Reconciler.advanceLocal} before emitting. Incoming entries go through
+ * {@link Reconciler.tryPlaceEntry}. Incoming snapshot replies go through
+ * {@link Reconciler.tryInstall}.
  */
-export type SnapshotReconciler = {
+export type Reconciler = {
   /** Lamport high-water mark. Moves on incoming stamps (including duplicates) and on install. */
   readonly clock: number;
   /** Per-writer highest contiguous counter applied. */
@@ -212,7 +212,7 @@ export type SnapshotReconciler = {
    * Installs a snapshot only if `frontier.vector` dominates the local vector; `concurrent` and
    * `not-ahead` leave state untouched. A hub forwards the reply only when `installed`.
    */
-  tryAdopt(frontier: SyncFrontier, state: Record<string, unknown>): SnapshotInstallOutcome;
+  tryInstall(frontier: SyncFrontier, state: Record<string, unknown>): InstallOutcome;
   /**
    * Places an incoming entry into the Log. `accepted`, `gap`, and `unapplied` mean it was logged. A hub
    * forwards the original payload for those and for a first-time `beyond-window`, so a hub that
@@ -221,20 +221,20 @@ export type SnapshotReconciler = {
    * `sync-request`. An `unapplied` entry failed to apply and is kept as a no-op, so every replica
    * folds the same stamps; the request repairs a parent that was lost rather than late.
    */
-  tryAdoptEntry(incoming: EntryPayload): AdoptEntryOutcome;
+  tryPlaceEntry(incoming: EntryPayload): PlaceEntryOutcome;
 };
 
 /**
- * Builds a {@link SnapshotReconciler} bound to one runtime's state.
+ * Builds a {@link Reconciler} bound to one runtime's state.
  *
- * `setState` is the runtime's `applyLocal` adapted to a plain record, so adopting never authors an
- * entry. `serviceId` names the service in warnings. `window` bounds the Log.
+ * `setState` is the runtime's `applyLocal` adapted to a plain record, so placing and installing never
+ * author an entry. `serviceId` names the service in warnings. `window` bounds the Log.
  */
-export function createSnapshotReconciler(options: {
+export function createReconciler(options: {
   serviceId: string;
   setState: (mutate: StateMutator) => void;
   window?: Partial<LogWindow>;
-}): SnapshotReconciler {
+}): Reconciler {
   const { serviceId, setState } = options;
   const logWindow: LogWindow = {
     maxAgeMs: options.window?.maxAgeMs ?? DEFAULT_LOG_MAX_AGE_MS,
@@ -412,7 +412,7 @@ export function createSnapshotReconciler(options: {
       return stamp;
     },
 
-    tryAdopt(frontier: SyncFrontier, state: Record<string, unknown>): SnapshotInstallOutcome {
+    tryInstall(frontier: SyncFrontier, state: Record<string, unknown>): InstallOutcome {
       // Before the dominance check: a runtime that cannot install this reply still learns how far
       // the replier's clock got, so its next write does not stamp below the replier's history.
       advanceClock(frontier.clock);
@@ -468,7 +468,7 @@ export function createSnapshotReconciler(options: {
       return 'installed';
     },
 
-    tryAdoptEntry(incoming: EntryPayload): AdoptEntryOutcome {
+    tryPlaceEntry(incoming: EntryPayload): PlaceEntryOutcome {
       const { stamp, command, patch } = incoming;
       const key = entryStampKey(stamp);
 

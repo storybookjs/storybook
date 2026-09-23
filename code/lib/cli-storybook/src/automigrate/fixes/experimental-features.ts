@@ -12,6 +12,7 @@ import type { Fix } from '../types.ts';
 const hasDocgenProvider = (mainConfig: StorybookConfigRaw): boolean =>
   getRendererName(mainConfig) === SupportedRenderer.REACT ||
   ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
+    // Stryker disable next-line StringLiteral: any non-provider fallback has the same false result.
     getFrameworkPackageName(mainConfig) ?? ''
   );
 

@@ -1,0 +1,24 @@
+{
+  "mutate": [
+    "code/lib/cli-storybook/src/automigrate/fixes/docgen-server.ts:16-98",
+    "code/lib/cli-storybook/src/automigrate/fixes/experimental-features.ts:12-83"
+  ],
+  "testRunner": "vitest",
+  "vitest": {
+    "configFile": "code/lib/cli-storybook/vitest.config.ts",
+    "dir": "code/lib/cli-storybook",
+    "related": true
+  },
+  "coverageAnalysis": "all",
+  "inPlace": true,
+  "thresholds": {
+    "break": 100
+  },
+  "reporters": ["clear-text", "json"],
+  "jsonReporter": {
+    "fileName": "reports/stryker-docgen-server.json"
+  },
+  "concurrency": 4,
+  "timeoutMS": 60000,
+  "cleanTempDir": "always"
+}

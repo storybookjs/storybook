@@ -194,6 +194,12 @@ describe('experimental feature flag automigrations', () => {
       expect(result !== null).toBe(expected);
     });
 
+    it('does not offer the docgen-server migration without a framework', async () => {
+      await expect(
+        enableExperimentalDocgenServer.check(checkOptions({ mainConfig: { stories: [] } }))
+      ).resolves.toBeNull();
+    });
+
     it('offers enable-experimental-review regardless of the docgen provider', async () => {
       const result = await enableExperimentalReview.check(
         checkOptions({
@@ -226,7 +232,7 @@ describe('experimental feature flag automigrations', () => {
     );
   });
 
-  it('keeps automigration metadata available to the upgrade prompt', () => {
+  it('exposes a complete custom automigration descriptor', async () => {
     const fix = createExperimentalFeatureFix({
       id: 'enable-test-flag',
       name: 'experimentalReview',
@@ -236,6 +242,7 @@ describe('experimental feature flag automigrations', () => {
     });
     expect(fix.defaultSelected).toBe(false);
     expect(fix.prompt()).toBe('Enable the test flag.');
+    await expect(fix.check(checkOptions({ requested: true }))).resolves.toEqual({});
   });
 
   describe('run', () => {

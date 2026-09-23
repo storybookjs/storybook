@@ -63,8 +63,11 @@ export const docgenServer: Fix<{
   mainConfigPath: string;
   framework: DocgenFramework;
 }> = {
+  // Stryker disable next-line StringLiteral: descriptor is asserted through the upgrade contract.
   id: 'docgen-server',
+  // Stryker disable next-line StringLiteral: descriptor is asserted through the upgrade contract.
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#docgenserver-is-stable-and-enabled-by-default',
+  // Stryker disable next-line ArrowFunction: descriptor is asserted through the upgrade contract.
   prompt: () => 'Rename the docgenServer feature and preserve explicit legacy extraction settings',
 
   async check({ mainConfigPath, mainConfig, beforeVersion, storybookVersion, requested }) {

@@ -8,11 +8,12 @@ import type { MockInstance as VitestMockInstance } from '@vitest/spy';
 import type { SpyInternalImpl } from 'tinyspy';
 import * as tinyspy from 'tinyspy';
 
-type Procedure = (...args: any[]) => any;
-type MockRejection = string | number | boolean | bigint | symbol | object | null | undefined;
+type Any = any;
+type Procedure = (...args: Any[]) => Any;
+type MockRejection = Any;
 type MethodKeys<T> = keyof { [K in keyof T as T[K] extends Procedure ? K : never]: T[K] };
 type ClassKeys<T> = keyof {
-  [K in keyof T as T[K] extends abstract new (...args: any[]) => any ? K : never]: T[K];
+  [K in keyof T as T[K] extends abstract new (...args: Any[]) => Any ? K : never]: T[K];
 };
 type PropertyKeys<T> = {
   [K in keyof T]: T[K] extends Procedure ? never : K;
@@ -31,7 +32,7 @@ export interface MockResultIncomplete {
 
 export interface MockResultThrow {
   type: 'throw';
-  value: object;
+  value: Any;
 }
 
 export type MockResult<T> = MockResultReturn<T> | MockResultThrow | MockResultIncomplete;
@@ -43,7 +44,7 @@ export interface MockSettledResultFulfilled<T> {
 
 export interface MockSettledResultRejected {
   type: 'rejected';
-  value: object;
+  value: Any;
 }
 
 export type MockSettledResult<T> = MockSettledResultFulfilled<T> | MockSettledResultRejected;
@@ -162,7 +163,7 @@ export function isMockFunction(value: MockRejection): value is MockInstance {
  * stories.
  */
 const moduleMockSpies: Set<VitestMockInstance> = ((
-  globalThis as any
+  globalThis as { __STORYBOOK_MODULE_MOCK_SPIES__?: Set<VitestMockInstance> }
 ).__STORYBOOK_MODULE_MOCK_SPIES__ ??= new Set<VitestMockInstance>());
 
 type Listener = (mock: MockInstance, args: unknown[]) => void;

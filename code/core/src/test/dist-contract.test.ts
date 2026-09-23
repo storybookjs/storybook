@@ -1,4 +1,5 @@
 import { execFileSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { existsSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
@@ -6,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 const DTS_ARTIFACT = join(import.meta.dirname, '../../dist/test/index.d.ts');
 const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-consumer.ts');
-const TYPESCRIPT = join(import.meta.dirname, '../../../../node_modules/typescript/bin/tsc');
+const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
 const DTS_BUILT = existsSync(DTS_ARTIFACT);
 
 describe('storybook/test declaration contract', () => {
@@ -14,7 +15,8 @@ describe('storybook/test declaration contract', () => {
     expect(DTS_BUILT).toBe(true);
   });
 
-  it.runIf(DTS_BUILT)('uses public dependencies compatible with TypeScript 5', () => {
+  it('uses public dependencies compatible with TypeScript 5', () => {
+    expect(DTS_BUILT).toBe(true);
     const declarations = readFileSync(DTS_ARTIFACT, 'utf-8');
 
     expect(declarations).toContain('from "@testing-library/jest-dom/matchers"');
@@ -25,7 +27,8 @@ describe('storybook/test declaration contract', () => {
     expect(declarations).not.toContain('Chai.');
   });
 
-  it.runIf(DTS_BUILT)('compiles the public test API consumer fixture', () => {
+  it('compiles the public test API consumer fixture', () => {
+    expect(DTS_BUILT).toBe(true);
     execFileSync(
       process.execPath,
       [

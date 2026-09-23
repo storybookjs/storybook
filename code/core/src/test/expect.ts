@@ -19,99 +19,196 @@ import {
 } from '@vitest/expect';
 import * as chai from 'chai';
 
-type ExpectedValue = string | number | boolean | bigint | symbol | object | null | undefined;
-type Matcher = (...args: ExpectedValue[]) => Promise<void>;
-type MatcherResult = { message: () => string; pass: boolean };
+type Any = any;
+type Matcher = (...args: Any[]) => Promise<void>;
+type MatcherResult = { message: () => string; pass: boolean; actual?: Any; expected?: Any };
+type MatcherHintOptions = {
+  comment?: string;
+  expectedColor?: Any;
+  isDirectExpectCall?: boolean;
+  isNot?: boolean;
+  promise?: string;
+  receivedColor?: Any;
+  secondArgument?: string;
+  secondArgumentColor?: Any;
+};
+type TesterContext = {
+  equals(a: Any, b: Any, customTesters?: EqualityTester[], strictCheck?: boolean): boolean;
+};
+type EqualityTester = (
+  this: TesterContext,
+  a: Any,
+  b: Any,
+  customTesters: EqualityTester[]
+) => boolean | undefined;
+type MatcherUtils = {
+  EXPECTED_COLOR: Any;
+  RECEIVED_COLOR: Any;
+  INVERTED_COLOR: Any;
+  BOLD_WEIGHT: Any;
+  DIM_COLOR: Any;
+  diff(a: Any, b: Any, options?: Any): Any;
+  matcherHint(
+    matcherName: string,
+    received?: string,
+    expected?: string,
+    options?: MatcherHintOptions
+  ): string;
+  printReceived(value: Any): string;
+  printExpected(value: Any): string;
+  printDiffOrStringify(a: Any, b: Any, aLabel: string, bLabel: string, options?: Any): string;
+  printWithType(name: string, value: Any, print: (value: Any) => string): string;
+  stringify(value: Any): string;
+  iterableEquality: EqualityTester;
+  subsetEquality: EqualityTester;
+};
 type CustomMatcher = (
   this: MatcherState,
-  received: never,
-  ...expected: never[]
+  received: Any,
+  ...expected: Any[]
 ) => MatcherResult | Promise<MatcherResult>;
 type Matchers<T> = TestingLibraryMatchers<T, Promise<void>>;
-type MockReturnValue<T> = T extends (...args: infer _Args) => infer R ? R : ExpectedValue;
-type MockParameters<T> = T extends (...args: infer Args) => infer _Return ? Args : ExpectedValue[];
+type MockReturnValue<T> = T extends (...args: Any[]) => infer R ? R : Any;
+type MockParameters<T> = T extends (...args: infer Args) => Any ? Args : Any[];
+type AsymmetricMatchers = {
+  stringContaining(expected: string): Any;
+  objectContaining<T = Any>(object: T): Any;
+  arrayContaining<T = Any>(array: T[]): Any;
+  stringMatching(expected: RegExp | string): Any;
+  closeTo(expected: number, precision?: number): Any;
+  toSatisfy(matcher: (value: Any) => boolean, message?: string): Any;
+  toBeOneOf<T>(sample: T[]): Any;
+};
 
 export interface MatcherState {
+  customTesters: EqualityTester[];
   assertionCalls: number;
   currentTestName?: string;
+  dontThrow?: () => void;
+  error?: Error;
+  equals(a: Any, b: Any, customTesters?: EqualityTester[], strictCheck?: boolean): boolean;
+  expand?: boolean;
   expectedAssertionsNumber?: number | null;
+  expectedAssertionsNumberErrorGen?: (() => Error) | null;
   isExpectingAssertions?: boolean;
+  isExpectingAssertionsError?: Error | null;
+  isNot: boolean;
+  promise: string;
+  suppressedErrors: Error[];
+  testPath?: string;
+  utils: MatcherUtils;
   soft?: boolean;
+  poll?: boolean;
 }
 
 // We only expose the jest compatible API for now
-export interface ExpectAssertion<T> extends Matchers<T> {
-  toBe: Matcher;
-  toBeCalled: Matcher;
-  toBeCalledWith(...args: MockParameters<T>): Promise<void>;
-  toBeCloseTo: Matcher;
-  toBeDefined: Matcher;
-  toBeFalsy: Matcher;
-  toBeFunction: Matcher;
-  toBeGreaterThan: Matcher;
-  toBeGreaterThanOrEqual: Matcher;
-  toBeInstanceOf: Matcher;
-  toBeLessThan: Matcher;
-  toBeLessThanOrEqual: Matcher;
-  toBeNaN: Matcher;
-  toBeNull: Matcher;
-  toBeTruthy: Matcher;
-  toBeTypeOf: Matcher;
-  toBeUndefined: Matcher;
-  toContain: Matcher;
-  toContainEqual: Matcher;
-  toEqual: Matcher;
-  toEqualTypeOf: Matcher;
-  toHaveBeenCalled: Matcher;
-  toHaveBeenCalledExactlyOnceWith: Matcher;
-  toHaveBeenCalledTimes: Matcher;
-  toHaveBeenCalledWith(...args: MockParameters<T>): Promise<void>;
-  toHaveBeenLastCalledWith(...args: MockParameters<T>): Promise<void>;
-  toHaveBeenNthCalledWith(nthCall: number, ...args: MockParameters<T>): Promise<void>;
-  toHaveLength: Matcher;
-  toHaveLiveRegion: Matcher;
-  toHaveProperty: Matcher;
+export interface Assertion<T> extends Matchers<T> {
+  toBe<E>(expected: E): Promise<void>;
+  toBeCloseTo(number: number, numDigits?: number): Promise<void>;
+  toBeDefined(): Promise<void>;
+  toBeFalsy(): Promise<void>;
+  toBeFunction(): Promise<void>;
+  toBeGreaterThan(number: number | bigint): Promise<void>;
+  toBeGreaterThanOrEqual(number: number | bigint): Promise<void>;
+  toBeInstanceOf<E>(expected: E): Promise<void>;
+  toBeLessThan(number: number | bigint): Promise<void>;
+  toBeLessThanOrEqual(number: number | bigint): Promise<void>;
+  toBeNaN(): Promise<void>;
+  toBeNull(): Promise<void>;
+  toBeTruthy(): Promise<void>;
+  toBeTypeOf(
+    expected:
+      | 'bigint'
+      | 'boolean'
+      | 'function'
+      | 'number'
+      | 'object'
+      | 'string'
+      | 'symbol'
+      | 'undefined'
+  ): Promise<void>;
+  toBeUndefined(): Promise<void>;
+  toContain<E>(item: E): Promise<void>;
+  toContainEqual<E>(item: E): Promise<void>;
+  toEqual<E>(expected: E): Promise<void>;
+  toEqualTypeOf<_Expected>(): Promise<void>;
+  toHaveBeenCalled(): Promise<void>;
+  toBeCalled(): Promise<void>;
+  toHaveBeenCalledExactlyOnceWith<E extends MockParameters<T>>(...args: E): Promise<void>;
+  toHaveBeenCalledTimes(times: number): Promise<void>;
+  toBeCalledTimes(times: number): Promise<void>;
+  toHaveBeenCalledWith<E extends MockParameters<T>>(...args: E): Promise<void>;
+  toBeCalledWith<E extends MockParameters<T>>(...args: E): Promise<void>;
+  toHaveBeenLastCalledWith<E extends MockParameters<T>>(...args: E): Promise<void>;
+  lastCalledWith<E extends MockParameters<T>>(...args: E): Promise<void>;
+  toHaveBeenNthCalledWith<E extends MockParameters<T>>(nthCall: number, ...args: E): Promise<void>;
+  nthCalledWith<E extends MockParameters<T>>(nthCall: number, ...args: E): Promise<void>;
+  toHaveLength(length: number): Promise<void>;
+  toHaveProperty<E>(property: string | (string | number)[], value?: E): Promise<void>;
+  toReturn(): Promise<void>;
+  toHaveReturned(): Promise<void>;
+  toReturnTimes(times: number): Promise<void>;
   toHaveReturnedTimes(times: number): Promise<void>;
-  toHaveReturnedWith(value: MockReturnValue<T>): Promise<void>;
-  toHaveLastReturnedWith(value: MockReturnValue<T>): Promise<void>;
-  toHaveNthReturnedWith(nthCall: number, value: MockReturnValue<T>): Promise<void>;
-  toMatch: Matcher;
-  toMatchFileSnapshot: Matcher;
-  toMatchInlineSnapshot: Matcher;
-  toMatchObject: Matcher;
-  toMatchSnapshot: Matcher;
-  toMatchTypeOf: Matcher;
-  toPass: Matcher;
-  toStrictEqual: Matcher;
-  toThrow: Matcher;
-  toThrowError: Matcher;
+  toReturnWith<E extends MockReturnValue<T> = MockReturnValue<T>>(value: E): Promise<void>;
+  toHaveReturnedWith<E extends MockReturnValue<T> = MockReturnValue<T>>(value: E): Promise<void>;
+  lastReturnedWith<E extends MockReturnValue<T> = MockReturnValue<T>>(value: E): Promise<void>;
+  toHaveLastReturnedWith<E extends MockReturnValue<T> = MockReturnValue<T>>(
+    value: E
+  ): Promise<void>;
+  nthReturnedWith<E extends MockReturnValue<T> = MockReturnValue<T>>(
+    nthCall: number,
+    value: E
+  ): Promise<void>;
+  toHaveNthReturnedWith<E extends MockReturnValue<T> = MockReturnValue<T>>(
+    nthCall: number,
+    value: E
+  ): Promise<void>;
+  toMatch(expected: string | RegExp): Promise<void>;
+  toMatchFileSnapshot(filepath: string, message?: string): Promise<void>;
+  toMatchInlineSnapshot(): Promise<void>;
+  toMatchInlineSnapshot(snapshot: string): Promise<void>;
+  toMatchInlineSnapshot(properties: Any, snapshot?: string): Promise<void>;
+  toMatchObject<E extends object | Any[]>(expected: E): Promise<void>;
+  toMatchSnapshot(message?: string): Promise<void>;
+  toMatchSnapshot(properties: Any, message?: string): Promise<void>;
+  toMatchTypeOf<_Expected>(): Promise<void>;
+  toPass(options?: { interval?: number; timeout?: number }): Promise<void>;
+  toStrictEqual<E>(expected: E): Promise<void>;
+  toThrow(
+    expected?: string | (abstract new (...args: Any[]) => Any) | RegExp | Error
+  ): Promise<void>;
+  toThrowError(
+    expected?: string | (abstract new (...args: Any[]) => Any) | RegExp | Error
+  ): Promise<void>;
   toThrowErrorMatchingInlineSnapshot: Matcher;
   toThrowErrorMatchingSnapshot: Matcher;
   toHaveBeenCalledOnce(): Promise<void>;
   toSatisfy<E>(matcher: (value: E) => boolean, message?: string): Promise<void>;
-  resolves: ExpectAssertion<T>;
-  rejects: ExpectAssertion<T>;
-  not: ExpectAssertion<T>;
+  toBeOneOf<E>(sample: E[]): Promise<void>;
+  resolves: Assertion<T>;
+  rejects: Assertion<T>;
+  not: Assertion<T>;
 }
 
-export interface Assertion<T> extends ExpectAssertion<T> {}
-
 export interface Expect {
-  <T>(actual: T, message?: string): ExpectAssertion<T>;
+  <T>(actual: T, message?: string): Assertion<T>;
   unreachable(message?: string): Promise<never>;
-  soft<T>(actual: T, message?: string): ExpectAssertion<T>;
-  extend(expects: Record<string, CustomMatcher>): void;
+  soft<T>(actual: T, message?: string): Assertion<T>;
+  extend(expects: Record<string, CustomMatcher> & ThisType<MatcherState>): void;
   assertions(expected: number): Promise<void>;
   hasAssertions(): Promise<void>;
-  anything(): ExpectedValue;
-  any(constructor: abstract new (...args: never[]) => object): ExpectedValue;
-  arrayContaining<T>(array: T[]): T[];
-  objectContaining<T extends object>(object: T): T;
-  stringContaining(expected: string): string;
-  stringMatching(expected: RegExp | string): string;
+  anything(): Any;
+  any(constructor: Any): Any;
+  arrayContaining<T = Any>(array: T[]): Any;
+  objectContaining<T = Any>(object: T): Any;
+  stringContaining(expected: string): Any;
+  stringMatching(expected: RegExp | string): Any;
+  closeTo(expected: number, precision?: number): Any;
+  toSatisfy(matcher: (value: Any) => boolean, message?: string): Any;
+  toBeOneOf<T>(sample: T[]): Any;
   getState(): MatcherState;
   setState(state: Partial<MatcherState>): void;
-  not: Omit<Expect, 'not'>;
+  not: AsymmetricMatchers;
 }
 
 export function createExpect(): Expect {

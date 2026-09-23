@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 
 import { expect, it, vi } from 'vitest';
 
+import { adaptCoreComponent, formatComponentManifest } from 'storybook/internal/toolsets-docs';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import { buildDocgenPayload } from './build-docgen.ts';
 
@@ -113,6 +114,61 @@ it('documents a real declared subcomponent through the same chain as the primary
     'export type ColorPickerComponentInputs = {'
   );
   expect(payload?.subcomponents?.ColorPicker?.error).toBeUndefined();
+}, 30_000);
+
+// The payload alone doesn't prove a subcomponent actually renders where MCP's `docs.show` puts it:
+// core's `formatComponentManifest` synthesizes `## Subcomponents` from the flat payload record and
+// demotes each child's own apiDescription headings underneath it. This runs the same real analyzer
+// chain as above, then the exact composition function MCP calls, to prove that render.
+it('renders a real declared subcomponent under `## Subcomponents` in the composed markdown', async () => {
+  const payload = await withRealAnalyzer((manager) =>
+    buildDocgenPayload(
+      { entry: entryFor(COMPOSITE_STORY_PATH, 'composite', 'Composite') },
+      {
+        manager,
+        options: { propsTable: 'api' },
+        logger: { warn: vi.fn(), debug: vi.fn() },
+        resolvePath: () => COMPOSITE_STORY_PATH,
+      }
+    )
+  );
+
+  expect(payload?.error).toBeUndefined();
+  const manifest = adaptCoreComponent({ ...payload!, id: payload!.id, name: payload!.name });
+  const markdown = formatComponentManifest(manifest);
+
+  expect(markdown).toContain('## Subcomponents');
+  expect(markdown).toContain('### ColorPickerComponent');
+  // The child's own `## Inputs`/`## Outputs` headings are demoted beneath its `###` subcomponent
+  // heading, so they render as `####` — content real, not a synthetic snapshot.
+  expect(markdown).toMatch(
+    /### ColorPickerComponent[\s\S]*#### Inputs[\s\S]*@default #345F92[\s\S]*color\?: string; \/\/ two-way: \[\(color\)\]/
+  );
+  expect(markdown).toMatch(/#### Outputs[\s\S]*colorChange: \(e: string\) => void;/);
+
+  // The primary component's own `## Inputs` still renders, unaffected by the child section.
+  expect(markdown).toContain('## Inputs');
+  expect(markdown).toContain('export type ButtonComponentInputs');
+}, 30_000);
+
+it('renders no `## Subcomponents` section when the component declares none', async () => {
+  const payload = await withRealAnalyzer((manager) =>
+    buildDocgenPayload(
+      { entry },
+      {
+        manager,
+        options: { propsTable: 'api' },
+        logger: { warn: vi.fn(), debug: vi.fn() },
+        resolvePath: () => STORY_PATH,
+      }
+    )
+  );
+
+  expect(payload?.error).toBeUndefined();
+  const manifest = adaptCoreComponent({ ...payload!, id: payload!.id, name: payload!.name });
+  const markdown = formatComponentManifest(manifest);
+
+  expect(markdown).not.toContain('## Subcomponents');
 }, 30_000);
 
 it('documents a real `model()` as one two-way input and one Change output', async () => {

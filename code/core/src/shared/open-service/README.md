@@ -548,7 +548,8 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
   A recipe that touches nothing emits no sync frame and does not bump the stamp. A command is a
   sequence of such entries: a command with two `setState` calls around an `await` sends two frames,
   and a command that throws after its first `setState` has already shared that write. There is no
-  rollback. Nested `ctx.self.commands.*` calls author their own entries.
+  rollback. Nested `ctx.self.commands.*` calls author their own entries. A `setState` call made
+  inside a recipe writes into that recipe's draft and joins its entry.
 - Objects assigned inside a recipe are **copied**, including other parts of the draft. After
   `state.selected = state.components.Button`, `state.selected` is a copy, so a later write to
   `state.components.Button.props` changes one path, on this runtime and on every peer alike. State

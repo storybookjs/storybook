@@ -388,6 +388,70 @@ describe('patch recorder', () => {
     });
   });
 
+  it("throws on an async recipe nested in another, after authoring both recipes' writes once", () => {
+    const state = deepSignal({ a: 0, b: 0 });
+    const author = vi.fn();
+
+    expect(() =>
+      recordPatch(
+        state,
+        (s) => {
+          s.a = 1;
+          recordPatch(
+            state,
+            (async (inner: { b: number }) => {
+              inner.b = 1;
+            }) as unknown as (inner: { a: number; b: number }) => void,
+            author
+          );
+        },
+        author
+      )
+    ).toThrow(OpenServiceAsyncRecipeError);
+
+    expect(author.mock.calls).toEqual([
+      [
+        {
+          ops: [
+            { op: 'replace', path: '/a', value: 1 },
+            { op: 'replace', path: '/b', value: 1 },
+          ],
+          inverse: [
+            { op: 'replace', path: '/a', value: 0 },
+            { op: 'replace', path: '/b', value: 0 },
+          ],
+        },
+      ],
+    ]);
+  });
+
+  it('leaves no unhandled rejection when a nested async recipe writes after an await', async () => {
+    const state = deepSignal({ a: 0, b: 0 });
+
+    expect(() =>
+      recordPatch(
+        state,
+        (s) => {
+          s.a = 1;
+          recordPatch(
+            state,
+            (async (inner: { b: number }) => {
+              await Promise.resolve();
+              inner.b = 1;
+            }) as unknown as (inner: { a: number; b: number }) => void,
+            () => {}
+          );
+        },
+        () => {}
+      )
+    ).toThrow(OpenServiceAsyncRecipeError);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(state.b).toBe(0);
+  });
+
   it('authors the entry before a subscriber reacts, so reaction entries come after it', () => {
     const state = deepSignal({ obj: null as { x?: number } | null });
     const author = vi.fn();

@@ -47,6 +47,10 @@ function ownValue(inner: object, name: string): Pick<Touch, 'existed' | 'firstVa
   return { existed, firstValue: existed ? clonePlain(peekProp(inner, name)) : undefined };
 }
 
+// The draft of the recipe running on each state. A second `recordPatch` inside it would author an
+// entry whose inverse assumes the outer writes before it had not happened.
+const activeDrafts = new WeakMap<object, object>();
+
 function readPath(root: object, segments: readonly string[]): { found: boolean; value: unknown } {
   let current: unknown = root;
 
@@ -70,13 +74,24 @@ function readPath(root: object, segments: readonly string[]): { found: boolean; 
  * `author`.
  *
  * `author` runs even when the recipe throws, with the paths written before the throw, and the
- * throw then propagates. A recipe that changes nothing does not call `author`.
+ * throw then propagates. A recipe that changes nothing does not call `author`. A call made inside
+ * another recipe on the same state writes into that recipe's draft, so its writes join that entry.
  */
 export function recordPatch<T extends object>(
   state: T,
   mutate: (state: T) => void,
   author: (recorded: RecordedPatch) => void
 ): void {
+  const activeDraft = activeDrafts.get(state);
+  if (activeDraft) {
+    const nested: unknown = mutate(activeDraft as T);
+    if (isThenable(nested)) {
+      void Promise.resolve(nested).catch(() => {});
+      throw new OpenServiceAsyncRecipeError();
+    }
+    return;
+  }
+
   const root: object = state;
   const touches = new Map<string, Touch>();
   const order: string[] = [];
@@ -321,14 +336,17 @@ export function recordPatch<T extends object>(
   // effect does not make that effect depend on every field the recipe and its clones read.
   batch(() => {
     untracked(() => {
+      const draft = wrap(state, [], null);
+      activeDrafts.set(state, draft);
       try {
-        const result: unknown = mutate(wrap(state, [], null));
+        const result: unknown = mutate(draft);
         if (isThenable(result)) {
           // The recipe keeps running and rejects on its first write to a revoked draft.
           void Promise.resolve(result).catch(() => {});
           throw new OpenServiceAsyncRecipeError();
         }
       } finally {
+        activeDrafts.delete(state);
         // Revoke first so a draft that escaped the recipe throws instead of writing unrecorded.
         for (const revoke of revokes) {
           revoke();

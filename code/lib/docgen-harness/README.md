@@ -14,6 +14,7 @@ yarn test code/lib/docgen-harness -u   # re-record after an intentional change, 
 Each framework has three test files:
 
 - `*-baselines.test.ts` records argTypes and snippets per fixture and self-compares every committed baseline through the comparator.
+- `*-osa-baselines.test.ts` records the server-side docgen provider output where that framework has one.
 - `*-legacy-gaps.test.ts` pins known legacy defects as `test.fails` red markers. They turn into hard requirements once `baseline-path.ts` flips from `'legacy'` to `'osa'`.
 - `*-render.test.ts` smoke-mounts the fixtures.
 
@@ -61,12 +62,15 @@ src/
 │                                 # story-descriptions.snapshot,
 │                                 # snippet-<story>.snapshot, plain-csf-snippet-<story>.snapshot
 ├── web-components/
+│   ├── web-components-osa-baselines.test.ts
 │   ├── web-components-baselines.test.ts
 │   ├── web-components-legacy-gaps.test.ts
 │   ├── web-components-render.test.ts
 │   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
 │                                 # optional custom-elements.v2.json/custom-elements.wca.json,
 │                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
+│                                 # osa-argtypes.snapshot, osa-payload.snapshot,
+│                                 # optional osa-v2-argtypes.snapshot and osa-v2-payload.snapshot,
 │                                 # snippet-<story>.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
@@ -184,6 +188,12 @@ The default capture stays at CEM 1.0.0 because the analyzer still writes that ve
 The 2.1.0 variant is the same capture plus additive fields (`cssStates`, `readonly`), so a diff between `argtypes.snapshot` and `v2-argtypes.snapshot` shows exactly what a newer manifest buys.
 The WCA variant records the deprecated web-component-analyzer shape that the runtime still accepts.
 
+### Server-side recorder (web-components)
+
+`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, and `osa-payload.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+The server recorder records CEM inputs only; the WCA shape is covered by the runtime recorder and rejected on the server path by the renderer's unit tests.
+The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes. `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
+
 ## Known legacy gaps (vue3)
 
 - Accepted delta: OSA snippets are static, so live Controls updates do not re-render them.
@@ -279,12 +289,19 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
 - `@summary` is recorded by the analyzer but never reaches the component description.
 - Class-level `@deprecated` never reaches the component description.
+- Component-level `jsDocTags` is always `{}` in the OSA payload; the CEM `deprecated` and `summary` fields never reach the tag map.
+- The JSDoc block above the CSF `meta` is ignored by the OSA provider, so its description and tags never reach the payload (other renderers resolve it through `extractComponentDescription`).
 - CEM 2.1.0 `cssStates` and `readonly` are ignored; the 1.0.0 and 2.1.0 recordings are identical.
 - The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
 - An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
 - Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
+
+## Issue-linked cases (web-components)
+
+- SB-1893 -> server-side docgen provider registration for `@storybook/web-components`.
+- SB-1894 -> Custom Elements Manifest loading for the server-side provider.
 
 ## The performance bench
 

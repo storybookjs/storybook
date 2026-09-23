@@ -19,7 +19,7 @@
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
   - [React: Require v18 and up](#react-require-v18-and-up)
-
+  - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -782,6 +782,14 @@ Storybook renders through React's new root API (`react-dom/client`), which React
 `storybook upgrade` blocks the upgrade when it detects an unsupported `react` or `react-dom` version and links to this section. Upgrade React to 18 or 19 and run the upgrade again.
 
 Remove `framework.options.legacyRootApi` from `.storybook/main.*`, whether its value is `true` or `false`. `storybook upgrade` blocks the upgrade while the option is still present and links to this section. This is a manual migration: `storybook upgrade` does not remove the option or migrate application code to the new root API. Projects that enabled the legacy root must verify their stories with the new root API before upgrading; automatically deleting the option cannot establish that their components support the changed rendering behavior.
+
+### `features.legacyDecoratorFileOrder` removed
+
+The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applies addon and framework decorators outside of decorators defined in `.storybook/preview.js` / `preview.ts`.
+
+This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
+
+`storybook upgrade` strips the flag from your main config automatically.
 
 ## From version 10.5.x to 10.6.0
 
@@ -4191,16 +4199,7 @@ For avoiding that, this change passes the mapped args instead of raw args at `re
 
 #### Changed decorator order between preview.js and addons/frameworks
 
-In Storybook 7.0 we have changed the order of decorators being applied to allow you to access context information added by decorators defined in addons/frameworks from decorators defined in `preview.js`. To revert the order to the previous behavior, you can set the `features.legacyDecoratorFileOrder` flag to `true` in your `main.js` file:
-
-```js
-// main.js
-export default {
-  features: {
-    legacyDecoratorFileOrder: true,
-  },
-};
-```
+In Storybook 7.0 we changed the order of decorators so you can access context added by addon/framework decorators from decorators defined in `preview.js`. Storybook 11 removed the `features.legacyDecoratorFileOrder` escape hatch that restored the pre-7 order. See [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed).
 
 #### Dark mode detection
 

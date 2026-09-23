@@ -8,7 +8,23 @@ import { describe, expect, it } from 'vitest';
 const DTS_ARTIFACT = join(import.meta.dirname, '../../dist/test/index.d.ts');
 const CONSUMER_FIXTURE = join(import.meta.dirname, '__testfixtures__/typescript-consumer.ts');
 const TYPESCRIPT = createRequire(import.meta.url).resolve('typescript/bin/tsc');
+const TYPESCRIPT_5 = createRequire(import.meta.url).resolve('typescript-5/bin/tsc');
 const DTS_BUILT = existsSync(DTS_ARTIFACT);
+const TSC_OPTIONS = [
+  '--module',
+  'Node16',
+  '--moduleResolution',
+  'node16',
+  '--target',
+  'ES2022',
+  '--strict',
+  '--skipLibCheck',
+  'false',
+  '--types',
+  'node',
+  '--noEmit',
+  CONSUMER_FIXTURE,
+];
 
 describe('storybook/test declaration contract', () => {
   it.runIf(process.env.CI)('is built before this suite runs', () => {
@@ -27,27 +43,13 @@ describe('storybook/test declaration contract', () => {
     expect(declarations).not.toContain('Chai.');
   });
 
-  it('compiles the public test API consumer fixture', () => {
+  it('compiles the public test API consumer fixture with the workspace compiler', () => {
     expect(DTS_BUILT).toBe(true);
-    execFileSync(
-      process.execPath,
-      [
-        TYPESCRIPT,
-        '--module',
-        'Node16',
-        '--moduleResolution',
-        'node16',
-        '--target',
-        'ES2022',
-        '--strict',
-        '--skipLibCheck',
-        'false',
-        '--types',
-        'node',
-        '--noEmit',
-        CONSUMER_FIXTURE,
-      ],
-      { stdio: 'pipe' }
-    );
+    execFileSync(process.execPath, [TYPESCRIPT, ...TSC_OPTIONS], { stdio: 'pipe' });
+  });
+
+  it('compiles the public test API consumer fixture with TypeScript 5.0.4', () => {
+    expect(DTS_BUILT).toBe(true);
+    execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], { stdio: 'pipe' });
   });
 });

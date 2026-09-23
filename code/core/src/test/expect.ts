@@ -22,43 +22,50 @@ import * as chai from 'chai';
 type Any = any;
 type Matcher = (...args: Any[]) => Promise<void>;
 type MatcherResult = { message: () => string; pass: boolean; actual?: Any; expected?: Any };
+type Formatter = (text: string) => string;
 type MatcherHintOptions = {
   comment?: string;
-  expectedColor?: Any;
+  expectedColor?: Formatter;
   isDirectExpectCall?: boolean;
   isNot?: boolean;
   promise?: string;
-  receivedColor?: Any;
+  receivedColor?: Formatter;
   secondArgument?: string;
-  secondArgumentColor?: Any;
+  secondArgumentColor?: Formatter;
 };
 type TesterContext = {
-  equals(a: Any, b: Any, customTesters?: EqualityTester[], strictCheck?: boolean): boolean;
+  equals(a: unknown, b: unknown, customTesters?: EqualityTester[], strictCheck?: boolean): boolean;
 };
 type EqualityTester = (
   this: TesterContext,
-  a: Any,
-  b: Any,
+  a: unknown,
+  b: unknown,
   customTesters: EqualityTester[]
 ) => boolean | undefined;
 type MatcherUtils = {
-  EXPECTED_COLOR: Any;
-  RECEIVED_COLOR: Any;
-  INVERTED_COLOR: Any;
-  BOLD_WEIGHT: Any;
-  DIM_COLOR: Any;
-  diff(a: Any, b: Any, options?: Any): Any;
+  EXPECTED_COLOR: Formatter;
+  RECEIVED_COLOR: Formatter;
+  INVERTED_COLOR: Formatter;
+  BOLD_WEIGHT: Formatter;
+  DIM_COLOR: Formatter;
+  diff(a: unknown, b: unknown, options?: unknown): string | null;
   matcherHint(
     matcherName: string,
     received?: string,
     expected?: string,
     options?: MatcherHintOptions
   ): string;
-  printReceived(value: Any): string;
-  printExpected(value: Any): string;
-  printDiffOrStringify(a: Any, b: Any, aLabel: string, bLabel: string, options?: Any): string;
-  printWithType(name: string, value: Any, print: (value: Any) => string): string;
-  stringify(value: Any): string;
+  printReceived(value: unknown): string;
+  printExpected(value: unknown): string;
+  printDiffOrStringify(
+    a: unknown,
+    b: unknown,
+    aLabel: string,
+    bLabel: string,
+    options?: unknown
+  ): string;
+  printWithType<T>(name: string, value: T, print: (value: T) => string): string;
+  stringify(value: unknown): string;
   iterableEquality: EqualityTester;
   subsetEquality: EqualityTester;
 };
@@ -86,7 +93,7 @@ export interface MatcherState {
   currentTestName?: string;
   dontThrow?: () => void;
   error?: Error;
-  equals(a: Any, b: Any, customTesters?: EqualityTester[], strictCheck?: boolean): boolean;
+  equals(a: unknown, b: unknown, customTesters?: EqualityTester[], strictCheck?: boolean): boolean;
   expand?: boolean;
   expectedAssertionsNumber?: number | null;
   expectedAssertionsNumberErrorGen?: (() => Error) | null;

@@ -33216,6 +33216,7 @@ __metadata:
     type-fest: "npm:4.18.1"
     type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^6.0.3"
+    typescript-5: "npm:typescript@5.0.4"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
@@ -34807,6 +34808,16 @@ __metadata:
   version: 0.0.6
   resolution: "typedarray@npm:0.0.6"
   checksum: 10c0/6005cb31df50eef8b1f3c780eb71a17925f3038a100d82f9406ac2ad1de5eb59f8e6decbdc145b3a1f8e5836e17b0c0002fb698b9fe2516b8f9f9ff602d36412
+  languageName: node
+  linkType: hard
+
+"typescript-5@npm:typescript@5.0.4":
+  version: 5.0.4
+  resolution: "typescript@npm:5.0.4"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/2f5bd1cead194905957cb34e220b1d6ff1662399adef8ec1864f74620922d860ee35b6e50eafb3b636ea6fd437195e454e1146cb630a4236b5095ed7617395c2
   languageName: node
   linkType: hard
 

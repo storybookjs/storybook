@@ -10,7 +10,7 @@ import * as tinyspy from 'tinyspy';
 
 type Any = any;
 type Procedure = (...args: Any[]) => Any;
-type MockRejection = Any;
+type MockRejection = unknown;
 type MethodKeys<T> = keyof { [K in keyof T as T[K] extends Procedure ? K : never]: T[K] };
 type ClassKeys<T> = keyof {
   [K in keyof T as T[K] extends abstract new (...args: Any[]) => Any ? K : never]: T[K];
@@ -146,7 +146,7 @@ export type Mocked<T> = {
       : T[P];
 } & T;
 
-export const mocks: Set<MockInstance> = vitestMocks as unknown as Set<MockInstance>;
+export const mocks: Set<MockInstance> = vitestMocks as Set<MockInstance>;
 
 export function isMockFunction(value: MockRejection): value is MockInstance {
   return vitestIsMockFunction(value);
@@ -199,27 +199,27 @@ type SpyOn = {
 
 export const spyOn = ((...args: Parameters<typeof vitestSpyOn>) => {
   const mock = vitestSpyOn(...args);
-  return reactiveMock(mock) as unknown as MockInstance;
+  return reactiveMock(mock) as MockInstance;
 }) as SpyOn;
 
 export function fn<T extends Procedure = Procedure>(implementation?: T): Mock<T>;
 export function fn(implementation?: Procedure) {
   const mock = implementation ? vitestFn(implementation) : vitestFn();
-  return reactiveMock(mock) as unknown as Mock;
+  return reactiveMock(mock) as Mock;
 }
 
-function reactiveMock(mock: VitestMockInstance) {
+function reactiveMock<T extends VitestMockInstance>(mock: T): T {
   const reactive = listenWhenCalled(mock);
   const originalMockImplementation = reactive.mockImplementation.bind(null);
   reactive.mockImplementation = (fn) => listenWhenCalled(originalMockImplementation(fn));
   return reactive;
 }
 
-function listenWhenCalled(mock: VitestMockInstance) {
+function listenWhenCalled<T extends VitestMockInstance>(mock: T): T {
   const state = tinyspy.getInternalState(mock as unknown as SpyInternalImpl);
   const impl = state.impl;
   state.willCall(function (this: unknown, ...args) {
-    listeners.forEach((listener) => listener(mock as unknown as MockInstance, args));
+    listeners.forEach((listener) => listener(mock as MockInstance, args));
     return impl?.apply(this, args);
   });
   return mock;

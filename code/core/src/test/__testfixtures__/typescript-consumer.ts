@@ -2,6 +2,8 @@ import {
   expect,
   fn,
   isMockFunction,
+  mocked,
+  spyOn,
   type MockResult,
   type MockSettledResult,
 } from 'storybook/test';
@@ -36,6 +38,79 @@ expect(returnedNumber).toHaveReturnedWith({});
 expect(returnedNumber).toHaveReturnedWith(undefined);
 
 const calledWithString = fn((value: string) => value.length);
+const calledWithObject = fn((value: { nested: { value: number } }) => value);
+
+const genericIdentity = fn(<T>(value: T) => value);
+const defaultedValue = fn<(value?: string) => string>((value = 'default') => value);
+
+const genericString: string = genericIdentity('value');
+const genericNumber: number = genericIdentity(1);
+defaultedValue();
+defaultedValue('value');
+// @ts-expect-error A defaulted string parameter cannot be a number.
+defaultedValue(1);
+
+const spyTarget = {
+  value: 'value',
+  method(value: string) {
+    return value.length;
+  },
+  Constructor: class {
+    constructor(readonly value: string) {}
+  },
+};
+
+const getterSpy = spyOn(spyTarget, 'value', 'get');
+const setterSpy = spyOn(spyTarget, 'value', 'set');
+const methodSpy = spyOn(spyTarget, 'method');
+const constructorSpy = spyOn(spyTarget, 'Constructor');
+
+getterSpy.mockReturnValue('value');
+setterSpy.mockImplementation((value) => void value.toUpperCase());
+methodSpy.mockReturnValue(3);
+constructorSpy.mockImplementation(function (value) {
+  return new spyTarget.Constructor(value);
+});
+// @ts-expect-error A string method cannot return a string length as text.
+methodSpy.mockReturnValue('three');
+
+void genericString;
+void genericNumber;
+
+const mockTarget = {
+  nested: {
+    method(value: { label: string }) {
+      return { length: value.label.length };
+    },
+  },
+};
+
+const deeplyMocked = mocked(mockTarget, true);
+const defaultMocked = mocked(mockTarget);
+const shallowlyMocked = mocked(mockTarget, false);
+const explicitlyShallowlyMocked = mocked(mockTarget, { partial: false, deep: false });
+const explicitlyDeeplyMocked = mocked(mockTarget, { partial: false, deep: true });
+const partiallyShallowlyMocked = mocked(mockTarget, { partial: true, deep: false });
+const partiallyDeeplyMockedObject = mocked(mockTarget, { partial: true, deep: true });
+const partiallyMocked = mocked(mockTarget.nested.method, { partial: true });
+const partiallyDeeplyMockedFunction = mocked(mockTarget.nested.method, {
+  partial: true,
+  deep: true,
+});
+
+deeplyMocked.nested.method.mockReturnValue({ length: 1 });
+explicitlyDeeplyMocked.nested.method.mockReturnValue({ length: 1 });
+partiallyDeeplyMockedObject.nested.method.mockReturnValue({ length: 1 });
+partiallyMocked.mockReturnValue({});
+partiallyDeeplyMockedFunction.mockReturnValue({});
+// @ts-expect-error A default shallow mock does not mock nested methods.
+defaultMocked.nested.method.mockReturnValue({ length: 1 });
+// @ts-expect-error A shallow mock does not mock nested methods.
+shallowlyMocked.nested.method.mockReturnValue({ length: 1 });
+// @ts-expect-error An explicit shallow mock does not mock nested methods.
+explicitlyShallowlyMocked.nested.method.mockReturnValue({ length: 1 });
+// @ts-expect-error A partial shallow mock does not mock nested methods.
+partiallyShallowlyMocked.nested.method.mockReturnValue({ length: 1 });
 
 expect(calledWithString).toHaveBeenCalledWith('value');
 expect(calledWithString).toBeCalledWith('value');
@@ -46,6 +121,16 @@ expect(calledWithString).nthCalledWith(1, 'value');
 expect(calledWithString).toHaveBeenCalledTimes(1);
 expect(calledWithString).toBeCalledTimes(1);
 expect(calledWithString).toHaveBeenCalledExactlyOnceWith('value');
+expect(calledWithObject).toHaveBeenCalledWith(
+  expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) })
+);
+expect(calledWithObject).toHaveReturnedWith(
+  expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) })
+);
+// @ts-expect-error A nested mock argument must retain its value type.
+expect(calledWithObject).toHaveBeenCalledWith({ nested: { value: 'one' } });
+// @ts-expect-error A nested mock result must retain its value type.
+expect(calledWithObject).toHaveReturnedWith({ nested: { value: 'one' } });
 expect(calledWithString).toHaveLength(1);
 expect('value').toMatch('value');
 expect(3).toBeGreaterThan(2);
@@ -87,10 +172,13 @@ expect.extend({
       typeof received === 'number' && typeof expected === 'number' && received % expected === 0;
     this.assertionCalls += 0;
     this.equals(received, expected);
-    this.utils.matcherHint('toBeDivisibleBy');
+    const hint: string = this.utils.matcherHint('toBeDivisibleBy');
+    const difference: string | null = this.utils.diff(received, expected);
     // @ts-expect-error Matcher utilities reject misspelled members.
     this.utils.matchHint('toBeDivisibleBy');
     this.isNot.valueOf();
+    void hint;
+    void difference;
     return { message: () => 'expected a divisible number', pass };
   },
 });

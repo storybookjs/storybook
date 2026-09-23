@@ -131,6 +131,32 @@ describe('transformPackageJsonFiles', () => {
     );
   });
 
+  it('updates the package manager cache when it transforms package.json', async () => {
+    const contents = JSON.stringify({
+      devDependencies: {
+        '@storybook/blocks': '^8.6.0',
+        '@storybook/test': '^8.6.0',
+        storybook: '^11.0.0',
+      },
+    });
+    const filePath = 'test/package.json';
+    const packageManager = { writePackageJson: vi.fn() } as unknown as JsPackageManager;
+
+    vi.mocked(readFile).mockResolvedValueOnce(contents);
+
+    await transformPackageJsonFiles([filePath], false, packageManager);
+
+    expect(packageManager.writePackageJson).toHaveBeenCalledWith(
+      {
+        devDependencies: {
+          storybook: '^11.0.0',
+        },
+      },
+      'test'
+    );
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
   it('should add renamed packages to devDependencies when storybook is in devDependencies', async () => {
     const pkgJson = {
       dependencies: {

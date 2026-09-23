@@ -8,7 +8,7 @@
 import { logger } from 'storybook/internal/client-logger';
 
 import { applyJsonPatch } from './json-patch.ts';
-import { FORBIDDEN_KEYS, hasOwn, isPlainObject } from './plain-object.ts';
+import { clonePlain, hasOwn, isPlainObject } from './plain-object.ts';
 import {
   entryStampKey,
   type EntryPayload,
@@ -123,9 +123,9 @@ export function compareStamps(left: EntryStamp, right: EntryStamp): number {
  * - Recurses into plain objects so nested deep-signal subscriptions stay attached.
  * - Replaces arrays wholesale, matching the sync contract that arrays are values rather than maps.
  * - Assigns primitives only when changed to avoid spurious signal invalidation.
- * - Skips `__proto__`, `constructor`, and `prototype` keys in `source` so untrusted channel
- *   payloads and static files cannot pollute prototypes. State never holds those keys, so the
- *   delete pass needs no such check.
+ * - Copies `source` through `clonePlain` first, like every other value on its way into state, so
+ *   untrusted channel payloads and static files cannot pollute prototypes or write deepsignal's
+ *   `$` accessors, and state never shares an object with the payload.
  *
  * The `preserveMissingKeys` mode selects the source contract:
  *
@@ -139,7 +139,15 @@ export function applyStatePatch(
   source: Record<string, unknown>,
   options: { preserveMissingKeys: boolean }
 ): void {
-  if (!options.preserveMissingKeys) {
+  mergeInto(target, clonePlain(source) as Record<string, unknown>, options.preserveMissingKeys);
+}
+
+function mergeInto(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+  preserveMissingKeys: boolean
+): void {
+  if (!preserveMissingKeys) {
     for (const key of Object.keys(target)) {
       if (!hasOwn(source, key)) {
         delete target[key];
@@ -148,15 +156,11 @@ export function applyStatePatch(
   }
 
   for (const key of Object.keys(source)) {
-    if (FORBIDDEN_KEYS.has(key)) {
-      continue;
-    }
-
     const sourceValue = source[key];
     const targetValue = target[key];
 
     if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
-      applyStatePatch(targetValue, sourceValue, options);
+      mergeInto(targetValue, sourceValue, preserveMissingKeys);
     } else if (targetValue !== sourceValue) {
       target[key] = sourceValue;
     }
@@ -493,10 +497,10 @@ export function createReconciler(options: {
       const index = insertIndexFor(stamp);
 
       const now = Date.now();
-      let inverse: JsonPatchOperation[] = [];
       let failedPath: string | undefined;
 
       setState((current) => {
+        let inverse: JsonPatchOperation[] = [];
         const isLater = index === log.length;
         const undone = isLater ? [] : undoToIndex(current, index);
         const result = applyJsonPatch(current, patch, (path) => {
@@ -510,6 +514,8 @@ export function createReconciler(options: {
           failedPath = result.path;
         }
         redoUndone(current, undone);
+        // Inside the batch: subscribers run when it ends and may throw, after state has changed.
+        appendOrInsert({ stamp, command, patch: [...patch], inverse, appliedAt: now }, index);
       });
 
       // A failed entry stays in the Log as a no-op, so every replica folds the same entries in the
@@ -526,7 +532,6 @@ export function createReconciler(options: {
         );
       }
 
-      appendOrInsert({ stamp, command, patch: [...patch], inverse, appliedAt: now }, index);
       return gap ? 'gap' : failedPath !== undefined ? 'unapplied' : 'accepted';
     },
   };

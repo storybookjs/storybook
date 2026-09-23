@@ -65,7 +65,13 @@ import {
 } from './service-channel.ts';
 import { deserializeError, serializeError } from './service-error-serialization.ts';
 import type { EntryAuthor } from './service-runtime.ts';
-import { formatFrontier, vectorDominates, type Reconciler } from './service-sync.ts';
+import {
+  formatFrontier,
+  vectorDominates,
+  type InstallOutcome,
+  type PlaceEntryOutcome,
+  type Reconciler,
+} from './service-sync.ts';
 import type { ServiceId } from './types.ts';
 
 /** A runtime command as seen by the transport layer: `(input) => Promise<result>`. */
@@ -162,6 +168,9 @@ export function connectRuntimeToChannel(
   let withinReplyWindow = false;
   let repairQueued = false;
   let silenceTimer: ReturnType<typeof setTimeout> | undefined;
+  // The channel hands a hub its own forward back, in-process or as a copy over the server
+  // websocket; that echo is not a reply to anything. Keyed by content so a copy still matches.
+  let forwardedReplyKey: string | undefined;
 
   const clearSilenceTimer = (): void => {
     if (silenceTimer !== undefined) {
@@ -232,20 +241,33 @@ export function connectRuntimeToChannel(
     ) {
       return;
     }
-
-    const outcome = reconciler.tryInstall(snapshot.output.frontier, snapshot.output.state);
-    if (outcome === 'concurrent' && withinReplyWindow) {
-      logger.warn(
-        `Open-service sync: concurrent snapshot reply dropped. service=${serviceId} local=${formatFrontier(reconciler.frontier)} reply=${formatFrontier(snapshot.output.frontier)}`
-      );
-      // The reply answers the frontier we sent. A write of ours since then makes it concurrent, and
-      // that write reaches the replier before our next request, so ask again with today's frontier.
-      repairQueued = true;
+    const replyKey = `${snapshot.output.runtimeId}:${formatFrontier(snapshot.output.frontier)}`;
+    // A real reply never repeats this key: after installing it, our vector covers that replier's.
+    if (replyKey === forwardedReplyKey) {
+      return;
     }
-    settleOutstandingRequest();
 
-    if (outcome === 'installed' && relay) {
-      channel.emit(SERVICE_SYNC_REPLY, payload);
+    let outcome: InstallOutcome | undefined;
+    try {
+      outcome = reconciler.tryInstall(snapshot.output.frontier, snapshot.output.state);
+    } finally {
+      // Only a subscriber throws out of tryInstall, and only after the install ran.
+      const settled = outcome ?? 'installed';
+      if (settled === 'concurrent' && withinReplyWindow) {
+        logger.warn(
+          `Open-service sync: concurrent snapshot reply dropped. service=${serviceId} local=${formatFrontier(reconciler.frontier)} reply=${formatFrontier(snapshot.output.frontier)}`
+        );
+        // The reply answers the frontier we sent. A write of ours since then makes it concurrent,
+        // and that write reaches the replier before our next request, so ask again with today's
+        // frontier.
+        repairQueued = true;
+      }
+      settleOutstandingRequest();
+
+      if (settled === 'installed' && relay) {
+        forwardedReplyKey = replyKey;
+        channel.emit(SERVICE_SYNC_REPLY, payload);
+      }
     }
   };
 
@@ -255,18 +277,25 @@ export function connectRuntimeToChannel(
       return;
     }
 
-    const outcome = reconciler.tryPlaceEntry(parsed.output);
+    let outcome: PlaceEntryOutcome | undefined;
+    try {
+      outcome = reconciler.tryPlaceEntry(parsed.output);
+    } finally {
+      // A subscriber can throw after the entry is logged, and a redelivery is then a duplicate, so
+      // forward it now. Whether it was a gap is lost, so ask for repair as for an unapplied entry.
+      const placed =
+        outcome ?? (reconciler.has(parsed.output.stamp) ? ('unapplied' as const) : undefined);
+      const logged = placed === 'accepted' || placed === 'gap' || placed === 'unapplied';
+      const needsRepair = placed === 'gap' || placed === 'beyond-window' || placed === 'unapplied';
 
-    const logged = outcome === 'accepted' || outcome === 'gap' || outcome === 'unapplied';
-    const needsRepair = outcome === 'gap' || outcome === 'beyond-window' || outcome === 'unapplied';
-
-    // A hub also forwards an entry it dropped as beyond-window: a peer with a different floor may
-    // place it, and the writer needs some peer to hold it before any reply can dominate the writer.
-    if ((logged || outcome === 'beyond-window') && relay) {
-      channel.emit(SERVICE_ENTRY, payload);
-    }
-    if (needsRepair) {
-      emitSyncRequest();
+      // A hub also forwards an entry it dropped as beyond-window: a peer with a different floor may
+      // place it, and the writer needs some peer to hold it before any reply can dominate the writer.
+      if ((logged || placed === 'beyond-window') && relay) {
+        channel.emit(SERVICE_ENTRY, payload);
+      }
+      if (needsRepair) {
+        emitSyncRequest();
+      }
     }
   };
 

@@ -208,6 +208,9 @@ export function recordPatch<T extends object>(
         if (name.startsWith('$')) {
           // deepsignal swaps the field's signal, which changes the plain key's value.
           const plain = name.slice(1);
+          if (FORBIDDEN_KEYS.has(plain)) {
+            return true;
+          }
           note(path.concat(plain), () => ownValue(inner, plain));
           return Reflect.set(inner, key, value);
         }

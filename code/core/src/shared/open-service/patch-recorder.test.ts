@@ -608,4 +608,14 @@ describe('patch recorder', () => {
       inverse: [{ op: 'add', path: '/a', value: { b: { c: 0 } } }],
     });
   });
+
+  it('does not store a forbidden key through its signal accessor', () => {
+    const recorded = record({ a: 1 } as Record<string, unknown>, (s) => {
+      s.$constructor = signal(5);
+      s.$prototype = signal(6);
+    });
+
+    expect(recorded.ops).toEqual([]);
+    expect(Object.keys(recorded.raw)).toEqual(['a']);
+  });
 });

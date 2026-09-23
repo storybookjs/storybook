@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/client-logger';
+import { deepSignal } from 'deepsignal/core';
 
 import type { EntryStamp, JsonPatchOperation } from './service-channel.ts';
 import {
@@ -609,6 +610,26 @@ describe('createReconciler entries', () => {
     );
   });
 
+  it('installs a snapshot without the reserved keys deepsignal throws on', () => {
+    const { state, reconciler } = fixture(
+      deepSignal({ a: 1, nested: { b: 2 } }) as Record<string, unknown>
+    );
+
+    expect(
+      reconciler.tryInstall(
+        { vector: { peer: 1 }, clock: 5 },
+        { a: 99, nested: { $y: 1 }, fresh: { $y: 1 }, list: [{ $y: 1 }] }
+      )
+    ).toBe('installed');
+
+    expect(JSON.parse(JSON.stringify(state))).toEqual({
+      a: 99,
+      nested: {},
+      fresh: {},
+      list: [{}],
+    });
+  });
+
   it('undoes later entries newest first, so an earlier insert applies to the state before them', () => {
     const { state, reconciler } = fixture({ n: {} });
     for (const [counter, value] of [
@@ -720,6 +741,50 @@ describe('createReconciler entries', () => {
 
     expect(reconciler.tryPlaceEntry(stale('c', 3))).toBe('duplicate');
     expect(reconciler.tryPlaceEntry(stale('b', 4))).toBe('beyond-window');
+  });
+});
+
+describe('createReconciler with a subscriber that throws', () => {
+  beforeEach(() => {
+    vi.mocked(logger.warn).mockReset();
+    vi.mocked(logger.warn).mockImplementation(() => undefined);
+  });
+
+  it('logs an entry it applied even when a subscriber throws at the end of the batch', () => {
+    const state: Record<string, unknown> = { x: 0, p: {} };
+    let subscriberThrows = true;
+    const reconciler = createReconciler({
+      serviceId: 'svc',
+      // `applyLocal` runs subscribers when its batch ends, after the mutation, and rethrows.
+      setState: (mutate) => {
+        mutate(state);
+        if (subscriberThrows) {
+          subscriberThrows = false;
+          throw new Error('subscriber');
+        }
+      },
+    });
+    const write = {
+      serviceId: 'svc',
+      stamp: stamp('z', 1, 2),
+      command: 'setBoth',
+      patch: [
+        { op: 'replace' as const, path: '/x', value: 1 },
+        { op: 'add' as const, path: '/p/k', value: 'v' },
+      ],
+    };
+
+    expect(() => reconciler.tryPlaceEntry(write)).toThrow('subscriber');
+    reconciler.tryPlaceEntry(write);
+    reconciler.tryPlaceEntry({
+      serviceId: 'svc',
+      stamp: stamp('a', 1, 1),
+      command: 'removeP',
+      patch: [{ op: 'remove', path: '/p' }],
+    });
+
+    expect(state).toEqual({ x: 0 });
+    expect(reconciler.vector).toEqual({ a: 1, z: 1 });
   });
 });
 

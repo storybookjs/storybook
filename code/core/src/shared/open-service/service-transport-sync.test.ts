@@ -27,12 +27,17 @@ function entry(runtimeId: string, counter: number, path: string, seq = counter):
 describe('connectRuntimeToChannel request policy', () => {
   const disconnects: Array<() => void> = [];
 
-  function connect(options: { relay?: boolean; window?: Partial<LogWindow> } = {}) {
+  function connect(
+    options: { relay?: boolean; window?: Partial<LogWindow>; afterApply?: () => void } = {}
+  ) {
     const channel = createTestChannel();
     const state: Record<string, unknown> = {};
     const reconciler = createReconciler({
       serviceId: SERVICE_ID,
-      setState: (mutate) => mutate(state),
+      setState: (mutate) => {
+        mutate(state);
+        options.afterApply?.();
+      },
       window: options.window,
     });
     disconnects.push(
@@ -222,5 +227,83 @@ describe('connectRuntimeToChannel request policy', () => {
     expect(emitted(SERVICE_ENTRY)).toHaveLength(1);
     expect(emitted(SERVICE_ENTRY)[0]).toBe(stale);
     expect(state).toEqual({ x: 'a' });
+  });
+
+  it.each(['in-process echo', 'copy over the websocket'])(
+    'keeps the queued repair outstanding when a hub hears the %s of a reply it forwarded',
+    (echo) => {
+      const { channel, emitted } = connect({ relay: true });
+      vi.advanceTimersByTime(1000);
+      channel.emitExternal(SERVICE_ENTRY, entry('w', 2, '/a'));
+      channel.emitExternal(SERVICE_ENTRY, entry('w', 3, '/b'));
+      channel.emit.mockClear();
+
+      const reply = {
+        serviceId: SERVICE_ID,
+        runtimeId: 'peer',
+        frontier: { vector: { w: 1 }, clock: 1 },
+        state: {},
+      };
+      channel.emitExternal(SERVICE_SYNC_REPLY, reply);
+      if (echo === 'copy over the websocket') {
+        channel.emitExternal(SERVICE_SYNC_REPLY, structuredClone(reply));
+      }
+      expect(emitted(SERVICE_SYNC_REPLY)).toHaveLength(1);
+      expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
+
+      channel.emitExternal(SERVICE_ENTRY, entry('w', 5, '/c'));
+
+      expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
+    }
+  );
+
+  it('forwards an entry and asks for repair when a subscriber throws after it was placed', () => {
+    let subscriberThrows = false;
+    const { channel, emitted } = connect({
+      relay: true,
+      afterApply: () => {
+        if (subscriberThrows) {
+          subscriberThrows = false;
+          throw new Error('subscriber');
+        }
+      },
+    });
+    vi.advanceTimersByTime(1000);
+    channel.emit.mockClear();
+
+    subscriberThrows = true;
+    const placed = entry('w', 1, '/a');
+    expect(() => channel.emitExternal(SERVICE_ENTRY, placed)).toThrow('subscriber');
+    channel.emitExternal(SERVICE_ENTRY, placed);
+
+    expect(emitted(SERVICE_ENTRY)).toEqual([placed]);
+    expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
+  });
+
+  it('settles its request and forwards an installed reply when a subscriber throws', () => {
+    let subscriberThrows = false;
+    const { channel, emitted } = connect({
+      relay: true,
+      afterApply: () => {
+        if (subscriberThrows) {
+          subscriberThrows = false;
+          throw new Error('subscriber');
+        }
+      },
+    });
+    channel.emitExternal(SERVICE_ENTRY, entry('w', 2, '/a'));
+    channel.emit.mockClear();
+
+    subscriberThrows = true;
+    const reply = {
+      serviceId: SERVICE_ID,
+      runtimeId: 'peer',
+      frontier: { vector: { w: 2 }, clock: 2 },
+      state: { a: 2 },
+    };
+    expect(() => channel.emitExternal(SERVICE_SYNC_REPLY, reply)).toThrow('subscriber');
+
+    expect(emitted(SERVICE_SYNC_REPLY)).toEqual([reply]);
+    expect(emitted(SERVICE_SYNC_REQUEST)).toHaveLength(1);
   });
 });

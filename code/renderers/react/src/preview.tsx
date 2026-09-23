@@ -209,7 +209,6 @@ export interface ReactMeta<
     >,
   >(
     story: TInput
-    /** @ts-expect-error hard */
   ): ReactStory<T, TInput>;
 
   /**
@@ -249,7 +248,10 @@ export interface ReactMeta<
  */
 export interface ReactStory<
   T extends ReactTypes,
-  TInput extends StoryAnnotations<T, T['args']>,
+  TInput extends {
+    play?: (...args: never[]) => void;
+    render?: (...args: never[]) => T['storyResult'];
+  },
 > extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
 }

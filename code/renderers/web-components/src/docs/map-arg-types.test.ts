@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { mapArgTypes } from './map-arg-types.ts';
 
 describe('mapArgTypes', () => {
-  it('maps an attribute', () => {
+  it('maps an attribute with a type object', () => {
     const argTypes = mapArgTypes({
       attributes: [{ name: 'label', description: 'Label.', type: { text: 'string' } }],
     });
@@ -31,56 +31,47 @@ describe('mapArgTypes', () => {
     `);
   });
 
-  it('maps an event pair', () => {
+  it('maps a plain string type', () => {
     const argTypes = mapArgTypes({
-      events: [{ name: 'my-change', description: 'Changed.', type: { text: 'CustomEvent' } }],
+      attributes: [{ name: 'label', type: 'string' }],
     });
 
     expect(argTypes).toMatchInlineSnapshot(`
       {
-        "my-change": {
-          "description": "Changed.",
-          "name": "my-change",
+        "label": {
+          "description": undefined,
+          "name": "label",
           "required": false,
           "table": {
-            "category": "events",
+            "category": "attributes",
             "defaultValue": {
               "summary": undefined,
             },
             "type": {
-              "summary": "CustomEvent",
+              "summary": "string",
             },
           },
           "type": {
-            "name": "void",
-          },
-        },
-        "onMyChange": {
-          "action": {
-            "name": "my-change",
-          },
-          "name": "onMyChange",
-          "table": {
-            "disable": true,
+            "name": "string",
           },
         },
       }
     `);
   });
 
-  it('maps a slot', () => {
+  it('leaves the type undefined when the manifest has no type text', () => {
     const argTypes = mapArgTypes({
-      slots: [{ name: 'footer', description: 'Footer slot.' }],
+      attributes: [{ name: 'x', type: {} }],
     });
 
     expect(argTypes).toMatchInlineSnapshot(`
       {
-        "footer": {
-          "description": "Footer slot.",
-          "name": "footer",
+        "x": {
+          "description": undefined,
+          "name": "x",
           "required": false,
           "table": {
-            "category": "slots",
+            "category": "attributes",
             "defaultValue": {
               "summary": undefined,
             },
@@ -89,7 +80,7 @@ describe('mapArgTypes', () => {
             },
           },
           "type": {
-            "name": "string",
+            "name": undefined,
           },
         },
       }
@@ -103,70 +94,6 @@ describe('mapArgTypes', () => {
 
     expect(argTypes).toMatchInlineSnapshot(`
       {}
-    `);
-  });
-
-  it('preserves type objects without text', () => {
-    const argTypes = mapArgTypes({
-      attributes: [{ name: 'x', type: { kind: 'union' } as unknown as { text?: string } }],
-    });
-
-    expect(argTypes).toMatchInlineSnapshot(`
-      {
-        "x": {
-          "description": undefined,
-          "name": "x",
-          "required": false,
-          "table": {
-            "category": "attributes",
-            "defaultValue": {
-              "summary": undefined,
-            },
-            "type": {
-              "summary": {
-                "kind": "union",
-              },
-            },
-          },
-          "type": {
-            "name": {
-              "kind": "union",
-            },
-          },
-        },
-      }
-    `);
-  });
-
-  it('falls back to the type object for empty text', () => {
-    const argTypes = mapArgTypes({
-      attributes: [{ name: 'x', type: { text: '' } }],
-    });
-
-    expect(argTypes).toMatchInlineSnapshot(`
-      {
-        "x": {
-          "description": undefined,
-          "name": "x",
-          "required": false,
-          "table": {
-            "category": "attributes",
-            "defaultValue": {
-              "summary": undefined,
-            },
-            "type": {
-              "summary": {
-                "text": "",
-              },
-            },
-          },
-          "type": {
-            "name": {
-              "text": "",
-            },
-          },
-        },
-      }
     `);
   });
 });

@@ -1,51 +1,47 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import invariant from 'tiny-invariant';
+import type {
+  CustomElementsItem,
+  CustomElementsItemGroups,
+} from './custom-elements-manifest-types.ts';
 
-export interface TagItem {
-  name: string;
-  type?: { text?: string } | string;
-  description?: string;
-  default?: unknown;
-  kind?: string;
-  defaultValue?: unknown;
+type TableDefaultSummary = NonNullable<
+  NonNullable<StrictInputType['table']>['defaultValue']
+>['summary'];
+
+const ITEM_GROUPS: [keyof CustomElementsItemGroups, string][] = [
+  ['members', 'properties'],
+  ['properties', 'properties'],
+  ['attributes', 'attributes'],
+  ['events', 'events'],
+  ['slots', 'slots'],
+  ['cssProperties', 'css custom properties'],
+  ['cssParts', 'css shadow parts'],
+];
+
+export function mapArgTypes(groups: CustomElementsItemGroups): StrictArgTypes {
+  return ITEM_GROUPS.reduce<StrictArgTypes>(
+    (argTypes, [groupName, category]) => ({
+      ...argTypes,
+      ...mapData(groups[groupName] ?? [], category),
+    }),
+    {}
+  );
 }
 
-export interface TagItemGroups {
-  attributes?: TagItem[];
-  properties?: TagItem[];
-  events?: TagItem[];
-  methods?: TagItem[];
-  members?: TagItem[];
-  slots?: TagItem[];
-  cssProperties?: TagItem[];
-  cssParts?: TagItem[];
-}
-
-export function mapArgTypes(groups: TagItemGroups): StrictArgTypes {
-  return {
-    ...mapData(groups.members ?? [], 'properties'),
-    ...mapData(groups.properties ?? [], 'properties'),
-    ...mapData(groups.attributes ?? [], 'attributes'),
-    ...mapData(groups.events ?? [], 'events'),
-    ...mapData(groups.slots ?? [], 'slots'),
-    ...mapData(groups.cssProperties ?? [], 'css custom properties'),
-    ...mapData(groups.cssParts ?? [], 'css shadow parts'),
-  };
-}
-
-function mapItem(item: TagItem, category: string): StrictInputType {
-  let type;
+function mapItem(item: CustomElementsItem, category: string): StrictInputType {
+  const text = typeText(item);
+  let typeName: string | undefined;
   switch (category) {
     case 'attributes':
     case 'properties':
-      type = { name: (item.type as { text?: string })?.text || item.type };
+      typeName = text;
       break;
     case 'slots':
-      type = { name: 'string' };
+      typeName = 'string';
       break;
     default:
-      type = { name: 'void' };
+      typeName = 'void';
       break;
   }
 
@@ -53,52 +49,55 @@ function mapItem(item: TagItem, category: string): StrictInputType {
     name: item.name,
     required: false,
     description: item.description,
-    type,
+    // The runtime writes the manifest's type text as the sbType name; mapping it to real SBTypes is PR B.
+    type: { name: typeName } as StrictInputType['type'],
     table: {
       category,
-      type: { summary: (item.type as { text?: string })?.text || item.type },
+      type: { summary: text },
       defaultValue: {
-        summary: item.default !== undefined ? item.default : item.defaultValue,
+        summary: (item.default !== undefined
+          ? item.default
+          : item.defaultValue) as TableDefaultSummary,
       },
     },
-  } as StrictInputType;
+  };
 }
 
-function mapEvent(item: TagItem): StrictInputType[] {
+function mapEvent(item: CustomElementsItem): StrictInputType[] {
   let name = item.name
     .replace(/(-|_|:|\.|\s)+(.)?/g, (_match, _separator, chr: string) => {
       return chr ? chr.toUpperCase() : '';
     })
     .replace(/^([A-Z])/, (match) => match.toLowerCase());
 
-  name = `on${name.charAt(0).toUpperCase() + name.substr(1)}`;
+  name = `on${name.charAt(0).toUpperCase() + name.slice(1)}`;
 
   return [{ name, action: { name: item.name }, table: { disable: true } }, mapItem(item, 'events')];
 }
 
-function mapData(data: TagItem[], category: string): StrictArgTypes | undefined {
-  return (
-    data &&
-    data
-      .filter((item) => item && item.name)
-      .reduce((acc, item) => {
-        if (item.kind === 'method') {
-          return acc;
-        }
-
-        switch (category) {
-          case 'events':
-            mapEvent(item).forEach((argType) => {
-              invariant(argType.name, `${argType} should have a name property.`);
-              acc[argType.name] = argType;
-            });
-            break;
-          default:
-            acc[item.name] = mapItem(item, category);
-            break;
-        }
-
+function mapData(items: CustomElementsItem[], category: string): StrictArgTypes {
+  return items
+    .filter((item) => item?.name)
+    .reduce<StrictArgTypes>((acc, item) => {
+      if (item.kind === 'method') {
         return acc;
-      }, {} as StrictArgTypes)
-  );
+      }
+
+      switch (category) {
+        case 'events':
+          mapEvent(item).forEach((argType) => {
+            acc[argType.name] = argType;
+          });
+          break;
+        default:
+          acc[item.name] = mapItem(item, category);
+          break;
+      }
+
+      return acc;
+    }, {});
+}
+
+function typeText(item: CustomElementsItem): string | undefined {
+  return typeof item.type === 'string' ? item.type : item.type?.text;
 }

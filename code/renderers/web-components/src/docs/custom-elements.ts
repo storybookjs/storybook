@@ -1,19 +1,20 @@
 import { logger } from 'storybook/internal/client-logger';
 
 import { getCustomElements, isValidComponent, isValidMetaData } from '..';
-import { mapArgTypes, type TagItem } from './map-arg-types.ts';
+import type { CustomElementsItem } from './custom-elements-manifest-types.ts';
+import { mapArgTypes } from './map-arg-types.ts';
 
 interface Tag {
   name: string;
   description: string;
-  attributes?: TagItem[];
-  properties?: TagItem[];
-  events?: TagItem[];
-  methods?: TagItem[];
-  members?: TagItem[];
-  slots?: TagItem[];
-  cssProperties?: TagItem[];
-  cssParts?: TagItem[];
+  attributes?: CustomElementsItem[];
+  properties?: CustomElementsItem[];
+  events?: CustomElementsItem[];
+  methods?: CustomElementsItem[];
+  members?: CustomElementsItem[];
+  slots?: CustomElementsItem[];
+  cssProperties?: CustomElementsItem[];
+  cssParts?: CustomElementsItem[];
 }
 
 interface CustomElements {

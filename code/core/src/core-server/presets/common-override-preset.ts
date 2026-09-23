@@ -1,4 +1,9 @@
-import type { PresetProperty, TestBuildFlags } from 'storybook/internal/types';
+import type {
+  CoreConfig,
+  Options,
+  PresetProperty,
+  TestBuildFlags,
+} from 'storybook/internal/types';
 
 import { removeMDXEntries } from '../utils/remove-mdx-entries.ts';
 import { getWsToken } from './wsToken.ts';
@@ -66,7 +71,7 @@ export const build: PresetProperty<'build'> = async (value, options) => {
  * websocket channel exists, and it is left out everywhere else so it cannot end up in a static
  * build.
  */
-export const core: PresetProperty<'core'> = async (existing, options) => {
+export const core = async (existing: CoreConfig, options: Options): Promise<CoreConfig> => {
   const channelOptions = { ...existing?.channelOptions };
   delete channelOptions.wsToken;
 

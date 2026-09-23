@@ -1,12 +1,29 @@
 {
+  "base-label": {
+    "description": "Label inherited from the base class.",
+    "name": "base-label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Base'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
   "baseLabel": {
-    "description": undefined,
+    "description": "Label inherited from the base class.",
     "name": "baseLabel",
     "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": undefined,
+        "summary": "'Base'",
       },
       "type": {
         "summary": "string",
@@ -33,14 +50,31 @@
       "name": "number",
     },
   },
+  "mixed-active": {
+    "description": "Whether the mixed-in state is active.",
+    "name": "mixed-active",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
   "mixedActive": {
-    "description": undefined,
+    "description": "Whether the mixed-in state is active.",
     "name": "mixedActive",
     "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": undefined,
+        "summary": "false",
       },
       "type": {
         "summary": "boolean",

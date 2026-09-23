@@ -40,24 +40,46 @@
           "customElement": true
         },
         {
-          "kind": "class",
-          "description": "Element composed from a base class and a mixin.",
-          "name": "LitInheritanceMixin",
+          "kind": "mixin",
+          "description": "",
+          "name": "SelectableMixin",
           "members": [
-            {
-              "kind": "field",
-              "name": "baseLabel",
-              "type": {
-                "text": "string"
-              }
-            },
             {
               "kind": "field",
               "name": "mixedActive",
               "type": {
                 "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the mixed-in state is active.",
+              "attribute": "mixed-active"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "mixed-active",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the mixed-in state is active.",
+              "fieldName": "mixedActive"
+            }
+          ],
+          "parameters": [
+            {
+              "name": "Base",
+              "type": {
+                "text": "T"
               }
-            },
+            }
+          ]
+        },
+        {
+          "kind": "class",
+          "description": "Element composed from a base class and a mixin.",
+          "name": "LitInheritanceMixin",
+          "members": [
             {
               "kind": "field",
               "name": "count",
@@ -67,6 +89,34 @@
               "default": "1",
               "description": "Count declared by the final class.",
               "attribute": "count"
+            },
+            {
+              "kind": "field",
+              "name": "mixedActive",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the mixed-in state is active.",
+              "attribute": "mixed-active",
+              "inheritedFrom": {
+                "name": "SelectableMixin",
+                "module": "lit-inheritance-mixin.ts"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "baseLabel",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Base'",
+              "description": "Label inherited from the base class.",
+              "attribute": "base-label",
+              "inheritedFrom": {
+                "name": "BaseElement",
+                "module": "lit-inheritance-mixin.ts"
+              }
             }
           ],
           "attributes": [
@@ -78,10 +128,42 @@
               "default": "1",
               "description": "Count declared by the final class.",
               "fieldName": "count"
+            },
+            {
+              "name": "mixed-active",
+              "type": {
+                "text": "boolean"
+              },
+              "default": "false",
+              "description": "Whether the mixed-in state is active.",
+              "fieldName": "mixedActive",
+              "inheritedFrom": {
+                "name": "SelectableMixin",
+                "module": "lit-inheritance-mixin.ts"
+              }
+            },
+            {
+              "name": "base-label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Base'",
+              "description": "Label inherited from the base class.",
+              "fieldName": "baseLabel",
+              "inheritedFrom": {
+                "name": "BaseElement",
+                "module": "lit-inheritance-mixin.ts"
+              }
+            }
+          ],
+          "mixins": [
+            {
+              "name": "SelectableMixin",
+              "module": "lit-inheritance-mixin.ts"
             }
           ],
           "superclass": {
-            "name": "SelectableBase",
+            "name": "BaseElement",
             "module": "lit-inheritance-mixin.ts"
           },
           "tagName": "lit-inheritance-mixin",
@@ -94,6 +176,14 @@
           "name": "BaseElement",
           "declaration": {
             "name": "BaseElement",
+            "module": "lit-inheritance-mixin.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "SelectableMixin",
+          "declaration": {
+            "name": "SelectableMixin",
             "module": "lit-inheritance-mixin.ts"
           }
         },

@@ -20,6 +20,118 @@ describe('compareArgTypes', () => {
     expect(compareArgTypes(baseline, argTypes({}))).toEqual([]);
   });
 
+  it.each([
+    {
+      input: 'waivedArgs contains the lost key',
+      output: 'passes',
+      baseline: { hidden: { name: 'hidden', type: { name: 'string' } } } as StrictArgTypes,
+      candidate: {} as StrictArgTypes,
+      options: { waivedArgs: new Set(['hidden']) },
+      expectedViolations: [],
+    },
+    {
+      input: 'waivedArgs does not contain the lost key',
+      output: 'lost-arg',
+      baseline: { hidden: { name: 'hidden', type: { name: 'string' } } } as StrictArgTypes,
+      candidate: {} as StrictArgTypes,
+      options: { waivedArgs: new Set(['other']) },
+      expectedViolations: [expect.objectContaining({ arg: 'hidden', kind: 'lost-arg' })],
+    },
+    {
+      input: 'legacy manifest runtime re-keys a same-name slot',
+      output: 'passes',
+      baseline: {
+        label: {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'label-slot': {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy baseline without legacy manifest runtime sees a re-keyed slot',
+      output: 'lost-arg',
+      baseline: {
+        label: {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'label-slot': {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true },
+      expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'lost-arg' })],
+    },
+    {
+      input: 'legacy manifest runtime treats void event type as unresolved',
+      output: 'passes',
+      baseline: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'void' } as never,
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'other', value: 'CustomEvent<{ value: string }>' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy baseline without legacy manifest runtime compares void event type',
+      output: 'type-fidelity',
+      baseline: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'void' } as never,
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'my-change': {
+          name: 'my-change',
+          type: { name: 'other', value: 'CustomEvent<{ value: string }>' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true },
+      expectedViolations: [expect.objectContaining({ arg: 'my-change', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacyManifestRuntime is set without legacyBaseline',
+      output: 'throws',
+      baseline: { label: { name: 'label', type: { name: 'string' } } } as StrictArgTypes,
+      candidate: {} as StrictArgTypes,
+      options: { legacyManifestRuntime: true },
+      expectedError: 'legacyManifestRuntime may only waive legacy baselines',
+    },
+  ])(
+    'applies web-components legacy waivers: $input => $output',
+    ({ baseline, candidate, options, expectedViolations, expectedError }) => {
+      if (expectedError) {
+        expect(() => compareArgTypes(baseline, candidate, options)).toThrow(expectedError);
+        return;
+      }
+      expect(compareArgTypes(baseline, candidate, options)).toEqual(expectedViolations);
+    }
+  );
+
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({
       size: { name: 'size', type: { name: 'string' } },

@@ -9,6 +9,8 @@ import type { IndexEntry } from 'storybook/internal/types';
 import ts from 'typescript';
 import { createCheckerByJson } from 'vue-component-meta';
 
+import { adaptCoreComponent, formatComponentManifest } from 'storybook/internal/toolsets-docs';
+
 import { CHECKER_OPTIONS, buildDocgenPayload } from '@storybook/vue3/internal/docgen';
 import { recordArgTypesSnapshot } from '../../compare/record-argtypes-snapshot.ts';
 
@@ -44,6 +46,13 @@ const docgenFor = (fixtureCase: string, title: string) =>
       typescript: ts,
     }
   );
+
+/**
+ * The markdown a consumer actually reads: the payload adapted into a component manifest and
+ * rendered by core, which is the same composition MCP's `docs-show` serves.
+ */
+const renderedApiDescriptionFor = async (fixtureCase: string, title: string) =>
+  formatComponentManifest(adaptCoreComponent((await docgenFor(fixtureCase, title))!));
 
 describe('vue3 declared subcomponents', () => {
   it('records each declared child’s own argTypes table', async () => {
@@ -90,6 +99,39 @@ describe('vue3 declared subcomponents', () => {
         'subcomponent-Header-own-api-description.snapshot'
       )
     );
+  });
+
+  it('renders each declared child under its own heading in the composed apiDescription', async () => {
+    const rendered = await renderedApiDescriptionFor('declared-subcomponents', 'Example/Card');
+
+    // What MCP's `docs-show` puts in front of a consumer: core synthesizes `## Subcomponents`,
+    // names the child, and demotes the child's own `##` sections one level so they nest beneath it.
+    expect(rendered).toContain('## Subcomponents');
+    expect(rendered).toContain('### CardHeader');
+    expect(rendered).toContain('#### Props');
+    expect(rendered).toContain('#### Events');
+
+    // The child's documentation survives the demotion intact — JSDoc, unions and defaults included.
+    expect(rendered).toContain('/** Heading text rendered above the card body. */');
+    expect(rendered).toContain('level?: 2 | 3;');
+    expect(rendered).toContain('/** Fired when the header is dismissed. */');
+
+    // Heading levels inside the child's fenced code block are left alone, and the parent keeps its
+    // own undemoted `## Props` below the section rather than merging into the child's.
+    expect(rendered).toContain('## Props\n\n```\nexport type CardProps');
+    expect(rendered.indexOf('## Subcomponents')).toBeLessThan(
+      rendered.indexOf('export type CardProps')
+    );
+  });
+
+  it('renders no subcomponents section when the meta declares none', async () => {
+    const rendered = await renderedApiDescriptionFor('no-subcomponents', 'Example/Standalone');
+
+    // An undeclared component's rendered docs are unchanged by this feature: no empty section,
+    // no stray heading, and its own props stay at `##`.
+    expect(rendered).not.toContain('Subcomponents');
+    expect(rendered).not.toContain('###');
+    expect(rendered).toContain('## Props');
   });
 
   it('omits the subcomponents key when the meta declares none', async () => {

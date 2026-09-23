@@ -6,8 +6,15 @@ import type { Violation } from './types.ts';
 export interface CompareArgTypesOptions {
   /** Waive the legacy Angular pipeline's invented defaults, which must not be ratcheted. */
   legacyBaseline?: boolean;
+  /**
+   * The legacy web-components runtime keyed args by member name and recorded `void` for events, so a
+   * same-name candidate under another key is a re-keying and `void` is an unresolved stub.
+   */
+  legacyManifestRuntime?: boolean;
   /** Also gate `table.type.summary` text and the `required` flag, for a same-engine baseline. */
   strictTable?: boolean;
+  /** Baseline args whose loss is accepted, e.g. members the manifest marks private or static. */
+  waivedArgs?: ReadonlySet<string>;
 }
 
 /**
@@ -22,16 +29,27 @@ export function compareArgTypes(
   candidate: StrictArgTypes,
   options: CompareArgTypesOptions = {}
 ): Violation[] {
+  if (options.legacyManifestRuntime === true && options.legacyBaseline !== true) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    throw new Error('legacyManifestRuntime may only waive legacy baselines');
+  }
+
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {
     // ES-private `#member`s are inaccessible outside their class; legacy Compodoc records them
     // anyway, and the modern extractor only surfaces them under `propsTable: 'all'`. Their loss
     // never gates.
-    if (arg.startsWith('#')) {
+    if (arg.startsWith('#') || options.waivedArgs?.has(arg) === true) {
       continue;
     }
     const candidateEntry = candidate[arg] as StrictInputType | undefined;
     if (candidateEntry === undefined) {
+      if (
+        options.legacyManifestRuntime === true &&
+        hasSameNamedCandidate(arg, baseEntry, candidate)
+      ) {
+        continue;
+      }
       violations.push({
         arg,
         kind: 'lost-arg',
@@ -75,7 +93,9 @@ export function compareArgTypes(
           kind: 'lost-type',
           message: `the baseline records type ${printType(baseType)} but the candidate has none`,
         });
-      } else if (!typeCurrentOrBetter(baseType, candidateType)) {
+      } else if (
+        !typeCurrentOrBetter(baseType, candidateType, options.legacyManifestRuntime === true)
+      ) {
         violations.push({
           arg,
           kind: 'type-fidelity',
@@ -197,7 +217,11 @@ const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 // Deep equality after normalization, or an enumerated improvement. Everything lateral fails and is
 // accepted only through a reviewed baseline update. Both sides are already normalized recorded
 // types, so the discriminants can be trusted.
-function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
+function typeCurrentOrBetter(
+  baseline: SBType,
+  candidate: SBType,
+  legacyManifestRuntime = false
+): boolean {
   if (deepEqual(canonicalType(baseline), canonicalType(candidate))) {
     return true;
   }
@@ -211,7 +235,7 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
     // Unequal other-text falls through to stub resolution so a nothing-recorded marker accepts
     // any candidate, including another `other`.
     if (!isQuotedToken(baseline.value)) {
-      return resolvesStub(baseline.value, candidate);
+      return resolvesStub(baseline.value, candidate, legacyManifestRuntime);
     }
   }
   const baselineMembers = memberSet(baseline);
@@ -229,25 +253,30 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   ) {
     const candidateValues = (candidate as Extract<SBType, { name: typeof baseline.name }>).value;
     return baseline.value.every((member) =>
-      candidateValues.some((candidateMember) => typeCurrentOrBetter(member, candidateMember))
+      candidateValues.some((candidateMember) =>
+        typeCurrentOrBetter(member, candidateMember, legacyManifestRuntime)
+      )
     );
   }
   if (baseline.name === 'tuple' && candidate.name === 'tuple') {
     // Tuples are positional: each recorded slot must survive at its index; appended slots pass.
     return (
       candidate.value.length >= baseline.value.length &&
-      baseline.value.every((member, index) => typeCurrentOrBetter(member, candidate.value[index]))
+      baseline.value.every((member, index) =>
+        typeCurrentOrBetter(member, candidate.value[index], legacyManifestRuntime)
+      )
     );
   }
   if (baseline.name === 'object' && candidate.name === 'object') {
     // An empty baseline value means "not extracted", so any candidate object improves on it.
     return Object.entries(baseline.value).every(
       ([key, member]) =>
-        candidate.value[key] !== undefined && typeCurrentOrBetter(member, candidate.value[key])
+        candidate.value[key] !== undefined &&
+        typeCurrentOrBetter(member, candidate.value[key], legacyManifestRuntime)
     );
   }
   if (baseline.name === 'array' && candidate.name === 'array') {
-    return typeCurrentOrBetter(baseline.value, candidate.value);
+    return typeCurrentOrBetter(baseline.value, candidate.value, legacyManifestRuntime);
   }
   return false;
 }
@@ -305,9 +334,9 @@ const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 //
 // Not the perf engine's `isOpaque`, which counts real type names an engine never looked through:
 // `undefined` is an extraction-failure marker here and a resolved type name there.
-const resolvesStub = (stub: string, candidate: SBType): boolean => {
+const resolvesStub = (stub: string, candidate: SBType, legacyManifestRuntime = false): boolean => {
   const text = stub.trim();
-  if (UNRESOLVED_STUBS.has(text)) {
+  if (UNRESOLVED_STUBS.has(text) || (legacyManifestRuntime && text === 'void')) {
     return true;
   }
   if (candidate.name === 'literal') {
@@ -409,3 +438,18 @@ const isSingleToken = (value: string): boolean =>
 
 const isQuotedToken = (value: unknown): boolean =>
   typeof value === 'string' && (/^"[^"]*"$/.test(value) || /^'[^']*'$/.test(value));
+
+const hasSameNamedCandidate = (
+  arg: string,
+  baseEntry: StrictInputType,
+  candidate: StrictArgTypes
+): boolean => {
+  const baseName = argName(arg, baseEntry);
+  return Object.entries(candidate).some(
+    ([candidateArg, candidateEntry]) =>
+      argName(candidateArg, candidateEntry as StrictInputType) === baseName
+  );
+};
+
+const argName = (arg: string, entry: StrictInputType): string =>
+  typeof entry.name === 'string' ? entry.name : arg;

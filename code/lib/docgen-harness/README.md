@@ -114,6 +114,8 @@ src/
 The comparator machine-checks a deliberate subset: baseline arg names, description presence, default presence, `table.type.summary` presence, and type fidelity for argTypes; represented binding names, root-element identity, and bare-attribute survival for Angular snippets.
 Everything else - description/default/summary text, `table.category`, `control`/`action`, per-arg `jsDocTags`, added args - is caught only by the byte-exact snapshot diffs reviewed at `-u` time, or by the sandbox gate's `change` findings.
 Two flags scope trust to where the baseline earns it: `legacyBaseline` (only on legs whose baseline is a legacy compodoc recording) waives the raw `false`/`NaN`/`null` defaults that pipeline invents, and `strictTable` (only on the ACM self-ratchet, whose baseline the same engine recorded) additionally gates `table.type.summary` text changes and `table.type.required` true->false flips.
+The web-components OSA recorder is the only user of `legacyManifestRuntime`, which waives legacy runtime re-keying and unresolved `void` event types.
+The same recorder is the only user of `waivedArgs`, which accepts losing manifest-hidden members such as private, protected, or static class members.
 The sandbox baseline gate runs in the daily CI tier, so a whole-project regression can merge green and surface up to a day later, detached from the offending PR.
 Known-accepted blind spots: enum members whose quoted and bare spellings collide normalize to the same member (`'"small"'` reads as `small`), and `\r`/`\r\n` in extracted strings are LF-normalized by vitest at write time, so a CR-bearing extraction can never record green (perma-loud, never silent).
 
@@ -193,6 +195,7 @@ Move the emitted `custom-elements.json` back into the fixture directory and make
 The default capture stays at CEM 1.0.0 because the analyzer still writes that version.
 The 2.1.0 variant is the same capture plus additive fields (`cssStates`, `readonly`), so a diff between `argtypes.snapshot` and `v2-argtypes.snapshot` shows exactly what a newer manifest buys.
 The WCA variant records the deprecated web-component-analyzer shape that the runtime still accepts.
+`lit-toolkit-shapes/custom-elements.json` additionally carries a hand-added `parsedType` on the `size` member, mirroring the wc-toolkit type-parser plugin output the OSA mapper reads for alias unions.
 
 ### Server-side recorder (web-components)
 

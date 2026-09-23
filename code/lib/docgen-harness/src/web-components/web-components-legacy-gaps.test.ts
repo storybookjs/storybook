@@ -74,14 +74,6 @@ test('every baseline referenced by a red marker exists', () => {
 });
 
 describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', () => {
-  marker('reflected booleans record one arg', (readBaseline) => {
-    const text = readBaseline('basicArgTypes');
-    const reflectedKeys = [/^  "is-open": \{$/m.test(text), /^  "isOpen": \{$/m.test(text)].filter(
-      Boolean
-    );
-    expect(reflectedKeys).toHaveLength(1);
-  });
-
   marker('literal unions and JSDoc tags reach argTypes structurally', (readBaseline) => {
     expect(readBaseline('unionArgTypes')).toContain('"name": "enum"');
     expect(readBaseline('unionArgTypes')).toMatch(/"jsDocTags": [[{]/);

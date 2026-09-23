@@ -16,6 +16,16 @@ import {
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
+type DeclarationMember = {
+  name?: unknown;
+  privacy?: unknown;
+  static?: unknown;
+};
+
+type DeclarationWithMembers = NonNullable<
+  WebComponentsDocgenPayload['customElementsManifest']
+>['declaration'] & { members?: DeclarationMember[] };
+
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
     'web-components-osa-baselines.test.ts gates the server recorder against the legacy runtime baselines; update the recorder or baseline-path.ts'
@@ -81,6 +91,20 @@ const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {
   return rest;
 };
 
+const hiddenMemberNames = (payload: WebComponentsDocgenPayload): ReadonlySet<string> => {
+  const declaration = payload.customElementsManifest?.declaration as
+    | DeclarationWithMembers
+    | undefined;
+  return new Set(
+    (declaration?.members ?? [])
+      .filter(
+        (member) =>
+          member.privacy === 'private' || member.privacy === 'protected' || member.static === true
+      )
+      .flatMap((member) => (typeof member.name === 'string' ? [member.name] : []))
+  );
+};
+
 describe('web-components server-side docgen baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
     const testDir = join(fixturesDir, fixtureCase);
@@ -113,6 +137,8 @@ describe('web-components server-side docgen baselines', () => {
             committed: committedLegacyArgTypes!,
             label: `${fixtureCase}/${legacyPrefix}argtypes.snapshot`,
             legacyBaseline: true,
+            legacyManifestRuntime: true,
+            waivedArgs: hiddenMemberNames(payload!),
           },
         ],
       });

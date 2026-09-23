@@ -36,7 +36,10 @@ export async function setupAddonInConfig({
     mainConfigCSFFile.appendValueToArray(['addons'], addonName);
   }
 
-  await writeConfig(mainConfigCSFFile);
+  await writeConfig(mainConfigCSFFile, undefined, {
+    trailingComma: { arrays: true },
+    wrapColumn: 0,
+  });
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {

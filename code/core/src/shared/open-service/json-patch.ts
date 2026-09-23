@@ -9,10 +9,6 @@ function parentAt(
   root: Record<string, unknown>,
   segments: readonly string[]
 ): { parent: Record<string, unknown>; key: string } | undefined {
-  if (segments.length === 0) {
-    return undefined;
-  }
-
   let current: unknown = root;
   for (let index = 0; index < segments.length - 1; index += 1) {
     const segment = segments[index];

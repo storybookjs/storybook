@@ -57,7 +57,7 @@ describe('applyStatePatch', () => {
       '{"__proto__":{"polluted":true},"constructor":{"polluted":true},"prototype":{"polluted":true},"safe":"updated"}'
     ) as Record<string, unknown>;
 
-  it('skips prototype-pollution keys when preserving missing keys', () => {
+  it('skips prototype-pollution keys in a partial snapshot', () => {
     const target = { safe: 'ok' };
 
     applyStatePatch(target, pollutionSource(), { preserveMissingKeys: true });
@@ -67,7 +67,7 @@ describe('applyStatePatch', () => {
     expect((Object.getPrototypeOf({}) as Record<string, unknown>).polluted).toBeUndefined();
   });
 
-  it('skips prototype-pollution keys when deleting missing keys', () => {
+  it('skips prototype-pollution keys in a full snapshot', () => {
     const target = { safe: 'ok' };
 
     applyStatePatch(target, pollutionSource(), { preserveMissingKeys: false });

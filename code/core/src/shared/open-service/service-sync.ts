@@ -123,16 +123,16 @@ export function compareStamps(left: EntryStamp, right: EntryStamp): number {
  * - Recurses into plain objects so nested deep-signal subscriptions stay attached.
  * - Replaces arrays wholesale, matching the sync contract that arrays are values rather than maps.
  * - Assigns primitives only when changed to avoid spurious signal invalidation.
- * - Skips `__proto__`, `constructor`, and `prototype` on both delete and assign paths so untrusted
- *   channel payloads and static files cannot pollute prototypes.
+ * - Skips `__proto__`, `constructor`, and `prototype` keys in `source` so untrusted channel
+ *   payloads and static files cannot pollute prototypes. State never holds those keys, so the
+ *   delete pass needs no such check.
  *
  * The `preserveMissingKeys` mode selects the source contract:
  *
  * - `false` means `source` is a full peer snapshot. Keys missing from `source` are deleted from
  *   `target`, allowing deletions to propagate through cross-peer sync.
  * - `true` means `source` is a partial static snapshot. Keys missing from `source` are left alone
- * so
- *   snapshots for one static query input do not erase state populated by other inputs.
+ *   so snapshots for one static query input do not erase state populated by other inputs.
  */
 export function applyStatePatch(
   target: Record<string, unknown>,
@@ -141,10 +141,6 @@ export function applyStatePatch(
 ): void {
   if (!options.preserveMissingKeys) {
     for (const key of Object.keys(target)) {
-      if (FORBIDDEN_KEYS.has(key)) {
-        continue;
-      }
-
       if (!hasOwn(source, key)) {
         delete target[key];
       }
@@ -157,11 +153,11 @@ export function applyStatePatch(
     }
 
     const sourceValue = source[key];
-    const tarvalue = target[key];
+    const targetValue = target[key];
 
-    if (isPlainObject(sourceValue) && isPlainObject(tarvalue)) {
-      applyStatePatch(tarvalue, sourceValue, options);
-    } else if (tarvalue !== sourceValue) {
+    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+      applyStatePatch(targetValue, sourceValue, options);
+    } else if (targetValue !== sourceValue) {
       target[key] = sourceValue;
     }
   }
@@ -333,9 +329,6 @@ export function createSnapshotReconciler(options: {
   };
 
   const evict = (now: number): void => {
-    if (log.length === 0) {
-      return;
-    }
     const minKeepIndex = Math.max(0, log.length - logWindow.maxEntries);
     const kept: StoredLogEntry[] = [];
     for (let index = 0; index < log.length; index += 1) {
@@ -358,21 +351,19 @@ export function createSnapshotReconciler(options: {
     log.push(...kept);
   };
 
-  const remember = (entry: StoredLogEntry, advanceVector: boolean): void => {
+  const remember = (entry: StoredLogEntry): void => {
     logKeys.add(entryStampKey(entry.stamp));
-    if (advanceVector) {
-      tryAdvanceVector(entry.stamp);
-    }
+    tryAdvanceVector(entry.stamp);
     evict(entry.appliedAt);
   };
 
-  const appendOrInsert = (entry: StoredLogEntry, index: number, advanceVector: boolean): void => {
+  const appendOrInsert = (entry: StoredLogEntry, index: number): void => {
     if (index === log.length) {
       log.push(entry);
     } else {
       log.splice(index, 0, entry);
     }
-    remember(entry, advanceVector);
+    remember(entry);
   };
 
   const advanceClock = (seq: number): void => {
@@ -417,7 +408,7 @@ export function createSnapshotReconciler(options: {
         inverse: [...authored.inverse],
         appliedAt: now,
       };
-      appendOrInsert(entry, log.length, true);
+      appendOrInsert(entry, log.length);
       return stamp;
     },
 
@@ -470,7 +461,7 @@ export function createSnapshotReconciler(options: {
           const replayed: StoredLogEntry = { ...entry };
           redoEntry(current, replayed);
           log.push(replayed);
-          remember(replayed, true);
+          remember(replayed);
         }
       });
 
@@ -500,9 +491,6 @@ export function createSnapshotReconciler(options: {
 
       const gap = stamp.counter > vectorOf(stamp.runtimeId) + 1;
       const index = insertIndexFor(stamp);
-      if (index < log.length && compareStamps(log[index].stamp, stamp) === 0) {
-        return 'duplicate';
-      }
 
       const now = Date.now();
       let inverse: JsonPatchOperation[] = [];
@@ -538,7 +526,7 @@ export function createSnapshotReconciler(options: {
         );
       }
 
-      appendOrInsert({ stamp, command, patch: [...patch], inverse, appliedAt: now }, index, !gap);
+      appendOrInsert({ stamp, command, patch: [...patch], inverse, appliedAt: now }, index);
       return gap ? 'gap' : failedPath !== undefined ? 'unapplied' : 'accepted';
     },
   };

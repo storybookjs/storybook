@@ -750,8 +750,8 @@ test.describe('open-service sync example', () => {
             await expectSlots(second.panelRaw, {});
           }
 
-          // Same key, same seq: last-write-wins. Either value is correct; all
-          // four surfaces must show the same one.
+          // Same key, same seq: the greater runtimeId wins, and runtimeIds are random,
+          // so either value is correct; all four surfaces must show the same one.
           const sharedSlot = `shared-${Date.now()}`;
           firstHold.arm();
           secondHold.arm();

@@ -20,10 +20,8 @@ import { OpenServiceAsyncRecipeError } from '../../server-errors.ts';
 import { FORBIDDEN_KEYS, clonePlain, hasOwn } from './plain-object.ts';
 import { encodePointer, type JsonPatchOperation } from './service-channel.ts';
 
-export type RecordedOp = JsonPatchOperation;
-
 /** Forward ops of one recipe and the inverse that restores the state from before it. */
-export type RecordedPatch = { ops: RecordedOp[]; inverse: RecordedOp[] };
+export type RecordedPatch = { ops: JsonPatchOperation[]; inverse: JsonPatchOperation[] };
 
 type Touch = {
   segments: string[];
@@ -271,14 +269,11 @@ export function recordPatch<T extends object>(
 
   const flush = (): RecordedPatch => {
     const touched = new Set(order);
-    const ops: RecordedOp[] = [];
-    const inverse: RecordedOp[] = [];
+    const ops: JsonPatchOperation[] = [];
+    const inverse: JsonPatchOperation[] = [];
 
     for (const pointer of order) {
-      const touch = touches.get(pointer);
-      if (!touch) {
-        continue;
-      }
+      const touch = touches.get(pointer)!;
 
       // `/a` covers `/a/b`; `/a` does not cover `/ab`.
       const hasTouchedAncestor = touch.segments.some((_, index) => {

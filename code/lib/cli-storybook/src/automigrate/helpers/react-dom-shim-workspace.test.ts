@@ -359,4 +359,20 @@ describe('analyzeReactDomShimWorkspace', () => {
       ]),
     });
   });
+
+  it('refuses shim references in manifest keys, dependency aliases, and static config expressions', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': `${JSON.stringify({ dependencies: { react: '19.1.1', 'react-dom': '19.1.1', '@storybook/react-dom-shim': '10.5.10', legacyShim: 'npm:@storybook/react-dom-shim@10.5.10' }, browser: { '@storybook/react-dom-shim': false } })}\n`,
+      '/project/webpack.config.js':
+        "module.exports = { resolve: { alias: { shim: '@storybook/' + 'react-dom-shim' } } };\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/package.json: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/webpack.config.js: contains a react-dom-shim reference that cannot be removed safely',
+      ]),
+    });
+  });
 });

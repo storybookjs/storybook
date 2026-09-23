@@ -148,14 +148,27 @@ const staticString = (
 const hasShimReference = (value: JsonValue): boolean => {
   if (typeof value === 'string') return value.includes(SHIM);
   if (Array.isArray(value)) return value.some(hasShimReference);
-  return value !== null && typeof value === 'object' && Object.values(value).some(hasShimReference);
+  return (
+    value !== null &&
+    typeof value === 'object' &&
+    Object.entries(value).some(
+      ([key, nestedValue]) => key.includes(SHIM) || hasShimReference(nestedValue)
+    )
+  );
 };
 
 const hasManifestShimReference = (manifest: Manifest): boolean =>
-  Object.entries(manifest).some(
-    ([key, value]) =>
-      !DEPENDENCY_SECTIONS.some((section) => section === key) && hasShimReference(value)
-  );
+  Object.entries(manifest).some(([key, value]) => {
+    if (!DEPENDENCY_SECTIONS.some((section) => section === key)) return hasShimReference(value);
+    return (
+      isJsonRecord(value) &&
+      Object.entries(value).some(
+        ([dependency, range]) =>
+          dependency !== SHIM &&
+          (dependency.includes(SHIM) || (typeof range === 'string' && range.includes(SHIM)))
+      )
+    );
+  });
 
 const moduleLoad = (
   callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee']
@@ -238,6 +251,12 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
         }
       },
       TemplateLiteral(path) {
+        const value = staticString(path.node);
+        if (!CONFIG_FILE.test(filePath) && value && isShimSource(value)) {
+          diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
+        }
+      },
+      BinaryExpression(path) {
         const value = staticString(path.node);
         if (!CONFIG_FILE.test(filePath) && value && isShimSource(value)) {
           diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;

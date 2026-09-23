@@ -362,20 +362,36 @@ describe('server: sync-request initialization', () => {
     );
   });
 
-  it('does not reply to a sync-request for a different service id', () => {
+  it('ignores a sync-request and a sync-reply for a different service id', () => {
     const channel = createMockChannel();
     installChannel(channel);
 
-    registerService(mutableRecordLookupServiceDef);
+    const service = registerService(mutableRecordLookupServiceDef);
+    channel.emitExternal(
+      SERVICE_ENTRY,
+      peerEntry(recordServiceId, [{ op: 'add', path: '/a', value: { k: 'v' } }], {
+        runtimeId: 'peer-1',
+        counter: 1,
+      })
+    );
+    channel.emit.mockClear();
 
     channel.emitExternal(SERVICE_SYNC_REQUEST, {
       serviceId: 'some-other-service',
       runtimeId: 'peer-2',
       frontier: { vector: {}, clock: 0 },
     });
+    channel.emitExternal(SERVICE_SYNC_REPLY, {
+      serviceId: 'some-other-service',
+      runtimeId: 'peer-2',
+      state: { b: { k: 'w' } },
+      frontier: { vector: { 'peer-1': 1, 'peer-2': 1 }, clock: 2 },
+    });
 
-    const replyCalls = channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY);
-    expect(replyCalls).toHaveLength(0);
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY)).toHaveLength(
+      0
+    );
+    expect(service.queries.recordFields.get({ entryId: 'b' })).toBeNull();
   });
 });
 

@@ -613,6 +613,25 @@ describe('patch recorder', () => {
     expect(restored).toEqual({ a: { b: { x: 0 } } });
   });
 
+  it('rebuilds a subsuming ancestor from its own descendants, not from sibling touches', () => {
+    const recorded = record({ other: 0, a: { b: 1 } }, (s) => {
+      s.other = 1;
+      s.a.b = 2;
+      s.a = { b: 3 };
+    });
+
+    expect({ ops: recorded.ops, inverse: recorded.inverse }).toEqual({
+      ops: [
+        { op: 'replace', path: '/other', value: 1 },
+        { op: 'replace', path: '/a', value: { b: 3 } },
+      ],
+      inverse: [
+        { op: 'replace', path: '/other', value: 0 },
+        { op: 'replace', path: '/a', value: { b: 1 } },
+      ],
+    });
+  });
+
   it('rebuilds an ancestor by undoing descendant touches newest first', () => {
     const recorded = record({ a: { b: { c: 0 } } } as { a?: { b?: { c: number } } }, (s) => {
       s.a!.b = { c: 1 };

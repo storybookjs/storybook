@@ -870,6 +870,119 @@ describe('createReconciler entries', () => {
       expect.stringContaining('service=svc stamps=1:other:1,1:w:1 paths=/z command=setZ')
     );
   });
+
+  it('undoes later entries newest first, so an earlier insert applies to the state before them', () => {
+    const { state, reconciler } = fixture({ n: {} });
+    for (const [counter, value] of [
+      [1, 5],
+      [2, 6],
+    ]) {
+      reconciler.tryPlaceEntry({
+        serviceId: 'svc',
+        stamp: stamp('z', counter),
+        command: 'setN',
+        patch: [{ op: 'replace', path: '/n', value }],
+      });
+    }
+
+    expect(
+      reconciler.tryPlaceEntry({
+        serviceId: 'svc',
+        stamp: stamp('a', 1),
+        command: 'setK',
+        patch: [{ op: 'add', path: '/n/k', value: 'a' }],
+      })
+    ).toBe('accepted');
+    expect(state).toEqual({ n: 6 });
+  });
+
+  it('turns a later write into a no-op when an earlier insert removes its parent, in either arrival order', () => {
+    const removeParent = {
+      serviceId: 'svc',
+      stamp: stamp('a', 1),
+      command: 'removeP',
+      patch: [{ op: 'remove' as const, path: '/p' }],
+    };
+    const writeChild = {
+      serviceId: 'svc',
+      stamp: stamp('z', 1),
+      command: 'setK',
+      patch: [{ op: 'add' as const, path: '/p/k', value: 'v' }],
+    };
+    const earliest = {
+      serviceId: 'svc',
+      stamp: stamp('0', 1),
+      command: 'setM',
+      patch: [{ op: 'add' as const, path: '/m', value: 1 }],
+    };
+
+    const inOrder = fixture({ p: {} });
+    expect(inOrder.reconciler.tryPlaceEntry(removeParent)).toBe('accepted');
+    expect(inOrder.reconciler.tryPlaceEntry(writeChild)).toBe('unapplied');
+
+    const reversed = fixture({ p: {} });
+    expect(reversed.reconciler.tryPlaceEntry(writeChild)).toBe('accepted');
+    expect(reversed.reconciler.tryPlaceEntry(removeParent)).toBe('accepted');
+    expect(vi.mocked(logger.warn)).toHaveBeenCalledWith(
+      expect.stringContaining('replay failed. service=svc stamp=1:z:1 path=/p/k command=setK')
+    );
+
+    for (const { reconciler } of [inOrder, reversed]) {
+      vi.mocked(logger.warn).mockClear();
+      expect(reconciler.tryPlaceEntry(earliest)).toBe('accepted');
+      expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
+        expect.stringContaining('undo failed')
+      );
+    }
+    expect(inOrder.state).toEqual({ m: 1 });
+    expect(reversed.state).toEqual(inOrder.state);
+    expect(reversed.reconciler.log).toEqual(inOrder.reconciler.log);
+  });
+
+  it('clears the evicted-stamp floor on install, so an entry above the reply clock still places', () => {
+    const { state, reconciler } = fixture({}, { maxAgeMs: 0, maxEntries: 1 });
+    for (const [counter, seq] of [
+      [2, 9],
+      [3, 10],
+    ]) {
+      expect(
+        reconciler.tryPlaceEntry({
+          serviceId: 'svc',
+          stamp: stamp('w', counter, seq),
+          command: 'setW',
+          patch: [{ op: 'add', path: `/w${counter}`, value: counter }],
+        })
+      ).toBe('gap');
+    }
+    expect(reconciler.tryInstall({ vector: { r: 1 }, clock: 3 }, { r: 1 })).toBe('installed');
+
+    expect(
+      reconciler.tryPlaceEntry({
+        serviceId: 'svc',
+        stamp: stamp('x', 1, 8),
+        command: 'setX',
+        patch: [{ op: 'add', path: '/x', value: 8 }],
+      })
+    ).toBe('accepted');
+    expect(state).toEqual({ r: 1, w3: 3, x: 8 });
+  });
+
+  it('remembers only as many dropped stamps as the window keeps entries', () => {
+    const { reconciler } = fixture({}, { maxEntries: 1 });
+    expect(reconciler.tryInstall({ vector: { a: 1 }, clock: 5 }, {})).toBe('installed');
+    const stale = (runtimeId: string, seq: number) => ({
+      serviceId: 'svc',
+      stamp: stamp(runtimeId, 1, seq),
+      command: 'set',
+      patch: [{ op: 'add' as const, path: `/${runtimeId}`, value: seq }],
+    });
+
+    expect(reconciler.tryPlaceEntry(stale('b', 4))).toBe('beyond-window');
+    expect(reconciler.tryPlaceEntry(stale('c', 3))).toBe('beyond-window');
+
+    expect(reconciler.tryPlaceEntry(stale('c', 3))).toBe('duplicate');
+    expect(reconciler.tryPlaceEntry(stale('b', 4))).toBe('beyond-window');
+  });
 });
 
 describe('log window eviction', () => {

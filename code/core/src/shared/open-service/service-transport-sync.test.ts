@@ -295,16 +295,6 @@ describe('connectRuntimeToChannel request policy', () => {
     });
     channel.emit.mockClear();
 
-    channel.emitExternal(SERVICE_ENTRY, {
-      serviceId: SERVICE_ID,
-      stamp: { seq: 2, runtimeId: 'w', counter: 2 },
-      command: 'setA',
-      patch: [{ op: 'add', path: '/a', value: 1 }],
-    });
-    expect(
-      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
-    ).toHaveLength(0);
-
     channel.emitExternal(SERVICE_SYNC_REPLY, {
       serviceId: SERVICE_ID,
       runtimeId: 'peer',
@@ -320,6 +310,83 @@ describe('connectRuntimeToChannel request policy', () => {
       frontier: reconciler.frontier,
     });
 
+    disconnect();
+  });
+
+  it('ignores its own sync-request, even one sent from a frontier it has since passed', () => {
+    const channel = createTestChannel();
+    const state: Record<string, unknown> = {};
+    const reconciler = createReconciler({
+      serviceId: SERVICE_ID,
+      setState: (mutate) => mutate(state),
+    });
+    const disconnect = connectRuntimeToChannel({
+      serviceId: SERVICE_ID,
+      ownRuntimeId: 'self',
+      reconciler,
+      getSnapshot: () => ({ ...state }),
+      channel,
+      relay: false,
+    });
+    channel.emitExternal(SERVICE_ENTRY, {
+      serviceId: SERVICE_ID,
+      stamp: { seq: 1, runtimeId: 'w', counter: 1 },
+      command: 'setA',
+      patch: [{ op: 'add', path: '/a', value: 1 }],
+    });
+    channel.emit.mockClear();
+
+    channel.emitExternal(SERVICE_SYNC_REQUEST, {
+      serviceId: SERVICE_ID,
+      runtimeId: 'self',
+      frontier: { vector: {}, clock: 0 },
+    });
+
+    expect(channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REPLY)).toHaveLength(
+      0
+    );
+    disconnect();
+  });
+
+  it('does not let the echo of its own reply clear its outstanding request', () => {
+    const channel = createTestChannel();
+    const state: Record<string, unknown> = {};
+    const reconciler = createReconciler({
+      serviceId: SERVICE_ID,
+      setState: (mutate) => mutate(state),
+    });
+    const disconnect = connectRuntimeToChannel({
+      serviceId: SERVICE_ID,
+      ownRuntimeId: 'self',
+      reconciler,
+      getSnapshot: () => ({ ...state }),
+      channel,
+      relay: false,
+    });
+    channel.emitExternal(SERVICE_ENTRY, {
+      serviceId: SERVICE_ID,
+      stamp: { seq: 1, runtimeId: 'w', counter: 1 },
+      command: 'setA',
+      patch: [{ op: 'add', path: '/a', value: 1 }],
+    });
+    channel.emitExternal(SERVICE_SYNC_REQUEST, {
+      serviceId: SERVICE_ID,
+      runtimeId: 'joiner',
+      frontier: { vector: {}, clock: 0 },
+    });
+    expect(channel.emit).toHaveBeenCalledWith(SERVICE_SYNC_REPLY, expect.anything());
+    channel.emit.mockClear();
+
+    channel.emitExternal(SERVICE_ENTRY, {
+      serviceId: SERVICE_ID,
+      stamp: { seq: 3, runtimeId: 'w', counter: 3 },
+      command: 'setC',
+      patch: [{ op: 'add', path: '/c', value: 3 }],
+    });
+
+    expect(
+      channel.emit.mock.calls.filter(([event]) => event === SERVICE_SYNC_REQUEST)
+    ).toHaveLength(0);
     disconnect();
   });
 

@@ -1,29 +1,8 @@
-import type { TagItemGroups } from '../../../docs/map-arg-types.ts';
-import type { ManifestLoadResult } from './load-manifest.ts';
-
-export interface CustomElementsDeclaration extends TagItemGroups {
-  [key: string]: unknown;
-}
-
-interface CustomElementsModule {
-  path?: string;
-  declarations?: CustomElementsDeclaration[];
-  exports?: CustomElementDefinitionExport[];
-}
-
-interface CustomElementDefinitionExport {
-  kind?: string;
-  name?: string;
-  declaration?: {
-    name?: string;
-    module?: string;
-  };
-}
-
-export interface CustomElementsManifest {
-  modules: CustomElementsModule[];
-  [key: string]: unknown;
-}
+import type {
+  CustomElementsDeclaration,
+  CustomElementsManifest,
+} from '../../../docs/custom-elements-manifest-types.ts';
+import { isFailedManifest, type ManifestLoadResult } from './load-manifest.ts';
 
 export interface ResolvedDeclaration {
   manifestPath: string;
@@ -52,7 +31,7 @@ export function resolveDeclarationForTag(
   tag: string
 ): ResolvedDeclaration | undefined {
   for (const loaded of manifests) {
-    if ('error' in loaded) {
+    if (isFailedManifest(loaded)) {
       continue;
     }
 

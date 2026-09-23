@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
-import type { BuildDocgenContext, WebComponentsDocgenOptions } from './build-docgen.ts';
+import type { BuildDocgenContext } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 import type { ManifestLoadResult } from './manifest/load-manifest.ts';
 
@@ -24,10 +24,6 @@ afterEach(() => {
 
 const STORY_PATH = '/workspace/input.stories.ts';
 
-const options: WebComponentsDocgenOptions = {
-  manifestPaths: ['/workspace/custom-elements.json'],
-};
-
 const entry: IndexEntry = {
   id: 'fixture--basic',
   name: 'Basic',
@@ -43,16 +39,12 @@ const givenStory = (component: string) => {
   });
 };
 
-const context = (
-  manifests: ManifestLoadResult[],
-  overrideOptions: Partial<WebComponentsDocgenOptions> = {}
-): BuildDocgenContext => ({
+const context = (manifests: ManifestLoadResult[]): BuildDocgenContext => ({
   manifests,
-  options: { ...options, ...overrideOptions },
 });
 
 const manifest = (declaration: Record<string, unknown>): ManifestLoadResult => ({
-  path: '/workspace/custom-elements.json',
+  path: 'custom-elements.json',
   manifest: {
     modules: [{ declarations: [declaration] }],
   },
@@ -144,34 +136,16 @@ describe('buildDocgenPayload', () => {
       },
     ],
     [
-      'no-manifest',
-      () => {
-        givenStory("'x-card'");
-        return context([], { manifestPaths: [] });
-      },
-      {
-        id: 'fixture',
-        name: 'x-card',
-        path: './input.stories.ts',
-        jsDocTags: {},
-        error: {
-          name: 'no-manifest',
-          message:
-            'No Custom Elements Manifest paths were configured. Set the `customElementsManifest` framework option or package.json#customElements.',
-        },
-      },
-    ],
-    [
       'manifest-invalid',
       () => {
         givenStory("'x-card'");
         return context([
           {
-            path: '/workspace/custom-elements.json',
+            path: 'custom-elements.json',
             error: {
               name: 'manifest-invalid',
               message:
-                'Invalid Custom Elements Manifest at /workspace/custom-elements.json: expected a top-level modules array.',
+                'Invalid Custom Elements Manifest at custom-elements.json: expected a top-level modules array.',
             },
           },
         ]);
@@ -194,11 +168,11 @@ describe('buildDocgenPayload', () => {
         givenStory("'x-card'");
         return context([
           {
-            path: '/workspace/custom-elements.json',
+            path: 'custom-elements.json',
             error: {
               name: 'manifest-unsupported',
               message:
-                '/workspace/custom-elements.json uses the web-component-analyzer manifest shape. The Storybook docgen server reads Custom Elements Manifests only; generate one with @custom-elements-manifest/analyzer.',
+                'custom-elements.json uses the web-component-analyzer manifest shape. The Storybook docgen server reads Custom Elements Manifests only; generate one with @custom-elements-manifest/analyzer.',
             },
           },
         ]);

@@ -1,6 +1,7 @@
 import { readFile } from 'node:fs/promises';
+import { relative } from 'node:path';
 
-import type { CustomElementsManifest } from './resolve-declaration.ts';
+import type { CustomElementsManifest } from '../../../docs/custom-elements-manifest-types.ts';
 
 export interface LoadedManifest {
   path: string;
@@ -17,8 +18,14 @@ export interface FailedManifest {
 
 export type ManifestLoadResult = LoadedManifest | FailedManifest;
 
+export const isFailedManifest = (result: ManifestLoadResult): result is FailedManifest =>
+  'error' in result;
+
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object';
+
+const isCustomElementsManifest = (value: unknown): value is CustomElementsManifest =>
+  isRecord(value) && Array.isArray(value.modules);
 
 const unsupportedMessage = (path: string): string =>
   `${path} uses the web-component-analyzer manifest shape. The Storybook docgen server reads ` +
@@ -33,8 +40,8 @@ function classifyManifest(path: string, parsed: unknown): ManifestLoadResult {
   if (!isRecord(parsed)) {
     return { path, error: { name: 'manifest-invalid', message: invalidMessage(path) } };
   }
-  if (Array.isArray(parsed.modules)) {
-    return { path, manifest: parsed as unknown as CustomElementsManifest };
+  if (isCustomElementsManifest(parsed)) {
+    return { path, manifest: parsed };
   }
   if (parsed.version === 'experimental' || Array.isArray(parsed.tags)) {
     return { path, error: { name: 'manifest-unsupported', message: unsupportedMessage(path) } };
@@ -42,9 +49,11 @@ function classifyManifest(path: string, parsed: unknown): ManifestLoadResult {
   return { path, error: { name: 'manifest-invalid', message: invalidMessage(path) } };
 }
 
-export async function loadManifest(path: string): Promise<ManifestLoadResult> {
+export async function loadManifest(absolutePath: string): Promise<ManifestLoadResult> {
+  const path = relative(process.cwd(), absolutePath);
+
   try {
-    return classifyManifest(path, JSON.parse(await readFile(path, 'utf8')));
+    return classifyManifest(path, JSON.parse(await readFile(absolutePath, 'utf8')));
   } catch (error) {
     return {
       path,

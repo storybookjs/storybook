@@ -12,7 +12,7 @@ export class MissingCustomElementsManifestError extends StorybookError {
   constructor(public data: { path: string }) {
     super({
       name: 'MissingCustomElementsManifestError',
-      category: Category.FRAMEWORK_WEB_COMPONENTS_VITE,
+      category: Category.RENDERER_WEB_COMPONENTS,
       code: 1,
       message: `The customElementsManifest framework option points to a file that does not exist: ${data.path}`,
     });

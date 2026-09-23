@@ -3,7 +3,7 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 
 import { relative, resolve } from 'node:path';
 
-import { extractArgTypesFromDeclaration } from './arg-types/extract-arg-types.ts';
+import { mapArgTypes } from '../../docs/map-arg-types.ts';
 import type { ManifestLoadResult } from './manifest/load-manifest.ts';
 import { resolveDeclarationForTag } from './manifest/resolve-declaration.ts';
 import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
@@ -97,7 +97,7 @@ export function buildDocgenPayload(
     description: describedBy(declaration.declaration.description),
     summary: describedBy(declaration.declaration.summary),
     jsDocTags: {},
-    argTypes: extractArgTypesFromDeclaration(declaration.declaration),
+    argTypes: mapArgTypes(declaration.declaration),
     renderer: 'web-components',
     customElementsManifest: {
       manifestPath: relative(process.cwd(), declaration.manifestPath),

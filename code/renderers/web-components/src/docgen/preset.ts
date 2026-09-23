@@ -1,7 +1,6 @@
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
-  Manifests,
   Options,
   PresetPropertyFn,
   StorybookConfigRaw,
@@ -46,20 +45,18 @@ export const experimental_manifests: PresetPropertyFn<
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[]; watch: boolean }
 > = async (existingManifests = {}, options) => {
-  const features = await options?.presets?.apply('features', {});
+  const features = await options.presets.apply('features', {});
 
   if (!features?.experimentalDocgenServer || !features?.componentsManifest) {
-    return existingManifests as Manifests;
+    return existingManifests;
   }
-
-  const existingComponents = (existingManifests as Manifests).components;
 
   return {
     ...existingManifests,
     components: {
-      v: existingComponents?.v ?? 0,
-      components: existingComponents?.components ?? {},
+      v: 0,
+      components: {},
       meta: { docgen: 'custom-elements-manifest', durationMs: 0 },
     },
-  } as unknown as Manifests;
+  };
 };

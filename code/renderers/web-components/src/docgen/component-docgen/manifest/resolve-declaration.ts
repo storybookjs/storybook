@@ -1,23 +1,7 @@
+import type { TagItemGroups } from '../../../docs/map-arg-types.ts';
 import type { ManifestLoadResult } from './load-manifest.ts';
 
-interface TagItem {
-  name: string;
-  type?: { text?: string } | string;
-  description?: string;
-  default?: unknown;
-  kind?: string;
-  defaultValue?: unknown;
-}
-
-export interface CustomElementsDeclaration {
-  attributes?: TagItem[];
-  properties?: TagItem[];
-  events?: TagItem[];
-  methods?: TagItem[];
-  members?: TagItem[];
-  slots?: TagItem[];
-  cssProperties?: TagItem[];
-  cssParts?: TagItem[];
+export interface CustomElementsDeclaration extends TagItemGroups {
   [key: string]: unknown;
 }
 

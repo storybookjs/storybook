@@ -1,8 +1,8 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import type { CustomElementsDeclaration } from '../manifest/resolve-declaration.ts';
+import invariant from 'tiny-invariant';
 
-interface TagItem {
+export interface TagItem {
   name: string;
   type?: { text?: string } | string;
   description?: string;
@@ -11,20 +11,35 @@ interface TagItem {
   defaultValue?: unknown;
 }
 
-const typeText = (item: TagItem): string | undefined => {
-  const type =
-    typeof item.type === 'object' && item.type !== null && 'text' in item.type
-      ? item.type.text
-      : item.type;
-  return type === undefined ? undefined : String(type);
-};
+export interface TagItemGroups {
+  attributes?: TagItem[];
+  properties?: TagItem[];
+  events?: TagItem[];
+  methods?: TagItem[];
+  members?: TagItem[];
+  slots?: TagItem[];
+  cssProperties?: TagItem[];
+  cssParts?: TagItem[];
+}
+
+export function mapArgTypes(groups: TagItemGroups): StrictArgTypes {
+  return {
+    ...mapData(groups.members ?? [], 'properties'),
+    ...mapData(groups.properties ?? [], 'properties'),
+    ...mapData(groups.attributes ?? [], 'attributes'),
+    ...mapData(groups.events ?? [], 'events'),
+    ...mapData(groups.slots ?? [], 'slots'),
+    ...mapData(groups.cssProperties ?? [], 'css custom properties'),
+    ...mapData(groups.cssParts ?? [], 'css shadow parts'),
+  };
+}
 
 function mapItem(item: TagItem, category: string): StrictInputType {
   let type;
   switch (category) {
     case 'attributes':
     case 'properties':
-      type = { name: typeText(item) };
+      type = { name: (item.type as { text?: string })?.text || item.type };
       break;
     case 'slots':
       type = { name: 'string' };
@@ -38,10 +53,10 @@ function mapItem(item: TagItem, category: string): StrictInputType {
     name: item.name,
     required: false,
     description: item.description,
-    type: type as StrictInputType['type'],
+    type,
     table: {
       category,
-      type: { summary: typeText(item) },
+      type: { summary: (item.type as { text?: string })?.text || item.type },
       defaultValue: {
         summary: item.default !== undefined ? item.default : item.defaultValue,
       },
@@ -56,16 +71,16 @@ function mapEvent(item: TagItem): StrictInputType[] {
     })
     .replace(/^([A-Z])/, (match) => match.toLowerCase());
 
-  name = `on${name.charAt(0).toUpperCase() + name.slice(1)}`;
+  name = `on${name.charAt(0).toUpperCase() + name.substr(1)}`;
 
   return [{ name, action: { name: item.name }, table: { disable: true } }, mapItem(item, 'events')];
 }
 
-function mapData(data: TagItem[] | undefined, category: string): StrictArgTypes | undefined {
+function mapData(data: TagItem[], category: string): StrictArgTypes | undefined {
   return (
     data &&
     data
-      .filter((item) => item?.name)
+      .filter((item) => item && item.name)
       .reduce((acc, item) => {
         if (item.kind === 'method') {
           return acc;
@@ -74,9 +89,8 @@ function mapData(data: TagItem[] | undefined, category: string): StrictArgTypes 
         switch (category) {
           case 'events':
             mapEvent(item).forEach((argType) => {
-              if (argType.name) {
-                acc[argType.name] = argType;
-              }
+              invariant(argType.name, `${argType} should have a name property.`);
+              acc[argType.name] = argType;
             });
             break;
           default:
@@ -87,18 +101,4 @@ function mapData(data: TagItem[] | undefined, category: string): StrictArgTypes 
         return acc;
       }, {} as StrictArgTypes)
   );
-}
-
-export function extractArgTypesFromDeclaration(
-  declaration: CustomElementsDeclaration
-): StrictArgTypes {
-  return {
-    ...mapData(declaration.members, 'properties'),
-    ...mapData(declaration.properties, 'properties'),
-    ...mapData(declaration.attributes, 'attributes'),
-    ...mapData(declaration.events, 'events'),
-    ...mapData(declaration.slots, 'slots'),
-    ...mapData(declaration.cssProperties, 'css custom properties'),
-    ...mapData(declaration.cssParts, 'css shadow parts'),
-  };
 }

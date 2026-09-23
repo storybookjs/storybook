@@ -79,6 +79,102 @@ describe('resolveDeclarationForTag', () => {
     `);
   });
 
+  it.each([
+    [
+      'same module',
+      {
+        modules: [
+          {
+            declarations: [
+              { name: 'First', tagName: 'same-tag' },
+              { name: 'Second', tagName: 'same-tag' },
+            ],
+          },
+        ],
+      },
+      'First',
+    ],
+    [
+      'split modules',
+      {
+        modules: [
+          { declarations: [{ name: 'First', tagName: 'same-tag' }] },
+          { declarations: [{ name: 'Second', tagName: 'same-tag' }] },
+        ],
+      },
+      'First',
+    ],
+  ])(
+    'picks the first of several declarations sharing a tag: %s',
+    (_name, manifest, expectedDeclarationName) => {
+      expect(resolveDeclarationForTag([loaded('/manifest.json', manifest)], 'same-tag')).toEqual({
+        manifestPath: '/manifest.json',
+        declaration: { name: expectedDeclarationName, tagName: 'same-tag' },
+      });
+    }
+  );
+
+  it('resolves a custom-element-definition whose declaration lives in another module', () => {
+    expect(
+      resolveDeclarationForTag(
+        [
+          loaded('/manifest.json', {
+            modules: [
+              {
+                path: 'components/button/button.component.js',
+                declarations: [{ name: 'SlButton', description: 'Button.' }],
+              },
+              {
+                path: 'components/button/button.js',
+                exports: [
+                  {
+                    kind: 'custom-element-definition',
+                    name: 'sl-button',
+                    declaration: {
+                      name: 'SlButton',
+                      module: 'components/button/button.component.js',
+                    },
+                  },
+                ],
+              },
+            ],
+          }),
+        ],
+        'sl-button'
+      )
+    ).toEqual({
+      manifestPath: '/manifest.json',
+      declaration: { name: 'SlButton', description: 'Button.' },
+    });
+  });
+
+  it('prefers a tagName declaration over a custom-element-definition export for the same tag', () => {
+    expect(
+      resolveDeclarationForTag(
+        [
+          loaded('/manifest.json', {
+            modules: [
+              {
+                declarations: [{ name: 'ByTag', tagName: 'x-tag' }, { name: 'ByExport' }],
+                exports: [
+                  {
+                    kind: 'custom-element-definition',
+                    name: 'x-tag',
+                    declaration: { name: 'ByExport' },
+                  },
+                ],
+              },
+            ],
+          }),
+        ],
+        'x-tag'
+      )
+    ).toEqual({
+      manifestPath: '/manifest.json',
+      declaration: { name: 'ByTag', tagName: 'x-tag' },
+    });
+  });
+
   it('returns undefined when no manifest resolves the tag', () => {
     expect(
       resolveDeclarationForTag([loaded('/manifest.json', cem)], 'missing-tag')

@@ -300,6 +300,17 @@ describe('docgen-server migration', () => {
     await expect(docgenServer.check(checkOptions)).resolves.toBeNull();
   });
 
+  it('leaves dynamic flags unchanged when it reports manual migration guidance', async () => {
+    const unsafeSource =
+      "export default { features: { docgenServer: process.env.DOCGEN === 'true', experimentalDocgenServer: true } };";
+    vol.writeFileSync(mainConfigPath, unsafeSource);
+
+    await expect(docgenServer.check(checkOptions)).rejects.toThrow(
+      'Cannot safely combine dynamic docgen flags. Rename features.experimentalDocgenServer to features.docgenServer manually'
+    );
+    expect(vol.readFileSync(mainConfigPath, 'utf8')).toBe(unsafeSource);
+  });
+
   it('reads config files as UTF-8 when checking', async () => {
     await docgenServer.check(checkOptions);
     expect(readFile).toHaveBeenCalledWith(mainConfigPath, 'utf8');

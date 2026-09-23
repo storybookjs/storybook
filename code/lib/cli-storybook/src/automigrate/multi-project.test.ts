@@ -133,6 +133,31 @@ describe('multi-project automigrations', () => {
       expect(results[0].fix.id).toBe('fix1');
       expect(results[0].reports.every((report) => report.status === 'check_failed')).toBe(true);
     });
+
+    it('shows manual migration guidance when a check cannot safely change the config', async () => {
+      const fix = createMockFix('docgen-server');
+      fix.check = vi
+        .fn()
+        .mockRejectedValue(
+          new Error(
+            'Cannot safely migrate dynamic typescript.reactDocgen. Rename features.experimentalDocgenServer to features.docgenServer manually.'
+          )
+        );
+      const project = createMockProject('/project/.storybook');
+
+      await collectAutomigrationsAcrossProjects({
+        fixes: [fix],
+        projects: [project],
+        taskLog: taskLogMock,
+      });
+
+      expect(taskLogMock.message).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'docgen-server: Cannot safely migrate dynamic typescript.reactDocgen. Rename features.experimentalDocgenServer to features.docgenServer manually.'
+        )
+      );
+      expect(taskLogMock.error).toHaveBeenCalledWith('1 automigration check failed');
+    });
   });
 
   describe('promptForAutomigrations', () => {

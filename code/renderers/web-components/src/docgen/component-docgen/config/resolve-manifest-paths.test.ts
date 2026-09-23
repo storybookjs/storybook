@@ -13,12 +13,10 @@ import {
 } from './resolve-manifest-paths.ts';
 
 vi.mock('node:fs', { spy: true });
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  findFilesUp: vi.fn(),
-}));
+vi.mock('storybook/internal/common', { spy: true });
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vol.reset();
   vi.mocked(existsSync).mockImplementation(memfs.existsSync);
   vi.mocked(findFilesUp).mockReturnValue([]);
@@ -54,6 +52,21 @@ describe('resolveManifestPaths', () => {
     expect(resolveManifestPaths('/workspace/.storybook', {})).toEqual([
       '/workspace/dist/custom-elements.json',
     ]);
+  });
+
+  it('ignores package.json#customElements when the framework option is set', () => {
+    vol.fromNestedJSON({
+      '/workspace/package.json': JSON.stringify({ customElements: 'dist/custom-elements.json' }),
+      '/workspace/custom-elements.json': '{}',
+    });
+    vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
+
+    expect(
+      resolveManifestPaths('/workspace/.storybook', {
+        customElementsManifest: '../custom-elements.json',
+      })
+    ).toEqual(['/workspace/custom-elements.json']);
+    expect(findFilesUp).not.toHaveBeenCalled();
   });
 
   it('finds package.json from a nested config directory', () => {

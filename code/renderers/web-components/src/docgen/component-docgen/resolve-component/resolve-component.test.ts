@@ -32,6 +32,21 @@ describe('resolveStoryComponent', () => {
       { tag: 'x-template' },
     ],
     [
+      'reads a string literal with an as const assertion',
+      `export default { title: 'Fixture', component: 'x-card' as const };`,
+      { tag: 'x-card' },
+    ],
+    [
+      'reads a string literal with a satisfies assertion',
+      `export default { title: 'Fixture', component: 'x-card' satisfies string };`,
+      { tag: 'x-card' },
+    ],
+    [
+      'reads a parenthesized string literal',
+      `export default { title: 'Fixture', component: ('x-card') };`,
+      { tag: 'x-card' },
+    ],
+    [
       'reads a CSF4 factory string component',
       `
         import preview from './preview.ts';
@@ -57,6 +72,16 @@ describe('resolveStoryComponent', () => {
       'reports a member expression component',
       `const tags = { button: 'x-button' }; export default { title: 'Fixture', component: tags.button };`,
       { reason: 'component-not-a-tag', expression: 'tags.button' },
+    ],
+    [
+      'reports an empty string literal component',
+      `export default { title: 'Fixture', component: '' };`,
+      { reason: 'component-not-a-tag', expression: "''" },
+    ],
+    [
+      'reports an identifier component wrapped in an as assertion',
+      `const Button = 'x-button'; export default { title: 'Fixture', component: Button as any };`,
+      { reason: 'component-not-a-tag', expression: 'Button as any' },
     ],
   ])('%s', (_name, source, expected) => {
     givenStory(source);

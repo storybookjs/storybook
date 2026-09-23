@@ -57,7 +57,7 @@ const resolveFrameworkManifestPaths = (
 export const resolveManifestPaths = (
   configDir: string,
   frameworkOptions: WebComponentsFrameworkOptions
-): string[] => [
-  ...resolveFrameworkManifestPaths(configDir, frameworkOptions),
-  ...readPackageCustomElements(configDir),
-];
+): string[] =>
+  frameworkOptions.customElementsManifest === undefined
+    ? readPackageCustomElements(configDir)
+    : resolveFrameworkManifestPaths(configDir, frameworkOptions);

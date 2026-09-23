@@ -1,5 +1,5 @@
 import type { CsfFile } from 'storybook/internal/csf-tools';
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf, unwrapExpression } from 'storybook/internal/csf-tools';
 import { recast, types as t } from 'storybook/internal/babel';
 
 import { readFileSync } from 'node:fs';
@@ -21,13 +21,18 @@ export function parseStoryFile(storyFilePath: string, title: string): CsfFile | 
 const expressionFor = (node: t.Node): string => recast.print(node).code;
 
 function tagFromNode(node: t.Node): WebComponentsComponentResolution {
-  if (t.isStringLiteral(node)) {
-    return { tag: node.value };
+  const expression = expressionFor(node);
+  const unwrapped = unwrapExpression(node);
+  if (t.isStringLiteral(unwrapped) && unwrapped.value !== '') {
+    return { tag: unwrapped.value };
   }
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return { tag: node.quasis[0]?.value.cooked ?? node.quasis[0]?.value.raw ?? '' };
+  if (t.isTemplateLiteral(unwrapped) && unwrapped.expressions.length === 0) {
+    const tag = unwrapped.quasis[0]?.value.cooked;
+    if (tag) {
+      return { tag };
+    }
   }
-  return { reason: 'component-not-a-tag', expression: expressionFor(node) };
+  return { reason: 'component-not-a-tag', expression };
 }
 
 export function resolveStoryComponent(

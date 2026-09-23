@@ -621,7 +621,7 @@ describe('experimental_devServer', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       statusCode: 0,
-    }) as any;
+    });
 
     await mcpHandler(mockReq, mockRes);
 
@@ -715,7 +715,7 @@ describe('experimental_devServer', () => {
       end: vi.fn(),
       setHeader: vi.fn(),
       statusCode: 0,
-    }) as any;
+    });
 
     await getMcpHandler(mockReq, mockRes);
 

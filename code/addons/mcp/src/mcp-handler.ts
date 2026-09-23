@@ -132,39 +132,52 @@ export const mcpServerHandler = async ({
   localAccess,
   compositionAuth,
 }: McpServerHandlerParams) => {
-  // Initialize MCP server and transport on first request, with concurrency safety
-  if (!initialize) {
-    initialize = initializeMCPServer(
+  // The client can leave while the server is still booting, so this listener goes on before the
+  // first awaited setup step. A close that arrives during that setup would otherwise be missed,
+  // and the GET channel the transport then hands back would be abandoned with its session still
+  // registered.
+  const clientGone = abortWhenClientLeaves(res);
+  try {
+    // Initialize MCP server and transport on first request, with concurrency safety
+    if (!initialize) {
+      initialize = initializeMCPServer(
+        options,
+        sources?.some((s) => s.url)
+      );
+    }
+    await initialize;
+
+    if (clientGone.signal.aborted) {
+      return;
+    }
+
+    // Convert Node.js request to Web API Request
+    const webRequest = await incomingMessageToWebRequest(req);
+
+    const addonContext: AddonContext = {
       options,
-      sources?.some((s) => s.url)
-    );
-  }
-  await initialize;
+      endpoint,
+      toolsets: getToolsets(webRequest, addonOptions),
+      reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
+      cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
+      origin: origin!,
+      disableTelemetry: disableTelemetry!,
+      a11yEnabled,
+      request: webRequest,
+      sources,
+      manifestProvider,
+      localAccess,
+    };
 
-  // Convert Node.js request to Web API Request
-  const webRequest = await incomingMessageToWebRequest(req);
+    const response = await transport!.respond(webRequest, addonContext);
+    if (!response) {
+      return;
+    }
 
-  const addonContext: AddonContext = {
-    options,
-    endpoint,
-    toolsets: getToolsets(webRequest, addonOptions),
-    reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
-    cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
-    origin: origin!,
-    disableTelemetry: disableTelemetry!,
-    a11yEnabled,
-    request: webRequest,
-    sources,
-    manifestProvider,
-    localAccess,
-  };
-
-  const response = await transport!.respond(webRequest, addonContext);
-  if (response) {
     // The GET response is the session's notification channel, which ends only when the client
     // leaves, so the buffering below would never answer it.
     if (webRequest.method !== 'POST') {
-      await webResponseToServerResponse(response, res);
+      await webResponseToServerResponse(response, res, clientGone.signal);
       return;
     }
 
@@ -183,7 +196,9 @@ export const mcpServerHandler = async ({
         })
       : new Response(body, { status: response.status, headers: response.headers });
 
-    await webResponseToServerResponse(finalResponse, res);
+    await webResponseToServerResponse(finalResponse, res, clientGone.signal);
+  } finally {
+    clientGone.dispose();
   }
 };
 
@@ -206,11 +221,51 @@ export async function incomingMessageToWebRequest(req: IncomingMessage): Promise
 }
 
 /**
+ * Bridges the Node response's lifecycle to an {@link AbortSignal}, so a client that leaves can be
+ * noticed from wherever it matters without every layer attaching its own listener.
+ */
+export function abortWhenClientLeaves(nodeResponse: ServerResponse) {
+  const controller = new AbortController();
+  const leave = () => controller.abort();
+  nodeResponse.once('close', leave);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      nodeResponse.off('close', leave);
+    },
+  };
+}
+
+/**
+ * Resolves once Node accepts another chunk. A client that left never emits `drain`, so the signal
+ * ends the wait instead of parking the stream forever.
+ */
+function waitForDrain(nodeResponse: ServerResponse, clientGone: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (clientGone.aborted) {
+      resolve();
+      return;
+    }
+    const drained = () => {
+      clientGone.removeEventListener('abort', left);
+      resolve();
+    };
+    const left = () => {
+      nodeResponse.off('drain', drained);
+      resolve();
+    };
+    nodeResponse.once('drain', drained);
+    clientGone.addEventListener('abort', left, { once: true });
+  });
+}
+
+/**
  * Converts a Web Response to a Node.js ServerResponse.
  */
 export async function webResponseToServerResponse(
   webResponse: Response,
-  nodeResponse: ServerResponse
+  nodeResponse: ServerResponse,
+  clientGone: AbortSignal
 ): Promise<void> {
   nodeResponse.statusCode = webResponse.status;
 
@@ -222,24 +277,33 @@ export async function webResponseToServerResponse(
   // Stream response body
   if (webResponse.body) {
     const reader = webResponse.body.getReader();
-    // A GET body is the session's notification channel, so the loop below only ends once the client
-    // leaves. Cancelling is what runs the transport's stream `cancel()` hook, which unregisters the
+    // Cancelling is what runs the transport's stream `cancel()` hook, which unregisters the
     // session; an abandoned channel that stays registered makes the client's next GET for the same
     // session id fail with "Conflict: Only one SSE stream is allowed per session".
-    const cancel = () => {
-      reader.cancel().catch(() => {
+    let released: Promise<void> | undefined;
+    const release = () => {
+      released ??= reader.cancel().catch(() => {
         // the stream was already closed or errored, so there is nothing left to release
       });
     };
-    nodeResponse.once('close', cancel);
+    // An already-aborted signal never fires its listener, so release here rather than park in read().
+    if (clientGone.aborted) {
+      release();
+    }
+    clientGone.addEventListener('abort', release, { once: true });
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        nodeResponse.write(value);
+        if (!nodeResponse.write(value)) {
+          await waitForDrain(nodeResponse, clientGone);
+        }
       }
+      // The transport unregisters the session inside the cancel hook, so a client that reconnects
+      // under the same session id has to be answered after that hook settles.
+      await released;
     } finally {
-      nodeResponse.off('close', cancel);
+      clientGone.removeEventListener('abort', release);
       reader.releaseLock();
     }
   }

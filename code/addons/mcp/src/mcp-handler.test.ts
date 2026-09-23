@@ -3,9 +3,11 @@ import { registerCoreToolsetsForTest } from './test-support/register-core-toolse
 import {
   incomingMessageToWebRequest,
   webResponseToServerResponse,
+  abortWhenClientLeaves,
   getToolsets,
 } from './mcp-handler.ts';
 import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { Options } from 'storybook/internal/types';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
@@ -42,6 +44,10 @@ function createMockIncomingMessage(options: {
 
 function createMockServerResponse(): {
   response: ServerResponse;
+  /** Report backpressure on every write, the way Node does for a client that cannot keep up. */
+  stall: () => void;
+  /** Accept chunks again and emit `drain`, which is how Node releases a backed-up writer. */
+  resume: () => void;
   getResponseData: () => {
     status: number;
     headers: Map<string, string>;
@@ -50,6 +56,7 @@ function createMockServerResponse(): {
 } {
   const headers = new Map<string, string>();
   const chunks: Uint8Array[] = [];
+  let acceptsChunks = true;
 
   // A real `ServerResponse` is an EventEmitter and the handler listens for `close` on it, so the
   // mock has to be one too.
@@ -60,12 +67,22 @@ function createMockServerResponse(): {
     }),
     write: vi.fn((chunk: Uint8Array) => {
       chunks.push(chunk);
+      // Node takes the chunk and returns false once its queue passes the high-water mark: the
+      // writer has to wait for `drain` before sending more.
+      return acceptsChunks;
     }),
     end: vi.fn(),
   }) as unknown as ServerResponse;
 
   return {
     response: mockResponse,
+    stall: () => {
+      acceptsChunks = false;
+    },
+    resume: () => {
+      acceptsChunks = true;
+      mockResponse.emit('drain');
+    },
     getResponseData: () => ({
       status: mockResponse.statusCode,
       headers,
@@ -73,6 +90,9 @@ function createMockServerResponse(): {
     }),
   };
 }
+
+// For the cases that only exercise the happy path: a client that never goes away.
+const stayingClient = new AbortController().signal;
 
 describe('mcp-handler conversion utilities', () => {
   describe('incomingMessageToWebRequest', () => {
@@ -150,7 +170,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { status, headers, body } = getResponseData();
       expect(status).toBe(200);
@@ -168,7 +188,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { body } = getResponseData();
       expect(JSON.parse(body)).toEqual(responseBody);
@@ -182,7 +202,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { status } = getResponseData();
       expect(status).toBe(404);
@@ -195,7 +215,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { status } = getResponseData();
       expect(status).toBe(500);
@@ -210,7 +230,8 @@ describe('mcp-handler conversion utilities', () => {
       });
 
       const { response } = createMockServerResponse();
-      const written = webResponseToServerResponse(new Response(body), response);
+      const clientGone = abortWhenClientLeaves(response);
+      const written = webResponseToServerResponse(new Response(body), response, clientGone.signal);
 
       response.emit('close');
 
@@ -220,13 +241,70 @@ describe('mcp-handler conversion utilities', () => {
       expect(response.end).toHaveBeenCalled();
     });
 
-    it('removes its disconnect listener once the response has been written', async () => {
-      const { response, getResponseData } = createMockServerResponse();
+    it('releases the stream when the client had already left before the response was written', async () => {
+      const onCancel = vi.fn();
+      const body = new ReadableStream({
+        pull: () => new Promise(() => undefined),
+        cancel: onCancel,
+      });
 
-      await webResponseToServerResponse(new Response('Hello World'), response);
+      const { response } = createMockServerResponse();
+      const clientGone = new AbortController();
+      clientGone.abort();
 
-      expect(getResponseData().body).toBe('Hello World');
-      expect(response.listenerCount('close')).toBe(0);
+      await webResponseToServerResponse(new Response(body), response, clientGone.signal);
+
+      // An aborted signal never fires its listener, so this is the branch that releases the session.
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(response.end).toHaveBeenCalled();
+    });
+
+    it('waits for drain before writing the next chunk to a client that cannot keep up', async () => {
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('first'));
+          controller.enqueue(encoder.encode('second'));
+          controller.close();
+        },
+      });
+
+      const { response, stall, resume, getResponseData } = createMockServerResponse();
+      stall();
+
+      const written = webResponseToServerResponse(new Response(body), response, stayingClient);
+
+      await vi.waitFor(() => expect(getResponseData().body).toBe('first'));
+      expect(getResponseData().body).not.toContain('second');
+
+      resume();
+      await written;
+      expect(getResponseData().body).toBe('firstsecond');
+    });
+
+    it('settles when the client leaves while a write is backed up', async () => {
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('first'));
+          controller.enqueue(encoder.encode('second'));
+        },
+      });
+
+      const { response, stall, getResponseData } = createMockServerResponse();
+      const clientGone = new AbortController();
+      stall();
+
+      const written = webResponseToServerResponse(new Response(body), response, clientGone.signal);
+
+      await vi.waitFor(() => expect(getResponseData().body).toBe('first'));
+
+      // A destroyed response never emits `drain`, so only the disconnect can end the wait.
+      clientGone.abort();
+
+      await written;
+      expect(getResponseData().body).not.toContain('second');
+      expect(response.end).toHaveBeenCalled();
     });
   });
 });
@@ -244,13 +322,14 @@ describe('mcpServerHandler', () => {
   });
 
   function createMockOptions(overrides = {}) {
+    const apply: Options['presets']['apply'] = vi.fn().mockResolvedValue({
+      disableTelemetry: false,
+    });
     return {
       port: 6006,
-      presets: {
-        apply: vi.fn().mockResolvedValue({ disableTelemetry: false }),
-      },
+      presets: { apply },
       ...overrides,
-    };
+    } as Options;
   }
 
   function createMCPInitializeRequest() {
@@ -655,24 +734,62 @@ describe('mcpServerHandler', () => {
     expect(toolNames).not.toContain('review-create');
   });
 
-  it('streams the GET notification channel instead of waiting for its body to end', async () => {
+  // Opens the GET notification channel and hands back the request, so a test can decide when the
+  // client leaves. A GET only settles then, which is why the returned promise is not awaited here.
+  function openNotificationChannel(port: number, extraHeaders: Record<string, string> = {}) {
     const { response, getResponseData } = createMockServerResponse();
-
-    // Not awaited: a GET only settles when the client disconnects, which is what is being asserted.
-    void mcpServerHandler({
+    const handler = mcpServerHandler({
       req: createMockIncomingMessage({
         method: 'GET',
-        headers: { accept: 'text/event-stream', host: 'localhost:6016' },
+        headers: { accept: 'text/event-stream', host: `localhost:${port}`, ...extraHeaders },
       }),
       res: response,
-      options: createMockOptions({ port: 6016 }) as any,
+      options: createMockOptions({ port }),
       addonOptions: { toolsets: { dev: true, docs: true } },
       compositionAuth: new CompositionAuth(),
     });
+    return { response, getResponseData, handler };
+  }
+
+  it('streams the GET notification channel instead of waiting for its body to end', async () => {
+    const { response, getResponseData, handler } = openNotificationChannel(6016);
 
     await vi.waitFor(() => expect(getResponseData().body).toContain(': connected'));
     expect(getResponseData().status).toBe(200);
     expect(getResponseData().headers.get('content-type')).toBe('text/event-stream');
+
+    response.emit('close');
+    await handler;
+    expect(response.listenerCount('close')).toBe(0);
+  });
+
+  it('frees the session id for a client that reconnects to the notification channel', async () => {
+    const session = { 'mcp-session-id': 'session-1' };
+    const first = openNotificationChannel(6018, session);
+    await vi.waitFor(() => expect(first.getResponseData().body).toContain(': connected'));
+
+    first.response.emit('close');
+    await first.handler;
+
+    const second = openNotificationChannel(6018, session);
+    // While the abandoned channel stayed registered, the transport answered this second GET with
+    // 409 and "Conflict: Only one SSE stream is allowed per session".
+    await vi.waitFor(() => expect(second.getResponseData().body).toContain(': connected'));
+    expect(second.getResponseData().status).toBe(200);
+
+    second.response.emit('close');
+    await second.handler;
+  });
+
+  it('settles when the client leaves while the server is still starting', async () => {
+    const { response, getResponseData, handler } = openNotificationChannel(6019);
+
+    // The listener has to be on the response before the awaited setup step, or this close goes
+    // unheard and the channel gets built for a client that is already gone.
+    response.emit('close');
+
+    await handler;
+    expect(getResponseData().body).toBe('');
   });
 
   it('replaces a POST response with 401 when a tool hit an auth error', async () => {
@@ -685,7 +802,7 @@ describe('mcpServerHandler', () => {
         body: createMCPInitializeRequest(),
       }),
       res: response,
-      options: createMockOptions({ port: 6017 }) as any,
+      options: createMockOptions({ port: 6017 }),
       addonOptions: { toolsets: { dev: true, docs: true } },
       compositionAuth: {
         hadAuthError: () => true,

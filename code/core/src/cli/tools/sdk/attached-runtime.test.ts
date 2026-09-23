@@ -394,6 +394,18 @@ describe('bootstrapAttachedRuntime', () => {
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
+  it('refuses the same installation when the record does not carry a version, asking to restart it', async () => {
+    const unversioned: StorybookInstanceRecord = { ...RECORD, storybookVersion: undefined };
+    const { deps } = makeRuntimeDeps([unversioned]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('version unknown');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
   it('spawns from a different installation before comparing versions', async () => {
     const foreign: StorybookInstanceRecord = {
       ...RECORD,

@@ -745,7 +745,7 @@ commands.write()
 
 A relay hub forwards, unchanged and in receipt order, every `services:entry` it appends to its own log and, once, every entry it drops as beyond-window; duplicates are not forwarded. It also forwards every `services:sync-reply` it installs, so repair reaches peers on its other transports. `services:sync-request` is never forwarded; a joiner asks its direct peers.
 
-A hub forwards a dropped entry because its floor is not every peer's floor. A peer with a lower floor can place the entry, and until some peer holds it, no vector can dominate its writer and every repair request about that writer stays silent. The hub remembers dropped stamps in a set bounded by the window's entry count and cleared on install, so each dropped stamp crosses the hub once.
+A hub forwards a dropped entry because its floor is not every peer's floor. A peer with a lower floor can place the entry, and until some peer holds it, no vector can dominate its writer and every repair request about that writer stays silent. The hub remembers every dropped stamp until the next install, so each dropped stamp crosses the hub once. A set bounded by the window's entry count would let two hubs that each dropped more stamps than that bounce them between each other forever.
 
 Hubs forward the original payload object, so unknown envelope fields survive the hop. Command events (`services:command-*`) are not relayed; see [Remote Command Execution](#remote-command-execution).
 

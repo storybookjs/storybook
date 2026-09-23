@@ -726,7 +726,7 @@ describe('createReconciler entries', () => {
     expect(state).toEqual({ r: 1, w3: 3, x: 8 });
   });
 
-  it('remembers only as many dropped stamps as the window keeps entries', () => {
+  it('remembers every dropped stamp until the next install, even past the window entry count', () => {
     const { reconciler } = fixture({}, { maxEntries: 1 });
     expect(reconciler.tryInstall({ vector: { a: 1 }, clock: 5 }, {})).toBe('installed');
     const stale = (runtimeId: string, seq: number) => ({
@@ -740,7 +740,7 @@ describe('createReconciler entries', () => {
     expect(reconciler.tryPlaceEntry(stale('c', 3))).toBe('beyond-window');
 
     expect(reconciler.tryPlaceEntry(stale('c', 3))).toBe('duplicate');
-    expect(reconciler.tryPlaceEntry(stale('b', 4))).toBe('beyond-window');
+    expect(reconciler.tryPlaceEntry(stale('b', 4))).toBe('duplicate');
   });
 });
 

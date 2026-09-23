@@ -89,7 +89,7 @@ describe('SB11 docgen server defaults', () => {
     }
   );
 
-  it.each([false, 'vue-component-meta', 'vue-docgen-api'] as const)(
+  it.each([true, false, 'vue-component-meta', 'vue-docgen-api'] as const)(
     'preserves Vue legacy extraction choice %s',
     async (docgen) => {
       expect(
@@ -176,19 +176,6 @@ describe('SB11 docgen server defaults', () => {
         }
       )
     ).toMatchObject({ docgenServer: false });
-  });
-
-  it('enables server docgen for the legacy Vue true shorthand', async () => {
-    expect(
-      await resolveFeatures(
-        '@storybook/vue3-vite',
-        '@storybook/vue3',
-        {},
-        {
-          docgen: true,
-        }
-      )
-    ).toMatchObject({ docgenServer: true });
   });
 
   it('does not treat Angular compodoc false as a server opt-out', async () => {

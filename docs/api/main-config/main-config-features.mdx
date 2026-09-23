@@ -309,7 +309,7 @@ If the configuration is too dynamic to transform safely, the automigration repor
 When neither option is explicit, Storybook 11 preserves these Storybook 10 choices by keeping server-side docgen off:
 
 - React's `typescript.reactDocgen: false` or `'react-docgen-typescript'`
-- Vue's `framework.options.docgen: false`, an explicit engine, or a custom `tsconfig`
+- Vue's `framework.options.docgen: false` or `true`, an explicit engine, or a custom `tsconfig`
 
 The automigration writes `docgenServer: false` when it finds one of these choices. Set `docgenServer: true` only after you are ready to stop using the legacy setting. The stable option wins and Storybook warns that the legacy setting is ignored.
 

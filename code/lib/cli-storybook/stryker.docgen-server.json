@@ -1,7 +1,7 @@
 {
   "mutate": [
-    "code/lib/cli-storybook/src/automigrate/fixes/docgen-server.ts:16-98",
-    "code/lib/cli-storybook/src/automigrate/fixes/experimental-features.ts:12-83"
+    "code/lib/cli-storybook/src/automigrate/fixes/docgen-server.ts:16-106",
+    "code/lib/cli-storybook/src/automigrate/fixes/experimental-features.ts:12-84"
   ],
   "testRunner": "vitest",
   "vitest": {

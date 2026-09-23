@@ -27,7 +27,7 @@ Storybook is a large TypeScript monorepo. The git root is the repo root, the mai
   legacy preservation, then the supported-framework default. The deprecated option and automatic
   legacy preservation expire in Storybook 12.
 - With neither option explicit, preserve React `reactDocgen: false` and
-  `'react-docgen-typescript'`, plus Vue `docgen: false`, explicit engines, and custom docgen
+  `'react-docgen-typescript'`, plus Vue `docgen: false` or `true`, explicit engines, and custom docgen
   `tsconfig` values, by disabling the server. Explicit `docgenServer: true` wins and warns that the
   legacy setting is ignored. Do not translate RDT options such as `propFilter` or a Vue docgen
   `tsconfig` automatically.

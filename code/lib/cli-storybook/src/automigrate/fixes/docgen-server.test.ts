@@ -128,6 +128,35 @@ describe('transformDocgenServer', () => {
     `);
   });
 
+  it('preserves the Vue true shorthand', () => {
+    expect(
+      transformDocgenServer(
+        "export default { framework: { name: '@storybook/vue3-vite', options: { docgen: true } } };",
+        'vue'
+      )
+    ).toMatchInlineSnapshot(`
+      "export default {
+        framework: { name: '@storybook/vue3-vite', options: { docgen: true } },
+
+        features: {
+          docgenServer: false
+        }
+      };"
+    `);
+  });
+
+  it.each([true, false])('leaves unsupported deprecated flag %s unchanged', async (enabled) => {
+    const input = `export default { features: { experimentalDocgenServer: ${enabled} } };`;
+    expect(transformDocgenServer(input, 'other')).toBe(input);
+    vol.writeFileSync(mainConfigPath, input);
+    await expect(
+      docgenServer.check({
+        ...checkOptions,
+        mainConfig: { framework: '@storybook/svelte-vite', stories: [] },
+      })
+    ).resolves.toBeNull();
+  });
+
   it('preserves Vue opt-out', () => {
     expect(
       transformDocgenServer(
@@ -174,7 +203,7 @@ describe('transformDocgenServer', () => {
   it('does not treat Angular compodoc false as an opt-out', () => {
     const input =
       "export default { framework: { name: '@storybook/angular-vite', options: { compodoc: false } } };";
-    expect(transformDocgenServer(input, 'other')).toBe(input);
+    expect(transformDocgenServer(input, 'angular')).toBe(input);
   });
 
   it('does not apply React legacy settings to an unsupported framework', () => {
@@ -249,7 +278,7 @@ describe('docgen-server migration', () => {
   it.each([
     [{ framework: '@storybook/react-vite', stories: [] }, 'react'],
     [{ framework: '@storybook/vue3-vite', stories: [] }, 'vue'],
-    [{ framework: '@storybook/svelte-vite', stories: [] }, 'other'],
+    [{ framework: '@storybook/angular-vite', stories: [] }, 'angular'],
   ] satisfies [CheckOptions['mainConfig'], string][])(
     'selects the %s docgen migration',
     async (mainConfig, framework) => {

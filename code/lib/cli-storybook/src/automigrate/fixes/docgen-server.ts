@@ -8,10 +8,10 @@ import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigF
 import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
-type DocgenFramework = 'react' | 'vue' | 'other';
+type DocgenFramework = 'react' | 'vue' | 'angular' | 'other';
 
 const manualGuidance =
-  'Rename features.experimentalDocgenServer to features.docgenServer manually, preserving expressions and stable-flag precedence. With neither flag present, set docgenServer: false to retain React reactDocgen: false or react-docgen-typescript, or an explicit Vue docgen engine/tsconfig/false. Do not translate RDT propFilter or Vue tsconfig to server options.';
+  'Rename features.experimentalDocgenServer to features.docgenServer manually, preserving expressions and stable-flag precedence. With neither flag present, set docgenServer: false to retain React reactDocgen: false or react-docgen-typescript, or an explicit Vue docgen setting. Do not translate RDT propFilter or Vue tsconfig to server options.';
 
 function preservesLegacyDocgen(main: ConfigFile, framework: 'react' | 'vue'): boolean {
   const path =
@@ -21,7 +21,7 @@ function preservesLegacyDocgen(main: ConfigFile, framework: 'react' | 'vue'): bo
     return false;
   }
   if (t.isBooleanLiteral(legacy)) {
-    return !legacy.value;
+    return framework === 'vue' || !legacy.value;
   }
   if (t.isStringLiteral(legacy)) {
     return framework === 'vue' || legacy.value === 'react-docgen-typescript';
@@ -33,6 +33,9 @@ function preservesLegacyDocgen(main: ConfigFile, framework: 'react' | 'vue'): bo
 }
 
 export function transformDocgenServer(source: string, framework: DocgenFramework): string {
+  if (framework === 'other') {
+    return source;
+  }
   const main = loadConfig(source).parse();
   const deprecated = main.get(['features', 'experimentalDocgenServer']);
   const stable = main.get(['features', 'docgenServer']);
@@ -45,7 +48,7 @@ export function transformDocgenServer(source: string, framework: DocgenFramework
     } else {
       throw new HandledError(`Cannot safely combine dynamic docgen flags. ${manualGuidance}`);
     }
-  } else if (!stable && framework !== 'other') {
+  } else if (!stable && framework !== 'angular') {
     if (preservesLegacyDocgen(main, framework)) {
       main.set(['features', 'docgenServer'], false);
     }
@@ -85,7 +88,9 @@ export const docgenServer: Fix<{
         ? 'react'
         : getFrameworkPackageName(mainConfig) === '@storybook/vue3-vite'
           ? 'vue'
-          : 'other';
+          : getFrameworkPackageName(mainConfig) === '@storybook/angular-vite'
+            ? 'angular'
+            : 'other';
     const source = await readFile(mainConfigPath, 'utf8');
     const transformedSource = transformDocgenServer(source, framework);
     return source === transformedSource ? null : { mainConfigPath, framework };

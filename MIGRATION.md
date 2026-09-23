@@ -561,7 +561,7 @@ The `docgen-server` automigration runs when an upgrade crosses into Storybook 11
 With neither flag present, the migration adds `features.docgenServer: false` to preserve these explicit legacy settings:
 
 - React `typescript.reactDocgen: false` or `'react-docgen-typescript'`, including custom RDT options such as `propFilter`.
-- Vue `framework.options.docgen: false`, an explicit engine, or an engine configuration with a custom `tsconfig`.
+- Vue `framework.options.docgen: false` or `true`, an explicit engine, or an engine configuration with a custom `tsconfig`.
 
 Storybook 11 also preserves these settings at runtime when migration is skipped or cannot safely transform a dynamic config. This compatibility rule and the deprecated flag alias will be removed in Storybook 12. The stable flag takes precedence over the deprecated flag, which takes precedence over legacy settings and the supported framework default.
 

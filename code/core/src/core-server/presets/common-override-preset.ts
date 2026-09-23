@@ -44,7 +44,7 @@ export const features: PresetPropertyFn<'features'> = async (input = {}, options
   const legacyReact =
     typescriptOptions?.reactDocgen === false ||
     typescriptOptions?.reactDocgen === 'react-docgen-typescript';
-  const legacyVue = frameworkOptions?.docgen !== undefined && frameworkOptions.docgen !== true;
+  const legacyVue = frameworkOptions?.docgen !== undefined;
   // SB11 preserves SB10 extractor choices for configs that could not be migrated; remove in SB12.
   const preservesLegacy = legacyReact || legacyVue;
 

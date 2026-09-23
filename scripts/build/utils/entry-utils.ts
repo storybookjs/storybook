@@ -105,6 +105,8 @@ export const getExternal = async (cwd: string) => {
   );
   const typesExternal = [
     ...runtimeExternal,
+    '@testing-library/jest-dom',
+    '@testing-library/jest-dom/matchers',
     'ast-types',
     // react-syntax-highlighter ships no type declarations and TS 6.0 no longer falls back to
     // @types/react-syntax-highlighter for its deep ESM entrypoints. Keep it out of the d.ts

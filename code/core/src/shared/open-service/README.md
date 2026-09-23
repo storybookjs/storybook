@@ -437,7 +437,7 @@ That split is intentional:
 existing runtime instead of throwing. This keeps core services safe to register from a `beforeAll`
 annotation, which CSF4 composes twice (once in `definePreview`, once in `StoryStore`) and which also
 re-runs on HMR. The default `services` preset hook in
-[common-preset.ts](../../../core-server/presets/common-preset.ts) still throws if the preset is applied
+[common-preset.ts](../../core-server/presets/common-preset.ts) still throws if the preset is applied
 more than once in the same process, which catches misconfigured preset wiring early.
 
 The internal Storybook config registers an example debug service through a dedicated preset file
@@ -638,85 +638,131 @@ flowchart TD
   J --> K[writeOpenServiceStaticFiles outputDir]
 ```
 
-## Client Architecture (Multi-Master)
+## State Sync (Multi-Master)
 
-Browser processes (manager and preview) each run their own full `ServiceRuntime` — identical in shape to the server-side one. State is reconciled peer-to-peer through Storybook's existing manager↔preview channel using `services:sync-request` / `services:sync-reply` for bootstrap and repair, and `services:entry` for ongoing writes.
+Every runtime holds its own replica of each service's state: the dev server, the manager, and each preview. A write changes the local replica first. It then reaches the peers as a small patch in RFC 6902 syntax, which receivers apply with a few deviations (see [Applying entries and snapshots](#applying-entries-and-snapshots)). Every replica places every write in one shared order, so all replicas end with the same state. Snapshots move only when a runtime joins or finds that it missed something.
 
 ```text
-┌─────────────────────────┐     channel (services:*)     ┌─────────────────────────┐
-│  Manager process        │  ◄────────────────────────►  │  Preview process        │
-│                         │                               │                         │
-│  registerService        │                               │  registerService        │
-│  ┌─────────────────┐    │                               │  ┌─────────────────┐    │
-│  │  ServiceRuntime │    │                               │  │  ServiceRuntime │    │
-│  │  (deep signals) │    │                               │  │  (deep signals) │    │
-│  └─────────────────┘    │                               │  └─────────────────┘    │
-└─────────────────────────┘                               └─────────────────────────┘
+dev                                    static build
+
+        ┌──────────────┐
+        │  dev server  │ hub
+        └──┬────────┬──┘
+           │        │                     ┌──────────────┐
+┌──────────┴───┐    │                     │   manager    │ hub
+│   manager    │ hub│                     └──┬────────┬──┘
+└──────────┬───┘    │                        │        │
+           │        │               ┌────────┴──┐  ┌──┴────────┐
+        ┌──┴────────┴──┐            │  preview  │  │  preview  │ leaves
+        │   preview    │ leaf       └───────────┘  └───────────┘
+        └──────────────┘
 ```
 
-### Channel setup
-
-There is no open-service-specific channel install step. `getChannel()` from `storybook/internal/channels`
-reads the live channel — the manager sets it via `addons.setChannel`, both builders inject it into the
-preview iframe, and the dev server installs it in the `services` preset before any service registers.
-
-Until a channel is installed, service runtimes operate in isolation — all reads and writes are local
-only. Unit tests can install a mock channel with `setChannel(mock)` (or `clearChannel()` to assert
-registration fails without one).
-
-### `registerService`
-
-Creates a local `ServiceRuntime` from the service definition (identical across runtimes) and wires it into the sync protocol:
-
-1. **On registration** — emits `services:sync-request` `{ serviceId, runtimeId, frontier }` so any direct peer whose vector dominates can reply with a snapshot. A fresh runtime sends an empty vector and clock 0.
-2. **On sync-reply** — installs the snapshot only if the reply's vector dominates the local vector (same rule for bootstrap and repair).
-3. **After each `setState` that writes** — emits `services:entry` `{ serviceId, stamp: { seq, runtimeId, counter }, command, patch }` where `patch` is an RFC 6902 document of the paths that recipe touched. A recipe that touches nothing emits nothing.
-4. **On incoming entries** — places the entry in the ordered Log (duplicate / later / earlier / gap / beyond-window) via the runtime's `applyLocal`, which triggers fine-grained signal updates and re-renders subscribed components. A gap, a beyond-window drop, or an entry that fails to apply sends another `services:sync-request`. A failed entry stays in the Log as a no-op, so every replica folds the same stamps; the request repairs a parent that was lost rather than late.
-
-### Replay contract
-
-A `setState` recipe runs exactly once, on the runtime that ran the command, against that runtime's state at that moment. What peers receive is the values it wrote, never the recipe. Peers place those writes in the shared canonical order, so when two runtimes write the same path concurrently, the canonically later write is what every runtime ends up holding. Read-modify-write inside a recipe (`state.n += 1`) is therefore safe only while one runtime writes that path; under concurrent writers one increment is lost, by design.
-
-The two escape hatches: make the server the sole writer of that path, or derive the value from other state.
+The server and the manager are **hubs**: they forward what they accept to their other links. The preview is a **leaf**. A second browser tab adds a second manager and preview under the same server. In a static build there is no server, so the manager is the hub for every preview.
 
 ### Glossary
 
-- **Entry** — one stamp plus the forward ops it recorded plus the inverse ops computed locally when applied here. Inverses never leave the runtime.
-- **Log** — applied entries in canonical order, bounded by the window. A snapshot install drops log entries the reply's vector covers and re-applies the rest.
+- **Runtime** — one service registration in one process, named by a `runtimeId` generated per `registerService` call.
+- **Entry** — one `setState` write: a stamp, the forward ops the recipe recorded, and the inverse ops computed locally when the entry is applied here. Inverses never leave the runtime.
+- **Stamp** — `{ seq, runtimeId, counter }`. `seq` is the Lamport order key. `counter` counts one writer's entries without holes; it finds duplicates and gaps and is never part of the order.
+- **Log** — applied entries in canonical order, bounded by the window.
 - **Vector** — per `runtimeId`, the highest contiguous `counter` applied.
-- **Clock** — the Lamport high-water mark. It moves on incoming stamps (including duplicates and echoes) and on snapshot install (`max` with `frontier.clock`). The clock of an installed reply is also an ordering floor: an uncovered entry whose `seq` is at or below it is beyond-window.
-- **Frontier** — `{ vector, clock }`. `services:sync-request` and `services:sync-reply` carry this so a joiner can place later entries and a replier can stay silent unless it is ahead.
+- **Clock** — the Lamport high-water mark. It moves on every incoming stamp, duplicates and echoes included, and on snapshot install.
+- **Frontier** — `{ vector, clock }`. A runtime sends it when it asks for a snapshot, and a replier sends it with the snapshot.
 
-Canonical order is ascending `seq`, then ascending `runtimeId` with plain string comparison. The canonical stamp string is `${seq}:${runtimeId}:${counter}`.
+Canonical order is ascending `seq`, then ascending `runtimeId` with plain string comparison. The canonical stamp string is `${seq}:${runtimeId}:${counter}`; the Log uses it as a key and every warning prints it.
+
+### Replay contract
+
+A `setState` recipe runs exactly once, on the runtime that called the command, against that runtime's state at that moment. What peers receive is the values it wrote, never the recipe. Peers place those writes in the shared canonical order, so when two runtimes write the same path concurrently, the canonically later write is what every runtime ends up holding. Read-modify-write inside a recipe (`state.n += 1`) is therefore safe only while one runtime writes that path; under concurrent writers one increment is lost, by design.
+
+The two escape hatches: make the server the sole writer of that path, or derive the value from other state.
+
+### Writes
+
+One `setState` call is one entry (see [State and reactivity](#state-and-reactivity)). When the recipe returns, the recorder turns the paths it touched into ops:
+
+- An ancestor write subsumes the writes under it, so the patch holds one op per touched subtree.
+- Arrays are atomic. A write anywhere inside an array replaces the whole array; no op has an index in its path.
+- Assigning an unchanged primitive records nothing. Assigning `undefined` records `remove`.
+- Assigned objects are copied, drafts included, so every replica holds one path to each value.
+
+The runtime then assigns the stamp (`seq = clock + 1`, `counter = own counter + 1`), appends the entry to its own Log, and emits `services:entry { serviceId, stamp, command, patch }`. A recipe that changes nothing emits nothing and does not move the clock.
+
+### Placing an incoming entry
+
+A replica checks an incoming entry against these cases, in this order:
+
+1. **Duplicate** — the stamp is in the Log, or its `counter` is at or below the writer's Vector, or it is a beyond-window stamp this replica already dropped. Ignored. The clock still moves. This drops a runtime's own echo and every relay bounce without a self-id check.
+2. **Beyond window** — `seq` is at or below the clock of the last installed snapshot, or the stamp sorts at or below the newest evicted entry. The Log can no longer place it. Dropped, warned, and a snapshot is requested.
+3. **Later** — sorts after every entry in the Log. Applied and appended.
+4. **Earlier** — sorts before some entry in the Log. The newer entries are undone newest first with their stored inverses, the incoming entry is applied, and the undone entries are redone from their stored forward ops with fresh inverses. All of it runs in one `setState` batch, so subscribers see one transition.
+5. **Gap** — `counter` is more than one above the writer's Vector. Placed as later or earlier, warned, and a snapshot is requested. The Vector does not move past the gap.
+
+An entry whose apply fails, on a missing parent or any other throw, rolls back inside its batch and stays in the Log as a no-op with an empty inverse. Every replica then folds the same stamps in the same order, and an earlier insert that supplies the parent makes the entry apply on redo. A failed apply warns and requests a snapshot, which repairs a parent that was lost rather than late.
+
+Every warning about an entry names the service, the stamps, the paths, and the authoring command. The concurrent-reply warning names the service and both frontiers.
 
 ### History window
 
-An entry is retained while it is younger than 15 seconds **or** among the newest 256, whichever keeps it longer. Eviction is lazy on append. There is no byte cap. Bounds are a runtime option with those defaults; peers never need to agree on the window. The Vector never evicts. An incoming entry that sorts at or before the newest evicted stamp, or whose `seq` is at or below the last installed snapshot clock, is dropped and warned.
+An entry is retained while it is younger than 15 seconds **or** among the newest 256, whichever keeps it longer. Eviction is lazy on append. There is no byte cap. Bounds are a runtime option with those defaults; peers never need to agree on the window. The Vector never evicts.
 
-### Loop prevention
+Eviction keeps young entries, so it is not a prefix cut: an old entry in the middle can go while a younger entry with a lower stamp stays. The window floor is therefore the newest evicted stamp, not the oldest retained one.
 
-Every channel event that names a writer carries a `runtimeId` generated per `registerService` call.
-Loop prevention is not a single self-id check:
+### Bootstrap and repair
 
-- `services:sync-request` is ignored when its `runtimeId` matches the listener's own, so a runtime does not reply to itself.
-- `services:entry` drops a stamp that is already in the Log, or whose `counter` is at or below that writer's Vector. A hub that appended the entry to its Log forwards the original payload object in receipt order. It also forwards, once, an entry it dropped as beyond-window: a peer with a lower floor may place it, and the writer needs some peer to hold it before any reply can dominate the writer. Duplicates, including a redelivery of a dropped stamp, are not forwarded. The server websocket transport still echoes the author's own entry back once as one small frame, which the Log drops.
-- `services:sync-reply` installs only if the reply's vector dominates; a concurrent reply is dropped with a warning. A relay hub that installs a reply forwards the original payload object; a rejected reply is not forwarded.
-- Command replies correlate on `callId`, not on `runtimeId`.
+1. A runtime registers a service and emits `services:sync-request { serviceId, runtimeId, frontier }`. A fresh runtime sends an empty vector and clock 0.
+2. Each direct peer compares vectors. It replies with `services:sync-reply { serviceId, runtimeId, frontier, state }` only when its vector dominates the requester's: every counter at least equal and one greater, or the requester's vector is empty and its own is not. Otherwise it stays silent, so two fresh runtimes exchange nothing. `getSnapshot()` runs only here. Both messages carry the sender's `runtimeId`, and a runtime ignores its own request and its own reply.
+3. The requester raises its clock to at least the reply's clock on every reply, installed or not. It judges each reply against its vector at arrival, so dominating replies install in arrival order. Install runs in one batch:
+   - merge `state` onto the live state, so signals stay attached;
+   - make the reply's clock the ordering floor;
+   - take the reply's vector;
+   - drop the Log entries that vector covers, and the uncovered entries at or below the reply's clock, with a warning for the latter: the snapshot already folded them, or a fresh arrival would reject them;
+   - re-apply the remaining entries in canonical order with fresh inverses. This keeps local writes the snapshot lacked and restores their writers in the Vector.
+4. A reply concurrent with the requester's vector, where each side has writes the other lacks, is not installed. The runtime warns and names both frontiers when the reply arrives within 1 s of its own request. It then asks again with its current frontier: the reply answered the frontier it sent, and its own newer write reaches the replier before the next request. Replies reach every direct peer, so a concurrent reply outside that window was meant for a peer and is dropped in silence.
+5. From then on, writes travel as entries. A gap, a beyond-window drop, or a failed apply starts repair:
+   - At most one request is outstanding per service. A reply or 1 s of silence clears it. Replies carry no requester id, so any reply for the service clears it.
+   - A repair needed during the wait is queued and sent when the outstanding request clears, with the frontier at send time. Every reply sends the queued request, because a dominating snapshot can still predate the anomaly that queued it. Peers that are not ahead stay silent, so the extra request is cheap.
 
-### State application without re-broadcast
+There is no unasked push on startup. `services:sync-request` is the only way state moves without an authored entry behind it. A reply carries the whole snapshot and no Log tail.
 
-Incoming state (from sync-reply or entries) is applied via `serviceRuntime.applyLocal(...)`, which mutates the state in one batch without recording, so no entry is authored and nothing is broadcast for received state. Only `setState` inside a command authors entries, through the author installed with `attachEntryAuthor` when the runtime is wired to the channel.
+```text
+Manager (hub)                        Preview (leaf)
+────────────────────────────────────────────────────────────────
+registerService()
+  └─ sync-request { {}, 0 } ──────►  (not registered yet)
 
-### `applyJsonPatch` and `applyStatePatch`
+                                     registerService()
+◄───────────────────────────────────── sync-request { {}, 0 }
+vector dominates {}
+  └─ sync-reply { frontier, state } ─► install snapshot
 
-Entries apply through `applyJsonPatch` (in [json-patch.ts](./json-patch.ts)), which walks RFC 6901 pointers on the live state object. Incoming values are cloned. Deviations from RFC 6902:
+commands.write()
+  └─ setState → entry { stamp, patch } ─► place in Log, apply
+```
+
+### Relay
+
+A relay hub forwards, unchanged and in receipt order, every `services:entry` it appends to its own log and, once, every entry it drops as beyond-window; duplicates are not forwarded. It also forwards every `services:sync-reply` it installs, so repair reaches peers on its other transports. `services:sync-request` is never forwarded; a joiner asks its direct peers.
+
+A hub forwards a dropped entry because its floor is not every peer's floor. A peer with a lower floor can place the entry, and until some peer holds it, no vector can dominate its writer and every repair request about that writer stays silent. The hub remembers dropped stamps in a set bounded by the window's entry count and cleared on install, so each dropped stamp crosses the hub once.
+
+Hubs forward the original payload object, so unknown envelope fields survive the hop. Command events (`services:command-*`) are not relayed; see [Remote Command Execution](#remote-command-execution).
+
+The server's websocket transport sends every emit to all clients, the authoring tab included, so an author receives each of its own entries back once, as one small frame the Log drops as a duplicate. Removing that residual echo needs a server transport that excludes the sender; the sync protocol does not depend on it.
+
+### Applying entries and snapshots
+
+Received state applies through `serviceRuntime.applyLocal(...)`, which mutates the state in one batch without recording. Nothing received is authored or broadcast again.
+
+Entries apply through `applyJsonPatch` (in [json-patch.ts](./json-patch.ts)), which walks RFC 6901 pointers on the live state object and clones incoming values. Deviations from RFC 6902:
 
 - `add` and `replace` both upsert.
 - `remove` of a missing key is a no-op with a debug log.
-- A missing parent rolls the entry back inside its batch, keeps it in the Log as a no-op, requests a snapshot, and warns, naming the service, stamp, path, and command.
+- A missing parent, or any throw, rolls back every op the entry already applied and reports the failed path. The reconciler keeps the entry as a no-op (see [Placing an incoming entry](#placing-an-incoming-entry)).
 - A successful apply returns the inverse in reverse apply order, so undoing nested removes restores the parent before the child.
 
-The schema accepts only `add`, `replace`, and `remove`. It rejects:
+The entry schema in [service-channel.ts](./service-channel.ts) accepts only `add`, `replace`, and `remove`, and never an empty `patch`. It rejects:
 
 - `move`, `copy`, and `test`
 - malformed `~` escapes
@@ -726,44 +772,17 @@ The schema accepts only `add`, `replace`, and `remove`. It rejects:
 
 The applier treats those same pointers as a missing parent, so a schema bypass cannot throw or leave a partial apply. Unknown envelope fields are ignored.
 
-Bootstrap snapshots and static JSON still use `applyStatePatch` (in [service-sync.ts](./service-sync.ts)): it recursively merges plain-object values in place so subscriptions stay attached. Arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer snapshot replies pass `false` so deletions propagate; static JSON loading passes `true` because each static file is a partial snapshot. Static snapshot loading never touches the entry reconciler.
+Snapshots and static JSON apply through `applyStatePatch` (in [service-sync.ts](./service-sync.ts)). It merges plain-object values in place so subscriptions stay attached, replaces arrays and primitives, and skips `__proto__`, `constructor`, and `prototype`. A sync reply passes `preserveMissingKeys: false`, so deletions propagate. Static JSON passes `true`, because each static file is a partial snapshot. Static loading never touches the Log.
 
-### State sync sequence
+### Channel setup
 
-1. A runtime registers a service and emits `services:sync-request { frontier }` (empty when fresh).
-2. Each direct peer compares vectors. If its vector dominates the requester's, it emits `services:sync-reply { frontier, state }`; otherwise it stays silent. `getSnapshot()` / `structuredClone` runs only here.
-3. The requester installs each dominating reply, inside one batch. It merges `state` onto the live proxy, raises the clock to at least `reply.clock`, takes the reply vector, drops the log entries that vector covers, and re-applies the rest in canonical order with fresh inverses. Re-applying fills in writers the snapshot lacked. An uncovered entry at or below the reply's clock is dropped with a warning, since the snapshot already folded it or a fresh arrival would reject it. An uncovered entry above the clock whose re-apply fails stays in the Log as a no-op with an empty inverse, like any failed apply. The reply's clock is an ordering floor for later uncovered arrivals. A concurrent reply to this runtime's own request is dropped with a warning naming the service and both frontiers, and the runtime asks again with its current frontier: the reply answered the frontier it sent, and its own newer write reaches the replier before the next request; replies reach every direct peer, so a concurrent reply nobody here asked for is dropped in silence.
-4. From then on, every `setState` write emits one `services:entry` carrying its stamp and forward ops. Peers place it by the five-case rule.
-5. Repair:
-   - A gap applies the entry, warns, and requests a snapshot. A beyond-window entry is dropped, warned, and requested. A missing parent rolls back, warns, stays in the Log as a no-op, and requests.
-   - At most one request is outstanding per service. A reply or 1 s of silence clears it. Replies carry no requester id, so any reply for the service clears the flag, including one meant for a peer.
-   - A repair needed during that wait is queued and sent afterwards with the frontier at send time. Every reply, installed or rejected, sends the queued request, because a dominating snapshot may still predate the anomaly that queued it. Peers that are not ahead stay silent, so the extra request is cheap.
-   - A concurrent reply warns only inside the 1 s window after this runtime's own request; outside it the reply was for a peer and is dropped in silence.
-6. Log entries expire when older than 15 s and outside the newest 256.
+There is no open-service-specific channel install step. `getChannel()` from `storybook/internal/channels` reads the live channel: the manager sets it through `addons.setChannel`, both builders inject it into the preview iframe, and the dev server installs it in the `services` preset before any service registers. `registerService` wires the runtime to that channel at registration; there is no separate connect step. Server registration uses `relay: true`, manager registration `relay: true`, and preview registration `relay: false`.
 
-```text
-Peer A (manager)            Channel              Peer B (preview)
-─────────────────────────────────────────────────────────────────
-registerService()
-  └─ emit sync-request ────────────────────────────────────►
-                                                (no peer yet; silence)
+Until a channel is installed, a runtime works in isolation: all reads and writes are local. Unit tests install a mock channel with `setChannel(mock)`, or call `clearChannel()` to assert that registration fails without one.
 
-                                                registerService()
-◄────────────────────────── emit sync-request ─────────────
-  └─ vector dominates → emit sync-reply ───────────────────────►
-                                                  └─ install snapshot
+### Where the protocol is tested
 
-service.commands.foo()
-  └─ local runtime mutates
-  └─ emit entry ───────────────────────────────────────────────►
-                                                  └─ apply patch
-```
-
-### Server participation
-
-The dev server is a full peer, not a passive observer. `registerService` on the server registers as a relay hub (`relay: true`): it emits a `services:entry` for each `setState` write, answers dominating `services:sync-request`s, places incoming entries in its Log, and forwards so peers on its other transports converge. A relay hub forwards, unchanged and in receipt order, every `services:entry` it appends to its own log and, once, every entry it drops as beyond-window; duplicates are not forwarded. It also forwards every `services:sync-reply` it installs, so repair reaches peers on its other transports. `services:sync-request` is never forwarded; a joiner asks its direct peers. There is no unasked hub push on startup — `sync-request` is the only way state moves without an authored entry behind it. This is wired automatically at registration once the `services` preset has installed the channel — there is no separate connect step.
-
-The server's websocket transport sends every emit to all clients including the authoring tab, so an author receives each of its own entries back once, as one small frame the reconciler drops as a duplicate. Removing that residual echo needs a server transport that excludes the sender; the sync protocol does not depend on it.
+The multi-replica scenarios run in [sync-simulation.test.ts](./sync-simulation.test.ts) over a deterministic virtual network in [sync-simulation/](./sync-simulation/). It builds real runtimes on the dev triangle, the production fan, and two tabs, injects delay, drops, duplicates, holds, and late joiners, and asserts that every replica converges and holds or covers every authored stamp. Scenarios are explicit; there is no random schedule to replay. [Testing Guidance](#testing-guidance) lists where each narrower concern is tested.
 
 ## Remote Command Execution
 

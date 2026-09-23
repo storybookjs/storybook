@@ -49,9 +49,10 @@ const hasRendererImport = (source: string, renderer: string) => {
 export const packageUsesRenderer = async (packageJsonPath: string, renderer: string) => {
   // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
-  const files = await globby(['**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}'], {
+  const files = await globby(['**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,mdx}'], {
     absolute: true,
     cwd: dirname(packageJsonPath),
+    dot: true,
     ignore: ['**/dist/**', '**/node_modules/**'],
   });
 

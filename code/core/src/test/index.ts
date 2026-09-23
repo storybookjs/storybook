@@ -11,23 +11,31 @@ export type { Assertion, Expect } from './expect.ts';
 
 export type UserEventObject = ReturnType<typeof userEvent.setup>;
 
+const chaiAssertionPrivateApi = ['assert', '__methods', '__flags', '_obj'];
+
+function getChaiAssertionKeys(obj: object, depth: number) {
+  const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
+    (key) => !chaiAssertionPrivateApi.includes(key)
+  );
+  return depth > 2 ? keys : [...keys, 'not'];
+}
+
+function getObjectKeys(obj: object) {
+  const keys = Object.keys(obj);
+  return 'any' in obj ? keys.filter((key) => key !== 'any') : keys;
+}
+
+function getKeys(obj: object, depth: number) {
+  if ('constructor' in obj && obj.constructor === chai.Assertion) {
+    return getChaiAssertionKeys(obj, depth);
+  }
+  return getObjectKeys(obj);
+}
+
 export const { expect } = instrument(
   { expect: rawExpect },
   {
-    getKeys: (obj: object, depth) => {
-      if ('constructor' in obj && obj.constructor === chai.Assertion) {
-        const privateApi = ['assert', '__methods', '__flags', '_obj'];
-        const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
-          (it) => !privateApi.includes(it)
-        );
-        return depth > 2 ? keys : [...keys, 'not'];
-      }
-      if ('any' in obj) {
-        // https://github.com/storybookjs/storybook/issues/29816
-        return Object.keys(obj).filter((it) => it !== 'any');
-      }
-      return Object.keys(obj);
-    },
+    getKeys,
     mutate: true,
     intercept: (method) => method !== 'expect',
   }

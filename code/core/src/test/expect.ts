@@ -83,7 +83,7 @@ type AsymmetricMatchers = {
   arrayContaining<T = Any>(array: T[]): Any;
   stringMatching(expected: RegExp | string): Any;
   closeTo(expected: number, precision?: number): Any;
-  toSatisfy(matcher: (value: Any) => boolean, message?: string): Any;
+  toSatisfy<E = Any>(matcher: (value: E) => boolean, message?: string): Any;
   toBeOneOf<T>(sample: T[]): Any;
 };
 
@@ -197,7 +197,7 @@ export interface Assertion<T> extends Matchers<T> {
   not: Assertion<T>;
 }
 
-export interface Expect {
+export interface Expect extends AsymmetricMatchers {
   <T>(actual: T, message?: string): Assertion<T>;
   unreachable(message?: string): Promise<never>;
   soft<T>(actual: T, message?: string): Assertion<T>;
@@ -206,13 +206,6 @@ export interface Expect {
   hasAssertions(): Promise<void>;
   anything(): Any;
   any(constructor: Any): Any;
-  arrayContaining<T = Any>(array: T[]): Any;
-  objectContaining<T = Any>(object: T): Any;
-  stringContaining(expected: string): Any;
-  stringMatching(expected: RegExp | string): Any;
-  closeTo(expected: number, precision?: number): Any;
-  toSatisfy(matcher: (value: Any) => boolean, message?: string): Any;
-  toBeOneOf<T>(sample: T[]): Any;
   getState(): MatcherState;
   setState(state: Partial<MatcherState>): void;
   not: AsymmetricMatchers;

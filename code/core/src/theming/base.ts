@@ -132,7 +132,7 @@ export const tokens = {
       positive: '#BFE7AC',
       warning: '#FFCE85',
       negative: '#FFC3AD',
-      critical: 'hsl(16 100% 100% / 0)',
+      critical: '#D13800',
       agentic: '#e1d2ef',
     },
   },

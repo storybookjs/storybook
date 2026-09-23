@@ -194,18 +194,16 @@ const hasUnsupportedModuleUse = (program: t.Program): boolean => {
       unsupported ||= isShimSource(path.node.source.value);
     },
     CallExpression(path) {
+      if (!t.isImport(path.node.callee) && !t.isIdentifier(path.node.callee, { name: 'require' })) {
+        return;
+      }
       const [argument] = path.node.arguments;
       const value = t.isStringLiteral(argument)
         ? argument.value
         : t.isTemplateLiteral(argument) && argument.expressions.length === 0
           ? argument.quasis[0]?.value.cooked
           : undefined;
-      if (!value || !isShimSource(value)) {
-        return;
-      }
-
-      unsupported ||=
-        t.isImport(path.node.callee) || t.isIdentifier(path.node.callee, { name: 'require' });
+      unsupported ||= !value || isShimSource(value);
     },
     ImportExpression(path) {
       const source = path.node.source;
@@ -214,6 +212,8 @@ const hasUnsupportedModuleUse = (program: t.Program): boolean => {
       } else if (t.isTemplateLiteral(source) && source.expressions.length === 0) {
         const value = source.quasis[0]?.value.cooked;
         unsupported ||= Boolean(value && isShimSource(value));
+      } else {
+        unsupported = true;
       }
     },
   });
@@ -368,7 +368,6 @@ const removeViteAlias = (config: StaticConfig): boolean | 'manual' => {
   return 'manual';
 };
 
-/** Analyze static Storybook, Vite, and Vitest config source without reading or writing files. */
 export const analyzeReactDomShimConfig = (
   source: string,
   filePath: string

@@ -1,5 +1,5 @@
 export default {
-  mutate: ['code/core/src/test/index.ts:14-32'],
+  mutate: ['code/core/src/test/index.ts:14-33'],
   testRunner: 'vitest',
   vitest: {
     configFile: 'vitest.sto-588.config.ts',

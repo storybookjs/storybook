@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { FC } from 'react';
-import React, { useState } from 'react';
+import React, { useLayoutEffect, useState } from 'react';
 
 import type { RenderContext } from 'storybook/internal/types';
 
@@ -28,12 +28,16 @@ const makeRenderContext = (
   {
     forceRemount = true,
     parameters = {},
+    viewMode = 'story',
     showMain = vi.fn(),
     showException = vi.fn(),
-  }: Partial<RenderContext<ReactRenderer>> & { parameters?: Record<string, unknown> } = {}
+  }: Partial<RenderContext<ReactRenderer>> & {
+    parameters?: Record<string, unknown>;
+    viewMode?: 'docs' | 'story';
+  } = {}
 ) =>
   ({
-    storyContext: { id: 'component--story', viewMode: 'story', parameters },
+    storyContext: { id: 'component--story', viewMode, parameters },
     unboundStoryFn: StoryComponent,
     showMain,
     showException,
@@ -50,6 +54,21 @@ const makeInstanceReporter = () => {
 };
 
 describe('renderToCanvas', () => {
+  it('waits for layout effects when rendering docs outside act', async () => {
+    let didRunLayoutEffect = false;
+    const Story: FC = () => {
+      useLayoutEffect(() => {
+        didRunLayoutEffect = true;
+      }, []);
+      return <div>content</div>;
+    };
+
+    teardown = await renderToCanvas(makeRenderContext(Story, { viewMode: 'docs' }), canvasElement);
+
+    expect(canvasElement.textContent).toBe('content');
+    expect(didRunLayoutEffect).toBe(true);
+  });
+
   // Regression test for https://github.com/storybookjs/storybook/issues/22057: unmounting the
   // root before the replacement render leaves the canvas empty across task boundaries, and any
   // browser layout pass in that window clamps the scroll position to 0.

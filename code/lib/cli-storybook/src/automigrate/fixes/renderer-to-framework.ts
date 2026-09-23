@@ -1,5 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
+import type { LimitFunction } from 'p-limit';
 
 import {
   type JsPackageManager,
@@ -46,7 +47,11 @@ const hasRendererImport = (source: string, renderer: string) => {
   return regex.test(source);
 };
 
-export const packageUsesRenderer = async (packageJsonPath: string, renderer: string) => {
+export const packageUsesRenderer = async (
+  packageJsonPath: string,
+  renderer: string,
+  sourceReadLimit?: LimitFunction
+) => {
   // eslint-disable-next-line depend/ban-dependencies
   const { globby } = await import('globby');
   const files = await globby(['**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,mdx}'], {
@@ -55,16 +60,19 @@ export const packageUsesRenderer = async (packageJsonPath: string, renderer: str
     dot: true,
     ignore: ['**/dist/**', '**/node_modules/**'],
   });
+  const limit = sourceReadLimit ?? (await import('p-limit')).default(10);
 
   return (
     await Promise.all(
-      files.map(async (file) => {
-        try {
-          return hasRendererImport(await readFile(file, 'utf-8'), renderer);
-        } catch {
-          return true;
-        }
-      })
+      files.map((file) =>
+        limit(async () => {
+          try {
+            return hasRendererImport(await readFile(file, 'utf-8'), renderer);
+          } catch {
+            return true;
+          }
+        })
+      )
     )
   ).some(Boolean);
 };
@@ -238,11 +246,13 @@ export const rendererToFramework: Fix<MigrationResult> = {
 
       logger.debug('Updating package.json files...');
 
+      const { default: pLimit } = await import('p-limit');
+      const sourceReadLimit = pLimit(10);
       const unusedRendererPackageJsonFiles = (
         await Promise.all(
           packageJsonFiles.map(async (file) => ({
             file,
-            usesRenderer: await packageUsesRenderer(file, rendererPackage),
+            usesRenderer: await packageUsesRenderer(file, rendererPackage, sourceReadLimit),
           }))
         )
       )

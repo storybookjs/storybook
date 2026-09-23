@@ -18,9 +18,6 @@ vi.mock('node:fs/promises');
 vi.mock('globby', () => ({
   globby: mockGlobby,
 }));
-vi.mock('p-limit', () => ({
-  default: vi.fn(() => vi.fn((fn) => fn())),
-}));
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal()),
   commonGlobOptions: () => ({}),
@@ -317,6 +314,51 @@ describe('run', () => {
     } as never);
 
     expect(packageManager.writePackageJson).not.toHaveBeenCalled();
+  });
+
+  it('limits source reads across package manifests', async () => {
+    const packageJsonFiles = ['/project/package.json', '/project/packages/app/package.json'];
+    const packageManager = { writePackageJson: vi.fn() };
+    const sourceFiles = Array.from({ length: 20 }, (_, index) => `source-${index}.ts`);
+    let activeReads = 0;
+    let maxActiveReads = 0;
+
+    mockGlobby.mockImplementation((_patterns, options) => {
+      if (options?.cwd === '/project' || options?.cwd === '/project/packages/app') {
+        return Promise.resolve(sourceFiles);
+      }
+
+      return Promise.resolve([]);
+    });
+    vi.mocked(readFile).mockImplementation(async (file) => {
+      if (packageJsonFiles.includes(file.toString())) {
+        return packageJson;
+      }
+
+      activeReads++;
+      maxActiveReads = Math.max(maxActiveReads, activeReads);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      activeReads--;
+      return '';
+    });
+
+    await run({
+      configDir: '/project/.storybook',
+      packageManager,
+      result: {
+        migrations: [
+          {
+            framework: '@storybook/react-vite',
+            renderer: '@storybook/react',
+            packageJsonFiles,
+          },
+        ],
+      },
+      storiesPaths: [],
+    } as never);
+
+    expect(maxActiveReads).toBe(10);
+    expect(packageManager.writePackageJson).toHaveBeenCalledTimes(2);
   });
 });
 

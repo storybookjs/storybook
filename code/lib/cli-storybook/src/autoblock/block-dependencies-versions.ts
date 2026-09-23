@@ -6,7 +6,7 @@ import { findOutdatedPackage } from './utils.ts';
 const minimalVersionsMap = {
   '@angular/core': '21.0.0',
   next: '15.0.0',
-  preact: '10.0.0',
+  preact: '10.8.0',
   react: '18.0.0',
   'react-dom': '18.0.0',
   svelte: '5.0.0',

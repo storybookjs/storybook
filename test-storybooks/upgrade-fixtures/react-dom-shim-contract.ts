@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const shimPackage = '@storybook/react-dom-shim';
 const shimPreset = '@storybook/react-dom-shim/preset';
 const internalClient = 'storybook/internal/react-dom-client';
-const preactRange = '^10.7.1 || >= 11.0.0-0';
+const preactRange = '^10.8.0 || >= 11.0.0-0';
 const unsafeManifestPath = 'packages/shim-consumer/package.json';
 const unsafeSourcePath = 'packages/shim-consumer/src/index.ts';
 const unsafeConfigPath = 'packages/dynamic-config/vitest.config.ts';

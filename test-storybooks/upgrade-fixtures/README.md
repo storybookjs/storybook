@@ -60,7 +60,7 @@ node test-storybooks/upgrade-fixtures/run.ts react-vite --baseline-v10
 
 The safe implementation-head command requires removal of its explicit dependency, preset, and
 literal alias; a shim-free install; the approved `storybook/internal/react-dom-client` first-party
-imports; the Preact peer range `^10.7.1 || >= 11.0.0-0`; and no request for a v11 shim release:
+imports; the Preact peer range `^10.8.0 || >= 11.0.0-0`; and no request for a v11 shim release:
 
 ```sh
 node test-storybooks/upgrade-fixtures/run.ts react-vite --verify-react-dom-shim-removal

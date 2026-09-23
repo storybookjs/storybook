@@ -1,6 +1,21 @@
 <base target="_parent" />
 
 <style>
+  /* Mirrors the semantic status tokens in code/core/src/theming/base.ts. This template
+     renders before the manager (and its CSS) exists, so it cannot read the tokens —
+     it shares their values instead. Same pattern as preview-navigator.ts. */
+  :root {
+    --sb-error-accent-color: #c23400; /* fgColor.negative, light theme */
+    --sb-error-code-bg: #222325; /* bgColor.default, dark theme — terminal-style surface */
+    --sb-error-code-color: #c9cccf; /* fgColor.default, dark theme */
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --sb-error-accent-color: #ff6933; /* fgColor.negative, dark theme */
+    }
+  }
+
   /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
   .sb-show-preparing-story:not(.sb-show-main) > :not(.sb-preparing-story) {
     display: none;
@@ -144,7 +159,7 @@
     border-radius: 6px;
     background: white;
     color: black;
-    border: 1px solid #ff0000;
+    border: 1px solid var(--sb-error-accent-color);
     box-shadow: 0 0 64px rgba(0, 0, 0, 0.1);
     gap: 24px;
   }
@@ -163,8 +178,8 @@
   /* Exclude error code block from the universal reset to preserve ANSI colors and dark theme */
   .sb-errordisplay_main .sb-errordisplay_code,
   .sb-errordisplay_main .sb-errordisplay_code * {
-    background: #242424;
-    color: #c6c6c6;
+    background: var(--sb-error-code-bg);
+    color: var(--sb-error-code-color);
   }
 
   .sb-errordisplay_main h1 {
@@ -180,7 +195,7 @@
     display: inline-block;
     width: 12px;
     height: 12px;
-    background: #ff4400;
+    background: var(--sb-error-accent-color);
     border-radius: 50%;
     margin-right: 8px;
   }
@@ -207,8 +222,8 @@
   .sb-errordisplay_main .sb-errordisplay_code {
     padding: 10px;
     flex: 1;
-    background: #242424;
-    color: #c6c6c6;
+    background: var(--sb-error-code-bg);
+    color: var(--sb-error-code-color);
     box-sizing: border-box;
 
     font-size: 14px;

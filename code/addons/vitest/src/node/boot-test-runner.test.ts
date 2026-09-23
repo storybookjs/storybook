@@ -231,12 +231,12 @@ describe('bootTestRunner', () => {
     message({ type: 'ready' });
     await promise;
 
-    const { experimental_UniversalStore } = await import('storybook/internal/core-server');
-    (experimental_UniversalStore as any).__prepare(
+    const { internal_UniversalStore } = await import('storybook/internal/core-server');
+    (internal_UniversalStore as any).__prepare(
       mockChannel,
-      experimental_UniversalStore.Environment.SERVER
+      internal_UniversalStore.Environment.SERVER
     );
-    const leader = experimental_UniversalStore.create({ ...storeOptions, leader: true });
+    const leader = internal_UniversalStore.create({ ...storeOptions, leader: true });
     try {
       await leader.untilReady();
       transport.send.mockClear();
@@ -249,8 +249,8 @@ describe('bootTestRunner', () => {
             eventInfo: {
               actor: {
                 id: 'child-follower',
-                type: experimental_UniversalStore.ActorType.FOLLOWER,
-                environment: experimental_UniversalStore.Environment.SERVER,
+                type: internal_UniversalStore.ActorType.FOLLOWER,
+                environment: internal_UniversalStore.Environment.SERVER,
               },
             },
           },

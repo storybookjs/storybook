@@ -14,7 +14,7 @@ import {
   type API,
   experimental_useStatusStore,
   experimental_useTestProviderStore,
-  experimental_useUniversalStore,
+  internal_useUniversalStore,
 } from 'storybook/manager-api';
 
 import { ADDON_ID, STATUS_TYPE_ID_A11Y, STATUS_TYPE_ID_COMPONENT_TEST } from './constants.ts';
@@ -66,7 +66,7 @@ export const useTestProvider = (
   isSettingsUpdated: boolean;
 } => {
   const testProviderState = experimental_useTestProviderStore((s) => s[ADDON_ID]);
-  const [storeState, setStoreState] = experimental_useUniversalStore(store);
+  const [storeState, setStoreState] = internal_useUniversalStore(store);
 
   const [isSettingsUpdated, setIsSettingsUpdated] = useState(false);
   const settingsUpdatedTimeoutRef = useRef<ReturnType<typeof setTimeout>>();

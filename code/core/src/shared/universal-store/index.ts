@@ -1,6 +1,7 @@
 import { dedent } from 'ts-dedent';
 
 import { UniversalStoreFollowerTimeoutError } from '../../manager-errors.ts';
+import { isFirstPartyStoreId } from './first-party-store-ids.ts';
 import { instances } from './instances.ts';
 import type {
   Actor,
@@ -359,6 +360,11 @@ export class UniversalStore<
   >(options: StoreOptions<State>): UniversalStore<State, CustomEvent> {
     if (!options || typeof options?.id !== 'string') {
       throw new TypeError('id is required and must be a string, when creating a UniversalStore');
+    }
+    if (!isFirstPartyStoreId(options.id)) {
+      throw new TypeError(
+        `UniversalStore is internal to Storybook and cannot create a store with id "${options.id}"`
+      );
     }
     if (options.debug) {
       console.debug(

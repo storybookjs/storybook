@@ -1,7 +1,7 @@
 import type { TestError } from 'vitest';
 import type { TestResult, TestState } from 'vitest/node';
 
-import type { experimental_UniversalStore } from 'storybook/internal/core-server';
+import type { internal_UniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
   StatusStoreByTypeId,
@@ -30,7 +30,7 @@ import { VitestManager } from './vitest-manager.ts';
 export type TestManagerOptions = {
   storybookOptions: Options;
   configLoader?: BuilderOptions['configLoader'];
-  store: experimental_UniversalStore<StoreState, StoreEvent>;
+  store: internal_UniversalStore<StoreState, StoreEvent>;
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;

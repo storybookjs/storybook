@@ -111,11 +111,6 @@ const config: BuildEntries = {
     ],
     browser: [
       {
-        exportEntries: ['./internal/react-dom-client'],
-        entryPoint: './src/preview/react-dom-client.tsx',
-        external: ['react', 'react-dom', 'react-dom/client', 'react/jsx-runtime'],
-      },
-      {
         exportEntries: ['./internal/client-logger'],
         entryPoint: './src/client-logger/index.ts',
       },

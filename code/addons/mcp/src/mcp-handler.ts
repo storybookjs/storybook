@@ -312,13 +312,17 @@ export async function webResponseToServerResponse(
           await waitForDrain(nodeResponse, clientGone);
         }
       }
-      // The transport unregisters the session inside the cancel hook, so a client that reconnects
-      // under the same session id has to be answered after that hook settles.
-      await released;
+    } catch (error) {
+      // Nothing above this bridge catches, so a rejected read would become an unhandled rejection
+      // and kill the dev server; the client instead gets an ended channel and a logged cause.
+      logger.error(`MCP notification channel failed: ${String(error)}`);
     } finally {
       clientGone.removeEventListener('abort', release);
       reader.releaseLock();
     }
+    // The transport unregisters the session inside the cancel hook, so a client that reconnects
+    // under the same session id has to be answered after that hook settles.
+    await released;
   }
 
   nodeResponse.end();

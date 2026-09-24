@@ -8,6 +8,7 @@ import {
 } from './mcp-handler.ts';
 import type { IncomingMessage } from 'node:http';
 import type { Options } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
 import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
@@ -304,6 +305,34 @@ describe('mcp-handler conversion utilities', () => {
       await written;
       expect(getResponseData().body).not.toContain('second');
       expect(response.end).toHaveBeenCalled();
+    });
+
+    it('ends the response and logs when the transport stream errors mid-channel', async () => {
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      let frames = 0;
+      // Like a notification channel that dies after a first frame: `error()` on a stream drops
+      // anything still queued, so the delivered chunk has to come from an earlier pull.
+      const body = new ReadableStream({
+        pull(controller) {
+          if (frames++ === 0) {
+            controller.enqueue(new TextEncoder().encode('first'));
+            return;
+          }
+          controller.error(new Error('transport died mid-stream'));
+        },
+      });
+
+      const { response, getResponseData } = createMockServerResponse();
+
+      // The middleware chain has no rejection handler, so a rejection here would reach Node's
+      // default `--unhandled-rejections=throw` and take the dev server down with it.
+      await expect(
+        webResponseToServerResponse(new Response(body), response, stayingClient)
+      ).resolves.toBeUndefined();
+
+      expect(getResponseData().body).toBe('first');
+      expect(response.end).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('transport died mid-stream'));
     });
   });
 });

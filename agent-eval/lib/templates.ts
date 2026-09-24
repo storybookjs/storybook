@@ -115,6 +115,17 @@ const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
+// Outside the workspace: the runner copies the workspace to /workspace after `setup`.
+const CODEX_MODEL_CATALOG_SANDBOX_PATH = '/tmp/agent-eval/codex-models.json';
+const CODEX_DIRECT_TOOL_MODE_SCRIPT = [
+  'let input = "";',
+  'process.stdin.on("data", (chunk) => { input += chunk; });',
+  'process.stdin.on("end", () => {',
+  '  const catalog = JSON.parse(input);',
+  '  for (const model of catalog.models) { model.tool_mode = "direct"; }',
+  '  process.stdout.write(JSON.stringify(catalog));',
+  '});',
+].join(' ');
 const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'code', 'lib', 'claude-plugin', 'skills');
 const CODEX_PLUGIN_SKILLS_DIR = path.join(
   REPO_ROOT,
@@ -721,6 +732,34 @@ export async function writeClaudeMcpConfig(sandbox: Sandbox): Promise<void> {
 
 export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
   await writeStorybookMcpConfig(sandbox, 'codex');
+  await writeCodexDirectToolModeCatalog(sandbox);
+}
+
+// Codex's catalog marks the GPT-6 models `tool_mode = "code_mode_only"`, which
+// hides MCP tools and their server instructions behind `exec`/`ALL_TOOLS`;
+// `features.code_mode*` cannot override the catalog, so every model is set to
+// `direct`. Codex is installed here because the runner installs it after `setup`.
+async function writeCodexDirectToolModeCatalog(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-lc',
+    [
+      'set -eo pipefail',
+      'npm install -g @openai/codex',
+      `mkdir -p ${path.posix.dirname(CODEX_MODEL_CATALOG_SANDBOX_PATH)}`,
+      `codex debug models | node -e '${CODEX_DIRECT_TOOL_MODE_SCRIPT}' > ${CODEX_MODEL_CATALOG_SANDBOX_PATH}`,
+      // The user layer, not the project `.codex/config.toml`: Codex trusts the
+      // workspace only while `codex exec` starts and resolves the catalog before
+      // it applies the project layer.
+      'mkdir -p ~/.codex',
+      `printf '%s\\n\\n' 'model_catalog_json = "${CODEX_MODEL_CATALOG_SANDBOX_PATH}"' > ~/.codex/config.toml`,
+    ].join('\n'),
+  ]);
+
+  if (result.exitCode !== 0) {
+    throw new Error(
+      `Failed to write the direct tool mode Codex model catalog: ${result.stderr || result.stdout}`
+    );
+  }
 }
 
 /**

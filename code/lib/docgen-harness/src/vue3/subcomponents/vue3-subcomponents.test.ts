@@ -104,23 +104,11 @@ describe('vue3 declared subcomponents', () => {
   it('renders each declared child under its own heading in the composed apiDescription', async () => {
     const rendered = await renderedApiDescriptionFor('declared-subcomponents', 'Example/Card');
 
-    // What MCP's `docs-show` puts in front of a consumer: core synthesizes `## Subcomponents`,
-    // names the child, and demotes the child's own `##` sections one level so they nest beneath it.
-    expect(rendered).toContain('## Subcomponents');
-    expect(rendered).toContain('### CardHeader');
-    expect(rendered).toContain('#### Props');
-    expect(rendered).toContain('#### Events');
-
-    // The child's documentation survives the demotion intact — JSDoc, unions and defaults included.
-    expect(rendered).toContain('/** Heading text rendered above the card body. */');
-    expect(rendered).toContain('level?: 2 | 3;');
-    expect(rendered).toContain('/** Fired when the header is dismissed. */');
-
-    // Heading levels inside the child's fenced code block are left alone, and the parent keeps its
-    // own undemoted `## Props` below the section rather than merging into the child's.
-    expect(rendered).toContain('## Props\n\n```\nexport type CardProps');
-    expect(rendered.indexOf('## Subcomponents')).toBeLessThan(
-      rendered.indexOf('export type CardProps')
+    // The whole page MCP's `docs-show` returns for Card. Core synthesizes `## Subcomponents`, adds
+    // `### CardHeader`, and demotes the child's own `##` sections to `####`, while Card's `## Props`
+    // stays put. Unlike the flat own-api snapshot above, this one diffs if that composition breaks.
+    await expect(rendered).toMatchFileSnapshot(
+      join(fixturesDir, 'declared-subcomponents', 'composed-render.snapshot')
     );
   });
 

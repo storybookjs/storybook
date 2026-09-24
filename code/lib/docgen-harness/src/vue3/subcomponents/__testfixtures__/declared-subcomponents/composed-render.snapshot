@@ -1,0 +1,56 @@
+# Card
+
+ID: example-card
+
+## Subcomponents
+
+### CardHeader
+
+#### Props
+
+```
+export type CardHeaderProps = {
+  /** Heading text rendered above the card body. */
+  heading: string;
+  /**
+   * Heading level applied to the rendered element.
+   *
+   * @default 2
+   */
+  level?: 2 | 3;
+}
+```
+
+#### Events
+
+```
+export type CardHeaderEvents = {
+  /** Fired when the header is dismissed. */
+  dismiss: [];
+}
+```
+
+## Props
+
+```
+export type CardProps = {
+  /** Body text rendered inside the card. */
+  content: string;
+  /**
+   * Visual density of the card.
+   *
+   * @default "comfortable"
+   */
+  density?: "comfortable" | "compact";
+}
+```
+
+## Slots
+
+Each slot is typed with the props it passes to its content.
+
+```
+export type CardSlots = {
+  header: {};
+}
+```

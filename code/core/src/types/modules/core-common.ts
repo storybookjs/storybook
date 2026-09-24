@@ -474,7 +474,8 @@ export interface ComponentsManifest {
       | 'vue-component-meta'
       | 'angular-component-meta'
       | 'compodoc'
-      | 'custom-elements-manifest';
+      | 'custom-elements-manifest'
+      | 'svelte2tsx';
     durationMs: number;
   };
 }

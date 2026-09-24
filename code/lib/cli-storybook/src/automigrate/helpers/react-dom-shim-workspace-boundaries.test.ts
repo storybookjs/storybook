@@ -122,6 +122,13 @@ const load = createRequire(import.meta.url);
 load['resolve'](['@storybook', 'react-dom-shim'].join('/'));
 `,
     ],
+    [
+      'an unsupported loader member call',
+      `import { createRequire } from 'node:module';
+const load = createRequire(import.meta.url);
+load.cache(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
   ])('refuses unresolved loads through %s', async (_description, source) => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,

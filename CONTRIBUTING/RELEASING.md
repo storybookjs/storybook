@@ -233,7 +233,7 @@ The publish workflow runs in the "release" GitHub environment, which has the npm
 
 #### Syncing the skills
 
-From 11.0, the Storybook CLI installs the official skills from [`storybookjs/skills`](https://github.com/storybookjs/skills) at the tag that matches the running Storybook version. Only the publish workflow writes to that repository. Nobody edits it by hand: a skill change ships with the next Storybook release.
+The official skills are written once, in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). From 11.0, `storybook init` and `storybook upgrade` also install them outside the plugins, with Vercel's `skills` CLI from [`storybookjs/skills`](https://github.com/storybookjs/skills), so every install counts on [skills.sh](https://skills.sh). That repository is release output: only the publish workflow writes to it, nobody edits it by hand, and a skill change ships with the next Storybook release. Every version is tagged, so a project gets the skills that shipped with its Storybook version.
 
 Step 8 runs [`scripts/release/sync-skills.sh`](../scripts/release/sync-skills.sh), which:
 
@@ -246,7 +246,7 @@ The tag is the version; there is no version file. A release without a skill chan
 
 The push uses the `SKILLS_SYNC_TOKEN` secret in the "release" environment: a fine-grained personal access token created by an org admin, with resource owner `storybookjs`, repository access limited to `storybookjs/skills`, and the single permission **Contents: Read and write**. When it expires, create a new one with the same scope and replace the secret.
 
-The step runs last, after npm publish, the GitHub Release and the merges, so a failure turns the publish workflow red and triggers the usual Discord failure message without skipping any other release task. It runs on every run of the workflow, including re-runs and the "skip publish" dispatch, because syncing twice is harmless: an unchanged tree adds no commit and an existing tag stays where it is. So when it fails, fix the cause (usually the token) and re-run the workflow. Check the result with `git ls-remote --tags https://github.com/storybookjs/skills refs/tags/v<version>`, which should print the head of `next` (prerelease) or `main` (release).
+The step runs last, after npm publish, the GitHub Release and the merges, so a failure turns the publish workflow red and triggers the usual Discord failure message without skipping any other release task. It runs on every run of the workflow, including re-runs and the "skip publish" dispatch, because syncing twice is harmless: an unchanged tree adds no commit, and a tag that already points at the same commit is accepted. So when it fails, fix the cause (usually the token) and re-run the workflow. Check the result with `git ls-remote --tags https://github.com/storybookjs/skills refs/tags/v<version>`, which should print the head of `next` (prerelease) or `main` (release).
 
 ## 👉 How to Release
 

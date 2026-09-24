@@ -748,6 +748,28 @@ tool_timeout_sec = 180
   await appendCodexConfig(sandbox, config);
 }
 
+const CODEX_MODEL_CATALOG_PATH = '/tmp/codex-models.json';
+
+// Codex's bundled catalog puts GPT-6 models in code mode, which hides MCP tools behind `exec`.
+export async function forceCodexDirectToolMode(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-lc',
+    [
+      'set -eo pipefail',
+      // The catalog must come from the Codex the runner will use, and the runner installs Codex after `setup`.
+      'npm install -g @openai/codex',
+      `codex debug models | node -e 'const c = JSON.parse(require("fs").readFileSync(0, "utf8")); for (const m of c.models) m.tool_mode = "direct"; process.stdout.write(JSON.stringify(c))' > ${CODEX_MODEL_CATALOG_PATH}`,
+      // Codex ignores `model_catalog_json` from a project that is not trusted yet.
+      'mkdir -p ~/.codex',
+      `echo 'model_catalog_json = "${CODEX_MODEL_CATALOG_PATH}"' > ~/.codex/config.toml`,
+    ].join('\n'),
+  ]);
+
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to force Codex direct tool mode: ${result.stderr || result.stdout}`);
+  }
+}
+
 async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<void> {
   let existing = '';
   try {

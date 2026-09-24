@@ -157,6 +157,25 @@ describe('attach failure messages', () => {
     `);
   });
 
+  it.each([
+    { instanceVersion: 'abc', callerVersion: '10.5.2' },
+    { instanceVersion: '10.5.2', callerVersion: 'abc' },
+  ])(
+    'prints a non-semver version as-is and asks to restart Storybook ($instanceVersion vs $callerVersion)',
+    ({ instanceVersion, callerVersion }) => {
+      const message = formatVersionMismatch({
+        instancePath: SAME_INSTALLATION,
+        instanceVersion,
+        callerVersion,
+      });
+
+      expect(message).toContain(`- running instance: version ${instanceVersion}`);
+      expect(message).toContain(`- this CLI: version ${callerVersion}`);
+      expect(message).toContain('The running instance is the older side.');
+      expect(message).toContain('restart Storybook');
+    }
+  );
+
   it('renders unknown facts on a mismatch without guessing them', () => {
     expect(
       formatInstallationMismatch({

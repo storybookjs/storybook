@@ -97,6 +97,31 @@ describe('removeReactDomShim', () => {
 `);
   });
 
+  it('removes the package when a static config declares a top-level helper', async () => {
+    vol.fromNestedJSON({
+      '/project': {
+        'package.json': JSON.stringify({
+          dependencies: {
+            '@storybook/react-dom-shim': '^10.0.0',
+            react: '^18.3.1',
+            'react-dom': '^18.3.1',
+          },
+        }),
+        '.storybook': {
+          'main.ts': `const storybookConfig = { framework: { name: getAbsolutePath('@storybook/react-vite') } };
+export default storybookConfig;
+function getAbsolutePath(value: string): string {
+  return import.meta.resolve(value);
+}`,
+        },
+      },
+    });
+
+    const result = await check();
+
+    expect(result).toMatchObject({ kind: 'safe', workspaceRoot: '/project' });
+  });
+
   it('does not write during a dry run', async () => {
     const manifest = JSON.stringify({
       dependencies: {

@@ -91,28 +91,19 @@ describe('Yarn 1 Proxy', () => {
       });
 
       it('forwards the caller options to `npx`', () => {
-        const { signal } = new AbortController();
-
-        yarn1Proxy.runPackageCommand({
-          args: ['skills@latest', 'add', 'storybookjs/skills#next'],
-          useRemotePkg: true,
+        const args = ['skills@latest', 'add', 'storybookjs/skills#next'];
+        const options = {
           env: { DISABLE_TELEMETRY: '1' },
           cwd: '/repo',
-          stdio: 'inherit',
-          signal,
+          stdio: 'inherit' as const,
+          signal: new AbortController().signal,
           ignoreError: true,
-        });
+        };
+
+        yarn1Proxy.runPackageCommand({ args, useRemotePkg: true, ...options });
 
         expect(mockedExecuteCommand).toHaveBeenLastCalledWith(
-          expect.objectContaining({
-            command: 'npx',
-            args: ['skills@latest', 'add', 'storybookjs/skills#next'],
-            env: { DISABLE_TELEMETRY: '1' },
-            cwd: '/repo',
-            stdio: 'inherit',
-            signal,
-            ignoreError: true,
-          })
+          expect.objectContaining({ command: 'npx', args, ...options })
         );
       });
     });

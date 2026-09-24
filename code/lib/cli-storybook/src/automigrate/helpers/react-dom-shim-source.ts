@@ -1,5 +1,4 @@
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
-
 import { hasShimReference, isShimSource, staticString } from './react-dom-shim.ts';
 
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
@@ -85,7 +84,6 @@ const addLoaderProperties = (
     return false;
   });
 };
-
 const addFactoryProperties = (
   pattern: t.ObjectPattern,
   source: t.Node | null | undefined,
@@ -114,7 +112,6 @@ const addFactoryProperties = (
     return false;
   });
 };
-
 const loaderNames = (file: t.File) => {
   const { program } = file;
   const loaders = new Set(['require']);
@@ -229,7 +226,6 @@ const loaderNames = (file: t.File) => {
   }
   return { factories, loaders, modules, unresolved };
 };
-
 type LoaderReferencePath = {
   node: t.Identifier;
   parent: t.Node;

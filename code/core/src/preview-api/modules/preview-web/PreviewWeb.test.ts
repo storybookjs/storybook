@@ -993,6 +993,24 @@ describe('PreviewWeb', () => {
       });
     });
 
+    it('emits STORY_ARGS_UPDATED with function args as name markers (#29207)', async () => {
+      document.location.search = '?id=component-one--a';
+      await createAndRenderPreview();
+
+      const onClick = function onClick() {};
+      emitter.emit(UPDATE_STORY_ARGS, {
+        storyId: 'component-one--a',
+        updatedArgs: { link: { onClick } },
+      });
+
+      await waitForEvents([STORY_ARGS_UPDATED]);
+      // The channel drops function values; the marker keeps the key visible to the manager.
+      expect(mockChannel.emit).toHaveBeenCalledWith(STORY_ARGS_UPDATED, {
+        storyId: 'component-one--a',
+        args: { foo: 'a', one: 1, link: { onClick: { __function__: { name: onClick.name } } } },
+      });
+    });
+
     it('sets new args on the store', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();

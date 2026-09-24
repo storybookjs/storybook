@@ -45,6 +45,7 @@ import type {
 
 import { global } from '@storybook/global';
 
+import { serializeArgFunctions } from '../../../shared/utils/function-args.ts';
 import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
@@ -362,10 +363,9 @@ export class Preview<TRenderer extends Renderer> {
           r.story && r.story.usesMount ? r.remount() : r.rerender()
         )
     );
-
     this.channel.emit(STORY_ARGS_UPDATED, {
       storyId,
-      args: this.storyStoreValue.args.get(storyId),
+      args: serializeArgFunctions(this.storyStoreValue.args.get(storyId)),
     });
   }
 

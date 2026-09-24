@@ -54,6 +54,7 @@ import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
+import { reviveArgFunctions } from '../../shared/utils/function-args.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
@@ -1204,7 +1205,18 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
       const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
-      api.updateStory(id, { ...update, prepared: true }, ref);
+      api.updateStory(
+        id,
+        {
+          ...update,
+          // Function-valued args arrive as `{ __function__: { name } }` markers; the channel drops
+          // functions outright, which is why object args lose their function keys in Controls.
+          args: reviveArgFunctions(update.args),
+          initialArgs: reviveArgFunctions(update.initialArgs),
+          prepared: true,
+        },
+        ref
+      );
 
       if (!ref) {
         if (!store.getState().hasCalledSetOptions) {
@@ -1306,7 +1318,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       { storyId, args }: { storyId: StoryId; args: Args }
     ) {
       const { ref } = getEventMetadata(this, fullAPI)!;
-      api.updateStory(storyId, { args }, ref);
+      api.updateStory(storyId, { args: reviveArgFunctions(args) }, ref);
     }
   );
 

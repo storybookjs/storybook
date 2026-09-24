@@ -13,6 +13,7 @@ const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SHIM = '@storybook/react-dom-shim';
 
 export type WorkspaceFileKind = 'astro' | 'data' | 'html' | 'inert' | 'manual' | 'source';
+type WorkspaceFiles = { complete: boolean; files: string[] };
 
 export const workspaceFileKind = (filePath: string): WorkspaceFileKind => {
   const name = basename(filePath);
@@ -24,28 +25,32 @@ export const workspaceFileKind = (filePath: string): WorkspaceFileKind => {
   return 'manual';
 };
 
-export const workspaceFiles = async (directory: string): Promise<string[] | undefined> => {
+export const workspaceFiles = async (directory: string): Promise<WorkspaceFiles> => {
   let entries: Awaited<ReturnType<typeof readdir>>;
   try {
     entries = await readdir(directory, { withFileTypes: true });
   } catch {
-    return undefined;
+    return { complete: false, files: [] };
   }
 
   const files: string[] = [];
+  let complete = true;
   for (const entry of entries) {
     const filePath = join(directory, entry.name);
-    if (entry.isSymbolicLink()) return undefined;
+    if (entry.isSymbolicLink()) {
+      complete = false;
+      continue;
+    }
     if (entry.isDirectory()) {
       if (SKIPPED_DIRECTORIES.has(entry.name)) continue;
       const descendants = await workspaceFiles(filePath);
-      if (!descendants) return undefined;
-      files.push(...descendants);
+      complete &&= descendants.complete;
+      files.push(...descendants.files);
     } else if (entry.isFile()) {
       files.push(filePath);
     }
   }
-  return files;
+  return { complete, files };
 };
 
 const cssEscapes = (source: string) =>

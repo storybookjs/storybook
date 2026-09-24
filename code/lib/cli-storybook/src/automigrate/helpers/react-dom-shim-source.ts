@@ -3,6 +3,7 @@ import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 import { hasShimReference, isShimSource, staticString } from './react-dom-shim.ts';
 
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
+const COMPONENT_FILE = /\.(?:svelte|vue)$/;
 
 const moduleLoad = (
   callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee'],
@@ -100,7 +101,7 @@ const moduleLoadDiagnostic = (
     : undefined;
 };
 
-export const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
+const scriptDiagnostic = (source: string, filePath: string): string | undefined => {
   try {
     const ast = babelParse(source);
     const loaders = loaderNames(ast.program);
@@ -130,20 +131,24 @@ export const sourceDiagnostic = (source: string, filePath: string): string | und
           diagnostic ??= `${filePath}: contains unresolved code execution`;
           return;
         }
-        diagnostic ??= moduleLoadDiagnostic(
+        const moduleDiagnostic = moduleLoadDiagnostic(
           path.node.callee,
           path.node.arguments,
           filePath,
           loaders
         );
+        if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
+        else diagnostic ??= moduleDiagnostic;
       },
       OptionalCallExpression(path) {
-        diagnostic ??= moduleLoadDiagnostic(
+        const moduleDiagnostic = moduleLoadDiagnostic(
           path.node.callee,
           path.node.arguments,
           filePath,
           loaders
         );
+        if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
+        else diagnostic ??= moduleDiagnostic;
       },
       ImportExpression(path) {
         const value = staticString(path.node.source);
@@ -176,4 +181,15 @@ export const sourceDiagnostic = (source: string, filePath: string): string | und
   } catch {
     return `${filePath}: cannot parse source during workspace scan`;
   }
+};
+
+export const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
+  if (!COMPONENT_FILE.test(filePath)) return scriptDiagnostic(source, filePath);
+  const scripts = [...source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+  if (source.includes('<script') && !scripts.length) {
+    return `${filePath}: cannot parse source during workspace scan`;
+  }
+  return scripts
+    .map((script) => scriptDiagnostic(script[1], filePath))
+    .find((diagnostic) => diagnostic !== undefined);
 };

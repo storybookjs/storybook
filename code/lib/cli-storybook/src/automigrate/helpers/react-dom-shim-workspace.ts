@@ -215,6 +215,9 @@ const manifestEdit = (filePath: string, source: string, manifest: Manifest): Edi
   return { filePath, original: source, replacement: `${JSON.stringify(manifest, null, 2)}\n` };
 };
 
+const hasMigrationSignal = (filePath: string, diagnostic: string | undefined) =>
+  diagnostic?.slice(filePath.length + 2).includes('react-dom-shim') ?? false;
+
 export const analyzeReactDomShimWorkspace = async (
   projectDirectory: string
 ): Promise<ReactDomShimWorkspaceAnalysis> => {
@@ -230,16 +233,8 @@ export const analyzeReactDomShimWorkspace = async (
   }
   const { directory: workspaceRoot, patterns } = workspace;
 
-  const files = await workspaceFiles(workspaceRoot);
-  if (!files) {
-    return {
-      kind: 'manual',
-      workspaceRoot,
-      diagnostics: [`${workspaceRoot}: scan was incomplete`],
-      manifests: [],
-      sources: [],
-    };
-  }
+  const scan = await workspaceFiles(workspaceRoot);
+  const { files } = scan;
   const manifestPaths = files.filter((filePath) => basename(filePath) === MANIFEST).sort();
   const pnpmWorkspacePaths = files
     .filter((filePath) => basename(filePath) === 'pnpm-workspace.yaml')
@@ -251,6 +246,7 @@ export const analyzeReactDomShimWorkspace = async (
     .sort();
   const diagnostics: string[] = [];
   const manifests: Array<{ filePath: string; source: string; manifest: Manifest }> = [];
+  let pnpmMetadataHasShimReference = false;
   const rootSource = await reads(join(workspaceRoot, MANIFEST));
   const rootManifest = rootSource && parseManifest(rootSource);
   if (!rootManifest)
@@ -270,6 +266,7 @@ export const analyzeReactDomShimWorkspace = async (
     if (source === undefined) {
       diagnostics.push(`${filePath}: cannot read pnpm workspace metadata during workspace scan`);
     } else {
+      pnpmMetadataHasShimReference ||= source.includes(SHIM);
       const diagnostic = pnpmWorkspaceDiagnostic(source, filePath);
       if (diagnostic) diagnostics.push(diagnostic);
     }
@@ -301,6 +298,44 @@ export const analyzeReactDomShimWorkspace = async (
     manifests.push({ filePath, source, manifest });
   }
   const shimManifests = manifests.filter(({ manifest }) => hasShim(manifest));
+  let applicable =
+    shimManifests.length > 0 ||
+    pnpmMetadataHasShimReference ||
+    manifests.some(({ manifest }) => hasManifestShimReference(manifest));
+
+  for (const filePath of sources) {
+    const source = await reads(filePath);
+    if (source === undefined) continue;
+    const kind = workspaceFileKind(filePath);
+    const diagnostic =
+      kind === 'html'
+        ? analyzeReactDomShimHtml(
+            source,
+            filePath,
+            sourceDiagnostic,
+            analyzeReactDomShimData,
+            () => undefined
+          )
+        : kind === 'data'
+          ? analyzeReactDomShimData(source, filePath)
+          : kind === 'source'
+            ? sourceDiagnostic(source, filePath)
+            : undefined;
+    applicable ||= hasMigrationSignal(filePath, diagnostic);
+    if (CONFIG_FILE.test(filePath)) {
+      applicable ||= analyzeReactDomShimConfig(source, filePath).kind === 'changed';
+    }
+  }
+  if (!applicable) return { kind: 'none', workspaceRoot };
+  if (!scan.complete) {
+    return {
+      kind: 'manual',
+      workspaceRoot,
+      diagnostics: [`${workspaceRoot}: scan was incomplete`],
+      manifests: manifestPaths,
+      sources,
+    };
+  }
 
   for (const item of shimManifests) {
     if (!rootManifest || !hasSupportedReact(item.manifest, rootManifest)) {

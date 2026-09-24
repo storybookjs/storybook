@@ -39,6 +39,26 @@ export const analyzeReactDomShimHtml = (
   if (errors.length) return `${filePath}: cannot parse HTML during workspace scan`;
 
   for (const element of htmlElements(document)) {
+    const content = element.tagName === 'script' ? htmlScript(element) : undefined;
+    if (
+      element.attrs.some(({ value }) => value.includes(SHIM)) ||
+      (content !== undefined && content.includes(SHIM))
+    ) {
+      return `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
+    }
+    if (content) {
+      const diagnostic = sourceDiagnostic(content, filePath);
+      if (diagnostic?.includes('react-dom-shim')) return diagnostic;
+    }
+    for (const { name, value } of element.attrs) {
+      if (!eventHandler(name) && !executableUrl(value)) continue;
+      const executable = executableUrl(value) ? value.slice(value.indexOf(':') + 1) : value;
+      const diagnostic = sourceDiagnostic(executable, filePath);
+      if (diagnostic?.includes('react-dom-shim')) return diagnostic;
+    }
+  }
+
+  for (const element of htmlElements(document)) {
     if (element.tagName === 'base') {
       return `${filePath}: contains an HTML base URL that cannot be scanned safely`;
     }

@@ -4,6 +4,9 @@ import {
   isMockFunction,
   mocked,
   spyOn,
+  type Mock,
+  type Mocked,
+  type MockInstance,
   type MockResult,
   type MockSettledResult,
 } from 'storybook/test';
@@ -19,6 +22,9 @@ expect.toSatisfy((value) => value >= 18);
 expect.not.toSatisfy((value) => value >= 18);
 
 const returnedNumber = fn(() => 3);
+const returnedNumberMock: Mock<() => number> = returnedNumber;
+const returnedNumberInstance: MockInstance<() => number> = returnedNumber;
+const returnedNumberMocked: Mocked<{ run: () => number }> = { run: returnedNumber };
 
 expect(returnedNumber).toHaveReturnedWith(3);
 expect(returnedNumber).toHaveLastReturnedWith(3);
@@ -76,6 +82,9 @@ methodSpy.mockReturnValue('three');
 
 void genericString;
 void genericNumber;
+void returnedNumberMock;
+void returnedNumberInstance;
+void returnedNumberMocked;
 
 const mockTarget = {
   nested: {

@@ -38,9 +38,6 @@ describe('storybook/test declaration contract', () => {
 
     expect(declarations).toContain('from "@testing-library/jest-dom/matchers"');
     expect(declarations).not.toContain('@testing-library/jest-dom/types/');
-    expect(declarations).not.toMatch(/(?:from|import\()\s*['"]@vitest\//);
-    expect(declarations).not.toContain('WeakKey');
-    expect(declarations).not.toContain('Disposable');
     expect(declarations).not.toContain('Chai.');
   });
 

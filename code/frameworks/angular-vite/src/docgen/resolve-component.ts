@@ -38,6 +38,14 @@ export function parseStoryFile(storyFilePath: string, title: string): CsfFile | 
   }
 }
 
+/** Resolves the primary component from an already-parsed CSF file's `meta.component`. */
+export function resolveComponentFromCsf(
+  csf: CsfFile,
+  storyFilePath: string
+): MetaComponentResolution {
+  return resolveMetaComponent(csf, storyFilePath);
+}
+
 /**
  * Story file → the component it documents.
  *
@@ -53,7 +61,7 @@ export function resolveStoryComponent(
     return { reason: 'no-meta-component' };
   }
 
-  return resolveMetaComponent(csf, storyFilePath);
+  return resolveComponentFromCsf(csf, storyFilePath);
 }
 
 /** One subcomponent a story file's meta declares, resolved to the component it names. */
@@ -66,10 +74,28 @@ export interface ResolvedStorySubcomponent {
 }
 
 /**
- * Story file → the subcomponents its meta declares, if any.
+ * An already-parsed CSF file → the subcomponents its meta declares, if any.
  *
  * Each declared `{ key: Component }` entry resolves through the same import, namespace, and
- * reference following as `meta.component` itself, from one parse of the file.
+ * reference following as `meta.component` itself. Takes a parsed `CsfFile` so callers that already
+ * hold one (e.g. having just resolved the primary component from it) never parse the story file twice.
+ */
+export function resolveSubcomponentsFromCsf(
+  csf: CsfFile,
+  storyFilePath: string
+): ResolvedStorySubcomponent[] {
+  return extractDeclaredSubcomponents(csf).map(({ name, componentName, node }) => ({
+    name,
+    componentName,
+    resolution: resolveMetaComponent(csf, storyFilePath, node),
+  }));
+}
+
+/**
+ * Story file → the subcomponents its meta declares, if any.
+ *
+ * Parses the file itself; prefer {@link resolveSubcomponentsFromCsf} when a `CsfFile` for this
+ * story is already in hand, to avoid parsing it twice.
  */
 export function resolveStorySubcomponents(
   storyFilePath: string,
@@ -80,9 +106,5 @@ export function resolveStorySubcomponents(
     return [];
   }
 
-  return extractDeclaredSubcomponents(csf).map(({ name, componentName, node }) => ({
-    name,
-    componentName,
-    resolution: resolveMetaComponent(csf, storyFilePath, node),
-  }));
+  return resolveSubcomponentsFromCsf(csf, storyFilePath);
 }

@@ -11,13 +11,13 @@ const moduleLoad = (
   loaders: Set<string>
 ): 'known' | 'unresolved' | undefined => {
   if (t.isImport(callee) || (t.isIdentifier(callee) && loaders.has(callee.name))) return 'known';
-  if (
-    (!t.isMemberExpression(callee) && !t.isOptionalMemberExpression(callee)) ||
-    (!t.isIdentifier(callee.object, { name: 'require' }) &&
-      !t.isIdentifier(callee.object, { name: 'module' }))
-  ) {
+  if (!t.isMemberExpression(callee) && !t.isOptionalMemberExpression(callee)) {
     return undefined;
   }
+  const knownLoader =
+    t.isIdentifier(callee.object) &&
+    (loaders.has(callee.object.name) || callee.object.name === 'module');
+  if (!knownLoader) return undefined;
   const property = callee.computed
     ? staticString(callee.property)
     : t.isIdentifier(callee.property)
@@ -30,11 +30,16 @@ const moduleLoad = (
       : undefined;
 };
 
-const isModuleFactory = (node: t.Node | null | undefined, loaders: Set<string>) =>
-  t.isCallExpression(node) &&
-  t.isIdentifier(node.callee) &&
-  loaders.has(node.callee.name) &&
-  MODULE_BUILTIN.has(staticString(node.arguments[0]) ?? '');
+const isModuleObject = (
+  node: t.Node | null | undefined,
+  loaders: Set<string>,
+  modules: Set<string>
+) =>
+  (t.isIdentifier(node) && modules.has(node.name)) ||
+  (t.isCallExpression(node) &&
+    t.isIdentifier(node.callee) &&
+    loaders.has(node.callee.name) &&
+    MODULE_BUILTIN.has(staticString(node.arguments[0]) ?? ''));
 
 const memberPropertyName = (node: t.MemberExpression | t.OptionalMemberExpression) =>
   node.computed
@@ -105,7 +110,7 @@ const loaderNames = (file: t.File): Set<string> => {
       }
     };
     for (const declaration of declarations) {
-      if (t.isObjectPattern(declaration.id) && isModuleFactory(declaration.init, loaders)) {
+      if (t.isObjectPattern(declaration.id) && isModuleObject(declaration.init, loaders, modules)) {
         for (const property of declaration.id.properties) {
           if (
             t.isObjectProperty(property) &&
@@ -118,7 +123,9 @@ const loaderNames = (file: t.File): Set<string> => {
         continue;
       }
       if (!t.isIdentifier(declaration.id)) continue;
-      if (isLoader(declaration.init, loaders, factories, modules)) {
+      if (isModuleObject(declaration.init, loaders, modules)) {
+        add(modules, declaration.id.name);
+      } else if (isLoader(declaration.init, loaders, factories, modules)) {
         add(loaders, declaration.id.name);
       } else if (isCreateRequireFactory(declaration.init, factories, modules)) {
         add(factories, declaration.id.name);
@@ -126,7 +133,9 @@ const loaderNames = (file: t.File): Set<string> => {
     }
     for (const assignment of assignments) {
       if (!t.isIdentifier(assignment.left)) continue;
-      if (isLoader(assignment.right, loaders, factories, modules)) {
+      if (isModuleObject(assignment.right, loaders, modules)) {
+        add(modules, assignment.left.name);
+      } else if (isLoader(assignment.right, loaders, factories, modules)) {
         add(loaders, assignment.left.name);
       } else if (isCreateRequireFactory(assignment.right, factories, modules)) {
         add(factories, assignment.left.name);

@@ -2,6 +2,7 @@ import { readFileSync } from 'node:fs';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+import { JsPackageManagerFactory, PackageManagerName } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
@@ -127,20 +128,103 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       {
         packageName: '@storybook/react-dom-shim',
         packageVersion: '10.5.10',
-        availableUpgrade: '11.0.0-alpha.1',
+        availableUpdate: '11.0.0-alpha.1',
         hasIncompatibleDependencies: true,
+      },
+      {
+        packageName: '@storybook/jest',
+        packageVersion: '0.2.3',
+        availableUpdate: '1.0.0',
+        hasIncompatibleDependencies: false,
       },
     ]);
 
-    const latestVersion = vi.fn().mockResolvedValue('11.0.0-alpha.1');
+    const latestVersion = vi.fn().mockResolvedValue('1.0.0');
+    const getInstalledVersion = vi.fn().mockResolvedValue('0.2.3');
     const packageManager = {
-      getAllDependencies: () => ({ '@storybook/react-dom-shim': '10.5.10' }),
+      getAllDependencies: () => ({
+        '@storybook/react-dom-shim': '10.5.10',
+        '@storybook/jest': '0.2.3',
+        'storybook-shim': 'npm:@storybook/react-dom-shim@10.5.10',
+      }),
       latestVersion,
-      getInstalledVersion: vi.fn().mockResolvedValue('10.5.10'),
+      getInstalledVersion,
       packageJsonPaths: ['package.json'],
     };
 
-    await expect(check({ packageManager })).resolves.toBeNull();
-    expect(latestVersion).not.toHaveBeenCalled();
+    await expect(check({ packageManager, storybookVersion: '10.5.10' })).resolves.toEqual({
+      upgradable: [
+        {
+          packageName: '@storybook/jest',
+          beforeVersion: '0.2.3',
+          afterVersion: '1.0.0',
+        },
+      ],
+    });
+    expect(latestVersion).toHaveBeenCalledExactlyOnceWith('@storybook/jest');
+    expect(getInstalledVersion).toHaveBeenCalledExactlyOnceWith('@storybook/jest');
+  });
+
+  it('does not rewrite removed shim entries from a supplied result', async () => {
+    const packageJson = {
+      dependencies: {
+        '@storybook/react-dom-shim': '10.5.10',
+        '@chromatic-com/storybook': '1.2.9',
+      },
+      devDependencies: {
+        'storybook-shim': 'npm:@storybook/react-dom-shim@10.5.10',
+      },
+      peerDependencies: {
+        '@storybook/react-dom-shim': '^10.0.0',
+      },
+    };
+    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(packageJson));
+
+    const packageManager = JsPackageManagerFactory.getPackageManager({
+      force: PackageManagerName.NPM,
+    });
+    packageManager.packageJsonPaths = ['package.json'];
+    const writePackageJson = vi.spyOn(packageManager, 'writePackageJson').mockImplementation(() => {
+      return undefined;
+    });
+
+    await upgradeStorybookRelatedDependencies.run({
+      result: {
+        upgradable: [
+          {
+            packageName: '@storybook/react-dom-shim',
+            beforeVersion: '10.5.10',
+            afterVersion: '11.0.0-alpha.1',
+          },
+          {
+            packageName: 'storybook-shim',
+            beforeVersion: '10.5.10',
+            afterVersion: '11.0.0-alpha.1',
+          },
+          {
+            packageName: '@chromatic-com/storybook',
+            beforeVersion: '1.2.9',
+            afterVersion: '2.0.0',
+          },
+        ],
+      },
+      packageManager,
+      mainConfigPath: '',
+      mainConfig: { stories: [] },
+      configDir: '',
+      storybookVersion: '11.0.0-alpha.1',
+      storiesPaths: [],
+    });
+
+    expect(writePackageJson).toHaveBeenCalledExactlyOnceWith(
+      {
+        ...packageJson,
+        dependencies: {
+          ...packageJson.dependencies,
+          '@chromatic-com/storybook': '^2.0.0',
+        },
+      },
+      '.'
+    );
   });
 });

@@ -12,7 +12,7 @@ const INERT_NAME =
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SHIM = '@storybook/react-dom-shim';
 
-export type WorkspaceFileKind = 'astro' | 'data' | 'html' | 'inert' | 'manual' | 'source';
+type WorkspaceFileKind = 'astro' | 'data' | 'html' | 'inert' | 'manual' | 'source';
 type WorkspaceFiles = { complete: boolean; files: string[] };
 
 export const workspaceFileKind = (filePath: string): WorkspaceFileKind => {

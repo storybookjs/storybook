@@ -9,7 +9,7 @@ const LEGACY_REPLACEMENTS = new Set([
   `${REACT_DOM_SHIM}/dist/react-16`,
 ]);
 
-export type ReactDomShimConfigAnalysis =
+type ReactDomShimConfigAnalysis =
   | { kind: 'unchanged' }
   | { kind: 'changed'; source: string }
   | { kind: 'manual'; source: string; diagnostic: string };

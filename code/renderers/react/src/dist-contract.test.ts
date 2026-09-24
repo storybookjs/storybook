@@ -34,16 +34,14 @@ describe('React declaration contract', () => {
     expect(DTS_BUILT).toBe(true);
   });
 
-  it('compiles public declarations with the workspace compiler', () => {
-    expect(DTS_BUILT).toBe(true);
+  it.runIf(DTS_BUILT)('compiles public declarations with the workspace compiler', () => {
     execFileSync(process.execPath, [TYPESCRIPT, ...TSC_OPTIONS], {
       cwd: REPOSITORY_ROOT,
       stdio: 'pipe',
     });
   });
 
-  it('compiles public declarations with TypeScript 5.9.3', () => {
-    expect(DTS_BUILT).toBe(true);
+  it.runIf(DTS_BUILT)('compiles public declarations with TypeScript 5.9.3', () => {
     execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], {
       cwd: REPOSITORY_ROOT,
       stdio: 'pipe',

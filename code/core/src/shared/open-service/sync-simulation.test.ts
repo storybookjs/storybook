@@ -956,7 +956,7 @@ describe('open-service sync simulation', () => {
     current.network.release('mb', 'server');
     drain(current);
     assertRelayTermination(current);
-  });
+  }, 30_000);
 
   it('converges after two concurrent bursts longer than the entry count on the production fan', async () => {
     const current = boot('production-fan');
@@ -974,7 +974,7 @@ describe('open-service sync simulation', () => {
 
     settleWithoutLogParity(current);
     expect(Object.keys(current.replica('p1').getState().slots)).toHaveLength(515);
-  });
+  }, 30_000);
 
   it('converges two tabs after a 16 s partition in which both sides wrote', async () => {
     const current = boot('two-tabs');

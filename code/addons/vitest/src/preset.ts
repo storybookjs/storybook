@@ -18,7 +18,7 @@ import {
   STORYBOOK_ADDON_TEST_CHANNEL,
 } from './constants.ts';
 import { log } from './logger.ts';
-import { runTestRunner } from './node/boot-test-runner.ts';
+import { runTestRunner, sendStoryIndexToTestRunner } from './node/boot-test-runner.ts';
 import {
   ensureTestRunnerStore,
   resolvePreviewBuilderName,
@@ -109,8 +109,8 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
 
   // The request listener answering test-run requests is wired by the `services` hook; the runner
   // machinery it sets up lazily is run eagerly here because the manager UI needs the store
-  // immediately. What follows are the dev-server extras: index invalidation refresh, watch mode,
-  // and addon telemetry.
+  // immediately. What follows are the dev-server extras: story index refresh, watch mode, and addon
+  // telemetry.
   const store = await ensureTestRunnerStore({ channel, options });
 
   storyIndexGenerator.onInvalidated(async () => {
@@ -122,6 +122,14 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
       logger.debug(error);
     }
   });
+
+  const refreshTestRunnerStoryIndex = () =>
+    sendStoryIndexToTestRunner(storyIndexGenerator).catch((error) => {
+      logger.debug('Failed to send the story index to the test runner, Error:');
+      logger.debug(error);
+    });
+  refreshTestRunnerStoryIndex();
+  storyIndexGenerator.onInvalidated(refreshTestRunnerStoryIndex);
 
   store.subscribe('TOGGLE_WATCHING', (event, eventInfo) => {
     store.setState((s) => ({

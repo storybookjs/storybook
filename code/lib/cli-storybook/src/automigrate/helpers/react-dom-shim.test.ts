@@ -213,6 +213,7 @@ export default config;
   it.each([
     "const shim = import('@storybook/' + 'react-dom-shim');",
     "const shim = require('@storybook/' + 'react-dom-shim');",
+    "const shim = import(`${'@storybook/'}react-dom-shim`);",
     "const name = 'react-dom-shim'; const shim = import(`@storybook/${name}`);",
   ])('refuses computed module loads before removing a preset: %s', (moduleLoad) => {
     const source = `${moduleLoad}\nexport default { addons: ['@storybook/react-dom-shim/preset'] };`;

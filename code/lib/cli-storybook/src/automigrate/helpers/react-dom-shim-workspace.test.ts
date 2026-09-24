@@ -402,4 +402,28 @@ describe('analyzeReactDomShimWorkspace', () => {
       ]),
     });
   });
+
+  it('refuses static template shim references in source and config without partial edits', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/src/loader.ts': "export const shim = `${'@storybook/'}react-dom-shim`;\n",
+      '/project/vite.config.ts':
+        "export default { resolve: { alias: { shim: `${'@storybook/'}react-dom-shim` } } };\n",
+      '/project/.storybook/main.ts':
+        "export default { addons: ['@storybook/react-dom-shim/preset'], shim: `${'@storybook/'}react-dom-shim` };\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/src/loader.ts: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/vite.config.ts: contains a react-dom-shim reference that cannot be removed safely',
+        '/project/.storybook/main.ts: contains a react-dom-shim reference that cannot be removed safely',
+      ]),
+    });
+  });
 });

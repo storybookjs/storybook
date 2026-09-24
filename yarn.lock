@@ -309,17 +309,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/architect@npm:^0.2100.0":
-  version: 0.2100.6
-  resolution: "@angular-devkit/architect@npm:0.2100.6"
-  dependencies:
-    "@angular-devkit/core": "npm:21.0.6"
-    rxjs: "npm:7.8.2"
-  checksum: 10c0/40e6d0546945ec888041fc6254b9b0a49352001599301fd255a9fd824a0c9f815b8614a95aa46c084c9de2159e265e7db3a21a828271b34a7f5072f7aa972dd7
-  languageName: node
-  linkType: hard
-
-"@angular-devkit/architect@npm:^0.2102.12":
+"@angular-devkit/architect@npm:0.2102.23, @angular-devkit/architect@npm:^0.2102.12":
   version: 0.2102.23
   resolution: "@angular-devkit/architect@npm:0.2102.23"
   dependencies:
@@ -328,6 +318,16 @@ __metadata:
   bin:
     architect: bin/cli.js
   checksum: 10c0/0fe546815e8d62716e6682756e4167dfcba26a3692db16b19ea74eefc245e61065be84d192fd38e06649a7ca36a55a601631404a4678be24284ddd67648e4d3e
+  languageName: node
+  linkType: hard
+
+"@angular-devkit/architect@npm:^0.2100.0":
+  version: 0.2100.6
+  resolution: "@angular-devkit/architect@npm:0.2100.6"
+  dependencies:
+    "@angular-devkit/core": "npm:21.0.6"
+    rxjs: "npm:7.8.2"
+  checksum: 10c0/40e6d0546945ec888041fc6254b9b0a49352001599301fd255a9fd824a0c9f815b8614a95aa46c084c9de2159e265e7db3a21a828271b34a7f5072f7aa972dd7
   languageName: node
   linkType: hard
 

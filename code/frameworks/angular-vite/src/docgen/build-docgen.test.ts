@@ -513,6 +513,71 @@ describe('buildDocgenPayload', () => {
       expect(payload?.argTypes?.label).toBeDefined();
       expect(payload?.error).toBeUndefined();
     });
+
+    it('isolates a declared subcomponent expression the resolver cannot follow', () => {
+      // `internal.config.component` is a property-access chain `extractDeclaredSubcomponents` can
+      // name (unlike a call expression, which it drops before resolution ever sees it), but
+      // `./nowhere` does not resolve, so the chain that names it cannot be followed either.
+      givenStoryFile(`
+        import { ButtonComponent } from './button.component';
+        import * as internal from './nowhere';
+        export default {
+          title: 'Button',
+          component: ButtonComponent,
+          subcomponents: { ColorPicker: internal.config.component },
+        };
+      `);
+      const manager = managerForPaths({ [COMPONENT_PATH]: metaFor(componentEntry()) });
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(COMPONENT_PATH, {
+        exportName: 'ButtonComponent',
+        localName: 'ButtonComponent',
+      });
+      expect(payload?.subcomponents?.ColorPicker).toMatchObject({
+        name: 'internal.config.component',
+        path: STORY_PATH,
+        jsDocTags: {},
+        error: { name: 'AngularComponentMetaNotFound' },
+      });
+      expect(payload?.subcomponents?.ColorPicker?.error?.message).toContain(
+        '"ColorPicker" sets `internal.config.component`'
+      );
+      expect(payload?.name).toBe('ButtonComponent');
+      expect(payload?.error).toBeUndefined();
+    });
+
+    it('isolates a declared subcomponent bound to a type-only import', () => {
+      givenStoryFile(`
+        import { ButtonComponent } from './button.component';
+        import type { ColorPickerComponent } from './color-picker.component';
+        export default {
+          title: 'Button',
+          component: ButtonComponent,
+          subcomponents: { ColorPicker: ColorPickerComponent },
+        };
+      `);
+      const manager = managerForPaths({ [COMPONENT_PATH]: metaFor(componentEntry()) });
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(COMPONENT_PATH, {
+        exportName: 'ButtonComponent',
+        localName: 'ButtonComponent',
+      });
+      expect(payload?.subcomponents?.ColorPicker).toMatchObject({
+        name: 'ColorPickerComponent',
+        path: STORY_PATH,
+        jsDocTags: {},
+        error: { name: 'AngularComponentMetaNotFound' },
+      });
+      expect(payload?.subcomponents?.ColorPicker?.error?.message).toContain(
+        '"ColorPicker" from ' + STORY_PATH
+      );
+      expect(payload?.name).toBe('ButtonComponent');
+      expect(payload?.error).toBeUndefined();
+    });
   });
 
   describe('component reached through another module', () => {

@@ -89,8 +89,12 @@ export const sourceUrlManifestProvider: ManifestProvider = async (_request, path
   return fetchManifestText(new URL(path.replace(/^\.\//, ''), base).toString());
 };
 
+const MANIFEST_FETCH_TIMEOUT_MS = 10_000;
+
 async function fetchManifestText(manifestUrl: string): Promise<string> {
-  const response = await fetch(manifestUrl);
+  const response = await fetch(manifestUrl, {
+    signal: AbortSignal.timeout(MANIFEST_FETCH_TIMEOUT_MS),
+  });
 
   if (!response.ok) {
     throw new ManifestGetError(

@@ -325,8 +325,12 @@ Invalid key: Expected "components" but received undefined]`);
 
       expect(result).toEqual({ componentManifest: validManifest });
       expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json');
-      expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/docs.json');
+      expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json', {
+        signal: expect.any(AbortSignal),
+      });
+      expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/docs.json', {
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it.each([
@@ -354,8 +358,12 @@ Invalid key: Expected "components" but received undefined]`);
       const result = await getManifests(request);
 
       expect(result).toEqual({ componentManifest: validManifest });
-      expect(global.fetch).toHaveBeenCalledWith(`${origin}/manifests/components.json`);
-      expect(global.fetch).toHaveBeenCalledWith(`${origin}/manifests/docs.json`);
+      expect(global.fetch).toHaveBeenCalledWith(`${origin}/manifests/components.json`, {
+        signal: expect.any(AbortSignal),
+      });
+      expect(global.fetch).toHaveBeenCalledWith(`${origin}/manifests/docs.json`, {
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it('should successfully fetch and parse both component and docs manifests', async () => {
@@ -486,7 +494,9 @@ Invalid key: Expected "components" but received undefined]`);
 
       expect(result).toEqual({ componentManifest: validManifest });
       expect(global.fetch).toHaveBeenCalledTimes(2);
-      expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json');
+      expect(global.fetch).toHaveBeenCalledWith('https://example.com/manifests/components.json', {
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it('should handle errors from manifestProvider', async () => {

@@ -51,6 +51,17 @@ describe('getRefsFromConfig', () => {
     expect(refs).toEqual([]);
   });
 
+  it('leaves out a ref keyed local, which would collide with the local source', async () => {
+    const refs = await getRefsFromConfig(
+      optionsWithRefs({
+        Local: { url: 'https://local.example.com' },
+        ds: { url: 'https://ds.example.com' },
+      })
+    );
+
+    expect(refs.map((ref) => ref.id)).toEqual(['ds']);
+  });
+
   it('lowercases the id and humanises the title like the sidebar does', async () => {
     const refs = await getRefsFromConfig(
       optionsWithRefs({ DesignSystem: { url: 'https://ds.example.com' } })

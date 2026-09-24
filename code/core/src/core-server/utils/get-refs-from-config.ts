@@ -1,4 +1,5 @@
 import { toTitle } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { Options, Ref } from 'storybook/internal/types';
 
 import type { SourceWithUrl } from '../../shared/open-service/toolsets/docs/sources.ts';
@@ -8,8 +9,9 @@ import type { SourceWithUrl } from '../../shared/open-service/toolsets/docs/sour
  *
  * Only the configured `refs` count, not auto-refs from package dependencies; a function-form
  * `refs` receives an empty object instead of them. Disabled refs and refs without a `url` are
- * dropped. Ids and titles are normalised the way the manager does for the sidebar, so a source id
- * matches the ref id in Storybook URLs. No network access.
+ * dropped, and so is a ref keyed `local`, the id reserved for this Storybook's own source. Ids and
+ * titles are normalised the way the manager does for the sidebar, so a source id matches the ref id
+ * in Storybook URLs. No network access.
  */
 export async function getRefsFromConfig(options: Options): Promise<SourceWithUrl[]> {
   const refs = (await options.presets.apply<Record<string, Ref>>('refs', {})) ?? {};
@@ -20,5 +22,14 @@ export async function getRefsFromConfig(options: Options): Promise<SourceWithUrl
       id: key.toLowerCase(),
       title: ref.title || toTitle(key),
       url: ref.url.replace(/\/$/, ''),
-    }));
+    }))
+    .filter(({ id }) => {
+      if (id !== 'local') {
+        return true;
+      }
+      logger.warn(
+        'The ref "local" is left out of the docs toolset: "local" is the id of this Storybook\'s own source. Rename the ref to list it.'
+      );
+      return false;
+    });
 }

@@ -3,13 +3,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetCtx } from '../../shared/open-service/toolset-definition.ts';
 import { clearToolsetRegistry, getToolset } from '../../shared/open-service/toolset-registry.ts';
+import { loadManifests } from '../utils/manifests/manifests.ts';
 import { services } from './common-preset.ts';
 
-vi.mock('../utils/manifests/manifests.ts', () => ({
-  loadManifests: async () => ({
-    components: { components: { card: { id: 'card', name: 'Card', stories: [] } } },
-  }),
-}));
+vi.mock('../utils/manifests/manifests.ts', { spy: true });
 
 const REMOTE_MANIFEST = JSON.stringify({
   v: 1,
@@ -60,6 +57,14 @@ describe('services preset hook: docs toolset', () => {
   beforeEach(() => {
     clearToolsetRegistry();
     vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
+    vi.mocked(loadManifests).mockResolvedValue({
+      components: {
+        v: 0,
+        components: {
+          card: { id: 'card', name: 'Card', path: './Card.tsx', jsDocTags: {}, stories: [] },
+        },
+      },
+    });
   });
 
   afterEach(() => {
@@ -83,7 +88,9 @@ describe('services preset hook: docs toolset', () => {
       expect(outcome.markdown).toContain('id: reshaped');
       expect(outcome.markdown).toContain('button');
       expect(outcome.telemetry?.payload).toMatchObject({ sourceCount: 2 });
-      expect(fetch).toHaveBeenCalledWith(RESHAPED_MANIFEST_URL);
+      expect(fetch).toHaveBeenCalledWith(RESHAPED_MANIFEST_URL, {
+        signal: expect.any(AbortSignal),
+      });
     });
 
     it('requires a storybookId on show and answers a missing one with the available sources', async () => {

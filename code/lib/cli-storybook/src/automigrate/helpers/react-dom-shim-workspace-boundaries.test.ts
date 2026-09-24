@@ -408,4 +408,32 @@ load(['@storybook', 'react-dom-shim'].join('/'));
       workspaceRoot: '/project',
     });
   });
+
+  it.each([
+    [
+      'an optional CommonJS acquisition',
+      `const nodeModule = require?.('node:module');
+const load = nodeModule.createRequire(import.meta.url);`,
+    ],
+    [
+      'an awaited dynamic acquisition',
+      `const nodeModule = await import('node:module');
+const load = nodeModule.createRequire(import.meta.url);`,
+    ],
+    [
+      'a dynamic acquisition passed to a promise callback',
+      `import('node:module').then((nodeModule) => {
+  const load = nodeModule.createRequire(import.meta.url);`,
+    ],
+  ])('refuses %s', async (_description, acquisition) => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/module-acquisition.ts': `${acquisition}
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+});`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'manual' });
+  });
 });

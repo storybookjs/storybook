@@ -320,6 +320,21 @@ describe('createServiceDocsAccess resolve', () => {
       "import { Alpha as type } from '@design-system/components';",
     ],
     [
+      "import type/* ; */from './components'",
+      'type',
+      "import { Alpha as type } from '@design-system/components';",
+    ],
+    [
+      "import type from './components/* ; */'",
+      'type',
+      "import { Alpha as type } from '@design-system/components';",
+    ],
+    [
+      "import type,*as Icons from './components'",
+      'type',
+      "import { Alpha as type } from '@design-system/components';\nimport * as Icons from './components';",
+    ],
+    [
       "import { type as Alpha } from './components'",
       'Alpha',
       "import { Alpha } from '@design-system/components';",
@@ -336,6 +351,11 @@ describe('createServiceDocsAccess resolve', () => {
     ],
     [
       "import { /* binding */ type as Alpha } from './components'",
+      'Alpha',
+      "import { Alpha } from '@design-system/components';",
+    ],
+    [
+      "import { /* rationale, legacy */ type as Alpha } from './components'",
       'Alpha',
       "import { Alpha } from '@design-system/components';",
     ],

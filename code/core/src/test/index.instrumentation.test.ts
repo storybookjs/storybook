@@ -13,9 +13,10 @@ it('instruments assertion chains and asymmetric matchers', async () => {
   try {
     const { expect: storybookExpect } = await import('./index.ts');
 
-    storybookExpect('storybook').not.not.not.toEqual('vitest');
+    const assertion = storybookExpect('storybook');
+    expect(Object.hasOwn(assertion, '__methods')).toBe(false);
+    assertion.not.not.not.toEqual('vitest');
     storybookExpect({ name: 'storybook' }).toEqual({ name: storybookExpect.any(String) });
-    storybookExpect({ name: 'storybook' }).to.have.any.keys('name');
 
     expect(storybookExpect.any).toBeTypeOf('function');
     expect(

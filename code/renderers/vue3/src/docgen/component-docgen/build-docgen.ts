@@ -76,6 +76,35 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
 };
 
 /**
+ * The subcomponent variant of {@link UNRESOLVED_COMPONENT_ERRORS}: same error names, but the
+ * messages point at the `meta.subcomponents.<Key>` entry that failed instead of the primary
+ * `meta.component` declaration the user never broke.
+ */
+function unresolvedSubcomponentError(
+  reason: UnresolvedComponentReason,
+  entryName: string
+): DocgenError {
+  const entry = `meta.subcomponents.${entryName}`;
+  switch (reason) {
+    case 'no-meta-component':
+      return {
+        name: 'No component found',
+        message: `We could not detect the component for the ${entry} entry in your story file.`,
+      };
+    case 'no-component-import':
+      return {
+        name: 'No component import found',
+        message: `No component file found for the component declared in ${entry}. Import it into the story file.`,
+      };
+    case 'unreadable-component-expression':
+      return {
+        name: 'No component found',
+        message: `We could not follow ${entry} to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.`,
+      };
+  }
+}
+
+/**
  * Get last segment of a story title
  */
 function componentNameFromTitle(title: string): string {
@@ -114,8 +143,7 @@ async function buildSubcomponentDocgen(
   try {
     const resolved = resolveMetaComponent(csf, storyPath, declared.node);
     if ('reason' in resolved) {
-      const { name, message } = UNRESOLVED_COMPONENT_ERRORS[resolved.reason];
-      return failure({ name, message: `${message} (subcomponent "${declared.name}")` });
+      return failure(unresolvedSubcomponentError(resolved.reason, declared.name));
     }
 
     const checker = context.getChecker(resolved.component.path);

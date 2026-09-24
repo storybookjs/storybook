@@ -485,14 +485,14 @@ describe('configureEslintPlugin', () => {
       await expect(configureFlatConfig(input)).resolves.toBe(input);
     });
 
-    it('preserves destructured CommonJS requires and warns', async () => {
+    it('leaves configs with a destructured CommonJS require untouched', async () => {
       const input = dedent`
         const { configs } = require('eslint-plugin-storybook');
-        module.exports = [];
+        module.exports = [...configs['flat/recommended']];
       `;
 
       await expect(configureFlatConfig(input)).resolves.toBe(input);
-      expect(logger.warn).toHaveBeenCalledOnce();
+      expect(logger.warn).not.toHaveBeenCalled();
     });
 
     it('should configure ESLint plugin correctly with default JS flat config', async () => {

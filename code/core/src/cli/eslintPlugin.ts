@@ -61,7 +61,6 @@ export const configureFlatConfig = async (code: string) => {
   let commonJsStorybookLocalName = '';
   const commonJsStorybookLocalNames = new Set<string>();
   let commonJsStorybookRequirePosition: number | undefined;
-  let hasUnsupportedCommonJsStorybookRequire = false;
   let programBindingNames = new Set<string>();
   traverse(ast, {
     Program(path) {
@@ -104,7 +103,8 @@ export const configureFlatConfig = async (code: string) => {
               commonJsStorybookRequirePosition = declaratorPath.parentPath.key;
             }
           } else {
-            hasUnsupportedCommonJsStorybookRequire = true;
+            alreadyHasStorybookImport = true;
+            path.stop();
           }
         }
       }
@@ -157,11 +157,7 @@ export const configureFlatConfig = async (code: string) => {
     },
   });
 
-  if (
-    hasUnsupportedCommonJsConfig ||
-    commonJsExportCount > 1 ||
-    (commonJsConfig && hasUnsupportedCommonJsStorybookRequire)
-  ) {
+  if (hasUnsupportedCommonJsConfig || commonJsExportCount > 1) {
     logger.warn(
       "Could not automatically configure eslint-plugin-storybook. CommonJS ESLint flat configs must export an array, for example: const storybook = require('eslint-plugin-storybook'); module.exports = [...storybook.configs['flat/recommended']];"
     );

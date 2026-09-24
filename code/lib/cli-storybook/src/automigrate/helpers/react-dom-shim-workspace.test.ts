@@ -121,8 +121,12 @@ describe('analyzeReactDomShimWorkspace', () => {
   it('refuses when the workspace traversal cannot read a directory', async () => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({ '@storybook/react-dom-shim': '10.5.10' }),
+      '/project/src/index.ts': 'export {};\n',
     });
-    vi.mocked(fs.readdir).mockRejectedValueOnce(new Error('permission denied'));
+    vi.mocked(fs.readdir).mockImplementation(async (path, options) => {
+      if (path === '/project/src') throw new Error('permission denied');
+      return vol.promises.readdir(path, options) as ReturnType<typeof fs.readdir>;
+    });
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
@@ -290,6 +294,125 @@ describe('analyzeReactDomShimWorkspace', () => {
         "workspaceRoot": "/project",
       }
     `);
+  });
+
+  it('returns none for a Vue project when only unsupported files are present', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/.gitignore': 'node_modules\n',
+      '/project/src/App.vue': '<template><main /></template>\n',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
+      {
+        "kind": "none",
+        "workspaceRoot": "/project",
+      }
+    `);
+  });
+
+  it('returns none when pnpm metadata contains an unrelated Storybook package path', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/pnpm-workspace.yaml': 'packages:\n  - packages/@storybook/*\n',
+      '/project/packages/@storybook/plugin/package.json': packageJson({ vue: '^3.5.0' }),
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
+      {
+        "kind": "none",
+        "workspaceRoot": "/project",
+      }
+    `);
+  });
+
+  it('refuses a removable config when unrelated code execution blocks its analysis', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/.storybook/main.ts':
+        "const value = eval('1'); export default { addons: ['@storybook/react-dom-shim/preset'], value };\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: ['/project/.storybook/main.ts: contains unresolved code execution'],
+    });
+  });
+
+  it('refuses a shim consumer in a Vue script block without a shim dependency', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/src/App.vue':
+        "<script setup>\nimport shim from '@storybook/react-dom-shim';\n</script>\n<template><main /></template>\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/src/App.vue: contains a react-dom-shim import, re-export, or module load',
+      ]),
+    });
+  });
+
+  it('refuses a shim consumer in HTML after an unrelated HTML blocker', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/index.html':
+        '<!doctype html><html><head><base href="/"></head><body><script type="module">import "@storybook/react-dom-shim";</script></body></html>\n',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/index.html: contains a react-dom-shim reference that cannot be removed safely',
+      ]),
+    });
+  });
+
+  it('returns none when an incomplete scan has no migration signal', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/readme.txt': 'Vue application\n',
+    });
+    await vol.promises.symlink('/project/readme.txt', '/project/linked.txt');
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
+      {
+        "kind": "none",
+        "workspaceRoot": "/project",
+      }
+    `);
+  });
+
+  it('refuses a direct consumer without a shim dependency after migration becomes applicable', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/.gitignore': 'node_modules\n',
+      '/project/src/consumer.ts': "import shim from '@storybook/react-dom-shim';\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/.gitignore: unsupported file type cannot be scanned safely',
+        '/project/src/consumer.ts: contains a react-dom-shim import, re-export, or module load',
+      ]),
+    });
+  });
+
+  it('refuses a direct consumer after an unresolved loader without a shim dependency', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({ vue: '^3.5.0' }),
+      '/project/src/consumer.cjs':
+        "const name = getName(); require(name); require('@storybook/react-dom-shim');\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: [
+        '/project/src/consumer.cjs: contains a react-dom-shim import, re-export, or module load',
+      ],
+    });
   });
 
   it('does not treat known non-loader require members as module loads', async () => {

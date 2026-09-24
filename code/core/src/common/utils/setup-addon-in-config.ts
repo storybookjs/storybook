@@ -3,6 +3,7 @@ import { writeConfig } from 'storybook/internal/csf-tools';
 
 import { loadMainConfig } from './load-main-config.ts';
 import { syncStorybookAddons } from './sync-main-preview-addons.ts';
+import { invariant } from './utils.ts';
 import {
   getAbsolutePathWrapperName,
   wrapValueWithGetAbsolutePathWrapper,
@@ -29,8 +30,9 @@ export async function setupAddonInConfig({
 }: SetupAddonInConfigOptions): Promise<void> {
   if (getAbsolutePathWrapperName(mainConfigCSFFile) !== null) {
     const addonNode = mainConfigCSFFile.valueToNode(addonName);
-    wrapValueWithGetAbsolutePathWrapper(mainConfigCSFFile, addonNode as any);
-    mainConfigCSFFile.appendNodeToArray(['addons'], addonNode as any);
+    invariant(addonNode, `Could not create an AST node for addon '${addonName}'`);
+    wrapValueWithGetAbsolutePathWrapper(mainConfigCSFFile, addonNode);
+    mainConfigCSFFile.appendNodeToArray(['addons'], addonNode);
   } else {
     mainConfigCSFFile.appendValueToArray(['addons'], addonName);
   }

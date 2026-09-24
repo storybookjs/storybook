@@ -64,7 +64,8 @@ const isLoader = (
     t.isIdentifier(node.object) &&
     (loaders.has(node.object.name) || isModuleObject(node.object, loaders, modules)) &&
     ['require', 'resolve'].includes(memberPropertyName(node) ?? '')) ||
-  (t.isCallExpression(node) && isCreateRequireFactory(node.callee, loaders, factories, modules));
+  ((t.isCallExpression(node) || t.isOptionalCallExpression(node)) &&
+    isCreateRequireFactory(node.callee, loaders, factories, modules));
 const addLoaderProperties = (
   pattern: t.ObjectPattern,
   source: t.Node | null | undefined,
@@ -236,7 +237,7 @@ type LoaderReferencePath = {
 };
 
 type LoaderCallPath = {
-  node: t.CallExpression;
+  node: t.CallExpression | t.OptionalCallExpression;
   parent: t.Node;
 };
 
@@ -389,6 +390,9 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
         );
         if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
         else diagnostic ??= moduleDiagnostic;
+        if (factoryCallEscapes(path, loaders, factories, modules)) {
+          diagnostic ??= `${filePath}: contains an unresolved module load`;
+        }
       },
       ImportExpression(path) {
         const value = staticString(path.node.source);

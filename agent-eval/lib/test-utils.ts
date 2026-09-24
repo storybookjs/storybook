@@ -612,11 +612,14 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
 // only what the assertions read: story ids, failure descriptions, violation
 // ids, and unhandled error names/messages.
 function renderTestRunJsonOutput(output: string): string | undefined {
-  const trimmed = output.trim();
-  if (!trimmed.startsWith('{')) {
+  // A `--json` run diverts every other stdout writer to stderr, so with `2>&1`
+  // npm/logger lines surround the document; it is the outermost brace pair.
+  const start = output.search(/^\{/m);
+  const end = output.lastIndexOf('}');
+  if (start === -1 || end < start) {
     return undefined;
   }
-  const data = parseJson(trimmed);
+  const data = parseJson(output.slice(start, end + 1));
   if (!isRecord(data) || typeof data.status !== 'string') {
     return undefined;
   }
@@ -633,16 +636,16 @@ function renderTestRunJsonOutput(output: string): string | undefined {
     case 'cancelled':
       return 'Error: Test run was cancelled';
     case 'completed':
-      return isRecord(data.result) ? renderCompletedTestRun(data.result) : undefined;
+      return isRecord(data.result)
+        ? renderCompletedTestRun(data.result, data.a11y !== false)
+        : undefined;
     default:
       return undefined;
   }
 }
 
-function renderCompletedTestRun(result: Record<string, unknown>): string {
-  const statuses = (Array.isArray(result.componentTestStatuses) ? result.componentTestStatuses : [])
-    .filter(isRecord)
-    .filter((status) => typeof status.storyId === 'string');
+function renderCompletedTestRun(result: Record<string, unknown>, a11y: boolean): string {
+  const statuses = asRecords(result.componentTestStatuses);
   const passing = statuses.filter((status) => status.value === 'status-value:success');
   const failing = statuses.filter((status) => status.value === 'status-value:error');
   const sections: string[] = [];
@@ -661,17 +664,15 @@ function renderCompletedTestRun(result: Record<string, unknown>): string {
     sections.push(`## Failing Stories\n\n${entries.join('\n\n')}`);
   }
 
-  const a11yEnabled = !(isRecord(result.config) && result.config.a11y === false);
-  const a11yReports = isRecord(result.a11yReports) ? result.a11yReports : {};
+  const a11yReports = a11y && isRecord(result.a11yReports) ? result.a11yReports : {};
   const a11ySections: string[] = [];
-  for (const [storyId, reports] of Object.entries(a11yEnabled ? a11yReports : {})) {
-    for (const report of Array.isArray(reports) ? reports.filter(isRecord) : []) {
+  for (const [storyId, reports] of Object.entries(a11yReports)) {
+    for (const report of asRecords(reports)) {
       if (isRecord(report.error)) {
         a11ySections.push(`### ${storyId} - Error\n\n${String(report.error.message)}`);
         continue;
       }
-      const violations = Array.isArray(report.violations) ? report.violations.filter(isRecord) : [];
-      for (const violation of violations) {
+      for (const violation of asRecords(report.violations)) {
         a11ySections.push(`### ${storyId} - ${violation.id}\n\n${violation.description}`);
       }
     }
@@ -680,9 +681,7 @@ function renderCompletedTestRun(result: Record<string, unknown>): string {
     sections.push(`## Accessibility Violations\n\n${a11ySections.join('\n\n')}`);
   }
 
-  const unhandledErrors = Array.isArray(result.unhandledErrors)
-    ? result.unhandledErrors.filter(isRecord)
-    : [];
+  const unhandledErrors = asRecords(result.unhandledErrors);
   if (unhandledErrors.length > 0) {
     const entries = unhandledErrors.map(
       (error) =>
@@ -694,8 +693,12 @@ function renderCompletedTestRun(result: Record<string, unknown>): string {
   return sections.join('\n\n');
 }
 
-// The test-run result formatter (packages/addon-mcp) always emits at
-// least one of these markers. A captured output with none of them is a
+function asRecords(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+// The test-run result formatter (code/addons/vitest/src/node/toolset/format.ts)
+// always emits at least one of these markers. A captured output with none of them is a
 // shell-filtered fragment of the real report, not the report itself. isError
 // deliberately does not count as recognizable: a piped `… | grep` exits
 // non-zero when the filter simply matches nothing, so an errored markerless
@@ -708,7 +711,7 @@ const RUN_STORY_TESTS_REPORT_MARKERS = [
   'No stories found matching',
 ];
 
-// On the plugin path agents pipe the `storybook ai test-run` CLI
+// On the plugin path agents pipe the `storybook tools test run` CLI
 // output through grep/sed/tail, so the chronologically last captured output
 // can be a filtered fragment of an otherwise correct run (observed in CI run
 // 28672627415, 2026-07-03). Judge the last output that still looks like a
@@ -726,7 +729,7 @@ export function selectFinalRunStoryTestsReport(
 
 // Chronological outputs of a Storybook workflow tool, across every path an
 // agent can reach it: Claude MCP tool calls, Codex MCP tool calls, and
-// `storybook ai <tool>` CLI invocations inside shell commands (plugin path).
+// `storybook tools` CLI invocations inside shell commands (plugin path).
 export function getWorkflowToolResults(workflowName: string): WorkflowToolResult[] {
   return parseWorkflowToolResults(readFileSync(TRANSCRIPT_PATH, 'utf8'), workflowName);
 }
@@ -808,7 +811,7 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return true;
   }
 
-  // Plugin path: the workflow call runs as a `storybook ai` CLI invocation
+  // Plugin path: the workflow call runs as a `storybook tools` CLI invocation
   // inside a shell tool call.
   const command = isRecord(block.input) ? block.input.command : undefined;
   if (typeof command !== 'string') {

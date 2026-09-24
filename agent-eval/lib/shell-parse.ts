@@ -7,7 +7,7 @@ import { isRecord } from './utils/type.ts';
 export type StorybookWorkflowCall = {
   name: string;
   input: Record<string, unknown>;
-  source: 'mcp' | 'storybook-ai' | 'cli';
+  source: 'mcp' | 'cli';
 };
 
 // `storybook skills write-story` serves the same document the MCP channel
@@ -86,8 +86,8 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
     return parsePluginWorkflowCalls(nestedCommand);
   }
 
-  // Only genuine `storybook ai` / `storybook tools` CLI invocations count as plugin
-  // workflow calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
+  // Only genuine `storybook tools` CLI invocations count as plugin workflow
+  // calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
   // are deliberately not recognized: agents must use the documented CLI.
   return parseStorybookCliWorkflowCalls(command);
 }
@@ -106,7 +106,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
     if (cli === 'skills') {
       // Record the literal invocation; which skill serves which workflow document
       // is workflowCallMatchesName's concern. A help request prints usage instead
-      // of the skill, so it does not count — same rule as the ai/tools branch below.
+      // of the skill, so it does not count — same rule as the tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
       const [first, ...rest] = segment;
       const all = first === '--all' && rest.length === 0;
@@ -126,11 +126,11 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       }
       continue;
     }
-    if (cli !== 'ai' && cli !== 'tools') {
+    if (cli !== 'tools') {
       continue;
     }
 
-    const invocation = parseStorybookCliInvocation(tokens.slice(index + 2), cli, heredocs);
+    const invocation = parseStorybookToolsInvocation(tokens.slice(index + 2), heredocs);
     if (invocation !== undefined) {
       calls.push(invocation.call);
       index += invocation.consumed + 1;
@@ -147,14 +147,14 @@ function segmentUntilSeparator(tokens: string[], start: number): string[] {
   return tokens.slice(start, end === -1 ? tokens.length : end);
 }
 
-function parseStorybookCliInvocation(
+function parseStorybookToolsInvocation(
   cliArgs: string[],
-  cli: 'ai' | 'tools',
   heredocs: Map<string, string>
 ): { call: StorybookWorkflowCall; consumed: number } | undefined {
   const endIndex = cliArgs.findIndex(
     (token, index) =>
-      SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && cliArgs[index + 1] === cli)
+      SHELL_COMMAND_SEPARATORS.has(token) ||
+      (token === 'storybook' && cliArgs[index + 1] === 'tools')
   );
   const consumed = endIndex === -1 ? cliArgs.length : endIndex;
   const segment = cliArgs.slice(0, consumed);
@@ -163,58 +163,34 @@ function parseStorybookCliInvocation(
     return undefined;
   }
 
-  const command = findWorkflowCommand(segment, cli);
+  const command = findWorkflowCommand(segment);
   if (command === undefined) {
     return undefined;
   }
 
-  const commandTokenCount = cli === 'tools' ? 2 : 1;
   const inputTokens = [
-    ...segment.slice(0, command.endIndex - commandTokenCount),
+    ...segment.slice(0, command.endIndex - 2),
     ...segment.slice(command.endIndex),
   ];
 
   return {
-    call: {
-      name: command.name,
-      input: parseStorybookCliInput(inputTokens, cli, heredocs),
-      source: 'storybook-ai',
-    },
+    call: { name: command.name, input: parseToolsInput(inputTokens, heredocs), source: 'cli' },
     consumed,
   };
 }
 
+// The `<toolset> <tool>` pair (`test run`) names the workflow tool (`test-run`).
 function findWorkflowCommand(
-  segment: string[],
-  cli: 'ai' | 'tools'
+  segment: string[]
 ): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; endIndex: number } | undefined {
-  if (cli === 'tools') {
-    for (let index = 0; index < segment.length - 1; index += 1) {
-      const first = segment[index];
-      const second = segment[index + 1];
-      if (first === undefined || second === undefined) {
-        continue;
-      }
-      const name = normalizeStorybookWorkflowName(`${first}-${second}`);
-      if (name !== undefined) {
-        return { name, endIndex: index + 2 };
-      }
+  for (let index = 0; index < segment.length - 1; index += 1) {
+    const name = normalizeStorybookWorkflowName(`${segment[index]}-${segment[index + 1]}`);
+    if (name !== undefined) {
+      return { name, endIndex: index + 2 };
     }
-    return undefined;
   }
 
-  const commandIndex = segment.findIndex(
-    (token) => normalizeStorybookWorkflowName(token) !== undefined
-  );
-  const commandToken = commandIndex === -1 ? undefined : segment[commandIndex];
-  const name =
-    commandToken === undefined ? undefined : normalizeStorybookWorkflowName(commandToken);
-
-  if (name === undefined || commandIndex === -1) {
-    return undefined;
-  }
-
-  return { name, endIndex: commandIndex + 1 };
+  return undefined;
 }
 
 // Matches the shell binary of a `bash -c '…'`-style wrapper, with or without a
@@ -257,58 +233,51 @@ function isShellRedirection(token: string): boolean {
   return SHELL_REDIRECTION_PATTERN.test(token);
 }
 
-// The two CLIs spell their flags differently. `storybook ai <tool>` took the
-// payload as `--json '<object>'`; `storybook tools <toolset> <tool>` takes it
-// as `--input '<object>'` (explicit `--key` flags win over its entries, in any
-// order, and nothing is unwrapped) and `--json` is its bare output-format
-// flag (code/core/src/cli/tools/tool-tokens.ts).
-function parseStorybookCliInput(
-  tokens: string[],
-  cli: 'ai' | 'tools',
-  heredocs: Map<string, string>
-): Record<string, unknown> {
+// The tools CLI's own options (target selection, output shaping) never reach
+// the tool, so they are dropped rather than recorded as input. Mirrors
+// TOOLS_OPTION_SPECS in code/core/src/cli/tools/tool-tokens.ts.
+const CLI_BARE_OPTIONS = new Set(['--json', '--attach', '--no-attach']);
+const CLI_VALUED_OPTIONS = new Set([
+  '-p',
+  '--port',
+  '-c',
+  '--config-dir',
+  '--cwd',
+  '-o',
+  '--output',
+]);
+
+// `--input '<object>'` carries the whole argument object; explicit `--key`
+// flags win over its entries in any order, as in parseToolsTokens. An `--input`
+// that is not an object (an unresolved `$(cat …)`) stays a plain flag so the
+// failing assertion shows what the agent passed. Nothing else is accepted
+// bare: the CLI rejects positional arguments.
+function parseToolsInput(tokens: string[], heredocs: Map<string, string>): Record<string, unknown> {
   const flags: Record<string, unknown> = {};
   let inputObject: Record<string, unknown> = {};
   let index = 0;
 
   while (index < tokens.length) {
-    const token = tokens[index];
-    if (token === undefined) {
-      index += 1;
-      continue;
-    }
+    const token = tokens[index] ?? '';
+    const [optionName = ''] = token.split('=', 1);
 
     if (isShellRedirection(token)) {
       index += BARE_SHELL_REDIRECTION_PATTERN.test(token) ? 2 : 1;
-      continue;
-    }
-
-    if (cli === 'tools' && token === '--json') {
+    } else if (CLI_BARE_OPTIONS.has(token)) {
       index += 1;
-      continue;
-    }
-
-    if (token.startsWith('--')) {
+    } else if (CLI_VALUED_OPTIONS.has(optionName)) {
+      index += token.includes('=') ? 1 : 2;
+    } else if (!token.startsWith('--')) {
+      index += 1;
+    } else {
       const flag = readFlagToken(tokens, index, heredocs);
       index = flag.next;
-      if (flag.key === undefined) {
-        continue;
-      }
-      if (cli === 'tools' && flag.key === 'input') {
-        if (isRecord(flag.value)) {
-          inputObject = flag.value;
-        }
-      } else if (cli === 'ai' && flag.key === 'json') {
-        mergeJsonInput(flags, flag.value);
-      } else {
+      if (flag.key === 'input' && isRecord(flag.value)) {
+        inputObject = flag.value;
+      } else if (flag.key !== undefined) {
         flags[flag.key] = flag.value;
       }
-      continue;
     }
-
-    // Positional argument: the CLI accepts the JSON payload bare.
-    mergeJsonInput(flags, parseCliValue(token, heredocs));
-    index += 1;
   }
 
   return { ...inputObject, ...flags };
@@ -341,15 +310,6 @@ function readFlagToken(
   return { key, value: true, next: index + 1 };
 }
 
-function mergeJsonInput(input: Record<string, unknown>, value: unknown): void {
-  if (isRecord(value)) {
-    Object.assign(input, unwrapWorkflowInput(value));
-    return;
-  }
-
-  input.json = value;
-}
-
 function parseCliValue(value: string, heredocs: Map<string, string>): unknown {
   const catPath = CAT_SUBSTITUTION.exec(value.trim())?.[1];
   const fromHeredoc = catPath === undefined ? undefined : heredocs.get(catPath);
@@ -380,21 +340,7 @@ function kebabToCamel(value: string): string {
   return value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 }
 
-function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unknown> {
-  const direct = getNestedWorkflowInput(value);
-  if (direct !== undefined) {
-    return direct;
-  }
-
-  const params = value.params;
-  if (isRecord(params)) {
-    return getNestedWorkflowInput(params) ?? value;
-  }
-
-  return value;
-}
-
-// Known limitation: a `storybook ai` invocation nested inside `$(...)` is not
+// Known limitation: a `storybook tools` invocation nested inside `$(...)` is not
 // recognized. `$(cat path)` is resolved when that path was written by a
 // `cat > path <<TAG` heredoc in the same command.
 export function tokenizeShellCommand(command: string): string[] {
@@ -410,7 +356,7 @@ export function tokenizeShellCommand(command: string): string[] {
     }
 
     // POSIX: inside single quotes everything is literal, including backslashes.
-    // Agents rely on this when passing JSON payloads (e.g. --json '{"a": "\"x\""}').
+    // Agents rely on this when passing JSON payloads (e.g. --input '{"a": "\"x\""}').
     if (quote === "'") {
       if (char === "'") {
         quote = undefined;

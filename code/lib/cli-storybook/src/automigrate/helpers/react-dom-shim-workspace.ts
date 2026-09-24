@@ -11,6 +11,10 @@ import {
   workspaceFiles,
 } from './react-dom-shim-file.ts';
 import { analyzeReactDomShimHtml, htmlHasShimUse } from './react-dom-shim-html.ts';
+import {
+  matchesWorkspacePattern,
+  pnpmWorkspacePatterns,
+} from './react-dom-shim-workspace-patterns.ts';
 import { analyzeReactDomShimConfig } from './react-dom-shim.ts';
 import { sourceDiagnostic, sourceHasShimUse } from './react-dom-shim-source.ts';
 
@@ -38,7 +42,7 @@ type Manifest = {
 };
 
 type Edit = { filePath: string; original: string; replacement: string };
-type WorkspaceRoot = { directory: string; patterns: string[] };
+type WorkspaceRoot = { directory: string; entryManifestPath?: string; patterns: string[] };
 type ManifestItem = { filePath: string; source: string; manifest: Manifest };
 
 export type ReactDomShimWorkspaceAnalysis =
@@ -111,31 +115,6 @@ const workspacePatterns = (manifest: Manifest): string[] | undefined => {
 const hasShim = (manifest: Manifest): boolean =>
   DEPENDENCY_SECTIONS.some((section) => Boolean(manifest[section]?.[SHIM]));
 
-const matchesPattern = (path: string, pattern: string): boolean => {
-  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('**', '\\0');
-  const glob = escaped.replaceAll('*', '[^/]*').replaceAll('\\0', '.*');
-  return new RegExp(`^${glob}$`).test(path);
-};
-
-const pnpmWorkspacePatterns = (source: string): string[] | undefined => {
-  const lines = source.split('\n');
-  const packagesIndex = lines.findIndex((line) => /^packages:\s*(?:#.*)?$/.test(line));
-  if (packagesIndex === -1) return undefined;
-
-  const patterns: string[] = [];
-  for (const line of lines.slice(packagesIndex + 1)) {
-    if (!line.trim() || /^\s*#/.test(line)) continue;
-    const match = /^\s+-\s+(?:['"]([^'"]+)['"]|([^\s#]+))\s*(?:#.*)?$/.exec(line);
-    if (match) {
-      patterns.push(match[1] ?? match[2]!);
-      continue;
-    }
-    if (/^\S/.test(line)) break;
-    return undefined;
-  }
-  return patterns.length ? patterns : undefined;
-};
-
 const hasJsonShimReference = (value: JsonValue): boolean => {
   if (typeof value === 'string') return value.includes(SHIM);
   if (Array.isArray(value)) return value.some(hasJsonShimReference);
@@ -166,6 +145,7 @@ const supportedWorkspaceRoot = async (
 ): Promise<WorkspaceRoot | undefined> => {
   let directory = resolve(projectDirectory);
   let fallback: string | undefined;
+  let entryManifestPath: string | undefined;
   while (true) {
     const manifestPath = join(directory, MANIFEST);
     const manifestSource = await reads(manifestPath);
@@ -173,18 +153,21 @@ const supportedWorkspaceRoot = async (
     if (manifestSource !== undefined && !manifest) return undefined;
     if (manifest) {
       fallback ??= directory;
+      entryManifestPath ??= manifestPath;
       const patterns = workspacePatterns(manifest);
       if (patterns === undefined) return undefined;
-      if (manifest.workspaces) return { directory, patterns };
+      if (manifest.workspaces) return { directory, entryManifestPath, patterns };
     }
 
     const pnpmSource = await reads(join(directory, 'pnpm-workspace.yaml'));
     if (pnpmSource !== undefined && !pnpmWorkspacePatterns(pnpmSource)) return undefined;
     const pnpmPatterns = pnpmSource && pnpmWorkspacePatterns(pnpmSource);
-    if (pnpmPatterns) return { directory, patterns: pnpmPatterns };
+    if (pnpmPatterns) return { directory, entryManifestPath, patterns: pnpmPatterns };
 
     const parent = dirname(directory);
-    if (parent === directory) return fallback ? { directory: fallback, patterns: [] } : undefined;
+    if (parent === directory) {
+      return fallback ? { directory: fallback, entryManifestPath, patterns: [] } : undefined;
+    }
     directory = parent;
   }
 };
@@ -248,7 +231,7 @@ const manifestWorkspaceDiagnostic = (
     return `${item.filePath}: nested workspace declarations are not supported`;
   }
   const path = relative(workspaceRoot, dirname(item.filePath)).split(sep).join('/');
-  return patterns.some((pattern) => matchesPattern(path, pattern))
+  return patterns.some((pattern) => matchesWorkspacePattern(path, pattern))
     ? undefined
     : `${item.filePath}: is outside the declared workspace packages`;
 };
@@ -407,11 +390,16 @@ export const analyzeReactDomShimWorkspace = async (
       sources: [],
     };
   }
-  const { directory: workspaceRoot, patterns } = workspace;
+  const { directory: workspaceRoot, entryManifestPath, patterns } = workspace;
 
   const scan = await workspaceFiles(workspaceRoot);
   const { files } = scan;
-  const manifestPaths = files.filter((filePath) => basename(filePath) === MANIFEST).sort();
+  const manifestPaths = [
+    ...new Set([
+      ...files.filter((filePath) => basename(filePath) === MANIFEST),
+      ...(entryManifestPath ? [entryManifestPath] : []),
+    ]),
+  ].sort();
   const pnpmWorkspacePaths = files
     .filter((filePath) => basename(filePath) === 'pnpm-workspace.yaml')
     .sort();

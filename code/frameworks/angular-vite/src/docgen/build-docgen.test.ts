@@ -782,6 +782,15 @@ describe('buildDocgenPayload', () => {
       expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
 
+    it('hands off to the next provider for an unparseable story file instead of throwing', () => {
+      // Regression coverage for `parseStoryFile`'s `undefined` contract: if the CSF parse ever
+      // threw past its catch, this would fail the whole extraction instead of the quiet handoff
+      // a story file that just isn't Angular's to document deserves.
+      givenStoryFile('this is not valid CSF syntax {{{');
+
+      expect(buildDocgenPayload({ entry }, context(managerReturning(undefined)))).toBeUndefined();
+    });
+
     it('returns undefined when the story file declares no component, and says why', () => {
       givenStoryFile(`export default { title: 'Button' };`);
       const manager = managerReturning(metaFor(componentEntry()));

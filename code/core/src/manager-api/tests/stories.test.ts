@@ -44,6 +44,8 @@ const getEventMetadata = vi.mocked(getEventMetadataOriginal);
 
 const wait = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
 
+vi.mock('../stores/status.ts');
+
 vi.mock('../lib/events.ts', () => ({
   getEventMetadata: vi.fn(() => ({ sourceType: 'local' })),
 }));
@@ -1655,7 +1657,6 @@ describe('stories API', () => {
     });
 
     it('can filter on status', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2015,7 +2016,6 @@ describe('stories API', () => {
 
   describe('computeStatusFilterFn (via experimental_setFilter)', () => {
     it('passes through all stories when both included and excluded are empty', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2028,7 +2028,6 @@ describe('stories API', () => {
     });
 
     it('applies OR logic within included status filters', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2063,7 +2062,6 @@ describe('stories API', () => {
     });
 
     it('re-applies active filters on status changes without re-registering the status filter', async () => {
-      vi.mock('../stores/status');
       fullStatusStore.unset();
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -2097,7 +2095,6 @@ describe('stories API', () => {
     });
 
     it('a stream of status updates triggers a bounded number of index rebuilds', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2135,7 +2132,6 @@ describe('stories API', () => {
     });
 
     it('applies the last status update after a burst (trailing edge of the throttle)', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2175,7 +2171,6 @@ describe('stories API', () => {
     });
 
     it('does not overlap status-driven index rebuilds when a rebuild outlasts the throttle', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       try {
         fullStatusStore.unset();
@@ -2235,7 +2230,6 @@ describe('stories API', () => {
     });
 
     it('keeps rebuilding the status-filtered index after a rebuild rejection', async () => {
-      vi.mock('../stores/status');
       vi.useFakeTimers();
       const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
       try {
@@ -2287,7 +2281,6 @@ describe('stories API', () => {
     });
 
     it('applies exclude logic: story with excluded status is hidden', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
@@ -2322,7 +2315,6 @@ describe('stories API', () => {
     });
 
     it('story with no statuses is hidden when included filters are active', async () => {
-      vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;

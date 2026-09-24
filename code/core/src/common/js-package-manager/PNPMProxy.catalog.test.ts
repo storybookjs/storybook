@@ -25,7 +25,8 @@ describe('PNPMProxy catalogs', () => {
 
   beforeEach(() => {
     // Restore the real fs so the proxy can be constructed, then redirect fs to memfs.
-    vi.resetAllMocks();
+    vi.mocked(readFileSync).mockReset();
+    vi.mocked(writeFileSync).mockReset();
     pnpmProxy = new PNPMProxy();
     vol.reset();
     vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);

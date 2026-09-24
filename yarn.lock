@@ -34969,7 +34969,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript-5@npm:typescript@5.9.3, typescript@npm:5.9.3":
+"typescript-5@npm:typescript@5.9.3":
   version: 5.9.3
   resolution: "typescript@npm:5.9.3"
   bin:

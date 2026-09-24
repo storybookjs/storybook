@@ -100,6 +100,42 @@ load(['@storybook', 'react-dom-shim'].join('/'));
     });
   });
 
+  it.each([
+    [
+      'a CommonJS module-object factory',
+      `const builtin = require('node:module');
+const load = builtin.createRequire(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
+      'a loader resolve member call',
+      `import { createRequire } from 'node:module';
+const load = createRequire(import.meta.url);
+load.resolve(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
+      'a computed loader resolve member call',
+      `import { createRequire } from 'node:module';
+const load = createRequire(import.meta.url);
+load['resolve'](['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+  ])('refuses unresolved loads through %s', async (_description, source) => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/loader.ts': source,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/loader.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
   it('refuses executable Vue template expressions that cannot be proven inert', async () => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,

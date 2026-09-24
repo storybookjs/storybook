@@ -81,7 +81,7 @@ export function getEvalContext(): EvalContext {
 }
 
 // Review mode of this run. Plugin runs are always review-on — the addon
-// enables review by default for the `storybook ai` CLI channel — while MCP
+// enables review by default for the `storybook tools` CLI channel — while MCP
 // runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
 // the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
 // files branch on this — with review on, visual work must end in a published
@@ -469,7 +469,7 @@ export function findDevServerKillCommands(commands: string[], navigatedUrls: str
 // URLs the in-app browser navigated to, from the codex raw transcript: each
 // successful node_repl `js` tool call is scanned for `goto('<url>')` string
 // literals in its code argument. This mirrors how plugin workflow calls are
-// parsed out of `storybook ai` shell commands. A dynamically composed URL
+// parsed out of `storybook tools` shell commands. A dynamically composed URL
 // (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
 // loud rather than as a false-pass.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {

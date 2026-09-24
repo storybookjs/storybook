@@ -156,7 +156,7 @@ const meta = {
 } satisfies Meta<YourComponentProps>;
 
 export default meta;
-type Story = StoryObj<YourComponentProps>;
+type Story = StoryObj<typeof meta>;
 
 export const FirstStory: Story = {
   args: {

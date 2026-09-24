@@ -1,4 +1,4 @@
-import type { ComponentProps, FC, MouseEvent, ReactElement, SyntheticEvent } from 'react';
+import type { ComponentProps, FC, ReactElement, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
@@ -20,6 +20,7 @@ import type { Link } from '../../../components/components/tooltip/TooltipLinkLis
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Shortcut } from '../Shortcut.tsx';
 import { StatusButton } from './StatusButton.tsx';
+import { TagEditor } from './TagEditor.tsx';
 import type { ExcludesNull } from './Tree.tsx';
 
 const empty = {
@@ -46,6 +47,7 @@ export const useContextMenu = (
 ) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const [isEditingTags, setIsEditingTags] = useState(false);
 
   const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
   const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -89,6 +91,18 @@ export const useContextMenu = (
           copyButtonProps.onClick(e);
         },
       });
+
+      if ('importPath' in context && context.importPath) {
+        defaultLinks.push({
+          id: 'add-story-tag',
+          title: 'Manage tag',
+          onClick: (e: SyntheticEvent) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsEditingTags(true);
+          },
+        });
+      }
     }
 
     return defaultLinks;
@@ -105,6 +119,7 @@ export const useContextMenu = (
       },
       onClose: () => {
         setIsOpen(false);
+        setIsEditingTags(false);
       },
     };
   }, []);
@@ -142,8 +157,29 @@ export const useContextMenu = (
           placement="bottom-end"
           defaultVisible={false}
           visible={isOpen}
-          onVisibleChange={setIsOpen}
-          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          onVisibleChange={(visible) => {
+            setIsOpen(visible);
+
+            if (!visible) {
+              setIsEditingTags(false);
+            }
+          }}
+          popover={
+            isEditingTags ? (
+              <TagEditor
+                context={context}
+                onCancel={() => {
+                  setIsEditingTags(false);
+                }}
+                onSaved={() => {
+                  setIsEditingTags(false);
+                  setIsOpen(false);
+                }}
+              />
+            ) : (
+              <LiveContextMenu context={context} links={[...topLinks, ...links]} />
+            )
+          }
           hasChrome={true}
           padding={0}
         >
@@ -160,7 +196,17 @@ export const useContextMenu = (
         </PopoverProvider>
       ) : null,
     };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks, buttonStatus, menuIcon]);
+  }, [
+    context,
+    handlers,
+    isOpen,
+    isEditingTags,
+    shouldRender,
+    links,
+    topLinks,
+    buttonStatus,
+    menuIcon,
+  ]);
 };
 
 /**

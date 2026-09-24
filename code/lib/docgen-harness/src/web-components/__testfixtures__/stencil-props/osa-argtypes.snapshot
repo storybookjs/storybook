@@ -1,0 +1,171 @@
+{
+  "aria-label-text": {
+    "description": "Attribute name differs from the field.",
+    "name": "aria-label-text",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string | undefined",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "hovered": {
+    "description": "Internal hover state.",
+    "name": "hovered",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "-1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "labelText": {
+    "description": "Attribute name differs from the field.",
+    "name": "labelText",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string | undefined",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "labels": {
+    "description": "Complex prop, kept as an object.",
+    "name": "labels",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "{}",
+      },
+      "type": {
+        "summary": "Record<number, string>",
+      },
+    },
+    "type": {
+      "name": "object",
+      "value": {},
+    },
+  },
+  "max": {
+    "description": "Maximum number of stars.",
+    "name": "max",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "5",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "onRatingChange": {
+    "action": {
+      "name": "ratingChange",
+    },
+    "name": "onRatingChange",
+    "table": {
+      "disable": true,
+    },
+  },
+  "onStencilReset": {
+    "action": {
+      "name": "stencil-reset",
+    },
+    "name": "onStencilReset",
+    "table": {
+      "disable": true,
+    },
+  },
+  "ratingChange": {
+    "description": "Emitted when the rating changes.",
+    "name": "ratingChange",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "EventEmitter<number>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "stencil-reset": {
+    "description": "Emitted under a custom event name.",
+    "name": "stencil-reset",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "EventEmitter<void>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "value": {
+    "description": "Current rating.",
+    "name": "value",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "0",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "variant": {
+    "description": "Visual variant.",
+    "name": "variant",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'full'",
+      },
+      "type": {
+        "summary": "'compact' | 'full'",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "compact",
+        "full",
+      ],
+    },
+  },
+}

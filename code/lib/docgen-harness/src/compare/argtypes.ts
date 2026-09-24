@@ -337,8 +337,9 @@ const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 
 // Legacy engines park what they cannot resolve in `other`, so its value is free text naming a real
 // type rather than a shape. The legacy Web Components runtime also wrote free type text: under
-// `legacyManifestRuntime`, scalar names match case-insensitively and function-looking text resolves
-// to `function`. Anything else falls through to a reviewed re-record.
+// `legacyManifestRuntime`, `void` remains unresolved, nullable scalar unions resolve to the scalar,
+// object-like text resolves to `object`, and function-looking text resolves to `function`.
+// Anything else falls through to a reviewed re-record.
 //
 // Not the perf engine's `isOpaque`, which counts real type names an engine never looked through:
 // `undefined` is an extraction-failure marker here and a resolved type name there.
@@ -360,14 +361,71 @@ function resolvesLegacyManifestRuntimeStub(text: string, candidate: SBType): boo
   if (text === 'void') {
     return true;
   }
+  const nonNullableText = dropNullableLegacyUnionMembers(text);
+  if (candidate.name === 'object' && isObjectLikeLegacyText(nonNullableText)) {
+    return true;
+  }
   if (
     LEGACY_MANIFEST_RUNTIME_SCALARS.has(candidate.name) &&
-    text.toLowerCase() === candidate.name
+    nonNullableText.toLowerCase() === candidate.name
   ) {
     return true;
   }
-  return candidate.name === 'function' && (text.includes('=>') || /\bFunction\b/.test(text));
+  return (
+    candidate.name === 'function' &&
+    (nonNullableText.includes('=>') || /\bFunction\b/.test(nonNullableText))
+  );
 }
+
+const dropNullableLegacyUnionMembers = (text: string): string =>
+  splitTopLevelUnion(text)
+    .filter((member) => member !== 'undefined' && member !== 'null')
+    .join(' | ');
+
+const isObjectLikeLegacyText = (text: string): boolean =>
+  text.includes('<') || text.startsWith('{') || text.startsWith('[');
+
+const splitTopLevelUnion = (text: string): string[] => {
+  const members: string[] = [];
+  let start = 0;
+  let angleDepth = 0;
+  let braceDepth = 0;
+  let bracketDepth = 0;
+  let parenDepth = 0;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '<') {
+      angleDepth += 1;
+    } else if (char === '>') {
+      angleDepth = Math.max(0, angleDepth - 1);
+    } else if (char === '{') {
+      braceDepth += 1;
+    } else if (char === '}') {
+      braceDepth = Math.max(0, braceDepth - 1);
+    } else if (char === '[') {
+      bracketDepth += 1;
+    } else if (char === ']') {
+      bracketDepth = Math.max(0, bracketDepth - 1);
+    } else if (char === '(') {
+      parenDepth += 1;
+    } else if (char === ')') {
+      parenDepth = Math.max(0, parenDepth - 1);
+    } else if (
+      char === '|' &&
+      angleDepth === 0 &&
+      braceDepth === 0 &&
+      bracketDepth === 0 &&
+      parenDepth === 0
+    ) {
+      members.push(text.slice(start, index).trim());
+      start = index + 1;
+    }
+  }
+
+  members.push(text.slice(start).trim());
+  return members;
+};
 
 const isPopulatedStructure = (candidate: SBType): boolean => {
   switch (candidate.name) {

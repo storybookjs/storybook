@@ -188,6 +188,7 @@ npx -y @custom-elements-manifest/analyzer@0.11.0 analyze --litelement
 ```
 
 Drop `--litelement` for vanilla cases.
+Use `--fast` when capturing `fast-attributes` and `--stencil` when capturing `stencil-props`; copy `.tsx` component sources into the staging directory too.
 Move the emitted `custom-elements.json` back into the fixture directory and make sure `modules[].path` records relative file names only.
 
 ### Manifest shape variants (web-components)
@@ -196,6 +197,7 @@ The default capture stays at CEM 1.0.0 because the analyzer still writes that ve
 The 2.1.0 variant is the same capture plus additive fields (`cssStates`, `readonly`), so a diff between `argtypes.snapshot` and `v2-argtypes.snapshot` shows exactly what a newer manifest buys.
 The WCA variant records the deprecated web-component-analyzer shape that the runtime still accepts.
 `lit-toolkit-shapes/custom-elements.json` additionally carries a hand-added `parsedType` on the `size` member, mirroring the wc-toolkit type-parser plugin output the OSA mapper reads for alias unions.
+The `stencil-props` capture shows that analyzer 0.11.0 emits attributes for Stencil `@Prop` fields without type annotations without adding `type`, does not read the Stencil `reflect` option as `reflects` or `attribute` on the member, and keeps Stencil `render` as a method. The `fast-attributes` capture shows that FAST `@attr({ mode: 'boolean' })` carries no boolean marker beyond the field type, and FAST events appear only through class-level `@fires`.
 
 ### Server-side recorder (web-components)
 

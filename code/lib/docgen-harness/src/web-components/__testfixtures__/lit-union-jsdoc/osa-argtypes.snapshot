@@ -2,7 +2,6 @@
   "label": {
     "description": "Current label.",
     "name": "label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -19,11 +18,13 @@
   "old-label": {
     "description": "Old label field.",
     "name": "old-label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
         "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use label instead.",
       },
       "type": {
         "summary": "string",
@@ -36,11 +37,13 @@
   "oldLabel": {
     "description": "Old label field.",
     "name": "oldLabel",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
         "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use label instead.",
       },
       "type": {
         "summary": "string",
@@ -53,7 +56,6 @@
   "variant": {
     "description": "Visual variant.",
     "name": "variant",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -64,7 +66,12 @@
       },
     },
     "type": {
-      "name": "'primary' | 'secondary' | 'ghost'",
+      "name": "enum",
+      "value": [
+        "primary",
+        "secondary",
+        "ghost",
+      ],
     },
   },
 }

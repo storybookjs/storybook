@@ -1,6 +1,6 @@
 import type { Options } from 'storybook/internal/types';
 
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -17,6 +17,7 @@ vi.mock('storybook/internal/common', { spy: true });
 beforeEach(() => {
   vol.reset();
   vi.mocked(findFilesUp).mockReturnValue([]);
+  vi.mocked(existsSync).mockImplementation(memfs.existsSync as typeof existsSync);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
 });
 
@@ -59,6 +60,34 @@ describe('experimental_docgenProvider', () => {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
           manifestPaths: [resolve('/workspace/dist/custom-elements.json')],
+          typeProperty: 'parsedType',
+        },
+      },
+    ]);
+  });
+
+  it('passes an explicit docgen type property to the worker', async () => {
+    vol.fromNestedJSON({
+      '/workspace/.storybook/custom-elements.json': JSON.stringify({ modules: [] }),
+    });
+
+    expect(
+      await experimental_docgenProvider(
+        [],
+        optionsWith(
+          { experimentalDocgenServer: true },
+          {
+            customElementsManifest: 'custom-elements.json',
+            docgen: { typeProperty: 'resolvedType' },
+          }
+        )
+      )
+    ).toEqual([
+      {
+        moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
+        options: {
+          manifestPaths: [resolve('/workspace/.storybook/custom-elements.json')],
+          typeProperty: 'resolvedType',
         },
       },
     ]);

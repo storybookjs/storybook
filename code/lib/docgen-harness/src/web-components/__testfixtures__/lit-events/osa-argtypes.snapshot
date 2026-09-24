@@ -54,7 +54,6 @@
   "value": {
     "description": "Current text value.",
     "name": "value",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

@@ -1,8 +1,8 @@
 {
   "config": {
+    "control": false,
     "description": "Rendering options for the list.",
     "name": "config",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -13,13 +13,13 @@
       },
     },
     "type": {
-      "name": "PanelConfig",
+      "name": "other",
+      "value": "PanelConfig",
     },
   },
   "items": {
     "description": "Items rendered by the list.",
     "name": "items",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -30,13 +30,16 @@
       },
     },
     "type": {
-      "name": "Item[]",
+      "name": "array",
+      "value": {
+        "name": "other",
+        "value": "Item",
+      },
     },
   },
   "label": {
     "description": "Visible label for the list.",
     "name": "label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

@@ -112,3 +112,21 @@ export const analyzeReactDomShimHtml = (
   }
   return undefined;
 };
+
+export const htmlHasShimUse = (
+  source: string,
+  sourceHasShimUse: (source: string) => boolean
+): boolean => {
+  const document = parse(source);
+  return htmlElements(document).some((element) => {
+    const content = element.tagName === 'script' ? htmlScript(element) : '';
+    return (
+      element.attrs.some(({ value }) => value.includes(SHIM)) ||
+      content.includes(SHIM) ||
+      sourceHasShimUse(content) ||
+      element.attrs
+        .filter(({ name, value }) => eventHandler(name) || executableUrl(value))
+        .some(({ value }) => sourceHasShimUse(value))
+    );
+  });
+};

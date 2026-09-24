@@ -10,9 +10,9 @@ import {
   workspaceFileKind,
   workspaceFiles,
 } from './react-dom-shim-file.ts';
-import { analyzeReactDomShimHtml } from './react-dom-shim-html.ts';
+import { analyzeReactDomShimHtml, htmlHasShimUse } from './react-dom-shim-html.ts';
 import { analyzeReactDomShimConfig } from './react-dom-shim.ts';
-import { sourceDiagnostic } from './react-dom-shim-source.ts';
+import { sourceDiagnostic, sourceHasShimUse } from './react-dom-shim-source.ts';
 
 const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
@@ -39,7 +39,7 @@ type Edit = { filePath: string; original: string; replacement: string };
 type WorkspaceRoot = { directory: string; patterns: string[] };
 
 export type ReactDomShimWorkspaceAnalysis =
-  | { kind: 'none'; workspaceRoot: string }
+  | { applicable: false; kind: 'none'; workspaceRoot: string }
   | { kind: 'safe'; workspaceRoot: string; edits: Edit[] }
   | {
       kind: 'manual';
@@ -215,9 +215,6 @@ const manifestEdit = (filePath: string, source: string, manifest: Manifest): Edi
   return { filePath, original: source, replacement: `${JSON.stringify(manifest, null, 2)}\n` };
 };
 
-const hasMigrationSignal = (filePath: string, diagnostic: string | undefined) =>
-  diagnostic?.slice(filePath.length + 2).includes('react-dom-shim') ?? false;
-
 export const analyzeReactDomShimWorkspace = async (
   projectDirectory: string
 ): Promise<ReactDomShimWorkspaceAnalysis> => {
@@ -307,26 +304,14 @@ export const analyzeReactDomShimWorkspace = async (
     const source = await reads(filePath);
     if (source === undefined) continue;
     const kind = workspaceFileKind(filePath);
-    const diagnostic =
-      kind === 'html'
-        ? analyzeReactDomShimHtml(
-            source,
-            filePath,
-            sourceDiagnostic,
-            analyzeReactDomShimData,
-            () => undefined
-          )
-        : kind === 'data'
-          ? analyzeReactDomShimData(source, filePath)
-          : kind === 'source'
-            ? sourceDiagnostic(source, filePath)
-            : undefined;
-    applicable ||= hasMigrationSignal(filePath, diagnostic);
+    applicable ||= sourceHasShimUse(source, filePath);
+    applicable ||=
+      kind === 'html' && htmlHasShimUse(source, (content) => sourceHasShimUse(content, filePath));
     if (CONFIG_FILE.test(filePath)) {
       applicable ||= analyzeReactDomShimConfig(source, filePath).kind === 'changed';
     }
   }
-  if (!applicable) return { kind: 'none', workspaceRoot };
+  if (!applicable) return { applicable: false, kind: 'none', workspaceRoot };
   if (!scan.complete) {
     return {
       kind: 'manual',
@@ -413,7 +398,9 @@ export const analyzeReactDomShimWorkspace = async (
       sources,
     };
   }
-  if (!shimManifests.length && !sourceEdits.length) return { kind: 'none', workspaceRoot };
+  if (!shimManifests.length && !sourceEdits.length) {
+    return { applicable: false, kind: 'none', workspaceRoot };
+  }
   return {
     kind: 'safe',
     workspaceRoot,

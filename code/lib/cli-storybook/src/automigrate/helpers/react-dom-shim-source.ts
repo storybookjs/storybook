@@ -35,9 +35,16 @@ const isModuleFactory = (node: t.Node | null | undefined, loaders: Set<string>) 
   loaders.has(node.callee.name) &&
   staticString(node.arguments[0]) === 'node:module';
 
-const loaderNames = (program: t.Program): Set<string> => {
+const loaderNames = (file: t.File): Set<string> => {
+  const { program } = file;
   const loaders = new Set(['require']);
   const factories = new Set<string>();
+  const declarations: t.VariableDeclarator[] = [];
+  traverse(file, {
+    VariableDeclarator(path) {
+      declarations.push(path.node);
+    },
+  });
   for (const statement of program.body) {
     if (t.isImportDeclaration(statement) && statement.source.value === 'node:module') {
       for (const specifier of statement.specifiers) {
@@ -46,38 +53,37 @@ const loaderNames = (program: t.Program): Set<string> => {
         }
       }
     }
-    if (!t.isVariableDeclaration(statement)) continue;
-    for (const declaration of statement.declarations) {
-      if (t.isObjectPattern(declaration.id) && isModuleFactory(declaration.init, loaders)) {
-        for (const property of declaration.id.properties) {
-          if (
-            t.isObjectProperty(property) &&
-            t.isIdentifier(property.key, { name: 'createRequire' }) &&
-            t.isIdentifier(property.value)
-          ) {
-            factories.add(property.value.name);
-          }
+  }
+  for (const declaration of declarations) {
+    if (t.isObjectPattern(declaration.id) && isModuleFactory(declaration.init, loaders)) {
+      for (const property of declaration.id.properties) {
+        if (
+          t.isObjectProperty(property) &&
+          t.isIdentifier(property.key, { name: 'createRequire' }) &&
+          t.isIdentifier(property.value)
+        ) {
+          factories.add(property.value.name);
         }
-        continue;
       }
-      if (!t.isIdentifier(declaration.id)) continue;
-      if (t.isIdentifier(declaration.init) && loaders.has(declaration.init.name)) {
-        loaders.add(declaration.id.name);
-      } else if (
-        t.isMemberExpression(declaration.init) &&
-        t.isIdentifier(declaration.init.object, { name: 'module' }) &&
-        t.isIdentifier(declaration.init.property, { name: 'require' })
-      ) {
-        loaders.add(declaration.id.name);
-      } else if (t.isIdentifier(declaration.init) && factories.has(declaration.init.name)) {
-        factories.add(declaration.id.name);
-      } else if (
-        t.isCallExpression(declaration.init) &&
-        t.isIdentifier(declaration.init.callee) &&
-        factories.has(declaration.init.callee.name)
-      ) {
-        loaders.add(declaration.id.name);
-      }
+      continue;
+    }
+    if (!t.isIdentifier(declaration.id)) continue;
+    if (t.isIdentifier(declaration.init) && loaders.has(declaration.init.name)) {
+      loaders.add(declaration.id.name);
+    } else if (
+      t.isMemberExpression(declaration.init) &&
+      t.isIdentifier(declaration.init.object, { name: 'module' }) &&
+      t.isIdentifier(declaration.init.property, { name: 'require' })
+    ) {
+      loaders.add(declaration.id.name);
+    } else if (t.isIdentifier(declaration.init) && factories.has(declaration.init.name)) {
+      factories.add(declaration.id.name);
+    } else if (
+      t.isCallExpression(declaration.init) &&
+      t.isIdentifier(declaration.init.callee) &&
+      factories.has(declaration.init.callee.name)
+    ) {
+      loaders.add(declaration.id.name);
     }
   }
   return loaders;
@@ -104,7 +110,7 @@ const moduleLoadDiagnostic = (
 const scriptDiagnostic = (source: string, filePath: string): string | undefined => {
   try {
     const ast = babelParse(source);
-    const loaders = loaderNames(ast.program);
+    const loaders = loaderNames(ast);
     let diagnostic: string | undefined;
     traverse(ast, {
       ImportDeclaration(path) {
@@ -183,13 +189,77 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
   }
 };
 
-export const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
-  if (!COMPONENT_FILE.test(filePath)) return scriptDiagnostic(source, filePath);
+const componentDiagnostic = (source: string, filePath: string): string | undefined => {
   const scripts = [...source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
   if (source.includes('<script') && !scripts.length) {
     return `${filePath}: cannot parse source during workspace scan`;
   }
-  return scripts
-    .map((script) => scriptDiagnostic(script[1], filePath))
-    .find((diagnostic) => diagnostic !== undefined);
+  for (const script of scripts) {
+    const diagnostic = scriptDiagnostic(script[1], filePath);
+    if (diagnostic) return diagnostic;
+  }
+  const template = source.replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi, '');
+  const expressions = template.matchAll(/\s(?:@[\w:-]+|v-on:[\w:-]+|on[\w-]+)=(['"])(.*?)\1/gi);
+  for (const expression of expressions) {
+    const diagnostic = scriptDiagnostic(expression[2], filePath);
+    if (diagnostic) return diagnostic;
+  }
+  return template.trim()
+    ? `${filePath}: cannot prove absence in component template during workspace scan`
+    : undefined;
+};
+
+const scriptHasShimUse = (source: string): boolean => {
+  try {
+    const ast = babelParse(source);
+    let hasShimUse = false;
+    traverse(ast, {
+      ImportDeclaration(path) {
+        hasShimUse ||= isShimSource(path.node.source.value);
+      },
+      ExportNamedDeclaration(path) {
+        hasShimUse ||= Boolean(path.node.source && isShimSource(path.node.source.value));
+      },
+      ExportAllDeclaration(path) {
+        hasShimUse ||= isShimSource(path.node.source.value);
+      },
+      TSImportEqualsDeclaration(path) {
+        const reference = path.node.moduleReference;
+        hasShimUse ||=
+          t.isTSExternalModuleReference(reference) && isShimSource(reference.expression.value);
+      },
+      CallExpression(path) {
+        hasShimUse ||= path.node.arguments.some(
+          (argument) => t.isExpression(argument) && hasShimReference(argument)
+        );
+      },
+      OptionalCallExpression(path) {
+        hasShimUse ||= path.node.arguments.some(
+          (argument) => t.isExpression(argument) && hasShimReference(argument)
+        );
+      },
+      ImportExpression(path) {
+        hasShimUse ||= hasShimReference(path.node.source);
+      },
+    });
+    return hasShimUse;
+  } catch {
+    return false;
+  }
+};
+
+export const sourceHasShimUse = (source: string, filePath: string): boolean => {
+  if (!COMPONENT_FILE.test(filePath)) return scriptHasShimUse(source);
+  const scripts = [...source.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/gi)];
+  const template = source.replace(/<script(?:\s[^>]*)?>[\s\S]*?<\/script>/gi, '');
+  const expressions = template.matchAll(/\s(?:@[\w:-]+|v-on:[\w:-]+|on[\w-]+)=(['"])(.*?)\1/gi);
+  return [
+    ...scripts.map((script) => script[1]),
+    ...[...expressions].map((expression) => expression[2]),
+  ].some(scriptHasShimUse);
+};
+
+export const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
+  if (!COMPONENT_FILE.test(filePath)) return scriptDiagnostic(source, filePath);
+  return componentDiagnostic(source, filePath);
 };

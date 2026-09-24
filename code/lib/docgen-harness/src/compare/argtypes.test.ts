@@ -132,6 +132,60 @@ describe('compareArgTypes', () => {
       expectedViolations: [],
     },
     {
+      input: 'legacy manifest runtime resolves nullable scalar text',
+      output: 'passes',
+      baseline: {
+        label: {
+          name: 'label',
+          type: { name: 'other', value: 'string | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        label: {
+          name: 'label',
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves object-like type text',
+      output: 'passes',
+      baseline: {
+        labels: {
+          name: 'labels',
+          type: { name: 'other', value: 'Record<number, string>' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        labels: {
+          name: 'labels',
+          type: { name: 'object', value: {} },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime does not resolve nullable scalar text to object',
+      output: 'type-fidelity',
+      baseline: {
+        label: {
+          name: 'label',
+          type: { name: 'other', value: 'string | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        label: {
+          name: 'label',
+          type: { name: 'object', value: {} },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'type-fidelity' })],
+    },
+    {
       input: 'legacy manifest runtime resolves function-text stubs',
       output: 'passes',
       baseline: {

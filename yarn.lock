@@ -4281,6 +4281,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@microsoft/fast-element@npm:3.0.2":
+  version: 3.0.2
+  resolution: "@microsoft/fast-element@npm:3.0.2"
+  checksum: 10c0/a1fcb4441de076614f2d92e096f18303b2eff4f76c6cbc915a1400d5ef00c1669ff42c93d821b36c222e3da862926f066038a060a30d60525f0ae6dc3881aeec
+  languageName: node
+  linkType: hard
+
 "@modelcontextprotocol/sdk@npm:^1.22.0":
   version: 1.29.0
   resolution: "@modelcontextprotocol/sdk@npm:1.29.0"
@@ -10139,6 +10146,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@compodoc/compodoc": "npm:2.0.0"
+    "@microsoft/fast-element": "npm:3.0.2"
     "@storybook/addon-svelte-csf": "npm:^5.1.2"
     "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"

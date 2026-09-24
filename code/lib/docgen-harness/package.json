@@ -38,6 +38,7 @@
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@compodoc/compodoc": "2.0.0",
+    "@microsoft/fast-element": "3.0.2",
     "@storybook/addon-svelte-csf": "^5.1.2",
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",

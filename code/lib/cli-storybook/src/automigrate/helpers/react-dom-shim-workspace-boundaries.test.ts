@@ -299,6 +299,20 @@ const load = factory(import.meta.url);
 load(['@storybook', 'react-dom-shim'].join('/'));
 `,
     ],
+    [
+      'a TypeScript module-object import assignment',
+      `import nodeModule = require('node:module');
+const load = nodeModule.createRequire(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
+      'an ambient CommonJS module-object require extraction',
+      `const nodeModule = module;
+const load = nodeModule.require;
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
   ])('refuses %s', async (_description, source) => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,

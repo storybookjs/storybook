@@ -10,6 +10,7 @@ import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages.ts';
+import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
 type PackageMetadata = {
@@ -102,6 +103,13 @@ export const upgradeStorybookRelatedDependencies = {
           beforeVersion === null ||
           afterVersion === null ||
           allDependencies[packageName] === null
+        ) {
+          return false;
+        }
+
+        if (
+          packageName === 'msw-storybook-addon' &&
+          crossesVersionBoundary(beforeVersion, afterVersion, '3.0.0')
         ) {
           return false;
         }

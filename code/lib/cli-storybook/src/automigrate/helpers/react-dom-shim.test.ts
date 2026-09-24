@@ -141,6 +141,60 @@ export default config;
     `);
   });
 
+  it('removes the preset from an exported typed config binding', () => {
+    const source = `import type { StorybookConfig } from '@storybook/react-vite';
+
+const config: StorybookConfig = {
+  addons: ['@storybook/react-dom-shim/preset'],
+  framework: '@storybook/react-vite',
+};
+
+export default config;
+`;
+
+    expect(analyzeReactDomShimConfig(source, 'main.ts')).toMatchInlineSnapshot(`
+      {
+        "kind": "changed",
+        "source": "import type { StorybookConfig } from '@storybook/react-vite';
+
+      const config: StorybookConfig = {
+        addons: [],
+        framework: '@storybook/react-vite',
+      };
+
+      export default config;
+      ",
+      }
+    `);
+  });
+
+  it('removes the alias from a defineConfig call', () => {
+    const source = `import { defineConfig } from 'vitest/config';
+
+export default defineConfig({
+  resolve: {
+    alias: {
+      '@storybook/react-dom-shim': '@storybook/react-dom-shim/dist/react-16',
+    },
+  },
+});
+`;
+
+    expect(analyzeReactDomShimConfig(source, 'vitest.config.ts')).toMatchInlineSnapshot(`
+      {
+        "kind": "changed",
+        "source": "import { defineConfig } from 'vitest/config';
+
+      export default defineConfig({
+        resolve: {
+          alias: {},
+        },
+      });
+      ",
+      }
+    `);
+  });
+
   it.each([
     ["import { renderElement } from '@storybook/react-dom-shim';", 'main.ts'],
     ["export { renderElement } from '@storybook/react-dom-shim';", 'main.ts'],

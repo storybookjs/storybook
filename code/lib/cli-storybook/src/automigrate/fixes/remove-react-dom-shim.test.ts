@@ -75,6 +75,9 @@ describe('removeReactDomShim', () => {
         '.storybook': {
           'main.ts': `export default { addons: ['@storybook/react-dom-shim/preset', '@storybook/addon-essentials'] };`,
         },
+        'package-lock.json': JSON.stringify({
+          packages: { 'node_modules/@storybook/react-dom-shim': { version: '10.5.10' } },
+        }),
       },
     });
 
@@ -88,6 +91,7 @@ describe('removeReactDomShim', () => {
     expect(vol.toJSON()).toMatchInlineSnapshot(`
 {
   "/project/.storybook/main.ts": "export default { addons: ['@storybook/addon-essentials'] };",
+  "/project/package-lock.json": "{\"packages\":{\"node_modules/@storybook/react-dom-shim\":{\"version\":\"10.5.10\"}}}",
   "/project/package.json": "{\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
 }
 `);

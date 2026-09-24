@@ -176,13 +176,19 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
         {codeFrame ? (
           <>
             {'\n'}
-            {codeFrame.lines.map((line, index) =>
-              index === codeFrame.lines.length - 1 ? (
-                <CaretLine key={line}>{line}</CaretLine>
+            {codeFrame.lines.map((line, index) => {
+              // The contract's `caret` is file-absolute — it carries no index into `lines` —
+              // and `parseCodeFrame` emits exactly one line, the caret line, so the caret is
+              // the last line by contract, not by coincidence. Multi-line context frames need
+              // a contract-side caret index first. Key by index: recursive stacks repeat
+              // frame lines and content keys collide.
+              const isCaretLine = index === codeFrame.lines.length - 1;
+              return isCaretLine ? (
+                <CaretLine key={index}>{line}</CaretLine>
               ) : (
-                <React.Fragment key={line}>{line}</React.Fragment>
-              )
-            )}
+                <React.Fragment key={index}>{line}</React.Fragment>
+              );
+            })}
           </>
         ) : null}
       </Diagnostics>

@@ -7,6 +7,7 @@ import {
 } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
+import { detectAgent } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
@@ -36,11 +37,11 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
       return null;
     }
 
-    if (
-      !getFieldsForGetAbsolutePathWrapper(config).some((node) =>
-        isGetAbsolutePathWrapperNecessary(node)
-      )
-    ) {
+    const needsWrapper = getFieldsForGetAbsolutePathWrapper(config).some((node) =>
+      isGetAbsolutePathWrapperNecessary(node)
+    );
+
+    if (!needsWrapper && !detectAgent()) {
       return null;
     }
 

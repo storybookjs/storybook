@@ -82,6 +82,48 @@ load(['@storybook', 'react-dom-shim'].join('/'));
     });
   });
 
+  it.each([
+    [
+      'a named factory optional call',
+      `import { createRequire } from 'node:module';
+const load = createRequire?.(import.meta.url);
+`,
+    ],
+    [
+      'an aliased factory optional call',
+      `import { createRequire } from 'node:module';
+const factory = createRequire;
+const load = factory?.(import.meta.url);
+`,
+    ],
+    [
+      'a namespace factory optional call',
+      `import * as nodeModule from 'node:module';
+const load = nodeModule.createRequire?.(import.meta.url);
+`,
+    ],
+    [
+      'an optional namespace factory member',
+      `import * as nodeModule from 'node:module';
+const load = nodeModule?.createRequire?.(import.meta.url);
+`,
+    ],
+  ])('refuses unresolved loads through %s', async (_description, declaration) => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/optional-factory.ts': `${declaration}const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/optional-factory.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
   it('refuses nested loader aliases with unresolved module specifiers', async () => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,

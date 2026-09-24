@@ -708,6 +708,8 @@ Every warning about an entry names the service, the stamps, the paths, and the a
 
 An entry is retained while it is younger than 15 seconds **or** among the newest 256, whichever keeps it longer. Eviction is lazy on append. There is no byte cap. Bounds are a runtime option with those defaults; peers never need to agree on the window. The Vector never evicts.
 
+Both halves are needed. The age half places a concurrent entry that arrives late during a burst. The count half places one that arrives late after a quiet period, such as when two sides wrote while cut off from each other. An entry the window cannot place is dropped and repaired through a snapshot, but a snapshot only repairs a runtime that is behind. When each side has writes the other lacks, neither side is behind, so no reply comes and the two sides stay apart. Keeping only entries that are both young and among the newest 256 saves memory, but it breaks convergence in exactly that case. The Log keeps each entry's forward ops for redo, so an entry that wrote a large value, such as the full docgen map, stays in memory until it is older than 15 seconds and 256 later entries have pushed it out.
+
 Eviction keeps young entries, so it is not a prefix cut: an old entry in the middle can go while a younger entry with a lower stamp stays. The window floor is therefore the newest evicted stamp, not the oldest retained one.
 
 ### Bootstrap and repair

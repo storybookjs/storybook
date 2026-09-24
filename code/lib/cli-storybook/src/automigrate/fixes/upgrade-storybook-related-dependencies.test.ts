@@ -121,4 +121,26 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       }
     `);
   });
+
+  it('does not upgrade the removed react-dom shim package', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([
+      {
+        packageName: '@storybook/react-dom-shim',
+        packageVersion: '10.5.10',
+        availableUpgrade: '11.0.0-alpha.1',
+        hasIncompatibleDependencies: true,
+      },
+    ]);
+
+    const latestVersion = vi.fn().mockResolvedValue('11.0.0-alpha.1');
+    const packageManager = {
+      getAllDependencies: () => ({ '@storybook/react-dom-shim': '10.5.10' }),
+      latestVersion,
+      getInstalledVersion: vi.fn().mockResolvedValue('10.5.10'),
+      packageJsonPaths: ['package.json'],
+    };
+
+    await expect(check({ packageManager })).resolves.toBeNull();
+    expect(latestVersion).not.toHaveBeenCalled();
+  });
 });

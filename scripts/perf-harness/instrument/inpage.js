@@ -117,7 +117,10 @@
     window.addEventListener(
       'keydown',
       (event) => {
-        if (window.__perf.trackKeys) {
+        // Only a real key press starts an interaction. react-aria's tree and grid rows dispatch a
+        // copy of every ArrowUp/ArrowDown to their parent (untrusted), which would split one press
+        // into two interactions.
+        if (window.__perf.trackKeys && event.isTrusted) {
           begin(`key:${event.key}`, performance.timeOrigin + event.timeStamp);
         }
       },

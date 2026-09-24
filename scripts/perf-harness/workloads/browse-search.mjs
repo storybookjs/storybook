@@ -12,6 +12,23 @@ const RENDER_EVENTS = [
   'playFunctionThrewException',
 ];
 
+// The tree row that arrow keys moved to, so runs can check that both builds moved equally far.
+// The react-aria tree moves focus. The older tree keeps focus and marks the row with an emotion
+// Global rule `[data-ref-id=…][data-item-id=…]:not([data-selected="true"])`.
+function treeCursorId() {
+  const focused = document.activeElement?.closest?.('#storybook-explorer-tree [data-item-id]');
+  const rules = [...document.styleSheets].flatMap((sheet) => {
+    try {
+      return [...sheet.cssRules];
+    } catch {
+      return [];
+    }
+  });
+  const highlightRule = /\[data-item-id="([^"]+)"\]:not\(\[data-selected="true"\]\)/;
+  const highlight = rules.map((rule) => highlightRule.exec(rule.selectorText ?? '')).find(Boolean);
+  return highlight?.[1] ?? focused?.getAttribute('data-item-id') ?? null;
+}
+
 async function pressKeys(page, keys, quietMs) {
   await page.evaluate(() => (window.__perf.trackKeys = true));
   for (const key of keys) {
@@ -64,7 +81,7 @@ export default {
       await page.evaluate(() => window.__perf.waitSettled(300));
       await page.focus(`#storybook-explorer-tree [data-item-id="${project.firstStoryId}"]`);
       await pressKeys(page, Array(arrows).fill('ArrowDown'), 150);
-      return { moves: arrows };
+      return { moves: arrows, endItemId: await page.evaluate(treeCursorId) };
     });
 
     // Select a story from the preview, like a link inside a story does, and time until the preview

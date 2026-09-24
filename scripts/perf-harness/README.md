@@ -220,7 +220,9 @@ larger than `flood` frames. Compare `floodSearch` only with `floodSearch`.
 1. `open`, `idle`, `indexJson`, `changeScan`.
 2. `searchType`: click the search field, type the query one key at a time.
 3. `searchArrows`: ArrowDown N times in the results.
-4. `treeArrows`: clear the search, focus the first story in the tree, ArrowDown N times.
+4. `treeArrows`: clear the search, focus the first story in the tree, ArrowDown N times. The run
+   JSON records the row that the keys moved to (`endItemId`). Compare it between builds: it must be
+   the same row.
 5. `visit`: select N stories spread over the index. Each selection goes from the preview, as a link
    in a story does.
 
@@ -281,7 +283,8 @@ An interaction starts at one of these points:
 
 - **status event**: the manager's websocket handler starts on a
   `UNIVERSAL_STORE:storybook/status` frame;
-- **key press**: the `keydown` event's time stamp (`key:<name>`);
+- **key press**: the `keydown` event's time stamp (`key:<name>`). Only trusted events count: the
+  react-aria sidebar tree dispatches a copy of each ArrowUp and ArrowDown;
 - a named action, for example `expandAll`.
 
 The harness credits every DOM mutation in the manager document to the latest interaction. After

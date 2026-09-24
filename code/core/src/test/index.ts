@@ -19,14 +19,13 @@ function getChaiAssertionKeys(obj: object, depth: number) {
   const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
     (key) => !chaiAssertionPrivateApi.includes(key)
   );
-  // Stryker disable next-line ConditionalExpression
-  return depth > 2 ? keys : [...keys, 'not'];
+  return keys.concat(['not'].slice(0, Number(!(depth > 2))));
 }
 
 function getObjectKeys(obj: object) {
   const keys = Object.keys(obj);
-  // Stryker disable next-line ArrowFunction,ConditionalExpression
-  return 'any' in obj ? keys.filter((key) => key !== 'any') : keys;
+  // Stryker disable next-line ArrowFunction
+  return keys.filter((key) => key !== 'any');
 }
 
 function getKeys(obj: object, depth: number) {

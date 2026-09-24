@@ -79,6 +79,7 @@ export { createServiceDocsAccess } from '../shared/open-service/toolsets/docs/ac
 export { createManifestDocsAccess } from '../shared/open-service/toolsets/docs/access-manifest.ts';
 export { createLocalDocsAccess } from '../shared/open-service/toolsets/docs/access-local.ts';
 export { loadManifests } from './utils/manifests/manifests.ts';
+export { getRefsFromConfig } from './utils/get-refs-from-config.ts';
 export { createStoriesToolset } from '../shared/open-service/toolsets/stories/definition.ts';
 export type { PreviewStoriesOutput } from '../shared/open-service/toolsets/stories/definition.ts';
 export { reviewToolset } from '../shared/open-service/toolsets/review/definition.ts';

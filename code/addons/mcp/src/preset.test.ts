@@ -750,7 +750,6 @@ describe('experimental_devServer', () => {
 
     await (experimental_devServer as any)(mockApp, optionsWithRefs);
 
-    // The preset should have called presets.apply('refs')
     expect(apply).toHaveBeenCalledWith('refs', {});
   });
 
@@ -773,7 +772,7 @@ describe('experimental_devServer', () => {
     expect(result).toBe(mockApp);
   });
 
-  it('should handle refs config throwing gracefully', async () => {
+  it('fails to start when the refs config throws, like the manager does', async () => {
     const optionsWithThrowingRefs = {
       port: 6006,
       presets: {
@@ -787,8 +786,8 @@ describe('experimental_devServer', () => {
       },
     } as unknown as Options;
 
-    // Should not throw
-    const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
-    expect(result).toBe(mockApp);
+    await expect((experimental_devServer as any)(mockApp, optionsWithThrowingRefs)).rejects.toThrow(
+      'Config error'
+    );
   });
 });

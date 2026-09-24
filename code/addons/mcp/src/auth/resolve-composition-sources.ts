@@ -1,8 +1,8 @@
+import { getRefsFromConfig } from 'storybook/internal/core-server';
 import { ComponentManifestMap, type Source } from 'storybook/internal/toolsets-docs';
 import type { Options } from 'storybook/internal/types';
 import * as v from 'valibot';
 import { CompositionAuth, type ComposedRef } from './composition-auth.ts';
-import { getRefsFromConfig } from './get-refs-from-config.ts';
 
 const MANIFEST_PROBE_TIMEOUT_MS = 3_000;
 

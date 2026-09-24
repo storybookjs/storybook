@@ -1,3 +1,5 @@
+/// <reference types="chai" preserve="true" />
+
 import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';

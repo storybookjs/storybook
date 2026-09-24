@@ -145,6 +145,8 @@ export type CommandOptions = {
   force?: any;
   /** Whether this is being run via an ai agent */
   agent?: boolean;
+  /** `--skills` / `--no-skills`: install the official Storybook skills without asking, or never */
+  skills?: boolean;
   html?: boolean;
   skipInstall?: boolean;
   language?: SupportedLanguage;

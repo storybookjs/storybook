@@ -105,8 +105,8 @@ export class BUNProxy extends JsPackageManager {
     return `bun run ${command}`;
   }
 
-  getRemoteRunCommand(pkg: string, args: string[], specifier?: string): string {
-    return `bunx ${pkg}${specifier ? `@${specifier}` : ''} ${args.join(' ')}`;
+  getRemoteRunCommand(args: string[]): string {
+    return `bunx ${args.join(' ')}`;
   }
 
   getPackageCommand(args: string[]): string {

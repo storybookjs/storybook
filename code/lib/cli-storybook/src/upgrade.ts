@@ -1,3 +1,4 @@
+import { installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
@@ -20,7 +21,7 @@ import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
+import { detectAgent, telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
@@ -143,6 +144,7 @@ export type UpgradeOptions = {
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
+  skills?: boolean;
   features?: string;
   force: boolean;
   disableTelemetry: boolean;
@@ -548,6 +550,15 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    const skills = options.dryRun
+      ? undefined
+      : await installSkills({
+          packageManager: rootPackageManager,
+          skillsFlag: options.skills,
+          yes: options.yes,
+          agent: !!detectAgent(),
+        });
+
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
       configDir: project.configDir,
@@ -605,6 +616,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 

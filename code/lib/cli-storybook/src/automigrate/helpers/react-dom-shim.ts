@@ -226,10 +226,10 @@ const manual = (source: string, filePath: string, reason: string): ReactDomShimC
   diagnostic: `${filePath}: ${reason}`,
 });
 
-const hasUnsupportedModuleUse = (program: t.Program): boolean => {
+const hasUnsupportedModuleUse = (file: t.File): boolean => {
   let unsupported = false;
 
-  traverse(program, {
+  traverse(file, {
     ImportDeclaration(path) {
       unsupported ||= isShimSource(path.node.source.value);
     },
@@ -263,9 +263,9 @@ const hasUnsupportedModuleUse = (program: t.Program): boolean => {
   return unsupported;
 };
 
-const hasShimLiteral = (program: t.Program): boolean => {
+const hasShimLiteral = (file: t.File): boolean => {
   let found = false;
-  traverse(program, {
+  traverse(file, {
     StringLiteral(path) {
       found ||= isShimSource(path.node.value);
     },
@@ -423,11 +423,11 @@ export const analyzeReactDomShimConfig = (
     return manual(source, filePath, 'cannot parse this config safely');
   }
 
-  if (hasUnsupportedModuleUse(ast.program)) {
+  if (hasUnsupportedModuleUse(ast)) {
     return manual(source, filePath, 'contains a react-dom-shim import, re-export, or module load');
   }
 
-  if (!hasShimLiteral(ast.program)) {
+  if (!hasShimLiteral(ast)) {
     return { kind: 'unchanged' };
   }
 
@@ -449,7 +449,7 @@ export const analyzeReactDomShimConfig = (
     return manual(source, filePath, 'uses react-dom-shim outside a supported config entry');
   }
 
-  if (hasShimLiteral(ast.program)) {
+  if (hasShimLiteral(ast)) {
     return manual(
       source,
       filePath,

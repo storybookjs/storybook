@@ -272,17 +272,26 @@ async function waitIdle(quietMs) {
   log('waitIdle: frames still arriving after 5 rounds');
 }
 
-async function phase(name, fn, { after, quietMs = QUIET_MS } = {}) {
-  if (stopped) {
+// `--phases a,b` records only those phases. A phase marked `setup` still runs when it is not
+// selected, because later phases need its effect (an open tab, an expanded tree, a typed query),
+// but its numbers are not recorded.
+const onlyPhases = opts.phases ? new Set(opts.phases.split(',').map((p) => p.trim())) : null;
+async function phase(name, fn, { after, quietMs = QUIET_MS, setup = false } = {}) {
+  const selected = !onlyPhases || onlyPhases.has(name);
+  if (stopped || (!selected && !setup)) {
     return;
   }
   await waitIdle(quietMs);
   await takeAll();
-  log(`phase ${name}`);
+  log(`phase ${name}${selected ? '' : ' (setup, not recorded)'}`);
   const started = Date.now();
   const info = (await fn()) ?? {};
   await waitIdle(quietMs);
-  results.phases[name] = { wallMs: Date.now() - started, info, raw: await takeAll() };
+  const raw = await takeAll();
+  if (!selected) {
+    return;
+  }
+  results.phases[name] = { wallMs: Date.now() - started, info, raw };
   await after?.();
   stopped = name === stopAfter;
 }

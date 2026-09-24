@@ -52,10 +52,14 @@ export async function changeScanPhase(ctx) {
 
 // Opens the manager on the first story; the phase covers page load to first story rendered.
 export async function openPhase(ctx) {
-  await ctx.phase('open', async () => {
-    const { openMs, firstRender } = await ctx.openTab('tab1');
-    return { openMs, firstRender };
-  });
+  await ctx.phase(
+    'open',
+    async () => {
+      const { openMs, firstRender } = await ctx.openTab('tab1');
+      return { openMs, firstRender };
+    },
+    { setup: true }
+  );
 }
 
 // Starts an interaction record in the manager, runs `fn` in the page, waits until the manager DOM

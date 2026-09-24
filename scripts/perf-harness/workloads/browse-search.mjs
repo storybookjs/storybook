@@ -36,17 +36,22 @@ export default {
     await indexJsonPhase(ctx);
     await changeScanPhase(ctx);
 
-    await phase('searchType', async () => {
-      await page.click('#storybook-explorer-searchfield', { timeout: 300_000 });
-      await page.evaluate(() => window.__perf.waitSettled(300));
-      await pressKeys(page, [...query], 300);
-      return {
-        query,
-        results: await page.evaluate(
-          () => document.querySelectorAll('#storybook-explorer-menu [data-id]').length
-        ),
-      };
-    });
+    await phase(
+      'searchType',
+      async () => {
+        await page.click('#storybook-explorer-searchfield', { timeout: 300_000 });
+        await page.evaluate(() => window.__perf.waitSettled(300));
+        await pressKeys(page, [...query], 300);
+        return {
+          query,
+          results: await page.evaluate(
+            () => document.querySelectorAll('#storybook-explorer-menu [data-id]').length
+          ),
+        };
+        // searchArrows moves through these results.
+      },
+      { setup: true }
+    );
 
     await phase('searchArrows', async () => {
       await pressKeys(page, Array(arrows).fill('ArrowDown'), 150);

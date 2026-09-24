@@ -52,29 +52,37 @@ export default {
       Math.min(EDITS, 20),
     ]);
 
-    await phase('open', async () => {
-      const { tab, openMs } = await ctx.openTab('tab1');
-      await tab.page.waitForFunction(hasDocgen, null, { timeout: 120_000 });
-      await previewFrame(tab.page).waitForFunction(hasDocgen, null, { timeout: 120_000 });
-      return { openMs };
-    });
+    await phase(
+      'open',
+      async () => {
+        const { tab, openMs } = await ctx.openTab('tab1');
+        await tab.page.waitForFunction(hasDocgen, null, { timeout: 120_000 });
+        await previewFrame(tab.page).waitForFunction(hasDocgen, null, { timeout: 120_000 });
+        return { openMs };
+      },
+      { setup: true }
+    );
 
-    await phase('extractAll', async () => {
-      const tab = tabs[0];
-      const visible = previewFrame(tab.page).evaluate(
-        ([id]) => window.__perf.waitForDocgen(id, null, 600_000),
-        [project.lastComponentId]
-      );
-      const call = await tab.page.evaluate(() =>
-        window.__perf.callCommand('core/docgen', 'extractAllDocgen', undefined)
-      );
-      const previewVisibleAt = await visible;
-      return {
-        call,
-        commandMs: call.end - call.start,
-        previewVisibleMs: previewVisibleAt === null ? null : previewVisibleAt - call.start,
-      };
-    });
+    await phase(
+      'extractAll',
+      async () => {
+        const tab = tabs[0];
+        const visible = previewFrame(tab.page).evaluate(
+          ([id]) => window.__perf.waitForDocgen(id, null, 600_000),
+          [project.lastComponentId]
+        );
+        const call = await tab.page.evaluate(() =>
+          window.__perf.callCommand('core/docgen', 'extractAllDocgen', undefined)
+        );
+        const previewVisibleAt = await visible;
+        return {
+          call,
+          commandMs: call.end - call.start,
+          previewVisibleMs: previewVisibleAt === null ? null : previewVisibleAt - call.start,
+        };
+      },
+      { setup: true }
+    );
 
     await phase(
       'burst',

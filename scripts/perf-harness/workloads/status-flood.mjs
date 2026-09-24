@@ -46,20 +46,24 @@ export default {
     const page = tabs[0].page;
 
     // Expand every node in the sidebar, as a user who pressed "expand all" would see it.
-    await phase('expandAll', async () => {
-      await measureInPage(
-        page,
-        'expandAll',
-        () => window.__STORYBOOK_ADDONS_CHANNEL__.emit('storiesExpandAll'),
-        undefined,
-        500
-      );
-      return {
-        treeItems: await page.evaluate(
-          () => document.querySelectorAll('#storybook-explorer-tree [data-item-id]').length
-        ),
-      };
-    });
+    await phase(
+      'expandAll',
+      async () => {
+        await measureInPage(
+          page,
+          'expandAll',
+          () => window.__STORYBOOK_ADDONS_CHANNEL__.emit('storiesExpandAll'),
+          undefined,
+          500
+        );
+        return {
+          treeItems: await page.evaluate(
+            () => document.querySelectorAll('#storybook-explorer-tree [data-item-id]').length
+          ),
+        };
+      },
+      { setup: true }
+    );
 
     await idlePhase(ctx);
     await indexJsonPhase(ctx);

@@ -89,6 +89,12 @@ The harness writes to `results/<workload>-<project>-<time>/` (or `--out <dir>`):
 | `--chromatic <dir>` | `~/dev/chromaui/chromatic` | Chromatic checkout. The harness does not change it. |
 | `--chromatic-ref <sha>` | pinned | Chromatic commit to test. |
 | `--prepare-only` | off | Pack and install, then stop. |
+| `--phases <a,b>` | all | Record only these phases (see [Workloads](#workloads) for names). |
+
+With `--phases`, the harness skips every phase that is not in the list, except setup phases.
+A setup phase (`open`; `expandAll` in status-flood; `searchType` in browse-search; `open` and
+`extractAll` in docgen) always runs, because later phases need its effect. The report does not
+include a setup phase unless you select it. `boot` is always in the report.
 
 ### Workload options
 
@@ -103,6 +109,41 @@ The harness writes to `results/<workload>-<project>-<time>/` (or `--out <dir>`):
 | `--arrows <n>` | 20 | browse-search | ArrowDown presses per list. |
 | `--visits <n>` | 10 | browse-search | Stories to visit. |
 | `--vitest-runs <n>` | 1 | vitest-run | 2 adds a second run on the warm Vitest child. |
+
+## Per-PR budget
+
+A full workload with 3 runs per build takes 30 to 60 minutes. Most PRs do not need that. Do this
+by default:
+
+1. Pick ONE workload that matches what the PR changes.
+2. Pick ONE size: `--size 10000 --shape wide` for status-flood; Chromatic for vitest-run and
+   browse-search.
+3. Select only the phase that the PR touches with `--phases`.
+4. Run before and after with `--runs 1`.
+
+| PR changes | Command (add `--before` and `--after`) |
+| --- | --- |
+| Status store, sidebar status rendering | `status-flood --size 10000 --shape wide --runs 1 --phases flood` |
+| Sidebar rendering with a search query | `status-flood --size 10000 --shape wide --runs 1 --phases floodSearch` |
+| Vitest child IPC, test provider store | `vitest-run --runs 1 --phases vitestRun` |
+| Story index, `index.json` | `status-flood --size 10000 --shape wide --runs 1 --phases indexJson` |
+| Change detection, git calls, watchers | `status-flood --size 10000 --shape wide --runs 1 --phases changeScan,idle` |
+| Sidebar search, keyboard navigation | `browse-search --runs 1 --phases searchType,searchArrows,treeArrows` |
+
+A single-phase, single-run measurement of both builds takes about 5 to 15 minutes. Examples measured
+on an M1 Pro (both builds prepared before):
+
+- `status-flood --size 10000 --shape wide --runs 1 --phases flood`: 8 min 19 s (499 s).
+- `vitest-run --runs 1 --phases vitestRun`: TIME_VITEST.
+
+Add runs (`--runs 3`) only when one of these is true:
+
+- the after/before ratio of the number you care about is between 0.85 and 1.15;
+- a p95 row moves but the p50 row does not (p95 of a few dozen samples is noisy).
+
+In status-flood, byte counts and git process counts changed by less than 1% between runs of the
+same build, so one run is enough for them. In vitest-run, bytes changed by up to 10% between runs,
+because the number of store updates depends on test timing.
 
 ## Projects
 

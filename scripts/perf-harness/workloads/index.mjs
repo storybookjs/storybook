@@ -30,4 +30,5 @@ export const workloadOptions = {
   'log-snapshot': { type: 'string' },
   // any workload
   'stop-after': { type: 'string' },
+  phases: { type: 'string' },
 };

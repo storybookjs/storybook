@@ -8,7 +8,7 @@ const ASTRO_FILE = /\.astro$/;
 const INERT_FILE =
   /\.(?:avif|bmp|css|csv|eot|gif|ico|jpe?g|lock|md|otf|png|scss|txt|ttf|webp|woff2?)$/;
 const INERT_NAME =
-  /^(?:CHANGELOG|LICENSE|README)$|^(?:bun|npm|package|pnpm|yarn)\.lock(?:\.b)?$|^pnpm-workspace\.yaml$/;
+  /^(?:CHANGELOG|LICENSE|README)$|^(?:package-lock|npm-shrinkwrap)\.json$|^(?:bun|npm|package|pnpm|yarn)\.lock(?:\.b)?$|^pnpm-workspace\.yaml$/;
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SHIM = '@storybook/react-dom-shim';
 

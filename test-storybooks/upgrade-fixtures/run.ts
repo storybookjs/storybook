@@ -20,6 +20,8 @@ const fixtureRoot = resolve(import.meta.dirname);
 const repositoryRoot = resolve(fixtureRoot, '../..');
 const registryUrl = 'http://127.0.0.1:6001';
 const registryPingUrl = 'http://127.0.0.1:6002/-/ping';
+const registryStorybookUrl = `${registryUrl}/storybook`;
+const registryCliUrl = `${registryUrl}/@storybook%2fcli`;
 const nxSocketDir = process.env.NX_SOCKET_DIR ?? `/tmp/sb-nx-${process.pid}`;
 const commandTimeoutMs = 20 * 60 * 1000;
 
@@ -44,6 +46,10 @@ type ReactDomShimScenario =
   | { kind: 'ordinary' }
   | { kind: 'safe-removal' }
   | { kind: 'unsafe-refusal' };
+
+type RegistryMetadata = {
+  versions?: Record<string, { dist?: { integrity?: string } }>;
+};
 
 function usage(): never {
   console.error(
@@ -105,8 +111,10 @@ async function run(command: string, args: string[], cwd = repositoryRoot, captur
       cwd,
       env: {
         ...process.env,
-        AI_AGENT: process.env.AI_AGENT ?? 'codex',
+        AI_AGENT: reactDomShimMode ? undefined : (process.env.AI_AGENT ?? 'codex'),
         CI: 'true',
+        CODEX_SANDBOX: reactDomShimMode ? undefined : process.env.CODEX_SANDBOX,
+        CODEX_THREAD_ID: reactDomShimMode ? undefined : process.env.CODEX_THREAD_ID,
         NX_SOCKET_DIR: nxSocketDir,
         STORYBOOK_DISABLE_TELEMETRY: 'true',
       },
@@ -147,15 +155,47 @@ async function run(command: string, args: string[], cwd = repositoryRoot, captur
   return output;
 }
 
-async function waitForRegistry(registry: ChildProcess) {
+async function publishedIntegrity(packagePath: string, version: string) {
+  const metadata: RegistryMetadata = JSON.parse(await readFile(packagePath, 'utf8'));
+  const integrity = metadata.versions?.[version]?.dist?.integrity;
+  if (!integrity) {
+    throw new Error(`No published integrity for version ${version} in ${packagePath}`);
+  }
+  return integrity;
+}
+
+async function registryMetadata(response: Response): Promise<RegistryMetadata | undefined> {
+  return response.ok ? JSON.parse(await response.text()) : undefined;
+}
+
+async function waitForRegistry(registry: ChildProcess, version: string) {
+  const [expectedStorybookIntegrity, expectedCliIntegrity] = await Promise.all([
+    publishedIntegrity(join(repositoryRoot, '.verdaccio-cache/storybook/package.json'), version),
+    publishedIntegrity(
+      join(repositoryRoot, '.verdaccio-cache/@storybook/cli/package.json'),
+      version
+    ),
+  ]);
   for (let attempt = 0; attempt < 100; attempt += 1) {
     if (registry.exitCode !== null) {
       throw new Error(`Local registry exited with code ${registry.exitCode}`);
     }
 
     try {
-      const response = await fetch(registryPingUrl, { signal: AbortSignal.timeout(1_000) });
-      if (response.ok) {
+      const [pingResponse, storybookResponse, cliResponse] = await Promise.all([
+        fetch(registryPingUrl, { signal: AbortSignal.timeout(1_000) }),
+        fetch(registryStorybookUrl, { signal: AbortSignal.timeout(1_000) }),
+        fetch(registryCliUrl, { signal: AbortSignal.timeout(1_000) }),
+      ]);
+      const [storybookMetadata, cliMetadata] = await Promise.all([
+        registryMetadata(storybookResponse),
+        registryMetadata(cliResponse),
+      ]);
+      if (
+        pingResponse.ok &&
+        storybookMetadata?.versions?.[version]?.dist?.integrity === expectedStorybookIntegrity &&
+        cliMetadata?.versions?.[version]?.dist?.integrity === expectedCliIntegrity
+      ) {
         return;
       }
     } catch {}
@@ -187,6 +227,7 @@ async function stopProcess(child: ChildProcess) {
 async function prepareLocalBuild() {
   await run('yarn', ['nx', 'run-many', '-t', 'compile']);
   await run('yarn', ['--cwd', 'code', 'local-registry', '--publish']);
+  const localVersion = await readLocalVersion();
 
   if (dryRun) {
     console.log(`\n$ ${formatCommand('yarn', ['--cwd', 'code', 'local-registry', '--open'])}`);
@@ -200,7 +241,7 @@ async function prepareLocalBuild() {
     stdio: 'inherit',
   });
   try {
-    await waitForRegistry(registry);
+    await waitForRegistry(registry, localVersion);
   } catch (error) {
     await stopProcess(registry);
     throw error;
@@ -218,7 +259,10 @@ async function assertUpgradedFixture(
   fixture: FixtureName,
   localVersion: string
 ) {
-  const packageNames = ['storybook', frameworkPackages[fixture], '@storybook/addon-mcp'];
+  const packageNames = ['storybook', frameworkPackages[fixture]];
+  if (!reactDomShimMode) {
+    packageNames.push('@storybook/addon-mcp');
+  }
 
   for (const packageName of packageNames) {
     const packageJsonPath = join(projectDir, 'node_modules', packageName, 'package.json');
@@ -231,14 +275,16 @@ async function assertUpgradedFixture(
     }
   }
 
-  const mainConfigPath = join(projectDir, '.storybook/main.ts');
-  const { default: mainConfig } = await import(pathToFileURL(mainConfigPath).href);
-  const addons = Array.isArray(mainConfig.addons) ? mainConfig.addons : [];
-  const addonNames = addons.map((addon: string | { name?: string }) =>
-    typeof addon === 'string' ? addon : addon.name
-  );
-  if (!addonNames.includes('@storybook/addon-mcp')) {
-    throw new Error('Expected the addon-mcp automigration to update .storybook/main.ts');
+  if (!reactDomShimMode) {
+    const mainConfigPath = join(projectDir, '.storybook/main.ts');
+    const { default: mainConfig } = await import(pathToFileURL(mainConfigPath).href);
+    const addons = Array.isArray(mainConfig.addons) ? mainConfig.addons : [];
+    const addonNames = addons.map((addon: string | { name?: string }) =>
+      typeof addon === 'string' ? addon : addon.name
+    );
+    if (!addonNames.includes('@storybook/addon-mcp')) {
+      throw new Error('Expected the addon-mcp automigration to update .storybook/main.ts');
+    }
   }
 }
 
@@ -337,6 +383,7 @@ async function verifyFixture(
       'npx',
       [
         '--yes',
+        `--cache=${join(workspace, '.npm-cache')}`,
         `--registry=${registryUrl}`,
         `storybook@${localVersion}`,
         'upgrade',

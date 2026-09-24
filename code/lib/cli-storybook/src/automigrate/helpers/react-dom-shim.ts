@@ -1,5 +1,7 @@
 import { babelParse, recast, traverse, types as t } from 'storybook/internal/babel';
 
+import { staticConfigObject } from './react-dom-shim-config.ts';
+
 const REACT_DOM_SHIM = '@storybook/react-dom-shim';
 const REACT_DOM_SHIM_PRESET = `${REACT_DOM_SHIM}/preset`;
 const LEGACY_REPLACEMENTS = new Set([
@@ -140,13 +142,13 @@ const getStaticConfig = (program: t.Program, filePath: string): StaticConfig | u
     return undefined;
   }
 
-  for (const statement of program.body) {
-    if (
-      t.isExportDefaultDeclaration(statement) &&
-      t.isObjectExpression(statement.declaration) &&
-      hasStaticUniqueProperties(statement.declaration)
-    ) {
-      return { object: statement.declaration, kind };
+  for (const [statementIndex, statement] of program.body.entries()) {
+    const defaultExportObject =
+      t.isExportDefaultDeclaration(statement) && t.isExpression(statement.declaration)
+        ? staticConfigObject(statement.declaration, program, statementIndex)
+        : undefined;
+    if (defaultExportObject && hasStaticUniqueProperties(defaultExportObject)) {
+      return { object: defaultExportObject, kind };
     }
 
     if (
@@ -157,10 +159,16 @@ const getStaticConfig = (program: t.Program, filePath: string): StaticConfig | u
       !statement.expression.left.computed &&
       t.isIdentifier(statement.expression.left.object, { name: 'module' }) &&
       t.isIdentifier(statement.expression.left.property, { name: 'exports' }) &&
-      t.isObjectExpression(statement.expression.right) &&
-      hasStaticUniqueProperties(statement.expression.right)
+      t.isExpression(statement.expression.right)
     ) {
-      return { object: statement.expression.right, kind };
+      const commonJsObject = staticConfigObject(
+        statement.expression.right,
+        program,
+        statementIndex
+      );
+      if (commonJsObject && hasStaticUniqueProperties(commonJsObject)) {
+        return { object: commonJsObject, kind };
+      }
     }
   }
 

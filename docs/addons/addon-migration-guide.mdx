@@ -115,8 +115,6 @@ The minimum supported TypeScript version is now 5. Update your TypeScript depend
 
 #### Preact
 
-<!-- Pending owner integration: add the captured before-and-after addon fixture before opening the removal PR. -->
-
 If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.8.0 || >=11.0.0-0` because Storybook relies on `preact/compat/client` roots with `unmount()` support. Preact 10.7.1 roots don't provide that method, which Storybook needs for cleanup and root recreation.
 
 The official Preact framework is `@storybook/preact-vite`. The same minimum applies to custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack.
@@ -172,9 +170,9 @@ If your addon imports internal Storybook APIs, review these additional changes:
 
 #### `@storybook/react-dom-shim` removed
 
-<!-- Pending owner integration: add the captured before-and-after addon fixture before opening the removal PR. -->
-
 Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. If your addon receives it only through another Storybook package, upgrade all Storybook dependencies together and don't add a replacement dependency.
+
+The upgrade automigration scans workspace packages before removing an explicit dependency. It handles exact literal preset entries and isolated aliases automatically. If it finds a direct import or dynamic configuration, it preserves the dependency and every consumer and reports the affected file paths for manual migration.
 
 If your addon lists it explicitly, search the entire addon workspace for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. Remove exact literal `@storybook/react-dom-shim/preset` entries and exact aliases that exist only for the shim. Review dynamic or computed configuration, regular-expression aliases, and custom wrappers manually.
 

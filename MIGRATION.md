@@ -766,9 +766,9 @@ Remove `framework.options.legacyRootApi` from `.storybook/main.*`, whether its v
 
 ### `@storybook/react-dom-shim` removed
 
-<!-- Pending owner integration: add the captured before-and-after upgrade fixture before opening the removal PR. -->
-
 Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. The package selected between legacy and modern React root APIs, but Storybook 11 requires React 18 or newer and no longer needs that compatibility layer. Published versions from earlier Storybook releases remain available.
+
+`storybook upgrade` removes an explicit dependency together with exact literal preset entries and isolated aliases when it can prove that the whole workspace is safe to migrate. It leaves all files unchanged and prints each consumer that needs manual work when it finds direct imports, computed configuration, unsupported React versions, or an incomplete workspace scan.
 
 If the package appears only as a transitive dependency, upgrade all Storybook packages together. You don't need to replace the package or add a direct dependency.
 
@@ -779,8 +779,6 @@ There is no supported import-only replacement for third-party code that imports 
 If your code renders React elements itself, keep one root for each container and reuse it across renders. Apply root options when you first create the root. On unmount, call `root.unmount()`, remove the stored root, and create a new root if that container renders again. Preserve any promise or `act` semantics that callers use to wait for a committed render. A bare `createRoot(container).render(element)` replacement does not preserve these behaviors.
 
 ### Preact: Require v10.8.0 and up
-
-<!-- Pending owner integration: verify this command against the captured Preact upgrade fixture before opening the removal PR. -->
 
 Storybook 11 requires Preact 10.8.0 or newer. Upgrade Preact before you upgrade Storybook:
 

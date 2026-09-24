@@ -296,8 +296,8 @@ The Storybook 11 automigration renames an explicit `experimentalDocgenServer` op
  const config: StorybookConfig = {
    framework: '@storybook/react-vite',
    features: {
--    experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
-+    docgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
+-    experimentalDocgenServer: false,
++    docgenServer: false,
    },
  };
 

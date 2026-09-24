@@ -30,9 +30,6 @@ const E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER = 'e2eStoryDocsAfter';
 const defaultArgsLine = `  args: { label: '${E2E_STORY_DOCS_HOT_UPDATE_LABEL_BEFORE}' }`;
 const hotUpdateArgsLine = `  args: { label: '${E2E_STORY_DOCS_HOT_UPDATE_LABEL_AFTER}' }`;
 
-// Start the internal dev server with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true before running the
-// hot-update test. CI sets that env var in the internal Storybook e2e job. Static tests require a
-// build produced with the same flag so story-docs snapshots exist under storybook-static/services/.
 let originalCodePanelStorySource: string | undefined;
 
 async function restoreFile(path: string, contents: string) {

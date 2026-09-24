@@ -157,9 +157,6 @@ const config = defineMain({
   features: {
     developmentModeForBuild: true,
     experimentalTestSyntax: true,
-    // Disabled by default for production builds; the internal dev server enables it via
-    // STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER so hot-update e2e covers the open-service path.
-    docgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
     experimentalReactComponentMeta: true,
     changeDetection: true,
     experimentalSearchDocsHeadings: true,

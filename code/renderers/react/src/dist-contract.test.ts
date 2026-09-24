@@ -42,7 +42,7 @@ describe('React declaration contract', () => {
     });
   });
 
-  it('compiles public declarations with TypeScript 5.0.4', () => {
+  it('compiles public declarations with TypeScript 5.9.3', () => {
     expect(DTS_BUILT).toBe(true);
     execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], {
       cwd: REPOSITORY_ROOT,

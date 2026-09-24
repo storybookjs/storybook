@@ -9887,7 +9887,7 @@ __metadata:
     sass: ^1.0.0
     sass-embedded: ^1.0.0
     storybook: "workspace:^"
-    typescript: ">= 5.9.x"
+    typescript: ">= 5.9.0"
     vite: ">=8.0.0"
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
@@ -9947,7 +9947,7 @@ __metadata:
     "@angular/platform-browser-dynamic": ">=21.0.0 < 23.0.0"
     rxjs: ^6.5.3 || ^7.4.0
     storybook: "workspace:^"
-    typescript: ">= 5.0.0"
+    typescript: ">= 5.9.0"
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/animations":
@@ -10585,7 +10585,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ">= 5.0.0"
+    typescript: ">= 5.9.0"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10605,7 +10605,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ">= 5.0.0"
+    typescript: ">= 5.9.0"
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -10641,14 +10641,14 @@ __metadata:
     react-element-to-jsx-string: "patch:react-element-to-jsx-string@npm%3A@7rulnik/react-element-to-jsx-string@15.0.1#~/.yarn/patches/@7rulnik-react-element-to-jsx-string-npm-15.0.1-e53b67c4b3.patch"
     require-from-string: "npm:^2.0.2"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:4.18.1"
+    type-fest: "npm:^5.6.0"
   peerDependencies:
     "@types/react": ^18.0.0 || ^19.0.0
     "@types/react-dom": ^18.0.0 || ^19.0.0
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ">= 5.0.0"
+    typescript: ">= 5.9.0"
   peerDependenciesMeta:
     "@types/react":
       optional: true
@@ -10856,6 +10856,7 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
+    typescript: ">= 5.9.0"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
@@ -10870,13 +10871,13 @@ __metadata:
     svelte-check: "npm:^4.4.8"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
-    type-fest: "npm:4.18.1"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
-    typescript: ">= 5.1.0"
+    typescript: ">= 5.9.0"
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -10945,7 +10946,7 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ">= 5.6.0"
+    typescript: ">= 5.9.0"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10963,7 +10964,7 @@ __metadata:
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/compiler-dom": "npm:^3.2.47"
     "@vue/language-core": "npm:^3.2.7"
-    type-fest: "npm:4.18.1"
+    type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
     vue-component-meta: "npm:^3.3.9"
@@ -10972,7 +10973,7 @@ __metadata:
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ">= 5.6.0"
+    typescript: ">= 5.9.0"
     vue: ^3.0.0
   peerDependenciesMeta:
     typescript:
@@ -33727,10 +33728,10 @@ __metadata:
     tinyspy: "npm:^3.0.2"
     ts-dedent: "npm:^2.0.0"
     tsconfig-paths: "npm:^4.2.0"
-    type-fest: "npm:4.18.1"
+    type-fest: "npm:^5.6.0"
     type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^6.0.3"
-    typescript-5: "npm:typescript@5.0.4"
+    typescript-5: "npm:typescript@5.9.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
@@ -35188,13 +35189,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"type-fest@npm:4.18.1":
-  version: 4.18.1
-  resolution: "type-fest@npm:4.18.1"
-  checksum: 10c0/f81c82548a1f8c107fb286661c4d0caf5ed9c9842050dc5d417326a6208ddc67e04fa30faa9f948308a7eb164497f138fe5035e3f305c87a3ba8e7e0ce2e38c6
-  languageName: node
-  linkType: hard
-
 "type-fest@npm:^0.20.2":
   version: 0.20.2
   resolution: "type-fest@npm:0.20.2"
@@ -35345,13 +35339,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"typescript-5@npm:typescript@5.0.4":
-  version: 5.0.4
-  resolution: "typescript@npm:5.0.4"
+"typescript-5@npm:typescript@5.9.3, typescript@npm:5.9.3":
+  version: 5.9.3
+  resolution: "typescript@npm:5.9.3"
   bin:
     tsc: bin/tsc
     tsserver: bin/tsserver
-  checksum: 10c0/2f5bd1cead194905957cb34e220b1d6ff1662399adef8ec1864f74620922d860ee35b6e50eafb3b636ea6fd437195e454e1146cb630a4236b5095ed7617395c2
+  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
   languageName: node
   linkType: hard
 
@@ -35423,16 +35417,6 @@ __metadata:
   bin:
     tsc: bin/tsc
   checksum: 10c0/3dcee51ec8c332492325bcdbf7df48b66668751f127e622ae7d41b6c716eb19184424a45e14f7750f50f340232388b69e6287859155f06a5ce2df76f12cb31cf
-  languageName: node
-  linkType: hard
-
-"typescript@npm:5.9.3":
-  version: 5.9.3
-  resolution: "typescript@npm:5.9.3"
-  bin:
-    tsc: bin/tsc
-    tsserver: bin/tsserver
-  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
   languageName: node
   linkType: hard
 

@@ -32,7 +32,7 @@ describe('storybook/test declaration contract', () => {
     expect(DTS_BUILT).toBe(true);
   });
 
-  it('uses public dependencies compatible with TypeScript 5', () => {
+  it('uses public dependencies compatible with TypeScript 5.9', () => {
     expect(DTS_BUILT).toBe(true);
     const declarations = readFileSync(DTS_ARTIFACT, 'utf-8');
 
@@ -52,7 +52,7 @@ describe('storybook/test declaration contract', () => {
     });
   });
 
-  it('compiles the public test API consumer fixture with TypeScript 5.0.4', () => {
+  it('compiles the public test API consumer fixture with TypeScript 5.9.3', () => {
     expect(DTS_BUILT).toBe(true);
     execFileSync(process.execPath, [TYPESCRIPT_5, ...TSC_OPTIONS], {
       cwd: REPOSITORY_ROOT,

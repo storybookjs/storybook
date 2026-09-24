@@ -25,6 +25,63 @@ const manifest = `${JSON.stringify({
 })}\n`;
 
 describe('workspace consumer boundaries', () => {
+  it('refuses unresolved loads through createRequire from the bare module builtin', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/bare-module-loader.ts': `import { createRequire } from 'module';
+const load = createRequire(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/bare-module-loader.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it('refuses unresolved loads through loaders declared after their uses', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/out-of-order-loader.ts': `export function run() {
+  const load = base;
+  return load(['@storybook', 'react-dom-shim'].join('/'));
+}
+const base = require;
+run();
+`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/out-of-order-loader.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it('refuses unresolved loads through namespace factory and assignment aliases', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/namespace-loader.ts': `import * as moduleBuiltin from 'module';
+let factory;
+factory = moduleBuiltin.createRequire;
+let load;
+load = factory(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/namespace-loader.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
   it('refuses nested loader aliases with unresolved module specifiers', async () => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,

@@ -71,7 +71,7 @@ export default {
 
     // Same flood with a search query in the sidebar, so the results list shows instead of the tree.
     const query = opts.query ?? project.searchQuery;
-    await page.click('#storybook-explorer-searchfield');
+    await page.click('#storybook-explorer-searchfield', { timeout: 300_000 });
     await page.keyboard.type(query, { delay: 50 });
     await page.evaluate(() => window.__perf.waitSettled(500));
     await ctx.control('/flood/reset');

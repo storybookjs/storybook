@@ -325,8 +325,11 @@
       const deadline = now() + timeoutMs;
       for (;;) {
         await new Promise((resolve) => afterFrame(resolve));
-        if (epoch() - lastMutationAt >= quietMs || now() > deadline) {
-          return;
+        if (epoch() - lastMutationAt >= quietMs) {
+          return { timedOut: false };
+        }
+        if (now() > deadline) {
+          return { timedOut: true };
         }
         await new Promise((resolve) => setTimeout(resolve, Math.min(quietMs, 100)));
       }

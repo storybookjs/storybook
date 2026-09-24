@@ -37,7 +37,7 @@ export default {
     await changeScanPhase(ctx);
 
     await phase('searchType', async () => {
-      await page.click('#storybook-explorer-searchfield');
+      await page.click('#storybook-explorer-searchfield', { timeout: 300_000 });
       await page.evaluate(() => window.__perf.waitSettled(300));
       await pressKeys(page, [...query], 300);
       return {

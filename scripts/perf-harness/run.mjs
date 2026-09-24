@@ -249,16 +249,39 @@ const results = {
 
 const stopAfter = opts['stop-after'];
 let stopped = false;
+// Quiet means: no channel frame for `quietMs`, and the manager DOM of every tab has had no mutation
+// for 500 ms with a painted frame since. A busy main thread neither counts frames nor paints, so the
+// second check waits out a manager that is still working through received frames.
+async function waitIdle(quietMs) {
+  const counts = () =>
+    Promise.all(tabs.map((tab) => tab.page.evaluate(() => window.__perf.frameCount())));
+  for (let round = 0; round < 5; round += 1) {
+    await waitQuiet(quietMs);
+    const before = await counts();
+    const settled = await Promise.all(
+      tabs.map((tab) => tab.page.evaluate(() => window.__perf.waitSettled(500, 300_000)))
+    );
+    if (settled.some((r) => r.timedOut)) {
+      log('waitIdle: manager DOM kept changing for 5 min');
+    }
+    const after = await counts();
+    if (before.every((n, i) => n === after[i])) {
+      return;
+    }
+  }
+  log('waitIdle: frames still arriving after 5 rounds');
+}
+
 async function phase(name, fn, { after, quietMs = QUIET_MS } = {}) {
   if (stopped) {
     return;
   }
-  await waitQuiet(quietMs);
+  await waitIdle(quietMs);
   await takeAll();
   log(`phase ${name}`);
   const started = Date.now();
   const info = (await fn()) ?? {};
-  await waitQuiet(quietMs);
+  await waitIdle(quietMs);
   results.phases[name] = { wallMs: Date.now() - started, info, raw: await takeAll() };
   await after?.();
   stopped = name === stopAfter;

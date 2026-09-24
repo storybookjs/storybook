@@ -119,16 +119,15 @@
     },
   },
   "label": {
-    "description": "Rich label content; collides with the `label` attribute.",
+    "description": "Plain label; collides with the `label` slot.",
     "name": "label",
-    "required": false,
     "table": {
-      "category": "slots",
+      "category": "attributes",
       "defaultValue": {
-        "summary": undefined,
+        "summary": "'Label'",
       },
       "type": {
-        "summary": undefined,
+        "summary": "string",
       },
     },
     "type": {
@@ -294,6 +293,7 @@
     },
   },
   "target": {
+    "control": "object",
     "description": "Mixed literal/object union.",
     "name": "target",
     "table": {
@@ -306,10 +306,8 @@
       },
     },
     "type": {
-      "name": "enum",
-      "value": [
-        "self",
-      ],
+      "name": "other",
+      "value": "'self' | { id: string }",
     },
   },
   "toolkit-resize": {

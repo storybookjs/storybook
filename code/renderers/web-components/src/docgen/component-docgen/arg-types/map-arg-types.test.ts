@@ -189,6 +189,25 @@ describe('mapArgTypes', () => {
       },
     },
     {
+      name: 'attribute wins over a same-name legacy slot',
+      declaration: declaration({
+        attributes: [{ name: 'label', type: { text: 'number' }, default: '42' }],
+        slots: [{ name: 'label', description: 'Label slot.' }],
+      }),
+      expected: {
+        label: {
+          name: 'label',
+          description: undefined,
+          type: { name: 'number' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'number' },
+            defaultValue: { summary: '42' },
+          },
+        },
+      },
+    },
+    {
       name: 'deprecated string',
       declaration: declaration({
         members: [

@@ -27,17 +27,6 @@ const AGENT_EVAL_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
 const TEMPLATE_METADATA_FILE = 'eval-template.json';
-const PREVIEW_BROWSER_MOCK_SOURCE_PATH = path.join(
-  AGENT_EVAL_ROOT,
-  'lib',
-  'mcp',
-  'preview-browser-mock.mjs'
-);
-const PREVIEW_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
-  '.agent-eval',
-  'mcp',
-  'preview-browser-mock.mjs'
-);
 const NODE_REPL_MOCK_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'node-repl-mock.mjs');
 const NODE_REPL_MOCK_SANDBOX_PATH = path.posix.join('.agent-eval', 'mcp', 'node-repl-mock.mjs');
 const CODEX_BROWSER_MOCK_SOURCE_PATH = path.join(
@@ -112,7 +101,6 @@ const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
-const PREVIEW_BROWSER_MCP_SERVER_NAME = 'preview-browser';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
 const CLAUDE_PLUGIN_SKILLS_DIR = path.join(REPO_ROOT, 'code', 'lib', 'claude-plugin', 'skills');
@@ -857,19 +845,6 @@ export async function installSkillDir(
     resolvedDir,
     path.posix.join(skillsRoot, path.basename(resolvedDir))
   );
-}
-
-export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {
-  await sandbox.writeFiles({
-    [PREVIEW_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(
-      PREVIEW_BROWSER_MOCK_SOURCE_PATH,
-      'utf8'
-    ),
-  });
-  await writeClaudeMcpServer(sandbox, PREVIEW_BROWSER_MCP_SERVER_NAME, {
-    command: 'node',
-    args: [PREVIEW_BROWSER_MOCK_SANDBOX_PATH],
-  });
 }
 
 async function writePluginSkills(

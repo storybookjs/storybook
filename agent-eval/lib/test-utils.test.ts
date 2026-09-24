@@ -5,11 +5,8 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 vi.mock('node:fs', { spy: true });
 
 import {
-  expectPreviewBrowserStarted,
-  expectValidStorybookLaunchConfig,
+  expectDevServerLeftRunning,
   findDevServerKillCommands,
-  isLocalDevServerUrl,
-  isLocalStorybookPreviewUrl,
   parseCodexBrowserNavigations,
   parseStorybookWorkflowShellCommands,
   parseWorkflowToolResults,
@@ -718,73 +715,28 @@ describe('parseCodexBrowserNavigations', () => {
   });
 });
 
-describe('isLocalDevServerUrl', () => {
-  test('accepts http URLs on local hosts', () => {
-    expect(isLocalDevServerUrl('http://localhost:6006/?path=/story/button--primary')).toBe(true);
-    expect(isLocalDevServerUrl('http://127.0.0.1:4123/iframe.html?id=button--primary')).toBe(true);
-    expect(isLocalDevServerUrl('http://[::1]:6006/')).toBe(true);
-  });
-
-  test('rejects remote URLs, other protocols, and non-URLs', () => {
-    expect(isLocalDevServerUrl('https://storybook.js.org')).toBe(false);
-    expect(isLocalDevServerUrl('file:///tmp/index.html')).toBe(false);
-    expect(isLocalDevServerUrl('about:blank')).toBe(false);
-    expect(isLocalDevServerUrl('not a url')).toBe(false);
-  });
-});
-
 describe('findDevServerKillCommands', () => {
-  const navigated = ['http://localhost:6006/?path=/review/'];
-
-  test('flags kill commands targeting the dev server', () => {
-    expect(findDevServerKillCommands(['pkill -f storybook'], navigated)).toEqual([
-      'pkill -f storybook',
-    ]);
-    expect(findDevServerKillCommands(['kill $(cat /tmp/storybook.pid)'], navigated)).toHaveLength(
-      1
-    );
-    expect(findDevServerKillCommands(['fuser -k 6006/tcp'], navigated)).toHaveLength(1);
-    expect(findDevServerKillCommands(['fuser -n tcp -k 6006'], navigated)).toHaveLength(1);
-  });
-
-  // Documents the heuristic's accepted blind spot: a kill routed through an
-  // unrelated variable in a later command carries no self-describing token,
-  // so it is NOT flagged (see the comment on findDevServerKillCommands).
-  test('does not flag a variable-indirected kill in a later command', () => {
-    expect(findDevServerKillCommands(['PID=$(lsof -ti:6006)', 'kill $PID'], navigated)).toEqual([]);
+  test('flags kill commands naming storybook, a pidfile, or the default port', () => {
+    expect(findDevServerKillCommands(['pkill -f storybook'])).toEqual(['pkill -f storybook']);
+    expect(findDevServerKillCommands(['kill $(cat /tmp/storybook.pid)'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['kill $(cat /tmp/dev-server.pid)'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['fuser -k 6006/tcp'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['fuser -n tcp -k 6006'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['kill -9 $(lsof -ti:6006)'])).toHaveLength(1);
   });
 
   test('ignores unrelated kill commands and non-kill dev-server commands', () => {
-    expect(findDevServerKillCommands(['pkill -f chromium'], navigated)).toEqual([]);
+    expect(findDevServerKillCommands(['pkill -f chromium', 'kill 1234'])).toEqual([]);
     expect(
-      findDevServerKillCommands(
-        ['nohup npm run storybook >/tmp/storybook.log 2>&1 &', 'curl http://localhost:6006'],
-        navigated
-      )
+      findDevServerKillCommands([
+        'nohup npm run storybook >/tmp/storybook.log 2>&1 &',
+        'curl http://localhost:6006',
+      ])
     ).toEqual([]);
   });
 });
 
-describe('isLocalStorybookPreviewUrl', () => {
-  test('accepts local Storybook review, story, and iframe preview URLs', () => {
-    expect(isLocalStorybookPreviewUrl('http://localhost:6006/?path=/review/change')).toBe(true);
-    expect(isLocalStorybookPreviewUrl('http://localhost:6006/?path=/story/button--primary')).toBe(
-      true
-    );
-    expect(isLocalStorybookPreviewUrl('http://127.0.0.1:4123/iframe.html?id=button--primary')).toBe(
-      true
-    );
-  });
-
-  test('rejects non-Storybook local URLs and remote Storybook URLs', () => {
-    // The app's own dev server or a bare Storybook root is not the result link.
-    expect(isLocalStorybookPreviewUrl('http://localhost:5173/')).toBe(false);
-    expect(isLocalStorybookPreviewUrl('http://localhost:6006/')).toBe(false);
-    expect(isLocalStorybookPreviewUrl('https://storybook.js.org/?path=/story/button')).toBe(false);
-  });
-});
-
-describe('launch/preview helpers fail loud out of context', () => {
+describe('expectDevServerLeftRunning', () => {
   const agentContextPath = '__agent_eval__/agent.json';
 
   beforeEach(() => {
@@ -795,34 +747,14 @@ describe('launch/preview helpers fail loud out of context', () => {
     vi.mocked(readFileSync).mockRestore();
   });
 
-  function stubAgentContext(agent: string, integration: 'mcp' | 'plugin') {
+  test('fails loud when integration is mcp', () => {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent, integration, review: false });
+        return JSON.stringify({ agent: 'claude-code', integration: 'mcp', review: false });
       }
       throw new Error(`Unexpected readFileSync path in fail-loud helper test: ${String(path)}`);
     }) as typeof readFileSync);
-  }
 
-  test('expectValidStorybookLaunchConfig fails when integration is mcp', () => {
-    stubAgentContext('claude-code', 'mcp');
-
-    expect(() => expectValidStorybookLaunchConfig()).toThrow(
-      /only for claude-code \+ plugin.*integration=mcp/
-    );
-  });
-
-  test('expectValidStorybookLaunchConfig fails for codex plugin (not Claude preview tooling)', () => {
-    stubAgentContext('codex', 'plugin');
-
-    expect(() => expectValidStorybookLaunchConfig()).toThrow(
-      /only for claude-code \+ plugin.*agent=codex/
-    );
-  });
-
-  test('expectPreviewBrowserStarted fails when integration is mcp', () => {
-    stubAgentContext('claude-code', 'mcp');
-
-    expect(() => expectPreviewBrowserStarted()).toThrow(/only for plugin.*integration=mcp/);
+    expect(() => expectDevServerLeftRunning()).toThrow(/only for plugin.*integration=mcp/);
   });
 });

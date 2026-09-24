@@ -116,7 +116,9 @@ export const RenderException = {
 
     await step('Human title leads, raw message stays in diagnostics', async () => {
       expect(
-        canvas.getByRole('heading', { name: 'The Primary story failed to render.' })
+        canvas.getByRole('heading', {
+          name: 'The Primary story failed to render.',
+        })
       ).toBeInTheDocument();
       expect(canvas.getByText('Error is not a constructor')).toBeInTheDocument();
       expect(
@@ -262,4 +264,37 @@ export const ManagerCrash = {
       expect(canvas.getByText(/at AddonPanel/)).toBeInTheDocument();
     });
   },
+} satisfies Story;
+
+// Dark companions: story-level `globals: { sb_theme: 'dark' }` lets Chromatic capture the dark
+// theme (play-function stories without an explicit theme are forced light by the UI decorator).
+// Each spreads its base story so the interaction assertions stay identical by construction.
+export const RenderExceptionDark = {
+  ...RenderException,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;
+
+export const StoryNotFoundDark = {
+  ...StoryNotFound,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;
+
+export const AppConfigErrorDark = {
+  ...AppConfigError,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;
+
+export const DependencyDark = {
+  ...Dependency,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;
+
+export const VitestFailureDark = {
+  ...VitestFailure,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;
+
+export const ManagerCrashDark = {
+  ...ManagerCrash,
+  globals: { sb_theme: 'dark' },
 } satisfies Story;

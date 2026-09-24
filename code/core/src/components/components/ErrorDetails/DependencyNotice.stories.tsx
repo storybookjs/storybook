@@ -67,3 +67,15 @@ export const CauseOnly = {
     });
   },
 } satisfies Story;
+
+// Dark companions: story-level `globals: { sb_theme: 'dark' }` lets Chromatic capture the dark
+// theme (play-function stories without an explicit theme are forced light by the UI decorator).
+export const ComponentTestsFailedDark = {
+  ...ComponentTestsFailed,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;
+
+export const CauseOnlyDark = {
+  ...CauseOnly,
+  globals: { sb_theme: 'dark' },
+} satisfies Story;

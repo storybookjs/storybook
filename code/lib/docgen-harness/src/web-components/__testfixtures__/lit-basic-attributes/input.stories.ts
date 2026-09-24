@@ -4,6 +4,12 @@ import type { Meta, Story } from '../../csf-types.ts';
 
 import './lit-basic-attributes.ts';
 
+/**
+ * Story-level docs for the basic attributes fixture.
+ *
+ * @since 1.2.0
+ * @see https://example.com/lit-basic-attributes
+ */
 const meta = {
   title: 'WebComponentsFixtures/LitBasicAttributes',
   component: 'lit-basic-attributes',

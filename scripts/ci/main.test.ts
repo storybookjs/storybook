@@ -39,6 +39,8 @@ describe('generateConfig', () => {
 });
 
 describe('CLI', () => {
+  // `Tests (linux)` checks out with `--depth 1`, where `HEAD^` does not resolve and the
+  // focus workflow's `git diff` aborts. `HEAD` diffs against itself on any checkout depth.
   it.each(parameters.workflow.enum)('runs the production command for %s', (workflow) => {
     const result = spawnSync(
       process.execPath,
@@ -46,7 +48,7 @@ describe('CLI', () => {
         '--experimental-transform-types',
         './scripts/ci/main.ts',
         `--workflow=${workflow}`,
-        '--base-ref=HEAD^',
+        '--base-ref=HEAD',
       ],
       { cwd: repoRoot, encoding: 'utf8' }
     );

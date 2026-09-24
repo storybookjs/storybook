@@ -104,25 +104,14 @@ export const experimental_serverChannel = async (channel: Channel, options: Opti
     typeof core.builder !== 'string' &&
     (core.builder?.options?.configLoader as BuilderOptions['configLoader']);
 
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-
   // The request listener answering test-run requests is wired by the `services` hook; the runner
   // machinery it sets up lazily is run eagerly here because the manager UI needs the store
   // immediately. What follows are the dev-server extras: story index refresh, watch mode, and addon
   // telemetry.
   const store = await ensureTestRunnerStore({ channel, options });
 
-  storyIndexGenerator.onInvalidated(async () => {
-    try {
-      const index = await storyIndexGenerator.getIndex();
-      store.setState((s) => ({ ...s, index }));
-    } catch (error) {
-      logger.debug('Failed to update story index after invalidation, Error:');
-      logger.debug(error);
-    }
-  });
-
+  const storyIndexGenerator =
+    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
   const refreshTestRunnerStoryIndex = () =>
     sendStoryIndexToTestRunner(storyIndexGenerator).catch((error) => {
       logger.debug('Failed to send the story index to the test runner, Error:');

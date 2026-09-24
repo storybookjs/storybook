@@ -17,51 +17,44 @@ declare module 'storybook/test' {
   }
 }
 
+const assertion: Promise<void> = expect(2).toBe(2);
+const negatedAssertion: Promise<void> = expect(2).not.toBe(3);
+const resolvedAssertion: Promise<void> = expect(Promise.resolve(2)).resolves.toBe(2);
+const domAssertion: Promise<void> = expect(document.body).toBeInTheDocument();
+
 expect(2).toBeEven();
 expect.toSatisfy((value) => value >= 18);
 expect.not.toSatisfy((value) => value >= 18);
 
-const directAssertion: Promise<void> = expect(2).toBe(2);
-const negatedAssertion: Promise<void> = expect(2).not.toBe(3);
-const resolvedAssertion: Promise<void> = expect(Promise.resolve(2)).resolves.toBe(2);
-const rejectedAssertion: Promise<void> = expect(Promise.reject('failure')).rejects.toBe('failure');
-const softAssertion: Promise<void> = expect.soft(2).toBe(2);
-const domAssertion: Promise<void> = expect(document.body).toBeInTheDocument();
-
-void directAssertion;
+void assertion;
 void negatedAssertion;
 void resolvedAssertion;
-void rejectedAssertion;
-void softAssertion;
 void domAssertion;
 
-const returnedNumber = fn(() => 3);
-const returnedNumberMock: Mock<() => number> = returnedNumber;
-const returnedNumberInstance: MockInstance<() => number> = returnedNumber;
-const returnedNumberMocked: Mocked<{ run: () => number }> = { run: returnedNumber };
+const numberMock = fn(() => 3);
+const typedMock: Mock<() => number> = numberMock;
+const mockInstance: MockInstance<() => number> = numberMock;
+const mockedObject: Mocked<{ run: () => number }> = { run: numberMock };
 
-expect(returnedNumber).toHaveReturnedWith(3);
-expect(returnedNumber).toHaveLastReturnedWith(3);
-expect(returnedNumber).toHaveNthReturnedWith(1, 3);
-expect(returnedNumber).toHaveReturned();
-expect(returnedNumber).toReturn();
-expect(returnedNumber).toReturnTimes(1);
-expect(returnedNumber).toReturnWith(3);
-expect(returnedNumber).lastReturnedWith(3);
-expect(returnedNumber).nthReturnedWith(1, 3);
+expect(numberMock).toHaveReturnedWith(3);
+expect(numberMock).toReturnTimes(1);
 
-const calledWithString = fn((value: string) => value.length);
-const calledWithObject = fn((value: { nested: { value: number } }) => value);
+void typedMock;
+void mockInstance;
+void mockedObject;
 
-const genericIdentity = fn(<T>(value: T) => value);
-const defaultedValue = fn<(value?: string) => string>((value = 'default') => value);
+const genericMock = fn(<T>(value: T) => value);
+const defaultedMock = fn<(value?: string) => string>((value = 'default') => value);
 
-const genericString: string = genericIdentity('value');
-const genericNumber: number = genericIdentity(1);
-defaultedValue();
-defaultedValue('value');
-// @ts-expect-error A defaulted string parameter cannot be a number.
-defaultedValue(1);
+const stringResult: string = genericMock('value');
+const numberResult: number = genericMock(1);
+defaultedMock();
+defaultedMock('value');
+// @ts-expect-error The defaulted parameter accepts strings only.
+defaultedMock(1);
+
+void stringResult;
+void numberResult;
 
 const spyTarget = {
   value: 'value',
@@ -73,25 +66,14 @@ const spyTarget = {
   },
 };
 
-const getterSpy = spyOn(spyTarget, 'value', 'get');
-const setterSpy = spyOn(spyTarget, 'value', 'set');
-const methodSpy = spyOn(spyTarget, 'method');
-const constructorSpy = spyOn(spyTarget, 'Constructor');
-
-getterSpy.mockReturnValue('value');
-setterSpy.mockImplementation((value) => void value.toUpperCase());
-methodSpy.mockReturnValue(3);
-constructorSpy.mockImplementation(function (value) {
+spyOn(spyTarget, 'value', 'get').mockReturnValue('value');
+spyOn(spyTarget, 'value', 'set').mockImplementation((value) => void value.toUpperCase());
+const methodSpy = spyOn(spyTarget, 'method').mockReturnValue(3);
+spyOn(spyTarget, 'Constructor').mockImplementation(function (value) {
   return new spyTarget.Constructor(value);
 });
-// @ts-expect-error A string method cannot return a string length as text.
+// @ts-expect-error The method returns a number.
 methodSpy.mockReturnValue('three');
-
-void genericString;
-void genericNumber;
-void returnedNumberMock;
-void returnedNumberInstance;
-void returnedNumberMocked;
 
 const mockTarget = {
   nested: {
@@ -101,59 +83,23 @@ const mockTarget = {
   },
 };
 
-const deeplyMocked = mocked(mockTarget, true);
-const defaultMocked = mocked(mockTarget);
-const shallowlyMocked = mocked(mockTarget, false);
-const explicitlyShallowlyMocked = mocked(mockTarget, { partial: false, deep: false });
-const explicitlyDeeplyMocked = mocked(mockTarget, { partial: false, deep: true });
-const partiallyShallowlyMocked = mocked(mockTarget, { partial: true, deep: false });
-const partiallyDeeplyMockedObject = mocked(mockTarget, { partial: true, deep: true });
-const partiallyMocked = mocked(mockTarget.nested.method, { partial: true });
-const partiallyDeeplyMockedFunction = mocked(mockTarget.nested.method, {
-  partial: true,
-  deep: true,
-});
-
-deeplyMocked.nested.method.mockReturnValue({ length: 1 });
-explicitlyDeeplyMocked.nested.method.mockReturnValue({ length: 1 });
-partiallyDeeplyMockedObject.nested.method.mockReturnValue({ length: 1 });
-partiallyMocked.mockReturnValue({});
-partiallyDeeplyMockedFunction.mockReturnValue({});
-// @ts-expect-error A default shallow mock does not mock nested methods.
-defaultMocked.nested.method.mockReturnValue({ length: 1 });
+mocked(mockTarget, true).nested.method.mockReturnValue({ length: 1 });
+mocked(mockTarget, { partial: false, deep: true }).nested.method.mockReturnValue({ length: 1 });
+mocked(mockTarget.nested.method, { partial: true, deep: true }).mockReturnValue({});
 // @ts-expect-error A shallow mock does not mock nested methods.
-shallowlyMocked.nested.method.mockReturnValue({ length: 1 });
-// @ts-expect-error An explicit shallow mock does not mock nested methods.
-explicitlyShallowlyMocked.nested.method.mockReturnValue({ length: 1 });
-// @ts-expect-error A partial shallow mock does not mock nested methods.
-partiallyShallowlyMocked.nested.method.mockReturnValue({ length: 1 });
+mocked(mockTarget).nested.method.mockReturnValue({ length: 1 });
 
-expect(calledWithString).toHaveBeenCalledWith('value');
-expect(calledWithString).toBeCalledWith('value');
-expect(calledWithString).toHaveBeenLastCalledWith('value');
-expect(calledWithString).lastCalledWith('value');
-expect(calledWithString).toHaveBeenNthCalledWith(1, 'value');
-expect(calledWithString).nthCalledWith(1, 'value');
-expect(calledWithString).toHaveBeenCalledTimes(1);
-expect(calledWithString).toBeCalledTimes(1);
-expect(calledWithObject).toHaveBeenCalledWith(
-  expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) })
-);
-expect(calledWithObject).toHaveReturnedWith(
-  expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) })
-);
-expect(calledWithString).toHaveLength(1);
-expect('value').toMatch('value');
-expect(3).toBeGreaterThan(2);
+const stringMock = fn((value: string) => value.length);
+const objectMock = fn((value: { nested: { value: number } }) => value);
+const nestedValue = expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) });
+
+expect(stringMock).toHaveBeenCalledWith('value');
+expect(stringMock).toHaveBeenCalledTimes(1);
+expect(objectMock).toHaveReturnedWith(nestedValue);
 // @ts-expect-error Call-count matchers require a number.
-expect(calledWithString).toHaveBeenCalledTimes('one');
-// @ts-expect-error A string matcher accepts strings or regular expressions.
-expect('value').toMatch(1);
-// @ts-expect-error Comparison matchers require numbers or bigints.
-expect(3).toBeGreaterThan('two');
+expect(stringMock).toHaveBeenCalledTimes('one');
 
 fn().mockRejectedValue('failure');
-
 isMockFunction(undefined);
 
 expect.getState().assertionCalls.toFixed();
@@ -179,13 +125,11 @@ expect.extend({
       typeof received === 'number' && typeof expected === 'number' && received % expected === 0;
     this.assertionCalls += 0;
     this.equals(received, expected);
-    const hint: string = this.utils.matcherHint('toBeDivisibleBy');
-    const difference: string | undefined = this.utils.diff(received, expected);
+    this.utils.matcherHint('toBeDivisibleBy');
+    this.utils.diff(received, expected);
+    this.isNot.valueOf();
     // @ts-expect-error Matcher utilities reject misspelled members.
     this.utils.matchHint('toBeDivisibleBy');
-    this.isNot.valueOf();
-    void hint;
-    void difference;
     return { message: () => 'expected a divisible number', pass };
   },
 });

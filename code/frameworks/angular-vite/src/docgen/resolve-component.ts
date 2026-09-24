@@ -46,24 +46,6 @@ export function resolveComponentFromCsf(
   return resolveMetaComponent(csf, storyFilePath);
 }
 
-/**
- * Story file → the component it documents.
- *
- * Reports `no-meta-component` when the file cannot be read or parsed, which callers treat the same
- * as "no `meta.component` here": there is no Angular component to document either way.
- */
-export function resolveStoryComponent(
-  storyFilePath: string,
-  title = 'Docgen'
-): MetaComponentResolution {
-  const csf = parseStoryFile(storyFilePath, title);
-  if (!csf) {
-    return { reason: 'no-meta-component' };
-  }
-
-  return resolveComponentFromCsf(csf, storyFilePath);
-}
-
 /** One subcomponent a story file's meta declares, resolved to the component it names. */
 export interface ResolvedStorySubcomponent {
   /** CSF object key the subcomponent is declared under. */
@@ -89,22 +71,4 @@ export function resolveSubcomponentsFromCsf(
     componentName,
     resolution: resolveMetaComponent(csf, storyFilePath, node),
   }));
-}
-
-/**
- * Story file → the subcomponents its meta declares, if any.
- *
- * Parses the file itself; prefer {@link resolveSubcomponentsFromCsf} when a `CsfFile` for this
- * story is already in hand, to avoid parsing it twice.
- */
-export function resolveStorySubcomponents(
-  storyFilePath: string,
-  title = 'Docgen'
-): ResolvedStorySubcomponent[] {
-  const csf = parseStoryFile(storyFilePath, title);
-  if (!csf) {
-    return [];
-  }
-
-  return resolveSubcomponentsFromCsf(csf, storyFilePath);
 }

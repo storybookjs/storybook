@@ -578,6 +578,47 @@ describe('buildDocgenPayload', () => {
       expect(payload?.name).toBe('ButtonComponent');
       expect(payload?.error).toBeUndefined();
     });
+
+    it('isolates an analyzer throw on a subcomponent, leaving the primary payload intact', () => {
+      // Regression coverage for the isolation `buildSubcomponentDocgen`'s try/catch provides: if
+      // that catch ever moved back to wrapping only the analyzer call (or were dropped entirely),
+      // a throw reached while building one child would fail the whole payload again, silently.
+      givenStoryFile(`
+        import { ButtonComponent } from './button.component';
+        import { ColorPickerComponent } from './color-picker.component';
+        export default {
+          title: 'Button',
+          component: ButtonComponent,
+          subcomponents: { ColorPicker: ColorPickerComponent },
+        };
+      `);
+      const manager = {
+        extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(
+          (path: string) => {
+            if (path === COLOR_PICKER_PATH) {
+              throw new TypeError('Debug Failure. False expression.');
+            }
+            return metaFor(componentEntry());
+          }
+        ),
+      };
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.subcomponents?.ColorPicker).toMatchObject({
+        name: 'ColorPickerComponent',
+        path: STORY_PATH,
+        jsDocTags: {},
+        error: { name: 'AngularComponentMetaExtractionFailed' },
+      });
+      expect(payload?.subcomponents?.ColorPicker?.error?.message).toContain(
+        'Debug Failure. False expression.'
+      );
+      // The child's throw does not touch the primary component's own extracted fields.
+      expect(payload?.name).toBe('ButtonComponent');
+      expect(payload?.argTypes?.label).toBeDefined();
+      expect(payload?.error).toBeUndefined();
+    });
   });
 
   describe('component reached through another module', () => {

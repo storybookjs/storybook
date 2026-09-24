@@ -32,7 +32,7 @@ const isModuleObject = (
   modules: Set<string>
 ) =>
   (t.isIdentifier(node) && (node.name === 'module' || modules.has(node.name))) ||
-  (t.isCallExpression(node) &&
+  ((t.isCallExpression(node) || t.isOptionalCallExpression(node)) &&
     t.isIdentifier(node.callee) &&
     loaders.has(node.callee.name) &&
     MODULE_BUILTIN.has(staticString(node.arguments[0]) ?? ''));

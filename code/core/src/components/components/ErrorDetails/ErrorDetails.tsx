@@ -150,7 +150,8 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
     children: 'Copy error',
     childrenOnCopy: 'Copied!',
     content: copyContent,
-    ariaLabel: 'Copy error to clipboard',
+    // Text buttons carry their accessible name in their visible text — the hook default
+    // (`ariaLabel: false`) keeps Button's text-button aria-label deprecation quiet.
     ariaLabelOnCopy: 'Error copied to clipboard',
   });
 
@@ -217,7 +218,7 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
               <ChevronDownIcon />
               {expanded ? 'Collapse error' : 'Expand error'}
             </Button>
-            <Button variant="ghost" size="small" {...copyButton.buttonProps} ariaLabel={false}>
+            <Button variant="ghost" size="small" {...copyButton.buttonProps}>
               <CopyIcon />
               {copyButton.children}
             </Button>

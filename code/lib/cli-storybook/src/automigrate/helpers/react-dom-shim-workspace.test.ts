@@ -646,9 +646,10 @@ describe('analyzeReactDomShimWorkspace', () => {
       }),
       '/project/index.html': '<!doctype html><script type="module" src="/src/main.ts"></script>',
       '/project/src/main.ts': "export const name = 'app';\n",
-      '/project/README.md': '# Project\n',
+      '/project/README.md': '# @storybook/react-dom-shim\n',
       '/project/styles.css': 'body { color: black; }\n',
       '/project/package-lock.json': '{"lockfileVersion":3}\n',
+      '/project/yarn.lock': '"@storybook/react-dom-shim@10.5.10":\n',
     });
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'safe' });
@@ -666,6 +667,11 @@ describe('analyzeReactDomShimWorkspace', () => {
       "import '@storybook/react-dom-shim#legacy';\n",
     ],
     [
+      'a config package query alias',
+      '/project/vite.config.ts',
+      'export default { resolve: { alias: { shim: "@storybook/react-dom-shim?worker" } } };\n',
+    ],
+    [
       'an external HTML base URL',
       '/project/index.html',
       '<base href="https://example.com/"><script type="module" src="main.ts"></script>',
@@ -676,9 +682,19 @@ describe('analyzeReactDomShimWorkspace', () => {
       "@import '@storybook/react-dom-shim';\n",
     ],
     [
+      'an escaped executable stylesheet import',
+      '/project/styles.css',
+      '@import "\\40 storybook/react-dom-shim";\n',
+    ],
+    [
       'a pnpm catalog reference',
       '/project/pnpm-workspace.yaml',
       "packages:\n  - packages/*\ncatalog:\n  shim: '@storybook/react-dom-shim'\n",
+    ],
+    [
+      'an escaped pnpm catalog reference',
+      '/project/pnpm-workspace.yaml',
+      'packages:\n  - packages/*\ncatalog:\n  shim: "npm:@storybook/react-dom-\\u0073him@10.5.10"\n',
     ],
   ])('refuses %s outside approved transforms', async (_name, filePath, source) => {
     vol.fromNestedJSON({
@@ -693,6 +709,26 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
       diagnostics: expect.arrayContaining([expect.stringContaining(`${filePath}:`)]),
+    });
+  });
+
+  it('refuses code execution that can load an unscanned file', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/vite.config.ts':
+        "import { readFileSync } from 'node:fs'; eval(readFileSync('./consumer.txt', 'utf8')); export default {};\n",
+      '/project/consumer.txt': "import('@storybook/' + 'react-dom-shim');\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/vite.config.ts: contains unresolved code execution',
+      ]),
     });
   });
 

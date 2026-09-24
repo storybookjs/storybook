@@ -1,17 +1,27 @@
-import { readdir, readFile } from 'node:fs/promises';
+import { readFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import { minVersion } from 'semver';
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 
 import { analyzeReactDomShimData } from './react-dom-shim-data.ts';
-import { linkedScriptDiagnostic, workspaceFileKind } from './react-dom-shim-file.ts';
+import {
+  inertFileDiagnostic,
+  linkedScriptDiagnostic,
+  pnpmWorkspaceDiagnostic,
+  workspaceFileKind,
+  workspaceFiles,
+} from './react-dom-shim-file.ts';
 import { analyzeReactDomShimHtml } from './react-dom-shim-html.ts';
-import { analyzeReactDomShimConfig, hasShimReference, staticString } from './react-dom-shim.ts';
+import {
+  analyzeReactDomShimConfig,
+  hasShimReference,
+  isShimSource,
+  staticString,
+} from './react-dom-shim.ts';
 
 const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
-const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const DEPENDENCY_SECTIONS = [
   'dependencies',
@@ -103,8 +113,6 @@ const workspacePatterns = (manifest: Manifest): string[] | undefined => {
 
 const hasShim = (manifest: Manifest): boolean =>
   DEPENDENCY_SECTIONS.some((section) => Boolean(manifest[section]?.[SHIM]));
-
-const isShimSource = (value: string) => value === SHIM || value.startsWith(`${SHIM}/`);
 
 const matchesPattern = (path: string, pattern: string): boolean => {
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&').replaceAll('**', '\\0');
@@ -215,6 +223,10 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
         }
       },
       CallExpression(path) {
+        if (t.isIdentifier(path.node.callee, { name: 'eval' })) {
+          diagnostic ??= `${filePath}: contains unresolved code execution`;
+          return;
+        }
         diagnostic ??= moduleLoadDiagnostic(path.node.callee, path.node.arguments, filePath);
       },
       OptionalCallExpression(path) {
@@ -251,31 +263,6 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
   } catch {
     return `${filePath}: cannot parse source during workspace scan`;
   }
-};
-
-const filePaths = async (directory: string): Promise<string[] | undefined> => {
-  let entries: Awaited<ReturnType<typeof readdir>>;
-  try {
-    entries = await readdir(directory, { withFileTypes: true });
-  } catch {
-    return undefined;
-  }
-
-  const files: string[] = [];
-  for (const entry of entries) {
-    const filePath = join(directory, entry.name);
-    if (entry.isSymbolicLink()) return undefined;
-    if (entry.isDirectory()) {
-      if (!SKIPPED_DIRECTORIES.has(entry.name)) {
-        const descendants = await filePaths(filePath);
-        if (!descendants) return undefined;
-        files.push(...descendants);
-      }
-    } else if (entry.isFile()) {
-      files.push(filePath);
-    }
-  }
-  return files;
 };
 
 const supportedWorkspaceRoot = async (
@@ -350,7 +337,7 @@ export const analyzeReactDomShimWorkspace = async (
   }
   const { directory: workspaceRoot, patterns } = workspace;
 
-  const files = await filePaths(workspaceRoot);
+  const files = await workspaceFiles(workspaceRoot);
   if (!files) {
     return {
       kind: 'manual',
@@ -386,11 +373,17 @@ export const analyzeReactDomShimWorkspace = async (
     );
   }
   for (const filePath of pnpmWorkspacePaths) {
+    const source = await reads(filePath);
+    if (source === undefined) {
+      diagnostics.push(`${filePath}: cannot read pnpm workspace metadata during workspace scan`);
+    } else {
+      const diagnostic = pnpmWorkspaceDiagnostic(source, filePath);
+      if (diagnostic) diagnostics.push(diagnostic);
+    }
     if (filePath !== join(workspaceRoot, 'pnpm-workspace.yaml')) {
       diagnostics.push(`${filePath}: nested workspace declarations are not supported`);
     }
   }
-
   for (const filePath of manifestPaths) {
     const source = await reads(filePath);
     const manifest = source && parseManifest(source);
@@ -414,7 +407,6 @@ export const analyzeReactDomShimWorkspace = async (
     }
     manifests.push({ filePath, source, manifest });
   }
-
   const shimManifests = manifests.filter(({ manifest }) => hasShim(manifest));
 
   for (const item of shimManifests) {
@@ -424,6 +416,15 @@ export const analyzeReactDomShimWorkspace = async (
   }
 
   const sourceEdits: Edit[] = [];
+  for (const filePath of files.filter((path) => /\.s?css$/.test(path))) {
+    const source = await reads(filePath);
+    if (source === undefined) {
+      diagnostics.push(`${filePath}: cannot read inert file during workspace scan`);
+    } else {
+      const diagnostic = inertFileDiagnostic(source, filePath);
+      if (diagnostic) diagnostics.push(diagnostic);
+    }
+  }
   for (const filePath of sources) {
     const source = await reads(filePath);
     if (source === undefined) {

@@ -19,8 +19,9 @@ type StaticConfig = {
 
 type CommentedNode = t.Node & { comments?: t.Comment[] | null };
 
-const isShimSource = (value: string) =>
-  value === REACT_DOM_SHIM || value.startsWith(`${REACT_DOM_SHIM}/`);
+export const isShimSource = (value: string) =>
+  value === REACT_DOM_SHIM ||
+  (value.startsWith(REACT_DOM_SHIM) && /^[/?#]/.test(value.slice(REACT_DOM_SHIM.length)));
 
 export const staticString = (node: t.Node | undefined): string | undefined => {
   if (t.isStringLiteral(node)) return node.value;

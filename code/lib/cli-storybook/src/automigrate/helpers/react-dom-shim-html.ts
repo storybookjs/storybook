@@ -39,6 +39,9 @@ export const analyzeReactDomShimHtml = (
   if (errors.length) return `${filePath}: cannot parse HTML during workspace scan`;
 
   for (const element of htmlElements(document)) {
+    if (element.tagName === 'base') {
+      return `${filePath}: contains an HTML base URL that cannot be scanned safely`;
+    }
     const type = element.attrs.find(({ name }) => name === 'type')?.value.toLowerCase();
     const script = element.tagName === 'script';
     const content = script ? htmlScript(element) : undefined;

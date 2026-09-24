@@ -451,7 +451,13 @@ export const analyzeReactDomShimWorkspace = async (
     return {
       kind: 'manual',
       workspaceRoot,
-      diagnostics: [`${workspaceRoot}: scan was incomplete`],
+      diagnostics: [
+        ...shimManifests.map(
+          ({ filePath }) =>
+            `${filePath}: declares @storybook/react-dom-shim and requires manual migration`
+        ),
+        `${workspaceRoot}: scan was incomplete`,
+      ],
       manifests: manifestPaths,
       sources,
     };

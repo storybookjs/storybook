@@ -18,7 +18,7 @@ on:
         type: boolean
         default: false
       storybook_latest:
-        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local build'
+        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of this checkout'
         type: boolean
         default: false
       review:
@@ -65,10 +65,10 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build local MCP packages
+      - name: Compile the Storybook packages the sandboxes install
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+        run: yarn nx run-many -t compile
 
       - name: Type check agent eval config
         run: yarn workspace agent-eval run typecheck

@@ -22,24 +22,6 @@ interface Options {
   upgradable: PackageMetadata[];
 }
 
-const REMOVED_REACT_DOM_SHIM = '@storybook/react-dom-shim';
-
-const isRemovedReactDomShim = (packageName: string, specifier?: string) =>
-  packageName === REMOVED_REACT_DOM_SHIM ||
-  specifier === `npm:${REMOVED_REACT_DOM_SHIM}` ||
-  specifier?.startsWith(`npm:${REMOVED_REACT_DOM_SHIM}@`) === true;
-
-const updatePackageVersion = (
-  dependencies: PackageJson['dependencies'],
-  packageName: string,
-  version: string
-) => {
-  const currentVersion = dependencies?.[packageName];
-  if (currentVersion && !isRemovedReactDomShim(packageName, currentVersion)) {
-    dependencies[packageName] = version;
-  }
-};
-
 async function getLatestVersions(
   packageManager: JsPackageManager,
   packages: [string, string][]
@@ -107,10 +89,8 @@ export const upgradeStorybookRelatedDependencies = {
 
     const uniquePackages = Array.from(
       new Set(
-        [...storybookDependencies, ...incompatibleDependencies].filter(
-          (dep) =>
-            !isRemovedReactDomShim(dep, allDependencies[dep]) &&
-            isValidVersionType(dep, allDependencies[dep])
+        [...storybookDependencies, ...incompatibleDependencies].filter((dep) =>
+          isValidVersionType(dep, allDependencies[dep])
         )
       )
     ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
@@ -162,9 +142,15 @@ export const upgradeStorybookRelatedDependencies = {
           const { packageName, afterVersion: version } = item;
           const prefixed = `^${version}`;
 
-          updatePackageVersion(packageJson.dependencies, packageName, prefixed);
-          updatePackageVersion(packageJson.devDependencies, packageName, prefixed);
-          updatePackageVersion(packageJson.peerDependencies, packageName, prefixed);
+          if (packageJson.dependencies?.[packageName]) {
+            packageJson.dependencies[packageName] = prefixed;
+          }
+          if (packageJson.devDependencies?.[packageName]) {
+            packageJson.devDependencies[packageName] = prefixed;
+          }
+          if (packageJson.peerDependencies?.[packageName]) {
+            packageJson.peerDependencies[packageName] = prefixed;
+          }
         });
 
         packageManager.writePackageJson(packageJson, dirname(packageJsonPath));

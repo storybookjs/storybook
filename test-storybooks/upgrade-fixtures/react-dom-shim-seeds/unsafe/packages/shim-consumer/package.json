@@ -1,8 +1,0 @@
-{
-  "name": "fixture-shim-consumer",
-  "private": true,
-  "type": "module",
-  "dependencies": {
-    "@storybook/react-dom-shim": "10.5.10"
-  }
-}

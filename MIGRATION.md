@@ -768,11 +768,9 @@ Remove `framework.options.legacyRootApi` from `.storybook/main.*`, whether its v
 
 Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. The package selected between legacy and modern React root APIs, but Storybook 11 requires React 18 or newer and no longer needs that compatibility layer. Published versions from earlier Storybook releases remain available.
 
-`storybook upgrade` removes an explicit dependency together with exact literal preset entries and isolated aliases when it can prove that the whole workspace is safe to migrate. It leaves all files unchanged and prints each consumer that needs manual work when it finds direct imports, computed configuration, unsupported React versions, or an incomplete workspace scan.
-
 If the package appears only as a transitive dependency, upgrade all Storybook packages together. You don't need to replace the package or add a direct dependency.
 
-If your project or monorepo lists `@storybook/react-dom-shim` explicitly, first search every workspace package for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. You can remove exact literal preset entries such as `@storybook/react-dom-shim/preset` and exact aliases that exist only for the shim. Inspect dynamic or computed configuration, regular-expression aliases, and custom wrappers manually before changing them.
+There is no automigration for explicit dependencies or imports because Storybook cannot determine whether third-party code depends on the shim's rendering lifecycle. If your project or monorepo lists `@storybook/react-dom-shim` explicitly, first search every workspace package for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. You can remove exact literal preset entries such as `@storybook/react-dom-shim/preset` and exact aliases that exist only for the shim. Inspect dynamic or computed configuration, regular-expression aliases, and custom wrappers manually before changing them.
 
 There is no supported import-only replacement for third-party code that imports `renderElement` or `unmountElement` from `@storybook/react-dom-shim`. The `storybook/internal/react-dom-client` entry is an internal contract for Storybook's own packages, not a public migration target.
 

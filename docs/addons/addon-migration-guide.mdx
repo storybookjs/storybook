@@ -172,9 +172,7 @@ If your addon imports internal Storybook APIs, review these additional changes:
 
 Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. If your addon receives it only through another Storybook package, upgrade all Storybook dependencies together and don't add a replacement dependency.
 
-The upgrade automigration scans workspace packages before removing an explicit dependency. It handles exact literal preset entries and isolated aliases automatically. If it finds a direct import or dynamic configuration, it preserves the dependency and every consumer and reports the affected file paths for manual migration.
-
-If your addon lists it explicitly, search the entire addon workspace for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. Remove exact literal `@storybook/react-dom-shim/preset` entries and exact aliases that exist only for the shim. Review dynamic or computed configuration, regular-expression aliases, and custom wrappers manually.
+There is no automigration for explicit dependencies or imports because Storybook cannot determine whether addon code depends on the shim's rendering lifecycle. If your addon lists it explicitly, search the entire addon workspace for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. Remove exact literal `@storybook/react-dom-shim/preset` entries and exact aliases that exist only for the shim. Review dynamic or computed configuration, regular-expression aliases, and custom wrappers manually.
 
 There is no supported public import that replaces `renderElement` or `unmountElement`. Don't migrate addon code to `storybook/internal/react-dom-client`; Storybook reserves that entry for its own packages. A direct `createRoot(container).render(element)` replacement is also incomplete because it doesn't preserve root reuse, unmount and recreation, initial root options, or awaitable commit and `act` behavior. Code that renders React elements must own those lifecycle and completion semantics.
 

@@ -451,8 +451,7 @@ export const generateUpgradeSpecs = async (
 
   // Filter for monorepo dependencies
   const monorepoDependencies = Object.keys(dependencies).filter(
-    (dependency): dependency is keyof typeof versions =>
-      dependency in versions && dependency !== '@storybook/react-dom-shim'
+    (dependency): dependency is keyof typeof versions => dependency in versions
   );
 
   // Generate core Storybook upgrades

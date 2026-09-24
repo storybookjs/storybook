@@ -42,8 +42,6 @@
     "commander": "^14.0.2",
     "create-storybook": "workspace:*",
     "jscodeshift": "^17.4.0",
-    "jsonc-parser": "^3.3.1",
-    "parse5": "^7.3.0",
     "storybook": "workspace:*",
     "ts-dedent": "^2.0.0"
   },

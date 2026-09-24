@@ -67,4 +67,16 @@ describe('applyVueDocgenApiTempFixes template slots', () => {
 
     expect(meta?.slots.map((slot) => slot.name)).toEqual(['header']);
   });
+
+  it('should keep a static slot name when its v-bind spread happens to carry a "name" key', async () => {
+    const [meta] = await applyVueDocgenApiTempFixes(
+      fixturePath('static-slot-name-bind-spread.vue'),
+      [metaWithoutSlots()],
+      ['default']
+    );
+
+    expect(meta?.slots).toEqual([
+      expect.objectContaining({ name: 'header', type: '{ name: unknown; item: unknown }' }),
+    ]);
+  });
 });

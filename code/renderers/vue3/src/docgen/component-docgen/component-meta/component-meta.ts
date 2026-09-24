@@ -316,7 +316,7 @@ export async function applyVueDocgenApiTempFixes(
         restoreMissingRuntimeEvents(meta, parsed.events);
       }
       if (needsSlots) {
-        mergeTemplateSlots(meta, parsed.slots);
+        mergeTemplateSlots(meta, parsed.slots, source);
       }
     });
   } catch {
@@ -425,18 +425,40 @@ function hasTemplateSlotGap(
 }
 
 /**
- * A dynamic `:name` binding is reported by vue-docgen-api as a slot named after the raw
- * expression, alongside a pseudo-binding literally named "name" (static `name` attributes never
- * produce one). The conventional `expr ?? 'literal'` shape folds to its fallback literal — the
- * slot name the author expects — and every other dynamic name is dropped: merged raw, it would
- * ship an argType key no story arg can address, and a wrong key is worse than no key.
+ * A dynamic `:name` directive is reported by vue-docgen-api as a slot named after the raw
+ * expression, alongside a pseudo-binding literally named "name". That pseudo-binding alone is
+ * not a reliable marker, though: a static slot's `v-bind="{ name: ..., ... }"` spread produces
+ * the identical "name" pseudo-binding while `slot.name` stays the real static attribute. Reading
+ * the source text disambiguates the two — only a genuine `:name`/`v-bind:name` directive whose
+ * value matches the reported name is actually dynamic.
  */
-const FOLDABLE_SLOT_NAME = /^\s*[\w$][\w$.]*\s*\?\?\s*(?:'([^']+)'|"([^"]+)")\s*$/;
+const NAME_DIRECTIVE = /(?:^|\s)(?::|v-bind:)name\s*=\s*(?:"([^"]*)"|'([^']*)')/g;
 
 type TemplateSlotDoc = NonNullable<ComponentDoc['slots']>[number];
 
-function resolveTemplateSlotName(slot: TemplateSlotDoc): string | undefined {
-  const isDynamic = slot.bindings?.some((binding) => binding.name === 'name') ?? false;
+function isDynamicSlotName(slot: TemplateSlotDoc, source: string | undefined): boolean {
+  const hasNameBinding = slot.bindings?.some((binding) => binding.name === 'name') ?? false;
+  if (!hasNameBinding || !source) {
+    return false;
+  }
+
+  const expression = slot.name.trim();
+  for (const match of source.matchAll(NAME_DIRECTIVE)) {
+    if ((match[1] ?? match[2] ?? '').trim() === expression) {
+      return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * The conventional `expr ?? 'literal'` shape folds to its fallback literal — the slot name the
+ * author expects — and every other dynamic name is dropped: merged raw, it would ship an
+ * argType key no story arg can address, and a wrong key is worse than no key.
+ */
+const FOLDABLE_SLOT_NAME = /^\s*[\w$][\w$.]*\s*\?\?\s*(?:'([^']+)'|"([^"]+)")\s*$/;
+
+function resolveTemplateSlotName(slot: TemplateSlotDoc, isDynamic: boolean): string | undefined {
   if (!isDynamic) {
     return slot.name;
   }
@@ -446,9 +468,14 @@ function resolveTemplateSlotName(slot: TemplateSlotDoc): string | undefined {
 }
 
 /** Merges template-derived slots into the meta: descriptions onto known slots, missing slots whole. */
-function mergeTemplateSlots(meta: ComponentMeta, slots: ComponentDoc['slots']): void {
+function mergeTemplateSlots(
+  meta: ComponentMeta,
+  slots: ComponentDoc['slots'],
+  source: string | undefined
+): void {
   for (const slot of slots ?? []) {
-    const slotName = resolveTemplateSlotName(slot);
+    const isDynamic = isDynamicSlotName(slot, source);
+    const slotName = resolveTemplateSlotName(slot, isDynamic);
     if (!slotName) {
       continue;
     }
@@ -461,9 +488,11 @@ function mergeTemplateSlots(meta: ComponentMeta, slots: ComponentDoc['slots']): 
       continue;
     }
 
-    // The "name" pseudo-binding marks a dynamic `:name` attribute, not a scoped slot prop.
+    // The "name" pseudo-binding marks a dynamic `:name` attribute, not a scoped slot prop —
+    // strip it only when the directive is genuinely dynamic; a static slot's `v-bind` spread
+    // may legitimately expose a scoped-slot prop also named "name".
     const bindings = (slot.bindings ?? [])
-      .filter((binding) => binding.name && binding.name !== 'name')
+      .filter((binding) => binding.name && (!isDynamic || binding.name !== 'name'))
       .map((binding) => `${binding.name}: ${binding.type?.name ?? 'unknown'}`);
     const type = bindings.length > 0 ? `{ ${bindings.join('; ')} }` : '{}';
     meta.slots.push({

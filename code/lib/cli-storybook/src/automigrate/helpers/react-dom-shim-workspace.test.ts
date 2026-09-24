@@ -546,6 +546,16 @@ describe('analyzeReactDomShimWorkspace', () => {
       'index.html',
       `<a href="javascript:import('@storybook/' + 'react-dom-shim')">Load</a>`,
     ],
+    [
+      'an encoded JavaScript URL module import',
+      'index.html',
+      `<a href="java&#x09;script:import('@storybook/' + 'react-dom-shim')">Load</a>`,
+    ],
+    [
+      'an HTML source document',
+      'README.html',
+      '<script type="module">import "@storybook/react-dom-shim";</script>',
+    ],
   ])('refuses %s in HTML', async (_name, fileName, html) => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({
@@ -593,6 +603,29 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
       sources: expect.arrayContaining(['/project/index.html']),
+      diagnostics: expect.arrayContaining([expect.stringContaining('/project/index.html:')]),
+    });
+  });
+
+  it.each([
+    ['an external module script', '<script type="module" src="https://example.com/loader.js"></script>'],
+    ['an escaping module script', '<script type="module" src="../../loader.js"></script>'],
+    [
+      'an embedded source document',
+      `<iframe srcdoc="&lt;script&gt;import('@storybook/' + 'react-dom-shim')&lt;/script&gt;"></iframe>`,
+    ],
+  ])('refuses %s in HTML', async (_name, body) => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/index.html': `<!doctype html>${body}`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
       diagnostics: expect.arrayContaining([expect.stringContaining('/project/index.html:')]),
     });
   });

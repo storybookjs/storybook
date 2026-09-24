@@ -320,6 +320,31 @@ describe('analyzeReactDomShimWorkspace', () => {
     });
   });
 
+  it('refuses unresolved arguments passed through CommonJS and ESM loader aliases', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/src/commonjs.cjs':
+        "const { createRequire } = require('node:module');\nconst load = createRequire(__filename);\nconst name = ['@storybook', 'react-dom-shim'].join('/');\nload(name);\n",
+      '/project/src/assigned.cjs':
+        "const load = require;\nconst name = ['@storybook', 'react-dom-shim'].join('/');\nload(name);\n",
+      '/project/src/esm.mjs':
+        "import { createRequire } from 'node:module';\nconst load = createRequire(import.meta.url);\nconst name = ['@storybook', 'react-dom-shim'].join('/');\nload(name);\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/src/assigned.cjs: contains an unresolved module load',
+        '/project/src/commonjs.cjs: contains an unresolved module load',
+        '/project/src/esm.mjs: contains an unresolved module load',
+      ]),
+    });
+  });
+
   it('refuses shim aliases in unsupported webpack configuration', async () => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({

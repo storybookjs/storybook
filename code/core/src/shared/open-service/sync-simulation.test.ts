@@ -956,5 +956,65 @@ describe('open-service sync simulation', () => {
     current.network.release('mb', 'server');
     drain(current);
     assertRelayTermination(current);
+  }, 30_000);
+
+  it('converges after two concurrent bursts longer than the entry count on the production fan', async () => {
+    const current = boot('production-fan');
+    await vi.advanceTimersByTimeAsync(1000);
+    for (let index = 0; index < 258; index += 1) {
+      await current.replica('p1').commands.setSlot({ slot: `a${index}`, value: 'a' });
+    }
+    for (let index = 0; index < 257; index += 1) {
+      await current.replica('p2').commands.setSlot({ slot: `b${index}`, value: 'b' });
+    }
+    drain(current);
+    await vi.advanceTimersByTimeAsync(1000);
+    drain(current);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    settleWithoutLogParity(current);
+    expect(Object.keys(current.replica('p1').getState().slots)).toHaveLength(515);
+  }, 30_000);
+
+  it('converges two tabs after a 16 s partition in which both sides wrote', async () => {
+    const current = boot('two-tabs');
+    await vi.advanceTimersByTimeAsync(1000);
+    const cut = [
+      ['server', 'mb'],
+      ['mb', 'server'],
+      ['server', 'pb'],
+      ['pb', 'server'],
+    ] as const;
+    for (const [from, to] of cut) {
+      current.network.hold(from, to);
+    }
+    for (const slot of ['a0', 'a1']) {
+      await current.replica('ma').commands.setSlot({ slot, value: 'a' });
+    }
+    for (const slot of ['b0', 'b1']) {
+      await current.replica('mb').commands.setSlot({ slot, value: 'b' });
+    }
+    drain(current);
+    await vi.advanceTimersByTimeAsync(16_000);
+    await current.replica('ma').commands.setSlot({ slot: 'a2', value: 'a' });
+    await current.replica('mb').commands.setSlot({ slot: 'b2', value: 'b' });
+    drain(current);
+    for (const [from, to] of cut) {
+      current.network.release(from, to);
+    }
+    drain(current);
+    await vi.advanceTimersByTimeAsync(1000);
+    drain(current);
+    await vi.advanceTimersByTimeAsync(1000);
+
+    settleWithoutLogParity(current);
+    expect(Object.keys(current.replica('pb').getState().slots).sort()).toEqual([
+      'a0',
+      'a1',
+      'a2',
+      'b0',
+      'b1',
+      'b2',
+    ]);
   });
 });

@@ -2,7 +2,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { fn } from 'storybook/test';
+import { expect, fn, within } from 'storybook/test';
 
 import { setupPreviewNavigator, teardownPreviewNavigator } from './preview-navigator.ts';
 
@@ -90,5 +90,50 @@ export const Default: Story = {
     });
 
     return teardownPreviewNavigator;
+  },
+};
+
+const specialCharactersIndex: StoryIndex = {
+  entries: {
+    'select--bold': {
+      id: 'select--bold',
+      title: 'Forms/<Select> & "Co"',
+      name: '<b>Bold</b>',
+      type: 'story',
+      subtype: 'story',
+      importPath: './components/select/Select.stories.ts',
+    },
+    'button--primary': {
+      id: 'button--primary',
+      title: 'Button',
+      name: 'Primary',
+      type: 'story',
+      subtype: 'story',
+      importPath: './button/Button.stories.ts',
+    },
+  },
+  v: 4,
+};
+
+/**
+ * Story titles and names can contain HTML characters like `<`, `&` and `"`. Those must render
+ * as literal text in the navigator, not as markup.
+ */
+export const SpecialCharacters: Story = {
+  args: {
+    currentStoryId: 'select--bold',
+  },
+  beforeEach: ({ args }) => {
+    teardownPreviewNavigator();
+    setupPreviewNavigator(specialCharactersIndex, args.currentStoryId);
+
+    return teardownPreviewNavigator;
+  },
+  play: async () => {
+    const body = within(document.body);
+
+    expect(body.getByRole('link', { name: '<b>Bold</b>' })).toBeInTheDocument();
+    expect(body.getByRole('list', { name: '<Select> & "Co"' })).toBeInTheDocument();
+    expect(document.querySelector('#sb-navigator-container b')).toBeNull();
   },
 };

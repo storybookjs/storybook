@@ -527,6 +527,44 @@ describe('analyzeReactDomShimWorkspace', () => {
 
   it.each([
     [
+      'an .htm module import',
+      'index.htm',
+      '<script type="module">import "@storybook/react-dom-shim";</script>',
+    ],
+    [
+      'an event handler module import',
+      'index.html',
+      `<button onclick="import('@storybook/' + 'react-dom-shim')">Load</button>`,
+    ],
+    [
+      'a template event handler module import',
+      'index.html',
+      `<template><button onclick="import('@storybook/' + 'react-dom-shim')">Load</button></template>`,
+    ],
+    [
+      'a JavaScript URL module import',
+      'index.html',
+      `<a href="javascript:import('@storybook/' + 'react-dom-shim')">Load</a>`,
+    ],
+  ])('refuses %s in HTML', async (_name, fileName, html) => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      [`/project/${fileName}`]: html,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      sources: expect.arrayContaining([`/project/${fileName}`]),
+      diagnostics: expect.arrayContaining([expect.stringContaining(`/project/${fileName}:`)]),
+    });
+  });
+
+  it.each([
+    [
       'external module entry',
       '<script type="module" src="@storybook/react-dom-shim/react-16"></script>',
     ],
@@ -556,6 +594,43 @@ describe('analyzeReactDomShimWorkspace', () => {
       kind: 'manual',
       sources: expect.arrayContaining(['/project/index.html']),
       diagnostics: expect.arrayContaining([expect.stringContaining('/project/index.html:')]),
+    });
+  });
+
+  it('keeps known inert workspace files out of the executable scan', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/index.html': '<!doctype html><script type="module" src="/src/main.ts"></script>',
+      '/project/src/main.ts': "export const name = 'app';\n",
+      '/project/README.md': '# Project\n',
+      '/project/styles.css': 'body { color: black; }\n',
+      '/project/package-lock.json': '{"lockfileVersion":3}\n',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'safe' });
+  });
+
+  it('refuses linked executable files outside the supported source formats', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/index.html':
+        '<!doctype html><script type="module" src="/src/main.coffee"></script>',
+      '/project/src/main.coffee': "require '@storybook/react-dom-shim'\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/src/main.coffee: unsupported file type cannot be scanned safely',
+      ]),
     });
   });
 

@@ -1,4 +1,5 @@
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
+import { capabilityCallEscapes } from './react-dom-shim-capability.ts';
 import { hasShimReference, isShimSource, staticString } from './react-dom-shim.ts';
 
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
@@ -231,10 +232,6 @@ type LoaderReferencePath = {
   parent: t.Node;
   parentPath: { parent: t.Node } | null;
 };
-type LoaderCallPath = {
-  node: t.CallExpression | t.OptionalCallExpression;
-  parent: t.Node;
-};
 const loaderReferenceEscapes = (
   path: LoaderReferencePath,
   loaders: Set<string>,
@@ -290,20 +287,6 @@ const loaderReferenceEscapes = (
     );
   }
   return true;
-};
-
-const factoryCallEscapes = (
-  path: LoaderCallPath,
-  loaders: Set<string>,
-  factories: Set<string>,
-  modules: Set<string>
-) => {
-  if (!isCreateRequireFactory(path.node.callee, loaders, factories, modules)) return false;
-  const parent = path.parent;
-  return !(
-    (t.isVariableDeclarator(parent) && parent.init === path.node && t.isIdentifier(parent.id)) ||
-    (t.isAssignmentExpression(parent) && parent.right === path.node && t.isIdentifier(parent.left))
-  );
 };
 
 const moduleLoadDiagnostic = (
@@ -371,7 +354,14 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
         );
         if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
         else diagnostic ??= moduleDiagnostic;
-        if (factoryCallEscapes(path, loaders, factories, modules)) {
+        if (
+          capabilityCallEscapes(
+            path,
+            isCreateRequireFactory(path.node.callee, loaders, factories, modules),
+            false
+          ) ||
+          capabilityCallEscapes(path, isModuleObject(path.node, loaders, modules), true)
+        ) {
           diagnostic ??= `${filePath}: contains an unresolved module load`;
         }
       },
@@ -385,7 +375,14 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
         );
         if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
         else diagnostic ??= moduleDiagnostic;
-        if (factoryCallEscapes(path, loaders, factories, modules)) {
+        if (
+          capabilityCallEscapes(
+            path,
+            isCreateRequireFactory(path.node.callee, loaders, factories, modules),
+            false
+          ) ||
+          capabilityCallEscapes(path, isModuleObject(path.node, loaders, modules), true)
+        ) {
           diagnostic ??= `${filePath}: contains an unresolved module load`;
         }
       },

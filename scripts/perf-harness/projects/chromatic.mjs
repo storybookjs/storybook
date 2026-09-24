@@ -36,6 +36,31 @@ export const monorepoPackages = [
   'vite-plugin-storybook-nextjs',
 ];
 
+// Bump when the prepare steps change, so existing worktrees are prepared again.
+const PREPARE_VERSION = 'prepare-2';
+
+// Storybook 11's nextjs-vite adds react/react-dom aliases to Next's compiled React 19 after main.ts's
+// viteFinal, which defeats Chromatic's React 18 pinning: every story throws "Cannot read properties
+// of undefined (reading 'S')" (React 19 react-dom on React 18). This drops those aliases in a
+// post-ordered config hook of Chromatic's own plugin.
+const FORCE_REACT_18_ANCHOR = `    enforce: 'pre' as const,
+    resolveId(source: string) {`;
+const FORCE_REACT_18_PATCH = `    enforce: 'pre' as const,
+    // perf-harness: drop nextjs-vite's aliases to Next's compiled React 19 (see the harness README).
+    config: {
+      order: 'post' as const,
+      handler(config: { resolve?: { alias?: unknown } }) {
+        const alias = config.resolve?.alias;
+        if (Array.isArray(alias)) {
+          config.resolve!.alias = alias.filter(
+            (entry: { replacement?: unknown }) =>
+              !(typeof entry.replacement === 'string' && /[\\\\/]next[\\\\/]dist[\\\\/]compiled[\\\\/]react/.test(entry.replacement))
+          );
+        }
+      },
+    },
+    resolveId(source: string) {`;
+
 const workspaceManifests = [
   'package.json',
   'lib/git-provider-content/package.json',
@@ -46,12 +71,16 @@ const workspaceManifests = [
 export async function ensureProject({ build, chromaticDir, chromaticRef }) {
   const dir = `${chromaticDir}.worktrees/perf-harness-${build.key}`;
   const buildMarker = join(dir, 'node_modules/.perf-harness-build');
-  const want = `${build.key} ${chromaticRef}`;
+  const want = `${build.key} ${chromaticRef} ${PREPARE_VERSION}`;
   if (existsSync(buildMarker) && (await readFile(buildMarker, 'utf8')) === want) {
     return dir;
   }
   if (!existsSync(dir)) {
-    sh('git', ['-C', chromaticDir, 'fetch', '--quiet', 'origin'], {});
+    try {
+      sh('git', ['-C', chromaticDir, 'cat-file', '-e', `${chromaticRef}^{commit}`]);
+    } catch {
+      sh('git', ['-C', chromaticDir, 'fetch', '--quiet', 'origin']);
+    }
     sh('git', ['-C', chromaticDir, 'worktree', 'add', '--detach', dir, chromaticRef]);
   } else {
     sh('git', ['-C', dir, 'reset', '--hard', '--quiet', chromaticRef]);
@@ -90,6 +119,18 @@ export async function ensureProject({ build, chromaticDir, chromaticRef }) {
       anchor,
       `${anchor}    experimentalDocgenServer: process.env.PERF_HARNESS_DOCGEN_SERVER === '1',\n`
     )
+  );
+
+  const forceReact18Path = join(dir, '.storybook/forceReact18.ts');
+  const forceReact18 = await readFile(forceReact18Path, 'utf8');
+  if (!forceReact18.includes(FORCE_REACT_18_ANCHOR)) {
+    throw new Error(
+      `Cannot find the plugin anchor in ${forceReact18Path}; update FORCE_REACT_18_ANCHOR`
+    );
+  }
+  await writeFile(
+    forceReact18Path,
+    forceReact18.replace(FORCE_REACT_18_ANCHOR, FORCE_REACT_18_PATCH)
   );
 
   await run('yarn', ['install'], {

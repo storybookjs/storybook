@@ -163,7 +163,8 @@ async function inBoth(tab, fn, arg) {
   return { manager, preview: prev };
 }
 
-// Opens the manager on `storyId` and resolves once the preview has rendered it.
+// Opens the manager on `storyId` and resolves once the preview reports the first render (story
+// rendered, docs rendered, or an error) to the manager.
 async function openTab(name, storyId = project.firstStoryId) {
   const page = await context.newPage();
   const cdp = await context.newCDPSession(page);
@@ -171,24 +172,11 @@ async function openTab(name, storyId = project.firstStoryId) {
   tabs.push(tab);
   const start = Date.now();
   await page.goto(`${baseUrl}/?path=/story/${storyId}`);
-  await page.waitForFunction(
-    () => document.querySelector('#storybook-preview-iframe')?.contentWindow?.__perf,
-    null,
-    { timeout: 180_000 }
-  );
-  await page.waitForFunction(
-    () => {
-      const doc = document.querySelector('#storybook-preview-iframe')?.contentDocument;
-      return (
-        doc?.querySelector('#storybook-root')?.childElementCount > 0 ||
-        doc?.querySelector('#storybook-docs')?.childElementCount > 0
-      );
-    },
-    null,
-    { timeout: 180_000 }
-  );
+  const rendered = await page
+    .waitForFunction(() => window.__perf?.lastRender, null, { timeout: 300_000 })
+    .then((h) => h.jsonValue());
   await page.waitForSelector('#storybook-explorer-tree', { timeout: 180_000 });
-  return { tab, openMs: Date.now() - start };
+  return { tab, openMs: Date.now() - start, firstRender: rendered.type };
 }
 
 // Waits until no runtime in any tab has recorded a new frame for `quietMs`.

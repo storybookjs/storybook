@@ -127,9 +127,21 @@
 
   // --- Transport frames --------------------------------------------------------------------------
 
+  // The preview reports the end of every render to the manager with one of these events.
+  const RENDER_EVENTS = new Set([
+    'storyRendered',
+    'docsRendered',
+    'storyErrored',
+    'storyMissing',
+    'storyThrewException',
+    'playFunctionThrewException',
+  ]);
   const pushFrame = (frame) => {
     frames.push(frame);
     frameCount += 1;
+    if (frame.dir === 'in' && frame.link === 'pm' && RENDER_EVENTS.has(frame.type)) {
+      window.__perf.lastRender = { type: frame.type, t: frame.t };
+    }
   };
   const startFrame = (link, text) => ({
     t: epoch(),
@@ -334,6 +346,7 @@
       tick();
     },
     watchHit: null,
+    lastRender: null,
     docgenText,
     // Resolves with the epoch time at which component `id`'s docgen JSON contains `marker`
     // (or exists, when `marker` is null), or null on timeout. Polls every 4 ms.

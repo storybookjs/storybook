@@ -89,11 +89,34 @@ if (isMainThread && basePort) {
   };
 
   const { ChildProcess } = childProcess;
+  // Node assigns `send` as an own property of each ChildProcess inside `spawn()` (setupChannel), so
+  // wrap it on the instance after spawning. The child gets the serialization mode in an env var,
+  // because Node deletes NODE_CHANNEL_SERIALIZATION_MODE before any `--import` runs.
   const origSpawn = ChildProcess.prototype.spawn;
   ChildProcess.prototype.spawn = function spawn(options) {
     recordSpawn(options?.file, options?.args, false);
-    serializationOf.set(this, options?.serialization ?? 'json');
-    return origSpawn.apply(this, arguments);
+    const serialization = options?.serialization ?? 'json';
+    if (Array.isArray(options?.envPairs)) {
+      options.envPairs.push(`PERF_HARNESS_IPC_SERIALIZATION=${serialization}`);
+    }
+    const result = origSpawn.apply(this, arguments);
+    if (typeof this.send === 'function') {
+      const send = this.send;
+      const child = this;
+      this.send = function (message) {
+        ipc.push({
+          t: epoch(),
+          dir: 'to-child',
+          pid: child.pid,
+          ...ipcType(message),
+          bytes: ipcBytes(message, serialization),
+          serialization,
+        });
+        return send.apply(this, arguments);
+      };
+      serializationOf.set(this, serialization);
+    }
+    return result;
   };
   for (const name of ['spawnSync', 'execFileSync', 'execSync']) {
     const orig = childProcess[name];
@@ -108,23 +131,10 @@ if (isMainThread && basePort) {
   }
   syncBuiltinESMExports();
 
-  const origSend = ChildProcess.prototype.send;
-  ChildProcess.prototype.send = function send(message) {
-    const serialization = serializationOf.get(this) ?? 'json';
-    ipc.push({
-      t: epoch(),
-      dir: 'to-child',
-      pid: this.pid,
-      ...ipcType(message),
-      bytes: ipcBytes(message, serialization),
-      serialization,
-    });
-    return origSend.apply(this, arguments);
-  };
   const origEmit = ChildProcess.prototype.emit;
   ChildProcess.prototype.emit = function emit(name, message) {
-    if (name === 'message') {
-      const serialization = serializationOf.get(this) ?? 'json';
+    if (name === 'message' && serializationOf.has(this)) {
+      const serialization = serializationOf.get(this);
       ipc.push({
         t: epoch(),
         dir: 'from-child',
@@ -138,7 +148,7 @@ if (isMainThread && basePort) {
   };
   // The child's own view of the same link, to cross-check the parent's numbers.
   if (isVitestChild && typeof process.send === 'function') {
-    const serialization = process.env.NODE_CHANNEL_SERIALIZATION_MODE ?? 'json';
+    const serialization = process.env.PERF_HARNESS_IPC_SERIALIZATION ?? 'json';
     const send = process.send.bind(process);
     process.send = function (message, ...rest) {
       ipc.push({
@@ -150,6 +160,15 @@ if (isMainThread && basePort) {
       });
       return send(message, ...rest);
     };
+    process.prependListener('message', (message) => {
+      ipc.push({
+        t: epoch(),
+        dir: 'from-parent',
+        ...ipcType(message),
+        bytes: ipcBytes(message, serialization),
+        serialization,
+      });
+    });
   }
 
   // Server-side websocket errors and closes, to explain a client that sees code 1006.

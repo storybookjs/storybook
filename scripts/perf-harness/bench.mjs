@@ -1,9 +1,10 @@
 // One command per workload: prepares a project for each build, runs the workload against both
 // builds alternately, and writes report.md (before, after, ratio; medians over runs).
 //
-// Usage: node bench.mjs <workload> --before <ref> --after <ref> [--runs 3] [--project <name>]
+// Usage: node bench.mjs <workload> --before <ref> [--after <ref>] [--runs 3] [--project <name>]
 //          [--size <n>] [--shape balanced|wide|docgen] [--out <dir>] [workload options]
 // A ref is local:<path to a compiled storybook checkout> or canary:<sha>. See README.md.
+// Without --after, it runs the --before build only and reports one column (a baseline).
 import { execFileSync } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { cpus, totalmem } from 'node:os';
@@ -36,9 +37,9 @@ const { values: opts, positionals } = parseArgs({
 
 const workloadName = positionals[0];
 const workload = WORKLOADS[workloadName];
-if (!workload || !opts.before || !opts.after) {
+if (!workload || !opts.before) {
   console.error(
-    `Usage: node bench.mjs <${Object.keys(WORKLOADS).join('|')}> --before <ref> --after <ref> [--runs 3]`
+    `Usage: node bench.mjs <${Object.keys(WORKLOADS).join('|')}> --before <ref> [--after <ref>] [--runs 3]`
   );
   process.exit(1);
 }
@@ -60,15 +61,17 @@ const out = resolve(
 );
 await mkdir(out, { recursive: true });
 
-const builds = {
-  before: await resolveBuild(opts.before, { workDir }),
-  after: await resolveBuild(opts.after, { workDir }),
-};
+// Without --after, the harness runs one build only (a baseline).
+const sides = opts.after ? ['before', 'after'] : ['before'];
+const builds = {};
+for (const side of sides) {
+  builds[side] = await resolveBuild(opts[side], { workDir });
+}
 
 const projectModule = await import(`./projects/${projectName}.mjs`);
 const chromaticRef = opts['chromatic-ref'] ?? projectModule.DEFAULT_CHROMATIC_REF;
 const dirs = {};
-for (const side of ['before', 'after']) {
+for (const side of sides) {
   dirs[side] =
     projectName === 'synthetic'
       ? await projectModule.ensureProject({ build: builds[side], workDir, size, shape })
@@ -123,7 +126,7 @@ if (opts['prepare-only']) {
 // Runs alternate so slow drift on the machine hits both sides: before, after, after, before, ...
 const passThrough = Object.entries(meta.options).flatMap(([k, v]) => [`--${k}`, String(v)]);
 for (let i = 1; i <= meta.runs; i += 1) {
-  const order = i % 2 ? ['before', 'after'] : ['after', 'before'];
+  const order = i % 2 ? sides : [...sides].reverse();
   for (const side of order) {
     const file = join(out, `${side}-${i}.json`);
     log(`run ${i}/${meta.runs} ${side}`);

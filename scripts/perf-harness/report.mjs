@@ -234,9 +234,15 @@ const ratio = (b, a) => {
   const r = a / b;
   return r < 0.01 ? `${r.toExponential(1)}×` : `${r.toFixed(2)}×`;
 };
+// A baseline (no --after build) has one value column.
+const single = !meta.builds.after;
 const row = (label, key, b, a) =>
-  `| ${label} | ${fmt(key, b)} | ${fmt(key, a)} | ${ratio(b, a)} |\n`;
-const TABLE_HEAD = '| Measure | Before | After | After/before |\n| --- | ---: | ---: | ---: |\n';
+  single
+    ? `| ${label} | ${fmt(key, b)} |\n`
+    : `| ${label} | ${fmt(key, b)} | ${fmt(key, a)} | ${ratio(b, a)} |\n`;
+const TABLE_HEAD = single
+  ? `| Measure | ${meta.builds.before.label} |\n| --- | ---: |\n`
+  : '| Measure | Before | After | After/before |\n| --- | ---: | ---: | ---: |\n';
 
 // Headline rows per workload: [phase, metric key]. Missing rows are skipped.
 const perLink = (phase) => [
@@ -325,9 +331,10 @@ const heapMedians = {
 
 const first = runs.after[0] ?? runs.before[0];
 let md = `### Perf harness: \`${meta.workload}\` on ${meta.project === 'synthetic' ? `synthetic ${meta.shape}, ${first?.indexEntries ?? meta.size} entries` : `Chromatic webapp (${first?.indexEntries ?? '?'} entries)`}\n\n`;
-md += `- Before: ${meta.builds.before.label}\n`;
-md += `- After: ${meta.builds.after.label}\n`;
-md += `- Runs: before ${runs.before.length}, after ${runs.after.length}; median shown. ${meta.machine.cpu}, ${meta.machine.cores} cores, ${meta.machine.memoryGB} GB, ${meta.machine.platform}, Node ${meta.machine.node}. Harness ${meta.harness}.\n`;
+md += single
+  ? `- Build: ${meta.builds.before.label} (baseline, no comparison)\n`
+  : `- Before: ${meta.builds.before.label}\n- After: ${meta.builds.after.label}\n`;
+md += `- Runs: ${single ? runs.before.length : `before ${runs.before.length}, after ${runs.after.length}`}; median shown. Machine: ${meta.machine.cpu}, ${meta.machine.cores} cores, ${meta.machine.memoryGB} GB, ${meta.machine.platform}, Node ${meta.machine.node}. Harness ${meta.harness}.\n`;
 if (failed.length) md += `- Failed runs: ${failed.join('; ')}\n`;
 md += '\n' + TABLE_HEAD;
 for (const [phase, key] of HEADLINES[meta.workload] ?? []) {

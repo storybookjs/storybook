@@ -286,7 +286,9 @@ The generated Storybook test project uses `extends: true` to share your root Vit
 
 Move unit-only settings, such as `setupFiles` and `environment`, into the unit-test project inside `test.projects`. Keep shared Vite plugins and aliases at the root. When the addon converts a single test configuration into projects, it moves project-specific test settings into the unit project automatically.
 
-If you need to isolate all root configuration, set `extends: false` on the Storybook project and explicitly configure its required framework plugins and aliases, either on that project or through Storybook's [`viteFinal`](../../../api/main-config/main-config-vite-final.mdx).
+If you need to isolate inherited project configuration, set `extends: false` on the Storybook project and explicitly configure its required framework plugins and aliases, either on that project or through Storybook's [`viteFinal`](../../../api/main-config/main-config-vite-final.mdx).
+
+Root `globalSetup` and root plugin hooks such as `config` still run even with `extends: false`. Move unit-only global setup into the unit-test project, and keep root plugin hooks safe for all projects.
 
 Coverage is a [global Vitest option](https://vitest.dev/guide/projects), so `extends: false` does not isolate it. When you run `vitest --project=storybook --coverage`, Vitest still uses the root `test.coverage` configuration.
 

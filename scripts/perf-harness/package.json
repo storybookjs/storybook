@@ -1,0 +1,14 @@
+{
+  "name": "storybook-perf-harness",
+  "private": true,
+  "type": "module",
+  "description": "Before/after performance numbers for Storybook PRs. Not a workspace of the monorepo; install with npm.",
+  "engines": {
+    "node": ">=22.18"
+  },
+  "dependencies": {
+    "@memlab/core": "^2.0.5",
+    "@memlab/heap-analysis": "^2.0.5",
+    "playwright": "1.62.0"
+  }
+}

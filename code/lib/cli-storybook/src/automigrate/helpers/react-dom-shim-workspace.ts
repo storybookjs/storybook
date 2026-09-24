@@ -2,8 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import { minVersion } from 'semver';
-import { babelParse, traverse, types as t } from 'storybook/internal/babel';
-
 import { analyzeReactDomShimData } from './react-dom-shim-data.ts';
 import {
   inertFileDiagnostic,
@@ -13,12 +11,8 @@ import {
   workspaceFiles,
 } from './react-dom-shim-file.ts';
 import { analyzeReactDomShimHtml } from './react-dom-shim-html.ts';
-import {
-  analyzeReactDomShimConfig,
-  hasShimReference,
-  isShimSource,
-  staticString,
-} from './react-dom-shim.ts';
+import { analyzeReactDomShimConfig } from './react-dom-shim.ts';
+import { sourceDiagnostic } from './react-dom-shim-source.ts';
 
 const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
@@ -163,107 +157,6 @@ const hasManifestShimReference = (manifest: Manifest): boolean =>
       )
     );
   });
-
-const moduleLoad = (
-  callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee']
-): 'known' | 'unresolved' | undefined => {
-  if (t.isImport(callee) || t.isIdentifier(callee, { name: 'require' })) return 'known';
-  if (
-    (!t.isMemberExpression(callee) && !t.isOptionalMemberExpression(callee)) ||
-    !t.isIdentifier(callee.object, { name: 'require' })
-  ) {
-    return undefined;
-  }
-  const property = callee.computed
-    ? staticString(callee.property)
-    : t.isIdentifier(callee.property)
-      ? callee.property.name
-      : undefined;
-  return property === undefined ? 'unresolved' : property === 'resolve' ? 'known' : undefined;
-};
-
-const moduleLoadDiagnostic = (
-  callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee'],
-  arguments_: (t.Expression | t.SpreadElement | t.JSXNamespacedName | t.ArgumentPlaceholder)[],
-  filePath: string
-): string | undefined => {
-  const [argument] = arguments_;
-  const value = staticString(argument);
-  if (value && isShimSource(value)) {
-    return `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-  }
-  const kind = moduleLoad(callee);
-  if (!kind) return undefined;
-  return kind === 'unresolved' || !value
-    ? `${filePath}: contains an unresolved module load`
-    : undefined;
-};
-
-const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
-  try {
-    let diagnostic: string | undefined;
-    traverse(babelParse(source), {
-      ImportDeclaration(path) {
-        if (isShimSource(path.node.source.value))
-          diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-      },
-      ExportNamedDeclaration(path) {
-        if (path.node.source && isShimSource(path.node.source.value))
-          diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-      },
-      ExportAllDeclaration(path) {
-        if (isShimSource(path.node.source.value))
-          diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-      },
-      TSImportEqualsDeclaration(path) {
-        const reference = path.node.moduleReference;
-        if (!t.isTSExternalModuleReference(reference)) return;
-        if (isShimSource(reference.expression.value)) {
-          diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-        }
-      },
-      CallExpression(path) {
-        if (t.isIdentifier(path.node.callee, { name: 'eval' })) {
-          diagnostic ??= `${filePath}: contains unresolved code execution`;
-          return;
-        }
-        diagnostic ??= moduleLoadDiagnostic(path.node.callee, path.node.arguments, filePath);
-      },
-      OptionalCallExpression(path) {
-        diagnostic ??= moduleLoadDiagnostic(path.node.callee, path.node.arguments, filePath);
-      },
-      ImportExpression(path) {
-        const value = staticString(path.node.source);
-        if (value && isShimSource(value))
-          diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-        else if (!value) diagnostic ??= `${filePath}: contains an unresolved module load`;
-      },
-      StringLiteral(path) {
-        if (!CONFIG_FILE.test(filePath) && isShimSource(path.node.value)) {
-          diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
-        }
-      },
-      TemplateLiteral(path) {
-        if (hasShimReference(path.node)) {
-          diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
-        }
-      },
-      BinaryExpression(path) {
-        if (hasShimReference(path.node)) {
-          diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
-        }
-      },
-      ObjectProperty(path) {
-        if (CONFIG_FILE.test(filePath) && path.node.computed) {
-          diagnostic ??= `${filePath}: contains computed configuration that cannot be removed safely`;
-        }
-      },
-    });
-    return diagnostic;
-  } catch {
-    return `${filePath}: cannot parse source during workspace scan`;
-  }
-};
 
 const supportedWorkspaceRoot = async (
   projectDirectory: string

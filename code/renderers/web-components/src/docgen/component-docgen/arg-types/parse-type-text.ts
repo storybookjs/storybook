@@ -12,7 +12,8 @@ const DROPPED_MEMBERS = new Set([
   'string & {}',
   '(string & {})',
 ]);
-const WIDENING_MEMBERS = new Set(['string', 'number', 'boolean', 'object', 'Function', '{}', '[]']);
+const NON_ENUM_IDENTIFIERS = new Set(['true', 'false', 'Date', 'bigint', 'symbol']);
+const WIDENING_MEMBERS = new Set(['string', 'number', 'boolean', 'object', '{}', '[]']);
 const FUNCTION_RE = /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/;
 const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
 
@@ -36,7 +37,12 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     return { type: { name: 'enum', value: literalMembers } };
   }
   if (hasStructuralLiteralUnion(members)) {
-    return { type: { name: 'other', value: members.join(' | ') }, control: 'object' };
+    return {
+      type: { name: 'other', value: members.join(' | ') },
+      control: members.some((member) => parseLiteral(member) === undefined && isCallable(member))
+        ? false
+        : 'object',
+    };
   }
 
   const scalar = pickScalar(members);
@@ -68,7 +74,7 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     if (isBareArrayType(member)) {
       return { type: { name: 'array', value: UNKNOWN_ARRAY_ELEMENT_TYPE } };
     }
-    if (member === 'Function' || FUNCTION_RE.test(member) || /^\([^)]*\)\s*:/.test(member)) {
+    if (isCallable(member)) {
       return { type: { name: 'function' } };
     }
     if (isObjectLike(member)) {
@@ -117,7 +123,7 @@ function pickScalar(members: string[]): SBType | undefined {
   return undefined;
 }
 
-/** Literal unions promote to enums unless non-literals include structural or callable type text. */
+/** Literal unions promote to enums unless non-literals include structural, callable, boolean or Date type text. */
 function pickLiteralMembers(members: string[]): (string | number)[] | undefined {
   const literalMembers = members.map(parseLiteral).filter((literal) => literal !== undefined);
   if (literalMembers.length === 0) {
@@ -136,7 +142,15 @@ function hasStructuralLiteralUnion(members: string[]): boolean {
 }
 
 function isEnumCompatible(text: string): boolean {
-  return WIDENING_MEMBERS.has(text) || BARE_IDENTIFIER_RE.test(text);
+  return (
+    !isCallable(text) &&
+    !NON_ENUM_IDENTIFIERS.has(text) &&
+    (WIDENING_MEMBERS.has(text) || BARE_IDENTIFIER_RE.test(text))
+  );
+}
+
+function isCallable(text: string): boolean {
+  return text === 'Function' || FUNCTION_RE.test(text) || /^\([^)]*\)\s*:/.test(text);
 }
 
 function isBareArrayType(text: string): boolean {

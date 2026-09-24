@@ -1,0 +1,220 @@
+import type { DocgenJsDocTags } from '../../services/docgen/types.ts';
+import type { StoryDocsPayload } from '../../services/story-docs/types.ts';
+
+const IDENTIFIER = /^[$_\p{ID_Start}][$\u200C\u200D\p{ID_Continue}]*$/u;
+
+type ImportSpecifier =
+  | { kind: 'default'; local: string }
+  | { kind: 'namespace'; local: string }
+  | { kind: 'named'; imported: string; local: string; raw: string };
+
+type ImportDeclaration = {
+  source: string;
+  quote: string;
+  defaultName?: string;
+  namespaceName?: string;
+  named: string[];
+};
+
+function splitImportStatements(imports: string): string[] | undefined {
+  const statements: string[] = [];
+  let start = 0;
+  let quote: string | undefined;
+  let escaped = false;
+  let braceDepth = 0;
+
+  for (let index = 0; index < imports.length; index += 1) {
+    const character = imports[index];
+    if (quote) {
+      if (escaped) {
+        escaped = false;
+      } else if (character === '\\') {
+        escaped = true;
+      } else if (character === quote) {
+        quote = undefined;
+      }
+    } else if (character === "'" || character === '"') {
+      quote = character;
+    } else if (character === '{') {
+      braceDepth += 1;
+    } else if (character === '}') {
+      braceDepth -= 1;
+    } else if (
+      braceDepth === 0 &&
+      (character === ';' ||
+        (character === '\n' &&
+          imports.slice(start, index).trim().length > 0 &&
+          imports
+            .slice(index + 1)
+            .trimStart()
+            .startsWith('import ')))
+    ) {
+      statements.push(imports.slice(start, index + 1).trim());
+      start = index + 1;
+    }
+  }
+
+  const remainder = imports.slice(start).trim();
+  if (remainder) {
+    statements.push(remainder);
+  }
+  return quote ||
+    braceDepth !== 0 ||
+    statements.some((statement) => !statement.startsWith('import '))
+    ? undefined
+    : statements;
+}
+
+function parseImport(statement: string): ImportDeclaration | undefined {
+  const sideEffect = statement.match(/^import\s+(['"])([^'"]+)\1\s*;?$/);
+  if (sideEffect) {
+    return { source: sideEffect[2], quote: sideEffect[1], named: [] };
+  }
+  const match = statement.match(/^import\s+([\s\S]+?)\s+from\s+(['"])([^'"]+)\2\s*;?$/);
+  if (!match) {
+    return undefined;
+  }
+
+  const [, clause, quote, source] = match;
+  const namedMatch = clause.match(/\{([\s\S]*)\}/);
+  const namespaceMatch = clause.match(/\*\s+as\s+([^\s,{}]+)/);
+  const specialIndexes = [clause.indexOf('{'), clause.indexOf('*')].filter((index) => index >= 0);
+  const prefix = clause.slice(0, Math.min(...specialIndexes, clause.length));
+  const defaultName = prefix.trim().replace(/,$/, '').trim();
+  const namespaceName = namespaceMatch?.[1];
+  if (
+    (defaultName && !IDENTIFIER.test(defaultName)) ||
+    (namespaceName && !IDENTIFIER.test(namespaceName))
+  ) {
+    return undefined;
+  }
+
+  return {
+    source,
+    quote,
+    ...(defaultName ? { defaultName } : {}),
+    ...(namespaceName ? { namespaceName } : {}),
+    named: namedMatch
+      ? namedMatch[1]
+          .split(',')
+          .map((name) => name.trim())
+          .filter(Boolean)
+      : [],
+  };
+}
+
+function specifiers(declaration: ImportDeclaration): ImportSpecifier[] {
+  const result: ImportSpecifier[] = [];
+  if (declaration.defaultName) {
+    result.push({ kind: 'default', local: declaration.defaultName });
+  }
+  if (declaration.namespaceName) {
+    result.push({ kind: 'namespace', local: declaration.namespaceName });
+  }
+  for (const raw of declaration.named) {
+    if (raw.startsWith('type ')) {
+      continue;
+    }
+    const [imported, local = imported] = raw.split(/\s+as\s+/);
+    if (IDENTIFIER.test(imported) && IDENTIFIER.test(local)) {
+      result.push({ kind: 'named', imported, local, raw });
+    }
+  }
+  return result;
+}
+
+function renderImport(declaration: ImportDeclaration): string | undefined {
+  const tail = declaration.namespaceName
+    ? `* as ${declaration.namespaceName}`
+    : declaration.named.length > 0
+      ? `{ ${declaration.named.join(', ')} }`
+      : undefined;
+  const clause = [declaration.defaultName, tail].filter(Boolean).join(', ');
+  return clause
+    ? `import ${clause} from ${declaration.quote}${declaration.source}${declaration.quote};`
+    : undefined;
+}
+
+function renderOverride(
+  declaration: ImportDeclaration,
+  specifier: ImportSpecifier | undefined,
+  local: string,
+  original: ImportSpecifier
+): string {
+  const selected = specifier ?? original;
+  const clause =
+    selected.kind === 'default'
+      ? local
+      : selected.kind === 'namespace'
+        ? `* as ${selected.local}`
+        : `{ ${selected.imported}${selected.imported === local ? '' : ` as ${local}`} }`;
+  return `import ${clause} from ${declaration.quote}${declaration.source}${declaration.quote};`;
+}
+
+function applyImportOverride(
+  imports: string,
+  componentName: string,
+  importOverride: string
+): string {
+  const statements = splitImportStatements(imports);
+  const overrideStatements = splitImportStatements(importOverride);
+  const override =
+    overrideStatements?.length === 1 ? parseImport(overrideStatements[0]) : undefined;
+  if (!statements || !override) {
+    return imports;
+  }
+
+  const declarations = statements.map(parseImport);
+  const candidates = declarations.flatMap((declaration, statementIndex) =>
+    declaration
+      ? specifiers(declaration).map((specifier) => ({ declaration, specifier, statementIndex }))
+      : []
+  );
+  const dot = componentName.indexOf('.');
+  const baseName = dot === -1 ? componentName : componentName.slice(0, dot);
+  const memberName = dot === -1 ? undefined : componentName.slice(dot + 1);
+  const match =
+    candidates.find(({ specifier }) => specifier.local === baseName) ??
+    (memberName ? candidates.find(({ specifier }) => specifier.local === memberName) : undefined);
+  if (!match) {
+    return imports;
+  }
+
+  const local = match.specifier.local === memberName ? baseName : match.specifier.local;
+  const overrideStatement = renderOverride(
+    override,
+    specifiers(override)[0],
+    local,
+    match.specifier
+  );
+  const remaining = { ...match.declaration };
+  if (match.specifier.kind === 'default') {
+    delete remaining.defaultName;
+  } else if (match.specifier.kind === 'namespace') {
+    delete remaining.namespaceName;
+  } else {
+    const { raw } = match.specifier;
+    remaining.named = remaining.named.filter((named) => named !== raw);
+  }
+
+  return statements
+    .flatMap((statement, index) =>
+      index === match.statementIndex
+        ? [overrideStatement, renderImport(remaining)].filter((value): value is string => !!value)
+        : statement
+    )
+    .join('\n');
+}
+
+export function composeComponentImport(
+  jsDocTags: DocgenJsDocTags | undefined,
+  storyDocs: Partial<Pick<StoryDocsPayload, 'name' | 'import'>> | null | undefined
+): string | undefined {
+  const imports = storyDocs?.import;
+  const importOverride = jsDocTags?.import?.[0]?.trim();
+  if (!imports || !importOverride || !storyDocs?.name) {
+    return imports;
+  }
+
+  return applyImportOverride(imports, storyDocs.name, importOverride);
+}

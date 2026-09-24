@@ -264,6 +264,74 @@ describe('createServiceDocsAccess list', () => {
 });
 
 describe('createServiceDocsAccess resolve', () => {
+  it('prefers the docgen import tag to the story docs fallback', async () => {
+    docgen.mockResolvedValueOnce({
+      ...alphaDocgen,
+      jsDocTags: { import: ["  import { Alpha } from '@design-system/components'  "] },
+    });
+    storyDocs.mockResolvedValueOnce({
+      ...alphaStoryDocs,
+      import:
+        "import './setup';\nimport type { AlphaProps } from './components';\nimport React, { Alpha, Icon } from './components';\nimport { fn } from 'storybook/test';",
+    });
+
+    const entry = await createAccess().resolve('alpha');
+
+    expect(entry).toMatchObject({
+      kind: 'component',
+      component: {
+        import:
+          "import './setup';\nimport type { AlphaProps } from './components';\nimport { Alpha } from '@design-system/components';\nimport React, { Icon } from './components';\nimport { fn } from 'storybook/test';",
+      },
+    });
+  });
+
+  it('applies the override to an aliased component that is not the first import', async () => {
+    docgen.mockResolvedValueOnce({
+      ...alphaDocgen,
+      jsDocTags: { import: ["import { Alpha } from '@design-system/components'"] },
+    });
+    storyDocs.mockResolvedValueOnce({
+      ...alphaStoryDocs,
+      name: 'ÜberAlpha',
+      import: "import { Icon } from './Icon'\nimport { Alpha as ÜberAlpha } from './alpha'",
+    });
+
+    const entry = await createAccess().resolve('alpha');
+
+    expect(entry).toMatchObject({
+      kind: 'component',
+      component: {
+        import:
+          "import { Icon } from './Icon'\nimport { Alpha as ÜberAlpha } from '@design-system/components';",
+      },
+    });
+  });
+
+  it('does not prepend an override when story snippets are self-contained', async () => {
+    docgen.mockResolvedValueOnce({
+      ...zebraDocgen,
+      jsDocTags: { import: ["import { Zebra } from '@design-system/components'"] },
+    });
+
+    const entry = await createAccess().resolve('zebra');
+
+    expect(entry).toMatchObject({ kind: 'component', component: { id: 'zebra' } });
+    expect(entry).not.toMatchObject({
+      kind: 'component',
+      component: { import: expect.anything() },
+    });
+  });
+
+  it('uses the story docs import when docgen has no import tag', async () => {
+    const entry = await createAccess().resolve('alpha');
+
+    expect(entry).toMatchObject({
+      kind: 'component',
+      component: { import: "import { Alpha } from './alpha'" },
+    });
+  });
+
   it('assembles a component from docgen, story docs, and attached MDX', async () => {
     const entry = await createAccess().resolve('alpha');
 

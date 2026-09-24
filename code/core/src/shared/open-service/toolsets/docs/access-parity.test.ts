@@ -18,7 +18,6 @@ import {
   buildComponentsRefManifest,
   toComponentManifestIndexEntries,
 } from '../../../../core-server/utils/manifests/components-ref-manifest.ts';
-import { createManifestDocsAccess } from './access-manifest.ts';
 import { createProviderDocsAccess } from './access-provider.ts';
 import { createServiceDocsAccess } from './access-service.ts';
 import { createDocsToolset } from './definition.ts';
@@ -68,6 +67,9 @@ const apiDescription = [
   '```',
 ].join('\n');
 
+const componentImport = "import { Button } from '@design-system/components'";
+const utilityImport = "import { fn } from 'storybook/test'";
+
 const docgenPayload = {
   id: 'button',
   name: 'Button',
@@ -77,13 +79,14 @@ const docgenPayload = {
   props: [{ name: 'variant', type: 'string', required: false, description: 'Visual style' }],
   apiDescription,
   renderer: 'angular',
+  jsDocTags: { import: [componentImport] },
 };
 
 const storyDocsPayload = {
   id: 'button',
   name: 'Button',
   path: './src/Button.stories.tsx',
-  import: "import { Button } from './Button'",
+  import: `import { Button } from './Button'\n${utilityImport}`,
   stories: {
     'button--primary': { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
   },
@@ -137,37 +140,38 @@ function serviceToolset() {
 
 /** The same project as core's manifest builder emits it (the default mode). */
 function manifestToolset() {
+  const files: Record<string, unknown> = {
+    './manifests/components.json': {
+      v: 1,
+      components: {
+        button: {
+          id: 'button',
+          name: 'Button',
+          description: 'A button',
+          summary: 'Clickable',
+          docgen: { $ref: '../services/core/docgen/button.json#/components/button' },
+          stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+        },
+      },
+    },
+    './manifests/docs.json': {
+      v: 0,
+      docs: {
+        'guide--docs': {
+          id: 'guide--docs',
+          name: 'Guide',
+          summary: 'How to',
+          content: '# Guide',
+        },
+      },
+    },
+    './services/core/docgen/button.json': { components: { button: docgenPayload } },
+    './services/core/story-docs/button.json': { components: { button: storyDocsPayload } },
+  };
+
   return createDocsToolset({
-    docsAccess: createManifestDocsAccess({
-      getManifests: async () => ({
-        components: {
-          v: 0,
-          components: {
-            button: {
-              id: 'button',
-              name: 'Button',
-              description: 'A button',
-              summary: 'Clickable',
-              props: docgenPayload.props,
-              apiDescription,
-              renderer: 'angular',
-              import: storyDocsPayload.import,
-              stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
-            },
-          },
-        },
-        docs: {
-          v: 0,
-          docs: {
-            'guide--docs': {
-              id: 'guide--docs',
-              name: 'Guide',
-              summary: 'How to',
-              content: '# Guide',
-            },
-          },
-        },
-      }),
+    docsAccess: createProviderDocsAccess({
+      manifestProvider: async (_request, path) => JSON.stringify(files[path]),
     }),
   });
 }

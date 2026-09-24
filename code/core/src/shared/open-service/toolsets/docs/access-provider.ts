@@ -29,6 +29,7 @@ import {
   type DocEntry,
 } from './manifest-formatter/manifest-types.ts';
 import { emptyManifests, type DocsAccess, type ResolvedDocsEntry } from './access.ts';
+import { composeComponentImport } from './compose-component-import.ts';
 import { mapWithConcurrency } from './map-with-concurrency.ts';
 import { ManifestGetError, RequiresOwnMcpError, type Source } from './sources.ts';
 
@@ -227,6 +228,7 @@ const DocgenRefPayload = jsonObject(v.looseObject({}));
 const StoryDocsRefPayload = v.nullable(
   jsonObject(
     v.looseObject({
+      name: v.optional(v.string()),
       // A record keyed by story id, or an already-resolved array — `adaptCoreStories` accepts both.
       stories: v.optional(
         v.union([v.record(v.string(), v.looseObject({})), v.array(v.looseObject({}))])
@@ -307,9 +309,6 @@ export async function resolveComponentEntry(
   }
 
   const provider = manifestProvider ?? defaultManifestProvider;
-
-  // Identity fields from the index row are authoritative; the docgen payload supplies
-  // path/props/jsDocTags/subcomponents.
   const identity = {
     id: component.id,
     name: component.name,
@@ -335,17 +334,18 @@ export async function resolveComponentEntry(
   if (Array.isArray(component.stories)) {
     core.stories = component.stories;
   }
-
   if (storiesRef) {
     const storyDocs = await fetchRefValue<{
+      name?: string;
       stories?: CoreDocgenComponent['stories'];
       import?: string;
     } | null>(storiesRef, request, provider, source, StoryDocsRefPayload);
     if (storyDocs?.stories) {
       core.stories = storyDocs.stories;
     }
-    if (storyDocs?.import) {
-      core.import = storyDocs.import;
+    const componentImport = composeComponentImport(core.jsDocTags, storyDocs);
+    if (componentImport) {
+      core.import = componentImport;
     }
   }
 

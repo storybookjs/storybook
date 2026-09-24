@@ -303,6 +303,60 @@ describe('createServiceDocsAccess resolve', () => {
     });
   });
 
+  it.each([
+    [
+      "import type from './components'",
+      'type',
+      "import { Alpha as type } from '@design-system/components';",
+    ],
+    [
+      "import type/* binding */ from './components'",
+      'type',
+      "import { Alpha as type } from '@design-system/components';",
+    ],
+    [
+      "import type/* binding */from './components'",
+      'type',
+      "import { Alpha as type } from '@design-system/components';",
+    ],
+    [
+      "import { type as Alpha } from './components'",
+      'Alpha',
+      "import { Alpha } from '@design-system/components';",
+    ],
+    [
+      "import { type/* binding */as Alpha } from './components'",
+      'Alpha',
+      "import { Alpha } from '@design-system/components';",
+    ],
+    [
+      "import { type as Alpha /* binding */ } from './components'",
+      'Alpha',
+      "import { Alpha } from '@design-system/components';",
+    ],
+    [
+      "import { /* binding */ type as Alpha } from './components'",
+      'Alpha',
+      "import { Alpha } from '@design-system/components';",
+    ],
+  ])(
+    'treats a contextual type keyword as a runtime binding: %s',
+    async (imports, name, expected) => {
+      docgen.mockResolvedValueOnce({
+        ...alphaDocgen,
+        jsDocTags: { import: ["import { Alpha } from '@design-system/components'"] },
+      });
+      storyDocs.mockResolvedValueOnce({ ...alphaStoryDocs, name, import: imports });
+
+      const entry = await createAccess().resolve('alpha');
+
+      expect(entry).toMatchObject({
+        kind: 'component',
+        component: { import: expected },
+      });
+    }
+  );
+
   it('applies the override to an aliased component that is not the first import', async () => {
     docgen.mockResolvedValueOnce({
       ...alphaDocgen,

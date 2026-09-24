@@ -129,6 +129,10 @@ export class PNPMProxy extends JsPackageManager {
     return `pnpm exec ${args.join(' ')}`;
   }
 
+  getRemoteRunCommand(args: string[]): string {
+    return `pnpm dlx ${args.join(' ')}`;
+  }
+
   public runPackageCommand({
     args,
     useRemotePkg = false,

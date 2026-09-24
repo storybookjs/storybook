@@ -97,7 +97,7 @@ describe('removeReactDomShim', () => {
 `);
   });
 
-  it('removes the package when a static config declares a top-level helper', async () => {
+  it('accepts a static config that declares a top-level helper', async () => {
     vol.fromNestedJSON({
       '/project': {
         'package.json': JSON.stringify({

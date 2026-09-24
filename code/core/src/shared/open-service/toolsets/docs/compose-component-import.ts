@@ -2,7 +2,10 @@ import type { DocgenJsDocTags } from '../../services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../services/story-docs/types.ts';
 
 const IDENTIFIER = /^[$_\p{ID_Start}][$\u200C\u200D\p{ID_Continue}]*$/u;
-const TYPE_ONLY = /^type(?![$_\u200C\u200D\p{ID_Continue}])/u;
+const TYPE_KEYWORD = /^type(?![$_\u200C\u200D\p{ID_Continue}])/u;
+const AS_KEYWORD = /^as(?![$_\u200C\u200D\p{ID_Continue}])/u;
+const LEADING_TRIVIA = /^(?:\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*(?:\n|$))*/u;
+const TRAILING_TRIVIA = /(?:\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*)*$/u;
 
 type ImportSpecifier =
   | { kind: 'default'; local: string }
@@ -17,6 +20,11 @@ type ImportDeclaration = {
   namespaceName?: string;
   named: string[];
 };
+
+function afterContextualType(value: string): string | undefined {
+  const trimmed = value.replace(LEADING_TRIVIA, '');
+  return TYPE_KEYWORD.test(trimmed) ? trimmed.slice(4).replace(LEADING_TRIVIA, '') : undefined;
+}
 
 function splitImportStatements(imports: string): string[] | undefined {
   const statements: string[] = [];
@@ -72,7 +80,9 @@ function parseImport(statement: string): ImportDeclaration | undefined {
   if (sideEffect) {
     return { source: sideEffect[2], quote: sideEffect[1], typeOnly: false, named: [] };
   }
-  const match = statement.match(/^import\s+([\s\S]+?)\s+from\s+(['"])([^'"]+)\2\s*;?$/);
+  const match = statement.match(
+    /^import\s+([\s\S]+?)(?:\s+|\/\*[\s\S]*?\*\/|\/\/[^\n]*\n)+from\s+(['"])([^'"]+)\2\s*;?$/
+  );
   if (!match) {
     return undefined;
   }
@@ -82,7 +92,10 @@ function parseImport(statement: string): ImportDeclaration | undefined {
   const namespaceMatch = clause.match(/\*\s+as\s+([^\s,{}]+)/);
   const specialIndexes = [clause.indexOf('{'), clause.indexOf('*')].filter((index) => index >= 0);
   const prefix = clause.slice(0, Math.min(...specialIndexes, clause.length));
-  const defaultName = prefix.trim().replace(/,$/, '').trim();
+  const typeRemainder = afterContextualType(clause);
+  const contextualTypeDefault =
+    typeRemainder !== undefined && (typeRemainder === '' || typeRemainder.startsWith(','));
+  const defaultName = contextualTypeDefault ? 'type' : prefix.trim().replace(/,$/, '').trim();
   const namespaceName = namespaceMatch?.[1];
   if (
     (defaultName && !IDENTIFIER.test(defaultName)) ||
@@ -94,7 +107,7 @@ function parseImport(statement: string): ImportDeclaration | undefined {
   return {
     source,
     quote,
-    typeOnly: TYPE_ONLY.test(clause.trimStart()),
+    typeOnly: typeRemainder !== undefined && !contextualTypeDefault,
     ...(defaultName ? { defaultName } : {}),
     ...(namespaceName ? { namespaceName } : {}),
     named: namedMatch
@@ -104,6 +117,25 @@ function parseImport(statement: string): ImportDeclaration | undefined {
           .filter(Boolean)
       : [],
   };
+}
+
+function parseNamedSpecifier(raw: string): ImportSpecifier | undefined {
+  const typeRemainder = afterContextualType(raw);
+  if (typeRemainder !== undefined) {
+    if (typeRemainder === '') {
+      return { kind: 'named', imported: 'type', local: 'type', raw };
+    }
+    if (AS_KEYWORD.test(typeRemainder)) {
+      const local = typeRemainder.slice(2).replace(LEADING_TRIVIA, '').replace(TRAILING_TRIVIA, '');
+      return IDENTIFIER.test(local) ? { kind: 'named', imported: 'type', local, raw } : undefined;
+    }
+    return undefined;
+  }
+
+  const [imported, local = imported] = raw.split(/\s+as\s+/);
+  return IDENTIFIER.test(imported) && IDENTIFIER.test(local)
+    ? { kind: 'named', imported, local, raw }
+    : undefined;
 }
 
 function specifiers(declaration: ImportDeclaration): ImportSpecifier[] {
@@ -119,12 +151,9 @@ function specifiers(declaration: ImportDeclaration): ImportSpecifier[] {
     result.push({ kind: 'namespace', local: declaration.namespaceName });
   }
   for (const raw of declaration.named) {
-    if (raw.startsWith('type ')) {
-      continue;
-    }
-    const [imported, local = imported] = raw.split(/\s+as\s+/);
-    if (IDENTIFIER.test(imported) && IDENTIFIER.test(local)) {
-      result.push({ kind: 'named', imported, local, raw });
+    const specifier = parseNamedSpecifier(raw);
+    if (specifier) {
+      result.push(specifier);
     }
   }
   return result;

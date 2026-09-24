@@ -654,6 +654,48 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'safe' });
   });
 
+  it.each([
+    [
+      'a package query import',
+      '/project/src/loader.ts',
+      "import '@storybook/react-dom-shim?worker';\n",
+    ],
+    [
+      'a package fragment import',
+      '/project/src/loader.ts',
+      "import '@storybook/react-dom-shim#legacy';\n",
+    ],
+    [
+      'an external HTML base URL',
+      '/project/index.html',
+      '<base href="https://example.com/"><script type="module" src="main.ts"></script>',
+    ],
+    [
+      'an executable stylesheet import',
+      '/project/styles.css',
+      "@import '@storybook/react-dom-shim';\n",
+    ],
+    [
+      'a pnpm catalog reference',
+      '/project/pnpm-workspace.yaml',
+      "packages:\n  - packages/*\ncatalog:\n  shim: '@storybook/react-dom-shim'\n",
+    ],
+  ])('refuses %s outside approved transforms', async (_name, filePath, source) => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      [filePath]: source,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([expect.stringContaining(`${filePath}:`)]),
+    });
+  });
+
   it('refuses linked executable files outside the supported source formats', async () => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({

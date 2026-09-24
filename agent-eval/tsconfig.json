@@ -13,6 +13,7 @@
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
     "paths": {
+      "#lib/*": ["./lib/*.ts"],
       "#test-utils": ["./lib/test-utils.ts"],
       "@storybook/mcp": ["../code/lib/mcp/src/index.ts"]
     },
@@ -28,7 +29,11 @@
     "experiments/**/*.ts",
     "evals/**/EVAL.ts",
     "evals/**/EVAL.tsx",
+    "evals/**/post-analysis.ts",
+    "evals/**/__analysis__/**/*.ts",
     "lib/**/*.ts",
+    "plans/**/*.ts",
+    "scripts/**/*.ts",
     "vitest.config.ts"
   ],
   "exclude": ["results/**", "templates/**"]

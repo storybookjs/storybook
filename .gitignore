@@ -102,6 +102,3 @@ scripts/eval/results
 
 # Perf suite results written by the docgen perf jobs
 code/lib/docgen-harness/perf-results
-
-/reports/mutation/sto-588.json
-/.stryker-tmp/

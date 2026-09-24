@@ -84,7 +84,15 @@ test.describe('storybook tools attach', () => {
     expect(list.output).toContain('example-button');
     expect(list.output).not.toContain('Falling back');
 
-    const show = await runTools(['docs', 'show', '--id', 'example-button']);
+    // The internal UI composes the `icons` ref, so docs lookups must name their source.
+    const show = await runTools([
+      'docs',
+      'show',
+      '--id',
+      'example-button',
+      '--storybookId',
+      'local',
+    ]);
     expect(show.exitCode, show.output).toBe(0);
     expect(show.output).toContain('label');
 

@@ -214,7 +214,11 @@ function heapMetrics(runData) {
 const medians = (side, fn) => {
   const perRun = runs[side].map(fn);
   const keys = new Set(perRun.flatMap((x) => Object.keys(x)));
-  return Object.fromEntries([...keys].map((k) => [k, median(perRun.map((x) => x[k] ?? 0))]));
+  // A missing key means zero occurrences in that run (e.g. no frames of a type); null means the
+  // run could not measure it, so the median skips it.
+  return Object.fromEntries(
+    [...keys].map((k) => [k, median(perRun.map((x) => (x[k] === undefined ? 0 : x[k])))])
+  );
 };
 
 const fmt = (key, v) => {

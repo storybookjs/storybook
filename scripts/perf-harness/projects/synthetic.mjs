@@ -11,7 +11,7 @@ import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 import { log, run, sh } from '../lib/util.mjs';
-import { componentsFromIndex, spreadTargets } from './shared.mjs';
+import { componentsFromIndex, spreadFirstStories, spreadTargets } from './shared.mjs';
 
 const STORIES_PER_COMPONENT = 5;
 const COMPONENTS_PER_ROOT = 20;
@@ -301,6 +301,7 @@ export async function createProject(dir, { shape }) {
         .map((e) => e.id)
         .filter((_, i, all) => i % Math.max(1, Math.floor(all.length / n)) === 0)
         .slice(0, n),
+    visitIds: (n) => spreadFirstStories(project.index, n),
     storyIds: (n) => project.storyIdsAll.slice(0, n),
   };
   return project;

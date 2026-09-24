@@ -134,7 +134,7 @@ A single-phase, single-run measurement of both builds takes about 5 to 15 minute
 on an M1 Pro (both builds prepared before):
 
 - `status-flood --size 10000 --shape wide --runs 1 --phases flood`: 8 min 19 s (499 s).
-- `vitest-run --runs 1 --phases vitestRun`: TIME_VITEST.
+- `vitest-run --runs 1 --phases vitestRun`: 5 min 1 s (301 s).
 
 Add runs (`--runs 3`) only when one of these is true:
 
@@ -210,7 +210,10 @@ Phases that more than one workload uses:
 4. `floodSearch`: type the search query in the sidebar, then the same flood. The results list shows
    instead of the tree.
 
-The flood status type is empty at the start of each flood.
+The flood status type is empty at the start of each flood. The harness empties it with the store's
+`unset()`. In `next` (September 2026), `unset()` leaves an empty object for every story it touched,
+so `floodSearch` starts with up to 2,000 empty entries in the state, and its frames are about 1.5×
+larger than `flood` frames. Compare `floodSearch` only with `floodSearch`.
 
 **browse-search** (Chromatic by default)
 

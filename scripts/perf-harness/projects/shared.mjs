@@ -33,3 +33,17 @@ export function spreadTargets(items, sizes) {
   }
   return lists;
 }
+
+// The first story of `n` components spread evenly over the index.
+export function spreadFirstStories(index, n) {
+  const firstStoryPerComponent = new Map();
+  for (const e of Object.values(index.entries)) {
+    const componentId = e.id.split('--')[0];
+    if (e.type === 'story' && !firstStoryPerComponent.has(componentId)) {
+      firstStoryPerComponent.set(componentId, e.id);
+    }
+  }
+  const ids = [...firstStoryPerComponent.values()];
+  const step = Math.max(1, Math.floor(ids.length / n));
+  return ids.filter((_, i) => i % step === 0).slice(0, n);
+}

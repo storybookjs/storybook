@@ -10,7 +10,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { basename, extname, join } from 'node:path';
 
 import { log, run, sh } from '../lib/util.mjs';
-import { componentsFromIndex, spreadTargets } from './shared.mjs';
+import { componentsFromIndex, spreadFirstStories, spreadTargets } from './shared.mjs';
 
 // chromaui/chromatic main on 2026-09-23, the commit SB-2057 measured.
 export const DEFAULT_CHROMATIC_REF = '4d8379e124247e9ef08ff1afcde097a05f7e7d63';
@@ -202,18 +202,8 @@ export async function createProject(dir) {
     },
     editTargets: (sizes) => spreadTargets(project.components, sizes),
     // Only one docs entry exists, so visiting docs here means moving between stories.
-    docsEntryIds: (n) => {
-      const firstStoryPerComponent = new Map();
-      for (const e of Object.values(project.index.entries)) {
-        const componentId = e.id.split('--')[0];
-        if (e.type === 'story' && !firstStoryPerComponent.has(componentId)) {
-          firstStoryPerComponent.set(componentId, e.id);
-        }
-      }
-      const ids = [...firstStoryPerComponent.values()];
-      const step = Math.max(1, Math.floor(ids.length / n));
-      return ids.filter((_, i) => i % step === 0).slice(0, n);
-    },
+    docsEntryIds: (n) => spreadFirstStories(project.index, n),
+    visitIds: (n) => spreadFirstStories(project.index, n),
     storyIds: (n) => project.storyIdsAll.slice(0, n),
   };
   return project;

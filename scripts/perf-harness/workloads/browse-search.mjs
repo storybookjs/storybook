@@ -71,9 +71,7 @@ export default {
     // reports it rendered (as seen by the manager).
     await phase('visit', async () => {
       const samples = [];
-      const ids = project
-        .docsEntryIds(Number(opts.visits))
-        .filter((id) => id !== project.firstStoryId);
+      const ids = project.visitIds(Number(opts.visits)).filter((id) => id !== project.firstStoryId);
       for (const storyId of ids) {
         const rendered = page.evaluate(
           ([events]) =>

@@ -428,10 +428,7 @@ describe('analyzeReactDomShimWorkspace', () => {
   });
 
   it.each([
-    [
-      'tsconfig.json',
-      '{"compilerOptions":{"paths":{"\\u0040storybook/react-dom-shim":["shim"]}}}',
-    ],
+    ['tsconfig.json', '{"compilerOptions":{"paths":{"\\u0040storybook/react-dom-shim":["shim"]}}}'],
     [
       'tsconfig.json',
       '{\n  // Compatibility alias\n  "compilerOptions": { "paths": { "shim": ["\\u0040storybook/react-dom-shim"] } }\n}',
@@ -440,6 +437,7 @@ describe('analyzeReactDomShimWorkspace', () => {
       'tsconfig.jsonc',
       '{\n  // Compatibility alias\n  "compilerOptions": { "paths": { "shim": ["@storybook/react-dom-shim"] } }\n}',
     ],
+    ['tsconfig.json', '{"__proto__":{"alias":"\\u0040storybook/react-dom-shim"}}'],
   ])('refuses decoded shim aliases in %s', async (fileName, config) => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({
@@ -456,6 +454,57 @@ describe('analyzeReactDomShimWorkspace', () => {
       diagnostics: expect.arrayContaining([
         `/project/${fileName}: contains a react-dom-shim reference that cannot be removed safely`,
       ]),
+    });
+  });
+
+  it('refuses malformed JSONC data files', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/tsconfig.jsonc': '{"compilerOptions": 0x10}',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: [
+        '/project/tsconfig.jsonc: cannot parse data configuration during workspace scan',
+      ],
+    });
+  });
+
+  it('refuses duplicate JSON keys when an earlier value references the shim', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/tsconfig.json': '{"alias":"@storybook/react-dom-shim","alias":"other"}',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: [
+        '/project/tsconfig.json: contains a react-dom-shim reference that cannot be removed safely',
+      ],
+    });
+  });
+
+  it('does not reject valid JSON data arrays without shim references', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/data.json': '[]',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'safe',
     });
   });
 });

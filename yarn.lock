@@ -9766,6 +9766,7 @@ __metadata:
     envinfo: "npm:^7.14.0"
     globby: "npm:^14.1.0"
     jscodeshift: "npm:^17.4.0"
+    jsonc-parser: "npm:^3.3.1"
     leven: "npm:^4.0.0"
     memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"

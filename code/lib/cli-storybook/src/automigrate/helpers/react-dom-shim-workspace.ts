@@ -3,6 +3,7 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import { minVersion } from 'semver';
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
+import { parseTree, type ParseError, type Node as JsonNode } from 'jsonc-parser';
 
 import { analyzeReactDomShimConfig, hasShimReference, staticString } from './react-dom-shim.ts';
 
@@ -10,7 +11,7 @@ const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte|mdx)$/;
-const DATA_FILE = /\.json$/;
+const DATA_FILE = /\.jsonc?$/;
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const DEPENDENCY_SECTIONS = [
   'dependencies',
@@ -190,10 +191,19 @@ const moduleLoadDiagnostic = (
     : undefined;
 };
 
-const dataDiagnostic = (source: string, filePath: string): string | undefined =>
-  source.includes(SHIM)
+const hasJsonTreeShimReference = (node: JsonNode): boolean =>
+  (typeof node.value === 'string' && node.value.includes(SHIM)) ||
+  Boolean(node.children?.some(hasJsonTreeShimReference));
+
+const dataDiagnostic = (source: string, filePath: string): string | undefined => {
+  const errors: ParseError[] = [];
+  const tree = parseTree(source, errors);
+  if (!tree || errors.length)
+    return `${filePath}: cannot parse data configuration during workspace scan`;
+  return hasJsonTreeShimReference(tree)
     ? `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
     : undefined;
+};
 
 const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
   try {

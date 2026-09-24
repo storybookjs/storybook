@@ -119,7 +119,9 @@ it('documents a real declared subcomponent through the same chain as the primary
 // The payload alone doesn't prove a subcomponent actually renders where MCP's `docs.show` puts it:
 // core's `formatComponentManifest` synthesizes `## Subcomponents` from the flat payload record and
 // demotes each child's own apiDescription headings underneath it. This runs the same real analyzer
-// chain as above, then the exact composition function MCP calls, to prove that render.
+// chain as above, then the exact composition function MCP calls, and snapshot-compares the full
+// rendered markdown so a regression in that composition — a dropped section, a duplicated heading,
+// a child whose headings stop being demoted — shows as a diff here rather than only in a QA run.
 it('renders a real declared subcomponent under `## Subcomponents` in the composed markdown', async () => {
   const payload = await withRealAnalyzer((manager) =>
     buildDocgenPayload(
@@ -137,18 +139,62 @@ it('renders a real declared subcomponent under `## Subcomponents` in the compose
   const manifest = adaptCoreComponent({ ...payload!, id: payload!.id, name: payload!.name });
   const markdown = formatComponentManifest(manifest);
 
-  expect(markdown).toContain('## Subcomponents');
-  expect(markdown).toContain('### ColorPickerComponent');
-  // The child's own `## Inputs`/`## Outputs` headings are demoted beneath its `###` subcomponent
-  // heading, so they render as `####` — content real, not a synthetic snapshot.
-  expect(markdown).toMatch(
-    /### ColorPickerComponent[\s\S]*#### Inputs[\s\S]*@default #345F92[\s\S]*color\?: string; \/\/ two-way: \[\(color\)\]/
-  );
-  expect(markdown).toMatch(/#### Outputs[\s\S]*colorChange: \(e: string\) => void;/);
+  expect(markdown).toMatchInlineSnapshot(`
+    "# ButtonComponent
 
-  // The primary component's own `## Inputs` still renders, unaffected by the child section.
-  expect(markdown).toContain('## Inputs');
-  expect(markdown).toContain('export type ButtonComponentInputs');
+    ID: composite
+
+    > **Deprecated:** Use NewButton.
+
+    Renders with {@link IconButton } in prose.
+    Use together with
+
+    > **See:** ButtonGroup for accessibility.
+
+    **Example:**
+    \`\`\`
+    <sb-button label="Save">
+    Save
+    </sb-button>
+    \`\`\`
+
+    ## Subcomponents
+
+    ### ColorPickerComponent
+
+    The colour picker panel.
+
+    #### Inputs
+
+    \`\`\`
+    export type ColorPickerComponentInputs = {
+      /**
+       * The currently selected colour
+       *
+       * @default #345F92
+       */
+      color?: string; // two-way: [(color)]
+    }
+    \`\`\`
+
+    #### Outputs
+
+    \`\`\`
+    export type ColorPickerComponentOutputs = {
+      /** The currently selected colour */
+      colorChange: (e: string) => void;
+    }
+    \`\`\`
+
+    ## Inputs
+
+    \`\`\`
+    export type ButtonComponentInputs = {
+      /** @default Click me */
+      label?: string;
+    }
+    \`\`\`"
+  `);
 }, 30_000);
 
 it('renders no `## Subcomponents` section when the component declares none', async () => {

@@ -231,12 +231,10 @@ type LoaderReferencePath = {
   parent: t.Node;
   parentPath: { parent: t.Node } | null;
 };
-
 type LoaderCallPath = {
   node: t.CallExpression | t.OptionalCallExpression;
   parent: t.Node;
 };
-
 const loaderReferenceEscapes = (
   path: LoaderReferencePath,
   loaders: Set<string>,
@@ -320,11 +318,12 @@ const moduleLoadDiagnostic = (
   if (value && isShimSource(value)) {
     return `${filePath}: contains a react-dom-shim import, re-export, or module load`;
   }
+  if (value && MODULE_BUILTIN.has(value) && t.isImport(callee)) {
+    return `${filePath}: contains an unresolved module load`;
+  }
   const kind = moduleLoad(callee, loaders, modules);
   if (!kind) return undefined;
-  return kind === 'unresolved' || !value
-    ? `${filePath}: contains an unresolved module load`
-    : undefined;
+  return kind !== 'known' || !value ? `${filePath}: contains an unresolved module load` : undefined;
 };
 
 const scriptDiagnostic = (source: string, filePath: string): string | undefined => {
@@ -394,7 +393,8 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
         const value = staticString(path.node.source);
         if (value && isShimSource(value))
           diagnostic = `${filePath}: contains a react-dom-shim import, re-export, or module load`;
-        else if (!value) diagnostic ??= `${filePath}: contains an unresolved module load`;
+        else if (!value || MODULE_BUILTIN.has(value))
+          diagnostic ??= `${filePath}: contains an unresolved module load`;
       },
       StringLiteral(path) {
         if (!CONFIG_FILE.test(filePath) && isShimSource(path.node.value)) {

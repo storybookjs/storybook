@@ -434,6 +434,8 @@ load(name);
 });`,
     });
 
-    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({ kind: 'manual' });
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+    });
   });
 });

@@ -413,29 +413,39 @@ load(['@storybook', 'react-dom-shim'].join('/'));
     [
       'an optional CommonJS acquisition',
       `const nodeModule = require?.('node:module');
-const load = nodeModule.createRequire(import.meta.url);`,
+const load = nodeModule.createRequire(import.meta.url);
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
     ],
     [
       'an awaited dynamic acquisition',
       `const nodeModule = await import('node:module');
-const load = nodeModule.createRequire(import.meta.url);`,
+const load = nodeModule.createRequire(import.meta.url);
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
     ],
     [
       'a dynamic acquisition passed to a promise callback',
       `import('node:module').then((nodeModule) => {
-  const load = nodeModule.createRequire(import.meta.url);`,
+  const load = nodeModule.createRequire(import.meta.url);
+  const name = ['@storybook', 'react-dom-shim'].join('/');
+  load(name);
+});
+`,
     ],
   ])('refuses %s', async (_description, acquisition) => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,
-      '/project/module-acquisition.ts': `${acquisition}
-const name = ['@storybook', 'react-dom-shim'].join('/');
-load(name);
-});`,
+      '/project/module-acquisition.ts': acquisition,
     });
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/module-acquisition.ts: contains an unresolved module load',
+      ]),
     });
   });
 });

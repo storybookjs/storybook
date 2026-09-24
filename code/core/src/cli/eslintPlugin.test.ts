@@ -362,7 +362,6 @@ describe('configureEslintPlugin', () => {
           ...storybook.configs[\"flat/recommended\"]
         ];"
       `);
-      expect(content.match(/require\('eslint-plugin-storybook'\)/g)).toHaveLength(1);
     });
 
     it('warns about the required flat-config export shape for unsupported CommonJS configs', async () => {

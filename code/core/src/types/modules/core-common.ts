@@ -16,6 +16,7 @@ import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+import type { Addon_StorySortParameterV7 } from './addons.ts';
 
 export type {
   DocgenError,
@@ -93,6 +94,7 @@ interface DirectoryMapping {
 }
 
 export interface Presets {
+  get?<T extends keyof StorybookConfigRaw>(extension: T): StorybookConfigRaw[T] | undefined;
   apply(
     extension: 'typescript',
     config: TypescriptOptions,
@@ -703,6 +705,8 @@ export interface StorybookConfigRaw {
   logLevel?: string;
   features?: StorybookFeatures;
 
+  storySort?: Addon_StorySortParameterV7;
+
   build?: TestBuildConfig;
 
   stories: StoriesEntry[];
@@ -797,6 +801,9 @@ export interface StorybookConfig {
   staticDirs?: PresetValue<StorybookConfigRaw['staticDirs']>;
   logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
   features?: PresetValue<StorybookConfigRaw['features']>;
+
+  /** Configure the order in which stories are displayed. */
+  storySort?: StorybookConfigRaw['storySort'];
 
   build?: PresetValue<StorybookConfigRaw['build']>;
 

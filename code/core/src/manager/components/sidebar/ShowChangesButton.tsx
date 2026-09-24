@@ -104,7 +104,7 @@ export const ShowChangesButton = () => {
 
   const includedStatusFilters = (rawIncludedStatusFilters ?? []) as StatusValue[];
   const excludedStatusFilters = (rawExcludedStatusFilters ?? []) as StatusValue[];
-  const isActive = includedStatusFilters.includes(NEW) && includedStatusFilters.includes(MOD);
+  const isActive = includedStatusFilters.includes(NEW) || includedStatusFilters.includes(MOD);
 
   if (!globalThis.FEATURES?.changeDetection) {
     return null;
@@ -142,7 +142,7 @@ export const ShowChangesButton = () => {
 
   const changeKinds =
     newCount > 0 && modifiedCount > 0 ? 'new and modified' : newCount > 0 ? 'new' : 'modified';
-  const label = `${isActive ? 'Showing' : 'Show'} ${changeKinds} stories`;
+  const label = `Show ${changeKinds} stories`;
   const ariaLabel = `${label} since last commit`;
 
   return (

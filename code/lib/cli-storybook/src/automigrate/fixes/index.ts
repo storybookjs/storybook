@@ -27,6 +27,7 @@ import { rendererToFramework } from './renderer-to-framework.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { rnstorybookConfig } from './rnstorybook-config.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
+import { storySortToMain } from './story-sort-to-main.ts';
 import { setConfigLayout } from './set-config-layout.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
@@ -59,6 +60,7 @@ export const allFixes: Fix[] = [
   wrapGetAbsolutePath,
   fixFauxEsmRequire,
   storybookPackageNameConflict,
+  storySortToMain,
   setConfigLayout,
   enableExperimentalReview,
   enableExperimentalDocgenServer,

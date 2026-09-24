@@ -6,6 +6,11 @@ const NODE_PROTOCOL_REGEX = /^node:/;
 const require = createRequire(import.meta.url);
 
 const nodePolyfillFallback = {
+  _stream_duplex: require.resolve('readable-stream/lib/_stream_duplex'),
+  _stream_passthrough: require.resolve('readable-stream/lib/_stream_passthrough'),
+  _stream_readable: require.resolve('readable-stream/lib/_stream_readable'),
+  _stream_transform: require.resolve('readable-stream/lib/_stream_transform'),
+  _stream_writable: require.resolve('readable-stream/lib/_stream_writable'),
   buffer: require.resolve('buffer/'),
   events: require.resolve('events/'),
   process: require.resolve('process/browser.js'),

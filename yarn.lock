@@ -10134,6 +10134,7 @@ __metadata:
     probe-image-size: "npm:^7.3.0"
     process: "npm:^0.11.10"
     react-refresh: "npm:^0.14.0"
+    readable-stream: "npm:^3.5.0"
     resolve-url-loader: "npm:^5.0.0"
     sass-loader: "npm:^16.0.5"
     semver: "npm:^7.7.3"

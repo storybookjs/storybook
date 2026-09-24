@@ -53,8 +53,6 @@ const KNOWN_FILES = [
   'addon-foo/register.js',
 ];
 
-// Re-applied per test so that cases which swap in a different resolver cannot leak into the rest
-// of the file.
 beforeEach(() => {
   mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) =>
     KNOWN_FILES.includes(specifier) ? specifier : undefined

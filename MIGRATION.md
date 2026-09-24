@@ -12,6 +12,7 @@
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
+  - [`storySort` moved to main](#storysort-moved-to-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
@@ -702,7 +703,7 @@ For help upgrading your Next.js application, see the [Next.js upgrade guide](htt
 
 Still polyfilled: `buffer`, `events`, `process`, `stream`, `util` and `zlib`, plus the `Buffer` and `process` globals. This covers what Next.js itself needs in the preview bundle.
 
-No longer polyfilled: `assert`, `constants`, `domain`, `http`, `https`, `os`, `path`, `punycode`, `querystring`, `string_decoder`, `sys`, `timers`, `tty`, `url`, `vm` and the `_stream_*` aliases. The `console` global is no longer replaced with `console-browserify`; the browser's native `console` is used instead. `crypto` was already disabled by the webpack builder, so importing it in browser code did not work before either.
+No longer polyfilled: `assert`, `constants`, `domain`, `http`, `https`, `os`, `path`, `punycode`, `querystring`, `string_decoder`, `sys`, `timers`, `tty`, `url` and `vm`. The `console` global is no longer replaced with `console-browserify`; the browser's native `console` is used instead. `crypto` was already disabled by the webpack builder, so importing it in browser code did not work before either. The `_stream_*` aliases still resolve through `readable-stream`.
 
 If a story or component imports one of the removed modules, `storybook build` fails with webpack's `Module not found` error for that module. Install the browser implementation you need and add it as a fallback in `webpackFinal`:
 
@@ -730,6 +731,35 @@ export default config;
 ```
 
 Before adding a polyfill, check whether the import can be removed instead. Most browser code does not need Node.js built-ins, and `@storybook/nextjs-vite` does not polyfill them at all.
+
+### `storySort` moved to main
+
+The `parameters.options.storySort` preview configuration has been removed. Configure story sorting as a top-level field in `.storybook/main.js|ts` instead.
+
+Before:
+
+```ts
+// .storybook/preview.ts
+export default {
+  parameters: {
+    options: {
+      storySort: { order: ['Introduction', 'Components'] },
+    },
+  },
+};
+```
+
+After:
+
+```ts
+// .storybook/main.ts
+export default {
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  storySort: { order: ['Introduction', 'Components'] },
+};
+```
+
+Run `npx storybook automigrate story-sort-to-main` to move statically readable object and array configurations automatically, including local constants used only by that configuration. Comparator functions, imported values, and shared or reassigned variables require manual migration. Move those values and their dependencies to the top-level `storySort` field in main manually.
 
 ### Angular: requires Angular 21 or higher
 

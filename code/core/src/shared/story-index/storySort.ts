@@ -87,7 +87,8 @@ export const storySort =
       if (index === -1) {
         index = order.indexOf('*');
       }
-      order = index !== -1 && Array.isArray(order[index + 1]) ? order[index + 1] : [];
+      const nestedOrder = order[index + 1];
+      order = index !== -1 && Array.isArray(nestedOrder) ? nestedOrder : [];
 
       // We'll need to look at the next part of the name.
       depth += 1;

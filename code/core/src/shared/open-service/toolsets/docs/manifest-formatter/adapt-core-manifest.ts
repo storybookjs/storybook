@@ -15,9 +15,10 @@ import type { ComponentManifest, Doc, Story } from './manifest-types.ts';
  * A component assembled from the `core/docgen` payload plus the `core/story-docs` stories and
  * resolved attached MDX docs.
  */
-export type CoreDocgenComponent = Partial<Omit<DocgenPayload, 'id' | 'name'>> & {
+export type CoreDocgenComponent = Partial<Omit<DocgenPayload, 'id' | 'name' | 'jsDocTags'>> & {
   id: string;
   name: string;
+  jsDocTags?: DocgenPayload['jsDocTags'];
   import?: string;
   /** Story snippets, either as a story-docs record or an already-resolved array. */
   stories?: StoryDocsById | Story[];

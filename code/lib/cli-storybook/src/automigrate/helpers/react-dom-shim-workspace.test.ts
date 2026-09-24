@@ -119,19 +119,25 @@ describe('analyzeReactDomShimWorkspace', () => {
     `);
   });
 
-  it('refuses when the workspace traversal cannot read a directory', async () => {
+  it('names discovered shim manifests when the workspace traversal is incomplete', async () => {
     vol.fromNestedJSON({
-      '/project/package.json': packageJson({ '@storybook/react-dom-shim': '10.5.10' }),
-      '/project/src/index.ts': 'export {};\n',
+      '/project/package.json': `${JSON.stringify({ private: true, workspaces: ['apps/*'] })}\n`,
+      '/project/apps/web/package.json': packageJson({
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/apps/web/src/index.ts': 'export {};\n',
     });
     vi.mocked(fs.readdir).mockImplementation(async (path, options) => {
-      if (path === '/project/src') throw new Error('permission denied');
+      if (path === '/project/apps/web/src') throw new Error('permission denied');
       return vol.promises.readdir(path, options) as ReturnType<typeof fs.readdir>;
     });
 
-    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+    await expect(analyzeReactDomShimWorkspace('/project/apps/web')).resolves.toMatchObject({
       kind: 'manual',
-      diagnostics: ['/project: scan was incomplete'],
+      diagnostics: [
+        '/project/apps/web/package.json: declares @storybook/react-dom-shim and requires manual migration',
+        '/project: scan was incomplete',
+      ],
     });
   });
 

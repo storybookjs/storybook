@@ -1,6 +1,10 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
 import { DEFAULT_EXPERIMENT_CONFIG, PLUGIN_STORYBOOK_EVALS } from '../lib/experiment.ts';
-import { setupSandbox, writeClaudePluginSkills } from '../lib/templates.ts';
+import {
+  setupSandbox,
+  writeClaudeInAppBrowserMock,
+  writeClaudePluginSkills,
+} from '../lib/templates.ts';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
@@ -12,5 +16,6 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'claude-code', integration: 'plugin' });
     await writeClaudePluginSkills(sandbox);
+    await writeClaudeInAppBrowserMock(sandbox);
   },
 } satisfies ExperimentConfig;

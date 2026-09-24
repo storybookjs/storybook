@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -6,6 +6,7 @@ vi.mock('node:fs', { spy: true });
 
 import {
   expectDevServerLeftRunning,
+  expectReviewOpenedInBrowser,
   findDevServerKillCommands,
   parseCodexBrowserNavigations,
   parseStorybookWorkflowShellCommands,
@@ -756,5 +757,138 @@ describe('expectDevServerLeftRunning', () => {
     }) as typeof readFileSync);
 
     expect(() => expectDevServerLeftRunning()).toThrow(/only for plugin.*integration=mcp/);
+  });
+});
+
+describe('expectReviewOpenedInBrowser', () => {
+  const agentContextPath = '__agent_eval__/agent.json';
+  const transcriptPath = '__agent_eval__/transcript.txt';
+  const launchConfigPath = '.claude/launch.json';
+
+  function mockSandbox(options: {
+    agent: 'claude-code' | 'codex';
+    transcript: string;
+    launchConfigExists?: boolean;
+  }): void {
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === agentContextPath) {
+        return JSON.stringify({ agent: options.agent, integration: 'plugin', review: true });
+      }
+      if (String(path) === transcriptPath) {
+        return options.transcript;
+      }
+      throw new Error(`Unexpected readFileSync path in browser assertion test: ${String(path)}`);
+    }) as typeof readFileSync);
+    vi.mocked(existsSync).mockImplementation(((path: unknown) => {
+      return String(path) === launchConfigPath && options.launchConfigExists === true;
+    }) as typeof existsSync);
+  }
+
+  function claudeToolUseLine(name: string, input: Record<string, unknown>): string {
+    return JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', id: 'toolu_1', name, input }] },
+    });
+  }
+
+  function codexJsLine(code: string): string {
+    return JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'mcp_tool_call',
+        server: 'node_repl',
+        tool: 'js',
+        status: 'completed',
+        error: null,
+        arguments: { code, title: 'Open review', timeout_ms: 30000 },
+      },
+    });
+  }
+
+  beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
+    vi.mocked(existsSync).mockReset();
+  });
+
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
+    vi.mocked(existsSync).mockRestore();
+  });
+
+  test('passes on a Claude navigate to the review page', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: claudeToolUseLine('mcp__Browser__navigate', {
+        url: 'http://localhost:6006/?path=/review/',
+      }),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude preview_start to the review page on 127.0.0.1 without a slash', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeToolUseLine('Bash', { command: 'npm run storybook' }),
+        claudeToolUseLine('mcp__Browser__preview_start', {
+          url: 'http://127.0.0.1:6006/?path=/review',
+        }),
+      ].join('\n'),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Codex goto of the review page', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: codexJsLine("await tab.goto('http://localhost:6006/?path=/review/');"),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('fails when the browser opened a remote URL', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: claudeToolUseLine('mcp__Browser__navigate', {
+        url: 'https://storybook.js.org/?path=/review/',
+      }),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
+  });
+
+  test('fails when the browser opened a story instead of the review page', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: codexJsLine(
+        "await tab.goto('http://localhost:6006/?path=/story/button--primary');"
+      ),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
+  });
+
+  test('fails when a .claude/launch.json exists', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: claudeToolUseLine('mcp__Browser__navigate', {
+        url: 'http://localhost:6006/?path=/review/',
+      }),
+      launchConfigExists: true,
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/never through a \.claude\/launch\.json/);
+  });
+
+  test('fails loud when the transcript holds no browser call', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: claudeToolUseLine('mcp__storybook-dev-mcp__review-create', { title: 'Review' }),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/no browser navigation at all/);
   });
 });

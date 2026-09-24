@@ -1,5 +1,5 @@
 import { spawn } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -352,6 +352,61 @@ export function findDevServerKillCommands(commands: string[]): string[] {
   return commands.filter(
     (command) => KILL_COMMAND_PATTERN.test(command) && DEV_SERVER_TARGET_PATTERN.test(command)
   );
+}
+
+const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review\/?/;
+const LAUNCH_CONFIG_PATH = '.claude/launch.json';
+
+// A navigate or preview_start call on any MCP browser server (Claude), or a
+// Codex in-app-browser `goto`, to the review page on the local dev server.
+// Not tied to the link in the final response, so `localhost` versus
+// `127.0.0.1` or a slash difference cannot fail the cell.
+export function expectReviewOpenedInBrowser(): void {
+  const navigations = getInAppBrowserNavigations();
+
+  expect(
+    navigations.length,
+    'Expected the agent to open a URL in the in-app browser (a navigate / preview_start call, or a Codex goto), but the transcript holds no browser navigation at all'
+  ).toBeGreaterThan(0);
+  expect(
+    navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
+    `Expected an in-app browser navigation to the review page on the local dev server. Navigated to:\n${navigations.join('\n')}`
+  ).toBe(true);
+  expect(
+    existsSync(LAUNCH_CONFIG_PATH),
+    `The review must be opened in the in-app browser directly, never through a ${LAUNCH_CONFIG_PATH} dev-server config`
+  ).toBe(false);
+}
+
+function isLocalDevServerUrl(value: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(value);
+    return (
+      (protocol === 'http:' || protocol === 'https:') &&
+      ['localhost', '127.0.0.1', '0.0.0.0', '[::1]'].includes(hostname)
+    );
+  } catch {
+    return false;
+  }
+}
+
+function getInAppBrowserNavigations(): string[] {
+  if (getEvalContext().agent === 'codex') {
+    return parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
+  }
+
+  return getTranscript().events.flatMap((event) => {
+    const name = event.tool?.originalName;
+    if (
+      event.type !== 'tool_call' ||
+      typeof name !== 'string' ||
+      !/^mcp__.+__(?:navigate|preview_start)$/.test(name)
+    ) {
+      return [];
+    }
+    const url = isRecord(event.tool?.args) ? event.tool.args.url : undefined;
+    return typeof url === 'string' ? [url] : [];
+  });
 }
 
 // URLs the Codex in-app browser navigated to, from the codex raw transcript:
@@ -1048,7 +1103,7 @@ function expectFinalResponseSharesReviewLink(): void {
   }
 
   expect(finalMessage, 'Final response must include the Storybook review page link').toMatch(
-    /[?&]path=\/review\/?/
+    REVIEW_PAGE_URL_PATTERN
   );
   expect(
     finalMessage,

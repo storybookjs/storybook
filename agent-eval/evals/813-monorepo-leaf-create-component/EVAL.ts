@@ -4,6 +4,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
@@ -36,6 +37,10 @@ describe('creating a Callout in a monorepo UI package', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('the review covers the new Callout stories', () => {

@@ -3,8 +3,9 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
 import { minVersion } from 'semver';
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
-import { parseTree, type ParseError, type Node as JsonNode } from 'jsonc-parser';
 
+import { analyzeReactDomShimData } from './react-dom-shim-data.ts';
+import { analyzeReactDomShimHtml } from './react-dom-shim-html.ts';
 import { analyzeReactDomShimConfig, hasShimReference, staticString } from './react-dom-shim.ts';
 
 const SHIM = '@storybook/react-dom-shim';
@@ -12,6 +13,8 @@ const MANIFEST = 'package.json';
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte|mdx)$/;
 const DATA_FILE = /\.jsonc?$/;
+const HTML_FILE = /\.html$/;
+const ASTRO_FILE = /\.astro$/;
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const DEPENDENCY_SECTIONS = [
   'dependencies',
@@ -191,20 +194,6 @@ const moduleLoadDiagnostic = (
     : undefined;
 };
 
-const hasJsonTreeShimReference = (node: JsonNode): boolean =>
-  (typeof node.value === 'string' && node.value.includes(SHIM)) ||
-  Boolean(node.children?.some(hasJsonTreeShimReference));
-
-const dataDiagnostic = (source: string, filePath: string): string | undefined => {
-  const errors: ParseError[] = [];
-  const tree = parseTree(source, errors);
-  if (!tree || errors.length)
-    return `${filePath}: cannot parse data configuration during workspace scan`;
-  return hasJsonTreeShimReference(tree)
-    ? `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
-    : undefined;
-};
-
 const sourceDiagnostic = (source: string, filePath: string): string | undefined => {
   try {
     let diagnostic: string | undefined;
@@ -381,7 +370,10 @@ export const analyzeReactDomShimWorkspace = async (
   const sources = files
     .filter(
       (filePath) =>
-        SOURCE_FILE.test(filePath) || (DATA_FILE.test(filePath) && basename(filePath) !== MANIFEST)
+        SOURCE_FILE.test(filePath) ||
+        HTML_FILE.test(filePath) ||
+        ASTRO_FILE.test(filePath) ||
+        (DATA_FILE.test(filePath) && basename(filePath) !== MANIFEST)
     )
     .sort();
   const diagnostics: string[] = [];
@@ -445,9 +437,13 @@ export const analyzeReactDomShimWorkspace = async (
       diagnostics.push(`${filePath}: cannot read source during workspace scan`);
       continue;
     }
-    const sourceIssue = DATA_FILE.test(filePath)
-      ? dataDiagnostic(source, filePath)
-      : sourceDiagnostic(source, filePath);
+    const sourceIssue = ASTRO_FILE.test(filePath)
+      ? `${filePath}: cannot prove absence in Astro source during workspace scan`
+      : HTML_FILE.test(filePath)
+        ? analyzeReactDomShimHtml(source, filePath, sourceDiagnostic, analyzeReactDomShimData)
+        : DATA_FILE.test(filePath)
+          ? analyzeReactDomShimData(source, filePath)
+          : sourceDiagnostic(source, filePath);
     if (sourceIssue) {
       diagnostics.push(sourceIssue);
       continue;

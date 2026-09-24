@@ -515,7 +515,8 @@ describe('analyzeReactDomShimWorkspace', () => {
         'react-dom': '19.1.1',
         '@storybook/react-dom-shim': '10.5.10',
       }),
-      '/project/index.html': '<!doctype html><div id="root"></div><script type="module" src="/src/main.ts"></script>\n',
+      '/project/index.html':
+        '<!doctype html><div id="root"></div><script type="module" src="/src/main.ts"></script>\n',
       '/project/src/main.ts': "export const name = 'app';\n",
     });
 
@@ -525,12 +526,22 @@ describe('analyzeReactDomShimWorkspace', () => {
   });
 
   it.each([
-    ['external module entry', '<script type="module" src="@storybook/react-dom-shim/react-16"></script>'],
-    ['inline module import', '<script type="module">import shim from \'@storybook/react-dom-shim\';</script>'],
-    ['inline dynamic load', '<script>import(\'@storybook/react-dom-shim\')</script>'],
-    ['import map value', '<script type="importmap">{"imports":{"shim":"@storybook/react-dom-shim"}}</script>'],
+    [
+      'external module entry',
+      '<script type="module" src="@storybook/react-dom-shim/react-16"></script>',
+    ],
+    [
+      'inline module import',
+      '<script type="module">import shim from \'@storybook/react-dom-shim\';</script>',
+    ],
+    ['inline dynamic load', "<script>import('@storybook/react-dom-shim')</script>"],
+    [
+      'import map value',
+      '<script type="importmap">{"imports":{"shim":"@storybook/react-dom-shim"}}</script>',
+    ],
     ['templated executable value', '<script type="module" src="%VITE_ENTRY%"></script>'],
     ['malformed inline JavaScript', '<script type="module">import {</script>'],
+    ['malformed HTML', '<script type="module" src="/src/main.ts" src="/src/other.ts"></script>'],
   ])('refuses %s in HTML', async (_name, html) => {
     vol.fromNestedJSON({
       '/project/package.json': packageJson({
@@ -555,7 +566,7 @@ describe('analyzeReactDomShimWorkspace', () => {
         'react-dom': '19.1.1',
         '@storybook/react-dom-shim': '10.5.10',
       }),
-      '/project/src/Canvas.astro': '---\nconst name = \'canvas\';\n---\n<div>{name}</div>\n',
+      '/project/src/Canvas.astro': "---\nconst name = 'canvas';\n---\n<div>{name}</div>\n",
     });
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({

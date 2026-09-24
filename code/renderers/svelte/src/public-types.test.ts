@@ -1,7 +1,6 @@
 // this file tests Typescript types that's why there are no assertions
 import { describe, expectTypeOf, it } from 'vitest';
 
-import { satisfies } from 'storybook/internal/common';
 import type {
   Args,
   Canvas,
@@ -52,10 +51,10 @@ describe('Meta', () => {
 
 describe('StoryObj', () => {
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good' },
-    });
+    } satisfies Meta<typeof Button>;
 
     type Actual = StoryObj<typeof meta>;
     type Expected = SvelteStory<
@@ -68,7 +67,7 @@ describe('StoryObj', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<typeof Button>;
 
       type Expected = SvelteStory<
         typeof Button,
@@ -78,10 +77,10 @@ describe('StoryObj', () => {
       expectTypeOf<StoryObj<typeof meta>>().toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const meta = {
         component: Button,
         args: { label: 'good' },
-      });
+      } satisfies Meta<typeof Button>;
       // @ts-expect-error disabled not provided ❌
       const Basic: StoryObj<typeof meta> = {};
 
@@ -93,7 +92,7 @@ describe('StoryObj', () => {
       expectTypeOf(Basic).toExtend<Expected>();
     }
     {
-      const meta = satisfies<Meta<{ label: string; disabled: boolean }>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<{ label: string; disabled: boolean }>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -123,7 +122,7 @@ type ThemeData = 'light' | 'dark';
 
 describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for render function', () => {
-    const meta = satisfies<Meta<ComponentProps<typeof Button> & { theme: ThemeData }>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       render: (args, { component }) => {
@@ -132,7 +131,7 @@ describe('Story args can be inferred', () => {
           props: args,
         };
       },
-    });
+    } satisfies Meta<ComponentProps<typeof Button> & { theme: ThemeData }>;
 
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
@@ -155,11 +154,11 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ComponentProps<typeof Button> & { decoratorArg: string };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 'title', label: 'good' } };
 
@@ -182,11 +181,11 @@ describe('Story args can be inferred', () => {
       props: { decoratorArg2 },
     });
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator, secondDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = {
       args: { decoratorArg: '', decoratorArg2: '', label: 'good' },

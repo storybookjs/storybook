@@ -426,4 +426,36 @@ describe('analyzeReactDomShimWorkspace', () => {
       ]),
     });
   });
+
+  it.each([
+    [
+      'tsconfig.json',
+      '{"compilerOptions":{"paths":{"\\u0040storybook/react-dom-shim":["shim"]}}}',
+    ],
+    [
+      'tsconfig.json',
+      '{\n  // Compatibility alias\n  "compilerOptions": { "paths": { "shim": ["\\u0040storybook/react-dom-shim"] } }\n}',
+    ],
+    [
+      'tsconfig.jsonc',
+      '{\n  // Compatibility alias\n  "compilerOptions": { "paths": { "shim": ["@storybook/react-dom-shim"] } }\n}',
+    ],
+  ])('refuses decoded shim aliases in %s', async (fileName, config) => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      [`/project/${fileName}`]: config,
+      '/project/src/index.ts': "import { renderElement } from 'shim';\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        `/project/${fileName}: contains a react-dom-shim reference that cannot be removed safely`,
+      ]),
+    });
+  });
 });

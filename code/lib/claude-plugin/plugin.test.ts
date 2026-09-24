@@ -66,6 +66,10 @@ const HARNESS_TOOLS = [
   '.claude/launch.json',
   'control-in-app-browser',
   'require_escalated',
+  'Claude_Browser',
+  'preview_open',
+  'browser_navigate',
+  'preview_eval',
 ];
 
 const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';

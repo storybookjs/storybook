@@ -56,8 +56,9 @@ describe('experimental_storyDocsProvider', () => {
 
   it.each([
     { importPath: './Button.stories.svelte', builds: true },
+    { importPath: './Button.svelte', builds: true },
     { importPath: './Button.stories.ts', builds: true },
-    { importPath: './Button.svelte', builds: false },
+    { importPath: './Button.test.ts', builds: false },
   ])('$importPath is built: $builds', async ({ importPath, builds }) => {
     const provider = await experimental_storyDocsProvider(
       async () => DOWNSTREAM,
@@ -69,7 +70,7 @@ describe('experimental_storyDocsProvider', () => {
   });
 
   it('merges its payload over downstream', async () => {
-    vi.mocked(buildStoryDocsPayload).mockReturnValueOnce({
+    vi.mocked(buildStoryDocsPayload).mockResolvedValueOnce({
       id: 'button',
       name: 'Button',
       path: './Button.stories.svelte',

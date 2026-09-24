@@ -1,13 +1,15 @@
-import type { IndexEntry, Indexer, Options } from 'storybook/internal/types';
+import type { DocgenPayload, IndexEntry, Indexer, Options } from 'storybook/internal/types';
 import { toId } from 'storybook/internal/csf';
 
-import { readFileSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { createDocgenProvider } from '../../../../renderers/svelte/src/docgen/docgen-worker.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -64,39 +66,84 @@ const entries = new Map(
   )
 );
 
+const LEGACY_PARITY = new Set<string>();
+
 const provider = createDocgenProvider()(async () => undefined);
+
+const withoutArgTypes = (
+  payload: DocgenPayload | undefined
+): Omit<DocgenPayload, 'argTypes'> | undefined => {
+  if (!payload) {
+    return payload;
+  }
+  const { argTypes: _argTypes, ...rest } = payload;
+  return rest;
+};
+
+const readFixtureFile = (fixtureCase: string, fileName: string): string =>
+  readFileSync(join(fixturesDir, fixtureCase, fileName), 'utf8');
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('svelte server-side docgen baselines (red until the provider emits payloads)', () => {
-  it.fails.each(fixtureCases)('%s', async (fixtureCase) => {
+describe('svelte server-side docgen baselines', () => {
+  it.each(fixtureCases)('%s', async (fixtureCase) => {
     const testDir = join(fixturesDir, fixtureCase);
     vi.spyOn(process, 'cwd').mockReturnValue(testDir);
 
     const payload = await provider({ entry: entries.get(fixtureCase)! });
 
-    expect(payload, `${fixtureCase}: no OSA payload recorded`).toBeDefined();
-    expect(JSON.stringify(payload)).not.toContain(testDir);
-    const { argTypes, ...withoutArgTypes } = payload!;
-    expect(argTypes, `${fixtureCase}: no OSA argTypes recorded`).toBeDefined();
-
+    expect(JSON.stringify(payload ?? null)).not.toContain(testDir);
     await recordArgTypesSnapshot({
       path: join(testDir, 'osa-argtypes.snapshot'),
       label: `${fixtureCase}/osa-argtypes.snapshot`,
-      candidate: argTypes!,
-      extraGates: [
-        {
-          committed: readFileSync(join(testDir, 'argtypes.snapshot'), 'utf8'),
-          label: `${fixtureCase}/argtypes.snapshot`,
-          legacyBaseline: true,
-        },
-      ],
+      candidate: payload?.argTypes ?? {},
+      extraGates: LEGACY_PARITY.has(fixtureCase)
+        ? [
+            {
+              committed: readFixtureFile(fixtureCase, 'argtypes.snapshot'),
+              label: `${fixtureCase}/argtypes.snapshot`,
+              legacyBaseline: true,
+            },
+          ]
+        : [],
     });
-    await expect(withoutArgTypes).toMatchFileSnapshot(join(testDir, 'osa-payload.snapshot'));
+    await expect(withoutArgTypes(payload)).toMatchFileSnapshot(
+      join(testDir, 'osa-payload.snapshot')
+    );
     await expect(payload?.description ?? '').toMatchFileSnapshot(
       join(testDir, 'osa-description.snapshot')
     );
   });
+});
+
+it('every parity marker has its legacy and server argTypes baselines', () => {
+  for (const fixtureCase of fixtureCases) {
+    for (const fileName of ['argtypes.snapshot', 'osa-argtypes.snapshot']) {
+      expect(
+        existsSync(join(fixturesDir, fixtureCase, fileName)),
+        `${fixtureCase}/${fileName}`
+      ).toBe(true);
+    }
+  }
+});
+
+describe('svelte server-side argTypes hold the legacy baseline (red until LEGACY_PARITY lists the fixture)', () => {
+  for (const fixtureCase of fixtureCases) {
+    (LEGACY_PARITY.has(fixtureCase) ? it : it.fails)(fixtureCase, () => {
+      expectCurrentOrBetter({
+        kind: 'argTypes',
+        baseline: parseArgTypesSnapshot(
+          readFixtureFile(fixtureCase, 'argtypes.snapshot'),
+          `${fixtureCase}/argtypes.snapshot`
+        ),
+        candidate: parseArgTypesSnapshot(
+          readFixtureFile(fixtureCase, 'osa-argtypes.snapshot'),
+          `${fixtureCase}/osa-argtypes.snapshot`
+        ),
+        legacyBaseline: true,
+      });
+    });
+  }
 });

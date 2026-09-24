@@ -4,6 +4,7 @@ import { hasShimReference, isShimSource, staticString } from './react-dom-shim.t
 
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const COMPONENT_FILE = /\.(?:svelte|vue)$/;
+const MODULE_BUILTIN = new Set(['module', 'node:module']);
 
 const moduleLoad = (
   callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee'],
@@ -33,57 +34,103 @@ const isModuleFactory = (node: t.Node | null | undefined, loaders: Set<string>) 
   t.isCallExpression(node) &&
   t.isIdentifier(node.callee) &&
   loaders.has(node.callee.name) &&
-  staticString(node.arguments[0]) === 'node:module';
+  MODULE_BUILTIN.has(staticString(node.arguments[0]) ?? '');
+
+const memberPropertyName = (node: t.MemberExpression | t.OptionalMemberExpression) =>
+  node.computed
+    ? staticString(node.property)
+    : t.isIdentifier(node.property)
+      ? node.property.name
+      : undefined;
+
+const isCreateRequireFactory = (
+  node: t.Node | null | undefined,
+  factories: Set<string>,
+  modules: Set<string>
+) =>
+  (t.isIdentifier(node) && factories.has(node.name)) ||
+  ((t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) &&
+    t.isIdentifier(node.object) &&
+    modules.has(node.object.name) &&
+    memberPropertyName(node) === 'createRequire');
+
+const isLoader = (
+  node: t.Node | null | undefined,
+  loaders: Set<string>,
+  factories: Set<string>,
+  modules: Set<string>
+) =>
+  (t.isIdentifier(node) && loaders.has(node.name)) ||
+  (t.isMemberExpression(node) &&
+    t.isIdentifier(node.object, { name: 'module' }) &&
+    t.isIdentifier(node.property, { name: 'require' })) ||
+  (t.isCallExpression(node) && isCreateRequireFactory(node.callee, factories, modules));
 
 const loaderNames = (file: t.File): Set<string> => {
   const { program } = file;
   const loaders = new Set(['require']);
   const factories = new Set<string>();
+  const modules = new Set<string>();
   const declarations: t.VariableDeclarator[] = [];
+  const assignments: t.AssignmentExpression[] = [];
   traverse(file, {
     VariableDeclarator(path) {
       declarations.push(path.node);
     },
+    AssignmentExpression(path) {
+      assignments.push(path.node);
+    },
   });
   for (const statement of program.body) {
-    if (t.isImportDeclaration(statement) && statement.source.value === 'node:module') {
+    if (t.isImportDeclaration(statement) && MODULE_BUILTIN.has(statement.source.value)) {
       for (const specifier of statement.specifiers) {
         if (t.isImportSpecifier(specifier) && specifier.imported.name === 'createRequire') {
           factories.add(specifier.local.name);
+        } else if (
+          t.isImportNamespaceSpecifier(specifier) ||
+          t.isImportDefaultSpecifier(specifier)
+        ) {
+          modules.add(specifier.local.name);
         }
       }
     }
   }
-  for (const declaration of declarations) {
-    if (t.isObjectPattern(declaration.id) && isModuleFactory(declaration.init, loaders)) {
-      for (const property of declaration.id.properties) {
-        if (
-          t.isObjectProperty(property) &&
-          t.isIdentifier(property.key, { name: 'createRequire' }) &&
-          t.isIdentifier(property.value)
-        ) {
-          factories.add(property.value.name);
-        }
+  let changed = true;
+  while (changed) {
+    changed = false;
+    const add = (names: Set<string>, name: string) => {
+      if (!names.has(name)) {
+        names.add(name);
+        changed = true;
       }
-      continue;
+    };
+    for (const declaration of declarations) {
+      if (t.isObjectPattern(declaration.id) && isModuleFactory(declaration.init, loaders)) {
+        for (const property of declaration.id.properties) {
+          if (
+            t.isObjectProperty(property) &&
+            t.isIdentifier(property.key, { name: 'createRequire' }) &&
+            t.isIdentifier(property.value)
+          ) {
+            add(factories, property.value.name);
+          }
+        }
+        continue;
+      }
+      if (!t.isIdentifier(declaration.id)) continue;
+      if (isLoader(declaration.init, loaders, factories, modules)) {
+        add(loaders, declaration.id.name);
+      } else if (isCreateRequireFactory(declaration.init, factories, modules)) {
+        add(factories, declaration.id.name);
+      }
     }
-    if (!t.isIdentifier(declaration.id)) continue;
-    if (t.isIdentifier(declaration.init) && loaders.has(declaration.init.name)) {
-      loaders.add(declaration.id.name);
-    } else if (
-      t.isMemberExpression(declaration.init) &&
-      t.isIdentifier(declaration.init.object, { name: 'module' }) &&
-      t.isIdentifier(declaration.init.property, { name: 'require' })
-    ) {
-      loaders.add(declaration.id.name);
-    } else if (t.isIdentifier(declaration.init) && factories.has(declaration.init.name)) {
-      factories.add(declaration.id.name);
-    } else if (
-      t.isCallExpression(declaration.init) &&
-      t.isIdentifier(declaration.init.callee) &&
-      factories.has(declaration.init.callee.name)
-    ) {
-      loaders.add(declaration.id.name);
+    for (const assignment of assignments) {
+      if (!t.isIdentifier(assignment.left)) continue;
+      if (isLoader(assignment.right, loaders, factories, modules)) {
+        add(loaders, assignment.left.name);
+      } else if (isCreateRequireFactory(assignment.right, factories, modules)) {
+        add(factories, assignment.left.name);
+      }
     }
   }
   return loaders;

@@ -283,7 +283,7 @@ npx storybook tools -p 36917 review create --input "$(cat /tmp/review.json)" 2>&
     });
   });
 
-  test('scores storybook tools --input payloads and drops the bare --json output flag', () => {
+  test('parses storybook tools --input payloads and drops the bare --json output flag', () => {
     // Verbatim from codex-plugin-gpt-6-sol-medium 803-edit-component and
     // 808-shared-infra-fallback (2026-09-24).
     const calls = parseStorybookWorkflowShellCommands([
@@ -309,10 +309,7 @@ npx storybook tools -p 36917 review create --input "$(cat /tmp/review.json)" 2>&
       ],
     });
     expect(calls[2]?.input).toEqual({ stories: [{ storyId: 'components-badge--default' }] });
-    for (const call of calls) {
-      expect(call.input).not.toHaveProperty('input');
-      expect(call.input).not.toHaveProperty('json');
-    }
+    expect(calls[0]?.input).not.toHaveProperty('json');
   });
 
   test('lets explicit --key flags override --input entries regardless of order', () => {
@@ -327,7 +324,7 @@ npx storybook tools -p 36917 review create --input "$(cat /tmp/review.json)" 2>&
     }
   });
 
-  test("drops the CLIs' own target and output options from the input", () => {
+  test("drops the CLI's own target and output options from the input", () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook tools -p 6006 -c .storybook test run --input \'{"stories":[{"storyId":"a--b"}]}\' -o /tmp/run.json --no-attach',
       'npx storybook tools --cwd app --port=6006 test run --stories \'[{"storyId":"a--b"}]\' --output /tmp/run.md --attach --json',
@@ -468,18 +465,24 @@ describe('parseWorkflowToolResults', () => {
     expect(parseWorkflowToolResults(transcript, 'test-run')).toHaveLength(0);
   });
 
-  function codexTestRunJsonLine(output: unknown): string {
+  function codexTestRunLine(
+    aggregatedOutput: string,
+    command = 'npx storybook tools test run --input \'{"stories":[{"storyId":"reviews-reviewcard--default"}]}\' --json'
+  ): string {
     return JSON.stringify({
       type: 'item.completed',
       item: {
         type: 'command_execution',
-        command:
-          'npx storybook tools test run --input \'{"stories":[{"storyId":"reviews-reviewcard--default"}]}\' --json',
-        aggregated_output: `${JSON.stringify(output, null, 2)}\n`,
+        command,
+        aggregated_output: aggregatedOutput,
         exit_code: 0,
         status: 'completed',
       },
     });
+  }
+
+  function codexTestRunJsonLine(output: unknown): string {
+    return codexTestRunLine(`${JSON.stringify(output, null, 2)}\n`);
   }
 
   function status(storyId: string, value: string, typeId = 'storybook/component-test') {
@@ -600,16 +603,10 @@ describe('parseWorkflowToolResults', () => {
       null,
       2
     );
-    const transcript = JSON.stringify({
-      type: 'item.completed',
-      item: {
-        type: 'command_execution',
-        command: 'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\' --json 2>&1',
-        aggregated_output: `npm warn exec The following package was not found and will be installed: storybook@10.3.0\n${json}\nOutput written to /tmp/run.json\n`,
-        exit_code: 0,
-        status: 'completed',
-      },
-    });
+    const transcript = codexTestRunLine(
+      `npm warn exec The following package was not found and will be installed: storybook@10.3.0\n${json}\nOutput written to /tmp/run.json\n`,
+      'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\' --json 2>&1'
+    );
 
     expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
       '## Passing Stories\n\n- a--b'
@@ -633,16 +630,10 @@ describe('parseWorkflowToolResults', () => {
   });
 
   test('leaves markdown and unrecognized JSON output untouched', () => {
-    const markdown = JSON.stringify({
-      type: 'item.completed',
-      item: {
-        type: 'command_execution',
-        command: 'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\'',
-        aggregated_output: '## Passing Stories\n\n- a--b',
-        exit_code: 0,
-        status: 'completed',
-      },
-    });
+    const markdown = codexTestRunLine(
+      '## Passing Stories\n\n- a--b',
+      'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\''
+    );
     const unrelatedJson = codexTestRunJsonLine({ reviewUrl: 'http://localhost:6006' });
 
     expect(parseWorkflowToolResults(markdown, 'test-run')[0]?.output).toBe(

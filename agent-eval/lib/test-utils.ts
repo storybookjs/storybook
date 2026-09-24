@@ -613,14 +613,11 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
 // ids, and unhandled error names/messages.
 function renderTestRunJsonOutput(output: string): string | undefined {
   // A `--json` run diverts every other stdout writer to stderr, so with `2>&1`
-  // npm/logger lines surround the document; it is the outermost brace pair.
-  const start = output.search(/^\{/m);
-  const end = output.lastIndexOf('}');
-  if (start === -1 || end < start) {
-    return undefined;
-  }
-  const data = parseJson(output.slice(start, end + 1));
-  if (!isRecord(data) || typeof data.status !== 'string') {
+  // npm/logger lines surround the document: the pretty-printed block between a
+  // `{` line and a `}` line.
+  const json = /^\{$[\s\S]*^\}$/m.exec(output)?.[0];
+  const data = json === undefined ? undefined : parseJson(json);
+  if (!isRecord(data)) {
     return undefined;
   }
 

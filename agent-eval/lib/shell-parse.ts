@@ -168,10 +168,7 @@ function parseStorybookToolsInvocation(
     return undefined;
   }
 
-  const inputTokens = [
-    ...segment.slice(0, command.endIndex - 2),
-    ...segment.slice(command.endIndex),
-  ];
+  const inputTokens = segment.toSpliced(command.index, 2);
 
   return {
     call: { name: command.name, input: parseToolsInput(inputTokens, heredocs), source: 'cli' },
@@ -182,11 +179,11 @@ function parseStorybookToolsInvocation(
 // The `<toolset> <tool>` pair (`test run`) names the workflow tool (`test-run`).
 function findWorkflowCommand(
   segment: string[]
-): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; endIndex: number } | undefined {
+): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; index: number } | undefined {
   for (let index = 0; index < segment.length - 1; index += 1) {
     const name = normalizeStorybookWorkflowName(`${segment[index]}-${segment[index + 1]}`);
     if (name !== undefined) {
-      return { name, endIndex: index + 2 };
+      return { name, index };
     }
   }
 
@@ -233,25 +230,24 @@ function isShellRedirection(token: string): boolean {
   return SHELL_REDIRECTION_PATTERN.test(token);
 }
 
-// The tools CLI's own options (target selection, output shaping) never reach
-// the tool, so they are dropped rather than recorded as input. Mirrors
-// TOOLS_OPTION_SPECS in code/core/src/cli/tools/tool-tokens.ts.
-const CLI_BARE_OPTIONS = new Set(['--json', '--attach', '--no-attach']);
-const CLI_VALUED_OPTIONS = new Set([
-  '-p',
-  '--port',
-  '-c',
-  '--config-dir',
-  '--cwd',
-  '-o',
-  '--output',
+// The tools CLI's own options (TOOLS_OPTION_SPECS in
+// code/core/src/cli/tools/tool-tokens.ts) never reach the tool, so they are
+// left out of the input. Their short forms (`-p 6006`) need no entry: a token
+// without `--` is dropped anyway, as the CLI rejects positional arguments.
+const CLI_OPTION_KEYS = new Set([
+  'json',
+  'attach',
+  'no-attach',
+  'port',
+  'config-dir',
+  'cwd',
+  'output',
 ]);
 
 // `--input '<object>'` carries the whole argument object; explicit `--key`
 // flags win over its entries in any order, as in parseToolsTokens. An `--input`
 // that is not an object (an unresolved `$(cat …)`) stays a plain flag so the
-// failing assertion shows what the agent passed. Nothing else is accepted
-// bare: the CLI rejects positional arguments.
+// failing assertion shows what the agent passed.
 function parseToolsInput(tokens: string[], heredocs: Map<string, string>): Record<string, unknown> {
   const flags: Record<string, unknown> = {};
   let inputObject: Record<string, unknown> = {};
@@ -259,22 +255,17 @@ function parseToolsInput(tokens: string[], heredocs: Map<string, string>): Recor
 
   while (index < tokens.length) {
     const token = tokens[index] ?? '';
-    const [optionName = ''] = token.split('=', 1);
 
     if (isShellRedirection(token)) {
       index += BARE_SHELL_REDIRECTION_PATTERN.test(token) ? 2 : 1;
-    } else if (CLI_BARE_OPTIONS.has(token)) {
-      index += 1;
-    } else if (CLI_VALUED_OPTIONS.has(optionName)) {
-      index += token.includes('=') ? 1 : 2;
-    } else if (!token.startsWith('--')) {
+    } else if (!token.startsWith('--') || token === '--') {
       index += 1;
     } else {
       const flag = readFlagToken(tokens, index, heredocs);
       index = flag.next;
       if (flag.key === 'input' && isRecord(flag.value)) {
         inputObject = flag.value;
-      } else if (flag.key !== undefined) {
+      } else if (!CLI_OPTION_KEYS.has(flag.key)) {
         flags[flag.key] = flag.value;
       }
     }
@@ -290,14 +281,9 @@ function readFlagToken(
   tokens: string[],
   index: number,
   heredocs: Map<string, string>
-): { key: string | undefined; value: unknown; next: number } {
+): { key: string; value: unknown; next: number } {
   const token = tokens[index] ?? '';
-  const [rawKey = '', inlineValue] = token.slice(2).split('=', 2);
-  if (rawKey.length === 0) {
-    return { key: undefined, value: undefined, next: index + 1 };
-  }
-
-  const key = kebabToCamel(rawKey);
+  const [key = '', inlineValue] = token.slice(2).split('=', 2);
   if (inlineValue !== undefined) {
     return { key, value: parseCliValue(inlineValue, heredocs), next: index + 1 };
   }
@@ -334,10 +320,6 @@ function extractCatHeredocs(command: string): Map<string, string> {
     }
   }
   return files;
-}
-
-function kebabToCamel(value: string): string {
-  return value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
 }
 
 // Known limitation: a `storybook tools` invocation nested inside `$(...)` is not

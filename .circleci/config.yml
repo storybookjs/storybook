@@ -6,7 +6,6 @@ setup: true
 orbs:
   git-shallow-clone: guitarrapc/git-shallow-clone@2.8.0
   continuation: circleci/continuation@2.0.1
-  node: circleci/node@7.2.1
 
 parameters:
   ghBaseBranch:
@@ -35,33 +34,31 @@ parameters:
 
 jobs:
   generate-and-run-config:
-    executor:
-      name: node/default
-      resource_class: large
+    docker:
+      - image: cimg/node:22.22.3
+    resource_class: large
     steps:
-      - node/install:
-          install-yarn: true
       - git-shallow-clone/checkout_advanced:
-          clone_options: '--depth 1'
+          clone_options: '--depth 500 --filter=blob:none --no-tags'
       - run:
           name: Fetch base branch for focused CI
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
           command: |
             if [ "<< pipeline.parameters.workflow >>" = "focus" ]; then
-              git fetch origin \
-                "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH" \
-                --deepen=500
+              git fetch --depth=500 --filter=blob:none --no-tags origin \
+                "$GH_BASE_BRANCH:refs/remotes/origin/$GH_BASE_BRANCH"
+              if ! git merge-base "origin/$GH_BASE_BRANCH" HEAD >/dev/null; then
+                echo "No merge base found between origin/$GH_BASE_BRANCH and HEAD within 500 commits." >&2
+                exit 1
+              fi
             fi
-      - run:
-          name: Install dependencies
-          command: yarn workspaces focus @storybook/scripts
       - run:
           name: Generate config
           environment:
             GH_BASE_BRANCH: << pipeline.parameters.ghBaseBranch >>
           command: |
-            yarn dlx jiti ./scripts/ci/main.ts \
+            node --experimental-transform-types ./scripts/ci/main.ts \
               --workflow=<< pipeline.parameters.workflow >> \
               --base-ref="origin/$GH_BASE_BRANCH" \
               --gh-trusted-author=<< pipeline.parameters.ghTrustedAuthor >>

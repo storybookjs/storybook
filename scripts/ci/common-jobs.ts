@@ -1,5 +1,4 @@
-// eslint-disable-next-line depend/ban-dependencies
-import glob from 'fast-glob';
+import { globSync, statSync } from 'node:fs';
 import { join } from 'path/posix';
 
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
@@ -24,10 +23,18 @@ import { type JobOrNoOpJob, defineJob, defineNoOpJob } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
-const packageDirs = glob.sync(['*/src', '*/*/src'], {
-  cwd: join(dirname, '../../code'),
-  onlyDirectories: true,
-});
+export function getPackageDirs(codeDirectory = join(dirname, '../../code')) {
+  return ['*/src', '*/*/src'].flatMap((pattern) =>
+    globSync(pattern, {
+      cwd: codeDirectory,
+      exclude: ['node_modules/**'],
+    })
+      .filter((path) => statSync(join(codeDirectory, path)).isDirectory())
+      .sort((a, b) => a.localeCompare(b))
+  );
+}
+
+const packageDirs = getPackageDirs();
 
 /**
  * Every job that installs goes through here, so none is left on the orb's own cache: one job saving

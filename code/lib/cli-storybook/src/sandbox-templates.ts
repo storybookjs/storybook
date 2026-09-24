@@ -1,5 +1,5 @@
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { type StorybookConfigRaw } from 'storybook/internal/types';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { ProjectType } from '../../../core/src/cli/projectTypes.ts';
 import { SupportedBuilder } from '../../../core/src/types/modules/builders.ts';

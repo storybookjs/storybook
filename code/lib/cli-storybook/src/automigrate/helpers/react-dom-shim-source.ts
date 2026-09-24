@@ -5,10 +5,10 @@ import { hasShimReference, isShimSource, staticString } from './react-dom-shim.t
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const COMPONENT_FILE = /\.(?:svelte|vue)$/;
 const MODULE_BUILTIN = new Set(['module', 'node:module']);
-
 const moduleLoad = (
   callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee'],
-  loaders: Set<string>
+  loaders: Set<string>,
+  modules: Set<string>
 ): 'known' | 'unresolved' | undefined => {
   if (t.isImport(callee) || (t.isIdentifier(callee) && loaders.has(callee.name))) return 'known';
   if (!t.isMemberExpression(callee) && !t.isOptionalMemberExpression(callee)) {
@@ -16,7 +16,9 @@ const moduleLoad = (
   }
   const knownLoader =
     t.isIdentifier(callee.object) &&
-    (loaders.has(callee.object.name) || callee.object.name === 'module');
+    (loaders.has(callee.object.name) ||
+      callee.object.name === 'module' ||
+      modules.has(callee.object.name));
   if (!knownLoader) return undefined;
   const property = callee.computed
     ? staticString(callee.property)
@@ -25,7 +27,6 @@ const moduleLoad = (
       : undefined;
   return property === 'resolve' || property === 'require' ? 'known' : 'unresolved';
 };
-
 const isModuleObject = (
   node: t.Node | null | undefined,
   loaders: Set<string>,
@@ -36,14 +37,12 @@ const isModuleObject = (
     t.isIdentifier(node.callee) &&
     loaders.has(node.callee.name) &&
     MODULE_BUILTIN.has(staticString(node.arguments[0]) ?? ''));
-
 const memberPropertyName = (node: t.MemberExpression | t.OptionalMemberExpression) =>
   node.computed
     ? staticString(node.property)
     : t.isIdentifier(node.property)
       ? node.property.name
       : undefined;
-
 const isCreateRequireFactory = (
   node: t.Node | null | undefined,
   loaders: Set<string>,
@@ -54,7 +53,6 @@ const isCreateRequireFactory = (
   ((t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) &&
     isModuleObject(node.object, loaders, modules) &&
     memberPropertyName(node) === 'createRequire');
-
 const isLoader = (
   node: t.Node | null | undefined,
   loaders: Set<string>,
@@ -67,7 +65,6 @@ const isLoader = (
     (loaders.has(node.object.name) || isModuleObject(node.object, loaders, modules)) &&
     ['require', 'resolve'].includes(memberPropertyName(node) ?? '')) ||
   (t.isCallExpression(node) && isCreateRequireFactory(node.callee, loaders, factories, modules));
-
 const addLoaderProperties = (
   pattern: t.ObjectPattern,
   source: t.Node | null | undefined,
@@ -286,6 +283,7 @@ const loaderReferenceEscapes = (
   ) {
     const grandparent = path.parentPath?.parent;
     const property = memberPropertyName(parent);
+    if (path.node.name === 'module' && property === undefined) return true;
     if (path.node.name === 'module' && property !== 'require') return false;
     const isSupportedMember =
       (isLoaderReference && ['require', 'resolve'].includes(property ?? '')) ||
@@ -317,14 +315,15 @@ const moduleLoadDiagnostic = (
   callee: t.CallExpression['callee'] | t.OptionalCallExpression['callee'],
   arguments_: (t.Expression | t.SpreadElement | t.JSXNamespacedName | t.ArgumentPlaceholder)[],
   filePath: string,
-  loaders: Set<string>
+  loaders: Set<string>,
+  modules: Set<string>
 ): string | undefined => {
   const [argument] = arguments_;
   const value = staticString(argument);
   if (value && isShimSource(value)) {
     return `${filePath}: contains a react-dom-shim import, re-export, or module load`;
   }
-  const kind = moduleLoad(callee, loaders);
+  const kind = moduleLoad(callee, loaders, modules);
   if (!kind) return undefined;
   return kind === 'unresolved' || !value
     ? `${filePath}: contains an unresolved module load`
@@ -371,7 +370,8 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
           path.node.callee,
           path.node.arguments,
           filePath,
-          loaders
+          loaders,
+          modules
         );
         if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
         else diagnostic ??= moduleDiagnostic;
@@ -384,7 +384,8 @@ const scriptDiagnostic = (source: string, filePath: string): string | undefined 
           path.node.callee,
           path.node.arguments,
           filePath,
-          loaders
+          loaders,
+          modules
         );
         if (moduleDiagnostic?.includes('react-dom-shim')) diagnostic = moduleDiagnostic;
         else diagnostic ??= moduleDiagnostic;

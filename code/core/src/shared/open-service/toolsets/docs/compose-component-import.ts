@@ -2,6 +2,7 @@ import type { DocgenJsDocTags } from '../../services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../services/story-docs/types.ts';
 
 const IDENTIFIER = /^[$_\p{ID_Start}][$\u200C\u200D\p{ID_Continue}]*$/u;
+const TYPE_ONLY = /^type(?![$_\u200C\u200D\p{ID_Continue}])/u;
 
 type ImportSpecifier =
   | { kind: 'default'; local: string }
@@ -11,6 +12,7 @@ type ImportSpecifier =
 type ImportDeclaration = {
   source: string;
   quote: string;
+  typeOnly: boolean;
   defaultName?: string;
   namespaceName?: string;
   named: string[];
@@ -68,7 +70,7 @@ function splitImportStatements(imports: string): string[] | undefined {
 function parseImport(statement: string): ImportDeclaration | undefined {
   const sideEffect = statement.match(/^import\s+(['"])([^'"]+)\1\s*;?$/);
   if (sideEffect) {
-    return { source: sideEffect[2], quote: sideEffect[1], named: [] };
+    return { source: sideEffect[2], quote: sideEffect[1], typeOnly: false, named: [] };
   }
   const match = statement.match(/^import\s+([\s\S]+?)\s+from\s+(['"])([^'"]+)\2\s*;?$/);
   if (!match) {
@@ -92,6 +94,7 @@ function parseImport(statement: string): ImportDeclaration | undefined {
   return {
     source,
     quote,
+    typeOnly: TYPE_ONLY.test(clause.trimStart()),
     ...(defaultName ? { defaultName } : {}),
     ...(namespaceName ? { namespaceName } : {}),
     named: namedMatch
@@ -104,6 +107,10 @@ function parseImport(statement: string): ImportDeclaration | undefined {
 }
 
 function specifiers(declaration: ImportDeclaration): ImportSpecifier[] {
+  if (declaration.typeOnly) {
+    return [];
+  }
+
   const result: ImportSpecifier[] = [];
   if (declaration.defaultName) {
     result.push({ kind: 'default', local: declaration.defaultName });
@@ -137,17 +144,15 @@ function renderImport(declaration: ImportDeclaration): string | undefined {
 
 function renderOverride(
   declaration: ImportDeclaration,
-  specifier: ImportSpecifier | undefined,
-  local: string,
-  original: ImportSpecifier
+  specifier: ImportSpecifier,
+  local: string
 ): string {
-  const selected = specifier ?? original;
   const clause =
-    selected.kind === 'default'
+    specifier.kind === 'default'
       ? local
-      : selected.kind === 'namespace'
-        ? `* as ${selected.local}`
-        : `{ ${selected.imported}${selected.imported === local ? '' : ` as ${local}`} }`;
+      : specifier.kind === 'namespace'
+        ? `* as ${specifier.local}`
+        : `{ ${specifier.imported}${specifier.imported === local ? '' : ` as ${local}`} }`;
   return `import ${clause} from ${declaration.quote}${declaration.source}${declaration.quote};`;
 }
 
@@ -160,7 +165,8 @@ function applyImportOverride(
   const overrideStatements = splitImportStatements(importOverride);
   const override =
     overrideStatements?.length === 1 ? parseImport(overrideStatements[0]) : undefined;
-  if (!statements || !override) {
+  const overrideSpecifier = override ? specifiers(override)[0] : undefined;
+  if (!statements || !override || !overrideSpecifier) {
     return imports;
   }
 
@@ -181,12 +187,7 @@ function applyImportOverride(
   }
 
   const local = match.specifier.local === memberName ? baseName : match.specifier.local;
-  const overrideStatement = renderOverride(
-    override,
-    specifiers(override)[0],
-    local,
-    match.specifier
-  );
+  const overrideStatement = renderOverride(override, overrideSpecifier, local);
   const remaining = { ...match.declaration };
   if (match.specifier.kind === 'default') {
     delete remaining.defaultName;

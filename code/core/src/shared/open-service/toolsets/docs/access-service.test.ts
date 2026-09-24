@@ -272,7 +272,7 @@ describe('createServiceDocsAccess resolve', () => {
     storyDocs.mockResolvedValueOnce({
       ...alphaStoryDocs,
       import:
-        "import './setup';\nimport type { AlphaProps } from './components';\nimport React, { Alpha, Icon } from './components';\nimport { fn } from 'storybook/test';",
+        "import './setup';\nimport type{ Alpha } from './types';\nimport React, { Alpha, Icon } from './components';\nimport { fn } from 'storybook/test';",
     });
 
     const entry = await createAccess().resolve('alpha');
@@ -281,8 +281,25 @@ describe('createServiceDocsAccess resolve', () => {
       kind: 'component',
       component: {
         import:
-          "import './setup';\nimport type { AlphaProps } from './components';\nimport { Alpha } from '@design-system/components';\nimport React, { Icon } from './components';\nimport { fn } from 'storybook/test';",
+          "import './setup';\nimport type{ Alpha } from './types';\nimport { Alpha } from '@design-system/components';\nimport React, { Icon } from './components';\nimport { fn } from 'storybook/test';",
       },
+    });
+  });
+
+  it.each([
+    ["import '@design-system/setup'"],
+    ["import type{ Alpha } from '@design-system/components'"],
+  ])('ignores an unsupported docgen import tag: %s', async (importOverride) => {
+    docgen.mockResolvedValueOnce({
+      ...alphaDocgen,
+      jsDocTags: { import: [importOverride] },
+    });
+
+    const entry = await createAccess().resolve('alpha');
+
+    expect(entry).toMatchObject({
+      kind: 'component',
+      component: { import: "import { Alpha } from './alpha'" },
     });
   });
 

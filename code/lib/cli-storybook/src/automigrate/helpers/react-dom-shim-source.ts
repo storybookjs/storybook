@@ -31,7 +31,7 @@ const isModuleObject = (
   loaders: Set<string>,
   modules: Set<string>
 ) =>
-  (t.isIdentifier(node) && modules.has(node.name)) ||
+  (t.isIdentifier(node) && (node.name === 'module' || modules.has(node.name))) ||
   (t.isCallExpression(node) &&
     t.isIdentifier(node.callee) &&
     loaders.has(node.callee.name) &&
@@ -64,16 +64,9 @@ const isLoader = (
   (t.isIdentifier(node) && loaders.has(node.name)) ||
   ((t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) &&
     t.isIdentifier(node.object) &&
-    (loaders.has(node.object.name) || node.object.name === 'module') &&
+    (loaders.has(node.object.name) || isModuleObject(node.object, loaders, modules)) &&
     ['require', 'resolve'].includes(memberPropertyName(node) ?? '')) ||
   (t.isCallExpression(node) && isCreateRequireFactory(node.callee, loaders, factories, modules));
-
-type LoaderNames = {
-  factories: Set<string>;
-  loaders: Set<string>;
-  modules: Set<string>;
-  unresolved: boolean;
-};
 
 const addLoaderProperties = (
   pattern: t.ObjectPattern,
@@ -124,7 +117,7 @@ const addFactoryProperties = (
   });
 };
 
-const loaderNames = (file: t.File): LoaderNames => {
+const loaderNames = (file: t.File) => {
   const { program } = file;
   const loaders = new Set(['require']);
   const factories = new Set<string>();
@@ -141,6 +134,15 @@ const loaderNames = (file: t.File): LoaderNames => {
     },
   });
   for (const statement of program.body) {
+    if (t.isTSImportEqualsDeclaration(statement)) {
+      const reference = statement.moduleReference;
+      if (
+        t.isTSExternalModuleReference(reference) &&
+        MODULE_BUILTIN.has(reference.expression.value)
+      ) {
+        modules.add(statement.id.name);
+      }
+    }
     if (t.isImportDeclaration(statement) && MODULE_BUILTIN.has(statement.source.value)) {
       for (const specifier of statement.specifiers) {
         const importedName =

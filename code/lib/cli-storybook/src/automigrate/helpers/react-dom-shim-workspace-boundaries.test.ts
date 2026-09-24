@@ -313,6 +313,19 @@ const load = nodeModule.require;
 load(['@storybook', 'react-dom-shim'].join('/'));
 `,
     ],
+    [
+      'an ambient CommonJS module-object require call',
+      `const nodeModule = module;
+nodeModule.require(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
+      'a computed ambient CommonJS module-object require extraction',
+      `const key = 'require';
+const load = module[key];
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
   ])('refuses %s', async (_description, source) => {
     vol.fromNestedJSON({
       '/project/package.json': manifest,

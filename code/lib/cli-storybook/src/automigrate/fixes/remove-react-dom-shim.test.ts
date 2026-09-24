@@ -1,0 +1,154 @@
+import * as fsp from 'node:fs/promises';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import {
+  formatFileContent,
+  JsPackageManagerFactory,
+  PackageManagerName,
+} from 'storybook/internal/common';
+
+import { vol } from 'memfs';
+
+import { allFixes } from './index.ts';
+import { removeReactDomShim } from './remove-react-dom-shim.ts';
+
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+
+const packageManager = JsPackageManagerFactory.getPackageManager({
+  force: PackageManagerName.NPM,
+});
+
+const check = () =>
+  removeReactDomShim.check({
+    packageManager,
+    configDir: '/project/.storybook',
+    mainConfig: {},
+    storybookVersion: '11.0.0',
+    storiesPaths: [],
+    hasCsfFactoryPreview: false,
+  });
+
+const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boolean) =>
+  removeReactDomShim.run({
+    packageManager,
+    result,
+    dryRun,
+    mainConfigPath: '/project/.storybook/main.ts',
+    mainConfig: {},
+    configDir: '/project/.storybook',
+    storybookVersion: '11.0.0',
+    storiesPaths: [],
+  });
+
+beforeEach(() => {
+  vol.reset();
+  vi.mocked(formatFileContent).mockImplementation(async (_filePath, source) => source);
+  vi.mocked(fsp.readFile).mockImplementation(vol.promises.readFile as typeof fsp.readFile);
+  vi.mocked(fsp.readdir).mockImplementation(vol.promises.readdir as typeof fsp.readdir);
+  vi.mocked(fsp.writeFile).mockImplementation(vol.promises.writeFile as typeof fsp.writeFile);
+});
+
+afterEach(() => vi.restoreAllMocks());
+
+describe('removeReactDomShim', () => {
+  it('is registered for upgrades', () => {
+    expect(allFixes).toContain(removeReactDomShim);
+  });
+
+  it('removes the package and its literal preset after analyzing the complete workspace', async () => {
+    vol.fromNestedJSON({
+      '/project': {
+        'package.json': JSON.stringify({
+          dependencies: {
+            '@storybook/react-dom-shim': '^10.0.0',
+            react: '^18.3.1',
+            'react-dom': '^18.3.1',
+          },
+        }),
+        '.storybook': {
+          'main.ts': `export default { addons: ['@storybook/react-dom-shim/preset', '@storybook/addon-essentials'] };`,
+        },
+      },
+    });
+
+    const result = await check();
+
+    expect(result).toMatchInlineSnapshot(`
+      {
+        "edits": [
+          {
+            "filePath": "/project/.storybook/main.ts",
+            "original": "export default { addons: ['@storybook/react-dom-shim/preset', '@storybook/addon-essentials'] };",
+            "replacement": "export default { addons: ['@storybook/addon-essentials'] };",
+          },
+          {
+            "filePath": "/project/package.json",
+            "original": "{\"dependencies\":{\"@storybook/react-dom-shim\":\"^10.0.0\",\"react\":\"^18.3.1\",\"react-dom\":\"^18.3.1\"}}",
+            "replacement": "{\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
+          },
+        ],
+        "kind": "safe",
+        "workspaceRoot": "/project",
+      }
+    `);
+    if (!result) throw new Error('Expected a migration');
+
+    await run(result, false);
+
+    expect(vol.toJSON()).toMatchInlineSnapshot(`
+      {
+        "/project/.storybook/main.ts": "export default { addons: ['@storybook/addon-essentials'] };",
+        "/project/package.json": "{\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
+      }
+    `);
+  });
+
+  it('does not write during a dry run', async () => {
+    const manifest = JSON.stringify({
+      dependencies: {
+        '@storybook/react-dom-shim': '^10.0.0',
+        react: '^19.0.0',
+        'react-dom': '^19.0.0',
+      },
+    });
+    vol.fromNestedJSON({ '/project/package.json': manifest });
+    const result = await check();
+    if (!result) throw new Error('Expected a migration');
+
+    await run(result, true);
+
+    await expect(fsp.readFile('/project/package.json', 'utf8')).resolves.toBe(manifest);
+  });
+
+  it('refuses direct consumers before writing files', async () => {
+    vol.fromNestedJSON({
+      '/project': {
+        'package.json': JSON.stringify({
+          dependencies: {
+            '@storybook/react-dom-shim': '^10.0.0',
+            react: '^19.0.0',
+            'react-dom': '^19.0.0',
+          },
+        }),
+        'src/index.ts': `import { renderElement } from '@storybook/react-dom-shim';`,
+      },
+    });
+
+    await expect(check()).rejects.toThrow(
+      '/project/src/index.ts: imports react-dom-shim and must be migrated manually'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('does not run when the workspace does not use the shim', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': JSON.stringify({
+        dependencies: { react: '^19.0.0', 'react-dom': '^19.0.0' },
+      }),
+    });
+
+    await expect(check()).resolves.toBeNull();
+  });
+});

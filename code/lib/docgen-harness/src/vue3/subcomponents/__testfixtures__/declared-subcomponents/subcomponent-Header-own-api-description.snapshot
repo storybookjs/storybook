@@ -1,0 +1,23 @@
+## Props
+
+```
+export type CardHeaderProps = {
+  /** Heading text rendered above the card body. */
+  heading: string;
+  /**
+   * Heading level applied to the rendered element.
+   *
+   * @default 2
+   */
+  level?: 2 | 3;
+}
+```
+
+## Events
+
+```
+export type CardHeaderEvents = {
+  /** Fired when the header is dismissed. */
+  dismiss: [];
+}
+```

@@ -116,25 +116,35 @@ const isMainConfigFile = (filePath: string) => /(^|[/\\])main\.[cm]?[jt]sx?$/.te
 const isViteConfigFile = (filePath: string) =>
   /(^|[/\\])vite(?:st)?\.config\.[cm]?[jt]sx?$/.test(filePath);
 
-const getStaticConfig = (program: t.Program, filePath: string): StaticConfig | undefined => {
-  const kind = isMainConfigFile(filePath)
-    ? 'main'
-    : isViteConfigFile(filePath)
-      ? 'vite'
-      : undefined;
-  if (!kind) {
+const configKind = (filePath: string): StaticConfig['kind'] | undefined => {
+  if (isMainConfigFile(filePath)) return 'main';
+  if (isViteConfigFile(filePath)) return 'vite';
+  return undefined;
+};
+
+const commonJsExportExpression = (statement: t.Statement): t.Expression | undefined => {
+  if (!t.isExpressionStatement(statement) || !t.isAssignmentExpression(statement.expression)) {
     return undefined;
   }
+  const { left, operator, right } = statement.expression;
+  if (
+    operator !== '=' ||
+    !t.isMemberExpression(left) ||
+    left.computed ||
+    !t.isIdentifier(left.object, { name: 'module' }) ||
+    !t.isIdentifier(left.property, { name: 'exports' }) ||
+    !t.isExpression(right)
+  ) {
+    return undefined;
+  }
+  return right;
+};
 
-  const hasCommonJsExport = program.body.some(
-    (statement) =>
-      t.isExpressionStatement(statement) &&
-      t.isAssignmentExpression(statement.expression) &&
-      t.isMemberExpression(statement.expression.left) &&
-      !statement.expression.left.computed &&
-      t.isIdentifier(statement.expression.left.object, { name: 'module' }) &&
-      t.isIdentifier(statement.expression.left.property, { name: 'exports' })
-  );
+const getStaticConfig = (program: t.Program, filePath: string): StaticConfig | undefined => {
+  const kind = configKind(filePath);
+  if (!kind) return undefined;
+
+  const hasCommonJsExport = program.body.some(commonJsExportExpression);
   const hasDefaultExport = program.body.some((statement) =>
     t.isExportDefaultDeclaration(statement)
   );
@@ -151,24 +161,11 @@ const getStaticConfig = (program: t.Program, filePath: string): StaticConfig | u
       return { object: defaultExportObject, kind };
     }
 
-    if (
-      t.isExpressionStatement(statement) &&
-      t.isAssignmentExpression(statement.expression) &&
-      statement.expression.operator === '=' &&
-      t.isMemberExpression(statement.expression.left) &&
-      !statement.expression.left.computed &&
-      t.isIdentifier(statement.expression.left.object, { name: 'module' }) &&
-      t.isIdentifier(statement.expression.left.property, { name: 'exports' }) &&
-      t.isExpression(statement.expression.right)
-    ) {
-      const commonJsObject = staticConfigObject(
-        statement.expression.right,
-        program,
-        statementIndex
-      );
-      if (commonJsObject && hasStaticUniqueProperties(commonJsObject)) {
-        return { object: commonJsObject, kind };
-      }
+    const commonJsExpression = commonJsExportExpression(statement);
+    if (!commonJsExpression) continue;
+    const commonJsObject = staticConfigObject(commonJsExpression, program, statementIndex);
+    if (commonJsObject && hasStaticUniqueProperties(commonJsObject)) {
+      return { object: commonJsObject, kind };
     }
   }
 

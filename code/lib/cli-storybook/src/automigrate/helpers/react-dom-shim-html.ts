@@ -27,6 +27,102 @@ const executableUrl = (value: string) =>
     .toLowerCase()
     .startsWith('javascript:');
 
+type SourceDiagnostic = (source: string, filePath: string) => string | undefined;
+
+const directShimDiagnostic = (
+  element: DefaultTreeAdapterTypes.Element,
+  filePath: string,
+  sourceDiagnostic: SourceDiagnostic
+) => {
+  const content = element.tagName === 'script' ? htmlScript(element) : undefined;
+  if (
+    element.attrs.some(({ value }) => value.includes(SHIM)) ||
+    (content !== undefined && content.includes(SHIM))
+  ) {
+    return `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
+  }
+  if (content) {
+    const diagnostic = sourceDiagnostic(content, filePath);
+    if (diagnostic?.includes('react-dom-shim')) return diagnostic;
+  }
+  for (const { name, value } of element.attrs) {
+    if (!eventHandler(name) && !executableUrl(value)) continue;
+    const executable = executableUrl(value) ? value.slice(value.indexOf(':') + 1) : value;
+    const diagnostic = sourceDiagnostic(executable, filePath);
+    if (diagnostic?.includes('react-dom-shim')) return diagnostic;
+  }
+  return undefined;
+};
+
+const embeddedDocumentDiagnostic = (element: DefaultTreeAdapterTypes.Element, filePath: string) => {
+  for (const { name } of element.attrs) {
+    if (name === 'srcdoc') {
+      return `${filePath}: contains an embedded HTML source document that cannot be scanned safely`;
+    }
+    if (
+      (element.tagName === 'embed' ||
+        element.tagName === 'iframe' ||
+        element.tagName === 'object') &&
+      (name === 'data' || name === 'src')
+    ) {
+      return `${filePath}: contains an embedded document that cannot be scanned safely`;
+    }
+  }
+  return undefined;
+};
+
+const executableAttributeDiagnostic = (
+  element: DefaultTreeAdapterTypes.Element,
+  filePath: string,
+  sourceDiagnostic: SourceDiagnostic
+) => {
+  for (const { name, value } of element.attrs) {
+    if (!eventHandler(name) && !executableUrl(value)) continue;
+    const executable = executableUrl(value) ? value.slice(value.indexOf(':') + 1) : value;
+    const diagnostic = sourceDiagnostic(executable, filePath);
+    if (diagnostic) return diagnostic;
+  }
+  return undefined;
+};
+
+const staticHtmlDiagnostic = (
+  element: DefaultTreeAdapterTypes.Element,
+  filePath: string,
+  sourceDiagnostic: SourceDiagnostic,
+  dataDiagnostic: SourceDiagnostic,
+  linkedScriptDiagnostic: SourceDiagnostic
+) => {
+  if (element.tagName === 'base') {
+    return `${filePath}: contains an HTML base URL that cannot be scanned safely`;
+  }
+  const content = element.tagName === 'script' ? htmlScript(element) : undefined;
+  if (
+    element.attrs.some(
+      ({ name, value }) => (name === 'src' || name === 'href') && hasNonStaticHtml(value)
+    ) ||
+    (content !== undefined && hasNonStaticHtml(content))
+  ) {
+    return `${filePath}: contains non-static HTML that cannot be scanned safely`;
+  }
+  const embeddedDiagnostic = embeddedDocumentDiagnostic(element, filePath);
+  if (embeddedDiagnostic) return embeddedDiagnostic;
+  const attributeDiagnostic = executableAttributeDiagnostic(element, filePath, sourceDiagnostic);
+  if (attributeDiagnostic) return attributeDiagnostic;
+  if (content === undefined) return undefined;
+
+  const scriptSource = element.attrs.find(({ name }) => name === 'src')?.value;
+  if (scriptSource) {
+    const diagnostic = linkedScriptDiagnostic(scriptSource, filePath);
+    if (diagnostic) return diagnostic;
+  }
+  const type = element.attrs.find(({ name }) => name === 'type')?.value.toLowerCase();
+  if (type === 'importmap' || type === 'importmap-shim') {
+    if (!content.trim()) return `${filePath}: cannot parse import map during workspace scan`;
+    return dataDiagnostic(content, filePath);
+  }
+  return content ? sourceDiagnostic(content, filePath) : undefined;
+};
+
 export const analyzeReactDomShimHtml = (
   source: string,
   filePath: string,
@@ -39,76 +135,19 @@ export const analyzeReactDomShimHtml = (
   if (errors.length) return `${filePath}: cannot parse HTML during workspace scan`;
 
   for (const element of htmlElements(document)) {
-    const content = element.tagName === 'script' ? htmlScript(element) : undefined;
-    if (
-      element.attrs.some(({ value }) => value.includes(SHIM)) ||
-      (content !== undefined && content.includes(SHIM))
-    ) {
-      return `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
-    }
-    if (content) {
-      const diagnostic = sourceDiagnostic(content, filePath);
-      if (diagnostic?.includes('react-dom-shim')) return diagnostic;
-    }
-    for (const { name, value } of element.attrs) {
-      if (!eventHandler(name) && !executableUrl(value)) continue;
-      const executable = executableUrl(value) ? value.slice(value.indexOf(':') + 1) : value;
-      const diagnostic = sourceDiagnostic(executable, filePath);
-      if (diagnostic?.includes('react-dom-shim')) return diagnostic;
-    }
+    const diagnostic = directShimDiagnostic(element, filePath, sourceDiagnostic);
+    if (diagnostic) return diagnostic;
   }
 
   for (const element of htmlElements(document)) {
-    if (element.tagName === 'base') {
-      return `${filePath}: contains an HTML base URL that cannot be scanned safely`;
-    }
-    const type = element.attrs.find(({ name }) => name === 'type')?.value.toLowerCase();
-    const script = element.tagName === 'script';
-    const content = script ? htmlScript(element) : undefined;
-    if (
-      element.attrs.some(({ value }) => value.includes(SHIM)) ||
-      (content !== undefined && content.includes(SHIM))
-    ) {
-      return `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
-    }
-    if (
-      element.attrs.some(
-        ({ name, value }) => (name === 'src' || name === 'href') && hasNonStaticHtml(value)
-      ) ||
-      (content !== undefined && hasNonStaticHtml(content))
-    ) {
-      return `${filePath}: contains non-static HTML that cannot be scanned safely`;
-    }
-    for (const { name, value } of element.attrs) {
-      if (name === 'srcdoc')
-        return `${filePath}: contains an embedded HTML source document that cannot be scanned safely`;
-      if (
-        (element.tagName === 'embed' ||
-          element.tagName === 'iframe' ||
-          element.tagName === 'object') &&
-        (name === 'data' || name === 'src')
-      ) {
-        return `${filePath}: contains an embedded document that cannot be scanned safely`;
-      }
-      if (!eventHandler(name) && !executableUrl(value)) continue;
-      const executable = executableUrl(value) ? value.slice(value.indexOf(':') + 1) : value;
-      const diagnostic = sourceDiagnostic(executable, filePath);
-      if (diagnostic) return diagnostic;
-    }
-    if (!script) continue;
-    const scriptSource = element.attrs.find(({ name }) => name === 'src')?.value;
-    if (scriptSource) {
-      const diagnostic = linkedScriptDiagnostic(scriptSource, filePath);
-      if (diagnostic) return diagnostic;
-    }
-    if (type === 'importmap' || type === 'importmap-shim') {
-      if (!content?.trim()) return `${filePath}: cannot parse import map during workspace scan`;
-      const diagnostic = dataDiagnostic(content, filePath);
-      if (diagnostic) return diagnostic;
-    } else if (content) {
-      const diagnostic = sourceDiagnostic(content, filePath);
-      if (diagnostic) return diagnostic;
-    }
+    const diagnostic = staticHtmlDiagnostic(
+      element,
+      filePath,
+      sourceDiagnostic,
+      dataDiagnostic,
+      linkedScriptDiagnostic
+    );
+    if (diagnostic) return diagnostic;
   }
   return undefined;
 };

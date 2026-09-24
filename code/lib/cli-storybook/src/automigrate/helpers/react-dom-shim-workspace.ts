@@ -39,6 +39,7 @@ type Manifest = {
 
 type Edit = { filePath: string; original: string; replacement: string };
 type WorkspaceRoot = { directory: string; patterns: string[] };
+type ManifestItem = { filePath: string; source: string; manifest: Manifest };
 
 export type ReactDomShimWorkspaceAnalysis =
   | { applicable: false; kind: 'none'; workspaceRoot: string }
@@ -217,6 +218,182 @@ const manifestEdit = (filePath: string, source: string, manifest: Manifest): Edi
   return { filePath, original: source, replacement: `${JSON.stringify(manifest, null, 2)}\n` };
 };
 
+const inspectPnpmWorkspaces = async (workspaceRoot: string, filePaths: string[]) => {
+  const diagnostics: string[] = [];
+  let hasShimReference = false;
+  for (const filePath of filePaths) {
+    const source = await reads(filePath);
+    if (source === undefined) {
+      diagnostics.push(`${filePath}: cannot read pnpm workspace metadata during workspace scan`);
+    } else {
+      hasShimReference ||= source.includes(SHIM);
+      const diagnostic = pnpmWorkspaceDiagnostic(source, filePath);
+      if (diagnostic) diagnostics.push(diagnostic);
+    }
+    if (filePath !== join(workspaceRoot, 'pnpm-workspace.yaml')) {
+      diagnostics.push(`${filePath}: nested workspace declarations are not supported`);
+    }
+  }
+  return { diagnostics, hasShimReference };
+};
+
+const manifestWorkspaceDiagnostic = (
+  item: ManifestItem,
+  workspaceRoot: string,
+  patterns: string[]
+) => {
+  const rootManifestPath = join(workspaceRoot, MANIFEST);
+  if (item.filePath === rootManifestPath) return undefined;
+  if (item.manifest.workspaces) {
+    return `${item.filePath}: nested workspace declarations are not supported`;
+  }
+  const path = relative(workspaceRoot, dirname(item.filePath)).split(sep).join('/');
+  return patterns.some((pattern) => matchesPattern(path, pattern))
+    ? undefined
+    : `${item.filePath}: is outside the declared workspace packages`;
+};
+
+const inspectManifests = async (
+  workspaceRoot: string,
+  patterns: string[],
+  manifestPaths: string[]
+) => {
+  const diagnostics: string[] = [];
+  const manifests: ManifestItem[] = [];
+  for (const filePath of manifestPaths) {
+    const source = await reads(filePath);
+    const manifest = source && parseManifest(source);
+    if (!source || !manifest) {
+      diagnostics.push(`${filePath}: cannot read a valid package.json`);
+      continue;
+    }
+    const item = { filePath, source, manifest };
+    const workspaceDiagnostic = manifestWorkspaceDiagnostic(item, workspaceRoot, patterns);
+    if (workspaceDiagnostic) diagnostics.push(workspaceDiagnostic);
+    if (hasManifestShimReference(manifest)) {
+      diagnostics.push(
+        `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
+      );
+    }
+    manifests.push(item);
+  }
+  return { diagnostics, manifests };
+};
+
+const hasApplicableSource = async (filePaths: string[]) => {
+  for (const filePath of filePaths) {
+    const source = await reads(filePath);
+    if (source === undefined) continue;
+    const kind = workspaceFileKind(filePath);
+    if (sourceHasShimUse(source, filePath)) return true;
+    if (
+      kind === 'html' &&
+      htmlHasShimUse(source, (content) => sourceHasShimUse(content, filePath))
+    ) {
+      return true;
+    }
+    if (
+      CONFIG_FILE.test(filePath) &&
+      analyzeReactDomShimConfig(source, filePath).kind === 'changed'
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const styleDiagnostics = async (files: string[]) => {
+  const diagnostics: string[] = [];
+  for (const filePath of files.filter((path) => /\.s?css$/.test(path))) {
+    const source = await reads(filePath);
+    if (source === undefined) {
+      diagnostics.push(`${filePath}: cannot read inert file during workspace scan`);
+    } else {
+      const diagnostic = inertFileDiagnostic(source, filePath);
+      if (diagnostic) diagnostics.push(diagnostic);
+    }
+  }
+  return diagnostics;
+};
+
+const workspaceSourceIssue = (
+  source: string,
+  filePath: string,
+  workspaceRoot: string,
+  files: string[]
+) => {
+  const kind = workspaceFileKind(filePath);
+  if (kind === 'astro') {
+    return `${filePath}: cannot prove absence in Astro source during workspace scan`;
+  }
+  if (kind === 'html') {
+    return analyzeReactDomShimHtml(
+      source,
+      filePath,
+      sourceDiagnostic,
+      analyzeReactDomShimData,
+      (scriptSource, htmlPath) =>
+        linkedScriptDiagnostic(scriptSource, htmlPath, workspaceRoot, files)
+    );
+  }
+  if (kind === 'data') return analyzeReactDomShimData(source, filePath);
+  if (kind === 'manual') return `${filePath}: unsupported file type cannot be scanned safely`;
+  return sourceDiagnostic(source, filePath);
+};
+
+const owningManifest = (filePath: string, manifests: ManifestItem[]) =>
+  manifests
+    .filter(({ filePath: manifestPath }) => {
+      const packageDirectory = dirname(manifestPath);
+      const path = relative(packageDirectory, filePath);
+      return path && !path.startsWith(`..${sep}`) && path !== '..';
+    })
+    .sort((left, right) => right.filePath.length - left.filePath.length)[0];
+
+const analyzeSources = async ({
+  diagnostics,
+  files,
+  manifests,
+  rootManifest,
+  sources,
+  workspaceRoot,
+}: {
+  diagnostics: string[];
+  files: string[];
+  manifests: ManifestItem[];
+  rootManifest: Manifest | undefined;
+  sources: string[];
+  workspaceRoot: string;
+}) => {
+  const edits: Edit[] = [];
+  for (const filePath of sources) {
+    const source = await reads(filePath);
+    if (source === undefined) {
+      diagnostics.push(`${filePath}: cannot read source during workspace scan`);
+      continue;
+    }
+    const issue = workspaceSourceIssue(source, filePath, workspaceRoot, files);
+    if (issue) {
+      diagnostics.push(issue);
+      continue;
+    }
+    if (!CONFIG_FILE.test(filePath)) continue;
+    const analysis = analyzeReactDomShimConfig(source, filePath);
+    if (analysis.kind === 'manual') {
+      diagnostics.push(analysis.diagnostic);
+      continue;
+    }
+    if (analysis.kind === 'unchanged') continue;
+    const owner = owningManifest(filePath, manifests);
+    if (!owner || !rootManifest || !hasSupportedReact(owner.manifest, rootManifest)) {
+      diagnostics.push(`${filePath}: react and react-dom must both support React 18 or later`);
+      continue;
+    }
+    edits.push({ filePath, original: source, replacement: analysis.source });
+  }
+  return edits;
+};
+
 export const analyzeReactDomShimWorkspace = async (
   projectDirectory: string
 ): Promise<ReactDomShimWorkspaceAnalysis> => {
@@ -244,10 +421,8 @@ export const analyzeReactDomShimWorkspace = async (
     )
     .sort();
   const diagnostics: string[] = [];
-  const manifests: Array<{ filePath: string; source: string; manifest: Manifest }> = [];
-  let pnpmMetadataHasShimReference = false;
   const rootSource = await reads(join(workspaceRoot, MANIFEST));
-  const rootManifest = rootSource && parseManifest(rootSource);
+  const rootManifest = rootSource ? parseManifest(rootSource) : undefined;
   if (!rootManifest)
     diagnostics.push(`${join(workspaceRoot, MANIFEST)}: unsupported workspace declaration`);
   if (
@@ -260,59 +435,17 @@ export const analyzeReactDomShimWorkspace = async (
       `${join(workspaceRoot, MANIFEST)}: has an unsupported external workspace pattern`
     );
   }
-  for (const filePath of pnpmWorkspacePaths) {
-    const source = await reads(filePath);
-    if (source === undefined) {
-      diagnostics.push(`${filePath}: cannot read pnpm workspace metadata during workspace scan`);
-    } else {
-      pnpmMetadataHasShimReference ||= source.includes(SHIM);
-      const diagnostic = pnpmWorkspaceDiagnostic(source, filePath);
-      if (diagnostic) diagnostics.push(diagnostic);
-    }
-    if (filePath !== join(workspaceRoot, 'pnpm-workspace.yaml')) {
-      diagnostics.push(`${filePath}: nested workspace declarations are not supported`);
-    }
-  }
-  for (const filePath of manifestPaths) {
-    const source = await reads(filePath);
-    const manifest = source && parseManifest(source);
-    if (!source || !manifest) {
-      diagnostics.push(`${filePath}: cannot read a valid package.json`);
-      continue;
-    }
-    if (filePath !== join(workspaceRoot, MANIFEST) && manifest.workspaces) {
-      diagnostics.push(`${filePath}: nested workspace declarations are not supported`);
-    }
-    if (filePath !== join(workspaceRoot, MANIFEST) && !manifest.workspaces) {
-      const path = relative(workspaceRoot, dirname(filePath)).split(sep).join('/');
-      if (!patterns.some((pattern) => matchesPattern(path, pattern))) {
-        diagnostics.push(`${filePath}: is outside the declared workspace packages`);
-      }
-    }
-    if (hasManifestShimReference(manifest)) {
-      diagnostics.push(
-        `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
-      );
-    }
-    manifests.push({ filePath, source, manifest });
-  }
+  const pnpmInspection = await inspectPnpmWorkspaces(workspaceRoot, pnpmWorkspacePaths);
+  diagnostics.push(...pnpmInspection.diagnostics);
+  const manifestInspection = await inspectManifests(workspaceRoot, patterns, manifestPaths);
+  diagnostics.push(...manifestInspection.diagnostics);
+  const { manifests } = manifestInspection;
   const shimManifests = manifests.filter(({ manifest }) => hasShim(manifest));
-  let applicable =
+  const applicable =
     shimManifests.length > 0 ||
-    pnpmMetadataHasShimReference ||
-    manifests.some(({ manifest }) => hasManifestShimReference(manifest));
-
-  for (const filePath of sources) {
-    const source = await reads(filePath);
-    if (source === undefined) continue;
-    const kind = workspaceFileKind(filePath);
-    applicable ||= sourceHasShimUse(source, filePath);
-    applicable ||=
-      kind === 'html' && htmlHasShimUse(source, (content) => sourceHasShimUse(content, filePath));
-    if (CONFIG_FILE.test(filePath)) {
-      applicable ||= analyzeReactDomShimConfig(source, filePath).kind === 'changed';
-    }
-  }
+    pnpmInspection.hasShimReference ||
+    manifests.some(({ manifest }) => hasManifestShimReference(manifest)) ||
+    (await hasApplicableSource(sources));
   if (!applicable) return { applicable: false, kind: 'none', workspaceRoot };
   if (!scan.complete) {
     return {
@@ -330,66 +463,15 @@ export const analyzeReactDomShimWorkspace = async (
     }
   }
 
-  const sourceEdits: Edit[] = [];
-  for (const filePath of files.filter((path) => /\.s?css$/.test(path))) {
-    const source = await reads(filePath);
-    if (source === undefined) {
-      diagnostics.push(`${filePath}: cannot read inert file during workspace scan`);
-    } else {
-      const diagnostic = inertFileDiagnostic(source, filePath);
-      if (diagnostic) diagnostics.push(diagnostic);
-    }
-  }
-  for (const filePath of sources) {
-    const source = await reads(filePath);
-    if (source === undefined) {
-      diagnostics.push(`${filePath}: cannot read source during workspace scan`);
-      continue;
-    }
-    const kind = workspaceFileKind(filePath);
-    const sourceIssue =
-      kind === 'astro'
-        ? `${filePath}: cannot prove absence in Astro source during workspace scan`
-        : kind === 'html'
-          ? analyzeReactDomShimHtml(
-              source,
-              filePath,
-              sourceDiagnostic,
-              analyzeReactDomShimData,
-              (scriptSource, htmlPath) =>
-                linkedScriptDiagnostic(scriptSource, htmlPath, workspaceRoot, files)
-            )
-          : kind === 'data'
-            ? analyzeReactDomShimData(source, filePath)
-            : kind === 'manual'
-              ? `${filePath}: unsupported file type cannot be scanned safely`
-              : sourceDiagnostic(source, filePath);
-    if (sourceIssue) {
-      diagnostics.push(sourceIssue);
-      continue;
-    }
-    if (!CONFIG_FILE.test(filePath)) {
-      continue;
-    }
-    const analysis = analyzeReactDomShimConfig(source, filePath);
-    if (analysis.kind === 'manual') {
-      diagnostics.push(analysis.diagnostic);
-      continue;
-    }
-    if (analysis.kind === 'unchanged') continue;
-    const owner = manifests
-      .filter(({ filePath: manifestPath }) => {
-        const packageDirectory = dirname(manifestPath);
-        const path = relative(packageDirectory, filePath);
-        return path && !path.startsWith(`..${sep}`) && path !== '..';
-      })
-      .sort((left, right) => right.filePath.length - left.filePath.length)[0];
-    if (!owner || !rootManifest || !hasSupportedReact(owner.manifest, rootManifest)) {
-      diagnostics.push(`${filePath}: react and react-dom must both support React 18 or later`);
-      continue;
-    }
-    sourceEdits.push({ filePath, original: source, replacement: analysis.source });
-  }
+  diagnostics.push(...(await styleDiagnostics(files)));
+  const sourceEdits = await analyzeSources({
+    diagnostics,
+    files,
+    manifests,
+    rootManifest,
+    sources,
+    workspaceRoot,
+  });
 
   if (diagnostics.length) {
     return {

@@ -4,6 +4,17 @@ import { JsPackageManagerFactory, PackageManagerName, versions } from 'storybook
 
 import { generateUpgradeSpecs } from './util.ts';
 
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const original = await importOriginal<typeof import('storybook/internal/common')>();
+  return {
+    ...original,
+    versions: {
+      ...original.versions,
+      '@storybook/react-dom-shim': '11.0.0-alpha.1',
+    },
+  };
+});
+
 afterEach(() => vi.restoreAllMocks());
 
 it.each([

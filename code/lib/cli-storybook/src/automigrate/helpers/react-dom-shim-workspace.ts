@@ -6,6 +6,7 @@ import { analyzeReactDomShimData } from './react-dom-shim-data.ts';
 import {
   inertFileDiagnostic,
   linkedScriptDiagnostic,
+  opaqueFileDiagnostic,
   pnpmWorkspaceDiagnostic,
   workspaceFileKind,
   workspaceFiles,
@@ -320,7 +321,7 @@ const workspaceSourceIssue = (
     );
   }
   if (kind === 'data') return analyzeReactDomShimData(source, filePath);
-  if (kind === 'manual') return `${filePath}: unsupported file type cannot be scanned safely`;
+  if (kind === 'opaque') return opaqueFileDiagnostic(source, filePath);
   return sourceDiagnostic(source, filePath);
 };
 

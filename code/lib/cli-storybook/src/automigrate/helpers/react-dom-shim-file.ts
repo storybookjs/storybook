@@ -1,7 +1,7 @@
 import { readdir } from 'node:fs/promises';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 
-const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte|mdx)$/;
+const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte)$/;
 const DATA_FILE = /\.jsonc?$/;
 const HTML_FILE = /\.html?$/;
 const ASTRO_FILE = /\.astro$/;
@@ -12,7 +12,7 @@ const INERT_NAME =
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
 const SHIM = '@storybook/react-dom-shim';
 
-type WorkspaceFileKind = 'astro' | 'data' | 'html' | 'inert' | 'manual' | 'source';
+type WorkspaceFileKind = 'astro' | 'data' | 'html' | 'inert' | 'opaque' | 'source';
 type WorkspaceFiles = { complete: boolean; files: string[] };
 
 export const workspaceFileKind = (filePath: string): WorkspaceFileKind => {
@@ -22,7 +22,7 @@ export const workspaceFileKind = (filePath: string): WorkspaceFileKind => {
   if (DATA_FILE.test(filePath)) return 'data';
   if (HTML_FILE.test(filePath)) return 'html';
   if (ASTRO_FILE.test(filePath)) return 'astro';
-  return 'manual';
+  return 'opaque';
 };
 
 export const workspaceFiles = async (directory: string): Promise<WorkspaceFiles> => {
@@ -62,6 +62,46 @@ export const inertFileDiagnostic = (source: string, filePath: string): string | 
   /\.s?css$/.test(filePath) && cssEscapes(source).includes(SHIM)
     ? `${filePath}: contains a react-dom-shim reference that cannot be removed safely`
     : undefined;
+
+const decodeAsciiCodePoints = (source: string) =>
+  source.replace(
+    /\\x([\da-f]{2})|\\u([\da-f]{4})|\\u\{([\da-f]+)\}|%([\da-f]{2})|&#(\d+);|&#x([\da-f]+);/gi,
+    (
+      match: string,
+      hex: string | undefined,
+      unicode: string | undefined,
+      unicodeBrace: string | undefined,
+      percent: string | undefined,
+      decimal: string | undefined,
+      hexEntity: string | undefined
+    ) => {
+      const value = hex || unicode || unicodeBrace || percent || decimal || hexEntity;
+      if (!value) return match;
+      const radix = decimal ? 10 : 16;
+      const codePoint = Number.parseInt(value, radix);
+      return codePoint <= 0x7f ? String.fromCodePoint(codePoint) : match;
+    }
+  );
+
+const LOADER_CAPABILITY =
+  /import\s*\(|require\s*\(|require\s*\.\s*resolve|createRequire|module\s*\.\s*require|import\s*\.\s*meta\s*\.\s*resolve/i;
+const EXECUTABLE_SVG =
+  /<\s*(?:script|foreignobject|iframe|object|embed)\b|(?:\s|<)on[a-z][\w:-]*\s*=|javascript\s*:/i;
+const ENCODING_SPELLING = /\\x\S{2}|\\u(?:\{[^}\s]*\}|\S{4})|%\S{2}|&#(?:x[^;\s]*|[^;\s]*);/gi;
+
+export const opaqueFileDiagnostic = (source: string, filePath: string): string | undefined => {
+  const decoded = decodeAsciiCodePoints(source).toLowerCase();
+  const hasShimReference =
+    decoded.includes('react-dom-shim') ||
+    decoded
+      .replace(ENCODING_SPELLING, '')
+      .replace(/[^a-z\d]/g, '')
+      .includes('storybookreactdomshim');
+  const hasExecutableSvg = /\.svg$/i.test(filePath) && EXECUTABLE_SVG.test(decoded);
+  return hasShimReference || LOADER_CAPABILITY.test(decoded) || hasExecutableSvg
+    ? `${filePath}: contains a possible react-dom-shim consumer that cannot be removed safely`
+    : undefined;
+};
 
 export const pnpmWorkspaceDiagnostic = (source: string, filePath: string): string | undefined =>
   source.includes('react-dom-shim') || source.includes('@storybook') || /\\[xuU]/.test(source)

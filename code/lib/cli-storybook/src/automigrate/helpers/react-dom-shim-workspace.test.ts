@@ -203,7 +203,7 @@ describe('analyzeReactDomShimWorkspace', () => {
       kind: 'manual',
       workspaceRoot: '/project',
       diagnostics: [
-        '/project/packages/docs/guide.mdx: contains a react-dom-shim import, re-export, or module load',
+        '/project/packages/docs/guide.mdx: contains a possible react-dom-shim consumer that cannot be removed safely',
       ],
     });
   });
@@ -405,7 +405,6 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
       diagnostics: expect.arrayContaining([
-        '/project/.gitignore: unsupported file type cannot be scanned safely',
         '/project/src/consumer.ts: contains a react-dom-shim import, re-export, or module load',
       ]),
     });

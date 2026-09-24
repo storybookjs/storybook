@@ -450,7 +450,8 @@ describe('analyzeReactDomShimWorkspace', () => {
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
       kind: 'manual',
       diagnostics: expect.arrayContaining([
-        '/project/src/main.coffee: unsupported file type cannot be scanned safely',
+        '/project/index.html: links to an unsupported script source',
+        '/project/src/main.coffee: contains a possible react-dom-shim consumer that cannot be removed safely',
       ]),
     });
   });

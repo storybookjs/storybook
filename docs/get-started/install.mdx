@@ -54,19 +54,17 @@ Storybook is designed to work with a variety of frameworks and environments. If 
 
 Additionally, the Storybook app supports the following browsers:
 
-- Chrome 131+
-- Edge 134+
-- Firefox 136+
-- Safari 18.3+
-- Opera 117+
+- Chrome 147+
+- Edge 150+
+- Firefox 152+
+- Safari 26.5+
 
 <details>
 <summary>How do I use Storybook with older browsers?</summary>
 
-You can use Storybook with older browsers in two ways:
+If your browser meets Storybook 10's requirements but not Storybook 11's raised floors, stay on Storybook 10. For browsers below the requirements introduced in Storybook 9, use a version prior to `9.0.0` whose requirements your browser meets.
 
-1. Use a version of Storybook prior to `9.0.0`, which will have less strict requirements.
-2. Develop or build your Storybook in ["preview-only" mode](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers), which can be used in older, unsupported browsers.
+You can also develop or build your Storybook in ["preview-only" mode](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers). This omits the manager UI; browser compatibility depends on your builder and its configuration. Open `/iframe.html?navigator=true` instead of `/index.html`. This does not add older-browser support to the Storybook manager.
 
 </details>
 

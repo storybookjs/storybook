@@ -9791,9 +9791,11 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     "@types/semver": "npm:^7.7.1"
     "@vitest/browser-playwright": "npm:^5.0.0"
+    "@vitest/istanbul-lib-report": "npm:^1.0.1"
     empathic: "npm:^2.0.0"
     es-toolkit: "npm:^1.43.0"
     istanbul-lib-report: "npm:^3.0.1"
+    istanbul-reports: "npm:^3.2.0"
     micromatch: "npm:^4.0.8"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
@@ -14215,7 +14217,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@vitest/istanbul-lib-report@npm:^1.0.0":
+"@vitest/istanbul-lib-report@npm:^1.0.0, @vitest/istanbul-lib-report@npm:^1.0.1":
   version: 1.0.1
   resolution: "@vitest/istanbul-lib-report@npm:1.0.1"
   dependencies:

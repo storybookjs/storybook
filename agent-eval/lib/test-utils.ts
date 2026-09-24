@@ -558,7 +558,8 @@ export type WorkflowToolResult = {
 // success. The section headers come from the shared test-run result formatter
 // (## Passing Stories / ## Failing Stories / ## Unhandled Errors) and appear
 // verbatim in the MCP tool result and — since storybookjs/storybook#36029 —
-// byte-identically in the `storybook tools test run` CLI output.
+// byte-identically in the `storybook tools test run` CLI output. A `--json`
+// CLI run is rendered to the same sections by renderTestRunJsonOutput.
 //
 // `covering` pins the final green run to the change under test: at least one
 // of the given substrings must appear in its story ids. A stricter
@@ -601,6 +602,96 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
       `Final test-run result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
     ).toBe(true);
   }
+}
+
+// `storybook tools test run --json` prints the run's structured outcome
+// instead of the markdown report. The raw JSON is unusable for the assertions
+// here: the embedded axe reports list every rule id under passes/inapplicable,
+// so a green run still "mentions" button-name. Render it to the same sections
+// the formatter (code/addons/vitest/src/node/toolset/format.ts) writes, keeping
+// only what the assertions read: story ids, failure descriptions, violation
+// ids, and unhandled error names/messages.
+function renderTestRunJsonOutput(output: string): string | undefined {
+  const trimmed = output.trim();
+  if (!trimmed.startsWith('{')) {
+    return undefined;
+  }
+  const data = parseJson(trimmed);
+  if (!isRecord(data) || typeof data.status !== 'string') {
+    return undefined;
+  }
+
+  switch (data.status) {
+    case 'no-stories': {
+      const messages = Array.isArray(data.notFoundMessages) ? data.notFoundMessages : [];
+      return `No stories found matching the provided input.\n\n${messages.join('\n')}`;
+    }
+    case 'error': {
+      const message = isRecord(data.error) ? data.error.message : undefined;
+      return `Error: ${typeof message === 'string' ? message : 'Unknown error'}`;
+    }
+    case 'cancelled':
+      return 'Error: Test run was cancelled';
+    case 'completed':
+      return isRecord(data.result) ? renderCompletedTestRun(data.result) : undefined;
+    default:
+      return undefined;
+  }
+}
+
+function renderCompletedTestRun(result: Record<string, unknown>): string {
+  const statuses = (Array.isArray(result.componentTestStatuses) ? result.componentTestStatuses : [])
+    .filter(isRecord)
+    .filter((status) => typeof status.storyId === 'string');
+  const passing = statuses.filter((status) => status.value === 'status-value:success');
+  const failing = statuses.filter((status) => status.value === 'status-value:error');
+  const sections: string[] = [];
+
+  if (passing.length > 0) {
+    sections.push(
+      `## Passing Stories\n\n- ${passing.map((status) => status.storyId).join('\n- ')}`
+    );
+  }
+
+  if (failing.length > 0) {
+    const entries = failing.map(
+      (status) =>
+        `### ${status.storyId}\n\n${status.description || 'No failure details available.'}`
+    );
+    sections.push(`## Failing Stories\n\n${entries.join('\n\n')}`);
+  }
+
+  const a11yEnabled = !(isRecord(result.config) && result.config.a11y === false);
+  const a11yReports = isRecord(result.a11yReports) ? result.a11yReports : {};
+  const a11ySections: string[] = [];
+  for (const [storyId, reports] of Object.entries(a11yEnabled ? a11yReports : {})) {
+    for (const report of Array.isArray(reports) ? reports.filter(isRecord) : []) {
+      if (isRecord(report.error)) {
+        a11ySections.push(`### ${storyId} - Error\n\n${String(report.error.message)}`);
+        continue;
+      }
+      const violations = Array.isArray(report.violations) ? report.violations.filter(isRecord) : [];
+      for (const violation of violations) {
+        a11ySections.push(`### ${storyId} - ${violation.id}\n\n${violation.description}`);
+      }
+    }
+  }
+  if (a11ySections.length > 0) {
+    sections.push(`## Accessibility Violations\n\n${a11ySections.join('\n\n')}`);
+  }
+
+  const unhandledErrors = Array.isArray(result.unhandledErrors)
+    ? result.unhandledErrors.filter(isRecord)
+    : [];
+  if (unhandledErrors.length > 0) {
+    const entries = unhandledErrors.map(
+      (error) =>
+        `### ${error.name || 'Unknown Error'}\n\n**Error message**: ${error.message || 'No message available'}`
+    );
+    sections.push(`## Unhandled Errors\n\n${entries.join('\n\n')}`);
+  }
+
+  return sections.join('\n\n');
 }
 
 // The test-run result formatter (packages/addon-mcp) always emits at
@@ -655,6 +746,13 @@ export function parseWorkflowToolResults(
 
     collectClaudeWorkflowToolResults(event, workflowName, pendingClaudeToolUseIds, results);
     collectCodexWorkflowToolResult(event, workflowName, results);
+  }
+
+  if (workflowName === 'test-run') {
+    return results.map((result) => ({
+      ...result,
+      output: renderTestRunJsonOutput(result.output) ?? result.output,
+    }));
   }
 
   return results;

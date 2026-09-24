@@ -177,7 +177,7 @@ function parseStorybookCliInvocation(
   return {
     call: {
       name: command.name,
-      input: parseStorybookAiInput(inputTokens, heredocs),
+      input: parseStorybookCliInput(inputTokens, cli, heredocs),
       source: 'storybook-ai',
     },
     consumed,
@@ -257,11 +257,18 @@ function isShellRedirection(token: string): boolean {
   return SHELL_REDIRECTION_PATTERN.test(token);
 }
 
-function parseStorybookAiInput(
+// The two CLIs spell their flags differently. `storybook ai <tool>` took the
+// payload as `--json '<object>'`; `storybook tools <toolset> <tool>` takes it
+// as `--input '<object>'` (explicit `--key` flags win over its entries, in any
+// order, and nothing is unwrapped) and `--json` is its bare output-format
+// flag (code/core/src/cli/tools/tool-tokens.ts).
+function parseStorybookCliInput(
   tokens: string[],
+  cli: 'ai' | 'tools',
   heredocs: Map<string, string>
 ): Record<string, unknown> {
-  const input: Record<string, unknown> = {};
+  const flags: Record<string, unknown> = {};
+  let inputObject: Record<string, unknown> = {};
   let index = 0;
 
   while (index < tokens.length) {
@@ -276,56 +283,62 @@ function parseStorybookAiInput(
       continue;
     }
 
+    if (cli === 'tools' && token === '--json') {
+      index += 1;
+      continue;
+    }
+
     if (token.startsWith('--')) {
-      index = parseFlagToken(tokens, index, input, heredocs);
+      const flag = readFlagToken(tokens, index, heredocs);
+      index = flag.next;
+      if (flag.key === undefined) {
+        continue;
+      }
+      if (cli === 'tools' && flag.key === 'input') {
+        if (isRecord(flag.value)) {
+          inputObject = flag.value;
+        }
+      } else if (cli === 'ai' && flag.key === 'json') {
+        mergeJsonInput(flags, flag.value);
+      } else {
+        flags[flag.key] = flag.value;
+      }
       continue;
     }
 
     // Positional argument: the CLI accepts the JSON payload bare.
-    mergeJsonInput(input, parseCliValue(token, heredocs));
+    mergeJsonInput(flags, parseCliValue(token, heredocs));
     index += 1;
   }
 
-  return input;
+  return { ...inputObject, ...flags };
 }
 
-// Parse one `--flag`, `--flag=value`, or `--flag value` starting at `index`;
-// returns the index of the next unconsumed token. `--json` values merge into
-// the input object, every other flag assigns its (JSON-parsed) value.
-function parseFlagToken(
+// Read one `--flag`, `--flag=value`, or `--flag value` starting at `index`;
+// `next` is the index of the first unconsumed token. A bare flag reads as
+// `true`, every value is JSON-parsed when possible.
+function readFlagToken(
   tokens: string[],
   index: number,
-  input: Record<string, unknown>,
   heredocs: Map<string, string>
-): number {
+): { key: string | undefined; value: unknown; next: number } {
   const token = tokens[index] ?? '';
   const [rawKey = '', inlineValue] = token.slice(2).split('=', 2);
   if (rawKey.length === 0) {
-    return index + 1;
+    return { key: undefined, value: undefined, next: index + 1 };
   }
 
   const key = kebabToCamel(rawKey);
-  const assign = (value: unknown) => {
-    if (key === 'json') {
-      mergeJsonInput(input, value);
-    } else {
-      input[key] = value;
-    }
-  };
-
   if (inlineValue !== undefined) {
-    assign(parseCliValue(inlineValue, heredocs));
-    return index + 1;
+    return { key, value: parseCliValue(inlineValue, heredocs), next: index + 1 };
   }
 
   const next = tokens[index + 1];
   if (next !== undefined && !next.startsWith('-') && !isShellRedirection(next)) {
-    assign(parseCliValue(next, heredocs));
-    return index + 2;
+    return { key, value: parseCliValue(next, heredocs), next: index + 2 };
   }
 
-  assign(true);
-  return index + 1;
+  return { key, value: true, next: index + 1 };
 }
 
 function mergeJsonInput(input: Record<string, unknown>, value: unknown): void {

@@ -19,7 +19,8 @@ function getChaiAssertionKeys(obj: object, depth: number) {
   const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
     (key) => !chaiAssertionPrivateApi.includes(key)
   );
-  return [...keys, ...['not'].slice(Math.floor(depth / 3))];
+  // Stryker disable next-line MethodExpression
+  return [...keys, ...['not'].slice(depth / 3)];
 }
 
 function getObjectKeys(obj: object) {

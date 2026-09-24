@@ -4,7 +4,7 @@ export default {
   vitest: {
     configFile: 'vitest.sto-588.config.ts',
   },
-  coverageAnalysis: 'perTest',
+  coverageAnalysis: 'off',
   concurrency: 4,
   disableTypeChecks: false,
   cleanTempDir: 'always',

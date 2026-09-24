@@ -507,4 +507,63 @@ describe('analyzeReactDomShimWorkspace', () => {
       kind: 'safe',
     });
   });
+
+  it('supports ordinary Vite HTML while scanning executable HTML positions', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/index.html': '<!doctype html><div id="root"></div><script type="module" src="/src/main.ts"></script>\n',
+      '/project/src/main.ts': "export const name = 'app';\n",
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'safe',
+    });
+  });
+
+  it.each([
+    ['external module entry', '<script type="module" src="@storybook/react-dom-shim/react-16"></script>'],
+    ['inline module import', '<script type="module">import shim from \'@storybook/react-dom-shim\';</script>'],
+    ['inline dynamic load', '<script>import(\'@storybook/react-dom-shim\')</script>'],
+    ['import map value', '<script type="importmap">{"imports":{"shim":"@storybook/react-dom-shim"}}</script>'],
+    ['templated executable value', '<script type="module" src="%VITE_ENTRY%"></script>'],
+    ['malformed inline JavaScript', '<script type="module">import {</script>'],
+  ])('refuses %s in HTML', async (_name, html) => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/index.html': html,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      sources: expect.arrayContaining(['/project/index.html']),
+      diagnostics: expect.arrayContaining([expect.stringContaining('/project/index.html:')]),
+    });
+  });
+
+  it('refuses Astro files without trying to extract frontmatter', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': packageJson({
+        react: '19.1.1',
+        'react-dom': '19.1.1',
+        '@storybook/react-dom-shim': '10.5.10',
+      }),
+      '/project/src/Canvas.astro': '---\nconst name = \'canvas\';\n---\n<div>{name}</div>\n',
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      sources: expect.arrayContaining(['/project/src/Canvas.astro']),
+      diagnostics: [
+        '/project/src/Canvas.astro: cannot prove absence in Astro source during workspace scan',
+      ],
+    });
+  });
 });

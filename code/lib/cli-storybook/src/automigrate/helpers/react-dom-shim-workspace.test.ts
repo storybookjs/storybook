@@ -48,6 +48,7 @@ describe('analyzeReactDomShimWorkspace', () => {
     for (const edit of result.edits) await fs.writeFile(edit.filePath, edit.replacement);
     expect(await analyzeReactDomShimWorkspace('/project')).toMatchInlineSnapshot(`
       {
+        "applicable": false,
         "kind": "none",
         "workspaceRoot": "/project",
       }
@@ -290,6 +291,7 @@ describe('analyzeReactDomShimWorkspace', () => {
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
       {
+        "applicable": false,
         "kind": "none",
         "workspaceRoot": "/project",
       }
@@ -305,6 +307,7 @@ describe('analyzeReactDomShimWorkspace', () => {
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
       {
+        "applicable": false,
         "kind": "none",
         "workspaceRoot": "/project",
       }
@@ -320,6 +323,7 @@ describe('analyzeReactDomShimWorkspace', () => {
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
       {
+        "applicable": false,
         "kind": "none",
         "workspaceRoot": "/project",
       }
@@ -378,6 +382,7 @@ describe('analyzeReactDomShimWorkspace', () => {
 
     await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchInlineSnapshot(`
       {
+        "applicable": false,
         "kind": "none",
         "workspaceRoot": "/project",
       }

@@ -1,4 +1,3 @@
-/* oxlint-disable react-classic/destructuring-assignment */
 import type { FC, PropsWithChildren, ReactElement, ReactNode, SyntheticEvent } from 'react';
 import React, { Component, forwardRef, memo, useMemo } from 'react';
 
@@ -11,6 +10,7 @@ import { styled } from 'storybook/theming';
 import { FlexBar } from '../Bar/Bar.tsx';
 import { TabButton } from './Button.tsx';
 import { EmptyTabContent } from './EmptyTabContent.tsx';
+import { TabErrorBoundary } from './TabErrorBoundary.tsx';
 import { VisuallyHidden, childrenToList } from './Tabs.helpers.tsx';
 import { useList } from './Tabs.hooks.tsx';
 
@@ -148,41 +148,6 @@ export interface TabsProps {
   absolute?: boolean;
   bordered?: boolean;
   menuName?: string;
-}
-
-interface ErrorBoundaryProps {
-  children: ReactNode;
-  active: boolean;
-}
-
-class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean }> {
-  constructor(props: ErrorBoundaryProps) {
-    super(props);
-    this.state = { hasError: false };
-  }
-
-  static getDerivedStateFromError() {
-    return { hasError: true };
-  }
-
-  componentDidCatch(error: Error, info: React.ErrorInfo) {
-    console.error('Error rendering addon panel');
-    console.error(error);
-    console.error(info.componentStack);
-  }
-
-  render() {
-    if (this.state.hasError && this.props.active) {
-      return (
-        <EmptyTabContent
-          title="This addon has errors"
-          description="Check your browser logs and addon code to pinpoint what went wrong. This issue was not caused by Storybook."
-        />
-      );
-    }
-
-    return this.props.children;
-  }
 }
 
 // Function declaration so esbuild minifySyntax cannot emit

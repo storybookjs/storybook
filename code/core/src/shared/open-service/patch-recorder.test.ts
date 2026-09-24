@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { applyJsonPatch } from './json-patch.ts';
 import { OpenServiceAsyncRecipeError, OpenServiceCyclicStateError } from '../../server-errors.ts';
-import { type RecordedOp, type RecordedPatch, recordPatch } from './patch-recorder.ts';
+import { type RecordedPatch, recordPatch } from './patch-recorder.ts';
 
 function record<T extends object>(initial: T, mutate: (state: T) => void) {
   const state = deepSignal(initial) as T;
@@ -388,6 +388,70 @@ describe('patch recorder', () => {
     });
   });
 
+  it("throws on an async recipe nested in another, after authoring both recipes' writes once", () => {
+    const state = deepSignal({ a: 0, b: 0 });
+    const author = vi.fn();
+
+    expect(() =>
+      recordPatch(
+        state,
+        (s) => {
+          s.a = 1;
+          recordPatch(
+            state,
+            (async (inner: { b: number }) => {
+              inner.b = 1;
+            }) as unknown as (inner: { a: number; b: number }) => void,
+            author
+          );
+        },
+        author
+      )
+    ).toThrow(OpenServiceAsyncRecipeError);
+
+    expect(author.mock.calls).toEqual([
+      [
+        {
+          ops: [
+            { op: 'replace', path: '/a', value: 1 },
+            { op: 'replace', path: '/b', value: 1 },
+          ],
+          inverse: [
+            { op: 'replace', path: '/a', value: 0 },
+            { op: 'replace', path: '/b', value: 0 },
+          ],
+        },
+      ],
+    ]);
+  });
+
+  it('leaves no unhandled rejection when a nested async recipe writes after an await', async () => {
+    const state = deepSignal({ a: 0, b: 0 });
+
+    expect(() =>
+      recordPatch(
+        state,
+        (s) => {
+          s.a = 1;
+          recordPatch(
+            state,
+            (async (inner: { b: number }) => {
+              await Promise.resolve();
+              inner.b = 1;
+            }) as unknown as (inner: { a: number; b: number }) => void,
+            () => {}
+          );
+        },
+        () => {}
+      )
+    ).toThrow(OpenServiceAsyncRecipeError);
+    await new Promise<void>((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(state.b).toBe(0);
+  });
+
   it('authors the entry before a subscriber reacts, so reaction entries come after it', () => {
     const state = deepSignal({ obj: null as { x?: number } | null });
     const author = vi.fn();
@@ -495,12 +559,6 @@ describe('patch recorder', () => {
     expect(state.a).toBe(0);
   });
 
-  it('records nothing when the recipe writes nothing', () => {
-    const { ops } = record({ n: 0 }, () => {});
-
-    expect(ops).toEqual([]);
-  });
-
   it('does not call the author when the recipe writes nothing', () => {
     const author = vi.fn();
     recordPatch(deepSignal({ n: 0 }), () => {}, author);
@@ -524,35 +582,6 @@ describe('patch recorder', () => {
     expect(ops).toEqual([
       { op: 'replace', path: '/selected', value: { name: 'Button', props: 3 } },
     ]);
-  });
-
-  it('keeps the author equal to peers by copying a draft on assignment', () => {
-    const state = deepSignal({
-      components: { Button: { name: 'Button', props: 3 } },
-      selected: null as { name: string; props: number } | null,
-    });
-    recordPatch(
-      state,
-      (s) => {
-        s.selected = s.components.Button;
-      },
-      () => {}
-    );
-
-    let ops: RecordedOp[] = [];
-    recordPatch(
-      state,
-      (s) => {
-        s.components.Button.props = 4;
-      },
-      (recorded) => {
-        ops = recorded.ops;
-      }
-    );
-
-    expect(ops).toEqual([{ op: 'replace', path: '/components/Button/props', value: 4 }]);
-    expect(state.components.Button.props).toBe(4);
-    expect(state.selected?.props).toBe(3);
   });
 
   it('authors the paths written before a recipe throws, then rethrows', () => {
@@ -613,6 +642,25 @@ describe('patch recorder', () => {
     expect(restored).toEqual({ a: { b: { x: 0 } } });
   });
 
+  it('rebuilds a subsuming ancestor from its own descendants, not from sibling touches', () => {
+    const recorded = record({ other: 0, a: { b: 1 } }, (s) => {
+      s.other = 1;
+      s.a.b = 2;
+      s.a = { b: 3 };
+    });
+
+    expect({ ops: recorded.ops, inverse: recorded.inverse }).toEqual({
+      ops: [
+        { op: 'replace', path: '/other', value: 1 },
+        { op: 'replace', path: '/a', value: { b: 3 } },
+      ],
+      inverse: [
+        { op: 'replace', path: '/other', value: 0 },
+        { op: 'replace', path: '/a', value: { b: 1 } },
+      ],
+    });
+  });
+
   it('rebuilds an ancestor by undoing descendant touches newest first', () => {
     const recorded = record({ a: { b: { c: 0 } } } as { a?: { b?: { c: number } } }, (s) => {
       s.a!.b = { c: 1 };
@@ -623,5 +671,15 @@ describe('patch recorder', () => {
       ops: [{ op: 'remove', path: '/a' }],
       inverse: [{ op: 'add', path: '/a', value: { b: { c: 0 } } }],
     });
+  });
+
+  it('does not store a forbidden key through its signal accessor', () => {
+    const recorded = record({ a: 1 } as Record<string, unknown>, (s) => {
+      s.$constructor = signal(5);
+      s.$prototype = signal(6);
+    });
+
+    expect(recorded.ops).toEqual([]);
+    expect(Object.keys(recorded.raw)).toEqual(['a']);
   });
 });

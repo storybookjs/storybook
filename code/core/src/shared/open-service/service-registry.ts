@@ -25,7 +25,7 @@ import {
 } from '../../server-errors.ts';
 import { type ServiceChannel, generateRuntimeId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
-import { createSnapshotReconciler, type LogWindow } from './service-sync.ts';
+import { createReconciler, type LogWindow } from './service-sync.ts';
 import { connectServiceToChannel, connectUnknownServiceReporter } from './service-transport.ts';
 import type { StaticLoader } from './static-fetch.ts';
 import type {
@@ -314,10 +314,7 @@ export function registerService<
     staticLoader,
   });
 
-  // Owns the per-service stamp, Vector, Clock, ordered Log, and adopt/advance logic. Adopting an
-  // entry or a bootstrap snapshot goes through `applyLocal`, not `setState`, so it never authors an
-  // entry of its own.
-  const reconciler = createSnapshotReconciler({
+  const reconciler = createReconciler({
     serviceId: definition.id,
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
     window,

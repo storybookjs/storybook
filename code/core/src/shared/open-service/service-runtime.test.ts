@@ -12,6 +12,8 @@ import {
   rebuiltEqualValueOnLoadServiceDef,
   voidOutputSchema,
 } from './fixtures.ts';
+import { applyJsonPatch } from './json-patch.ts';
+import type { JsonPatchOperation } from './service-channel.ts';
 import { defineService } from './service-definition.ts';
 import { serviceRegistryApi } from './service-registry.ts';
 import { createServiceRuntime } from './service-runtime.ts';
@@ -1703,6 +1705,51 @@ describe('service runtime', () => {
 
       expect(author).not.toHaveBeenCalled();
       expect(runtime.getStateSnapshot()).toEqual({ slots: { adopted: 'x' } });
+    });
+
+    it("joins a setState called inside a recipe to that recipe's entry", async () => {
+      type NestState = { x: number; q: Record<string, string> };
+      const runtime = createServiceRuntime(
+        defineService({
+          id: 'internal-fixture/nested-set-state',
+          description: 'Calls setState inside a setState recipe.',
+          initialState: { x: 0, q: {} } as NestState,
+          queries: {},
+          commands: {
+            nest: {
+              description: 'Writes x, nests a write to x and q.y, then writes q.z.',
+              input: v.void(),
+              output: voidOutputSchema,
+              handler: (_input, ctx) => {
+                ctx.self.setState((state) => {
+                  state.x = 1;
+                  ctx.self.setState((inner) => {
+                    inner.x = 2;
+                    inner.q.y = 'i';
+                  });
+                  state.q.z = 'o';
+                });
+              },
+            },
+          },
+        }),
+        { registryApi: serviceRegistryApi }
+      );
+      const entries: { ops: JsonPatchOperation[]; inverse: JsonPatchOperation[] }[] = [];
+      runtime.attachEntryAuthor(({ ops, inverse }) => entries.push({ ops, inverse }));
+
+      await runtime.commands.nest();
+
+      expect(entries.map(({ ops }) => ops)).toEqual([
+        [
+          { op: 'replace', path: '/x', value: 2 },
+          { op: 'add', path: '/q/y', value: 'i' },
+          { op: 'add', path: '/q/z', value: 'o' },
+        ],
+      ]);
+      const restored = runtime.getStateSnapshot() as Record<string, unknown>;
+      expect(applyJsonPatch(restored, entries[0].inverse, () => undefined).ok).toBe(true);
+      expect(restored).toEqual({ x: 0, q: {} });
     });
   });
 });

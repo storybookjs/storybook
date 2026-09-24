@@ -548,7 +548,8 @@ created in [service-runtime.ts](./service-runtime.ts). There is no top-level sta
   A recipe that touches nothing emits no sync frame and does not bump the stamp. A command is a
   sequence of such entries: a command with two `setState` calls around an `await` sends two frames,
   and a command that throws after its first `setState` has already shared that write. There is no
-  rollback. Nested `ctx.self.commands.*` calls author their own entries.
+  rollback. Nested `ctx.self.commands.*` calls author their own entries. A `setState` call made
+  inside a recipe writes into that recipe's draft and joins its entry.
 - Objects assigned inside a recipe are **copied**, including other parts of the draft. After
   `state.selected = state.components.Button`, `state.selected` is a copy, so a later write to
   `state.components.Button.props` changes one path, on this runtime and on every peer alike. State
@@ -745,7 +746,7 @@ commands.write()
 
 A relay hub forwards, unchanged and in receipt order, every `services:entry` it appends to its own log and, once, every entry it drops as beyond-window; duplicates are not forwarded. It also forwards every `services:sync-reply` it installs, so repair reaches peers on its other transports. `services:sync-request` is never forwarded; a joiner asks its direct peers.
 
-A hub forwards a dropped entry because its floor is not every peer's floor. A peer with a lower floor can place the entry, and until some peer holds it, no vector can dominate its writer and every repair request about that writer stays silent. The hub remembers dropped stamps in a set bounded by the window's entry count and cleared on install, so each dropped stamp crosses the hub once.
+A hub forwards a dropped entry because its floor is not every peer's floor. A peer with a lower floor can place the entry, and until some peer holds it, no vector can dominate its writer and every repair request about that writer stays silent. The hub remembers every dropped stamp until the next install, so each dropped stamp crosses the hub once. A set bounded by the window's entry count would let two hubs that each dropped more stamps than that bounce them between each other forever.
 
 Hubs forward the original payload object, so unknown envelope fields survive the hop. Command events (`services:command-*`) are not relayed; see [Remote Command Execution](#remote-command-execution).
 
@@ -1094,11 +1095,12 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 - Touched-path recording belongs in [patch-recorder.test.ts](./patch-recorder.test.ts)
 - RFC 6901 pointer helpers and the `services:entry` schema belong in [service-channel.test.ts](./service-channel.test.ts); apply-by-path in [json-patch.test.ts](./json-patch.test.ts)
 - Wire cost of the entry protocol (frame bytes, relay bytes, no `structuredClone` per write) belongs in [sync-wire.test.ts](./sync-wire.test.ts)
-- The request policy of one runtime (one outstanding request, silence timeout, queued repair) belongs in [service-transport-sync.test.ts](./service-transport-sync.test.ts)
-- Multi-replica protocol scenarios (ordering, gaps, window, relay termination, bootstrap and repair, multi-write commands, reactions, inverse parity) belong in [sync-simulation.test.ts](./sync-simulation.test.ts), over the virtual network in [sync-simulation/](./sync-simulation/); the network itself is tested in [sync-simulation/network.test.ts](./sync-simulation/network.test.ts)
+- One reconciler (placing an entry, snapshot install, the two floors, the window, and the warning text) belongs in [service-sync.test.ts](./service-sync.test.ts)
+- The request policy of one runtime (one outstanding request, silence timeout, queued repair, its own echoes) belongs in [service-transport-sync.test.ts](./service-transport-sync.test.ts)
+- Multi-replica protocol scenarios (ordering, gaps, window, relay termination, bootstrap and repair, multi-write commands, reactions, inverse parity) belong in [sync-simulation.test.ts](./sync-simulation.test.ts), over the virtual network in [sync-simulation/](./sync-simulation/); the network itself is tested in [sync-simulation/network.test.ts](./sync-simulation/network.test.ts). A behavior a scenario there already fails on gets no second unit test; a unit test is for a rule the scenarios cannot pin, such as an exact request count or a warning's text
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
-- Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
+- How `registerService` wires a runtime to the channel (authored entries, peer traffic, hub and leaf relay roles, teardown) belongs in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
 - Remote command execution (requester/responder protocol) belongs in [service-command-transport.test.ts](./service-command-transport.test.ts); delegated dispatch in [service-delegated-mode.test.ts](./service-delegated-mode.test.ts); error (de)serialization in [service-error-serialization.test.ts](./service-error-serialization.test.ts)
 - React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)

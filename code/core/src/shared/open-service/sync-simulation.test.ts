@@ -931,4 +931,30 @@ describe('open-service sync simulation', () => {
       expect(world.replica(hubA).getState().slots).toEqual({ trigger: 't', reaction: 'saw t' });
     }
   );
+
+  it('forwards each beyond-window stamp once when more are in flight than the window keeps', async () => {
+    const current = boot('two-tabs');
+    await vi.advanceTimersByTimeAsync(1000);
+
+    // mb is cut off from the server in both directions, so its burst and ma's burst are concurrent.
+    current.network.hold('mb', 'server');
+    current.network.hold('mb', 'pb');
+    current.network.hold('server', 'mb');
+    for (let index = 0; index < 600; index += 1) {
+      await current.replica('ma').commands.setSlot({ slot: `a${index}`, value: 'a' });
+    }
+    drain(current);
+    for (let index = 0; index < 600; index += 1) {
+      await current.replica('mb').commands.setSlot({ slot: `b${index}`, value: 'b' });
+    }
+    // One more write after 15 s evicts ma's oldest 345 entries on the server and on ma, so mb's
+    // entries up to seq 344 land below both floors: more dropped stamps than the window keeps.
+    await vi.advanceTimersByTimeAsync(16_000);
+    await current.replica('ma').commands.setSlot({ slot: 'last', value: 'a' });
+    drain(current);
+
+    current.network.release('mb', 'server');
+    drain(current);
+    assertRelayTermination(current);
+  });
 });

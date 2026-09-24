@@ -8,7 +8,7 @@
 import { logger } from 'storybook/internal/client-logger';
 
 import { applyJsonPatch } from './json-patch.ts';
-import { FORBIDDEN_KEYS, hasOwn, isPlainObject } from './plain-object.ts';
+import { clonePlain, hasOwn, isPlainObject } from './plain-object.ts';
 import {
   entryStampKey,
   type EntryPayload,
@@ -25,9 +25,9 @@ export type LogWindow = {
   maxEntries: number;
 };
 
-export type SnapshotInstallOutcome = 'installed' | 'concurrent' | 'not-ahead';
+export type InstallOutcome = 'installed' | 'concurrent' | 'not-ahead';
 
-export type AdoptEntryOutcome = 'accepted' | 'gap' | 'unapplied' | 'duplicate' | 'beyond-window';
+export type PlaceEntryOutcome = 'accepted' | 'gap' | 'unapplied' | 'duplicate' | 'beyond-window';
 
 function vectorCounter(vector: Record<string, number>, runtimeId: string): number {
   return vector[runtimeId] ?? 0;
@@ -123,28 +123,32 @@ export function compareStamps(left: EntryStamp, right: EntryStamp): number {
  * - Recurses into plain objects so nested deep-signal subscriptions stay attached.
  * - Replaces arrays wholesale, matching the sync contract that arrays are values rather than maps.
  * - Assigns primitives only when changed to avoid spurious signal invalidation.
- * - Skips `__proto__`, `constructor`, and `prototype` on both delete and assign paths so untrusted
- *   channel payloads and static files cannot pollute prototypes.
+ * - Copies `source` through `clonePlain` first, like every other value on its way into state, so
+ *   untrusted channel payloads and static files cannot pollute prototypes or write deepsignal's
+ *   `$` accessors, and state never shares an object with the payload.
  *
  * The `preserveMissingKeys` mode selects the source contract:
  *
  * - `false` means `source` is a full peer snapshot. Keys missing from `source` are deleted from
  *   `target`, allowing deletions to propagate through cross-peer sync.
  * - `true` means `source` is a partial static snapshot. Keys missing from `source` are left alone
- * so
- *   snapshots for one static query input do not erase state populated by other inputs.
+ *   so snapshots for one static query input do not erase state populated by other inputs.
  */
 export function applyStatePatch(
   target: Record<string, unknown>,
   source: Record<string, unknown>,
   options: { preserveMissingKeys: boolean }
 ): void {
-  if (!options.preserveMissingKeys) {
-    for (const key of Object.keys(target)) {
-      if (FORBIDDEN_KEYS.has(key)) {
-        continue;
-      }
+  mergeInto(target, clonePlain(source) as Record<string, unknown>, options.preserveMissingKeys);
+}
 
+function mergeInto(
+  target: Record<string, unknown>,
+  source: Record<string, unknown>,
+  preserveMissingKeys: boolean
+): void {
+  if (!preserveMissingKeys) {
+    for (const key of Object.keys(target)) {
       if (!hasOwn(source, key)) {
         delete target[key];
       }
@@ -152,16 +156,12 @@ export function applyStatePatch(
   }
 
   for (const key of Object.keys(source)) {
-    if (FORBIDDEN_KEYS.has(key)) {
-      continue;
-    }
-
     const sourceValue = source[key];
-    const tarvalue = target[key];
+    const targetValue = target[key];
 
-    if (isPlainObject(sourceValue) && isPlainObject(tarvalue)) {
-      applyStatePatch(tarvalue, sourceValue, options);
-    } else if (tarvalue !== sourceValue) {
+    if (isPlainObject(sourceValue) && isPlainObject(targetValue)) {
+      mergeInto(targetValue, sourceValue, preserveMissingKeys);
+    } else if (targetValue !== sourceValue) {
       target[key] = sourceValue;
     }
   }
@@ -191,11 +191,11 @@ type StoredLogEntry = ReconcilerLogEntry & {
  * The per-service reconciler shared by every runtime's channel integration.
  *
  * It owns the Clock, the per-writer Vector, and the ordered Log. The entry author calls
- * {@link SnapshotReconciler.advanceLocal} before emitting. Incoming entries go through
- * {@link SnapshotReconciler.tryAdoptEntry}. Incoming snapshot replies go through
- * {@link SnapshotReconciler.tryAdopt}.
+ * {@link Reconciler.advanceLocal} before emitting. Incoming entries go through
+ * {@link Reconciler.tryPlaceEntry}. Incoming snapshot replies go through
+ * {@link Reconciler.tryInstall}.
  */
-export type SnapshotReconciler = {
+export type Reconciler = {
   /** Lamport high-water mark. Moves on incoming stamps (including duplicates) and on install. */
   readonly clock: number;
   /** Per-writer highest contiguous counter applied. */
@@ -216,7 +216,7 @@ export type SnapshotReconciler = {
    * Installs a snapshot only if `frontier.vector` dominates the local vector; `concurrent` and
    * `not-ahead` leave state untouched. A hub forwards the reply only when `installed`.
    */
-  tryAdopt(frontier: SyncFrontier, state: Record<string, unknown>): SnapshotInstallOutcome;
+  tryInstall(frontier: SyncFrontier, state: Record<string, unknown>): InstallOutcome;
   /**
    * Places an incoming entry into the Log. `accepted`, `gap`, and `unapplied` mean it was logged. A hub
    * forwards the original payload for those and for a first-time `beyond-window`, so a hub that
@@ -225,20 +225,20 @@ export type SnapshotReconciler = {
    * `sync-request`. An `unapplied` entry failed to apply and is kept as a no-op, so every replica
    * folds the same stamps; the request repairs a parent that was lost rather than late.
    */
-  tryAdoptEntry(incoming: EntryPayload): AdoptEntryOutcome;
+  tryPlaceEntry(incoming: EntryPayload): PlaceEntryOutcome;
 };
 
 /**
- * Builds a {@link SnapshotReconciler} bound to one runtime's state.
+ * Builds a {@link Reconciler} bound to one runtime's state.
  *
- * `setState` is the runtime's `applyLocal` adapted to a plain record, so adopting never authors an
- * entry. `serviceId` names the service in warnings. `window` bounds the Log.
+ * `setState` is the runtime's `applyLocal` adapted to a plain record, so placing and installing never
+ * author an entry. `serviceId` names the service in warnings. `window` bounds the Log.
  */
-export function createSnapshotReconciler(options: {
+export function createReconciler(options: {
   serviceId: string;
   setState: (mutate: StateMutator) => void;
   window?: Partial<LogWindow>;
-}): SnapshotReconciler {
+}): Reconciler {
   const { serviceId, setState } = options;
   const logWindow: LogWindow = {
     maxAgeMs: options.window?.maxAgeMs ?? DEFAULT_LOG_MAX_AGE_MS,
@@ -250,7 +250,8 @@ export function createSnapshotReconciler(options: {
   const log: StoredLogEntry[] = [];
   const logKeys = new Set<string>();
   // Stamps dropped as beyond-window, so a redelivery is a duplicate and a hub forwards each
-  // dropped stamp once. Cleared on install because install moves both floors.
+  // dropped stamp once. Cleared on install because install moves both floors. Not bounded: two hubs
+  // that each forget a stamp they dropped bounce it between them forever.
   const dropped = new Set<string>();
   let floor: EntryStamp | undefined;
 
@@ -259,13 +260,6 @@ export function createSnapshotReconciler(options: {
   const vectorOf = (runtimeId: string): number => vector.get(runtimeId) ?? 0;
 
   const hasStamp = (stamp: EntryStamp): boolean => logKeys.has(entryStampKey(stamp));
-
-  const rememberDropped = (key: string): void => {
-    dropped.add(key);
-    if (dropped.size > logWindow.maxEntries) {
-      dropped.delete(dropped.values().next().value!);
-    }
-  };
 
   const silentMissingRemove = (): void => undefined;
 
@@ -333,9 +327,6 @@ export function createSnapshotReconciler(options: {
   };
 
   const evict = (now: number): void => {
-    if (log.length === 0) {
-      return;
-    }
     const minKeepIndex = Math.max(0, log.length - logWindow.maxEntries);
     const kept: StoredLogEntry[] = [];
     for (let index = 0; index < log.length; index += 1) {
@@ -358,21 +349,19 @@ export function createSnapshotReconciler(options: {
     log.push(...kept);
   };
 
-  const remember = (entry: StoredLogEntry, advanceVector: boolean): void => {
+  const remember = (entry: StoredLogEntry): void => {
     logKeys.add(entryStampKey(entry.stamp));
-    if (advanceVector) {
-      tryAdvanceVector(entry.stamp);
-    }
+    tryAdvanceVector(entry.stamp);
     evict(entry.appliedAt);
   };
 
-  const appendOrInsert = (entry: StoredLogEntry, index: number, advanceVector: boolean): void => {
+  const appendOrInsert = (entry: StoredLogEntry, index: number): void => {
     if (index === log.length) {
       log.push(entry);
     } else {
       log.splice(index, 0, entry);
     }
-    remember(entry, advanceVector);
+    remember(entry);
   };
 
   const advanceClock = (seq: number): void => {
@@ -417,11 +406,11 @@ export function createSnapshotReconciler(options: {
         inverse: [...authored.inverse],
         appliedAt: now,
       };
-      appendOrInsert(entry, log.length, true);
+      appendOrInsert(entry, log.length);
       return stamp;
     },
 
-    tryAdopt(frontier: SyncFrontier, state: Record<string, unknown>): SnapshotInstallOutcome {
+    tryInstall(frontier: SyncFrontier, state: Record<string, unknown>): InstallOutcome {
       // Before the dominance check: a runtime that cannot install this reply still learns how far
       // the replier's clock got, so its next write does not stamp below the replier's history.
       advanceClock(frontier.clock);
@@ -470,14 +459,14 @@ export function createSnapshotReconciler(options: {
           const replayed: StoredLogEntry = { ...entry };
           redoEntry(current, replayed);
           log.push(replayed);
-          remember(replayed, true);
+          remember(replayed);
         }
       });
 
       return 'installed';
     },
 
-    tryAdoptEntry(incoming: EntryPayload): AdoptEntryOutcome {
+    tryPlaceEntry(incoming: EntryPayload): PlaceEntryOutcome {
       const { stamp, command, patch } = incoming;
       const key = entryStampKey(stamp);
 
@@ -494,21 +483,18 @@ export function createSnapshotReconciler(options: {
         logger.warn(
           `Open-service sync: entry beyond the log window. service=${serviceId} stamps=${key}${floorLabel} paths=${patchPaths(patch)} command=${command}`
         );
-        rememberDropped(key);
+        dropped.add(key);
         return 'beyond-window';
       }
 
       const gap = stamp.counter > vectorOf(stamp.runtimeId) + 1;
       const index = insertIndexFor(stamp);
-      if (index < log.length && compareStamps(log[index].stamp, stamp) === 0) {
-        return 'duplicate';
-      }
 
       const now = Date.now();
-      let inverse: JsonPatchOperation[] = [];
       let failedPath: string | undefined;
 
       setState((current) => {
+        let inverse: JsonPatchOperation[] = [];
         const isLater = index === log.length;
         const undone = isLater ? [] : undoToIndex(current, index);
         const result = applyJsonPatch(current, patch, (path) => {
@@ -522,6 +508,8 @@ export function createSnapshotReconciler(options: {
           failedPath = result.path;
         }
         redoUndone(current, undone);
+        // Inside the batch: subscribers run when it ends and may throw, after state has changed.
+        appendOrInsert({ stamp, command, patch: [...patch], inverse, appliedAt: now }, index);
       });
 
       // A failed entry stays in the Log as a no-op, so every replica folds the same entries in the
@@ -538,7 +526,6 @@ export function createSnapshotReconciler(options: {
         );
       }
 
-      appendOrInsert({ stamp, command, patch: [...patch], inverse, appliedAt: now }, index, !gap);
       return gap ? 'gap' : failedPath !== undefined ? 'unapplied' : 'accepted';
     },
   };

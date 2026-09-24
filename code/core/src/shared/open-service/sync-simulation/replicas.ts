@@ -4,11 +4,7 @@ import type { Channel } from '../../../channels/main.ts';
 import { defineService } from '../service-definition.ts';
 import { SERVICE_ENTRY, entryStampKey, type EntryPayload } from '../service-channel.ts';
 import { createServiceRuntime } from '../service-runtime.ts';
-import {
-  createSnapshotReconciler,
-  type LogWindow,
-  type SnapshotReconciler,
-} from '../service-sync.ts';
+import { createReconciler, type LogWindow, type Reconciler } from '../service-sync.ts';
 import { connectServiceToChannel } from '../service-transport.ts';
 import { serviceRegistryApi } from '../service-registry.ts';
 import type { NodeId, VirtualNetwork } from './network.ts';
@@ -170,7 +166,7 @@ export type Replica = {
   id: NodeId;
   relay: boolean;
   runtimeId: string;
-  reconciler: SnapshotReconciler;
+  reconciler: Reconciler;
   commands: ReturnType<typeof connectServiceToChannel>['commands'];
   queries: ReturnType<
     typeof createServiceRuntime<
@@ -197,7 +193,7 @@ export function attachReplica(options: {
   const runtimeId = id;
   const runtime = createServiceRuntime(simServiceDef, { registryApi: serviceRegistryApi });
 
-  const reconciler = createSnapshotReconciler({
+  const reconciler = createReconciler({
     serviceId: simServiceDef.id,
     setState: (mutate) => runtime.applyLocal((state) => mutate(state as Record<string, unknown>)),
     window,

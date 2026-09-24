@@ -35,6 +35,7 @@ describe('setupAddonInConfig', () => {
     vi.mocked(csfTools.writeConfig).mockResolvedValue();
     vi.mocked(syncModule.syncStorybookAddons).mockResolvedValue();
     vi.mocked(loadMainConfigModule.loadMainConfig).mockResolvedValue(mockMainConfig);
+    vi.mocked(wrapUtils.getAbsolutePathWrapperName).mockReturnValue(null);
   });
 
   it('should add addon to main config when no getAbsolutePath wrapper exists', async () => {
@@ -103,8 +104,12 @@ describe('setupAddonInConfig', () => {
     );
   });
 
-  it('should write config even when addon field does not exist', async () => {
+  it('should add an addon with the wrapper when the addon field does not exist', async () => {
+    const mockAddonNode = { type: 'StringLiteral' } as any;
+
     vi.mocked(mockMain.getFieldNode).mockReturnValue(undefined);
+    vi.mocked(mockMain.valueToNode).mockReturnValue(mockAddonNode);
+    vi.mocked(wrapUtils.getAbsolutePathWrapperName).mockReturnValue('getAbsolutePath');
 
     await setupAddonInConfig({
       addonName: '@storybook/addon-docs',
@@ -113,7 +118,12 @@ describe('setupAddonInConfig', () => {
       configDir: '.storybook',
     });
 
-    expect(mockMain.appendValueToArray).toHaveBeenCalledWith(['addons'], '@storybook/addon-docs');
+    expect(mockMain.appendNodeToArray).toHaveBeenCalledWith(['addons'], mockAddonNode);
+    expect(wrapUtils.wrapValueWithGetAbsolutePathWrapper).toHaveBeenCalledWith(
+      mockMain,
+      mockAddonNode
+    );
+    expect(mockMain.appendValueToArray).not.toHaveBeenCalled();
     expect(csfTools.writeConfig).toHaveBeenCalledWith(mockMain, undefined, {
       trailingComma: true,
       wrapColumn: 0,

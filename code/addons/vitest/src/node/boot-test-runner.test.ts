@@ -21,6 +21,7 @@ import { killTestRunner, runTestRunner, sendStoryIndexToTestRunner } from './boo
 let stdout: (chunk: Buffer | string) => void;
 let stderr: (chunk: Buffer | string) => void;
 let message: (event: { type: string; args?: unknown[]; payload?: unknown }) => void;
+let exitChild: (code: number | null, signal: string | null) => void;
 
 const child = vi.hoisted(() => ({
   stdout: {
@@ -44,6 +45,9 @@ const child = vi.hoisted(() => ({
     ) => {
       if (event === 'message') {
         message = callback;
+      }
+      if (event === 'exit') {
+        exitChild = callback as unknown as typeof exitChild;
       }
     }
   ),
@@ -528,5 +532,326 @@ describe('bootTestRunner', () => {
       }),
       expect.anything()
     );
+  });
+
+  it('should boot a new child after the child dies, and run the trigger that boots it', async () => {
+    bootOnTrigger();
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['a'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+    await vi.waitFor(() => expect(sentTypes()).toContain('TRIGGER_RUN:a'));
+    vi.mocked(executeNodeCommand).mockClear();
+    child.send.mockClear();
+
+    exitChild(null, 'SIGKILL');
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['b'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+
+    await vi.waitFor(() => expect(sentTypes()).toEqual(['index:', 'TRIGGER_RUN:b']));
+  });
+
+  it('should run the trigger that boots the runner again after a fatal error killed the child', async () => {
+    bootOnTrigger();
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['a'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+    await vi.waitFor(() => expect(sentTypes()).toContain('TRIGGER_RUN:a'));
+    mockStore.send({
+      type: 'FATAL_ERROR',
+      payload: { message: 'crash', error: { message: 'crash' } },
+    });
+    vi.mocked(executeNodeCommand).mockClear();
+    child.send.mockClear();
+
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['b'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+
+    await vi.waitFor(() => expect(sentTypes()).toEqual(['index:', 'TRIGGER_RUN:b']));
+  });
+
+  it('should report one fatal error and close the open run when a ready child dies', async () => {
+    const fatalErrors = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', fatalErrors);
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+    mockStore.setState((s) => ({
+      ...s,
+      cancelling: true,
+      currentRun: { ...s.currentRun, startedAt: 1000, finishedAt: undefined },
+    }));
+
+    exitChild(null, 'SIGKILL');
+
+    expect(fatalErrors).toHaveBeenCalledTimes(1);
+    expect(mockStore.getState().cancelling).toBe(false);
+    expect(mockStore.getState().currentRun.finishedAt).toEqual(expect.any(Number));
+  });
+
+  it('should report one fatal error when the child crashes before it is ready', async () => {
+    const fatalErrors = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', fatalErrors);
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+
+    message({
+      type: 'uncaught-error',
+      payload: {
+        message: 'Uncaught exception in the test runner process',
+        error: { message: 'x' },
+      },
+    });
+    await promise.catch(() => {});
+
+    expect(fatalErrors).toHaveBeenCalledTimes(1);
+  });
+
+  it('should fail the boot at once, with one fatal error, when the child is killed before it is ready', async () => {
+    const fatalErrors = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', fatalErrors);
+    let outcome: unknown;
+    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions }).then(
+      () => (outcome = 'resolved'),
+      (error) => (outcome = error)
+    );
+    await childSpawned();
+
+    exitChild(null, 'SIGKILL');
+
+    await vi.waitFor(() => expect(outcome).toBeInstanceOf(Error));
+    expect(fatalErrors).toHaveBeenCalledTimes(1);
+  });
+
+  it('should not add listeners when the child boots again after crashes', async () => {
+    const subscribe = vi.spyOn(mockStore, 'subscribe');
+    const processListeners = () =>
+      (['exit', 'SIGINT', 'SIGTERM'] as const).map((event) => process.listenerCount(event));
+    const bootAndCrash = async () => {
+      vi.mocked(executeNodeCommand).mockClear();
+      const promise = runTestRunner({
+        channel: mockChannel,
+        store: mockStore,
+        options: mockOptions,
+      });
+      await childSpawned();
+      message({ type: 'ready' });
+      await promise;
+      exitChild(1, null);
+    };
+
+    await bootAndCrash();
+    const afterFirstBoot = processListeners();
+    await bootAndCrash();
+    await bootAndCrash();
+    await bootAndCrash();
+
+    expect(processListeners()).toEqual(afterFirstBoot);
+    expect(subscribe.mock.calls.filter(([type]) => type === 'FATAL_ERROR')).toHaveLength(1);
+  });
+
+  it('should close the open run when a ready child reports an uncaught error and exits', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+    mockStore.setState((s) => ({
+      ...s,
+      cancelling: true,
+      currentRun: { ...s.currentRun, startedAt: 1000, finishedAt: undefined },
+    }));
+
+    message({
+      type: 'uncaught-error',
+      payload: {
+        message: 'Uncaught exception in the test runner process',
+        error: { message: 'x' },
+      },
+    });
+    exitChild(1, null);
+
+    expect(mockStore.getState().cancelling).toBe(false);
+    expect(mockStore.getState().currentRun.finishedAt).toEqual(expect.any(Number));
+  });
+
+  it('should report one fatal error when the exit arrives before the uncaught-error message', async () => {
+    const fatalErrors = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', fatalErrors);
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+
+    exitChild(1, null);
+    message({
+      type: 'uncaught-error',
+      payload: {
+        message: 'Uncaught exception in the test runner process',
+        error: { message: 'x' },
+      },
+    });
+    await promise.catch(() => {});
+
+    expect(fatalErrors).toHaveBeenCalledTimes(1);
+  });
+
+  it('should queue the next trigger when the child dies while its ready handler fetches the index', async () => {
+    const pendingIndex = deferredIndex();
+    storyIndexGenerator.getIndex.mockReturnValueOnce(pendingIndex.promise);
+    bootOnTrigger();
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['a'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+    exitChild(null, 'SIGKILL');
+    pendingIndex.resolve(storyIndex);
+    await vi.advanceTimersByTimeAsync(0);
+    vi.mocked(executeNodeCommand).mockClear();
+    child.send.mockClear();
+
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['b'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+
+    await vi.waitFor(() => expect(sentTypes()).toEqual(['index:', 'TRIGGER_RUN:b']));
+  });
+
+  it('should fail the boot at once, with one fatal error, when the child reports a fatal error before it is ready', async () => {
+    const fatalErrors = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', fatalErrors);
+    let outcome: unknown;
+    runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions }).then(
+      () => (outcome = 'resolved'),
+      (error) => (outcome = error)
+    );
+    await childSpawned();
+
+    mockStore.send({
+      type: 'FATAL_ERROR',
+      payload: { message: 'Failed to start Vitest', error: { message: 'x' } },
+    });
+    exitChild(1, null);
+
+    await vi.waitFor(() => expect(outcome).toBeInstanceOf(Error));
+    expect(fatalErrors).toHaveBeenCalledTimes(1);
+  });
+
+  describe('with one fake child per spawn', () => {
+    type FakeChild = ReturnType<typeof fakeChild>;
+    const fakeChild = () => {
+      const handlers: Record<string, (...args: any[]) => void> = {};
+      return {
+        stdout: { on: vi.fn() },
+        stderr: { on: vi.fn() },
+        on: vi.fn((event: string, handler: (...args: any[]) => void) => {
+          handlers[event] = handler;
+        }),
+        send: vi.fn(),
+        kill: vi.fn(),
+        message: (event: unknown) => handlers.message(event),
+        exit: (code: number | null, signal: string | null) => handlers.exit(code, signal),
+      };
+    };
+    let spawned: FakeChild[];
+    const typesSentTo = (target: FakeChild) =>
+      target.send.mock.calls.map(([event]) =>
+        event.type === STORE_CHANNEL_EVENT_NAME
+          ? `${event.args[0].event.type}:${event.args[0].event.payload.storyIds}`
+          : event.type === STORY_INDEX_CHANNEL_EVENT_NAME
+            ? 'index'
+            : event.type
+      );
+    const trigger = (id: string) =>
+      mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: [id] } });
+    const fatalError = {
+      type: 'FATAL_ERROR' as const,
+      payload: { message: 'Failed to start Vitest', error: { message: 'x' } },
+    };
+
+    beforeEach(() => {
+      spawned = [];
+      vi.mocked(executeNodeCommand).mockImplementation(() => {
+        const next = fakeChild();
+        spawned.push(next);
+        return next as never;
+      });
+    });
+
+    afterEach(() => {
+      vi.mocked(executeNodeCommand).mockReturnValue(child as never);
+    });
+
+    it('should boot one child when two runs are triggered before it spawns', async () => {
+      bootOnTrigger();
+
+      trigger('a');
+      trigger('b');
+      await vi.waitFor(() => expect(spawned).toHaveLength(1));
+      spawned[0].message({ type: 'ready' });
+
+      await vi.waitFor(() =>
+        expect(typesSentTo(spawned[0])).toEqual(['index', 'TRIGGER_RUN:a', 'TRIGGER_RUN:b'])
+      );
+      expect(spawned).toHaveLength(1);
+    });
+
+    it('should run a trigger sent after a fatal error killed a booting child, even when that child exits later', async () => {
+      bootOnTrigger();
+      trigger('a');
+      await vi.waitFor(() => expect(spawned).toHaveLength(1));
+
+      mockStore.send(fatalError);
+      trigger('b');
+      await vi.waitFor(() => expect(spawned).toHaveLength(2));
+      spawned[0].exit(0, null);
+      spawned[1].message({ type: 'ready' });
+
+      await vi.waitFor(() => expect(typesSentTo(spawned[1])).toEqual(['index', 'TRIGGER_RUN:b']));
+    });
+
+    it('should not spawn a child for a boot that was killed while it read its presets', async () => {
+      let releasePresets!: () => void;
+      const presetsRead = new Promise<void>((resolve) => {
+        releasePresets = resolve;
+      });
+      const apply = vi.mocked(mockOptions.presets.apply);
+      const defaultApply = apply.getMockImplementation()!;
+      apply.mockImplementation(async (key: string, fallback?: unknown) => {
+        await presetsRead;
+        return defaultApply(key, fallback);
+      });
+      try {
+        const boot = runTestRunner({
+          channel: mockChannel,
+          store: mockStore,
+          options: mockOptions,
+        });
+        boot.catch(() => {});
+
+        killTestRunner();
+        releasePresets();
+        await vi.advanceTimersByTimeAsync(0);
+
+        expect(spawned).toHaveLength(0);
+      } finally {
+        apply.mockImplementation(defaultApply);
+      }
+    });
+
+    it('should not let the start timeout of a killed boot kill the next child', async () => {
+      const fatalErrors = vi.fn();
+      mockStore.subscribe('FATAL_ERROR', fatalErrors);
+      bootOnTrigger();
+      trigger('a');
+      await vi.waitFor(() => expect(spawned).toHaveLength(1));
+      mockStore.send(fatalError);
+      trigger('b');
+      await vi.waitFor(() => expect(spawned).toHaveLength(2));
+      spawned[1].message({ type: 'ready' });
+
+      await vi.advanceTimersByTimeAsync(30_001);
+
+      expect(spawned[1].kill).not.toHaveBeenCalled();
+      expect(fatalErrors).toHaveBeenCalledTimes(1);
+    });
   });
 });

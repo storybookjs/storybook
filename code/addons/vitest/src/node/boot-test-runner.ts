@@ -42,6 +42,23 @@ type UniversalStoreBridge = {
 let child: null | ChildProcess;
 let ready = false;
 let unsubscribeBridges: Array<() => void> = [];
+let processExitHandled = false;
+const storesKillingOnFatalError = new WeakSet<Store>();
+// A kill ends the current boot: its later timeout, rejection, or exit must not touch the next one.
+let generation = 0;
+let booting: { generation: number; promise: Promise<void> } | undefined;
+
+const killChild = () => {
+  for (const unsubscribe of unsubscribeBridges) {
+    unsubscribe();
+  }
+  unsubscribeBridges = [];
+  child?.kill();
+  child = null;
+  ready = false;
+  eventQueue.length = 0;
+  generation++;
+};
 
 const forwardUniversalStoreEvent =
   (storeEventName: string) => (event: any, eventInfo: EventInfo) => {
@@ -84,31 +101,36 @@ const bootTestRunner = async ({
   const bridgedEventNames = new Set(universalStoreBridges.map((bridge) => bridge.eventName));
 
   let stderr: string[] = [];
-  const killChild = () => {
-    for (const unsubscribe of unsubscribeBridges) {
-      unsubscribe();
-    }
-    unsubscribeBridges = [];
-    child?.kill();
-    child = null;
-  };
 
-  store.subscribe('FATAL_ERROR', killChild);
+  if (!storesKillingOnFatalError.has(store)) {
+    storesKillingOnFatalError.add(store);
+    store.subscribe('FATAL_ERROR', () => {
+      killChild();
+      closeOpenRun(store);
+    });
+  }
+  if (!processExitHandled) {
+    processExitHandled = true;
+    const exit = (code = 0) => {
+      killChild();
+      process.exit(code);
+    };
+    process.on('exit', exit);
+    process.on('SIGINT', () => exit(0));
+    process.on('SIGTERM', () => exit(0));
+  }
 
-  const exit = (code = 0) => {
-    killChild();
-    eventQueue.length = 0;
-    process.exit(code);
-  };
-
-  process.on('exit', exit);
-  process.on('SIGINT', () => exit(0));
-  process.on('SIGTERM', () => exit(0));
+  const bootGeneration = generation;
+  // eslint-disable-next-line local-rules/no-uncategorized-errors
+  const crashAlreadyReported = new Error('The test runner process crashed');
 
   const startChildProcess = async () => {
     const storyIndexGenerator =
       await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
     const previewAnnotations = await getPreviewAnnotations(options);
+    if (bootGeneration !== generation) {
+      throw crashAlreadyReported;
+    }
 
     await new Promise<void>((resolve, reject) => {
       child = executeNodeCommand({
@@ -129,6 +151,21 @@ const bootTestRunner = async ({
       sentStoryIndex = undefined;
       stderr = [];
 
+      const spawnedChild = child;
+      spawnedChild.on('exit', (code: number | null, signal: NodeJS.Signals | null) => {
+        // A child the server already cleared was killed after a reported fatal error or on shutdown.
+        if (child === spawnedChild) {
+          store.send({
+            type: 'FATAL_ERROR',
+            payload: {
+              message: 'The test runner process exited unexpectedly',
+              error: { message: signal ? `Killed by ${signal}` : `Exited with code ${code}` },
+            },
+          });
+        }
+        reject(crashAlreadyReported);
+      });
+
       child.stdout?.on('data', log);
       child.stderr?.on('data', (data) => {
         // Ignore deprecation warnings which appear in yellow ANSI color
@@ -143,8 +180,14 @@ const bootTestRunner = async ({
       );
 
       child.on('message', (event: any) => {
+        if (child !== spawnedChild) {
+          return;
+        }
         if (event.type === 'ready') {
           refreshStoryIndex(storyIndexGenerator).then(() => {
+            if (child !== spawnedChild) {
+              return;
+            }
             ready = true;
             sendStoryIndex();
             // Resend events that triggered (during) the boot sequence, now that Vitest is ready
@@ -159,7 +202,7 @@ const bootTestRunner = async ({
             type: 'FATAL_ERROR',
             payload: event.payload,
           });
-          reject();
+          reject(crashAlreadyReported);
         } else if (bridgedEventNames.has(event.type)) {
           // Give the event to local store listeners only. emit() would also send it to browsers,
           // and the store leader already forwards that copy once.
@@ -183,6 +226,9 @@ const bootTestRunner = async ({
   );
 
   await Promise.race([startChildProcess(), timeout]).catch((error) => {
+    if (bootGeneration !== generation) {
+      throw error;
+    }
     store.send({
       type: 'FATAL_ERROR',
       payload: {
@@ -190,7 +236,6 @@ const bootTestRunner = async ({
         error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
       },
     });
-    eventQueue.length = 0;
     throw error;
   });
 };
@@ -213,20 +258,25 @@ export const runTestRunner = async ({
   if (!ready && initEvent) {
     eventQueue.push({ type: initEvent, args: initArgs });
   }
-  if (!child) {
-    ready = false;
-    await bootTestRunner({ channel, store, options, configLoader });
-    ready = true;
+  if (!child && booting?.generation !== generation) {
+    const boot = {
+      generation,
+      promise: bootTestRunner({ channel, store, options, configLoader }),
+    };
+    booting = boot;
+    boot.promise
+      .catch(() => {})
+      .then(() => {
+        if (booting === boot) {
+          booting = undefined;
+        }
+      });
   }
+  await booting?.promise;
 };
 
 export const killTestRunner = () => {
-  if (child) {
-    child.kill();
-    child = null;
-  }
-  ready = false;
-  eventQueue.length = 0;
+  killChild();
   lastStoryIndex = undefined;
   sentStoryIndex = undefined;
 };
@@ -277,3 +327,14 @@ const getPreviewAnnotations = async (options: Options): Promise<PreviewAnnotatio
   const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
   return (previewAnnotations ?? []).concat(previewPath ?? []);
 };
+
+const closeOpenRun = (store: Store) =>
+  store.setState((s) => ({
+    ...s,
+    cancelling: false,
+    currentRun: {
+      ...s.currentRun,
+      finishedAt:
+        s.currentRun.startedAt && !s.currentRun.finishedAt ? Date.now() : s.currentRun.finishedAt,
+    },
+  }));

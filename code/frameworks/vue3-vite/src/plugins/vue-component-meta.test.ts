@@ -25,7 +25,9 @@ function makeComponentMeta() {
   };
 }
 
-async function getTransformHandler() {
+type TransformHandler = (src: string, id: string) => Promise<{ code: string } | undefined>;
+
+async function getPlugin() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
   const { experimental_vueDocgenEngine } = await import('@storybook/vue3/preset');
   const plugin = await vueComponentMeta(await experimental_vueDocgenEngine());
@@ -35,7 +37,39 @@ async function getTransformHandler() {
       ? plugin.transform
       : (plugin.transform as { handler: (...args: unknown[]) => unknown }).handler;
 
-  return handler as (src: string, id: string) => Promise<{ code: string } | undefined>;
+  return {
+    transform: handler as TransformHandler,
+    handleHotUpdate: plugin.handleHotUpdate as (ctx: unknown) => Promise<unknown>,
+  };
+}
+
+async function getTransformHandler() {
+  return (await getPlugin()).transform;
+}
+
+/** Minimal Vite HMR context for exercising the handleHotUpdate hook. */
+function makeHotUpdateContext(file: string, importerIds: string[] = []) {
+  const send = vi.fn();
+  const modules = [
+    { id: file, importers: new Set(importerIds.map((id) => ({ id, importers: new Set() }))) },
+  ];
+
+  return {
+    ctx: {
+      file,
+      read: async () => 'updated source',
+      server: {
+        ws: { send },
+        moduleGraph: {
+          invalidateModule: vi.fn(),
+          getModulesByFile: (requested: string) => (requested === file ? modules : []),
+        },
+      },
+      modules,
+      timestamp: 1,
+    },
+    send,
+  };
 }
 
 describe('vue-component-meta plugin', () => {
@@ -268,6 +302,89 @@ describe('vue-component-meta plugin', () => {
 
       expect(result!.code).toContain('Tabs.__docgenInfo');
       expect(result!.code).toContain('"displayName":"Tabs"');
+    });
+  });
+
+  describe('hot update reloads (issue #35653)', () => {
+    const id = '/project/src/components/Tab.vue';
+    const src = `const _sfc_main = { name: 'Tab' };\nexport default _sfc_main;\n`;
+
+    beforeEach(() => {
+      mockChecker.getExportNames.mockReturnValue(['default']);
+    });
+
+    it('should not reload the preview when the docgen is unchanged', async () => {
+      const { transform, handleHotUpdate } = await getPlugin();
+      await transform(src, id);
+
+      const { ctx, send } = makeHotUpdateContext(id);
+      const result = await handleHotUpdate(ctx);
+
+      // returning undefined hands the update back to Vue's own HMR
+      expect(result).toBeUndefined();
+      expect(send).not.toHaveBeenCalled();
+      // the checker must still be kept in sync with the file on disk
+      expect(mockChecker.updateFile).toHaveBeenCalledWith(id, 'updated source');
+    });
+
+    it('should reload the preview when the docgen changed', async () => {
+      const { transform, handleHotUpdate } = await getPlugin();
+      await transform(src, id);
+
+      mockChecker.getComponentMeta.mockImplementation(() => ({
+        ...makeComponentMeta(),
+        props: [{ name: 'newProp', schema: 'number' }],
+      }));
+
+      const { ctx, send } = makeHotUpdateContext(id);
+      const result = await handleHotUpdate(ctx);
+
+      expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
+      expect(result).toEqual([]);
+    });
+
+    it('should reload the preview for a file that has no docgen yet', async () => {
+      const { handleHotUpdate } = await getPlugin();
+
+      const { ctx, send } = makeHotUpdateContext('/project/src/components/Other.vue');
+      await handleHotUpdate(ctx);
+
+      expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
+    });
+
+    it("should reload the preview when the changed file alters an importer's docgen", async () => {
+      // props declared in their own module: the edited file has no docgen of its own, so judging it
+      // by its own meta would miss the change, but the component importing it is documented
+      const propsModule = '/project/src/components/tab-props.ts';
+      mockChecker.getExportNames.mockImplementation((forId: string) =>
+        forId === propsModule ? [] : ['default']
+      );
+
+      const { transform, handleHotUpdate } = await getPlugin();
+      await transform(src, id);
+      await transform(`export const tabProps = {};\n`, propsModule);
+
+      mockChecker.getComponentMeta.mockImplementation(() => ({
+        ...makeComponentMeta(),
+        props: [{ name: 'newProp', schema: 'number' }],
+      }));
+
+      const { ctx, send } = makeHotUpdateContext(propsModule, [id]);
+      await handleHotUpdate(ctx);
+
+      expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
+    });
+
+    it('should leave files it does not document to their own HMR', async () => {
+      const { handleHotUpdate } = await getPlugin();
+
+      const { ctx, send } = makeHotUpdateContext('/project/src/components/styles.css');
+      const result = await handleHotUpdate(ctx);
+
+      expect(result).toBeUndefined();
+      expect(send).not.toHaveBeenCalled();
+      // vue-component-meta warns and corrupts later lookups when fed a file it cannot parse
+      expect(mockChecker.updateFile).not.toHaveBeenCalled();
     });
   });
 

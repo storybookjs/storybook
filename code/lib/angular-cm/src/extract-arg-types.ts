@@ -8,6 +8,7 @@
  */
 import type { SBEnumType, SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
+import type { AnalyzerContext } from './analyzer/context.ts';
 import type {
   Argument,
   Class,
@@ -21,6 +22,7 @@ import type {
   Property,
   PropertyInitializer,
 } from './types.ts';
+import { namedTypeDetail } from './type-detail.ts';
 
 export interface ParsingLogger {
   warn(message: string): void;
@@ -52,6 +54,11 @@ export interface ExtractArgTypesOptions {
   /** Required so no host inherits a silent default. */
   propsTable: PropsTableMode;
   logger?: ParsingLogger;
+  /**
+   * The live analyzer context beside this extraction, which named-type table detail needs. Without
+   * it, extraction stays flat and `table.type.detail` is absent.
+   */
+  context?: AnalyzerContext;
 }
 
 // The analyzer's `description`/`jsdoctags` comments are plain text already, never the
@@ -241,35 +248,46 @@ const resolveTypealias = (
 const isFunctionTypeString = (type: string): boolean =>
   type === 'function' || /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/.test(type);
 
+/**
+ * The declared type's sbType plus, when the analyzer context can resolve it, the pinned one-hop
+ * detail text for a named interface, object-shape alias, or enum reference. `detail` is undefined —
+ * never empty — wherever no expansion applies.
+ */
 const extractType = (
   property: Property,
   defaultValue: any,
   metadataJson: MetadataJson | undefined,
-  componentFile?: string
-): SBType => {
+  componentFile?: string,
+  context?: AnalyzerContext
+): { type: SBType; detail?: string } => {
   const type = property.type || extractTypeFromValue(defaultValue);
   switch (type) {
     case 'string':
     case 'boolean':
     case 'number':
-      return { name: type };
+      return { type: { name: type } };
     case null:
-      return { name: 'other', value: 'void' };
+      return { type: { name: 'other', value: 'void' } };
     default: {
       if (typeof type === 'string' && isFunctionTypeString(type)) {
-        return { name: 'function' };
+        return { type: { name: 'function' } };
       }
       const resolvedType = resolveTypealias(type, metadataJson, componentFile);
       if (typeof resolvedType === 'string' && resolvedType.indexOf('|') !== -1) {
         const control = primitiveUnionControl([...new Set(selectableUnionMembers(resolvedType))]);
         if (control) {
-          return control;
+          return { type: control };
         }
       }
       const enumValues = extractEnumValues(resolvedType, metadataJson, componentFile);
-      return enumValues
+      const sbType: SBType = enumValues
         ? { name: 'enum', value: enumValues }
         : { name: 'other', value: 'empty-enum' };
+      // Detail rides on the type text as written — the same spelling the summary shows — and only
+      // when a live analyzer context is in hand; a stubbed analyzer keeps today's flat output.
+      const detail =
+        typeof type === 'string' && context ? namedTypeDetail(context, type) : undefined;
+      return detail === undefined ? { type: sbType } : { type: sbType, detail };
     }
   }
 };
@@ -441,7 +459,7 @@ const getModelProperties = (componentData: Entry): Property[] => {
 
 export const extractArgTypesFromData = (
   componentData: Entry,
-  { metadataJson, propsTable, logger = NOOP_LOGGER }: ExtractArgTypesOptions
+  { metadataJson, propsTable, logger = NOOP_LOGGER, context }: ExtractArgTypesOptions
 ) => {
   const sectionToItems: Record<string, StrictInputType[]> = {};
   const componentClasses: MemberKey[] =
@@ -475,10 +493,10 @@ export const extractArgTypesFromData = (
 
       const defaultValue = isMethod(item) ? undefined : extractDefaultValue(item, logger);
 
-      const declaredType: SBType =
+      const { type: declaredType, detail } =
         isMethod(item) || (section !== 'inputs' && section !== 'properties')
-          ? { name: 'other', value: 'void' }
-          : extractType(item, defaultValue, metadataJson, componentData.file);
+          ? { type: { name: 'other', value: 'void' } as SBType }
+          : extractType(item, defaultValue, metadataJson, componentData.file, context);
 
       const type: SBType =
         section === 'inputs' && !isMethod(item) && isRequired(item)
@@ -499,6 +517,7 @@ export const extractArgTypesFromData = (
           ...(jsDocTags !== undefined ? { jsDocTags } : {}),
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
+            ...(detail !== undefined ? { detail } : {}),
           },
           defaultValue: { summary: defaultValue },
         },

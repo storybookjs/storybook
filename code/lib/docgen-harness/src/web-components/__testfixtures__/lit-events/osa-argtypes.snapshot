@@ -1,0 +1,71 @@
+{
+  "my-change": {
+    "description": "Fired when the value changes.",
+    "name": "my-change",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "CustomEvent",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "my-close": {
+    "description": "Fired when the panel closes.",
+    "name": "my-close",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "CustomEvent",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "onMyChange": {
+    "action": {
+      "name": "my-change",
+    },
+    "name": "onMyChange",
+    "table": {
+      "disable": true,
+    },
+  },
+  "onMyClose": {
+    "action": {
+      "name": "my-close",
+    },
+    "name": "onMyClose",
+    "table": {
+      "disable": true,
+    },
+  },
+  "value": {
+    "description": "Current text value.",
+    "name": "value",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'ready'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

@@ -96,8 +96,8 @@ type ClientAwareResponse = {
   setHeader(name: string, value: string): void;
   write(chunk: Uint8Array): boolean;
   end(): void;
-  once(event: 'close' | 'drain', listener: () => void): unknown;
-  off(event: 'close' | 'drain', listener: () => void): unknown;
+  once(event: 'close' | 'drain', listener: () => void): void;
+  off(event: 'close' | 'drain', listener: () => void): void;
 };
 
 /**

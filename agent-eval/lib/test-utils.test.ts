@@ -262,9 +262,9 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai -p 36917 review-create --json "$(cat
 
   test('parses storybook tools toolset/method pairs', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook tools test run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'',
-      'npx storybook tools stories find-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
-      'npx storybook tools review create --json \'{"title":"Pass","description":"x","collections":[]}\'',
+      'npx storybook tools test run --input \'{"stories":[{"storyId":"example-button--primary"}]}\'',
+      'npx storybook tools stories find-by-component --input \'{"componentPaths":["src/Badge.tsx"]}\'',
+      'npx storybook tools review create --input \'{"title":"Pass","description":"x","collections":[]}\'',
     ]);
 
     expect(calls.map((call) => call.name)).toEqual([
@@ -275,6 +275,59 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai -p 36917 review-create --json "$(cat
     expect(calls[0]?.input).toMatchObject({
       stories: [{ storyId: 'example-button--primary' }],
     });
+  });
+
+  test('scores storybook tools --input payloads and drops the bare --json output flag', () => {
+    // Verbatim from codex-plugin-gpt-6-sol-medium 803-edit-component and
+    // 808-shared-infra-fallback (2026-09-24): `--input` is the tools CLI's
+    // whole-argument-object escape hatch and `--json` its output-format flag.
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools review create --input \'{"title":"Review date and report action","description":"The review card now shows a date and can offer a Report action.","collections":[{"title":"Review card states","rationale":"Shows the date in the standard card and the optional Report button with its click behavior.","storyIds":["reviews-reviewcard--default","reviews-reviewcard--with-report-action"]}],"changedFiles":["src/components/ReviewCard.tsx","stories/ReviewCard.stories.tsx"]}\' --json',
+      'npx storybook tools test run --input \'{"stories":[{"storyId":"reviews-reviewcard--default"},{"storyId":"reviews-reviewcard--with-report-action"}]}\' --json',
+      'npx storybook tools test run --stories \'[{"storyId":"components-badge--default"}]\' --json 2>&1',
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual(['review-create', 'test-run', 'test-run']);
+    expect(calls[0]?.input.title).toBe('Review date and report action');
+    expect(calls[0]?.input.collections).toEqual([
+      {
+        title: 'Review card states',
+        rationale:
+          'Shows the date in the standard card and the optional Report button with its click behavior.',
+        storyIds: ['reviews-reviewcard--default', 'reviews-reviewcard--with-report-action'],
+      },
+    ]);
+    expect(calls[1]?.input).toEqual({
+      stories: [
+        { storyId: 'reviews-reviewcard--default' },
+        { storyId: 'reviews-reviewcard--with-report-action' },
+      ],
+    });
+    expect(calls[2]?.input).toEqual({ stories: [{ storyId: 'components-badge--default' }] });
+    for (const call of calls) {
+      expect(call.input).not.toHaveProperty('input');
+      expect(call.input).not.toHaveProperty('json');
+    }
+  });
+
+  test('lets explicit --key flags override --input entries regardless of order', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run --a11y false --input \'{"a11y":true,"stories":[{"storyId":"a--b"}]}\'',
+      'npx storybook tools test run --input \'{"a11y":true,"stories":[{"storyId":"a--b"}]}\' --a11y false',
+    ]);
+
+    expect(calls).toHaveLength(2);
+    for (const call of calls) {
+      expect(call.input).toEqual({ a11y: false, stories: [{ storyId: 'a--b' }] });
+    }
+  });
+
+  test('does not unwrap MCP-style wrappers inside a tools --input object', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run --input \'{"arguments":{"stories":[{"storyId":"a--b"}]}}\'',
+    ]);
+
+    expect(calls[0]?.input).toEqual({ arguments: { stories: [{ storyId: 'a--b' }] } });
   });
 });
 
@@ -396,6 +449,137 @@ describe('parseWorkflowToolResults', () => {
     ].join('\n');
 
     expect(parseWorkflowToolResults(transcript, 'test-run')).toHaveLength(0);
+  });
+
+  function codexTestRunJsonLine(output: unknown): string {
+    return JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'command_execution',
+        command:
+          'npx storybook tools test run --input \'{"stories":[{"storyId":"reviews-reviewcard--default"}]}\' --json',
+        aggregated_output: `${JSON.stringify(output, null, 2)}\n`,
+        exit_code: 0,
+        status: 'completed',
+      },
+    });
+  }
+
+  function status(storyId: string, value: string, typeId = 'storybook/component-test') {
+    return { storyId, typeId, value, title: '', description: '', sidebarContextMenu: false };
+  }
+
+  test('renders --json test-run output as the markdown report', () => {
+    // Shape observed in codex-plugin-gpt-6-sol-medium 803 (2026-09-24). The
+    // raw axe reports list every rule id under passes/inapplicable, so the
+    // JSON itself must never be grepped for violation ids.
+    const transcript = codexTestRunJsonLine({
+      status: 'completed',
+      result: {
+        config: { coverage: false, a11y: true },
+        componentTestStatuses: [
+          status('reviews-reviewcard--default', 'status-value:success'),
+          status('reviews-reviewcard--with-report-action', 'status-value:success'),
+        ],
+        a11yStatuses: [
+          status('reviews-reviewcard--default', 'status-value:success', 'storybook/a11y'),
+        ],
+        a11yReports: {
+          'reviews-reviewcard--default': [
+            {
+              violations: [],
+              passes: [{ id: 'button-name', description: 'Buttons have discernible text' }],
+              inapplicable: [{ id: 'color-contrast' }],
+            },
+          ],
+        },
+        unhandledErrors: [],
+      },
+    });
+
+    const results = parseWorkflowToolResults(transcript, 'test-run');
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.output).toBe(
+      '## Passing Stories\n\n- reviews-reviewcard--default\n- reviews-reviewcard--with-report-action'
+    );
+  });
+
+  test('renders failing stories, a11y violations, and unhandled errors from --json output', () => {
+    const transcript = codexTestRunJsonLine({
+      status: 'completed',
+      result: {
+        config: { coverage: false, a11y: true },
+        componentTestStatuses: [
+          status('a--b', 'status-value:success'),
+          { ...status('a--c', 'status-value:error'), description: 'expected 1 to be 2' },
+        ],
+        a11yStatuses: [],
+        a11yReports: {
+          'a--b': [
+            {
+              violations: [
+                {
+                  id: 'button-name',
+                  description: 'Buttons must have discernible text',
+                  nodes: [{ impact: 'critical', html: '<button></button>' }],
+                },
+              ],
+              passes: [],
+            },
+          ],
+          'a--c': [{ error: { message: 'axe crashed' } }],
+        },
+        unhandledErrors: [{ name: 'TypeError', message: 'x is not a function' }],
+      },
+    });
+
+    const output = parseWorkflowToolResults(transcript, 'test-run')[0]?.output ?? '';
+
+    expect(output).toContain('## Passing Stories\n\n- a--b');
+    expect(output).toContain('## Failing Stories\n\n### a--c\n\nexpected 1 to be 2');
+    expect(output).toContain(
+      '## Accessibility Violations\n\n### a--b - button-name\n\nButtons must have discernible text'
+    );
+    expect(output).toContain('### a--c - Error\n\naxe crashed');
+    expect(output).toContain(
+      '## Unhandled Errors\n\n### TypeError\n\n**Error message**: x is not a function'
+    );
+  });
+
+  test('renders the non-completed --json test-run outcomes', () => {
+    const outputs = [
+      { status: 'no-stories', notFoundMessages: ['No story with id a--b'] },
+      { status: 'error', error: { message: 'dev server unreachable' } },
+      { status: 'cancelled' },
+    ].map(
+      (output) => parseWorkflowToolResults(codexTestRunJsonLine(output), 'test-run')[0]?.output
+    );
+
+    expect(outputs).toEqual([
+      'No stories found matching the provided input.\n\nNo story with id a--b',
+      'Error: dev server unreachable',
+      'Error: Test run was cancelled',
+    ]);
+  });
+
+  test('leaves markdown and unrecognized JSON output untouched', () => {
+    const markdown = JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'command_execution',
+        command: 'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\'',
+        aggregated_output: '## Passing Stories\n\n- a--b',
+        exit_code: 0,
+        status: 'completed',
+      },
+    });
+    const unrelatedJson = codexTestRunJsonLine({ reviewUrl: 'http://localhost:6006' });
+
+    expect(parseWorkflowToolResults(markdown, 'test-run')[0]?.output).toBe(
+      '## Passing Stories\n\n- a--b'
+    );
+    expect(parseWorkflowToolResults(unrelatedJson, 'test-run')[0]?.output).toContain('reviewUrl');
   });
 });
 

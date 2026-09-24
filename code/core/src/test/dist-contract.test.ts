@@ -22,7 +22,7 @@ const TSC_OPTIONS = [
   '--skipLibCheck',
   'false',
   '--types',
-  'node',
+  'node,chai',
   '--noEmit',
   CONSUMER_FIXTURE,
 ];
@@ -37,6 +37,7 @@ describe('storybook/test declaration contract', () => {
     const declarations = readFileSync(DTS_ARTIFACT, 'utf-8');
 
     expect(declarations).toContain('from "@testing-library/jest-dom/matchers"');
+    expect(declarations).toContain('from "@vitest/expect"');
     expect(declarations).not.toContain('@testing-library/jest-dom/types/');
     expect(declarations).not.toContain('Chai.');
   });

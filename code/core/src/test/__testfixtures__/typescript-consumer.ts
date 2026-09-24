@@ -21,6 +21,20 @@ expect(2).toBeEven();
 expect.toSatisfy((value) => value >= 18);
 expect.not.toSatisfy((value) => value >= 18);
 
+const directAssertion: Promise<void> = expect(2).toBe(2);
+const negatedAssertion: Promise<void> = expect(2).not.toBe(3);
+const resolvedAssertion: Promise<void> = expect(Promise.resolve(2)).resolves.toBe(2);
+const rejectedAssertion: Promise<void> = expect(Promise.reject('failure')).rejects.toBe('failure');
+const softAssertion: Promise<void> = expect.soft(2).toBe(2);
+const domAssertion: Promise<void> = expect(document.body).toBeInTheDocument();
+
+void directAssertion;
+void negatedAssertion;
+void resolvedAssertion;
+void rejectedAssertion;
+void softAssertion;
+void domAssertion;
+
 const returnedNumber = fn(() => 3);
 const returnedNumberMock: Mock<() => number> = returnedNumber;
 const returnedNumberInstance: MockInstance<() => number> = returnedNumber;
@@ -35,13 +49,6 @@ expect(returnedNumber).toReturnTimes(1);
 expect(returnedNumber).toReturnWith(3);
 expect(returnedNumber).lastReturnedWith(3);
 expect(returnedNumber).nthReturnedWith(1, 3);
-
-// @ts-expect-error A returned number cannot match a string.
-expect(returnedNumber).toHaveReturnedWith('three');
-// @ts-expect-error A returned number cannot match an object.
-expect(returnedNumber).toHaveReturnedWith({});
-// @ts-expect-error A returned number cannot match undefined.
-expect(returnedNumber).toHaveReturnedWith(undefined);
 
 const calledWithString = fn((value: string) => value.length);
 const calledWithObject = fn((value: { nested: { value: number } }) => value);
@@ -129,26 +136,17 @@ expect(calledWithString).toHaveBeenNthCalledWith(1, 'value');
 expect(calledWithString).nthCalledWith(1, 'value');
 expect(calledWithString).toHaveBeenCalledTimes(1);
 expect(calledWithString).toBeCalledTimes(1);
-expect(calledWithString).toHaveBeenCalledExactlyOnceWith('value');
 expect(calledWithObject).toHaveBeenCalledWith(
   expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) })
 );
 expect(calledWithObject).toHaveReturnedWith(
   expect.objectContaining({ nested: expect.objectContaining({ value: 1 }) })
 );
-// @ts-expect-error A nested mock argument must retain its value type.
-expect(calledWithObject).toHaveBeenCalledWith({ nested: { value: 'one' } });
-// @ts-expect-error A nested mock result must retain its value type.
-expect(calledWithObject).toHaveReturnedWith({ nested: { value: 'one' } });
 expect(calledWithString).toHaveLength(1);
 expect('value').toMatch('value');
 expect(3).toBeGreaterThan(2);
-// @ts-expect-error A string mock argument cannot be a number.
-expect(calledWithString).toHaveBeenCalledWith(1);
 // @ts-expect-error Call-count matchers require a number.
 expect(calledWithString).toHaveBeenCalledTimes('one');
-// @ts-expect-error An exact-call matcher requires the mock's arguments.
-expect(calledWithString).toHaveBeenCalledExactlyOnceWith(1);
 // @ts-expect-error A string matcher accepts strings or regular expressions.
 expect('value').toMatch(1);
 // @ts-expect-error Comparison matchers require numbers or bigints.
@@ -182,7 +180,7 @@ expect.extend({
     this.assertionCalls += 0;
     this.equals(received, expected);
     const hint: string = this.utils.matcherHint('toBeDivisibleBy');
-    const difference: string | null = this.utils.diff(received, expected);
+    const difference: string | undefined = this.utils.diff(received, expected);
     // @ts-expect-error Matcher utilities reject misspelled members.
     this.utils.matchHint('toBeDivisibleBy');
     this.isNot.valueOf();

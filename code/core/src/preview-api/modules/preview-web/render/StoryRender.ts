@@ -21,12 +21,19 @@ import type {
   StoryContext,
   StoryId,
   StoryRenderOptions,
+  StrictArgTypes,
   TeardownRenderToCanvas,
 } from 'storybook/internal/types';
 
 import type { UserEventObject } from 'storybook/test';
 
+import { global } from '@storybook/global';
+
 import type { StoryStore } from '../../store/index.ts';
+import {
+  loadDocgenServiceArgTypes,
+  mergeDocgenServiceArgTypes,
+} from '../../store/docgenServiceArgTypes.ts';
 import type { Render, RenderType } from './Render.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
@@ -225,6 +232,19 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     const isMountDestructured = story.usesMount;
 
     try {
+      let serverArgTypes: StrictArgTypes | undefined;
+      if (global.FEATURES?.experimentalDocgenServer) {
+        // Server docgen: the manager defers extraction past the first-render window, so without
+        // waiting for the payload the first render would miss server argTypes entirely (slot
+        // args degrade to props). Bounded and failure-tolerant: slow, missing, or failed
+        // extraction renders without server argTypes instead of throwing. Flag off skips the
+        // await entirely so render timing stays byte-identical to the legacy path.
+        serverArgTypes = await loadDocgenServiceArgTypes(componentId);
+        if (abortSignal.aborted) {
+          return;
+        }
+      }
+
       const context: StoryContext<TRenderer> = {
         ...this.storyContext(),
         viewMode: this.viewMode,
@@ -261,6 +281,16 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       };
 
       context.context = context;
+
+      // The awaited payload is authoritative — the state patch can lag the command output, so
+      // layer it in directly (customArgTypes still win). Idempotent with the state-read merge
+      // in `getStoryContext`.
+      if (serverArgTypes) {
+        context.argTypes = mergeDocgenServiceArgTypes({
+          serverArgTypes,
+          argTypes: context.argTypes,
+        });
+      }
 
       const renderContext: RenderContext<TRenderer> = {
         componentId,

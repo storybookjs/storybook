@@ -23,6 +23,7 @@ import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { removeAddonInteractions } from './remove-addon-interactions.ts';
 import { removeDocsAutodocs } from './remove-docs-autodocs.ts';
 import { removeEssentials } from './remove-essentials.ts';
+import { removeReactDomShim } from './remove-react-dom-shim.ts';
 import { rendererToFramework } from './renderer-to-framework.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { rnstorybookConfig } from './rnstorybook-config.ts';
@@ -54,6 +55,7 @@ export const allFixes: Fix[] = [
   addonMcp,
   rendererToFramework,
   removeEssentials,
+  removeReactDomShim,
   addonA11yParameters,
   removeDocsAutodocs,
   wrapGetAbsolutePath,

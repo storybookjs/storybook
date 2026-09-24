@@ -7,6 +7,7 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
 } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { vol } from 'memfs';
 
@@ -15,6 +16,7 @@ import { removeReactDomShim } from './remove-react-dom-shim.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 const packageManager = JsPackageManagerFactory.getPackageManager({
   force: PackageManagerName.NPM,
@@ -24,23 +26,26 @@ const check = () =>
   removeReactDomShim.check({
     packageManager,
     configDir: '/project/.storybook',
-    mainConfig: {},
+    mainConfig: { stories: [] },
     storybookVersion: '11.0.0',
     storiesPaths: [],
     hasCsfFactoryPreview: false,
   });
 
-const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boolean) =>
-  removeReactDomShim.run({
+const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boolean) => {
+  const migration = removeReactDomShim.run;
+  if (!migration) throw new Error('Expected an automatic migration');
+  return migration({
     packageManager,
     result,
     dryRun,
     mainConfigPath: '/project/.storybook/main.ts',
-    mainConfig: {},
+    mainConfig: { stories: [] },
     configDir: '/project/.storybook',
     storybookVersion: '11.0.0',
     storiesPaths: [],
   });
+};
 
 beforeEach(() => {
   vol.reset();
@@ -75,34 +80,17 @@ describe('removeReactDomShim', () => {
 
     const result = await check();
 
-    expect(result).toMatchInlineSnapshot(`
-      {
-        "edits": [
-          {
-            "filePath": "/project/.storybook/main.ts",
-            "original": "export default { addons: ['@storybook/react-dom-shim/preset', '@storybook/addon-essentials'] };",
-            "replacement": "export default { addons: ['@storybook/addon-essentials'] };",
-          },
-          {
-            "filePath": "/project/package.json",
-            "original": "{\"dependencies\":{\"@storybook/react-dom-shim\":\"^10.0.0\",\"react\":\"^18.3.1\",\"react-dom\":\"^18.3.1\"}}",
-            "replacement": "{\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
-          },
-        ],
-        "kind": "safe",
-        "workspaceRoot": "/project",
-      }
-    `);
+    expect(result).toMatchObject({ kind: 'safe', workspaceRoot: '/project' });
     if (!result) throw new Error('Expected a migration');
 
     await run(result, false);
 
     expect(vol.toJSON()).toMatchInlineSnapshot(`
-      {
-        "/project/.storybook/main.ts": "export default { addons: ['@storybook/addon-essentials'] };",
-        "/project/package.json": "{\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
-      }
-    `);
+{
+  "/project/.storybook/main.ts": "export default { addons: ['@storybook/addon-essentials'] };",
+  "/project/package.json": "{\n  \"dependencies\": {\n    \"react\": \"^18.3.1\",\n    \"react-dom\": \"^18.3.1\"\n  }\n}\n",
+}
+`);
   });
 
   it('does not write during a dry run', async () => {
@@ -136,8 +124,13 @@ describe('removeReactDomShim', () => {
       },
     });
 
-    await expect(check()).rejects.toThrow(
-      '/project/src/index.ts: imports react-dom-shim and must be migrated manually'
+    const result = await check();
+
+    expect(result).toMatchObject({ kind: 'manual' });
+    expect(logger.warn).toHaveBeenCalledWith(
+      expect.stringContaining(
+        '/project/src/index.ts: contains a react-dom-shim import, re-export, or module load'
+      )
     );
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });

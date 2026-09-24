@@ -26,31 +26,30 @@ export const workspaceFileKind = (filePath: string): WorkspaceFileKind => {
 };
 
 export const workspaceFiles = async (directory: string): Promise<WorkspaceFiles> => {
-  let entries: Awaited<ReturnType<typeof readdir>>;
   try {
-    entries = await readdir(directory, { withFileTypes: true });
+    const entries = await readdir(directory, { encoding: 'utf8', withFileTypes: true });
+
+    const files: string[] = [];
+    let complete = true;
+    for (const entry of entries) {
+      const filePath = join(directory, entry.name);
+      if (entry.isSymbolicLink()) {
+        complete = false;
+        continue;
+      }
+      if (entry.isDirectory()) {
+        if (SKIPPED_DIRECTORIES.has(entry.name)) continue;
+        const descendants = await workspaceFiles(filePath);
+        complete &&= descendants.complete;
+        files.push(...descendants.files);
+      } else if (entry.isFile()) {
+        files.push(filePath);
+      }
+    }
+    return { complete, files };
   } catch {
     return { complete: false, files: [] };
   }
-
-  const files: string[] = [];
-  let complete = true;
-  for (const entry of entries) {
-    const filePath = join(directory, entry.name);
-    if (entry.isSymbolicLink()) {
-      complete = false;
-      continue;
-    }
-    if (entry.isDirectory()) {
-      if (SKIPPED_DIRECTORIES.has(entry.name)) continue;
-      const descendants = await workspaceFiles(filePath);
-      complete &&= descendants.complete;
-      files.push(...descendants.files);
-    } else if (entry.isFile()) {
-      files.push(filePath);
-    }
-  }
-  return { complete, files };
 };
 
 const cssEscapes = (source: string) =>

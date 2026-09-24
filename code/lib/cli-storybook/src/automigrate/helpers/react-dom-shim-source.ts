@@ -79,8 +79,8 @@ const addLoaderProperties = (
     if (!t.isObjectProperty(property) || property.computed || !t.isIdentifier(property.value)) {
       return true;
     }
-    const name = t.isIdentifier(property.key) ? property.key.name : property.key.value;
-    if (!['require', 'resolve'].includes(name)) return true;
+    const name = t.isIdentifier(property.key) ? property.key.name : staticString(property.key);
+    if (name === undefined || !['require', 'resolve'].includes(name)) return true;
     add(loaders, property.value.name);
     return false;
   });
@@ -101,7 +101,7 @@ const addFactoryProperties = (
         ? staticString(property.key)
         : t.isIdentifier(property.key)
           ? property.key.name
-          : property.key.value);
+          : staticString(property.key));
     if (
       !t.isObjectProperty(property) ||
       name !== 'createRequire' ||
@@ -228,7 +228,7 @@ const loaderNames = (file: t.File) => {
   return { factories, loaders, modules, unresolved };
 };
 type LoaderReferencePath = {
-  node: t.Identifier;
+  node: t.Identifier | t.JSXIdentifier;
   parent: t.Node;
   parentPath: { parent: t.Node } | null;
 };
@@ -238,6 +238,7 @@ const loaderReferenceEscapes = (
   factories: Set<string>,
   modules: Set<string>
 ) => {
+  if (!t.isIdentifier(path.node)) return false;
   const isLoaderReference = loaders.has(path.node.name);
   const isFactoryReference = factories.has(path.node.name);
   const isModuleReference = modules.has(path.node.name) || path.node.name === 'module';

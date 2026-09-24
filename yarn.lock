@@ -10254,25 +10254,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@storybook/react-dom-shim@workspace:code/lib/react-dom-shim":
-  version: 0.0.0-use.local
-  resolution: "@storybook/react-dom-shim@workspace:code/lib/react-dom-shim"
-  dependencies:
-    typescript: "npm:^6.0.3"
-  peerDependencies:
-    "@types/react": ^18.0.0 || ^19.0.0
-    "@types/react-dom": ^18.0.0 || ^19.0.0
-    react: ^18.0.0 || ^19.0.0
-    react-dom: ^18.0.0 || ^19.0.0
-    storybook: "workspace:^"
-  peerDependenciesMeta:
-    "@types/react":
-      optional: true
-    "@types/react-dom":
-      optional: true
-  languageName: unknown
-  linkType: soft
-
 "@storybook/react-native-web-vite@workspace:code/frameworks/react-native-web-vite":
   version: 0.0.0-use.local
   resolution: "@storybook/react-native-web-vite@workspace:code/frameworks/react-native-web-vite"

@@ -26,7 +26,9 @@ const DEPENDENCY_SECTIONS = [
 
 type DependencyMap = Record<string, string>;
 type JsonValue = boolean | JsonRecord | JsonValue[] | null | number | string;
-type JsonRecord = Record<string, JsonValue>;
+interface JsonRecord {
+  [key: string]: JsonValue;
+}
 type Manifest = {
   dependencies?: DependencyMap;
   devDependencies?: DependencyMap;

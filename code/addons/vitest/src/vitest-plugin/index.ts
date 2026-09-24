@@ -19,6 +19,7 @@ import {
   Tag,
   experimental_loadStorybook,
   mapStaticDir,
+  watchStorySpecifiers,
 } from 'storybook/internal/core-server';
 import {
   componentTransform,
@@ -117,45 +118,47 @@ const getStoryGlobsAndFiles = async (
   };
 };
 
-// Story files without a single story matching the tags filter are left out of `test.include`, so
-// Vitest never loads them or the component graph they import.
-const getStoryFilesWithTests = async (
+const createStoryIndexGenerator = async (
   presets: Presets,
   normalizedStories: NormalizedStoriesSpecifier[],
-  storiesFiles: string[],
-  options: Pick<InternalOptions, 'configDir' | 'tags'> & {
-    workingDir: string;
-    features: StorybookConfigRaw['features'];
-  }
+  options: { workingDir: string; configDir: string; features: StorybookConfigRaw['features'] }
 ) => {
   const [indexers, docs] = await Promise.all([
     presets.apply('experimental_indexers', []),
     presets.apply('docs'),
   ]);
 
-  const generator = new StoryIndexGenerator(normalizedStories, {
-    workingDir: options.workingDir,
-    configDir: options.configDir,
-    indexers,
-    docs,
-    features: options.features,
-  });
+  const generator = new StoryIndexGenerator(normalizedStories, { ...options, indexers, docs });
   await generator.initialize();
+  return generator;
+};
+
+// Story files without a single story matching the tags filter are left out of `test.include`, so
+// Vitest never loads them or the component graph they import. Returns paths relative to the
+// Vitest root, the form `test.include` is matched against.
+const selectStoryFilesWithTests = async (
+  generator: StoryIndexGenerator,
+  options: Pick<InternalOptions, 'vitestRoot' | 'includeStories' | 'tags'> & { workingDir: string }
+) => {
   const { entries } = await generator.getIndex();
 
-  const storyFiles = new Set(storiesFiles.map((file) => normalize(file)));
   const storyFilesWithTests = new Set<string>();
   for (const entry of Object.values(entries)) {
     if (entry.type !== 'story' || !matchesTagsFilter(entry.tags ?? [], options.tags)) {
       continue;
     }
-    const absolutePath = resolve(options.workingDir, entry.importPath);
-    if (storyFiles.has(absolutePath)) {
-      storyFilesWithTests.add(absolutePath);
+    const storyFile = relative(options.vitestRoot, resolve(options.workingDir, entry.importPath));
+    if (match([storyFile], options.includeStories).length > 0) {
+      storyFilesWithTests.add(storyFile);
     }
   }
   return [...storyFilesWithTests];
 };
+
+const toTestIncludePatterns = (storyFilesWithTests: string[]) => [
+  ...storyFilesWithTests.map((storyFile) => escapePath(storyFile)),
+  ...getComponentTestPaths(),
+];
 
 /**
  * Plugin to stub MDX imports during testing This prevents the need to process MDX files in the test
@@ -277,7 +280,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   const [
     corePlugins,
-    { storiesGlobs, normalizedStories, storiesFiles },
+    { storiesGlobs, normalizedStories },
     framework,
     viteConfigFromStorybook,
     staticDirs,
@@ -320,6 +323,8 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
+  let storyIndexGenerator: StoryIndexGenerator | undefined;
+  let storyFilesWithTests: string[] | undefined;
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
@@ -391,28 +396,23 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       finalOptions.includeStories = includeStories;
 
-      let storyFilesWithTests: string[] | undefined;
       try {
-        storyFilesWithTests = await getStoryFilesWithTests(
-          presets,
-          normalizedStories,
-          storiesFiles,
-          {
-            workingDir: WORKING_DIR,
-            configDir: finalOptions.configDir,
-            features,
-            tags: finalOptions.tags,
-          }
-        );
+        storyIndexGenerator = await createStoryIndexGenerator(presets, normalizedStories, {
+          workingDir: WORKING_DIR,
+          configDir: finalOptions.configDir,
+          features,
+        });
+        storyFilesWithTests = await selectStoryFilesWithTests(storyIndexGenerator, {
+          ...finalOptions,
+          workingDir: WORKING_DIR,
+        });
       } catch (err) {
+        storyIndexGenerator = undefined;
         logger.warn(dedent`
           Could not index the stories to select the story files to test, falling back to the story globs.
           ${err}
         `);
       }
-      const testFiles =
-        storyFilesWithTests?.map((file) => escapePath(relative(finalOptions.vitestRoot, file))) ??
-        includeStories;
 
       const projectId = oneWayHash(finalOptions.configDir);
 
@@ -483,7 +483,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             [STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY]: finalOptions.initialGlobals,
           },
 
-          include: [...testFiles, ...getComponentTestPaths()],
+          include: storyFilesWithTests
+            ? toTestIncludePatterns(storyFilesWithTests)
+            : [...includeStories, ...getComponentTestPaths()],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
@@ -560,6 +562,52 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      if (context.vitest.config.watch && storyIndexGenerator && storyFilesWithTests) {
+        const generator = storyIndexGenerator;
+        let refreshing = Promise.resolve();
+        const stopWatching = watchStorySpecifiers(
+          normalizedStories,
+          { workingDir: WORKING_DIR },
+          (importPath, removed) => {
+            generator.invalidate(importPath, removed);
+            refreshing = refreshing.then(async () => {
+              try {
+                const previous = new Set(storyFilesWithTests);
+                storyFilesWithTests = await selectStoryFilesWithTests(generator, {
+                  ...finalOptions,
+                  workingDir: WORKING_DIR,
+                });
+                context.project.config.include.splice(
+                  0,
+                  context.project.config.include.length,
+                  ...toTestIncludePatterns(storyFilesWithTests)
+                );
+
+                const absolutePath = resolve(WORKING_DIR, importPath);
+                const storyFile = relative(finalOptions.vitestRoot, absolutePath);
+                // Vitest and the Storybook test provider already handled this file event with the
+                // stale include list, so a file that only now became a test file has to be
+                // announced again. Both re-check `include` for added files, but Vitest 5 no longer
+                // does so for changed ones.
+                if (
+                  !removed &&
+                  !previous.has(storyFile) &&
+                  storyFilesWithTests.includes(storyFile)
+                ) {
+                  context.vitest.vite.watcher.emit('add', absolutePath);
+                }
+              } catch (err) {
+                logger.warn(dedent`
+                  Could not index the stories to update the story files to test.
+                  ${err}
+                `);
+              }
+            });
+          }
+        );
+        context.vitest.onClose(stopWatching);
+      }
 
       const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
 

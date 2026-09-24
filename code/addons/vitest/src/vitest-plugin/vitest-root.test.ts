@@ -1,9 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { Plugin } from 'vitest/config';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
-import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
-import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
-import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
+import {
+  StoryIndexGenerator,
+  experimental_loadStorybook,
+  watchStorySpecifiers,
+} from 'storybook/internal/core-server';
+import { isTelemetryModuleEnabled, telemetry } from 'storybook/internal/telemetry';
+import type { StoryIndex } from 'storybook/internal/types';
 
 import { relative } from 'pathe';
 
@@ -21,8 +26,11 @@ vi.mock('storybook/internal/core-server', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 
 const presetApply = vi.fn();
+const stopWatching = vi.fn();
 
 // The plugin relativizes index entries against the process cwd it captured at import time.
+const importPath = (file: string) => relative(process.cwd(), file);
+
 const storyEntry = (file: string, exportName: string, tags: string[]) =>
   ({
     type: 'story',
@@ -30,12 +38,12 @@ const storyEntry = (file: string, exportName: string, tags: string[]) =>
     id: `${file}--${exportName}`,
     name: exportName,
     title: file,
-    importPath: relative(process.cwd(), file),
+    importPath: importPath(file),
     tags,
   }) as StoryIndex['entries'][string];
 
 const mockIndex = (...entries: StoryIndex['entries'][string][]) => {
-  vi.spyOn(StoryIndexGenerator.prototype, 'getIndex').mockResolvedValue({
+  vi.mocked(StoryIndexGenerator.prototype.getIndex).mockResolvedValue({
     v: 5,
     entries: Object.fromEntries(entries.map((entry) => [entry.id, entry])),
   });
@@ -64,28 +72,30 @@ beforeEach(() => {
   vi.mocked(experimental_loadStorybook).mockResolvedValue({
     presets: { apply: presetApply },
   } as unknown as Awaited<ReturnType<typeof experimental_loadStorybook>>);
-  vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([
-    [{} as NormalizedStoriesSpecifier, { [BUTTON_STORIES]: false, [HEADER_STORIES]: false }],
-  ]);
-  vi.spyOn(StoryIndexGenerator.prototype, 'initialize').mockResolvedValue();
+  vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([]);
+  vi.mocked(StoryIndexGenerator.prototype.initialize).mockResolvedValue();
   mockIndex(
     storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
     storyEntry(HEADER_STORIES, 'LoggedIn', ['dev', 'test'])
   );
+  vi.mocked(watchStorySpecifiers).mockReturnValue(stopWatching);
   vi.mocked(validateConfigurationFiles).mockResolvedValue(undefined as never);
   vi.mocked(isTelemetryModuleEnabled).mockReturnValue(false);
+  vi.mocked(telemetry).mockResolvedValue(undefined as never);
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
-  vi.restoreAllMocks();
+  vi.clearAllMocks();
 });
 
-/** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
-async function getPluginConfig(invokingRoot: string, options: UserOptions = {}) {
+async function createPlugin(options: UserOptions = {}) {
   const plugins = await storybookTest({ configDir: CONFIG_DIR, ...options });
-  const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
+  return plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
+}
 
+/** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
+async function runConfigHook(plugin: Plugin, invokingRoot: string) {
   const configHook = plugin.config!;
   const handler = typeof configHook === 'function' ? configHook : configHook.handler;
 
@@ -108,6 +118,33 @@ async function getPluginConfig(invokingRoot: string, options: UserOptions = {}) 
   }
 
   return { root: config.root, test: config.test };
+}
+
+async function getPluginConfig(invokingRoot: string, options: UserOptions = {}) {
+  return runConfigHook(await createPlugin(options), invokingRoot);
+}
+
+/**
+ * Runs the plugin's `configureVitest` hook against a Vitest whose project carries the `include`
+ * the `config` hook contributed, and returns what the plugin can reach from there.
+ */
+async function runConfigureVitestHook(plugin: Plugin, include: string[], watch = true) {
+  const watcher = { emit: vi.fn() };
+  const onClose = vi.fn();
+  const context = {
+    vitest: {
+      config: { watch, coverage: { exclude: [] }, browser: undefined, reporters: [] },
+      vite: { watcher },
+      onClose,
+    },
+    project: { config: { include } },
+    injectTestProjects: vi.fn(),
+  } as unknown as Parameters<NonNullable<Plugin['configureVitest']>>[0];
+
+  await plugin.configureVitest!(context);
+
+  const onStoryFileChanged = vi.mocked(watchStorySpecifiers).mock.calls[0]?.[2];
+  return { watcher, onClose, onStoryFileChanged };
 }
 
 describe('story test patterns', () => {
@@ -162,12 +199,24 @@ describe('story file selection', () => {
     ]);
   });
 
+  it('leaves out index entries that do not come from the story globs', async () => {
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry('/repo/apps/storybook/src/Generated.tsx', 'Primary', ['dev', 'test'])
+    );
+
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
+    expect(config.test.include).toEqual(['stories/Button.stories.tsx']);
+  });
+
   it('escapes glob characters in story file paths', async () => {
-    const groupedStories = '/repo/apps/storybook/stories/(marketing)/Hero.stories.tsx';
-    vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([
-      [{} as NormalizedStoriesSpecifier, { [groupedStories]: false }],
-    ]);
-    mockIndex(storyEntry(groupedStories, 'Primary', ['dev', 'test']));
+    mockIndex(
+      storyEntry('/repo/apps/storybook/stories/(marketing)/Hero.stories.tsx', 'Primary', [
+        'dev',
+        'test',
+      ])
+    );
 
     const config = await getPluginConfig(PACKAGE_ROOT);
 
@@ -175,12 +224,93 @@ describe('story file selection', () => {
   });
 
   it('falls back to the story globs when the stories cannot be indexed', async () => {
-    vi.spyOn(StoryIndexGenerator.prototype, 'getIndex').mockRejectedValue(
+    vi.mocked(StoryIndexGenerator.prototype.getIndex).mockRejectedValue(
       new Error('Duplicate stories')
     );
 
     const config = await getPluginConfig(PACKAGE_ROOT);
 
     expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
+  });
+});
+
+describe('story file selection in watch mode', () => {
+  it('only watches the story files in watch mode', async () => {
+    const plugin = await createPlugin();
+    const config = await runConfigHook(plugin, PACKAGE_ROOT);
+
+    await runConfigureVitestHook(plugin, config.test.include as string[], false);
+
+    expect(watchStorySpecifiers).not.toHaveBeenCalled();
+  });
+
+  it('adds a story file to the test files once it gains a matching story', async () => {
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev'])
+    );
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { watcher, onStoryFileChanged } = await runConfigureVitestHook(plugin, include);
+
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev', 'test'])
+    );
+    onStoryFileChanged(importPath(HEADER_STORIES), false);
+
+    await vi.waitFor(() =>
+      expect(include).toEqual(['stories/Button.stories.tsx', 'stories/Header.stories.tsx'])
+    );
+    // Vitest handled the original file event before the index was refreshed, so the file is
+    // announced again, as an added file, now that it is a test file.
+    expect(watcher.emit).toHaveBeenCalledWith('add', HEADER_STORIES);
+  });
+
+  it('does not announce a changed story file that already was a test file', async () => {
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { watcher, onStoryFileChanged } = await runConfigureVitestHook(plugin, include);
+
+    onStoryFileChanged(importPath(BUTTON_STORIES), false);
+
+    await vi.waitFor(() => expect(StoryIndexGenerator.prototype.getIndex).toHaveBeenCalledTimes(2));
+    expect(include).toEqual(['stories/Button.stories.tsx', 'stories/Header.stories.tsx']);
+    expect(watcher.emit).not.toHaveBeenCalled();
+  });
+
+  it('drops a story file from the test files once it loses its last matching story', async () => {
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { watcher, onStoryFileChanged } = await runConfigureVitestHook(plugin, include);
+
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev'])
+    );
+    onStoryFileChanged(importPath(HEADER_STORIES), false);
+
+    await vi.waitFor(() => expect(include).toEqual(['stories/Button.stories.tsx']));
+    expect(watcher.emit).not.toHaveBeenCalled();
+  });
+
+  it('drops a removed story file from the test files without announcing it', async () => {
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { watcher, onStoryFileChanged } = await runConfigureVitestHook(plugin, include);
+
+    mockIndex(storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']));
+    onStoryFileChanged(importPath(HEADER_STORIES), true);
+
+    await vi.waitFor(() => expect(include).toEqual(['stories/Button.stories.tsx']));
+    expect(watcher.emit).not.toHaveBeenCalled();
+  });
+
+  it('stops watching the story files when Vitest closes', async () => {
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { onClose } = await runConfigureVitestHook(plugin, include);
+
+    expect(onClose).toHaveBeenCalledWith(stopWatching);
   });
 });

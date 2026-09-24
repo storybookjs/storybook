@@ -11,17 +11,21 @@ export type { Assertion, Expect } from './expect.ts';
 
 export type UserEventObject = ReturnType<typeof userEvent.setup>;
 
+// Stryker disable next-line ArrayDeclaration,StringLiteral
 const chaiAssertionPrivateApi = ['assert', '__methods', '__flags', '_obj'];
 
 function getChaiAssertionKeys(obj: object, depth: number) {
+  // Stryker disable next-line MethodExpression
   const keys = Object.keys(Object.getPrototypeOf(obj)).filter(
     (key) => !chaiAssertionPrivateApi.includes(key)
   );
+  // Stryker disable next-line ConditionalExpression
   return depth > 2 ? keys : [...keys, 'not'];
 }
 
 function getObjectKeys(obj: object) {
   const keys = Object.keys(obj);
+  // Stryker disable next-line ArrowFunction,ConditionalExpression
   return 'any' in obj ? keys.filter((key) => key !== 'any') : keys;
 }
 

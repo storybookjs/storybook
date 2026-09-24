@@ -114,6 +114,50 @@ describe('compareArgTypes', () => {
       expectedViolations: [expect.objectContaining({ arg: 'my-change', kind: 'type-fidelity' })],
     },
     {
+      input: 'legacy manifest runtime resolves a case-insensitive scalar stub',
+      output: 'passes',
+      baseline: {
+        createdAt: {
+          name: 'createdAt',
+          type: { name: 'other', value: 'Date' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        createdAt: {
+          name: 'createdAt',
+          type: { name: 'date' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves function-text stubs',
+      output: 'passes',
+      baseline: {
+        onSelect: {
+          name: 'onSelect',
+          type: { name: 'other', value: '(value: string) => void' },
+        },
+        onClose: {
+          name: 'onClose',
+          type: { name: 'other', value: 'Function' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        onSelect: {
+          name: 'onSelect',
+          type: { name: 'function' },
+        },
+        onClose: {
+          name: 'onClose',
+          type: { name: 'function' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
       input: 'legacyManifestRuntime is set without legacyBaseline',
       output: 'throws',
       baseline: { label: { name: 'label', type: { name: 'string' } } } as StrictArgTypes,
@@ -131,6 +175,34 @@ describe('compareArgTypes', () => {
       expect(compareArgTypes(baseline, candidate, options)).toEqual(expectedViolations);
     }
   );
+
+  it('keeps legacy manifest stub resolutions scoped to the legacy manifest runtime', () => {
+    const baseline = argTypes({
+      createdAt: {
+        name: 'createdAt',
+        type: { name: 'other', value: 'Date' },
+      },
+      onSelect: {
+        name: 'onSelect',
+        type: { name: 'other', value: '(value: string) => void' },
+      },
+    });
+    const candidate = argTypes({
+      createdAt: {
+        name: 'createdAt',
+        type: { name: 'date' },
+      },
+      onSelect: {
+        name: 'onSelect',
+        type: { name: 'function' },
+      },
+    });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'createdAt', kind: 'type-fidelity' }),
+      expect.objectContaining({ arg: 'onSelect', kind: 'type-fidelity' }),
+    ]);
+  });
 
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({

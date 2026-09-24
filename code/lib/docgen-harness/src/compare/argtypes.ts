@@ -3,6 +3,13 @@ import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/s
 import { deepEqual } from './deep-equal.ts';
 import type { Violation } from './types.ts';
 
+const LEGACY_MANIFEST_RUNTIME_SCALARS = new Set<SBType['name']>([
+  'boolean',
+  'date',
+  'number',
+  'string',
+]);
+
 export interface CompareArgTypesOptions {
   /** Waive the legacy Angular pipeline's invented defaults, which must not be ratcheted. */
   legacyBaseline?: boolean;
@@ -329,14 +336,18 @@ function normalizeRecordedType(type: SBType): SBType {
 const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 
 // Legacy engines park what they cannot resolve in `other`, so its value is free text naming a real
-// type rather than a shape. Reading more than a scalar or single literal out of that text would mean
-// guessing at each engine's spelling, so anything else falls through to a reviewed re-record.
+// type rather than a shape. The legacy Web Components runtime also wrote free type text: under
+// `legacyManifestRuntime`, scalar names match case-insensitively and function-looking text resolves
+// to `function`. Anything else falls through to a reviewed re-record.
 //
 // Not the perf engine's `isOpaque`, which counts real type names an engine never looked through:
 // `undefined` is an extraction-failure marker here and a resolved type name there.
 const resolvesStub = (stub: string, candidate: SBType, legacyManifestRuntime = false): boolean => {
   const text = stub.trim();
-  if (UNRESOLVED_STUBS.has(text) || (legacyManifestRuntime && text === 'void')) {
+  if (UNRESOLVED_STUBS.has(text)) {
+    return true;
+  }
+  if (legacyManifestRuntime && resolvesLegacyManifestRuntimeStub(text, candidate)) {
     return true;
   }
   if (candidate.name === 'literal') {
@@ -344,6 +355,19 @@ const resolvesStub = (stub: string, candidate: SBType, legacyManifestRuntime = f
   }
   return isPopulatedStructure(candidate) || text === candidate.name;
 };
+
+function resolvesLegacyManifestRuntimeStub(text: string, candidate: SBType): boolean {
+  if (text === 'void') {
+    return true;
+  }
+  if (
+    LEGACY_MANIFEST_RUNTIME_SCALARS.has(candidate.name) &&
+    text.toLowerCase() === candidate.name
+  ) {
+    return true;
+  }
+  return candidate.name === 'function' && (text.includes('=>') || /\bFunction\b/.test(text));
+}
 
 const isPopulatedStructure = (candidate: SBType): boolean => {
   switch (candidate.name) {

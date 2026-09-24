@@ -9,10 +9,11 @@ import { logger } from 'storybook/internal/client-logger';
 
 import { extractArgTypes } from '../../../../renderers/web-components/src/docs/custom-elements.ts';
 import { setCustomElementsManifest } from '../../../../renderers/web-components/src/framework-api.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
-const OSA_CLOSED = new Set<string>();
+const OSA_CLOSED = new Set<string>(['literal unions and JSDoc tags reach argTypes structurally']);
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
@@ -136,8 +137,15 @@ describe('manifest shape regressions', () => {
     expect(baseline('v2ArgTypes')).toBe(baseline('basicArgTypes'));
   });
 
-  test('the OSA 1.0.0 and 2.1.0 lit-basic-attributes argTypes recordings are byte-identical', () => {
-    expect(baseline('v2ArgTypes', 'osa-')).toBe(baseline('basicArgTypes', 'osa-'));
+  test('the 2.1.0 recording differs from 1.0.0 only by the readonly control on count', () => {
+    const v1 = parseArgTypesSnapshot(baseline('basicArgTypes', 'osa-'));
+    const v2 = parseArgTypesSnapshot(baseline('v2ArgTypes', 'osa-'));
+
+    expect(v2.count.control).toBe(false);
+    expect(v1.count.control).toBeUndefined();
+
+    const { control: _control, ...v2CountWithoutControl } = v2.count;
+    expect({ ...v2, count: v2CountWithoutControl }).toEqual(v1);
   });
 
   it.each([

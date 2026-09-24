@@ -9,6 +9,7 @@ import { fs as memfs, vol } from 'memfs';
 import type { BuildDocgenContext } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 import type { ManifestLoadResult } from './manifest/load-manifest.ts';
+import type { ManifestDeclaration } from './manifest/types.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -41,12 +42,14 @@ const givenStory = (component: string) => {
 
 const context = (manifests: ManifestLoadResult[]): BuildDocgenContext => ({
   manifests,
+  typeProperty: 'parsedType',
 });
 
-const manifest = (declaration: Record<string, unknown>): ManifestLoadResult => ({
+const manifest = (declaration: ManifestDeclaration): ManifestLoadResult => ({
   path: 'custom-elements.json',
   manifest: {
-    modules: [{ declarations: [declaration] }],
+    schemaVersion: '1.0.0',
+    modules: [{ kind: 'javascript-module', path: 'component.js', declarations: [declaration] }],
   },
 });
 
@@ -60,6 +63,8 @@ describe('buildDocgenPayload', () => {
         context([
           manifest({
             name: 'XCard',
+            customElement: true,
+            kind: 'class',
             tagName: 'x-card',
             description: '  Card description.  ',
             summary: '  Card summary.  ',
@@ -73,7 +78,6 @@ describe('buildDocgenPayload', () => {
           "label": {
             "description": "Label.",
             "name": "label",
-            "required": false,
             "table": {
               "category": "attributes",
               "defaultValue": {
@@ -99,7 +103,9 @@ describe('buildDocgenPayload', () => {
                 },
               },
             ],
+            "customElement": true,
             "description": "  Card description.  ",
+            "kind": "class",
             "name": "XCard",
             "summary": "  Card summary.  ",
             "tagName": "x-card",
@@ -122,7 +128,9 @@ describe('buildDocgenPayload', () => {
       'component-not-a-tag',
       () => {
         givenStory('Button');
-        return context([manifest({ name: 'XCard', tagName: 'x-card' })]);
+        return context([
+          manifest({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' }),
+        ]);
       },
       {
         id: 'fixture',
@@ -193,7 +201,14 @@ describe('buildDocgenPayload', () => {
       'tag-not-found',
       () => {
         givenStory("'x-card'");
-        return context([manifest({ name: 'OtherCard', tagName: 'other-card' })]);
+        return context([
+          manifest({
+            name: 'OtherCard',
+            customElement: true,
+            kind: 'class',
+            tagName: 'other-card',
+          }),
+        ]);
       },
       {
         id: 'fixture',
@@ -215,7 +230,12 @@ describe('buildDocgenPayload', () => {
     vol.fromNestedJSON({ [STORY_PATH]: `export default { title: 'Fixture' };` });
 
     expect(
-      buildDocgenPayload({ entry }, context([manifest({ name: 'XCard', tagName: 'x-card' })]))
+      buildDocgenPayload(
+        { entry },
+        context([
+          manifest({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' }),
+        ])
+      )
     ).toBeUndefined();
   });
 });

@@ -202,6 +202,8 @@ The WCA variant records the deprecated web-component-analyzer shape that the run
 `web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, and `osa-payload.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
 The server recorder records CEM inputs only; the WCA shape is covered by the runtime recorder and rejected on the server path by the renderer's unit tests.
 The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes. `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
+The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
+The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.
 
 ## Known legacy gaps (vue3)
 

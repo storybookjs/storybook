@@ -9,8 +9,19 @@ const cem = {
     {
       path: 'first.js',
       declarations: [
-        { name: 'FirstElement', tagName: 'first-element', description: 'First element.' },
-        { name: 'ExportedElement', description: 'Exported element.' },
+        {
+          name: 'FirstElement',
+          kind: 'class',
+          customElement: true,
+          tagName: 'first-element',
+          description: 'First element.',
+        },
+        {
+          name: 'ExportedElement',
+          kind: 'class',
+          customElement: true,
+          description: 'Exported element.',
+        },
       ],
       exports: [
         {
@@ -35,6 +46,8 @@ describe('resolveDeclarationForTag', () => {
         manifestPath: '/manifest.json',
         declaration: {
           name: 'FirstElement',
+          kind: 'class',
+          customElement: true,
           tagName: 'first-element',
           description: 'First element.',
         },
@@ -47,6 +60,8 @@ describe('resolveDeclarationForTag', () => {
         manifestPath: '/manifest.json',
         declaration: {
           name: 'ExportedElement',
+          kind: 'class',
+          customElement: true,
           description: 'Exported element.',
         },
       },
@@ -60,10 +75,22 @@ describe('resolveDeclarationForTag', () => {
       resolveDeclarationForTag(
         [
           loaded('/first.json', {
-            modules: [{ declarations: [{ name: 'First', tagName: 'same-tag' }] }],
+            modules: [
+              {
+                declarations: [
+                  { name: 'First', kind: 'class', customElement: true, tagName: 'same-tag' },
+                ],
+              },
+            ],
           }),
           loaded('/second.json', {
-            modules: [{ declarations: [{ name: 'Second', tagName: 'same-tag' }] }],
+            modules: [
+              {
+                declarations: [
+                  { name: 'Second', kind: 'class', customElement: true, tagName: 'same-tag' },
+                ],
+              },
+            ],
           }),
         ],
         'same-tag'
@@ -71,6 +98,8 @@ describe('resolveDeclarationForTag', () => {
     ).toMatchInlineSnapshot(`
       {
         "declaration": {
+          "customElement": true,
+          "kind": "class",
           "name": "First",
           "tagName": "same-tag",
         },
@@ -86,8 +115,8 @@ describe('resolveDeclarationForTag', () => {
         modules: [
           {
             declarations: [
-              { name: 'First', tagName: 'same-tag' },
-              { name: 'Second', tagName: 'same-tag' },
+              { name: 'First', kind: 'class', customElement: true, tagName: 'same-tag' },
+              { name: 'Second', kind: 'class', customElement: true, tagName: 'same-tag' },
             ],
           },
         ],
@@ -98,8 +127,16 @@ describe('resolveDeclarationForTag', () => {
       'split modules',
       {
         modules: [
-          { declarations: [{ name: 'First', tagName: 'same-tag' }] },
-          { declarations: [{ name: 'Second', tagName: 'same-tag' }] },
+          {
+            declarations: [
+              { name: 'First', kind: 'class', customElement: true, tagName: 'same-tag' },
+            ],
+          },
+          {
+            declarations: [
+              { name: 'Second', kind: 'class', customElement: true, tagName: 'same-tag' },
+            ],
+          },
         ],
       },
       'First',
@@ -109,7 +146,12 @@ describe('resolveDeclarationForTag', () => {
     (_name, manifest, expectedDeclarationName) => {
       expect(resolveDeclarationForTag([loaded('/manifest.json', manifest)], 'same-tag')).toEqual({
         manifestPath: '/manifest.json',
-        declaration: { name: expectedDeclarationName, tagName: 'same-tag' },
+        declaration: {
+          name: expectedDeclarationName,
+          kind: 'class',
+          customElement: true,
+          tagName: 'same-tag',
+        },
       });
     }
   );
@@ -122,7 +164,14 @@ describe('resolveDeclarationForTag', () => {
             modules: [
               {
                 path: 'components/button/button.component.js',
-                declarations: [{ name: 'SlButton', description: 'Button.' }],
+                declarations: [
+                  {
+                    name: 'SlButton',
+                    kind: 'class',
+                    customElement: true,
+                    description: 'Button.',
+                  },
+                ],
               },
               {
                 path: 'components/button/button.js',
@@ -144,7 +193,12 @@ describe('resolveDeclarationForTag', () => {
       )
     ).toEqual({
       manifestPath: '/manifest.json',
-      declaration: { name: 'SlButton', description: 'Button.' },
+      declaration: {
+        name: 'SlButton',
+        kind: 'class',
+        customElement: true,
+        description: 'Button.',
+      },
     });
   });
 
@@ -155,7 +209,10 @@ describe('resolveDeclarationForTag', () => {
           loaded('/manifest.json', {
             modules: [
               {
-                declarations: [{ name: 'ByTag', tagName: 'x-tag' }, { name: 'ByExport' }],
+                declarations: [
+                  { name: 'ByTag', kind: 'class', customElement: true, tagName: 'x-tag' },
+                  { name: 'ByExport', kind: 'class', customElement: true },
+                ],
                 exports: [
                   {
                     kind: 'custom-element-definition',
@@ -171,8 +228,21 @@ describe('resolveDeclarationForTag', () => {
       )
     ).toEqual({
       manifestPath: '/manifest.json',
-      declaration: { name: 'ByTag', tagName: 'x-tag' },
+      declaration: { name: 'ByTag', kind: 'class', customElement: true, tagName: 'x-tag' },
     });
+  });
+
+  it('does not resolve a tagName-only class without the customElement flag', () => {
+    expect(
+      resolveDeclarationForTag(
+        [
+          loaded('/manifest.json', {
+            modules: [{ declarations: [{ name: 'ByTag', kind: 'class', tagName: 'x-tag' }] }],
+          }),
+        ],
+        'x-tag'
+      )
+    ).toBeUndefined();
   });
 
   it('returns undefined when no manifest resolves the tag', () => {

@@ -36,7 +36,6 @@
   "heading": {
     "description": "Heading above the projected content.",
     "name": "heading",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

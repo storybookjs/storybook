@@ -1,21 +1,4 @@
 {
-  "#secret": {
-    "description": "ES private, excluded.",
-    "name": "#secret",
-    "required": false,
-    "table": {
-      "category": "properties",
-      "defaultValue": {
-        "summary": "'s'",
-      },
-      "type": {
-        "summary": "string",
-      },
-    },
-    "type": {
-      "name": "string",
-    },
-  },
   "--toolkit-color": {
     "description": "Text color.",
     "name": "--toolkit-color",
@@ -119,9 +102,9 @@
     },
   },
   "computed": {
+    "control": false,
     "description": "Read-only computed value.",
     "name": "computed",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -133,40 +116,6 @@
     },
     "type": {
       "name": "string",
-    },
-  },
-  "helper": {
-    "description": "Protected field, excluded.",
-    "name": "helper",
-    "required": false,
-    "table": {
-      "category": "properties",
-      "defaultValue": {
-        "summary": "'h'",
-      },
-      "type": {
-        "summary": "string",
-      },
-    },
-    "type": {
-      "name": "string",
-    },
-  },
-  "internalCounter": {
-    "description": "Private field, excluded.",
-    "name": "internalCounter",
-    "required": false,
-    "table": {
-      "category": "properties",
-      "defaultValue": {
-        "summary": "0",
-      },
-      "type": {
-        "summary": "number",
-      },
-    },
-    "type": {
-      "name": "number",
     },
   },
   "label": {
@@ -189,7 +138,6 @@
   "level": {
     "description": "Inline literal union with a numeric member.",
     "name": "level",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -200,17 +148,24 @@
       },
     },
     "type": {
-      "name": "1 | 2 | 3",
+      "name": "enum",
+      "value": [
+        1,
+        2,
+        3,
+      ],
     },
   },
   "old-size": {
     "description": "Old size field.",
     "name": "old-size",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
         "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use `size` instead.",
       },
       "type": {
         "summary": "string",
@@ -223,11 +178,13 @@
   "oldSize": {
     "description": "Old size field.",
     "name": "oldSize",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
         "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use `size` instead.",
       },
       "type": {
         "summary": "string",
@@ -249,7 +206,6 @@
   "onSelect": {
     "description": "Callback property.",
     "name": "onSelect",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -260,7 +216,7 @@
       },
     },
     "type": {
-      "name": "((size: Size) => void) | undefined",
+      "name": "function",
     },
   },
   "onToolkitResize": {
@@ -275,7 +231,6 @@
   "pressed": {
     "description": "Internal reactive state.",
     "name": "pressed",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -292,7 +247,6 @@
   "size": {
     "description": "Named alias union.",
     "name": "size",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -303,30 +257,22 @@
       },
     },
     "type": {
-      "name": "Size",
-    },
-  },
-  "tagName": {
-    "description": "Static member, excluded.",
-    "name": "tagName",
-    "required": false,
-    "table": {
-      "category": "properties",
-      "defaultValue": {
-        "summary": "'lit-toolkit-shapes'",
-      },
-      "type": {
-        "summary": "string",
-      },
-    },
-    "type": {
-      "name": "string",
+      "name": "enum",
+      "value": [
+        "small",
+        "medium",
+        "large",
+      ],
     },
   },
   "tags": {
+    "control": "multi-select",
     "description": "Array of literals.",
     "name": "tags",
-    "required": false,
+    "options": [
+      "a",
+      "b",
+    ],
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -337,13 +283,19 @@
       },
     },
     "type": {
-      "name": "Array<'a' | 'b'>",
+      "name": "array",
+      "value": {
+        "name": "enum",
+        "value": [
+          "a",
+          "b",
+        ],
+      },
     },
   },
   "target": {
     "description": "Mixed literal/object union.",
     "name": "target",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -354,7 +306,10 @@
       },
     },
     "type": {
-      "name": "'self' | { id: string }",
+      "name": "enum",
+      "value": [
+        "self",
+      ],
     },
   },
   "toolkit-resize": {
@@ -375,9 +330,9 @@
     },
   },
   "version": {
+    "control": false,
     "description": "Readonly field.",
     "name": "version",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -392,9 +347,9 @@
     },
   },
   "when": {
+    "control": "date",
     "description": "Date value.",
     "name": "when",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -405,7 +360,7 @@
       },
     },
     "type": {
-      "name": "Date",
+      "name": "date",
     },
   },
 }

@@ -1,8 +1,8 @@
 {
   "count": {
+    "control": false,
     "description": "Number of items to display.",
     "name": "count",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -19,7 +19,6 @@
   "disabled": {
     "description": "Whether the panel is disabled.",
     "name": "disabled",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -36,7 +35,6 @@
   "is-open": {
     "description": "Whether the panel is open.",
     "name": "is-open",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {
@@ -53,7 +51,6 @@
   "isOpen": {
     "description": "Whether the panel is open.",
     "name": "isOpen",
-    "required": false,
     "table": {
       "category": "properties",
       "defaultValue": {
@@ -70,7 +67,6 @@
   "label": {
     "description": "Text shown in the component.",
     "name": "label",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

@@ -11,20 +11,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 import {
   createDocgenProvider,
+  DEFAULT_TYPE_PROPERTY,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
-
-type DeclarationMember = {
-  name?: unknown;
-  privacy?: unknown;
-  static?: unknown;
-};
-
-type DeclarationWithMembers = NonNullable<
-  WebComponentsDocgenPayload['customElementsManifest']
->['declaration'] & { members?: DeclarationMember[] };
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
@@ -79,6 +70,7 @@ const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: str
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [manifestPath],
+    typeProperty: DEFAULT_TYPE_PROPERTY,
   })(async () => undefined);
   return provider({ entry });
 };
@@ -92,9 +84,7 @@ const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {
 };
 
 const hiddenMemberNames = (payload: WebComponentsDocgenPayload): ReadonlySet<string> => {
-  const declaration = payload.customElementsManifest?.declaration as
-    | DeclarationWithMembers
-    | undefined;
+  const declaration = payload.customElementsManifest?.declaration;
   return new Set(
     (declaration?.members ?? [])
       .filter(

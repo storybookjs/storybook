@@ -49,8 +49,20 @@ describe('parseTypeText', () => {
       output: { type: { name: 'enum', value: ['a'] } },
     },
     {
+      input: "'auto' | true",
+      output: { type: { name: 'other', value: "'auto' | true" }, control: 'object' },
+    },
+    {
+      input: "'auto' | Date",
+      output: { type: { name: 'other', value: "'auto' | Date" }, control: 'object' },
+    },
+    {
       input: "'a' | () => void",
-      output: { type: { name: 'other', value: "'a' | () => void" }, control: 'object' },
+      output: { type: { name: 'other', value: "'a' | () => void" }, control: false },
+    },
+    {
+      input: "'a' | Function",
+      output: { type: { name: 'other', value: "'a' | Function" }, control: false },
     },
     {
       input: 'boolean | undefined',

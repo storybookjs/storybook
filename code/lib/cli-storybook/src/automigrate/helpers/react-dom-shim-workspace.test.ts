@@ -608,11 +608,18 @@ describe('analyzeReactDomShimWorkspace', () => {
   });
 
   it.each([
-    ['an external module script', '<script type="module" src="https://example.com/loader.js"></script>'],
+    [
+      'an external module script',
+      '<script type="module" src="https://example.com/loader.js"></script>',
+    ],
     ['an escaping module script', '<script type="module" src="../../loader.js"></script>'],
     [
       'an embedded source document',
       `<iframe srcdoc="&lt;script&gt;import('@storybook/' + 'react-dom-shim')&lt;/script&gt;"></iframe>`,
+    ],
+    [
+      'an embedded data document',
+      '<iframe src="data:text/html;base64,PHNjcmlwdD5pbXBvcnQoJ0BzdG9yeWJvb2svJyArICdyZWFjdC1kb20tc2hpbScpPC9zY3JpcHQ+"></iframe>',
     ],
   ])('refuses %s in HTML', async (_name, body) => {
     vol.fromNestedJSON({

@@ -9,10 +9,19 @@ export interface AnalyzerContext {
   checker: ts.TypeChecker;
   /** Rendering a type through this also files it under `miscellaneous`. */
   types: TypeIndex;
+  /** The file this context analyzes, which a bare type name resolves against. */
+  sourceFile: ts.SourceFile;
 }
 
 export const resolvedSymbol = (ctx: AnalyzerContext, node: ts.Node): ts.Symbol | undefined => {
   const symbol = ctx.checker.getSymbolAtLocation(node);
+  return symbol && symbol.flags & ctx.ts.SymbolFlags.Alias
+    ? ctx.checker.getAliasedSymbol(symbol)
+    : symbol;
+};
+
+export const resolvedNameSymbol = (ctx: AnalyzerContext, name: string): ts.Symbol | undefined => {
+  const symbol = ctx.checker.resolveName(name, ctx.sourceFile, ctx.ts.SymbolFlags.All, false);
   return symbol && symbol.flags & ctx.ts.SymbolFlags.Alias
     ? ctx.checker.getAliasedSymbol(symbol)
     : symbol;

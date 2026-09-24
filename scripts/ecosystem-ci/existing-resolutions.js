@@ -25,6 +25,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@vercel/agent-eval@npm:1.2.0',
   '@vitest/expect@npm:3.2.4',
   'aria-query@5.3.0',
+  'caniuse-lite',
   'esbuild',
   'playwright',
   'playwright-core',

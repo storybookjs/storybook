@@ -38,11 +38,19 @@ describe('parseTypeText', () => {
     },
     {
       input: "'self' | { id: string }",
-      output: { type: { name: 'enum', value: ['self'] } },
+      output: { type: { name: 'other', value: "'self' | { id: string }" }, control: 'object' },
+    },
+    {
+      input: "'a' | Foo",
+      output: { type: { name: 'enum', value: ['a'] } },
     },
     {
       input: "'a' | SomeType",
       output: { type: { name: 'enum', value: ['a'] } },
+    },
+    {
+      input: "'a' | () => void",
+      output: { type: { name: 'other', value: "'a' | () => void" }, control: 'object' },
     },
     {
       input: 'boolean | undefined',
@@ -154,11 +162,11 @@ describe('parseTypeText', () => {
     },
     {
       input: 'array',
-      output: { type: { name: 'object', value: {} } },
+      output: { type: { name: 'array', value: { name: 'other', value: '' } } },
     },
     {
       input: 'Array',
-      output: { type: { name: 'object', value: {} } },
+      output: { type: { name: 'array', value: { name: 'other', value: '' } } },
     },
     {
       input: 'object',

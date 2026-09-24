@@ -17,9 +17,9 @@ export function mapArgTypes(
 ): StrictArgTypes {
   const { events, slots, cssProperties, cssParts } = declaration;
   return {
-    ...mapAttributesAndProperties(declaration, typeProperty),
-    // The legacy mapper still owns events, slots, and CSS groups until the categories PR.
+    // Legacy owns events, slots, and CSS until categories land; attributes win collisions.
     ...mapLegacyArgTypes({ events, slots, cssProperties, cssParts }),
+    ...mapAttributesAndProperties(declaration, typeProperty),
   };
 }
 

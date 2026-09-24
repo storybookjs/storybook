@@ -58,6 +58,27 @@ describe('compareArgTypes', () => {
       expectedViolations: [],
     },
     {
+      input: 'legacy manifest runtime re-keys a same-name slot that lost its description',
+      output: 'lost-description',
+      baseline: {
+        label: {
+          name: 'label',
+          description: 'Label slot.',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        'label-slot': {
+          name: 'label',
+          table: { category: 'slots' },
+          type: { name: 'string' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'lost-description' })],
+    },
+    {
       input: 'legacy baseline without legacy manifest runtime sees a re-keyed slot',
       output: 'lost-arg',
       baseline: {

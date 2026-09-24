@@ -49,14 +49,12 @@ export function compareArgTypes(
     if (arg.startsWith('#') || options.waivedArgs?.has(arg) === true) {
       continue;
     }
-    const candidateEntry = candidate[arg] as StrictInputType | undefined;
+    const candidateEntry =
+      (candidate[arg] as StrictInputType | undefined) ??
+      (options.legacyManifestRuntime === true
+        ? findSameNamedCandidate(arg, baseEntry, candidate)
+        : undefined);
     if (candidateEntry === undefined) {
-      if (
-        options.legacyManifestRuntime === true &&
-        hasSameNamedCandidate(arg, baseEntry, candidate)
-      ) {
-        continue;
-      }
       violations.push({
         arg,
         kind: 'lost-arg',
@@ -521,16 +519,15 @@ const isSingleToken = (value: string): boolean =>
 const isQuotedToken = (value: unknown): boolean =>
   typeof value === 'string' && (/^"[^"]*"$/.test(value) || /^'[^']*'$/.test(value));
 
-const hasSameNamedCandidate = (
+const findSameNamedCandidate = (
   arg: string,
   baseEntry: StrictInputType,
   candidate: StrictArgTypes
-): boolean => {
+): StrictInputType | undefined => {
   const baseName = argName(arg, baseEntry);
-  return Object.entries(candidate).some(
-    ([candidateArg, candidateEntry]) =>
-      argName(candidateArg, candidateEntry as StrictInputType) === baseName
-  );
+  return Object.entries(candidate).find(
+    ([candidateArg, candidateEntry]) => argName(candidateArg, candidateEntry) === baseName
+  )?.[1];
 };
 
 const argName = (arg: string, entry: StrictInputType): string =>

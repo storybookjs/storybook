@@ -154,8 +154,11 @@
       },
     },
     "type": {
-      "name": "object",
-      "value": {},
+      "name": "array",
+      "value": {
+        "name": "other",
+        "value": "",
+      },
     },
   },
   "side-changed": {

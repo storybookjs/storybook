@@ -1,6 +1,7 @@
 import type { SBType, StrictInputType } from 'storybook/internal/types';
 
 const ARRAY_RE = /^(?:Array<(.+)>|(.+)\[\])$/;
+const BARE_IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
 const DROPPED_MEMBERS = new Set([
   'undefined',
   'null',
@@ -13,6 +14,7 @@ const DROPPED_MEMBERS = new Set([
 ]);
 const WIDENING_MEMBERS = new Set(['string', 'number', 'boolean', 'object', 'Function', '{}', '[]']);
 const FUNCTION_RE = /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/;
+const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
 
 export interface ParsedTypeText {
   type: SBType;
@@ -30,8 +32,11 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
   }
 
   const literalMembers = pickLiteralMembers(members);
-  if (literalMembers.length > 0) {
+  if (literalMembers !== undefined) {
     return { type: { name: 'enum', value: literalMembers } };
+  }
+  if (hasStructuralLiteralUnion(members)) {
+    return { type: { name: 'other', value: members.join(' | ') }, control: 'object' };
   }
 
   const scalar = pickScalar(members);
@@ -43,10 +48,9 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     const member = stripWrappingParens(members[0]);
     const array = ARRAY_RE.exec(member);
     if (array) {
-      const element = parseTypeText(stripWrappingParens(array[1] ?? array[2] ?? ''))?.type ?? {
-        name: 'other',
-        value: '',
-      };
+      const element =
+        parseTypeText(stripWrappingParens(array[1] ?? array[2] ?? ''))?.type ??
+        UNKNOWN_ARRAY_ELEMENT_TYPE;
       return element.name === 'enum'
         ? {
             type: { name: 'array', value: element },
@@ -58,8 +62,11 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     if (member === 'Date') {
       return { type: { name: 'date' }, control: 'date' };
     }
-    if (isBareContainerType(member)) {
+    if (isBareObjectType(member)) {
       return { type: { name: 'object', value: {} } };
+    }
+    if (isBareArrayType(member)) {
+      return { type: { name: 'array', value: UNKNOWN_ARRAY_ELEMENT_TYPE } };
     }
     if (member === 'Function' || FUNCTION_RE.test(member) || /^\([^)]*\)\s*:/.test(member)) {
       return { type: { name: 'function' } };
@@ -110,13 +117,34 @@ function pickScalar(members: string[]): SBType | undefined {
   return undefined;
 }
 
-/** Literal-member unions intentionally diverge from core's converter, which requires all literals. */
-function pickLiteralMembers(members: string[]): (string | number)[] {
-  return members.map(parseLiteral).filter((literal) => literal !== undefined);
+/** Literal unions promote to enums unless non-literals include structural or callable type text. */
+function pickLiteralMembers(members: string[]): (string | number)[] | undefined {
+  const literalMembers = members.map(parseLiteral).filter((literal) => literal !== undefined);
+  if (literalMembers.length === 0) {
+    return undefined;
+  }
+  return members.every((member) => parseLiteral(member) !== undefined || isEnumCompatible(member))
+    ? literalMembers
+    : undefined;
 }
 
-function isBareContainerType(text: string): boolean {
-  return text.toLowerCase() === 'array' || text.toLowerCase() === 'object';
+function hasStructuralLiteralUnion(members: string[]): boolean {
+  return (
+    members.some((member) => parseLiteral(member) !== undefined) &&
+    members.some((member) => parseLiteral(member) === undefined && !isEnumCompatible(member))
+  );
+}
+
+function isEnumCompatible(text: string): boolean {
+  return WIDENING_MEMBERS.has(text) || BARE_IDENTIFIER_RE.test(text);
+}
+
+function isBareArrayType(text: string): boolean {
+  return text.toLowerCase() === 'array';
+}
+
+function isBareObjectType(text: string): boolean {
+  return text.toLowerCase() === 'object';
 }
 
 function isObjectLike(text: string): boolean {

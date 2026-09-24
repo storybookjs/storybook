@@ -22,7 +22,10 @@ vitest.mock('storybook/internal/docs-tools', async (importOriginal) => {
 
 // What each engine extracts from a real component is recorded per fixture in
 // @storybook/docgen-harness, which runs both Vue docgen pipelines end to end. Only the
-// docgen-less guard is unit-tested here, because no fixture can produce it.
+// docgen-less guard is unit-tested here, because no fixture can produce it. The TSX slot
+// tests below pin the argTypes contract with metadata shapes taken from direct
+// vue-component-meta invocation on a .tsx `defineComponent` (see the tsx fixtures in the
+// harness for the end-to-end equivalent).
 describe('extractArgTypes', () => {
   beforeEach(() => {
     vi.resetAllMocks();
@@ -82,6 +85,62 @@ describe('extractArgTypes', () => {
 
     expect(resolveNamedTypeDetail).not.toHaveBeenCalled();
     expect(argTypes?.user?.table?.type).toEqual({ summary: 'string' });
+  });
+
+  it('should turn typed tsx slot metadata into slots-category argTypes', () => {
+    (hasDocgen as unknown as Mock).mockReturnValue(true);
+    // Metadata shape as vue-component-meta emits it for a .tsx
+    // `slots: Object as SlotsType<{ /** ... */ default?: { content: string } }>` option
+    // (recorded from direct invocation), flowing through the docgen-server path.
+    const slotMeta = {
+      name: 'default',
+      type: '[] | [{ content: string; } | undefined]',
+      description: 'The content rendered inside the card.',
+      tags: [],
+      schema: '{ content: string; }',
+      declarations: [],
+    } as unknown as VueDocgenInfoEntry<'vue-component-meta', 'slots'>;
+    (extractComponentProps as Mock).mockImplementation((_component: unknown, section: string) =>
+      section === 'slots' ? [{ docgenInfo: slotMeta }] : []
+    );
+
+    const argTypes = extractArgTypes({
+      __docgenInfo: { props: [], events: [], slots: [slotMeta], exposed: [] },
+    } as any);
+
+    expect(argTypes?.default).toEqual({
+      name: 'default',
+      description: 'The content rendered inside the card.',
+      type: { name: 'other', value: '[] | [{ content: string; } | undefined]' },
+      table: {
+        type: { summary: '[] | [{ content: string; }]' },
+        category: 'slots',
+      },
+    });
+  });
+
+  it('should keep untyped tsx slot usage out of the argTypes', () => {
+    (hasDocgen as unknown as Mock).mockReturnValue(true);
+    // Untyped TSX components (useSlots()/context slots) extract no slot metadata at all,
+    // so the docgen carries an empty slots section - no phantom entries may appear.
+    const propMeta = {
+      name: 'label',
+      type: 'string | undefined',
+      required: false,
+      schema: 'string',
+      description: '',
+      tags: [],
+    } as unknown as VueDocgenInfoEntry<'vue-component-meta', 'props'>;
+    (extractComponentProps as Mock).mockImplementation((_component: unknown, section: string) =>
+      section === 'props' ? [{ docgenInfo: propMeta }] : []
+    );
+
+    const argTypes = extractArgTypes({
+      __docgenInfo: { props: [propMeta], events: [], slots: [], exposed: [] },
+    } as any);
+
+    expect(Object.keys(argTypes ?? {})).toEqual(['label']);
+    expect(argTypes?.label?.table?.category).toBe('props');
   });
 });
 

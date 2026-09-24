@@ -15,4 +15,5 @@ export * from './enrichCsf.ts';
 export * from './story-shape/index.ts';
 export { babelParse } from 'storybook/internal/babel';
 export { vitestTransform } from './vitest-plugin/transformer.ts';
+export { type TagsFilter, matchesTagsFilter } from './vitest-plugin/tags-filter.ts';
 export { componentTransform } from './vitest-plugin/component-transformer.ts';

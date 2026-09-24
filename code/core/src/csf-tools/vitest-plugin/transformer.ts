@@ -8,23 +8,8 @@ import type { StoriesEntry, Tag } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { type StoryTest, formatCsf, loadCsf } from '../CsfFile.ts';
+import { type TagsFilter, matchesTagsFilter } from './tags-filter.ts';
 
-type TagsFilter = {
-  include: string[];
-  exclude: string[];
-  skip: string[];
-};
-
-const isValidTest = (storyTags: string[], tagsFilter: TagsFilter) => {
-  if (tagsFilter.include.length && !tagsFilter.include.some((tag) => storyTags?.includes(tag))) {
-    return false;
-  }
-  if (tagsFilter.exclude.some((tag) => storyTags?.includes(tag))) {
-    return false;
-  }
-  // Skipped tests are intentionally included here
-  return true;
-};
 /**
  * TODO: the functionality in this file can be moved back to the vitest plugin itself It can use
  * `storybook/internal/babel` for all it's babel needs, without duplicating babel embedding in our
@@ -179,7 +164,7 @@ export async function vitestTransform({
       ...(parsed._stories[key].tags || [])
     );
 
-    if (isValidTest(finalTags, tagsFilter)) {
+    if (matchesTagsFilter(finalTags, tagsFilter)) {
       validStories[key] = parsed._storyStatements[key];
     }
   });

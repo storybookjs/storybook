@@ -3,18 +3,43 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+import type { NormalizedStoriesSpecifier, StoryIndex } from 'storybook/internal/types';
+
+import { relative } from 'pathe';
 
 import { storybookTest } from './index.ts';
+import type { UserOptions } from './types.ts';
 
 const REPO_ROOT = '/repo';
 const PACKAGE_ROOT = '/repo/apps/storybook';
 const CONFIG_DIR = '/repo/apps/storybook/.storybook';
+const BUTTON_STORIES = '/repo/apps/storybook/stories/Button.stories.tsx';
+const HEADER_STORIES = '/repo/apps/storybook/stories/Header.stories.tsx';
 
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/core-server', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 
 const presetApply = vi.fn();
+
+// The plugin relativizes index entries against the process cwd it captured at import time.
+const storyEntry = (file: string, exportName: string, tags: string[]) =>
+  ({
+    type: 'story',
+    subtype: 'story',
+    id: `${file}--${exportName}`,
+    name: exportName,
+    title: file,
+    importPath: relative(process.cwd(), file),
+    tags,
+  }) as StoryIndex['entries'][string];
+
+const mockIndex = (...entries: StoryIndex['entries'][string][]) => {
+  vi.spyOn(StoryIndexGenerator.prototype, 'getIndex').mockResolvedValue({
+    v: 5,
+    entries: Object.fromEntries(entries.map((entry) => [entry.id, entry])),
+  });
+};
 
 beforeEach(() => {
   vi.stubEnv('VITEST', 'true');
@@ -39,18 +64,26 @@ beforeEach(() => {
   vi.mocked(experimental_loadStorybook).mockResolvedValue({
     presets: { apply: presetApply },
   } as unknown as Awaited<ReturnType<typeof experimental_loadStorybook>>);
-  vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([]);
+  vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([
+    [{} as NormalizedStoriesSpecifier, { [BUTTON_STORIES]: false, [HEADER_STORIES]: false }],
+  ]);
+  vi.spyOn(StoryIndexGenerator.prototype, 'initialize').mockResolvedValue();
+  mockIndex(
+    storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+    storyEntry(HEADER_STORIES, 'LoggedIn', ['dev', 'test'])
+  );
   vi.mocked(validateConfigurationFiles).mockResolvedValue(undefined as never);
   vi.mocked(isTelemetryModuleEnabled).mockReturnValue(false);
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
+  vi.restoreAllMocks();
 });
 
 /** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
-async function getPluginConfig(invokingRoot: string) {
-  const plugins = await storybookTest({ configDir: CONFIG_DIR });
+async function getPluginConfig(invokingRoot: string, options: UserOptions = {}) {
+  const plugins = await storybookTest({ configDir: CONFIG_DIR, ...options });
   const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
 
   const configHook = plugin.config!;
@@ -78,21 +111,76 @@ async function getPluginConfig(invokingRoot: string) {
 }
 
 describe('story test patterns', () => {
-  // The plugin sets the project root itself, so story globs have to be written relative to that
+  // The plugin sets the project root itself, so story files have to be listed relative to that
   // root rather than to whichever root Vitest happened to be invoked with. When a Vitest config
-  // lives above the package — a monorepo root — the two differ, and globs built against the
+  // lives above the package — a monorepo root — the two differ, and paths built against the
   // invoking root resolve outside the project and match no story files at all, silently.
-  it('resolves story globs against the root it returns, not the invoking root', async () => {
+  it('lists story files relative to the root it returns, not the invoking root', async () => {
     const config = await getPluginConfig(REPO_ROOT);
 
     expect(config.root).toBe(PACKAGE_ROOT);
-    expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
+    expect(config.test.include).toEqual([
+      'stories/Button.stories.tsx',
+      'stories/Header.stories.tsx',
+    ]);
   });
 
-  it('resolves story globs the same way when the invoking root already matches', async () => {
+  it('lists story files the same way when the invoking root already matches', async () => {
     const config = await getPluginConfig(PACKAGE_ROOT);
 
     expect(config.root).toBe(PACKAGE_ROOT);
+    expect(config.test.include).toEqual([
+      'stories/Button.stories.tsx',
+      'stories/Header.stories.tsx',
+    ]);
+  });
+});
+
+describe('story file selection', () => {
+  it('leaves out story files whose stories are all excluded by the tags filter', async () => {
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev'])
+    );
+
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
+    expect(config.test.include).toEqual(['stories/Button.stories.tsx']);
+  });
+
+  it('keeps story files whose only matching story is skipped', async () => {
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev', 'test', 'flaky'])
+    );
+
+    const config = await getPluginConfig(PACKAGE_ROOT, { tags: { skip: ['flaky'] } });
+
+    expect(config.test.include).toEqual([
+      'stories/Button.stories.tsx',
+      'stories/Header.stories.tsx',
+    ]);
+  });
+
+  it('escapes glob characters in story file paths', async () => {
+    const groupedStories = '/repo/apps/storybook/stories/(marketing)/Hero.stories.tsx';
+    vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([
+      [{} as NormalizedStoriesSpecifier, { [groupedStories]: false }],
+    ]);
+    mockIndex(storyEntry(groupedStories, 'Primary', ['dev', 'test']));
+
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
+    expect(config.test.include).toEqual(['stories/\\(marketing\\)/Hero.stories.tsx']);
+  });
+
+  it('falls back to the story globs when the stories cannot be indexed', async () => {
+    vi.spyOn(StoryIndexGenerator.prototype, 'getIndex').mockRejectedValue(
+      new Error('Duplicate stories')
+    );
+
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
     expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
   });
 });

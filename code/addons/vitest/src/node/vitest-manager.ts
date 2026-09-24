@@ -10,6 +10,7 @@ import type {
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
+import { matchesTagsFilter } from 'storybook/internal/csf-tools';
 import type { StoryId, StoryIndexEntry } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
@@ -332,16 +333,9 @@ export class VitestManager {
 
       const storiesInTestSpecification = storiesByImportPath[testSpecification.moduleId] ?? [];
 
-      const filteredStories = storiesInTestSpecification.filter((story) => {
-        if (include.length && !include.some((tag) => story.tags?.includes(tag))) {
-          return false;
-        }
-        if (exclude.some((tag) => story.tags?.includes(tag))) {
-          return false;
-        }
-        // Skipped tests are intentionally included here
-        return true;
-      });
+      const filteredStories = storiesInTestSpecification.filter((story) =>
+        matchesTagsFilter(story.tags ?? [], { include, exclude, skip })
+      );
 
       if (!filteredStories.length) {
         continue;

@@ -20,7 +20,13 @@ import {
   experimental_loadStorybook,
   mapStaticDir,
 } from 'storybook/internal/core-server';
-import { componentTransform, readConfig, vitestTransform } from 'storybook/internal/csf-tools';
+import {
+  componentTransform,
+  matchesTagsFilter,
+  readConfig,
+  vitestTransform,
+} from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import { MainFileMissingError } from 'storybook/internal/server-errors';
 import {
   detectAgent,
@@ -30,13 +36,18 @@ import {
   telemetry,
   setTelemetryEnabled,
 } from 'storybook/internal/telemetry';
-import type { Presets } from 'storybook/internal/types';
+import type {
+  NormalizedStoriesSpecifier,
+  Presets,
+  StorybookConfigRaw,
+} from 'storybook/internal/types';
 
 import { match } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
 import path from 'pathe';
 import picocolors from 'picocolors';
 import sirv from 'sirv';
+import { escapePath } from 'tinyglobby';
 import { dedent } from 'ts-dedent';
 import type { PluginOption } from 'vite';
 
@@ -99,10 +110,51 @@ const getStoryGlobsAndFiles = async (
 
   return {
     storiesGlobs: stories,
+    normalizedStories,
     storiesFiles: StoryIndexGenerator.storyFileNames(
       new Map(matchingStoryFiles.map(([specifier, cache]) => [specifier, cache]))
     ),
   };
+};
+
+// Story files without a single story matching the tags filter are left out of `test.include`, so
+// Vitest never loads them or the component graph they import.
+const getStoryFilesWithTests = async (
+  presets: Presets,
+  normalizedStories: NormalizedStoriesSpecifier[],
+  storiesFiles: string[],
+  options: Pick<InternalOptions, 'configDir' | 'tags'> & {
+    workingDir: string;
+    features: StorybookConfigRaw['features'];
+  }
+) => {
+  const [indexers, docs] = await Promise.all([
+    presets.apply('experimental_indexers', []),
+    presets.apply('docs'),
+  ]);
+
+  const generator = new StoryIndexGenerator(normalizedStories, {
+    workingDir: options.workingDir,
+    configDir: options.configDir,
+    indexers,
+    docs,
+    features: options.features,
+  });
+  await generator.initialize();
+  const { entries } = await generator.getIndex();
+
+  const storyFiles = new Set(storiesFiles.map((file) => normalize(file)));
+  const storyFilesWithTests = new Set<string>();
+  for (const entry of Object.values(entries)) {
+    if (entry.type !== 'story' || !matchesTagsFilter(entry.tags ?? [], options.tags)) {
+      continue;
+    }
+    const absolutePath = resolve(options.workingDir, entry.importPath);
+    if (storyFiles.has(absolutePath)) {
+      storyFilesWithTests.add(absolutePath);
+    }
+  }
+  return [...storyFilesWithTests];
 };
 
 /**
@@ -225,7 +277,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   const [
     corePlugins,
-    { storiesGlobs },
+    { storiesGlobs, normalizedStories, storiesFiles },
     framework,
     viteConfigFromStorybook,
     staticDirs,
@@ -339,6 +391,29 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       finalOptions.includeStories = includeStories;
 
+      let storyFilesWithTests: string[] | undefined;
+      try {
+        storyFilesWithTests = await getStoryFilesWithTests(
+          presets,
+          normalizedStories,
+          storiesFiles,
+          {
+            workingDir: WORKING_DIR,
+            configDir: finalOptions.configDir,
+            features,
+            tags: finalOptions.tags,
+          }
+        );
+      } catch (err) {
+        logger.warn(dedent`
+          Could not index the stories to select the story files to test, falling back to the story globs.
+          ${err}
+        `);
+      }
+      const testFiles =
+        storyFilesWithTests?.map((file) => escapePath(relative(finalOptions.vitestRoot, file))) ??
+        includeStories;
+
       const projectId = oneWayHash(finalOptions.configDir);
 
       const areProjectAnnotationRequired = await requiresProjectAnnotations(
@@ -408,7 +483,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             [STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY]: finalOptions.initialGlobals,
           },
 
-          include: [...includeStories, ...getComponentTestPaths()],
+          include: [...testFiles, ...getComponentTestPaths()],
           exclude: [
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),

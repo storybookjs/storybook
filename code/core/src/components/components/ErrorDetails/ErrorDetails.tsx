@@ -28,6 +28,11 @@ const Container = styled.div<{ severity: ClassifiedError['severity']; neutral: b
   })
 );
 
+/** Flex-column stretch would widen the pill across the card; anchor it to the start. */
+const PillSlot = styled.div({
+  alignSelf: 'flex-start',
+});
+
 /**
  * Failure transitions are announced through an implicit live region so assistive tech reports
  * them without focus moves (WCAG 4.1.3). `role="alert"` is assertive, `role="status"` polite.
@@ -159,9 +164,9 @@ export const ErrorDetails = ({ error, action, links }: ErrorDetailsProps) => {
         {error.title}
       </LiveAnnouncement>
       {neutral ? null : (
-        <Badge status={error.severity} style={{ alignSelf: 'flex-start' }}>
-          {SEVERITY_LABELS[error.severity]}
-        </Badge>
+        <PillSlot>
+          <Badge status={error.severity}>{SEVERITY_LABELS[error.severity]}</Badge>
+        </PillSlot>
       )}
       <Title>{error.title}</Title>
       {error.cause ? <Cause>{error.cause}</Cause> : null}

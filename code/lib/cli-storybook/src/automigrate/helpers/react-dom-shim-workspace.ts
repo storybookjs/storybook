@@ -5,16 +5,13 @@ import { minVersion } from 'semver';
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 
 import { analyzeReactDomShimData } from './react-dom-shim-data.ts';
+import { linkedScriptDiagnostic, workspaceFileKind } from './react-dom-shim-file.ts';
 import { analyzeReactDomShimHtml } from './react-dom-shim-html.ts';
 import { analyzeReactDomShimConfig, hasShimReference, staticString } from './react-dom-shim.ts';
 
 const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
 const SKIPPED_DIRECTORIES = new Set(['.git', 'node_modules']);
-const SOURCE_FILE = /\.(?:[cm]?[jt]sx?|vue|svelte|mdx)$/;
-const DATA_FILE = /\.jsonc?$/;
-const HTML_FILE = /\.html$/;
-const ASTRO_FILE = /\.astro$/;
 const CONFIG_FILE = /(^|[/\\])(?:main|vite(?:st)?\.config)\.[cm]?[jt]sx?$/;
 const DEPENDENCY_SECTIONS = [
   'dependencies',
@@ -369,11 +366,7 @@ export const analyzeReactDomShimWorkspace = async (
     .sort();
   const sources = files
     .filter(
-      (filePath) =>
-        SOURCE_FILE.test(filePath) ||
-        HTML_FILE.test(filePath) ||
-        ASTRO_FILE.test(filePath) ||
-        (DATA_FILE.test(filePath) && basename(filePath) !== MANIFEST)
+      (filePath) => basename(filePath) !== MANIFEST && workspaceFileKind(filePath) !== 'inert'
     )
     .sort();
   const diagnostics: string[] = [];
@@ -437,13 +430,24 @@ export const analyzeReactDomShimWorkspace = async (
       diagnostics.push(`${filePath}: cannot read source during workspace scan`);
       continue;
     }
-    const sourceIssue = ASTRO_FILE.test(filePath)
-      ? `${filePath}: cannot prove absence in Astro source during workspace scan`
-      : HTML_FILE.test(filePath)
-        ? analyzeReactDomShimHtml(source, filePath, sourceDiagnostic, analyzeReactDomShimData)
-        : DATA_FILE.test(filePath)
-          ? analyzeReactDomShimData(source, filePath)
-          : sourceDiagnostic(source, filePath);
+    const kind = workspaceFileKind(filePath);
+    const sourceIssue =
+      kind === 'astro'
+        ? `${filePath}: cannot prove absence in Astro source during workspace scan`
+        : kind === 'html'
+          ? analyzeReactDomShimHtml(
+              source,
+              filePath,
+              sourceDiagnostic,
+              analyzeReactDomShimData,
+              (scriptSource, htmlPath) =>
+                linkedScriptDiagnostic(scriptSource, htmlPath, workspaceRoot, files)
+            )
+          : kind === 'data'
+            ? analyzeReactDomShimData(source, filePath)
+            : kind === 'manual'
+              ? `${filePath}: unsupported file type cannot be scanned safely`
+              : sourceDiagnostic(source, filePath);
     if (sourceIssue) {
       diagnostics.push(sourceIssue);
       continue;

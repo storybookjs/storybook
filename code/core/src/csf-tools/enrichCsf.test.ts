@@ -1,3 +1,5 @@
+import { runInNewContext } from 'node:vm';
+
 import { describe, expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
@@ -5,6 +7,20 @@ import { dedent } from 'ts-dedent';
 import { formatCsf, loadCsf } from './CsfFile.ts';
 import type { EnrichCsfOptions } from './enrichCsf.ts';
 import { enrichCsf, extractSource } from './enrichCsf.ts';
+
+type RuntimeStory = {
+  _tag?: string;
+  input?: { parameters?: RuntimeParameters };
+  parameters?: RuntimeParameters;
+  extend: () => RuntimeStory;
+};
+
+type RuntimeParameters = {
+  docs?: {
+    description?: { story?: string };
+    source?: { originalSource?: string };
+  };
+};
 
 expect.addSnapshotSerializer({
   print: (val: any) => val.replace(/\\r\\n/gm, '\\n'),
@@ -19,7 +35,11 @@ const enrich = async (code: string, originalCode: string, options?: EnrichCsfOpt
     makeTitle: (userTitle) => userTitle ?? 'Unknown',
   }).parse();
   await enrichCsf(csf, csfSource, options);
-  return formatCsf(csf);
+  const formattedCsf = formatCsf(csf);
+  if (typeof formattedCsf !== 'string') {
+    throw new Error('Expected formatted CSF code');
+  }
+  return formattedCsf;
 };
 
 describe('enrichCsf', () => {
@@ -190,6 +210,217 @@ describe('enrichCsf', () => {
           }
         };
       `);
+    });
+    it('csf factories with .extend()', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          args: {
+            label: "Hello world!"
+          }
+        });
+        export const Story = meta.story({});
+        export const Extended = Story.extend({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+        if (Extended._tag === "Story") {
+          Extended.input.parameters = {
+            ...Extended.input.parameters,
+            docs: {
+              ...Extended.input.parameters?.docs,
+              source: {
+                originalSource: "Story.extend({})",
+                ...Extended.input.parameters?.docs?.source
+              }
+            }
+          };
+        } else {
+          Extended.parameters = {
+            ...Extended.parameters,
+            docs: {
+              ...Extended.parameters?.docs,
+              source: {
+                originalSource: "Story.extend({})",
+                ...Extended.parameters?.docs?.source
+              }
+            }
+          };
+        }
+      `);
+    });
+    it('enriches factory and non-factory extensions through their runtime parameters', async () => {
+      const output = await enrich(
+        dedent`
+          import { config } from "/.storybook/preview.ts";
+          import { ImportedStory } from './factory.stories';
+          import { utility } from './utility';
+          const componentMeta = config.meta({ title: 'Button' });
+          export default componentMeta;
+          export const Renamed = componentMeta.story({});
+          const Local = componentMeta.story({});
+          /** Local extension description */
+          export const LocalExtended = Local.extend({});
+          /** Imported extension description */
+          export const ImportedExtended = ImportedStory.extend({});
+          /** Imported utility extension description */
+          export const ImportedUtilityExtended = utility.extend({});
+          /** Chained extension description */
+          export const Chained = LocalExtended.extend({});
+          const localUtility = {
+            extend: (value) => ({ input: value, extend: localUtility.extend }),
+          };
+          /** Utility extension description */
+          export const UtilityExtended = localUtility.extend({});
+          /** Chained utility extension description */
+          export const ChainedUtilityExtended = UtilityExtended.extend({});
+        `,
+        dedent`
+          import { config } from "#.storybook/preview.ts";
+          import { ImportedStory } from './factory.stories';
+          import { utility } from './utility';
+          const componentMeta = config.meta({ title: 'Button' });
+          export default componentMeta;
+          export const Renamed = componentMeta.story({});
+          const Local = componentMeta.story({});
+          /** Local extension description */
+          export const LocalExtended = Local.extend({});
+          /** Imported extension description */
+          export const ImportedExtended = ImportedStory.extend({});
+          /** Imported utility extension description */
+          export const ImportedUtilityExtended = utility.extend({});
+          /** Chained extension description */
+          export const Chained = LocalExtended.extend({});
+          const localUtility = {
+            extend: (value) => ({ input: value, extend: localUtility.extend }),
+          };
+          /** Utility extension description */
+          export const UtilityExtended = localUtility.extend({});
+          /** Chained utility extension description */
+          export const ChainedUtilityExtended = UtilityExtended.extend({});
+        `
+      );
+
+      expect(output).toContain('Renamed.input.parameters');
+      expect(output).toContain('if (LocalExtended._tag === "Story")');
+      expect(output).toContain('if (Chained._tag === "Story")');
+      expect(output).toContain('if (ImportedExtended._tag === "Story")');
+      expect(output).toContain('if (ImportedUtilityExtended._tag === "Story")');
+      expect(output).toContain('if (UtilityExtended._tag === "Story")');
+      expect(output).toContain('if (ChainedUtilityExtended._tag === "Story")');
+      expect(output).toContain('ImportedUtilityExtended.parameters');
+      expect(output).toContain('UtilityExtended.parameters');
+      expect(output).toContain('ChainedUtilityExtended.parameters');
+      expect(output).toContain('originalSource: "Local.extend({})"');
+      expect(output).toContain('originalSource: "ImportedStory.extend({})"');
+      expect(output).toContain('originalSource: "LocalExtended.extend({})"');
+      expect(output).toContain('story: "Local extension description"');
+      expect(output).toContain('story: "Imported extension description"');
+      expect(output).toContain('story: "Imported utility extension description"');
+      expect(output).toContain('story: "Chained extension description"');
+      expect(output).toContain('story: "Utility extension description"');
+      expect(output).toContain('story: "Chained utility extension description"');
+
+      const createFactoryStory = (): RuntimeStory => ({
+        _tag: 'Story',
+        input: {},
+        extend: createFactoryStory,
+      });
+      const createUtilityStory = (): RuntimeStory => ({
+        input: {},
+        parameters: {},
+        extend: createUtilityStory,
+      });
+      const runtime: {
+        config: { meta: () => { story: () => RuntimeStory } };
+        ImportedStory: RuntimeStory;
+        utility: RuntimeStory;
+        results?: Record<string, RuntimeStory>;
+      } = {
+        config: { meta: () => ({ story: createFactoryStory }) },
+        ImportedStory: createFactoryStory(),
+        utility: createUtilityStory(),
+      };
+      const executableOutput = `${output
+        .replace(/^import.*;\n/gm, '')
+        .replace('export default componentMeta;\n', '')
+        .replaceAll('export const ', 'const ')}
+        globalThis.results = {
+          LocalExtended,
+          ImportedExtended,
+          ImportedUtilityExtended,
+          Chained,
+          UtilityExtended,
+          ChainedUtilityExtended,
+        };`;
+      runInNewContext(executableOutput, runtime);
+
+      expect(runtime.results?.LocalExtended.input?.parameters?.docs).toEqual({
+        source: { originalSource: 'Local.extend({})' },
+        description: { story: 'Local extension description' },
+      });
+      expect(runtime.results?.ImportedExtended.input?.parameters?.docs).toEqual({
+        source: { originalSource: 'ImportedStory.extend({})' },
+        description: { story: 'Imported extension description' },
+      });
+      expect(runtime.results?.UtilityExtended.parameters?.docs).toEqual({
+        source: { originalSource: 'localUtility.extend({})' },
+        description: { story: 'Utility extension description' },
+      });
+      expect(runtime.results?.ChainedUtilityExtended.parameters?.docs).toEqual({
+        source: { originalSource: 'UtilityExtended.extend({})' },
+        description: { story: 'Chained utility extension description' },
+      });
+    });
+    it('does not treat methods on a CSF3 meta object as factory stories', async () => {
+      const output = await enrich(
+        dedent`
+          const componentMeta = { title: 'Button', make: () => ({}) };
+          export default componentMeta;
+          export const Basic = componentMeta.make();
+        `,
+        dedent`
+          const componentMeta = { title: 'Button', make: () => ({}) };
+          export default componentMeta;
+          export const Basic = componentMeta.make();
+        `
+      );
+
+      expect(output).toContain('Basic.parameters');
+      expect(output).not.toContain('Basic.input.parameters');
     });
     it('multiple stories', async () => {
       expect(

@@ -1,0 +1,88 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'primary'",
+          "description": "Visual variant.",
+          "fieldName": "variant",
+          "name": "variant",
+          "type": {
+            "text": "'primary' | 'secondary' | 'ghost'",
+          },
+        },
+        {
+          "default": "''",
+          "deprecated": "Use label instead.",
+          "description": "Old label field.",
+          "fieldName": "oldLabel",
+          "name": "old-label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "'Union label'",
+          "description": "Current label.",
+          "fieldName": "label",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "customElement": true,
+      "deprecated": "Use lit-basic-attributes instead.",
+      "description": "Button with typed visual variants.",
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "variant",
+          "default": "'primary'",
+          "description": "Visual variant.",
+          "kind": "field",
+          "name": "variant",
+          "type": {
+            "text": "'primary' | 'secondary' | 'ghost'",
+          },
+        },
+        {
+          "attribute": "old-label",
+          "default": "''",
+          "deprecated": "Use label instead.",
+          "description": "Old label field.",
+          "kind": "field",
+          "name": "oldLabel",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "attribute": "label",
+          "default": "'Union label'",
+          "description": "Current label.",
+          "kind": "field",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "name": "LitUnionJsdoc",
+      "summary": "Compact variant fixture.",
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-union-jsdoc",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Button with typed visual variants.",
+  "id": "lit-union-jsdoc",
+  "jsDocTags": {},
+  "name": "lit-union-jsdoc",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": "Compact variant fixture.",
+}

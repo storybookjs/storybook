@@ -271,6 +271,13 @@ consume(builtin);
 
   it.each([
     [
+      'a string-named createRequire import',
+      `import { 'createRequire' as factory } from 'node:module';
+const load = factory(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
       'a direct module-object factory extraction',
       `const factory = require('node:module').createRequire;
 const load = factory(import.meta.url);
@@ -280,6 +287,14 @@ load(['@storybook', 'react-dom-shim'].join('/'));
     [
       'a computed module-object factory destructuring',
       `const { ['createRequire']: factory } = require('node:module');
+const load = factory(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
+      'an assigned module-object factory destructuring',
+      `let factory;
+({ createRequire: factory } = require('node:module'));
 const load = factory(import.meta.url);
 load(['@storybook', 'react-dom-shim'].join('/'));
 `,

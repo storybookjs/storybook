@@ -76,6 +76,7 @@ export class Yarn1Proxy extends JsPackageManager {
       return executeCommand({
         command: 'npx',
         args,
+        ...options,
       });
     }
     return executeCommand({

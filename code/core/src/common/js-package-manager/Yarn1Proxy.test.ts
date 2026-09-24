@@ -84,6 +84,30 @@ describe('Yarn 1 Proxy', () => {
         })
       );
     });
+
+    it('forwards env, cwd and stdio to `npx` when running a remote package', () => {
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '' }) as never
+      );
+
+      yarn1Proxy.runPackageCommand({
+        args: ['skills@latest', 'add', 'storybookjs/skills#next'],
+        useRemotePkg: true,
+        env: { DISABLE_TELEMETRY: '1' },
+        cwd: '/repo',
+        stdio: 'inherit',
+      });
+
+      expect(executeCommandSpy).toHaveBeenLastCalledWith(
+        expect.objectContaining({
+          command: 'npx',
+          args: ['skills@latest', 'add', 'storybookjs/skills#next'],
+          env: { DISABLE_TELEMETRY: '1' },
+          cwd: '/repo',
+          stdio: 'inherit',
+        })
+      );
+    });
   });
 
   describe('addDependencies', () => {

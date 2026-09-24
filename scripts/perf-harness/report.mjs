@@ -74,20 +74,17 @@ function phaseMetrics(runData, phaseName) {
   m['bytes all links'] = total;
 
   // Browser main thread. Manager and preview are same-origin, so they share one renderer main
-  // thread; each frame's observer can report the same task, so merge by start time.
-  const seen = new Map();
-  for (const t of tabs) {
-    for (const [runtime, list] of [
-      ['manager', t.manager?.longtasks ?? []],
-      ['preview', t.preview?.longtasks ?? []],
-    ]) {
-      for (const lt of list) {
-        const key = Math.round(lt.start);
-        if (!seen.has(key) || runtime === 'manager') seen.set(key, { ...lt, runtime });
-      }
-    }
-  }
-  const longtasks = [...seen.values()];
+  // thread, and each frame's observer reports every task on it (the preview's own tasks show in the
+  // manager as `same-origin-descendant`). Use the manager's list. Merging both lists by start time
+  // does not work: the two frames' time origins differ by a fraction of a millisecond.
+  const longtasks = tabs.flatMap((t) =>
+    (t.manager?.longtasks?.length ? t.manager.longtasks : (t.preview?.longtasks ?? [])).map(
+      (lt) => ({
+        ...lt,
+        runtime: t.manager?.longtasks?.length ? 'manager' : 'preview',
+      })
+    )
+  );
   m['main thread long tasks'] = longtasks.length;
   m['main thread total blocking time ms'] = sum(
     longtasks.map((lt) => Math.max(0, lt.duration - 50))

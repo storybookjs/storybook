@@ -133,9 +133,18 @@ The dev server runs with `--max-old-space-size=8192`.
 
 ## Workloads
 
-Each workload is a list of phases. Before a phase starts, the harness waits until no channel frame
-has moved for 2 s and throws away all counters. After the phase, it waits again, then reads every
-counter. So a number in a phase is the cost of that phase only.
+Each workload is a list of phases. Before a phase starts, the harness waits until the session is
+idle and throws away all counters. After the phase, it waits until idle again, then reads every
+counter. So a number in a phase is the cost of that phase only, including work that the manager
+finishes late.
+
+Idle means both of these:
+
+- no channel frame moved for 2 s;
+- the manager DOM had no mutation for 500 ms, and a frame painted after that.
+
+The second check matters: a blocked main thread does not run message handlers, so frames stop
+moving while the manager still has work to do.
 
 Phases that more than one workload uses:
 
@@ -144,8 +153,9 @@ Phases that more than one workload uses:
   (`storyRendered`, `docsRendered`, or an error event).
 - `idle`: 5 s with no action. It gives the server's CPU when nothing happens.
 - `indexJson`: `GET /index.json` N times in a row.
-- `changeScan`: save one story file with an added comment, wait, restore it. Each save runs HMR,
-  the indexer for that file, and a change-detection scan.
+- `changeScan`: save one component file with an added comment, wait, restore it. In the synthetic
+  project the story file holds the component, so the save also runs the indexer for that file.
+  Each save runs HMR and a change-detection scan (git).
 
 **status-flood** (synthetic by default)
 

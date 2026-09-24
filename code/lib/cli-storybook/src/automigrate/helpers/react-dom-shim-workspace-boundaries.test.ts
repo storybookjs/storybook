@@ -102,6 +102,36 @@ load(['@storybook', 'react-dom-shim'].join('/'));
 
   it.each([
     [
+      'an extracted require resolve method',
+      `const load = require.resolve;
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
+    ],
+    [
+      'a destructured require resolve method',
+      `const { resolve: load } = require;
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
+    ],
+    [
+      'an assigned require resolve method',
+      `let load;
+load = require.resolve;
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
+    ],
+    [
+      'an assigned destructured require resolve method',
+      `let load;
+({ resolve: load } = require);
+const name = ['@storybook', 'react-dom-shim'].join('/');
+load(name);
+`,
+    ],
+    [
       'a CommonJS module-object factory',
       `const builtin = require('node:module');
 const load = builtin.createRequire(import.meta.url);
@@ -139,6 +169,131 @@ load.cache(['@storybook', 'react-dom-shim'].join('/'));
       kind: 'manual',
       diagnostics: expect.arrayContaining([
         '/project/loader.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it('refuses passing a recognized loader to an arbitrary function', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/loader-escape.ts': `const load = require.resolve;
+consume(load);
+`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/loader-escape.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it('refuses returning a recognized loader from a wrapper', async () => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/loader-escape.ts': `function getLoader() {
+  return require;
+}
+const load = getLoader();
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/loader-escape.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it.each([
+    [
+      'a function parameter default',
+      `function run(load = require.resolve) {
+  return load(['@storybook', 'react-dom-shim'].join('/'));
+}
+run();
+`,
+    ],
+    [
+      'a container value',
+      `const loaders = [require.resolve];
+loaders[0](['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+  ])('refuses a recognized loader in %s', async (_description, source) => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/loader-escape.ts': source,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/loader-escape.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it.each([
+    [
+      'a passed createRequire factory',
+      `import { createRequire } from 'node:module';
+consume(createRequire);
+`,
+    ],
+    [
+      'a passed module object',
+      `const builtin = require('node:module');
+consume(builtin);
+`,
+    ],
+    [
+      'an inline createRequire loader',
+      `require('node:module').createRequire(import.meta.url)(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+  ])('refuses an escaped %s', async (_description, source) => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/loader-escape.ts': source,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/loader-escape.ts: contains an unresolved module load',
+      ]),
+    });
+  });
+
+  it.each([
+    [
+      'a direct module-object factory extraction',
+      `const factory = require('node:module').createRequire;
+const load = factory(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+    [
+      'a computed module-object factory destructuring',
+      `const { ['createRequire']: factory } = require('node:module');
+const load = factory(import.meta.url);
+load(['@storybook', 'react-dom-shim'].join('/'));
+`,
+    ],
+  ])('refuses %s', async (_description, source) => {
+    vol.fromNestedJSON({
+      '/project/package.json': manifest,
+      '/project/loader-escape.ts': source,
+    });
+
+    await expect(analyzeReactDomShimWorkspace('/project')).resolves.toMatchObject({
+      kind: 'manual',
+      diagnostics: expect.arrayContaining([
+        '/project/loader-escape.ts: contains an unresolved module load',
       ]),
     });
   });

@@ -7,7 +7,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 import { createMetaComponentResolver } from 'storybook/internal/common';
-import { resolveStoryComponent, resolveStorySubcomponents } from './resolve-component.ts';
+import { resolveComponentFromCsf } from './resolve-component.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
 
@@ -169,21 +169,23 @@ describe('resolveMetaComponent', () => {
   });
 });
 
-describe('resolveStoryComponent', () => {
-  it('parses the story file off disk', () => {
-    expect(resolveStoryComponent(storyPath)).toEqual({
+describe('resolveComponentFromCsf', () => {
+  it('resolves from an already-parsed CSF file', () => {
+    expect(
+      resolveComponentFromCsf(
+        parse(`
+          import { ButtonComponent } from './button.component';
+          export default { component: ButtonComponent };
+        `),
+        storyPath
+      )
+    ).toEqual({
       component: {
         localName: 'ButtonComponent',
         importId: './button.component',
         exportName: 'ButtonComponent',
         path: join(fixtures, 'button.component.ts'),
       },
-    });
-  });
-
-  it('reports no component for a file that cannot be read', () => {
-    expect(resolveStoryComponent(join(fixtures, 'missing.stories.ts'))).toEqual({
-      reason: 'no-meta-component',
     });
   });
 });

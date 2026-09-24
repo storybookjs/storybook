@@ -66,6 +66,8 @@ node bench.mjs vitest-run --before local:../next --after local:../pr
 node bench.mjs docgen --before local:../next --after local:../pr
 ```
 
+Leave out `--after` to measure one build only (a baseline). The report then has one value column.
+
 The runs alternate: before, after, after, before, and so on. So slow drift on the machine affects
 both sides the same. Every run starts cold: the harness deletes the Storybook and Vite caches of the
 project first.

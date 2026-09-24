@@ -157,6 +157,9 @@ function phaseMetrics(runData, phaseName) {
     m['vitest child → server IPC bytes (child view)'] = sum(
       raw.child.ipc.filter((x) => x.dir === 'to-parent').map((x) => x.bytes)
     );
+    m['server → vitest child IPC bytes (child view)'] = sum(
+      raw.child.ipc.filter((x) => x.dir === 'from-parent').map((x) => x.bytes)
+    );
   }
 
   // Phase-specific numbers.

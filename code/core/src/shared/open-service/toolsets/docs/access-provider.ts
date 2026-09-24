@@ -76,7 +76,20 @@ async function defaultManifestProvider(
       "Request is required when using the default manifest provider. You must either pass the original request forward to the server context, or set a custom manifestProvider that doesn't need the request."
     );
   }
-  const manifestUrl = getManifestUrlFromRequest(request, path);
+  return fetchManifestText(getManifestUrlFromRequest(request, path));
+}
+
+// For a composition assembled at boot rather than per request (the docs toolset core registers
+// for the tools CLI): no request, no credentials, so a private source lands in its own error section.
+export const sourceUrlManifestProvider: ManifestProvider = async (_request, path, source) => {
+  if (!source?.url) {
+    throw new ManifestGetError('The local source has no URL to fetch manifests from.');
+  }
+  const base = `${source.url.replace(/\/$/, '')}/`;
+  return fetchManifestText(new URL(path.replace(/^\.\//, ''), base).toString());
+};
+
+async function fetchManifestText(manifestUrl: string): Promise<string> {
   const response = await fetch(manifestUrl);
 
   if (!response.ok) {

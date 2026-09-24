@@ -38,14 +38,17 @@ import { registerModuleGraphService } from '../../shared/open-service/services/m
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
+import { sourceUrlManifestProvider } from '../../shared/open-service/toolsets/docs/access-provider.ts';
 import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
 import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
+import { createCompositionDocsSources } from '../../shared/open-service/toolsets/docs/multi-source.ts';
 import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
 import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
+import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
 
 import * as pathe from 'pathe';
@@ -458,15 +461,27 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     });
   }
 
+  // Registration-based selection between the docgen services and the inline manifests, shared
+  // with addon-mcp's composed local source so both read this Storybook the same way.
+  const localDocsAccess = createLocalDocsAccess({
+    storyIndex,
+    getManifests: () => loadManifests(options.presets),
+  });
+
+  // Composed here, not only per MCP request in addon-mcp, so the tools CLI lists every source too.
+  const refs = await getRefsFromConfig(options);
   registerToolset(
-    createDocsToolset({
-      // Registration-based selection between the docgen services and the inline manifests, shared
-      // with addon-mcp's composed local source so both read this Storybook the same way.
-      docsAccess: createLocalDocsAccess({
-        storyIndex,
-        getManifests: () => loadManifests(options.presets),
-      }),
-    })
+    createDocsToolset(
+      refs.length > 0
+        ? {
+            sources: createCompositionDocsSources({
+              sources: [{ id: 'local', title: 'Local' }, ...refs],
+              manifestProvider: sourceUrlManifestProvider,
+              localAccess: localDocsAccess,
+            }),
+          }
+        : { docsAccess: localDocsAccess }
+    )
   );
 };
 

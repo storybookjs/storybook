@@ -23,11 +23,7 @@ const moduleLoad = (
     : t.isIdentifier(callee.property)
       ? callee.property.name
       : undefined;
-  return property === undefined
-    ? 'unresolved'
-    : property === 'resolve' || property === 'require'
-      ? 'known'
-      : undefined;
+  return property === 'resolve' || property === 'require' ? 'known' : 'unresolved';
 };
 
 const isModuleObject = (

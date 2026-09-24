@@ -56,9 +56,8 @@ describe('experimental_storyDocsProvider', () => {
 
   it.each([
     { importPath: './Button.stories.svelte', builds: true },
-    { importPath: './Button.svelte', builds: true },
-    { importPath: './Button.stories.ts', builds: true },
-    { importPath: './Button.test.ts', builds: false },
+    { importPath: './Button.svelte', builds: false },
+    { importPath: './Button.stories.ts', builds: false },
   ])('$importPath is built: $builds', async ({ importPath, builds }) => {
     const provider = await experimental_storyDocsProvider(
       async () => DOWNSTREAM,

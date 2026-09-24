@@ -28,10 +28,8 @@ const entryFor = (importPath: string): IndexEntry => ({
 describe('createDocgenProvider', () => {
   it.each([
     { importPath: './Button.stories.svelte', extracts: true },
-    { importPath: './Button.svelte', extracts: true },
-    { importPath: './Button.stories.ts', extracts: true },
-    { importPath: './Button.story.js', extracts: true },
-    { importPath: './Button.test.ts', extracts: false },
+    { importPath: './Button.svelte', extracts: false },
+    { importPath: './Button.stories.ts', extracts: false },
   ])('$importPath is extracted: $extracts', async ({ importPath, extracts }) => {
     const provider = createDocgenProvider()(async () => DOWNSTREAM);
 

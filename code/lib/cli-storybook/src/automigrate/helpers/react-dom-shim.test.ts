@@ -173,6 +173,10 @@ export default config;
       'main.ts',
     ],
     [
+      "export default { addons: ['@storybook/react-dom-shim/preset'], shim: `${'@storybook/'}react-dom-shim` };",
+      'main.ts',
+    ],
+    [
       "export default { resolve: { alias: [{ find: '@storybook/react-dom-shim', replacement: '@storybook/react-dom-shim/react-16', customResolver: initializeResolver() }] } };",
       'vite.config.ts',
     ],

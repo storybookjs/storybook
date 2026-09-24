@@ -22,10 +22,22 @@ type CommentedNode = t.Node & { comments?: t.Comment[] | null };
 const isShimSource = (value: string) =>
   value === REACT_DOM_SHIM || value.startsWith(`${REACT_DOM_SHIM}/`);
 
-const staticString = (node: t.Node | undefined): string | undefined => {
+export const staticString = (node: t.Node | undefined): string | undefined => {
   if (t.isStringLiteral(node)) return node.value;
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked;
+  if (t.isTemplateLiteral(node)) {
+    let value = '';
+    for (let index = 0; index < node.quasis.length; index += 1) {
+      const quasi = node.quasis[index]?.value.cooked;
+      if (quasi === undefined) return undefined;
+      value += quasi;
+      const expression = node.expressions[index];
+      if (expression) {
+        const expressionValue = staticString(expression);
+        if (expressionValue === undefined) return undefined;
+        value += expressionValue;
+      }
+    }
+    return value;
   }
   if (t.isBinaryExpression(node, { operator: '+' })) {
     const left = staticString(node.left);
@@ -33,6 +45,21 @@ const staticString = (node: t.Node | undefined): string | undefined => {
     return left === undefined || right === undefined ? undefined : left + right;
   }
   return undefined;
+};
+
+const hasShimFragment = (value: string) =>
+  value.includes('@storybook/') || value.includes('react-dom-shim');
+
+export const hasShimReference = (node: t.Node): boolean => {
+  const value = staticString(node);
+  if (value !== undefined) return isShimSource(value);
+  if (t.isTemplateLiteral(node)) {
+    return node.quasis.some((quasi) => hasShimFragment(quasi.value.cooked ?? ''));
+  }
+  return (
+    t.isBinaryExpression(node, { operator: '+' }) &&
+    (hasShimReference(node.left) || hasShimReference(node.right))
+  );
 };
 
 const propertyName = (property: t.ObjectProperty): string | undefined => {
@@ -237,12 +264,10 @@ const hasShimLiteral = (program: t.Program): boolean => {
       found ||= isShimSource(path.node.value);
     },
     TemplateLiteral(path) {
-      const value = staticString(path.node);
-      found ||= Boolean(value && isShimSource(value));
+      found ||= hasShimReference(path.node);
     },
     BinaryExpression(path) {
-      const value = staticString(path.node);
-      found ||= Boolean(value && isShimSource(value));
+      found ||= hasShimReference(path.node);
     },
   });
   return found;

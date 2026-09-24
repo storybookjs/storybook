@@ -4,7 +4,7 @@ import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { minVersion } from 'semver';
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 
-import { analyzeReactDomShimConfig } from './react-dom-shim.ts';
+import { analyzeReactDomShimConfig, hasShimReference, staticString } from './react-dom-shim.ts';
 
 const SHIM = '@storybook/react-dom-shim';
 const MANIFEST = 'package.json';
@@ -130,36 +130,21 @@ const pnpmWorkspacePatterns = (source: string): string[] | undefined => {
   return patterns.length ? patterns : undefined;
 };
 
-const staticString = (
-  node: t.Node | t.Expression | t.SpreadElement | undefined
-): string | undefined => {
-  if (t.isStringLiteral(node)) return node.value;
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked ?? undefined;
-  }
-  if (t.isBinaryExpression(node, { operator: '+' })) {
-    const left = staticString(node.left);
-    const right = staticString(node.right);
-    return left === undefined || right === undefined ? undefined : left + right;
-  }
-  return undefined;
-};
-
-const hasShimReference = (value: JsonValue): boolean => {
+const hasJsonShimReference = (value: JsonValue): boolean => {
   if (typeof value === 'string') return value.includes(SHIM);
-  if (Array.isArray(value)) return value.some(hasShimReference);
+  if (Array.isArray(value)) return value.some(hasJsonShimReference);
   return (
     value !== null &&
     typeof value === 'object' &&
     Object.entries(value).some(
-      ([key, nestedValue]) => key.includes(SHIM) || hasShimReference(nestedValue)
+      ([key, nestedValue]) => key.includes(SHIM) || hasJsonShimReference(nestedValue)
     )
   );
 };
 
 const hasManifestShimReference = (manifest: Manifest): boolean =>
   Object.entries(manifest).some(([key, value]) => {
-    if (!DEPENDENCY_SECTIONS.some((section) => section === key)) return hasShimReference(value);
+    if (!DEPENDENCY_SECTIONS.some((section) => section === key)) return hasJsonShimReference(value);
     return (
       isJsonRecord(value) &&
       Object.entries(value).some(
@@ -251,14 +236,12 @@ const sourceDiagnostic = (source: string, filePath: string): string | undefined 
         }
       },
       TemplateLiteral(path) {
-        const value = staticString(path.node);
-        if (value && isShimSource(value)) {
+        if (hasShimReference(path.node)) {
           diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
         }
       },
       BinaryExpression(path) {
-        const value = staticString(path.node);
-        if (value && isShimSource(value)) {
+        if (hasShimReference(path.node)) {
           diagnostic ??= `${filePath}: contains a react-dom-shim reference that cannot be removed safely`;
         }
       },

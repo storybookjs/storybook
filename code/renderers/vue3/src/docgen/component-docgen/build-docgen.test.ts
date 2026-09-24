@@ -76,6 +76,10 @@ describe('buildDocgenPayload subcomponents', () => {
 
     expect(payload?.error).toBeUndefined();
     expect(payload?.subcomponents?.Missing?.error?.name).toBe('No component import found');
+    // The entry error names the failed meta.subcomponents key, not the primary meta.component.
+    const message = payload?.subcomponents?.Missing?.error?.message ?? '';
+    expect(message).toContain('meta.subcomponents.Missing');
+    expect(message).not.toContain('meta.component');
     expect(payload?.argTypes?.content).toBeDefined();
   });
 

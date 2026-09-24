@@ -45,7 +45,7 @@ export async function maybeSetupPreviewNavigator() {
   setupPreviewNavigator(index, currentEntryId);
 }
 
-export const createElementForNode = (node: BranchNode | LeafNode): HTMLElement => {
+const createElementForNode = (node: BranchNode | LeafNode): HTMLElement => {
   const li = document.createElement('li');
 
   if ('entries' in node && 'title' in node) {

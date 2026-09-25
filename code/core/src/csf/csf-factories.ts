@@ -91,10 +91,7 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
 
 export interface Meta<
   TRenderer extends Renderer,
-  TMetaInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
-    TRenderer,
-    TRenderer['args']
-  >,
+  TMetaInput extends { args?: object } = ComponentAnnotations<TRenderer, TRenderer['args']>,
 > {
   readonly _tag: 'Meta';
   input: TMetaInput;
@@ -142,10 +139,10 @@ function defineMeta<
 
 export interface Story<
   TRenderer extends Renderer,
-  TInput extends StoryAnnotations<TRenderer, TRenderer['args']> = StoryAnnotations<
-    TRenderer,
-    TRenderer['args']
-  >,
+  TInput extends {
+    play?: (...args: never[]) => void;
+    render?: (...args: never[]) => TRenderer['storyResult'];
+  } = StoryAnnotations<TRenderer, TRenderer['args']>,
 > {
   readonly _tag: 'Story';
   input: TInput;

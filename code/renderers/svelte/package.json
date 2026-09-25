@@ -63,7 +63,13 @@
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "svelte": "^5.0.0"
+    "svelte": "^5.0.0",
+    "typescript": "^5.9.0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

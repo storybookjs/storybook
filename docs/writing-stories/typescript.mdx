@@ -55,7 +55,7 @@ The example above passes a component type. See [**Typing custom args**](#typing-
 
 </If>
 
-If you are using TypeScript 4.9+, you can take advantage of the new [`satisfies`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html) operator to get stricter type checking. Now you will receive type errors for missing required args, not just invalid ones.
+You can use the [`satisfies`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html) operator to get stricter type checking. TypeScript will then report missing required args as well as invalid ones.
 
 Using `satisfies` to apply a story's type helps maintain type safety when sharing a [play function](./play-function.mdx) across stories. Without it, TypeScript will throw an error that the `play` function may be undefined. The `satisfies` operator enables TypeScript to infer whether the play function is defined or not.
 

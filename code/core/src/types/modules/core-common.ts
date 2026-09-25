@@ -580,13 +580,6 @@ export interface StorybookFeatures {
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
    *
-   * Apply decorators from preview.js before decorators from addons or frameworks
-   */
-  legacyDecoratorFileOrder?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
    * Disallow implicit actions during rendering. This will be the default in Storybook 8.
    *
    * This will make sure that your story renders the same no matter if docgen is enabled or not.

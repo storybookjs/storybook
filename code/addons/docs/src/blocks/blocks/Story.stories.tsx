@@ -9,14 +9,14 @@ import * as ButtonStories from '../examples/Button.stories';
 import * as StoryParametersStories from '../examples/StoryParameters.stories';
 import { Story as StoryBlock } from './Story';
 
-const meta: Meta<typeof StoryBlock> = {
+const meta = {
   component: StoryBlock,
   parameters: {
     layout: 'fullscreen',
     relativeCsfPaths: ['../examples/Button.stories', '../examples/StoryParameters.stories'],
     docsStyles: true,
   },
-};
+} satisfies Meta<typeof StoryBlock>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;

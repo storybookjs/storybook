@@ -1,9 +1,11 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
+  - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
@@ -22,7 +24,7 @@
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
-
+  - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -555,6 +557,21 @@
 
 ## From version 10.x to 11.0.0
 
+### `storybook dev` no longer opens a browser by default
+
+Storybook now starts the development server without automatically opening it in a browser. The CLI
+continues to print the local URL, which you can open manually.
+
+To keep opening Storybook automatically, add `--open` to your command or package script:
+
+```json
+{
+  "scripts": {
+    "storybook": "storybook dev --open"
+  }
+}
+```
+
 ### Docs Code panel enabled by default
 
 When `@storybook/addon-docs` is installed, the Code panel is now available for stories without setting `parameters.docs.codePanel` to `true`.
@@ -582,6 +599,12 @@ Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js i
 Storybook accepts prerelease Node.js builds when their version meets this minimum. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.
 
 During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
+
+### TypeScript 5.9 or 6.x
+
+Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
+
+There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
 
 ### Yarn PnP support removed
 
@@ -824,6 +847,12 @@ npm install preact@^10.8.0
 The accepted peer dependency range is `^10.8.0 || >=11.0.0-0`. Storybook uses the `preact/compat/client` entry and calls `unmount()` on its roots when it cleans up a rendered story. Although Preact 10.7.1 includes that entry, its roots don't provide `unmount()`. Preact 10.8.0 provides the root lifecycle that Storybook needs to clean up and render into the same container again.
 
 The official Preact framework is `@storybook/preact-vite`. Custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack must also use Preact 10.8.0 or newer.
+
+### `features.legacyDecoratorFileOrder` removed
+
+The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applies addon and framework decorators outside of decorators defined in `.storybook/preview.js` / `preview.ts`.
+
+This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
 
 ## From version 10.5.x to 10.6.0
 
@@ -4233,16 +4262,7 @@ For avoiding that, this change passes the mapped args instead of raw args at `re
 
 #### Changed decorator order between preview.js and addons/frameworks
 
-In Storybook 7.0 we have changed the order of decorators being applied to allow you to access context information added by decorators defined in addons/frameworks from decorators defined in `preview.js`. To revert the order to the previous behavior, you can set the `features.legacyDecoratorFileOrder` flag to `true` in your `main.js` file:
-
-```js
-// main.js
-export default {
-  features: {
-    legacyDecoratorFileOrder: true,
-  },
-};
-```
+In Storybook 7.0 we changed the order of decorators so you can access context added by addon/framework decorators from decorators defined in `preview.js`. Storybook 11 removed the `features.legacyDecoratorFileOrder` escape hatch that restored the pre-7 order. See [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed).
 
 #### Dark mode detection
 

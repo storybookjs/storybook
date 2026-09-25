@@ -9810,7 +9810,7 @@ __metadata:
     sass: ^1.0.0
     sass-embedded: ^1.0.0
     storybook: "workspace:^"
-    typescript: ">= 5.9.x"
+    typescript: ^5.9.0 || ^6.0.0
     vite: ">=8.0.0"
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
@@ -9870,7 +9870,7 @@ __metadata:
     "@angular/platform-browser-dynamic": ">=21.0.0 < 23.0.0"
     rxjs: ^6.5.3 || ^7.4.0
     storybook: "workspace:^"
-    typescript: ^4.9.0 || ^5.0.0 || ^6.0.0
+    typescript: ^5.9.0 || ^6.0.0
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/animations":
@@ -10489,7 +10489,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ">= 4.9.x"
+    typescript: ^5.9.0 || ^6.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10509,7 +10509,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ">= 4.9.x"
+    typescript: ^5.9.0 || ^6.0.0
   peerDependenciesMeta:
     typescript:
       optional: true
@@ -10551,7 +10551,7 @@ __metadata:
     react: ^18.0.0 || ^19.0.0
     react-dom: ^18.0.0 || ^19.0.0
     storybook: "workspace:^"
-    typescript: ">= 4.9.x"
+    typescript: ^5.9.0 || ^6.0.0
   peerDependenciesMeta:
     "@types/react":
       optional: true
@@ -10756,6 +10756,7 @@ __metadata:
     "@sveltejs/vite-plugin-svelte": ^2.0.0 || ^3.0.0 || ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
+    typescript: ^5.9.0 || ^6.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
   linkType: soft
@@ -10776,6 +10777,10 @@ __metadata:
   peerDependencies:
     storybook: "workspace:^"
     svelte: ^5.0.0
+    typescript: ^5.9.0 || ^6.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 
@@ -10841,7 +10846,7 @@ __metadata:
     vue-docgen-api: "npm:^4.75.1"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ">= 4.9.x"
+    typescript: ^5.9.0 || ^6.0.0
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
     typescript:
@@ -10855,6 +10860,7 @@ __metadata:
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     "@testing-library/vue": "npm:^8.0.0"
+    "@types/pug": "npm:2.0.10"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/compiler-dom": "npm:^3.2.47"
     "@vue/language-core": "npm:^3.2.7"
@@ -10867,7 +10873,7 @@ __metadata:
     vue-tsc: "npm:latest"
   peerDependencies:
     storybook: "workspace:^"
-    typescript: ">= 4.9.x"
+    typescript: ^5.9.0 || ^6.0.0
     vue: ^3.0.0
   peerDependenciesMeta:
     typescript:
@@ -12484,6 +12490,13 @@ __metadata:
   version: 15.7.9
   resolution: "@types/prop-types@npm:15.7.9"
   checksum: 10c0/e2a7373b91a8eb30cb4e399ef5b3a14baa7d72eed1667ef5e3cb1e9400edfca9b60c20b845fefdcf7562773829f6ff60ba350b09f6313a8093e70c15b2b88f00
+  languageName: node
+  linkType: hard
+
+"@types/pug@npm:2.0.10":
+  version: 2.0.10
+  resolution: "@types/pug@npm:2.0.10"
+  checksum: 10c0/6fac37fd84ad4bcf755061caad274db70591699739070bc30c5c1b5f0aecf98646dc29ec8da11cfca82a2b7cc57d949a3ae50aba2f88bf098751ebdd25d9aaea
   languageName: node
   linkType: hard
 
@@ -33222,6 +33235,7 @@ __metadata:
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^14.0.0"
     "@testing-library/user-event": "npm:^14.6.3"
+    "@types/chai": "npm:^5.2.2"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/detect-port": "npm:^1.3.0"
     "@types/diff": "npm:^5.0.9"
@@ -33336,6 +33350,7 @@ __metadata:
     type-fest: "npm:^5.6.0"
     type-plus: "npm:^8.0.0-beta.8"
     typescript: "npm:^6.0.3"
+    typescript-5: "npm:typescript@5.9.3"
     unique-string: "npm:^3.0.0"
     use-resize-observer: "npm:^9.1.0"
     use-sync-external-store: "npm:^1.5.0"
@@ -34927,6 +34942,16 @@ __metadata:
   version: 0.0.6
   resolution: "typedarray@npm:0.0.6"
   checksum: 10c0/6005cb31df50eef8b1f3c780eb71a17925f3038a100d82f9406ac2ad1de5eb59f8e6decbdc145b3a1f8e5836e17b0c0002fb698b9fe2516b8f9f9ff602d36412
+  languageName: node
+  linkType: hard
+
+"typescript-5@npm:typescript@5.9.3":
+  version: 5.9.3
+  resolution: "typescript@npm:5.9.3"
+  bin:
+    tsc: bin/tsc
+    tsserver: bin/tsserver
+  checksum: 10c0/6bd7552ce39f97e711db5aa048f6f9995b53f1c52f7d8667c1abdc1700c68a76a308f579cd309ce6b53646deb4e9a1be7c813a93baaf0a28ccd536a30270e1c5
   languageName: node
   linkType: hard
 

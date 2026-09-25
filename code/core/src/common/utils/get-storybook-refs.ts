@@ -68,7 +68,7 @@ export const checkRef = async (url: string) => {
 
 const stripTrailingSlash = (url: string) => url.replace(/\/$/, '');
 
-const toTitle = (input: string) => {
+export const toTitle = (input: string) => {
   const result = input
     .replace(/[A-Z]/g, (f) => ` ${f}`)
     .replace(/[-_][A-Z]/gi, (f) => ` ${f.toUpperCase()}`)

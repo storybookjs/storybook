@@ -854,6 +854,27 @@ describe('ConfigFile', () => {
         `export default { addons: [require.resolve('a11y'), someVariable, 'docs'] };`
       );
     });
+
+    it('preserves a trailing comma in a multiline array', () => {
+      const config = loadConfig(dedent`
+        export default {
+          addons: [
+            '@storybook/addon-docs',
+          ],
+        };
+      `).parse();
+      config.appendValueToArray(['addons'], '@storybook/addon-mcp');
+
+      expect(printConfig(config, { trailingComma: true, wrapColumn: 0 }).code)
+        .toMatchInlineSnapshot(`
+        export default {
+          addons: [
+            '@storybook/addon-docs',
+            '@storybook/addon-mcp',
+          ],
+        };
+      `);
+    });
   });
 
   describe('removeField', () => {

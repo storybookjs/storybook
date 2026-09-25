@@ -3,6 +3,7 @@ import { writeConfig } from 'storybook/internal/csf-tools';
 
 import { loadMainConfig } from './load-main-config.ts';
 import { syncStorybookAddons } from './sync-main-preview-addons.ts';
+import { invariant } from './utils.ts';
 import {
   getAbsolutePathWrapperName,
   wrapValueWithGetAbsolutePathWrapper,
@@ -27,16 +28,19 @@ export async function setupAddonInConfig({
   configDir,
   mainConfigCSFFile,
 }: SetupAddonInConfigOptions): Promise<void> {
-  const mainConfigAddons = mainConfigCSFFile.getFieldNode(['addons']);
-  if (mainConfigAddons && getAbsolutePathWrapperName(mainConfigCSFFile) !== null) {
+  if (getAbsolutePathWrapperName(mainConfigCSFFile) !== null) {
     const addonNode = mainConfigCSFFile.valueToNode(addonName);
-    mainConfigCSFFile.appendNodeToArray(['addons'], addonNode as any);
-    wrapValueWithGetAbsolutePathWrapper(mainConfigCSFFile, addonNode as any);
+    invariant(addonNode, `Could not create an AST node for addon '${addonName}'`);
+    wrapValueWithGetAbsolutePathWrapper(mainConfigCSFFile, addonNode);
+    mainConfigCSFFile.appendNodeToArray(['addons'], addonNode);
   } else {
     mainConfigCSFFile.appendValueToArray(['addons'], addonName);
   }
 
-  await writeConfig(mainConfigCSFFile);
+  await writeConfig(mainConfigCSFFile, undefined, {
+    trailingComma: true,
+    wrapColumn: 0,
+  });
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {

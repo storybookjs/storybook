@@ -1,0 +1,22 @@
+{
+  "user": {
+    "description": "",
+    "name": "user",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": "User {
+  name: string
+  age: number
+}",
+        "summary": "User",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": true,
+      "value": "User",
+    },
+  },
+}

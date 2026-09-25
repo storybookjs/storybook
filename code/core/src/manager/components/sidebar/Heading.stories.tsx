@@ -20,7 +20,7 @@ export default {
   decorators: [
     (storyFn) => <div style={{ padding: '0 20px', maxWidth: '230px' }}>{storyFn()}</div>,
   ],
-} as Meta<typeof Heading>;
+} satisfies Meta<typeof Heading>;
 
 const menuItems = [
   [

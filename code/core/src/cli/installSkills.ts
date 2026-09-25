@@ -69,7 +69,7 @@ async function resolveSkillsRef(
       args: ['ls-remote', '--tags', `https://github.com/${SKILLS_REPO}`, `refs/tags/${tag}`],
       stdio: 'pipe',
     });
-    if (stdout.trim()) {
+    if (typeof stdout === 'string' && stdout.trim()) {
       return { ref: tag, refType: 'tag' };
     }
   } catch (error) {
@@ -163,7 +163,10 @@ export async function installSkills({
       result: 'failed',
       source: decision.source,
       refType,
-      exitCode: error instanceof ExecaCommandFailedError ? error.data.exitCode : undefined,
+      exitCode:
+        error instanceof ExecaCommandFailedError && typeof error.data.exitCode === 'number'
+          ? error.data.exitCode
+          : undefined,
     };
   }
 

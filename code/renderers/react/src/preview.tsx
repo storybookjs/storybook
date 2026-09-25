@@ -1,8 +1,14 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { AddonTypes, InferTypes, Meta, Preview, Story } from 'storybook/internal/csf';
-import type { PreviewAddon } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferTypes,
+  Meta,
+  Preview,
+  PreviewAddonEntry,
+  Story,
+} from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
@@ -52,8 +58,8 @@ type InferReactTypes<T, TArgs, Decorators> = ReactTypes &
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
-  input: { addons: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
+export function __definePreview<Addons extends PreviewAddonEntry[] = []>(
+  input: { addons?: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,

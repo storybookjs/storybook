@@ -667,7 +667,7 @@ describe('getDocumentationTool', () => {
       served.remote = { componentManifest: smallManifestFixture };
     });
 
-    it('should return schema validation error when storybookId is missing', async () => {
+    it('should default to the local source when storybookId is missing', async () => {
       const request = {
         jsonrpc: '2.0' as const,
         id: 1,
@@ -683,9 +683,12 @@ describe('getDocumentationTool', () => {
         custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
-      // storybookId is required in multi-source mode — schema validation rejects it
-      expect((response.result as any).isError).toBe(true);
-      expect((response.result as any).content[0].text).toContain('storybookId');
+      expect((response.result as any).content[0].text).toContain('# Button');
+      expect(manifestProvider).toHaveBeenCalledWith(
+        mockHttpRequest,
+        COMPONENT_MANIFEST_PATH,
+        sources[0]
+      );
     });
 
     it('should return error when storybookId is invalid', async () => {

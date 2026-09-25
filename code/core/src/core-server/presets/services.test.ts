@@ -43,13 +43,6 @@ function jsonResponse(status: number, body?: string) {
   };
 }
 
-// Serves only the ref's components manifest; anything else is a 404, like a static host.
-function fetchServing(manifestUrl: string) {
-  return vi.fn(async (url: string | URL) =>
-    String(url) === manifestUrl ? jsonResponse(200, REMOTE_MANIFEST) : jsonResponse(404)
-  );
-}
-
 const RESHAPED = { reshaped: { title: 'Reshaped', url: 'https://reshaped.example.com/' } };
 const RESHAPED_MANIFEST_URL = 'https://reshaped.example.com/manifests/components.json';
 
@@ -57,6 +50,15 @@ describe('services preset hook: docs toolset', () => {
   beforeEach(() => {
     clearToolsetRegistry();
     vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
+    // Serves only the Reshaped components manifest; anything else is a 404, like a static host.
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL) =>
+        String(url) === RESHAPED_MANIFEST_URL
+          ? jsonResponse(200, REMOTE_MANIFEST)
+          : jsonResponse(404)
+      )
+    );
     vi.mocked(loadManifests).mockResolvedValue({
       components: {
         v: 0,
@@ -73,9 +75,6 @@ describe('services preset hook: docs toolset', () => {
 
   describe('with refs', () => {
     it('lists the local Storybook and every composed ref under its own heading', async () => {
-      const fetch = fetchServing(RESHAPED_MANIFEST_URL);
-      vi.stubGlobal('fetch', fetch);
-
       await services(undefined, optionsWithRefs(RESHAPED));
       expect(fetch).not.toHaveBeenCalled();
 
@@ -94,8 +93,6 @@ describe('services preset hook: docs toolset', () => {
     });
 
     it('requires a storybookId on show and answers a missing one with the available sources', async () => {
-      vi.stubGlobal('fetch', fetchServing(RESHAPED_MANIFEST_URL));
-
       await services(undefined, optionsWithRefs(RESHAPED));
       const { show, showStory } = getToolset('docs').methods;
 
@@ -118,12 +115,10 @@ describe('services preset hook: docs toolset', () => {
     });
 
     it('keeps the local section and reports a ref without a manifest in its own error section', async () => {
-      vi.stubGlobal(
-        'fetch',
-        fetchServing('https://elsewhere.example.com/manifests/components.json')
+      await services(
+        undefined,
+        optionsWithRefs({ reshaped: { title: 'Reshaped', url: 'https://no-manifest.example.com' } })
       );
-
-      await services(undefined, optionsWithRefs(RESHAPED));
       const outcome = await getToolset('docs').methods.list.handler({ withStoryIds: false });
 
       expect(outcome.markdown).toContain('card');
@@ -132,7 +127,7 @@ describe('services preset hook: docs toolset', () => {
     });
 
     it('keeps the local section when a ref is unreachable', async () => {
-      vi.stubGlobal('fetch', vi.fn().mockRejectedValue(new Error('ECONNREFUSED')));
+      vi.mocked(fetch).mockRejectedValue(new Error('ECONNREFUSED'));
 
       await services(undefined, optionsWithRefs(RESHAPED));
       const outcome = await getToolset('docs').methods.list.handler({ withStoryIds: false });
@@ -144,9 +139,6 @@ describe('services preset hook: docs toolset', () => {
 
   describe('without refs', () => {
     it('registers a single-source toolset whose show takes only an id', async () => {
-      const fetch = vi.fn();
-      vi.stubGlobal('fetch', fetch);
-
       await services(undefined, optionsWithRefs({}));
       const { list, show } = getToolset('docs').methods;
 

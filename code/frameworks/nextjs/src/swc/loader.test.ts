@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { Options } from 'storybook/internal/types';
 
 import type { NextConfig } from 'next';
-import type { Configuration, RuleSetRule } from 'webpack';
+import type { Configuration, RuleSetRule, RuleSetUseFunction } from 'webpack';
 
 import { configureSWCLoader } from './loader.ts';
 
@@ -41,22 +41,29 @@ function getBarrelRule(rules: RuleSetRule[]) {
   return rules.find((rule) => rule.test?.toString() === barrelOptimizeRuleTest.toString());
 }
 
-interface BarrelLoaderUse {
-  loader: string;
-  options: Record<string, unknown>;
-  ident: string;
-}
-
 /**
  * `swc` implements `optimizePackageImports` by rewriting named imports of the configured packages
  * into requests such as `__barrel_optimize__?names=a!=!@/shared`. webpack matches the rules of
  * those requests against the part before `!=!`, so this is the `resourceQuery` that the rule of
  * the barrel loader sees.
  */
-function getUse(rule: RuleSetRule, resourceQuery: string) {
-  const use = rule.use as unknown as (context: { resourceQuery: string }) => BarrelLoaderUse[];
+function getUse(rule: RuleSetRule, resourceQuery: string): ReturnType<RuleSetUseFunction> {
+  const { use } = rule;
 
-  return use({ resourceQuery });
+  if (typeof use !== 'function') {
+    throw new Error('expected the barrel loader rule to resolve its loaders from the request');
+  }
+
+  // webpack calls a `use` callback with the data of the effect it is matching. Only
+  // `resourceQuery` is read, the other properties are the ones webpack requires.
+  const effectData: Parameters<RuleSetUseFunction>[0] = {
+    dependency: '',
+    issuer: '',
+    issuerLayer: '',
+    resourceQuery,
+  };
+
+  return use(effectData);
 }
 
 describe('configureSWCLoader', () => {
@@ -72,25 +79,35 @@ describe('configureSWCLoader', () => {
     const use = getUse(barrelRule!, '?names=a');
 
     expect(use).toHaveLength(1);
-    expect(use[0].loader).toContain('next-barrel-loader');
-    expect(use[0].options).toEqual({
-      names: ['a'],
-      swcCacheDir: join('/project-root', '.next', 'cache', 'swc'),
-    });
-    // The names have to be part of the ident, otherwise importers of different
-    // exports of the same barrel file would share a module.
-    expect(use[0].ident).toBe('next-barrel-loader:?names=a');
+    expect(use).toMatchObject([
+      {
+        loader: expect.stringContaining('next-barrel-loader'),
+        options: {
+          names: ['a'],
+          swcCacheDir: join('/project-root', '.next', 'cache', 'swc'),
+        },
+        // The names have to be part of the ident, otherwise importers of different
+        // exports of the same barrel file would share a module.
+        ident: 'next-barrel-loader:?names=a',
+      },
+    ]);
   });
 
   it('uses the export names of the request as the barrel loader `names` option', async () => {
     const barrelRule = getBarrelRule(await getRules(optimizePackageImportsConfig))!;
 
-    expect(getUse(barrelRule, '?names=a,b')[0].options).toEqual({
-      names: ['a', 'b'],
-      swcCacheDir: join('/project-root', '.next', 'cache', 'swc'),
-    });
+    expect(getUse(barrelRule, '?names=a,b')).toMatchObject([
+      {
+        options: {
+          names: ['a', 'b'],
+          swcCacheDir: join('/project-root', '.next', 'cache', 'swc'),
+        },
+      },
+    ]);
     // The barrel loader emits `__barrel_optimize__?names=a&wildcard!=!…` requests itself.
-    expect(getUse(barrelRule, '?names=a&wildcard')[0].options).toMatchObject({ names: ['a'] });
+    expect(getUse(barrelRule, '?names=a&wildcard')).toMatchObject([
+      { options: { names: ['a'] } },
+    ]);
   });
 
   it('does not register a barrel loader rule without `optimizePackageImports`', async () => {

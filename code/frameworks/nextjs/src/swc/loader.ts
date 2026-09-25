@@ -8,7 +8,7 @@ import { getVirtualModules } from '@storybook/builder-webpack5';
 
 import type { NextConfig } from 'next';
 import nextJSLoadConfigModule from 'next/dist/build/load-jsconfig.js';
-import type { Configuration as WebpackConfig } from 'webpack';
+import type { Configuration as WebpackConfig, RuleSetUseFunction } from 'webpack';
 
 import { getNodeModulesExcludeRegex } from '../utils.ts';
 
@@ -53,7 +53,9 @@ export const configureSWCLoader = async (
       // Next.js registers this rule before its other rules, because the barrel
       // loader emits code that might still need to be transformed.
       test: /__barrel_optimize__/,
-      use: ({ resourceQuery = '' }: { resourceQuery?: string }) => {
+      // webpack hands the request being matched to a `use` callback, so the parameter
+      // is webpack's own effect data rather than a shape invented here.
+      use: ({ resourceQuery = '' }: Parameters<RuleSetUseFunction>[0]) => {
         const names = (resourceQuery.match(/\?names=([^&]+)/)?.[1] ?? '').split(',');
         return [
           {

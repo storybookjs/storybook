@@ -73,6 +73,12 @@ jobs:
       - name: compile
         run: yarn task --task compile --start-from=compile
 
+      - name: Build core declarations for package contract tests
+        run: yarn nx compile core -c production --exclude-task-dependencies
+
+      - name: Build mcp declarations for package contract tests
+        run: yarn nx compile mcp -c production --exclude-task-dependencies
+
       - name: Install Playwright Dependencies
         run: cd code && yarn exec playwright install chromium --with-deps
 

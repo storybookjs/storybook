@@ -3,6 +3,7 @@ import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../project-info.ts';
 import { getDocsMarkdownUrl } from '../setup-utils/docs-markdown-url.ts';
 import { ext } from '../setup-utils/ext.ts';
+import { isReactProject } from '../setup-utils/is-react-project.ts';
 import { listDOD, listRules, listSteps } from '../setup-utils/markdown.ts';
 import type { SetupInstructionsContext } from './types.ts';
 import {
@@ -38,7 +39,7 @@ import {
 export function instructions(projectInfo: ProjectInfo): string {
   const { configDir, language, needsUserOnboarding, packageManager, packageManagerName } =
     projectInfo;
-  const tsx = ext(language, true);
+  const tsx = ext(language, isReactProject(projectInfo));
   const ts = ext(language, false);
   const docsUrl = (path: string) => getDocsMarkdownUrl(path, projectInfo);
   const mswInstall = packageManager.getInstallCommand(['msw', 'mockdate'], true);

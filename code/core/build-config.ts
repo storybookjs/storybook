@@ -82,7 +82,6 @@ const config: BuildEntries = {
       {
         exportEntries: ['./internal/bin/loader'],
         entryPoint: './src/bin/loader.ts',
-        dts: false,
       },
       {
         exportEntries: ['./internal/common'],

@@ -157,23 +157,27 @@ function parseStorybookToolsInvocation(
       (token === 'storybook' && cliArgs[index + 1] === 'tools')
   );
   const consumed = endIndex === -1 ? cliArgs.length : endIndex;
-  const segment = cliArgs.slice(0, consumed);
-
-  if (segment.includes('--help') || segment.includes('-h') || segment[0] === 'help') {
-    return undefined;
-  }
+  const segment = expandShellWords(cliArgs.slice(0, consumed), heredocs);
 
   const command = findWorkflowCommand(segment);
-  if (command === undefined) {
+  if (command === undefined || segment[0] === 'help') {
     return undefined;
   }
 
-  const inputTokens = segment.toSpliced(command.index, 2);
+  const commanderOptions = segment.slice(0, command.index);
+  if (commanderOptions.includes('--help') || commanderOptions.includes('-h')) {
+    return undefined;
+  }
 
-  return {
-    call: { name: command.name, input: parseToolsInput(inputTokens, heredocs), source: 'cli' },
-    consumed,
-  };
+  const input = parseToolArguments(
+    segment.slice(command.index + 2),
+    readCommanderInput(commanderOptions)
+  );
+  if (input === undefined) {
+    return undefined;
+  }
+
+  return { call: { name: command.name, input, source: 'cli' }, consumed };
 }
 
 // The `<toolset> <tool>` pair (`test run`) names the workflow tool (`test-run`).
@@ -230,84 +234,130 @@ function isShellRedirection(token: string): boolean {
   return SHELL_REDIRECTION_PATTERN.test(token);
 }
 
-// The tools CLI's own options (TOOLS_OPTION_SPECS in
-// code/core/src/cli/tools/tool-tokens.ts) never reach the tool, so they are
-// left out of the input. Their short forms (`-p 6006`) need no entry: a token
-// without `--` is dropped anyway, as the CLI rejects positional arguments.
-const CLI_OPTION_KEYS = new Set([
-  'json',
-  'attach',
-  'no-attach',
-  'port',
-  'config-dir',
-  'cwd',
-  'output',
-]);
+const CAT_SUBSTITUTION = /\$\(\s*cat\s+([^\s)]+)\s*\)/g;
 
-// `--input '<object>'` carries the whole argument object; explicit `--key`
-// flags win over its entries in any order, as in parseToolsTokens. An `--input`
-// that is not an object (an unresolved `$(cat …)`) stays a plain flag so the
-// failing assertion shows what the agent passed.
-function parseToolsInput(tokens: string[], heredocs: Map<string, string>): Record<string, unknown> {
-  const flags: Record<string, unknown> = {};
-  let inputObject: Record<string, unknown> = {};
-  let index = 0;
-
-  while (index < tokens.length) {
+// What the shell hands the CLI: redirections removed, and `$(cat path)`
+// replaced by the body of a same-command `cat > path <<TAG` heredoc.
+function expandShellWords(tokens: string[], heredocs: Map<string, string>): string[] {
+  const words: string[] = [];
+  for (let index = 0; index < tokens.length; index += 1) {
     const token = tokens[index] ?? '';
-
-    if (isShellRedirection(token)) {
-      index += BARE_SHELL_REDIRECTION_PATTERN.test(token) ? 2 : 1;
-    } else if (!token.startsWith('--') || token === '--') {
+    if (BARE_SHELL_REDIRECTION_PATTERN.test(token)) {
       index += 1;
-    } else {
-      const flag = readFlagToken(tokens, index, heredocs);
-      index = flag.next;
-      if (flag.key === 'input' && isRecord(flag.value)) {
-        inputObject = flag.value;
-      } else if (!CLI_OPTION_KEYS.has(flag.key)) {
-        flags[flag.key] = flag.value;
-      }
+    } else if (!isShellRedirection(token)) {
+      words.push(
+        token.replace(CAT_SUBSTITUTION, (match, path: string) => heredocs.get(path) ?? match)
+      );
     }
   }
-
-  return { ...inputObject, ...flags };
+  return words;
 }
 
-// Read one `--flag`, `--flag=value`, or `--flag value` starting at `index`;
-// `next` is the index of the first unconsumed token. A bare flag reads as
-// `true`, every value is JSON-parsed when possible.
-function readFlagToken(
+// Commander parses the options before the toolset name; of those, only
+// `--input` reaches the tool.
+function readCommanderInput(options: string[]): string | undefined {
+  let input: string | undefined;
+  options.forEach((option, index) => {
+    if (option === '--input') {
+      input = options[index + 1];
+    } else if (option.startsWith('--input=')) {
+      input = option.slice('--input='.length);
+    }
+  });
+  return input;
+}
+
+// A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
+// returns only the tool arguments, or `undefined` where the CLI prints help or
+// rejects the invocation. shell-parse.test.ts runs both on the same tokens.
+function parseToolArguments(
   tokens: string[],
-  index: number,
-  heredocs: Map<string, string>
-): { key: string; value: unknown; next: number } {
-  const token = tokens[index] ?? '';
-  const [key = '', inlineValue] = token.slice(2).split('=', 2);
-  if (inlineValue !== undefined) {
-    return { key, value: parseCliValue(inlineValue, heredocs), next: index + 1 };
+  commanderInput: string | undefined
+): Record<string, unknown> | undefined {
+  let rawInput = commanderInput;
+  let attach: boolean | undefined;
+  const flagArgs: Record<string, unknown> = {};
+
+  let index = 0;
+  while (index < tokens.length) {
+    const token = tokens[index] ?? '';
+    index += 1;
+
+    if (token === '--help' || token === '-h') {
+      return undefined;
+    }
+    if (token === '--json') {
+      continue;
+    }
+    if (token === '--attach' || token === '--no-attach') {
+      const value = token === '--attach';
+      if (attach === !value) {
+        return undefined;
+      }
+      attach = value;
+      continue;
+    }
+    if (token === '-o') {
+      const path = tokens[index];
+      if (path === undefined || path.startsWith('-')) {
+        return undefined;
+      }
+      index += 1;
+      continue;
+    }
+    if (!token.startsWith('--') || token === '--') {
+      return undefined;
+    }
+
+    const equalsIndex = token.indexOf('=');
+    const key = token.slice(2, equalsIndex === -1 ? undefined : equalsIndex);
+    let value = equalsIndex === -1 ? undefined : token.slice(equalsIndex + 1);
+    const next = tokens[index];
+    if (value === undefined && next !== undefined && !next.startsWith('--')) {
+      value = next;
+      index += 1;
+    }
+
+    if (key === '' || ['help', 'json', 'attach', 'no-attach'].includes(key)) {
+      return undefined;
+    }
+    if (key === 'output') {
+      if (!value) {
+        return undefined;
+      }
+      continue;
+    }
+    if (key === 'input') {
+      if (value === undefined) {
+        return undefined;
+      }
+      rawInput = value;
+      continue;
+    }
+    flagArgs[key] = value === undefined ? true : coerceValue(value);
   }
 
-  const next = tokens[index + 1];
-  if (next !== undefined && !next.startsWith('-') && !isShellRedirection(next)) {
-    return { key, value: parseCliValue(next, heredocs), next: index + 2 };
+  if (rawInput === undefined) {
+    return flagArgs;
   }
-
-  return { key, value: true, next: index + 1 };
-}
-
-function parseCliValue(value: string, heredocs: Map<string, string>): unknown {
-  const catPath = CAT_SUBSTITUTION.exec(value.trim())?.[1];
-  const fromHeredoc = catPath === undefined ? undefined : heredocs.get(catPath);
-  const payload = fromHeredoc ?? value;
+  let input: unknown;
   try {
-    return JSON.parse(payload) as unknown;
+    input = JSON.parse(rawInput);
   } catch {
-    return payload;
+    // The shell expanded this (`$(cat file)` from an earlier command, `$VAR`)
+    // into what the CLI saw; keep the raw text so a failing assertion shows it.
+    return rawInput.includes('$') ? { input: rawInput, ...flagArgs } : undefined;
   }
+  return isRecord(input) ? { ...input, ...flagArgs } : undefined;
 }
 
-const CAT_SUBSTITUTION = /^\$\(\s*cat\s+(\S+)\s*\)$/;
+function coerceValue(value: string): unknown {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
 
 function extractCatHeredocs(command: string): Map<string, string> {
   const files = new Map<string, string>();
@@ -349,7 +399,10 @@ export function tokenizeShellCommand(command: string): string[] {
     }
 
     if (escaping) {
-      token += char;
+      // A backslash-newline continues the line and is removed entirely.
+      if (char !== '\n') {
+        token += char;
+      }
       escaping = false;
       continue;
     }

@@ -18,6 +18,21 @@ Storybook is a large TypeScript monorepo. The git root is the repo root, the mai
 - **TS execution**: Migrating from `jiti` to native `node` for running `.ts` files. New scripts should use `node ./path/file.ts` with explicit `.ts` import extensions (enabled by `allowImportingTsExtensions` in tsconfig). Legacy scripts still use `jiti` but should be migrated over time.
 - **Type checking**: Per-package checks (`yarn task check`, `scripts/check/check-package.ts`) run on the TypeScript 7 native compiler (the `typescript-native` npm alias); diagnostics are filtered to the checked package. `@storybook/vue3`, `@storybook/docgen-harness` (for its `.vue` fixtures), and `@storybook/svelte` use `vue-tsc` / `svelte-check` (TS 6 based). The workspace `typescript` dependency stays on TS 6 for IDEs and API consumers, so tsconfigs must remain valid for both (e.g. no `baseUrl`).
 
+### Storybook 11 docgen feature contract
+
+- `features.docgenServer` defaults to `true` for every React-renderer framework and the Angular,
+  Svelte, Vue 3, and Web Components Vite frameworks, including React frameworks that use Webpack.
+  Unsupported frameworks resolve it to `false`, even when it is explicitly `true`.
+- Resolution order is the stable option, deprecated `experimentalDocgenServer`, Storybook 10
+  legacy preservation, then the supported-framework default. The deprecated option and automatic
+  legacy preservation expire in Storybook 12.
+- With neither option explicit, preserve React `reactDocgen: false` and
+  `'react-docgen-typescript'`, plus Vue `docgen: false` or `true`, explicit engines, and custom docgen
+  `tsconfig` values, by disabling the server. Explicit `docgenServer: true` wins and warns that the
+  legacy setting is ignored. Do not translate RDT options such as `propFilter` or a Vue docgen
+  `tsconfig` automatically.
+- Angular `compodoc: false` controls only the legacy Compodoc run. It is not a server opt-out.
+
 ## Common Commands
 
 Run commands from the repository root unless stated otherwise.

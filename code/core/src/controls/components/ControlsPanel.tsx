@@ -253,7 +253,7 @@ function ServiceControlsPanel({
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
   // Custom argTypes (project + meta + story annotations) for the selected story arrive over the
-  // channel via STORY_PREPARED. With experimentalDocgenServer, prepareStory skips second-pass
+  // channel via STORY_PREPARED. With docgenServer, prepareStory skips second-pass
   // enhancers so these stay annotation-only; mergeServiceArgTypes layers them on server docgen.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];

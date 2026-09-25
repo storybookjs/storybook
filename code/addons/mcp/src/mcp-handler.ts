@@ -112,7 +112,7 @@ type McpServerHandlerParams = {
     source?: Source
   ) => Promise<string>;
   /**
-   * Optional in-process single-entry resolver for `experimentalDocgenServer` mode.
+   * Optional in-process single-entry resolver for `docgenServer` mode.
    * Selected (alongside `manifestProvider`) by the caller; the doc tools only consult
    * it for the local source. Undefined on older Storybook versions / when the feature is off.
    */

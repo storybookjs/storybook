@@ -22,7 +22,6 @@ import {
   experimental_docgenProvider,
   experimental_manifests,
   experimental_storyDocsProvider,
-  features,
   stylePreprocessorCheckPlugin,
   viteFinal,
 } from './preset.ts';
@@ -574,7 +573,7 @@ describe('viteFinal Compodoc generation', () => {
   });
 
   it('generates nothing when the docgen server extracts in-process instead', async () => {
-    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}, { experimentalDocgenServer: true }));
+    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}, { docgenServer: true }));
 
     expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
   });
@@ -582,7 +581,7 @@ describe('viteFinal Compodoc generation', () => {
   it('registers the documentation.json stub only when the docgen server is on', async () => {
     const withServer = await viteFinal(
       { root: WORKSPACE_ROOT },
-      optionsWith({}, { experimentalDocgenServer: true })
+      optionsWith({}, { docgenServer: true })
     );
     const withoutServer = await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
 
@@ -623,21 +622,6 @@ describe('viteFinal tsconfig path resolution', () => {
     )) as any;
 
     expect(result.resolve).toMatchObject({ alias, tsconfigPaths: true });
-  });
-});
-
-describe('features', () => {
-  const applyFeatures = features as (existing: unknown, options: unknown) => Promise<any>;
-
-  it('turns the docgen server on by default', async () => {
-    expect(await applyFeatures({}, {})).toMatchObject({ experimentalDocgenServer: true });
-  });
-
-  it('keeps other framework and core feature defaults', async () => {
-    expect(await applyFeatures({ componentsManifest: true }, {})).toMatchObject({
-      componentsManifest: true,
-      experimentalDocgenServer: true,
-    });
   });
 });
 
@@ -752,7 +736,7 @@ describe('viteFinal props-table wiring', () => {
         .mocked(logger.warn)
         .mock.calls.map(([message]) => String(message))
         .join('\n')
-    ).toContain('experimentalDocgenServer');
+    ).toContain('docgenServer');
   });
 
   const warningsFor = async (featureFlags: Record<string, boolean>) => {
@@ -766,11 +750,11 @@ describe('viteFinal props-table wiring', () => {
   it('points a components-manifest build with the docgen server off at the flag that fixes it', async () => {
     const warnings = await warningsFor({
       componentsManifest: true,
-      experimentalDocgenServer: false,
+      docgenServer: false,
     });
 
     expect(warnings).toContain('no components manifest');
-    expect(warnings).toContain('features: { experimentalDocgenServer: true }');
+    expect(warnings).toContain('features: { docgenServer: true }');
   });
 
   // `@storybook/addon-mcp` turns `componentsManifest` on from its own `features` hook, so the key
@@ -778,7 +762,7 @@ describe('viteFinal props-table wiring', () => {
   it('does not tell the user to drop a feature an addon set on their behalf', async () => {
     const warnings = await warningsFor({
       componentsManifest: true,
-      experimentalDocgenServer: false,
+      docgenServer: false,
     });
 
     expect(warnings).not.toMatch(/drop|remove/i);
@@ -786,13 +770,11 @@ describe('viteFinal props-table wiring', () => {
 
   it('stays quiet about the components manifest when the docgen server is on', async () => {
     await expect(
-      warningsFor({ componentsManifest: true, experimentalDocgenServer: true })
+      warningsFor({ componentsManifest: true, docgenServer: true })
     ).resolves.not.toContain('componentsManifest');
   });
 
   it('stays quiet about the components manifest when it was never asked for', async () => {
-    await expect(warningsFor({ experimentalDocgenServer: false })).resolves.not.toContain(
-      'componentsManifest'
-    );
+    await expect(warningsFor({ docgenServer: false })).resolves.not.toContain('componentsManifest');
   });
 });

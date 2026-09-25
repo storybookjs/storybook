@@ -269,7 +269,7 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     .filter((enhancer) => {
       // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
       // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
-      if (global.FEATURES?.experimentalDocgenServer && enhancer.secondPass) {
+      if (global.FEATURES?.docgenServer && enhancer.secondPass) {
         return false;
       }
       return true;

@@ -110,16 +110,16 @@ JSDoc comments above your components, and above their `@Input` and `@Output` mem
 
 Two engines can read them, and which one you get depends on a single feature flag:
 
-|                       | [`experimentalDocgenServer`](../../api/main-config/main-config-features.mdx#experimentaldocgenserver) on, the default here | flag off                             |
-| --------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------ |
-| Reads your components | on the Storybook server, from your TypeScript sources                                                                      | in the browser, from Compodoc output |
-| Compodoc              | never runs, and is not a dependency                                                                                        | runs on demand                       |
-| `documentation.json`  | never generated, never read                                                                                                | generated and read                   |
-| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx)                                   | controls and autodocs                |
+|                       | [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) on, the default | flag off                             |
+| --------------------- | --------------------------------------------------------------------------------------------- | ------------------------------------ |
+| Reads your components | on the Storybook server, from your TypeScript sources                                         | in the browser, from Compodoc output |
+| Compodoc              | never runs, and is not a dependency                                                           | runs on demand                       |
+| `documentation.json`  | never generated, never read                                                                   | generated and read                   |
+| Powers                | controls, autodocs, code snippets, and the [components manifest](../../ai/manifests.mdx)      | controls and autodocs                |
 
-`@storybook/angular-vite` turns the flag on from its own configuration, so server-side extraction is what you get unless you turn it off. The Webpack-based [`@storybook/angular`](./angular.mdx) is unaffected and always uses Compodoc.
+Storybook 11 enables `docgenServer` for `@storybook/angular-vite`, so server-side extraction is what you get unless you turn it off. The Webpack-based [`@storybook/angular`](./angular.mdx) is unaffected and always uses Compodoc.
 
-The flag-off column is temporary. It exists so that a project upgrading to 10.6 can keep the setup it already has while it migrates, and it is planned to be [deprecated](../../releases/features.mdx#deprecated) in Storybook 11 and removed in Storybook 12. From then on `@storybook/angular-vite` reads your components from source and nothing else. Plan on the default path rather than opting out.
+The Compodoc compatibility path is temporary. It remains available in Storybook 11 so an existing project can migrate, and it will be removed in Storybook 12. Plan on the default path rather than opting out.
 
 #### Server-side extraction (default)
 
@@ -133,7 +133,7 @@ See [Known limitations](#known-limitations) for what this path does not yet do.
 
 <Callout variant="warning" icon="⚠️">
 
-This path is a migration aid, not a supported long-term configuration. Turning `experimentalDocgenServer` off on `@storybook/angular-vite` is planned to be deprecated in Storybook 11 and removed in Storybook 12, along with the `compodoc` and `compodocArgs` framework options and the `setCompodocJson` wiring. Use it to keep an existing project working while you migrate, and plan on the default path.
+This path is a migration aid, not a supported long-term configuration. The Compodoc path, its `compodoc` and `compodocArgs` framework options, and the `setCompodocJson` wiring will be removed in Storybook 12. Use it to keep an existing project working while you migrate, and plan on the default path.
 
 </Callout>
 
@@ -145,7 +145,7 @@ import type { StorybookConfig } from '@storybook/angular-vite';
 const config: StorybookConfig = {
   framework: '@storybook/angular-vite',
   features: {
-    experimentalDocgenServer: false,
+    docgenServer: false,
   },
 };
 
@@ -179,7 +179,25 @@ Generation is controlled by the [`compodoc`](#compodoc) and [`compodocArgs`](#co
 
 #### Upgrading a project that already uses Compodoc
 
-`npx storybook automigrate` removes the setup that no longer does anything: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` call and the imports that fed it, the same two options on your `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency. It skips any project that sets `experimentalDocgenServer: false`.
+`npx storybook automigrate` removes the setup that no longer does anything: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` call and the imports that fed it, the same two options on your `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency. It skips any project that sets `docgenServer: false`.
+
+If your Storybook 10 configuration uses `experimentalDocgenServer: false`, the Storybook 11 automigration makes this change:
+
+```diff title=".storybook/main.ts"
+ import type { StorybookConfig } from '@storybook/angular-vite';
+
+ const config: StorybookConfig = {
+   framework: '@storybook/angular-vite',
+   features: {
+-    experimentalDocgenServer: false,
++    docgenServer: false,
+   },
+ };
+
+ export default config;
+```
+
+If you only set `compodoc: false`, the server remains on; `compodoc` controls the legacy engine and is not a server opt-out.
 
 If you keep the wiring instead of running the automigration, nothing breaks:
 
@@ -505,7 +523,7 @@ Default: `true`
 
 Whether to run [Compodoc](https://compodoc.app/) to generate `documentation.json`. When `true`, the framework runs Compodoc once per Storybook run, replacing the previous `documentation.json`. Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
 
-This option only takes effect with [`experimentalDocgenServer: false`](#using-compodoc-instead). On the default path Compodoc never runs whatever this is set to.
+This option only takes effect with [`docgenServer: false`](#using-compodoc-instead). On the default path Compodoc never runs whatever this is set to.
 
 It controls the Compodoc run and nothing else. Setting it to `false` does not turn off component documentation: on the default path your components are still read from their TypeScript sources.
 
@@ -519,7 +537,7 @@ Default: `['-e', 'json', '-d', '.']`
 
 Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.
 
-Like `compodoc`, this is only read when [`experimentalDocgenServer` is off](#using-compodoc-instead), and is planned for removal on the same schedule.
+Like `compodoc`, this is only read when [`docgenServer` is off](#using-compodoc-instead), and is planned for removal on the same schedule.
 
 #### `propsTable`
 
@@ -565,6 +583,6 @@ To drop a single member that `'api'` keeps, tag it `@ignore`:
 protected internalHelper = 0;
 ```
 
-`'api'` needs the `experimentalDocgenServer` feature, which this framework turns on by default, so it works without any extra configuration.
+`'api'` needs the `docgenServer` feature, which Storybook turns on by default for this framework, so it works without any extra configuration.
 If you have [turned that feature off](#using-compodoc-instead), Storybook reads your components through Compodoc, whose visibility data Storybook cannot interpret reliably, so only `'all'` and `'inputs'` apply.
 Asking for `'api'` then logs a warning rather than silently changing what you see.

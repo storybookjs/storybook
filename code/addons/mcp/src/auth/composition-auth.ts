@@ -166,7 +166,7 @@ export class CompositionAuth {
    * Create a manifest provider for multi-source mode.
    *
    * Remote sources are fetched over HTTP with auth and caching; the local source fetches from
-   * `localOrigin`. In `experimentalDocgenServer` mode core 404s the local `/manifests/*.json`, and
+   * `localOrigin`. In `docgenServer` mode core 404s the local `/manifests/*.json`, and
    * the composition reads that source through its own access instead of this provider.
    */
   createManifestProvider(localOrigin: string): ManifestProvider {

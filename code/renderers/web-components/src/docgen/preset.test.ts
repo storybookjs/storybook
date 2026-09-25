@@ -9,6 +9,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import { findFilesUp } from 'storybook/internal/common';
 
+import type { WebComponentsFrameworkOptions } from './component-docgen/config/resolve-manifest-paths.ts';
 import { experimental_docgenProvider, experimental_manifests } from './preset.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -21,8 +22,8 @@ beforeEach(() => {
 });
 
 const optionsWith = (
-  features: Record<string, unknown>,
-  frameworkOptions: Record<string, unknown> = {}
+  features: Record<string, boolean>,
+  frameworkOptions: WebComponentsFrameworkOptions = {}
 ) => {
   const options = {
     configDir: resolve('/workspace/.storybook'),
@@ -43,7 +44,7 @@ const optionsWith = (
 
 describe('experimental_docgenProvider', () => {
   it('contributes no descriptor when the docgen server flag is off', async () => {
-    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
+    expect(await experimental_docgenProvider([], optionsWith({ docgenServer: false }))).toEqual([]);
   });
 
   it('contributes the docgen worker descriptor', async () => {
@@ -52,9 +53,7 @@ describe('experimental_docgenProvider', () => {
     });
     vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
 
-    expect(
-      await experimental_docgenProvider([], optionsWith({ experimentalDocgenServer: true }))
-    ).toEqual([
+    expect(await experimental_docgenProvider([], optionsWith({ docgenServer: true }))).toEqual([
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
@@ -68,10 +67,10 @@ describe('experimental_docgenProvider', () => {
 describe('experimental_manifests', () => {
   it.each([
     ['docgen server flag off', { componentsManifest: true }, {}],
-    ['components manifest flag off', { experimentalDocgenServer: true }, {}],
+    ['components manifest flag off', { docgenServer: true }, {}],
     [
       'both flags on',
-      { experimentalDocgenServer: true, componentsManifest: true },
+      { docgenServer: true, componentsManifest: true },
       {
         components: {
           v: 0,

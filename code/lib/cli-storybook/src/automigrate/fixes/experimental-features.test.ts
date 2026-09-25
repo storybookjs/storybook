@@ -66,6 +66,16 @@ describe('experimental feature flag automigrations', () => {
   });
 
   describe('check', () => {
+    it.each(['11.0.0-alpha.1', '11.0.0', '12.0.0'])(
+      'does not enable the retired experimental docgen flag in %s',
+      async (storybookVersion) => {
+        expect(
+          await enableExperimentalDocgenServer.check(
+            checkOptions({ storybookVersion, requested: true })
+          )
+        ).toBeNull();
+      }
+    );
     // Each flag carries its own `introducedIn`, so a flag added in a later minor must stay hidden
     // on an upgrade that does not reach it. Both shipped flags are 10.5, so this needs its own fix.
     describe('per-feature introducedIn', () => {
@@ -173,8 +183,8 @@ describe('experimental feature flag automigrations', () => {
       ['@storybook/react-webpack5', true],
       ['@storybook/vue3-vite', true],
       ['@storybook/angular-vite', true],
-      ['@storybook/svelte-vite', false],
-      ['@storybook/web-components-vite', false],
+      ['@storybook/svelte-vite', true],
+      ['@storybook/web-components-vite', true],
       ['@storybook/preact-vite', false],
       ['@storybook/angular', false],
     ])('%s offers enable-experimental-docgen-server: %s', async (framework, expected) => {
@@ -182,6 +192,12 @@ describe('experimental feature flag automigrations', () => {
         checkOptions({ mainConfig: { framework: { name: framework } } as StorybookConfigRaw })
       );
       expect(result !== null).toBe(expected);
+    });
+
+    it('does not offer the docgen-server migration without a framework', async () => {
+      await expect(
+        enableExperimentalDocgenServer.check(checkOptions({ mainConfig: { stories: [] } }))
+      ).resolves.toBeNull();
     });
 
     it('offers enable-experimental-review regardless of the docgen provider', async () => {
@@ -214,6 +230,19 @@ describe('experimental feature flag automigrations', () => {
         );
       }
     );
+  });
+
+  it('exposes a complete custom automigration descriptor', async () => {
+    const fix = createExperimentalFeatureFix({
+      id: 'enable-test-flag',
+      name: 'experimentalReview',
+      introducedIn: '10.5.0',
+      link: 'https://example.com/test-flag',
+      prompt: 'Enable the test flag.',
+    });
+    expect(fix.defaultSelected).toBe(false);
+    expect(fix.prompt()).toBe('Enable the test flag.');
+    await expect(fix.check(checkOptions({ requested: true }))).resolves.toEqual({});
   });
 
   describe('run', () => {

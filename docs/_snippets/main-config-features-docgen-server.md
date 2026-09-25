@@ -1,23 +1,21 @@
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF 3"
 export default {
-  // Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-  framework: '@storybook/your-framework',
+  framework: '@storybook/react-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 };
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF 3"
-// Replace your-framework with the framework you are using, e.g. react-vite, nextjs, vue3-vite, etc.
-import type { StorybookConfig } from '@storybook/your-framework';
+import type { StorybookConfig } from '@storybook/react-vite';
 
 const config: StorybookConfig = {
-  framework: '@storybook/your-framework',
+  framework: '@storybook/react-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 };
 
@@ -25,29 +23,51 @@ export default config;
 ```
 
 ```ts filename=".storybook/main.ts" renderer="react" language="ts" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
+import { defineMain } from '@storybook/react-vite/node';
 
 export default defineMain({
-  framework: '@storybook/your-framework',
+  framework: '@storybook/react-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 });
 ```
 
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
-
 ```js filename=".storybook/main.js" renderer="react" language="js" tabTitle="CSF Next 🧪"
-// Replace your-framework with the framework you are using (e.g., react-vite, nextjs, nextjs-vite)
-import { defineMain } from '@storybook/your-framework/node';
+import { defineMain } from '@storybook/react-vite/node';
 
 export default defineMain({
-  framework: '@storybook/your-framework',
+  framework: '@storybook/react-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF 3"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
+  },
+};
+
+export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="angular" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from '@storybook/angular-vite/node';
+
+export default defineMain({
+  framework: '@storybook/angular-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    docgenServer: false,
   },
 });
 ```
@@ -57,7 +77,7 @@ export default {
   framework: '@storybook/vue3-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 };
 ```
@@ -69,7 +89,7 @@ const config: StorybookConfig = {
   framework: '@storybook/vue3-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 };
 
@@ -83,12 +103,10 @@ export default defineMain({
   framework: '@storybook/vue3-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 });
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->
 
 ```js filename=".storybook/main.js" renderer="vue" language="js" tabTitle="CSF Next 🧪"
 import { defineMain } from '@storybook/vue3-vite/node';
@@ -97,7 +115,7 @@ export default defineMain({
   framework: '@storybook/vue3-vite',
   stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
   features: {
-    experimentalDocgenServer: true,
+    docgenServer: false,
   },
 });
 ```

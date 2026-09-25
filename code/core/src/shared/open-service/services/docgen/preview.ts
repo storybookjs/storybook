@@ -10,7 +10,7 @@ export type DocgenService = ServiceInstanceOf<typeof docgenServiceDef>;
 export default () =>
   definePreviewAddon({
     beforeAll: () => {
-      if (globalThis.FEATURES?.experimentalDocgenServer) {
+      if (globalThis.FEATURES?.docgenServer) {
         registerService(docgenServiceDef);
       }
     },

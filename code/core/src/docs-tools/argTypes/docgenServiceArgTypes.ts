@@ -14,7 +14,7 @@ import { combineParameters } from '../../preview-api/modules/store/parameters.ts
 /**
  * Builds the Controls/ArgTypes table shape from server docgen and custom argTypes.
  *
- * Mirrors the legacy `prepareStory` enhancer chain when `experimentalDocgenServer` is enabled:
+ * Mirrors the legacy `prepareStory` enhancer chain when `docgenServer` is enabled:
  * server docgen stands in for `enhanceArgTypes`, user annotations from `customArgTypes` layer on
  * top, then `inferArgTypes` and `inferControls` run the second pass that `prepareStory` skips.
  *

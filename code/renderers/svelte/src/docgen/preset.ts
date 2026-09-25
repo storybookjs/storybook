@@ -16,7 +16,7 @@ export const experimental_docgenProvider = async (
 ): Promise<DocgenProviderDescriptor[]> => {
   const features = await options.presets.apply('features', {});
 
-  if (!features?.experimentalDocgenServer) {
+  if (!features?.docgenServer) {
     return existing;
   }
 
@@ -33,7 +33,7 @@ export const experimental_manifests: PresetPropertyFn<
 > = async (existingManifests = {}, options) => {
   const features = await options.presets.apply('features', {});
 
-  if (!features?.experimentalDocgenServer || !features?.componentsManifest) {
+  if (!features?.docgenServer || !features?.componentsManifest) {
     return existingManifests;
   }
 

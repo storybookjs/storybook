@@ -1,4 +1,5 @@
 import { fileURLToPath } from 'node:url';
+
 import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';

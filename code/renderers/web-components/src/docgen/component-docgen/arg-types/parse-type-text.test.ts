@@ -38,7 +38,9 @@ describe('parseTypeText', () => {
     },
     {
       input: "'self' | { id: string }",
-      output: { type: { name: 'other', value: "'self' | { id: string }" }, control: 'object' },
+      output: {
+        type: { name: 'other', value: "'self' | { id: string }" },
+      },
     },
     {
       input: "'a' | Foo",
@@ -50,11 +52,11 @@ describe('parseTypeText', () => {
     },
     {
       input: "'auto' | true",
-      output: { type: { name: 'other', value: "'auto' | true" }, control: 'object' },
+      output: { type: { name: 'other', value: "'auto' | true" } },
     },
     {
       input: "'auto' | Date",
-      output: { type: { name: 'other', value: "'auto' | Date" }, control: 'object' },
+      output: { type: { name: 'other', value: "'auto' | Date" } },
     },
     {
       input: "'a' | () => void",
@@ -72,7 +74,7 @@ describe('parseTypeText', () => {
       input: "Array<'a' | 'b'>",
       output: {
         type: { name: 'array', value: { name: 'enum', value: ['a', 'b'] } },
-        control: 'multi-select',
+        control: { type: 'multi-select' },
         options: ['a', 'b'],
       },
     },
@@ -80,7 +82,7 @@ describe('parseTypeText', () => {
       input: "('a' | 'b')[]",
       output: {
         type: { name: 'array', value: { name: 'enum', value: ['a', 'b'] } },
-        control: 'multi-select',
+        control: { type: 'multi-select' },
         options: ['a', 'b'],
       },
     },
@@ -88,7 +90,7 @@ describe('parseTypeText', () => {
       input: "Array<'a' | Foo>",
       output: {
         type: { name: 'array', value: { name: 'enum', value: ['a'] } },
-        control: 'multi-select',
+        control: { type: 'multi-select' },
         options: ['a'],
       },
     },
@@ -96,7 +98,7 @@ describe('parseTypeText', () => {
       input: "('a' | Foo)[]",
       output: {
         type: { name: 'array', value: { name: 'enum', value: ['a'] } },
-        control: 'multi-select',
+        control: { type: 'multi-select' },
         options: ['a'],
       },
     },
@@ -146,7 +148,7 @@ describe('parseTypeText', () => {
     },
     {
       input: 'Date | null',
-      output: { type: { name: 'date' }, control: 'date' },
+      output: { type: { name: 'date' }, control: { type: 'date' } },
     },
     {
       input: '(size: Size) => void',

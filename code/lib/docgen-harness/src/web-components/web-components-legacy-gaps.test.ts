@@ -13,7 +13,16 @@ import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
-const OSA_CLOSED = new Set<string>(['literal unions and JSDoc tags reach argTypes structurally']);
+const COMPONENT_TAGS_MARKER =
+  'component-level jsDocTags carry the CEM deprecated and summary fields';
+const STORY_META_MARKER = 'the story meta docblock reaches the payload description and jsDocTags';
+const OSA_CLOSED = new Set<string>([
+  'literal unions and JSDoc tags reach argTypes structurally',
+  'events carry structured type information and descriptions',
+  'CEM 2.1.0 CSS states are recorded',
+  COMPONENT_TAGS_MARKER,
+  STORY_META_MARKER,
+]);
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
@@ -82,12 +91,12 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     expect(readBaseline('unionArgTypes')).toContain('default');
   });
 
-  marker('@summary reaches the component description', (readBaseline) => {
-    expect(readBaseline('unionDescription')).toContain('Compact variant fixture.');
+  gapTest('@summary reaches the component description', () => {
+    expect(baseline('unionDescription')).toContain('Compact variant fixture.');
   });
 
-  marker('class-level @deprecated reaches the component description', (readBaseline) => {
-    expect(readBaseline('unionDescription')).toContain('Use lit-basic-attributes instead.');
+  gapTest('class-level @deprecated reaches the component description', () => {
+    expect(baseline('unionDescription')).toContain('Use lit-basic-attributes instead.');
   });
 
   marker('events carry structured type information and descriptions', (readBaseline) => {
@@ -97,7 +106,13 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 
   marker('CEM 2.1.0 CSS states are recorded', (readBaseline) => {
-    expect(readBaseline('v2ArgTypes')).toContain('  "open": {');
+    const v2ArgTypes = parseArgTypesSnapshot(readBaseline('v2ArgTypes'));
+    expect(Object.values(v2ArgTypes)).toContainEqual(
+      expect.objectContaining({
+        name: 'open',
+        table: expect.objectContaining({ category: 'css states' }),
+      })
+    );
   });
 
   gapTest('the WCA experimental shape triggers a deprecation warning', async () => {
@@ -111,18 +126,14 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
 });
 
 describe('OSA payload gaps (red until the server mapper closes them)', () => {
-  const componentTagsName = 'component-level jsDocTags carry the CEM deprecated and summary fields';
-
-  osaGapTest(componentTagsName)(componentTagsName, () => {
+  osaGapTest(COMPONENT_TAGS_MARKER)(COMPONENT_TAGS_MARKER, () => {
     const payload = fixedBaseline('unionPayload');
     expect(payload).not.toContain('"jsDocTags": {}');
     expect(payload).toMatch(/"deprecated": \[\s*"Use lit-basic-attributes instead\."/);
     expect(payload).toMatch(/"summary": \[\s*"Compact variant fixture\."/);
   });
 
-  const storyMetaName = 'the story meta docblock reaches the payload description and jsDocTags';
-
-  osaGapTest(storyMetaName)(storyMetaName, () => {
+  osaGapTest(STORY_META_MARKER)(STORY_META_MARKER, () => {
     const payload = fixedBaseline('basicPayload');
     expect(payload).toContain(
       '"description": "Story-level docs for the basic attributes fixture."'
@@ -137,15 +148,17 @@ describe('manifest shape regressions', () => {
     expect(baseline('v2ArgTypes')).toBe(baseline('basicArgTypes'));
   });
 
-  test('the 2.1.0 recording differs from 1.0.0 only by the readonly control on count', () => {
+  test('the 2.1.0 recording differs from 1.0.0 only by the readonly control on count and cssStates', () => {
     const v1 = parseArgTypesSnapshot(baseline('basicArgTypes', 'osa-'));
     const v2 = parseArgTypesSnapshot(baseline('v2ArgTypes', 'osa-'));
 
     expect(v2.count.control).toBe(false);
     expect(v1.count.control).toBeUndefined();
+    expect(v2['open-state'].table.category).toBe('css states');
 
     const { control: _control, ...v2CountWithoutControl } = v2.count;
-    expect({ ...v2, count: v2CountWithoutControl }).toEqual(v1);
+    const { 'open-state': _openState, ...v2WithoutOpenState } = v2;
+    expect({ ...v2WithoutOpenState, count: v2CountWithoutControl }).toEqual(v1);
   });
 
   it.each([

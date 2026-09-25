@@ -19,8 +19,8 @@ const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
 
 export interface ParsedTypeText {
   type: SBType;
-  /** Only when core's `inferControls` would not derive it from `type`. */
-  control?: StrictInputType['control'];
+  /** Only when core's `inferControls` would not derive it from `type`; object form, since service argTypes skip the preview normalizer. */
+  control?: Exclude<StrictInputType['control'], string>;
   options?: (string | number)[];
 }
 
@@ -37,11 +37,12 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     return { type: { name: 'enum', value: literalMembers } };
   }
   if (hasStructuralLiteralUnion(members)) {
+    const hasCallable = members.some(
+      (member) => parseLiteral(member) === undefined && isCallable(member)
+    );
     return {
       type: { name: 'other', value: members.join(' | ') },
-      control: members.some((member) => parseLiteral(member) === undefined && isCallable(member))
-        ? false
-        : 'object',
+      ...(hasCallable ? { control: false as const } : {}),
     };
   }
 
@@ -60,13 +61,13 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
       return element.name === 'enum'
         ? {
             type: { name: 'array', value: element },
-            control: 'multi-select',
+            control: { type: 'multi-select' },
             options: element.value as (string | number)[],
           }
         : { type: { name: 'array', value: element } };
     }
     if (member === 'Date') {
-      return { type: { name: 'date' }, control: 'date' };
+      return { type: { name: 'date' }, control: { type: 'date' } };
     }
     if (isBareObjectType(member)) {
       return { type: { name: 'object', value: {} } };

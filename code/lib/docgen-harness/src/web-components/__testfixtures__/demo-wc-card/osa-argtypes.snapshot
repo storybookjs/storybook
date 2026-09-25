@@ -2,7 +2,6 @@
   "--demo-wc-card-back-color": {
     "description": "Font color for back",
     "name": "--demo-wc-card-back-color",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -13,13 +12,12 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
   "--demo-wc-card-front-color": {
     "description": "Font color for front",
     "name": "--demo-wc-card-front-color",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -30,13 +28,12 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
   "--demo-wc-card-header-font-size": {
     "description": "Header font size",
     "name": "--demo-wc-card-header-font-size",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -47,24 +44,17 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
-  "back": {
+  "back-part": {
     "description": "Back of the card",
     "name": "back",
-    "required": false,
     "table": {
       "category": "css shadow parts",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
   "back-side": {
@@ -99,21 +89,24 @@
       "name": "boolean",
     },
   },
-  "front": {
-    "description": "Front of the card",
-    "name": "front",
-    "required": false,
+  "default-slot": {
+    "description": "This is an unnamed slot (the default slot)",
+    "name": "default",
     "table": {
-      "category": "css shadow parts",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
+      "category": "slots",
     },
     "type": {
-      "name": "void",
+      "name": "string",
+    },
+  },
+  "front-part": {
+    "description": "Front of the card",
+    "name": "front",
+    "table": {
+      "category": "css shadow parts",
+    },
+    "type": {
+      "name": "string",
     },
   },
   "header": {
@@ -161,21 +154,32 @@
       },
     },
   },
-  "side-changed": {
+  "side-changed-event": {
+    "control": false,
     "description": "Fires whenever it switches between front/back",
     "name": "side-changed",
-    "required": false,
     "table": {
       "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
       "type": {
         "summary": "CustomEvent",
       },
     },
     "type": {
-      "name": "void",
+      "name": "other",
+      "value": "CustomEvent",
+    },
+  },
+  "toggle-method": {
+    "description": undefined,
+    "name": "toggle",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "()",
+      },
+    },
+    "type": {
+      "name": "function",
     },
   },
 }

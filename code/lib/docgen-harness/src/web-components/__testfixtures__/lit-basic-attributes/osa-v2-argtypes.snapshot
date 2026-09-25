@@ -80,4 +80,14 @@
       "name": "string",
     },
   },
+  "open-state": {
+    "description": "Set while the panel is open.",
+    "name": "open",
+    "table": {
+      "category": "css states",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
 }

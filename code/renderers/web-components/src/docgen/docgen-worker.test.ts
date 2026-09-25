@@ -1,7 +1,7 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { readFile } from 'node:fs/promises';
+import { readFile, stat } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -18,6 +18,7 @@ beforeEach(() => {
   vol.reset();
   vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
   vi.mocked(readFile).mockImplementation(memfs.promises.readFile as typeof readFile);
+  vi.mocked(stat).mockImplementation(memfs.promises.stat as typeof stat);
   vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
   vi.mocked(logger.warn).mockImplementation(() => {});
 });

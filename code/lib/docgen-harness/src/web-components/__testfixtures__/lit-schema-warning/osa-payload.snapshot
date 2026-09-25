@@ -1,0 +1,61 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'Label'",
+          "fieldName": "label",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "0",
+          "fieldName": "count",
+          "name": "count",
+          "type": {
+            "text": "number",
+          },
+        },
+      ],
+      "customElement": true,
+      "description": "Exercises Lit schema warning handling.",
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "label",
+          "default": "'Label'",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "attribute": "count",
+          "default": "0",
+          "kind": "field",
+          "name": "count",
+          "type": {
+            "text": "number",
+          },
+        },
+      ],
+      "name": "LitSchemaWarning",
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-schema-warning",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Exercises Lit schema warning handling.",
+  "id": "lit-schema-warning",
+  "jsDocTags": {},
+  "name": "lit-schema-warning",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+  "warning": "custom-elements.json has 1 schema violation(s); first: /modules/0/declarations/0/members/0 must have required property 'kind'",
+}

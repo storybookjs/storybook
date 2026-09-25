@@ -11,5 +11,9 @@ export function namedItems<T extends { name: string }>(value: unknown): T[] {
   ) as T[];
 }
 
+export function errorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
+}
+
 export const trimmedOrUndefined = (text: unknown): string | undefined =>
   typeof text === 'string' ? text.trim() || undefined : undefined;

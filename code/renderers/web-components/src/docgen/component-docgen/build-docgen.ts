@@ -4,8 +4,7 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 import { resolve } from 'node:path';
 
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
-import { isFailedManifest, type ManifestLoadResult } from './manifest/load-manifest.ts';
-import { resolveDeclarationForTag } from './manifest/resolve-declaration.ts';
+import type { ManifestSnapshot } from './manifest/manifest-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
 import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
 import { trimmedOrUndefined } from './utils.ts';
@@ -16,6 +15,8 @@ export interface WebComponentsDocgenOptions {
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
+  /** Surfaced to payload consumers such as the docs toolset; no docs block renders it yet. */
+  warning?: string;
   customElementsManifest?: {
     manifestPath: string;
     declaration: ManifestDeclaration;
@@ -23,7 +24,7 @@ export type WebComponentsDocgenPayload = DocgenPayload & {
 };
 
 export interface BuildDocgenContext {
-  manifests: ManifestLoadResult[];
+  manifests: ManifestSnapshot;
   typeProperty: string;
 }
 
@@ -60,16 +61,15 @@ export function buildDocgenPayload(
 
   const { tag } = resolved;
 
-  const found = resolveDeclarationForTag(context.manifests, tag);
+  const found = context.manifests.tags.get(tag);
   if (!found) {
     return fail(
       tag,
-      context.manifests.find(isFailedManifest)?.error ?? {
+      context.manifests.errors[0] ?? {
         name: 'tag-not-found',
         message:
-          `No declaration for "${tag}" was found in ${context.manifests
-            .map((manifest) => manifest.path)
-            .join(', ')}. ` + 'If the element is new, rerun the custom elements manifest analyzer.',
+          `No declaration for "${tag}" was found in ${context.manifests.paths.join(', ')}. ` +
+          'If the element is new, rerun the custom elements manifest analyzer.',
       }
     );
   }
@@ -83,6 +83,7 @@ export function buildDocgenPayload(
     jsDocTags: {},
     argTypes: mapArgTypes(found.declaration, context.typeProperty),
     renderer: 'web-components',
+    ...(found.warning ? { warning: found.warning } : {}),
     customElementsManifest: {
       manifestPath: found.manifestPath,
       declaration: found.declaration,

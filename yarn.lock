@@ -10911,6 +10911,7 @@ __metadata:
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/node": "npm:^22.19.1"
     "@types/tmp": "npm:^0.2.6"
+    ajv: "npm:^8.17.1"
     cross-spawn: "npm:^7.0.6"
     custom-elements-manifest: "npm:^2.1.0"
     lit: "npm:2.3.1"

@@ -29,14 +29,21 @@ The rest of this guide will help you upgrade successfully, either automatically 
   - [Vitest 4 or higher for the Vitest addon](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
   - [Next.js 15 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up)
   - [Angular 21 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-requires-angular-21-or-higher)
+  - [Preact 10.8.0 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preact-require-v1080-and-up)
   - [Create React App preset removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
+  - [Raised browser support floors for the manager UI](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#raised-browser-support-floors)
+- Changed defaults
+  - [`storybook dev` no longer opens a browser by default](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [Docs Code panel enabled by default](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#docs-code-panel-enabled-by-default)
 - Configuration changes
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
 - Internal tooling changes
   - [Update custom CSF tooling to the unified mutation API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-csf-tools-use-the-unified-mutation-api)
+- Package removals
+  - [`@storybook/react-dom-shim` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookreact-dom-shim-removed)
 - [Changes for addon authors](../addons/addon-migration-guide.mdx)
 
 Storybook accepts prerelease Node.js builds when their version meets the minimum requirement. For example, Node.js 26.1.0-rc.0 is supported, but 22.12.0-rc.0 is older than 22.12.0 and is not supported.

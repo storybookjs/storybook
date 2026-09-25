@@ -83,4 +83,10 @@ jobs:
         run: cd code && yarn exec playwright install chromium --with-deps
 
       - name: test
+        if: runner.os != 'Windows'
         run: yarn test
+
+      # Other workspace suites include POSIX-specific path assumptions; Linux runs the full suite.
+      - name: test (Windows)
+        if: runner.os == 'Windows'
+        run: yarn test --project core --project @storybook/mcp --project @storybook/addon-vitest

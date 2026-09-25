@@ -85,8 +85,9 @@ export const sourceUrlManifestProvider: ManifestProvider = async (_request, path
   if (!source?.url) {
     throw new ManifestGetError('The local source has no URL to fetch manifests from.');
   }
-  const base = `${source.url.replace(/\/$/, '')}/`;
-  return fetchManifestText(new URL(path.replace(/^\.\//, ''), base).toString());
+  // Concatenated rather than resolved with `new URL`, which would let a `$ref` such as
+  // `../http:evil.example/x.json` from the remote manifest leave the source's origin.
+  return fetchManifestText(`${source.url.replace(/\/$/, '')}${path.replace(/^\.\//, '/')}`);
 };
 
 const MANIFEST_FETCH_TIMEOUT_MS = 10_000;

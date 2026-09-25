@@ -39,7 +39,7 @@ describe('resolveManifestPaths', () => {
     });
 
     expect(resolveManifestPaths('/workspace/.storybook', { customElementsManifest })).toEqual(
-      expectedManifestPaths
+      expectedManifestPaths.map((path) => resolve(path))
     );
   });
 
@@ -50,7 +50,7 @@ describe('resolveManifestPaths', () => {
     vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
 
     expect(resolveManifestPaths('/workspace/.storybook', {})).toEqual([
-      '/workspace/dist/custom-elements.json',
+      resolve('/workspace/dist/custom-elements.json'),
     ]);
   });
 
@@ -65,7 +65,7 @@ describe('resolveManifestPaths', () => {
       resolveManifestPaths('/workspace/.storybook', {
         customElementsManifest: '../custom-elements.json',
       })
-    ).toEqual(['/workspace/custom-elements.json']);
+    ).toEqual([resolve('/workspace/custom-elements.json')]);
     expect(findFilesUp).not.toHaveBeenCalled();
   });
 
@@ -78,7 +78,7 @@ describe('resolveManifestPaths', () => {
     vi.mocked(findFilesUp).mockReturnValue(['/workspace/apps/foo/package.json']);
 
     expect(resolveManifestPaths('/workspace/apps/foo/config/storybook', {})).toEqual([
-      '/workspace/apps/foo/dist/custom-elements.json',
+      resolve('/workspace/apps/foo/dist/custom-elements.json'),
     ]);
     expect(findFilesUp).toHaveBeenCalledWith(
       ['package.json'],

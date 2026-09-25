@@ -8,6 +8,7 @@ import type { ChannelEvent } from './types.ts';
 import { useUniversalStore as useUniversalStoreManager } from './use-universal-store-manager.ts';
 
 vi.mock('./instances');
+vi.mock('./first-party-store-ids');
 
 const mockChannelListeners = new Map<string, Set<(...args: any[]) => void>>();
 

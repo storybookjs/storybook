@@ -83,7 +83,7 @@ export { createStoriesToolset } from '../shared/open-service/toolsets/stories/de
 export type { PreviewStoriesOutput } from '../shared/open-service/toolsets/stories/definition.ts';
 export { reviewToolset } from '../shared/open-service/toolsets/review/definition.ts';
 
-export { UniversalStore as experimental_UniversalStore } from '../shared/universal-store/index.ts';
+export { UniversalStore as internal_UniversalStore } from '../shared/universal-store/index.ts';
 export { MockUniversalStore as experimental_MockUniversalStore } from '../shared/universal-store/mock.ts';
 export {
   getStatusStoreByTypeId as experimental_getStatusStore,

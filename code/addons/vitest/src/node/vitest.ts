@@ -2,7 +2,7 @@ import process from 'node:process';
 
 import { Channel } from 'storybook/internal/channels';
 import {
-  experimental_UniversalStore,
+  internal_UniversalStore,
   experimental_getStatusStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
@@ -19,7 +19,7 @@ import type { ErrorLike, FatalErrorEvent, StoreEvent, StoreState } from '../type
 import { TestManager } from './test-manager.ts';
 
 // Destructure the imported functions for easier access
-const UniversalStore = experimental_UniversalStore;
+const UniversalStore = internal_UniversalStore;
 const getStatusStore = experimental_getStatusStore;
 const getTestProviderStore = experimental_getTestProviderStore;
 

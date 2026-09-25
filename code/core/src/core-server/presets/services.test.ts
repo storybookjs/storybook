@@ -1,4 +1,5 @@
 import type { Options } from 'storybook/internal/types';
+import * as v from 'valibot';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { ToolsetCtx } from '../../shared/open-service/toolset-definition.ts';
@@ -92,18 +93,16 @@ describe('services preset hook: docs toolset', () => {
       });
     });
 
-    it('requires a storybookId on show and answers a missing one with the available sources', async () => {
+    it('defaults show to the local Storybook and answers an unknown storybookId with the available sources', async () => {
       await services(undefined, optionsWithRefs(RESHAPED));
       const { show, showStory } = getToolset('docs').methods;
 
       expect(show.input.entries).toHaveProperty('storybookId');
       expect(showStory.input.entries).toHaveProperty('storybookId');
 
-      const missing = await show.handler({ id: 'button' } as never, cliCtx);
-      expect(missing.ok).toBe(false);
-      expect(missing.markdown).toContain(
-        'storybookId is required. Available sources: local, reshaped'
-      );
+      const local = await show.handler(v.parse(show.input, { id: 'card' }) as never, cliCtx);
+      expect(local.ok).toBe(true);
+      expect(local.markdown).toContain('Card');
 
       const unknown = await show.handler({ id: 'button', storybookId: 'nope' } as never, cliCtx);
       expect(unknown.ok).toBe(false);

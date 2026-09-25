@@ -355,7 +355,7 @@ Type:
 
 Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
 
-When `options.multiSource` is `true`, the tool schema requires `storybookId` input.
+When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`.
 
 #### `addGetStoryDocumentationTool`
 

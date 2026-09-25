@@ -12,8 +12,6 @@
  * this access before the `services` preset hooks have necessarily run.
  */
 
-import type { StoryIndex } from 'storybook/internal/types';
-
 import { DOCGEN_SERVICE_ID } from '../../services/docgen/paths.ts';
 import { STORY_DOCS_SERVICE_ID } from '../../services/story-docs/paths.ts';
 import { getRegisteredServices, getService } from '../../service-registry.ts';
@@ -23,19 +21,12 @@ import { createServiceDocsAccess } from './access-service.ts';
 import type { DocsAccess } from './access.ts';
 
 export type LocalDocsAccessOptions = {
-  storyIndex: { getIndex: () => Promise<StoryIndex> };
   /** Reads the live inline manifests, e.g. core-server's `loadManifests`. */
   getManifests: () => Promise<RawManifests>;
 };
 
-export function createLocalDocsAccess({
-  storyIndex,
-  getManifests,
-}: LocalDocsAccessOptions): DocsAccess {
-  const serviceAccess = createServiceDocsAccess({
-    storyIndex,
-    getService: getService as ToolsetGetService,
-  });
+export function createLocalDocsAccess({ getManifests }: LocalDocsAccessOptions): DocsAccess {
+  const serviceAccess = createServiceDocsAccess({ getService: getService as ToolsetGetService });
   const manifestAccess = createManifestDocsAccess({ getManifests });
   // The service access hard-requires every one of these; a partial registration would make every
   // call throw, so it degrades to the manifests instead of trusting that core's registration block

@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { ProjectType } from 'storybook/internal/cli';
+import { ProjectType, installSkills } from 'storybook/internal/cli';
 import {
   HandledError,
   PackageManagerName,
@@ -164,7 +164,17 @@ export async function doInitiate(options: CommandOptions): Promise<
     options,
   });
 
-  // Step 8: Print final summary
+  // Step 8: Install the official Storybook skills for AI agents
+  await telemetryService.trackSkills(
+    await installSkills({
+      packageManager,
+      skillsFlag: options.skills,
+      yes: options.yes,
+      agent: options.agent,
+    })
+  );
+
+  // Step 9: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (configDir && isAiSetupAvailable) {
     // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
@@ -193,7 +203,7 @@ export async function doInitiate(options: CommandOptions): Promise<
     setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'setup']),
   });
 
-  // Step 9: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
+  // Step 10: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
   await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser, configDir);
 
   // Signal dev to redirect to onboarding on first run

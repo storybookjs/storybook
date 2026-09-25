@@ -166,6 +166,8 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .option('--skills', 'Install the official Storybook skills for AI agents without asking')
+  .option('--no-skills', 'Skip installing the official Storybook skills for AI agents')
   .addOption(
     new Option(
       '--features <list>',

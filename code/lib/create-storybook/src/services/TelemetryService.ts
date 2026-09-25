@@ -3,6 +3,7 @@ import {
   getProcessAncestry,
   getStorybookVersionSpecifierFromAncestry,
 } from 'storybook/internal/common';
+import type { SkillsInstallResult } from 'storybook/internal/cli';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 
@@ -44,6 +45,14 @@ export class TelemetryService {
     await telemetry('init-step', {
       step: 'playwright-install',
       result,
+    });
+  }
+
+  /** Track the outcome of the official Storybook skills install step */
+  async trackSkills(result: SkillsInstallResult): Promise<void> {
+    await telemetry('init-step', {
+      step: 'skills',
+      ...result,
     });
   }
 

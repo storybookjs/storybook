@@ -2,9 +2,11 @@
 import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
 
+import type { Renderer } from 'storybook/internal/types';
+
 import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
-import type { InferTypes } from './csf-factories.ts';
+import type { InferTypes, Preview } from './csf-factories.ts';
 import type { Tag } from './story.ts';
 
 interface Addon1Types {
@@ -23,6 +25,11 @@ const preview = definePreview({ addons: [addon, addon2], renderToCanvas: () => {
 
 test('an empty addon list does not add the generic addon types', () => {
   expectTypeOf<InferTypes<never[]>>().toEqualTypeOf<{ csf4: true }>();
+});
+
+test('omitting addons does not add the generic addon types', () => {
+  const previewWithoutAddons = definePreview({ renderToCanvas: () => {} });
+  expectTypeOf(previewWithoutAddons).toEqualTypeOf<Preview<Renderer & { csf4: true }>>();
 });
 
 const meta = preview.type<{ args: { label: string } }>().meta({

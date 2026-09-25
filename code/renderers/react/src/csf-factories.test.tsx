@@ -33,7 +33,7 @@ expectTypeOf(previewWithRender).toEqualTypeOf<ReactPreview<ReactTypes & { csf4: 
 type Renderer = ReactRenderer & { csf4: true };
 
 interface TestAddonTypes {
-  parameters: { test?: { value: string } };
+  parameters: { test: { value: string } };
 }
 
 const testAddon = definePreviewAddon<TestAddonTypes>({});
@@ -43,6 +43,8 @@ const addonRender: ArgsStoryFn<Renderer & TestAddonTypes> = (props, context) => 
 };
 const previewWithAddon = __definePreview({ addons: [testAddon], render: addonRender });
 previewWithAddon.meta({ component: Button, parameters: { test: { value: 'valid' } } });
+// @ts-expect-error the preview cannot provide the addon's required parameter
+__definePreview({ addons: [], render: addonRender });
 
 type UnsupportedRenderer = Renderer & { parameters: { required: string } };
 const unsupportedRender: ArgsStoryFn<UnsupportedRenderer> = () => <></>;

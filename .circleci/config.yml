@@ -22,7 +22,7 @@ parameters:
     description: Whether the PR author is a trusted author who should be allowed to persist to shared caches
     type: string
   workflow:
-    default: skipped
+    default: focus
     description: Which workflow to run
     enum:
       - normal

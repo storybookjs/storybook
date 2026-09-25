@@ -249,7 +249,6 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   // opt-out in the merged preset. See `isReviewFeatureEnabled` in `shared/review/features.ts`.
   highlight: true,
   interactions: true,
-  legacyDecoratorFileOrder: false,
   measure: true,
   outline: true,
   menuOnboardingChecklist: true,

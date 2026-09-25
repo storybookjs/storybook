@@ -1,0 +1,68 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'Details'",
+          "description": "Heading above the projected content.",
+          "fieldName": "heading",
+          "name": "heading",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "cssParts": [
+        {
+          "description": "Outer panel.",
+          "name": "panel",
+        },
+      ],
+      "cssProperties": [
+        {
+          "description": "Panel text color.",
+          "name": "--slot-panel-color",
+        },
+      ],
+      "customElement": true,
+      "description": "Shows projected content with themed parts.",
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "heading",
+          "default": "'Details'",
+          "description": "Heading above the projected content.",
+          "kind": "field",
+          "name": "heading",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "name": "LitSlotsAndCss",
+      "slots": [
+        {
+          "description": "Default body content.",
+          "name": "",
+        },
+        {
+          "description": "Action controls.",
+          "name": "actions",
+        },
+      ],
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-slots-and-css",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Shows projected content with themed parts.",
+  "id": "lit-slots-and-css",
+  "jsDocTags": {},
+  "name": "lit-slots-and-css",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

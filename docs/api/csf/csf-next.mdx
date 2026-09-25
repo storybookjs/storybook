@@ -96,6 +96,36 @@ const meta = preview.meta({
 });
 ```
 
+<Callout variant="warning">
+
+<a name="literal-args" />
+
+**In TypeScript, args with literal types need `as const`.** When a prop is typed as a union of literals (strings, numbers, or enum members) or as a template literal, and you provide a value for it in the `args` of `preview.meta`, TypeScript widens the value (`'primary'` becomes `string`) before it can compare it to the prop type. The meta then loses track of every arg it provided, not only that one, and each `meta.story()` call that relies on those args reports:
+
+```text
+Expected 1 arguments, but got 0.
+```
+
+Add `as const` to each such value. Do not add it to the whole `args` object: that also turns array values into readonly tuples, which fail array-typed props in the same way. For example:
+
+```ts title="Button.stories.ts"
+// ...from above
+
+const meta = preview.meta({
+  component: Button, // props: { variant: 'primary' | 'secondary'; items: string[] }
+  args: {
+    variant: 'primary' as const, // ✅ keeps the literal type
+    items: ['a', 'b'], // ✅ arrays stay as they are
+  },
+});
+
+export const Primary = meta.story(); // ✅ variant and items are already provided
+```
+
+Removing the need for `as const` is planned for Storybook 11, when the minimum supported TypeScript version becomes 5.0 and `preview.meta` can keep the literal types itself. See [#36125](https://github.com/storybookjs/storybook/issues/36125).
+
+</Callout>
+
 <Callout variant="info" icon="💡">
 
 <a name="subpath-imports" />
@@ -562,6 +592,10 @@ While using CSF Next, you can still use the older formats, as long as they are n
 ### How do I use custom arg types with this format?
 
 The [`preview.type`](#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types.
+
+### Why does `meta.story()` report "Expected 1 arguments, but got 0" for an arg I provided in `preview.meta`?
+
+`meta.story()` reports this whenever a required prop is provided by neither the meta nor the story. If the meta did provide it, and any value in the meta's `args` has a union of literals or a template literal type, see [args with literal types](#literal-args).
 
 ### Will this format work with MDX docs pages?
 

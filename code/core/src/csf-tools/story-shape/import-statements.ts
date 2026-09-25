@@ -58,42 +58,158 @@ export function resolveComponentImport(
 }
 
 type OverrideSpecifier =
-  | { kind: 'namespace'; local: string }
+  | { kind: 'namespace' }
   | { kind: 'default' }
-  | { kind: 'named'; imported: string };
+  | { kind: 'named'; imported: t.Identifier | t.StringLiteral };
 
 interface ParsedOverride {
   source: string;
   specifier?: OverrideSpecifier;
 }
 
-function parseImportOverride(code: string): ParsedOverride | undefined {
-  let declaration: t.ImportDeclaration | undefined;
+function preservesBindingShape(isNamespace: boolean, override: ParsedOverride) {
+  return !override.specifier || (override.specifier.kind === 'namespace') === isNamespace;
+}
+
+function parseSingleImport(code: string): t.ImportDeclaration | undefined {
   try {
-    declaration = babelParse(code).program.body.find((node): node is t.ImportDeclaration =>
-      t.isImportDeclaration(node)
-    );
+    const body = babelParse(code).program.body;
+    return body.length === 1 && t.isImportDeclaration(body[0]) ? body[0] : undefined;
   } catch {
     return undefined;
   }
+}
 
+function parseImportOverride(code: string): ParsedOverride | undefined {
+  const declaration = parseSingleImport(code);
   if (!declaration) {
     return undefined;
   }
 
   const source = declaration.source.value;
+  if (declaration.importKind === 'type') {
+    return { source };
+  }
   const specifier = (declaration.specifiers ?? []).find((s) => !isTypeSpecifier(s));
 
   if (t.isImportNamespaceSpecifier(specifier)) {
-    return { source, specifier: { kind: 'namespace', local: specifier.local.name } };
+    return { source, specifier: { kind: 'namespace' } };
   }
   if (t.isImportDefaultSpecifier(specifier)) {
     return { source, specifier: { kind: 'default' } };
   }
   if (t.isImportSpecifier(specifier)) {
-    return { source, specifier: { kind: 'named', imported: importedName(specifier.imported) } };
+    return {
+      source,
+      specifier: { kind: 'named', imported: t.cloneNode(specifier.imported, true, true) },
+    };
   }
   return { source };
+}
+
+function valueSpecifiers(declaration: t.ImportDeclaration) {
+  return declaration.importKind === 'type'
+    ? []
+    : declaration.specifiers.filter((specifier) => !isTypeSpecifier(specifier));
+}
+
+function overrideImport(
+  override: ParsedOverride,
+  localName: string
+): t.ImportDeclaration | undefined {
+  const { specifier } = override;
+  if (!specifier) {
+    return undefined;
+  }
+
+  const local = t.identifier(localName);
+  const rewrittenSpecifier =
+    specifier.kind === 'default'
+      ? t.importDefaultSpecifier(local)
+      : specifier.kind === 'namespace'
+        ? t.importNamespaceSpecifier(local)
+        : t.importSpecifier(local, t.cloneNode(specifier.imported, true, true));
+  return t.importDeclaration([rewrittenSpecifier], t.stringLiteral(override.source));
+}
+
+export function rewriteComponentImport({
+  imports,
+  componentName,
+  importOverride,
+}: {
+  imports: string;
+  componentName: string;
+  importOverride: string;
+}): string {
+  let file: t.File;
+  try {
+    file = babelParse(imports, { errorRecovery: true });
+  } catch {
+    return imports;
+  }
+
+  if (!file.program.body.every((statement) => t.isImportDeclaration(statement))) {
+    return imports;
+  }
+
+  const override = parseImportOverride(importOverride);
+  if (!override?.specifier) {
+    return imports;
+  }
+
+  const dot = componentName.indexOf('.');
+  const baseName = dot === -1 ? componentName : componentName.slice(0, dot);
+  const memberName = dot === -1 ? undefined : componentName.slice(dot + 1);
+  const declarations = file.program.body;
+  const findMatch = (name: string) => {
+    for (const [statementIndex, declaration] of declarations.entries()) {
+      const specifier = valueSpecifiers(declaration).find((item) => item.local.name === name);
+      if (specifier) {
+        return { declaration, specifier, statementIndex };
+      }
+    }
+    return undefined;
+  };
+  const match = findMatch(baseName) ?? (memberName ? findMatch(memberName) : undefined);
+  if (!match) {
+    return imports;
+  }
+
+  if (!preservesBindingShape(t.isImportNamespaceSpecifier(match.specifier), override)) {
+    return imports;
+  }
+
+  const localName =
+    match.specifier.local.name === memberName ? baseName : match.specifier.local.name;
+  const rewritten = overrideImport(override, localName);
+  if (!rewritten) {
+    return imports;
+  }
+
+  const originalRemainingSpecifiers = match.declaration.specifiers.filter(
+    (specifier) => specifier !== match.specifier
+  );
+  const remainingSpecifiers = originalRemainingSpecifiers.map((specifier) => {
+    const clone = t.cloneNode(specifier, true, true);
+    t.removeComments(clone);
+    return clone;
+  });
+  const remaining = t.importDeclaration(
+    remainingSpecifiers,
+    t.cloneNode(match.declaration.source, true, true)
+  );
+  remaining.assertions = match.declaration.assertions;
+  remaining.attributes = match.declaration.attributes;
+  remaining.importKind = match.declaration.importKind;
+  remaining.module = match.declaration.module;
+  remaining.phase = match.declaration.phase;
+  declarations.splice(
+    match.statementIndex,
+    1,
+    rewritten,
+    ...(remainingSpecifiers.length > 0 ? [remaining] : [])
+  );
+  return babelPrint(file);
 }
 
 interface Bucket {
@@ -109,11 +225,18 @@ function addUniqueBy<T>(list: T[], item: T, eq: (candidate: T) => boolean) {
   }
 }
 
-function addNamed(bucket: Bucket, local: string, imported: string) {
+function addNamed(
+  bucket: Bucket,
+  local: string,
+  imported: string | t.Identifier | t.StringLiteral
+) {
+  const importedValue = typeof imported === 'string' ? imported : importedName(imported);
+  const importedNode =
+    typeof imported === 'string' ? t.identifier(imported) : t.cloneNode(imported, true, true);
   addUniqueBy(
     bucket.named,
-    t.importSpecifier(t.identifier(local), t.identifier(imported)),
-    (n) => n.local.name === local && importedName(n.imported) === imported
+    t.importSpecifier(t.identifier(local), importedNode),
+    (n) => n.local.name === local && importedName(n.imported) === importedValue
   );
 }
 
@@ -132,7 +255,9 @@ function collectSpecifier(
   if (override?.specifier) {
     const { specifier } = override;
     if (specifier.kind === 'namespace') {
-      addSingle(bucket.namespaces, specifier.local);
+      if (ref.namespace) {
+        addSingle(bucket.namespaces, ref.namespace);
+      }
       return;
     }
     if (!ref.localImportName) {
@@ -215,9 +340,9 @@ function printBucket({ source, defaults, namespaces, named }: Bucket): string[] 
  * Build the minimal, deduplicated set of import declarations the given references need.
  *
  * References are bucketed by their final source, which is the `importOverride` source when one
- * parses, else `packageName` when the original source is not already a package, else the source as
- * written. Sources keep first-seen order and declarations keep a fixed order within a source, so
- * repeated runs produce byte-identical output.
+ * parses without changing the binding shape, else `packageName` when the original source is not
+ * already a package, else the source as written. Sources keep first-seen order and declarations
+ * keep a fixed order within a source, so repeated runs produce byte-identical output.
  */
 export function buildImportStatements({
   refs,
@@ -233,7 +358,11 @@ export function buildImportStatements({
       return;
     }
 
-    const override = ref.importOverride ? parseImportOverride(ref.importOverride) : undefined;
+    const parsedOverride = ref.importOverride ? parseImportOverride(ref.importOverride) : undefined;
+    const override =
+      parsedOverride && preservesBindingShape(ref.namespace !== undefined, parsedOverride)
+        ? parsedOverride
+        : undefined;
     const source = override?.source ?? (packageName && !ref.isPackage ? packageName : ref.importId);
 
     let bucket = buckets.get(source);

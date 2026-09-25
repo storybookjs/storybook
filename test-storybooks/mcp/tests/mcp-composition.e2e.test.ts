@@ -139,7 +139,7 @@ describe('MCP Composition E2E Tests', () => {
 				  /**
 				    How large should the button be?
 				  */
-				  size?: 'small' | 'medium' | 'large' = 'medium';
+				  size?: "small" | "medium" | "large" = 'medium';
 				  /**
 				    Button contents
 				  */

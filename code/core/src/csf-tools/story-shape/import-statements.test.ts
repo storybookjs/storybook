@@ -7,6 +7,7 @@ import {
   type ImportRef,
   buildImportStatements,
   resolveComponentImport,
+  rewriteComponentImport,
 } from './import-statements.ts';
 import { collectImportBindings } from './imports.ts';
 
@@ -358,6 +359,18 @@ describe('buildImportStatements', () => {
       `);
     });
 
+    it('keeps a string-named overridden export', () => {
+      expect(
+        buildImportStatements({
+          refs: [{ ...button, importOverride: `import { 'public-button' as Alpha } from 'ds';` }],
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import { 'public-button' as Button } from 'ds';",
+        ]
+      `);
+    });
+
     it('forces a default import while keeping the local name', () => {
       expect(
         buildImportStatements({
@@ -370,14 +383,54 @@ describe('buildImportStatements', () => {
       `);
     });
 
-    it('uses a namespace override as written', () => {
+    it('preserves a named binding when the override is a namespace import', () => {
       expect(
         buildImportStatements({
           refs: [{ ...button, importOverride: `import * as DS from 'ds';` }],
         })
       ).toMatchInlineSnapshot(`
         [
-          "import * as DS from 'ds';",
+          "import { Button } from './button';",
+        ]
+      `);
+    });
+
+    it('preserves a namespace binding when the override is a named import', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: './ui',
+              importName: 'Alpha',
+              localImportName: 'UI',
+              namespace: 'UI',
+              importOverride: `import { Alpha } from 'ds';`,
+            },
+          ],
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import * as UI from './ui';",
+        ]
+      `);
+    });
+
+    it('retains the local name when overriding a namespace import', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: './ui',
+              importName: 'Alpha',
+              localImportName: 'UI',
+              namespace: 'UI',
+              importOverride: `import * as Components from 'ds';`,
+            },
+          ],
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import * as UI from 'ds';",
         ]
       `);
     });
@@ -419,5 +472,17 @@ describe('buildImportStatements', () => {
         ]
       `);
     });
+  });
+});
+
+describe('rewriteComponentImport', () => {
+  it('keeps a string-named overridden export', () => {
+    expect(
+      rewriteComponentImport({
+        imports: `import { Alpha } from './alpha'`,
+        componentName: 'Alpha',
+        importOverride: `import { 'public-button' as Alpha } from 'ds'`,
+      })
+    ).toBe("import { 'public-button' as Alpha } from 'ds';");
   });
 });

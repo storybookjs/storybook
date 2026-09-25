@@ -806,6 +806,38 @@ describe('stories API', () => {
       expect((changedIndex!['a--1'] as API_StoryEntry).args).toEqual({ foo: 'bar' });
       expect((changedIndex!['b--1'] as API_StoryEntry).args).toEqual({ x: 'y' });
     });
+
+    it('revives function markers in args, so object args keep their function keys (#29207)', () => {
+      const fullAPI = { setOptions: vi.fn() };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider, store } = moduleArgs;
+
+      api.setIndex({ v: 5, entries: preparedEntries });
+
+      // The channel drops function values; they arrive as `{ __function__: { name } }` markers.
+      provider.channel.emit(STORY_PREPARED, {
+        id: 'a--1',
+        parameters: {},
+        argTypes: {},
+        initialArgs: { link: { onClick: { __function__: { name: 'onClick' } } } },
+        args: { link: { onClick: { __function__: { name: 'onClick' } } } },
+      });
+      provider.channel.emit(STORY_ARGS_UPDATED, {
+        storyId: 'a--1',
+        args: { link: { onClick: { __function__: { name: 'onClick' } } } },
+      });
+
+      const entry = store.getState().index!['a--1'] as API_StoryEntry;
+      const preparedArgs = entry.args as Record<string, any>;
+      const preparedInitialArgs = entry.initialArgs as Record<string, any>;
+
+      expect(typeof preparedArgs.link.onClick).toBe('function');
+      expect(preparedArgs.link.onClick.name).toBe('onClick');
+      // Args are diffed by reference (URL args, save-story): the same unchanged function revived
+      // from two events must keep one identity, or the diffs report phantom changes.
+      expect(preparedArgs.link.onClick).toBe(preparedInitialArgs.link.onClick);
+    });
     it('changes reffed args properly, per story when receiving STORY_ARGS_UPDATED', () => {
       const fullAPI = { updateRef: vi.fn() };
       const moduleArgs = createMockModuleArgs({ fullAPI });

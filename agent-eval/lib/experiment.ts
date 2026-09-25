@@ -122,14 +122,6 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   ? []
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
-// Non-default model tiers run zero evals unless EVAL_EXTRA_MODELS=1, so
-// labeled CI runs only pay for the default-model experiments.
-export const EXTRA_MODEL_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
-
-export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];
-
 function attachUsageMetadata({ runData }: RunCompleteContext) {
   if (!runData.transcript) {
     return;

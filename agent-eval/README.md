@@ -46,7 +46,7 @@ yarn eval
 Run a single experiment:
 
 ```bash
-yarn exec agent-eval cc-mcp-opus-high
+yarn exec agent-eval cc-mcp-opus-5.5-medium
 ```
 
 Pull requests with the `ci:eval` label run all experiments in CI. The
@@ -74,7 +74,7 @@ from the repository root). A stale `dist` importing since-renamed core exports
 crashes the sandbox Storybook at preset load, which surfaces as the readiness
 timeout below rather than a build error.
 
-A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 3
+A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
 lifecycle eval). The budget guardrail is **$75 per full run** — check the
@@ -88,13 +88,7 @@ they become the active line (default smoke: `908-run-story-tests`). See
 `lib/experiment.ts`. Twins of 8xx scenarios were removed.
 
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
-effort explicitly. Non-default model tiers (currently `cc-plugin-sonnet-medium` and `cc-mcp-sonnet-medium`)
-run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
-for the default-model experiments:
-
-```bash
-EVAL_EXTRA_MODELS=1 yarn exec agent-eval cc-plugin-sonnet-medium
-```
+effort explicitly, so a CLI default change cannot silently change what runs.
 
 Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
 exact version it finds into the sandbox `package.json`, so each result snapshot
@@ -122,13 +116,12 @@ workflow too:
 EVAL_REVIEW=1 yarn eval
 ```
 
-In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
-`ci:review` PR labels set the matching flag on labeled `ci:eval` runs, and
-manual `workflow_dispatch` runs of the `Agent eval` workflow can enable them
-through the `extra_evals`, `extra_models`, `storybook_latest`, and `review`
-inputs, or target specific evals through the `eval_only` input. All of these
-are human-triggered spend decisions; agents never apply the labels or dispatch
-the workflow.
+In CI, the `ci:extra-evals`, `ci:storybook-latest`, and `ci:review` PR labels
+set the matching flag on labeled `ci:eval` runs, and manual `workflow_dispatch`
+runs of the `Agent eval` workflow can enable them through the `extra_evals`,
+`storybook_latest`, and `review` inputs, or target specific evals through the
+`eval_only` input. All of these are human-triggered spend decisions; agents
+never apply the labels or dispatch the workflow.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
 `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
@@ -140,11 +133,10 @@ Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
 
-- `cc-mcp-opus-high`: Claude Code (Opus at high effort) with project-local Storybook MCP config in `.mcp.json`.
-- `cc-plugin-opus-high`: Claude Code (Opus at high effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
-- `codex-plugin-gpt-5.5-medium`: Codex (gpt-5.5 at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
-- `cc-mcp-sonnet-medium` / `cc-plugin-sonnet-medium`: Claude Code (Sonnet at medium effort) variants; they run zero evals unless `EVAL_EXTRA_MODELS=1` is set.
+- `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
+- `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
+- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
+- `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Known Failures
 

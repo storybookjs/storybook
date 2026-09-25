@@ -1,3 +1,4 @@
+import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
@@ -74,7 +75,7 @@ async function getPluginConfig(invokingRoot: string) {
     throw new Error('The plugin config hook returned no test config');
   }
 
-  return { root: config.root, test: config.test };
+  return { root: config.root, test: config.test, plugin };
 }
 
 describe('story test patterns', () => {
@@ -94,5 +95,27 @@ describe('story test patterns', () => {
 
     expect(config.root).toBe(PACKAGE_ROOT);
     expect(config.test.include).toEqual(['stories/**/*.stories.tsx']);
+  });
+});
+
+describe('internal setup files', () => {
+  it('registers internal setup files', async () => {
+    const { test, plugin } = await getPluginConfig(REPO_ROOT);
+    const project = {
+      config: { browser: { enabled: true }, setupFiles: ['/repo/my-own-setup.ts'] },
+    };
+
+    await (plugin.configureVitest as (context: unknown) => Promise<void>)({
+      vitest: { config: { coverage: { exclude: [] }, reporters: [] } },
+      project,
+    });
+
+    const resolve = (specifier: string) => fileURLToPath(import.meta.resolve(specifier));
+    expect([...project.config.setupFiles, ...(test.setupFiles as string[])]).toEqual([
+      '/repo/my-own-setup.ts',
+      resolve('@storybook/addon-vitest/internal/setup-file.browser.4'),
+      '@storybook/addon-vitest/internal/setup-file',
+      '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+    ]);
   });
 });

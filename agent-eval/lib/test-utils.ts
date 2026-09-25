@@ -607,10 +607,10 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
 // `storybook tools test run --json` prints the run's structured outcome
 // instead of the markdown report. The raw JSON is unusable for the assertions
 // here: the embedded axe reports list every rule id under passes/inapplicable,
-// so a green run still "mentions" button-name. Render it to the same sections
-// the formatter (code/addons/vitest/src/node/toolset/format.ts) writes, keeping
-// only what the assertions read: story ids, failure descriptions, violation
-// ids, and unhandled error names/messages.
+// so a green run still "mentions" button-name. Render it to the section headings
+// of the formatter (code/addons/vitest/src/node/toolset/format.ts), listing
+// only what the assertions read: story ids and violation ids. Error and
+// cancelled outcomes stay raw, as the markdown report has no heading for them.
 function renderTestRunJsonOutput(output: string): string | undefined {
   // A `--json` run diverts every other stdout writer to stderr, so with `2>&1`
   // npm/logger lines surround the document: the pretty-printed block between a
@@ -621,73 +621,36 @@ function renderTestRunJsonOutput(output: string): string | undefined {
     return undefined;
   }
 
-  switch (data.status) {
-    case 'no-stories': {
-      const messages = Array.isArray(data.notFoundMessages) ? data.notFoundMessages : [];
-      return `No stories found matching the provided input.\n\n${messages.join('\n')}`;
-    }
-    case 'error': {
-      const message = isRecord(data.error) ? data.error.message : undefined;
-      return `Error: ${typeof message === 'string' ? message : 'Unknown error'}`;
-    }
-    case 'cancelled':
-      return 'Error: Test run was cancelled';
-    case 'completed':
-      return isRecord(data.result)
-        ? renderCompletedTestRun(data.result, data.a11y !== false)
-        : undefined;
-    default:
-      return undefined;
+  if (data.status === 'no-stories') {
+    return 'No stories found matching the provided input.';
   }
+
+  return data.status === 'completed' && isRecord(data.result)
+    ? renderCompletedTestRun(data.result, data.a11y !== false)
+    : undefined;
 }
 
 function renderCompletedTestRun(result: Record<string, unknown>, a11y: boolean): string {
   const statuses = asRecords(result.componentTestStatuses);
-  const passing = statuses.filter((status) => status.value === 'status-value:success');
-  const failing = statuses.filter((status) => status.value === 'status-value:error');
-  const sections: string[] = [];
-
-  if (passing.length > 0) {
-    sections.push(
-      `## Passing Stories\n\n- ${passing.map((status) => status.storyId).join('\n- ')}`
-    );
-  }
-
-  if (failing.length > 0) {
-    const entries = failing.map(
-      (status) =>
-        `### ${status.storyId}\n\n${status.description || 'No failure details available.'}`
-    );
-    sections.push(`## Failing Stories\n\n${entries.join('\n\n')}`);
-  }
-
+  const storyIds = (value: string) =>
+    statuses.filter((status) => status.value === value).map((status) => status.storyId);
   const a11yReports = a11y && isRecord(result.a11yReports) ? result.a11yReports : {};
-  const a11ySections: string[] = [];
-  for (const [storyId, reports] of Object.entries(a11yReports)) {
-    for (const report of asRecords(reports)) {
-      if (isRecord(report.error)) {
-        a11ySections.push(`### ${storyId} - Error\n\n${String(report.error.message)}`);
-        continue;
-      }
-      for (const violation of asRecords(report.violations)) {
-        a11ySections.push(`### ${storyId} - ${violation.id}\n\n${violation.description}`);
-      }
-    }
-  }
-  if (a11ySections.length > 0) {
-    sections.push(`## Accessibility Violations\n\n${a11ySections.join('\n\n')}`);
-  }
+  const violations = Object.entries(a11yReports).flatMap(([storyId, reports]) =>
+    asRecords(reports).flatMap((report) =>
+      asRecords(report.violations).map((violation) => `${storyId} - ${violation.id}`)
+    )
+  );
+  const sections: [string, unknown[]][] = [
+    ['## Passing Stories', storyIds('status-value:success')],
+    ['## Failing Stories', storyIds('status-value:error')],
+    ['## Accessibility Violations', violations],
+    ['## Unhandled Errors', asRecords(result.unhandledErrors).map((error) => error.name)],
+  ];
 
-  const unhandledErrors = asRecords(result.unhandledErrors);
-  if (unhandledErrors.length > 0) {
-    const entries = unhandledErrors.map(
-      (error) =>
-        `### ${error.name || 'Unknown Error'}\n\n**Error message**: ${error.message || 'No message available'}`
-    );
-    sections.push(`## Unhandled Errors\n\n${entries.join('\n\n')}`);
-  }
-
-  return sections.join('\n\n');
+  return sections
+    .filter(([, items]) => items.length > 0)
+    .map(([heading, items]) => `${heading}\n\n- ${items.join('\n- ')}`)
+    .join('\n\n');
 }
 
 function asRecords(value: unknown): Record<string, unknown>[] {

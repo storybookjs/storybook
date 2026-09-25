@@ -4,6 +4,7 @@ import { addonA11yAddonTest } from './addon-a11y-addon-test.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
 import { addonMcp } from './addon-mcp.ts';
+import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import {
   enableExperimentalDocgenServer,
@@ -25,6 +26,7 @@ export const allFixes: Fix[] = [
   upgradeStorybookRelatedDependencies,
   addonA11yAddonTest,
   vitestSetupFile,
+  componentSubtitle,
   rnOndeviceAddonsToDeviceAddons,
   nextjsToNextjsVite,
   angularToAngularVite,

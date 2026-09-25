@@ -2,6 +2,7 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
@@ -573,6 +574,58 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+### `parameters.componentSubtitle` removed
+
+The deprecated `parameters.componentSubtitle` fallback was removed. Move subtitles to
+`parameters.docs.subtitle`.
+
+When you upgrade to Storybook 11, the upgrade command offers to move directly declared properties
+in preview configuration and CSF files when it can preserve their behavior. To run this
+automigration directly from your project root without the post-migration health check, use:
+
+```sh
+npx storybook@11 automigrate component-subtitle --skip-doctor
+```
+
+Use `--config-dir <path>` if the Storybook configuration is not in the root `.storybook` directory.
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+If `parameters.docs` already exists, add `subtitle` without replacing its other options:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
+    docs: {
++     subtitle: 'Button variants',
+      source: { type: 'code' },
+    },
+  },
+};
+```
+
+The migration also follows a single-use local object literal through a sole spread, such as
+`parameters: { ...localParameters }`. Shared or reassigned bindings and unresolved spreads require
+manual changes. An unresolved spread may supply an existing `docs.subtitle`, even when
+`componentSubtitle` appears after the spread.
+
+A truthy `docs.subtitle` keeps its value. For a statically known falsy value such as `''`, `false`,
+`0`, `null`, or `undefined`, the migration preserves the legacy fallback instead. It reports an
+error when it cannot prove this choice or preserve subtitle inheritance between preview, meta,
+and stories. Check descendant subtitle overrides when moving a preview or meta fallback manually.
+
+If any file fails the safety check, the migration reports the affected files before writing
+changes. It checks current contents again when you run it. Resolve the reported cases manually,
+then rerun the command to migrate the remaining files.
 
 ### Docs Code panel enabled by default
 

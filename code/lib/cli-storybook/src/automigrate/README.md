@@ -33,6 +33,7 @@ check({ files: scratch }) ──result or null──▶ prompt ──▶ run({ f
   Path discovery (`existsSync`, globbing) is fine.
 - `add()` and `removeAddon()` still write `main.ts` directly.
   Call them before staging edits to the same files, or the commit fails because the file changed after it was read.
+- Use `loadAnnotationFile` from `storybook/internal/csf-tools` when a migration edits both preview and story annotations; keep inheritance rules in the migration.
 - Remove a fix once upgrades no longer start from a version that needs it.
 
 ## Tests

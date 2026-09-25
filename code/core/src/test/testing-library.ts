@@ -23,6 +23,27 @@ const testingLibrary = instrument(
   fireEvent: Promisify<FireFunction> & PromisifyObject<FireObject>;
 };
 
+// Testing Library appends a full prettyDOM dump to query and waitFor errors which buries the actual error when the container is the whole document
+// Keep a short excerpt and point at screen.debug() for the rest.
+const DOM_DUMP_LINE_LIMIT = 20;
+
+domTestingLibrary.configure({
+  getElementError(message, container) {
+    const prettifiedDOM = container && domTestingLibrary.prettyDOM(container);
+    const lines = prettifiedDOM ? prettifiedDOM.split('\n') : [];
+    const dump =
+      lines.length > DOM_DUMP_LINE_LIMIT
+        ? [
+            ...lines.slice(0, DOM_DUMP_LINE_LIMIT),
+            `... (DOM dump truncated at ${DOM_DUMP_LINE_LIMIT} lines, use screen.debug() to see the full DOM)`,
+          ].join('\n')
+        : prettifiedDOM;
+    const error = new Error([message, dump].filter(Boolean).join('\n\n'));
+    error.name = 'TestingLibraryElementError';
+    return error;
+  },
+});
+
 testingLibrary.screen = new Proxy(testingLibrary.screen, {
   get(target, prop, receiver) {
     if (typeof window !== 'undefined' && globalThis.location?.href?.includes('viewMode=docs')) {

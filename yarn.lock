@@ -10465,7 +10465,11 @@ __metadata:
     react-native: ">=0.74.5"
     react-native-web: ^0.19.12 || ^0.20.0 || ^0.21.0
     storybook: "workspace:^"
+    typescript: ">= 5.9.x"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+  peerDependenciesMeta:
+    typescript:
+      optional: true
   languageName: unknown
   linkType: soft
 

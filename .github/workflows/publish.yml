@@ -294,6 +294,15 @@ jobs:
           release: ${{ steps.version.outputs.current-version }}
           environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
 
+      # Runs last so a failure turns the run red without skipping any release bookkeeping, and on
+      # every run so a re-run repairs a failed sync: the same skills add no commit and re-push the same tag.
+      - name: Sync skills to storybookjs/skills
+        env:
+          VERSION: ${{ steps.version.outputs.current-version }}
+          STORYBOOK_REF: ${{ github.ref_name }}
+          SKILLS_REPO_URL: https://x-access-token:${{ secrets.SKILLS_SYNC_TOKEN }}@github.com/storybookjs/skills.git
+        run: ./release/sync-skills.sh
+
       - name: Report job failure to Discord
         if: failure()
         env:

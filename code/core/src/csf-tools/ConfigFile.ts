@@ -1454,11 +1454,7 @@ export const readConfig = async (fileName: string) => {
   return loadConfig(code, fileName).parse();
 };
 
-export const writeConfig = async (
-  config: ConfigFile,
-  fileName?: string,
-  options?: RecastOptions
-) => {
+export const writeConfig = async (config: ConfigFile, fileName?: string) => {
   const [diagnostic] = config.mutationDiagnostics;
   invariant(!diagnostic, diagnostic?.message);
   const fname = fileName || config.fileName;
@@ -1466,7 +1462,7 @@ export const writeConfig = async (
   if (!fname) {
     throw new Error('Please specify a fileName for writeConfig');
   }
-  await writeFile(fname, printConfig(config, options).code);
+  await writeFile(fname, formatConfig(config));
 };
 
 export const isCsfFactoryPreview = (previewConfig: ConfigFile) => {

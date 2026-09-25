@@ -7,20 +7,9 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs/promises')>()),
   writeFile: vi.fn(),
 }));
+
 describe('wrapGetAbsolutePath', () => {
   describe('check', () => {
-    it('should return null for a custom package resolver that needs no generic wrapping', async () => {
-      const check = wrapGetAbsolutePath.check({
-        packageManager: {
-          isStorybookInMonorepo: () => true,
-        },
-        storybookVersion: '7.0.0',
-        mainConfigPath: require.resolve('./__test__/main-config-with-custom-resolver.ts'),
-      } as CheckOptions);
-
-      await expect(check).resolves.toBeNull();
-    });
-
     it('should return null if not in a monorepo', async () => {
       const check = wrapGetAbsolutePath.check({
         packageManager: {

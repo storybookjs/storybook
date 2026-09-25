@@ -1,7 +1,6 @@
 export {
   buildImportStatements,
   resolveComponentImport,
-  rewriteComponentImport,
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';

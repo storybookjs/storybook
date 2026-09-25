@@ -30,7 +30,6 @@ import {
   type CoreDocgenComponent,
 } from './manifest-formatter/adapt-core-manifest.ts';
 import type { ComponentManifestV1, DocV1 } from './manifest-formatter/manifest-types.ts';
-import { composeComponentImport } from './compose-component-import.ts';
 import { selectAttachedDocs, type MdxPayload } from './map.ts';
 
 /** Stable addon-docs MDX service id. Kept local so the docs toolset does not import core-server. */
@@ -215,14 +214,13 @@ export function createServiceDocsAccess({
         ? await loadOptionalComponentPayload(mdx.queries.mdxForComponent.loaded({ id }))
         : undefined;
     const docs = selectAttachedDocs(classification, id, mdxPayload);
-    const componentImport = composeComponentImport(docgenPayload?.jsDocTags, storyDocsPayload);
 
     const core: CoreDocgenComponent = {
       ...docgenPayload,
       id,
       name: docgenPayload?.name ?? id,
       ...(storyDocsPayload?.stories ? { stories: storyDocsPayload.stories } : {}),
-      ...(componentImport ? { import: componentImport } : {}),
+      ...(storyDocsPayload?.import ? { import: storyDocsPayload.import } : {}),
       ...(docs ? { docs } : {}),
     };
 

@@ -1,5 +1,4 @@
-import { getAbsolutePathWrapperName, getAddonNames } from 'storybook/internal/common';
-import { readConfig } from 'storybook/internal/csf-tools';
+import { getAddonNames } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { detectAgent } from 'storybook/internal/telemetry';
 
@@ -7,20 +6,16 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
-import { ensureGetAbsolutePathWrapper } from './wrap-getAbsolutePath.ts';
 
 const ADDON_MCP = '@storybook/addon-mcp';
 
-export type AddonMcpOptions =
-  | { agentName: string; isInstalled: true }
-  | {
-      agentName: string;
-      isInstalled: false;
-      addGetAbsolutePathWrapper: boolean;
-      isConfigTypescript: boolean;
-    };
+export interface AddonMcpOptions {
+  /** Name of the detected AI coding agent (e.g. `claude`, `cursor`), surfaced in the prompt. */
+  agentName: string;
+  /** Whether `@storybook/addon-mcp` is already configured, so we update rather than install. */
+  isInstalled: boolean;
+}
 
 /**
  * When `storybook upgrade` is driven by an AI coding agent, install `@storybook/addon-mcp` — or, if
@@ -33,7 +28,7 @@ export const addonMcp: Fix<AddonMcpOptions> = {
   id: 'addon-mcp',
   link: 'https://github.com/storybookjs/storybook/tree/next/code/addons/mcp',
 
-  async check({ mainConfig, mainConfigPath, packageManager }) {
+  async check({ mainConfig }) {
     const agent = detectAgent();
     if (!agent) {
       return null;
@@ -41,23 +36,7 @@ export const addonMcp: Fix<AddonMcpOptions> = {
 
     const isInstalled = getAddonNames(mainConfig).some((addon) => addon.includes(ADDON_MCP));
 
-    if (isInstalled) {
-      return { agentName: agent.name, isInstalled: true };
-    }
-
-    const isConfigTypescript =
-      mainConfigPath?.endsWith('.ts') === true || mainConfigPath?.endsWith('.tsx') === true;
-    const addGetAbsolutePathWrapper =
-      mainConfigPath !== undefined &&
-      packageManager.isStorybookInMonorepo() &&
-      getAbsolutePathWrapperName(await readConfig(mainConfigPath)) === null;
-
-    return {
-      agentName: agent.name,
-      isInstalled: false,
-      addGetAbsolutePathWrapper,
-      isConfigTypescript,
-    };
+    return { agentName: agent.name, isInstalled };
   },
 
   prompt() {
@@ -67,7 +46,7 @@ export const addonMcp: Fix<AddonMcpOptions> = {
     `;
   },
 
-  async run({ result, packageManager, configDir, mainConfigPath, dryRun }) {
+  async run({ result, packageManager, configDir, dryRun }) {
     if (dryRun) {
       return;
     }
@@ -75,13 +54,6 @@ export const addonMcp: Fix<AddonMcpOptions> = {
     logger.log(
       `${result.isInstalled ? 'Updating' : 'Installing'} ${picocolors.magenta(ADDON_MCP)} to the latest version...`
     );
-
-    if (!result.isInstalled && result.addGetAbsolutePathWrapper) {
-      await updateMainConfig({ mainConfigPath, dryRun: false }, (mainConfig) => {
-        ensureGetAbsolutePathWrapper(mainConfig, result.isConfigTypescript);
-      });
-    }
-
     // `add` pins core packages (including @storybook/addon-mcp) to the matching Storybook
     // version from the versions map and, when the addon is already present, refreshes the
     // dependency without duplicating it in the main config.

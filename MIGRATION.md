@@ -1,10 +1,10 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
-  - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
+  - [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
@@ -560,23 +560,6 @@
 
 ## From version 10.x to 11.0.0
 
-### `docgenServer` is stable and enabled by default
-
-The `experimentalDocgenServer` feature is now `docgenServer`. Server-side component metadata extraction is enabled by default for React frameworks, including Webpack, Vue3-Vite, and Angular-Vite. Unsupported frameworks keep it disabled even when the flag is `true`.
-
-The `docgen-server` automigration runs when an upgrade crosses into Storybook 11. It renames the deprecated flag while preserving its value or expression. If both flags have literal boolean values, it keeps `docgenServer`. Unsafe dynamic configs receive manual migration instructions instead of being overwritten. You can also run `storybook automigrate docgen-server` explicitly on Storybook 11.
-
-With neither flag present, the migration adds `features.docgenServer: false` to preserve these explicit legacy settings:
-
-- React `typescript.reactDocgen: false` or `'react-docgen-typescript'`, including custom RDT options such as `propFilter`.
-- Vue `framework.options.docgen: false` or `true`, an explicit engine, or an engine configuration with a custom `tsconfig`.
-
-Storybook 11 also preserves these settings at runtime when migration is skipped or cannot safely transform a dynamic config. This compatibility rule and the deprecated flag alias will be removed in Storybook 12. The stable flag takes precedence over the deprecated flag, which takes precedence over legacy settings and the supported framework default.
-
-An explicit `features.docgenServer: true` selects server extraction and warns when it overrides these legacy settings. RDT `propFilter` and Vue docgen `tsconfig` have no equivalent server option and are not translated. Set `features.docgenServer: false` to keep builder extraction. For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
-
-The older opt-in automigration for `experimentalDocgenServer` applies only to Storybook 10 targets and is not offered when upgrading to Storybook 11.
-
 ### `storybook dev` no longer opens a browser by default
 
 Storybook now starts the development server without automatically opening it in a browser. The CLI
@@ -611,6 +594,23 @@ export default {
 You can also set this parameter at the component or story level. An explicit `true` enables the panel when a broader configuration disables it.
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
+
+### `docgenServer` is stable and enabled by default
+
+The `experimentalDocgenServer` feature is now `docgenServer`. Server-side component metadata extraction is enabled by default for React frameworks, including Webpack, Vue3-Vite, and Angular-Vite. Unsupported frameworks keep it disabled even when the flag is `true`.
+
+The `docgen-server` automigration runs when an upgrade crosses into Storybook 11. It renames the deprecated flag while preserving its value or expression. If both flags have literal boolean values, it keeps `docgenServer`. Unsafe dynamic configs receive manual migration instructions instead of being overwritten. You can also run `storybook automigrate docgen-server` explicitly on Storybook 11.
+
+With neither flag present, the migration adds `features.docgenServer: false` to preserve these explicit legacy settings:
+
+- React `typescript.reactDocgen: false` or `'react-docgen-typescript'`, including custom RDT options such as `propFilter`.
+- Vue `framework.options.docgen: false` or `true`, an explicit engine, or an engine configuration with a custom `tsconfig`.
+
+Storybook 11 also preserves these settings at runtime when migration is skipped or cannot safely transform a dynamic config. This compatibility rule and the deprecated flag alias will be removed in Storybook 12. The stable flag takes precedence over the deprecated flag, which takes precedence over legacy settings and the supported framework default.
+
+An explicit `features.docgenServer: true` selects server extraction and warns when it overrides these legacy settings. RDT `propFilter` and Vue docgen `tsconfig` have no equivalent server option and are not translated. Set `features.docgenServer: false` to keep builder extraction. For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
+
+The older opt-in automigration for `experimentalDocgenServer` applies only to Storybook 10 targets and is not offered when upgrading to Storybook 11.
 
 ### Node.js 22.12 or higher
 

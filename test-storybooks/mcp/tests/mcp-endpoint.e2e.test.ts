@@ -874,7 +874,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 				# Docs
 
-				- Docs (getting-started--docs): # Getting Started This is the getting started documentation of this design system. ## Usag...",
+				- getting-started (getting-started--docs): # Getting Started This is the getting started documentation of this design system. ## Usag...",
 				      "type": "text",
 				    },
 				  ],

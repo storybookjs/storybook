@@ -25,14 +25,11 @@ export const parserOptions: ParserOptions = {
   tokens: true,
 };
 
-export const babelParse = (
-  code: string,
-  options: Pick<ParserOptions, 'errorRecovery'> = {}
-): t.File => {
+export const babelParse = (code: string): t.File => {
   return recast.parse(code, {
     parser: {
       parse(source: string) {
-        return parseWithFlowOrTypescript(source, { ...parserOptions, ...options });
+        return parseWithFlowOrTypescript(source, parserOptions);
       },
     },
   });

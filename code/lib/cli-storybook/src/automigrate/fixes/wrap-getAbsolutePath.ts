@@ -5,7 +5,7 @@ import {
   isGetAbsolutePathWrapperNecessary,
   wrapValueWithGetAbsolutePathWrapper,
 } from 'storybook/internal/common';
-import { type ConfigFile, readConfig } from 'storybook/internal/csf-tools';
+import { readConfig } from 'storybook/internal/csf-tools';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
@@ -17,29 +17,6 @@ export interface WrapGetAbsolutePathRunOptions {
   storybookVersion: string;
   isStorybookInMonorepo: boolean;
   isConfigTypescript: boolean;
-}
-
-export function ensureGetAbsolutePathWrapper(
-  mainConfig: ConfigFile,
-  isConfigTypescript: boolean
-): void {
-  if (getAbsolutePathWrapperName(mainConfig) !== null) {
-    return;
-  }
-
-  if (
-    mainConfig?.fileName?.endsWith('.cjs') ||
-    mainConfig?.fileName?.endsWith('.cts') ||
-    mainConfig?.fileName?.endsWith('.cjsx') ||
-    mainConfig?.fileName?.endsWith('.ctsx') ||
-    mainConfig._code.includes('module.exports')
-  ) {
-    throw new CommonJsConfigNotSupportedError();
-  }
-
-  mainConfig.setImport(['dirname'], 'node:path');
-  mainConfig.setImport(['fileURLToPath'], 'node:url');
-  mainConfig.setBodyDeclaration(getAbsolutePathWrapperAsCallExpression(isConfigTypescript));
 }
 
 export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
@@ -59,11 +36,11 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
       return null;
     }
 
-    const needsWrapper = getFieldsForGetAbsolutePathWrapper(config).some((node) =>
-      isGetAbsolutePathWrapperNecessary(node)
-    );
-
-    if (!needsWrapper) {
+    if (
+      !getFieldsForGetAbsolutePathWrapper(config).some((node) =>
+        isGetAbsolutePathWrapperNecessary(node)
+      )
+    ) {
       return null;
     }
 
@@ -82,7 +59,23 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
         wrapValueWithGetAbsolutePathWrapper(mainConfig, node);
       });
 
-      ensureGetAbsolutePathWrapper(mainConfig, result.isConfigTypescript);
+      if (getAbsolutePathWrapperName(mainConfig) === null) {
+        if (
+          mainConfig?.fileName?.endsWith('.cjs') ||
+          mainConfig?.fileName?.endsWith('.cts') ||
+          mainConfig?.fileName?.endsWith('.cjsx') ||
+          mainConfig?.fileName?.endsWith('.ctsx') ||
+          mainConfig._code.includes('module.exports')
+        ) {
+          throw new CommonJsConfigNotSupportedError();
+        } else {
+          mainConfig.setImport(['dirname'], 'node:path');
+          mainConfig.setImport(['fileURLToPath'], 'node:url');
+        }
+        mainConfig.setBodyDeclaration(
+          getAbsolutePathWrapperAsCallExpression(result.isConfigTypescript)
+        );
+      }
     });
   },
 };

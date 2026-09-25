@@ -1,9 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
-import { dirname } from 'node:path';
-import type { LimitFunction } from 'p-limit';
 
 import {
-  type JsPackageManager,
   frameworkPackages,
   frameworkToRenderer,
   rendererPackages,
@@ -14,11 +11,9 @@ import type { PackageJson } from 'storybook/internal/types';
 import type { Fix, RunOptions } from '../types.ts';
 
 interface MigrationResult {
-  migrations: {
-    framework: string;
-    renderer: string;
-    packageJsonFiles: string[];
-  }[];
+  frameworks: string[];
+  renderers: string[];
+  packageJsonFiles: string[];
 }
 
 const getAllDependencies = (packageJson: PackageJson): string[] =>
@@ -40,41 +35,6 @@ const detectRenderers = (dependencies: string[]): string[] => {
 const replaceImports = (source: string, renderer: string, framework: string) => {
   const regex = new RegExp(`(['"])${renderer}(['"])`, 'g');
   return regex.test(source) ? source.replace(regex, `$1${framework}$2`) : null;
-};
-
-const hasRendererImport = (source: string, renderer: string) => {
-  const regex = new RegExp(`(['"])${renderer}(?:/[^'"]*)?\\1`);
-  return regex.test(source);
-};
-
-export const packageUsesRenderer = async (
-  packageJsonPath: string,
-  renderer: string,
-  sourceReadLimit?: LimitFunction
-) => {
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-  const files = await globby(['**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts,mdx}'], {
-    absolute: true,
-    cwd: dirname(packageJsonPath),
-    dot: true,
-    ignore: ['**/dist/**', '**/node_modules/**'],
-  });
-  const limit = sourceReadLimit ?? (await import('p-limit')).default(10);
-
-  return (
-    await Promise.all(
-      files.map((file) =>
-        limit(async () => {
-          try {
-            return hasRendererImport(await readFile(file, 'utf-8'), renderer);
-          } catch {
-            return true;
-          }
-        })
-      )
-    )
-  ).some(Boolean);
 };
 
 export const transformSourceFiles = async (
@@ -109,8 +69,7 @@ export const transformSourceFiles = async (
 export const removeRendererInPackageJson = async (
   packageJsonPath: string,
   renderer: string,
-  dryRun: boolean,
-  packageManager?: Pick<JsPackageManager, 'writePackageJson'>
+  dryRun: boolean
 ) => {
   try {
     const content = await readFile(packageJsonPath, 'utf-8');
@@ -127,11 +86,7 @@ export const removeRendererInPackageJson = async (
     }
 
     if (!dryRun && hasChanges) {
-      if (packageManager) {
-        packageManager.writePackageJson(packageJson, dirname(packageJsonPath));
-      } else {
-        await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
-      }
+      await writeFile(packageJsonPath, JSON.stringify(packageJson, null, 2));
     }
 
     return hasChanges;
@@ -168,50 +123,30 @@ export const rendererToFramework: Fix<MigrationResult> = {
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#moving-from-renderer-based-to-framework-based-configuration',
 
   async check({ packageManager }): Promise<MigrationResult | null> {
+    // Check each package.json for migration needs
     const results = await Promise.all(
       packageManager.packageJsonPaths.map(async (file) => {
         try {
-          return { file, result: await checkPackageJson(file) };
+          return await checkPackageJson(file);
         } catch (error) {
           return null;
         }
       })
     );
-    const migrations = new Map<
-      string,
-      { framework: string; renderer: string; packageJsonFiles: string[] }
-    >();
+    const validResults = results.filter(
+      (r): r is { frameworks: string[]; renderers: string[] } =>
+        r !== null && r.renderers.length > 0
+    );
 
-    for (const item of results) {
-      if (!item?.result) {
-        continue;
-      }
-
-      for (const framework of item.result.frameworks) {
-        const renderer = frameworkToRenderer[frameworkPackages[framework]];
-        const rendererPackage = Object.entries(rendererPackages).find(
-          ([, rendererName]) => rendererName === renderer
-        )?.[0];
-
-        if (!rendererPackage || !item.result.renderers.includes(rendererPackage)) {
-          continue;
-        }
-
-        const migration = migrations.get(framework) ?? {
-          framework,
-          renderer: rendererPackage,
-          packageJsonFiles: [],
-        };
-        migration.packageJsonFiles.push(item.file);
-        migrations.set(framework, migration);
-      }
-    }
-
-    if (migrations.size === 0) {
+    if (validResults.length === 0) {
       return null;
     }
 
-    return { migrations: [...migrations.values()] };
+    return {
+      frameworks: [...new Set(validResults.flatMap((r) => r.frameworks))],
+      renderers: [...new Set(validResults.flatMap((r) => r.renderers))],
+      packageJsonFiles: packageManager.packageJsonPaths.filter((_, i) => validResults[i] !== null),
+    };
   },
 
   prompt(): string {
@@ -221,47 +156,44 @@ export const rendererToFramework: Fix<MigrationResult> = {
   async run(options: RunOptions<MigrationResult>) {
     const { result, dryRun = false, storiesPaths, configDir } = options;
 
-    for (const migration of result.migrations) {
-      const { framework, renderer: rendererPackage, packageJsonFiles } = migration;
+    for (const selectedFramework of result.frameworks) {
+      const frameworkName = frameworkPackages[selectedFramework];
+      if (!frameworkName) {
+        logger.warn(`Framework name not found for ${selectedFramework}, skipping.`);
+        continue;
+      }
+      const rendererName = frameworkToRenderer[frameworkPackages[selectedFramework]];
+      const [rendererPackage] =
+        Object.entries(rendererPackages).find(([, renderer]) => renderer === rendererName) ?? [];
 
-      logger.debug(`\nMigrating ${rendererPackage} to ${framework}`);
+      if (!rendererPackage) {
+        logger.warn(`Renderer package not found for ${selectedFramework}, skipping.`);
+        continue;
+      }
+
+      if (rendererPackage === selectedFramework) {
+        continue;
+      }
+
+      logger.debug(`\nMigrating ${rendererPackage} to ${selectedFramework}`);
 
       // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
       const configFiles = await globby([`${configDir}/**/*`]);
 
-      const errors = await transformSourceFiles(
+      await transformSourceFiles(
         [...storiesPaths, ...configFiles].filter(Boolean) as string[],
         rendererPackage,
-        framework,
+        selectedFramework,
         dryRun
       );
-      if (errors.length > 0) {
-        throw new Error(
-          `Failed to process ${errors.length} files:\n${errors
-            .map(({ file, error }) => `- ${file}: ${error.message}`)
-            .join('\n')}`
-        );
-      }
 
       logger.debug('Updating package.json files...');
 
-      const { default: pLimit } = await import('p-limit');
-      const sourceReadLimit = pLimit(10);
-      const unusedRendererPackageJsonFiles = (
-        await Promise.all(
-          packageJsonFiles.map(async (file) => ({
-            file,
-            usesRenderer: await packageUsesRenderer(file, rendererPackage, sourceReadLimit),
-          }))
-        )
-      )
-        .filter(({ usesRenderer }) => !usesRenderer)
-        .map(({ file }) => file);
-
+      // Update all package.json files to remove renderers
       await Promise.all(
-        unusedRendererPackageJsonFiles.map((file) =>
-          removeRendererInPackageJson(file, rendererPackage, dryRun, options.packageManager)
+        result.packageJsonFiles.map((file: string) =>
+          removeRendererInPackageJson(file, rendererPackage, dryRun)
         )
       );
     }

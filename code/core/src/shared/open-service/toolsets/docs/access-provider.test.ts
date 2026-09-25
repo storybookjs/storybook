@@ -741,7 +741,7 @@ describe('resolveComponentEntry (split/ref format)', () => {
               id: 'button',
               name: 'Button',
               path: 'src/Button.tsx',
-              jsDocTags: { import: ["import Button from 'design-system'"] },
+              jsDocTags: {},
               reactComponentMeta: {
                 props: { label: { type: { name: 'string' }, required: true } },
               },
@@ -824,7 +824,7 @@ describe('resolveComponentEntry (split/ref format)', () => {
     expect(resolved.stories).toEqual([
       { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
     ]);
-    expect(resolved.import).toBe("import Button from 'design-system';");
+    expect(resolved.import).toBe("import { Button } from './Button'");
     // mdx ref row -> resolved Doc
     expect(resolved.docs?.['button--docs']).toEqual({
       id: 'button--docs',
@@ -852,6 +852,7 @@ describe('resolveComponentEntry (split/ref format)', () => {
     expect(resolved.stories).toEqual([
       { id: 'button--primary', name: 'Primary', snippet: '<Button />' },
     ]);
+    // Only the story-docs file is fetched (not docgen/mdx).
     expect(provider).toHaveBeenCalledTimes(1);
     expect(provider).toHaveBeenCalledWith(
       undefined,
@@ -887,11 +888,6 @@ describe('validating referenced payloads', () => {
   /** Serves an index whose refs are honoured, and one ref target of the caller's choosing. */
   const providerServing = (refBody: unknown) => async (_request: unknown, path: string) =>
     path.includes('services') ? JSON.stringify(refBody) : '{}';
-  const storyDocsComponent: ComponentManifestV1 = {
-    id: 'button',
-    name: 'Button',
-    stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
-  };
 
   it('rejects a docgen payload that is not a record', async () => {
     const component: ComponentManifestV1 = {
@@ -905,22 +901,31 @@ describe('validating referenced payloads', () => {
     ).rejects.toThrow(ManifestGetError);
   });
 
-  it.each([{ stories: 'Primary' }, { name: 42 }])(
-    'rejects an invalid story-docs payload',
-    async (payload) => {
-      await expect(
-        resolveComponentStories(
-          storyDocsComponent,
-          undefined,
-          providerServing({ components: { button: payload } })
-        )
-      ).rejects.toThrow(ManifestGetError);
-    }
-  );
+  it('rejects a story-docs payload whose stories are a string', async () => {
+    const component: ComponentManifestV1 = {
+      id: 'button',
+      name: 'Button',
+      stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+    };
+
+    await expect(
+      resolveComponentStories(
+        component,
+        undefined,
+        providerServing({ components: { button: { stories: 'Primary' } } })
+      )
+    ).rejects.toThrow(ManifestGetError);
+  });
 
   it('accepts story-docs whose stories are a record, which is what core emits', async () => {
+    const component: ComponentManifestV1 = {
+      id: 'button',
+      name: 'Button',
+      stories: { $ref: '../services/core/story-docs/button.json#/components/button' },
+    };
+
     const resolved = await resolveComponentStories(
-      storyDocsComponent,
+      component,
       undefined,
       providerServing({
         components: { button: { stories: { 'button--primary': { name: 'Primary' } } } },

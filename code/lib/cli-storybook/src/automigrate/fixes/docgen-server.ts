@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
-import { HandledError } from 'storybook/internal/common';
+import { formatFileContent, HandledError } from 'storybook/internal/common';
 import { formatConfig, loadConfig, type ConfigFile } from 'storybook/internal/csf-tools';
 
 import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile.ts';
@@ -99,8 +99,11 @@ export const docgenServer: Fix<{
   async run({ dryRun, result }) {
     const source = await readFile(result.mainConfigPath, 'utf8');
     const transformedSource = transformDocgenServer(source, result.framework);
-    if (!dryRun && transformedSource !== source) {
-      await writeFile(result.mainConfigPath, transformedSource);
+    if (transformedSource !== source && !dryRun) {
+      await writeFile(
+        result.mainConfigPath,
+        await formatFileContent(result.mainConfigPath, transformedSource)
+      );
     }
   },
 };

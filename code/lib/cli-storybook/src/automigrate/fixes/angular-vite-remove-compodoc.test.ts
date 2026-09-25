@@ -13,6 +13,7 @@ import { dedent } from 'ts-dedent';
 
 import { logger } from 'storybook/internal/node-logger';
 
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   type angularViteRemoveCompodoc as FixType,
@@ -113,10 +114,11 @@ const checkOptions = (
 
 beforeEach(() => {
   vol.reset();
-  vol.fromNestedJSON({ '/project/package.json': '{}' });
+  vol.fromNestedJSON({
+    '/project/package.json': '{}',
+    [PREVIEW]: 'export const parameters = {};',
+  });
   vi.mocked(fs.existsSync).mockImplementation(memfs.existsSync as never);
-  vi.mocked(fs.readFileSync).mockImplementation(memfs.readFileSync as never);
-  vi.mocked(fs.writeFileSync).mockImplementation(memfs.writeFileSync as never);
   vi.mocked(fsPromises.readFile).mockImplementation(memfs.promises.readFile as never);
   vi.mocked(fsPromises.writeFile).mockImplementation(memfs.promises.writeFile as never);
   // globby walks the real disk, which memfs has replaced. Resolve `project.json` files out of the
@@ -139,7 +141,7 @@ afterEach(() => {
 
 describe('check', () => {
   it('skips a project that is not on angular-vite', async () => {
-    const result = await angularViteRemoveCompodoc.check({
+    const result = await checkFix(angularViteRemoveCompodoc, {
       ...checkOptions({}),
       mainConfig: { framework: { name: '@storybook/angular' } } as never,
     });
@@ -148,7 +150,8 @@ describe('check', () => {
   });
 
   it('skips a project that opted out of the docgen server', async () => {
-    const result = await angularViteRemoveCompodoc.check(
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
       checkOptions({
         framework: { name: '@storybook/angular-vite', options: { compodoc: true } },
         features: { experimentalDocgenServer: false },
@@ -159,11 +162,12 @@ describe('check', () => {
   });
 
   it('skips a project with no Compodoc setup left', async () => {
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   it('detects the framework options', async () => {
-    const result = await angularViteRemoveCompodoc.check(
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
       checkOptions({
         framework: {
           name: '@storybook/angular-vite',
@@ -178,7 +182,7 @@ describe('check', () => {
   it('detects the preview wiring', async () => {
     vol.fromNestedJSON({ [PREVIEW]: PREVIEW_WITH_WIRING });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result).toMatchObject({ hasPreviewWiring: true });
   });
@@ -186,7 +190,7 @@ describe('check', () => {
   it('detects the angular.json builder options', async () => {
     vol.fromNestedJSON({ [ANGULAR_JSON]: angularJson({ compodoc: true }) });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result?.workspaceJsonEdits.map((edit) => edit.filePath)).toEqual([ANGULAR_JSON]);
   });
@@ -194,7 +198,7 @@ describe('check', () => {
   it('detects the Compodoc options in an Nx project.json', async () => {
     vol.fromNestedJSON({ [PROJECT_JSON]: projectJson({ compodoc: true }) });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result?.workspaceJsonEdits.map((edit) => edit.filePath)).toContain(PROJECT_JSON);
   });
@@ -202,13 +206,13 @@ describe('check', () => {
   it('ignores an angular.json whose storybook target has no Compodoc options', async () => {
     vol.fromNestedJSON({ [ANGULAR_JSON]: angularJson({ port: 6006 }) });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   it('discovers project.json files from the workspace root, not the working directory', async () => {
     vol.fromNestedJSON({ [PROJECT_JSON]: projectJson({ compodoc: true }) });
 
-    await angularViteRemoveCompodoc.check(checkOptions({}));
+    await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(globby).toHaveBeenCalledWith(
       ['**/project.json'],
@@ -221,7 +225,10 @@ describe('check', () => {
   });
 
   it('detects the Compodoc dependency on its own', async () => {
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}, { hasCompodoc: true }));
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
+      checkOptions({}, { hasCompodoc: true })
+    );
 
     expect(result).toMatchObject({ hasCompodocDependency: true });
   });
@@ -233,7 +240,7 @@ describe('check', () => {
       [ANGULAR_JSON]: angularJson({ compodoc: false }, ANGULAR_BUILDER),
     });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   it('picks the angular-vite target out of a workspace that still has Webpack ones', async () => {
@@ -242,7 +249,7 @@ describe('check', () => {
       [PROJECT_JSON]: projectJson({ compodoc: true }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result?.workspaceJsonEdits.map((edit) => edit.filePath)).toEqual([PROJECT_JSON]);
   });
@@ -252,7 +259,7 @@ describe('check', () => {
       '/project/storybook-static/project.json': projectJson({ compodoc: true }),
     });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   // A bare-name `targetDefaults` entry names no package, so it is only attributable once every
@@ -263,7 +270,7 @@ describe('check', () => {
       [PROJECT_JSON]: projectJson({ port: 6006 }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result?.workspaceJsonEdits).toEqual([
       {
@@ -282,7 +289,7 @@ describe('check', () => {
       [WEBPACK_PROJECT_JSON]: projectJson({ port: 6006 }, ANGULAR_BUILDER),
     });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   // Nx can crystallize the Storybook targets from a plugin instead of declaring them, so "no
@@ -290,7 +297,7 @@ describe('check', () => {
   it('leaves bare-name targetDefaults alone when no workspace file declares a Storybook target', async () => {
     vol.fromNestedJSON({ [NX_JSON]: nxJson({ compodoc: true, compodocArgs: ['-e', 'json'] }) });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   it('leaves bare-name targetDefaults alone when another targetDefault names the Webpack executor', async () => {
@@ -304,7 +311,7 @@ describe('check', () => {
       [PROJECT_JSON]: projectJson({ port: 6006 }),
     });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   // A leftover key in a configuration is a hard Architect validation failure.
@@ -322,7 +329,7 @@ describe('check', () => {
       }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result?.workspaceJsonEdits).toEqual([
       {
@@ -338,7 +345,7 @@ describe('check', () => {
   it('does not mistake a project\u2019s own data file for the Compodoc documentation.json', async () => {
     vol.fromNestedJSON({ [PREVIEW]: 'import meta from "../api-documentation.json";' });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   it('does not mistake a comment mentioning the Compodoc setup for wiring', async () => {
@@ -351,7 +358,7 @@ describe('check', () => {
       `,
     });
 
-    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+    expect(await checkFix(angularViteRemoveCompodoc, checkOptions({}))).toBeNull();
   });
 
   it('detects a documentation.json fed in through a dynamic import', async () => {
@@ -359,7 +366,7 @@ describe('check', () => {
       [PREVIEW]: 'const docs = await import("../documentation.json");',
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result).toMatchObject({ hasPreviewWiring: true });
   });
@@ -376,7 +383,7 @@ describe('check', () => {
       `,
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+    const result = await checkFix(angularViteRemoveCompodoc, checkOptions({}));
 
     expect(result).toMatchObject({ hasPreviewWiring: true });
   });
@@ -392,7 +399,10 @@ describe('check', () => {
       }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}, { hasCompodoc: true }));
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
+      checkOptions({}, { hasCompodoc: true })
+    );
 
     expect(result?.compodocScripts).toEqual([
       { packageJsonPath: PACKAGE_JSON, scriptName: 'docs:json' },
@@ -414,7 +424,10 @@ describe('check', () => {
       }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}, { hasCompodoc: true }));
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
+      checkOptions({}, { hasCompodoc: true })
+    );
 
     expect(result?.compodocScripts.map(({ scriptName }) => scriptName)).toEqual([
       'docs:cli',
@@ -433,7 +446,10 @@ describe('check', () => {
       }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}, { hasCompodoc: true }));
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
+      checkOptions({}, { hasCompodoc: true })
+    );
 
     expect(result?.compodocScripts).toEqual([{ packageJsonPath: nested, scriptName: 'build' }]);
   });
@@ -450,7 +466,10 @@ describe('check', () => {
       }),
     });
 
-    const result = await angularViteRemoveCompodoc.check(checkOptions({}, { hasCompodoc: true }));
+    const result = await checkFix(
+      angularViteRemoveCompodoc,
+      checkOptions({}, { hasCompodoc: true })
+    );
 
     expect(result?.compodocScripts).toEqual([]);
   });
@@ -458,13 +477,47 @@ describe('check', () => {
 
 describe('run', () => {
   const runWith = async (result: Awaited<ReturnType<typeof FixType.check>>, pm: JsPackageManager) =>
-    angularViteRemoveCompodoc.run!({
+    runFix(angularViteRemoveCompodoc, {
       result: result!,
-      dryRun: false,
       mainConfigPath: MAIN,
       previewConfigPath: PREVIEW,
       packageManager: pm,
-    } as unknown as RunOptions<never>);
+    } as unknown as Omit<RunOptions<never>, 'files'>);
+
+  it('removes the Compodoc framework options from the main config', async () => {
+    vol.fromNestedJSON({
+      [MAIN]: dedent`
+        export default {
+          framework: {
+            name: '@storybook/angular-vite',
+            options: { compodoc: true, compodocArgs: ['-e', 'json'], zoneless: true },
+          },
+        };
+      `,
+    });
+
+    await runWith(
+      {
+        hasFrameworkOptions: true,
+        hasPreviewWiring: false,
+        workspaceJsonEdits: [],
+        compodocScripts: [],
+        hasCompodocDependency: false,
+      },
+      packageManager(false)
+    );
+
+    expect(vol.readFileSync(MAIN, 'utf8')).toBe(dedent`
+      export default {
+        framework: {
+          name: '@storybook/angular-vite',
+          options: {
+            zoneless: true
+          },
+        },
+      };
+    `);
+  });
 
   it('strips the setCompodocJson wiring but keeps the rest of the preview', async () => {
     vol.fromNestedJSON({ [PREVIEW]: PREVIEW_WITH_WIRING });
@@ -796,49 +849,5 @@ describe('run', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('setCompodocJson is not called at the top level')
     );
-  });
-
-  it('changes nothing on a dry run, and says what it would change instead', async () => {
-    vol.fromNestedJSON({
-      [PREVIEW]: PREVIEW_WITH_WIRING,
-      [NX_JSON]: nxJson({ compodoc: true }),
-      [PACKAGE_JSON]: JSON.stringify({
-        overrides: { '@compodoc/compodoc': '1.1.19' },
-        devDependencies: { '@compodoc/compodoc': '^1.1.23' },
-      }),
-    });
-    const pm = packageManager(true);
-
-    await angularViteRemoveCompodoc.run!({
-      result: {
-        hasFrameworkOptions: false,
-        hasPreviewWiring: true,
-        workspaceJsonEdits: [
-          {
-            filePath: NX_JSON,
-            optionPaths: [['targetDefaults', 'build-storybook', 'options', 'compodoc']],
-          },
-        ],
-        compodocScripts: [],
-        hasCompodocDependency: true,
-      },
-      dryRun: true,
-      mainConfigPath: MAIN,
-      previewConfigPath: PREVIEW,
-      packageManager: pm,
-    } as unknown as RunOptions<never>);
-
-    expect(vol.readFileSync(PREVIEW, 'utf8')).toContain('setCompodocJson');
-    expect(JSON.parse(vol.readFileSync(NX_JSON, 'utf8') as string)).toEqual(
-      JSON.parse(nxJson({ compodoc: true }))
-    );
-    expect(pm.removeDependencies).not.toHaveBeenCalled();
-    expect(pm.writePackageJson).not.toHaveBeenCalled();
-
-    const reported = vi.mocked(logger.step).mock.calls.flat().join('\n');
-    expect(reported).toContain(`Would remove the Compodoc builder options from ${NX_JSON}`);
-    expect(reported).toContain(`Would remove the setCompodocJson wiring from ${PREVIEW}`);
-    expect(reported).toContain('Would remove @compodoc/compodoc');
-    expect(reported).toContain(`Would remove the dangling @compodoc/compodoc override`);
   });
 });

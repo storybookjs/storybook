@@ -1,12 +1,18 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import * as fsp from 'node:fs/promises';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAddonNames } from 'storybook/internal/common';
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
+import { vol } from 'memfs';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import { addonA11yAddonTest, transformPreviewFile } from './addon-a11y-addon-test.ts';
+
+vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const mod = (await importOriginal()) as any;
@@ -16,14 +22,11 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   };
 });
 
-// mock fs.existsSync
 vi.mock('fs', async (importOriginal) => {
   const mod = (await importOriginal()) as any;
   return {
     ...mod,
     existsSync: vi.fn(),
-    readFileSync: vi.fn(),
-    writeFileSync: vi.fn(),
   };
 });
 
@@ -43,27 +46,54 @@ vi.mock('picocolors', async (importOriginal) => {
 
 describe('addonA11yAddonTest', () => {
   const configDir = '/path/to/config';
+  const previewFile = path.join(configDir, 'preview.js');
   const mainConfig = {} as any;
 
+  const check = (options: { mainConfig: any; configDir: string }) =>
+    checkFix(addonA11yAddonTest, {
+      packageManager: {} as any,
+      storybookVersion: '11.0.0',
+      storiesPaths: [],
+      hasCsfFactoryPreview: false,
+      ...options,
+    });
+
+  const run = (result: { previewFile: string | null; canTransformPreview: boolean }) =>
+    runFix(addonA11yAddonTest, {
+      packageManager: {} as any,
+      result,
+      mainConfigPath: path.join(configDir, 'main.js'),
+      mainConfig,
+      configDir,
+      storybookVersion: '11.0.0',
+      storiesPaths: [],
+    });
+
   beforeEach(() => {
+    vol.reset();
+    vi.mocked(fsp.readFile).mockImplementation(vol.promises.readFile as typeof fsp.readFile);
+    vi.mocked(fsp.writeFile).mockImplementation(vol.promises.writeFile as typeof fsp.writeFile);
+  });
+
+  afterEach(() => {
     vi.clearAllMocks();
   });
 
   describe('check', () => {
     it('should return null if a11y addon is not present', async () => {
       vi.mocked(getAddonNames).mockReturnValue([]);
-      const result = await addonA11yAddonTest.check({ mainConfig, configDir } as any);
+      const result = await check({ mainConfig, configDir });
       expect(result).toBeNull();
     });
 
     it('should return null if test addon is not present', async () => {
       vi.mocked(getAddonNames).mockReturnValue(['@storybook/addon-a11y']);
-      const result = await addonA11yAddonTest.check({ mainConfig, configDir } as any);
+      const result = await check({ mainConfig, configDir });
       expect(result).toBeNull();
     });
 
     it('should return null if configDir is not provided', async () => {
-      const result = await addonA11yAddonTest.check({ mainConfig, configDir: '' } as any);
+      const result = await check({ mainConfig, configDir: '' });
       expect(result).toBeNull();
     });
 
@@ -72,12 +102,12 @@ describe('addonA11yAddonTest', () => {
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
-      const result = await addonA11yAddonTest.check({
+      const result = await check({
         mainConfig: {
           framework: '@storybook/angular',
         },
         configDir: '',
-      } as any);
+      });
       expect(result).toBeNull();
     });
 
@@ -87,7 +117,8 @@ describe('addonA11yAddonTest', () => {
         '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockReturnValue(`
+      vol.fromJSON({
+        [previewFile]: `
         export default {
           parameters: {
             a11y: {
@@ -95,94 +126,94 @@ describe('addonA11yAddonTest', () => {
             }
           }
         }
-      `);
+      `,
+      });
 
-      const result = await addonA11yAddonTest.check({
+      const result = await check({
         mainConfig: {
           framework: '@storybook/react-vite',
         },
         configDir,
-      } as any);
+      });
       expect(result).toBeNull();
     });
 
-    it('should return previewFile and transformedPreviewCode if preview file exists', async () => {
+    it('should return a transformable previewFile if preview file exists', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockReturnValue('export default {}');
+      vol.fromJSON({ [previewFile]: 'export default {}' });
 
-      const result = await addonA11yAddonTest.check({
+      const result = await check({
         mainConfig: {
           framework: '@storybook/react-vite',
         },
         configDir,
-      } as any);
-      expect(result).toEqual({
-        previewFile: path.join(configDir, 'preview.js'),
-        transformedPreviewCode: expect.any(String),
       });
+      expect(result).toEqual({ previewFile, canTransformPreview: true });
+      expect(vol.readFileSync(previewFile, 'utf8')).toBe('export default {}');
     });
 
-    it('should return null transformedPreviewCode if there is no preview file', async () => {
+    it('should return no previewFile if there is no preview file', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(false);
 
-      const result = await addonA11yAddonTest.check({
+      const result = await check({
         mainConfig: {
           framework: '@storybook/react-vite',
         },
         configDir,
-      } as any);
-      expect(result).toEqual({ previewFile: null, transformedPreviewCode: null });
+      });
+      expect(result).toEqual({ previewFile: null, canTransformPreview: false });
     });
 
-    it('should return previewFile and null transformedPreviewCode if transformation fails', async () => {
+    it('should return a non-transformable previewFile if reading it fails', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockImplementation(() => {
-        throw new Error('Test error');
-      });
+      vi.mocked(fsp.readFile).mockRejectedValue(new Error('Test error'));
 
-      const result = await addonA11yAddonTest.check({
+      const result = await check({
         mainConfig: {
           framework: '@storybook/sveltekit',
         },
         configDir,
-      } as any);
-      expect(result).toEqual({
-        previewFile: path.join(configDir, 'preview.js'),
-        transformedPreviewCode: null,
       });
+      expect(result).toEqual({ previewFile, canTransformPreview: false });
     });
   });
 
   describe('run', () => {
-    it('should write transformed preview code to file', async () => {
-      const previewFile = '/path/to/preview.ts';
-      const transformedPreviewCode = 'transformed code';
+    it('should write the transformed preview file', async () => {
+      vol.fromJSON({ [previewFile]: 'export default {};' });
 
-      await addonA11yAddonTest.run?.({
-        result: { previewFile, transformedPreviewCode },
-      } as any);
+      await run({ previewFile, canTransformPreview: true });
 
-      expect(writeFileSync).toHaveBeenCalledWith(previewFile, transformedPreviewCode, 'utf8');
+      expect(vol.readFileSync(previewFile, 'utf8')).toMatchInlineSnapshot(`
+        "export default {
+          parameters: {
+            a11y: {
+              // 'todo' - show a11y violations in the test UI only
+              // 'error' - fail CI on a11y violations
+              // 'off' - skip a11y checks entirely
+              test: "todo"
+            }
+          }
+        };"
+      `);
     });
 
-    it('should throw with instructions when transformedPreviewCode is null', async () => {
-      await expect(
-        addonA11yAddonTest.run?.({
-          result: { previewFile: 'preview.js', transformedPreviewCode: null },
-        } as any)
-      ).rejects
+    it('should throw with instructions when the preview file cannot be transformed', async () => {
+      vol.fromJSON({ [previewFile]: 'export default {};' });
+
+      await expect(run({ previewFile, canTransformPreview: false })).rejects
         .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
 We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
 
@@ -195,7 +226,7 @@ export default {
   }
 }]`);
 
-      expect(writeFileSync).not.toHaveBeenCalled();
+      expect(vol.readFileSync(previewFile, 'utf8')).toBe('export default {};');
     });
   });
 

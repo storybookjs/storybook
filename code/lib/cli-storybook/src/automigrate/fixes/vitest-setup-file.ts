@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
 
 import {
   formatFileContent,
@@ -77,7 +77,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
   promptType: 'auto',
 
-  async check({ mainConfig, configDir: rawConfigDir, packageManager }) {
+  async check({ mainConfig, configDir: rawConfigDir, packageManager, files }) {
     if (!rawConfigDir) {
       return null;
     }
@@ -94,7 +94,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
     for (const configFile of candidateConfigFiles) {
       try {
-        configSources.set(configFile, readFileSync(configFile, 'utf8'));
+        configSources.set(configFile, await files.read(configFile));
       } catch {
         // Skip config files that can't be read
       }
@@ -158,7 +158,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
       let source: string;
 
       try {
-        source = readFileSync(filePath, 'utf8');
+        source = await files.read(filePath);
       } catch {
         continue;
       }
@@ -227,7 +227,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     return `We'll remove "setProjectAnnotations" calls from your Vitest setup files, as ${VITEST_ADDON_NAME} now applies project annotations itself`;
   },
 
-  async run({ result, dryRun }) {
+  async run({ result, files }) {
     const { setupFiles, configFiles, unresolvedEntries, inheritsRootByDefault } = result;
 
     const deletedFiles = setupFiles.filter((setupFile) => setupFile.transform.kind === 'empty');
@@ -284,45 +284,31 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
       );
     }
 
-    // Every file is prepared before the first one is touched, so a failure leaves nothing half-migrated
-    const writes: { path: string; content: string }[] = [];
-
     for (const setupFile of rewrittenFiles) {
-      writes.push({
-        path: setupFile.path,
-        content: await formatFileContent(setupFile.path, setupFile.code),
-      });
+      files.write(setupFile.path, await formatFileContent(setupFile.path, setupFile.code));
     }
 
     const deletedPaths = new Set(deletedFiles.map((setupFile) => setupFile.path));
 
-    for (const configFile of deletedFiles.length > 0 ? configFiles : []) {
+    await files.edit(deletedFiles.length > 0 ? configFiles : [], (source, configFile) => {
       const { code, changed } = removeSetupFileEntries(
-        readFileSync(configFile, 'utf8'),
+        source,
         configFile,
         (resolvedPath) => deletedPaths.has(resolvedPath),
         inheritsRootByDefault
       );
 
       if (!changed) {
-        continue;
+        return null;
       }
 
       // The rewritten config must still parse before we write it back
       loadConfig(code, configFile);
-      writes.push({ path: configFile, content: await formatFileContent(configFile, code) });
-    }
-
-    if (dryRun) {
-      return;
-    }
-
-    for (const write of writes) {
-      writeFileSync(write.path, write.content, 'utf8');
-    }
+      return formatFileContent(configFile, code);
+    });
 
     for (const setupFile of deletedFiles) {
-      unlinkSync(setupFile.path);
+      files.remove(setupFile.path);
     }
   },
 };

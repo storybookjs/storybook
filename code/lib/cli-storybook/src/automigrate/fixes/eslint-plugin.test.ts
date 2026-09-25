@@ -4,6 +4,7 @@ import * as cliImports from 'storybook/internal/cli';
 import type { PackageJson } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
+import { checkFix } from '../helpers/fix-test-utils.ts';
 import { makePackageManager } from '../helpers/testing-helpers.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 
@@ -16,7 +17,7 @@ const defaultHasEslintValues = {
 };
 
 const checkEslint = async ({ packageJson }: { packageJson: PackageJson }) => {
-  return eslintPlugin.check({
+  return checkFix(eslintPlugin, {
     packageManager: makePackageManager(packageJson),
     mainConfig: {} as any,
     storybookVersion: '7.0.0',

@@ -5,7 +5,8 @@ import { detectAgent } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { add } from '../../add.ts';
-import type { CheckOptions, RunOptions } from '../types.ts';
+import { checkFix } from '../helpers/fix-test-utils.ts';
+import type { RunOptions } from '../types.ts';
 import { type AddonMcpOptions, addonMcp } from './addon-mcp.ts';
 
 vi.mock('../../add', { spy: true });
@@ -15,7 +16,7 @@ vi.mock('storybook/internal/telemetry', { spy: true });
 
 const mockPackageManager = { type: 'npm' } as JsPackageManager;
 
-const baseCheckOptions: CheckOptions = {
+const baseCheckOptions = {
   packageManager: mockPackageManager,
   mainConfig: {
     stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -48,7 +49,7 @@ describe('addon-mcp', () => {
       });
 
       it('returns null', async () => {
-        await expect(addonMcp.check(baseCheckOptions)).resolves.toBeNull();
+        await expect(checkFix(addonMcp, baseCheckOptions)).resolves.toBeNull();
       });
     });
 
@@ -58,7 +59,7 @@ describe('addon-mcp', () => {
       });
 
       it('returns isInstalled: false when addon-mcp is missing', async () => {
-        await expect(addonMcp.check(baseCheckOptions)).resolves.toEqual({
+        await expect(checkFix(addonMcp, baseCheckOptions)).resolves.toEqual({
           agentName: 'claude',
           isInstalled: false,
         });
@@ -66,7 +67,7 @@ describe('addon-mcp', () => {
 
       it('returns isInstalled: true when addon-mcp is configured as a string', async () => {
         await expect(
-          addonMcp.check({
+          checkFix(addonMcp, {
             ...baseCheckOptions,
             mainConfig: {
               stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -78,7 +79,7 @@ describe('addon-mcp', () => {
 
       it('returns isInstalled: true when addon-mcp is configured as an object', async () => {
         await expect(
-          addonMcp.check({
+          checkFix(addonMcp, {
             ...baseCheckOptions,
             mainConfig: {
               stories: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
@@ -109,17 +110,6 @@ describe('addon-mcp', () => {
       } as RunOptions<AddonMcpOptions>);
 
       expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
-    });
-
-    it('does nothing in dry run mode', async () => {
-      await addonMcp.run?.({
-        result: { agentName: 'claude', isInstalled: false },
-        packageManager: mockPackageManager,
-        configDir: '.storybook',
-        dryRun: true,
-      } as RunOptions<AddonMcpOptions>);
-
-      expect(vi.mocked(add)).not.toHaveBeenCalled();
     });
   });
 });

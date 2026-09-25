@@ -35,6 +35,18 @@ describe('composeComponentImport', () => {
     ).toBe("import * as UI from './components'");
   });
 
+  it('retains the local name when rewriting a namespace import', () => {
+    expect(
+      composeComponentImport(
+        { import: ["import * as Components from '@design-system/components'"] },
+        {
+          name: 'UI.Alpha',
+          import: "import * as UI from './components'",
+        }
+      )
+    ).toBe("import * as UI from '@design-system/components';");
+  });
+
   it.each([
     [
       "import /* legacy */ Alpha from './components'",

@@ -383,14 +383,54 @@ describe('buildImportStatements', () => {
       `);
     });
 
-    it('uses a namespace override as written', () => {
+    it('preserves a named binding when the override is a namespace import', () => {
       expect(
         buildImportStatements({
           refs: [{ ...button, importOverride: `import * as DS from 'ds';` }],
         })
       ).toMatchInlineSnapshot(`
         [
-          "import * as DS from 'ds';",
+          "import { Button } from './button';",
+        ]
+      `);
+    });
+
+    it('preserves a namespace binding when the override is a named import', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: './ui',
+              importName: 'Alpha',
+              localImportName: 'UI',
+              namespace: 'UI',
+              importOverride: `import { Alpha } from 'ds';`,
+            },
+          ],
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import * as UI from './ui';",
+        ]
+      `);
+    });
+
+    it('retains the local name when overriding a namespace import', () => {
+      expect(
+        buildImportStatements({
+          refs: [
+            {
+              importId: './ui',
+              importName: 'Alpha',
+              localImportName: 'UI',
+              namespace: 'UI',
+              importOverride: `import * as Components from 'ds';`,
+            },
+          ],
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import * as UI from 'ds';",
         ]
       `);
     });

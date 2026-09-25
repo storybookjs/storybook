@@ -58,13 +58,17 @@ export function resolveComponentImport(
 }
 
 type OverrideSpecifier =
-  | { kind: 'namespace'; local: string }
+  | { kind: 'namespace' }
   | { kind: 'default' }
   | { kind: 'named'; imported: t.Identifier | t.StringLiteral };
 
 interface ParsedOverride {
   source: string;
   specifier?: OverrideSpecifier;
+}
+
+function preservesBindingShape(isNamespace: boolean, override: ParsedOverride) {
+  return !override.specifier || (override.specifier.kind === 'namespace') === isNamespace;
 }
 
 function parseSingleImport(code: string): t.ImportDeclaration | undefined {
@@ -89,7 +93,7 @@ function parseImportOverride(code: string): ParsedOverride | undefined {
   const specifier = (declaration.specifiers ?? []).find((s) => !isTypeSpecifier(s));
 
   if (t.isImportNamespaceSpecifier(specifier)) {
-    return { source, specifier: { kind: 'namespace', local: specifier.local.name } };
+    return { source, specifier: { kind: 'namespace' } };
   }
   if (t.isImportDefaultSpecifier(specifier)) {
     return { source, specifier: { kind: 'default' } };
@@ -123,7 +127,7 @@ function overrideImport(
     specifier.kind === 'default'
       ? t.importDefaultSpecifier(local)
       : specifier.kind === 'namespace'
-        ? t.importNamespaceSpecifier(t.identifier(specifier.local))
+        ? t.importNamespaceSpecifier(local)
         : t.importSpecifier(local, t.cloneNode(specifier.imported, true, true));
   return t.importDeclaration([rewrittenSpecifier], t.stringLiteral(override.source));
 }
@@ -168,6 +172,10 @@ export function rewriteComponentImport({
   };
   const match = findMatch(baseName) ?? (memberName ? findMatch(memberName) : undefined);
   if (!match) {
+    return imports;
+  }
+
+  if (!preservesBindingShape(t.isImportNamespaceSpecifier(match.specifier), override)) {
     return imports;
   }
 
@@ -247,7 +255,9 @@ function collectSpecifier(
   if (override?.specifier) {
     const { specifier } = override;
     if (specifier.kind === 'namespace') {
-      addSingle(bucket.namespaces, specifier.local);
+      if (ref.namespace) {
+        addSingle(bucket.namespaces, ref.namespace);
+      }
       return;
     }
     if (!ref.localImportName) {
@@ -330,9 +340,9 @@ function printBucket({ source, defaults, namespaces, named }: Bucket): string[] 
  * Build the minimal, deduplicated set of import declarations the given references need.
  *
  * References are bucketed by their final source, which is the `importOverride` source when one
- * parses, else `packageName` when the original source is not already a package, else the source as
- * written. Sources keep first-seen order and declarations keep a fixed order within a source, so
- * repeated runs produce byte-identical output.
+ * parses without changing the binding shape, else `packageName` when the original source is not
+ * already a package, else the source as written. Sources keep first-seen order and declarations
+ * keep a fixed order within a source, so repeated runs produce byte-identical output.
  */
 export function buildImportStatements({
   refs,
@@ -348,7 +358,11 @@ export function buildImportStatements({
       return;
     }
 
-    const override = ref.importOverride ? parseImportOverride(ref.importOverride) : undefined;
+    const parsedOverride = ref.importOverride ? parseImportOverride(ref.importOverride) : undefined;
+    const override =
+      parsedOverride && preservesBindingShape(ref.namespace !== undefined, parsedOverride)
+        ? parsedOverride
+        : undefined;
     const source = override?.source ?? (packageName && !ref.isPackage ? packageName : ref.importId);
 
     let bucket = buckets.get(source);

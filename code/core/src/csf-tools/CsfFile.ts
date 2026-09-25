@@ -29,10 +29,10 @@ import type {
 import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
-import type { PrintResultType } from './PrintResultType.ts';
 import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
+import type { PrintResultType } from './PrintResultType.ts';
 import {
   isCanonicalCsf2BindCall,
   isCsfFactoryCall,
@@ -199,6 +199,19 @@ const hasMount = (play: t.Node | undefined) => {
     }
   }
   return false;
+};
+
+/**
+ * Records the enclosing variable declaration of a CSF factory meta call (e.g. `const meta =
+ * preview.meta({ ... })`), so a leading JSDoc/comment above it can later be read as the meta's
+ * component description.
+ */
+const recordMetaFactoryStatement = (path: NodePath<t.CallExpression>, self: CsfFile) => {
+  const metaStatementPath = path.findParent((p) => p.isVariableDeclaration());
+  if (metaStatementPath?.isVariableDeclaration()) {
+    self._metaStatementPath = metaStatementPath;
+    self._metaStatement = metaStatementPath.node;
+  }
 };
 
 const MODULE_MOCK_REGEX = /^[.\/#].*\.mock($|\.[^.]*$)/i;
@@ -909,6 +922,7 @@ export class CsfFile {
                   self._metaIsFactory = true;
                   self._metaFactoryCall = node;
                   const metaDeclarator = path.findParent((p) => p.isVariableDeclarator());
+                  recordMetaFactoryStatement(path, self);
 
                   // find the name of the meta variable declaration
                   // e.g. const foo = preview.meta({ ... });

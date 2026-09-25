@@ -63,6 +63,24 @@ const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   'control-in-app-browser',
   'SKILL.md'
 );
+const CLAUDE_BROWSER_MOCK_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'mcp',
+  'claude-browser-mock.mjs'
+);
+const CLAUDE_BROWSER_MOCK_SANDBOX_PATH = path.posix.join(
+  '.agent-eval',
+  'mcp',
+  'claude-browser-mock.mjs'
+);
+const CLAUDE_BROWSER_PROMPT_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'mcp',
+  'claude-browser-prompt.md'
+);
+const CLAUDE_BROWSER_PROMPT_SANDBOX_PATH = 'CLAUDE.md';
 const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
   'lib',
@@ -100,6 +118,7 @@ export function isReviewEnabledFor(integration: EvalIntegration): boolean {
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
+const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
 const CLAUDE_MCP_CONFIG_PATH = '.mcp.json';
 const CODEX_CONFIG_PATH = '.codex/config.toml';
@@ -756,6 +775,23 @@ export async function forceCodexDirectToolMode(sandbox: Sandbox): Promise<void> 
   if (result.exitCode !== 0) {
     throw new Error(`Failed to force Codex direct tool mode: ${result.stderr || result.stdout}`);
   }
+}
+
+// Ship the Claude desktop Browser pane stand-in: the `Browser` MCP server
+// (browser flow only) and, as the sandbox CLAUDE.md, the `<built_in_browser>`
+// prompt block the app injects so the agent knows it has that browser.
+export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
+  await sandbox.writeFiles({
+    [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
+    [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]: await fs.readFile(
+      CLAUDE_BROWSER_PROMPT_SOURCE_PATH,
+      'utf8'
+    ),
+  });
+  await writeClaudeMcpServer(sandbox, CLAUDE_BROWSER_MCP_SERVER_NAME, {
+    command: 'node',
+    args: [CLAUDE_BROWSER_MOCK_SANDBOX_PATH],
+  });
 }
 
 async function appendCodexConfig(sandbox: Sandbox, section: string): Promise<void> {

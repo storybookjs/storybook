@@ -2,12 +2,14 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { Sandbox } from '@vercel/agent-eval';
 import { describe, expect, it } from 'vitest';
 
 import {
   enableExperimentalReview,
   isReviewEnabledFor,
   rewritePackageSpecsForNpm,
+  writeClaudeInAppBrowserMock,
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
@@ -95,6 +97,39 @@ describe('rewritePackageSpecsForNpm', () => {
     expect((rewritten.peerDependencies as Record<string, string>)['@storybook/addon-vitest']).toBe(
       `^${version}`
     );
+  });
+});
+
+describe('writeClaudeInAppBrowserMock', () => {
+  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
+    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
+    const files: Record<string, string> = {
+      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
+    };
+    const sandbox = {
+      writeFiles: async (written: Record<string, string>) => {
+        Object.assign(files, written);
+      },
+      readFile: async (filePath: string) => {
+        const content = files[filePath];
+        if (content === undefined) {
+          throw new Error(`ENOENT: ${filePath}`);
+        }
+        return content;
+      },
+    } as unknown as Sandbox;
+
+    await writeClaudeInAppBrowserMock(sandbox);
+
+    expect(JSON.parse(files['.mcp.json'] ?? '')).toEqual({
+      mcpServers: {
+        'storybook-dev-mcp': storybookServer,
+        Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
+      },
+    });
+    expect(files['CLAUDE.md']).toMatch(/^<built_in_browser>\n/);
+    expect(files['CLAUDE.md']).toContain('tools named `mcp__Browser__*`');
+    expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toContain("name: 'Browser'");
   });
 });
 

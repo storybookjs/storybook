@@ -3,6 +3,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
@@ -23,6 +24,10 @@ describe('creating a ProfileCard component', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('every new story appears in the display review', () => {

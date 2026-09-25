@@ -4,6 +4,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
@@ -25,6 +26,10 @@ describe('creating an accessible ToggleSwitch', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('discovers stories through the workflow tools before publishing the review', () => {

@@ -4,6 +4,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
@@ -24,6 +25,10 @@ describe('writing the first Button stories in an empty Storybook', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('the review covers the new Button stories', () => {

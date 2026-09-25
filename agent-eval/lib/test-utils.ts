@@ -81,7 +81,7 @@ export function getEvalContext(): EvalContext {
 }
 
 // Review mode of this run. Plugin runs are always review-on — the addon
-// enables review by default for the `storybook ai` CLI channel — while MCP
+// enables review by default for the `storybook tools` CLI channel — while MCP
 // runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
 // the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
 // files branch on this — with review on, visual work must end in a published
@@ -469,7 +469,7 @@ export function findDevServerKillCommands(commands: string[], navigatedUrls: str
 // URLs the in-app browser navigated to, from the codex raw transcript: each
 // successful node_repl `js` tool call is scanned for `goto('<url>')` string
 // literals in its code argument. This mirrors how plugin workflow calls are
-// parsed out of `storybook ai` shell commands. A dynamically composed URL
+// parsed out of `storybook tools` shell commands. A dynamically composed URL
 // (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
 // loud rather than as a false-pass.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
@@ -558,7 +558,8 @@ export type WorkflowToolResult = {
 // success. The section headers come from the shared test-run result formatter
 // (## Passing Stories / ## Failing Stories / ## Unhandled Errors) and appear
 // verbatim in the MCP tool result and — since storybookjs/storybook#36029 —
-// byte-identically in the `storybook tools test run` CLI output.
+// byte-identically in the `storybook tools test run` CLI output. A `--json`
+// CLI run is rendered to the same sections by renderTestRunJsonOutput.
 //
 // `covering` pins the final green run to the change under test: at least one
 // of the given substrings must appear in its story ids. A stricter
@@ -603,8 +604,61 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
   }
 }
 
-// The test-run result formatter (packages/addon-mcp) always emits at
-// least one of these markers. A captured output with none of them is a
+// `storybook tools test run --json` prints the run's structured outcome
+// instead of the markdown report. The raw JSON is unusable for the assertions
+// here: the embedded axe reports list every rule id under passes/inapplicable,
+// so a green run still "mentions" button-name. Render it to the section headings
+// of the formatter (code/addons/vitest/src/node/toolset/format.ts), listing
+// only what the assertions read: story ids and violation ids. Error and
+// cancelled outcomes stay raw, as the markdown report has no heading for them.
+function renderTestRunJsonOutput(output: string): string | undefined {
+  // A `--json` run diverts every other stdout writer to stderr, so with `2>&1`
+  // npm/logger lines surround the document: the pretty-printed block between a
+  // `{` line and a `}` line.
+  const json = /^\{$[\s\S]*^\}$/m.exec(output)?.[0];
+  const data = json === undefined ? undefined : parseJson(json);
+  if (!isRecord(data)) {
+    return undefined;
+  }
+
+  if (data.status === 'no-stories') {
+    return 'No stories found matching the provided input.';
+  }
+
+  return data.status === 'completed' && isRecord(data.result)
+    ? renderCompletedTestRun(data.result, data.a11y !== false)
+    : undefined;
+}
+
+function renderCompletedTestRun(result: Record<string, unknown>, a11y: boolean): string {
+  const statuses = asRecords(result.componentTestStatuses);
+  const storyIds = (value: string) =>
+    statuses.filter((status) => status.value === value).map((status) => status.storyId);
+  const a11yReports = a11y && isRecord(result.a11yReports) ? result.a11yReports : {};
+  const violations = Object.entries(a11yReports).flatMap(([storyId, reports]) =>
+    asRecords(reports).flatMap((report) =>
+      asRecords(report.violations).map((violation) => `${storyId} - ${violation.id}`)
+    )
+  );
+  const sections: [string, unknown[]][] = [
+    ['## Passing Stories', storyIds('status-value:success')],
+    ['## Failing Stories', storyIds('status-value:error')],
+    ['## Accessibility Violations', violations],
+    ['## Unhandled Errors', asRecords(result.unhandledErrors).map((error) => error.name)],
+  ];
+
+  return sections
+    .filter(([, items]) => items.length > 0)
+    .map(([heading, items]) => `${heading}\n\n- ${items.join('\n- ')}`)
+    .join('\n\n');
+}
+
+function asRecords(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value) ? value.filter(isRecord) : [];
+}
+
+// The test-run result formatter (code/addons/vitest/src/node/toolset/format.ts)
+// always emits at least one of these markers. A captured output with none of them is a
 // shell-filtered fragment of the real report, not the report itself. isError
 // deliberately does not count as recognizable: a piped `… | grep` exits
 // non-zero when the filter simply matches nothing, so an errored markerless
@@ -617,7 +671,7 @@ const RUN_STORY_TESTS_REPORT_MARKERS = [
   'No stories found matching',
 ];
 
-// On the plugin path agents pipe the `storybook ai test-run` CLI
+// On the plugin path agents pipe the `storybook tools test run` CLI
 // output through grep/sed/tail, so the chronologically last captured output
 // can be a filtered fragment of an otherwise correct run (observed in CI run
 // 28672627415, 2026-07-03). Judge the last output that still looks like a
@@ -635,7 +689,7 @@ export function selectFinalRunStoryTestsReport(
 
 // Chronological outputs of a Storybook workflow tool, across every path an
 // agent can reach it: Claude MCP tool calls, Codex MCP tool calls, and
-// `storybook ai <tool>` CLI invocations inside shell commands (plugin path).
+// `storybook tools` CLI invocations inside shell commands (plugin path).
 export function getWorkflowToolResults(workflowName: string): WorkflowToolResult[] {
   return parseWorkflowToolResults(readFileSync(TRANSCRIPT_PATH, 'utf8'), workflowName);
 }
@@ -655,6 +709,13 @@ export function parseWorkflowToolResults(
 
     collectClaudeWorkflowToolResults(event, workflowName, pendingClaudeToolUseIds, results);
     collectCodexWorkflowToolResult(event, workflowName, results);
+  }
+
+  if (workflowName === 'test-run') {
+    return results.map((result) => ({
+      ...result,
+      output: renderTestRunJsonOutput(result.output) ?? result.output,
+    }));
   }
 
   return results;
@@ -710,7 +771,7 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return true;
   }
 
-  // Plugin path: the workflow call runs as a `storybook ai` CLI invocation
+  // Plugin path: the workflow call runs as a `storybook tools` CLI invocation
   // inside a shell tool call.
   const command = isRecord(block.input) ? block.input.command : undefined;
   if (typeof command !== 'string') {

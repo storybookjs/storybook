@@ -7,7 +7,7 @@ import { isRecord } from './utils/type.ts';
 export type StorybookWorkflowCall = {
   name: string;
   input: Record<string, unknown>;
-  source: 'mcp' | 'storybook-ai' | 'cli';
+  source: 'mcp' | 'cli';
 };
 
 // `storybook skills write-story` serves the same document the MCP channel
@@ -86,14 +86,15 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
     return parsePluginWorkflowCalls(nestedCommand);
   }
 
-  // Only genuine `storybook ai` / `storybook tools` CLI invocations count as plugin
-  // workflow calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
+  // Only genuine `storybook tools` CLI invocations count as plugin workflow
+  // calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
   // are deliberately not recognized: agents must use the documented CLI.
   return parseStorybookCliWorkflowCalls(command);
 }
 
 function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
-  const tokens = tokenizeShellCommand(command);
+  const words = tokenizeShellWords(command);
+  const tokens = words.map((word) => word.value);
   const heredocs = extractCatHeredocs(command);
   const calls: StorybookWorkflowCall[] = [];
 
@@ -106,7 +107,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
     if (cli === 'skills') {
       // Record the literal invocation; which skill serves which workflow document
       // is workflowCallMatchesName's concern. A help request prints usage instead
-      // of the skill, so it does not count — same rule as the ai/tools branch below.
+      // of the skill, so it does not count — same rule as the tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
       const [first, ...rest] = segment;
       const all = first === '--all' && rest.length === 0;
@@ -126,11 +127,11 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       }
       continue;
     }
-    if (cli !== 'ai' && cli !== 'tools') {
+    if (cli !== 'tools') {
       continue;
     }
 
-    const invocation = parseStorybookCliInvocation(tokens.slice(index + 2), cli, heredocs);
+    const invocation = parseStorybookToolsInvocation(words.slice(index + 2), heredocs);
     if (invocation !== undefined) {
       calls.push(invocation.call);
       index += invocation.consumed + 1;
@@ -147,74 +148,52 @@ function segmentUntilSeparator(tokens: string[], start: number): string[] {
   return tokens.slice(start, end === -1 ? tokens.length : end);
 }
 
-function parseStorybookCliInvocation(
-  cliArgs: string[],
-  cli: 'ai' | 'tools',
+function parseStorybookToolsInvocation(
+  cliArgs: ShellWord[],
   heredocs: Map<string, string>
 ): { call: StorybookWorkflowCall; consumed: number } | undefined {
   const endIndex = cliArgs.findIndex(
-    (token, index) =>
-      SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && cliArgs[index + 1] === cli)
+    ({ value }, index) =>
+      SHELL_COMMAND_SEPARATORS.has(value) ||
+      (value === 'storybook' && cliArgs[index + 1]?.value === 'tools')
   );
   const consumed = endIndex === -1 ? cliArgs.length : endIndex;
-  const segment = cliArgs.slice(0, consumed);
+  const { segment, unresolved } = expandShellWords(cliArgs.slice(0, consumed), heredocs);
 
-  if (segment.includes('--help') || segment.includes('-h') || segment[0] === 'help') {
+  const command = findWorkflowCommand(segment);
+  if (command === undefined || segment[0] === 'help') {
     return undefined;
   }
 
-  const command = findWorkflowCommand(segment, cli);
-  if (command === undefined) {
+  const commanderOptions = segment.slice(0, command.index);
+  if (commanderOptions.includes('--help') || commanderOptions.includes('-h')) {
     return undefined;
   }
 
-  const commandTokenCount = cli === 'tools' ? 2 : 1;
-  const inputTokens = [
-    ...segment.slice(0, command.endIndex - commandTokenCount),
-    ...segment.slice(command.endIndex),
-  ];
+  const input = parseToolArguments(
+    segment.slice(command.index + 2),
+    readCommanderInput(commanderOptions),
+    unresolved
+  );
+  if (input === undefined) {
+    return undefined;
+  }
 
-  return {
-    call: {
-      name: command.name,
-      input: parseStorybookAiInput(inputTokens, heredocs),
-      source: 'storybook-ai',
-    },
-    consumed,
-  };
+  return { call: { name: command.name, input, source: 'cli' }, consumed };
 }
 
+// The `<toolset> <tool>` pair (`test run`) names the workflow tool (`test-run`).
 function findWorkflowCommand(
-  segment: string[],
-  cli: 'ai' | 'tools'
-): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; endIndex: number } | undefined {
-  if (cli === 'tools') {
-    for (let index = 0; index < segment.length - 1; index += 1) {
-      const first = segment[index];
-      const second = segment[index + 1];
-      if (first === undefined || second === undefined) {
-        continue;
-      }
-      const name = normalizeStorybookWorkflowName(`${first}-${second}`);
-      if (name !== undefined) {
-        return { name, endIndex: index + 2 };
-      }
+  segment: string[]
+): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; index: number } | undefined {
+  for (let index = 0; index < segment.length - 1; index += 1) {
+    const name = normalizeStorybookWorkflowName(`${segment[index]}-${segment[index + 1]}`);
+    if (name !== undefined) {
+      return { name, index };
     }
-    return undefined;
   }
 
-  const commandIndex = segment.findIndex(
-    (token) => normalizeStorybookWorkflowName(token) !== undefined
-  );
-  const commandToken = commandIndex === -1 ? undefined : segment[commandIndex];
-  const name =
-    commandToken === undefined ? undefined : normalizeStorybookWorkflowName(commandToken);
-
-  if (name === undefined || commandIndex === -1) {
-    return undefined;
-  }
-
-  return { name, endIndex: commandIndex + 1 };
+  return undefined;
 }
 
 // Matches the shell binary of a `bash -c '…'`-style wrapper, with or without a
@@ -257,98 +236,152 @@ function isShellRedirection(token: string): boolean {
   return SHELL_REDIRECTION_PATTERN.test(token);
 }
 
-function parseStorybookAiInput(
-  tokens: string[],
-  heredocs: Map<string, string>
-): Record<string, unknown> {
-  const input: Record<string, unknown> = {};
-  let index = 0;
+const CAT_SUBSTITUTION = /\$\(\s*cat\s+([^\s)]+)\s*\)/g;
 
-  while (index < tokens.length) {
-    const token = tokens[index];
-    if (token === undefined) {
+// What the shell hands the CLI: redirections removed, and `$(cat path)`
+// replaced by the body of a same-command `cat > path <<TAG` heredoc.
+// `unresolved` holds the values whose substitution the harness cannot see, both
+// as a whole word and as the value of a `--key=value` word.
+function expandShellWords(
+  words: ShellWord[],
+  heredocs: Map<string, string>
+): { segment: string[]; unresolved: Set<string> } {
+  const segment: string[] = [];
+  const unresolved = new Set<string>();
+  for (let index = 0; index < words.length; index += 1) {
+    const word = words[index];
+    if (word === undefined) {
+      continue;
+    }
+    if (!word.quotedStart && BARE_SHELL_REDIRECTION_PATTERN.test(word.value)) {
       index += 1;
       continue;
     }
-
-    if (isShellRedirection(token)) {
-      index += BARE_SHELL_REDIRECTION_PATTERN.test(token) ? 2 : 1;
+    if (!word.quotedStart && isShellRedirection(word.value)) {
       continue;
     }
-
-    if (token.startsWith('--')) {
-      index = parseFlagToken(tokens, index, input, heredocs);
+    if (!word.expands) {
+      segment.push(word.value);
       continue;
     }
-
-    // Positional argument: the CLI accepts the JSON payload bare.
-    mergeJsonInput(input, parseCliValue(token, heredocs));
-    index += 1;
+    const value = word.value.replace(
+      CAT_SUBSTITUTION,
+      (match, path: string) => heredocs.get(path) ?? match
+    );
+    if (value.includes('$')) {
+      unresolved.add(value).add(value.slice(value.indexOf('=') + 1));
+    }
+    segment.push(value);
   }
+  return { segment, unresolved };
+}
 
+// Commander parses the options before the toolset name; of those, only
+// `--input` reaches the tool.
+function readCommanderInput(options: string[]): string | undefined {
+  let input: string | undefined;
+  options.forEach((option, index) => {
+    if (option === '--input') {
+      input = options[index + 1];
+    } else if (option.startsWith('--input=')) {
+      input = option.slice('--input='.length);
+    }
+  });
   return input;
 }
 
-// Parse one `--flag`, `--flag=value`, or `--flag value` starting at `index`;
-// returns the index of the next unconsumed token. `--json` values merge into
-// the input object, every other flag assigns its (JSON-parsed) value.
-function parseFlagToken(
+// A copy of parseToolsTokens (code/core/src/cli/tools/tool-tokens.ts) that
+// returns only the tool arguments, or `undefined` where the CLI prints help or
+// rejects the invocation. shell-parse.test.ts runs both on the same tokens.
+function parseToolArguments(
   tokens: string[],
-  index: number,
-  input: Record<string, unknown>,
-  heredocs: Map<string, string>
-): number {
-  const token = tokens[index] ?? '';
-  const [rawKey = '', inlineValue] = token.slice(2).split('=', 2);
-  if (rawKey.length === 0) {
-    return index + 1;
-  }
+  commanderInput: string | undefined,
+  unresolved: ReadonlySet<string>
+): Record<string, unknown> | undefined {
+  let rawInput = commanderInput;
+  let attach: boolean | undefined;
+  const flagArgs: Record<string, unknown> = {};
 
-  const key = kebabToCamel(rawKey);
-  const assign = (value: unknown) => {
-    if (key === 'json') {
-      mergeJsonInput(input, value);
-    } else {
-      input[key] = value;
+  let index = 0;
+  while (index < tokens.length) {
+    const token = tokens[index] ?? '';
+    index += 1;
+
+    if (token === '--help' || token === '-h') {
+      return undefined;
     }
-  };
+    if (token === '--json') {
+      continue;
+    }
+    if (token === '--attach' || token === '--no-attach') {
+      const value = token === '--attach';
+      if (attach === !value) {
+        return undefined;
+      }
+      attach = value;
+      continue;
+    }
+    if (token === '-o') {
+      const path = tokens[index];
+      if (path === undefined || path.startsWith('-')) {
+        return undefined;
+      }
+      index += 1;
+      continue;
+    }
+    if (!token.startsWith('--') || token === '--') {
+      return undefined;
+    }
 
-  if (inlineValue !== undefined) {
-    assign(parseCliValue(inlineValue, heredocs));
-    return index + 1;
+    const equalsIndex = token.indexOf('=');
+    const key = token.slice(2, equalsIndex === -1 ? undefined : equalsIndex);
+    let value = equalsIndex === -1 ? undefined : token.slice(equalsIndex + 1);
+    const next = tokens[index];
+    if (value === undefined && next !== undefined && !next.startsWith('--')) {
+      value = next;
+      index += 1;
+    }
+
+    if (key === '' || ['help', 'json', 'attach', 'no-attach'].includes(key)) {
+      return undefined;
+    }
+    if (key === 'output') {
+      if (!value) {
+        return undefined;
+      }
+      continue;
+    }
+    if (key === 'input') {
+      if (value === undefined) {
+        return undefined;
+      }
+      rawInput = value;
+      continue;
+    }
+    flagArgs[key] = value === undefined ? true : coerceValue(value);
   }
 
-  const next = tokens[index + 1];
-  if (next !== undefined && !next.startsWith('-') && !isShellRedirection(next)) {
-    assign(parseCliValue(next, heredocs));
-    return index + 2;
+  if (rawInput === undefined) {
+    return flagArgs;
   }
-
-  assign(true);
-  return index + 1;
-}
-
-function mergeJsonInput(input: Record<string, unknown>, value: unknown): void {
-  if (isRecord(value)) {
-    Object.assign(input, unwrapWorkflowInput(value));
-    return;
-  }
-
-  input.json = value;
-}
-
-function parseCliValue(value: string, heredocs: Map<string, string>): unknown {
-  const catPath = CAT_SUBSTITUTION.exec(value.trim())?.[1];
-  const fromHeredoc = catPath === undefined ? undefined : heredocs.get(catPath);
-  const payload = fromHeredoc ?? value;
+  let input: unknown;
   try {
-    return JSON.parse(payload) as unknown;
+    input = JSON.parse(rawInput);
   } catch {
-    return payload;
+    // The CLI saw what the shell made of this (`$(cat file)` from an earlier
+    // command, `$VAR`); keep the raw text so a failing assertion shows it.
+    return unresolved.has(rawInput) ? { input: rawInput, ...flagArgs } : undefined;
   }
+  return isRecord(input) ? { ...input, ...flagArgs } : undefined;
 }
 
-const CAT_SUBSTITUTION = /^\$\(\s*cat\s+(\S+)\s*\)$/;
+function coerceValue(value: string): unknown {
+  try {
+    return JSON.parse(value) as unknown;
+  } catch {
+    return value;
+  }
+}
 
 function extractCatHeredocs(command: string): Map<string, string> {
   const files = new Map<string, string>();
@@ -363,30 +396,24 @@ function extractCatHeredocs(command: string): Map<string, string> {
   return files;
 }
 
-function kebabToCamel(value: string): string {
-  return value.replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
-}
-
-function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unknown> {
-  const direct = getNestedWorkflowInput(value);
-  if (direct !== undefined) {
-    return direct;
-  }
-
-  const params = value.params;
-  if (isRecord(params)) {
-    return getNestedWorkflowInput(params) ?? value;
-  }
-
-  return value;
-}
-
-// Known limitation: a `storybook ai` invocation nested inside `$(...)` is not
+// Known limitation: a `storybook tools` invocation nested inside `$(...)` is not
 // recognized. `$(cat path)` is resolved when that path was written by a
 // `cat > path <<TAG` heredoc in the same command.
 export function tokenizeShellCommand(command: string): string[] {
-  const tokens: string[] = [];
-  let token = '';
+  return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
+}
+
+type ShellWord = {
+  value: string;
+  // The first character was quoted or escaped, so a leading `<` or `>` is text.
+  quotedStart: boolean;
+  // A `$` outside single quotes: the shell substitutes something here.
+  expands: boolean;
+};
+
+function tokenizeShellWords(command: string): ShellWord[] {
+  const words: ShellWord[] = [];
+  let word: ShellWord | undefined;
   let quote: '"' | "'" | undefined;
   let escaping = false;
 
@@ -397,18 +424,21 @@ export function tokenizeShellCommand(command: string): string[] {
     }
 
     // POSIX: inside single quotes everything is literal, including backslashes.
-    // Agents rely on this when passing JSON payloads (e.g. --json '{"a": "\"x\""}').
+    // Agents rely on this when passing JSON payloads (e.g. --input '{"a": "\"x\""}').
     if (quote === "'") {
       if (char === "'") {
         quote = undefined;
       } else {
-        token += char;
+        append(char, true);
       }
       continue;
     }
 
     if (escaping) {
-      token += char;
+      // A backslash-newline continues the line and is removed entirely.
+      if (char !== '\n') {
+        append(char, true);
+      }
       escaping = false;
       continue;
     }
@@ -422,53 +452,61 @@ export function tokenizeShellCommand(command: string): string[] {
       if (char === '"') {
         quote = undefined;
       } else {
-        token += char;
+        append(char, true, char === '$');
       }
       continue;
     }
 
     if (char === '"' || char === "'") {
       quote = char;
+      word ??= { value: '', quotedStart: true, expands: false };
       continue;
     }
 
     if (char === '&' && command[index + 1] === '&') {
-      pushToken();
-      tokens.push('&&');
+      pushOperator('&&');
       index += 1;
       continue;
     }
 
     if (char === '|' && command[index + 1] === '|') {
-      pushToken();
-      tokens.push('||');
+      pushOperator('||');
       index += 1;
       continue;
     }
 
     if (char === ';' || char === '|') {
-      pushToken();
-      tokens.push(char);
+      pushOperator(char);
       continue;
     }
 
     if (/\s/.test(char)) {
-      pushToken();
+      pushWord();
       continue;
     }
 
-    token += char;
+    append(char, false, char === '$');
   }
 
-  pushToken();
-  return tokens;
+  pushWord();
+  return words;
 
-  function pushToken(): void {
-    if (token.length === 0) {
-      return;
+  function append(char: string, quoted: boolean, expands = false): void {
+    word ??= { value: '', quotedStart: quoted, expands: false };
+    word.value += char;
+    word.expands ||= expands;
+  }
+
+  function pushWord(): void {
+    if (word !== undefined) {
+      words.push(word);
+      word = undefined;
     }
-    tokens.push(token);
-    token = '';
+  }
+
+  function pushOperator(operator: string): void {
+    pushWord();
+    words.push({ value: operator, quotedStart: false, expands: false });
   }
 }
 

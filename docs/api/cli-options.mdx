@@ -103,6 +103,23 @@ Options include:
 | `--enable-crash-reports`        | Enables sending crash reports to Storybook's telemetry. Learn more about it [here](../configure/telemetry.mdx#crash-reports-disabled-by-default).<br />`storybook build --enable-crash-reports`                                                |
 | `--preview-only`                | Skips Storybook's manager from building and produces a "preview only" app, which is designed to be used in [unsupported browsers](../sharing/publish-storybook.mdx#build-storybook-for-older-browsers). <br />`storybook build --preview-only` |
 
+<Callout variant="info">
+
+`storybook build` does not include a built-in watch mode. For normal development, use
+`storybook dev` so Storybook updates in the browser as your source files change. If your workflow
+must repeatedly rebuild static output, run `storybook build` from a file watcher such as
+[`nodemon`](https://www.npmjs.com/package/nodemon):
+
+```json
+{
+  "scripts": {
+    "build-storybook:watch": "nodemon --watch src --exec 'storybook build'"
+  }
+}
+```
+
+</Callout>
+
 ### `init`
 
 <Callout variant="info">

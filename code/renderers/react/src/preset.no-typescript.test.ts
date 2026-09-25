@@ -5,5 +5,6 @@ vi.mock('typescript', () => {
 });
 
 test('loads the React preset without TypeScript installed', async () => {
-  await expect(import('./preset.ts')).resolves.toBeDefined();
+  // @ts-expect-error The runtime-only preset export has no declaration file.
+  await expect(import('@storybook/react/preset')).resolves.toBeDefined();
 });

@@ -8,16 +8,27 @@ import type { SourceWithUrl } from '../../shared/open-service/toolsets/docs/sour
  * Reads the composed Storybooks from the project's `refs` as docs sources, in config order.
  *
  * Only the configured `refs` count, not auto-refs from package dependencies; a function-form
- * `refs` receives an empty object instead of them. Disabled refs and refs without a `url` are
- * dropped, and so is a ref keyed `local`, the id reserved for this Storybook's own source. Ids and
- * titles are normalised the way the manager does for the sidebar, so a source id matches the ref id
- * in Storybook URLs. No network access.
+ * `refs` receives an empty object instead of them. Disabled refs and refs without a string `url`
+ * are dropped, and so is a ref keyed `local`, the id reserved for this Storybook's own source. Ids
+ * and titles are normalised the way the manager does for the sidebar, so a source id matches the
+ * ref id in Storybook URLs. No network access.
+ *
+ * A `refs` config that throws yields no sources and a warning, because this also runs for tools
+ * that load the config without the manager, such as the Vitest plugin and the tools CLI.
  */
 export async function getRefsFromConfig(options: Options): Promise<SourceWithUrl[]> {
-  const refs = (await options.presets.apply<Record<string, Ref>>('refs', {})) ?? {};
+  let refs: Record<string, Ref>;
+  try {
+    refs = (await options.presets.apply<Record<string, Ref>>('refs', {})) ?? {};
+  } catch (error) {
+    logger.warn(
+      `Composed Storybooks are left out of the docs toolset: reading "refs" failed. ${error instanceof Error ? error.message : String(error)}`
+    );
+    return [];
+  }
 
   return Object.entries(refs)
-    .filter(([, ref]) => ref?.url && !ref.disable)
+    .filter(([, ref]) => typeof ref?.url === 'string' && ref.url.length > 0 && !ref.disable)
     .map(([key, ref]) => ({
       id: key.toLowerCase(),
       title: ref.title || toTitle(key),

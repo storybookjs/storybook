@@ -11,6 +11,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 import {
   createDocgenProvider,
+  DEFAULT_TYPE_PROPERTY,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
@@ -69,6 +70,7 @@ const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: str
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [manifestPath],
+    typeProperty: DEFAULT_TYPE_PROPERTY,
   })(async () => undefined);
   return provider({ entry });
 };
@@ -79,6 +81,18 @@ const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {
   }
   const { argTypes: _argTypes, ...rest } = payload;
   return rest;
+};
+
+const hiddenMemberNames = (payload: WebComponentsDocgenPayload): ReadonlySet<string> => {
+  const declaration = payload.customElementsManifest?.declaration;
+  return new Set(
+    (declaration?.members ?? [])
+      .filter(
+        (member) =>
+          member.privacy === 'private' || member.privacy === 'protected' || member.static === true
+      )
+      .flatMap((member) => (typeof member.name === 'string' ? [member.name] : []))
+  );
 };
 
 describe('web-components server-side docgen baselines', () => {
@@ -113,6 +127,8 @@ describe('web-components server-side docgen baselines', () => {
             committed: committedLegacyArgTypes!,
             label: `${fixtureCase}/${legacyPrefix}argtypes.snapshot`,
             legacyBaseline: true,
+            legacyManifestRuntime: true,
+            waivedArgs: hiddenMemberNames(payload!),
           },
         ],
       });

@@ -9,7 +9,7 @@
         "summary": undefined,
       },
       "type": {
-        "summary": "CustomEvent",
+        "summary": "CustomEvent<{ value: string }>",
       },
     },
     "type": {
@@ -26,7 +26,7 @@
         "summary": undefined,
       },
       "type": {
-        "summary": "CustomEvent",
+        "summary": "CustomEvent<void>",
       },
     },
     "type": {
@@ -54,7 +54,6 @@
   "value": {
     "description": "Current text value.",
     "name": "value",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

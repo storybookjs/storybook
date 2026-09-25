@@ -8,6 +8,7 @@ import { isFailedManifest, loadManifests } from './component-docgen/manifest/loa
 
 export const createDocgenProvider = ({
   manifestPaths,
+  typeProperty,
 }: WebComponentsDocgenOptions): DocgenMiddleware =>
   createLazyDocgenMiddleware({
     createManager: async () => {
@@ -29,5 +30,5 @@ export const createDocgenProvider = ({
       }
       return loaded;
     },
-    extract: async (manifests, input) => buildDocgenPayload(input, { manifests }),
+    extract: async (manifests, input) => buildDocgenPayload(input, { manifests, typeProperty }),
   });

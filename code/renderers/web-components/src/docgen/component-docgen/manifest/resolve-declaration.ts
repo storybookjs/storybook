@@ -1,29 +1,39 @@
-import type {
-  CustomElementsDeclaration,
-  CustomElementsManifest,
-} from '../../../docs/custom-elements-manifest-types.ts';
 import { isFailedManifest, type ManifestLoadResult } from './load-manifest.ts';
+import type { ManifestAnyDeclaration, ManifestDeclaration, ManifestPackage } from './types.ts';
 
 export interface ResolvedDeclaration {
   manifestPath: string;
-  declaration: CustomElementsDeclaration;
+  declaration: ManifestDeclaration;
 }
 
 function findDeclarationByName(
-  manifest: CustomElementsManifest,
+  manifest: ManifestPackage,
   name: string,
   modulePath: string | undefined
-): CustomElementsDeclaration | undefined {
+): ManifestDeclaration | undefined {
   for (const module of manifest.modules) {
     if (modulePath !== undefined && module.path !== modulePath) {
       continue;
     }
-    const declaration = module.declarations?.find((candidate) => candidate.name === name);
+    const declaration = module.declarations?.find(
+      (candidate): candidate is ManifestDeclaration =>
+        isManifestDeclaration(candidate) && candidate.name === name
+    );
     if (declaration) {
       return declaration;
     }
   }
   return undefined;
+}
+
+function isManifestDeclaration(
+  candidate: ManifestAnyDeclaration
+): candidate is ManifestDeclaration {
+  return (
+    (candidate.kind === 'class' || candidate.kind === 'mixin') &&
+    'customElement' in candidate &&
+    candidate.customElement === true
+  );
 }
 
 export function resolveDeclarationForTag(
@@ -36,7 +46,10 @@ export function resolveDeclarationForTag(
     }
 
     for (const module of loaded.manifest.modules) {
-      const declaration = module.declarations?.find((candidate) => candidate.tagName === tag);
+      const declaration = module.declarations?.find(
+        (candidate): candidate is ManifestDeclaration =>
+          isManifestDeclaration(candidate) && candidate.tagName === tag
+      );
       if (declaration) {
         return { manifestPath: loaded.path, declaration };
       }

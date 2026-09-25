@@ -4281,6 +4281,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@microsoft/fast-element@npm:3.0.2":
+  version: 3.0.2
+  resolution: "@microsoft/fast-element@npm:3.0.2"
+  checksum: 10c0/a1fcb4441de076614f2d92e096f18303b2eff4f76c6cbc915a1400d5ef00c1669ff42c93d821b36c222e3da862926f066038a060a30d60525f0ae6dc3881aeec
+  languageName: node
+  linkType: hard
+
 "@modelcontextprotocol/sdk@npm:^1.22.0":
   version: 1.29.0
   resolution: "@modelcontextprotocol/sdk@npm:1.29.0"
@@ -10139,6 +10146,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@compodoc/compodoc": "npm:2.0.0"
+    "@microsoft/fast-element": "npm:3.0.2"
     "@storybook/addon-svelte-csf": "npm:^5.1.2"
     "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
@@ -10904,6 +10912,7 @@ __metadata:
     "@types/node": "npm:^22.19.1"
     "@types/tmp": "npm:^0.2.6"
     cross-spawn: "npm:^7.0.6"
+    custom-elements-manifest: "npm:^2.1.0"
     lit: "npm:2.3.1"
     tiny-invariant: "npm:^1.3.1"
     tmp: "npm:^0.2.3"
@@ -17996,6 +18005,13 @@ __metadata:
   version: 3.2.3
   resolution: "csstype@npm:3.2.3"
   checksum: 10c0/cd29c51e70fa822f1cecd8641a1445bed7063697469d35633b516e60fe8c1bde04b08f6c5b6022136bb669b64c63d4173af54864510fbb4ee23281801841a3ce
+  languageName: node
+  linkType: hard
+
+"custom-elements-manifest@npm:^2.1.0":
+  version: 2.1.0
+  resolution: "custom-elements-manifest@npm:2.1.0"
+  checksum: 10c0/cc671f8b9f7bdcc481a3f20c24a5532f61c7f879f59ff652b1edd3923c99f35a5cf942b842380f34d1f123a9037e93ef8ecd4264b043ac40a27fd6b1835d6062
   languageName: node
   linkType: hard
 

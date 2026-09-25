@@ -36,8 +36,11 @@ const CONFIG_FILE_PATTERNS = [
 interface VitestSetupFileInfo {
   path: string;
   transform:
+    // The `setProjectAnnotations()` call was removed but other statements remain; `code` is written back to the file
     | { kind: 'rewritten'; code: string }
+    // Nothing remains after removing the call, so the file and its `setupFiles` entries are deleted
     | { kind: 'empty' }
+    // The call can't be removed safely; `reason` is shown to the user as a manual step
     | { kind: 'manual'; reason: string };
 }
 
@@ -328,7 +331,6 @@ const ANNOTATIONS_IMPORT_SOURCES = new Set([
   'storybook',
   'storybook/preview-api',
   'storybook/internal/preview-api',
-  '@storybook/experimental-nextjs-vite',
   ...Object.keys(frameworkPackages),
   ...Object.keys(rendererPackages),
 ]);

@@ -76,7 +76,8 @@ async function defaultManifestProvider(
       "Request is required when using the default manifest provider. You must either pass the original request forward to the server context, or set a custom manifestProvider that doesn't need the request."
     );
   }
-  return fetchManifestText(getManifestUrlFromRequest(request, path));
+  const manifestUrl = getManifestUrlFromRequest(request, path);
+  return readManifestText(await fetch(manifestUrl), manifestUrl);
 }
 
 // For a composition assembled at boot rather than per request (the docs toolset core registers
@@ -87,16 +88,17 @@ export const sourceUrlManifestProvider: ManifestProvider = async (_request, path
   }
   // Concatenated rather than resolved with `new URL`, which would let a `$ref` such as
   // `../http:evil.example/x.json` from the remote manifest leave the source's origin.
-  return fetchManifestText(`${source.url.replace(/\/$/, '')}${path.replace(/^\.\//, '/')}`);
+  const manifestUrl = `${source.url.replace(/\/$/, '')}${path.replace(/^\.\//, '/')}`;
+  const response = await fetch(manifestUrl, {
+    signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS),
+  });
+  return readManifestText(response, manifestUrl);
 };
 
-const MANIFEST_FETCH_TIMEOUT_MS = 10_000;
+// The same budget addon-mcp gives its startup probe of a ref's manifest.
+const REF_MANIFEST_FETCH_TIMEOUT_MS = 3_000;
 
-async function fetchManifestText(manifestUrl: string): Promise<string> {
-  const response = await fetch(manifestUrl, {
-    signal: AbortSignal.timeout(MANIFEST_FETCH_TIMEOUT_MS),
-  });
-
+async function readManifestText(response: Response, manifestUrl: string): Promise<string> {
   if (!response.ok) {
     throw new ManifestGetError(
       `Failed to fetch manifest: ${response.status} ${response.statusText}`,

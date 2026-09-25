@@ -207,13 +207,20 @@ export class Yarn1Proxy extends JsPackageManager {
           if (typeof version === 'string') {
             return version as T extends true ? string[] : string;
           }
-          throw new Error(`Yarn did not provide the ${taggedPackage[2]} dist-tag.`);
+          throw new FindPackageVersionsError({
+            error: `Yarn did not provide the ${taggedPackage[2]} dist-tag.`,
+            packageManager: 'Yarn 1',
+            packageName,
+          });
         }
         return parsedOutput.data;
       }
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(`Yarn did not provide an output with type 'inspect'.`);
     } catch (error) {
+      if (error instanceof FindPackageVersionsError) {
+        throw error;
+      }
       throw new FindPackageVersionsError({
         error,
         packageManager: 'Yarn 1',

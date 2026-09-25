@@ -11,6 +11,8 @@ export interface CheckOptions {
   storybookVersion: string;
   /** Version installed before the upgrade. Only set when running as part of `storybook upgrade`. */
   beforeVersion?: string;
+  /** Whether this check runs as part of `storybook upgrade`. */
+  isUpgrade?: boolean;
   /**
    * The user named this fix explicitly (`storybook automigrate <fixId>` or `storybook upgrade
    * --features <flag>`). Opt-in fixes may treat this as consent and skip their own gating.
@@ -108,6 +110,8 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
+  /** Version installed before the upgrade. Only set when running as part of `storybook upgrade`. */
+  beforeVersion?: string;
   /** Whether the migration is part of an upgrade. */
   isUpgrade: boolean;
   isLatest: boolean;

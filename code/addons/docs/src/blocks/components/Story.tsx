@@ -99,6 +99,10 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
  * The manager renders the docs page with the selected globals (e.g. `theme:dark`) in its URL. The
  * nested story iframe only receives the initial globals of the preview if it is given them
  * explicitly, so read them from the current URL and let `UPDATE_QUERY_PARAMS` keep them up to date.
+ *
+ * Cleared globals are removed from that URL by the manager (it emits an explicit `null` so the
+ * preview drops the param instead of merging the stale value), which is why reading the URL again
+ * after a remount cannot resurrect a cleared value.
  */
 const getGlobalsFromUrl = () => {
   const searchParams = new URLSearchParams(globalThis.location?.search ?? '');
@@ -112,8 +116,9 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
     if (!channel) {
       return () => {};
     }
-    const onUpdateQueryParams = (queryParams: Record<string, string | undefined>) => {
-      setGlobals(queryParams?.globals || undefined);
+    // `globals` is `null` when the manager clears it, which removes it from the iframe src below.
+    const onUpdateQueryParams = (queryParams: Record<string, string | null | undefined>) => {
+      setGlobals(queryParams?.globals ?? undefined);
     };
     channel.on(UPDATE_QUERY_PARAMS, onUpdateQueryParams);
     return () => channel.off(UPDATE_QUERY_PARAMS, onUpdateQueryParams);

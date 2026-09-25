@@ -187,6 +187,44 @@ describe('queryParams', () => {
     expect(state.customQueryParams).not.toHaveProperty('tags');
   });
 
+  it('emits an explicit null for a param that is cleared', () => {
+    let state = {};
+    const store = {
+      setState: (change) => {
+        state = { ...state, ...change };
+      },
+      getState: () => state,
+    };
+    const channel = new EventEmitter();
+    const { api } = initURL({
+      state: { location: { search: '' } },
+      navigate: vi.fn(),
+      store,
+      provider: { channel },
+    });
+
+    const listener = vi.fn();
+    channel.on(UPDATE_QUERY_PARAMS, listener);
+
+    api.setQueryParams({ globals: 'theme:dark' });
+    expect(listener).toHaveBeenLastCalledWith({ globals: 'theme:dark' });
+
+    listener.mockClear();
+    api.setQueryParams({ globals: null });
+
+    // The preview merges the payload into its own URL, so clearing has to be explicit: the param is
+    // dropped from the manager URL, but sent as `null` so the preview removes it as well.
+    expect(listener).toHaveBeenCalledTimes(1);
+    expect(listener).toHaveBeenCalledWith({ globals: null });
+    expect(api.getQueryParam('globals')).toBeUndefined();
+    expect(state.customQueryParams).not.toHaveProperty('globals');
+
+    // Clearing a param that is already gone is a no-op.
+    listener.mockClear();
+    api.setQueryParams({ globals: null });
+    expect(listener).not.toHaveBeenCalled();
+  });
+
   it('lets your read out parameters you set previously', () => {
     let state = {};
     const store = {

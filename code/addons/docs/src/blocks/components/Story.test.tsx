@@ -67,10 +67,37 @@ describe('Story', () => {
     });
     expect(getIframeSrc(container)).toContain('globals=theme%3Adark');
 
+    // The manager signals a cleared selection with an explicit `null`, not by omitting the key, so
+    // that the preview drops the param instead of merging the previous value back in.
     act(() => {
-      channel.emit(UPDATE_QUERY_PARAMS, { globals: undefined });
+      channel.emit(UPDATE_QUERY_PARAMS, { globals: null });
     });
     expect(getIframeSrc(container)).not.toContain('globals=');
+  });
+
+  it('does not resurrect a global that the manager cleared when the story iframe remounts', () => {
+    const channel = mockChannel();
+    setUrl(`${DOCS_URL}&globals=theme:dark`);
+
+    const view = render(
+      <Story story={story} inline={false} height="100px" primary={false} channel={channel} />
+    );
+    expect(getIframeSrc(view.container)).toContain('globals=theme%3Adark');
+
+    act(() => {
+      channel.emit(UPDATE_QUERY_PARAMS, { globals: null });
+    });
+    expect(getIframeSrc(view.container)).not.toContain('globals=');
+
+    // Clearing also removes the param from the url (the UrlStore and manager-api tests cover both
+    // halves), so remounting cannot read the cleared value back out of the url.
+    setUrl(DOCS_URL);
+    view.unmount();
+
+    const remounted = render(
+      <Story story={story} inline={false} height="100px" primary={false} channel={mockChannel()} />
+    );
+    expect(getIframeSrc(remounted.container)).not.toContain('globals=');
   });
 });
 

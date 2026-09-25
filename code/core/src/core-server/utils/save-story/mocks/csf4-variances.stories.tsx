@@ -13,3 +13,7 @@ export const WithArgs = meta.story({
     foo: 'bar',
   },
 });
+// A spread carries its own args, so saved args have to land after it to take effect
+export const SpreadsAnotherStory = meta.story({
+  ...WithArgs,
+});

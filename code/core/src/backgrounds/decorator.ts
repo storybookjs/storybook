@@ -5,7 +5,8 @@ import { useEffect } from 'storybook/preview-api';
 import { PARAM_KEY } from './constants.ts';
 import { DEFAULT_BACKGROUNDS } from './defaults.ts';
 import type { BackgroundsParameters, GridConfig } from './types.ts';
-import { addBackgroundStyle, addGridStyle, clearStyles, isReduceMotionEnabled } from './utils.ts';
+import { isReduceMotionEnabled } from '../shared/utils/is-reduced-motion-enabled.ts';
+import { addBackgroundStyle, addGridStyle, clearStyles } from './utils.ts';
 
 const defaultGrid: GridConfig = {
   cellSize: 100,
@@ -15,8 +16,6 @@ const defaultGrid: GridConfig = {
 
 const BG_SELECTOR_BASE = `addon-backgrounds`;
 const GRID_SELECTOR_BASE = 'addon-backgrounds-grid';
-
-const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
 
 export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const { globals = {}, parameters = {}, viewMode, id } = context;
@@ -52,6 +51,7 @@ export const withBackgroundAndGrid: DecoratorFunction = (StoryFn, context) => {
   const backgroundTarget = viewMode === 'docs' ? id : null;
 
   useEffect(() => {
+    const transitionStyle = isReduceMotionEnabled() ? '' : 'transition: background-color 0.3s;';
     const backgroundStyles = `
     ${backgroundSelector} {
       background: ${value} !important;

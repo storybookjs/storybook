@@ -4,6 +4,7 @@ import { testType } from 'type-plus';
 
 import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
+import type { InferTypes } from './csf-factories.ts';
 import type { Tag } from './story.ts';
 
 interface Addon1Types {
@@ -19,6 +20,10 @@ interface Addon2Types {
 const addon2 = definePreviewAddon<Addon2Types>({});
 
 const preview = definePreview({ addons: [addon, addon2], renderToCanvas: () => {} });
+
+test('an empty addon list does not add the generic addon types', () => {
+  expectTypeOf<InferTypes<never[]>>().toEqualTypeOf<{ csf4: true }>();
+});
 
 const meta = preview.type<{ args: { label: string } }>().meta({
   args: { label: 'foo' },

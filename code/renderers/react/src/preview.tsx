@@ -19,7 +19,7 @@ import * as reactAnnotations from './entry-preview.tsx';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
 import * as reactDocsAnnotations from './entry-preview-docs.ts';
 import type { AddMocks } from './public-types.ts';
-import type { ReactTypes } from './types.ts';
+import type { ReactRenderer, ReactTypes } from './types.ts';
 
 /** Extracts and unions all args types from an array of decorators. */
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
@@ -52,11 +52,19 @@ type InferReactTypes<T, TArgs, Decorators> = ReactTypes &
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
-  input: { addons: Addons } & ProjectAnnotations<ReactTypes & InferTypes<Addons>>
+export function __definePreview<
+  Addons extends PreviewAddon<never>[],
+  TRenderer extends ReactRenderer & { csf4: true } = ReactRenderer & InferTypes<Addons>,
+>(
+  input: {
+    addons: Addons;
+    render?: ArgsStoryFn<TRenderer> &
+      ([ReactTypes & InferTypes<Addons>] extends [TRenderer] ? ArgsStoryFn<TRenderer> : never);
+  } & Omit<ProjectAnnotations<ReactTypes & InferTypes<Addons>>, 'render'>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,
+    render: input.render as ProjectAnnotations<ReactTypes & InferTypes<Addons>>['render'],
     addons: [
       reactAnnotations,
       reactArgTypesAnnotations,

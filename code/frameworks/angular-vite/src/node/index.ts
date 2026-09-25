@@ -5,3 +5,4 @@ export function defineMain(config: StorybookConfig) {
 }
 
 export type { StorybookConfig };
+export type { AngularComponentManifest } from '../componentManifest/index.ts';

@@ -20,9 +20,9 @@ Storybook is a large TypeScript monorepo. The git root is the repo root, the mai
 
 ### Storybook 11 docgen feature contract
 
-- `features.docgenServer` defaults to `true` for every React-renderer framework,
-  `@storybook/vue3-vite`, and `@storybook/angular-vite`, including React frameworks that use
-  Webpack. Unsupported frameworks resolve it to `false`, even when it is explicitly `true`.
+- `features.docgenServer` defaults to `true` for every React-renderer framework and the Angular,
+  Svelte, Vue 3, and Web Components Vite frameworks, including React frameworks that use Webpack.
+  Unsupported frameworks resolve it to `false`, even when it is explicitly `true`.
 - Resolution order is the stable option, deprecated `experimentalDocgenServer`, Storybook 10
   legacy preservation, then the supported-framework default. The deprecated option and automatic
   legacy preservation expire in Storybook 12.

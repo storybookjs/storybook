@@ -597,7 +597,7 @@ No automigration is needed. Existing boolean settings retain their meaning, and 
 
 ### `docgenServer` is stable and enabled by default
 
-The `experimentalDocgenServer` feature is now `docgenServer`. Server-side component metadata extraction is enabled by default for React frameworks, including Webpack, Vue3-Vite, and Angular-Vite. Unsupported frameworks keep it disabled even when the flag is `true`.
+The `experimentalDocgenServer` feature is now `docgenServer`. Server-side component metadata extraction is enabled by default for React frameworks, including Webpack, and for the Angular, Svelte, Vue 3, and Web Components Vite frameworks. Unsupported frameworks keep it disabled even when the flag is `true`.
 
 The `docgen-server` automigration runs when an upgrade crosses into Storybook 11. It renames the deprecated flag while preserving its value or expression. If both flags have literal boolean values, it keeps `docgenServer`. Unsafe dynamic configs receive manual migration instructions instead of being overwritten. You can also run `storybook automigrate docgen-server` explicitly on Storybook 11.
 

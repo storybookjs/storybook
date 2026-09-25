@@ -10,10 +10,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 import {
-  buildDocgenPayload,
+  createDocgenProvider,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
-import { loadManifests } from '../../../../renderers/web-components/src/docgen/component-docgen/manifest/load-manifest.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -68,8 +67,10 @@ const entryForFixture = (fixtureCase: string, testDir: string): IndexEntry => {
 
 const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: string) => {
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
-  const manifests = await loadManifests([manifestPath]);
-  return buildDocgenPayload({ entry }, { manifests });
+  const provider = createDocgenProvider({
+    manifestPaths: [manifestPath],
+  })(async () => undefined);
+  return provider({ entry });
 };
 
 const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {

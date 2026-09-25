@@ -34,6 +34,7 @@
     "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",
     "./internal/createReactiveProps": "./static/createReactiveProps.svelte.js",
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"

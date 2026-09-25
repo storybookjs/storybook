@@ -8,7 +8,7 @@ import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigF
 import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
-type DocgenFramework = 'react' | 'vue' | 'angular' | 'other';
+type DocgenFramework = 'react' | 'vue' | 'angular' | 'svelte' | 'web-components' | 'other';
 
 const manualGuidance =
   'Rename features.experimentalDocgenServer to features.docgenServer manually, preserving expressions and stable-flag precedence. With neither flag present, set docgenServer: false to retain React reactDocgen: false or react-docgen-typescript, or an explicit Vue docgen setting. Do not translate RDT propFilter or Vue tsconfig to server options.';
@@ -48,7 +48,7 @@ export function transformDocgenServer(source: string, framework: DocgenFramework
     } else {
       throw new HandledError(`Cannot safely combine dynamic docgen flags. ${manualGuidance}`);
     }
-  } else if (!stable && framework !== 'angular') {
+  } else if (!stable && (framework === 'react' || framework === 'vue')) {
     if (preservesLegacyDocgen(main, framework)) {
       main.set(['features', 'docgenServer'], false);
     }
@@ -83,14 +83,19 @@ export const docgenServer: Fix<{
     ) {
       return null;
     }
+    const frameworkPackageName = getFrameworkPackageName(mainConfig);
     const framework =
       getRendererName(mainConfig) === 'react'
         ? 'react'
-        : getFrameworkPackageName(mainConfig) === '@storybook/vue3-vite'
+        : frameworkPackageName === '@storybook/vue3-vite'
           ? 'vue'
-          : getFrameworkPackageName(mainConfig) === '@storybook/angular-vite'
+          : frameworkPackageName === '@storybook/angular-vite'
             ? 'angular'
-            : 'other';
+            : frameworkPackageName === '@storybook/svelte-vite'
+              ? 'svelte'
+              : frameworkPackageName === '@storybook/web-components-vite'
+                ? 'web-components'
+                : 'other';
     const source = await readFile(mainConfigPath, 'utf8');
     const transformedSource = transformDocgenServer(source, framework);
     return source === transformedSource ? null : { mainConfigPath, framework };

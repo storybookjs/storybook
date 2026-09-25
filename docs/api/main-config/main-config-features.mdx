@@ -258,7 +258,7 @@ Unlike the current implementation, this method reads the actual stories source f
 
 Type: `boolean`
 
-Default: `true` for every React framework, [`@storybook/angular-vite`](../../get-started/frameworks/angular-vite.mdx#component-documentation), and [`@storybook/vue3-vite`](../../get-started/frameworks/vue3-vite.mdx#component-documentation). `false` for other frameworks.
+Default: `true` for every React framework and the Angular, Svelte, Vue 3, and Web Components Vite frameworks. `false` for other frameworks.
 
 Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 

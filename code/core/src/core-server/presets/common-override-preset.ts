@@ -12,7 +12,12 @@ export const features: PresetPropertyFn<'features'> = async (input = {}, options
   const frameworkName = extractFrameworkPackageName(await getFrameworkName(options));
   const isReact = (await extractRenderer(frameworkName)) === 'react';
   const isVue = frameworkName === '@storybook/vue3-vite';
-  const supported = isReact || isVue || frameworkName === '@storybook/angular-vite';
+  const supported =
+    isReact ||
+    isVue ||
+    frameworkName === '@storybook/angular-vite' ||
+    frameworkName === '@storybook/svelte-vite' ||
+    frameworkName === '@storybook/web-components-vite';
   const { experimentalDocgenServer, ...stableFeatures } = input;
   const explicit = input.docgenServer ?? experimentalDocgenServer;
 

@@ -152,10 +152,21 @@ describe('transformDocgenServer', () => {
     await expect(
       docgenServer.check({
         ...checkOptions,
-        mainConfig: { framework: '@storybook/svelte-vite', stories: [] },
+        mainConfig: { framework: '@storybook/html-vite', stories: [] },
       })
     ).resolves.toBeNull();
   });
+
+  it.each(['svelte', 'web-components'] as const)(
+    'renames the deprecated flag for %s',
+    (framework) => {
+      const transformed = transformDocgenServer(source, framework);
+      expect(transformed).toMatchInlineSnapshot(
+        `"export default { features: { docgenServer: false } };"`
+      );
+      expect(transformDocgenServer(transformed, framework)).toBe(transformed);
+    }
+  );
 
   it('preserves Vue opt-out', () => {
     expect(
@@ -279,6 +290,8 @@ describe('docgen-server migration', () => {
     [{ framework: '@storybook/react-vite', stories: [] }, 'react'],
     [{ framework: '@storybook/vue3-vite', stories: [] }, 'vue'],
     [{ framework: '@storybook/angular-vite', stories: [] }, 'angular'],
+    [{ framework: '@storybook/svelte-vite', stories: [] }, 'svelte'],
+    [{ framework: '@storybook/web-components-vite', stories: [] }, 'web-components'],
   ] satisfies [CheckOptions['mainConfig'], string][])(
     'selects the %s docgen migration',
     async (mainConfig, framework) => {

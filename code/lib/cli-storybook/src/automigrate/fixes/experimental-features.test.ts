@@ -183,8 +183,8 @@ describe('experimental feature flag automigrations', () => {
       ['@storybook/react-webpack5', true],
       ['@storybook/vue3-vite', true],
       ['@storybook/angular-vite', true],
-      ['@storybook/svelte-vite', false],
-      ['@storybook/web-components-vite', false],
+      ['@storybook/svelte-vite', true],
+      ['@storybook/web-components-vite', true],
       ['@storybook/preact-vite', false],
       ['@storybook/angular', false],
     ])('%s offers enable-experimental-docgen-server: %s', async (framework, expected) => {

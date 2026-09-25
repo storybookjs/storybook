@@ -1,3 +1,4 @@
+export { createDocgenProvider } from './docgen-worker.ts';
 export {
   buildDocgenPayload,
   type WebComponentsDocgenOptions,

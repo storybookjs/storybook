@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { buildDocgenPayload } from '../../../../renderers/svelte/src/docgen/component-docgen/build-docgen.ts';
+import { createDocgenProvider } from '../../../../renderers/svelte/src/docgen/docgen-worker.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
@@ -68,7 +68,7 @@ const entries = new Map(
 
 const LEGACY_PARITY = new Set<string>();
 
-const provider = buildDocgenPayload;
+const provider = createDocgenProvider()(async () => undefined);
 
 const withoutArgTypes = (
   payload: DocgenPayload | undefined
@@ -92,7 +92,7 @@ describe('svelte server-side docgen baselines', () => {
     const testDir = join(fixturesDir, fixtureCase);
     vi.spyOn(process, 'cwd').mockReturnValue(testDir);
 
-    const payload = provider({ entry: entries.get(fixtureCase)! });
+    const payload = await provider({ entry: entries.get(fixtureCase)! });
 
     expect(JSON.stringify(payload ?? null)).not.toContain(testDir);
     await recordArgTypesSnapshot({

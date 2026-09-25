@@ -6,6 +6,7 @@ Build your stories with [vite](https://vitejs.dev/) for fast startup times and n
 
 - [Installation](#installation)
 - [Usage](#usage)
+  - [Experimental Vite plugin](#experimental-vite-plugin)
   - [Getting started with Vite and Storybook (on a new project)](#getting-started-with-vite-and-storybook-on-a-new-project)
   - [Migration from webpack / CRA](#migration-from-webpack--cra)
   - [Customize Vite config](#customize-vite-config)
@@ -31,6 +32,23 @@ Your `vite.config` file will be used by Storybook. If you need to customize the 
 
 1. Set values in your `vite.config` conditionally, based on an environment variable, for example.
 2. Add a `viteFinal` config to your `.storybook/main.js` file. See [Customize Vite config](#customize-vite-config) for details.
+
+### Experimental Vite plugin
+
+The experimental Vite plugin serves Storybook from the consuming application's Vite dev server and
+can build a static Storybook in a dedicated Vite mode:
+
+```typescript
+import { experimental_vitePlugin } from '@storybook/builder-vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({
+  plugins: [experimental_vitePlugin({ outputDir: './storybook-static' })],
+});
+```
+
+Run `vite build --mode storybook` to produce the static Storybook. `outputDir` is resolved against
+Vite's project root and defaults to `./storybook-static`.
 
 ### Getting started with Vite and Storybook (on a new project)
 

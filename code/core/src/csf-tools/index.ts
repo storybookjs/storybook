@@ -1,3 +1,4 @@
+export * from './AnnotationFile.ts';
 export * from './CsfFile.ts';
 export type {
   CsfMutationDiagnostic,

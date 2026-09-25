@@ -18,7 +18,7 @@ Each editor reads and writes static property paths with `get`, `getValue`, `set`
 `get` returns an AST expression; `getValue` reads plain values from literals, nested arrays and objects, and local constants without executing code. Missing fields return `undefined`. Values that cannot be resolved statically return `undefined` and add a mutation diagnostic; reads never return a partially decoded object.
 `set` accepts Babel expressions or plain strings, numbers, booleans, `null`, `undefined`, and nested arrays or objects of those values. Values are copied into the AST; subsequent changes to the input do not affect the file. Top-level expression-shaped objects are interpreted as AST nodes.
 Successful removals and moves recursively remove empty source parents, stopping at the editor's root object or an empty parent that shadows an earlier spread or computed key. Removing a field that could reveal an earlier spread value produces a diagnostic. Moves clean up after inserting the destination, so shared ancestors remain intact. Unrelated empty objects are preserved.
-Nested object paths can follow local constants used only by that object; shared or reassigned references remain untouched.
+Nested object paths can follow local constants used only by that object, including a sole spread such as `parameters: { ...localParameters }` when the binding resolves to an object literal. Shared or reassigned references remain untouched.
 Nodes reused by `transform` keep their original source, so relocating a value prints it as written instead of pretty-printing it.
 `group(path, names)` nests named siblings under a destination object, retaining their source order. A new group replaces a contiguous run of source fields at their original position. Grouping into an existing object requires values whose relocation cannot change expression evaluation order. Conflicts, ambiguous keys, and unsafe relocations produce diagnostics before the operation changes the source; absent source fields are ignored.
 Annotation editors take the same paths as their story counterparts, so `['parameters', 'a11y']` addresses `Story.parameters.a11y` and an inline `parameters.a11y` alike.
@@ -68,3 +68,10 @@ if (manager.changed && manager.mutationDiagnostics.length === 0) {
 ```
 
 These editors share the file's change tracking and diagnostics and expose the same read and mutation methods as configs and stories.
+
+## Transforming preview and story annotations together
+
+`loadAnnotationFile(source, 'preview' | 'stories')` provides `objects`, `changed`,
+`mutationDiagnostics`, and `print()` for either format. Apply the same `CsfObject` operations to
+those editors and print only when the file changed without diagnostics. Each editor's `target`
+identifies its annotation level; migrations remain responsible for inheritance semantics.

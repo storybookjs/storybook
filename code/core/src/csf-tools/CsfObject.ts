@@ -1,6 +1,7 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
-import { pathForNode, unwrapExpression } from './story-shape/index.ts';
+import { resolveExpression, resolveObject } from './resolveObject.ts';
+import { unwrapExpression } from './story-shape/index.ts';
 
 export type CsfObjectTarget =
   | { kind: 'config' }
@@ -513,7 +514,7 @@ class CsfObjectEditor implements CsfObject {
         return { ok: true, changed: false };
       }
       const value = t.isObjectProperty(inspected.property)
-        ? this.resolveExpression(inspected.property.value)
+        ? resolveObject(inspected.property.value, this.root.scope)
         : undefined;
       if (!t.isObjectExpression(value)) {
         return this.failure('unsupported-member', path, inspected.property);
@@ -683,7 +684,7 @@ class CsfObjectEditor implements CsfObject {
       if (ancestor.ok === false || !t.isObjectProperty(ancestor.property) || !ancestor.parent) {
         return;
       }
-      const value = this.resolveExpression(ancestor.property.value);
+      const value = resolveObject(ancestor.property.value, this.root.scope);
       if (!t.isObjectExpression(value) || value.properties.length > 0) {
         return;
       }
@@ -708,7 +709,7 @@ class CsfObjectEditor implements CsfObject {
   }
 
   private readValue(node: t.Node): CsfValue | typeof UNRESOLVED {
-    const value = this.resolveExpression(node);
+    const value = resolveExpression(node, this.root.scope);
     if (t.isStringLiteral(value) || t.isNumericLiteral(value) || t.isBooleanLiteral(value)) {
       return value.value;
     }
@@ -783,34 +784,6 @@ class CsfObjectEditor implements CsfObject {
     return UNRESOLVED;
   }
 
-  private resolveExpression(node: t.Node): t.Node | undefined {
-    const program = this.root.scope.getProgramParent().path;
-    if (!program.isProgram()) {
-      return undefined;
-    }
-    let value = unwrapExpression(node);
-    const visited = new Set<t.Node>();
-    while (t.isIdentifier(value) && !visited.has(value)) {
-      visited.add(value);
-      const reference = pathForNode(program, value);
-      const binding = reference?.scope.getBinding(value.name);
-      if (!binding && reference && value.name === 'undefined') {
-        return value;
-      }
-      if (
-        !binding?.constant ||
-        binding.referencePaths.length !== 1 ||
-        binding.referencePaths[0].node !== value ||
-        !binding.path.isVariableDeclarator() ||
-        !binding.path.node.init
-      ) {
-        return undefined;
-      }
-      value = unwrapExpression(binding.path.node.init);
-    }
-    return value;
-  }
-
   private inspect(path: readonly string[]) {
     let object = this.root.node;
     let parent: t.ObjectExpression | undefined;
@@ -829,7 +802,7 @@ class CsfObjectEditor implements CsfObject {
       if (!t.isObjectProperty(property)) {
         return { ok: false as const, code: 'unsupported-member' as const, node: property };
       }
-      const value = this.resolveExpression(property.value);
+      const value = resolveObject(property.value, this.root.scope);
       if (!t.isObjectExpression(value)) {
         return { ok: false as const, code: 'unsupported-member' as const, node: property.value };
       }
@@ -852,7 +825,7 @@ class CsfObjectEditor implements CsfObject {
         object = child;
       } else {
         const value = t.isObjectProperty(lookup.property)
-          ? this.resolveExpression(lookup.property.value)
+          ? resolveObject(lookup.property.value, this.root.scope)
           : undefined;
         if (!t.isObjectExpression(value)) {
           throw this.root.buildCodeFrameError('CsfObject mutation preflight was invalidated');

@@ -130,6 +130,7 @@ export const automigrate = async ({
   hideMigrationSummary = false,
   isUpgrade,
   isLatest,
+  beforeVersion,
   storiesPaths,
   hasCsfFactoryPreview,
   glob,
@@ -202,6 +203,7 @@ export const automigrate = async ({
     mainConfigPath,
     storybookVersion,
     isUpgrade: !!isUpgrade,
+    beforeVersion,
     dryRun,
     yes,
     storiesPaths,
@@ -240,6 +242,7 @@ type RunFixesOptions = {
   storybookVersion: string;
   isUpgrade?: boolean;
   hasCsfFactoryPreview: boolean;
+  beforeVersion?: string;
 };
 
 export async function runFixes({
@@ -257,6 +260,8 @@ export async function runFixes({
   storybookVersion,
   storiesPaths,
   hasCsfFactoryPreview,
+  beforeVersion,
+  isUpgrade,
 }: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
@@ -284,6 +289,8 @@ export async function runFixes({
         mainConfigPath,
         storiesPaths,
         hasCsfFactoryPreview,
+        beforeVersion,
+        isUpgrade,
         requested: fixId === f.id,
         files: createFixFiles().files,
       });

@@ -311,6 +311,30 @@ export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
   }
 }
 
+export class OpenServiceAsyncRecipeError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceAsyncRecipeError',
+      category: Category.CORE_COMMON,
+      code: 31,
+      message:
+        'setState recipes must be synchronous. A write after an await would change state without authoring a sync entry. Split the command into one setState per synchronous step.',
+    });
+  }
+}
+
+export class OpenServiceCyclicStateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceCyclicStateError',
+      category: Category.CORE_COMMON,
+      code: 32,
+      message:
+        'Service state must be JSON-serializable, but the value is cyclic or nested more than 256 levels deep. Store an id and look the value up in a query instead of a reference.',
+    });
+  }
+}
+
 export class OpenServiceOperationNameCollisionError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; operationName: string }) {
     super({

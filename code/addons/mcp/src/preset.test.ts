@@ -772,7 +772,7 @@ describe('experimental_devServer', () => {
     expect(result).toBe(mockApp);
   });
 
-  it('fails to start when the refs config throws, like the manager does', async () => {
+  it('should handle refs config throwing gracefully', async () => {
     const optionsWithThrowingRefs = {
       port: 6006,
       presets: {
@@ -786,8 +786,7 @@ describe('experimental_devServer', () => {
       },
     } as unknown as Options;
 
-    await expect((experimental_devServer as any)(mockApp, optionsWithThrowingRefs)).rejects.toThrow(
-      'Config error'
-    );
+    const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
+    expect(result).toBe(mockApp);
   });
 });

@@ -1,7 +1,10 @@
+import { logger } from 'storybook/internal/node-logger';
 import type { Options } from 'storybook/internal/types';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { getRefsFromConfig } from './get-refs-from-config.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 function optionsWithRefs(refs: unknown): Options {
   return { presets: { apply: async () => refs } } as unknown as Options;
@@ -39,16 +42,31 @@ describe('getRefsFromConfig', () => {
     expect(refs.map((ref) => ref.id)).toEqual(['enabled']);
   });
 
-  it('excludes refs without a url', async () => {
+  it('excludes refs without a string url', async () => {
     const refs = await getRefsFromConfig(
       optionsWithRefs({
         broken: { title: 'Broken' },
         empty: { title: 'Empty', url: '' },
+        object: { title: 'Object', url: new URL('https://object.example.com') },
+        number: { title: 'Number', url: 42 },
         nothing: null,
       })
     );
 
     expect(refs).toEqual([]);
+  });
+
+  it('returns no sources and warns when the refs config throws', async () => {
+    const options = {
+      presets: {
+        apply: async () => {
+          throw new Error('Config error');
+        },
+      },
+    } as unknown as Options;
+
+    expect(await getRefsFromConfig(options)).toEqual([]);
+    expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Config error'));
   });
 
   it('leaves out a ref keyed local, which would collide with the local source', async () => {

@@ -289,3 +289,76 @@ describe('shortcuts api', () => {
     ).toEqual(['G']);
   });
 });
+
+describe('addon shortcut matching', () => {
+  const initWithUi = () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return api;
+  };
+
+  it('addon shortcuts match and fire', async () => {
+    const api = initWithUi();
+    const action = vi.fn();
+    await api.setAddonShortcut('my-addon', {
+      label: 'Do it',
+      defaultShortcut: ['O'],
+      actionName: 'doIt',
+      action,
+    });
+
+    expect(api.handleKeydownEvent({ key: 'O', code: 'KeyO' })).toBe('my-addon-doIt');
+    expect(action).toHaveBeenCalled();
+  });
+
+  it('persisted addon bindings whose addon did not re-register are ignored', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, 'stale-addon-gone': ['ArrowUp'] },
+    });
+
+    expect(() => api.handleKeydownEvent({ key: 'ArrowUp' })).not.toThrow();
+    expect(api.handleKeydownEvent({ key: 'ArrowUp' })).toBeUndefined();
+  });
+});
+
+describe('keydown match gating', () => {
+  it('reports no match when shortcuts are disabled, so the key is not swallowed', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: false }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBeUndefined();
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
+  });
+
+  it('reports no match for sidebar shortcuts while the nav is unavailable', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'unavailable', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'S', code: 'KeyS', altKey: true })).toBeUndefined();
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBe('fullScreen');
+  });
+
+  it('reports no match for an escape binding persisted by an older Storybook, so overlays receive the key', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, escape: ['escape'] },
+    });
+
+    expect(api.handleKeydownEvent({ key: 'Escape' })).toBeUndefined();
+  });
+});

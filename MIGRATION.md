@@ -9,6 +9,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Sidebar rewrite: manager API changes](#sidebar-rewrite-manager-api-changes)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
@@ -669,6 +670,14 @@ option exists in both places, keep the nested value because it was authoritative
 `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working - the parameter is optional.
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
+
+### Sidebar rewrite: manager API changes
+
+The sidebar tree is rebuilt on react-aria-components. These public manager API surfaces changed:
+
+- The `escape` entry is no longer a configurable shortcut. `api.getShortcutKeys()` omits it, and the types reject `api.setShortcut('escape', …)`. Escape exits fullscreen as fixed behavior, so you cannot rebind it.
+- A `contextMenu` shortcut is new (default <kbd>ctrl/⌘+shift+U</kbd>). It opens the actions menu of the focused or selected story row.
+- The internal sidebar components no longer export `StatusButton` or `StatusLabel`. `ContextMenuButton` replaces both. These exports were always internal, but an addon can import them from an unexported path.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

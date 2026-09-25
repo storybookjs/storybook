@@ -1,5 +1,7 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+
+import { flushSync } from 'react-dom';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
@@ -11,6 +13,15 @@ import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/ove
 export interface TooltipProviderProps {
   /** Tooltips trigger on hover and focus by default. To trigger on focus only, set this to `true`. */
   triggerOnFocusOnly?: boolean;
+
+  /**
+   * Whether the tooltip is prevented from opening. Turning this on closes an open tooltip.
+   *
+   * Prefer this over `visible={false}` for temporary suppression: a controlled `visible` also
+   * stops react-aria from reporting state changes, and the tooltip can reopen unprompted when
+   * control is released.
+   */
+  disabled?: boolean;
 
   /** Distance between the trigger and tooltip. Customize only if you have a good reason to. */
   offset?: number;
@@ -48,6 +59,7 @@ export interface TooltipProviderProps {
 
 const TooltipProvider = ({
   triggerOnFocusOnly = false,
+  disabled = false,
   placement: placementProp = 'top',
   offset = 8,
   tooltip,
@@ -76,28 +88,106 @@ const TooltipProvider = ({
     [onVisibleChange]
   );
 
+  // Hide the tooltip on any pointer press in the document. react-aria hides the tooltip only when
+  // the pointer leaves the trigger or presses it. A press elsewhere can hide or replace the
+  // trigger, and the tooltip then stays open next to a hidden trigger.
+  const isTooltipShown = visible ?? isOpen;
+  useEffect(() => {
+    if (!isTooltipShown) {
+      return;
+    }
+    const onPointerDown = () => onOpenChange(false);
+    document.addEventListener('pointerdown', onPointerDown, true);
+    return () => document.removeEventListener('pointerdown', onPointerDown, true);
+  }, [isTooltipShown, onOpenChange]);
+
+  // react-aria consumes isDisabled in the trigger interactions only: it stops new opens, and it
+  // leaves a tooltip that is already open on screen. Close that one here.
+  useEffect(() => {
+    if (disabled && isTooltipShown) {
+      onOpenChange(false);
+    }
+  }, [disabled, isTooltipShown, onOpenChange]);
+
+  // Hide the tooltip the moment its trigger loses its box, such as a row-action button that is
+  // display: none unless its row is hovered. react-aria also observes the trigger and repositions
+  // the open tooltip against the collapsed rect by writing the overlay's style directly in the
+  // same ResizeObserver tick, which paints the tooltip at the viewport origin with its stale
+  // content. The close must therefore commit synchronously in that same tick — an async state
+  // update lands after the repaint and lets that frame show.
+  const triggerRef = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    const el = triggerRef.current;
+    if (!isTooltipShown || !el) {
+      return;
+    }
+    const closeWhenBoxless = () => {
+      const rect = el.getBoundingClientRect();
+      if (rect.width === 0 && rect.height === 0) {
+        flushSync(() => onOpenChange(false));
+      }
+    };
+    closeWhenBoxless();
+    const resizeObserver = new ResizeObserver(closeWhenBoxless);
+    resizeObserver.observe(el);
+    return () => resizeObserver.disconnect();
+  }, [isTooltipShown, onOpenChange]);
+
+  const childRef =
+    parseInt(React.version, 10) < 19
+      ? (child as unknown as { ref?: React.Ref<HTMLElement> }).ref
+      : (child.props as { ref?: React.Ref<HTMLElement> }).ref;
+  const setTriggerRef = (node: HTMLElement | null) => {
+    triggerRef.current = node;
+    if (typeof childRef === 'function') {
+      childRef(node);
+    } else if (childRef && typeof childRef === 'object') {
+      (childRef as React.MutableRefObject<HTMLElement | null>).current = node;
+    }
+  };
+
   return (
     <TooltipTrigger
       delay={delayShow}
       closeDelay={delayHide}
+      isDisabled={disabled}
       isOpen={visible ?? isOpen}
       onOpenChange={onOpenChange}
       trigger={triggerOnFocusOnly ? 'focus' : undefined}
       {...props}
     >
       {/* We don't let react-aria set an aria-describedby attribute because it clashes with our intention to explicitly set an aria-label that can be different from the tooltip copy. Some screenreaders would announce the label AND description if we also allowed aria-describedby, which would decrease usability. */}
-      {/* @ts-expect-error: We have to nullify aria-describedby and this is the only way we can do it (undefined won't work and an empty string will result in DOM pollution). */}
-      <Focusable>{React.cloneElement(child, { 'aria-describedby': null })}</Focusable>
-      <TooltipUpstream
-        data-testid="tooltip"
-        placement={placement}
-        offset={offset}
-        onOpenChange={onOpenChange}
-        style={{ outline: 'none' }}
-        {...props}
-      >
-        {tooltip}
-      </TooltipUpstream>
+      {/* The cast covers two intentional deviations: aria-describedby must be null (undefined
+          won't work and an empty string pollutes the DOM), and cloneElement's typings admit no
+          ref for a generically typed child. */}
+      <Focusable>
+        {
+          React.cloneElement(child, {
+            'aria-describedby': null,
+            ref: setTriggerRef,
+          } as unknown as Partial<DOMAttributes<Element>>) as React.ComponentProps<
+            typeof Focusable
+          >['children']
+        }
+      </Focusable>
+      {/* Render the tooltip element only while shown. A closing react-aria tooltip stays mounted
+          in an "exiting" state that only an animation's end can leave, and a close racing the
+          first mount (before the overlay container exists) strands it there forever: a permanent
+          unpositioned tooltip at the viewport origin. An unmounted child has no exit state. */}
+      {isTooltipShown ? (
+        <TooltipUpstream
+          data-testid="tooltip"
+          placement={placement}
+          offset={offset}
+          onOpenChange={onOpenChange}
+          style={{ outline: 'none' }}
+          {...props}
+        >
+          {tooltip}
+        </TooltipUpstream>
+      ) : (
+        <></>
+      )}
     </TooltipTrigger>
   );
 };

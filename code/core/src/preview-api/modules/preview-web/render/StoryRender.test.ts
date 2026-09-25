@@ -409,6 +409,38 @@ describe('StoryRender', () => {
       });
     });
 
+    it('does not reload the page when a slow render unwinds after the abort', async () => {
+      // Arrange - renderToScreen resolves, but only after several ticks. This is what a docs page
+      // does: the renderer serializes every story on the page, so a story can sit in `rendering`
+      // for a while waiting its turn (#29007).
+      const store = buildStore();
+      const renderToScreen = vi.fn(async () => {
+        for (let i = 0; i < 10; i += 1) {
+          await tick();
+        }
+        return () => {};
+      });
+      const render = new StoryRender(
+        new Channel({}),
+        store,
+        renderToScreen as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: false },
+        buildStory()
+      );
+
+      // Act - render (blocked in renderToScreen), teardown
+      render.renderToElement({} as any);
+      await tick();
+      expect(render.phase).toBe('rendering');
+      await render.teardown();
+
+      // Assert - the render unwound on its own, so there was no need to reload
+      expect(window.location.reload).not.toHaveBeenCalled();
+    });
+
     it('reloads the page when tearing down during rendering', async () => {
       // Arrange - setup StoryRender and async gate blocking renderToScreen
       const [renderGate] = createGate();

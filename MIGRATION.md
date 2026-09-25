@@ -21,6 +21,7 @@
   - [Internal CSF tools use the unified mutation API](#internal-csf-tools-use-the-unified-mutation-api)
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
+  - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
@@ -813,6 +814,22 @@ Storybook no longer closes the client connection because its event loop failed t
 If you implement toolsets using Storybook's internal open-service APIs, return usage data as `telemetry: { payload: { ... } }` alongside `ok`, `data`, and `markdown`. The `ToolsetCtx.telemetry` callback, `ToolsetTelemetry` type, and `reportToolsetTelemetry` helper have been removed. The adapter derives the event name from the registered toolset and method.
 
 Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`. The `toolsCommandDimensions` and `wrapMethodTelemetry` helpers are no longer exported from `storybook/internal/tools`. The CLI and MCP adapters handle reporting for their own calls.
+
+### Internal `satisfies` helper removed
+
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-higher).
+
+Replace calls with the native operator:
+
+```diff
+-import { satisfies } from 'storybook/internal/common';
+-
+-const meta = satisfies<Meta<typeof Button>>()({
++const meta = {
+   component: Button,
+-});
++} satisfies Meta<typeof Button>;
+```
 
 ### React: Require v18 and up
 

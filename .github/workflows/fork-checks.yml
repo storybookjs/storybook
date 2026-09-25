@@ -89,4 +89,4 @@ jobs:
       # Other workspace suites include POSIX-specific path assumptions; Linux runs the full suite.
       - name: test (Windows)
         if: runner.os == 'Windows'
-        run: yarn test --project core --project @storybook/mcp --project @storybook/addon-vitest
+        run: yarn test --project core --project '@storybook/mcp' --project '@storybook/addon-vitest'

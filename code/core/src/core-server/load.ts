@@ -9,7 +9,13 @@ import {
   validateFrameworkName,
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
-import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import type {
+  BuilderOptions,
+  CLIOptions,
+  LoadOptions,
+  Options,
+  PresetConfig,
+} from 'storybook/internal/types';
 import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 
 import { global } from '@storybook/global';
@@ -30,6 +36,12 @@ export async function loadStorybook(
        * so addon hooks that answer requests over `options.channel` share the caller's bus.
        */
       channel?: Channel;
+      /**
+       * Presets applied after the project's `main` config and before Storybook's own override
+       * preset. A host embedding Storybook in another dev server uses them to force builder
+       * settings the project cannot know about, such as the Vite `base` it is mounted under.
+       */
+      overridePresets?: PresetConfig[];
     }
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
@@ -64,10 +76,11 @@ export async function loadStorybook(
   // We hope to remove this in SB8
   let presets = await loadAllPresets({
     corePresets,
+    ...options,
     overridePresets: [
+      ...(options.overridePresets ?? []),
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    ...options,
     isCritical: true,
     channel,
   });
@@ -103,10 +116,11 @@ export async function loadStorybook(
       ...(resolvedRenderer ? [resolvedRenderer] : []),
       ...corePresets,
     ],
+    ...options,
     overridePresets: [
+      ...(options.overridePresets ?? []),
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    ...options,
     channel,
   });
 

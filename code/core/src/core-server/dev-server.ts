@@ -195,7 +195,7 @@ export async function storybookDevServer(
     registerManifests({ app, presets: options.presets });
   }
   // Now the preview has successfully started, we can count this as a 'dev' event.
-  doTelemetry(app, core, storyIndexGeneratorPromise, options);
+  doTelemetry(core, storyIndexGeneratorPromise, options);
 
   async function cancelTelemetry() {
     try {

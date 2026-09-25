@@ -2,12 +2,13 @@ import { type ChildProcess } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 import type { Channel } from 'storybook/internal/channels';
-import { executeNodeCommand } from 'storybook/internal/common';
+import { executeNodeCommand, loadPreviewOrConfigFile } from 'storybook/internal/common';
 import {
+  type StoryIndexGenerator,
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
-import type { EventInfo, Options } from 'storybook/internal/types';
+import type { EventInfo, Options, PreviewAnnotation, StoryIndex } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
@@ -17,6 +18,7 @@ import { importMetaResolve } from '../../../../core/src/shared/utils/module.ts';
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
+  STORY_INDEX_CHANNEL_EVENT_NAME,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
 } from '../constants.ts';
 import { log } from '../logger.ts';
@@ -43,6 +45,10 @@ let unsubscribeBridges: Array<() => void> = [];
 
 const forwardUniversalStoreEvent =
   (storeEventName: string) => (event: any, eventInfo: EventInfo) => {
+    // Until the child is ready, runTestRunner queues run events and sends them after the story index
+    if (!ready && event.type === 'TRIGGER_RUN') {
+      return;
+    }
     child?.send({
       type: storeEventName,
       args: [{ event, eventInfo }],
@@ -99,8 +105,12 @@ const bootTestRunner = async ({
   process.on('SIGINT', () => exit(0));
   process.on('SIGTERM', () => exit(0));
 
-  const startChildProcess = () =>
-    new Promise<void>((resolve, reject) => {
+  const startChildProcess = async () => {
+    const storyIndexGenerator =
+      await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+    const previewAnnotations = await getPreviewAnnotations(options);
+
+    await new Promise<void>((resolve, reject) => {
       child = executeNodeCommand({
         scriptPath: vitestModulePath,
         options: {
@@ -111,10 +121,12 @@ const bootTestRunner = async ({
             NODE_ENV: process.env.NODE_ENV ?? 'test',
             STORYBOOK_CONFIG_DIR: normalize(options.configDir),
             STORYBOOK_CONFIG_LOADER: configLoader,
+            STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(previewAnnotations),
           },
           extendEnv: true,
         },
       });
+      sentStoryIndex = undefined;
       stderr = [];
 
       child.stdout?.on('data', log);
@@ -132,12 +144,16 @@ const bootTestRunner = async ({
 
       child.on('message', (event: any) => {
         if (event.type === 'ready') {
-          // Resend events that triggered (during) the boot sequence, now that Vitest is ready
-          while (eventQueue.length) {
-            const { type, args } = eventQueue.shift()!;
-            child?.send({ type, args, from: 'server' });
-          }
-          resolve();
+          refreshStoryIndex(storyIndexGenerator).then(() => {
+            ready = true;
+            sendStoryIndex();
+            // Resend events that triggered (during) the boot sequence, now that Vitest is ready
+            while (eventQueue.length) {
+              const { type, args } = eventQueue.shift()!;
+              child?.send({ type, args, from: 'server' });
+            }
+            resolve();
+          }, reject);
         } else if (event.type === 'uncaught-error') {
           store.send({
             type: 'FATAL_ERROR',
@@ -153,6 +169,7 @@ const bootTestRunner = async ({
         }
       });
     });
+  };
 
   const timeout = new Promise((_, reject) =>
     setTimeout(
@@ -210,4 +227,53 @@ export const killTestRunner = () => {
   }
   ready = false;
   eventQueue.length = 0;
+  lastStoryIndex = undefined;
+  sentStoryIndex = undefined;
+};
+
+let lastStoryIndex: StoryIndex | undefined;
+let sentStoryIndex: StoryIndex | undefined;
+let storyIndexRequests = 0;
+let appliedStoryIndexRequest = 0;
+
+// getIndex() throws while a story file is broken, so the runner keeps the last good index until
+// the file is fixed. Concurrent getIndex() calls can resolve out of order; the newest call wins.
+const refreshStoryIndex = async (storyIndexGenerator: StoryIndexGenerator) => {
+  const request = ++storyIndexRequests;
+  try {
+    const index = await storyIndexGenerator.getIndex();
+    if (request > appliedStoryIndexRequest) {
+      appliedStoryIndexRequest = request;
+      lastStoryIndex = index;
+    }
+  } catch (error) {
+    if (!lastStoryIndex) {
+      throw error;
+    }
+  }
+};
+
+const sendStoryIndex = () => {
+  if (child && lastStoryIndex !== sentStoryIndex) {
+    sentStoryIndex = lastStoryIndex;
+    child.send({ type: STORY_INDEX_CHANNEL_EVENT_NAME, args: [lastStoryIndex], from: 'server' });
+  }
+};
+
+// A child that is not ready yet gets the index from its ready handler.
+export const sendStoryIndexToTestRunner = async (storyIndexGenerator: StoryIndexGenerator) => {
+  await refreshStoryIndex(storyIndexGenerator);
+  if (ready) {
+    sendStoryIndex();
+  }
+};
+
+const getPreviewAnnotations = async (options: Options): Promise<PreviewAnnotation[]> => {
+  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
+    'previewAnnotations',
+    [],
+    options
+  );
+  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
+  return (previewAnnotations ?? []).concat(previewPath ?? []);
 };

@@ -1,12 +1,11 @@
 import {
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   getEvalContext,
   getWorkflowCalls,
   getWorkflowToolResults,
@@ -91,21 +90,17 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
       expectSkillInvoked('stories');
     });
 
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
       () => {
-        expectValidStorybookLaunchConfig();
+        expectDevServerLeftRunning();
       }
     );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
-      expectPreviewBrowserStarted();
-    });
   });
 });

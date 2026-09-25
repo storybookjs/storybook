@@ -2,12 +2,11 @@ import {
   DISPLAY_REVIEW_CURATION_CRITERION,
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
   getEvalContext,
   isReviewEnabled,
@@ -15,7 +14,7 @@ import {
 import { transcript } from '@vercel/agent-eval/eval';
 import { describe, expect, test } from 'vitest';
 
-describe('creating an accessible ToggleSwitch without a launch config', () => {
+describe('creating an accessible ToggleSwitch', () => {
   const reviewEnabled = isReviewEnabled();
 
   test('runs story tests after the change and finishes with them passing', () => {
@@ -73,16 +72,9 @@ describe('creating an accessible ToggleSwitch without a launch config', () => {
       expectSkillInvoked('stories')
     );
 
-    // The fixture overrides the template's .claude/launch.json with an empty
-    // configurations array (fixtures can only overwrite files, not delete them),
-    // so the plugin must set up the Storybook launch entry itself.
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'writes a valid Storybook launch config for Claude preview tooling',
-      () => expectValidStorybookLaunchConfig()
-    );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
-      expectPreviewBrowserStarted()
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
     );
   });
 });

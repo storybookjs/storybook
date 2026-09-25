@@ -4,7 +4,7 @@ import { collectTranscriptUsage } from './usage.ts';
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
 // one per workflow behavior branch. This is the set that always runs on CI.
 const CORE_STORYBOOK_EVALS = [
-  '801-create-component-no-launch-config',
+  '801-create-accessible-component',
   '802-create-component',
   '803-edit-component',
   '804-write-story-for-existing-component',
@@ -106,7 +106,7 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
 
   return STORYBOOK_LATEST
     ? { core: ['908-run-story-tests'], lifecycle: [] }
-    : { core: ['801-create-component-no-launch-config'], lifecycle: [] };
+    : { core: ['801-create-accessible-component'], lifecycle: [] };
 }
 
 const ACTIVE_EVALS = resolveActiveEvals();

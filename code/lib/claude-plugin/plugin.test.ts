@@ -1,13 +1,22 @@
-import { readFileSync } from 'node:fs';
-import { dirname } from 'node:path';
-import { resolve } from 'node:path';
+import { readFileSync, readdirSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { x } from 'tinyexec';
 import { describe, expect, it } from 'vitest';
 
+import { renderCodexSkill } from './scripts/codex-skill.ts';
+
 const packageRoot = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(packageRoot, '../../..');
+const codexSkillsPath = 'code/lib/codex-plugin/plugins/storybook/skills';
+
+const claudeSkills = readdirSync(resolve(packageRoot, 'skills'), { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map(({ name }) => ({
+    name,
+    content: readFileSync(resolve(packageRoot, 'skills', name, 'SKILL.md'), 'utf8'),
+  }));
 
 type ClaudeMarketplaceJson = {
   plugins?: Array<{
@@ -25,6 +34,10 @@ async function isClaudeCliAvailable() {
 }
 
 const hasClaudeCli = await isClaudeCliAvailable();
+
+function git(args: string[]) {
+  return x('git', args, { nodeOptions: { cwd: repoRoot } });
+}
 
 function readMarketplace(path: string) {
   return JSON.parse(readFileSync(path, 'utf8')) as ClaudeMarketplaceJson;
@@ -48,39 +61,44 @@ function normalizeMarketplace(marketplace: ClaudeMarketplaceJson) {
 // minimal sandbox, so stay well below it to survive plugin-heavy environments.
 const MAX_SKILL_DESCRIPTION_BYTES = 350;
 
-function readSkillDescription(skillPath: string) {
-  const skill = readFileSync(skillPath, 'utf8');
+const HARNESS_TOOLS = [
+  'preview_start',
+  '.claude/launch.json',
+  'control-in-app-browser',
+  'require_escalated',
+];
+
+const RENDER_HINT = 'Run `yarn nx compile claude-plugin` and commit the Codex skills.';
+
+function readSkillDescription(skill: string) {
   const description = skill.match(/^description: (.*)$/m)?.[1];
   if (description === undefined) {
-    throw new Error(`No description frontmatter found in ${skillPath}`);
+    throw new Error('No description frontmatter found in skill');
   }
   return description;
 }
 
-describe('stories skill description', () => {
-  it.each([
-    resolve(packageRoot, 'skills/stories/SKILL.md'),
-    resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
-  ])('stays under the silent-drop listing budget: %s', (skillPath) => {
-    const description = readSkillDescription(skillPath);
-    expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(MAX_SKILL_DESCRIPTION_BYTES);
-  });
+describe('canonical skills', () => {
+  it.each(claudeSkills)(
+    '$name keeps its description under the silent-drop listing budget',
+    ({ content }) => {
+      const description = readSkillDescription(content);
+      expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(
+        MAX_SKILL_DESCRIPTION_BYTES
+      );
+    }
+  );
 
-  it('keeps the claude and codex plugin descriptions identical', () => {
-    expect(readSkillDescription(resolve(packageRoot, 'skills/stories/SKILL.md'))).toBe(
-      readSkillDescription(
-        resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md')
-      )
-    );
+  it.each(claudeSkills)('$name names no harness-specific tool or file', ({ content }) => {
+    for (const harnessTool of HARNESS_TOOLS) {
+      expect(content).not.toContain(harnessTool);
+    }
   });
 });
 
 describe('stories skill prerequisites', () => {
-  it.each([
-    resolve(packageRoot, 'skills/stories/SKILL.md'),
-    resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
-  ])('uses Storybook documentation and treats setup as upgrade approval: %s', (skillPath) => {
-    const skill = readFileSync(skillPath, 'utf8');
+  it('uses Storybook documentation and treats setup as upgrade approval', () => {
+    const skill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');
 
     expect(skill).toContain('docs list');
     expect(skill).toContain('docs show');
@@ -89,17 +107,23 @@ describe('stories skill prerequisites', () => {
   });
 });
 
-describe('Claude story skill launch guidance', () => {
-  it('keeps Claude launch guidance scoped to preview tooling without shell interpolation', () => {
-    const launchSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');
+// Compared against HEAD rather than the working tree: CI runs `compile` before
+// `yarn test`, so a working-tree comparison would pass even when the render
+// was never committed.
+describe('committed Codex skills', () => {
+  it.each(claudeSkills)('$name equals the render of the canonical skill', async ({ content }) => {
+    const rendered = renderCodexSkill(content);
+    const committed = await git(['show', `HEAD:${codexSkillsPath}/${rendered.name}/SKILL.md`]);
 
-    expect(launchSkill).toContain('autoPort: true');
-    expect(launchSkill).toContain('preferred package manager');
-    expect(launchSkill).toContain('existing `package.json` Storybook script');
-    expect(launchSkill).toContain('preview_start');
-    expect(launchSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(launchSkill).not.toMatch(/runtimeArgs[\s\S]+storybook[\s\S]+dev/i);
-    expect(launchSkill).not.toContain('--ci');
+    expect(committed.exitCode, RENDER_HINT).toBe(0);
+    expect(committed.stdout, RENDER_HINT).toBe(rendered.content);
+  });
+
+  it('hold exactly the rendered set of skills', async () => {
+    const rendered = claudeSkills.map(({ content }) => renderCodexSkill(content).name).sort();
+    const committed = await git(['ls-tree', '--name-only', `HEAD:${codexSkillsPath}`]);
+
+    expect(committed.stdout.trim().split('\n').sort(), RENDER_HINT).toEqual(rendered);
   });
 });
 

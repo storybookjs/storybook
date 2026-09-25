@@ -1,12 +1,11 @@
 import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
   expectPreviewStoriesWithFinalLinks,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
   getEvalContext,
   isReviewEnabled,
@@ -57,15 +56,9 @@ describe('creating a ProfileCard component', () => {
       expectSkillInvoked('stories')
     );
 
-    // Unlike 801, the template's valid .claude/launch.json is left intact, so the
-    // plugin must reuse the existing config instead of writing a fresh one.
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
-      () => expectValidStorybookLaunchConfig()
-    );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
-      expectPreviewBrowserStarted()
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
     );
   });
 });

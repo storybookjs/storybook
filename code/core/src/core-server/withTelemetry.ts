@@ -146,7 +146,6 @@ export async function sendTelemetryError(
           ...(parent ? { parent: parent.fullErrorCode } : {}),
         },
         {
-          immediate: true,
           configDir: options.cliOptions.configDir || options.presetOptions?.configDir,
           enableCrashReports: errorLevel === 'full',
           force: true,
@@ -231,7 +230,7 @@ export async function withTelemetry<T>(
 
   async function cancelTelemetry() {
     canceled = true;
-    await telemetry('canceled', { eventType }, { stripMetadata: true, immediate: true });
+    await telemetry('canceled', { eventType }, { stripMetadata: true });
 
     process.exit(0);
   }

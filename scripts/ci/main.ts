@@ -1,8 +1,6 @@
 import fs from 'node:fs/promises';
 import { join } from 'node:path';
-
-import { program } from 'commander';
-import yml from 'yaml';
+import { parseArgs } from 'node:util';
 
 import {
   benchmarkPackages,
@@ -41,16 +39,37 @@ import { type Workflow, isWorkflowOrAbove } from './utils/types.ts';
 
 const dirname = import.meta.dirname;
 
-/**
- * Generate the CircleCI config for a given workflow.
- *
- * @param workflow - The workflow to generate the config for.
- * @returns The generated config for CircleCI in JS format.
- */
-function generateConfig(workflow: Workflow, baseRef: string) {
+type GenerateConfigOptions = { trustedAuthor: boolean } & (
+  | { workflow: 'focus'; changedFiles: readonly string[] }
+  | { workflow: Exclude<Workflow, 'focus'> }
+);
+
+function parseWorkflow(value: string | undefined): Workflow {
+  const workflow = parameters.workflow.enum.find((candidate) => candidate === value);
+
+  if (workflow === undefined) {
+    throw new Error(
+      `--workflow must be one of: ${parameters.workflow.enum.join(', ')}. Received: ${value ?? 'missing'}`
+    );
+  }
+
+  return workflow;
+}
+
+function parseTrustedAuthor(value: string): boolean {
+  if (value !== 'true' && value !== 'false') {
+    throw new Error(`--gh-trusted-author must be true or false. Received: ${value}`);
+  }
+
+  return value === 'true';
+}
+
+export function generateConfig(options: GenerateConfigOptions) {
+  const { workflow } = options;
+  setTrustedAuthor(options.trustedAuthor);
   const jobs: JobOrNoOpJob[] = [];
   if (workflow === 'focus') {
-    jobs.push(defineFocusJob(selectFocusSandbox(getChangedFiles(baseRef))));
+    jobs.push(defineFocusJob(selectFocusSandbox(options.changedFiles)));
   } else if (isWorkflowOrAbove(workflow, 'docs')) {
     jobs.push(fmt);
   } else {
@@ -159,27 +178,37 @@ function generateConfig(workflow: Workflow, baseRef: string) {
   };
 }
 
-console.log('Generating CircleCI config...');
-console.log('--------------------------------');
+async function run(argv: string[]) {
+  console.log('Generating CircleCI config...');
+  console.log('--------------------------------');
 
-program
-  .description('Generate CircleCI config')
-  .requiredOption('-w, --workflow <string>', 'Workflow to generate config for')
-  .option('--base-ref <string>', 'Git ref to compare against for focused CI', 'origin/next')
-  .option(
-    '--gh-trusted-author <string>',
-    'Whether the pipeline can persist to shared caches',
-    'false'
-  )
-  .parse(process.argv);
+  const { values } = parseArgs({
+    args: argv,
+    options: {
+      workflow: { type: 'string', short: 'w' },
+      'base-ref': { type: 'string', default: 'origin/next' },
+      'gh-trusted-author': { type: 'string', default: 'false' },
+    },
+    strict: true,
+  });
 
-const opts = program.opts();
-setTrustedAuthor(opts.ghTrustedAuthor === 'true');
+  const workflow = parseWorkflow(values.workflow);
+  const trustedAuthor = parseTrustedAuthor(values['gh-trusted-author']);
 
-await fs.writeFile(
-  join(dirname, '../../.circleci/config.generated.yml'),
-  yml.stringify(generateConfig(opts.workflow, opts.baseRef), null, {
-    lineWidth: 1200,
-    indent: 4,
-  })
-);
+  const options: GenerateConfigOptions =
+    workflow === 'focus'
+      ? { workflow, trustedAuthor, changedFiles: getChangedFiles(values['base-ref']) }
+      : { workflow, trustedAuthor };
+
+  await fs.writeFile(
+    join(dirname, '../../.circleci/config.generated.yml'),
+    `${JSON.stringify(generateConfig(options), null, 2)}\n`
+  );
+}
+
+if (process.argv[1] === import.meta.filename) {
+  run(process.argv.slice(2)).catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

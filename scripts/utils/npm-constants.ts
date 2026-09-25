@@ -1,0 +1,1 @@
+export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.17.0';

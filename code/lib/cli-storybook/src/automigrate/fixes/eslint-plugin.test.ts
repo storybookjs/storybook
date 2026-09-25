@@ -21,7 +21,6 @@ const checkEslint = async ({ packageJson }: { packageJson: PackageJson }) => {
     mainConfig: {} as any,
     storybookVersion: '7.0.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 };
 

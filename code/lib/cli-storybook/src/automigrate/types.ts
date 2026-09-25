@@ -3,7 +3,6 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface CheckOptions {
   packageManager: JsPackageManager;
-  rendererPackage?: string;
   configDir?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
@@ -17,7 +16,6 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
 }
 
 export interface RunOptions<ResultType> {
@@ -103,7 +101,6 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   isUpgrade: boolean;
   isLatest: boolean;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;
@@ -113,7 +110,6 @@ export interface AutofixOptionsFromCLI {
   packageManager?: PackageManagerName;
   dryRun?: boolean;
   configDir: string;
-  renderer?: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;
   skipDoctor?: boolean;

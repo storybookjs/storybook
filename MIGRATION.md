@@ -2,8 +2,10 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
+  - [TypeScript 5.9 or higher](#typescript-59-or-higher)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
@@ -596,6 +598,12 @@ Storybook accepts prerelease Node.js builds when their version meets this minimu
 
 During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.19. This does not mean Node.js 20 will remain supported in the final release. Use Node.js 22.12 or higher when testing your migration.
 
+### TypeScript 5.9 or higher
+
+Storybook 11 requires TypeScript 5.9 or higher. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
+
+There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
 ### Yarn PnP support removed
 
 Storybook 11 removes support for Yarn Plug'n'Play, which was deprecated in Storybook 10. If you use Yarn PnP, configure Yarn to install dependencies in `node_modules` before upgrading Storybook.
@@ -607,6 +615,21 @@ nodeLinker: node-modules
 ```
 
 Remove `--use-pnp` from any `storybook init` or `create storybook` commands. The `detectPnp` utility is also no longer exported from `storybook/internal/cli`; remove imports of that utility from custom tooling.
+
+### Raised browser support floors
+
+Storybook 11 requires these browsers for the manager UI:
+
+- Chrome 147+
+- Edge 150+
+- Firefox 152+
+- Safari 26.5+
+
+Android Chrome matches the Chrome floor. iOS Safari matches the Safari floor. Opera is no longer a listed target.
+
+If your browser meets Storybook 10's requirements but not these raised floors, stay on Storybook 10. For browsers below the requirements introduced in Storybook 9, use a version prior to `9.0.0` whose requirements your browser meets.
+
+Alternatively, use [`--preview-only`](https://storybook.js.org/docs/sharing/publish-storybook#build-storybook-for-older-browsers). This omits the manager UI; browser compatibility depends on your builder and its configuration. Open `/iframe.html?navigator=true` instead of `/index.html`. This does not add older-browser support to the Storybook manager.
 
 ### Top-level `setConfig` layout and UI options removed
 

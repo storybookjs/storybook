@@ -1,6 +1,6 @@
 import { beforeEach, expect, it, vi } from 'vitest';
 
-import ansiRegex from 'ansi-regex';
+import { stripVTControlCharacters } from 'node:util';
 import type { LogResult } from 'simple-git';
 
 import { run } from '../label-patches.ts';
@@ -129,8 +129,7 @@ it('should label the PR associated with cherry picks in the current branch', asy
   const stderrCalls = writeStderr.mock.calls
     .map(([text]) =>
       typeof text === 'string'
-        ? text
-            .replace(ansiRegex(), '')
+        ? stripVTControlCharacters(text)
             .replace(/[^\x20-\x7E]/g, '')
             .replaceAll('-', '')
             .trim()
@@ -168,8 +167,7 @@ it('should label all PRs when the --all flag is passed', async () => {
   const stderrCalls = writeStderr.mock.calls
     .map(([text]) =>
       typeof text === 'string'
-        ? text
-            .replace(ansiRegex(), '')
+        ? stripVTControlCharacters(text)
             .replace(/[^\x20-\x7E]/g, '')
             .replaceAll('-', '')
             .trim()

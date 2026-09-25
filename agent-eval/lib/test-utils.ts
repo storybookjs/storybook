@@ -9,7 +9,6 @@ import { expect } from 'vitest';
 
 import {
   getNestedWorkflowInput,
-  isRecord,
   isSameWorkflowCall,
   normalizeStorybookWorkflowName,
   parseJson,
@@ -17,7 +16,10 @@ import {
   workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
+import { isRecord } from './utils/type.ts';
 
+// Re-exported, not merely used: #test-utils is the only module an EVAL.ts can
+// reach from inside a sandbox, so anything evals need has to surface here.
 export { isRecord, parseJson, parseStorybookWorkflowShellCommands, workflowCallMatchesName };
 export type { StorybookWorkflowCall };
 
@@ -33,7 +35,9 @@ type AgentContext = {
 
 type EvalContext = {
   agent: string;
-  integration: 'mcp' | 'plugin';
+  // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
+  // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
+  integration: 'mcp' | 'plugin' | 'none';
   /** Whether the sandbox runs review-on: always for the plugin integration, via EVAL_REVIEW=1 for MCP. */
   review: boolean;
 };
@@ -64,7 +68,7 @@ export function getEvalContext(): EvalContext {
     );
   }
 
-  if (integration !== 'mcp' && integration !== 'plugin') {
+  if (integration !== 'mcp' && integration !== 'plugin' && integration !== 'none') {
     throw new Error(
       'Expected ' +
         AGENT_CONTEXT_PATH +

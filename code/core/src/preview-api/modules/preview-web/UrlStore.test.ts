@@ -1,8 +1,8 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { global } from '@storybook/global';
 
-import { getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
+import { UrlStore, getSelectionSpecifierFromPath, pathToId, setPath } from './UrlStore.ts';
 
 const { history, document } = global;
 
@@ -128,6 +128,54 @@ describe('UrlStore', () => {
         storySpecifier: 'abc',
         viewMode: 'story',
       });
+    });
+  });
+
+  describe('setQueryParams', () => {
+    const replaceStateUrl = () => {
+      const calls = vi.mocked(history.replaceState).mock.calls;
+      return calls.at(-1)?.[2] as string;
+    };
+
+    beforeEach(() => {
+      vi.clearAllMocks();
+      document.location.search = '?id=story--id&viewMode=story';
+    });
+
+    afterEach(() => {
+      document.location.search = '';
+    });
+
+    it('should merge the given params into the current URL', () => {
+      new UrlStore().setQueryParams({ globals: 'theme:dark' });
+      expect(replaceStateUrl()).toContain('id=story--id');
+      expect(replaceStateUrl()).toContain('globals=theme%3Adark');
+    });
+
+    it('should remove a param that the manager cleared explicitly', () => {
+      document.location.search = '?id=story--id&globals=theme:dark';
+      new UrlStore().setQueryParams({ globals: null });
+
+      // The manager sends `null` to clear a param. Merging it into the current URL would keep the
+      // old value or produce an empty `globals=`, which the docs page reads back on remount and
+      // shows as a stale global.
+      expect(replaceStateUrl()).not.toContain('globals');
+      expect(replaceStateUrl()).toContain('id=story--id');
+    });
+
+    it('should remove a param that is undefined', () => {
+      document.location.search = '?id=story--id&globals=theme:dark';
+      new UrlStore().setQueryParams({ globals: undefined });
+      expect(replaceStateUrl()).not.toContain('globals');
+    });
+
+    it('should keep unrelated params while clearing others', () => {
+      document.location.search = '?id=story--id&globals=theme:dark&args=foo:bar';
+      new UrlStore().setQueryParams({ globals: null, viewMode: 'docs' });
+
+      expect(replaceStateUrl()).not.toContain('globals');
+      expect(replaceStateUrl()).toContain('args=foo%3Abar');
+      expect(replaceStateUrl()).toContain('viewMode=docs');
     });
   });
 });

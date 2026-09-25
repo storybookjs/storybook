@@ -328,8 +328,14 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
     setQueryParams(input) {
       const { customQueryParams } = store.getState();
       const update: QueryParams = { ...customQueryParams };
+      // Cleared params are dropped from the manager URL, but they are emitted as an explicit
+      // `null` so the preview removes them from its own URL instead of keeping a stale value.
+      const cleared: Record<string, null> = {};
       for (const [key, value] of Object.entries(input)) {
         if (value === null || value === undefined) {
+          if (key in customQueryParams) {
+            cleared[key] = null;
+          }
           delete update[key];
         } else {
           update[key] = value;
@@ -337,7 +343,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       }
       if (!deepEqual(customQueryParams, update)) {
         store.setState({ customQueryParams: update });
-        provider.channel?.emit(UPDATE_QUERY_PARAMS, update);
+        provider.channel?.emit(UPDATE_QUERY_PARAMS, { ...update, ...cleared });
       }
     },
     applyQueryParams(input, options) {

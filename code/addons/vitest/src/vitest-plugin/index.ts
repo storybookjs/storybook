@@ -49,7 +49,6 @@ import {
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
-import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
@@ -341,17 +340,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const areProjectAnnotationRequired = await requiresProjectAnnotations(
-        nonMutableInputConfig.test,
-        finalOptions
-      );
-
-      const internalSetupFiles = [
-        '@storybook/addon-vitest/internal/setup-file',
-        areProjectAnnotationRequired &&
-          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-      ].filter(Boolean) as string[];
-
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
@@ -365,7 +353,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           setupFiles: [
-            ...internalSetupFiles,
+            '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
               nonMutableInputConfig.test?.setupFiles,
@@ -474,7 +464,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
 
             The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
-            
+
             More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
           `)
         );
@@ -486,17 +476,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
+      const isBrowserModeEnabled = context.project.config.browser?.enabled === true;
 
       if (isBrowserModeEnabled) {
-        const setupFilePath = '@storybook/addon-vitest/internal/setup-file.browser.4';
+        const browserSetupFile = fileURLToPath(
+          import.meta.resolve('@storybook/addon-vitest/internal/setup-file.browser.4')
+        );
 
-        context.vitest.config.setupFiles = [
-          setupFilePath,
-          ...(context.vitest.config.setupFiles ?? []).filter(
-            (configuredSetupFile) => configuredSetupFile !== setupFilePath
-          ),
-        ];
+        if (!context.project.config.setupFiles.includes(browserSetupFile)) {
+          context.project.config.setupFiles.push(browserSetupFile);
+        }
       }
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete

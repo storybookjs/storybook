@@ -34,6 +34,7 @@ import { toHaveLiveRegion } from '../core/src/shared/utils/toHaveLiveRegion.ts';
 import * as templatePreview from '../core/template/stories/preview.ts';
 import '../renderers/react/template/components/index.js';
 import { isChromatic } from './isChromatic.ts';
+import * as vitestPreview from './vitest.preview.ts';
 
 sb.mock(import('@storybook/global'), { spy: true });
 
@@ -432,6 +433,7 @@ export default definePreview({
     addonTest(),
     addonPseudoStates(),
     templatePreview,
+    ...((import.meta as { env?: { VITEST?: unknown } }).env?.VITEST ? [vitestPreview] : []),
   ],
   decorators,
   loaders,

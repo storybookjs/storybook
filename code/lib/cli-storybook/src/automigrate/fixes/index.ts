@@ -30,6 +30,7 @@ import { rnstorybookConfig } from './rnstorybook-config.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 import { setConfigLayout } from './set-config-layout.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
+import { vitestSetupFile } from './vitest-setup-file.ts';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
 
 export * from '../types.ts';
@@ -44,6 +45,7 @@ export const allFixes: Fix[] = [
   addonA11yAddonTest,
   consolidatedImports,
   addonExperimentalTest,
+  vitestSetupFile,
   rnstorybookConfig,
   rnOndeviceAddonsToDeviceAddons,
   migrateAddonConsole,

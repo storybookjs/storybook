@@ -136,8 +136,7 @@ Here's a highlight of notable directories and files:
 │   ├── ember-cli
 │   ├── external-docs
 │   ├── portable-stories-kitchen-sink
-│   ├── server-kitchen-sink
-│   └── standalone-preview
+│   └── server-kitchen-sink
 └── yarn.lock
 ```
 

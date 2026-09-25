@@ -166,10 +166,6 @@
       "description": "Write stats JSON to disk",
       "default": false
     },
-    "previewUrl": {
-      "type": "string",
-      "description": "Disables the default storybook preview and lets you use your own"
-    },
     "loglevel": {
       "type": "string",
       "description": "Controls level of logging during build. Can be one of: [trace, debug, info (default), warn, error, silent].",

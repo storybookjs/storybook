@@ -417,11 +417,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerToolset(reviewToolset);
   }
 
-  // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
-  // so registering it would force full story-index generation during manager-only builds (and
-  // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
-  // gate around index.json and writeManifests in build-static.ts.
-  if (features?.experimentalDocgenServer && !options.ignorePreview) {
+  if (features?.experimentalDocgenServer) {
     const [docgenDescriptors, storyDocsProvider] = await Promise.all([
       options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
       options.presets.apply<StoryDocsProvider>(

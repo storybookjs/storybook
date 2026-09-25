@@ -14,6 +14,27 @@ describe('composeComponentImport', () => {
     ).toBe("import { Alpha } from '@design-system/components';");
   });
 
+  it('preserves a named binding when the override is a namespace import', () => {
+    expect(
+      composeComponentImport(
+        { import: ["import * as Components from '@design-system/components'"] },
+        {
+          name: 'Button',
+          import: "import { Button } from './components'",
+        }
+      )
+    ).toBe("import { Button } from './components'");
+  });
+
+  it('preserves a namespace binding when the override is a named import', () => {
+    expect(
+      composeComponentImport(jsDocTags, {
+        name: 'UI.Alpha',
+        import: "import * as UI from './components'",
+      })
+    ).toBe("import * as UI from './components'");
+  });
+
   it.each([
     [
       "import /* legacy */ Alpha from './components'",

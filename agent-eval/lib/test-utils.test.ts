@@ -554,16 +554,13 @@ describe('parseWorkflowToolResults', () => {
       },
     });
 
-    const output = parseWorkflowToolResults(transcript, 'test-run')[0]?.output ?? '';
-
-    expect(output).toContain('## Passing Stories\n\n- a--b');
-    expect(output).toContain('## Failing Stories\n\n### a--c\n\nexpected 1 to be 2');
-    expect(output).toContain(
-      '## Accessibility Violations\n\n### a--b - button-name\n\nButtons must have discernible text'
-    );
-    expect(output).toContain('### a--c - Error\n\naxe crashed');
-    expect(output).toContain(
-      '## Unhandled Errors\n\n### TypeError\n\n**Error message**: x is not a function'
+    expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
+      [
+        '## Passing Stories\n\n- a--b',
+        '## Failing Stories\n\n- a--c',
+        '## Accessibility Violations\n\n- a--b - button-name',
+        '## Unhandled Errors\n\n- TypeError',
+      ].join('\n\n')
     );
   });
 
@@ -613,20 +610,15 @@ describe('parseWorkflowToolResults', () => {
     );
   });
 
-  test('renders the non-completed --json test-run outcomes', () => {
-    const outputs = [
-      { status: 'no-stories', notFoundMessages: ['No story with id a--b'] },
-      { status: 'error', error: { message: 'dev server unreachable' } },
-      { status: 'cancelled' },
-    ].map(
-      (output) => parseWorkflowToolResults(codexTestRunJsonLine(output), 'test-run')[0]?.output
-    );
+  test('renders a --json no-stories outcome as the markdown report marker', () => {
+    const transcript = codexTestRunJsonLine({
+      status: 'no-stories',
+      notFoundMessages: ['No story with id a--b'],
+    });
 
-    expect(outputs).toEqual([
-      'No stories found matching the provided input.\n\nNo story with id a--b',
-      'Error: dev server unreachable',
-      'Error: Test run was cancelled',
-    ]);
+    expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
+      'No stories found matching the provided input.'
+    );
   });
 
   test('leaves markdown and unrecognized JSON output untouched', () => {

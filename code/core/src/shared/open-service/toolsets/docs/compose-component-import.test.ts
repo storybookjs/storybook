@@ -48,7 +48,7 @@ describe('composeComponentImport', () => {
     [
       "import { Alpha } from './alpha' /* see\nimport docs */\nimport { Beta } from './beta'",
       'Alpha',
-      "import { Alpha } from '@design-system/components';\nimport { Beta } from './beta'",
+      "import { Alpha } from '@design-system/components'; /* see\nimport docs */\nimport { Beta } from './beta'",
     ],
   ])('treats comment contents as import trivia: %s', (imports, name, expected) => {
     expect(composeComponentImport(jsDocTags, { name, import: imports })).toBe(expected);

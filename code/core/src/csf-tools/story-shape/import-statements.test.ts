@@ -7,6 +7,7 @@ import {
   type ImportRef,
   buildImportStatements,
   resolveComponentImport,
+  rewriteComponentImport,
 } from './import-statements.ts';
 import { collectImportBindings } from './imports.ts';
 
@@ -358,6 +359,18 @@ describe('buildImportStatements', () => {
       `);
     });
 
+    it('keeps a string-named overridden export', () => {
+      expect(
+        buildImportStatements({
+          refs: [{ ...button, importOverride: `import { 'public-button' as Alpha } from 'ds';` }],
+        })
+      ).toMatchInlineSnapshot(`
+        [
+          "import { 'public-button' as Button } from 'ds';",
+        ]
+      `);
+    });
+
     it('forces a default import while keeping the local name', () => {
       expect(
         buildImportStatements({
@@ -419,5 +432,17 @@ describe('buildImportStatements', () => {
         ]
       `);
     });
+  });
+});
+
+describe('rewriteComponentImport', () => {
+  it('keeps a string-named overridden export', () => {
+    expect(
+      rewriteComponentImport({
+        imports: `import { Alpha } from './alpha'`,
+        componentName: 'Alpha',
+        importOverride: `import { 'public-button' as Alpha } from 'ds'`,
+      })
+    ).toBe("import { 'public-button' as Alpha } from 'ds';");
   });
 });

@@ -5,9 +5,8 @@ import {
   isGetAbsolutePathWrapperNecessary,
   wrapValueWithGetAbsolutePathWrapper,
 } from 'storybook/internal/common';
-import { readConfig } from 'storybook/internal/csf-tools';
+import { type ConfigFile, readConfig } from 'storybook/internal/csf-tools';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
-import { detectAgent } from 'storybook/internal/telemetry';
 
 import { dedent } from 'ts-dedent';
 
@@ -18,6 +17,29 @@ export interface WrapGetAbsolutePathRunOptions {
   storybookVersion: string;
   isStorybookInMonorepo: boolean;
   isConfigTypescript: boolean;
+}
+
+export function ensureGetAbsolutePathWrapper(
+  mainConfig: ConfigFile,
+  isConfigTypescript: boolean
+): void {
+  if (getAbsolutePathWrapperName(mainConfig) !== null) {
+    return;
+  }
+
+  if (
+    mainConfig?.fileName?.endsWith('.cjs') ||
+    mainConfig?.fileName?.endsWith('.cts') ||
+    mainConfig?.fileName?.endsWith('.cjsx') ||
+    mainConfig?.fileName?.endsWith('.ctsx') ||
+    mainConfig._code.includes('module.exports')
+  ) {
+    throw new CommonJsConfigNotSupportedError();
+  }
+
+  mainConfig.setImport(['dirname'], 'node:path');
+  mainConfig.setImport(['fileURLToPath'], 'node:url');
+  mainConfig.setBodyDeclaration(getAbsolutePathWrapperAsCallExpression(isConfigTypescript));
 }
 
 export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
@@ -41,7 +63,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
       isGetAbsolutePathWrapperNecessary(node)
     );
 
-    if (!needsWrapper && !detectAgent()) {
+    if (!needsWrapper) {
       return null;
     }
 
@@ -60,23 +82,7 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
         wrapValueWithGetAbsolutePathWrapper(mainConfig, node);
       });
 
-      if (getAbsolutePathWrapperName(mainConfig) === null) {
-        if (
-          mainConfig?.fileName?.endsWith('.cjs') ||
-          mainConfig?.fileName?.endsWith('.cts') ||
-          mainConfig?.fileName?.endsWith('.cjsx') ||
-          mainConfig?.fileName?.endsWith('.ctsx') ||
-          mainConfig._code.includes('module.exports')
-        ) {
-          throw new CommonJsConfigNotSupportedError();
-        } else {
-          mainConfig.setImport(['dirname'], 'node:path');
-          mainConfig.setImport(['fileURLToPath'], 'node:url');
-        }
-        mainConfig.setBodyDeclaration(
-          getAbsolutePathWrapperAsCallExpression(result.isConfigTypescript)
-        );
-      }
+      ensureGetAbsolutePathWrapper(mainConfig, result.isConfigTypescript);
     });
   },
 };

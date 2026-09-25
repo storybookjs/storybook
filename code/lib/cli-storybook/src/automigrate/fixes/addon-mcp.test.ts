@@ -9,6 +9,10 @@ import type { CheckOptions, RunOptions } from '../types.ts';
 import { type AddonMcpOptions, addonMcp } from './addon-mcp.ts';
 
 vi.mock('../../add', { spy: true });
+vi.mock('node:fs/promises', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('node:fs/promises')>()),
+  writeFile: vi.fn(),
+}));
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
@@ -59,7 +63,9 @@ describe('addon-mcp', () => {
 
       it('returns isInstalled: false when addon-mcp is missing', async () => {
         await expect(addonMcp.check(baseCheckOptions)).resolves.toEqual({
+          addGetAbsolutePathWrapper: false,
           agentName: 'claude',
+          isConfigTypescript: false,
           isInstalled: false,
         });
       });
@@ -98,6 +104,49 @@ describe('addon-mcp', () => {
         configDir: '.storybook',
       } as RunOptions<AddonMcpOptions>);
 
+      expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
+    });
+
+    it('adds the wrapper before installing into an agent-run monorepo', async () => {
+      const mainConfigPath = require.resolve('./__test__/main-config-with-custom-resolver.ts');
+      const result = await addonMcp.check({
+        ...baseCheckOptions,
+        packageManager: {
+          ...mockPackageManager,
+          isStorybookInMonorepo: () => true,
+        } as JsPackageManager,
+        mainConfigPath,
+      });
+
+      expect(result).toEqual({
+        addGetAbsolutePathWrapper: true,
+        agentName: 'claude',
+        isConfigTypescript: true,
+        isInstalled: false,
+      });
+
+      await addonMcp.run?.({
+        result,
+        packageManager: mockPackageManager,
+        configDir: '.storybook',
+        mainConfigPath,
+      } as RunOptions<AddonMcpOptions>);
+
+      const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
+      expect(writeFile.mock.calls[0][1]).toMatchInlineSnapshot(`
+        "import { fileURLToPath } from 'node:url';
+        import { dirname } from 'node:path';
+        import { resolvePackage } from './resolve-package.ts';
+
+        export default {
+          framework: resolvePackage('@storybook/react-vite'),
+        };
+
+        function getAbsolutePath(value: string): any {
+          return dirname(fileURLToPath(import.meta.resolve(\`\${value}/package.json\`)));
+        }
+        "
+      `);
       expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
     });
 

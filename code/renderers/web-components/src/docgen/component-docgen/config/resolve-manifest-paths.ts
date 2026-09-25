@@ -1,21 +1,9 @@
-import { Category, StorybookError } from 'storybook/internal/server-errors';
 import { findFilesUp } from 'storybook/internal/common';
 
-import { existsSync, readFileSync } from 'node:fs';
+import { readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
 import type { WebComponentsFrameworkOptions } from '../../../types.ts';
-
-export class MissingCustomElementsManifestError extends StorybookError {
-  constructor(public data: { path: string }) {
-    super({
-      name: 'MissingCustomElementsManifestError',
-      category: Category.RENDERER_WEB_COMPONENTS,
-      code: 1,
-      message: `The customElementsManifest framework option points to a file that does not exist: ${data.path}`,
-    });
-  }
-}
 
 const asPathArray = (value: unknown): string[] => {
   if (typeof value === 'string') {
@@ -44,13 +32,7 @@ const resolveFrameworkManifestPaths = (
   configDir: string,
   frameworkOptions: WebComponentsFrameworkOptions
 ): string[] =>
-  asPathArray(frameworkOptions.customElementsManifest).map((path) => {
-    const resolvedPath = resolve(configDir, path);
-    if (!existsSync(resolvedPath)) {
-      throw new MissingCustomElementsManifestError({ path: resolvedPath });
-    }
-    return resolvedPath;
-  });
+  asPathArray(frameworkOptions.customElementsManifest).map((path) => resolve(configDir, path));
 
 export const resolveManifestPaths = (
   configDir: string,

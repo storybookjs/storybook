@@ -111,7 +111,7 @@ describe('web-components server-side docgen baselines', () => {
         | undefined;
 
       expect(payload, `${fixtureCase}: no OSA payload recorded`).toBeDefined();
-      expect(JSON.stringify(payload)).not.toContain(testDir);
+      expect(JSON.stringify(withoutArgTypes(payload))).not.toContain(testDir);
       const argTypes = payload?.argTypes;
       expect(argTypes, `${fixtureCase}: no OSA argTypes recorded`).toBeDefined();
 

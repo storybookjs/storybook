@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { relative } from 'node:path';
 
-import { isRecord } from '../utils.ts';
+import { errorMessage, isRecord } from '../utils.ts';
 import type { ManifestPackage } from './types.ts';
 
 export interface LoadedManifest {
@@ -57,12 +57,8 @@ export async function loadManifest(absolutePath: string): Promise<ManifestLoadRe
       path,
       error: {
         name: 'manifest-invalid',
-        message: invalidMessage(path, error instanceof Error ? error.message : String(error)),
+        message: invalidMessage(path, errorMessage(error)),
       },
     };
   }
-}
-
-export async function loadManifests(paths: string[]): Promise<ManifestLoadResult[]> {
-  return Promise.all(paths.map((path) => loadManifest(path)));
 }

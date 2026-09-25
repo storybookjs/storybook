@@ -93,7 +93,8 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 }
 
 function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
-  const tokens = tokenizeShellCommand(command);
+  const words = tokenizeShellWords(command);
+  const tokens = words.map((word) => word.value);
   const heredocs = extractCatHeredocs(command);
   const calls: StorybookWorkflowCall[] = [];
 
@@ -130,7 +131,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       continue;
     }
 
-    const invocation = parseStorybookToolsInvocation(tokens.slice(index + 2), heredocs);
+    const invocation = parseStorybookToolsInvocation(words.slice(index + 2), heredocs);
     if (invocation !== undefined) {
       calls.push(invocation.call);
       index += invocation.consumed + 1;
@@ -148,16 +149,16 @@ function segmentUntilSeparator(tokens: string[], start: number): string[] {
 }
 
 function parseStorybookToolsInvocation(
-  cliArgs: string[],
+  cliArgs: ShellWord[],
   heredocs: Map<string, string>
 ): { call: StorybookWorkflowCall; consumed: number } | undefined {
   const endIndex = cliArgs.findIndex(
-    (token, index) =>
-      SHELL_COMMAND_SEPARATORS.has(token) ||
-      (token === 'storybook' && cliArgs[index + 1] === 'tools')
+    ({ value }, index) =>
+      SHELL_COMMAND_SEPARATORS.has(value) ||
+      (value === 'storybook' && cliArgs[index + 1]?.value === 'tools')
   );
   const consumed = endIndex === -1 ? cliArgs.length : endIndex;
-  const segment = expandShellWords(cliArgs.slice(0, consumed), heredocs);
+  const { segment, unresolved } = expandShellWords(cliArgs.slice(0, consumed), heredocs);
 
   const command = findWorkflowCommand(segment);
   if (command === undefined || segment[0] === 'help') {
@@ -171,7 +172,8 @@ function parseStorybookToolsInvocation(
 
   const input = parseToolArguments(
     segment.slice(command.index + 2),
-    readCommanderInput(commanderOptions)
+    readCommanderInput(commanderOptions),
+    unresolved
   );
   if (input === undefined) {
     return undefined;
@@ -238,19 +240,40 @@ const CAT_SUBSTITUTION = /\$\(\s*cat\s+([^\s)]+)\s*\)/g;
 
 // What the shell hands the CLI: redirections removed, and `$(cat path)`
 // replaced by the body of a same-command `cat > path <<TAG` heredoc.
-function expandShellWords(tokens: string[], heredocs: Map<string, string>): string[] {
-  const words: string[] = [];
-  for (let index = 0; index < tokens.length; index += 1) {
-    const token = tokens[index] ?? '';
-    if (BARE_SHELL_REDIRECTION_PATTERN.test(token)) {
-      index += 1;
-    } else if (!isShellRedirection(token)) {
-      words.push(
-        token.replace(CAT_SUBSTITUTION, (match, path: string) => heredocs.get(path) ?? match)
-      );
+// `unresolved` holds the values whose substitution the harness cannot see, both
+// as a whole word and as the value of a `--key=value` word.
+function expandShellWords(
+  words: ShellWord[],
+  heredocs: Map<string, string>
+): { segment: string[]; unresolved: Set<string> } {
+  const segment: string[] = [];
+  const unresolved = new Set<string>();
+  for (let index = 0; index < words.length; index += 1) {
+    const word = words[index];
+    if (word === undefined) {
+      continue;
     }
+    if (!word.quotedStart && BARE_SHELL_REDIRECTION_PATTERN.test(word.value)) {
+      index += 1;
+      continue;
+    }
+    if (!word.quotedStart && isShellRedirection(word.value)) {
+      continue;
+    }
+    if (!word.expands) {
+      segment.push(word.value);
+      continue;
+    }
+    const value = word.value.replace(
+      CAT_SUBSTITUTION,
+      (match, path: string) => heredocs.get(path) ?? match
+    );
+    if (value.includes('$')) {
+      unresolved.add(value).add(value.slice(value.indexOf('=') + 1));
+    }
+    segment.push(value);
   }
-  return words;
+  return { segment, unresolved };
 }
 
 // Commander parses the options before the toolset name; of those, only
@@ -272,7 +295,8 @@ function readCommanderInput(options: string[]): string | undefined {
 // rejects the invocation. shell-parse.test.ts runs both on the same tokens.
 function parseToolArguments(
   tokens: string[],
-  commanderInput: string | undefined
+  commanderInput: string | undefined,
+  unresolved: ReadonlySet<string>
 ): Record<string, unknown> | undefined {
   let rawInput = commanderInput;
   let attach: boolean | undefined;
@@ -344,9 +368,9 @@ function parseToolArguments(
   try {
     input = JSON.parse(rawInput);
   } catch {
-    // The shell expanded this (`$(cat file)` from an earlier command, `$VAR`)
-    // into what the CLI saw; keep the raw text so a failing assertion shows it.
-    return rawInput.includes('$') ? { input: rawInput, ...flagArgs } : undefined;
+    // The CLI saw what the shell made of this (`$(cat file)` from an earlier
+    // command, `$VAR`); keep the raw text so a failing assertion shows it.
+    return unresolved.has(rawInput) ? { input: rawInput, ...flagArgs } : undefined;
   }
   return isRecord(input) ? { ...input, ...flagArgs } : undefined;
 }
@@ -376,8 +400,20 @@ function extractCatHeredocs(command: string): Map<string, string> {
 // recognized. `$(cat path)` is resolved when that path was written by a
 // `cat > path <<TAG` heredoc in the same command.
 export function tokenizeShellCommand(command: string): string[] {
-  const tokens: string[] = [];
-  let token = '';
+  return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
+}
+
+type ShellWord = {
+  value: string;
+  // The first character was quoted or escaped, so a leading `<` or `>` is text.
+  quotedStart: boolean;
+  // A `$` outside single quotes: the shell substitutes something here.
+  expands: boolean;
+};
+
+function tokenizeShellWords(command: string): ShellWord[] {
+  const words: ShellWord[] = [];
+  let word: ShellWord | undefined;
   let quote: '"' | "'" | undefined;
   let escaping = false;
 
@@ -393,7 +429,7 @@ export function tokenizeShellCommand(command: string): string[] {
       if (char === "'") {
         quote = undefined;
       } else {
-        token += char;
+        append(char, true);
       }
       continue;
     }
@@ -401,7 +437,7 @@ export function tokenizeShellCommand(command: string): string[] {
     if (escaping) {
       // A backslash-newline continues the line and is removed entirely.
       if (char !== '\n') {
-        token += char;
+        append(char, true);
       }
       escaping = false;
       continue;
@@ -416,53 +452,61 @@ export function tokenizeShellCommand(command: string): string[] {
       if (char === '"') {
         quote = undefined;
       } else {
-        token += char;
+        append(char, true, char === '$');
       }
       continue;
     }
 
     if (char === '"' || char === "'") {
       quote = char;
+      word ??= { value: '', quotedStart: true, expands: false };
       continue;
     }
 
     if (char === '&' && command[index + 1] === '&') {
-      pushToken();
-      tokens.push('&&');
+      pushOperator('&&');
       index += 1;
       continue;
     }
 
     if (char === '|' && command[index + 1] === '|') {
-      pushToken();
-      tokens.push('||');
+      pushOperator('||');
       index += 1;
       continue;
     }
 
     if (char === ';' || char === '|') {
-      pushToken();
-      tokens.push(char);
+      pushOperator(char);
       continue;
     }
 
     if (/\s/.test(char)) {
-      pushToken();
+      pushWord();
       continue;
     }
 
-    token += char;
+    append(char, false, char === '$');
   }
 
-  pushToken();
-  return tokens;
+  pushWord();
+  return words;
 
-  function pushToken(): void {
-    if (token.length === 0) {
-      return;
+  function append(char: string, quoted: boolean, expands = false): void {
+    word ??= { value: '', quotedStart: quoted, expands: false };
+    word.value += char;
+    word.expands ||= expands;
+  }
+
+  function pushWord(): void {
+    if (word !== undefined) {
+      words.push(word);
+      word = undefined;
     }
-    tokens.push(token);
-    token = '';
+  }
+
+  function pushOperator(operator: string): void {
+    pushWord();
+    words.push({ value: operator, quotedStart: false, expands: false });
   }
 }
 

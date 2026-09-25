@@ -28,6 +28,10 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--title', 'plain text'], input: { title: 'plain text' } },
     { tokens: ['--title', 'a=b'], input: { title: 'a=b' } },
     { tokens: ['--title=a=b'], input: { title: 'a=b' } },
+    { tokens: ['--title', ''], input: { title: '' } },
+    { tokens: ['--title', '<Callout> variants'], input: { title: '<Callout> variants' } },
+    { tokens: ['--title', '> quote', '--a11y', 'false'], input: { title: '> quote', a11y: false } },
+    { tokens: ['--title', '$HOME'], input: { title: '$HOME' } },
     { tokens: ['--value', 'null'], input: { value: null } },
     {
       tokens: ['--stories', '[{"storyId":"a--b"}]'],
@@ -75,10 +79,11 @@ describe('storybook tools arguments after the tool name', () => {
     { tokens: ['--input'], input: undefined },
     { tokens: ['--input', '{"title":'], input: undefined },
     { tokens: ['--input', '["a--b"]'], input: undefined },
+    { tokens: ['--input', '$not-json'], input: undefined },
   ];
 
   for (const { tokens, input } of cases) {
-    test(tokens.join(' ') || '(no arguments)', () => {
+    test(JSON.stringify(tokens), () => {
       const calls = parseStorybookWorkflowShellCommands([
         ['npx storybook tools test run', ...tokens.map(shellQuote)].join(' '),
       ]);
@@ -286,13 +291,24 @@ npx storybook tools review create --input="$(cat /tmp/review.json)" --title Over
   test('keeps an --input the shell expanded out of view as a plain argument', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook tools test run --input "$(cat /tmp/input.json)"',
-      'npx storybook tools test run --input "$PAYLOAD" --a11y false',
+      'npx storybook tools test run --input="$(cat /tmp/input.json)"',
+      'npx storybook tools test run --input $PAYLOAD --a11y false',
     ]);
 
     expect(calls.map((call) => call.input)).toEqual([
       { input: '$(cat /tmp/input.json)' },
+      { input: '$(cat /tmp/input.json)' },
       { input: '$PAYLOAD', a11y: false },
     ]);
+  });
+
+  test('treats a single-quoted or escaped `$` as literal text', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      "npx storybook tools test run --input '$(cat /tmp/input.json)'",
+      'npx storybook tools test run --input \\$PAYLOAD',
+    ]);
+
+    expect(calls).toEqual([]);
   });
 
   test('ignores shell redirections', () => {
@@ -300,9 +316,17 @@ npx storybook tools review create --input="$(cat /tmp/review.json)" --title Over
       'npx storybook tools stories changed 2>&1',
       'npx storybook tools --port 6006 test run >out.txt 2> err.log',
       'npx storybook tools test run --a11y false > /tmp/out.md',
+      'npx storybook tools test run --a11y false 2>"/tmp/err log" >\'/tmp/out.md\'',
+      'npx storybook tools review create --title \\<Callout\\> 2>&1',
     ]);
 
-    expect(calls.map((call) => call.input)).toEqual([{}, {}, { a11y: false }]);
+    expect(calls.map((call) => call.input)).toEqual([
+      {},
+      {},
+      { a11y: false },
+      { a11y: false },
+      { title: '<Callout>' },
+    ]);
   });
 
   test('does not credit ad hoc MCP invocations from the shell', () => {

@@ -5,6 +5,15 @@ import { composeComponentImport } from './compose-component-import.ts';
 const jsDocTags = { import: ["import { Alpha } from '@design-system/components'"] };
 
 describe('composeComponentImport', () => {
+  it('rewrites an escaped component binding', () => {
+    expect(
+      composeComponentImport(jsDocTags, {
+        name: 'Alpha',
+        import: String.raw`import { \u0041lpha } from './components'`,
+      })
+    ).toBe("import { Alpha } from '@design-system/components';");
+  });
+
   it.each([
     [
       "import /* legacy */ Alpha from './components'",

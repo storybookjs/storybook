@@ -2,7 +2,6 @@
   "--slot-panel-color": {
     "description": "Panel text color.",
     "name": "--slot-panel-color",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -13,21 +12,24 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
-  "actions": {
+  "actions-slot": {
     "description": "Action controls.",
     "name": "actions",
-    "required": false,
     "table": {
       "category": "slots",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "default-slot": {
+    "description": "Default body content.",
+    "name": "default",
+    "table": {
+      "category": "slots",
     },
     "type": {
       "name": "string",
@@ -49,21 +51,14 @@
       "name": "string",
     },
   },
-  "panel": {
+  "panel-part": {
     "description": "Outer panel.",
     "name": "panel",
-    "required": false,
     "table": {
       "category": "css shadow parts",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
 }

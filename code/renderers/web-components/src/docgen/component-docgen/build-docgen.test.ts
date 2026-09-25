@@ -129,13 +129,57 @@ describe('buildDocgenPayload', () => {
         },
         "description": "Card description.",
         "id": "fixture",
-        "jsDocTags": {},
+        "jsDocTags": {
+          "summary": [
+            "Card summary.",
+          ],
+        },
         "name": "x-card",
         "path": "./input.stories.ts",
         "renderer": "web-components",
         "summary": "Card summary.",
       }
     `);
+  });
+
+  it('combines the story meta docblock with component-level manifest tags', () => {
+    vol.fromNestedJSON({
+      [STORY_PATH]: `
+        /**
+         * Story-level docs for the card.
+         * @since 1.2.0
+         */
+        const meta = { title: 'Fixture', component: 'x-card' };
+        export default meta;
+      `,
+    });
+
+    expect(
+      buildDocgenPayload(
+        { entry },
+        context({
+          tags: [
+            tag({
+              name: 'XCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'x-card',
+              description: 'Card declaration description.',
+              deprecated: 'Use x-panel instead.',
+              summary: 'Card declaration summary.',
+            }),
+          ],
+        })
+      )
+    ).toMatchObject({
+      description: 'Story-level docs for the card.',
+      summary: 'Card declaration summary.',
+      jsDocTags: {
+        since: ['1.2.0'],
+        deprecated: ['Use x-panel instead.'],
+        summary: ['Card declaration summary.'],
+      },
+    });
   });
 
   it.each([

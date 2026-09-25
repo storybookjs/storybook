@@ -18,8 +18,8 @@ const MAX_ARRAY_DEPTH = 8;
 
 export interface ParsedTypeText {
   type: SBType;
-  /** Only when core's `inferControls` would not derive it from `type`. */
-  control?: StrictInputType['control'];
+  /** Only when core's `inferControls` would not derive it from `type`; object form, since service argTypes skip the preview normalizer. */
+  control?: Exclude<StrictInputType['control'], string>;
   options?: (string | number)[];
 }
 
@@ -42,7 +42,7 @@ export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeTe
   if (literalValues.length > 0) {
     return {
       type: { name: 'other', value: members.join(' | ') },
-      control: pickObjectControl(members),
+      ...(members.some(isCallable) ? { control: false as const } : {}),
     };
   }
 
@@ -63,13 +63,13 @@ export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeTe
       return element.name === 'enum'
         ? {
             type: { name: 'array', value: element },
-            control: 'multi-select',
+            control: { type: 'multi-select' },
             options: element.value as (string | number)[],
           }
         : { type: { name: 'array', value: element } };
     }
     if (member === 'Date') {
-      return { type: { name: 'date' }, control: 'date' };
+      return { type: { name: 'date' }, control: { type: 'date' } };
     }
     if (isBareObjectType(member)) {
       return { type: { name: 'object', value: {} } };
@@ -85,7 +85,10 @@ export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeTe
     }
   }
 
-  return { type: { name: 'other', value: members.join(' | ') }, control: false };
+  return {
+    type: { name: 'other', value: members.join(' | ') },
+    control: false,
+  };
 }
 
 function normalizeMembers(text: string): string[] {
@@ -125,7 +128,7 @@ function pickScalar(members: string[]): ParsedTypeText | undefined {
   );
   const hasNumber = members.some((member) => member === 'number' || member === 'bigint');
   if (hasBoolean && hasNumber) {
-    return { type: { name: 'other', value: members.join(' | ') }, control: 'object' };
+    return { type: { name: 'other', value: members.join(' | ') } };
   }
 
   if (hasBoolean) {
@@ -135,10 +138,6 @@ function pickScalar(members: string[]): ParsedTypeText | undefined {
     return { type: { name: 'number' } };
   }
   return undefined;
-}
-
-function pickObjectControl(members: string[]): StrictInputType['control'] {
-  return members.some(isCallable) ? false : 'object';
 }
 
 function isCallable(text: string): boolean {

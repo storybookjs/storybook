@@ -40,7 +40,6 @@
       "code": "./src/docgen/index.ts",
       "default": "./dist/docgen/index.js"
     },
-    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
   },

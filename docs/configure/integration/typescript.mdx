@@ -68,7 +68,7 @@ The example above uses the power of TypeScript in combination with the exported 
 
 ### Stricter checking with `satisfies`
 
-You can update your component stories to use the [`satisfies`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html) operator to ensure stricter type checking for your component stories. For example:
+You can use the [`satisfies`](https://www.typescriptlang.org/docs/handbook/release-notes/typescript-4-9.html) operator to apply stricter type checking to your component stories. For example:
 
 <CodeSnippets path="button-story-baseline-with-satisfies.md" />
 
@@ -80,7 +80,7 @@ Now, when you define a story or update an existing one, you'll automatically get
 
 ### The `satisfies` operator is not working as expected
 
-Out of the box, Storybook supports the `satisfies` operator for almost every supported framework. However, due to the constraints of the Angular and Web Components framework, you might run into issues when applying this operator for additional type safety. This is primarily due to how both frameworks are currently implemented, making it almost impossible for Storybook to determine if the component property is required. If you encounter this issue, please open up a support request on [GitHub Discussions](https://github.com/storybookjs/storybook/discussions/new?category=help).
+Storybook supports the `satisfies` operator for almost every supported framework. However, Angular and Web Components users might run into issues when applying this operator for additional type safety. Their renderer types cannot always determine whether a component property is required. If you encounter this issue, please open a support request on [GitHub Discussions](https://github.com/storybookjs/storybook/discussions/new?category=help).
 
 <If renderer={[ 'vue', 'svelte' ]}>
 

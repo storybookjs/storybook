@@ -1,6 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { dirname } from 'node:path';
 
-import { transformImportFiles, versions } from 'storybook/internal/common';
+import { type JsPackageManager, transformImportFiles, versions } from 'storybook/internal/common';
 
 import { consolidatedPackages } from '../helpers/consolidated-packages.ts';
 import type { Fix } from '../types.ts';
@@ -61,7 +62,11 @@ function transformPackageJson(content: string): string | null {
   return hasChanges ? JSON.stringify(packageJson, null, 2) : null;
 }
 
-export const transformPackageJsonFiles = async (files: string[], dryRun: boolean) => {
+export const transformPackageJsonFiles = async (
+  files: string[],
+  dryRun: boolean,
+  packageManager?: Pick<JsPackageManager, 'writePackageJson'>
+) => {
   const errors: Array<{ file: string; error: Error }> = [];
 
   const { default: pLimit } = await import('p-limit');
@@ -75,7 +80,11 @@ export const transformPackageJsonFiles = async (files: string[], dryRun: boolean
           const contents = await readFile(file, 'utf-8');
           const transformed = transformPackageJson(contents);
           if (!dryRun && transformed) {
-            await writeFile(file, transformed);
+            if (packageManager) {
+              packageManager.writePackageJson(JSON.parse(transformed), dirname(file));
+            } else {
+              await writeFile(file, transformed);
+            }
           }
         } catch (error) {
           errors.push({ file, error: error as Error });
@@ -137,7 +146,8 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
 
     const packageJsonErrors = await transformPackageJsonFiles(
       packageManager.packageJsonPaths,
-      dryRun
+      dryRun,
+      packageManager
     );
     errors.push(...packageJsonErrors);
 

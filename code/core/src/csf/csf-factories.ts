@@ -38,11 +38,16 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   type<T>(): Preview<TRenderer & T>;
 }
 
-export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
-  ? C & { csf4: true }
-  : never;
+export type InferTypes<T extends PreviewAddon<never>[]> = [T[number]] extends [never]
+  ? Pick<AddonTypes, 'args'> & { csf4: true }
+  : T extends PreviewAddon<infer C>[]
+    ? C & { csf4: true }
+    : never;
 
-export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+export function definePreview<
+  TRenderer extends Renderer,
+  Addons extends PreviewAddon<never>[] = [],
+>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;

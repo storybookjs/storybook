@@ -6,15 +6,19 @@ import { expect, test } from 'vitest';
 import type { ComponentType, KeyboardEventHandler, ReactElement, ReactNode } from 'react';
 import React from 'react';
 
+import { definePreviewAddon } from 'storybook/internal/csf';
 import type { Canvas } from 'storybook/internal/csf';
-import type { Args, StrictArgs } from 'storybook/internal/types';
+import type { Args, ArgsStoryFn, StrictArgs } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
 import { fn } from 'storybook/test';
 import type { Mock } from 'storybook/test';
 
 import { __definePreview } from './preview.tsx';
+import type { ReactPreview } from './preview.tsx';
 import type { Decorator } from './public-types.ts';
+import { render as portableRender } from './render.tsx';
+import type { ReactRenderer, ReactTypes } from './types.ts';
 
 type ButtonProps = { label: string; disabled: boolean; onKeyDown?: () => void };
 const Button: (props: ButtonProps) => ReactElement = () => <></>;
@@ -22,6 +26,30 @@ const Button: (props: ButtonProps) => ReactElement = () => <></>;
 const preview = __definePreview({
   addons: [],
 });
+
+const previewWithRender = __definePreview({ addons: [], render: portableRender });
+expectTypeOf(previewWithRender).toEqualTypeOf<ReactPreview<ReactTypes & { csf4: true }>>();
+
+type Renderer = ReactRenderer & { csf4: true };
+
+interface TestAddonTypes {
+  parameters: { test: { value: string } };
+}
+
+const testAddon = definePreviewAddon<TestAddonTypes>({});
+const addonRender: ArgsStoryFn<Renderer & TestAddonTypes> = (props, context) => {
+  const Component = context.component as ComponentType<Args>;
+  return <Component {...props} />;
+};
+const previewWithAddon = __definePreview({ addons: [testAddon], render: addonRender });
+previewWithAddon.meta({ component: Button, parameters: { test: { value: 'valid' } } });
+// @ts-expect-error the preview cannot provide the addon's required parameter
+__definePreview({ addons: [], render: addonRender });
+
+type UnsupportedRenderer = Renderer & { parameters: { required: string } };
+const unsupportedRender: ArgsStoryFn<UnsupportedRenderer> = () => <></>;
+// @ts-expect-error the preview cannot provide the required parameter
+__definePreview({ addons: [], render: unsupportedRender });
 
 test('csf factories', () => {
   const meta = preview.meta({ component: Button, args: { disabled: true } });

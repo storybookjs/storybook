@@ -179,6 +179,52 @@ describe('ManifestManager', () => {
     expect(tag?.declaration.name).toBe('XElement');
   });
 
+  it('keeps valid tags from manifests with malformed nested values', async () => {
+    writeManifest(MANIFEST_PATH, {
+      schemaVersion: '1.0.0',
+      modules: [
+        null,
+        {
+          kind: 'javascript-module',
+          path: 'bad-declarations.js',
+          declarations: 'bad',
+        },
+        {
+          kind: 'javascript-module',
+          path: 'bad-export.js',
+          exports: [
+            {
+              kind: 'custom-element-definition',
+              name: 'x-broken',
+              declaration: null,
+            },
+          ],
+        },
+        {
+          kind: 'javascript-module',
+          path: 'good.js',
+          declarations: [
+            {
+              name: 'GoodElement',
+              kind: 'class',
+              customElement: true,
+              tagName: 'x-good',
+            },
+          ],
+        },
+      ],
+    } as unknown as ManifestPackage);
+    const manager = new ManifestManager([MANIFEST_PATH]);
+
+    const snapshot = await manager.refresh();
+    const tag = snapshot.tags.get('x-good');
+
+    expect(snapshot.errors).toEqual([]);
+    expect([...snapshot.tags.keys()]).toEqual(['x-good']);
+    expect(tag?.declaration.name).toBe('GoodElement');
+    expect(tag?.warning).toMatch(/^custom-elements\.json has \d+ schema violation\(s\);/);
+  });
+
   it('keeps the handed-out schema warning snapshot untouched after a failed reload', async () => {
     writeManifest(MANIFEST_PATH, schemaWarningManifest(), 1_000);
     const manager = new ManifestManager([MANIFEST_PATH]);

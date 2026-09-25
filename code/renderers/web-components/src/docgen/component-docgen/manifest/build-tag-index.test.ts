@@ -181,4 +181,44 @@ describe('buildTagIndex', () => {
   }[])('$name', ({ manifest, tag, expectedDeclarationName }) => {
     expect(buildTagIndex(manifest).get(tag)?.name).toBe(expectedDeclarationName);
   });
+
+  it('skips malformed modules, declarations, and custom-element-definition exports', () => {
+    const index = buildTagIndex({
+      schemaVersion: '1.0.0',
+      modules: [
+        null,
+        {
+          kind: 'javascript-module',
+          path: 'bad-declarations.js',
+          declarations: 'bad',
+        },
+        {
+          kind: 'javascript-module',
+          path: 'bad-export.js',
+          exports: [
+            {
+              kind: 'custom-element-definition',
+              name: 'x-broken',
+              declaration: null,
+            },
+          ],
+        },
+        {
+          kind: 'javascript-module',
+          path: 'good.js',
+          declarations: [
+            {
+              name: 'GoodElement',
+              kind: 'class',
+              customElement: true,
+              tagName: 'x-good',
+            },
+          ],
+        },
+      ],
+    } as unknown as ManifestPackage);
+
+    expect([...index.keys()]).toEqual(['x-good']);
+    expect(index.get('x-good')?.name).toBe('GoodElement');
+  });
 });

@@ -1,0 +1,200 @@
+{
+  "children": {
+    "control": null,
+    "description": "Button content.",
+    "name": "children",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "Snippet<[]>",
+      },
+    },
+    "type": {
+      "name": "Snippet<[]>",
+      "required": false,
+    },
+  },
+  "elem_classes": {
+    "control": {
+      "type": "array",
+    },
+    "description": "Element class names.",
+    "name": "elem_classes",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "string[]",
+      },
+    },
+    "type": {
+      "name": "string[]",
+      "required": false,
+    },
+  },
+  "elem_id": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Element id.",
+    "name": "elem_id",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "icon": {
+    "control": {
+      "type": "object",
+    },
+    "description": "Icon file data.",
+    "name": "icon",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "FileData",
+      },
+    },
+    "type": {
+      "name": "FileData",
+      "required": false,
+    },
+  },
+  "min_width": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Minimum width.",
+    "name": "min_width",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "onclick": {
+    "control": null,
+    "description": "Click callback.",
+    "name": "onclick",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "function",
+      },
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "() => void",
+      "required": false,
+    },
+  },
+  "scale": {
+    "control": {
+      "type": "number",
+    },
+    "description": "Flex scale.",
+    "name": "scale",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "null",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "value": {
+    "control": {
+      "type": "text",
+    },
+    "description": "Button label.",
+    "name": "value",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "null",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "variant": {
+    "control": {
+      "type": "radio",
+    },
+    "description": "Button variant.",
+    "name": "variant",
+    "options": [
+      "primary",
+      "secondary",
+      "stop",
+    ],
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": ""secondary"",
+      },
+      "type": {
+        "summary": ""primary" | "secondary" | "stop"",
+      },
+    },
+    "type": {
+      "name": ""primary" | "secondary" | "stop"",
+      "required": false,
+    },
+  },
+  "visible": {
+    "description": "Visibility state.",
+    "name": "visible",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "true",
+      },
+      "type": {
+        "summary": "boolean | "hidden"",
+      },
+    },
+    "type": {
+      "name": "boolean | "hidden"",
+      "required": false,
+    },
+  },
+}

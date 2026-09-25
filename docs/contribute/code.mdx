@@ -171,7 +171,7 @@ Doing this prevents last-minute bugs and is a great way to merge your contributi
 
 ### Target `next` branch
 
-Once the test suite finishes, it's time to commit, push and open a pull request against Storybook's `next` (default) branch. This branch is where all active development happens and is associated with the latest prerelease version (e.g., `7.0.0-alpha.47`).
+Once the test suite finishes, it's time to commit, push and open a pull request against Storybook's `next` (default) branch. This branch is where all active development happens and is associated with the latest prerelease version.
 
 If your contribution focuses on a bugfix and you want it featured in the next stable release, mention it in the pull request description. We'll try to patch it if it appears non-disruptive and fixes a critical bug.
 
@@ -258,7 +258,7 @@ The **`expected`** field reflects what framework/renderer/builder we expect `sb 
 
 ### Running a sandbox
 
-If your template has a `inDevelopment` flag, it will be generated (locally) as part of the sandbox process. You can create the sandbox with the following command, where `<template-key>` is replaced by the id of the selected template e.g. `cra/default-js`:
+If your template has an `inDevelopment` flag, it will be generated (locally) as part of the sandbox process. You can create the sandbox with the following command, where `<template-key>` is replaced by the id of the selected template e.g. `cra/default-js`:
 
 ```bash
 yarn task --task dev --template <template-key> --start-from=install

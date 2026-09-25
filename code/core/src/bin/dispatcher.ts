@@ -5,10 +5,10 @@ import { pathToFileURL } from 'node:url';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
-import { getProcessAncestry } from 'process-ancestry';
 import { dedent } from 'ts-dedent';
 
 import { MIN_SUPPORTED_NODE_DESCRIPTION, isNodeVersionSupported } from '../common/node-version.ts';
+import { getProcessAncestry } from '../common/utils/process-ancestry.ts';
 import versions from '../common/versions.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 

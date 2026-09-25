@@ -1,0 +1,1334 @@
+{
+	"repo": "yannbf/mealdrop",
+	"ref": "refs/tags/agentic-reference/base-ui-v1",
+	"metricsVersion": 9,
+	"nodeCensus": true,
+	"analysis": {
+		"files": {
+			"functions/restaurants.ts": {
+				"cyclomatic": 8,
+				"cognitive": 8,
+				"jsxCyclomatic": 8,
+				"jsxCognitive": 8,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/App.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 3,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 9,
+				"jsxLength": 5,
+				"jsxBindings": 2,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/Routes.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 2,
+				"jsxLength": 14,
+				"jsxBindings": 14,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/api/conditional-logic.ts": {
+				"cyclomatic": 13,
+				"cognitive": 8,
+				"jsxCyclomatic": 13,
+				"jsxCognitive": 8,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/api/hooks.ts": {
+				"cyclomatic": 7,
+				"cognitive": 5,
+				"jsxCyclomatic": 7,
+				"jsxCognitive": 5,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/api/index.ts": {
+				"cyclomatic": 8,
+				"cognitive": 4,
+				"jsxCyclomatic": 8,
+				"jsxCognitive": 4,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/cart/cart.ts": {
+				"cyclomatic": 8,
+				"cognitive": 5,
+				"jsxCyclomatic": 8,
+				"jsxCognitive": 5,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/cart/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/cart/selectors.ts": {
+				"cyclomatic": 5,
+				"cognitive": 0,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/hooks.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/order/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/order/order.ts": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/order/selectors.ts": {
+				"cyclomatic": 3,
+				"cognitive": 0,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/app-state/store.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/AnimatedIllustration/AnimatedIllustration.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 3,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 4,
+				"jsxLength": 2,
+				"jsxBindings": 5,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/AnimatedIllustration/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Badge/Badge.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 1,
+				"jsxLength": 2,
+				"jsxBindings": 4,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/Badge/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Breadcrumb/Breadcrumb.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 12,
+				"jsxLength": 6,
+				"jsxBindings": 7,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/components/Breadcrumb/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Button/Button.tsx": {
+				"cyclomatic": 13,
+				"cognitive": 12,
+				"jsxCyclomatic": 13,
+				"jsxCognitive": 15,
+				"jsxLength": 3,
+				"jsxBindings": 13,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/Button/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Carousel/Carousel.tsx": {
+				"cyclomatic": 15,
+				"cognitive": 22,
+				"jsxCyclomatic": 16,
+				"jsxCognitive": 29,
+				"jsxLength": 6,
+				"jsxBindings": 14,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/components/Carousel/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Category/Category.tsx": {
+				"cyclomatic": 15,
+				"cognitive": 8,
+				"jsxCyclomatic": 15,
+				"jsxCognitive": 13,
+				"jsxLength": 9,
+				"jsxBindings": 16,
+				"jsxDepthTotal": 8,
+				"jsxTrees": 3
+			},
+			"src/components/Category/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/ErrorBlock/ErrorBlock.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 1,
+				"jsxLength": 5,
+				"jsxBindings": 6,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/ErrorBlock/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Footer/Footer.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 15,
+				"jsxLength": 10,
+				"jsxBindings": 15,
+				"jsxDepthTotal": 6,
+				"jsxTrees": 1
+			},
+			"src/components/Footer/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/FooterCard/FooterCard.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 15,
+				"jsxLength": 7,
+				"jsxBindings": 13,
+				"jsxDepthTotal": 5,
+				"jsxTrees": 1
+			},
+			"src/components/FooterCard/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Header/Header.tsx": {
+				"cyclomatic": 17,
+				"cognitive": 5,
+				"jsxCyclomatic": 17,
+				"jsxCognitive": 34,
+				"jsxLength": 21,
+				"jsxBindings": 40,
+				"jsxDepthTotal": 11,
+				"jsxTrees": 3
+			},
+			"src/components/Header/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Icon/Icon.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 1,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 2,
+				"jsxLength": 2,
+				"jsxBindings": 5,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/Icon/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/IconButton/IconButton.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 3,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 6,
+				"jsxLength": 2,
+				"jsxBindings": 6,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/IconButton/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Logo/Logo.tsx": {
+				"cyclomatic": 10,
+				"cognitive": 5,
+				"jsxCyclomatic": 10,
+				"jsxCognitive": 8,
+				"jsxLength": 10,
+				"jsxBindings": 28,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/components/Logo/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Modal/Modal.styles.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Modal/Modal.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 2,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 13,
+				"jsxLength": 6,
+				"jsxBindings": 16,
+				"jsxDepthTotal": 5,
+				"jsxTrees": 1
+			},
+			"src/components/Modal/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/PageSection/PageSection.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 1,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 4,
+				"jsxLength": 4,
+				"jsxBindings": 8,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/components/PageSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Portal.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 3,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 3,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/RestaurantCard/RestaurantCard.tsx": {
+				"cyclomatic": 13,
+				"cognitive": 5,
+				"jsxCyclomatic": 14,
+				"jsxCognitive": 39,
+				"jsxLength": 24,
+				"jsxBindings": 32,
+				"jsxDepthTotal": 10,
+				"jsxTrees": 3
+			},
+			"src/components/RestaurantCard/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/RestaurantCard/progress/RestaurantCard.basic.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 3,
+				"jsxLength": 4,
+				"jsxBindings": 2,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 2
+			},
+			"src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 11,
+				"jsxLength": 11,
+				"jsxBindings": 13,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 2
+			},
+			"src/components/Review/Review.tsx": {
+				"cyclomatic": 9,
+				"cognitive": 6,
+				"jsxCyclomatic": 9,
+				"jsxCognitive": 7,
+				"jsxLength": 2,
+				"jsxBindings": 4,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/Review/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/ShoppingCart/OrderSummary/OrderSummary.styles.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 1,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/ShoppingCart/OrderSummary/OrderSummary.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 1,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 14,
+				"jsxLength": 8,
+				"jsxBindings": 7,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.styles.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 1,
+				"jsxLength": 4,
+				"jsxBindings": 6,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/ShoppingCart/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/ShoppingCartMenu/ShoppingCartMenu.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 10,
+				"jsxLength": 15,
+				"jsxBindings": 26,
+				"jsxDepthTotal": 9,
+				"jsxTrees": 3
+			},
+			"src/components/ShoppingCartMenu/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Sidebar/Sidebar.styles.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Sidebar/Sidebar.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 4,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 20,
+				"jsxLength": 11,
+				"jsxBindings": 22,
+				"jsxDepthTotal": 7,
+				"jsxTrees": 1
+			},
+			"src/components/Sidebar/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/Spinner/Spinner.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 20,
+				"jsxLength": 19,
+				"jsxBindings": 77,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/components/Spinner/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/TopBanner/TopBanner.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 3,
+				"jsxCyclomatic": 6,
+				"jsxCognitive": 3,
+				"jsxLength": 2,
+				"jsxBindings": 4,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/TopBanner/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/components/forms/Input.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 6,
+				"jsxLength": 4,
+				"jsxBindings": 11,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/components/forms/Select.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 2,
+				"jsxCyclomatic": 6,
+				"jsxCognitive": 6,
+				"jsxLength": 4,
+				"jsxBindings": 13,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/components/typography/Body.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 1,
+				"jsxLength": 1,
+				"jsxBindings": 7,
+				"jsxDepthTotal": 1,
+				"jsxTrees": 1
+			},
+			"src/components/typography/Heading.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 2,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 2,
+				"jsxLength": 1,
+				"jsxBindings": 6,
+				"jsxDepthTotal": 1,
+				"jsxTrees": 1
+			},
+			"src/components/typography/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/docs/utils.ts": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/helpers/getCurrency.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/helpers/index.ts": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/hooks/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/hooks/useBodyScrollLock.test.ts": {
+				"cyclomatic": 2,
+				"cognitive": 3,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 3,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/hooks/useBodyScrollLock.ts": {
+				"cyclomatic": 6,
+				"cognitive": 8,
+				"jsxCyclomatic": 6,
+				"jsxCognitive": 8,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/hooks/useKeyboard.test.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/hooks/useKeyboard.ts": {
+				"cyclomatic": 6,
+				"cognitive": 4,
+				"jsxCyclomatic": 6,
+				"jsxCognitive": 4,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 2,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/pages/CategoryDetailPage/CategoryDetailPage.tsx": {
+				"cyclomatic": 7,
+				"cognitive": 5,
+				"jsxCyclomatic": 9,
+				"jsxCognitive": 21,
+				"jsxLength": 9,
+				"jsxBindings": 18,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/pages/CategoryDetailPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/CategoryListPage/CategoryListPage.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 3,
+				"jsxLength": 6,
+				"jsxBindings": 5,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/CategoryListPage/components/CategoryList/CategoryList.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 5,
+				"jsxLength": 3,
+				"jsxBindings": 5,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/CategoryListPage/components/CategoryList/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/CategoryListPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/CheckoutPage/CheckoutPage.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 13,
+				"jsxLength": 8,
+				"jsxBindings": 5,
+				"jsxDepthTotal": 5,
+				"jsxTrees": 1
+			},
+			"src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx": {
+				"cyclomatic": 21,
+				"cognitive": 17,
+				"jsxCyclomatic": 21,
+				"jsxCognitive": 28,
+				"jsxLength": 8,
+				"jsxBindings": 31,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx": {
+				"cyclomatic": 18,
+				"cognitive": 16,
+				"jsxCyclomatic": 18,
+				"jsxCognitive": 25,
+				"jsxLength": 7,
+				"jsxBindings": 23,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/CheckoutPage/components/registration-form/MultiStepForm.tsx": {
+				"cyclomatic": 10,
+				"cognitive": 3,
+				"jsxCyclomatic": 10,
+				"jsxCognitive": 4,
+				"jsxLength": 4,
+				"jsxBindings": 10,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 3
+			},
+			"src/pages/CheckoutPage/components/registration-form/StepIndicator.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 0,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 5,
+				"jsxLength": 6,
+				"jsxBindings": 8,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/CheckoutPage/components/registration-form/validation.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/CheckoutPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/HomePage/HomePage.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 1,
+				"jsxLength": 9,
+				"jsxBindings": 2,
+				"jsxDepthTotal": 2,
+				"jsxTrees": 1
+			},
+			"src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 10,
+				"jsxLength": 8,
+				"jsxBindings": 3,
+				"jsxDepthTotal": 5,
+				"jsxTrees": 1
+			},
+			"src/pages/HomePage/components/AwardWinningSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/HomePage/components/Banner/Banner.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 0,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 9,
+				"jsxLength": 7,
+				"jsxBindings": 3,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/pages/HomePage/components/Banner/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 2,
+				"jsxCognitive": 8,
+				"jsxLength": 4,
+				"jsxBindings": 10,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/pages/HomePage/components/CategoriesSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 12,
+				"jsxLength": 5,
+				"jsxBindings": 12,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 2
+			},
+			"src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 1,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 12,
+				"jsxLength": 4,
+				"jsxBindings": 8,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/HomePage/components/RestaurantsSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/HomePage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx": {
+				"cyclomatic": 14,
+				"cognitive": 7,
+				"jsxCyclomatic": 15,
+				"jsxCognitive": 26,
+				"jsxLength": 23,
+				"jsxBindings": 47,
+				"jsxDepthTotal": 13,
+				"jsxTrees": 4
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 1,
+				"jsxCyclomatic": 5,
+				"jsxCognitive": 4,
+				"jsxLength": 6,
+				"jsxBindings": 11,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItem/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx": {
+				"cyclomatic": 8,
+				"cognitive": 9,
+				"jsxCyclomatic": 8,
+				"jsxCognitive": 21,
+				"jsxLength": 11,
+				"jsxBindings": 22,
+				"jsxDepthTotal": 5,
+				"jsxTrees": 1
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItemModal/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1,
+				"jsxCyclomatic": 4,
+				"jsxCognitive": 5,
+				"jsxLength": 4,
+				"jsxBindings": 9,
+				"jsxDepthTotal": 3,
+				"jsxTrees": 1
+			},
+			"src/pages/RestaurantDetailPage/components/FoodSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/RestaurantDetailPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/pages/SuccessPage/SuccessPage.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 6,
+				"jsxLength": 8,
+				"jsxBindings": 6,
+				"jsxDepthTotal": 4,
+				"jsxTrees": 1
+			},
+			"src/pages/SuccessPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/serviceWorker.ts": {
+				"cyclomatic": 19,
+				"cognitive": 41,
+				"jsxCyclomatic": 19,
+				"jsxCognitive": 41,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/stub/cart-items.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/stub/categories.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/stub/restaurants.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/styles/CSSReset.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/styles/GlobalStyle.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0,
+				"jsxCyclomatic": 1,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/styles/breakpoints.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/styles/theme.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/templates/PageTemplate.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1,
+				"jsxCyclomatic": 3,
+				"jsxCognitive": 1,
+				"jsxLength": 8,
+				"jsxBindings": 5,
+				"jsxDepthTotal": 6,
+				"jsxTrees": 3
+			},
+			"src/types/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/typings.d.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"src/vite-env.d.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"test-runner-jest.config.js": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			},
+			"vite.config.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0,
+				"jsxCyclomatic": 0,
+				"jsxCognitive": 0,
+				"jsxLength": 0,
+				"jsxBindings": 0,
+				"jsxDepthTotal": 0,
+				"jsxTrees": 0
+			}
+		},
+		"parseFailures": [],
+		"dsCoverage": {
+			"dsPackages": [
+				"@base-ui/react",
+				"@droppy/*"
+			],
+			"files": 127,
+			"nodes": {
+				"all": 365.5,
+				"host": 152.5,
+				"component": 213,
+				"ds": 18,
+				"external": 27,
+				"local": 168,
+				"unresolved": 0
+			},
+			"dsShareOfAllNodes": 0.0492,
+			"dsShareOfComponentNodes": 0.0845,
+			"instances": {
+				"nodes": {
+					"all": 4184,
+					"host": 2302.5,
+					"component": 1881.5,
+					"ds": 491,
+					"external": 144.5,
+					"local": 1246,
+					"unresolved": 0
+				},
+				"dsShareOfAllNodes": 0.1174,
+				"dsShareOfComponentNodes": 0.261
+			},
+			"parseFailures": [],
+			"readFailures": []
+		}
+	}
+}

@@ -116,9 +116,7 @@ function generateConfig(workflow: Workflow, baseRef: string) {
   // Append a completion job that depends on every other job in the workflow.
   // It acts as a single status check for GitHub branch protection: it only runs
   // (and reports success) once every required job has finished successfully.
-  if (workflow !== 'focus') {
-    ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
-  }
+  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {

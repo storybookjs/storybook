@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -58,8 +60,10 @@ describe('PNPM Proxy', () => {
 
   describe('getRegistryURL', () => {
     it('should return the configured registry URL', async () => {
+      const cwd = resolve('fixtures', 'pnpm-project');
+      pnpmProxy = new PNPMProxy({ cwd });
       const executeCommandSpy = mockedExecuteCommand.mockResolvedValueOnce({
-        stdout: 'https://registry.npmjs.org/',
+        stdout: 'https://registry.npmjs.org/\n',
       } as Awaited<ReturnType<typeof executeCommand>>);
 
       await expect(pnpmProxy.getRegistryURL()).resolves.toBe('https://registry.npmjs.org/');
@@ -67,10 +71,18 @@ describe('PNPM Proxy', () => {
       expect(executeCommandSpy).toHaveBeenCalledWith(
         expect.objectContaining({
           command: 'pnpm',
-          cwd: process.cwd(),
+          cwd,
           args: ['config', 'get', 'registry', '--location=project'],
         })
       );
+    });
+
+    it('should return undefined when pnpm reports no registry', async () => {
+      mockedExecuteCommand.mockResolvedValueOnce({
+        stdout: 'undefined\n',
+      } as Awaited<ReturnType<typeof executeCommand>>);
+
+      await expect(pnpmProxy.getRegistryURL()).resolves.toBeUndefined();
     });
   });
 

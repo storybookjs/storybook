@@ -1,6 +1,8 @@
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import type { FixFiles } from './fix-files.ts';
+
 export interface CheckOptions {
   packageManager: JsPackageManager;
   configDir?: string;
@@ -16,12 +18,15 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
+  /** Scratch file edits: a check may stage them to learn whether `run` would change anything. */
+  files: FixFiles;
 }
 
 export interface RunOptions<ResultType> {
   packageManager: JsPackageManager;
   result: ResultType;
-  dryRun?: boolean;
+  /** File edits the runner writes once `run` resolves, and discards when it throws. */
+  files: FixFiles;
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
@@ -31,8 +36,6 @@ export interface RunOptions<ResultType> {
   storiesPaths: string[];
   /** Skip prompts and use defaults (from --yes flag) */
   yes?: boolean;
-  /** Glob pattern for story files (for csf-factories codemod) */
-  glob?: string;
   /**
    * Collector for core addons whose postinstall configuration must run AFTER dependencies are
    * installed. A fix that adds a core addon via `add(..., { skipPostinstall: true })` pushes the
@@ -78,10 +81,16 @@ export type Fix<ResultType = any> =
       run?: never;
     } & BaseFix<ResultType>);
 
-export type CommandFix<ResultType = any> = {
-  promptType: PromptType<ResultType, 'command'>;
-  run: (options: RunOptions<ResultType>) => Promise<void>;
-} & Omit<BaseFix<ResultType>, 'check' | 'prompt'>;
+export type CommandFixRunOptions = Omit<RunOptions<null>, 'files' | 'addonsToPostinstall'> & {
+  dryRun?: boolean;
+  /** Glob pattern for story files (for csf-factories codemod) */
+  glob?: string;
+};
+
+export type CommandFix = {
+  promptType: 'command';
+  run: (options: CommandFixRunOptions) => Promise<void>;
+} & Omit<BaseFix, 'check' | 'prompt'>;
 
 export type FixId = string;
 

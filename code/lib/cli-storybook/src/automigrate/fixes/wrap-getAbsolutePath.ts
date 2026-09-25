@@ -5,12 +5,11 @@ import {
   isGetAbsolutePathWrapperNecessary,
   wrapValueWithGetAbsolutePathWrapper,
 } from 'storybook/internal/common';
-import { readConfig } from 'storybook/internal/csf-tools';
+import { loadConfig } from 'storybook/internal/csf-tools';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 
 export interface WrapGetAbsolutePathRunOptions {
@@ -23,14 +22,14 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
   id: 'wrap-getAbsolutePath',
   link: 'https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environments',
 
-  async check({ packageManager, storybookVersion, mainConfigPath }) {
+  async check({ packageManager, storybookVersion, mainConfigPath, files }) {
     const isStorybookInMonorepo = packageManager.isStorybookInMonorepo();
 
     if (!mainConfigPath) {
       return null;
     }
 
-    const config = await readConfig(mainConfigPath);
+    const config = loadConfig(await files.read(mainConfigPath), mainConfigPath).parse();
 
     if (!isStorybookInMonorepo) {
       return null;
@@ -53,8 +52,8 @@ export const wrapGetAbsolutePath: Fix<WrapGetAbsolutePathRunOptions> = {
     return dedent`We have detected that you're using Storybook in a monorepo. Some fields in your main config must be updated.`;
   },
 
-  async run({ dryRun, mainConfigPath, result }) {
-    await updateMainConfig({ dryRun: !!dryRun, mainConfigPath }, (mainConfig) => {
+  async run({ files, mainConfigPath, result }) {
+    await files.editConfig(mainConfigPath, (mainConfig) => {
       getFieldsForGetAbsolutePathWrapper(mainConfig).forEach((node) => {
         wrapValueWithGetAbsolutePathWrapper(mainConfig, node);
       });

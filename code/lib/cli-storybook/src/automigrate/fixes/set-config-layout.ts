@@ -1,8 +1,7 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
 import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
+import type { FixFiles } from '../fix-files.ts';
 import type { Fix } from '../types.ts';
 
 const managerApiPackages = new Set(['storybook/manager-api', '@storybook/manager-api']);
@@ -26,7 +25,6 @@ const optionGroups = {
 
 interface SetConfigLayoutOptions {
   managerConfigPath: string;
-  transformedSource: string;
 }
 
 export const transformSetConfigLayout = (
@@ -53,11 +51,17 @@ export const transformSetConfigLayout = (
   return managerConfig.changed ? formatConfig(managerConfig) : source;
 };
 
+const migrateSetConfigLayout = (files: FixFiles, managerConfigPath: string) =>
+  files.edit(managerConfigPath, (source) => {
+    const transformed = transformSetConfigLayout(source, managerConfigPath);
+    return transformed === source ? null : formatFileContent(managerConfigPath, transformed);
+  });
+
 export const setConfigLayout: Fix<SetConfigLayoutOptions> = {
   id: 'set-config-layout',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed',
 
-  async check({ configDir }) {
+  async check({ configDir, files }) {
     if (!configDir) {
       return null;
     }
@@ -66,19 +70,13 @@ export const setConfigLayout: Fix<SetConfigLayoutOptions> = {
       return null;
     }
 
-    const source = await readFile(managerConfigPath, 'utf8');
-    const transformedSource = transformSetConfigLayout(source, managerConfigPath);
-    return transformedSource === source ? null : { managerConfigPath, transformedSource };
+    const changed = await migrateSetConfigLayout(files, managerConfigPath);
+    return changed.length > 0 ? { managerConfigPath } : null;
   },
 
   prompt: () => 'Move top-level setConfig layout and UI options into their nested objects',
 
-  async run({ dryRun, result }) {
-    if (!dryRun) {
-      await writeFile(
-        result.managerConfigPath,
-        await formatFileContent(result.managerConfigPath, result.transformedSource)
-      );
-    }
+  async run({ files, result }) {
+    await migrateSetConfigLayout(files, result.managerConfigPath);
   },
 };

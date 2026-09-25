@@ -1,11 +1,7 @@
 import type { StorybookConfigRaw, StorybookFeatures } from 'storybook/internal/types';
 import { SupportedRenderer } from 'storybook/internal/types';
 
-import {
-  getFrameworkPackageName,
-  getRendererName,
-  updateMainConfig,
-} from '../helpers/mainConfigFile.ts';
+import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
@@ -70,8 +66,8 @@ export const createExperimentalFeatureFix = ({
     return {};
   },
 
-  run: async ({ mainConfigPath, dryRun }) => {
-    await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
+  run: async ({ mainConfigPath, files }) => {
+    await files.editConfig(mainConfigPath, (main) => {
       main.set(['features', name], true);
     });
   },

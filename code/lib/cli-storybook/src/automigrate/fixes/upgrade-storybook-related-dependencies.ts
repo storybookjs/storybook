@@ -1,13 +1,9 @@
-import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { PackageJson } from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
+import { JsPackageManager, isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { gt } from 'semver';
-import { dedent } from 'ts-dedent';
 
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages.ts';
 import type { Fix } from '../types.ts';
@@ -117,23 +113,10 @@ export const upgradeStorybookRelatedDependencies = {
     return "We'll upgrade the community packages that are compatible.";
   },
 
-  async run({ result: { upgradable }, packageManager, dryRun }) {
-    if (dryRun) {
-      logger.log(dedent`
-        The following would have been upgraded:
-        ${upgradable
-          .map(
-            ({ packageName, afterVersion, beforeVersion }) =>
-              `${packageName}: ${beforeVersion} => ${afterVersion}`
-          )
-          .join('\n')}
-      `);
-      return;
-    }
-
+  async run({ result: { upgradable }, packageManager }) {
     if (upgradable.length > 0) {
       packageManager.packageJsonPaths.forEach((packageJsonPath) => {
-        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as PackageJson;
+        const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
         upgradable.forEach((item) => {
           if (!item) {
             return;

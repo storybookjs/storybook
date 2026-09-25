@@ -1,11 +1,10 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
-import { transformImportFiles } from 'storybook/internal/common';
+import { transformImports } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { writeText } from 'tinyclip';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import type { FixFiles } from '../fix-files.ts';
 import type { Fix } from '../types.ts';
 
 export const REACT_VITE_PACKAGE = '@storybook/react-vite';
@@ -53,10 +52,12 @@ const fileLooksLikeTanstackRouterDecorator = (content: string): boolean => {
  * catches the vast majority of real-world setups.
  */
 const detectTanstackRouterDecorator = async ({
+  files,
   previewConfigPath,
   configDir,
   storiesPaths,
 }: {
+  files: FixFiles;
   previewConfigPath: string | undefined;
   configDir: string | undefined;
   storiesPaths: string[];
@@ -75,37 +76,11 @@ const detectTanstackRouterDecorator = async ({
   );
 
   for (const file of candidateFiles) {
-    try {
-      const content = await readFile(file, 'utf-8');
-      if (fileLooksLikeTanstackRouterDecorator(content)) {
-        return true;
-      }
-    } catch {
-      continue;
+    if (fileLooksLikeTanstackRouterDecorator(await files.read(file))) {
+      return true;
     }
   }
   return false;
-};
-
-const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
-  try {
-    const content = await readFile(mainConfigPath, 'utf-8');
-
-    if (!content.includes(REACT_VITE_PACKAGE)) {
-      return false;
-    }
-
-    const transformedContent = content.replaceAll(REACT_VITE_PACKAGE, TANSTACK_REACT_PACKAGE);
-
-    if (transformedContent !== content && !dryRun) {
-      await writeFile(mainConfigPath, transformedContent);
-    }
-
-    return transformedContent !== content;
-  } catch (error) {
-    logger.error(`Failed to update main config at ${mainConfigPath}: ${error}`);
-    return false;
-  }
 };
 
 const buildAiMigrationPrompt = (previewConfigPath?: string) =>
@@ -274,6 +249,7 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
   defaultSelected: false,
 
   async check({
+    files,
     packageManager,
     previewConfigPath,
     configDir,
@@ -289,6 +265,7 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
     }
 
     const hasTanstackRouterDecorator = await detectTanstackRouterDecorator({
+      files,
       previewConfigPath,
       configDir,
       storiesPaths: storiesPaths ?? [],
@@ -305,7 +282,7 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
 
   async run({
     result,
-    dryRun = false,
+    files,
     mainConfigPath,
     previewConfigPath,
     storiesPaths,
@@ -314,54 +291,28 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
     storybookVersion,
     yes,
   }) {
-    if (!result) {
-      return;
-    }
-
     logger.step(`Migrating from ${REACT_VITE_PACKAGE} to ${TANSTACK_REACT_PACKAGE}...`);
 
-    if (dryRun) {
-      logger.debug('Dry run: Skipping package.json updates.');
-    } else {
-      logger.debug('Updating package.json files...');
-      await packageManager.removeDependencies([REACT_VITE_PACKAGE]);
-      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-        `${TANSTACK_REACT_PACKAGE}@${storybookVersion}`,
-      ]);
-    }
-
-    if (mainConfigPath) {
-      logger.debug('Updating main config file...');
-      await transformMainConfig(mainConfigPath, dryRun);
-    }
-
-    logger.debug('Scanning and updating import statements...');
+    await files.edit(mainConfigPath, (source) =>
+      source.replaceAll(REACT_VITE_PACKAGE, TANSTACK_REACT_PACKAGE)
+    );
 
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
-    const configFiles = configDir
-      ? await globby([`${configDir}/**/*.{ts,tsx,js,jsx,mjs,cjs}`], {
-          ignore: ['**/node_modules/**', '**/dist/**'],
-        })
-      : [];
+    const configFiles = await globby([`${configDir}/**/*.{ts,tsx,js,jsx,mjs,cjs}`], {
+      ignore: ['**/node_modules/**', '**/dist/**'],
+    });
     const allFiles = [...storiesPaths, ...configFiles, previewConfigPath].filter(
       Boolean
     ) as string[];
-
-    const transformErrors = await transformImportFiles(
-      allFiles,
-      {
-        [REACT_VITE_PACKAGE]: TANSTACK_REACT_PACKAGE,
-      },
-      !!dryRun
+    await files.edit(allFiles, (source) =>
+      transformImports(source, { [REACT_VITE_PACKAGE]: TANSTACK_REACT_PACKAGE })
     );
 
-    if (transformErrors.length > 0) {
-      logger.warn(`Encountered ${transformErrors.length} errors during file transformation:`);
-      transformErrors.forEach(({ file, error }) => {
-        logger.warn(`  - ${file}: ${error.message}`);
-      });
-    }
+    await packageManager.removeDependencies([REACT_VITE_PACKAGE]);
+    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+      `${TANSTACK_REACT_PACKAGE}@${storybookVersion}`,
+    ]);
 
     if (result.hasTanstackRouterDecorator) {
       logger.logBox(

@@ -53,17 +53,14 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
   async run({
     result: { eslintConfigFile, unsupportedExtension, isFlatConfig },
     packageManager,
-    dryRun,
     storybookVersion,
   }) {
     const deps = [`eslint-plugin-storybook@${storybookVersion}`];
 
     logger.debug(`Adding dependencies: ${deps}`);
-    if (!dryRun) {
-      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, deps);
-    }
+    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, deps);
 
-    if (!dryRun && unsupportedExtension) {
+    if (unsupportedExtension) {
       logger.warn(dedent`
           The plugin was successfully installed but failed to be configured.
           
@@ -77,8 +74,6 @@ export const eslintPlugin: Fix<EslintPluginRunOptions> = {
       return;
     }
 
-    if (!dryRun) {
-      await configureEslintPlugin({ eslintConfigFile, packageManager, isFlatConfig });
-    }
+    await configureEslintPlugin({ eslintConfigFile, packageManager, isFlatConfig });
   },
 };

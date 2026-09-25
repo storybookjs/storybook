@@ -9,6 +9,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import { setConfigLayout, transformSetConfigLayout } from './set-config-layout.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -20,7 +21,7 @@ const packageManager = {} as JsPackageManager;
 const mainConfig = {} as StorybookConfigRaw;
 
 const check = () =>
-  setConfigLayout.check({
+  checkFix(setConfigLayout, {
     packageManager,
     configDir,
     mainConfig,
@@ -28,11 +29,10 @@ const check = () =>
     storiesPaths: [],
   });
 
-const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boolean) =>
-  setConfigLayout.run!({
+const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>) =>
+  runFix(setConfigLayout, {
     packageManager,
     result,
-    dryRun,
     mainConfigPath: '/project/.storybook/main.ts',
     mainConfig,
     configDir,
@@ -430,33 +430,13 @@ describe('setConfigLayout', () => {
       throw new Error('expected a migration result');
     }
 
-    await run(result, false);
+    await run(result);
 
     await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: {
         showToolbar: false
       } });"
-    `);
-  });
-
-  it('does not write the manager config during a dry run', async () => {
-    const source = dedent`
-      import { addons } from 'storybook/manager-api';
-      addons.setConfig({ showToolbar: false });
-    `;
-    vol.fromJSON({ [managerConfigPath]: source });
-
-    const result = await check();
-    if (!result) {
-      throw new Error('expected a migration result');
-    }
-
-    await run(result, true);
-
-    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
-      "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ showToolbar: false });"
     `);
   });
 

@@ -5,7 +5,7 @@ import { findConfigFile, loadMainConfig } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { getFrameworkPackageName, updateMainConfig } from '../helpers/mainConfigFile.ts';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { RN_STORYBOOK_DIR } from '../../../../../core/src/shared/constants/config-folder.ts';
 
@@ -146,9 +146,9 @@ export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
     return 'Renaming `addons` to `deviceAddons` in your React Native Storybook config (on-device addons must not be evaluated as Node.js presets).';
   },
 
-  async run({ result, dryRun }) {
+  async run({ result, files }) {
     for (const { mainConfigPath } of result.targets) {
-      await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, (main) => {
+      await files.editConfig(mainConfigPath, (main) => {
         main.rename(['addons'], 'deviceAddons');
       });
     }

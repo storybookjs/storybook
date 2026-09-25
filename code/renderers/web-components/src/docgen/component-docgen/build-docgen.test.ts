@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { DocgenError, IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
 
@@ -8,7 +8,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import type { BuildDocgenContext } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
-import type { ManifestLoadResult } from './manifest/load-manifest.ts';
+import type { ManifestTag } from './manifest/manifest-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -34,24 +34,37 @@ const entry: IndexEntry = {
   importPath: './input.stories.ts',
 };
 
-const givenStory = (component: string) => {
+const givenStory = (component: string): void => {
   vol.fromNestedJSON({
     [STORY_PATH]: `export default { title: 'Fixture', component: ${component} };`,
   });
 };
 
-const context = (manifests: ManifestLoadResult[]): BuildDocgenContext => ({
-  manifests,
+const context = ({
+  tags = [],
+  loadErrors = [],
+  paths = ['custom-elements.json'],
+}: {
+  tags?: [string, ManifestTag][];
+  loadErrors?: DocgenError[];
+  paths?: string[];
+}): BuildDocgenContext => ({
+  manifests: {
+    tags: new Map(tags),
+    errors: loadErrors,
+    paths,
+  },
   typeProperty: 'parsedType',
 });
 
-const manifest = (declaration: ManifestDeclaration): ManifestLoadResult => ({
-  path: 'custom-elements.json',
-  manifest: {
-    schemaVersion: '1.0.0',
-    modules: [{ kind: 'javascript-module', path: 'component.js', declarations: [declaration] }],
+const tag = (declaration: ManifestDeclaration, warning?: string): [string, ManifestTag] => [
+  declaration.tagName ?? declaration.name,
+  {
+    declaration,
+    manifestPath: 'custom-elements.json',
+    ...(warning ? { warning } : {}),
   },
-});
+];
 
 describe('buildDocgenPayload', () => {
   it('builds a payload from the matching manifest declaration', () => {
@@ -60,17 +73,19 @@ describe('buildDocgenPayload', () => {
     expect(
       buildDocgenPayload(
         { entry },
-        context([
-          manifest({
-            name: 'XCard',
-            customElement: true,
-            kind: 'class',
-            tagName: 'x-card',
-            description: '  Card description.  ',
-            summary: '  Card summary.  ',
-            attributes: [{ name: 'label', description: 'Label.', type: { text: 'string' } }],
-          }),
-        ])
+        context({
+          tags: [
+            tag({
+              name: 'XCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'x-card',
+              description: '  Card description.  ',
+              summary: '  Card summary.  ',
+              attributes: [{ name: 'label', description: 'Label.', type: { text: 'string' } }],
+            }),
+          ],
+        })
       )
     ).toMatchInlineSnapshot(`
       {
@@ -128,9 +143,9 @@ describe('buildDocgenPayload', () => {
       'component-not-a-tag',
       () => {
         givenStory('Button');
-        return context([
-          manifest({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' }),
-        ]);
+        return context({
+          tags: [tag({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' })],
+        });
       },
       {
         id: 'fixture',
@@ -147,16 +162,16 @@ describe('buildDocgenPayload', () => {
       'manifest-invalid',
       () => {
         givenStory("'x-card'");
-        return context([
-          {
-            path: 'custom-elements.json',
-            error: {
+        return context({
+          loadErrors: [
+            {
               name: 'manifest-invalid',
               message:
                 'Invalid Custom Elements Manifest at custom-elements.json: expected a top-level modules array.',
             },
-          },
-        ]);
+          ],
+          paths: ['custom-elements.json'],
+        });
       },
       {
         id: 'fixture',
@@ -174,16 +189,16 @@ describe('buildDocgenPayload', () => {
       'manifest-unsupported',
       () => {
         givenStory("'x-card'");
-        return context([
-          {
-            path: 'custom-elements.json',
-            error: {
+        return context({
+          loadErrors: [
+            {
               name: 'manifest-unsupported',
               message:
                 'custom-elements.json uses the web-component-analyzer manifest shape. The Storybook docgen server reads Custom Elements Manifests only; generate one with @custom-elements-manifest/analyzer.',
             },
-          },
-        ]);
+          ],
+          paths: ['custom-elements.json'],
+        });
       },
       {
         id: 'fixture',
@@ -201,14 +216,16 @@ describe('buildDocgenPayload', () => {
       'tag-not-found',
       () => {
         givenStory("'x-card'");
-        return context([
-          manifest({
-            name: 'OtherCard',
-            customElement: true,
-            kind: 'class',
-            tagName: 'other-card',
-          }),
-        ]);
+        return context({
+          tags: [
+            tag({
+              name: 'OtherCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'other-card',
+            }),
+          ],
+        });
       },
       {
         id: 'fixture',
@@ -222,8 +239,53 @@ describe('buildDocgenPayload', () => {
         },
       },
     ],
+    [
+      'load error with no entry',
+      () => {
+        givenStory("'x-card'");
+        return context({
+          loadErrors: [
+            {
+              name: 'manifest-invalid',
+              message: 'Invalid Custom Elements Manifest at custom-elements.json: nope',
+            },
+          ],
+          paths: ['custom-elements.json'],
+        });
+      },
+      {
+        id: 'fixture',
+        name: 'x-card',
+        path: './input.stories.ts',
+        jsDocTags: {},
+        error: {
+          name: 'manifest-invalid',
+          message: 'Invalid Custom Elements Manifest at custom-elements.json: nope',
+        },
+      },
+    ],
   ])('reports %s', (_name, buildContext, expected) => {
     expect(buildDocgenPayload({ entry }, buildContext())).toEqual(expected);
+  });
+
+  it('copies manifest warnings to resolved payloads', () => {
+    givenStory("'x-card'");
+
+    expect(
+      buildDocgenPayload(
+        { entry },
+        context({
+          tags: [
+            tag(
+              { name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' },
+              'custom-elements.json has 1 schema violation(s); first: /modules/0 must match'
+            ),
+          ],
+        })
+      )
+    ).toMatchObject({
+      warning: 'custom-elements.json has 1 schema violation(s); first: /modules/0 must match',
+    });
   });
 
   it('falls through when the story has no meta.component', () => {
@@ -232,9 +294,9 @@ describe('buildDocgenPayload', () => {
     expect(
       buildDocgenPayload(
         { entry },
-        context([
-          manifest({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' }),
-        ])
+        context({
+          tags: [tag({ name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' })],
+        })
       )
     ).toBeUndefined();
   });

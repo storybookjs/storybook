@@ -206,6 +206,7 @@ The server recorder records CEM inputs only; the WCA shape is covered by the run
 The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes. `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
 The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
 The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.
+The OSA payload may carry `warning` when the worker reports schema violations but keeps the manifest; `lit-schema-warning` exercises that path, and its `custom-elements.json` is intentionally invalid, so re-capturing it requires re-applying the violation. To reproduce a reload locally, enable the feature flag, edit the manifest while the dev server runs and open or reload a docs page; the worker re-reads a manifest whose mtime changed and logs it at debug level.
 
 ## Known legacy gaps (vue3)
 

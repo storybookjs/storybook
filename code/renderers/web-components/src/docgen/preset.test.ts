@@ -9,12 +9,15 @@ import { fs as memfs, vol } from 'memfs';
 
 import { findFilesUp } from 'storybook/internal/common';
 
+import * as rootPreset from '../preset.ts';
+import * as docgenPreset from './preset.ts';
 import { experimental_docgenProvider, experimental_manifests } from './preset.ts';
 
 vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vol.reset();
   vi.mocked(findFilesUp).mockReturnValue([]);
   vi.mocked(existsSync).mockImplementation(memfs.existsSync as typeof existsSync);
@@ -24,16 +27,16 @@ beforeEach(() => {
 const optionsWith = (
   features: Record<string, unknown>,
   frameworkOptions: Record<string, unknown> = {}
-) => {
+): Options => {
   const options = {
     configDir: resolve('/workspace/.storybook'),
     presets: {
-      apply: async (key: string) => {
+      apply: async <T>(key: string): Promise<T | undefined> => {
         if (key === 'features') {
-          return features;
+          return features as T;
         }
         if (key === 'frameworkOptions') {
-          return frameworkOptions;
+          return frameworkOptions as T;
         }
         return undefined;
       },
@@ -42,16 +45,31 @@ const optionsWith = (
   return options;
 };
 
+const givenManifestPackage = (): void => {
+  vol.fromNestedJSON({
+    '/workspace/package.json': JSON.stringify({ customElements: 'dist/custom-elements.json' }),
+  });
+  vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
+};
+
+describe('renderer preset exports', () => {
+  it('re-exports every docgen preset hook from the renderer preset', () => {
+    const docgenPresetHooks = Object.keys(docgenPreset).sort();
+    const rootPresetDocgenHooks = Object.keys(rootPreset)
+      .filter((key) => key in docgenPreset)
+      .sort();
+
+    expect(rootPresetDocgenHooks).toEqual(docgenPresetHooks);
+  });
+});
+
 describe('experimental_docgenProvider', () => {
   it('contributes no descriptor when the docgen server flag is off', async () => {
     expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
   });
 
   it('contributes the docgen worker descriptor', async () => {
-    vol.fromNestedJSON({
-      '/workspace/package.json': JSON.stringify({ customElements: 'dist/custom-elements.json' }),
-    });
-    vi.mocked(findFilesUp).mockReturnValue(['/workspace/package.json']);
+    givenManifestPackage();
 
     expect(
       await experimental_docgenProvider([], optionsWith({ experimentalDocgenServer: true }))

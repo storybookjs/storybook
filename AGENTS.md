@@ -69,7 +69,6 @@ yarn storybook:vitest
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
-| Verify an SB11 upgrade fixture  | `node test-storybooks/upgrade-fixtures/run.ts react-vite`                      |
 | List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
 | Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |
 

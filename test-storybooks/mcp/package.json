@@ -23,7 +23,6 @@
     "@storybook/builder-vite": "file:../../code/builders/builder-vite",
     "@storybook/mcp": "file:../../code/lib/mcp",
     "@storybook/react": "file:../../code/renderers/react",
-    "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",
     "@storybook/react-vite": "file:../../code/frameworks/react-vite",
     "playwright": "1.58.2",
     "storybook": "file:../../code/core"

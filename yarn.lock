@@ -9578,7 +9578,6 @@ __metadata:
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
     "@storybook/icons": "npm:^2.0.2"
-    "@storybook/react-dom-shim": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
     "@types/react": "npm:^18.0.0 || ^19.0.0"
     color-convert: "npm:^2.0.1"
@@ -10371,7 +10370,7 @@ __metadata:
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
-    preact: ">=10 || >= 11.0.0-0"
+    preact: ^10.8.0 || >= 11.0.0-0
     storybook: "workspace:^"
     vite: ^6.3.0 || ^7.0.0 || ^8.0.0
   languageName: unknown
@@ -10382,11 +10381,11 @@ __metadata:
   resolution: "@storybook/preact@workspace:code/renderers/preact"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    preact: "npm:^10.5.13"
+    preact: "npm:^10.8.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
-    preact: ^8.0.0 || ^10.0.0 || >= 11.0.0-0
+    preact: ^10.8.0 || >= 11.0.0-0
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -10448,25 +10447,6 @@ __metadata:
   checksum: 10c0/505a728f36df3f519f4985bdf18f2078ea18a1a8f7f837fc831f971363fb7643a182f01a6857a9729ac5a1246d370526fca5a19017f82e7493af4ca945cb7235
   languageName: node
   linkType: hard
-
-"@storybook/react-dom-shim@workspace:*, @storybook/react-dom-shim@workspace:code/lib/react-dom-shim":
-  version: 0.0.0-use.local
-  resolution: "@storybook/react-dom-shim@workspace:code/lib/react-dom-shim"
-  dependencies:
-    typescript: "npm:^6.0.3"
-  peerDependencies:
-    "@types/react": ^18.0.0 || ^19.0.0
-    "@types/react-dom": ^18.0.0 || ^19.0.0
-    react: ^18.0.0 || ^19.0.0
-    react-dom: ^18.0.0 || ^19.0.0
-    storybook: "workspace:^"
-  peerDependenciesMeta:
-    "@types/react":
-      optional: true
-    "@types/react-dom":
-      optional: true
-  languageName: unknown
-  linkType: soft
 
 "@storybook/react-native-web-vite@workspace:code/frameworks/react-native-web-vite":
   version: 0.0.0-use.local
@@ -10541,7 +10521,6 @@ __metadata:
   resolution: "@storybook/react@workspace:code/renderers/react"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    "@storybook/react-dom-shim": "workspace:*"
     "@types/babel-plugin-react-docgen": "npm:^4.2.3"
     "@types/escodegen": "npm:^0.0.6"
     "@types/estree": "npm:^1.0.6"
@@ -29539,10 +29518,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"preact@npm:^10.5.13":
-  version: 10.27.2
-  resolution: "preact@npm:10.27.2"
-  checksum: 10c0/951b708f7afa34391e054b0f1026430e8f5f6d5de24020beef70288e17067e473b9ee5503a994e0a80ced014826f56708fea5902f80346432c22dfcf3dff4be7
+"preact@npm:^10.8.0":
+  version: 10.29.8
+  resolution: "preact@npm:10.29.8"
+  peerDependencies:
+    preact-render-to-string: ">=5"
+  peerDependenciesMeta:
+    preact-render-to-string:
+      optional: true
+  checksum: 10c0/505460352139e0ce5b9c971b69d8d9f3b73ea0f316e3ff1c0b3db9a1abe206c9dff6ba385eb796253c38fcc08b5ade70cd8da3d9d6c9e9aec1a2fd59348253ae
   languageName: node
   linkType: hard
 

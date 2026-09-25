@@ -110,8 +110,14 @@ The minimum supported TypeScript version is now 5.9. Update your TypeScript depe
      ...
      "lib": ["esnext", "dom", "dom.iterable"],
 -    "baseUrl": ".",
-     "rootDir": "."
+    "rootDir": "."
 ```
+
+#### Preact
+
+If your addon or its development Storybook uses Preact, upgrade Preact before Storybook 11. The supported peer range is `^10.8.0 || >=11.0.0-0` because Storybook relies on `preact/compat/client` roots with `unmount()` support. Preact 10.7.1 roots don't provide that method, which Storybook needs for cleanup and root recreation.
+
+The official Preact framework is `@storybook/preact-vite`. The same minimum applies to custom frameworks and addon-docs integrations that alias React DOM to `preact/compat` under Webpack.
 
 ### CSF Next support
 
@@ -161,6 +167,16 @@ If your addon imports internal Storybook APIs, review these additional changes:
 - [Removed WebSocket heartbeat controls](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-websocket-heartbeat-controls-removed)
 - [Removed Vitest workspace configuration helper](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
 - [Toolset telemetry returned with the outcome](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-toolset-telemetry-now-returns-with-the-outcome)
+
+#### `@storybook/react-dom-shim` removed
+
+Storybook 11 doesn't publish a v11 release of `@storybook/react-dom-shim`. If your addon receives it only through another Storybook package, upgrade all Storybook dependencies together and don't add a replacement dependency. In a monorepo, update every workspace that declares Storybook packages in the same install.
+
+There is no automigration for explicit dependencies or imports because Storybook cannot determine whether addon code depends on the shim's rendering lifecycle. If your addon lists it explicitly, search the entire addon workspace for imports, preset entries, aliases, and custom wrappers. Remove the dependency only after you have handled every consumer. Remove exact literal `@storybook/react-dom-shim/preset` entries and exact aliases that exist only for the shim. Review dynamic or computed configuration, regular-expression aliases, and custom wrappers manually.
+
+There is no supported public import that replaces `renderElement` or `unmountElement`, and Storybook 11 does not provide a `storybook/internal/react-dom-client` entry. A direct `createRoot(container).render(element)` replacement is also incomplete because it doesn't preserve root reuse, unmount and recreation, initial root options, or awaitable commit and `act` behavior. Code that renders React elements must own those lifecycle and completion semantics.
+
+See the [`@storybook/react-dom-shim` migration reference](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookreact-dom-shim-removed) for the full migration contract.
 
 #### Tab UI type removed
 

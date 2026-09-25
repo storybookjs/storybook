@@ -3,7 +3,12 @@ import * as React from 'react';
 import type { Root as ReactRoot, RootOptions } from 'react-dom/client';
 import * as ReactDOM from 'react-dom/client';
 
-const nodes = new Map<Element, ReactRoot>();
+type RootState = {
+  root: ReactRoot;
+  pendingRenders: Set<() => void>;
+};
+
+const nodes = new Map<Element, RootState>();
 
 declare const globalThis: {
   IS_REACT_ACT_ENVIRONMENT: boolean;
@@ -34,29 +39,45 @@ const createPromise = <T,>() => {
   return { promise, resolve: resolve! };
 };
 
-export const renderElement = async (node: ReactElement, el: Element, rootOptions?: RootOptions) => {
-  let root = nodes.get(el);
+const settlePendingRenders = ({ pendingRenders }: RootState) => {
+  pendingRenders.forEach((resolve) => resolve());
+  pendingRenders.clear();
+};
 
-  if (!root) {
-    root = ReactDOM.createRoot(el, rootOptions);
-    nodes.set(el, root);
+export const renderElement = async (node: ReactElement, el: Element, rootOptions?: RootOptions) => {
+  let state = nodes.get(el);
+
+  if (!state) {
+    state = {
+      root: ReactDOM.createRoot(el, rootOptions),
+      pendingRenders: new Set(),
+    };
+    nodes.set(el, state);
   }
 
+  settlePendingRenders(state);
+
   if (globalThis.IS_REACT_ACT_ENVIRONMENT) {
-    root.render(node);
+    state.root.render(node);
     return;
   }
 
   const { promise, resolve } = createPromise<void>();
-  root.render(<WithCallback callback={resolve}>{node}</WithCallback>);
+  const onCommit = () => {
+    state.pendingRenders.delete(onCommit);
+    resolve();
+  };
+  state.pendingRenders.add(onCommit);
+  state.root.render(<WithCallback callback={onCommit}>{node}</WithCallback>);
   return promise;
 };
 
 export const unmountElement = (el: Element) => {
-  const root = nodes.get(el);
+  const state = nodes.get(el);
 
-  if (root) {
-    root.unmount();
+  if (state) {
+    state.root.unmount();
+    settlePendingRenders(state);
     nodes.delete(el);
   }
 };

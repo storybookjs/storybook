@@ -140,7 +140,7 @@ function serviceToolset() {
 
 /** The same project as core's manifest builder emits it (the default mode). */
 function manifestToolset() {
-  const files: Record<string, unknown> = {
+  const files: Record<string, object> = {
     './manifests/components.json': {
       v: 1,
       components: {

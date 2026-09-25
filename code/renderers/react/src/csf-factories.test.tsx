@@ -17,6 +17,7 @@ import type { Mock } from 'storybook/test';
 import { __definePreview } from './preview.tsx';
 import type { ReactPreview } from './preview.tsx';
 import type { Decorator } from './public-types.ts';
+import { render as portableRender } from './render.tsx';
 import type { ReactRenderer, ReactTypes } from './types.ts';
 
 type ButtonProps = { label: string; disabled: boolean; onKeyDown?: () => void };
@@ -26,14 +27,10 @@ const preview = __definePreview({
   addons: [],
 });
 
-type Renderer = ReactRenderer & { csf4: true };
-const render: ArgsStoryFn<Renderer> = (props, context) => {
-  const Component = context.component as ComponentType<Args>;
-  return <Component {...props} />;
-};
-
-const previewWithRender = __definePreview({ addons: [], render });
+const previewWithRender = __definePreview({ addons: [], render: portableRender });
 expectTypeOf(previewWithRender).toEqualTypeOf<ReactPreview<ReactTypes & { csf4: true }>>();
+
+type Renderer = ReactRenderer & { csf4: true };
 
 interface TestAddonTypes {
   parameters: { test?: { value: string } };

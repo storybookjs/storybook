@@ -54,12 +54,11 @@ type InferReactTypes<T, TArgs, Decorators> = ReactTypes &
  */
 export function __definePreview<
   Addons extends PreviewAddon<never>[],
-  TRenderer extends ReactRenderer & { csf4: true } = ReactRenderer & InferTypes<Addons>,
+  TRenderer extends ReactRenderer = ReactRenderer & InferTypes<Addons>,
 >(
   input: {
     addons: Addons;
-    render?: ArgsStoryFn<TRenderer> &
-      ([ReactTypes & InferTypes<Addons>] extends [TRenderer] ? ArgsStoryFn<TRenderer> : never);
+    render?: [ReactTypes & InferTypes<Addons>] extends [TRenderer] ? ArgsStoryFn<TRenderer> : never;
   } & Omit<ProjectAnnotations<ReactTypes & InferTypes<Addons>>, 'render'>
 ): ReactPreview<ReactTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({

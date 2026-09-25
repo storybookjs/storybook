@@ -28,8 +28,10 @@ type Story = StoryObj<typeof meta>;
 export const Lifecycle: Story = {
   play: async ({ canvas }) => {
     const element = document.createElement('div');
+    const immediatelyUnmountedElement = document.createElement('div');
     const layoutEffectElement = document.createElement('div');
     document.body.appendChild(element);
+    document.body.appendChild(immediatelyUnmountedElement);
     document.body.appendChild(layoutEffectElement);
 
     let instanceCount = 0;
@@ -49,6 +51,15 @@ export const Lifecycle: Story = {
       await renderElement(<LayoutEffectContent />, layoutEffectElement);
       await expect(layoutEffectElement).toHaveTextContent('committed');
 
+      const interruptedRender = renderElement(<LayoutEffectContent />, immediatelyUnmountedElement);
+      unmountElement(immediatelyUnmountedElement);
+      await expect(
+        Promise.race([
+          interruptedRender.then(() => 'settled'),
+          new Promise((resolve) => setTimeout(() => resolve('pending'), 100)),
+        ])
+      ).resolves.toBe('settled');
+
       await renderElement(<Stateful />, element, { identifierPrefix: 'first-' });
       const firstIdentifier = element
         .querySelector('[data-testid="stateful"]')
@@ -67,8 +78,10 @@ export const Lifecycle: Story = {
       await expect(element).toHaveTextContent('instance 2');
     } finally {
       unmountElement(element);
+      unmountElement(immediatelyUnmountedElement);
       unmountElement(layoutEffectElement);
       element.remove();
+      immediatelyUnmountedElement.remove();
       layoutEffectElement.remove();
     }
   },

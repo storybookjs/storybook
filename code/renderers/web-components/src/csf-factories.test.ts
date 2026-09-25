@@ -134,6 +134,18 @@ describe('Args can be provided in multiple ways', () => {
         `,
     });
   });
+
+  it('✅ Literal and array args provided in meta do not need to be repeated in the story', () => {
+    type Props = { variant: 'primary' | 'secondary'; items: string[]; disabled: boolean };
+    const meta = preview.type<{ args: Props }>().meta({
+      component: 'my-button',
+      args: { variant: 'primary', items: [] },
+    });
+
+    // @ts-expect-error disabled not provided ❌
+    meta.story();
+    meta.story({ args: { disabled: false } });
+  });
 });
 
 type ThemeData = 'light' | 'dark';

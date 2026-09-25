@@ -10,7 +10,7 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
-import type { SetOptional } from 'type-fest';
+import type { LiteralToPrimitive, SetOptional, WritableDeep } from 'type-fest';
 
 import {
   combineParameters,
@@ -41,6 +41,24 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
 export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
   ? C & { csf4: true }
   : never;
+
+export type MetaArgsInput<TInput, TArgs> = [WritableDeep<TInput>] extends [NoInfer<Partial<TArgs>>]
+  ? TInput
+  : NoInfer<Partial<TArgs>>;
+
+type WidenMetaArg<T> = T extends CallableFunction
+  ? T
+  : T extends object
+    ? { -readonly [K in keyof T]: WidenMetaArg<T[K]> }
+    : LiteralToPrimitive<T>;
+
+export type CapturedMetaArgs<TInput, TArgs> = {
+  -readonly [K in keyof TInput]: K extends keyof TArgs
+    ? TInput[K] extends object
+      ? WidenMetaArg<TInput[K]> & TArgs[K]
+      : TInput[K] & TArgs[K]
+    : never;
+};
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }

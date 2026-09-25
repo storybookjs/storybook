@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
 import type { Canvas } from 'storybook/internal/types';
 
-import { h } from 'vue';
+import { type PropType, defineComponent, h } from 'vue';
 
 import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
@@ -99,6 +99,25 @@ describe('StoryObj', () => {
         args: { label: 'good' },
       });
     }
+  });
+
+  it('✅ Literal and array args provided in meta do not need to be repeated in the story', () => {
+    const Component = defineComponent({
+      props: {
+        label: { type: String as PropType<'A' | 'B'>, required: true },
+        items: { type: Array as PropType<string[]>, required: true },
+        disabled: { type: Boolean, required: true },
+      },
+      render: () => h('button'),
+    });
+    const meta = preview.type<{ args: { extra?: boolean } }>().meta({
+      component: Component,
+      args: { label: 'A', items: [] },
+    });
+
+    // @ts-expect-error disabled not provided ❌
+    meta.story();
+    meta.story({ args: { disabled: false } });
   });
 });
 

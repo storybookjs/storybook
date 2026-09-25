@@ -5,6 +5,7 @@ import {
   resolveComponentEntry,
   resolveComponentStories,
   resolveDocEntry as resolveDoc,
+  sourceUrlManifestProvider,
 } from './access-provider.ts';
 import { createCompositionDocsSources, listSources } from './multi-source.ts';
 import { ManifestGetError, RequiresOwnMcpError, type Source } from './sources.ts';
@@ -676,6 +677,40 @@ describe('parseManifestRef', () => {
       path: './x.json',
       pointer: ['a/b', 'c~d'],
     });
+  });
+});
+
+describe('sourceUrlManifestProvider', () => {
+  const source: Source = { id: 'ds', title: 'DS', url: 'https://ds.example.com/sub/' };
+
+  beforeEach(() => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('{}', { headers: { 'content-type': 'application/json' } }))
+    );
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('fetches under the source url, keeping its sub-path', async () => {
+    await sourceUrlManifestProvider(undefined, './manifests/components.json', source);
+
+    expect(fetch).toHaveBeenCalledWith('https://ds.example.com/sub/manifests/components.json', {
+      signal: expect.any(AbortSignal),
+    });
+  });
+
+  it('keeps a $ref with a scheme-like segment under the source url', async () => {
+    const { path } = parseManifestRef('../http:169.254.169.254/latest/x.json#/');
+
+    await sourceUrlManifestProvider(undefined, path, source);
+
+    expect(fetch).toHaveBeenCalledWith(
+      'https://ds.example.com/sub/http:169.254.169.254/latest/x.json',
+      { signal: expect.any(AbortSignal) }
+    );
   });
 });
 

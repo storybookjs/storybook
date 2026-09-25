@@ -204,7 +204,7 @@ describe('MCP Composition E2E Tests', () => {
 			expect(text).not.toContain('no-manifest');
 		});
 
-		it('should require storybookId in multi-source mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest('tools/call', {
 				name: 'docs-show',
 				arguments: {
@@ -212,17 +212,11 @@ describe('MCP Composition E2E Tests', () => {
 				},
 			});
 
-			expect(response.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "Invalid arguments for tool docs-show: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
-				      "type": "text",
-				    },
-				  ],
-				  "isError": true,
-				}
-			`);
+			expect(response.result.isError).toBeFalsy();
+			const text = response.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			// Only the local Button carries this attached doc; the storybook-ui ref has its own Button.
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 

@@ -77,8 +77,28 @@ async function defaultManifestProvider(
     );
   }
   const manifestUrl = getManifestUrlFromRequest(request, path);
-  const response = await fetch(manifestUrl);
+  return readManifestText(await fetch(manifestUrl), manifestUrl);
+}
 
+// For a composition assembled at boot rather than per request (the docs toolset core registers
+// for the tools CLI): no request, no credentials, so a private source lands in its own error section.
+export const sourceUrlManifestProvider: ManifestProvider = async (_request, path, source) => {
+  if (!source?.url) {
+    throw new ManifestGetError('The local source has no URL to fetch manifests from.');
+  }
+  // Concatenated rather than resolved with `new URL`, which would let a `$ref` such as
+  // `../http:evil.example/x.json` from the remote manifest leave the source's origin.
+  const manifestUrl = `${source.url.replace(/\/$/, '')}${path.replace(/^\.\//, '/')}`;
+  const response = await fetch(manifestUrl, {
+    signal: AbortSignal.timeout(REF_MANIFEST_FETCH_TIMEOUT_MS),
+  });
+  return readManifestText(response, manifestUrl);
+};
+
+// The same budget addon-mcp gives its startup probe of a ref's manifest.
+const REF_MANIFEST_FETCH_TIMEOUT_MS = 3_000;
+
+async function readManifestText(response: Response, manifestUrl: string): Promise<string> {
   if (!response.ok) {
     throw new ManifestGetError(
       `Failed to fetch manifest: ${response.status} ${response.statusText}`,

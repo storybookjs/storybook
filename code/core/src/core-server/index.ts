@@ -9,6 +9,7 @@ export * from './withTelemetry.ts';
 export { default as build } from './standalone.ts';
 export { mapStaticDir } from './utils/server-statics.ts';
 export { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+export { watchStorySpecifiers } from './utils/watch-story-specifiers.ts';
 export { getStoriesPathsFromConfig } from './utils/get-stories-paths-from-config.ts';
 export { generateStoryFile } from './utils/generate-story.ts';
 export type { GenerateStoryResult, GenerateStoryOptions } from './utils/generate-story.ts';

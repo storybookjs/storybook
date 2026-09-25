@@ -39,7 +39,7 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
 }
 
 export type InferTypes<T extends PreviewAddon<never>[]> = [T[number]] extends [never]
-  ? { csf4: true }
+  ? Pick<AddonTypes, 'args'> & { csf4: true }
   : T extends PreviewAddon<infer C>[]
     ? C & { csf4: true }
     : never;

@@ -15,6 +15,7 @@ describe('buildStoryInstructions transport refs', () => {
   it('MCP transport names MCP tools', () => {
     const text = buildStoryInstructions({ ...baseInputs, transport: 'mcp' });
     expect(text).toContain('stories-changed');
+    expect(text).not.toContain('stories-preview');
     expect(text).toContain('test-run');
     expect(text).not.toContain('npx storybook tools');
   });
@@ -22,6 +23,7 @@ describe('buildStoryInstructions transport refs', () => {
   it('CLI transport names tools CLI commands', () => {
     const text = buildStoryInstructions({ ...baseInputs, transport: 'cli' });
     expect(text).toContain('npx storybook tools stories changed');
+    expect(text).not.toContain('npx storybook tools stories preview');
     expect(text).toContain('npx storybook tools test run');
     expect(text).not.toContain('stories-changed');
   });
@@ -42,14 +44,13 @@ describe('buildStoryInstructions placeholder resolution', () => {
 
     expect(instructions).toContain('@storybook/react-vite');
     expect(instructions).toContain('@storybook/react');
-    expect(instructions).toContain('stories-preview');
     expect(instructions).toContain('stories-changed');
+    expect(instructions).not.toContain('stories-preview');
 
     expect(instructions).not.toContain('{{FRAMEWORK}}');
     expect(instructions).not.toContain('{{RENDERER}}');
-    expect(instructions).not.toContain('{{PREVIEW_STORIES}}');
+    expect(instructions).not.toContain('{{PREVIEW_LINK_GUIDANCE}}');
     expect(instructions).not.toContain('{{STORY_LINKING_WORKFLOW}}');
-    expect(instructions).not.toContain('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}');
     expect(instructions).not.toContain('{{FINAL_LINKS_GUIDANCE}}');
     expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
   });
@@ -103,7 +104,7 @@ describe('buildStoryInstructions review-aware link guidance', () => {
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
     expect(instructions).toContain('Feed the discovered IDs into **review-create**');
-    expect(instructions).not.toContain('first, then use `stories-preview`');
+    expect(instructions).not.toContain('stories-preview');
   });
 
   it('tells the agent to include preview URLs when review is disabled', () => {
@@ -114,6 +115,7 @@ describe('buildStoryInstructions review-aware link guidance', () => {
     });
 
     expect(instructions).toContain('include every returned preview URL');
+    expect(instructions).toContain('stories-preview');
     expect(instructions).not.toContain('## 👀 Review your changes');
     expect(instructions).not.toContain('present links in this order');
   });

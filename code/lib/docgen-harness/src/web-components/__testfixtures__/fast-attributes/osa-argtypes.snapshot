@@ -31,21 +31,32 @@
       "name": "boolean",
     },
   },
-  "fast-count-change": {
+  "fast-count-change-event": {
+    "control": false,
     "description": "Emitted after every click with the new count.",
     "name": "fast-count-change",
-    "required": false,
     "table": {
       "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
       "type": {
         "summary": "CustomEvent<number>",
       },
     },
     "type": {
-      "name": "void",
+      "name": "other",
+      "value": "CustomEvent<number>",
+    },
+  },
+  "increment-method": {
+    "description": "Increments the counter and fires `fast-count-change`.",
+    "name": "increment",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "function",
     },
   },
   "items": {

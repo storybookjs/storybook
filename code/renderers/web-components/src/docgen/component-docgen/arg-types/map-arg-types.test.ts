@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ManifestClassField, ManifestDeclaration } from '../manifest/types.ts';
+import type {
+  ManifestClassField,
+  ManifestCssCustomProperty,
+  ManifestDeclaration,
+  ManifestEvent,
+} from '../manifest/types.ts';
 import { mapArgTypes } from './map-arg-types.ts';
 
 const TYPE_PROPERTY = 'parsedType';
@@ -189,7 +194,7 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'attribute wins over a same-name legacy slot',
+      name: 'attribute and same-name slot use distinct keys',
       declaration: declaration({
         attributes: [{ name: 'label', type: { text: 'number' }, default: '42' }],
         slots: [{ name: 'label', description: 'Label slot.' }],
@@ -203,6 +208,14 @@ describe('mapArgTypes', () => {
             category: 'attributes',
             type: { summary: 'number' },
             defaultValue: { summary: '42' },
+          },
+        },
+        'label-slot': {
+          name: 'label',
+          description: 'Label slot.',
+          type: { name: 'string' },
+          table: {
+            category: 'slots',
           },
         },
       },
@@ -330,65 +343,306 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'legacy parity groups',
+      name: 'typed event',
       declaration: declaration({
         events: [
           {
             name: 'my-change',
             description: 'Change description.',
-            type: { text: 'CustomEvent' },
+            type: { text: 'CustomEvent<{ value: string }>' },
           },
         ],
-        slots: [{ name: 'label', description: 'Label slot.' }],
-        cssProperties: [{ name: '--accent', description: 'Accent color.', default: 'red' }],
-        cssParts: [{ name: 'button', description: 'Button part.' }],
       }),
       expected: {
+        'my-change-event': {
+          name: 'my-change',
+          description: 'Change description.',
+          type: { name: 'other', value: 'CustomEvent<{ value: string }>' },
+          control: false,
+          table: {
+            category: 'events',
+            type: { summary: 'CustomEvent<{ value: string }>' },
+          },
+        },
         onMyChange: {
           name: 'onMyChange',
           action: { name: 'my-change' },
           table: { disable: true },
         },
-        'my-change': {
+      },
+    },
+    {
+      name: 'property wins event action twin',
+      declaration: declaration({
+        members: [{ kind: 'field', name: 'onMyChange', type: { text: 'string' } }],
+        events: [{ name: 'my-change', type: { text: 'CustomEvent<{ value: string }>' } }],
+      }),
+      expected: {
+        'my-change-event': {
           name: 'my-change',
-          required: false,
-          description: 'Change description.',
-          type: { name: 'void' },
+          description: undefined,
+          type: { name: 'other', value: 'CustomEvent<{ value: string }>' },
+          control: false,
+          table: {
+            category: 'events',
+            type: { summary: 'CustomEvent<{ value: string }>' },
+          },
+        },
+        onMyChange: {
+          name: 'onMyChange',
+          description: undefined,
+          type: { name: 'string' },
+          table: {
+            category: 'properties',
+            type: { summary: 'string' },
+            defaultValue: { summary: undefined },
+          },
+        },
+      },
+    },
+    {
+      name: 'untyped event falls back to CustomEvent',
+      declaration: declaration({
+        events: [{ name: 'ready' } as ManifestEvent],
+      }),
+      expected: {
+        'ready-event': {
+          name: 'ready',
+          description: undefined,
+          type: { name: 'other', value: 'CustomEvent' },
+          control: false,
           table: {
             category: 'events',
             type: { summary: 'CustomEvent' },
-            defaultValue: { summary: undefined },
           },
         },
-        label: {
-          name: 'label',
-          required: false,
-          description: 'Label slot.',
+        onReady: {
+          name: 'onReady',
+          action: { name: 'ready' },
+          table: { disable: true },
+        },
+      },
+    },
+    {
+      name: 'deprecated event',
+      declaration: declaration({
+        events: [
+          {
+            name: 'my-close',
+            deprecated: 'Use my-dismiss instead.',
+            type: { text: 'CustomEvent<void>' },
+          },
+        ],
+      }),
+      expected: {
+        'my-close-event': {
+          name: 'my-close',
+          description: undefined,
+          type: { name: 'other', value: 'CustomEvent<void>' },
+          control: false,
+          table: {
+            category: 'events',
+            type: { summary: 'CustomEvent<void>' },
+            jsDocTags: { deprecated: 'Use my-dismiss instead.' },
+          },
+        },
+        onMyClose: {
+          name: 'onMyClose',
+          action: { name: 'my-close' },
+          table: { disable: true },
+        },
+      },
+    },
+    {
+      name: 'event reads the custom type property',
+      declaration: declaration({
+        events: [
+          {
+            name: 'value-change',
+            type: { text: 'ValueChangeEvent' },
+            resolvedType: { text: 'CustomEvent<{ value: number }>' },
+          } as ManifestEvent & { resolvedType: { text: string } },
+        ],
+      }),
+      typeProperty: 'resolvedType',
+      expected: {
+        'value-change-event': {
+          name: 'value-change',
+          description: undefined,
+          type: { name: 'other', value: 'CustomEvent<{ value: number }>' },
+          control: false,
+          table: {
+            category: 'events',
+            type: { summary: 'CustomEvent<{ value: number }>' },
+          },
+        },
+        onValueChange: {
+          name: 'onValueChange',
+          action: { name: 'value-change' },
+          table: { disable: true },
+        },
+      },
+    },
+    {
+      name: 'public method with optional and default parameters',
+      declaration: declaration({
+        members: [
+          {
+            kind: 'method',
+            name: 'focusItem',
+            description: 'Focuses one item.',
+            parameters: [
+              { name: 'index', type: { text: 'number' } },
+              {
+                name: 'options',
+                optional: true,
+                type: { text: '{ smooth: boolean }' },
+                default: '{ smooth: true }',
+              },
+            ],
+            return: { type: { text: 'boolean' } },
+          },
+        ],
+      }),
+      expected: {
+        'focusItem-method': {
+          name: 'focusItem',
+          description: 'Focuses one item.',
+          type: { name: 'function' },
+          table: {
+            category: 'methods',
+            type: {
+              summary:
+                '(index: number, options?: { smooth: boolean } = { smooth: true }) => boolean',
+            },
+          },
+        },
+      },
+    },
+    {
+      name: 'public method without return type',
+      declaration: declaration({
+        members: [
+          {
+            kind: 'method',
+            name: 'show',
+            description: 'Shows the component.',
+            parameters: [{ name: 'to', optional: true, type: { text: 'number' }, default: '0' }],
+          },
+        ],
+      }),
+      expected: {
+        'show-method': {
+          name: 'show',
+          description: 'Shows the component.',
+          type: { name: 'function' },
+          table: {
+            category: 'methods',
+            type: { summary: '(to?: number = 0)' },
+          },
+        },
+      },
+    },
+    {
+      name: 'private static protected and hash methods skipped',
+      declaration: declaration({
+        members: [
+          { kind: 'method', name: 'secret', privacy: 'private' },
+          { kind: 'method', name: 'hidden', privacy: 'protected' },
+          { kind: 'method', name: 'global', static: true },
+          { kind: 'method', name: '#focus' },
+        ],
+      }),
+      expected: {},
+    },
+    {
+      name: 'default and named slots',
+      declaration: declaration({
+        slots: [
+          { name: '', description: 'Default content.' },
+          { name: 'actions', summary: 'Action controls.' },
+        ],
+      }),
+      expected: {
+        'default-slot': {
+          name: 'default',
+          description: 'Default content.',
           type: { name: 'string' },
           table: {
             category: 'slots',
+          },
+        },
+        'actions-slot': {
+          name: 'actions',
+          description: 'Action controls.',
+          type: { name: 'string' },
+          table: {
+            category: 'slots',
+          },
+        },
+      },
+    },
+    {
+      name: 'css custom properties',
+      declaration: declaration({
+        cssProperties: [
+          {
+            name: '--accent',
+            description: 'Accent color.',
+            syntax: '<color>',
+            default: 'red',
+          },
+          {
+            name: '--border-colour',
+            description: 'Border colour.',
+          },
+          {
+            name: '--columns',
+            type: { text: '<integer>' },
+          } as ManifestCssCustomProperty & { type: { text: string } },
+          {
+            name: '--spacing',
+          },
+        ],
+      }),
+      expected: {
+        '--accent': {
+          name: '--accent',
+          description: 'Accent color.',
+          type: { name: 'string' },
+          control: { type: 'color' },
+          table: {
+            category: 'css custom properties',
+            type: { summary: '<color>' },
+            defaultValue: { summary: 'red' },
+          },
+        },
+        '--border-colour': {
+          name: '--border-colour',
+          description: 'Border colour.',
+          type: { name: 'string' },
+          table: {
+            category: 'css custom properties',
             type: { summary: undefined },
             defaultValue: { summary: undefined },
           },
         },
-        '--accent': {
-          name: '--accent',
-          required: false,
-          description: 'Accent color.',
-          type: { name: 'void' },
+        '--columns': {
+          name: '--columns',
+          description: undefined,
+          type: { name: 'number' },
           table: {
             category: 'css custom properties',
-            type: { summary: undefined },
-            defaultValue: { summary: 'red' },
+            type: { summary: '<integer>' },
+            defaultValue: { summary: undefined },
           },
         },
-        button: {
-          name: 'button',
-          required: false,
-          description: 'Button part.',
-          type: { name: 'void' },
+        '--spacing': {
+          name: '--spacing',
+          description: undefined,
+          type: { name: 'string' },
           table: {
-            category: 'css shadow parts',
+            category: 'css custom properties',
             type: { summary: undefined },
             defaultValue: { summary: undefined },
           },
@@ -396,18 +650,36 @@ describe('mapArgTypes', () => {
       },
     },
     {
-      name: 'method skipped',
+      name: 'css part',
       declaration: declaration({
-        members: [
-          {
-            kind: 'method',
-            name: 'focus',
-            parameters: [],
-            return: { type: { text: 'void' } },
-          },
-        ],
+        cssParts: [{ name: 'button', description: 'Button part.' }],
       }),
-      expected: {},
+      expected: {
+        'button-part': {
+          name: 'button',
+          description: 'Button part.',
+          type: { name: 'string' },
+          table: {
+            category: 'css shadow parts',
+          },
+        },
+      },
+    },
+    {
+      name: 'css state',
+      declaration: declaration({
+        cssStates: [{ name: 'open', description: 'Set while open.' }],
+      }),
+      expected: {
+        'open-state': {
+          name: 'open',
+          description: 'Set while open.',
+          type: { name: 'string' },
+          table: {
+            category: 'css states',
+          },
+        },
+      },
     },
   ] satisfies {
     name: string;

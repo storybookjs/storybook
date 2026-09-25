@@ -1,4 +1,6 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import type { JsDocTagMap } from 'storybook/internal/csf-tools';
+import { extractComponentDescription, extractDescription } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -6,8 +8,8 @@ import { resolve } from 'node:path';
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
 import type { ManifestSnapshot } from './manifest/manifest-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
-import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
-import { trimmedOrUndefined } from './utils.ts';
+import { parseStoryFile, resolveStoryComponent } from './resolve-component/resolve-component.ts';
+import { deprecationMessage, trimmedOrUndefined } from './utils.ts';
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
@@ -46,7 +48,12 @@ export function buildDocgenPayload(
     error,
   });
   const storyFilePath = resolve(process.cwd(), storyImportPath);
-  const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
+  const csf = parseStoryFile(storyFilePath, input.entry.title);
+  if (!csf) {
+    return undefined;
+  }
+
+  const resolved = resolveStoryComponent(csf);
   if ('reason' in resolved) {
     if (resolved.reason === 'no-meta-component') {
       return undefined;
@@ -74,13 +81,19 @@ export function buildDocgenPayload(
     );
   }
 
+  const { description, summary, jsDocTags } = extractComponentDescription(
+    extractDescription(csf._metaStatement) || undefined,
+    found.declaration.description,
+    declarationTags(found.declaration)
+  );
+
   return {
     id,
     name: tag,
     path,
-    description: trimmedOrUndefined(found.declaration.description),
-    summary: trimmedOrUndefined(found.declaration.summary),
-    jsDocTags: {},
+    description,
+    summary,
+    jsDocTags,
     argTypes: mapArgTypes(found.declaration, context.typeProperty),
     renderer: 'web-components',
     ...(found.warning ? { warning: found.warning } : {}),
@@ -89,4 +102,17 @@ export function buildDocgenPayload(
       declaration: found.declaration,
     },
   };
+}
+
+function declarationTags(declaration: ManifestDeclaration): JsDocTagMap {
+  const tags: JsDocTagMap = {};
+  const summary = trimmedOrUndefined(declaration.summary);
+  if (summary) {
+    tags.summary = [summary];
+  }
+  const deprecated = deprecationMessage(declaration.deprecated);
+  if (deprecated) {
+    tags.deprecated = [deprecated];
+  }
+  return tags;
 }

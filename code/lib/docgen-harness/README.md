@@ -203,7 +203,10 @@ The `stencil-props` capture shows that analyzer 0.11.0 emits attributes for Sten
 
 `web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, and `osa-payload.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
 The server recorder records CEM inputs only; the WCA shape is covered by the runtime recorder and rejected on the server path by the renderer's unit tests.
-The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes. `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
+The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes.
+The server mapper keys events, methods, slots, CSS parts and CSS states as `<name>-event`, `<name>-method`, `<name|default>-slot`, `<name>-part` and `<name>-state`, so they never collide with attributes.
+It keeps the legacy `on<Name>` action twins, and the legacy gate matches re-keyed rows by `name`.
+`OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
 The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
 The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.
 The OSA payload may carry `warning` when the worker reports schema violations but keeps the manifest; `lit-schema-warning` exercises that path, and its `custom-elements.json` is intentionally invalid, so re-capturing it requires re-applying the violation. To reproduce a reload locally, enable the feature flag, edit the manifest while the dev server runs and open or reload a docs page; the worker re-reads a manifest whose mtime changed and logs it at debug level.
@@ -303,8 +306,6 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
 - `@summary` is recorded by the analyzer but never reaches the component description.
 - Class-level `@deprecated` never reaches the component description.
-- Component-level `jsDocTags` is always `{}` in the OSA payload; the CEM `deprecated` and `summary` fields never reach the tag map.
-- The JSDoc block above the CSF `meta` is ignored by the OSA provider, so its description and tags never reach the payload (other renderers resolve it through `extractComponentDescription`).
 - CEM 2.1.0 `cssStates` and `readonly` are ignored; the 1.0.0 and 2.1.0 recordings are identical.
 - The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.

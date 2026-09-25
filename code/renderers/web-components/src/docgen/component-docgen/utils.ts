@@ -8,3 +8,10 @@ export function errorMessage(error: unknown): string {
 
 export const trimmedOrUndefined = (text: unknown): string | undefined =>
   typeof text === 'string' ? text.trim() || undefined : undefined;
+
+export function deprecationMessage(deprecated: string | boolean | undefined): string | undefined {
+  if (!deprecated) {
+    return undefined;
+  }
+  return typeof deprecated === 'string' ? deprecated : 'deprecated';
+}

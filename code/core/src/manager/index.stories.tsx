@@ -4,7 +4,6 @@ import { MemoryRouter } from 'storybook/internal/router';
 import type { Addon_Config, Addon_Types } from 'storybook/internal/types';
 import type { API_PreparedStoryIndex } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
@@ -109,8 +108,6 @@ const meta = preview.meta({
     },
   },
   beforeEach: () => {
-    global.PREVIEW_URL = 'about:blank';
-
     addons.setChannel(channel);
     channel.emit(CHANNEL_CREATED);
 

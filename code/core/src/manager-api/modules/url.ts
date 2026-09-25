@@ -275,7 +275,7 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const previewBaseUrl = base ? managerBase : global.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
-        : global.PREVIEW_URL || resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
+        : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });
 
       const refParam = refId ? `&refId=${encodeURIComponent(refId)}` : '';
       const { args = '', globals = '', ...otherParams } = queryParams;

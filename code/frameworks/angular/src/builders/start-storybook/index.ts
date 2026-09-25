@@ -69,7 +69,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'webpackStatsJson'
     | 'statsJson'
     | 'loglevel'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
@@ -142,7 +141,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           loglevel,
           webpackStatsJson,
           statsJson,
-          previewUrl,
           sourceMap = false,
           preserveSymlinks = false,
           // Angular 21+ always supports zoneless; users still opt out via `experimentalZoneless: false`
@@ -185,7 +183,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           webpackStatsJson,
           statsJson,
           loglevel,
-          previewUrl,
         };
 
         const startedPort = await runInstance(standaloneOptions);

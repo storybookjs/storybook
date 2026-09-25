@@ -224,7 +224,6 @@ export interface LoadOptions {
   outputDir?: string;
   configDir?: string;
   cacheKey?: string;
-  ignorePreview?: boolean;
   extendServer?: (server: HttpServer) => void;
 }
 
@@ -239,9 +238,6 @@ export interface CLIBaseOptions {
 
 export interface CLIOptions extends CLIBaseOptions {
   port?: number;
-  ignorePreview?: boolean;
-  previewUrl?: string;
-  forceBuildPreview?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
@@ -265,7 +261,6 @@ export interface CLIOptions extends CLIBaseOptions {
 
 export interface BuilderOptions {
   configType?: 'DEVELOPMENT' | 'PRODUCTION';
-  ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
   docsMode?: boolean;

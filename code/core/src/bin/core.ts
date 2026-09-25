@@ -123,11 +123,6 @@ command('dev')
     'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
   )
   .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option(
-    '--preview-url <string>',
-    'Disables the default storybook preview and lets your use your own'
-  )
-  .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--exact-port', 'Exit early if the desired port is not available')
   .option(
@@ -165,11 +160,6 @@ command('build')
     'Write Webpack stats JSON to disk (synonym for `--stats-json`)'
   )
   .option('--stats-json [directory]', 'Write stats JSON to disk')
-  .option(
-    '--preview-url <string>',
-    'Disables the default storybook preview and lets your use your own'
-  )
-  .option('--force-build-preview', 'Build the preview iframe even if you are using --preview-url')
   .option('--docs', 'Build a documentation-only site using addon-docs')
   .option('--test', 'Build stories optimized for testing purposes.')
   .option('--preview-only', 'Use the preview without the manager UI')

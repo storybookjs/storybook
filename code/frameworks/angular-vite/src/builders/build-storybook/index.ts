@@ -57,7 +57,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'statsJson'
     | 'disableTelemetry'
     | 'logfile'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & { [key: string]: any };
@@ -110,7 +109,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     enableProdMode = true,
     statsJson,
     disableTelemetry,
-    previewUrl,
     sourceMap = false,
     preserveSymlinks = false,
     zoneless = true,
@@ -156,7 +154,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     angularBuilderOptions,
     tsConfig,
     statsJson,
-    previewUrl,
   };
 
   // Bridge angularBuilderOptions to the addon-vitest child process

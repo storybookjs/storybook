@@ -50,9 +50,7 @@ export async function loadStorybook(
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
+  validateFrameworkName(frameworkName);
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
   }

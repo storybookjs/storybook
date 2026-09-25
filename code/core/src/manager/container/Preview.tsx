@@ -4,8 +4,6 @@ import React from 'react';
 import type { Addon_BaseType, Addon_Collection, Addon_WrapperType } from 'storybook/internal/types';
 import { Addon_TypesEnum } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import memoizerific from 'memoizerific';
 import type { State, StoriesHash } from 'storybook/manager-api';
 import { Consumer } from 'storybook/manager-api';
@@ -66,8 +64,6 @@ const memoizedWrapper = memoizerific(1)((_, previewElements: Addon_Collection) =
   ...Object.values(previewElements),
 ]);
 
-const { PREVIEW_URL } = global;
-
 export type Item = StoriesHash[keyof StoriesHash];
 
 const splitTitleAddExtraSpace = (input: string) =>
@@ -123,7 +119,7 @@ const mapper = ({
     viewMode,
     refs,
     storyId,
-    baseUrl: PREVIEW_URL || 'iframe.html',
+    baseUrl: 'iframe.html',
     path,
     queryParams: customQueryParams,
     tools: tools,

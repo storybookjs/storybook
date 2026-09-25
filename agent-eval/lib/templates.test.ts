@@ -8,7 +8,8 @@ import { describe, expect, it } from 'vitest';
 import {
   enableExperimentalReview,
   isReviewEnabledFor,
-  rewritePackageSpecsForNpm,
+  pinStorybookPackages,
+  type StorybookWorkspace,
   writeClaudeInAppBrowserMock,
 } from './templates.ts';
 
@@ -73,30 +74,80 @@ describe('enableExperimentalReview', () => {
   });
 });
 
-describe('rewritePackageSpecsForNpm', () => {
-  it('rewrites the real addon manifest for npm sandboxes', () => {
-    const packageJson = JSON.parse(
-      readFileSync(join(AGENT_EVAL_ROOT, '..', 'code', 'addons', 'mcp', 'package.json'), 'utf8')
-    ) as Record<string, unknown>;
-    const rewritten = rewritePackageSpecsForNpm(packageJson);
-    const version = packageJson.version;
-    const dependencyFields = [
-      'dependencies',
-      'devDependencies',
-      'optionalDependencies',
-      'peerDependencies',
-    ] as const;
-    const rewrittenSpecs = dependencyFields.flatMap((field) =>
-      Object.values((rewritten[field] as Record<string, string> | undefined) ?? {})
-    );
+describe('pinStorybookPackages', () => {
+  const workspace: StorybookWorkspace = new Map([
+    ['storybook', { dir: 'code/core', dependencies: [] }],
+    [
+      '@storybook/react-vite',
+      {
+        dir: 'code/frameworks/react-vite',
+        dependencies: ['@storybook/builder-vite', '@storybook/react'],
+      },
+    ],
+    ['@storybook/builder-vite', { dir: 'code/builders/builder-vite', dependencies: [] }],
+    [
+      '@storybook/react',
+      { dir: 'code/renderers/react', dependencies: ['@storybook/react-dom-shim'] },
+    ],
+    ['@storybook/react-dom-shim', { dir: 'code/lib/react-dom-shim', dependencies: [] }],
+    ['@storybook/addon-mcp', { dir: 'code/addons/mcp', dependencies: [] }],
+  ]);
 
-    expect(rewrittenSpecs.some((spec) => spec.startsWith('workspace:'))).toBe(false);
-    expect((rewritten.devDependencies as Record<string, string>)['@storybook/addon-a11y']).toBe(
-      version
-    );
-    expect((rewritten.peerDependencies as Record<string, string>)['@storybook/addon-vitest']).toBe(
-      `^${version}`
-    );
+  const manifest = (packageJson: Record<string, unknown>) =>
+    JSON.stringify(packageJson, null, 2).concat('\n');
+
+  it('points every monorepo dependency at its checkout tarball and overrides the transitive ones', async () => {
+    const files = {
+      'package.json': manifest({
+        workspaces: ['packages/*'],
+        devDependencies: {
+          storybook: 'next',
+          '@storybook/addon-mcp': 'file:./local-packages/addon-mcp',
+          vite: '7.2.2',
+        },
+      }),
+      'packages/ui/package.json': manifest({
+        devDependencies: { '@storybook/react-vite': 'next', react: '19.2.0' },
+      }),
+    };
+
+    const packed = await pinStorybookPackages(files, workspace, 'checkout');
+
+    expect(JSON.parse(files['package.json'])).toEqual({
+      workspaces: ['packages/*'],
+      devDependencies: {
+        storybook: 'file:local-packages/storybook.tgz',
+        '@storybook/addon-mcp': 'file:local-packages/storybook-addon-mcp.tgz',
+        vite: '7.2.2',
+      },
+      overrides: {
+        '@storybook/builder-vite': 'file:local-packages/storybook-builder-vite.tgz',
+        '@storybook/react': 'file:local-packages/storybook-react.tgz',
+        '@storybook/react-dom-shim': 'file:local-packages/storybook-react-dom-shim.tgz',
+      },
+    });
+    expect(JSON.parse(files['packages/ui/package.json']).devDependencies).toEqual({
+      '@storybook/react-vite': 'file:../../local-packages/storybook-react-vite.tgz',
+      react: '19.2.0',
+    });
+    expect(packed.sort()).toEqual([
+      '@storybook/addon-mcp',
+      '@storybook/builder-vite',
+      '@storybook/react',
+      '@storybook/react-dom-shim',
+      '@storybook/react-vite',
+      'storybook',
+    ]);
+  });
+
+  it('leaves a manifest without monorepo dependencies byte-identical', async () => {
+    const source = '{"dependencies":{"react":"19.2.0"}}';
+    const files = { 'package.json': source };
+
+    const packed = await pinStorybookPackages(files, workspace, 'checkout');
+
+    expect(files['package.json']).toBe(source);
+    expect(packed).toEqual([]);
   });
 });
 

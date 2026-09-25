@@ -365,6 +365,61 @@ describe('bootstrapAttachedRuntime', () => {
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
+  it('refuses the same installation on an older running server, even in a child host, asking to restart it', async () => {
+    const stale: StorybookInstanceRecord = { ...RECORD, storybookVersion: '10.1.0' };
+    const { deps } = makeRuntimeDeps([stale], { isChildHost: true });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('different versions');
+    await expect(failure).rejects.toThrow(STORYBOOK_PATH);
+    await expect(failure).rejects.toThrow('version 10.1.0');
+    await expect(failure).rejects.toThrow('version 10.2.0');
+    await expect(failure).rejects.toThrow('running instance is the older side');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+    expect(deps.setDelegatedMode).not.toHaveBeenCalled();
+  });
+
+  it('refuses the same installation when this CLI is the older side, asking to restart the CLI', async () => {
+    const newer: StorybookInstanceRecord = { ...RECORD, storybookVersion: '10.3.0' };
+    const { deps } = makeRuntimeDeps([newer]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('This CLI is the older side');
+    await expect(failure).rejects.not.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses the same installation when the record does not carry a version, asking to restart it', async () => {
+    const unversioned: StorybookInstanceRecord = { ...RECORD, storybookVersion: undefined };
+    const { deps } = makeRuntimeDeps([unversioned]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('version unknown');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('spawns from a different installation before comparing versions', async () => {
+    const foreign: StorybookInstanceRecord = {
+      ...RECORD,
+      storybookPath: FOREIGN_STORYBOOK_PATH,
+      storybookVersion: undefined,
+    };
+    const { deps } = makeRuntimeDeps([foreign]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    expect(result.kind).toBe('spawn');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
   it('rejects a channel that never opens', async () => {
     const { deps } = makeRuntimeDeps([RECORD], {
       createNodeChannel: vi.fn(async () => {

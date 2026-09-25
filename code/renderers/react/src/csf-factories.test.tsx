@@ -105,6 +105,60 @@ describe('Args can be provided in multiple ways', () => {
       render: (args) => <div>Hello world</div>,
     });
   });
+
+  it('✅ Named and array args provided in meta do not need to be repeated in the story', () => {
+    type Count = 10 | 11;
+    type Props = {
+      count: Count;
+      items?: { tags: string[] }[];
+      label: string;
+      nested: { callback: () => void };
+      optionalClick?: () => void;
+      pair: [string, number];
+    };
+    const Component: (props: Props) => ReactElement = () => <></>;
+
+    const meta = preview.meta({
+      component: Component,
+      args: {
+        count: 10,
+        items: [{ tags: ['one'] }],
+        nested: { callback: fn() },
+        optionalClick: fn(),
+        pair: ['one', 1],
+      },
+    });
+
+    // @ts-expect-error label not provided ❌
+    meta.story();
+    meta.story({ args: { label: 'good' } });
+    expectTypeOf(meta.input.args.count).toEqualTypeOf<10>();
+    meta.input.args.items[0].tags.push('two');
+    meta.input.args.nested.callback.mockClear();
+    meta.input.args.optionalClick.mockClear();
+
+    preview.meta({
+      component: Component,
+      // @ts-expect-error pair has the wrong element types ❌
+      args: { count: 10, pair: [1, 'one'] },
+    });
+    preview.meta({
+      component: Component,
+      // @ts-expect-error pair is missing its second element ❌
+      args: { count: 10, pair: ['one'] },
+    });
+
+    class Model {
+      private secret = 'secret';
+      label = 'label';
+    }
+    const ModelComponent: (props: { model: Model }) => ReactElement = () => <></>;
+    preview.meta({
+      component: ModelComponent,
+      // @ts-expect-error a plain object is not a Model instance ❌
+      args: { model: { label: 'label' } },
+    });
+  });
 });
 
 it('✅ Void functions are not changed', () => {

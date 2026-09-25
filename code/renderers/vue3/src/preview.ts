@@ -1,7 +1,9 @@
 import type {
   AddonTypes,
+  CapturedMetaArgs,
   InferTypes,
   Meta,
+  MetaArgsInput,
   Preview,
   PreviewAddon,
   Story,
@@ -89,15 +91,10 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
    */
   type<R>(): VuePreview<T & R>;
 
-  meta<
-    C,
-    Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<ComponentPropsAndSlots<C> & T['args']>,
-  >(
+  meta<C, Decorators extends DecoratorFunction<VueTypes & T, any>, const TMetaArgs>(
     meta: {
       component?: C;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, ComponentPropsAndSlots<C> & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C> & T['args']>,
@@ -106,19 +103,20 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   ): VueMeta<
     InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>,
     Omit<ComponentAnnotations<InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
+      args: {} extends TMetaArgs
+        ? {}
+        : CapturedMetaArgs<TMetaArgs, ComponentPropsAndSlots<C> & T['args']>;
     }
   >;
 
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    const TMetaArgs,
   >(
     meta: {
       render?: ArgsStoryFn<VueTypes & T, TArgs>;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, TArgs & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<VueTypes & T, TArgs & T['args']>,
@@ -127,7 +125,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   ): VueMeta<
     InferVueTypes<T, TArgs, Decorators>,
     Omit<ComponentAnnotations<InferVueTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
+      args: {} extends TMetaArgs ? {} : CapturedMetaArgs<TMetaArgs, TArgs & T['args']>;
     }
   >;
 }

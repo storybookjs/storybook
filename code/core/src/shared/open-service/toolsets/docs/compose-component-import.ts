@@ -1,4 +1,4 @@
-import { rewriteComponentImport } from 'storybook/internal/csf-tools';
+import { rewriteComponentImport } from '../../../../csf-tools/story-shape/import-statements.ts';
 
 import type { DocgenJsDocTags } from '../../services/docgen/types.ts';
 import type { StoryDocsPayload } from '../../services/story-docs/types.ts';

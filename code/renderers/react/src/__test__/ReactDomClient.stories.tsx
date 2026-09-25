@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { expect } from 'storybook/test';
 
-import { renderElement, unmountElement } from './react-dom-client.tsx';
+import { renderElement, unmountElement } from '../react-dom-client.tsx';
 
 const LayoutEffectContent = () => {
   const [hasCommitted, setHasCommitted] = useState(false);
@@ -17,7 +17,7 @@ const LayoutEffectContent = () => {
 };
 
 const meta = {
-  title: 'Preview/React DOM Client',
+  title: 'React/React DOM Client',
   component: LayoutEffectContent,
 } satisfies Meta<typeof LayoutEffectContent>;
 

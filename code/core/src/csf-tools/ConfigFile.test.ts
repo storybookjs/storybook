@@ -865,7 +865,7 @@ describe('ConfigFile', () => {
       `).parse();
       config.appendValueToArray(['addons'], '@storybook/addon-mcp');
 
-      expect(printConfig(config, { trailingComma: { arrays: true }, wrapColumn: 0 }).code)
+      expect(printConfig(config, { trailingComma: true, wrapColumn: 0 }).code)
         .toMatchInlineSnapshot(`
         export default {
           addons: [

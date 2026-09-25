@@ -37,7 +37,7 @@ export async function setupAddonInConfig({
   }
 
   await writeConfig(mainConfigCSFFile, undefined, {
-    trailingComma: { arrays: true },
+    trailingComma: true,
     wrapColumn: 0,
   });
 

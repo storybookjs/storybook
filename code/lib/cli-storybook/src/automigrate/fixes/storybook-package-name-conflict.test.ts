@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import { checkFix } from '../helpers/fix-test-utils.ts';
 import { makePackageManager } from '../helpers/testing-helpers.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 
@@ -10,7 +11,7 @@ const mockMainConfig: StorybookConfigRaw = {
 };
 
 const check = async (packageName: string) => {
-  return storybookPackageNameConflict.check({
+  return checkFix(storybookPackageNameConflict, {
     packageManager: makePackageManager({ name: packageName }),
     mainConfig: mockMainConfig,
     storybookVersion: '8.0.0',
@@ -32,7 +33,7 @@ describe('storybookPackageNameConflict', () => {
     });
 
     it('returns null when package name is undefined', async () => {
-      const result = await storybookPackageNameConflict.check({
+      const result = await checkFix(storybookPackageNameConflict, {
         packageManager: makePackageManager({}),
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',

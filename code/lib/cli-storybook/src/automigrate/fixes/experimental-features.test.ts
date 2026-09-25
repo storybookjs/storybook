@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { readFile, writeFile } from 'node:fs/promises';
 
@@ -7,6 +7,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import * as memfs from 'memfs';
 import { vol } from 'memfs';
 
+import { runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   createExperimentalFeatureFix,
@@ -15,8 +16,8 @@ import {
   resolveRequestedFeatures,
 } from './experimental-features.ts';
 
-// Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
-// csf-tools' readConfig/writeConfigFile to `memfs` so disk state stays scoped to `vol`.
+// Spy-only mock, redirected to memfs per test and restored afterwards so Vitest can still write
+// inline snapshots to the real test file.
 vi.mock('node:fs/promises', { spy: true });
 
 const MAIN_CONFIG_PATH = '/project/.storybook/main.ts';
@@ -50,9 +51,7 @@ const checkOptions = (overrides: Partial<CheckOptions> = {}): CheckOptions =>
 const withFeatures = (features: StorybookConfigRaw['features']): StorybookConfigRaw =>
   ({ ...REACT_MAIN_CONFIG, features }) as StorybookConfigRaw;
 
-// `run` only reads mainConfigPath and dryRun; the rest of RunOptions is irrelevant here.
-const runOptions = (dryRun: boolean): RunOptions<object> =>
-  ({ mainConfigPath: MAIN_CONFIG_PATH, dryRun }) as RunOptions<object>;
+const runOptions = { mainConfigPath: MAIN_CONFIG_PATH } as Omit<RunOptions<object>, 'files'>;
 
 describe('experimental feature flag automigrations', () => {
   beforeEach(() => {
@@ -63,6 +62,11 @@ describe('experimental feature flag automigrations', () => {
     vi.mocked(writeFile).mockImplementation(
       memfs.fs.promises.writeFile as unknown as typeof writeFile
     );
+  });
+
+  afterEach(() => {
+    vi.mocked(readFile).mockRestore();
+    vi.mocked(writeFile).mockRestore();
   });
 
   describe('check', () => {
@@ -220,23 +224,27 @@ describe('experimental feature flag automigrations', () => {
     it('writes the flag while preserving the rest of the file', async () => {
       vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
 
-      await enableExperimentalReview.run!(runOptions(false));
+      await runFix(enableExperimentalReview, runOptions);
 
-      const written = memfs.fs.readFileSync(MAIN_CONFIG_PATH, 'utf-8') as string;
-      expect(written).toMatch(/features:\s*{\s*experimentalReview:\s*true/);
-      expect(written).toContain(
-        `stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],`
-      );
-      expect(written).toContain(`name: '@storybook/react-vite',`);
-      expect(written).toContain('export default config;');
-    });
+      expect(memfs.fs.readFileSync(MAIN_CONFIG_PATH, 'utf-8')).toMatchInlineSnapshot(`
+        "import type { StorybookConfig } from '@storybook/react-vite';
 
-    it('leaves the file untouched on a dry run', async () => {
-      vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
+        const config: StorybookConfig = {
+          stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+          addons: ['@storybook/addon-docs'],
 
-      await enableExperimentalDocgenServer.run!(runOptions(true));
+          framework: {
+            name: '@storybook/react-vite',
+            options: {},
+          },
 
-      expect(memfs.fs.readFileSync(MAIN_CONFIG_PATH, 'utf-8')).toBe(FIXTURE_MAIN_TS);
+          features: {
+            experimentalReview: true
+          }
+        };
+        export default config;
+        "
+      `);
     });
   });
 });

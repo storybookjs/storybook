@@ -8,6 +8,7 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
+import { createFixFiles } from './fix-files.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
 
@@ -110,6 +111,7 @@ export async function collectAutomigrationsAcrossProjects(
           mainConfig: project.mainConfig,
           storybookVersion: project.storybookVersion,
           beforeVersion: project.beforeVersion,
+          files: createFixFiles().files,
           requested: requestedFixIds?.includes(fix.id),
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
@@ -283,7 +285,7 @@ export async function runAutomigrationsForProjects(
   selectedAutomigrations: AutomigrationCheckResult[],
   options: MultiProjectRunAutomigrationOptions
 ): Promise<Record<ConfigDir, AutomigrationResult>> {
-  const { dryRun, skipInstall, automigrations, yes } = options;
+  const { skipInstall, automigrations, yes } = options;
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
@@ -388,10 +390,11 @@ export async function runAutomigrationsForProjects(
 
       try {
         if (typeof fix.run === 'function') {
+          const { files, commit } = createFixFiles();
           const runOptions: RunOptions<typeof result> = {
             packageManager: project.packageManager,
             result,
-            dryRun,
+            files,
             mainConfigPath: project.mainConfigPath,
             previewConfigPath: project.previewConfigPath,
             mainConfig: project.mainConfig,
@@ -404,6 +407,7 @@ export async function runAutomigrationsForProjects(
           };
 
           await fix.run(runOptions);
+          await commit();
           fixResults[fix.id] = FixStatus.SUCCEEDED;
           taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }

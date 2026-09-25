@@ -1,7 +1,7 @@
 import { formatFileContent, frameworkPackages, getAddonNames } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import { existsSync, readFileSync, writeFileSync } from 'fs';
+import { existsSync } from 'fs';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -24,7 +24,7 @@ export const fileExtensions = [
 
 interface AddonA11yAddonTestOptions {
   previewFile: string | null;
-  transformedPreviewCode: string | null;
+  canTransformPreview: boolean;
 }
 
 /**
@@ -37,7 +37,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
   promptType: 'auto',
 
-  async check({ mainConfig, configDir }) {
+  async check({ mainConfig, configDir, files }) {
     const addons = getAddonNames(mainConfig);
 
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
@@ -60,30 +60,30 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
         .map((ext) => path.join(configDir, `preview${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    let transformedPreviewCode: string | null = null;
+    let canTransformPreview = false;
     if (previewFile) {
       try {
-        const previewSource = readFileSync(previewFile, 'utf8');
-        if (!shouldPreviewFileBeTransformed(previewSource)) {
+        if (!shouldPreviewFileBeTransformed(await files.read(previewFile))) {
           return null;
         }
-        transformedPreviewCode = await transformPreviewFile(previewSource, previewFile);
+        await files.edit(previewFile, (source) => transformPreviewFile(source, previewFile));
+        canTransformPreview = true;
       } catch {
         // an unreadable or unparsable preview file is reported as a manual step by `run`
       }
     }
 
-    return { previewFile, transformedPreviewCode };
+    return { previewFile, canTransformPreview };
   },
 
   prompt() {
     return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience';
   },
 
-  async run({ result }) {
-    const { previewFile, transformedPreviewCode } = result;
+  async run({ result, files }) {
+    const { previewFile, canTransformPreview } = result;
 
-    if (!previewFile || transformedPreviewCode === null) {
+    if (!previewFile || !canTransformPreview) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(dedent`
         The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:
@@ -100,7 +100,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       `);
     }
 
-    writeFileSync(previewFile, transformedPreviewCode, 'utf8');
+    await files.edit(previewFile, (source) => transformPreviewFile(source, previewFile));
   },
 };
 

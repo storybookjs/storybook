@@ -46,11 +46,7 @@ export const addonMcp: Fix<AddonMcpOptions> = {
     `;
   },
 
-  async run({ result, packageManager, configDir, dryRun }) {
-    if (dryRun) {
-      return;
-    }
-
+  async run({ result, packageManager, configDir }) {
     logger.log(
       `${result.isInstalled ? 'Updating' : 'Installing'} ${picocolors.magenta(ADDON_MCP)} to the latest version...`
     );

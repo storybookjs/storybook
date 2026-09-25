@@ -1,24 +1,24 @@
+import { readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import * as storybookCommon from 'storybook/internal/common';
-import { type ConfigFile, loadConfig, printConfig } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import * as memfs from 'memfs';
+import { vol } from 'memfs';
+
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 
-const mocks = vi.hoisted(() => {
-  const updateMainConfig = vi.fn();
-  return {
-    source: '',
-    output: '',
-    updateMainConfig,
-    /** When set, `existsSync` in the automigrate fix uses this instead of the real fs (ESM-safe). */
-    existsSyncOverride: null as null | ((p: string) => boolean),
-  };
-});
+const mocks = vi.hoisted(() => ({
+  existsSyncOverride: null as null | ((p: string) => boolean),
+}));
+
+// Restored after each test so Vitest can still write inline snapshots to the real test file.
+vi.mock('node:fs/promises', { spy: true });
 
 vi.mock('node:fs', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs')>();
@@ -26,14 +26,6 @@ vi.mock('node:fs', async (importOriginal) => {
     ...actual,
     existsSync: (p: Parameters<typeof actual.existsSync>[0]) =>
       mocks.existsSyncOverride != null ? mocks.existsSyncOverride(String(p)) : actual.existsSync(p),
-  };
-});
-
-vi.mock('../helpers/mainConfigFile', async (importOriginal) => {
-  const mod = await importOriginal<typeof import('../helpers/mainConfigFile')>();
-  return {
-    ...mod,
-    updateMainConfig: mocks.updateMainConfig,
   };
 });
 
@@ -57,18 +49,18 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     mocks.existsSyncOverride = null;
     vi.mocked(storybookCommon.findConfigFile).mockImplementation(() => null);
     vi.mocked(storybookCommon.loadMainConfig).mockReset();
-    mocks.source = `export default { addons: ['@storybook/addon-ondevice-controls'] };`;
-    mocks.output = '';
-    mocks.updateMainConfig.mockImplementation(
-      async (
-        _opts: { mainConfigPath: string; dryRun: boolean },
-        callback: (cfg: ConfigFile) => Promise<void>
-      ) => {
-        const config = loadConfig(mocks.source).parse();
-        await callback(config);
-        mocks.output = printConfig(config).code;
-      }
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(
+      memfs.fs.promises.readFile as unknown as typeof readFile
     );
+    vi.mocked(writeFile).mockImplementation(
+      memfs.fs.promises.writeFile as unknown as typeof writeFile
+    );
+  });
+
+  afterEach(() => {
+    vi.mocked(readFile).mockRestore();
+    vi.mocked(writeFile).mockRestore();
   });
 
   describe('check', () => {
@@ -79,7 +71,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         addons: ['@storybook/addon-ondevice-controls', '@storybook/addon-ondevice-actions'],
       };
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig,
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
@@ -99,7 +91,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         stories: ['../stories/**/*.stories.@(js|jsx|ts|tsx)'],
       };
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig,
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
@@ -121,7 +113,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         deviceAddons: ['@storybook/addon-ondevice-controls'],
       } as StorybookConfigRaw;
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig,
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
@@ -147,7 +139,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         ],
       };
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig,
         mainConfigPath,
@@ -174,7 +166,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         ],
       };
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig,
         mainConfigPath,
@@ -197,7 +189,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         addons: ['@storybook/addon-ondevice-controls'],
       };
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig,
         mainConfigPath,
@@ -238,7 +230,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         addons: ['@storybook/addon-docs'],
       };
 
-      const result = await rnOndeviceAddonsToDeviceAddons.check({
+      const result = await checkFix(rnOndeviceAddonsToDeviceAddons, {
         packageManager,
         mainConfig: webMainConfig,
         mainConfigPath: storybookMainPath,
@@ -256,92 +248,37 @@ describe('rn-ondevice-addons-to-device-addons', () => {
   });
 
   describe('run', () => {
-    it('renames the whole `addons` field to `deviceAddons`', async () => {
-      await rnOndeviceAddonsToDeviceAddons.run?.({
-        result: {
-          targets: [{ mainConfigPath: '.rnstorybook/main.ts' }],
-        },
-        dryRun: false,
-        mainConfigPath: '.rnstorybook/main.ts',
-        mainConfig: {} as StorybookConfigRaw,
-        packageManager: {} as any,
-        configDir: '.rnstorybook',
-        storybookVersion: '8.0.0',
-        storiesPaths: [],
+    const runOptions = {
+      mainConfigPath: '/project/.storybook/main.ts',
+      mainConfig: {} as StorybookConfigRaw,
+      packageManager: {} as JsPackageManager,
+      configDir: '/project/.storybook',
+      storybookVersion: '8.0.0',
+      storiesPaths: [],
+    };
+
+    it('renames the whole `addons` field to `deviceAddons` in every target', async () => {
+      vol.fromJSON({
+        '/project/.storybook/main.ts': `export default { addons: ['@storybook/addon-ondevice-controls'] };`,
+        '/project/.rnstorybook/main.ts': `export default { addons: ['@storybook/addon-ondevice-actions'] };`,
       });
 
-      expect(mocks.output).toBe(
-        `export default { deviceAddons: ['@storybook/addon-ondevice-controls'] };`
-      );
-    });
-
-    it('does nothing when `addons` is missing in the parsed AST', async () => {
-      mocks.source = 'export default {};';
-
-      await rnOndeviceAddonsToDeviceAddons.run?.({
-        result: {
-          targets: [{ mainConfigPath: '.rnstorybook/main.ts' }],
-        },
-        dryRun: false,
-        mainConfigPath: '.rnstorybook/main.ts',
-        mainConfig: {} as StorybookConfigRaw,
-        packageManager: {} as any,
-        configDir: '.rnstorybook',
-        storybookVersion: '8.0.0',
-        storiesPaths: [],
-      });
-
-      expect(mocks.output).toBe(mocks.source);
-    });
-
-    it('passes dryRun flag to updateMainConfig', async () => {
-      await rnOndeviceAddonsToDeviceAddons.run?.({
-        result: {
-          targets: [{ mainConfigPath: '.rnstorybook/main.ts' }],
-        },
-        dryRun: true,
-        mainConfigPath: '.rnstorybook/main.ts',
-        mainConfig: {} as StorybookConfigRaw,
-        packageManager: {} as any,
-        configDir: '.rnstorybook',
-        storybookVersion: '8.0.0',
-        storiesPaths: [],
-      });
-
-      expect(mocks.updateMainConfig).toHaveBeenCalledWith(
-        { mainConfigPath: '.rnstorybook/main.ts', dryRun: true },
-        expect.any(Function)
-      );
-    });
-
-    it('runs updateMainConfig once per target when multiple mains need changes', async () => {
-      await rnOndeviceAddonsToDeviceAddons.run?.({
+      await runFix(rnOndeviceAddonsToDeviceAddons, {
+        ...runOptions,
         result: {
           targets: [
-            { mainConfigPath: '.storybook/main.ts' },
-            { mainConfigPath: '.rnstorybook/main.ts' },
+            { mainConfigPath: '/project/.storybook/main.ts' },
+            { mainConfigPath: '/project/.rnstorybook/main.ts' },
           ],
         },
-        dryRun: false,
-        mainConfigPath: '.storybook/main.ts',
-        mainConfig: {} as StorybookConfigRaw,
-        packageManager: {} as any,
-        configDir: '.storybook',
-        storybookVersion: '8.0.0',
-        storiesPaths: [],
       });
 
-      expect(mocks.updateMainConfig).toHaveBeenCalledTimes(2);
-      expect(mocks.updateMainConfig).toHaveBeenNthCalledWith(
-        1,
-        { mainConfigPath: '.storybook/main.ts', dryRun: false },
-        expect.any(Function)
-      );
-      expect(mocks.updateMainConfig).toHaveBeenNthCalledWith(
-        2,
-        { mainConfigPath: '.rnstorybook/main.ts', dryRun: false },
-        expect.any(Function)
-      );
+      expect(vol.toJSON()).toMatchInlineSnapshot(`
+        {
+          "/project/.rnstorybook/main.ts": "export default { deviceAddons: ['@storybook/addon-ondevice-actions'] };",
+          "/project/.storybook/main.ts": "export default { deviceAddons: ['@storybook/addon-ondevice-controls'] };",
+        }
+      `);
     });
   });
 });

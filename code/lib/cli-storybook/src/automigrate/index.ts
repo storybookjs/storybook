@@ -19,6 +19,7 @@ import type {
   PreCheckFailure,
   Prompt,
 } from './fixes/index.ts';
+import { createFixFiles } from './fix-files.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -284,6 +285,7 @@ export async function runFixes({
         storiesPaths,
         hasCsfFactoryPreview,
         requested: fixId === f.id,
+        files: createFixFiles().files,
       });
       logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {
@@ -391,10 +393,11 @@ export async function runFixes({
           try {
             invariant(typeof f.run === 'function', 'run method should be available in fix.');
             invariant(mainConfigPath, 'Main config path should be defined to run migration.');
+            const { files, commit } = createFixFiles();
             await f.run({
               result,
               packageManager,
-              dryRun,
+              files,
               mainConfigPath,
               configDir,
               previewConfigPath,
@@ -405,6 +408,7 @@ export async function runFixes({
               yes,
               addonsToPostinstall,
             });
+            await commit();
             logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
 
             fixResults[f.id] = FixStatus.SUCCEEDED;

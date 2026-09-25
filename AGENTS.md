@@ -159,6 +159,12 @@ When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.ag
 
 These usually start long-running development servers and are the wrong default for agents.
 
+## Automigrations
+
+- A fix describes edits; the runner owns orchestration. `check` and `run` receive `files` (`FixFiles`): `read`, `write`, `remove`, `edit`, `editConfig`, and `editCsf` stage changes, and the runner writes them only after `run` resolves.
+- Do not read or write source files with `node:fs` in a fix, loop with `p-limit`, branch on `dryRun`, or catch per-file errors. A dry run never reaches `run`, and `files.edit` already reports every failed file in one error.
+- A `check` may stage the same edits as `run` on its scratch `files` to learn whether anything would change.
+
 ## Repository skills
 
 - Canonical contributor skills live in `.agents/skills/`; `.claude/skills/` contains references to them.

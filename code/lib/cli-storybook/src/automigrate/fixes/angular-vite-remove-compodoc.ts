@@ -1,18 +1,17 @@
-import { writeFile } from 'node:fs/promises';
-
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
 import { formatFileContent, type JsPackageManager } from 'storybook/internal/common';
-import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
+import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync } from 'node:fs';
 
 import { dirname } from 'pathe';
 import { dedent } from 'ts-dedent';
 
-import { getFrameworkPackageName, updateMainConfig } from '../helpers/mainConfigFile.ts';
+import type { FixFiles } from '../fix-files.ts';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix, RunOptions } from '../types.ts';
 import { findWorkspaceFiles, getTargetGroups } from './angular-workspace.ts';
 
@@ -125,9 +124,9 @@ const compodocOptionPaths = (
   return [...fromTargets, ...fromTargetDefaults];
 };
 
-const readJson = (filePath: string): any | null => {
+const readJson = async (files: FixFiles, filePath: string): Promise<any | null> => {
   try {
-    return JSON.parse(readFileSync(filePath, 'utf8'));
+    return JSON.parse(await files.read(filePath));
   } catch {
     return null;
   }
@@ -224,21 +223,29 @@ const invokesCompodoc = (script: string): boolean =>
  * docs-only package holds no stories and no Storybook config, yet its script still breaks once the
  * dependency is gone.
  */
-const findCompodocScripts = async (packageJsonPaths: string[]): Promise<CompodocScript[]> => {
+const findCompodocScripts = async (
+  files: FixFiles,
+  packageJsonPaths: string[]
+): Promise<CompodocScript[]> => {
   const paths = new Set([...packageJsonPaths, ...(await findWorkspaceFiles('package.json'))]);
-
-  return [...paths].flatMap((packageJsonPath) =>
-    Object.entries<string>(readJson(packageJsonPath)?.scripts ?? {})
-      .filter(([, script]) => typeof script === 'string' && invokesCompodoc(script))
-      .map(([scriptName]) => ({ packageJsonPath, scriptName }))
-  );
+  const scripts: CompodocScript[] = [];
+  for (const packageJsonPath of paths) {
+    for (const [scriptName, script] of Object.entries<string>(
+      (await readJson(files, packageJsonPath))?.scripts ?? {}
+    )) {
+      if (typeof script === 'string' && invokesCompodoc(script)) {
+        scripts.push({ packageJsonPath, scriptName });
+      }
+    }
+  }
+  return scripts;
 };
 
 export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = {
   id: 'angular-vite-remove-compodoc',
   link: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
 
-  async check({ mainConfig, mainConfigPath, previewConfigPath, packageManager }) {
+  async check({ files, mainConfig, mainConfigPath, previewConfigPath, packageManager }) {
     if (!mainConfigPath || getFrameworkPackageName(mainConfig) !== '@storybook/angular-vite') {
       return null;
     }
@@ -248,7 +255,7 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       return null;
     }
 
-    return findCompodocSetup({ mainConfig, previewConfigPath, packageManager });
+    return findCompodocSetup({ files, mainConfig, previewConfigPath, packageManager });
   },
 
   prompt: () =>
@@ -257,14 +264,7 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       We'll remove the Compodoc setup that has no effect anymore.
     `,
 
-  run: async ({
-    result,
-    dryRun = false,
-    mainConfigPath,
-    previewConfigPath,
-    packageManager,
-  }: RunOptions<AngularViteRemoveCompodocOptions>) =>
-    removeCompodocSetup({ result, dryRun, mainConfigPath, previewConfigPath, packageManager }),
+  run: (options: RunOptions<AngularViteRemoveCompodocOptions>) => removeCompodocSetup(options),
 };
 
 /**
@@ -275,18 +275,19 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
  * config as it was when the run started.
  */
 export const findCompodocSetup = async ({
+  files,
   mainConfig,
   previewConfigPath,
   packageManager,
   builderPackages = [ANGULAR_VITE_PACKAGE],
 }: {
+  files: FixFiles;
   mainConfig: StorybookConfigRaw;
   previewConfigPath?: string;
   packageManager: JsPackageManager;
   /**
    * Builder packages whose Compodoc options are dead. `angular-to-angular-vite` also owns
-   * `@storybook/angular`: by the time it asks, every such target has been rewritten already, or,
-   * on a dry run, would have been.
+   * `@storybook/angular`: by the time it asks, every such target has been rewritten already.
    */
   builderPackages?: string[];
 }): Promise<AngularViteRemoveCompodocOptions | null> => {
@@ -298,16 +299,15 @@ export const findCompodocSetup = async ({
   );
 
   const hasPreviewWiring =
-    !!previewConfigPath &&
-    existsSync(previewConfigPath) &&
-    previewWiresCompodoc(readFileSync(previewConfigPath, 'utf8'));
+    !!previewConfigPath && previewWiresCompodoc(await files.read(previewConfigPath));
 
-  const documents = (await workspaceJsonCandidates(packageManager.packageJsonPaths)).flatMap(
-    (filePath) => {
-      const json = readJson(filePath);
-      return json ? [{ filePath, json }] : [];
+  const documents: { filePath: string; json: any }[] = [];
+  for (const filePath of await workspaceJsonCandidates(packageManager.packageJsonPaths)) {
+    const json = await readJson(files, filePath);
+    if (json) {
+      documents.push({ filePath, json });
     }
-  );
+  }
   const declaredTargets = documents.flatMap(({ json }) => declaredStorybookTargets(json));
   const everyStorybookTargetIsOwned =
     declaredTargets.some((target) => isOwnedBy(target, builderPackages)) &&
@@ -337,7 +337,7 @@ export const findCompodocSetup = async ({
     hasFrameworkOptions,
     hasPreviewWiring,
     workspaceJsonEdits,
-    compodocScripts: await findCompodocScripts(packageManager.packageJsonPaths),
+    compodocScripts: await findCompodocScripts(files, packageManager.packageJsonPaths),
     hasCompodocDependency,
   };
 };
@@ -345,13 +345,13 @@ export const findCompodocSetup = async ({
 /** Deletes what {@link findCompodocSetup} reported, wherever it lives. */
 export const removeCompodocSetup = async ({
   result,
-  dryRun,
+  files,
   mainConfigPath,
   previewConfigPath,
   packageManager,
 }: {
   result: AngularViteRemoveCompodocOptions;
-  dryRun: boolean;
+  files: FixFiles;
   mainConfigPath: string;
   previewConfigPath?: string;
   packageManager: JsPackageManager;
@@ -364,23 +364,20 @@ export const removeCompodocSetup = async ({
     hasCompodocDependency,
   } = result;
 
-  // A dry run describes the same edits the real run makes, so only the writes below are skipped.
-  const removed = dryRun ? 'Would remove' : 'Removed';
-
   if (hasFrameworkOptions) {
-    await updateMainConfig({ mainConfigPath, dryRun }, (main) => {
+    await files.editConfig(mainConfigPath, (main) => {
       main.remove(['framework', 'options', 'compodoc']);
       main.remove(['framework', 'options', 'compodocArgs']);
     });
-    logger.step(`${removed} the Compodoc framework options from ${mainConfigPath}`);
+    logger.step(`Removed the Compodoc framework options from ${mainConfigPath}`);
   }
 
   if (hasPreviewWiring && previewConfigPath) {
-    await removePreviewWiring(previewConfigPath, dryRun);
+    await removePreviewWiring(files, previewConfigPath);
   }
 
   for (const { filePath, optionPaths } of workspaceJsonEdits) {
-    removeCompodocOptions(filePath, optionPaths, dryRun);
+    await removeCompodocOptions(files, filePath, optionPaths);
   }
 
   if (hasCompodocDependency) {
@@ -393,11 +390,9 @@ export const removeCompodocSetup = async ({
           `so remove the dependency once your own scripts stop calling it.`
       );
     } else {
-      if (!dryRun) {
-        await packageManager.removeDependencies([COMPODOC_PACKAGE]);
-      }
-      logger.step(`${removed} ${COMPODOC_PACKAGE}`);
-      removeCompodocOverrides(packageManager, dryRun);
+      await packageManager.removeDependencies([COMPODOC_PACKAGE]);
+      logger.step(`Removed ${COMPODOC_PACKAGE}`);
+      await removeCompodocOverrides(files, packageManager);
     }
   }
 };
@@ -412,30 +407,23 @@ const OVERRIDE_CONTAINERS = [['overrides'], ['resolutions'], ['pnpm', 'overrides
  * package.json through a process-wide cache that no raw write invalidates, so every later
  * `addDependencies`/`removeDependencies` would serialise the pre-edit snapshot back over the file.
  */
-const removeCompodocOverrides = (packageManager: JsPackageManager, dryRun: boolean): void => {
+const removeCompodocOverrides = async (
+  files: FixFiles,
+  packageManager: JsPackageManager
+): Promise<void> => {
   for (const packageJsonPath of packageManager.packageJsonPaths) {
-    try {
-      const json = readJson(packageJsonPath);
-      const containers = OVERRIDE_CONTAINERS.map((path) =>
-        path.reduce<any>((parent, key) => parent?.[key], json)
-      ).filter((container) => container && COMPODOC_PACKAGE in container);
+    const json = await readJson(files, packageJsonPath);
+    const containers = OVERRIDE_CONTAINERS.map((path) =>
+      path.reduce<any>((parent, key) => parent?.[key], json)
+    ).filter((container) => container && COMPODOC_PACKAGE in container);
 
-      if (containers.length === 0) {
-        continue;
-      }
-
-      if (!dryRun) {
-        containers.forEach((container) => delete container[COMPODOC_PACKAGE]);
-        packageManager.writePackageJson(json, dirname(packageJsonPath));
-      }
-      logger.step(
-        `${dryRun ? 'Would remove' : 'Removed'} the dangling ${COMPODOC_PACKAGE} override from ${packageJsonPath}`
-      );
-    } catch (error) {
-      logger.warn(
-        `Could not remove the ${COMPODOC_PACKAGE} override from ${packageJsonPath} automatically: ${error}.`
-      );
+    if (containers.length === 0) {
+      continue;
     }
+
+    containers.forEach((container) => delete container[COMPODOC_PACKAGE]);
+    packageManager.writePackageJson(json, dirname(packageJsonPath));
+    logger.step(`Removed the dangling ${COMPODOC_PACKAGE} override from ${packageJsonPath}`);
   }
 };
 
@@ -470,9 +458,9 @@ const countReferences = (program: t.Program, name: string): number => {
  * anything that is not a plain top-level call is reported and left untouched. Imports survive
  * while any other code still reads them.
  */
-const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): Promise<void> => {
-  try {
-    const preview = await readConfig(previewConfigPath);
+const removePreviewWiring = async (files: FixFiles, previewConfigPath: string): Promise<void> => {
+  const changed = await files.edit(previewConfigPath, async (source) => {
+    const preview = loadConfig(source, previewConfigPath).parse();
     const program = preview._ast.program;
 
     const callsToDrop = program.body.filter(
@@ -530,18 +518,11 @@ const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): 
       remaining.push(node);
     }
 
-    if (!dryRun) {
-      program.body = remaining;
-      await writeFile(
-        previewConfigPath,
-        await formatFileContent(previewConfigPath, formatConfig(preview))
-      );
-    }
-    logger.step(
-      `${dryRun ? 'Would remove' : 'Removed'} the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`
-    );
-  } catch (error) {
-    manualRemovalHint(previewConfigPath, `it could not be rewritten automatically (${error})`);
+    program.body = remaining;
+    return formatFileContent(previewConfigPath, formatConfig(preview));
+  });
+  if (changed.length > 0) {
+    logger.step(`Removed the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`);
   }
 };
 
@@ -564,29 +545,15 @@ const workspaceJsonCandidates = async (packageJsonPaths: string[]): Promise<stri
 };
 
 /** Drops the `compodoc` and `compodocArgs` builder options, which angular-vite never read. */
-const removeCompodocOptions = (
+const removeCompodocOptions = async (
+  files: FixFiles,
   workspaceJsonPath: string,
-  optionPaths: JSONEditPath[],
-  dryRun: boolean
-): void => {
-  try {
-    const original = readFileSync(workspaceJsonPath, 'utf8');
-    const updated = optionPaths.reduce(
-      (text, path) => editJsonText(text, path, undefined),
-      original as string
-    );
-
-    if (updated !== original) {
-      if (!dryRun) {
-        writeFileSync(workspaceJsonPath, updated);
-      }
-      logger.step(
-        `${dryRun ? 'Would remove' : 'Removed'} the Compodoc builder options from ${workspaceJsonPath}`
-      );
-    }
-  } catch (error) {
-    logger.warn(
-      `Could not remove the Compodoc builder options from ${workspaceJsonPath} automatically: ${error}.`
-    );
+  optionPaths: JSONEditPath[]
+): Promise<void> => {
+  const changed = await files.edit(workspaceJsonPath, (source) =>
+    optionPaths.reduce((text, path) => editJsonText(text, path, undefined), source)
+  );
+  if (changed.length > 0) {
+    logger.step(`Removed the Compodoc builder options from ${workspaceJsonPath}`);
   }
 };

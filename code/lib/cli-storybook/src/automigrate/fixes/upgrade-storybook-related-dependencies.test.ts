@@ -1,21 +1,13 @@
-import { readFileSync } from 'node:fs';
-
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import * as docsUtils from '../../doctor/getIncompatibleStorybookPackages.ts';
+import { checkFix } from '../helpers/fix-test-utils.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 
 vi.mock('../../doctor/getIncompatibleStorybookPackages');
-vi.mock('node:fs', async (importOriginal) => {
-  const actual = (await importOriginal()) as any;
-  return {
-    ...actual,
-    readFileSync: vi.fn(),
-  };
-});
 
 const check = async ({
   packageManager,
@@ -26,7 +18,7 @@ const check = async ({
   main?: Partial<StorybookConfig> & Record<string, unknown>;
   storybookVersion?: string;
 }) => {
-  return upgradeStorybookRelatedDependencies.check({
+  return checkFix(upgradeStorybookRelatedDependencies, {
     packageManager: packageManager as any,
     configDir: '',
     mainConfig: mainConfig as any,
@@ -69,20 +61,6 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       },
     ];
     vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue(analyzedPackages);
-
-    // Mock the package.json content
-    const mockPackageJson = {
-      dependencies: {
-        '@storybook/jest': '0.2.3',
-        '@storybook/addon-a11y': '7.0.0',
-      },
-      devDependencies: {
-        '@chromatic-com/storybook': '1.2.9',
-        storybook: '8.0.0',
-      },
-    };
-
-    vi.mocked(readFileSync).mockReturnValue(JSON.stringify(mockPackageJson));
 
     const mockPackageManager = {
       getAllDependencies: () =>

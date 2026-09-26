@@ -24,7 +24,7 @@ They are defined as a function that returns the full list of indexers, including
 
 <CodeSnippets path="main-config-indexers.md" />
 
-Unless your indexer is doing something relatively trivial (e.g. [indexing stories with a different naming convention](../../configure/user-interface/sidebar-and-urls.mdx#story-indexers)), in addition to indexing the file, you will likely need to [transpile it to CSF](#transpiling-to-csf) so that Storybook can read them in the browser.
+Unless your indexer is doing something relatively trivial (e.g. [indexing stories with a different naming convention](#indexing-stories-with-a-different-naming-convention)), in addition to indexing the file, you will likely need to [transpile it to CSF](#transpiling-to-csf) so that Storybook can read them in the browser.
 
 ## `Indexer`
 
@@ -264,6 +264,36 @@ export const Primary = {
 ```
 
 ## Examples
+
+### Indexing stories with a different naming convention
+
+If your files already contain CSF but use a different suffix, such as `Widget.demo.tsx`, you can reuse an existing CSF indexer with a different `test` expression. You must also include these files in your [`stories`](./main-config-stories.mdx) configuration: the glob determines which files Storybook discovers, while the indexer's `test` determines which files it can parse.
+
+<CodeSnippets path="main-config-indexers-custom-naming.md" />
+
+This configuration finds the indexer that handles a standard `Widget.stories.tsx` file and copies it with a matcher for `.demo` files. It preserves the existing indexers, so standard stories continue to work. The copied indexer keeps the original `createIndex` implementation, including CSF parsing and title generation.
+
+For example, in a React project, create the following file:
+
+```tsx filename="src/Widget.demo.tsx"
+import type { Meta, StoryObj } from '@storybook/react-vite';
+
+const meta = {
+  title: 'Example/Widget',
+  render: (args) => <button type="button">{args.label}</button>,
+} satisfies Meta<{ label: string }>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Default: Story = {
+  args: { label: 'Custom filename' },
+};
+```
+
+Start Storybook and open **Example → Widget → Default** to see the button. The story is also included when you build Storybook. Because the file already contains CSF, this example does not need an additional plugin to transpile a custom format to CSF.
+
+### Other examples
 
 Some example usages of custom indexers include:
 

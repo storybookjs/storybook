@@ -29,7 +29,7 @@ import * as pkg from 'empathic/package';
 
 import { mergeBrowserTargetOptions } from '../utils/browser-target-options.ts';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
-import type { StandaloneOptions } from '../utils/standalone-options.ts';
+import { normalizeStatsJson, type StandaloneOptions } from '../utils/standalone-options.ts';
 import { Channel } from 'storybook/internal/channels';
 import { resolveTsconfig } from '../../find-tsconfig.ts';
 
@@ -187,7 +187,7 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           tsConfig,
           initialPath,
           open,
-          statsJson,
+          statsJson: normalizeStatsJson(statsJson),
           loglevel,
           previewUrl,
         };

@@ -162,8 +162,8 @@
       "description": "URL path to be appended when visiting Storybook for the first time"
     },
     "statsJson": {
-      "type": ["boolean", "string"],
-      "description": "Write stats JSON to disk",
+      "type": ["string", "boolean"],
+      "description": "Write stats JSON to disk. Use --stats-json to enable, --no-stats-json to disable, or --stats-json=<directory> for a custom directory. Explicit values, including 'true' and 'false', are directory names. In angular.json, use a boolean or a directory string.",
       "default": false
     },
     "previewUrl": {

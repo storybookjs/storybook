@@ -1,5 +1,3 @@
-import type { ResolvedCoverageOptions } from 'vitest/node';
-
 import type { ReportNode, Visitor } from 'istanbul-lib-report';
 import { ReportBase } from 'istanbul-lib-report';
 
@@ -8,18 +6,14 @@ import type { TestManager } from './test-manager.ts';
 
 export type StorybookCoverageReporterOptions = {
   testManager: TestManager;
-  coverageOptions: ResolvedCoverageOptions | undefined;
 };
 
 class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
   #testManager: StorybookCoverageReporterOptions['testManager'];
 
-  #coverageOptions: StorybookCoverageReporterOptions['coverageOptions'];
-
   constructor(opts: StorybookCoverageReporterOptions) {
     super();
     this.#testManager = opts.testManager;
-    this.#coverageOptions = opts.coverageOptions;
   }
 
   onSummary(node: ReportNode) {
@@ -32,7 +26,7 @@ class StorybookCoverageReporter extends ReportBase implements Partial<Visitor> {
 
     // Fallback to Vitest's default watermarks https://vitest.dev/config/#coverage-watermarks
     const [lowWatermark = 50, highWatermark = 80] =
-      this.#coverageOptions?.watermarks?.statements ?? [];
+      this.#testManager.vitestManager.vitest?.config.coverage.watermarks?.statements ?? [];
 
     const coverageSummary: StoreState['currentRun']['coverageSummary'] = {
       percentage,

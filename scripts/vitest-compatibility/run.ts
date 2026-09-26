@@ -6,7 +6,7 @@ import { fork, execFile, type ChildProcess } from 'node:child_process';
 import { mkdir, readFile, writeFile, readdir, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Channel } from 'storybook/internal/channels';
+import { Channel, type ChannelEvent } from 'storybook/internal/channels';
 import {
   experimental_UniversalStore as UniversalStore,
   internal_universalStatusStore,
@@ -31,7 +31,7 @@ await writeFile(
 );
 await writeFile(
   'Button.jsx',
-  `import React from 'react'; export const Button = () => <button>Ready</button>;`
+  `import React from 'react'; export const unused = () => 'Uncovered'; export const Button = () => <button>Ready</button>;`
 );
 const stories = `import { Button } from './Button.jsx';
 import preview from './.storybook/preview.js';
@@ -48,7 +48,7 @@ await writeFile(
   `import { defineConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 ${version.startsWith('3.') ? '' : "import { playwright } from '@vitest/browser-playwright';"}
-export default defineConfig({ test: { coverage: { provider: 'v8', reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, projects: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: ${version.startsWith('3.') ? "'playwright'" : 'playwright()'}, instances: [{ browser: 'chromium' }] } } }] } });`
+export default defineConfig({ test: { coverage: { provider: 'v8', watermarks: { statements: [90, 100] }, reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, ${version === '3.0.0' ? 'workspace' : 'projects'}: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: ${version.startsWith('3.') ? "'playwright'" : 'playwright()'}, instances: [{ browser: 'chromium' }] } } }] } });`
 );
 let child: ChildProcess | undefined;
 const channel = new Channel({ async: true });
@@ -128,7 +128,10 @@ try {
     },
     stdio: ['ignore', 'inherit', 'inherit', 'ipc'],
   });
-  child.on('message', (event: any) => {
+  child.on('message', (message) => {
+    const event = message as ChannelEvent & {
+      payload: Extract<StoreEvent, { type: 'FATAL_ERROR' }>['payload'];
+    };
     if (event.type === 'ready') ready = true;
     else if (event.type === 'uncaught-error')
       events.push({ type: 'FATAL_ERROR', payload: event.payload });
@@ -161,13 +164,13 @@ try {
   assert.equal(selected.totalTestCount, 1);
   assert.equal((await run(['compatibility--primary'])).componentTestCount.success, 3);
   const covered = await run(undefined, true);
-  assert(covered.coverageSummary, 'Expected custom coverage summary');
+  assert.deepEqual(covered.coverageSummary, { percentage: 80, status: 'negative' });
   assert.equal((await run()).coverageSummary, undefined);
   store.setState((state) => ({ ...state, watching: true }));
   const before = events.length;
   await writeFile(
     'Button.jsx',
-    `import React from 'react'; export const Button = () => <button>Changed</button>;`
+    `import React from 'react'; export const unused = () => 'Uncovered'; export const Button = () => <button>Changed</button>;`
   );
   await waitFor(
     () =>
@@ -182,7 +185,7 @@ try {
   const failed = events.length;
   await writeFile(
     'Button.jsx',
-    `import React from 'react'; export const Button = () => <button>Ready</button>;`
+    `import React from 'react'; export const unused = () => 'Uncovered'; export const Button = () => <button>Ready</button>;`
   );
   await waitFor(
     () =>
@@ -207,7 +210,14 @@ try {
   channel.removeAllListeners();
 }
 
-const nativeCoverage = await Promise.all(
+type ScriptCoverage = {
+  url: string;
+  functions: {
+    functionName: string;
+    ranges: { startOffset: number; endOffset: number; count: number }[];
+  }[];
+};
+const nativeCoverage: { result: ScriptCoverage[] }[] = await Promise.all(
   (await readdir('native-coverage')).map(async (file) =>
     JSON.parse(await readFile(resolve('native-coverage', file), 'utf8'))
   )
@@ -215,11 +225,11 @@ const nativeCoverage = await Promise.all(
 const api = version.startsWith('5.') ? 'standalone' : 'init';
 const executions = nativeCoverage
   .flatMap((coverage) => coverage.result)
-  .filter((script: any) => script.url.includes('/vitest/dist/'))
-  .flatMap((script: any) =>
+  .filter((script) => script.url.includes('/vitest/dist/'))
+  .flatMap((script) =>
     script.functions
-      .filter((fn: any) => fn.functionName === api && fn.ranges[0].count === 3)
-      .map((fn: any) => ({ url: script.url, ...fn }))
+      .filter((fn) => fn.functionName === api && fn.ranges[0].count === 3)
+      .map((fn) => ({ url: script.url, ...fn }))
   );
 assert.equal(
   executions.length,
@@ -234,5 +244,5 @@ await promisify(execFile)(
 );
 const summary = JSON.parse(await readFile('coverage-cli/coverage-summary.json', 'utf8'));
 assert(summary.total.statements.total > 0);
-assert(summary.total.statements.pct > 0);
+assert.equal(summary.total.statements.pct, 80);
 process.stdout.write(`PASS Vitest ${version}: CLI coverage and real ${api} execution evidence\n`);

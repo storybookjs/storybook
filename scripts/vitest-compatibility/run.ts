@@ -56,7 +56,11 @@ export default defineConfig({ test: { coverage: { provider: 'v8', include: ['But
 );
 let child: ChildProcess | undefined;
 const channel = new Channel({ async: true });
-UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
+// Published declarations omit this internal method; the fixture must prepare the packed runtime.
+const internalStore = UniversalStore as typeof UniversalStore & {
+  __prepare(channel: Channel, environment: typeof UniversalStore.Environment.SERVER): void;
+};
+internalStore.__prepare(channel, UniversalStore.Environment.SERVER);
 const inputs = loadCsf(stories, {
   fileName: resolve('Button.stories.jsx'),
   makeTitle: (title) => title,

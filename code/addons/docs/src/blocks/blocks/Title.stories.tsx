@@ -3,7 +3,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 import * as DefaultButtonStories from '../examples/Button.stories';
 import { Title } from './Title';
 
-const meta: Meta<typeof Title> = {
+const meta = {
   component: Title,
   title: 'Blocks/Title',
   parameters: {
@@ -17,7 +17,7 @@ const meta: Meta<typeof Title> = {
     attached: false,
     docsStyles: true,
   },
-};
+} satisfies Meta<typeof Title>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;

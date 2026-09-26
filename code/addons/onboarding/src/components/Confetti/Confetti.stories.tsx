@@ -4,7 +4,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { Confetti } from './Confetti.tsx';
 
-const meta: Meta<typeof Confetti> = {
+const meta = {
   component: Confetti,
   parameters: {
     chromatic: { disableSnapshot: true },
@@ -25,10 +25,10 @@ const meta: Meta<typeof Confetti> = {
       </div>
     ),
   ],
-};
+} satisfies Meta<typeof Confetti>;
 
 export default meta;
 
-type Story = StoryObj<typeof Confetti>;
+type Story = StoryObj<typeof meta>;
 
 export const Default: Story = {};

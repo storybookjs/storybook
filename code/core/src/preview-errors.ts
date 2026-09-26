@@ -393,6 +393,28 @@ export class UnsupportedViewportDimensionError extends StorybookError {
   }
 }
 
+export class ProjectAnnotationsAlreadyAppliedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ProjectAnnotationsAlreadyAppliedError',
+      category: Category.ADDON_VITEST,
+      code: 2,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files',
+      message: dedent`
+        setProjectAnnotations() was called from a Vitest setup file, but @storybook/addon-vitest applies your project annotations itself: your .storybook/preview file and the previews of the addons registered in .storybook/main. Calling it again replaces those annotations, so the call has to go:
+
+        - If it only passes your .storybook/preview annotations, delete the call.
+        - If it passes an addon's annotations, register that addon in the "addons" field of .storybook/main instead.
+        - If it passes custom annotations, move them into .storybook/preview.
+        - If the setup file is shared with a Vitest project that uses portable stories directly, list it only in that project's "setupFiles".
+
+        Run "npx storybook automigrate vitest-setup-file" to remove calls that only pass your .storybook/preview annotations, or @storybook/addon-a11y/preview when that addon is already registered.
+      `,
+    });
+  }
+}
+
 export class ElementA11yParameterError extends StorybookError {
   constructor() {
     super({

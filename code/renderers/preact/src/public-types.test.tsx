@@ -3,7 +3,6 @@
 // this file tests TypeScript types — that's why there are no runtime assertions
 import { describe, it } from 'vitest';
 
-import { satisfies } from 'storybook/internal/common';
 import type { Args, StoryAnnotations, StrictArgs } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
@@ -23,19 +22,19 @@ const Button: FunctionComponent<ButtonProps> = () => h('div', null);
 
 describe('Meta correctly extracts props from component types', () => {
   it('✅ Meta<typeof Component> extracts component props', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good', disabled: false },
-    });
+    } satisfies Meta<typeof Button>;
 
     expectTypeOf(meta.args).toMatchTypeOf<Partial<ButtonProps>>();
   });
 
   it('✅ Meta<Props> still works when passing props directly', () => {
-    const meta = satisfies<Meta<ButtonProps>>()({
+    const meta = {
       component: Button,
       args: { label: 'good', disabled: false },
-    });
+    } satisfies Meta<ButtonProps>;
 
     expectTypeOf(meta.args).toMatchTypeOf<Partial<ButtonProps>>();
   });
@@ -47,10 +46,10 @@ describe('Meta correctly extracts props from component types', () => {
 
 describe('Args can be provided in multiple ways', () => {
   it('✅ All required args may be provided in meta', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good', disabled: false },
-    });
+    } satisfies Meta<typeof Button>;
 
     type Story = StoryObj<typeof meta>;
     const Basic: Story = {};
@@ -61,10 +60,10 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it('✅ Required args may be provided partial in meta and the story', () => {
-    const meta = satisfies<Meta<typeof Button>>()({
+    const meta = {
       component: Button,
       args: { label: 'good' },
-    });
+    } satisfies Meta<typeof Button>;
     const Basic: StoryObj<typeof meta> = {
       args: { disabled: false },
     };
@@ -75,7 +74,7 @@ describe('Args can be provided in multiple ways', () => {
 
   it('❌ The combined shape of meta args and story args must match the required args.', () => {
     {
-      const meta = satisfies<Meta<typeof Button>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<typeof Button>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -85,10 +84,10 @@ describe('Args can be provided in multiple ways', () => {
       expectTypeOf(Basic).toEqualTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<typeof Button>>()({
+      const meta = {
         component: Button,
         args: { label: 'good' },
-      });
+      } satisfies Meta<typeof Button>;
       // @ts-expect-error disabled not provided ❌
       const Basic: StoryObj<typeof meta> = {};
 
@@ -96,7 +95,7 @@ describe('Args can be provided in multiple ways', () => {
       expectTypeOf(Basic).toEqualTypeOf<Expected>();
     }
     {
-      const meta = satisfies<Meta<ButtonProps>>()({ component: Button });
+      const meta = { component: Button } satisfies Meta<ButtonProps>;
       const Basic: StoryObj<typeof meta> = {
         // @ts-expect-error disabled not provided ❌
         args: { label: 'good' },
@@ -174,13 +173,13 @@ describe('Story args can be inferred', () => {
     type ThemeData = 'light' | 'dark';
     type Props = ButtonProps & { theme: ThemeData };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       render: (args) => {
         return h('div', null, args.label);
       },
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { theme: 'light', label: 'good' } };
 
@@ -193,11 +192,11 @@ describe('Story args can be inferred', () => {
   it('Correct args are inferred when type is widened for decorators', () => {
     type Props = ButtonProps & { decoratorArg: number };
 
-    const meta = satisfies<Meta<Props>>()({
+    const meta = {
       component: Button,
       args: { disabled: false },
       decorators: [withDecorator],
-    });
+    } satisfies Meta<Props>;
 
     const Basic: StoryObj<typeof meta> = { args: { decoratorArg: 0, label: 'good' } };
 

@@ -153,10 +153,6 @@ const docs: PresetProperty<'docs'> = (input = {}, options) => {
   return result;
 };
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/react-dom-shim/preset'),
-];
-
 export const viteFinal = async (config: any, options: DocsOptions) => {
   const { plugins = [] } = config;
   const { csfPluginOptions = {} } = options;
@@ -244,7 +240,6 @@ const optimizeViteDeps = [
   '@storybook/addon-docs',
   '@storybook/addon-docs/blocks',
   '@storybook/addon-docs > @mdx-js/react',
-  '@storybook/addon-docs > @storybook/react-dom-shim',
   'react-dom/client',
   'react/jsx-runtime',
   'react',

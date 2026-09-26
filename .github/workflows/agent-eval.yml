@@ -132,6 +132,13 @@ jobs:
 
           echo "has_result_files=true" >> "$GITHUB_OUTPUT"
 
+      - name: Compute offline metrics
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        # Write analysis.json next to each run's result.json so the metrics ride
+        # along in the uploaded artifact.
+        continue-on-error: true
+        run: yarn workspace agent-eval run results:analyze
+
       - name: Archive eval results
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
         # Tar before upload: result files may contain characters (e.g. the colon
@@ -159,8 +166,8 @@ jobs:
           fi
 
       # Vercel CLI commands run from the repository root: the storybook-evals
-      # project's Root Directory setting is agent-eval, and in a monorepo the
-      # CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
+      # project's Root Directory setting is agent-eval, and in a monorepo
+      # the CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
       # or `deploy --prebuilt` resolves trace paths against the wrong base.
       - name: Link Vercel project
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}

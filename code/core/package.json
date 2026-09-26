@@ -72,7 +72,11 @@
       "default": "./dist/babel/index.js"
     },
     "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
-    "./internal/bin/loader": "./dist/bin/loader.js",
+    "./internal/bin/loader": {
+      "types": "./dist/bin/loader.d.ts",
+      "code": "./src/bin/loader.ts",
+      "default": "./dist/bin/loader.js"
+    },
     "./internal/channels": {
       "types": "./dist/channels/index.d.ts",
       "code": "./src/channels/index.ts",

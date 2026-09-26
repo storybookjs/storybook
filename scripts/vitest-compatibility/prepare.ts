@@ -12,7 +12,16 @@ assert(
 );
 assert(['react', 'vue3', 'svelte'].includes(framework));
 const directory = resolve(destination);
-const packages = new Map<string, { path: string; manifest: any }>();
+type Manifest = {
+  name: string;
+  version: string;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+  peerDependencies?: Record<string, string>;
+  optionalDependencies?: Record<string, string>;
+  scripts?: Record<string, string>;
+};
+const packages = new Map<string, { path: string; manifest: Manifest }>();
 for (const category of ['.', 'addons', 'builders', 'frameworks', 'renderers', 'lib']) {
   const parent = join(root, 'code', category);
   for (const entry of await readdir(parent, { withFileTypes: true })) {
@@ -21,8 +30,8 @@ for (const category of ['.', 'addons', 'builders', 'frameworks', 'renderers', 'l
     try {
       const manifest = JSON.parse(await readFile(join(path, 'package.json'), 'utf8'));
       packages.set(manifest.name, { path, manifest });
-    } catch (error: any) {
-      if (error.code !== 'ENOENT') throw error;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
     }
   }
 }
@@ -38,7 +47,7 @@ async function pack(name: string) {
   const manifest = structuredClone(pkg.manifest);
   delete manifest.devDependencies;
   delete manifest.scripts;
-  for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies']) {
+  for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies'] as const) {
     for (const [dependency, range] of Object.entries(manifest[field] ?? {})) {
       if (String(range).startsWith('workspace:')) {
         manifest[field][dependency] = packages.get(dependency)!.manifest.version;
@@ -49,7 +58,7 @@ async function pack(name: string) {
   await writeFile(join(staging, 'package.json'), JSON.stringify(manifest, null, 2));
   await cp(join(pkg.path, 'dist'), join(staging, 'dist'), { recursive: true });
   for (const entry of await readdir(pkg.path)) {
-    if (['templates', 'assets'].includes(entry) || /\.(mjs|cjs|js|ts)$/.test(entry)) {
+    if (['templates', 'assets', 'static'].includes(entry) || /\.(mjs|cjs|js|ts)$/.test(entry)) {
       await cp(join(pkg.path, entry), join(staging, entry), { recursive: true });
     }
   }
@@ -86,6 +95,7 @@ execFileSync('npm', ['install', '--legacy-peer-deps', '--no-audit', '--no-fund']
   stdio: 'inherit',
 });
 await cp(join(import.meta.dirname, 'run.ts'), join(directory, 'run.ts'));
+await cp(join(import.meta.dirname, 'ui.ts'), join(directory, 'ui.ts'));
 await writeFile(
   join(directory, 'environment.json'),
   JSON.stringify(

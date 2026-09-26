@@ -1,12 +1,6 @@
 import { existsSync, readFileSync } from 'node:fs';
 
-import type {
-  CoverageOptions,
-  ResolvedCoverageOptions,
-  TestProject,
-  TestSpecification,
-  Vitest,
-} from 'vitest/node';
+import type { CoverageOptions, TestProject, TestSpecification, Vitest } from 'vitest/node';
 
 import { getProjectRoot, resolvePathInStorybookCache } from 'storybook/internal/common';
 import { Tag } from 'storybook/internal/core-server';
@@ -62,7 +56,6 @@ export class VitestManager {
       '@storybook/addon-vitest/internal/coverage-reporter',
       {
         testManager: this.testManager,
-        coverageOptions: this.vitest?.config?.coverage as ResolvedCoverageOptions | undefined,
       },
     ];
     const coverageOptions = (

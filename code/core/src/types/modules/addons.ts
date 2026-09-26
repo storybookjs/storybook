@@ -39,7 +39,7 @@ export type Addons_ArgTypes<TArgs = Args> = {
 };
 
 export type Addon_Comparator<T> = ((a: T, b: T) => boolean) | ((a: T, b: T) => number);
-export type Addon_StorySortMethod = 'configure' | 'alphabetical';
+export type Addon_StorySortMethod = 'configure' | 'alphabetical' | 'alphabetical-by-kind';
 export interface Addon_StorySortObjectParameter {
   method?: Addon_StorySortMethod;
   order?: any[];

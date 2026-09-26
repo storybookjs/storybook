@@ -2,7 +2,7 @@
 import type { Mock } from 'vitest';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { FC, PropsWithChildren } from 'react';
+import type { FC, PropsWithChildren, ReactNode } from 'react';
 import React, { Profiler, StrictMode, createElement } from 'react';
 
 import PropTypes from 'prop-types';
@@ -336,6 +336,153 @@ describe('renderJsx', () => {
       />
     `);
   });
+
+  // Regression for #26582: with `showDefaultProps: false` every prop equal to the component's
+  // `defaultProps` is hidden, and a boolean prop set to `false` cannot be told apart from the
+  // injected default. A `false` prop is therefore always rendered, while other defaults
+  // (here `backgroundColor` and `size`) are still hidden.
+  it('should render boolean props set to false when the component declares a false default', () => {
+    const Button = ({ label, primary }: { label: string; primary?: boolean }) => (
+      <button type="button">{primary ? `${label}!` : label}</button>
+    );
+    Button.defaultProps = {
+      primary: false,
+      backgroundColor: null,
+      size: 'medium',
+    };
+
+    const Container = ({ children }: PropsWithChildren) => <div>{children}</div>;
+    Container.defaultProps = { className: 'super-container' };
+
+    expect(
+      renderJsx(
+        <Container>
+          <Button label="test" primary={false} />
+        </Container>,
+        { showDefaultProps: false }
+      )
+    ).toMatchInlineSnapshot(`
+      <Container>
+        <Button
+          label="test"
+          primary={false}
+        />
+      </Container>
+    `);
+  });
+
+  // A `false` default that was left out when the element was created is applied to `props` by
+  // React, so it is indistinguishable from an explicit `false` and is rendered as well. Hiding
+  // it again would bring back #26582, where an explicit `false` was hidden too.
+  it('should render boolean props set to false when a false default was not passed explicitly', () => {
+    const Button = ({ label, primary }: { label: string; primary?: boolean }) => (
+      <button type="button">{primary ? `${label}!` : label}</button>
+    );
+    Button.defaultProps = { primary: false, size: 'medium' };
+
+    // `defaultProps` are resolved when the element is created, so the omitted `primary` is already
+    // `false` in the element's props. Asserting that here keeps the snapshot below honest instead
+    // of silently depending on element creation to fill the default in.
+    const element = createElement(Button, { label: 'test' });
+    expect(element.props).toHaveProperty('primary', false);
+
+    expect(renderJsx(element, { showDefaultProps: false })).toMatchInlineSnapshot(`
+      <Button
+        label="test"
+        primary={false}
+      />
+    `);
+  });
+
+  it('should render boolean props set to true as shorthand when the component declares a false default', () => {
+    const Button = ({ label, primary }: { label: string; primary?: boolean }) => (
+      <button type="button">{primary ? `${label}!` : label}</button>
+    );
+    Button.defaultProps = {
+      primary: false,
+      backgroundColor: null,
+      size: 'medium',
+    };
+
+    expect(
+      renderJsx(<Button label="test" primary={true} />, {
+        showDefaultProps: false,
+      })
+    ).toMatchInlineSnapshot(`
+      <Button
+        label="test"
+        primary
+      />
+    `);
+  });
+
+  // `displayName` callbacks are called with the whole element, so they can read `props`.
+  it('passes the element props to a displayName callback', () => {
+    const Button = ({ label, primary }: { label: string; primary?: boolean }) => (
+      <button type="button">{primary ? `${label}!` : label}</button>
+    );
+    Button.defaultProps = { primary: false };
+
+    const displayName = (element: ReactNode) => {
+      const { type, props } = element as unknown as {
+        type: { displayName?: string; name?: string };
+        props: { label: string };
+      };
+      return `${type.displayName || type.name}@${props.label}`;
+    };
+
+    expect(
+      renderJsx(<Button label="test" primary={false} />, { displayName, showDefaultProps: false })
+    ).toMatchInlineSnapshot(`
+      <Button@test
+        label="test"
+        primary={false}
+      />
+    `);
+  });
+
+  it('should still add default props to the string when showDefaultProps is enabled', () => {
+    const Button = ({ label, primary }: { label: string; primary?: boolean }) => (
+      <button type="button">{primary ? `${label}!` : label}</button>
+    );
+    Button.defaultProps = { primary: false };
+
+    expect(renderJsx(<Button label="test" />, { showDefaultProps: true })).toMatchInlineSnapshot(`
+      <Button
+        label="test"
+        primary={false}
+      />
+    `);
+  });
+
+  it('resolves subcomponents with a false default attached as properties of a parent component', () => {
+    // The subcomponent's type carries its own `defaultProps` static instead of relying on `FC`
+    // having one, which the React 19 types removed.
+    type SubComponentType = FC<{ children?: ReactNode; hidden?: boolean }> & {
+      defaultProps?: { hidden?: boolean };
+    };
+    type ModalType = FC<{ children?: ReactNode }> & {
+      Title: SubComponentType;
+    };
+    const Modal = (({ children }: { children?: ReactNode }) => <div>{children}</div>) as ModalType;
+    Modal.Title = (({ children }) => <h2>{children}</h2>) as SubComponentType;
+    Modal.Title.defaultProps = { hidden: false };
+
+    expect(
+      renderJsx(
+        <Modal>
+          <Modal.Title hidden={false}>Hi</Modal.Title>
+        </Modal>,
+        { parentComponent: Modal, showDefaultProps: false }
+      )
+    ).toMatchInlineSnapshot(`
+      <Modal>
+        <Modal.Title hidden={false}>
+          Hi
+        </Modal.Title>
+      </Modal>
+    `);
+  });
 });
 
 // @ts-expect-error (Converted from ts-ignore)
@@ -416,6 +563,27 @@ describe('jsxDecorator', () => {
     // First verify that useState was called with the correct JSX string
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(
       expect.stringContaining('Hello MDX'),
+      context
+    );
+  });
+
+  it('should emit boolean props set to false of a component that declares a false default', () => {
+    const Button = ({ label, primary }: { label: string; primary?: boolean }) => (
+      <button type="button">{primary ? `${label}!` : label}</button>
+    );
+    Button.defaultProps = { primary: false, size: 'medium' };
+
+    const context = makeContext(
+      'boolean-false-default',
+      { __isArgsStory: true },
+      { label: 'test', primary: false },
+      { originalStoryFn: () => <Button label="test" primary={false} /> }
+    );
+
+    jsxDecorator(mockStoryFn, context);
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      expect.stringContaining('primary={false}'),
       context
     );
   });

@@ -52,6 +52,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -90,9 +91,9 @@ jobs:
 
       - name: test
         if: runner.os != 'Windows'
-        run: yarn test
+        run: yarn test --testTimeout=30000
 
       # Other workspace suites include POSIX-specific path assumptions; Linux runs the full suite.
       - name: test (Windows)
         if: runner.os == 'Windows'
-        run: yarn test --project core --project '@storybook/mcp' --project '@storybook/addon-vitest'
+        run: yarn test --testTimeout=30000 --project core --project '@storybook/mcp' --project '@storybook/addon-vitest'

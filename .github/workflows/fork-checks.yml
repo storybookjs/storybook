@@ -79,6 +79,12 @@ jobs:
       - name: Build mcp declarations for package contract tests
         run: yarn nx compile mcp -c production --exclude-task-dependencies
 
+      - name: Build react declarations for package contract tests
+        run: yarn nx compile react -c production --exclude-task-dependencies
+
+      - name: Build vue3 declarations for package contract tests
+        run: yarn nx compile vue3 -c production --exclude-task-dependencies
+
       - name: Install Playwright Dependencies
         run: cd code && yarn exec playwright install chromium --with-deps
 

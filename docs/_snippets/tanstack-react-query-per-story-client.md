@@ -21,17 +21,13 @@ export function queryClientForStory(storyId: string): QueryClient {
   return client;
 }
 
-export function removeStoryClient(storyId: string) {
-  clients.get(storyId)?.clear();
-  clients.delete(storyId);
-}
 ```
 
-```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF 3"
+```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx"
 import { QueryClientProvider } from '@tanstack/react-query';
 import type { Preview } from '@storybook/tanstack-react';
 
-import { queryClientForStory, removeStoryClient } from './query-clients';
+import { queryClientForStory } from './query-clients';
 
 const preview: Preview = {
   parameters: {
@@ -47,50 +43,14 @@ const preview: Preview = {
   },
   decorators: [
     (Story, context) => (
-      // The React tree reads the same per-story client
       <QueryClientProvider client={queryClientForStory(context.id)}>
         <Story />
       </QueryClientProvider>
     ),
   ],
-  // Return the cleanup from beforeEach: it runs after the story
-  // unmounts, so the client is never cleared while still rendering
-  beforeEach: ({ id }) => () => removeStoryClient(id),
 };
 
 export default preview;
-```
-
-```tsx filename=".storybook/preview.tsx" renderer="react" language="tsx" tabTitle="CSF Next 🧪"
-import { QueryClientProvider } from '@tanstack/react-query';
-import { definePreview } from '@storybook/tanstack-react';
-
-import { queryClientForStory, removeStoryClient } from './query-clients';
-
-export default definePreview({
-  parameters: {
-    tanstack: {
-      router: {
-        // The factory runs before the router's initial load, so route
-        // loaders see the story's own client
-        context: ({ storyContext }) => ({
-          queryClient: queryClientForStory(storyContext.id),
-        }),
-      },
-    },
-  },
-  decorators: [
-    (Story, context) => (
-      // The React tree reads the same per-story client
-      <QueryClientProvider client={queryClientForStory(context.id)}>
-        <Story />
-      </QueryClientProvider>
-    ),
-  ],
-  // Return the cleanup from beforeEach: it runs after the story
-  // unmounts, so the client is never cleared while still rendering
-  beforeEach: ({ id }) => () => removeStoryClient(id),
-});
 ```
 
 ```tsx filename="Navbar.stories.ts" renderer="react" language="ts"

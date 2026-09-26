@@ -71,7 +71,7 @@ jobs:
           install-code-deps: true
 
       - name: compile
-        run: yarn task --task compile --start-from=compile
+        run: yarn task --task compile --start-from=compile --prod
 
       - name: Install Playwright Dependencies
         run: cd code && yarn exec playwright install chromium --with-deps

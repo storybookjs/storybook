@@ -2,7 +2,12 @@ import { resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { buildDevStandalone, buildStaticStandalone } from 'storybook/internal/core-server';
+import { getEnvConfig } from 'storybook/internal/common';
+import {
+  buildDevStandalone,
+  buildStaticStandalone,
+  withTelemetry,
+} from 'storybook/internal/core-server';
 import type { CLIOptions } from 'storybook/internal/types';
 
 import {
@@ -12,36 +17,20 @@ import {
 import { Architect } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
+import * as pkg from 'empathic/package';
 import yargs from 'yargs/yargs';
 
 import buildSchema from '../../build-schema.json';
 import startSchema from '../../start-schema.json';
+import { resolveTsconfig } from '../find-tsconfig.ts';
 import buildHandler from './build-storybook/index.ts';
 import startHandler from './start-storybook/index.ts';
 
-vi.mock('storybook/internal/core-server', () => ({
-  buildStaticStandalone: vi.fn(),
-  buildDevStandalone: vi.fn(),
-  withTelemetry: (_event: unknown, _options: unknown, callback: () => Promise<unknown>) =>
-    callback(),
-}));
-
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<object>()),
-  getEnvConfig: vi.fn(),
-}));
-
-vi.mock('storybook/internal/telemetry', () => ({
-  addToGlobalContext: vi.fn(),
-}));
-
-vi.mock('empathic/package', () => ({
-  up: (): null => null,
-}));
-
-vi.mock('../find-tsconfig.ts', () => ({
-  resolveTsconfig: () => resolve('tsconfig.json'),
-}));
+vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
+vi.mock('empathic/package', { spy: true });
+vi.mock('../find-tsconfig.ts', { spy: true });
 
 const statsDirectory = resolve('storybook stats');
 
@@ -66,6 +55,10 @@ describe.each([
 
   beforeEach(() => {
     vi.stubEnv('STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON', undefined);
+    vi.mocked(withTelemetry).mockImplementation((_event, _options, callback) => callback());
+    vi.mocked(getEnvConfig).mockReturnValue(undefined);
+    vi.mocked(pkg.up).mockReturnValue(undefined);
+    vi.mocked(resolveTsconfig).mockReturnValue(resolve('tsconfig.json'));
     vi.mocked(buildStaticStandalone).mockResolvedValue(undefined);
     vi.mocked(buildDevStandalone).mockResolvedValue({
       port: 6006,

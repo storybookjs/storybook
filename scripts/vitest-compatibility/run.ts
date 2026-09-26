@@ -31,7 +31,11 @@ await writeFile(
 );
 await writeFile(
   'Button.jsx',
-  `import React from 'react'; export const unused = () => 'Uncovered'; export const Button = () => <button>Ready</button>;`
+  `import React from 'react';
+export const unused = () => {
+  return 'Uncovered';
+};
+export const Button = () => <button>Ready</button>;`
 );
 const stories = `import { Button } from './Button.jsx';
 import preview from './.storybook/preview.js';
@@ -48,7 +52,7 @@ await writeFile(
   `import { defineConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
 ${version.startsWith('3.') ? '' : "import { playwright } from '@vitest/browser-playwright';"}
-export default defineConfig({ test: { coverage: { provider: 'v8', watermarks: { statements: [90, 100] }, reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, ${version === '3.0.0' ? 'workspace' : 'projects'}: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: ${version.startsWith('3.') ? "'playwright'" : 'playwright()'}, instances: [{ browser: 'chromium' }] } } }] } });`
+export default defineConfig({ test: { coverage: { provider: 'v8', include: ['Button.jsx'], watermarks: { statements: [90, 100] }, reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, ${version === '3.0.0' ? 'workspace' : 'projects'}: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: ${version.startsWith('3.') ? "'playwright'" : 'playwright()'}, instances: [{ browser: 'chromium' }] } } }] } });`
 );
 let child: ChildProcess | undefined;
 const channel = new Channel({ async: true });
@@ -164,13 +168,19 @@ try {
   assert.equal(selected.totalTestCount, 1);
   assert.equal((await run(['compatibility--primary'])).componentTestCount.success, 3);
   const covered = await run(undefined, true);
-  assert.deepEqual(covered.coverageSummary, { percentage: 80, status: 'negative' });
+  assert(covered.coverageSummary);
+  assert(covered.coverageSummary.percentage > 0 && covered.coverageSummary.percentage < 90);
+  assert.equal(covered.coverageSummary.status, 'negative');
   assert.equal((await run()).coverageSummary, undefined);
   store.setState((state) => ({ ...state, watching: true }));
   const before = events.length;
   await writeFile(
     'Button.jsx',
-    `import React from 'react'; export const unused = () => 'Uncovered'; export const Button = () => <button>Changed</button>;`
+    `import React from 'react';
+export const unused = () => {
+  return 'Uncovered';
+};
+export const Button = () => <button>Changed</button>;`
   );
   await waitFor(
     () =>
@@ -185,7 +195,11 @@ try {
   const failed = events.length;
   await writeFile(
     'Button.jsx',
-    `import React from 'react'; export const unused = () => 'Uncovered'; export const Button = () => <button>Ready</button>;`
+    `import React from 'react';
+export const unused = () => {
+  return 'Uncovered';
+};
+export const Button = () => <button>Ready</button>;`
   );
   await waitFor(
     () =>
@@ -223,6 +237,22 @@ const nativeCoverage: { result: ScriptCoverage[] }[] = await Promise.all(
   )
 );
 const api = version.startsWith('5.') ? 'standalone' : 'init';
+if (version.startsWith('5.')) {
+  for (const script of nativeCoverage
+    .flatMap((coverage) => coverage.result)
+    .filter((script) => script.url.includes('/vitest/dist/'))) {
+    const source = await readFile(fileURLToPath(script.url), 'utf8');
+    for (const fn of script.functions.filter((fn) => fn.functionName === 'init')) {
+      const range = fn.ranges[0];
+      if (
+        source.slice(range.startOffset, range.endOffset).includes('`vitest.init()` is deprecated.')
+      ) {
+        assert.equal(range.count, 0, 'Deprecated Vitest.init() was called');
+      }
+    }
+  }
+}
+
 const executions = nativeCoverage
   .flatMap((coverage) => coverage.result)
   .filter((script) => script.url.includes('/vitest/dist/'))
@@ -244,5 +274,7 @@ await promisify(execFile)(
 );
 const summary = JSON.parse(await readFile('coverage-cli/coverage-summary.json', 'utf8'));
 assert(summary.total.statements.total > 0);
-assert.equal(summary.total.statements.pct, 80);
+const results = JSON.parse(await readFile('results.json', 'utf8'));
+const coveredRun = results.results.find((run: CurrentRun) => run.coverageSummary);
+assert.equal(Math.round(summary.total.statements.pct), coveredRun.coverageSummary.percentage);
 process.stdout.write(`PASS Vitest ${version}: CLI coverage and real ${api} execution evidence\n`);

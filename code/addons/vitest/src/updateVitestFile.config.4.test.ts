@@ -1,6 +1,9 @@
-import { join } from 'node:path';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
 import { describe, expect, it, vi } from 'vitest';
+import { createVitest, type Vitest } from 'vitest/node';
 
 import * as babel from 'storybook/internal/babel';
 
@@ -20,6 +23,77 @@ vi.mock('../../../core/src/shared/utils/module', () => ({
 }));
 
 describe('updateConfigFile', () => {
+  it.each(['existing projects', 'single project'])(
+    'preserves shared Vite configuration and isolates unit setup when adding to %s',
+    async (mode) => {
+      const setupFile = resolve('unit-only-setup.js');
+      const source = babel.babelParse(
+        await loadTemplate('vitest.config.4.template', { CONFIG_DIR: '.storybook' })
+      );
+      const target = babel.babelParse(`
+        export default defineConfig({
+          plugins: [{ name: 'shared-plugin' }],
+          resolve: { alias: { 'shared-alias': '/shared' } },
+          test: {
+            ${
+              mode === 'existing projects'
+                ? `projects: [{ extends: true, test: { name: 'unit', setupFiles: [${JSON.stringify(setupFile)}] } }]`
+                : `name: 'unit', setupFiles: [${JSON.stringify(setupFile)}]`
+            }
+          }
+        });
+      `);
+      expect(updateConfigFile(source, target)).toBe(true);
+      const declaration = target.program.body.find(
+        (node) => node.type === 'ExportDefaultDeclaration'
+      )!;
+      const directory = await mkdtemp(join(tmpdir(), 'storybook-vitest-config-'));
+      let vitest: Vitest | undefined;
+      try {
+        const configFile = join(directory, 'vitest.config.mjs');
+        await writeFile(
+          configFile,
+          `
+          import path from 'node:path';
+          import { playwright } from ${JSON.stringify(import.meta.resolve('@vitest/browser-playwright'))};
+          const dirname = ${JSON.stringify(process.cwd())};
+          const defineConfig = (value) => value;
+          const storybookTest = () => ({ name: 'storybook-test-probe' });
+          export default ${babel.generate(declaration.declaration).code};
+        `
+        );
+        vitest = await createVitest('test', {
+          config: configFile,
+          configLoader: 'native',
+          watch: false,
+          reporters: [],
+        });
+        const unit = vitest.projects.find((project) => project.name === 'unit')!;
+        const storybook = vitest.projects.find((project) => project.config.browser.enabled)!;
+        expect(unit.config.setupFiles).toEqual([setupFile]);
+        expect(unit.vite.config.plugins.map((plugin) => plugin.name)).toContain('shared-plugin');
+        expect(unit.vite.config.resolve.alias).toContainEqual({
+          find: 'shared-alias',
+          replacement: '/shared',
+        });
+        expect(storybook.config.setupFiles).toEqual([]);
+        expect(storybook.vite.config.plugins.map((plugin) => plugin.name)).toContain(
+          'shared-plugin'
+        );
+        expect(storybook.vite.config.resolve.alias).toContainEqual({
+          find: 'shared-alias',
+          replacement: '/shared',
+        });
+        expect(storybook.vite.config.plugins.map((plugin) => plugin.name)).toContain(
+          'storybook-test-probe'
+        );
+      } finally {
+        await vitest?.close();
+        await rm(directory, { recursive: true, force: true });
+      }
+    }
+  );
+
   it('updates vite config file with existing projects', async () => {
     const source = babel.babelParse(
       await loadTemplate('vitest.config.4.template', {

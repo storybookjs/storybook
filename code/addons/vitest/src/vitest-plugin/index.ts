@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
+import { version as vitestVersion } from 'vitest/node';
 import type { ViteUserConfig } from 'vitest/config';
 import type {} from '@vitest/browser-playwright';
 
@@ -342,6 +343,12 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
+        resolve: {
+          alias:
+            Number.parseInt(vitestVersion, 10) === 3
+              ? [{ find: /^vitest\/browser$/, replacement: '@vitest/browser/context' }]
+              : [],
+        },
         test: {
           expect: { requireAssertions: false },
 

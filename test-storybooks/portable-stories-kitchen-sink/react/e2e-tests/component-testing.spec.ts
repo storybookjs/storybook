@@ -3,7 +3,7 @@ import path from "node:path";
 
 import { expect, test, type Page } from "@playwright/test";
 
-import { SbPage } from "../../../../code/e2e-sandbox/util";
+import { SbPage } from "../../../../code/e2e-sandbox/util.ts";
 
 const STORYBOOK_URL = "http://localhost:6006";
 const TEST_STORY_PATH = path.resolve(
@@ -119,13 +119,12 @@ test.describe("component testing", () => {
       await clearStatusesButton.click({ force: true });
     }
 
-    const watchModeToggle = page.getByRole("switch", { name: "Watch mode" });
-    if (
-      (await watchModeToggle.isVisible()) &&
-      (await watchModeToggle.getAttribute("aria-checked")) === "true"
-    ) {
-      await watchModeToggle.click({ force: true });
+    const watchModeToggle = page.getByRole("switch", { name: /^Watch mode/ });
+    await expect(watchModeToggle).toBeEnabled({ timeout: 30000 });
+    if (await watchModeToggle.isChecked()) {
+      await watchModeToggle.click();
     }
+    await expect(watchModeToggle).not.toBeChecked();
 
     const configs = [
       page.getByRole("checkbox", { name: "Coverage" }),

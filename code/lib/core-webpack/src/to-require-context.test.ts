@@ -273,7 +273,10 @@ describe('toRequireContext', () => {
       const regex = new RegExp(match);
 
       function isMatched(filePath: string) {
-        const relativePath = `./${relative(base, filePath)}`;
+        // path.relative emits native separators, while the matcher works on
+        // URL-format paths (`/`, the importPathMatcher convention) — normalize
+        // before testing, or on Windows every `\` breaks the comparison.
+        const relativePath = `./${relative(base, filePath)}`.replaceAll('\\', '/');
 
         const baseIncluded = filePath.includes(base);
         const matched = regex.test(relativePath);

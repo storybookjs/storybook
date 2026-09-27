@@ -33,8 +33,8 @@ beforeEach(async () => {
   vi.mocked(readFile).mockImplementation(
     memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
   );
-  enrichCsf.mockReset();
-  enrichCsf.mockResolvedValue(undefined);
+  vi.mocked(enrichCsf).mockReset();
+  vi.mocked(enrichCsf).mockResolvedValue(undefined);
   vol.reset();
   vol.fromJSON({ [id]: source });
 });

@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfEnricher } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
 
@@ -13,6 +13,7 @@ vi.mock('node:fs/promises', { spy: true });
 
 const id = resolve('/project/Button.stories.tsx');
 const context = { getCombinedSourcemap: () => null };
+const enrichCsf = vi.fn<CsfEnricher>();
 
 const source = `
 /** Button component */
@@ -32,6 +33,8 @@ beforeEach(async () => {
   vi.mocked(readFile).mockImplementation(
     memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
   );
+  enrichCsf.mockReset();
+  enrichCsf.mockResolvedValue(undefined);
   vol.reset();
   vol.fromJSON({ [id]: source });
 });
@@ -55,11 +58,9 @@ describe('transformCsf', () => {
   });
 
   it('leaves the source passed to enrichCsf hooks unenriched', async () => {
-    const enrichCsf = vi.fn(async (_csf: CsfFile, _csfSource: CsfFile) => {});
-
     await transform(source, { enrichCsf });
 
-    const [, csfSource] = enrichCsf.mock.calls[0];
+    const [, csfSource] = vi.mocked(enrichCsf).mock.calls[0];
     expect(csfSource._ast.program.body).toHaveLength(2);
   });
 });

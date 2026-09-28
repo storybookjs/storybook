@@ -133,29 +133,21 @@ describe('react-vite-to-tanstack-react', () => {
       expect(result?.hasTanstackRouterDecorator).toBe(true);
     });
 
-    it('detects a tanstack router decorator that lives in a separate config file', async () => {
+    it('detects a manual tanstack router decorator in a story file', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [REACT_VITE_PACKAGE]: '^10.0.0',
         '@tanstack/react-router': '^1.0.0',
       });
 
-      vi.mocked(globby).mockResolvedValueOnce([
-        '/project/.storybook/preview.tsx',
-        '/project/.storybook/decorators.tsx',
-      ]);
-
       vol.fromJSON({
         '/project/.storybook/main.ts': 'export default {};',
-        '/project/.storybook/preview.tsx': `
-        import { withRouter } from './decorators';
-        export const decorators = [withRouter];
-      `,
-        '/project/.storybook/decorators.tsx': `
+        '/project/src/Page.stories.tsx': `
         import { RouterProvider, createRouter, createMemoryHistory } from '@tanstack/react-router';
 
-        export const withRouter = (Story) => {
-          const router = createRouter({ history: createMemoryHistory() });
-          return <RouterProvider router={router}><Story /></RouterProvider>;
+        export default {
+          decorators: [
+            (Story) => <RouterProvider router={createRouter({ history: createMemoryHistory() })} />,
+          ],
         };
       `,
       });
@@ -163,7 +155,7 @@ describe('react-vite-to-tanstack-react', () => {
       const result = await checkFix(reactViteToTanstackReact, {
         ...project,
         packageManager: mockPackageManager,
-        previewConfigPath: '/project/.storybook/preview.tsx',
+        storiesPaths: ['/project/src/Page.stories.tsx'],
       } as unknown as CheckOptions);
 
       expect(result?.hasTanstackRouterDecorator).toBe(true);

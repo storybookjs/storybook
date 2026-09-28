@@ -3,7 +3,6 @@ import { SupportedRenderer } from 'storybook/internal/types';
 
 import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
-import { editConfigSource } from '../pipeline.ts';
 import type { Fix } from '../types.ts';
 
 const hasDocgenProvider = (mainConfig: StorybookConfigRaw): boolean =>
@@ -68,11 +67,7 @@ export const createExperimentalFeatureFix = ({
   },
 
   transform: () => [
-    {
-      filter: { kind: ['main'] },
-      handler: (code, { id }) =>
-        editConfigSource(code, id, (main) => main.set(['features', name], true)),
-    },
+    { filter: { kind: ['main'] }, editConfig: (main) => main.set(['features', name], true) },
   ],
 });
 

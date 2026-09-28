@@ -8,6 +8,7 @@ import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
 import { CanvasRenderer } from './CanvasRenderer.ts';
 import { RendererFactory } from './RendererFactory.ts';
 import { DocsRenderer } from './DocsRenderer.ts';
+import { queueBootstrapping } from './utils/BootstrapQueue.ts';
 
 vi.mock('@angular/platform-browser-dynamic');
 
@@ -281,6 +282,41 @@ describe('RendererFactory', () => {
         expect(global.document.querySelector('#story-2 > story-2').innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
+      });
+    });
+
+    describe('when the story container is removed while its bootstrap is queued', () => {
+      it('should skip bootstrapping the removed story', async () => {
+        @Component({ selector: 'foo', template: '🦊' })
+        class FooComponent {}
+
+        vi.spyOn(console, 'error').mockImplementation(() => {});
+
+        const render = await rendererFactory.getRendererInstance(
+          global.document.getElementById('storybook-docs')
+        );
+
+        const targetDOMNode = global.document.createElement('div');
+        targetDOMNode.id = 'story-1';
+        global.document.getElementById('storybook-docs').appendChild(targetDOMNode);
+
+        const { promise: queueHeld, resolve: releaseQueue } = Promise.withResolvers<null>();
+        queueBootstrapping(() => queueHeld);
+
+        const rendered = render.render({
+          storyFnAngular: {},
+          forced: false,
+          component: FooComponent,
+          targetDOMNode,
+          storyId: 'story-1',
+        });
+
+        await vi.waitFor(() => expect(targetDOMNode.querySelector('story-1')).not.toBeNull());
+        targetDOMNode.remove();
+        releaseQueue(null);
+
+        await expect(rendered).resolves.toBeUndefined();
+        expect(console.error).not.toHaveBeenCalled();
       });
     });
   });

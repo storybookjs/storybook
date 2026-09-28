@@ -92,6 +92,17 @@ export function createASTObjectExpression(
   };
 }
 
+/**
+ * Append a property to an {@link ESTreeAST.ObjectExpression}.
+ * It replaces the array instead of using `push`, because Rollup's parser returns a frozen array for an empty object literal.
+ */
+export function appendASTProperty(
+  node: ESTreeAST.ObjectExpression,
+  property: ESTreeAST.ObjectExpression['properties'][number]
+): void {
+  node.properties = [...node.properties, property];
+}
+
 interface ASTScriptOptions {
   module?: boolean;
   content: SvelteAST.Script['content'];

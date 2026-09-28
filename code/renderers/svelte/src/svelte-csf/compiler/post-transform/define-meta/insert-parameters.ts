@@ -7,7 +7,12 @@ import {
   getDocsPropertyValue,
   getParametersPropertyValue,
 } from '$lib/compiler/post-transform/shared/parameters.js';
-import { createASTObjectExpression, createASTProperty, type ESTreeAST } from '$lib/parser/ast.js';
+import {
+  appendASTProperty,
+  createASTObjectExpression,
+  createASTProperty,
+  type ESTreeAST,
+} from '$lib/parser/ast.js';
 import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
 import { getDefineMetaFirstArgumentObjectExpression } from '$lib/parser/extract/svelte/define-meta.js';
@@ -61,7 +66,8 @@ export function insertDefineMetaParameters(params: Params): void {
       node: defineMetaFirstArgumentObjectExpression,
     }) === -1
   ) {
-    defineMetaFirstArgumentObjectExpression.properties.push(
+    appendASTProperty(
+      defineMetaFirstArgumentObjectExpression,
       createASTProperty('parameters', createASTObjectExpression())
     );
   }
@@ -72,10 +78,13 @@ export function insertDefineMetaParameters(params: Params): void {
       node: defineMetaFirstArgumentObjectExpression,
     }) === -1
   ) {
-    getParametersPropertyValue({
-      filename,
-      node: defineMetaFirstArgumentObjectExpression,
-    }).properties.push(createASTProperty('docs', createASTObjectExpression()));
+    appendASTProperty(
+      getParametersPropertyValue({
+        filename,
+        node: defineMetaFirstArgumentObjectExpression,
+      }),
+      createASTProperty('docs', createASTObjectExpression())
+    );
   }
 
   if (
@@ -84,10 +93,13 @@ export function insertDefineMetaParameters(params: Params): void {
       node: defineMetaFirstArgumentObjectExpression,
     }) === -1
   ) {
-    getDocsPropertyValue({
-      filename,
-      node: defineMetaFirstArgumentObjectExpression,
-    }).properties.push(createASTProperty('description', createASTObjectExpression()));
+    appendASTProperty(
+      getDocsPropertyValue({
+        filename,
+        node: defineMetaFirstArgumentObjectExpression,
+      }),
+      createASTProperty('description', createASTObjectExpression())
+    );
   }
 
   if (
@@ -109,10 +121,11 @@ export function insertDefineMetaParameters(params: Params): void {
     return;
   }
 
-  getDescriptionPropertyValue({
-    filename,
-    node: defineMetaFirstArgumentObjectExpression,
-  }).properties.push(
+  appendASTProperty(
+    getDescriptionPropertyValue({
+      filename,
+      node: defineMetaFirstArgumentObjectExpression,
+    }),
     createASTProperty('component', {
       type: 'Literal',
       value: extractDescription(nodes.svelte.defineMetaVariableDeclaration.leadingComments),

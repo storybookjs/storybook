@@ -9,7 +9,11 @@ import {
   getDocsPropertyValue,
   getDescriptionPropertyValue,
 } from '$lib/compiler/post-transform/shared/parameters.js';
-import { createASTObjectExpression, createASTProperty } from '$lib/parser/ast.js';
+import {
+  appendASTProperty,
+  createASTObjectExpression,
+  createASTProperty,
+} from '$lib/parser/ast.js';
 
 import type { ESTreeAST } from '$lib/parser/ast.js';
 import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
@@ -49,7 +53,8 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
       node: storyPropsObjectExpression,
     }) === -1
   ) {
-    storyPropsObjectExpression.properties.push(
+    appendASTProperty(
+      storyPropsObjectExpression,
       createASTProperty('parameters', createASTObjectExpression())
     );
   }
@@ -61,11 +66,14 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
       node: storyPropsObjectExpression,
     }) === -1
   ) {
-    getParametersPropertyValue({
-      filename,
-      component,
-      node: storyPropsObjectExpression,
-    }).properties.push(createASTProperty('docs', createASTObjectExpression()));
+    appendASTProperty(
+      getParametersPropertyValue({
+        filename,
+        component,
+        node: storyPropsObjectExpression,
+      }),
+      createASTProperty('docs', createASTObjectExpression())
+    );
   }
 
   if (
@@ -75,11 +83,14 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
       node: storyPropsObjectExpression,
     }) === -1
   ) {
-    getDocsPropertyValue({
-      filename,
-      component,
-      node: storyPropsObjectExpression,
-    }).properties.push(createASTProperty('description', createASTObjectExpression()));
+    appendASTProperty(
+      getDocsPropertyValue({
+        filename,
+        component,
+        node: storyPropsObjectExpression,
+      }),
+      createASTProperty('description', createASTObjectExpression())
+    );
   }
 
   if (
@@ -111,11 +122,12 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     return;
   }
 
-  getDescriptionPropertyValue({
-    filename,
-    component,
-    node: storyPropsObjectExpression,
-  }).properties.push(
+  appendASTProperty(
+    getDescriptionPropertyValue({
+      filename,
+      component,
+      node: storyPropsObjectExpression,
+    }),
     createASTProperty('story', {
       type: 'Literal',
       value: dedent(comment.data),

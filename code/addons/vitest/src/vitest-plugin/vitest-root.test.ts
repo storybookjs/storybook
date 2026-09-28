@@ -143,7 +143,13 @@ async function runConfigureVitestHook(plugin: Plugin, include: string[], watch =
 
   await plugin.configureVitest!(context);
 
-  const onStoryFileChanged = vi.mocked(watchStorySpecifiers).mock.calls[0]?.[2];
+  const onStoryFileChanged = (importPath: string, removed: boolean) => {
+    const registered = vi.mocked(watchStorySpecifiers).mock.calls[0]?.[2];
+    if (!registered) {
+      throw new Error('The plugin did not start watching the story specifiers');
+    }
+    registered(importPath, removed);
+  };
   return { watcher, onClose, onStoryFileChanged };
 }
 
@@ -303,6 +309,20 @@ describe('story file selection in watch mode', () => {
     onStoryFileChanged(importPath(HEADER_STORIES), true);
 
     await vi.waitFor(() => expect(include).toEqual(['stories/Button.stories.tsx']));
+    expect(watcher.emit).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the story globs when a story file cannot be re-indexed', async () => {
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { watcher, onStoryFileChanged } = await runConfigureVitestHook(plugin, include);
+
+    vi.mocked(StoryIndexGenerator.prototype.getIndex).mockRejectedValue(
+      new Error('Duplicate stories')
+    );
+    onStoryFileChanged(importPath(HEADER_STORIES), false);
+
+    await vi.waitFor(() => expect(include).toEqual(['stories/**/*.stories.tsx']));
     expect(watcher.emit).not.toHaveBeenCalled();
   });
 

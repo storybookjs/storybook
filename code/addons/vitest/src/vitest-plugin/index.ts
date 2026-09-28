@@ -598,8 +598,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   context.vitest.vite.watcher.emit('add', absolutePath);
                 }
               } catch (err) {
+                context.project.config.include.splice(
+                  0,
+                  context.project.config.include.length,
+                  ...finalOptions.includeStories,
+                  ...getComponentTestPaths()
+                );
                 logger.warn(dedent`
-                  Could not index the stories to update the story files to test.
+                  Could not index the stories to update the story files to test, falling back to the story globs.
                   ${err}
                 `);
               }

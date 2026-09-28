@@ -460,12 +460,13 @@ export async function runFixes({
     const errors = applied.get(f.id)?.errors ?? [];
     fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: f.id })));
     logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
-    if (errors.length > 0) {
-      logger.warn(`${f.id}: ${pluralFiles(errors.length)} skipped`);
-    }
     fixResults[f.id] = FixStatus.SUCCEEDED;
     fixSummary.succeeded.push(f.id);
     taskLog.success(`Ran ${picocolors.cyan(f.id)} migration`);
+    // After `success`, which clears the lines logged while the task log was open.
+    if (errors.length > 0) {
+      logger.warn(`${f.id}: ${pluralFiles(errors.length)} skipped`);
+    }
   }
 
   return { fixResults, fixSummary, addonsToPostinstall, fileFailures };

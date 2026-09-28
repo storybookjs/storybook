@@ -1,5 +1,5 @@
 import { rm, writeFile } from 'node:fs/promises';
-import { join, relative } from 'node:path';
+import { join, relative, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -25,7 +25,8 @@ export const renderFailureReport = (failures: FixFileFailure[], root: string) =>
       '| File | Reason |',
       '| ---- | ------ |',
       ...fixFailures.map(
-        ({ file, message }) => `| \`${cell(relative(root, file))}\` | ${cell(message)} |`
+        ({ file, message }) =>
+          `| \`${cell(relative(root, file))}\` | ${cell(message.replaceAll(`${root}${sep}`, ''))} |`
       ),
     ].join('\n')
   );

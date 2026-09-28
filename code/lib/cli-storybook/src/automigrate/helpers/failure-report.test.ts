@@ -9,7 +9,7 @@ import { fs, vol } from 'memfs';
 
 import { runFixes } from '../index.ts';
 import type { Fix } from '../types.ts';
-import { REPORT_FILE_NAME, reportFileFailures } from './failure-report.ts';
+import { REPORT_FILE_NAME, renderFailureReport, reportFileFailures } from './failure-report.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -105,5 +105,22 @@ describe('file failures', () => {
     await reportFileFailures([]);
 
     expect(fs.existsSync(`/project/${REPORT_FILE_NAME}`)).toBe(false);
+  });
+
+  it('shows paths inside the project relative to its root, in the reason too', () => {
+    const report = renderFailureReport(
+      [
+        {
+          fixId: 'rename-legacy',
+          file: stories[1],
+          message: `EACCES: permission denied, open '${stories[1]}'`,
+        },
+      ],
+      '/project'
+    );
+
+    expect(report).toContain(
+      "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
+    );
   });
 });

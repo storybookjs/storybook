@@ -7,7 +7,8 @@ import { getProjectRoot } from 'storybook/internal/common';
 
 import { fs, vol } from 'memfs';
 
-import { runFixes } from '../index.ts';
+import { automigrate, doAutomigrate, runFixes } from '../index.ts';
+import * as mainConfigFile from './mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { REPORT_FILE_NAME, reportFileFailures } from './failure-report.ts';
 
@@ -90,6 +91,42 @@ describe('file failures', () => {
       | \`src/B.stories.ts\` | legacy is computed \\| cannot rename |
       "
     `);
+  });
+
+  const project = {
+    configDir: '/project/.storybook',
+    packageManager: {} as JsPackageManager,
+    mainConfig: { stories: [] },
+    mainConfigPath: '/project/.storybook/main.ts',
+    storybookVersion: '11.0.0',
+    storiesPaths: stories,
+  };
+
+  it('drops the section of a fix once the user fixed its files by hand', async () => {
+    const options = { ...project, fixes: [renameFix], yes: true, hideMigrationSummary: true };
+    await automigrate({ ...options, isUpgrade: false, isLatest: false });
+    fs.writeFileSync(stories[1], 'export const modern = 2;');
+
+    await automigrate({ ...options, isUpgrade: false, isLatest: false });
+
+    expect(fs.existsSync(`/project/${REPORT_FILE_NAME}`)).toBe(false);
+  });
+
+  it('makes storybook automigrate fail while files are left to migrate by hand', async () => {
+    vi.spyOn(mainConfigFile, 'getStorybookData').mockResolvedValue({
+      ...project,
+      versionInstalled: '11.0.0',
+    } as never);
+
+    await expect(
+      doAutomigrate({
+        configDir: project.configDir,
+        fixes: [renameFix],
+        yes: true,
+        skipInstall: true,
+        skipDoctor: true,
+      })
+    ).rejects.toMatchObject({ data: { errors: [expect.stringContaining('1 file skipped')] } });
   });
 
   it('removes the sections of fixes that ran cleanly, and the file once none is left', async () => {

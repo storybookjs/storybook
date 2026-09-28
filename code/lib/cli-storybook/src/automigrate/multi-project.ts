@@ -29,6 +29,8 @@ export interface AutomigrationCheckResultReport {
   result: any;
   status: 'check_succeeded' | 'check_failed' | 'not_applicable';
   project: ProjectAutomigrationData;
+  /** The fix's hooks went through every file and would change none. */
+  verified?: boolean;
 }
 
 export interface AutomigrationCheckResult<T = any> {
@@ -70,9 +72,10 @@ export async function collectAutomigrationsAcrossProjects(
     fix: Fix,
     project: ProjectAutomigrationData,
     status: 'check_succeeded' | 'check_failed' | 'not_applicable',
-    result?: any
+    result?: any,
+    verified?: boolean
   ) {
-    const report = { project, result, status };
+    const report = { project, result, status, verified };
     const existing = automigrationMap.get(fix.id);
     if (existing) {
       existing.reports.push(report);
@@ -129,7 +132,13 @@ export async function collectAutomigrationsAcrossProjects(
       if (failed) {
         collectResult(fix, project, 'check_failed');
       } else if (!applicable.includes(check)) {
-        collectResult(fix, project, 'not_applicable');
+        collectResult(
+          fix,
+          project,
+          'not_applicable',
+          undefined,
+          result !== null && !!fix.transform && !fix.run
+        );
       } else {
         collectResult(fix, project, 'check_succeeded', result);
       }
@@ -515,6 +524,9 @@ export async function runAutomigrations(
         )
       ),
       ...fileFailures.map(({ fixId }) => fixId),
+      ...detectedAutomigrations
+        .filter(({ reports }) => reports.some(({ verified }) => verified))
+        .map(({ fix }) => fix.id),
     ]);
   }
 

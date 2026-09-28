@@ -49,8 +49,9 @@ transform: () => [
   `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged; use it for text edits such as renaming an import.
 - A hook that throws, an edit that leaves mutation diagnostics, or a file that cannot be read or parsed skips that file for that fix only: the fix still migrates its other files, and later fixes see the file as the last successful hook left it.
   The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run.
-  The summary keeps the sections of fixes that did not run this time, and drops a fix's section once it runs again.
-- A fix fails, and the command exits with an error, when its hooks fail on the main config or on every file they touch; otherwise it succeeds and reports the files it skipped.
+- A fix fails when its hooks fail on the main config; otherwise it succeeds and reports the files it skipped.
+  `storybook automigrate` exits with an error while any fix failed or skipped files.
+- The summary keeps a fix's section until the fix runs again, or until the detection pass finds nothing left for it to change.
 - The runner formats a file that an edit changed with the project's formatter before writing it, so hooks neither check diagnostics nor format; text from a `handler` is written as returned.
 - Hooks see `\n` line endings; a CRLF file is written back with CRLF.
 - Files that no active hook asks for are never read.

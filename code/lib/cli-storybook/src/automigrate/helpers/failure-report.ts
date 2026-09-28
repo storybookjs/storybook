@@ -40,7 +40,7 @@ const renderSections = (failures: FixFileFailure[], root: string) =>
   );
 
 const readSections = async (reportPath: string) => {
-  const report = await readFile(reportPath, 'utf-8').catch(() => '');
+  const report = (await readFile(reportPath, 'utf-8').catch(() => '')).replaceAll('\r\n', '\n');
   return report
     .split(/\n(?=## )/)
     .filter((section) => section.startsWith('## '))

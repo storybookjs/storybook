@@ -201,14 +201,14 @@ describe('a fix whose hooks cannot migrate its files', () => {
     });
   });
 
-  it('fails when no file could be migrated', async () => {
+  it('succeeds and reports the files it could not migrate outside the main config', async () => {
     const { fixResults, fileFailures } = await runFixes({
       ...project,
       fixes: [failOn('stories', 'story'), healthy],
       yes: true,
     });
 
-    expect(fixResults).toEqual({ stories: 'failed', healthy: 'succeeded' });
+    expect(fixResults).toEqual({ stories: 'succeeded', healthy: 'succeeded' });
     expect(fileFailures).toEqual([
       {
         fixId: 'stories',

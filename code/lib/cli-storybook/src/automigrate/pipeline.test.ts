@@ -365,6 +365,14 @@ describe('edit hooks', () => {
     );
   });
 
+  it('writes a file with mixed line endings with LF only', async () => {
+    vol.fromJSON({ [mainConfigPath]: 'export default {\r\n  features: {},\n};\n' });
+
+    await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], { write: true });
+
+    expect(fs.readFileSync(mainConfigPath, 'utf8')).not.toContain('\r');
+  });
+
   it('passes MDX stories to text handlers only', async () => {
     const mdx = '/project/src/Intro.mdx';
     vol.fromJSON({ [mdx]: "import { Meta } from '@storybook/addon-docs/blocks';" });

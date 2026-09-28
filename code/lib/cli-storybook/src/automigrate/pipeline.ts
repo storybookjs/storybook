@@ -213,8 +213,8 @@ export const runTransforms = async (
     }
 
     // Printers emit `\n`, so a CRLF file would otherwise always look changed.
-    const crlf = raw.includes('\r\n');
-    const source = crlf ? raw.replaceAll('\r\n', '\n') : raw;
+    const source = raw.replaceAll('\r\n', '\n');
+    const crlf = source !== raw && !/(?<!\r)\n/.test(raw);
     let code = source;
     // Kept across consecutive edits; dropped when a handler rewrites the text or an edit fails, so
     // the next edit parses `code`, the output of the last hook that succeeded.
@@ -323,7 +323,18 @@ const failuresOnMain = async (
   if (!hooks?.length) {
     return [];
   }
-  const outcomes = await runTransforms(project, [{ fixId: fix.id, hooks }], { write: false });
+  const outcomes = await runTransforms(
+    { ...project, storiesPaths: [] },
+    [
+      {
+        fixId: fix.id,
+        hooks: hooks.map(
+          (hook) => ({ ...hook, filter: { ...hook.filter, kind: ['main'] } }) as FixTransform
+        ),
+      },
+    ],
+    { write: false }
+  );
   return outcomes.get(fix.id)!.errors;
 };
 
@@ -331,8 +342,9 @@ const failuresOnMain = async (
  * Run the selected fixes on one project: each `run` in order, committing its `files` edits, then one
  * apply pass over the hooks of every fix whose `run` succeeded.
  *
- * A fix fails when its `run` throws, when its hooks fail on the main config, or when they fail on
- * every file they touch. A fix whose `run` resolves `false` is skipped and keeps no edits.
+ * A fix fails when its `run` throws or its hooks fail on the main config; its hooks run on the main
+ * config without writing before its `run`, so such a fix changes nothing. A fix whose `run` resolves
+ * `false` is skipped and keeps no edits.
  */
 export const applyFixes = async (
   project: ProjectRunOptions & ProjectPaths,
@@ -365,10 +377,10 @@ export const applyFixes = async (
 
   const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
   for (const { fix } of ran) {
-    const { changed, errors } = applied.get(fix.id) ?? { changed: [], errors: [] };
+    const errors = applied.get(fix.id)?.errors ?? [];
     outcomes.set(
       fix.id,
-      errors.some(({ kind }) => kind === 'main') || (errors.length > 0 && changed.length === 0)
+      errors.some(({ kind }) => kind === 'main')
         ? failed(errors)
         : { status: 'succeeded', fileFailures: errors }
     );

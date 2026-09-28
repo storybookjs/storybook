@@ -137,6 +137,15 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(vol.toJSON()['/project/.storybook/main.ts']).toBe(mainConfig);
     });
 
+    it('fails before changing dependencies when the main config inherits the framework', async () => {
+      vol.fromJSON({ '/project/.storybook/main.ts': "export { default } from '../../base-main';" });
+
+      await expect(runFix(nextjsToNextjsVite, runOptions)).rejects.toThrow(
+        'most likely inherits the framework from a shared config'
+      );
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+    });
+
     it('fails before changing dependencies when the main config cannot be migrated', async () => {
       vol.unlinkSync('/project/.storybook/main.ts');
 

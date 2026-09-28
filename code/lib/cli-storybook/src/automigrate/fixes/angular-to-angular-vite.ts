@@ -19,6 +19,7 @@ import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
+import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
 import type { Fix } from '../types.ts';
 import { findWorkspaceJsonFiles, getTargetGroups, readJsonFile } from './angular-workspace.ts';
 import {
@@ -356,15 +357,10 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     logger.debug(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);
 
-    // `check()` reads the framework off the evaluated config, so it may be inherited from a shared
-    // base file that this migration cannot rewrite.
-    if (!(await files.read(mainConfigPath)).includes(result.framework)) {
-      throw new Error(dedent`
-        The \`framework\` field could not be rewritten in ${mainConfigPath}.
-        That file names no \`${result.framework}\`, so it most likely inherits the framework from a shared config.
-        Point \`framework\` at \`${ANGULAR_VITE_PACKAGE}\` where it is declared, then run this migration again.
-      `);
-    }
+    await assertMainConfigNamesFramework(files, mainConfigPath, result.framework, {
+      from: result.framework,
+      to: ANGULAR_VITE_PACKAGE,
+    });
 
     // Everything that can fail runs before the first dependency change or `add()`.
     const changedPaths = await rewriteWorkspaceJson(

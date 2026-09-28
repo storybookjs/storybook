@@ -101,15 +101,17 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     await doctor({ configDir, packageManager: options.packageManager });
   }
 
-  if (hasFailures(outcome?.fixResults)) {
-    const failedMigrations = Object.entries(outcome?.fixResults ?? {})
-      .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
-      .map(([id, status]) => {
-        const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
-        return `${picocolors.cyan(id)} (${statusLabel})`;
-      });
-
-    throw new AutomigrateError({ errors: failedMigrations });
+  const failedMigrations = Object.entries(outcome?.fixResults ?? {})
+    .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
+    .map(([id, status]) => {
+      const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
+      return `${picocolors.cyan(id)} (${statusLabel})`;
+    });
+  const skippedFiles = [...Map.groupBy(outcome?.fileFailures ?? [], ({ fixId }) => fixId)]
+    .filter(([id]) => outcome?.fixResults[id] === FixStatus.SUCCEEDED)
+    .map(([id, failures]) => `${picocolors.cyan(id)} (${pluralFiles(failures.length)} skipped)`);
+  if (failedMigrations.length > 0 || skippedFiles.length > 0) {
+    throw new AutomigrateError({ errors: [...failedMigrations, ...skippedFiles] });
   }
 };
 
@@ -136,6 +138,7 @@ export const automigrate = async ({
   preCheckFailure?: PreCheckFailure;
   /** Core addons added by fixes that must be configured after dependencies are installed. */
   addonsToPostinstall?: string[];
+  fileFailures: FixFileFailure[];
 } | null> => {
   if (list) {
     logAvailableMigrations();
@@ -188,7 +191,7 @@ export const automigrate = async ({
 
   logger.step('Checking possible migrations..');
 
-  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall, fileFailures } =
+  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall, fileFailures, verified } =
     await runFixes({
       fixes,
       fixId,
@@ -209,6 +212,7 @@ export const automigrate = async ({
     await reportFileFailures(fileFailures, [
       ...fixSummary.succeeded,
       ...fileFailures.map(({ fixId }) => fixId),
+      ...verified,
     ]);
   }
 
@@ -224,7 +228,7 @@ export const automigrate = async ({
     });
   }
 
-  return { fixResults, preCheckFailure, addonsToPostinstall };
+  return { fixResults, preCheckFailure, addonsToPostinstall, fileFailures };
 };
 
 type RunFixesOptions = {
@@ -263,6 +267,8 @@ export async function runFixes({
   fixSummary: FixSummary;
   addonsToPostinstall: string[];
   fileFailures: FixFileFailure[];
+  /** Fixes whose hooks went through every file and would change none. */
+  verified: FixId[];
 }> {
   const fixResults = {} as Record<FixId, FixStatus>;
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
@@ -315,9 +321,13 @@ export async function runFixes({
 
   const fileFailures: FixFileFailure[] = [];
   const applicable = await detectApplicable(project, checked);
+  const verified: FixId[] = [];
   for (const { fix } of checked) {
     if (!applicable.some((check) => check.fix === fix)) {
       fixResults[fix.id] = FixStatus.UNNECESSARY;
+      if (fix.transform && !fix.run) {
+        verified.push(fix.id);
+      }
     }
   }
 
@@ -422,7 +432,7 @@ export async function runFixes({
   }
 
   if (selected.length === 0) {
-    return { fixResults, fixSummary, addonsToPostinstall, fileFailures };
+    return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
   }
 
   const taskLog = prompt.taskLog({ id: 'automigrate-run', title: 'Running automigrations' });
@@ -458,5 +468,5 @@ export async function runFixes({
     taskLog.success('Ran automigrations');
   }
 
-  return { fixResults, fixSummary, addonsToPostinstall, fileFailures };
+  return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
 }

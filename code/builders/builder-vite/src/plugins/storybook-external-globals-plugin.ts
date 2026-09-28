@@ -1,9 +1,11 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
+
+import { previewRuntimePath } from '../utils/preview-runtime-path.ts';
 
 import * as pkg from 'empathic/package';
 import { init, parse } from 'es-module-lexer';
@@ -101,22 +103,37 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
 
         const [imports] = parse(code);
         const src = new MagicString(code);
+        let didRewrite = false;
         imports.forEach(({ n: path, ss: startPosition, se: endPosition }) => {
           const packageName = path;
           if (packageName && globalsList.includes(packageName)) {
             const importStatement = src.slice(startPosition, endPosition);
             const transformedImport = rewriteImport(importStatement, externals, packageName);
             src.update(startPosition, endPosition, transformedImport);
+            didRewrite = true;
           }
         });
 
+        const rewritten = src.toString();
         return {
-          code: src.toString(),
+          code: didRewrite ? ensurePreviewRuntimePrecedesGlobals(rewritten, id) : rewritten,
           map: null,
         };
       },
     },
   } satisfies Plugin;
+}
+
+const bundledPreviewRuntimeDir = `${sep}dist${sep}preview${sep}`;
+
+// setup() assigns these globals from inside the chunked runtime's init wrapper.
+// Importing that module first makes Rollup run init before this binding is read.
+export function ensurePreviewRuntimePrecedesGlobals(code: string, id: string) {
+  if (id.includes(bundledPreviewRuntimeDir)) {
+    return code;
+  }
+
+  return `import ${JSON.stringify(previewRuntimePath)};\n${code}`;
 }
 
 function getDefaultImportReplacement(match: string) {

@@ -17,6 +17,9 @@ type PackageMetadata = {
 // Yarn patches, local paths, git and URL specifiers, and workspaces have no registry version to bump.
 const NON_REGISTRY_SPECIFIER = /^(patch|file|link|portal|git|http|https|workspace):|^git\+/;
 
+const scopeOf = (packageName: string) =>
+  packageName.startsWith('@') ? packageName.slice(0, packageName.indexOf('/')) : null;
+
 // A helping hand when upgrading to `latest`, not a complete solution: the user still has to check
 // other dependencies. See https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
 export const upgradeStorybookRelatedDependencies = {
@@ -53,12 +56,27 @@ export const upgradeStorybookRelatedDependencies = {
       })
     );
 
+    // A package whose scope has siblings that stay behind, like `@nx/storybook` next to `@nx/web`,
+    // keeps its major version: a new major would fall out of step with them.
+    const scopesStayingBehind = new Set(
+      Object.keys(allDependencies)
+        .filter((dependency) => !packageNames.has(dependency))
+        .map(scopeOf)
+        .filter((scope) => scope !== null && scope !== '@storybook')
+    );
     const packageVersions = await Promise.all(
-      [...packageNames].map(async (packageName) => ({
-        packageName,
-        beforeVersion: await packageManager.getInstalledVersion(packageName),
-        afterVersion: await packageManager.latestVersion(packageName),
-      }))
+      [...packageNames].map(async (packageName) => {
+        const beforeVersion = await packageManager.getInstalledVersion(packageName);
+        const keepMajor = !!beforeVersion && scopesStayingBehind.has(scopeOf(packageName));
+        return {
+          packageName,
+          beforeVersion,
+          afterVersion: await packageManager.latestVersion(
+            packageName,
+            keepMajor ? `^${beforeVersion}` : undefined
+          ),
+        };
+      })
     );
     const upgradable = packageVersions.filter(
       (pkg): pkg is PackageMetadata =>

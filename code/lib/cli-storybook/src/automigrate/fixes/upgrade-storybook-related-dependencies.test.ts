@@ -98,4 +98,32 @@ describe('upgrade-storybook-related-dependencies fix', () => {
       }
     `);
   });
+
+  it('keeps the major of a package whose scope has siblings that stay behind', async () => {
+    vi.mocked(docsUtils.getIncompatibleStorybookPackages).mockResolvedValue([
+      {
+        packageName: '@nx/storybook',
+        packageVersion: '22.7.5',
+        availableUpdate: '23.2.1',
+        hasIncompatibleDependencies: true,
+      },
+    ]);
+    const latestVersion = vi.fn(async (_packageName: string, constraint?: string) =>
+      constraint === '^22.7.5' ? '22.9.0' : '23.2.1'
+    );
+
+    const result = await check({
+      packageManager: {
+        getAllDependencies: () => ({ '@nx/storybook': '22.7.5', '@nx/web': '22.7.5' }),
+        latestVersion,
+        getInstalledVersion: async () => '22.7.5',
+      },
+    });
+
+    expect(result).toEqual({
+      upgradable: [
+        { packageName: '@nx/storybook', beforeVersion: '22.7.5', afterVersion: '22.9.0' },
+      ],
+    });
+  });
 });

@@ -1,7 +1,3 @@
-# Storybook
-
-This project has the Storybook MCP server `storybook-dev-mcp`. The tools named below are its tools.
-
 Follow these workflows when working with UI and/or Storybook. Answer questions about component props, API, or usage with the documentation tools — never from source or type definitions.
 
 ## UI Building and Story Writing Workflow

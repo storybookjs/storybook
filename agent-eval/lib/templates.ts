@@ -728,8 +728,13 @@ export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
 // instructions only once the model searches its tools, which it skips for
 // tasks it thinks it can do alone. AGENTS.md is always in its context.
 export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
+  // codex-agents.md mirrors the review-off server instructions, which contradict the review flow.
+  if (isReviewEnabledFor('mcp')) {
+    return;
+  }
+  const instructions = await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8');
   await sandbox.writeFiles({
-    'AGENTS.md': await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8'),
+    'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
   });
 }
 

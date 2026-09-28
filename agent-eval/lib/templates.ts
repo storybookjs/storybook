@@ -738,8 +738,14 @@ export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
     isReviewEnabledFor('mcp') ? CODEX_AGENTS_MD_REVIEW_SOURCE_PATH : CODEX_AGENTS_MD_SOURCE_PATH,
     'utf8'
   );
+  let existing = '';
+  try {
+    existing = `${(await sandbox.readFile('AGENTS.md')).trimEnd()}\n\n`;
+  } catch {
+    // No AGENTS.md in the fixture.
+  }
   await sandbox.writeFiles({
-    'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
+    'AGENTS.md': `${existing}# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
   });
 }
 

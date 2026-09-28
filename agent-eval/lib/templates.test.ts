@@ -71,6 +71,43 @@ describe('enableExperimentalReview', () => {
   });
 });
 
+// The Codex MCP experiment copies the server instructions into AGENTS.md, so a
+// change to them must update the copies too.
+describe('Codex AGENTS.md instructions', async () => {
+  // Imported by path: agent-eval's tsc would otherwise type-check core's sources.
+  const builderPath = join(
+    AGENT_EVAL_ROOT,
+    '..',
+    'code/core/src/cli/skills/content/build-server-instructions.ts'
+  );
+  const { buildServerInstructions } = (await import(builderPath)) as {
+    buildServerInstructions: (options: Record<string, unknown>) => string;
+  };
+  const serverInstructions = (reviewEnabled: boolean) =>
+    buildServerInstructions({
+      transport: 'mcp',
+      devEnabled: true,
+      testSupported: true,
+      docsEnabled: true,
+      changeDetectionEnabled: true,
+      moduleGraphSupported: true,
+      reviewEnabled,
+    }).trim();
+
+  it('match the review-off server instructions', () => {
+    const copy = readFileSync(join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md'), 'utf8');
+    expect(copy.trim()).toBe(serverInstructions(false));
+  });
+
+  it('match the review-on server instructions', () => {
+    const copy = readFileSync(
+      join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents-review.md'),
+      'utf8'
+    );
+    expect(copy.trim()).toBe(serverInstructions(true));
+  });
+});
+
 describe('rewritePackageSpecsForNpm', () => {
   it('rewrites the real addon manifest for npm sandboxes', () => {
     const packageJson = JSON.parse(

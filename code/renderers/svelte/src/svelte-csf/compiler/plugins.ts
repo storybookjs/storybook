@@ -42,6 +42,19 @@ export async function preTransformPlugin(): Promise<Plugin> {
           filename: id,
         });
 
+        // NOTE: Printing the AST again collapses the whitespace between nodes,
+        // which would also remove the newlines from the stories' source code snippets.
+        // So only print it when a codemod changed something.
+        if (transformedSvelteAST === svelteAST) {
+          return {
+            code,
+            map: null,
+            meta: {
+              _storybook_csf_pre_transform: code,
+            },
+          };
+        }
+
         let magicCode = new MagicString(code);
 
         magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));

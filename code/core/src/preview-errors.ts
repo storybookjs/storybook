@@ -312,6 +312,24 @@ export class StatusTypeIdMismatchError extends StorybookError {
   }
 }
 
+export class ArgTypesRemovedFromStoryContextError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ArgTypesRemovedFromStoryContextError',
+      category: Category.PREVIEW_API,
+      code: 17,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach',
+      message: dedent`
+        \`argTypes\` is no longer part of the story context passed to loaders, beforeEach, play and afterEach.
+
+        With server-side docgen the preview only holds the arg types you declared yourself, so this object was incomplete while looking complete.
+        - Read \`args\` for the values passed to the story.
+        - Inspect the resolved arg types in the Controls panel or the ArgTypes doc block.`,
+    });
+  }
+}
+
 export class NextJsSharpError extends StorybookError {
   constructor() {
     super({

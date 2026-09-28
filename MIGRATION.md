@@ -4,6 +4,7 @@
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
+  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
@@ -595,6 +596,38 @@ export default {
 You can also set this parameter at the component or story level. An explicit `true` enables the panel when a broader configuration disables it.
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
+
+### `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+
+The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
+
+With server-side docgen (`features.experimentalDocgenServer`, which becomes the default in Storybook 11), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+
+```ts
+// Before
+export const Primary: Story = {
+  play: async ({ argTypes, args }) => {
+    for (const name of Object.keys(argTypes)) {
+      // ...
+    }
+  },
+};
+
+// After
+export const Primary: Story = {
+  play: async ({ args }) => {
+    for (const name of Object.keys(args)) {
+      // ...
+    }
+  },
+};
+```
+
+- Use `args` for the values passed to the story. Iterate `Object.keys(args)` instead of `Object.keys(argTypes)`.
+- To see the resolved arg types, including those inferred from your component, use the Controls panel or the `ArgTypes` doc block.
+- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
+
+Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
 
 ### Node.js 22.12 or higher
 

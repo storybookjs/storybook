@@ -1,5 +1,19 @@
 # @storybook/addon-svelte-csf
 
+## 5.1.4
+
+### Patch Changes
+
+- [#364](https://github.com/storybookjs/addon-svelte-csf/pull/364) [`e82c53e`](https://github.com/storybookjs/addon-svelte-csf/commit/e82c53e43bf3a6bfbbdf0d883e78e98178c2108c) Thanks [@JReinhold](https://github.com/JReinhold)! - Keep the newlines between elements in generated code snippets.
+
+- [#348](https://github.com/storybookjs/addon-svelte-csf/pull/348) [`07c809e`](https://github.com/storybookjs/addon-svelte-csf/commit/07c809e2a6e105c639c2e116c661461da615d1cf) Thanks [@XIYO](https://github.com/XIYO)! - Fix a compile error in the legacy `Template` and `Story` components when `compilerOptions.runes` is `true`.
+
+- [#343](https://github.com/storybookjs/addon-svelte-csf/pull/343) [`568a01f`](https://github.com/storybookjs/addon-svelte-csf/commit/568a01fe48fc80278724acd0c5fd2f38930aaead) Thanks [@lukethacoder](https://github.com/lukethacoder)! - Fix duplicated `children`, unneeded `{"..."}` wrappers and the `<undefined>` wrapper in generated code snippets.
+
+- [#358](https://github.com/storybookjs/addon-svelte-csf/pull/358) [`1935dce`](https://github.com/storybookjs/addon-svelte-csf/commit/1935dced9450cef1fd67dc78b82f8678c47e53e7) Thanks [@Maxwell-II](https://github.com/Maxwell-II)! - Keep the primary component's story args type when `defineMeta` includes subcomponents.
+
+- [#356](https://github.com/storybookjs/addon-svelte-csf/pull/356) [`aab0dfa`](https://github.com/storybookjs/addon-svelte-csf/commit/aab0dfac42fad65017c014a7e74b71ee4eff1eb5) Thanks [@madonoharu](https://github.com/madonoharu)! - Load the Svelte config once in the story indexer instead of once per stories file.
+
 ## 5.1.3
 
 ### Patch Changes

@@ -87,7 +87,7 @@ export const ToolbarComp = React.memo<ToolData>(function ToolbarComp({
     sectionRef
   );
 
-  return isShown ? (
+  return isShown && (tools.length > 0 || toolsExtra.length > 0) ? (
     <StyledSection
       className="sb-bar"
       key="toolbar"

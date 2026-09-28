@@ -1,5 +1,13 @@
 # @storybook/addon-svelte-csf
 
+## 5.1.3
+
+### Patch Changes
+
+- [#353](https://github.com/storybookjs/addon-svelte-csf/pull/353) [`af5023e`](https://github.com/storybookjs/addon-svelte-csf/commit/af5023ed764a1bc1f51c766dc0b96501e3398d21) Thanks [@ndelangen](https://github.com/ndelangen)! - Broaden the `@storybook/svelte` peer dependency range to include Storybook `10.5` and `10.6` prereleases.
+
+- [#359](https://github.com/storybookjs/addon-svelte-csf/pull/359) [`eac8820`](https://github.com/storybookjs/addon-svelte-csf/commit/eac8820a2840fe6ae8784f909fe2e7379c14a0b2) Thanks [@JReinhold](https://github.com/JReinhold)! - Broaden Storybook peer dependency ranges to include 11.0 canaries.
+
 ## 5.1.2
 
 ### Patch Changes

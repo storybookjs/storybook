@@ -38,6 +38,12 @@ export const printDuration = (startTime: [number, number]) =>
 
 const corePath = dirname(fileURLToPath(import.meta.resolve('storybook/package.json')));
 
+const previewDistDir = (features: Options['features']) =>
+  join(
+    corePath,
+    features?.experimentalChunkedPreviewRuntime ? 'dist/preview-chunked' : 'dist/preview'
+  );
+
 let compilation: ReturnType<typeof webpackDevMiddleware> | undefined;
 let reject: (reason?: any) => void;
 let activeCompiler: import('webpack').Compiler | undefined;
@@ -206,7 +212,7 @@ const starter: StarterFunction = async function* starterGeneratorFn({
 
   compilation = webpackDevMiddleware(compiler, middlewareOptions);
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = previewDistDir(options.features);
   router.use(
     '/sb-preview',
     sirv(previewResolvedDir, {
@@ -320,7 +326,7 @@ const builder: BuilderFunction = async function* builderGeneratorFn({ startTime,
     });
   });
 
-  const previewResolvedDir = join(corePath, 'dist/preview');
+  const previewResolvedDir = previewDistDir(options.features);
   const previewDirTarget = join(options.outputDir || '', `sb-preview`);
   const previewFiles = cp(previewResolvedDir, previewDirTarget, {
     filter: (src) => {

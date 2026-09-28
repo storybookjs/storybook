@@ -1,11 +1,12 @@
 import { existsSync, watch } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 
-import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
 import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, join, relative } from 'pathe';
 import picocolors from 'picocolors';
+import type { Plugin as RolldownPlugin } from 'rolldown';
+import { rolldown } from 'rolldown';
 import { dedent } from 'ts-dedent';
 
 import { globalsModuleInfoMap } from '../../../code/core/src/manager/globals/globals-module-info.ts';
@@ -17,6 +18,7 @@ import {
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module.ts';
 import {
   type BuildEntries,
+  type BuildEntry,
   type EntryType,
   type EsbuildContextOptions,
   getExternal,
@@ -33,6 +35,30 @@ const DIR_METAFILE_BASE = join(
   'esbuild-metafiles'
 );
 export const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+
+function rolldownGlobalExternalsPlugin(): RolldownPlugin {
+  const prefix = '\0storybook-global:';
+
+  return {
+    name: 'storybook-global-externals',
+    resolveId(id) {
+      return id in globalsModuleInfoMap ? `${prefix}${id}` : null;
+    },
+    load(id) {
+      if (!id.startsWith(prefix)) {
+        return null;
+      }
+
+      const moduleName = id.slice(prefix.length) as keyof typeof globalsModuleInfoMap;
+      const { namedExports, varName } = globalsModuleInfoMap[moduleName];
+      const exports = namedExports.map(
+        (name) => `export const ${name} = ${varName}[${JSON.stringify(name)}];`
+      );
+
+      return [...exports, `export default ${varName};`].join('\n');
+    },
+  };
+}
 
 /*
  * This plugin writes the metafile to a file in the output directory.
@@ -164,6 +190,53 @@ export async function generateBundle({
     },
   } as const satisfies EsbuildContextOptions;
 
+  const buildChunkedRuntimeEntry = async ({
+    entryPoint,
+    outDir,
+    chunkDir,
+    useGlobals,
+  }: {
+    entryPoint: string;
+    outDir: string;
+    chunkDir: string;
+    useGlobals: boolean;
+  }) => {
+    const name = basename(entryPoint).replace(/\.[^.]+$/, '');
+    const alias = Object.fromEntries(
+      Object.entries(runtimeOptions.alias).map(([key, value]) => [
+        key,
+        value.startsWith('.') ? join(DIR_CWD, value) : value,
+      ])
+    );
+    const build = await rolldown({
+      cwd: DIR_CWD,
+      input: { [name]: entryPoint },
+      platform: 'browser',
+      plugins: useGlobals ? [rolldownGlobalExternalsPlugin()] : [],
+      resolve: {
+        alias,
+        conditionNames: ['browser', 'module', 'default'],
+      },
+      transform: {
+        define: runtimeOptions.define,
+        jsx: 'react',
+      },
+      treeshake: true,
+    });
+
+    await build.write({
+      dir: join(DIR_CWD, 'dist'),
+      format: 'es',
+      entryFileNames: `${outDir}/[name].js`,
+      chunkFileNames: `${outDir}/${chunkDir}/${name}-[hash].js`,
+      strictExecutionOrder: true,
+      codeSplitting: {
+        groups: [{ name, maxSize: 500 * 1024 }],
+      },
+    });
+    await build.close();
+  };
+
   const contexts: Array<ReturnType<typeof esbuild.context>> = [];
 
   if (entries.node) {
@@ -236,11 +309,23 @@ export async function generateBundle({
     );
   }
 
-  if (entries.runtime) {
+  const isReplacingChunking = (chunking: BuildEntry['chunkedRuntime']) => chunking === true;
+  const sideDir = (chunking: BuildEntry['chunkedRuntime']) =>
+    typeof chunking === 'object' ? chunking.sideDir : undefined;
+
+  const regularRuntimeEntries = entries.runtime?.filter(
+    (entry) => !isReplacingChunking(entry.chunkedRuntime)
+  );
+  const replacingChunkedEntries = entries.runtime?.filter((entry) =>
+    isReplacingChunking(entry.chunkedRuntime)
+  );
+  const sideChunkedEntries = entries.runtime?.filter((entry) => sideDir(entry.chunkedRuntime));
+
+  if (regularRuntimeEntries?.length) {
     contexts.push(
       esbuild.context({
         ...runtimeOptions,
-        entryPoints: entries.runtime.map(({ entryPoint }) => entryPoint),
+        entryPoints: regularRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
           metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
@@ -249,21 +334,33 @@ export async function generateBundle({
     );
   }
 
-  if (entries.globalizedRuntime) {
-    contexts.push(
-      esbuild.context({
-        ...runtimeOptions,
-        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
-        plugins: [
-          ...runtimeOptions.plugins,
-          globalExternals(globalsModuleInfoMap),
-          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
-        ],
-      })
-    );
-  }
-
   const compile = await Promise.all(contexts);
+  await Promise.all([
+    ...(replacingChunkedEntries ?? []).map(({ entryPoint }) =>
+      buildChunkedRuntimeEntry({
+        entryPoint,
+        outDir: 'manager',
+        chunkDir: '_manager-chunks',
+        useGlobals: false,
+      })
+    ),
+    ...(sideChunkedEntries ?? []).map(({ entryPoint, chunkedRuntime }) =>
+      buildChunkedRuntimeEntry({
+        entryPoint,
+        outDir: sideDir(chunkedRuntime)!,
+        chunkDir: '_chunks',
+        useGlobals: false,
+      })
+    ),
+    ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
+      buildChunkedRuntimeEntry({
+        entryPoint,
+        outDir: 'manager',
+        chunkDir: '_manager-chunks',
+        useGlobals: true,
+      })
+    ),
+  ]);
 
   await Promise.all(
     compile.map(async (context) => {

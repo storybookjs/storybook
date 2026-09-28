@@ -239,11 +239,13 @@ const config: BuildEntries = {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
+        chunkedRuntime: { sideDir: 'preview-chunked' },
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],
         entryPoint: './src/manager/globals-runtime.ts',
         dts: false,
+        chunkedRuntime: true,
       },
       /**
        * It is required to be a runtime entry point, because it is used to inject the mocker runtime

@@ -655,6 +655,18 @@ export interface StorybookFeatures {
   experimentalDocgenServer?: boolean;
 
   /**
+   * Split the prebuilt preview runtime so shipped files stay under 1MB.
+   *
+   * Webpack serves the chunked build at `/sb-preview`. Vite aliases that same build
+   * and caps output chunks (Rolldown `maxSize` on Vite 8; Rollup keeps the pre-split
+   * preview modules in their own chunks).
+   *
+   * @default false
+   * @experimental
+   */
+  experimentalChunkedPreviewRuntime?: boolean;
+
+  /**
    * Enable change detection
    * @default true
    */

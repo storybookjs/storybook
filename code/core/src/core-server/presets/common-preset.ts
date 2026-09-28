@@ -244,6 +244,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   backgrounds: true,
   changeDetection: true,
   componentsManifest: false,
+  experimentalChunkedPreviewRuntime: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
   // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling

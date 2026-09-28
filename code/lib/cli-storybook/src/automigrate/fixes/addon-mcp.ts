@@ -4,6 +4,7 @@ import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
+import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import type { Fix } from '../types.ts';
 
 const ADDON_MCP = '@storybook/addon-mcp';
@@ -26,12 +27,16 @@ export const addonMcp: Fix = {
 
   async run({ packageManager, configDir }) {
     // `add` also refreshes an already-configured addon without duplicating it in main config.
-    await add(ADDON_MCP, {
-      configDir,
-      packageManager: packageManager.type,
-      skipInstall: true,
-      skipPostinstall: true,
-      yes: true,
-    });
+    await add(
+      ADDON_MCP,
+      {
+        configDir,
+        packageManager: packageManager.type,
+        skipInstall: true,
+        skipPostinstall: true,
+        yes: true,
+      },
+      automigrationLogger
+    );
   },
 };

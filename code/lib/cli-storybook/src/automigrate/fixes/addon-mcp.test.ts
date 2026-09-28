@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import { detectAgent } from 'storybook/internal/telemetry';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -55,6 +56,10 @@ describe('addon-mcp', () => {
       configDir: '.storybook',
     } as RunOptions<object>);
 
-    expect(vi.mocked(add)).toHaveBeenCalledWith('@storybook/addon-mcp', addArgs);
+    expect(vi.mocked(add)).toHaveBeenCalledWith(
+      '@storybook/addon-mcp',
+      addArgs,
+      expect.objectContaining({ log: logger.debug })
+    );
   });
 });

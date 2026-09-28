@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { fs as memfs, vol } from 'memfs';
 
-import { ManifestManager } from './manifest-manager.ts';
+import { CemManager } from './cem-manager.ts';
 import type { ManifestPackage } from './types.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -69,10 +69,10 @@ const writeManifest = (
   memfs.utimesSync(path, new Date(mtimeMs), new Date(mtimeMs));
 };
 
-describe('ManifestManager', () => {
+describe('CemManager', () => {
   it('shares one in-flight refresh between concurrent callers', async () => {
     writeManifest(MANIFEST_PATH, manifest('x-card'));
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     const [first, second] = await Promise.all([manager.refresh(), manager.refresh()]);
 
@@ -83,7 +83,7 @@ describe('ManifestManager', () => {
 
   it('resolves changed tags after mtime bumps', async () => {
     writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     expect((await manager.refresh()).tags.get('x-old')?.declaration.name).toBe('XElement');
 
@@ -96,7 +96,7 @@ describe('ManifestManager', () => {
 
   it('does not re-read an invalid manifest until its mtime changes', async () => {
     writeManifest(MANIFEST_PATH, '{nope', 1_000);
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     expect((await manager.refresh()).errors).toMatchObject([{ name: 'manifest-invalid' }]);
     expect((await manager.refresh()).errors).toMatchObject([{ name: 'manifest-invalid' }]);
@@ -124,7 +124,7 @@ describe('ManifestManager', () => {
     'keeps the last valid manifest when reload sees $name',
     async ({ source, expectedWarning }) => {
       writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
-      const manager = new ManifestManager([MANIFEST_PATH]);
+      const manager = new CemManager([MANIFEST_PATH]);
       await manager.refresh();
 
       writeManifest(MANIFEST_PATH, source, 2_000);
@@ -140,7 +140,7 @@ describe('ManifestManager', () => {
   );
 
   it('reports a missing manifest as manifest-not-found', async () => {
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     expect(await manager.refresh()).toMatchObject({
       errors: [
@@ -156,7 +156,7 @@ describe('ManifestManager', () => {
   });
 
   it('loads a manifest that appears after it was missing at startup', async () => {
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     expect((await manager.refresh()).tags.size).toBe(0);
 
@@ -170,7 +170,7 @@ describe('ManifestManager', () => {
 
   it('keeps schema-violating manifests with a warning', async () => {
     writeManifest(MANIFEST_PATH, schemaWarningManifest());
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     const tag = (await manager.refresh()).tags.get('x-schema');
 
@@ -214,7 +214,7 @@ describe('ManifestManager', () => {
         },
       ],
     } as unknown as ManifestPackage);
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
 
     const snapshot = await manager.refresh();
     const tag = snapshot.tags.get('x-good');
@@ -227,7 +227,7 @@ describe('ManifestManager', () => {
 
   it('keeps the handed-out schema warning snapshot untouched after a failed reload', async () => {
     writeManifest(MANIFEST_PATH, schemaWarningManifest(), 1_000);
-    const manager = new ManifestManager([MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH]);
     const loaded = await manager.refresh();
     const schemaWarning = loaded.tags.get('x-schema')?.warning;
 
@@ -242,7 +242,7 @@ describe('ManifestManager', () => {
   it('resolves duplicate tags from the first manifest in configuration order', async () => {
     writeManifest(MANIFEST_PATH, manifest('x-same', 'FirstElement'));
     writeManifest(SECOND_MANIFEST_PATH, manifest('x-same', 'SecondElement'));
-    const manager = new ManifestManager([MANIFEST_PATH, SECOND_MANIFEST_PATH]);
+    const manager = new CemManager([MANIFEST_PATH, SECOND_MANIFEST_PATH]);
 
     expect((await manager.refresh()).tags.get('x-same')?.declaration.name).toBe('FirstElement');
   });

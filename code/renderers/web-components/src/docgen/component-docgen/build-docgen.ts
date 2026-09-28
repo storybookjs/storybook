@@ -4,7 +4,7 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 import { resolve } from 'node:path';
 
 import { mapArgTypes } from './arg-types/map-arg-types.ts';
-import type { ManifestSnapshot } from './manifest/manifest-manager.ts';
+import type { CemSnapshot } from './manifest/cem-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
 import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
 import { trimmedOrUndefined } from './utils.ts';
@@ -24,7 +24,7 @@ export type WebComponentsDocgenPayload = DocgenPayload & {
 };
 
 export interface BuildDocgenContext {
-  manifests: ManifestSnapshot;
+  cem: CemSnapshot;
   typeProperty: string;
 }
 
@@ -61,14 +61,14 @@ export function buildDocgenPayload(
 
   const { tag } = resolved;
 
-  const found = context.manifests.tags.get(tag);
+  const found = context.cem.tags.get(tag);
   if (!found) {
     return fail(
       tag,
-      context.manifests.errors[0] ?? {
+      context.cem.errors[0] ?? {
         name: 'tag-not-found',
         message:
-          `No declaration for "${tag}" was found in ${context.manifests.paths.join(', ')}. ` +
+          `No declaration for "${tag}" was found in ${context.cem.paths.join(', ')}. ` +
           'If the element is new, rerun the custom elements manifest analyzer.',
       }
     );

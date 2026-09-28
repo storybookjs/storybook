@@ -10,44 +10,44 @@ import { isFailedManifest, loadManifest, type FailedManifest } from './load-mani
 import type { ManifestDeclaration } from './types.ts';
 import { validateManifest } from './validate-manifest.ts';
 
-export interface ManifestTag {
+export interface CemTag {
   declaration: ManifestDeclaration;
   /** Path relative to `process.cwd()`, as shown in messages and payloads. */
   manifestPath: string;
   warning?: string;
 }
 
-export interface ManifestSnapshot {
+export interface CemSnapshot {
   /** First manifest in configuration order wins a tag. */
-  tags: ReadonlyMap<string, ManifestTag>;
+  tags: ReadonlyMap<string, CemTag>;
   /** Manifests that contribute nothing: missing or invalid with no last valid version. */
   errors: DocgenError[];
   /** Relative paths of every configured manifest, for messages. */
   paths: string[];
 }
 
-interface ManifestEntry {
+interface CemEntry {
   path: string;
   tags: TagIndex;
   warning?: string;
 }
 
-interface ManifestState {
+interface CemState {
   absolutePath: string;
   path: string;
   /** Last observed mtime, whether the load succeeded or failed. */
   mtimeMs?: number;
   /** Last good index; together with `error` it means stale. */
-  entry?: ManifestEntry;
+  entry?: CemEntry;
   /** Missing (`manifest-not-found`) or invalid; without `entry` the manifest contributes nothing. */
   error?: DocgenError;
   lastLogged?: string;
 }
 
-export class ManifestManager {
-  private states: ManifestState[];
+export class CemManager {
+  private states: CemState[];
 
-  private refreshPromise?: Promise<ManifestSnapshot>;
+  private refreshPromise?: Promise<CemSnapshot>;
 
   constructor(absolutePaths: string[]) {
     this.states = absolutePaths.map((absolutePath) => ({
@@ -57,19 +57,19 @@ export class ManifestManager {
   }
 
   /** Re-stats every path, reloads what changed, and shares concurrent refreshes. */
-  refresh(): Promise<ManifestSnapshot> {
+  refresh(): Promise<CemSnapshot> {
     this.refreshPromise ??= this.refreshStates().finally(() => {
       this.refreshPromise = undefined;
     });
     return this.refreshPromise;
   }
 
-  private async refreshStates(): Promise<ManifestSnapshot> {
+  private async refreshStates(): Promise<CemSnapshot> {
     this.states = await Promise.all(this.states.map((state) => this.refreshState(state)));
     return buildSnapshot(this.states);
   }
 
-  private async refreshState(state: ManifestState): Promise<ManifestState> {
+  private async refreshState(state: CemState): Promise<CemState> {
     try {
       const stats = await stat(state.absolutePath);
       if (state.mtimeMs === stats.mtimeMs) {
@@ -79,7 +79,7 @@ export class ManifestManager {
     } catch (error) {
       if (isNotFound(error)) {
         const notFound = missingManifestError(state.path);
-        const nextState: ManifestState = {
+        const nextState: CemState = {
           absolutePath: state.absolutePath,
           path: state.path,
           error: notFound,
@@ -92,19 +92,19 @@ export class ManifestManager {
     }
   }
 
-  private async loadChangedManifest(state: ManifestState, mtimeMs: number): Promise<ManifestState> {
+  private async loadChangedManifest(state: CemState, mtimeMs: number): Promise<CemState> {
     const loaded = await loadManifest(state.absolutePath);
     if (isFailedManifest(loaded)) {
       return this.failedState(state, loaded.error, mtimeMs);
     }
 
     const warning = warningForViolations(loaded.path, validateManifest(loaded.manifest));
-    const entry: ManifestEntry = {
+    const entry: CemEntry = {
       path: loaded.path,
       tags: buildTagIndex(loaded.manifest),
       ...(warning ? { warning } : {}),
     };
-    const nextState: ManifestState = {
+    const nextState: CemState = {
       absolutePath: state.absolutePath,
       path: state.path,
       mtimeMs,
@@ -119,13 +119,9 @@ export class ManifestManager {
     return nextState;
   }
 
-  private failedState(
-    state: ManifestState,
-    error: DocgenError,
-    mtimeMs: number | undefined
-  ): ManifestState {
+  private failedState(state: CemState, error: DocgenError, mtimeMs: number | undefined): CemState {
     if (state.entry) {
-      const nextState: ManifestState = {
+      const nextState: CemState = {
         absolutePath: state.absolutePath,
         path: state.path,
         mtimeMs,
@@ -137,7 +133,7 @@ export class ManifestManager {
       return nextState;
     }
 
-    const nextState: ManifestState = {
+    const nextState: CemState = {
       absolutePath: state.absolutePath,
       path: state.path,
       mtimeMs,
@@ -148,7 +144,7 @@ export class ManifestManager {
     return nextState;
   }
 
-  private warnOnce(state: ManifestState, message: string): void {
+  private warnOnce(state: CemState, message: string): void {
     if (state.lastLogged === message) {
       return;
     }
@@ -156,7 +152,7 @@ export class ManifestManager {
     logger.warn(message);
   }
 
-  private debugOnce(state: ManifestState, message: string): void {
+  private debugOnce(state: CemState, message: string): void {
     if (state.lastLogged === message) {
       return;
     }
@@ -165,8 +161,8 @@ export class ManifestManager {
   }
 }
 
-function buildSnapshot(states: ManifestState[]): ManifestSnapshot {
-  const tags = new Map<string, ManifestTag>();
+function buildSnapshot(states: CemState[]): CemSnapshot {
+  const tags = new Map<string, CemTag>();
   const errors: DocgenError[] = [];
   const paths = states.map(({ path }) => path);
 

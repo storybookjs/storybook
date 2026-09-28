@@ -4,7 +4,7 @@ import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import type { WebComponentsDocgenOptions } from './component-docgen/build-docgen.ts';
 import { buildDocgenPayload } from './component-docgen/build-docgen.ts';
-import { ManifestManager } from './component-docgen/manifest/manifest-manager.ts';
+import { CemManager } from './component-docgen/manifest/cem-manager.ts';
 
 export const createDocgenProvider = ({
   manifestPaths,
@@ -20,11 +20,11 @@ export const createDocgenProvider = ({
         return undefined;
       }
 
-      return new ManifestManager(manifestPaths);
+      return new CemManager(manifestPaths);
     },
     extract: async (manager, input) =>
       buildDocgenPayload(input, {
-        manifests: await manager.refresh(),
+        cem: await manager.refresh(),
         typeProperty,
       }),
   });

@@ -8,7 +8,7 @@ import { fs as memfs, vol } from 'memfs';
 
 import type { BuildDocgenContext } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
-import type { ManifestTag } from './manifest/manifest-manager.ts';
+import type { CemTag } from './manifest/cem-manager.ts';
 import type { ManifestDeclaration } from './manifest/types.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -45,11 +45,11 @@ const context = ({
   loadErrors = [],
   paths = ['custom-elements.json'],
 }: {
-  tags?: [string, ManifestTag][];
+  tags?: [string, CemTag][];
   loadErrors?: DocgenError[];
   paths?: string[];
 }): BuildDocgenContext => ({
-  manifests: {
+  cem: {
     tags: new Map(tags),
     errors: loadErrors,
     paths,
@@ -57,7 +57,7 @@ const context = ({
   typeProperty: 'parsedType',
 });
 
-const tag = (declaration: ManifestDeclaration, warning?: string): [string, ManifestTag] => [
+const tag = (declaration: ManifestDeclaration, warning?: string): [string, CemTag] => [
   declaration.tagName ?? declaration.name,
   {
     declaration,

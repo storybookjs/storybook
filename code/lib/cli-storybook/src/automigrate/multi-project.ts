@@ -397,7 +397,11 @@ export async function runAutomigrationsForProjects(
             addonsToPostinstall,
           };
 
-          await fix.run(runOptions);
+          if ((await fix.run(runOptions)) === false) {
+            fixResults[fix.id] = FixStatus.SKIPPED;
+            taskLog.message(CLI_COLORS.warning(`▲ ${fix.id}: cancelled`));
+            continue;
+          }
           await commit();
         }
         if (fix.run || fix.transform) {

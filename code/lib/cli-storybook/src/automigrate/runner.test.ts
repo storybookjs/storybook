@@ -26,7 +26,7 @@ const project = {
   storybookVersion: '11.0.0',
 };
 
-const renameImports = (id: string, run?: () => Promise<void>): Fix => ({
+const renameImports = (id: string, run?: () => Promise<void | false>): Fix => ({
   id,
   prompt: () => id,
   transform: () => [
@@ -79,6 +79,52 @@ describe('a fix whose run fails', () => {
 
     expect(results[project.configDir].automigrationStatuses).toEqual({
       swap: 'failed',
+      healthy: 'succeeded',
+    });
+    expect(vol.toJSON()).toEqual({
+      [project.mainConfigPath]: "import 'swap-old'; import 'healthy-new';",
+      [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-new';",
+    });
+  });
+});
+
+describe('a fix whose run declines', () => {
+  const declining = renameImports('swap', async () => false);
+
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vol.fromJSON({
+      [project.mainConfigPath]: "import 'swap-old'; import 'healthy-old';",
+      [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-old';",
+    });
+  });
+
+  it('is skipped and applies none of its hooks in a single-project run', async () => {
+    const { fixResults } = await runFixes({ ...project, fixes: [declining, healthy], yes: true });
+
+    expect(fixResults).toEqual({ swap: 'skipped', healthy: 'succeeded' });
+    expect(vol.toJSON()).toEqual({
+      [project.mainConfigPath]: "import 'swap-old'; import 'healthy-new';",
+      [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-new';",
+    });
+  });
+
+  it('is skipped and applies none of its hooks in a multi-project run', async () => {
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes: [declining, healthy],
+      projects: [{ ...project, beforeVersion: '10.0.0' }],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+
+    const results = await runAutomigrationsForProjects(detected, {
+      automigrations: detected,
+      yes: true,
+    } as never);
+
+    expect(results[project.configDir].automigrationStatuses).toEqual({
+      swap: 'skipped',
       healthy: 'succeeded',
     });
     expect(vol.toJSON()).toEqual({

@@ -428,7 +428,7 @@ export async function runFixes({
     try {
       if (f.run) {
         const { files, commit } = createFixFiles();
-        await f.run({
+        const outcome = await f.run({
           result,
           packageManager,
           files,
@@ -442,6 +442,12 @@ export async function runFixes({
           yes,
           addonsToPostinstall,
         });
+        if (outcome === false) {
+          fixResults[f.id] = FixStatus.SKIPPED;
+          fixSummary.skipped.push(f.id);
+          taskLog.success(`Skipped ${picocolors.cyan(f.id)} migration`);
+          continue;
+        }
         await commit();
       }
       ran.push(entry);

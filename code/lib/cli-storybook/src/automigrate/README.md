@@ -18,6 +18,7 @@ check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` �
   A fix with its own `run` applies on its `check` alone, so its hooks do not run during detection.
 - After the prompt, each selected fix's `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
   A fix whose `run` throws keeps none of its edits: its staged `files` are discarded and its hooks skip the apply pass.
+  `run` can also resolve `false` to decline, for example when the user cancels a prompt; the fix keeps no edits and is reported as skipped.
 - The apply pass then streams the files once more through the hooks of the fixes that ran, and writes each changed file before reading the next one, so it sees what `run` and `add()` wrote.
   A dry run stops before `run`.
 

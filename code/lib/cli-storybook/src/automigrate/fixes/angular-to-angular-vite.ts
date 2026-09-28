@@ -365,8 +365,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       `);
     }
 
-    // `add()` rewrites the main and preview configs on disk, so it runs before any edit of them is
-    // staged: committing a staged edit would overwrite what it wrote.
     const wantsVitest =
       yes ||
       (await prompt.confirm({

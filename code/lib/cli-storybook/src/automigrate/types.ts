@@ -19,8 +19,7 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
-  /** Scratch file edits: a check may stage them to learn whether `run` would change anything. */
-  files: FixFiles;
+  files: Pick<FixFiles, 'read'>;
 }
 
 export interface RunOptions<ResultType> {

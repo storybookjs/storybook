@@ -8,7 +8,10 @@ import type { FixFiles } from '../fix-files.ts';
 type JsonObject = Record<string, unknown>;
 
 /** `null` when the file cannot be read or is not valid JSON. */
-export const readJsonFile = async (files: FixFiles, path: string): Promise<any | null> => {
+export const readJsonFile = async (
+  files: Pick<FixFiles, 'read'>,
+  path: string
+): Promise<any | null> => {
   try {
     return JSON.parse(await files.read(path));
   } catch {

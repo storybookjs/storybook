@@ -148,7 +148,7 @@ export async function collectAutomigrationsAcrossProjects(
   const allAutomigrations = Array.from(automigrationMap.values());
 
   const applicableAutomigrations = allAutomigrations.filter((am) =>
-    am.reports.every((rep) => rep.status !== 'not_applicable')
+    am.reports.some((rep) => rep.status !== 'not_applicable')
   );
   // Single pass through detectedAutomigrations to build both arrays
   const { successAutomigrations, failedAutomigrations } = applicableAutomigrations.reduce(
@@ -299,7 +299,7 @@ export async function runAutomigrationsForProjects(
   const projectResults: Record<ConfigDir, AutomigrationResult> = {};
 
   const applicableAutomigrations = selectedAutomigrations.filter((am) =>
-    am.reports.every((rep) => rep.status !== 'not_applicable')
+    am.reports.some((rep) => rep.status !== 'not_applicable')
   );
   const projectAutomigrationResults = new Map<
     ConfigDir,
@@ -407,6 +407,10 @@ export async function runAutomigrationsForProjects(
         fixResults[fixId] = FixStatus.FAILED;
         fixFailures[fixId] = sanitizeError(outcome.error as Error);
         taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${fixId}`));
+        // Shown with the task log when the project fails, e.g. manual steps a fix could not take.
+        taskLog.message(
+          outcome.error instanceof Error ? outcome.error.message : String(outcome.error)
+        );
         logger.debug(outcome.error instanceof Error ? outcome.error.stack : String(outcome.error));
         ErrorCollector.addError(outcome.error);
       } else {

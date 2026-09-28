@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import { prompt } from 'storybook/internal/node-logger';
 
 import { fs, vol } from 'memfs';
 
@@ -62,6 +63,21 @@ describe('a fix whose run fails', () => {
       [project.mainConfigPath]: "import 'swap-old'; import 'healthy-new';",
       [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-new';",
     });
+  });
+
+  it('shows why it failed in the project task log', async () => {
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes: [failingSwap],
+      projects: [{ ...project, beforeVersion: '10.0.0' }],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+
+    const projectLog = { message: vi.fn(), success: vi.fn(), error: vi.fn() };
+    vi.mocked(prompt.taskLog).mockReturnValueOnce(projectLog as never);
+
+    await runAutomigrationsForProjects(detected, { automigrations: detected, yes: true } as never);
+
+    expect(projectLog.message).toHaveBeenCalledWith('registry unreachable');
   });
 
   it('leaves none of its file edits behind in a multi-project run', async () => {

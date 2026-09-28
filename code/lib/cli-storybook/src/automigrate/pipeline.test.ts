@@ -116,13 +116,17 @@ describe('runTransforms', () => {
     );
 
     expect(vol.toJSON()).toEqual(before);
+    const unreadable = {
+      file: project.storiesPaths[1],
+      message: expect.stringContaining('ENOENT'),
+    };
     expect(outcomes.get('strict')?.errors).toEqual([
-      `- ${project.storiesPaths[0]}: cannot migrate a`,
-      expect.stringContaining(`- ${project.storiesPaths[1]}: ENOENT`),
+      { file: project.storiesPaths[0], message: 'cannot migrate a' },
+      unreadable,
     ]);
     expect(outcomes.get('lenient')).toEqual({
       changed: [project.storiesPaths[0]],
-      errors: [expect.stringContaining(`- ${project.storiesPaths[1]}: ENOENT`)],
+      errors: [unreadable],
     });
   });
 });

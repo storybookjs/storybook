@@ -1084,7 +1084,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         declareZoneJs();
         vol.fromJSON({ [ANGULAR_JSON]: angularJsonWithFlag(undefined) });
 
-        await expect(runMigration({ previewConfigPath: undefined })).resolves.toBeUndefined();
+        await expect(runMigration({ previewConfigPath: undefined })).resolves.toEqual([]);
 
         expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('manually'));
       });

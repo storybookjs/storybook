@@ -9,7 +9,8 @@ import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
-import { applies, pluginsFor, runTransforms, transformError } from './pipeline.ts';
+import { type FixFileFailure, reportFileFailures } from './helpers/failure-report.ts';
+import { type FileFailure, applies, pluginsFor, runTransforms } from './pipeline.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
 
@@ -28,6 +29,8 @@ export interface AutomigrationCheckResultReport {
   result: any;
   status: 'check_succeeded' | 'check_failed' | 'not_applicable';
   project: ProjectAutomigrationData;
+  /** Files a transform-only fix failed on, when it could migrate no file at all. */
+  fileFailures?: FileFailure[];
 }
 
 export interface AutomigrationCheckResult<T = any> {
@@ -69,28 +72,15 @@ export async function collectAutomigrationsAcrossProjects(
     fix: Fix,
     project: ProjectAutomigrationData,
     status: 'check_succeeded' | 'check_failed' | 'not_applicable',
-    result?: any
+    result?: any,
+    fileFailures?: FileFailure[]
   ) {
+    const report = { project, result, status, fileFailures };
     const existing = automigrationMap.get(fix.id);
     if (existing) {
-      // Add project to existing automigration
-      existing.reports.push({
-        project,
-        result,
-        status,
-      });
+      existing.reports.push(report);
     } else {
-      // Create new automigration entry
-      automigrationMap.set(fix.id, {
-        fix,
-        reports: [
-          {
-            result,
-            status,
-            project,
-          },
-        ],
-      });
+      automigrationMap.set(fix.id, { fix, reports: [report] });
     }
   }
 
@@ -147,11 +137,12 @@ export async function collectAutomigrationsAcrossProjects(
         collectResult(fix, project, 'check_failed');
       } else if (result === null) {
         collectResult(fix, project, 'not_applicable');
-      } else if (errors.length > 0) {
-        collectResult(fix, project, 'check_failed');
-        ErrorCollector.addError(transformError(errors));
       } else if (fix.transform && !fix.run && changed.length === 0) {
-        collectResult(fix, project, 'not_applicable');
+        if (errors.length > 0) {
+          collectResult(fix, project, 'check_failed', undefined, errors);
+        } else {
+          collectResult(fix, project, 'not_applicable');
+        }
       } else {
         collectResult(fix, project, 'check_succeeded', result);
       }
@@ -300,6 +291,8 @@ export type AutomigrationResult = {
    * automigrations); it configures these addons afterwards (see `upgrade.ts`).
    */
   addonsToPostinstall?: string[];
+  /** Files that fixes could not transform; the other files of those fixes were migrated. */
+  fileFailures: FixFileFailure[];
 };
 /** Runs selected automigrations for each project */
 export async function runAutomigrationsForProjects(
@@ -319,31 +312,20 @@ export async function runAutomigrationsForProjects(
       project: ProjectAutomigrationData;
       result: any;
       status: AutomigrationCheckResultReport['status'];
+      fileFailures?: FileFailure[];
     }[]
   >();
 
   // selectedAutomigrations -> { fix, reports } -> reports (status passed or failed or skipped) -> project
   for (const automigration of automigrations) {
     for (const report of automigration.reports) {
-      const { project, result, status } = report;
+      const { project } = report;
       const existing = projectAutomigrationResults.get(project.configDir) || [];
 
       if (existing.length > 0) {
-        existing.push({
-          fix: automigration.fix,
-          project,
-          result,
-          status,
-        });
+        existing.push({ ...report, fix: automigration.fix });
       } else {
-        projectAutomigrationResults.set(project.configDir, [
-          {
-            fix: automigration.fix,
-            project,
-            result,
-            status,
-          },
-        ]);
+        projectAutomigrationResults.set(project.configDir, [{ ...report, fix: automigration.fix }]);
       }
     }
   }
@@ -382,6 +364,7 @@ export async function runAutomigrationsForProjects(
     const fixFailures: Record<FixId, ErrorMessage> = {};
     // Core addons added by fixes that must be configured after the upgrade installs dependencies.
     const addonsToPostinstall: string[] = [];
+    const fileFailures: FixFileFailure[] = [];
 
     const isSelected = (fix: Fix) =>
       selectedAutomigrations.some(
@@ -410,6 +393,9 @@ export async function runAutomigrationsForProjects(
 
       if (status === 'check_failed') {
         fixResults[fix.id] = FixStatus.CHECK_FAILED;
+        fileFailures.push(
+          ...(automigration.fileFailures ?? []).map((failure) => ({ ...failure, fixId: fix.id }))
+        );
         continue;
       }
 
@@ -418,11 +404,10 @@ export async function runAutomigrationsForProjects(
         continue;
       }
 
+      fileFailures.push(
+        ...(applied.get(fix.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: fix.id }))
+      );
       try {
-        const errors = applied.get(fix.id)?.errors ?? [];
-        if (errors.length > 0) {
-          throw transformError(errors);
-        }
         if (typeof fix.run === 'function') {
           const { files, commit } = createFixFiles();
           const runOptions: RunOptions<typeof result> = {
@@ -473,6 +458,7 @@ export async function runAutomigrationsForProjects(
       automigrationStatuses: fixResults,
       automigrationErrors: fixFailures,
       addonsToPostinstall,
+      fileFailures,
     };
   }
 
@@ -551,6 +537,11 @@ export async function runAutomigrations(
     yes: options.yes,
     skipInstall: options.skipInstall,
   });
+
+  await reportFileFailures(
+    Object.values(automigrationResults).flatMap(({ fileFailures }) => fileFailures),
+    { dryRun: options.dryRun }
+  );
 
   return {
     detectedAutomigrations,

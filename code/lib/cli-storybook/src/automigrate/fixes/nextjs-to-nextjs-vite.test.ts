@@ -147,13 +147,16 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(vol.toJSON()['/project/.storybook/main.ts']).toBe(mainConfig);
     });
 
-    it('should fail without touching dependencies when the main config cannot be read', async () => {
+    it('reports an unreadable main config and still migrates the other files', async () => {
       vol.unlinkSync('/project/.storybook/main.ts');
 
-      await expect(runFix(nextjsToNextjsVite, runOptions)).rejects.toThrow(
-        '/project/.storybook/main.ts'
-      );
-      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      const failures = await runFix(nextjsToNextjsVite, runOptions);
+
+      expect(failures).toEqual([
+        { file: '/project/.storybook/main.ts', message: expect.stringContaining('ENOENT') },
+      ]);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).toContain('@storybook/nextjs-vite');
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
     });
   });
 });

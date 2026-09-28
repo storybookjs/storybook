@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { HandledError, findConfigFile } from 'storybook/internal/common';
+import { findConfigFile } from 'storybook/internal/common';
 import { type ConfigFile, formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { assertConfigMutationSuccess } from './helpers/config-object.ts';
@@ -35,9 +35,14 @@ export interface TransformPlugin {
   hooks: FixTransform[];
 }
 
+export interface FileFailure {
+  file: string;
+  message: string;
+}
+
 export interface TransformOutcome {
   changed: string[];
-  errors: string[];
+  errors: FileFailure[];
 }
 
 interface ProjectPaths {
@@ -116,9 +121,10 @@ export const runTransforms = async (
     }
 
     const fail = (fixId: string, error: unknown) =>
-      outcomes
-        .get(fixId)!
-        .errors.push(`- ${context.id}: ${error instanceof Error ? error.message : String(error)}`);
+      outcomes.get(fixId)!.errors.push({
+        file: context.id,
+        message: error instanceof Error ? error.message : String(error),
+      });
 
     let source: string;
     try {
@@ -152,8 +158,6 @@ export const runTransforms = async (
   return outcomes;
 };
 
-class TransformError extends HandledError {}
-
 /** Instantiate the hooks of every fix in `fixes` that declares `transform`, for one project. */
 export const pluginsFor = (
   fixes: { fix: Fix; result: unknown }[],
@@ -162,9 +166,6 @@ export const pluginsFor = (
   fixes.flatMap(({ fix, result }) =>
     fix.transform ? [{ fixId: fix.id, hooks: fix.transform({ ...project, result }) }] : []
   );
-
-export const transformError = (errors: string[]) =>
-  new TransformError(`Could not migrate these files:\n${errors.join('\n')}`);
 
 /** The check of a transform fix without its own gate: detection decides from the hooks' output. */
 export const applies = async () => ({});

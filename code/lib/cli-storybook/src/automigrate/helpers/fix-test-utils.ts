@@ -1,5 +1,5 @@
 import { createFixFiles } from '../fix-files.ts';
-import { applies, pluginsFor, runTransforms, transformError } from '../pipeline.ts';
+import { type FileFailure, applies, pluginsFor, runTransforms } from '../pipeline.ts';
 import type { CheckOptions, Fix, RunOptions } from '../types.ts';
 
 type ProjectOptions = Omit<CheckOptions, 'files'> & {
@@ -23,34 +23,29 @@ export const checkFix = async <Result>(
   const detected = await runTransforms(project, pluginsFor([{ fix, result }], project), {
     write: false,
   });
-  const { changed, errors } = detected.get(fix.id)!;
-  if (errors.length > 0) {
-    throw transformError(errors);
-  }
+  const { changed } = detected.get(fix.id)!;
   return fix.run || changed.length > 0 ? result : null;
 };
 
-/** Apply a fix's hooks, then run it and commit its file edits, as the automigration runner does. */
+/**
+ * Apply a fix's hooks, then run it and commit its file edits, as the automigration runner does.
+ * Resolves with the files the hooks could not transform.
+ */
 export const runFix = async <Result>(
   fix: Fix<Result>,
   options: Omit<RunOptions<Result>, 'files'>
-) => {
-  if (fix.transform) {
-    const applied = await runTransforms(
-      options,
-      pluginsFor([{ fix, result: options.result }], options),
-      {
-        write: true,
-      }
-    );
-    const { errors } = applied.get(fix.id)!;
-    if (errors.length > 0) {
-      throw transformError(errors);
+): Promise<FileFailure[]> => {
+  const applied = await runTransforms(
+    options,
+    pluginsFor([{ fix, result: options.result }], options),
+    {
+      write: true,
     }
-  }
+  );
   if (fix.run) {
     const { files, commit } = createFixFiles();
     await fix.run({ ...options, files });
     await commit();
   }
+  return applied.get(fix.id)?.errors ?? [];
 };

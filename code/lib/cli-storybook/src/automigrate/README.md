@@ -13,7 +13,7 @@ check ──▶ detection pass ──▶ prompt ──▶ apply pass ──▶ r
 - `check` gates the fix on things that are not file contents: dependencies, versions, flags.
   It returns a small result (paths and flags, not ASTs or generated code), or `null`.
 - The detection pass streams the project's files once through the `transform` hooks of every fix that passed `check`, without writing.
-  A fix whose hook throws fails its check and lists each failed file; a fix with only `transform` applies when its hooks would change a file.
+  A fix with only `transform` applies when its hooks would change a file.
 - After the prompt, the apply pass streams the files once more through the selected fixes' hooks and writes each changed file before reading the next one.
 - `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
   A dry run stops before the apply pass.
@@ -34,6 +34,8 @@ transform: () => [
 
 - `filter.kind` selects `main`, `preview`, `manager`, `config` (anything else in the config directory), or `story` files, visited in that order; `filter.id` narrows by path.
 - `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged.
+- A handler that throws, or a file that cannot be read, skips that file for that fix only: the fix still migrates its other files, and later fixes still see the file.
+  The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run; a dry run only logs the list.
 - Files that no active hook asks for are never read.
 
 ## `files`

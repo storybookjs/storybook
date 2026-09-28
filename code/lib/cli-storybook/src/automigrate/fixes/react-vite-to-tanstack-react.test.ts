@@ -212,13 +212,16 @@ describe('react-vite-to-tanstack-react', () => {
       });
     });
 
-    it('fails without touching dependencies when the main config cannot be read', async () => {
+    it('reports an unreadable main config and still migrates the other files', async () => {
       vol.unlinkSync('/project/.storybook/main.ts');
 
-      await expect(runFix(reactViteToTanstackReact, runOptions)).rejects.toThrow(
-        '/project/.storybook/main.ts'
-      );
-      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      const failures = await runFix(reactViteToTanstackReact, runOptions);
+
+      expect(failures).toEqual([
+        { file: '/project/.storybook/main.ts', message: expect.stringContaining('ENOENT') },
+      ]);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).toContain(TANSTACK_REACT_PACKAGE);
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([REACT_VITE_PACKAGE]);
     });
 
     it('asks the user for an AI prompt when a decorator is detected', async () => {

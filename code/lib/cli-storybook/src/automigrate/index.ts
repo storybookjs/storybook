@@ -20,7 +20,12 @@ import type {
   Prompt,
 } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
-import { applies, pluginsFor, runTransforms, transformError } from './pipeline.ts';
+import {
+  type FixFileFailure,
+  REPORT_FILE_NAME,
+  reportFileFailures,
+} from './helpers/failure-report.ts';
+import { applies, pluginsFor, runTransforms } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -187,21 +192,24 @@ export const automigrate = async ({
 
   logger.step('Checking possible migrations..');
 
-  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall } = await runFixes({
-    fixes,
-    fixId,
-    packageManager,
-    skipInstall,
-    configDir,
-    previewConfigPath,
-    mainConfig,
-    mainConfigPath,
-    storybookVersion,
-    isUpgrade: !!isUpgrade,
-    dryRun,
-    yes,
-    storiesPaths,
-  });
+  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall, fileFailures } =
+    await runFixes({
+      fixes,
+      fixId,
+      packageManager,
+      skipInstall,
+      configDir,
+      previewConfigPath,
+      mainConfig,
+      mainConfigPath,
+      storybookVersion,
+      isUpgrade: !!isUpgrade,
+      dryRun,
+      yes,
+      storiesPaths,
+    });
+
+  await reportFileFailures(fileFailures, { dryRun });
 
   // if migration failed, display a log file in the users cwd
   if (hasFailures(fixResults)) {
@@ -253,6 +261,7 @@ export async function runFixes({
   fixResults: Record<FixId, FixStatus>;
   fixSummary: FixSummary;
   addonsToPostinstall: string[];
+  fileFailures: FixFileFailure[];
 }> {
   const fixResults = {} as Record<FixId, FixStatus>;
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
@@ -303,20 +312,21 @@ export async function runFixes({
     }
   }
 
+  const fileFailures: FixFileFailure[] = [];
   const detected = await runTransforms(project, pluginsFor(checked, project), { write: false });
   const applicable = checked.filter(({ fix }) => {
     const { changed, errors } = detected.get(fix.id) ?? { changed: [], errors: [] };
+    if (!fix.transform || fix.run || changed.length > 0) {
+      return true;
+    }
     if (errors.length > 0) {
-      logger.warn(`⚠️  failed to check fix ${picocolors.bold(fix.id)}`);
-      fixSummary.failed[fix.id] = transformError(errors).message;
+      fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: fix.id })));
+      fixSummary.failed[fix.id] = `No file could be migrated; see ${REPORT_FILE_NAME}`;
       fixResults[fix.id] = FixStatus.CHECK_FAILED;
-      return false;
-    }
-    if (fix.transform && !fix.run && changed.length === 0) {
+    } else {
       fixResults[fix.id] = FixStatus.UNNECESSARY;
-      return false;
     }
-    return true;
+    return false;
   });
 
   const selected: { fix: Fix; result: unknown; taskLog: TaskLogInstance }[] = [];
@@ -426,11 +436,10 @@ export async function runFixes({
   const applied = await runTransforms(project, pluginsFor(selected, project), { write: true });
 
   for (const { fix: f, result, taskLog } of selected) {
+    fileFailures.push(
+      ...(applied.get(f.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: f.id }))
+    );
     try {
-      const errors = applied.get(f.id)?.errors ?? [];
-      if (errors.length > 0) {
-        throw transformError(errors);
-      }
       if (f.run) {
         const { files, commit } = createFixFiles();
         await f.run({
@@ -461,5 +470,5 @@ export async function runFixes({
     }
   }
 
-  return { fixResults, fixSummary, addonsToPostinstall };
+  return { fixResults, fixSummary, addonsToPostinstall, fileFailures };
 }

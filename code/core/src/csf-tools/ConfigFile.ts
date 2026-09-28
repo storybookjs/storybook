@@ -128,6 +128,25 @@ const _findVarInitialization = (identifier: string, program: t.Program) => {
   return declarator?.init;
 };
 
+// A leading comment on the first statement is usually a license header, which has to stay first:
+// add below the existing imports then, or take the comment over when there are none.
+const prependStatement = (program: t.Program, statement: t.Statement) => {
+  const [first] = program.body as (t.Statement & { comments?: t.Comment[] })[];
+  const header = first?.comments?.filter((comment) => (comment as { leading?: boolean }).leading);
+  if (!header?.length) {
+    program.body.unshift(statement);
+    return;
+  }
+  const firstNonImport = program.body.findIndex((node) => !t.isImportDeclaration(node));
+  const index = firstNonImport === -1 ? program.body.length : firstNonImport;
+  if (index === 0) {
+    first.comments = first.comments!.filter((comment) => !header.includes(comment));
+    first.leadingComments = [];
+    Object.assign(statement, { comments: header, leadingComments: header });
+  }
+  program.body.splice(index, 0, statement);
+};
+
 export class ConfigFile implements CsfObject {
   /**
    * Identify the config, meta, story, annotation, or call argument this editor represents.
@@ -1065,7 +1084,8 @@ export class ConfigFile implements CsfObject {
     if (typeof importSpecifier === 'string') {
       // If the import declaration with the given source exists
       const addDefaultRequireSpecifier = () => {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.variableDeclaration('const', [
             t.variableDeclarator(
               t.identifier(importSpecifier),
@@ -1095,7 +1115,8 @@ export class ConfigFile implements CsfObject {
         }
       });
     } else {
-      this._ast.program.body.unshift(
+      prependStatement(
+        this._ast.program,
         t.variableDeclaration('const', [
           t.variableDeclarator(
             t.objectPattern(
@@ -1198,7 +1219,7 @@ export class ConfigFile implements CsfObject {
     // Handle side-effect imports (e.g., import 'foo')
     if (importSpecifier === null) {
       if (!importDeclaration) {
-        this._ast.program.body.unshift(t.importDeclaration([], t.stringLiteral(fromImport)));
+        prependStatement(this._ast.program, t.importDeclaration([], t.stringLiteral(fromImport)));
       }
       // Handle default imports e.g. import foo from 'bar'
     } else if (typeof importSpecifier === 'string') {
@@ -1209,7 +1230,8 @@ export class ConfigFile implements CsfObject {
           );
         }
       } else {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.importDeclaration(
             [t.importDefaultSpecifier(t.identifier(importSpecifier))],
             t.stringLiteral(fromImport)
@@ -1225,7 +1247,8 @@ export class ConfigFile implements CsfObject {
           }
         });
       } else {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.importDeclaration(
             importSpecifier.map(getNewImportSpecifier),
             t.stringLiteral(fromImport)
@@ -1241,7 +1264,8 @@ export class ConfigFile implements CsfObject {
           );
         }
       } else {
-        this._ast.program.body.unshift(
+        prependStatement(
+          this._ast.program,
           t.importDeclaration(
             [t.importNamespaceSpecifier(t.identifier(importSpecifier.namespace))],
             t.stringLiteral(fromImport)

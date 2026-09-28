@@ -5,7 +5,7 @@ import { babelPrint, parserOptions } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
-import { ConfigFile, loadConfig, printConfig } from './ConfigFile.ts';
+import { ConfigFile, formatConfig, loadConfig, printConfig } from './ConfigFile.ts';
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -1435,6 +1435,58 @@ describe('ConfigFile', () => {
   });
 
   describe('setImport', () => {
+    it('keeps a license header above the imports it adds', () => {
+      const source = dedent`
+        /*
+         * Copyright Example
+         */
+
+        import type { StorybookConfig } from '@storybook/react-vite';
+
+        const config: StorybookConfig = { stories: [] };
+        export default config;
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setImport(['dirname'], 'node:path');
+      config.setImport(['fileURLToPath'], 'node:url');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        /*
+         * Copyright Example
+         */
+
+        import type { StorybookConfig } from '@storybook/react-vite';
+
+        import { dirname } from 'node:path';
+        import { fileURLToPath } from 'node:url';
+
+        const config: StorybookConfig = { stories: [] };
+        export default config;
+      `);
+    });
+
+    it('keeps a license header above a require it adds to a file without imports', () => {
+      const source = dedent`
+        // Copyright Example
+
+        module.exports = { stories: [] };
+      `;
+
+      const config = loadConfig(source).parse();
+      config.setRequireImport(['dirname'], 'node:path');
+
+      expect(formatConfig(config)).toMatchInlineSnapshot(`
+        // Copyright Example
+
+        const {
+          dirname
+        } = require("node:path");
+
+        module.exports = { stories: [] };
+      `);
+    });
+
     it(`supports setting a default import for a field that does not exist`, () => {
       const source = dedent`
         const config: StorybookConfig = { };

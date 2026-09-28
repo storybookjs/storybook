@@ -10,14 +10,17 @@ Vite pre-transform hook does codemod where this component gets transformed into 
 -->
 
 <script lang="ts">
-  import type { Snippet } from 'svelte';
-  import type { StoryProps } from '../legacy-types.d.ts';
-  import type { StoryContext } from 'storybook/internal/types';
+  import type { Slots, StoryProps } from '../legacy-types.d.ts';
 
-  interface Props extends StoryProps {
-    children?: Snippet<[{ args: any; context: StoryContext }]>;
-  }
-  const { children }: Props = $props();
+  // Props use `$props()` so this file compiles when `compilerOptions.runes` is `true`.
+  // It still renders a `<slot>`, because the typing of legacy `let:args` and `let:context` comes from `$$Slots`.
+  type $$Slots = Slots;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _props: StoryProps = $props();
+
+  let args!: $$Slots['default']['args'];
+  let context!: $$Slots['default']['context'];
 </script>
 
-{@render children?.({ args: {} as any, context: {} as StoryContext })}
+<slot {context} {args} />

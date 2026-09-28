@@ -234,4 +234,27 @@ describe('PNPMProxy catalogs', () => {
       expect(result).toEqual(['@vitest/coverage-v8@^3.2.0']);
     });
   });
+
+  describe('upgradeCatalogEntries', () => {
+    it('upgrades catalog entries in place and leaves only direct dependencies to package.json', () => {
+      vol.fromJSON({
+        [WORKSPACE_YAML]:
+          '# Storybook\ncatalog:\n  storybook: ^10.3.6\ncatalogs:\n  sb:\n    "@storybook/react-vite": 10.3.6\n',
+      });
+
+      const remaining = pnpmProxy.upgradeCatalogEntries(
+        ['storybook@11.0.0', '@storybook/react-vite@11.0.0', '@storybook/addon-docs@^11.0.0'],
+        {
+          storybook: 'catalog:',
+          '@storybook/react-vite': 'catalog:sb',
+          '@storybook/addon-docs': '^10.3.6',
+        }
+      );
+
+      expect(remaining).toEqual(['@storybook/addon-docs@^11.0.0']);
+      expect(writtenYaml()).toBe(
+        '# Storybook\ncatalog:\n  storybook: ^11.0.0\ncatalogs:\n  sb:\n    "@storybook/react-vite": 11.0.0\n'
+      );
+    });
+  });
 });

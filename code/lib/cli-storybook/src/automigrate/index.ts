@@ -433,12 +433,11 @@ export async function runFixes({
     }
   }
 
-  const applied = await runTransforms(project, pluginsFor(selected, project), { write: true });
-
-  for (const { fix: f, result, taskLog } of selected) {
-    fileFailures.push(
-      ...(applied.get(f.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: f.id }))
-    );
+  // `run` goes first so a fix whose dependency work fails leaves no file edits behind, and so the
+  // apply pass reads what `add()` wrote to the main config.
+  const ran: typeof selected = [];
+  for (const entry of selected) {
+    const { fix: f, result, taskLog } = entry;
     try {
       if (f.run) {
         const { files, commit } = createFixFiles();
@@ -458,16 +457,24 @@ export async function runFixes({
         });
         await commit();
       }
-      logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
-
-      fixResults[f.id] = FixStatus.SUCCEEDED;
-      fixSummary.succeeded.push(f.id);
-      taskLog.success(`Ran ${picocolors.cyan(f.id)} migration`);
+      ran.push(entry);
     } catch (error) {
       fixResults[f.id] = FixStatus.FAILED;
       fixSummary.failed[f.id] = error instanceof Error ? error.message : 'Failed to run migration';
       taskLog.error(`Error when running ${picocolors.cyan(f.id)} migration`);
     }
+  }
+
+  const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
+
+  for (const { fix: f, taskLog } of ran) {
+    fileFailures.push(
+      ...(applied.get(f.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: f.id }))
+    );
+    logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
+    fixResults[f.id] = FixStatus.SUCCEEDED;
+    fixSummary.succeeded.push(f.id);
+    taskLog.success(`Ran ${picocolors.cyan(f.id)} migration`);
   }
 
   return { fixResults, fixSummary, addonsToPostinstall, fileFailures };

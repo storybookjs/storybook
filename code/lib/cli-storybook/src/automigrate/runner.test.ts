@@ -1,0 +1,88 @@
+import { readFile, writeFile } from 'node:fs/promises';
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import type { JsPackageManager } from 'storybook/internal/common';
+
+import { fs, vol } from 'memfs';
+
+import { runFixes } from './index.ts';
+import {
+  collectAutomigrationsAcrossProjects,
+  runAutomigrationsForProjects,
+} from './multi-project.ts';
+import type { Fix } from './types.ts';
+
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/node-logger', { spy: true });
+
+const project = {
+  configDir: '/project/.storybook',
+  mainConfigPath: '/project/.storybook/main.ts',
+  storiesPaths: ['/project/src/A.stories.ts'],
+  packageManager: {} as JsPackageManager,
+  mainConfig: { stories: [] },
+  storybookVersion: '11.0.0',
+};
+
+const renameImports = (id: string, run?: () => Promise<void>): Fix => ({
+  id,
+  prompt: () => id,
+  transform: () => [
+    {
+      filter: { kind: ['main', 'story'] },
+      handler: (code) => code.replaceAll(`${id}-old`, `${id}-new`),
+    },
+  ],
+  ...(run ? { run } : {}),
+});
+
+const failingSwap = renameImports('swap', async () => {
+  throw new Error('registry unreachable');
+});
+const healthy = renameImports('healthy');
+
+describe('a fix whose run fails', () => {
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vol.fromJSON({
+      [project.mainConfigPath]: "import 'swap-old'; import 'healthy-old';",
+      [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-old';",
+    });
+  });
+
+  it('leaves none of its file edits behind in a single-project run', async () => {
+    const { fixResults } = await runFixes({ ...project, fixes: [failingSwap, healthy], yes: true });
+
+    expect(fixResults).toEqual({ swap: 'failed', healthy: 'succeeded' });
+    expect(vol.toJSON()).toEqual({
+      [project.mainConfigPath]: "import 'swap-old'; import 'healthy-new';",
+      [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-new';",
+    });
+  });
+
+  it('leaves none of its file edits behind in a multi-project run', async () => {
+    const projectData = { ...project, beforeVersion: '10.0.0' };
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes: [failingSwap, healthy],
+      projects: [projectData],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+
+    const results = await runAutomigrationsForProjects(detected, {
+      automigrations: detected,
+      yes: true,
+    } as never);
+
+    expect(results[project.configDir].automigrationStatuses).toEqual({
+      swap: 'failed',
+      healthy: 'succeeded',
+    });
+    expect(vol.toJSON()).toEqual({
+      [project.mainConfigPath]: "import 'swap-old'; import 'healthy-new';",
+      [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-new';",
+    });
+  });
+});

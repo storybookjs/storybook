@@ -18,7 +18,8 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as Omit<CheckOptions, 'files'>);
+        storiesPaths: [],
+      } as unknown as Omit<CheckOptions, 'files'>);
 
       await expect(check).resolves.toBeNull();
     });
@@ -30,7 +31,8 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as Omit<CheckOptions, 'files'>);
+        storiesPaths: [],
+      } as unknown as Omit<CheckOptions, 'files'>);
 
       await expect(check).resolves.toEqual({});
     });
@@ -42,7 +44,8 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-with-wrappers.js'),
-      } as Omit<CheckOptions, 'files'>);
+        storiesPaths: [],
+      } as unknown as Omit<CheckOptions, 'files'>);
 
       await expect(check).resolves.toBeNull();
     });
@@ -52,8 +55,9 @@ describe('wrapGetAbsolutePath', () => {
     it('should wrap the require wrapper', async () => {
       await runFix(wrapGetAbsolutePath, {
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
+        storiesPaths: [],
         result: {},
-      } as Omit<RunOptions<object>, 'files'>);
+      } as unknown as Omit<RunOptions<object>, 'files'>);
 
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
 

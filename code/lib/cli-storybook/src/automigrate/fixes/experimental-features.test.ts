@@ -50,7 +50,10 @@ const checkOptions = (overrides: Partial<CheckOptions> = {}): CheckOptions =>
 const withFeatures = (features: StorybookConfigRaw['features']): StorybookConfigRaw =>
   ({ ...REACT_MAIN_CONFIG, features }) as StorybookConfigRaw;
 
-const runOptions = { mainConfigPath: MAIN_CONFIG_PATH } as Omit<RunOptions<object>, 'files'>;
+const runOptions = { mainConfigPath: MAIN_CONFIG_PATH, storiesPaths: [] } as unknown as Omit<
+  RunOptions<object>,
+  'files'
+>;
 
 describe('experimental feature flag automigrations', () => {
   beforeEach(() => {

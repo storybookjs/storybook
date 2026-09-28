@@ -6,17 +6,18 @@ The runner owns everything around it: detection across projects, prompting, dry 
 ## Lifecycle
 
 ```
-check ──▶ detection pass ──▶ prompt ──▶ apply pass ──▶ run ──▶ commit `files`
-          (read, transform)              (read, transform, write)
+check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` ──▶ apply pass
+          (read, transform)                                        (read, transform, write)
 ```
 
 - `check` gates the fix on things that are not file contents: dependencies, versions, flags.
   It returns a small result (paths and flags, not ASTs or generated code), or `null`.
 - The detection pass streams the project's files once through the `transform` hooks of every fix that passed `check`, without writing.
   A fix with only `transform` applies when its hooks would change a file.
-- After the prompt, the apply pass streams the files once more through the selected fixes' hooks and writes each changed file before reading the next one.
-- `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
-  A dry run stops before the apply pass.
+- After the prompt, each selected fix's `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
+  A fix whose `run` throws keeps none of its edits: its staged `files` are discarded and its hooks skip the apply pass.
+- The apply pass then streams the files once more through the hooks of the fixes that ran, and writes each changed file before reading the next one, so it sees what `run` and `add()` wrote.
+  A dry run stops before `run`.
 
 ## `transform`
 
@@ -33,6 +34,7 @@ transform: () => [
 ```
 
 - `filter.kind` selects `main`, `preview`, `manager`, `config` (anything else in the config directory), or `story` files, visited in that order; `filter.id` narrows by path.
+  Each file has one kind whichever fixes run: a story inside the config directory is a `story`, and the manager config is a `manager`, so list every kind a hook needs.
 - `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged.
 - A handler that throws, or a file that cannot be read, skips that file for that fix only: the fix still migrates its other files, and later fixes still see the file.
   The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run; a dry run only logs the list.
@@ -55,7 +57,7 @@ Its edits are staged and committed after `run` resolves, and the commit refuses 
 
 - Do not read or write project files with `node:fs` in a fix, loop with `p-limit`, branch on `dryRun`, or catch per-file errors.
   Path discovery (`existsSync`, globbing) is fine.
-- `add()` and `removeAddon()` write `main.ts` directly; call them from `run`, which starts after the apply pass.
+- `add()` and `removeAddon()` write `main.ts` directly; call them from `run`, which finishes before the apply pass reads the file.
 - Remove a fix once upgrades no longer start from a version that needs it.
 
 ## Tests

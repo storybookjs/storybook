@@ -226,7 +226,7 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
       handler: (code) => code.replaceAll(REACT_VITE_PACKAGE, TANSTACK_REACT_PACKAGE),
     },
     {
-      filter: { kind: ['preview', 'config', 'story'], id: /\.[cm]?[jt]sx?$/ },
+      filter: { kind: ['preview', 'manager', 'config', 'story'], id: /\.[cm]?[jt]sx?$/ },
       handler: (code) => {
         if (fileLooksLikeTanstackRouterDecorator(code)) {
           result.hasTanstackRouterDecorator = true;

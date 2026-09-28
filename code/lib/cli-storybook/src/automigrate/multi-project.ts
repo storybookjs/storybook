@@ -372,16 +372,8 @@ export async function runAutomigrationsForProjects(
           am.fix.id === fix.id &&
           am.reports.some((report) => report.project.configDir === project.configDir)
       );
-    const applied = await runTransforms(
-      project,
-      pluginsFor(
-        projectAutomigration.filter(
-          ({ fix, status }) => status === 'check_succeeded' && isSelected(fix)
-        ),
-        project
-      ),
-      { write: true }
-    );
+    // Fixes whose `run` succeeded; only their hooks reach the apply pass, after every `run`.
+    const ran: typeof projectAutomigration = [];
 
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
@@ -404,9 +396,6 @@ export async function runAutomigrationsForProjects(
         continue;
       }
 
-      fileFailures.push(
-        ...(applied.get(fix.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: fix.id }))
-      );
       try {
         if (typeof fix.run === 'function') {
           const { files, commit } = createFixFiles();
@@ -429,6 +418,7 @@ export async function runAutomigrationsForProjects(
           await commit();
         }
         if (fix.run || fix.transform) {
+          ran.push(automigration);
           fixResults[fix.id] = FixStatus.SUCCEEDED;
           taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }
@@ -441,6 +431,13 @@ export async function runAutomigrationsForProjects(
         logger.debug(errorMessage);
         ErrorCollector.addError(error);
       }
+    }
+
+    const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
+    for (const { fix } of ran) {
+      fileFailures.push(
+        ...(applied.get(fix.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: fix.id }))
+      );
     }
 
     const automigrationsWithErrors = Object.values(fixResults).filter(

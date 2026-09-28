@@ -64,33 +64,41 @@ export const editConfigSource = async (
   return formatConfig(config);
 };
 
+/**
+ * Classify every project file once, independent of which hooks are active, so a file keeps its kind
+ * whichever fixes run. Stories claim their paths before the config directory glob does.
+ */
 const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
-  const byKind: Record<FileKind, () => Promise<string[]>> = {
-    main: async () => [project.mainConfigPath],
-    preview: async () => (project.previewConfigPath ? [project.previewConfigPath] : []),
-    manager: async () => {
-      const managerConfigPath = findConfigFile('manager', project.configDir);
-      return managerConfigPath ? [managerConfigPath] : [];
-    },
-    config: async () => {
-      // eslint-disable-next-line depend/ban-dependencies
-      const { globby } = await import('globby');
-      return globby(`${project.configDir}/**/*`, { absolute: true, dot: true });
-    },
-    story: async () => project.storiesPaths,
+  if (kinds.size === 0) {
+    return [];
+  }
+  const files = new Map<string, TransformContext>();
+  const claim = (id: string, kind: FileKind) => {
+    if (!files.has(resolve(id))) {
+      files.set(resolve(id), { id, kind });
+    }
   };
 
-  const files: TransformContext[] = [];
-  const seen = new Set<string>();
-  for (const kind of KIND_ORDER.filter((kind) => kinds.has(kind))) {
-    for (const id of await byKind[kind]()) {
-      if (!seen.has(resolve(id))) {
-        seen.add(resolve(id));
-        files.push({ id, kind });
-      }
-    }
+  claim(project.mainConfigPath, 'main');
+  if (project.previewConfigPath) {
+    claim(project.previewConfigPath, 'preview');
   }
-  return files;
+  const managerConfigPath = project.configDir && findConfigFile('manager', project.configDir);
+  if (managerConfigPath) {
+    claim(managerConfigPath, 'manager');
+  }
+  project.storiesPaths.forEach((id) => claim(id, 'story'));
+  if (kinds.has('config')) {
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
+    (await globby(`${project.configDir}/**/*`, { absolute: true, dot: true })).forEach((id) =>
+      claim(id, 'config')
+    );
+  }
+
+  return [...files.values()]
+    .filter(({ kind }) => kinds.has(kind))
+    .sort((a, b) => KIND_ORDER.indexOf(a.kind) - KIND_ORDER.indexOf(b.kind));
 };
 
 /**
@@ -151,7 +159,16 @@ export const runTransforms = async (
     }
 
     if (write && code !== source) {
-      await writeFile(context.id, code);
+      try {
+        await writeFile(context.id, code);
+      } catch (error) {
+        for (const [fixId, outcome] of outcomes) {
+          if (outcome.changed.includes(context.id)) {
+            outcome.changed = outcome.changed.filter((file) => file !== context.id);
+            fail(fixId, error);
+          }
+        }
+      }
     }
   }
 

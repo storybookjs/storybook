@@ -1,6 +1,10 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { type JsPackageManager, getProjectRoot } from 'storybook/internal/common';
+import {
+  type JsPackageManager,
+  formatFileContent,
+  getProjectRoot,
+} from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -10,7 +14,7 @@ import * as find from 'empathic/find';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { babelParse, recast, types as t, traverse } from '../babel/index.ts';
+import { babelParse, types as t, traverse } from '../babel/index.ts';
 
 export const SUPPORTED_ESLINT_EXTENSIONS = ['ts', 'mts', 'cts', 'mjs', 'js', 'cjs', 'json'];
 const UNSUPPORTED_ESLINT_EXTENSIONS = ['yaml', 'yml'];
@@ -84,6 +88,9 @@ export const configureFlatConfig = async (code: string) => {
     return code;
   }
 
+  const targets: { node: t.Node; items: (t.Node | null)[]; spread: boolean }[] = [];
+  let hasImportAlready = false;
+  let lastImport: t.ImportDeclaration | undefined;
   let tsEslintLocalName = '';
   let eslintDefineConfigLocalName = '';
   let eslintConfigExpression: any = null;
@@ -121,15 +128,13 @@ export const configureFlatConfig = async (code: string) => {
       const node = path.node;
       eslintConfigExpression = unwrapTSExpression(node.declaration);
 
-      const storybookConfig = t.memberExpression(
-        t.memberExpression(t.identifier('storybook'), t.identifier('configs')),
-        t.stringLiteral('flat/recommended'),
-        true
-      );
-
       // Case 1: Direct array
       if (t.isArrayExpression(eslintConfigExpression)) {
-        eslintConfigExpression.elements.push(t.spreadElement(storybookConfig));
+        targets.push({
+          node: eslintConfigExpression,
+          items: eslintConfigExpression.elements,
+          spread: true,
+        });
       }
 
       // Case 2: tseslint.config(...)
@@ -140,7 +145,11 @@ export const configureFlatConfig = async (code: string) => {
         t.isIdentifier(eslintConfigExpression.callee.object, { name: tsEslintLocalName }) &&
         t.isIdentifier(eslintConfigExpression.callee.property, { name: 'config' })
       ) {
-        eslintConfigExpression.arguments.push(storybookConfig);
+        targets.push({
+          node: eslintConfigExpression,
+          items: eslintConfigExpression.arguments,
+          spread: false,
+        });
       }
 
       // Case 2b: export default defineConfig([...]) from "eslint/config"
@@ -155,7 +164,7 @@ export const configureFlatConfig = async (code: string) => {
         if (t.isExpression(firstArg)) {
           const unwrappedArg = unwrapTSExpression(firstArg);
           if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
-            unwrappedArg.elements.push(t.spreadElement(storybookConfig));
+            targets.push({ node: unwrappedArg, items: unwrappedArg.elements, spread: true });
           }
         }
       }
@@ -167,7 +176,7 @@ export const configureFlatConfig = async (code: string) => {
           const init = unwrapTSExpression(binding.path.node.init);
 
           if (t.isArrayExpression(init)) {
-            init.elements.push(t.spreadElement(storybookConfig));
+            targets.push({ node: init, items: init.elements, spread: true });
           } else if (
             t.isCallExpression(init) &&
             init.arguments.length > 0 &&
@@ -180,7 +189,7 @@ export const configureFlatConfig = async (code: string) => {
             if (t.isExpression(firstArg)) {
               const unwrappedArg = unwrapTSExpression(firstArg);
               if (unwrappedArg && t.isArrayExpression(unwrappedArg)) {
-                unwrappedArg.elements.push(t.spreadElement(storybookConfig));
+                targets.push({ node: unwrappedArg, items: unwrappedArg.elements, spread: true });
               }
             }
           }
@@ -189,29 +198,47 @@ export const configureFlatConfig = async (code: string) => {
     },
 
     Program(path) {
-      const alreadyImported = path.node.body.some(
+      hasImportAlready = path.node.body.some(
         (node) => t.isImportDeclaration(node) && node.source.value === 'eslint-plugin-storybook'
       );
-
-      if (!alreadyImported) {
-        // Add import: import storybook from 'eslint-plugin-storybook'
-        const importDecl = t.importDeclaration(
-          [t.importDefaultSpecifier(t.identifier('storybook'))],
-          t.stringLiteral('eslint-plugin-storybook')
-        );
-        (importDecl as any).comments = [
-          {
-            type: 'CommentLine',
-            value:
-              ' For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format',
-          },
-        ];
-        path.node.body.unshift(importDecl);
-      }
+      lastImport = path.node.body.filter((node) => t.isImportDeclaration(node)).at(-1);
     },
   });
 
-  return recast.print(ast).code;
+  const quote = (code.match(/'/g) ?? []).length >= (code.match(/"/g) ?? []).length ? "'" : '"';
+  const storybookConfig = `storybook.configs[${quote}flat/recommended${quote}]`;
+  const insertions = targets.map(({ node, items, spread }) =>
+    insertLast(code, node, items, spread ? `...${storybookConfig}` : storybookConfig)
+  );
+  if (!hasImportAlready) {
+    const importText = `// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format\nimport storybook from ${quote}eslint-plugin-storybook${quote};\n`;
+    insertions.push(
+      lastImport
+        ? { at: lastImport.end!, text: `\n${importText.trimEnd()}` }
+        : { at: 0, text: `${importText}\n` }
+    );
+  }
+  return insertions
+    .sort((a, b) => b.at - a.at)
+    .reduce((result, { at, text }) => result.slice(0, at) + text + result.slice(at), code);
+};
+
+// Append `text` as the last item of an array literal or argument list, in the list's own layout.
+const insertLast = (code: string, node: t.Node, items: (t.Node | null)[], text: string) => {
+  const close = code.lastIndexOf(t.isArrayExpression(node) ? ']' : ')', node.end! - 1);
+  const last = items.at(-1);
+  if (!last) {
+    return { at: close, text };
+  }
+  const afterLast = code.slice(last.end!, close);
+  const trailingComma = afterLast.indexOf(',');
+  const lineStart = code.lastIndexOf('\n', last.start!) + 1;
+  const multiline = code.slice(last.end!, close).includes('\n');
+  const indent = code.slice(lineStart, last.start!).match(/^\s*/)![0];
+  const separator = multiline ? `\n${indent}` : ' ';
+  return trailingComma === -1
+    ? { at: last.end!, text: `,${separator}${text}` }
+    : { at: last.end! + trailingComma + 1, text: `${separator}${text},` };
 };
 
 export async function extractEslintInfo(packageManager: JsPackageManager): Promise<{
@@ -299,7 +326,7 @@ export async function configureEslintPlugin({
         if (output === code) {
           return;
         }
-        await writeFile(eslintConfigFile, output);
+        await writeFile(eslintConfigFile, await formatFileContent(eslintConfigFile, output));
       } else {
         const eslint = await readConfig(eslintConfigFile);
         const existingExtends = normalizeExtends(eslint.getValue(['extends'])).filter(Boolean);

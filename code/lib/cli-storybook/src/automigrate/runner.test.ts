@@ -219,6 +219,30 @@ describe('a fix whose hooks cannot migrate its files', () => {
     ]);
   });
 
+  it('leaves its other files alone when it fails on the main config', async () => {
+    const mainFirst: Fix = {
+      id: 'main-first',
+      prompt: () => 'main-first',
+      transform: () => [
+        {
+          filter: { kind: ['main'] },
+          handler: () => {
+            throw new Error('cannot migrate this main');
+          },
+        },
+        {
+          filter: { kind: ['story'] },
+          handler: (code) => code.replace('healthy-old', 'main-first-new'),
+        },
+      ],
+    };
+
+    const { fixResults } = await runFixes({ ...project, fixes: [mainFirst], yes: true });
+
+    expect(fixResults).toEqual({ 'main-first': 'failed' });
+    expect(vol.toJSON()[project.storiesPaths[0]]).toBe("import 'healthy-old';");
+  });
+
   it('fails before its run changes anything when it cannot migrate the main config', async () => {
     const swapDependencies = vi.fn(async () => {});
 

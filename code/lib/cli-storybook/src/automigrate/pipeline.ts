@@ -173,13 +173,18 @@ export const runTransforms = async (
   const kinds = new Set<FileKind>(
     plugins.flatMap(({ hooks }) => hooks.flatMap(({ filter }) => filter.kind))
   );
+  const failedOnMain = (fixId: string) =>
+    outcomes.get(fixId)!.errors.some(({ kind }) => kind === 'main');
   const detected = (fixId: string) => {
     const { changed, errors } = outcomes.get(fixId)!;
     return changed.length > 0 || errors.length > 0;
   };
 
   for (const context of await collectFiles(project, kinds)) {
-    const pending = write ? plugins : plugins.filter(({ fixId }) => !detected(fixId));
+    // A fix that failed on the main config fails as a whole, so it leaves the other files alone.
+    const pending = plugins.filter(({ fixId }) =>
+      write ? !failedOnMain(fixId) : !detected(fixId)
+    );
     if (pending.length === 0) {
       break;
     }

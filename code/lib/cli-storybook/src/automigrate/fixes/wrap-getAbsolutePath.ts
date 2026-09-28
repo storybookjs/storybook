@@ -7,8 +7,6 @@ import {
 } from 'storybook/internal/common';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
-import { dedent } from 'ts-dedent';
-
 import type { Fix } from '../types.ts';
 
 export const wrapGetAbsolutePath: Fix = {
@@ -20,7 +18,7 @@ export const wrapGetAbsolutePath: Fix = {
   },
 
   prompt() {
-    return dedent`We have detected that you're using Storybook in a monorepo. Some fields in your main config must be updated.`;
+    return "We have detected that you're using Storybook in a monorepo. Some fields in your main config must be updated.";
   },
 
   transform: () => [

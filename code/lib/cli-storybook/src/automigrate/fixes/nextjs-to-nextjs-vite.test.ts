@@ -12,16 +12,6 @@ import { VITE_DEFAULT_VERSION, nextjsToNextjsVite } from './nextjs-to-nextjs-vit
 
 vi.mock('node:fs/promises', { spy: true });
 
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: {
-    step: vi.fn(),
-    debug: vi.fn(),
-    warn: vi.fn(),
-    log: vi.fn(),
-    error: vi.fn(),
-  },
-}));
-
 vi.mock('globby', () => ({
   globby: vi.fn().mockResolvedValue(['/project/.storybook/preview.ts']),
 }));
@@ -42,7 +32,7 @@ describe('nextjs-to-nextjs-vite', () => {
     storiesPaths: ['/project/src/Button.stories.tsx'],
     configDir: '/project/.storybook',
     storybookVersion: '9.0.0',
-  } as unknown as Omit<RunOptions<any>, 'files'>;
+  } as unknown as Omit<RunOptions<object>, 'files'>;
 
   beforeEach(() => {
     vi.clearAllMocks();

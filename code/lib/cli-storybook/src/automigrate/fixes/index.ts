@@ -38,6 +38,4 @@ export const allFixes: Fix[] = [
   enableExperimentalDocgenServer,
 ];
 
-// These are specific fixes that only occur when triggered on command, and are hidden otherwise.
-// e.g. npx storybook automigrate csf-factories
 export const commandFixes: CommandFix[] = [csfFactories];

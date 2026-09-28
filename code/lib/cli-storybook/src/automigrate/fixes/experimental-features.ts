@@ -5,24 +5,14 @@ import { getFrameworkPackageName, getRendererName } from '../helpers/mainConfigF
 import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
 import type { Fix } from '../types.ts';
 
-const hasDocgenProvider = (mainConfig: StorybookConfigRaw): boolean =>
-  getRendererName(mainConfig) === SupportedRenderer.REACT ||
-  ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
-    getFrameworkPackageName(mainConfig) ?? ''
-  );
-
-export interface ExperimentalFeatureFixOptions {
+interface ExperimentalFeatureFixOptions {
   id: string;
-  /** The `features` key this fix sets to `true`. */
   name: keyof StorybookFeatures;
-  /** Storybook version that added this flag. Each flag carries its own, per release. */
   introducedIn: string;
   link: string;
-  /** Keep it to one line, like every other automigration prompt. */
   prompt: string;
-  /** A feature this flag builds on; the flag is inert when that one is explicitly disabled. */
+  // The flag is inert when this feature is explicitly disabled.
   requires?: keyof StorybookFeatures;
-  /** Extra applicability check, e.g. the project must ship a docgen provider. */
   isSupported?: (mainConfig: StorybookConfigRaw) => boolean;
 }
 
@@ -40,10 +30,7 @@ export const createExperimentalFeatureFix = ({
   defaultSelected: false,
   prompt: () => prompt,
 
-  async check({ mainConfigPath, mainConfig, beforeVersion, storybookVersion, requested }) {
-    if (!mainConfigPath) {
-      return null;
-    }
+  async check({ mainConfig, beforeVersion, storybookVersion, requested }) {
     if (isSupported && !isSupported(mainConfig)) {
       return null;
     }
@@ -85,12 +72,15 @@ export const enableExperimentalDocgenServer = createExperimentalFeatureFix({
   id: 'enable-experimental-docgen-server',
   name: 'experimentalDocgenServer',
   introducedIn: '10.5.0',
-  isSupported: hasDocgenProvider,
+  isSupported: (mainConfig) =>
+    getRendererName(mainConfig) === SupportedRenderer.REACT ||
+    ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
+      getFrameworkPackageName(mainConfig) ?? ''
+    ),
   link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentaldocgenserver',
   prompt: 'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes.',
 });
 
-/** Feature-flag names accepted by `storybook upgrade --features`, mapped to the fix that sets them. */
 const FEATURE_FLAG_FIXES = {
   experimentalReview: enableExperimentalReview,
   experimentalDocgenServer: enableExperimentalDocgenServer,

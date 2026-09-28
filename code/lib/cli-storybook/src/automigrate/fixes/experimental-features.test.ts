@@ -157,13 +157,6 @@ describe('experimental feature flag automigrations', () => {
       expect(result).toBeNull();
     });
 
-    it('is not offered without a resolvable main config', async () => {
-      const result = await enableExperimentalDocgenServer.check!(
-        checkOptions({ mainConfigPath: undefined })
-      );
-      expect(result).toBeNull();
-    });
-
     it('does not offer experimentalReview when changeDetection is explicitly disabled', async () => {
       const result = await enableExperimentalReview.check!(
         checkOptions({ mainConfig: withFeatures({ changeDetection: false }) })

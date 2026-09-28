@@ -52,7 +52,7 @@ transform: () => [
 - A fix fails when its hooks fail on the main config, and then leaves the other files alone; otherwise it succeeds and reports the files it skipped.
   `storybook automigrate` exits with an error while any fix failed or skipped files.
 - The summary keeps a fix's section until the fix runs again, or until the detection pass finds nothing left for it to change.
-- The runner formats a file that an edit changed with the project's formatter before writing it, so hooks neither check diagnostics nor format; a file that only `handler` hooks changed is written as returned.
+- The runner formats a file that an edit changed with the project's own Prettier and Prettier config before writing it, and leaves it as printed when the project has none, so hooks neither check diagnostics nor format; a file that only `handler` hooks changed is written as returned.
 - Hooks see `\n` line endings; a CRLF file is written back with CRLF.
 - Files that no active hook asks for are never read.
 

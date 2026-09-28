@@ -13,7 +13,7 @@ import { dedent } from 'ts-dedent';
 import { stripVTControlCharacters } from 'util';
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
-import { formatFileContent } from 'storybook/internal/common';
+import { formatExistingFile } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
@@ -198,7 +198,7 @@ describe('vitestSetupFile', () => {
         '.storybook/vitest.setup.ts': PREVIEW_ONLY_SETUP_FILE,
         'vitest.config.ts': STANDARD_VITEST_CONFIG,
       });
-      vi.mocked(formatFileContent).mockRejectedValueOnce(new Error('formatter crashed'));
+      vi.mocked(formatExistingFile).mockRejectedValueOnce(new Error('formatter crashed'));
 
       await expect(runFix(vitestSetupFile, { result: result! } as any)).rejects.toThrow(
         'formatter crashed'

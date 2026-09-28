@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findConfigFile, formatFileContent } from 'storybook/internal/common';
+import { findConfigFile, formatExistingFile } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
 
 import { fs, vol } from 'memfs';
@@ -203,7 +203,7 @@ describe('runTransforms', () => {
       [storyInConfigDir]: "import type { Meta } from '@storybook/react-vite';",
     });
     vi.mocked(findConfigFile).mockReturnValue(managerConfigPath);
-    vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+    vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
     const withStory = { ...project, storiesPaths: [...project.storiesPaths, storyInConfigDir] };
     const result = { hasTanstackRouterDecorator: false };
 
@@ -317,7 +317,7 @@ describe('edit hooks', () => {
     vi.mocked(loadConfig).mockClear();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(formatFileContent)
+    vi.mocked(formatExistingFile)
       .mockClear()
       .mockImplementation(async (_path, source) => `${source}\n// formatted`);
     vol.fromJSON({ [mainConfigPath]: 'export default { features: {} };' });
@@ -339,7 +339,7 @@ describe('edit hooks', () => {
     );
 
     expect(loadConfig).toHaveBeenCalledTimes(1);
-    expect(formatFileContent).toHaveBeenCalledTimes(1);
+    expect(formatExistingFile).toHaveBeenCalledTimes(1);
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
       "export default { features: {
         a: true,
@@ -456,7 +456,7 @@ describe('edit hooks', () => {
     );
 
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe('export default {};');
-    expect(formatFileContent).not.toHaveBeenCalled();
+    expect(formatExistingFile).not.toHaveBeenCalled();
   });
 
   it('runs a hook only on files whose code matches filter.code, and formats nothing on detection', async () => {
@@ -475,7 +475,7 @@ describe('edit hooks', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(outcomes.get('hit')?.changed).toEqual([mainConfigPath]);
-    expect(formatFileContent).not.toHaveBeenCalled();
+    expect(formatExistingFile).not.toHaveBeenCalled();
   });
 });
 

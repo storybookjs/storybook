@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
+import { findConfigFile, formatExistingFile, HandledError } from 'storybook/internal/common';
 import {
   type ConfigFile,
   type CsfFile,
@@ -254,7 +254,7 @@ export const runTransforms = async (
 
     if (write && code !== source) {
       try {
-        const output = printed ? await formatFileContent(context.id, code) : code;
+        const output = printed ? await formatExistingFile(context.id, code) : code;
         await writeFile(context.id, crlf ? output.replace(/\r?\n/g, '\r\n') : output);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { formatFileContent } from 'storybook/internal/common';
+import { formatExistingFile } from 'storybook/internal/common';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
@@ -15,7 +15,7 @@ vi.mock('storybook/internal/common', { spy: true });
 
 describe('wrapGetAbsolutePath', () => {
   beforeEach(() => {
-    vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+    vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
   });
 
   describe('check', () => {

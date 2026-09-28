@@ -2,7 +2,7 @@ import * as fsp from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findConfigFile, formatFileContent } from 'storybook/internal/common';
+import { findConfigFile, formatExistingFile } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -44,7 +44,7 @@ const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>) =>
 beforeEach(() => {
   vol.reset();
   vi.mocked(findConfigFile).mockReturnValue(managerConfigPath);
-  vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+  vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
   vi.mocked(fsp.readFile).mockImplementation(vol.promises.readFile as typeof fsp.readFile);
   vi.mocked(fsp.writeFile).mockImplementation(vol.promises.writeFile as typeof fsp.writeFile);
 });

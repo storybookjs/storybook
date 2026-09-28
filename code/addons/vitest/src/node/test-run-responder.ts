@@ -1,15 +1,10 @@
 import type { Channel } from 'storybook/internal/channels';
+import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
 import {
-  createFileSystemCache,
-  loadPreviewOrConfigFile,
-  resolvePathInStorybookCache,
-} from 'storybook/internal/common';
-import {
-  type StoryIndexGenerator,
   experimental_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
-import type { Options, PreviewAnnotation } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
 
@@ -42,8 +37,8 @@ export const resolvePreviewBuilderName = (
 let storePromise: Promise<Store> | undefined;
 
 /**
- * The machinery that answers a test-run request: the leader UniversalStore seeded with the story
- * index and cached config, and the subscriptions that boot the vitest child process and record
+ * The machinery that answers a test-run request: the leader UniversalStore seeded with the cached
+ * config, and the subscriptions that boot the vitest child process and record
  * fatal errors. Memoized so the request listener (which runs it on first request) and the dev
  * server (which additionally runs it eagerly, because the manager UI needs the store immediately)
  * share one store.
@@ -63,15 +58,6 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
       (core?.builder?.options?.configLoader as BuilderOptions['configLoader'])) ||
     undefined;
 
-  const previewPath = loadPreviewOrConfigFile({ configDir: options.configDir });
-  const previewAnnotations = await options.presets.apply<PreviewAnnotation[]>(
-    'previewAnnotations',
-    [],
-    options
-  );
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
-
   const fsCache = createFileSystemCache({
     basePath: resolvePathInStorybookCache(ADDON_ID.replace('/', '-')),
     ns: 'storybook',
@@ -88,8 +74,6 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
     ...storeOptions,
     initialState: {
       ...storeOptions.initialState,
-      previewAnnotations: (previewAnnotations ?? []).concat(previewPath ?? []),
-      index: await storyIndexGenerator.getIndex(),
       ...selectCachedState(cachedState),
     },
     leader:

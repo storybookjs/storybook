@@ -4,8 +4,10 @@ import type { TestResult, TestState } from 'vitest/node';
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
 import type {
   Options,
+  PreviewAnnotation,
   StatusStoreByTypeId,
   StatusValue,
+  StoryIndex,
   TestProviderStoreById,
 } from 'storybook/internal/types';
 
@@ -34,6 +36,7 @@ export type TestManagerOptions = {
   componentTestStatusStore: StatusStoreByTypeId;
   a11yStatusStore: StatusStoreByTypeId;
   testProviderStore: TestProviderStoreById;
+  previewAnnotations: PreviewAnnotation[];
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
 };
@@ -84,6 +87,10 @@ export class TestManager {
 
   public readonly configLoader?: TestManagerOptions['configLoader'];
 
+  public storyIndex: StoryIndex = { v: 5, entries: {} };
+
+  public readonly previewAnnotations: PreviewAnnotation[];
+
   private batchedTestCaseResults: {
     storyId: string;
     testResult: TestResult;
@@ -106,6 +113,7 @@ export class TestManager {
     this.onReady = options.onReady;
     this.storybookOptions = options.storybookOptions;
     this.configLoader = options.configLoader;
+    this.previewAnnotations = options.previewAnnotations;
 
     this.vitestManager = new VitestManager(this);
 
@@ -239,7 +247,7 @@ export class TestManager {
       return true;
     }
 
-    const entry = this.store.getState().index.entries[storyId];
+    const entry = this.storyIndex.entries[storyId];
     return entry?.type === 'story' && !!entry.parent && requestedStoryIds.includes(entry.parent);
   }
 

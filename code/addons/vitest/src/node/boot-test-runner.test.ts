@@ -4,18 +4,19 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { executeNodeCommand } from 'storybook/internal/common';
-import type { Options } from 'storybook/internal/types';
+import type { Options, StoryIndex } from 'storybook/internal/types';
 
 import {
   STATUS_STORE_CHANNEL_EVENT_NAME,
   STORE_CHANNEL_EVENT_NAME,
+  STORY_INDEX_CHANNEL_EVENT_NAME,
   TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
   storeOptions,
 } from '../constants.ts';
 import { log } from '../logger.ts';
 import type { StoreEvent } from '../types.ts';
 import type { StoreState } from '../types.ts';
-import { killTestRunner, runTestRunner } from './boot-test-runner.ts';
+import { killTestRunner, runTestRunner, sendStoryIndexToTestRunner } from './boot-test-runner.ts';
 
 let stdout: (chunk: Buffer | string) => void;
 let stderr: (chunk: Buffer | string) => void;
@@ -90,6 +91,11 @@ afterEach(() => {
   vi.useRealTimers();
 });
 
+const storyIndex: StoryIndex = { v: 5, entries: {} };
+const storyIndexGenerator = { getIndex: vi.fn(async () => storyIndex) };
+
+const childSpawned = () => vi.waitFor(() => expect(executeNodeCommand).toHaveBeenCalled());
+
 const transport = { setHandler: vi.fn(), send: vi.fn() } satisfies ChannelTransport;
 const mockChannel = new Channel({ transport });
 
@@ -102,7 +108,19 @@ describe('bootTestRunner', () => {
   >;
   const mockOptions = {
     configDir: '.storybook',
-  } as Options;
+    presets: {
+      apply: vi.fn(async (key: string, fallback?: unknown) => {
+        switch (key) {
+          case 'storyIndexGenerator':
+            return storyIndexGenerator;
+          case 'previewAnnotations':
+            return ['/project/.storybook/preview.ts'];
+          default:
+            return fallback;
+        }
+      }),
+    },
+  } as unknown as Options;
 
   beforeEach(async () => {
     const { experimental_MockUniversalStore: MockUniversalStore } =
@@ -111,10 +129,13 @@ describe('bootTestRunner', () => {
     vi.mocked(executeNodeCommand).mockClear();
     vi.mocked(log).mockClear();
     child.send.mockClear();
+    storyIndexGenerator.getIndex.mockReset();
+    storyIndexGenerator.getIndex.mockResolvedValue(storyIndex);
   });
 
   it('should execute vitest.js', async () => {
     const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
     expect(vi.mocked(executeNodeCommand)).toHaveBeenCalledWith({
       scriptPath: expect.stringMatching(/vitest\.js$/),
       options: {
@@ -124,6 +145,7 @@ describe('bootTestRunner', () => {
           VITEST: 'true',
           VITEST_CHILD_PROCESS: 'true',
           STORYBOOK_CONFIG_DIR: '.storybook',
+          STORYBOOK_PREVIEW_ANNOTATIONS: JSON.stringify(['/project/.storybook/preview.ts']),
         },
         extendEnv: true,
       },
@@ -134,6 +156,7 @@ describe('bootTestRunner', () => {
 
   it('should log stdout and stderr', async () => {
     const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
     stdout('foo');
     stderr('bar');
     message({ type: 'ready' });
@@ -151,6 +174,7 @@ describe('bootTestRunner', () => {
     }).then(() => {
       ready = true;
     });
+    await childSpawned();
     expect(ready).toBeUndefined();
     message({ type: 'ready' });
     await expect(promise).resolves.toBeUndefined();
@@ -163,12 +187,14 @@ describe('bootTestRunner', () => {
       store: mockStore,
       options: mockOptions,
     });
+    await childSpawned();
     vi.advanceTimersByTime(30001);
     await expect(promise).rejects.toThrow();
   });
 
   it('should forward universal store events', async () => {
     const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
     message({ type: 'ready' });
     await promise;
 
@@ -199,6 +225,7 @@ describe('bootTestRunner', () => {
 
   it('should deliver universal store events from the child without re-broadcasting them', async () => {
     const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
     message({ type: 'ready' });
     await promise;
     for (const type of [
@@ -228,6 +255,7 @@ describe('bootTestRunner', () => {
 
   it('should broadcast child store events to clients exactly once, via the leader forward', async () => {
     const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
     message({ type: 'ready' });
     await promise;
 
@@ -275,6 +303,7 @@ describe('bootTestRunner', () => {
       initEvent: 'init',
       initArgs: ['foo'],
     });
+    await childSpawned();
     message({ type: 'ready' });
     await promise;
     expect(child.send).toHaveBeenCalledWith({
@@ -282,5 +311,222 @@ describe('bootTestRunner', () => {
       from: 'server',
       type: 'init',
     });
+  });
+
+  it('should send the story index to the child before the events queued during boot', async () => {
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      options: mockOptions,
+      initEvent: 'init',
+      initArgs: ['foo'],
+    });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+    expect(child.send.mock.calls.map(([event]) => event.type)).toEqual([
+      STORY_INDEX_CHANNEL_EVENT_NAME,
+      'init',
+    ]);
+    expect(child.send).toHaveBeenCalledWith({
+      type: STORY_INDEX_CHANNEL_EVENT_NAME,
+      args: [storyIndex],
+      from: 'server',
+    });
+  });
+
+  it('should send a new story index to a running child', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+    child.send.mockClear();
+    const updatedIndex: StoryIndex = { v: 5, entries: { 'a--b': {} as never } };
+    storyIndexGenerator.getIndex.mockResolvedValueOnce(updatedIndex);
+
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+
+    expect(child.send).toHaveBeenCalledWith({
+      type: STORY_INDEX_CHANNEL_EVENT_NAME,
+      args: [updatedIndex],
+      from: 'server',
+    });
+  });
+
+  it('should boot with the last good story index while a story file is broken', async () => {
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    storyIndexGenerator.getIndex.mockRejectedValue(new Error('broken story file'));
+
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      options: mockOptions,
+      initEvent: 'init',
+      initArgs: ['foo'],
+    });
+    await childSpawned();
+    message({ type: 'ready' });
+
+    await expect(promise).resolves.toBeUndefined();
+    expect(child.send).toHaveBeenCalledWith({
+      type: STORY_INDEX_CHANNEL_EVENT_NAME,
+      args: [storyIndex],
+      from: 'server',
+    });
+    expect(child.send).toHaveBeenCalledWith({ type: 'init', args: ['foo'], from: 'server' });
+  });
+
+  const deferredIndex = () => {
+    let resolve!: (index: StoryIndex) => void;
+    const promise = new Promise<StoryIndex>((r) => {
+      resolve = r;
+    });
+    return { promise, resolve };
+  };
+  const indexV1: StoryIndex = { v: 5, entries: { v1: {} as never } };
+  const indexV2: StoryIndex = { v: 5, entries: { v2: {} as never } };
+  const sentTypes = () =>
+    child.send.mock.calls.map(([event]) =>
+      event.type === STORY_INDEX_CHANNEL_EVENT_NAME
+        ? `index:${Object.keys(event.args[0].entries).join()}`
+        : event.type === STORE_CHANNEL_EVENT_NAME
+          ? `${event.args[0].event.type}:${event.args[0].event.payload.storyIds}`
+          : event.type
+    );
+  const bootOnTrigger = () =>
+    mockStore.subscribe('TRIGGER_RUN', (event, eventInfo) => {
+      runTestRunner({
+        channel: mockChannel,
+        store: mockStore,
+        options: mockOptions,
+        initEvent: STORE_CHANNEL_EVENT_NAME,
+        initArgs: [{ event, eventInfo }],
+      }).catch(() => {});
+    });
+
+  it('should send a run triggered during boot only after the story index, and once', async () => {
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    bootOnTrigger();
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['a'] } });
+    await childSpawned();
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['b'] } });
+    message({ type: 'ready' });
+    await vi.waitFor(() => expect(sentTypes()).toContain('TRIGGER_RUN:a'));
+
+    expect(sentTypes()).toEqual(['index:', 'TRIGGER_RUN:a', 'TRIGGER_RUN:b']);
+  });
+
+  it('should keep the newest story index when getIndex() calls resolve out of order', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+    child.send.mockClear();
+    const first = deferredIndex();
+    const second = deferredIndex();
+    storyIndexGenerator.getIndex.mockReturnValueOnce(first.promise);
+    storyIndexGenerator.getIndex.mockReturnValueOnce(second.promise);
+
+    const a = sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    const b = sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    second.resolve(indexV2);
+    await b;
+    first.resolve(indexV1);
+    await a;
+
+    expect(sentTypes()).toEqual(['index:v2']);
+  });
+
+  it('should not let the ready handler overwrite an index from a later invalidation', async () => {
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    const promise = runTestRunner({
+      channel: mockChannel,
+      store: mockStore,
+      options: mockOptions,
+      initEvent: 'init',
+    });
+    await childSpawned();
+    child.send.mockClear();
+    const onReady = deferredIndex();
+    storyIndexGenerator.getIndex.mockReturnValueOnce(onReady.promise);
+    message({ type: 'ready' });
+    storyIndexGenerator.getIndex.mockResolvedValueOnce(indexV2);
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    onReady.resolve(indexV1);
+    await promise;
+
+    expect(sentTypes()).toEqual(['index:v2', 'init']);
+  });
+
+  it('should not send an index fetched for a killed child to its successor', async () => {
+    bootOnTrigger();
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['a'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+    await vi.waitFor(() => expect(sentTypes()).toContain('TRIGGER_RUN:a'));
+    const stale = deferredIndex();
+    storyIndexGenerator.getIndex.mockReturnValueOnce(stale.promise);
+    const staleSend = sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    mockStore.send({
+      type: 'FATAL_ERROR',
+      payload: { message: 'crash', error: { message: 'crash' } },
+    });
+    vi.mocked(executeNodeCommand).mockClear();
+    child.send.mockClear();
+
+    storyIndexGenerator.getIndex.mockResolvedValue(indexV2);
+    mockStore.send({ type: 'TRIGGER_RUN', payload: { triggeredBy: 'global', storyIds: ['b'] } });
+    await childSpawned();
+    message({ type: 'ready' });
+    await vi.waitFor(() => expect(sentTypes()).toContain('index:v2'));
+    stale.resolve(indexV1);
+    await staleSend;
+
+    expect(sentTypes().filter((type) => type.startsWith('index:'))).toEqual(['index:v2']);
+  });
+
+  it('should not resend an unchanged story index while a story file stays broken', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    message({ type: 'ready' });
+    await promise;
+    child.send.mockClear();
+    storyIndexGenerator.getIndex.mockRejectedValue(new Error('broken story file'));
+
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+
+    expect(child.send).not.toHaveBeenCalled();
+  });
+
+  it('should send the story index to a booting child once', async () => {
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    await childSpawned();
+    await sendStoryIndexToTestRunner(storyIndexGenerator as never);
+    message({ type: 'ready' });
+    await promise;
+
+    expect(sentTypes()).toEqual(['index:']);
+  });
+
+  it('should report a fatal error when the story index generator cannot be loaded', async () => {
+    const fatalErrors = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', fatalErrors);
+    const options = {
+      ...mockOptions,
+      presets: { apply: vi.fn().mockRejectedValue(new Error('no index')) },
+    } as unknown as Options;
+
+    await expect(
+      runTestRunner({ channel: mockChannel, store: mockStore, options })
+    ).rejects.toThrow('no index');
+
+    expect(fatalErrors).toHaveBeenCalledWith(
+      expect.objectContaining({
+        payload: expect.objectContaining({ message: 'Failed to start test runner process' }),
+      }),
+      expect.anything()
+    );
   });
 });

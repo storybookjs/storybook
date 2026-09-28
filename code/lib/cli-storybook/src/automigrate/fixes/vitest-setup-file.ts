@@ -400,6 +400,7 @@ export function transformSetupFile(
     return unsupportedAnnotation(node);
   };
 
+  const [firstStatement] = program.body;
   const removedStatements = new Set<t.Statement>();
   const capturedNames = new Set<string>();
   const annotationNames = new Set<string>();
@@ -488,7 +489,19 @@ export function transformSetupFile(
     return { kind: 'empty' };
   }
 
+  keepHeader(firstStatement, program.body[0]);
   return { kind: 'rewritten', code: root.toSource(PRINT_OPTIONS) };
+}
+
+// A leading comment on the first statement is usually a license header, which must survive the
+// removal of that statement.
+function keepHeader(removed: t.Statement | undefined, first: t.Statement) {
+  type Commented = { comments?: (t.Comment & { leading?: boolean })[] };
+  const header = (removed as Commented | undefined)?.comments?.filter(({ leading }) => leading);
+  if (removed === first || !header?.length) {
+    return;
+  }
+  (first as Commented).comments = [...header, ...((first as Commented).comments ?? [])];
 }
 
 function resolvesToPreview(importSource: string, options: TransformOptions) {

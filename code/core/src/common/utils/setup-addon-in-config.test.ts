@@ -8,7 +8,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import { fs, vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { formatFileContent } from './formatter.ts';
+import { formatExistingFile } from './formatter.ts';
 import { loadMainConfig } from './load-main-config.ts';
 import { setupAddonInConfig } from './setup-addon-in-config.ts';
 import { syncStorybookAddons } from './sync-main-preview-addons.ts';
@@ -33,7 +33,9 @@ describe('setupAddonInConfig', () => {
   beforeEach(() => {
     vol.reset();
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(formatFileContent).mockImplementation(async (_path, code) => `${code}\n// formatted`);
+    vi.mocked(formatExistingFile).mockImplementation(
+      async (_path, code) => `${code}\n// formatted`
+    );
     vi.mocked(loadMainConfig).mockResolvedValue(mainConfig);
     vi.mocked(syncStorybookAddons).mockResolvedValue();
     vol.fromJSON({ [mainConfigPath]: '' });

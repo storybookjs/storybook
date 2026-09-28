@@ -5,12 +5,10 @@ import {
   isGetAbsolutePathWrapperNecessary,
   wrapValueWithGetAbsolutePathWrapper,
 } from 'storybook/internal/common';
-import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { CommonJsConfigNotSupportedError } from 'storybook/internal/server-errors';
 
 import { dedent } from 'ts-dedent';
 
-import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 import type { Fix } from '../types.ts';
 
 export const wrapGetAbsolutePath: Fix = {
@@ -28,24 +26,21 @@ export const wrapGetAbsolutePath: Fix = {
   transform: () => [
     {
       filter: { kind: ['main'] },
-      handler: (code, { id }) => {
-        const mainConfig = loadConfig(code, id).parse();
+      editConfig: (mainConfig, { id }) => {
         const fields = getFieldsForGetAbsolutePathWrapper(mainConfig);
         if (!fields.some((node) => isGetAbsolutePathWrapperNecessary(node))) {
-          return null;
+          return;
         }
         fields.forEach((node) => wrapValueWithGetAbsolutePathWrapper(mainConfig, node));
 
         if (getAbsolutePathWrapperName(mainConfig) === null) {
-          if (/\.c[jt]sx?$/.test(id) || code.includes('module.exports')) {
+          if (/\.c[jt]sx?$/.test(id) || mainConfig._code.includes('module.exports')) {
             throw new CommonJsConfigNotSupportedError();
           }
           mainConfig.setImport(['dirname'], 'node:path');
           mainConfig.setImport(['fileURLToPath'], 'node:url');
           mainConfig.setBodyDeclaration(getAbsolutePathWrapperAsCallExpression(/\.tsx?$/.test(id)));
         }
-        assertConfigMutationSuccess(mainConfig);
-        return formatConfig(mainConfig);
       },
     },
   ],

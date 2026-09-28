@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { formatFileContent } from 'storybook/internal/common';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
@@ -9,7 +11,13 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
   writeFile: vi.fn(),
 }));
 
+vi.mock('storybook/internal/common', { spy: true });
+
 describe('wrapGetAbsolutePath', () => {
+  beforeEach(() => {
+    vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+  });
+
   describe('check', () => {
     it('should return null if not in a monorepo', async () => {
       const check = checkFix(wrapGetAbsolutePath, {

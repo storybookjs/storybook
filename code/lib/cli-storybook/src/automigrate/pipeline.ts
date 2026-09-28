@@ -1,10 +1,16 @@
 import { readFile, writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { findConfigFile } from 'storybook/internal/common';
-import { type ConfigFile, formatConfig, loadConfig } from 'storybook/internal/csf-tools';
+import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
+import {
+  type ConfigFile,
+  type CsfFile,
+  formatConfig,
+  loadConfig,
+  loadCsf,
+  printCsf,
+} from 'storybook/internal/csf-tools';
 
-import { assertConfigMutationSuccess } from './helpers/config-object.ts';
 import type { Fix, TransformOptions } from './types.ts';
 
 /** Where a file sits in a Storybook project. Files are visited in this order. */
@@ -17,18 +23,31 @@ export interface TransformContext {
   kind: FileKind;
 }
 
+type Handler = (
+  code: string,
+  context: TransformContext
+) => string | null | undefined | Promise<string | null | undefined>;
+
+type Edit<File> = (file: File, context: TransformContext) => unknown;
+
 /**
- * A per-file transform, modelled on Vite's `transform` hook. `handler` receives the output of the
- * fixes before it and returns new code, or `null`/`undefined` to leave the file unchanged. A throw
- * fails the fix for that file without affecting the other fixes.
+ * A per-file transform, modelled on Vite's `transform` hook. `filter.code` skips files whose current
+ * code does not contain it.
+ *
+ * `handler` rewrites the code as text: it receives the output of the fixes before it and returns new
+ * code, or `null`/`undefined` to leave the file unchanged. `editConfig` (main, preview, manager, and
+ * other config-directory files) and `editCsf` (story files) edit the parsed file instead; consecutive
+ * edits share one parse, and the runner prints the result.
+ *
+ * A handler or edit that throws, or an edit that leaves mutation diagnostics, fails the fix for that
+ * file without affecting the other fixes.
  */
-export interface FixTransform {
-  filter: { kind: readonly FileKind[]; id?: RegExp };
-  handler: (
-    code: string,
-    context: TransformContext
-  ) => string | null | undefined | Promise<string | null | undefined>;
-}
+export type FixTransform = {
+  filter: { kind: readonly FileKind[]; id?: RegExp; code?: string | RegExp };
+} & (
+  | { handler: Handler; editConfig?: never; editCsf?: never }
+  | { handler?: never; editConfig?: Edit<ConfigFile>; editCsf?: Edit<CsfFile> }
+);
 
 export interface TransformPlugin {
   fixId: string;
@@ -52,16 +71,38 @@ interface ProjectPaths {
   storiesPaths: string[];
 }
 
-/** Apply a `ConfigFile` edit to config source, for use inside a `transform` handler. */
-export const editConfigSource = async (
-  code: string,
-  id: string,
-  edit: (config: ConfigFile) => unknown
-) => {
-  const config = loadConfig(code, id).parse();
-  await edit(config);
-  assertConfigMutationSuccess(config);
-  return formatConfig(config);
+type Parsed = { config: ConfigFile } | { csf: CsfFile };
+
+const parse = (code: string, { id, kind }: TransformContext): Parsed =>
+  kind === 'story'
+    ? { csf: loadCsf(code, { fileName: id, makeTitle: (title) => title || id }).parse() }
+    : { config: loadConfig(code, id).parse() };
+
+const hasHookFor = (hook: FixTransform, { kind }: TransformContext) =>
+  !!(hook.handler ?? (kind === 'story' ? hook.editCsf : hook.editConfig));
+
+const matchesCode = (filter: FixTransform['filter'], code: string) =>
+  !filter.code ||
+  (typeof filter.code === 'string' ? code.includes(filter.code) : filter.code.test(code));
+
+/**
+ * Run one edit on the parsed file and resolve with the printed file. `changed` misses the legacy
+ * `ConfigFile` mutators, so the runner compares the printed code instead.
+ */
+const edit = async (hook: FixTransform, context: TransformContext, parsed: Parsed) => {
+  const file = 'csf' in parsed ? parsed.csf : parsed.config;
+  const diagnosticsBefore = file.mutationDiagnostics.length;
+  await ('csf' in parsed
+    ? hook.editCsf!(parsed.csf, context)
+    : hook.editConfig!(parsed.config, context));
+  const diagnostics = file.mutationDiagnostics.slice(diagnosticsBefore);
+  if (diagnostics.length > 0) {
+    const messages = diagnostics.map(({ message, loc }) =>
+      loc ? `line ${loc.start.line}: ${message}` : message
+    );
+    throw new HandledError([...new Set(messages)].join('; '));
+  }
+  return 'csf' in parsed ? printCsf(parsed.csf).code : formatConfig(parsed.config);
 };
 
 /**
@@ -133,8 +174,10 @@ export const runTransforms = async (
     const active = pending.flatMap(({ fixId, hooks }) =>
       hooks
         .filter(
-          ({ filter }) =>
-            filter.kind.includes(context.kind) && (!filter.id || filter.id.test(context.id))
+          (hook) =>
+            hook.filter.kind.includes(context.kind) &&
+            (!hook.filter.id || hook.filter.id.test(context.id)) &&
+            hasHookFor(hook, context)
         )
         .map((hook) => ({ fixId, hook }))
     );
@@ -157,24 +200,40 @@ export const runTransforms = async (
     }
 
     let code = source;
+    // Kept across consecutive edits; dropped when a handler rewrites the text or an edit fails, so
+    // the next edit parses `code`, the output of the last hook that succeeded.
+    let parsed: Parsed | undefined;
+    // Printing an AST drifts from the project's style; a text handler keeps it.
+    let printed = false;
     for (const { fixId, hook } of active) {
+      if (!matchesCode(hook.filter, code)) {
+        continue;
+      }
       const outcome = outcomes.get(fixId)!;
       try {
-        const result = await hook.handler(code, context);
+        const result = hook.handler
+          ? await hook.handler(code, context)
+          : await edit(hook, context, (parsed ??= parse(code, context)));
         if (result != null && result !== code) {
           code = result;
+          if (hook.handler) {
+            parsed = undefined;
+          } else {
+            printed = true;
+          }
           if (!outcome.changed.includes(context.id)) {
             outcome.changed.push(context.id);
           }
         }
       } catch (error) {
+        parsed = undefined;
         fail(fixId, error);
       }
     }
 
     if (write && code !== source) {
       try {
-        await writeFile(context.id, code);
+        await writeFile(context.id, printed ? await formatFileContent(context.id, code) : code);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {
           if (outcome.changed.includes(context.id)) {

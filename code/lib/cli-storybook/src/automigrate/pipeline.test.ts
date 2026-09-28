@@ -3,6 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findConfigFile, formatFileContent } from 'storybook/internal/common';
+import { loadConfig } from 'storybook/internal/csf-tools';
 
 import { fs, vol } from 'memfs';
 
@@ -10,9 +11,11 @@ import { reactViteToTanstackReact } from './fixes/react-vite-to-tanstack-react.t
 import { setConfigLayout } from './fixes/set-config-layout.ts';
 import { detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
 import type { Fix } from './types.ts';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/csf-tools', { spy: true });
 vi.mock('globby', () => ({
   globby: vi.fn(async (pattern: string) =>
     Object.keys(vol.toJSON()).filter((file) => file.startsWith(pattern.replace('/**/*', '/')))
@@ -268,6 +271,136 @@ describe('runTransforms', () => {
 
     expect(outcomes.get('both')).toEqual({ changed: project.storiesPaths, errors: [] });
     expect(fs.readFileSync(project.mainConfigPath, 'utf8')).toBe('main');
+  });
+});
+
+describe('edit hooks', () => {
+  const mainConfigPath = '/project/.storybook/main.ts';
+  const project = { configDir: '/project/.storybook', mainConfigPath, storiesPaths: [] };
+  const setFeature = (name: string) => ({
+    filter: { kind: ['main'] as const },
+    editConfig: (main: ConfigFile) => main.set(['features', name], true),
+  });
+
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(loadConfig).mockClear();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vi.mocked(formatFileContent)
+      .mockClear()
+      .mockImplementation(async (_path, source) => `${source}\n// formatted`);
+    vol.fromJSON({ [mainConfigPath]: 'export default { features: {} };' });
+  });
+
+  afterEach(() => {
+    vi.mocked(readFile).mockRestore();
+    vi.mocked(writeFile).mockRestore();
+  });
+
+  it('parses a file once for consecutive edits and formats it once when writing', async () => {
+    const outcomes = await runTransforms(
+      project,
+      [
+        { fixId: 'a', hooks: [setFeature('a')] },
+        { fixId: 'b', hooks: [setFeature('b')] },
+      ],
+      { write: true }
+    );
+
+    expect(loadConfig).toHaveBeenCalledTimes(1);
+    expect(formatFileContent).toHaveBeenCalledTimes(1);
+    expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
+      "export default { features: {
+        a: true,
+        b: true
+      } };
+      // formatted"
+    `);
+    expect(outcomes.get('b')).toEqual({ changed: [mainConfigPath], errors: [] });
+  });
+
+  it('drops the edits of a failed hook and keeps the others', async () => {
+    const outcomes = await runTransforms(
+      project,
+      [
+        { fixId: 'a', hooks: [setFeature('a')] },
+        {
+          fixId: 'broken',
+          hooks: [
+            {
+              filter: { kind: ['main'] },
+              editConfig: (main) => {
+                main.set(['features', 'broken'], true);
+                throw new Error('cannot finish');
+              },
+            },
+          ],
+        },
+        { fixId: 'c', hooks: [setFeature('c')] },
+      ],
+      { write: true }
+    );
+
+    expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
+      "export default { features: {
+        a: true,
+        c: true
+      } };
+      // formatted"
+    `);
+    expect(outcomes.get('broken')).toEqual({
+      changed: [],
+      errors: [{ file: mainConfigPath, message: 'cannot finish' }],
+    });
+  });
+
+  it('fails a hook that leaves mutation diagnostics, with their line', async () => {
+    fs.writeFileSync(mainConfigPath, 'const base = {};\nexport default { ...base };');
+
+    const outcomes = await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], {
+      write: true,
+    });
+
+    expect(outcomes.get('a')?.errors).toEqual([
+      { file: mainConfigPath, message: expect.stringMatching(/^line 2: /) },
+    ]);
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('writes text from a handler as returned, without formatting it', async () => {
+    await runTransforms(
+      project,
+      [
+        {
+          fixId: 'text',
+          hooks: [{ filter: { kind: ['main'] }, handler: () => 'export default {};' }],
+        },
+      ],
+      { write: true }
+    );
+
+    expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe('export default {};');
+    expect(formatFileContent).not.toHaveBeenCalled();
+  });
+
+  it('runs a hook only on files whose code matches filter.code, and formats nothing on detection', async () => {
+    const handler = vi.fn(() => 'changed');
+    const outcomes = await runTransforms(
+      project,
+      [
+        {
+          fixId: 'miss',
+          hooks: [{ filter: { kind: ['main'], code: 'componentSubtitle' }, handler }],
+        },
+        { fixId: 'hit', hooks: [{ filter: { kind: ['main'], code: /features/ }, handler }] },
+      ],
+      { write: false }
+    );
+
+    expect(handler).toHaveBeenCalledTimes(1);
+    expect(outcomes.get('hit')?.changed).toEqual([mainConfigPath]);
+    expect(formatFileContent).not.toHaveBeenCalled();
   });
 });
 

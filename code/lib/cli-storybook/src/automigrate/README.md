@@ -29,18 +29,24 @@ Detection can stop early, so `run` cannot rely on anything a hook recorded; find
 
 ```ts
 transform: () => [
+  { filter: { kind: ['main'] }, editConfig: (main) => main.set(['features', name], true) },
   {
-    filter: { kind: ['main'] },
-    handler: (code, { id }) => editConfigSource(code, id, (main) => main.set(['features', name], true)),
+    filter: { kind: ['preview', 'story'], code: 'componentSubtitle' },
+    editConfig: migrate,
+    editCsf: (csf) => csf.objects({ stories: false }).forEach(migrate),
   },
 ],
 ```
 
-- `filter.kind` selects `main`, `preview`, `manager`, `config` (anything else in the config directory), or `story` files, visited in that order; `filter.id` narrows by path.
+- `filter.kind` selects `main`, `preview`, `manager`, `config` (anything else in the config directory), or `story` files, visited in that order; `filter.id` narrows by path, and `filter.code` skips files whose current code does not contain that string or match that pattern.
   Each file has one kind whichever fixes run: a story inside the config directory is a `story`, and the manager config is a `manager`, so list every kind a hook needs.
-- `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged.
-- A handler that throws, or a file that cannot be read, skips that file for that fix only: the fix still migrates its other files, and later fixes still see the file.
+- A hook either edits the parsed file or rewrites its text.
+  `editConfig(config, { id, kind })` receives a `ConfigFile` for every kind except `story`, and `editCsf(csf, { id, kind })` receives a `CsfFile` for stories.
+  Consecutive edits share one parse, and the runner prints the file after each edit.
+  `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged; use it for text edits such as renaming an import.
+- A hook that throws, an edit that leaves mutation diagnostics, or a file that cannot be read or parsed skips that file for that fix only: the fix still migrates its other files, and later fixes see the file as the last successful hook left it.
   The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run; a dry run only logs the list.
+- The runner formats a file that an edit changed with the project's formatter before writing it, so hooks neither check diagnostics nor format; text from a `handler` is written as returned.
 - Files that no active hook asks for are never read.
 
 ## `files`

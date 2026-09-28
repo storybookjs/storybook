@@ -68,6 +68,7 @@ const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
   'mcp',
   'codex-browser-skill.md'
 );
+const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
 const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   '.agents',
   'skills',
@@ -721,6 +722,15 @@ export async function writeClaudeMcpConfig(sandbox: Sandbox): Promise<void> {
 
 export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
   await writeStorybookMcpConfig(sandbox, 'codex');
+}
+
+// In code mode (the default for GPT-6 models) Codex shows MCP server
+// instructions only once the model searches its tools, which it skips for
+// tasks it thinks it can do alone. AGENTS.md is always in its context.
+export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
+  await sandbox.writeFiles({
+    'AGENTS.md': await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8'),
+  });
 }
 
 /**

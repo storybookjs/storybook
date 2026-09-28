@@ -225,6 +225,8 @@ export const automigrate = async ({
     logMigrationSummary({
       fixResults,
       fixSummary,
+      skippedFiles: fileFailures.filter(({ fixId }) => fixResults[fixId] === FixStatus.SUCCEEDED)
+        .length,
     });
   }
 

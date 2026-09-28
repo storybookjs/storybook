@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 
 import { fs, vol } from 'memfs';
 
@@ -110,6 +111,21 @@ describe('file failures', () => {
     await automigrate({ ...options, isUpgrade: false, isLatest: false });
 
     expect(fs.existsSync(`/project/${REPORT_FILE_NAME}`)).toBe(false);
+  });
+
+  it('ends the summary with a warning instead of a success when files were skipped', async () => {
+    await automigrate({
+      ...project,
+      fixes: [renameFix],
+      yes: true,
+      isUpgrade: false,
+      isLatest: false,
+    });
+
+    expect(logger.warn).toHaveBeenCalledWith(
+      'Migrations ran, but 1 file could not be migrated automatically'
+    );
+    expect(logger.step).not.toHaveBeenCalledWith(expect.stringContaining('ran successfully'));
   });
 
   it('makes storybook automigrate fail while files are left to migrate by hand', async () => {

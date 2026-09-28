@@ -96,7 +96,7 @@ const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 // EVAL_REVIEW=1 enables the `experimentalReview` feature flag in every
 // sandbox Storybook, turning review on for the MCP integration too. Plugin
-// runs don't need it: review is on by default for the `storybook ai` CLI
+// runs don't need it: review is on by default for the `storybook tools` CLI
 // channel, so plugin sandboxes always run review-on, matching released
 // users of either integration. EVAL.ts assertions read the effective
 // per-run signal from the agent context (see isReviewEnabled in test-utils).

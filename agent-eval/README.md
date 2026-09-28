@@ -111,7 +111,7 @@ EVAL_STORYBOOK_LATEST=1 yarn eval
 
 Review mode follows the integration. The plugin experiments always run — and
 assert — the review workflow (review-create published, review section in the
-final response), because review is on by default for the `storybook ai` CLI
+final response), because review is on by default for the `storybook tools` CLI
 channel the plugins use. The MCP experiments run review-off by default
 (stories-preview links, no review-create), matching direct MCP clients where
 the `experimentalReview` feature flag is opt-in. Set `EVAL_REVIEW=1` to enable

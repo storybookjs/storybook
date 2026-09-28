@@ -1,9 +1,16 @@
-import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
+import type {
+  FC,
+  PropsWithChildren,
+  ReactElement,
+  ReactNode,
+  RefObject,
+  SyntheticEvent,
+} from 'react';
 
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
-import type { API_Layout, API_LayoutCustomisations, API_SidebarOptions, API_UI } from './api.ts';
 import type { API_HashEntry, API_StoryEntry } from './api-stories.ts';
+import type { API_Layout, API_LayoutCustomisations, API_SidebarOptions, API_UI } from './api.ts';
 import type {
   Args,
   ArgsStoryFn as ArgsStoryFnForFramework,
@@ -24,7 +31,9 @@ import type { IndexEntry } from './indexer.ts';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_PAGE
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_CONTEXT_MENU
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -324,7 +333,8 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
-  | Addon_TestProviderType;
+  | Addon_TestProviderType
+  | Addon_ContextMenuType;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -345,6 +355,7 @@ export interface Addon_BaseType {
     | Addon_TypesEnum.PREVIEW
     | Addon_TypesEnum.experimental_PAGE
     | Addon_TypesEnum.experimental_TEST_PROVIDER
+    | Addon_TypesEnum.experimental_CONTEXT_MENU
   >;
   /**
    * The unique id of the addon.
@@ -450,17 +461,59 @@ export interface Addon_TestProviderType {
   clear?: () => void;
 }
 
+export interface Addon_ContextMenuItemClickOptions {
+  /**
+   * Ref to the button that opens the context menu. Use it to anchor floating UI to the menu's
+   * origin, e.g. by passing it as `triggerRef` to a React Aria Components Popover.
+   */
+  triggerRef: RefObject<HTMLButtonElement | null>;
+}
+
+export interface Addon_ContextMenuItem {
+  /** The unique id of the menu item within this addon's menu entries. */
+  id: string;
+  /** The human-visible label of the menu item. */
+  title: string;
+  /** Optional icon rendered before the title. */
+  icon?: ReactNode;
+  /**
+   * Whether the menu item is disabled. Use only when necessary as we cannot advertise
+   * why the item is disabled. It needs to be obvious to users from the surrounding context.
+   */
+  disabled?: boolean;
+  /** Called when the user selects the menu item; the context menu closes afterwards. */
+  onClick: (event: SyntheticEvent, options: Addon_ContextMenuItemClickOptions) => void;
+}
+
+/** Options received in the handler that decides what menu entries to inject into the context menu. */
+export interface Addon_ContextMenuOptions {
+  /** The index entry (story, docs, component, group or root) the context menu is opened for. */
+  context: API_HashEntry;
+}
+
+export interface Addon_ContextMenuType {
+  type: Addon_TypesEnum.experimental_CONTEXT_MENU;
+  /** A unique id for this addon's menu entries, to prevent collisions with other addons. */
+  id: string;
+  /**
+   * Return the menu items to add to the context menu of a given index entry.
+   */
+  items: (options: Addon_ContextMenuOptions) => Addon_ContextMenuItem[];
+}
+
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_CONTEXT_MENU
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
+  [Addon_TypesEnum.experimental_CONTEXT_MENU]: Addon_ContextMenuType;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -517,4 +570,10 @@ export enum Addon_TypesEnum {
   experimental_PAGE = 'page',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
+  /**
+   * This adds entries to the context menu of index entries in the sidebar.
+   *
+   * @unstable
+   */
+  experimental_CONTEXT_MENU = 'context-menu',
 }

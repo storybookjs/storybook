@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { forwardRef, useEffect } from 'react';
 
+import { useObjectRef } from 'react-aria/useObjectRef';
 import { color, styled } from 'storybook/theming';
 
 const Input = styled.input(({ theme }) => ({
@@ -47,6 +48,26 @@ const Input = styled.input(({ theme }) => ({
   },
 }));
 
-export const Checkbox = (props: React.InputHTMLAttributes<HTMLInputElement>) => {
-  return <Input {...props} type="checkbox" />;
-};
+export interface CheckboxProps extends React.InputHTMLAttributes<HTMLInputElement> {
+  /**
+   * Render the mixed state, for a value that is neither on nor off. Browsers show it instead of the
+   * `checked` state, and expose the checkbox as `mixed` to assistive technology.
+   */
+  indeterminate?: boolean;
+}
+
+export const Checkbox = forwardRef<HTMLInputElement, CheckboxProps>(function Checkbox(
+  { indeterminate = false, ...props },
+  ref
+) {
+  const inputRef = useObjectRef(ref);
+
+  // `indeterminate` is a DOM property without an HTML attribute, so React cannot set it for us.
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.indeterminate = indeterminate;
+    }
+  }, [indeterminate, inputRef]);
+
+  return <Input {...props} ref={inputRef} type="checkbox" />;
+});

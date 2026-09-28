@@ -1,5 +1,4 @@
-import { basename, dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { basename } from 'node:path';
 
 import type { UserConfig } from 'vite';
 import { version } from 'vite';
@@ -34,13 +33,7 @@ export function ensureRolldownOptions(config: UserConfig) {
 
 // Headroom under the ~1MB response limit.
 const MAX_CHUNK_BYTES = 500 * 1024;
-
-export function chunkedPreviewRuntimePath() {
-  return join(
-    dirname(fileURLToPath(import.meta.resolve('storybook/package.json'))),
-    'dist/preview-chunked/runtime.js'
-  );
-}
+const PREVIEW_CHUNK = /[/\\]preview[/\\]_chunks[/\\]/;
 
 type ChunkOutput = {
   strictExecutionOrder?: boolean;
@@ -53,17 +46,6 @@ type ChunkOutput = {
     | Record<string, string[]>
     | ((id: string, meta: unknown) => string | null | undefined | void);
 };
-
-function aliasChunkedPreviewRuntime(config: UserConfig, runtimePath: string) {
-  config.resolve ??= {};
-  const alias = config.resolve.alias;
-  const find = 'storybook/internal/preview/runtime';
-  if (Array.isArray(alias)) {
-    alias.push({ find, replacement: runtimePath });
-    return;
-  }
-  config.resolve.alias = { ...alias, [find]: runtimePath };
-}
 
 function eachOutput(config: UserConfig, useRolldown: boolean, fn: (output: ChunkOutput) => void) {
   config.build ??= {};
@@ -86,13 +68,11 @@ function eachOutput(config: UserConfig, useRolldown: boolean, fn: (output: Chunk
   fn(options.output);
 }
 
-// The package export is one module, so a size cap cannot split it.
+// Vite follows the static chunk imports and merges them into the entry chunk.
 export function applyChunkedPreviewRuntime(
   config: UserConfig,
   useRolldown = shouldUseRolldownOptions()
 ) {
-  aliasChunkedPreviewRuntime(config, chunkedPreviewRuntimePath());
-
   eachOutput(config, useRolldown, (output) => {
     if (useRolldown) {
       output.strictExecutionOrder = true;
@@ -111,7 +91,7 @@ export function applyChunkedPreviewRuntime(
 
     const previous = output.manualChunks;
     output.manualChunks = (id, meta) => {
-      if (id.includes('preview-chunked')) {
+      if (PREVIEW_CHUNK.test(id)) {
         return basename(id, '.js');
       }
       return previous?.(id, meta);

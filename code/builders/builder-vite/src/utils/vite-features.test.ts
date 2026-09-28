@@ -5,30 +5,11 @@ import type { UserConfig } from 'vite';
 import { applyChunkedPreviewRuntime } from './vite-features.ts';
 
 describe('applyChunkedPreviewRuntime', () => {
-  it('aliases the chunked preview runtime', () => {
+  it('does not add a second preview runtime alias', () => {
     const config: UserConfig = {};
     applyChunkedPreviewRuntime(config, false);
 
-    expect(config.resolve?.alias).toEqual({
-      'storybook/internal/preview/runtime': expect.stringContaining(
-        'dist/preview-chunked/runtime.js'
-      ),
-    });
-  });
-
-  it('appends to an existing alias array', () => {
-    const config: UserConfig = {
-      resolve: { alias: [{ find: 'foo', replacement: 'bar' }] },
-    };
-    applyChunkedPreviewRuntime(config, false);
-
-    expect(config.resolve?.alias).toEqual([
-      { find: 'foo', replacement: 'bar' },
-      {
-        find: 'storybook/internal/preview/runtime',
-        replacement: expect.stringContaining('dist/preview-chunked/runtime.js'),
-      },
-    ]);
+    expect(config.resolve?.alias).toBeUndefined();
   });
 
   it('keeps pre-split preview modules in their own Rollup chunks', () => {
@@ -48,7 +29,7 @@ describe('applyChunkedPreviewRuntime', () => {
     }
 
     expect(
-      manualChunks.manualChunks('/abs/preview-chunked/_chunks/runtime-abc.js', {} as never)
+      manualChunks.manualChunks('/abs/storybook/dist/preview/_chunks/runtime-abc.js', {} as never)
     ).toBe('runtime-abc');
     expect(manualChunks.manualChunks('/abs/src/Button.tsx', {} as never)).toBe('vendor');
     expect(previous).toHaveBeenCalledOnce();

@@ -655,11 +655,11 @@ export interface StorybookFeatures {
   experimentalDocgenServer?: boolean;
 
   /**
-   * Split the prebuilt preview runtime so shipped files stay under 1MB.
+   * Keep Vite from merging the pre-split preview runtime back into one output chunk.
    *
-   * Webpack serves the chunked build at `/sb-preview`. Vite aliases that same build
-   * and caps output chunks (Rolldown `maxSize` on Vite 8; Rollup keeps the pre-split
-   * preview modules in their own chunks).
+   * Webpack always serves the chunked `dist/preview` at `/sb-preview`. This flag only
+   * affects the Vite production build: Rolldown `maxSize` on Vite 8, and on Vite 5–7
+   * Rollup pins each pre-split preview module to its own chunk.
    *
    * @default false
    * @experimental

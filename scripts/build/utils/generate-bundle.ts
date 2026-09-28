@@ -3,7 +3,7 @@ import { mkdir, rm, writeFile } from 'node:fs/promises';
 
 import * as esbuild from 'esbuild';
 import { raw as rawPlugin } from 'esbuild-raw-plugin';
-import { basename, join, relative } from 'pathe';
+import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin as RolldownPlugin } from 'rolldown';
 import { rolldown } from 'rolldown';
@@ -18,7 +18,6 @@ import {
 import { resolvePackageDir } from '../../../code/core/src/shared/utils/module.ts';
 import {
   type BuildEntries,
-  type BuildEntry,
   type EntryType,
   type EsbuildContextOptions,
   getExternal,
@@ -309,17 +308,18 @@ export async function generateBundle({
     );
   }
 
-  const isReplacingChunking = (chunking: BuildEntry['chunkedRuntime']) => chunking === true;
-  const sideDir = (chunking: BuildEntry['chunkedRuntime']) =>
-    typeof chunking === 'object' ? chunking.sideDir : undefined;
+  const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime);
+  const replacingChunkedEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime);
 
-  const regularRuntimeEntries = entries.runtime?.filter(
-    (entry) => !isReplacingChunking(entry.chunkedRuntime)
-  );
-  const replacingChunkedEntries = entries.runtime?.filter((entry) =>
-    isReplacingChunking(entry.chunkedRuntime)
-  );
-  const sideChunkedEntries = entries.runtime?.filter((entry) => sideDir(entry.chunkedRuntime));
+  const chunkedRuntimeOutput = (entryPoint: string, useGlobals: boolean) => {
+    const outDir = basename(dirname(entryPoint));
+    return {
+      entryPoint,
+      outDir,
+      chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
+      useGlobals,
+    };
+  };
 
   if (regularRuntimeEntries?.length) {
     contexts.push(
@@ -337,28 +337,10 @@ export async function generateBundle({
   const compile = await Promise.all(contexts);
   await Promise.all([
     ...(replacingChunkedEntries ?? []).map(({ entryPoint }) =>
-      buildChunkedRuntimeEntry({
-        entryPoint,
-        outDir: 'manager',
-        chunkDir: '_manager-chunks',
-        useGlobals: false,
-      })
-    ),
-    ...(sideChunkedEntries ?? []).map(({ entryPoint, chunkedRuntime }) =>
-      buildChunkedRuntimeEntry({
-        entryPoint,
-        outDir: sideDir(chunkedRuntime)!,
-        chunkDir: '_chunks',
-        useGlobals: false,
-      })
+      buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
     ),
     ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
-      buildChunkedRuntimeEntry({
-        entryPoint,
-        outDir: 'manager',
-        chunkDir: '_manager-chunks',
-        useGlobals: true,
-      })
+      buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))
     ),
   ]);
 

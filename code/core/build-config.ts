@@ -239,7 +239,7 @@ const config: BuildEntries = {
         exportEntries: ['./internal/preview/runtime'],
         entryPoint: './src/preview/runtime.ts',
         dts: false,
-        chunkedRuntime: { sideDir: 'preview-chunked' },
+        chunkedRuntime: true,
       },
       {
         exportEntries: ['./internal/manager/globals-runtime'],

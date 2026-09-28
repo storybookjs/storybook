@@ -11,9 +11,8 @@ export type BuildEntry = {
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
   external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
-  // true: replace esbuild with a Rolldown chunked build under dist/manager.
-  // { sideDir }: keep esbuild for package exports and also write chunks under dist/<sideDir>.
-  chunkedRuntime?: true | { sideDir: string };
+  // Replace the esbuild runtime bundle with a Rolldown build under dist/<entry dir>.
+  chunkedRuntime?: true;
   /**
    * Bundle this entry's d.ts in an isolated single-entry pass, producing one flat self-contained
    * file instead of sharing type chunks with the package's other entries. For entries other

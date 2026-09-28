@@ -7,7 +7,6 @@ import {
   toDevkitVersion,
 } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImports } from 'storybook/internal/common';
-import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -18,9 +17,14 @@ import { dedent } from 'ts-dedent';
 import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import type { FixTransform } from '../pipeline.ts';
 import type { Fix } from '../types.ts';
-import { findWorkspaceJsonFiles, getTargetGroups } from './angular-workspace.ts';
-import { findCompodocSetup, removeCompodocSetup } from './angular-vite-remove-compodoc.ts';
+import { findWorkspaceJsonFiles, getTargetGroups, readJsonFile } from './angular-workspace.ts';
+import {
+  compodocTransforms,
+  findCompodocSetup,
+  removeCompodocSetup,
+} from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
 export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
@@ -43,7 +47,16 @@ interface AngularToAngularViteOptions {
   framework: MigratableFramework;
   angularVersion: string | null;
   hasWebpackFinal: boolean;
+  /**
+   * `import`: a Storybook target exists and `zone.js` is installed, so the preview imports it.
+   * `missing`: a target is zone-based but `zone.js` is not installed.
+   */
+  zoneJs: 'unneeded' | 'import' | 'missing';
 }
+
+const IMPORT_RENAMES = Object.fromEntries(
+  MIGRATABLE_FRAMEWORKS.map((pkg) => [pkg, ANGULAR_VITE_PACKAGE])
+);
 
 const rewriteBuilderRefs = (content: string): string =>
   MIGRATABLE_FRAMEWORKS.reduce(
@@ -123,18 +136,18 @@ const matchMigratableFramework = (frameworkPackageName: string | null) => {
 };
 
 /**
- * Rewrite the builder refs and rename `experimentalZoneless` to `zoneless` in every Storybook target
- * of the given `angular.json` or Nx `project.json` files.
+ * Detection is wider than the rewrite: a multi-project upgrade runs each project against the tree
+ * the first project already rewrote, and a narrower gate would skip the zone.js import.
  */
-const rewriteWorkspaceJson = async (files: FixFiles, paths: string[]) => {
+const resolveZoneJs = (
+  workspaceJson: unknown[],
+  hasZoneJsDependency: boolean
+): AngularToAngularViteOptions['zoneJs'] => {
   let hasStorybookTarget = false;
   let anyZoneBasedTarget = false;
-  const changedPaths = await files.edit(paths, (source) => {
-    let content = source;
-    for (const { pathPrefix, targets } of getTargetGroups(JSON.parse(source))) {
-      for (const [targetName, target] of Object.entries(targets)) {
-        // Detection is wider than the rewrite: a multi-project upgrade runs each project against the
-        // tree the first project already rewrote, and a narrower gate would skip the zone.js import.
+  for (const json of workspaceJson) {
+    for (const { targets } of getTargetGroups(json)) {
+      for (const target of Object.values(targets)) {
         if (
           !isMigratableStorybookTarget(target) &&
           !isStorybookTarget(target, ANGULAR_VITE_PACKAGE)
@@ -143,9 +156,26 @@ const rewriteWorkspaceJson = async (files: FixFiles, paths: string[]) => {
         }
         hasStorybookTarget = true;
         // An earlier run may already have renamed the key, so both spellings count.
-        const zonelessValue = target.options?.zoneless ?? target.options?.experimentalZoneless;
-        anyZoneBasedTarget ||= zonelessValue === false;
+        anyZoneBasedTarget ||=
+          (target.options?.zoneless ?? target.options?.experimentalZoneless) === false;
+      }
+    }
+  }
+  if (hasStorybookTarget && hasZoneJsDependency) {
+    return 'import';
+  }
+  return anyZoneBasedTarget ? 'missing' : 'unneeded';
+};
 
+/**
+ * Rewrite the builder refs and rename `experimentalZoneless` to `zoneless` in every Storybook target
+ * of the given `angular.json` or Nx `project.json` files.
+ */
+const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
+  files.edit(paths, (source) => {
+    let content = source;
+    for (const { pathPrefix, targets } of getTargetGroups(JSON.parse(source))) {
+      for (const [targetName, target] of Object.entries(targets)) {
         if (!isMigratableStorybookTarget(target)) {
           continue;
         }
@@ -157,7 +187,11 @@ const rewriteWorkspaceJson = async (files: FixFiles, paths: string[]) => {
           rewriteBuilderRefs((target.builder ?? target.executor)!)
         );
         if (target.options && 'experimentalZoneless' in target.options) {
-          content = editJsonText(content, [...targetPath, 'options', 'zoneless'], zonelessValue);
+          content = editJsonText(
+            content,
+            [...targetPath, 'options', 'zoneless'],
+            target.options.zoneless ?? target.options.experimentalZoneless
+          );
           content = editJsonText(
             content,
             [...targetPath, 'options', 'experimentalZoneless'],
@@ -168,7 +202,21 @@ const rewriteWorkspaceJson = async (files: FixFiles, paths: string[]) => {
     }
     return content;
   });
-  return { hasStorybookTarget, anyZoneBasedTarget, changedPaths };
+
+const addZoneJsImport: FixTransform = {
+  filter: { kind: ['preview'] },
+  editConfig: (preview, { id }) => {
+    const hasZoneJsImport = preview._ast.program.body.some(
+      (node) =>
+        t.isImportDeclaration(node) &&
+        (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
+    );
+    if (hasZoneJsImport) {
+      return;
+    }
+    preview.setImport(null, 'zone.js');
+    logger.debug(`Added a \`zone.js\` import to ${id}`);
+  },
 };
 
 const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
@@ -230,11 +278,18 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       );
     }
 
+    const workspaceJson = await Promise.all(
+      (await findWorkspaceJsonFiles(packageManager.packageJsonPaths, ['angular.json'])).map(
+        (path) => readJsonFile(files, path)
+      )
+    );
+
     return {
       framework,
       hasWebpackFinal:
         !!mainConfigPath && (await files.read(mainConfigPath)).includes('webpackFinal'),
       angularVersion: angularMajor === null ? null : angularSpecifier,
+      zoneJs: resolveZoneJs(workspaceJson, packageManager.isDependencyInstalled('zone.js')),
     };
   },
 
@@ -242,13 +297,30 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     return 'Migrate from @storybook/angular (Webpack) or @analogjs/storybook-angular to @storybook/angular-vite (in preview).';
   },
 
+  transform: ({ result }) => [
+    {
+      filter: { kind: ['main'] },
+      // Only `@storybook/angular` is a prefix of `@storybook/angular-vite`, so only it needs the
+      // negative lookahead that leaves already-migrated references alone.
+      handler: (code) =>
+        result.framework === ANGULAR_PACKAGE
+          ? code.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE)
+          : code.replaceAll(result.framework, ANGULAR_VITE_PACKAGE),
+    },
+    ...compodocTransforms(),
+    ...(result.zoneJs === 'import' ? [addZoneJsImport] : []),
+    {
+      filter: { kind: ['main', 'preview', 'manager', 'config', 'story'] },
+      handler: (code) => transformImports(code, IMPORT_RENAMES),
+    },
+  ],
+
   async run({
     result,
     files,
     mainConfig,
     mainConfigPath,
     previewConfigPath,
-    storiesPaths,
     configDir,
     packageManager,
     storybookVersion,
@@ -277,11 +349,11 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
         logger.log(
           'Migration cancelled. Port your webpackFinal hook to viteFinal first, then run the automigration again.'
         );
-        return;
+        return false;
       }
     }
 
-    logger.step(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);
+    logger.debug(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);
 
     // `check()` reads the framework off the evaluated config, so it may be inherited from a shared
     // base file that this migration cannot rewrite.
@@ -316,7 +388,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
             buildAngularVitestConfig(relative(dirname(newConfigFile), configDir))
           )
         );
-        logger.step(`Creating a Vitest config file: ${newConfigFile}`);
+        logger.debug(`Creating a Vitest config file: ${newConfigFile}`);
       }
 
       // The addon is not installed until the end of the run, so its postinstall is deferred.
@@ -347,14 +419,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       });
       addonsToPostinstall?.push('@storybook/addon-a11y');
     }
-
-    // Only `@storybook/angular` is a prefix of `@storybook/angular-vite`, so only it needs the
-    // negative lookahead that leaves already-migrated references alone.
-    await files.edit(mainConfigPath, (source) =>
-      result.framework === ANGULAR_PACKAGE
-        ? source.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE)
-        : source.replaceAll(result.framework, ANGULAR_VITE_PACKAGE)
-    );
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as a peer, so an Analog project
     // carries both and neither renders anything once the framework points at angular-vite.
@@ -394,7 +458,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
         : []),
     ]);
 
-    const { hasStorybookTarget, anyZoneBasedTarget, changedPaths } = await rewriteWorkspaceJson(
+    const changedPaths = await rewriteWorkspaceJson(
       files,
       await findWorkspaceJsonFiles(packageManager.packageJsonPaths, ['angular.json'])
     );
@@ -425,18 +489,10 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       builderPackages: [ANGULAR_VITE_PACKAGE, ...MIGRATABLE_FRAMEWORKS],
     });
     if (compodocSetup) {
-      await removeCompodocSetup({
-        result: compodocSetup,
-        files,
-        mainConfigPath,
-        previewConfigPath,
-        packageManager,
-      });
+      await removeCompodocSetup({ result: compodocSetup, files, packageManager });
     }
 
-    const hasZoneJsDependency = packageManager.isDependencyInstalled('zone.js');
-
-    if (hasStorybookTarget && anyZoneBasedTarget && !hasZoneJsDependency) {
+    if (result.zoneJs === 'missing') {
       logger.warn(
         'A Storybook builder target sets `zoneless: false`, but this project does not depend on ' +
           "`zone.js`, so no `import 'zone.js';` was added to your preview - it could not resolve, " +
@@ -444,41 +500,10 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           'target if your app uses zoneless change detection.'
       );
     }
-
-    const needsZoneJs = hasStorybookTarget && hasZoneJsDependency;
-    if (needsZoneJs && previewConfigPath) {
-      const changed = await files.edit(previewConfigPath, (source) => {
-        const preview = loadConfig(source, previewConfigPath).parse();
-        const hasZoneJsImport = preview._ast.program.body.some(
-          (node) =>
-            t.isImportDeclaration(node) &&
-            (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
-        );
-        if (hasZoneJsImport) {
-          return;
-        }
-        preview.setImport(null, 'zone.js');
-        return formatFileContent(previewConfigPath, formatConfig(preview));
-      });
-      if (changed.length > 0) {
-        logger.step(`Added a \`zone.js\` import to ${previewConfigPath}`);
-      }
-    } else if (needsZoneJs) {
+    if (result.zoneJs === 'import' && !previewConfigPath) {
       logger.warn(
         "Could not find a Storybook preview file to add the zone.js import to. If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview file manually."
       );
     }
-
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    const renames = Object.fromEntries(
-      MIGRATABLE_FRAMEWORKS.map((pkg) => [pkg, ANGULAR_VITE_PACKAGE])
-    );
-    await files.edit([...storiesPaths, ...(await globby([`${configDir}/**/*`]))], (source) =>
-      transformImports(source, renames)
-    );
-
-    logger.step('Migration completed successfully!');
-    logger.log(`For more information, see: ${FRAMEWORK_DOC_URL}`);
   },
 };

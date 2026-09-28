@@ -484,6 +484,7 @@ describe('run', () => {
       result: result!,
       mainConfigPath: MAIN,
       previewConfigPath: PREVIEW,
+      storiesPaths: [],
       packageManager: pm,
     } as unknown as Omit<RunOptions<never>, 'files'>);
 

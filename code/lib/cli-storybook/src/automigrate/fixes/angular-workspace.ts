@@ -3,7 +3,18 @@ import { existsSync } from 'node:fs';
 import type { JSONEditPath } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 
+import type { FixFiles } from '../fix-files.ts';
+
 type JsonObject = Record<string, unknown>;
+
+/** `null` when the file cannot be read or is not valid JSON. */
+export const readJsonFile = async (files: FixFiles, path: string): Promise<any | null> => {
+  try {
+    return JSON.parse(await files.read(path));
+  } catch {
+    return null;
+  }
+};
 
 const asObject = (value: unknown): JsonObject | undefined =>
   typeof value === 'object' && value !== null && !Array.isArray(value)

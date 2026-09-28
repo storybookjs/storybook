@@ -193,22 +193,14 @@ export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean
   link: DOCS_URL,
   defaultSelected: false,
 
-  async check({ packageManager, files, previewConfigPath, configDir, storiesPaths }) {
+  async check({ packageManager, files, previewConfigPath, storiesPaths }) {
     const allDeps = packageManager.getAllDependencies();
     if (!allDeps[REACT_VITE_PACKAGE] || !TANSTACK_ROUTER_PACKAGES.some((pkg) => allDeps[pkg])) {
       return null;
     }
 
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    // Decorators are often factored out of the preview into another config directory file.
-    const configFiles = configDir
-      ? await globby(`${configDir}/**/*`, { absolute: true, dot: true })
-      : [];
-    const candidates = new Set(
-      [...(previewConfigPath ? [previewConfigPath] : []), ...configFiles, ...storiesPaths].filter(
-        (file) => scriptFile.test(file)
-      )
+    const candidates = [...(previewConfigPath ? [previewConfigPath] : []), ...storiesPaths].filter(
+      (file) => scriptFile.test(file)
     );
 
     for (const file of candidates) {

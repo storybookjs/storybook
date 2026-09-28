@@ -1,14 +1,22 @@
-/* eslint-disable @typescript-eslint/ban-ts-comment */
-import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
+import type {
+  Args,
+  ArgsStoryFn,
+  Parameters,
+  RenderContext,
+  StrictArgTypes,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
 import { render as litRender } from 'lit';
 // Keep `.js` extension to avoid issue with Webpack (related to export map?)
 import { isTemplateResult } from 'lit/directive-helpers.js';
+import { action } from 'storybook/actions';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
+import { actionEventName, bindArgs } from './docgen-render/bind-args.ts';
+import { getComponentDocgen } from './docgen-render/component-docgen.ts';
 import type { WebComponentsRenderer } from './types.ts';
 
 const { Node } = global;
@@ -22,17 +30,14 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  Object.entries(args).forEach(([key, val]) => {
-    // @ts-ignore
-    element[key] = val;
-  });
-  return element;
+  const argTypes = getComponentDocgen(context)?.argTypes ?? {};
+  return bindArgs(element, { ...actionArgs(argTypes, context.parameters), ...args }, argTypes);
 };
 
 export function renderToCanvas(
   { storyFn, kind, name, showMain, showError, forceRemount }: RenderContext<WebComponentsRenderer>,
   canvasElement: WebComponentsRenderer['canvasElement']
-) {
+): void {
   const element = storyFn();
 
   showMain();
@@ -68,4 +73,18 @@ export function renderToCanvas(
       `,
     });
   }
+}
+
+/** Mirrors core's argTypes action enhancer after the server payload reaches the preview. */
+function actionArgs(argTypes: StrictArgTypes, parameters: Parameters): Args {
+  if (parameters.actions?.disable) {
+    return {};
+  }
+
+  return Object.entries(argTypes).reduce((acc, [key, argType]) => {
+    if (actionEventName(argType)) {
+      acc[key] = action(key);
+    }
+    return acc;
+  }, {} as Args);
 }

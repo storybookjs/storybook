@@ -16,9 +16,10 @@ import type {
   ManifestSlot,
 } from '../manifest/types.ts';
 import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
+import { ARG_TYPE_CATEGORIES, type ArgTypeCategory } from './categories.ts';
 import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
 
-type ArgTypeCategory = 'attributes' | 'properties';
+type MemberCategory = typeof ARG_TYPE_CATEGORIES.attributes | typeof ARG_TYPE_CATEGORIES.properties;
 type ArgTypeSource = ManifestAttribute | ManifestClassField;
 type DocSource = {
   summary?: string;
@@ -32,7 +33,7 @@ type ArgTypeFields = Omit<StrictInputType, 'name' | 'description' | 'table' | 'c
 
 interface ToArgTypeOptions {
   key: string;
-  category: ArgTypeCategory;
+  category: MemberCategory;
   sources: ArgTypeSource[];
   typeProperty: string;
 }
@@ -59,9 +60,9 @@ export function mapArgTypes(
     ...Object.fromEntries([
       ...events.flatMap((event) => eventEntries(event, typeProperty)),
       ...members.filter(isMethod).filter(isPublicMember).map(methodEntry),
-      ...slots.map((slot) => namedEntry(slot, 'slot', 'slots')),
-      ...cssParts.map((part) => namedEntry(part, 'part', 'css shadow parts')),
-      ...cssStates.map((state) => namedEntry(state, 'state', 'css states')),
+      ...slots.map((slot) => namedEntry(slot, 'slot', ARG_TYPE_CATEGORIES.slots)),
+      ...cssParts.map((part) => namedEntry(part, 'part', ARG_TYPE_CATEGORIES.cssParts)),
+      ...cssStates.map((state) => namedEntry(state, 'state', ARG_TYPE_CATEGORIES.cssStates)),
       ...cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
     ]),
     ...mapAttributesAndProperties(declaration, members, typeProperty),
@@ -85,7 +86,7 @@ function mapAttributesAndProperties(
 
     argTypes[field.name] = toArgType({
       key: field.name,
-      category: 'properties',
+      category: ARG_TYPE_CATEGORIES.properties,
       sources: sourcesForField(field, attributes),
       typeProperty,
     });
@@ -103,7 +104,7 @@ function mapAttributesAndProperties(
 
     argTypes[attribute.name] = toArgType({
       key: attribute.name,
-      category: 'attributes',
+      category: ARG_TYPE_CATEGORIES.attributes,
       sources: field ? [field, attribute] : [attribute],
       typeProperty,
     });
@@ -121,7 +122,7 @@ function toArgType({ key, category, sources, typeProperty }: ToArgTypeOptions): 
   );
   const parsed =
     parseTypeText(text) ??
-    (category === 'attributes'
+    (category === ARG_TYPE_CATEGORIES.attributes
       ? { type: { name: 'string' } as const }
       : { type: { name: 'other', value: text ?? '' } as const, control: false as const });
   const readonly = firstValue(sources, (source) =>
@@ -148,7 +149,7 @@ function eventEntries(
   return [
     [
       `${event.name}-event`,
-      memberArgType(event.name, [event], 'events', {
+      memberArgType(event.name, [event], ARG_TYPE_CATEGORIES.events, {
         type: { name: 'other', value: text },
         control: false,
         table: { type: { summary: text } },
@@ -168,7 +169,7 @@ function eventEntries(
 function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
   return [
     `${method.name}-method`,
-    memberArgType(method.name, [method], 'methods', {
+    memberArgType(method.name, [method], ARG_TYPE_CATEGORIES.methods, {
       type: { name: 'function' },
       table: { type: { summary: methodSignature(method) } },
     }),
@@ -178,7 +179,7 @@ function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
 function namedEntry(
   item: ManifestSlot | ManifestCssPart | ManifestCssCustomState,
   suffix: string,
-  category: string
+  category: ArgTypeCategory
 ): [string, StrictInputType] {
   const name = item.name || 'default';
   return [`${name}-${suffix}`, memberArgType(name, [item], category, { type: { name: 'string' } })];
@@ -192,7 +193,7 @@ function cssPropertyEntry(
 
   return [
     property.name,
-    memberArgType(property.name, [property], 'css custom properties', {
+    memberArgType(property.name, [property], ARG_TYPE_CATEGORIES.cssProperties, {
       ...cssCustomPropertyControl(syntax),
       table: {
         type: { summary: syntax },
@@ -205,7 +206,7 @@ function cssPropertyEntry(
 function memberArgType(
   name: string,
   sources: DocSource[],
-  category: string,
+  category: ArgTypeCategory,
   rest: ArgTypeFields
 ): StrictInputType {
   const { table, ...input } = rest;

@@ -96,6 +96,7 @@ describe('web-components legacy baselines', () => {
       const context = {
         id: `${fixtureCase}--${exportName}`,
         component: tagName,
+        parameters: {},
       } as StoryContext<WebComponentsRenderer>;
       const storyRender = story.render ?? meta.render;
       const storyResult = storyRender ? storyRender(args) : defaultRender(args, context);

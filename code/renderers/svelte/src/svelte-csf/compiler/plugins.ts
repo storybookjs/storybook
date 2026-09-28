@@ -57,7 +57,7 @@ export async function preTransformPlugin(): Promise<Plugin> {
 
         let magicCode = new MagicString(code);
 
-        magicCode.overwrite(0, code.length - 1, print(transformedSvelteAST));
+        magicCode.overwrite(0, code.length, print(transformedSvelteAST));
 
         const stringifiedMagicCode = magicCode.toString();
 

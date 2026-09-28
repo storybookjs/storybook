@@ -54,4 +54,23 @@ describe(preTransformPlugin.name, () => {
     expect(result.code).toContain('defineMeta');
     expect(result.meta._storybook_csf_pre_transform).toBe(result.code);
   });
+
+  it('does not repeat the last character of a legacy file', async ({ expect }) => {
+    const code = dedent(`
+      <script context="module">
+        import { Story } from "${pkg.name}";
+        import Button from "./Button.svelte";
+
+        export const meta = { component: Button };
+      </script>
+
+      <Story name="Default" />
+      foo
+    `);
+
+    const result = await runPreTransform(code);
+
+    expect(code.endsWith('foo')).toBe(true);
+    expect(result.code).toMatch(/[^o]foo$/);
+  });
 });

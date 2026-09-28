@@ -1,5 +1,9 @@
+import { writeFile } from 'node:fs/promises';
+
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import { writeConfig } from 'storybook/internal/csf-tools';
+import { formatConfig } from 'storybook/internal/csf-tools';
+
+import { formatFileContent } from './formatter.ts';
 
 import { loadMainConfig } from './load-main-config.ts';
 import { syncStorybookAddons } from './sync-main-preview-addons.ts';
@@ -36,7 +40,12 @@ export async function setupAddonInConfig({
     mainConfigCSFFile.appendValueToArray(['addons'], addonName);
   }
 
-  await writeConfig(mainConfigCSFFile);
+  const [diagnostic] = mainConfigCSFFile.mutationDiagnostics;
+  if (diagnostic) {
+    throw new Error(diagnostic.message);
+  }
+  const fileName = mainConfigCSFFile.fileName!;
+  await writeFile(fileName, await formatFileContent(fileName, formatConfig(mainConfigCSFFile)));
 
   // TODO: remove try/catch once CSF factories is shipped, for now gracefully handle any error
   try {

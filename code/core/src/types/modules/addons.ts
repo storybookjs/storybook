@@ -358,15 +358,6 @@ export interface Addon_BaseType {
    * Do not prefix with `storybook`, this is reserved for core storybook feature and core addons.
    */
   id?: string;
-  /**
-   * This component will wrap your `render` function.
-   *
-   * With it you can determine if you want your addon to be rendered or not.
-   *
-   * This is to facilitate addons keeping state, and keep listening for events even when they are
-   * not currently on screen/rendered.
-   */
-  route?: (routeOptions: RouterData) => string;
   /** This will determine the value of `active` prop of your render function. */
   match?: (matchOptions: RouterData) => boolean;
   /**
@@ -385,8 +376,6 @@ export interface Addon_BaseType {
   paramKey?: string;
   /** @unstable */
   disabled?: boolean | ((parameters: API_StoryEntry['parameters']) => boolean);
-  /** @unstable */
-  hidden?: boolean;
 }
 
 export interface Addon_PageType {

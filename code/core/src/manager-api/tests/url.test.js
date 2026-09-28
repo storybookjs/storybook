@@ -135,6 +135,7 @@ describe('initial state', () => {
             nav: '0',
             shortcuts: '0',
             addonPanel: 'controls',
+            tab: 'my-addon',
             tabs: '0',
             path: '/story/button--primary',
             // genuinely custom params that must survive

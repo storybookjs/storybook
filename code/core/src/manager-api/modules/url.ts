@@ -65,7 +65,16 @@ const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }):
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
 // passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
 // identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
-const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPanel', 'tabs', 'path'];
+const LAYOUT_QUERY_PARAM_KEYS = [
+  'full',
+  'panel',
+  'nav',
+  'shortcuts',
+  'addonPanel',
+  'tab',
+  'tabs',
+  'path',
+];
 
 /** Single source of truth for the custom (non-layout) query params derived from the URL. */
 export const getCustomQueryParams = (
@@ -86,7 +95,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -122,7 +131,6 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
-    showTabs: parseBoolean(tabs),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),

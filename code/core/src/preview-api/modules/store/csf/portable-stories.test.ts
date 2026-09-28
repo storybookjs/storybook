@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { ProjectAnnotations } from 'storybook/internal/csf';
 import type {
@@ -514,5 +514,18 @@ describe('composeStories', () => {
       );
       expect(Object.keys(result)).not.toContain('mockData');
     });
+  });
+});
+
+describe('setProjectAnnotations', () => {
+  it('throws once addon-vitest has applied the project annotations', () => {
+    onTestFinished(() => {
+      delete globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__;
+    });
+    globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__ = true;
+
+    expect(() => setProjectAnnotations({})).toThrow(
+      'setProjectAnnotations() was called from a Vitest setup file'
+    );
   });
 });

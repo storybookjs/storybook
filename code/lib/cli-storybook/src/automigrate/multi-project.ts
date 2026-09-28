@@ -8,10 +8,8 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
-import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
-import { RN_STORYBOOK_DIR } from '../../../../core/src/shared/constants/config-folder.ts';
 
 export interface ProjectAutomigrationData {
   configDir: string;
@@ -22,7 +20,6 @@ export interface ProjectAutomigrationData {
   storybookVersion: string;
   beforeVersion: string;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
 }
 
 export interface AutomigrationCheckResultReport {
@@ -116,7 +113,6 @@ export async function collectAutomigrationsAcrossProjects(
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
-          hasCsfFactoryPreview: project.hasCsfFactoryPreview,
         };
         const result = await fix.check(checkOptions);
 
@@ -461,7 +457,6 @@ export async function runAutomigrations(
     storybookVersion: project.currentCLIVersion,
     beforeVersion: project.beforeVersion,
     storiesPaths: project.storiesPaths,
-    hasCsfFactoryPreview: project.hasCsfFactoryPreview,
   }));
 
   const detectingAutomigrationTask = prompt.taskLog({
@@ -513,20 +508,6 @@ export async function runAutomigrations(
     dryRun: options.dryRun,
     yes: options.yes,
     skipInstall: options.skipInstall,
-  });
-
-  // Special case handling for rnstorybook-config which renames the config dir
-  // TODO: Remove this as soon as the rn-storybook-config automigration is removed
-  Object.entries(automigrationResults).forEach(([configDir, resultData]) => {
-    if (resultData.automigrationStatuses[rnstorybookConfig.id] === FixStatus.SUCCEEDED) {
-      const project = projects.find((p) => p.configDir === configDir);
-      if (project) {
-        const oldConfigDir = project.configDir;
-        project.configDir = project.configDir.replace('.storybook', RN_STORYBOOK_DIR);
-        automigrationResults[project.configDir] = resultData;
-        delete automigrationResults[oldConfigDir];
-      }
-    }
   });
 
   return {

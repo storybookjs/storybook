@@ -33,7 +33,6 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
       get: vi.fn(async (_key: string, fallback: unknown) => fallback),
       set: vi.fn(),
     })),
-    loadPreviewOrConfigFile: vi.fn(() => undefined),
   };
 });
 
@@ -53,10 +52,6 @@ function makeOptions({ builder = '@storybook/builder-vite' }: { builder?: string
         switch (key) {
           case 'core':
             return { builder };
-          case 'previewAnnotations':
-            return [];
-          case 'storyIndexGenerator':
-            return { getIndex: async () => ({ v: 5, entries: {} }) };
           default:
             return fallback;
         }
@@ -250,15 +245,11 @@ describe('wireTestRunResponder', () => {
     const responses = vi.fn();
     channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
     const options = makeOptions();
-    const defaultApply = vi.mocked(options.presets.apply).getMockImplementation()!;
-    let failSetup = true;
-    vi.mocked(options.presets.apply).mockImplementation(async (key: string, fallback?: unknown) => {
-      if (key === 'storyIndexGenerator' && failSetup) {
-        failSetup = false;
-        throw new Error('index generation failed');
-      }
-      return defaultApply(key, fallback);
-    });
+    const { createFileSystemCache } = await import('storybook/internal/common');
+    vi.mocked(createFileSystemCache).mockReturnValueOnce({
+      get: vi.fn().mockRejectedValue(new Error('cache read failed')),
+      set: vi.fn(),
+    } as unknown as ReturnType<typeof createFileSystemCache>);
 
     await wireTestRunResponder({ channel, options });
     emitRequest(channel, 'req-1');
@@ -271,7 +262,7 @@ describe('wireTestRunResponder', () => {
           status: 'error',
           error: expect.objectContaining({
             message: 'Failed to set up the test runner',
-            error: expect.objectContaining({ message: 'index generation failed' }),
+            error: expect.objectContaining({ message: 'cache read failed' }),
           }),
         })
       )

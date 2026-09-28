@@ -71,7 +71,6 @@ describe('multi-project automigrations', () => {
     storybookVersion: '8.0.0',
     beforeVersion: '7.0.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 
   describe('collectAutomigrationsAcrossProjects', () => {

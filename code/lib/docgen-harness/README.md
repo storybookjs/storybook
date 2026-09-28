@@ -56,11 +56,13 @@ src/
 ├── svelte/
 │   ├── svelte-baselines.test.ts
 │   ├── svelte-legacy-gaps.test.ts
+│   ├── svelte-osa-baselines.test.ts
 │   ├── svelte-render.test.ts
 │   └── __testfixtures__/<case>/  # component, input.stories.svelte, optional input.stories.ts,
 │                                 # argtypes.snapshot, description.snapshot,
 │                                 # story-descriptions.snapshot,
-│                                 # snippet-<story>.snapshot, plain-csf-snippet-<story>.snapshot
+│                                 # snippet-<story>.snapshot, plain-csf-snippet-<story>.snapshot,
+│                                 # osa-argtypes.snapshot, osa-payload.snapshot, osa-description.snapshot
 ├── web-components/
 │   ├── web-components-osa-baselines.test.ts
 │   ├── web-components-baselines.test.ts
@@ -154,6 +156,10 @@ The Svelte harness records two snippet paths because Storybook currently has two
   The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the addon's runtime.
 - `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
 `story-descriptions.snapshot` records the docs description parameters that addon-svelte-csf creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
+
+`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the addon's own indexer from `input.stories.svelte`.
+It records `osa-argtypes.snapshot`, `osa-payload.snapshot`, and `osa-description.snapshot` even while the provider returns nothing, so each provider PR shows its progress as a snapshot diff; `osa-argtypes.snapshot` is ratcheted against its own previous recording.
+Parity with the legacy `argtypes.snapshot` is a per-fixture `it.fails` red marker in the same file: when one turns red, add the fixture to `LEGACY_PARITY`, which makes the legacy comparison a hard requirement for it.
 
 ### Capturing compodoc input (angular)
 

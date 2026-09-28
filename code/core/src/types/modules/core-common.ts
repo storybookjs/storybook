@@ -224,7 +224,6 @@ export interface LoadOptions {
   outputDir?: string;
   configDir?: string;
   cacheKey?: string;
-  ignorePreview?: boolean;
   extendServer?: (server: HttpServer) => void;
 }
 
@@ -239,9 +238,6 @@ export interface CLIBaseOptions {
 
 export interface CLIOptions extends CLIBaseOptions {
   port?: number;
-  ignorePreview?: boolean;
-  previewUrl?: string;
-  forceBuildPreview?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
@@ -265,7 +261,6 @@ export interface CLIOptions extends CLIBaseOptions {
 
 export interface BuilderOptions {
   configType?: 'DEVELOPMENT' | 'PRODUCTION';
-  ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
   docsMode?: boolean;
@@ -474,7 +469,8 @@ export interface ComponentsManifest {
       | 'vue-component-meta'
       | 'angular-component-meta'
       | 'compodoc'
-      | 'custom-elements-manifest';
+      | 'custom-elements-manifest'
+      | 'svelte2tsx';
     durationMs: number;
   };
 }
@@ -575,13 +571,6 @@ export interface StorybookFeatures {
    * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
    */
   argTypeTargetsV7?: boolean;
-
-  /**
-   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-   *
-   * Apply decorators from preview.js before decorators from addons or frameworks
-   */
-  legacyDecoratorFileOrder?: boolean;
 
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.

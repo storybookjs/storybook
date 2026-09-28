@@ -10,7 +10,7 @@ import * as SourceParameterStories from '../examples/SourceParameters.stories';
 import { Canvas } from './Canvas';
 import SourceStoriesMeta from './Source.stories';
 
-const meta: Meta<typeof Canvas> = {
+const meta = {
   component: Canvas,
   parameters: {
     layout: 'fullscreen',
@@ -32,7 +32,7 @@ const meta: Meta<typeof Canvas> = {
     docsStyles: true,
   },
   decorators: SourceStoriesMeta.decorators,
-};
+} satisfies Meta<typeof Canvas>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;

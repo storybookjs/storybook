@@ -1,3 +1,52 @@
+## 11.0.0-alpha.1
+
+- A11y: Fix SummaryScreen region nesting - [#36183](https://github.com/storybookjs/storybook/pull/36183), thanks @Sidnioulz!
+- Addon A11y: Fix vision simulator color filters in Firefox - [#36153](https://github.com/storybookjs/storybook/pull/36153), thanks @ghengeveld!
+- Addon Links: Add `hrefToSync` function for synchronous url generation - [#36189](https://github.com/storybookjs/storybook/pull/36189), thanks @Vazaril!
+- Addon-vitest: Support Vitest 5 browser tests - [#36270](https://github.com/storybookjs/storybook/pull/36270), thanks @valentinpalkovic!
+- Angular-Vite: Drop @angular/animations and warn on legacy animation modules - [#35437](https://github.com/storybookjs/storybook/pull/35437), thanks @valentinpalkovic!
+- Angular: Raise the supported floor to 21 - [#36166](https://github.com/storybookjs/storybook/pull/36166), thanks @obvious-autobuild!
+- Builder Vite: Prevent `publicDir` from overriding `index.json` and `staticDirs` - [#36247](https://github.com/storybookjs/storybook/pull/36247), thanks @AriPerkkio!
+- CLI: Automigrate SB11 setConfig layout options - [#36128](https://github.com/storybookjs/storybook/pull/36128), thanks @valentinpalkovic!
+- CLI: Block upgrade when addon-vitest runs Vitest below 4 - [#36187](https://github.com/storybookjs/storybook/pull/36187), thanks @obvious-autobuild!
+- CLI: Remove Create React App support - [#36168](https://github.com/storybookjs/storybook/pull/36168), thanks @obvious-autobuild!
+- Core: Fix DEP0205 deprecation warning for module.register() on Node.js 26 - [#35337](https://github.com/storybookjs/storybook/pull/35337), thanks @alexismo!
+- Core: Fix build crash when ref reachability check fails mid-request - [#36181](https://github.com/storybookjs/storybook/pull/36181), thanks @shilman!
+- Core: Fix manager WebSocket overload during large test runs - [#36229](https://github.com/storybookjs/storybook/pull/36229), thanks @JReinhold!
+- Core: Remove Yarn PnP support - [#36237](https://github.com/storybookjs/storybook/pull/36237), thanks @obvious-autobuild!
+- Core: Remove client-side WebSocket timeout detection - [#36244](https://github.com/storybookjs/storybook/pull/36244), thanks @JReinhold!
+- Core: Restore the change-detection CTA in the sidebar - [#36214](https://github.com/storybookjs/storybook/pull/36214), thanks @ghengeveld!
+- Dependencies: Bump `jscodeshift` to 17.4.0 - [#36262](https://github.com/storybookjs/storybook/pull/36262), thanks @AriPerkkio!
+- Dependencies: Upgrade react-aria to 3.52 and drop the patched builds - [#36216](https://github.com/storybookjs/storybook/pull/36216), thanks @Sidnioulz!
+- Next.js: Deprecate @storybook/nextjs (removal in SB12) - [#36193](https://github.com/storybookjs/storybook/pull/36193), thanks @obvious-autobuild!
+- Next.js: Raise the supported floor to 15 - [#36167](https://github.com/storybookjs/storybook/pull/36167), thanks @obvious-autobuild!
+- Next.js: Raise the supported floor to 15 - [#36201](https://github.com/storybookjs/storybook/pull/36201), thanks @obvious-autobuild!
+- Next.js: Replace node-polyfill-webpack-plugin with minimal polyfills - [#35944](https://github.com/storybookjs/storybook/pull/35944), thanks @ndelangen!
+- Nextjs-Vite: Hash next-image virtual IDs to avoid ENAMETOOLONG - [#35885](https://github.com/storybookjs/storybook/pull/35885), thanks @ndelangen!
+- Node.js: Require 22.12+ for Storybook 11 - [#36279](https://github.com/storybookjs/storybook/pull/36279), thanks @obvious-autobuild!
+- Preact: Preact 11 support - [#33917](https://github.com/storybookjs/storybook/pull/33917), thanks @Sidnioulz!
+- Revert "Next.js: Raise the supported floor to 15" - [#36199](https://github.com/storybookjs/storybook/pull/36199), thanks @obvious-autobuild!
+- Telemetry: One tools-command record per invocation with CLI toolset and tool names - [#36210](https://github.com/storybookjs/storybook/pull/36210), thanks @kasperpeulen!
+- Telemetry: Read the package manager node linker from its config file - [#36158](https://github.com/storybookjs/storybook/pull/36158), thanks @kasperpeulen!
+- Tooling: Use pkg.pr.new for canary releases - [#34799](https://github.com/storybookjs/storybook/pull/34799), thanks @JReinhold!
+- Typescript: Explicitly type enhanceArgTypes - [#35664](https://github.com/storybookjs/storybook/pull/35664), thanks @mrginglymus!
+- UI: Add renderAriaLabel and a context argument to renderLabel - [#36218](https://github.com/storybookjs/storybook/pull/36218), thanks @Sidnioulz!
+- UI: Ensure FocusScope reuse across manager - [#36286](https://github.com/storybookjs/storybook/pull/36286), thanks @Sidnioulz!
+- UI: Fix focus trap, indicators and tab order in the mobile about overlay - [#36224](https://github.com/storybookjs/storybook/pull/36224), thanks @Sidnioulz!
+- UI: Fix stacked modals being inert and Escape closing both - [#36227](https://github.com/storybookjs/storybook/pull/36227), thanks @Sidnioulz!
+- UI: Make settings pages scrollable in mobile layout - [#36226](https://github.com/storybookjs/storybook/pull/36226), thanks @Sidnioulz!
+- UI: Polish shared primitives ahead of the sidebar rework - [#36219](https://github.com/storybookjs/storybook/pull/36219), thanks @Sidnioulz!
+- UI: Preserve story scroll position on HMR re-render - [#36209](https://github.com/storybookjs/storybook/pull/36209), thanks @Sidnioulz!
+- UI: Reset the mobile about overlay when the menu drawer closes - [#36225](https://github.com/storybookjs/storybook/pull/36225), thanks @Sidnioulz!
+- Vite: Fix emptyOutDir override by plugins like Adonis - [#36277](https://github.com/storybookjs/storybook/pull/36277), thanks @Sidnioulz!
+- Vite: Raise minimum supported version to 7 - [#36162](https://github.com/storybookjs/storybook/pull/36162), thanks @obvious-autobuild!
+- Vite: Restore support for Vite 6.3+ - [#36255](https://github.com/storybookjs/storybook/pull/36255), thanks @obvious-autobuild!
+- Vitest: Raise minimum supported Vitest to 4 - [#36164](https://github.com/storybookjs/storybook/pull/36164), thanks @obvious-autobuild!
+- Vitest: Removal of workarounds obsoleted by the Vitest 4 floor - [#36200](https://github.com/storybookjs/storybook/pull/36200), thanks @obvious-autobuild!
+- Vitest: Remove workarounds obsoleted by the Vitest 4 floor - [#36188](https://github.com/storybookjs/storybook/pull/36188), thanks @obvious-autobuild!
+- Vitest: Revert removal of workarounds obsoleted by the Vitest 4 floor - [#36198](https://github.com/storybookjs/storybook/pull/36198), thanks @obvious-autobuild!
+- WC: Add docgen baseline snapshots - [#36212](https://github.com/storybookjs/storybook/pull/36212), thanks @huang-julien!
+
 ## 11.0.0-alpha.0
 
 

@@ -2,7 +2,6 @@ import { formatFileContent, frameworkPackages, getAddonNames } from 'storybook/i
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import { existsSync, readFileSync, writeFileSync } from 'fs';
-import jscodeshift from 'jscodeshift';
 import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
@@ -24,20 +23,13 @@ export const fileExtensions = [
 ] as const;
 
 interface AddonA11yAddonTestOptions {
-  setupFile: string | null;
   previewFile: string | null;
-  transformedSetupCode: string | null;
   transformedPreviewCode: string | null;
-  skipVitestSetupTransformation: boolean;
-  skipPreviewTransformation: boolean;
 }
 
 /**
- * If addon-a11y and addon-vitest are already installed, we need to update
- *
- * - `.storybook/vitest.setup.<ts|js>` to set up project annotations from addon-a11y.
- * - `.storybook/preview.<ts|js>` to set up tags.
- * - If we can't transform the files automatically, we'll prompt the user to do it manually.
+ * If addon-a11y and addon-vitest are both installed, sets `parameters.a11y.test` in
+ * `.storybook/preview.<ts|js>`, or prompts the user to do it when the file can't be transformed.
  */
 export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   id: 'addon-a11y-addon-test',
@@ -45,7 +37,7 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
   promptType: 'auto',
 
-  async check({ mainConfig, configDir, hasCsfFactoryPreview }) {
+  async check({ mainConfig, configDir }) {
     const addons = getAddonNames(mainConfig);
 
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
@@ -63,77 +55,25 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       return null;
     }
 
-    const vitestSetupFile =
-      fileExtensions
-        .map((ext) => path.join(configDir, `vitest.setup${ext}`))
-        .find((filePath) => existsSync(filePath)) ?? null;
-
     const previewFile =
       fileExtensions
         .map((ext) => path.join(configDir, `preview${ext}`))
         .find((filePath) => existsSync(filePath)) ?? null;
 
-    // Without a setup file there is nothing to transform: since Storybook 10.3
-    // the vitest plugin auto-provisions preview annotations (including addon-a11y's).
-    let skipVitestSetupTransformation = hasCsfFactoryPreview || !vitestSetupFile;
-    let skipPreviewTransformation = false;
-
-    if (vitestSetupFile && !skipVitestSetupTransformation) {
-      try {
-        const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
-        skipVitestSetupTransformation = vitestSetupSource.includes('@storybook/addon-a11y');
-      } catch {
-        // leave the flag as-is; getTransformedSetupCode handles unreadable files
-      }
-    }
-
+    let transformedPreviewCode: string | null = null;
     if (previewFile) {
       try {
-        const previewSetupSource = readFileSync(previewFile, 'utf8');
-        skipPreviewTransformation = !shouldPreviewFileBeTransformed(previewSetupSource);
+        const previewSource = readFileSync(previewFile, 'utf8');
+        if (!shouldPreviewFileBeTransformed(previewSource)) {
+          return null;
+        }
+        transformedPreviewCode = await transformPreviewFile(previewSource, previewFile);
       } catch {
-        // leave the flag as-is; getTransformedPreviewCode handles unreadable files
+        // an unreadable or unparsable preview file is reported as a manual step by `run`
       }
     }
 
-    if (skipVitestSetupTransformation && skipPreviewTransformation) {
-      return null;
-    }
-
-    const getTransformedSetupCode = () => {
-      if (!vitestSetupFile || skipVitestSetupTransformation) {
-        return null;
-      }
-
-      try {
-        const vitestSetupSource = readFileSync(vitestSetupFile, 'utf8');
-        return transformSetupFile(vitestSetupSource);
-      } catch {
-        return null;
-      }
-    };
-
-    const getTransformedPreviewCode = () => {
-      if (!previewFile || skipPreviewTransformation) {
-        return null;
-      }
-
-      try {
-        const previewSetupSource = readFileSync(previewFile, 'utf8');
-        return transformPreviewFile(previewSetupSource, previewFile);
-      } catch {
-        return null;
-      }
-    };
-
-    return {
-      setupFile: vitestSetupFile,
-      previewFile: previewFile,
-      transformedSetupCode: getTransformedSetupCode(),
-      transformedPreviewCode: await getTransformedPreviewCode(),
-      skipVitestSetupTransformation,
-      skipPreviewTransformation,
-    };
+    return { previewFile, transformedPreviewCode };
   },
 
   prompt() {
@@ -141,107 +81,28 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
   },
 
   async run({ result }) {
-    let counter = 1;
+    const { previewFile, transformedPreviewCode } = result;
 
-    const {
-      transformedSetupCode,
-      skipPreviewTransformation,
-      skipVitestSetupTransformation,
-      setupFile,
-      previewFile,
-      transformedPreviewCode,
-    } = result;
-
-    const errorMessage: string[] = [];
-    if (!skipVitestSetupTransformation) {
-      if (transformedSetupCode === null && setupFile) {
-        errorMessage.push(dedent`
-          ${counter++}) We couldn't find or automatically update ${picocolors.cyan(`.storybook/vitest.setup.<ts|js>`)} in your project to smoothly set up project annotations from ${picocolors.magenta(`@storybook/addon-a11y`)}. 
-          Please manually update your ${picocolors.cyan(`vitest.setup.ts`)} file to include the following:
-
-          ${picocolors.gray('...')}   
-          ${picocolors.green('+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";')}
-
-          ${picocolors.gray('setProjectAnnotations([')}
-          ${picocolors.gray('  ...')}
-          ${picocolors.green('+ a11yAddonAnnotations,')}
-          ${picocolors.gray(']);')}
-        `);
-      }
-    }
-
-    if (!skipPreviewTransformation) {
-      if (transformedPreviewCode === null) {
-        errorMessage.push(dedent`
-          ${counter++}) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up ${picocolors.cyan('parameters.a11y.test')} from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
-
-          ${picocolors.gray('export default {')}
-          ${picocolors.gray('  ...')}
-          ${picocolors.gray('  parameters: {')}
-          ${picocolors.green('+   a11y: {')}
-          ${picocolors.gray('+      test: "todo"')}
-          ${picocolors.green('+   }')}
-          ${picocolors.gray('  }')}
-          ${picocolors.gray('}')}
-        `);
-      }
-    }
-
-    if (errorMessage.length > 0) {
+    if (!previewFile || transformedPreviewCode === null) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error(
-        dedent`The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:\n${errorMessage.join('\n')}`
-      );
+      throw new Error(dedent`
+        The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:
+        We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up ${picocolors.cyan('parameters.a11y.test')} from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
+
+        ${picocolors.gray('export default {')}
+        ${picocolors.gray('  ...')}
+        ${picocolors.gray('  parameters: {')}
+        ${picocolors.green('+   a11y: {')}
+        ${picocolors.gray('+      test: "todo"')}
+        ${picocolors.green('+   }')}
+        ${picocolors.gray('  }')}
+        ${picocolors.gray('}')}
+      `);
     }
 
-    if (transformedSetupCode && setupFile) {
-      writeFileSync(setupFile, transformedSetupCode, 'utf8');
-    }
-
-    if (transformedPreviewCode && previewFile) {
-      writeFileSync(previewFile, transformedPreviewCode, 'utf8');
-    }
+    writeFileSync(previewFile, transformedPreviewCode, 'utf8');
   },
 };
-
-export function transformSetupFile(source: string) {
-  const j = jscodeshift.withParser('ts');
-
-  const root = j(source);
-
-  // Import a11yAddonAnnotations
-  const importDeclaration = j.importDeclaration(
-    [j.importNamespaceSpecifier(j.identifier('a11yAddonAnnotations'))],
-    j.literal('@storybook/addon-a11y/preview')
-  );
-
-  // Find the setProjectAnnotations call
-  const setProjectAnnotationsCall = root.find(j.CallExpression, {
-    callee: {
-      type: 'Identifier',
-      name: 'setProjectAnnotations',
-    },
-  });
-
-  if (setProjectAnnotationsCall.length === 0) {
-    throw new Error('Could not find setProjectAnnotations call in vitest.setup file');
-  }
-
-  // Add a11yAddonAnnotations to the annotations array or create a new array if argument is a string
-  setProjectAnnotationsCall.forEach((p) => {
-    if (p.value.arguments.length === 1 && p.value.arguments[0].type === 'ArrayExpression') {
-      p.value.arguments[0].elements.unshift(j.identifier('a11yAddonAnnotations'));
-    } else if (p.value.arguments.length === 1 && p.value.arguments[0].type === 'Identifier') {
-      const arg = p.value.arguments[0];
-      p.value.arguments[0] = j.arrayExpression([j.identifier('a11yAddonAnnotations'), arg]);
-    }
-  });
-
-  // Add the import declaration at the top
-  root.get().node.program.body.unshift(importDeclaration);
-
-  return root.toSource();
-}
 
 export function transformPreviewFile(source: string, filePath: string) {
   if (!shouldPreviewFileBeTransformed(source)) {

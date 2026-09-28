@@ -279,7 +279,6 @@ describe('toUpgradedDependencies', () => {
         storiesPaths: [],
         versionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
         versionInstalled: '10.0.0',
-        hasCsfFactoryPreview: false,
       });
 
       const results = await collectProjects({ force: true } as any, ['.storybook'], () => {});
@@ -404,7 +403,6 @@ describe('collectProjects', () => {
       packageManager,
       storiesPaths: [],
       versionInstalled: '8.0.0',
-      hasCsfFactoryPreview: false,
     } as unknown as Awaited<ReturnType<typeof getStorybookData>>);
 
     const results = await collectProjects(

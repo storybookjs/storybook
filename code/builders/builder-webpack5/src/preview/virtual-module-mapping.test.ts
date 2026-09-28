@@ -31,8 +31,12 @@ describe('virtual module mapping', () => {
     expect(entry).not.toContain('{{csfImportPath}}');
 
     const csfImport = entry.match(/^import \{ isPreview \} from '(.+)';$/m);
-    expect(csfImport?.[1]).toMatch(/^(?:[A-Za-z]:)?[/\\]/);
-    expect(csfImport?.[1]).toMatch(/[/\\]dist[/\\]csf[/\\]index\.js$/);
+    // The template double-escapes `\` so the generated string literal evaluates to the real
+    // path on Windows (e.g. `'C:\\Users\\…\\dist\\csf\\index.js'`). Undo that escape to
+    // assert on the evaluated specifier; on POSIX paths this is a no-op.
+    const csfImportPath = csfImport?.[1].replaceAll('\\\\', '\\');
+    expect(csfImportPath).toMatch(/^(?:[A-Za-z]:)?[/\\]/);
+    expect(csfImportPath).toMatch(/[/\\]dist[/\\]csf[/\\]index\.js$/);
 
     // The four externalized imports stay bare — webpack externalizes them via
     // globalsNameReferenceMap, so they inherit the version of the sb-preview globals runtime.

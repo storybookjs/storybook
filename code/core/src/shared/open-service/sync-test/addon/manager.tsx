@@ -3,6 +3,8 @@ import React from 'react';
 import { AddonPanel } from 'storybook/internal/components';
 
 import { addons, registerService, types } from 'storybook/manager-api';
+
+import { concurrentWritesSyncServiceDef } from '../concurrent-writes/definition.ts';
 import { localCommandSyncServiceDef } from '../local-command/definition.ts';
 import { remoteCommandSyncServiceDef } from '../remote-command/definition.ts';
 import { staticLoadSyncServiceDef } from '../static-load/definition.ts';
@@ -25,6 +27,7 @@ addons.register(OPEN_SERVICE_DEMO_ADDON_ID, () => {
     localCommand: registerService(localCommandSyncServiceDef),
     remoteCommand: registerService(remoteCommandSyncServiceDef),
     staticLoad: registerService(staticLoadSyncServiceDef),
+    concurrentWrites: registerService(concurrentWritesSyncServiceDef),
   };
 
   addons.add(OPEN_SERVICE_DEMO_PANEL_ID, {

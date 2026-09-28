@@ -152,6 +152,32 @@ describe('Yarn 1 Proxy', () => {
       expect(version).toEqual('5.3.19');
     });
 
+    it('resolves the next tag to its version', async () => {
+      const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '{"type":"inspect","data":{"next":"6.0.0-alpha.1"}}' }) as never
+      );
+
+      const version = await yarn1Proxy.latestVersion('@chromatic-com/storybook@next');
+
+      expect(executeCommandSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          command: 'yarn',
+          args: ['info', '@chromatic-com/storybook', 'dist-tags', '--json'],
+        })
+      );
+      expect(version).toEqual('6.0.0-alpha.1');
+    });
+
+    it('does not return a dist-tag object when next is unavailable', async () => {
+      mockedExecuteCommand.mockReturnValue(
+        Promise.resolve({ stdout: '{"type":"inspect","data":{"latest":"4.0.1"}}' }) as never
+      );
+
+      await expect(
+        yarn1Proxy.latestVersion('@storybook/addon-webpack5-compiler-babel@next')
+      ).resolves.toBe(null);
+    });
+
     it('with constraint it returns the latest version satisfying the constraint', async () => {
       const executeCommandSpy = mockedExecuteCommand.mockReturnValue(
         Promise.resolve({

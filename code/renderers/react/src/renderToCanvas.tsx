@@ -76,7 +76,7 @@ export async function renderToCanvas(
   }: RenderContext<ReactRenderer>,
   canvasElement: ReactRenderer['canvasElement']
 ) {
-  const { renderElement, unmountElement } = await import('@storybook/react-dom-shim');
+  const { renderElement, unmountElement } = await import('./react-dom-client.tsx');
   const Story = unboundStoryFn as FC<StoryContext<ReactRenderer>>;
 
   const isPortableStory = storyContext.parameters.__isPortableStory;

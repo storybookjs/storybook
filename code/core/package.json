@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.1",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -279,6 +279,7 @@
     "@testing-library/dom": "^10.4.1",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/user-event": "^14.6.3",
+    "@types/chai": "^5.2.2",
     "@vitest/expect": "3.2.4",
     "@vitest/spy": "3.2.4",
     "@webcontainer/env": "^1.1.1",
@@ -287,7 +288,6 @@
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "11.21.2",
-    "process-ancestry": "^0.0.2",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",
@@ -331,7 +331,7 @@
     "@types/js-yaml": "^4.0.5",
     "@types/node": "^22.19.1",
     "@types/npmlog": "^7.0.0",
-    "@types/picomatch": "^2.3.0",
+    "@types/picomatch": "^4.0.3",
     "@types/prettier": "^3.0.0",
     "@types/pretty-hrtime": "^1.0.0",
     "@types/prompts": "^2.0.9",
@@ -375,7 +375,6 @@
     "globby": "^14.1.0",
     "hast-util-to-estree": "^3.0.0",
     "host-validation-middleware": "^0.1.2",
-    "immer": "11.1.8",
     "jiti": "^2.6.1",
     "js-yaml": "^4.1.0",
     "jsdoc-type-pratt-parser": "^4.0.0",
@@ -395,7 +394,7 @@
     "package-manager-detector": "^1.1.0",
     "pathe": "^1.1.2",
     "picocolors": "^1.1.0",
-    "picomatch": "^2.3.0",
+    "picomatch": "^4.0.5",
     "picoquery": "^2.5.0",
     "polished": "^4.2.2",
     "polka": "^1.0.0-next.28",
@@ -430,6 +429,7 @@
     "type-fest": "^5.6.0",
     "type-plus": "^8.0.0-beta.8",
     "typescript": "^6.0.3",
+    "typescript-5": "npm:typescript@5.9.3",
     "unique-string": "^3.0.0",
     "use-resize-observer": "^9.1.0",
     "valibot": "^1.4.0",
@@ -439,9 +439,9 @@
     "zod": "^3.25.76"
   },
   "peerDependencies": {
-    "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
+    "@types/react": "^18.0.0 || ^19.0.0",
     "prettier": "^2 || ^3",
-    "vite-plus": "^0.1.15 || ^0.2.0"
+    "vite-plus": "^0.1.15 || ^0.2.0 || ^0.3.0"
   },
   "peerDependenciesMeta": {
     "@types/react": {

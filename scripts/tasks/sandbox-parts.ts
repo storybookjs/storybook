@@ -336,8 +336,11 @@ export const init: Task['run'] = async (
 
   switch (template.expected.framework) {
     case '@storybook/angular':
+      await prepareAngularSandbox(cwd, template.name);
+      break;
     case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
+      await addBrowserTargetStylesCoverage(cwd);
       break;
     case '@storybook/nextjs':
     case '@storybook/nextjs-vite':
@@ -1232,6 +1235,36 @@ async function prepareTypeChecking(cwd: string) {
   // Add chai global types
   (tsConfigJson.compilerOptions.types ??= []).push('chai');
   await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
+}
+
+/**
+ * Wires the app's `build` (browser) target with a load-bearing stylesheet and Sass include path.
+ * The Storybook builders reference that target via `browserTarget`, and the banner story under
+ * `template-stories/basics/browser-target-styles` renders markup styled only through it: losing
+ * the browser target's `styles` entry leaves the banner unstyled (Chromatic visual diff), while
+ * losing `stylePreprocessorOptions.includePaths` fails the build outright because the banner's
+ * `@use 'theme'` only resolves through the include path. See #36009.
+ */
+async function addBrowserTargetStylesCoverage(cwd: string) {
+  const angularJsonPath = join(cwd, 'angular.json');
+  const angularJson = await readJson(angularJsonPath);
+
+  Object.keys(angularJson.projects).forEach((projectName: string) => {
+    const buildOptions = angularJson.projects[projectName].architect.build.options;
+    buildOptions.styles = [
+      ...(buildOptions.styles ?? []),
+      'src/stories/frameworks/angular-vite/basics/browser-target-styles/banner.scss',
+    ];
+    buildOptions.stylePreprocessorOptions = {
+      ...buildOptions.stylePreprocessorOptions,
+      includePaths: [
+        ...(buildOptions.stylePreprocessorOptions?.includePaths ?? []),
+        'src/stories/frameworks/angular-vite/basics/browser-target-styles/theme',
+      ],
+    };
+  });
+
+  await writeFile(angularJsonPath, JSON.stringify(angularJson, null, 2));
 }
 
 async function prepareAngularSandbox(cwd: string, templateName: string) {

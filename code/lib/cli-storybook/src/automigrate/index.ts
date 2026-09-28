@@ -52,7 +52,6 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     configDir,
     packageManager,
     storiesPaths,
-    hasCsfFactoryPreview,
   } = await getStorybookData({
     configDir: options.configDir,
     packageManagerName: options.packageManager,
@@ -73,7 +72,6 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     isUpgrade: false,
     isLatest: false,
     storiesPaths,
-    hasCsfFactoryPreview,
   });
 
   // only install dependencies if the outcome contains any fixes that were not failed or skipped
@@ -124,13 +122,11 @@ export const automigrate = async ({
   mainConfigPath,
   previewConfigPath,
   storybookVersion,
-  renderer: rendererPackage,
   skipInstall,
   hideMigrationSummary = false,
   isUpgrade,
   isLatest,
   storiesPaths,
-  hasCsfFactoryPreview,
   glob,
 }: AutofixOptions): Promise<{
   fixResults: Record<string, FixStatus>;
@@ -193,7 +189,6 @@ export const automigrate = async ({
     fixes,
     fixId,
     packageManager,
-    rendererPackage,
     skipInstall,
     configDir,
     previewConfigPath,
@@ -204,7 +199,6 @@ export const automigrate = async ({
     dryRun,
     yes,
     storiesPaths,
-    hasCsfFactoryPreview,
   });
 
   // if migration failed, display a log file in the users cwd
@@ -229,7 +223,6 @@ type RunFixesOptions = {
   yes?: boolean;
   storiesPaths: string[];
   dryRun?: boolean;
-  rendererPackage?: string;
   skipInstall?: boolean;
   configDir: string;
   packageManager: JsPackageManager;
@@ -238,7 +231,6 @@ type RunFixesOptions = {
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
   isUpgrade?: boolean;
-  hasCsfFactoryPreview: boolean;
 };
 
 export async function runFixes({
@@ -246,7 +238,6 @@ export async function runFixes({
   fixId,
   dryRun,
   yes,
-  rendererPackage,
   skipInstall,
   configDir,
   packageManager,
@@ -255,7 +246,6 @@ export async function runFixes({
   previewConfigPath,
   storybookVersion,
   storiesPaths,
-  hasCsfFactoryPreview,
 }: RunFixesOptions): Promise<{
   preCheckFailure?: PreCheckFailure;
   fixResults: Record<FixId, FixStatus>;
@@ -276,13 +266,11 @@ export async function runFixes({
       result = await f.check({
         packageManager,
         configDir,
-        rendererPackage,
         mainConfig,
         storybookVersion,
         previewConfigPath,
         mainConfigPath,
         storiesPaths,
-        hasCsfFactoryPreview,
         requested: fixId === f.id,
       });
       logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);

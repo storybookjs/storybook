@@ -6,7 +6,9 @@ import { findOutdatedPackage } from './utils.ts';
 const minimalVersionsMap = {
   '@angular/core': '21.0.0',
   next: '15.0.0',
-  preact: '10.0.0',
+  preact: '10.8.0',
+  react: '18.0.0',
+  'react-dom': '18.0.0',
   svelte: '5.0.0',
   vue: '3.0.0',
   vite: '5.0.0',
@@ -22,6 +24,16 @@ export const blocker = createBlocker({
     const outdated = await findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, {
       packageManager,
     });
+
+    // React experimental/canary builds use 0.0.0 versions even though they provide the supported
+    // modern root API, so their version string must not block the upgrade.
+    if (
+      outdated &&
+      (outdated.packageName === 'react' || outdated.packageName === 'react-dom') &&
+      outdated.installedVersion?.startsWith('0.0.0')
+    ) {
+      return false;
+    }
 
     if (outdated !== false) {
       return outdated;
@@ -81,6 +93,16 @@ export const blocker = createBlocker({
             2. Run your test suite to verify the migration
           `,
           link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher',
+        };
+      case 'react':
+      case 'react-dom':
+        return {
+          title: 'React 18 or newer required',
+          message: dedent`
+            Support for React < 18 has been removed.
+            Please see the migration guide for more information:
+          `,
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up',
         };
       default:
         return {

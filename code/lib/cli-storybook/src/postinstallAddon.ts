@@ -21,6 +21,10 @@ export const postinstallAddon = async (addonName: string, options: PostinstallOp
     // than the project, e.g. via npx or in a monorepo.
     modulePath = require.resolve(hookPath, { paths: [DIR_CWD] });
   } catch (e) {
+    // The addon is installed but has no postinstall hook.
+    if ((e as { code?: string }).code === 'ERR_PACKAGE_PATH_NOT_EXPORTED') {
+      return;
+    }
     // When the addon was installed while this process was already running (the upgrade command
     // installs dependencies mid-run), Node's module resolution has cached the earlier negative
     // lookup and keeps failing. A fresh child process resolves from a clean cache.

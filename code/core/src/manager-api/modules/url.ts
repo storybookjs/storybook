@@ -86,7 +86,7 @@ const initialUrlSupport = ({
   state: { location, path, viewMode, storyId: storyIdFromUrl },
   singleStory,
 }: ModuleArgs) => {
-  const { full, panel, nav, shortcuts, addonPanel, tabs } = queryFromLocation(location);
+  const { full, panel, nav, shortcuts, addonPanel } = queryFromLocation(location);
 
   let navSize;
   let bottomPanelHeight;
@@ -122,7 +122,6 @@ const initialUrlSupport = ({
     bottomPanelHeight,
     rightPanelWidth,
     panelPosition: ['right', 'bottom'].includes(panel) ? panel : undefined,
-    showTabs: parseBoolean(tabs),
   };
   const ui: Partial<API_UI> = {
     enableShortcuts: parseBoolean(shortcuts),

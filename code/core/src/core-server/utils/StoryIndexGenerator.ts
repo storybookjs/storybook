@@ -121,6 +121,9 @@ export class StoryIndexGenerator {
 
   private invalidationListeners: Set<() => void> = new Set();
 
+  // Lets a build that raced with a file change skip caching its result
+  private invalidationCount = 0;
+
   constructor(
     public readonly specifiers: NormalizedStoriesSpecifier[],
     public readonly options: StoryIndexGeneratorOptions
@@ -301,8 +304,11 @@ export class StoryIndexGenerator {
         : this.extractStories(specifier, absolutePath, projectTags)
     );
 
+    // A story file can also be empty here if it changed during the first pass
     await this.updateExtracted(async (specifier, absolutePath) =>
-      this.extractDocs(specifier, absolutePath, projectTags)
+      this.isDocsMdx(absolutePath)
+        ? this.extractDocs(specifier, absolutePath, projectTags)
+        : this.extractStories(specifier, absolutePath, projectTags)
     );
 
     const statsSummary = {} as IndexStatsSummary;
@@ -750,6 +756,7 @@ export class StoryIndexGenerator {
       throw this.lastError;
     }
 
+    const invalidationCount = this.invalidationCount;
     const previewCode = await this.getPreviewCode();
     const projectTags = this.getProjectTags(previewCode);
 
@@ -790,18 +797,21 @@ export class StoryIndexGenerator {
         previewCode && getStorySortParameter(previewCode)
       );
 
-      this.lastStats = stats;
-      this.lastIndex = {
-        v: 5,
-        entries: sorted,
-      };
+      const storyIndex: StoryIndex = { v: 5, entries: sorted };
+      if (invalidationCount === this.invalidationCount) {
+        this.lastStats = stats;
+        this.lastIndex = storyIndex;
+      }
 
-      return { storyIndex: this.lastIndex, stats: this.lastStats };
+      return { storyIndex, stats };
     } catch (err) {
-      this.lastError = err == null || err instanceof Error ? err : undefined;
-      invariant(this.lastError);
-      logger.warn(`🚨 ${this.lastError.toString()}`);
-      throw this.lastError;
+      const error = err == null || err instanceof Error ? err : undefined;
+      invariant(error);
+      if (invalidationCount === this.invalidationCount) {
+        this.lastError = error;
+      }
+      logger.warn(`🚨 ${error.toString()}`);
+      throw error;
     }
   }
 
@@ -813,6 +823,7 @@ export class StoryIndexGenerator {
     });
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidationCount += 1;
     this.invalidationListeners.forEach((listener) => listener());
   }
 
@@ -865,6 +876,7 @@ export class StoryIndexGenerator {
     }
     this.lastIndex = null;
     this.lastError = null;
+    this.invalidationCount += 1;
     this.invalidationListeners.forEach((listener) => listener());
   }
 

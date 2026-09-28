@@ -9,6 +9,7 @@ import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type {
   DocsIndexEntry,
+  Indexer,
   NormalizedStoriesSpecifier,
   StoryIndexEntry,
 } from 'storybook/internal/types';
@@ -2550,6 +2551,74 @@ describe('StoryIndexGenerator', () => {
 
         // this will throw if MetaOf is not removed from A's dependents
         generator.invalidate('./src/A.stories.js', false);
+      });
+    });
+
+    describe('file changed while indexing', () => {
+      it('indexes a story file that changes while the index is being built', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        let pauseIndexing = Promise.resolve();
+        let onIndexingPaused = () => {};
+        const pausingIndexer: Indexer = {
+          test: /A\.stories\.js$/,
+          createIndex: async (fileName, indexerOptions) => {
+            onIndexingPaused();
+            await pauseIndexing;
+            return csfIndexer.createIndex(fileName, indexerOptions);
+          },
+        };
+
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          indexers: [pausingIndexer, csfIndexer],
+        });
+        await generator.initialize();
+        await generator.getIndex();
+
+        let resumeIndexing = () => {};
+        pauseIndexing = new Promise((resolve) => {
+          resumeIndexing = resolve;
+        });
+        const indexingPaused = new Promise<void>((resolve) => {
+          onIndexingPaused = resolve;
+        });
+
+        generator.invalidate('./src/A.stories.js', false);
+        const indexPromise = generator.getIndex();
+        await indexingPaused;
+        generator.invalidate('./src/B.stories.ts', false);
+        resumeIndexing();
+
+        expect(Object.keys((await indexPromise).entries)).toContain('b--story-one');
+        expect(Object.keys((await generator.getIndex()).entries)).toContain('b--story-one');
+      });
+
+      it('does not reuse an index that was built while a story file changed', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], options);
+        await generator.initialize();
+
+        let changeFileDuringSort = true;
+        getStorySortParameterMock.mockReturnValueOnce(() => {
+          if (changeFileDuringSort) {
+            changeFileDuringSort = false;
+            generator.invalidate('./src/B.stories.ts', false);
+          }
+          return 0;
+        });
+        await generator.getIndex();
+
+        loadCsfMock.mockClear();
+        await generator.getIndex();
+        expect(loadCsfMock).toHaveBeenCalledTimes(1);
       });
     });
   });

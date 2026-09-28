@@ -9,6 +9,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -673,6 +674,171 @@ option exists in both places, keep the nested value because it was authoritative
 `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working - the parameter is optional.
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
+
+### Test runner support ended
+
+Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
+
+If your Storybook uses a Vite-based framework, we recommend migrating to the Vitest addon by following the [migration guide](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide).
+
+The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack, switch frameworks first:
+
+- `@storybook/nextjs` → `@storybook/nextjs-vite`: run `npx storybook automigrate nextjs-to-nextjs-vite`.
+- `@storybook/angular` → `@storybook/angular-vite`: run `npx storybook automigrate angular-to-angular-vite`.
+- `@storybook/react-webpack5` → `@storybook/react-vite`: follow the [React Vite migration steps](https://storybook.js.org/docs/get-started/frameworks/react-vite#how-do-i-migrate-from-the-react-webpack-framework).
+- Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
+
+If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with a minimal setup that generates tests from stories:
+
+<details>
+  <summary>Playwright setup</summary>
+
+```ts
+// playwright.config.ts
+import { defineConfig } from '@playwright/test';
+
+const storybookUrl = process.env.STORYBOOK_URL ?? 'http://localhost:6006';
+
+export default defineConfig({
+  testDir: './playwright',
+  globalSetup: './playwright/stories-setup.ts',
+  use: { baseURL: storybookUrl },
+  fullyParallel: true,
+  webServer: storybookUrl
+    ? undefined
+    : {
+        command: 'npm run storybook -- --ci',
+        url: `${storybookUrl}/index.json`,
+        reuseExistingServer: true,
+      },
+});
+```
+
+```ts
+// playwright/stories.spec.ts
+import { test } from '@playwright/test';
+import { loadStories } from './stories-setup.ts';
+
+for (const [title, body] of loadStories()) {
+  test(title, body);
+}
+```
+
+```ts
+// playwright/stories-setup.ts
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
+import { type test, type Page } from '@playwright/test';
+
+declare global {
+  var __storyResult: { status: string; errors: string[] };
+}
+
+interface Entry {
+  id: string;
+  title: string;
+  name: string;
+  type: 'story' | 'docs';
+  tags?: string[];
+}
+
+interface Report {
+  type: string;
+  status: string;
+  result?: { violations?: { id: string; help: string }[] };
+}
+
+const storybookURL = process.env.STORYBOOK_URL ?? 'http://localhost:6006';
+const indexFile = resolve('node_modules/.cache/storybook-playwright/index.json');
+
+export default async function globalSetup() {
+  const response = await fetch(`${storybookURL}/index.json`);
+
+  if (!response.ok) {
+    throw new Error(`Failed to fetch ${storybookURL}/index.json: ${response.status}`);
+  }
+
+  mkdirSync(dirname(indexFile), { recursive: true });
+  writeFileSync(indexFile, await response.text());
+}
+
+export function loadStories(): [string, Parameters<typeof test>[2]][] {
+  const index = JSON.parse(readFileSync(indexFile, 'utf8')) as {
+    entries: Record<string, Entry>;
+  };
+
+  return Object.values(index.entries)
+    .filter((entry) => entry.type === 'story' && entry.tags?.includes('test'))
+    .map((entry) => [
+      `${entry.title} › ${entry.name}`,
+      async ({ page }) => visitStory(page, entry),
+    ]);
+}
+
+async function visitStory(page: Page, entry: Entry) {
+  await page.addInitScript(captureStoryResult);
+  await page.goto(`/iframe.html?id=${entry.id}&viewMode=story`);
+
+  const handle = await page.waitForFunction(() => globalThis.__storyResult);
+  const result = await handle.jsonValue();
+
+  if (result.status !== 'success' || result.errors.length > 0) {
+    throw new Error(
+      [
+        `Story "${entry.title} › ${entry.name}" ${result.status === 'missing' ? 'is missing' : 'failed'}.`,
+        `Open it in Storybook: ${storybookURL}/?path=/story/${entry.id}`,
+        '',
+        ...result.errors,
+      ].join('\n')
+    );
+  }
+}
+
+function captureStoryResult() {
+  const errors: string[] = [];
+  const serialize = (error: Error) => error.stack ?? `${error.name}: ${error.message}`;
+
+  let channel: any;
+  Object.defineProperty(globalThis, '__STORYBOOK_ADDONS_CHANNEL__', {
+    configurable: true,
+    get: () => channel,
+    set: (value) => {
+      channel = value;
+      channel.on('storyErrored', ({ title, description }: Record<string, string>) =>
+        errors.push(`${title}\n${description}`)
+      );
+      channel.on('storyThrewException', (error: Error) => errors.push(serialize(error)));
+      channel.on('playFunctionThrewException', (error: Error) => errors.push(serialize(error)));
+      channel.on('unhandledErrorsWhilePlaying', (unhandled: Error[]) =>
+        errors.push(...unhandled.map(serialize))
+      );
+      channel.on('storyMissing', (id: string) => {
+        globalThis.__storyResult = {
+          status: 'missing',
+          errors: [`Story "${id}" not found`],
+        };
+      });
+      channel.on(
+        'storyFinished',
+        ({ status, reporters }: { status: string; reporters: Report[] }) => {
+          for (const report of reporters.filter((report) => report.status === 'failed')) {
+            const violations = report.result?.violations ?? [];
+            errors.push(
+              [
+                `${report.type} report failed`,
+                ...violations.map((v) => `- ${v.id}: ${v.help}`),
+              ].join('\n')
+            );
+          }
+          globalThis.__storyResult = { status, errors };
+        }
+      );
+    },
+  });
+}
+```
+
+</details>
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

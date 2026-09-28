@@ -23,7 +23,7 @@ import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
-import { lt, prerelease } from 'semver';
+import { gt, lt, prerelease } from 'semver';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -486,8 +486,12 @@ export const generateUpgradeSpecs = async (
       try {
         const upgradePromises = satelliteDependencies.map(async (dependency) => {
           try {
-            const packageName = isCLIPrerelease ? `${dependency}@next` : dependency;
-            const mostRecentVersion = (await packageManager.latestVersion(packageName))!;
+            const latest = await packageManager.latestVersion(dependency);
+            // A `next` tag that is older than `latest` would downgrade the addon.
+            const next = isCLIPrerelease
+              ? await packageManager.latestVersion(`${dependency}@next`)
+              : null;
+            const mostRecentVersion = next && (!latest || gt(next, latest)) ? next : latest;
             if (!mostRecentVersion) {
               return null;
             }

@@ -1,3 +1,6 @@
+import { getAddonNames } from 'storybook/internal/common';
+import { loadConfig } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 import { detectAgent } from 'storybook/internal/telemetry';
 
 import picocolors from 'picocolors';
@@ -13,8 +16,26 @@ export const addonMcp: Fix = {
   id: 'addon-mcp',
   link: 'https://github.com/storybookjs/storybook/tree/next/code/addons/mcp',
 
-  async check() {
-    return detectAgent() ? {} : null;
+  async check({ mainConfig, mainConfigPath, files }) {
+    if (!detectAgent()) {
+      return null;
+    }
+
+    // An optional addon: skip a main config that `add` could not edit, such as one that spreads a
+    // shared config or exports a factory call, instead of failing the migration.
+    const isInstalled = getAddonNames(mainConfig).some((addon) => addon.includes(ADDON_MCP));
+    if (!isInstalled && mainConfigPath) {
+      const main = loadConfig(await files.read(mainConfigPath), mainConfigPath).parse();
+      main.appendValueToArray(['addons'], ADDON_MCP);
+      if (main.mutationDiagnostics.length > 0) {
+        logger.debug(
+          `Skipping ${ADDON_MCP} in ${mainConfigPath}: ${main.mutationDiagnostics[0].message}`
+        );
+        return null;
+      }
+    }
+
+    return {};
   },
 
   prompt() {

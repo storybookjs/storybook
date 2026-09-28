@@ -1,19 +1,19 @@
 import { existsSync } from 'node:fs';
 
-import type { JSONEditPath } from 'storybook/internal/cli';
+import { type JSONEditPath, parseJsonText } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 
 import type { FixFiles } from '../fix-files.ts';
 
 type JsonObject = Record<string, unknown>;
 
-/** `null` when the file cannot be read or is not valid JSON. */
+/** `null` when the file cannot be read or is not valid JSON with comments. */
 export const readJsonFile = async (
   files: Pick<FixFiles, 'read'>,
   path: string
 ): Promise<any | null> => {
   try {
-    return JSON.parse(await files.read(path));
+    return parseJsonText(await files.read(path));
   } catch {
     return null;
   }

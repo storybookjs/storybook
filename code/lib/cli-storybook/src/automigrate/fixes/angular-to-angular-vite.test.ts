@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
 import semver from 'semver';
+import { dedent } from 'ts-dedent';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -616,6 +617,37 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
 
       await expect(runMigration()).rejects.toThrow(ANGULAR_JSON);
       expect(read(MAIN)).toBe(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('fails before changing dependencies when the preview cannot be read', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      await expect(
+        runMigration({ previewConfigPath: '/project/.storybook/preview.ts' })
+      ).rejects.toThrow('ENOENT');
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+    });
+
+    it('rewrites a workspace file that contains comments and trailing commas', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      vol.fromJSON({
+        [PROJECT_JSON]: dedent`
+          {
+            // Storybook for the design system
+            "targets": {
+              "storybook": { "executor": "@storybook/angular:start-storybook", },
+            },
+          }
+        `,
+      });
+
+      await runMigration();
+
+      expect(read(PROJECT_JSON)).toContain(`"executor": "${ANGULAR_VITE_PACKAGE}:start-storybook"`);
+      expect(read(PROJECT_JSON)).toContain('// Storybook for the design system');
     });
 
     // Compodoc no longer runs once the framework switches, and the dedicated
@@ -784,7 +816,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         '@storybook/addon-a11y',
         expect.objectContaining({ skipInstall: true, skipPostinstall: true })
       );
-      expect(addonsToPostinstall).toEqual(['@storybook/addon-vitest', '@storybook/addon-a11y']);
+      expect(addonsToPostinstall).toEqual(['@storybook/addon-vitest']);
     });
 
     it('does not invoke storybook add when addons are declined', async () => {

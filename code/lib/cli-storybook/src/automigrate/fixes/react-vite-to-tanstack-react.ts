@@ -204,7 +204,8 @@ export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean
     );
 
     for (const file of candidates) {
-      const content = await files.read(file);
+      // An unreadable file is reported by the apply pass, not by this check.
+      const content = await files.read(file).catch(() => '');
       if (
         TANSTACK_ROUTER_IMPORT.test(content) &&
         TANSTACK_ROUTER_DECORATOR_MARKERS.some((marker) => content.includes(marker))

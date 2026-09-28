@@ -44,12 +44,11 @@ export const upgradeStorybookRelatedDependencies = {
 
     const packageNames = new Set(
       [...storybookDependencies, ...incompatibleDependencies].filter((dep) => {
-        if (!NON_REGISTRY_SPECIFIER.test(allDependencies[dep])) {
+        const specifier = allDependencies[dep];
+        if (specifier !== undefined && !NON_REGISTRY_SPECIFIER.test(specifier)) {
           return true;
         }
-        logger.debug(
-          `Skipping ${dep} as it does not have a valid version type: ${allDependencies[dep]}`
-        );
+        logger.debug(`Skipping ${dep}: it is not declared with a registry version (${specifier})`);
         return false;
       })
     );

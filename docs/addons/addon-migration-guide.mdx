@@ -180,9 +180,30 @@ See the [`@storybook/react-dom-shim` migration reference](https://github.com/sto
 
 #### Tab UI type removed
 
-The `TAB` addon UI type has been removed. It was not possible for us to build an accessible keyboard navigation experience in the Storybook toolbar with tabs present in the toolbar.
+`type: types.TAB` has been removed. Storybook no longer renders addon tabs beside the canvas, and it ignores the `tab` query parameter. There is no automigration: addon authors register UI directly, so Storybook cannot rewrite those calls.
 
-Addons may now only create `PANEL`, `TOOL` or `TOOLEXTRA` types. We recommend you replace any existing use of this type by a `PANEL`, or by a `TOOL` that opens a `Modal`.
+Register the same UI as a panel:
+
+```diff title="manager.js"
+ import { addons, types } from 'storybook/manager-api';
+
+ addons.register('my-addon', () => {
+   addons.add('my-addon/panel', {
+-    type: types.TAB,
+-    title: 'My Addon',
+-    render: () => <div>Hello World</div>,
++    type: types.PANEL,
++    title: 'My Addon',
++    render: ({ active }) => (active ? <div>Hello World</div> : null),
+   });
+ });
+```
+
+A panel stays next to the story. A tab replaced the canvas. If the UI is a short-lived action rather than a persistent view, register a `TOOL` that opens a `Modal` instead.
+
+`match` no longer receives `tabId`. Remove checks such as `!tabId` or `tabId === 'my-addon/tab'`, and use `viewMode` when a tool should appear only for stories or docs.
+
+`parameters.previewTabs` and `layout.showTabs` no longer change the manager. The `tabs` URL parameter is ignored.
 
 #### Changes to story index
 

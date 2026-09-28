@@ -368,7 +368,7 @@ export interface Addon_BaseType {
    */
   route?: (routeOptions: RouterData) => string;
   /** This will determine the value of `active` prop of your render function. */
-  match?: (matchOptions: RouterData & { tabId?: string }) => boolean;
+  match?: (matchOptions: RouterData) => boolean;
   /**
    * The actual contents of your addon.
    *
@@ -490,13 +490,6 @@ export interface Addon_Config {
 }
 
 export enum Addon_TypesEnum {
-  /**
-   * This API is used to create a tab the toolbar above the canvas, This API might be removed in the
-   * future.
-   *
-   * @unstable
-   */
-  TAB = 'tab',
   /** This adds panels to the addons side panel. */
   PANEL = 'panel',
   /** This adds items in the toolbar above the canvas - on the left side. */

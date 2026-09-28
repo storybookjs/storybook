@@ -10,6 +10,8 @@ import type { FileFailure } from '../pipeline.ts';
 
 export const REPORT_FILE_NAME = 'automigrations-summary.md';
 
+export const pluralFiles = (count: number) => `${count} file${count === 1 ? '' : 's'}`;
+
 export type FixFileFailure = FileFailure & { fixId: string };
 
 const cell = (text: string) => text.replaceAll('|', '\\|').replace(/\s*\n\s*/g, ' ');
@@ -60,6 +62,6 @@ export const reportFileFailures = async (failures: FixFileFailure[], { dryRun = 
   }
   await writeFile(reportPath, renderFailureReport(failures, root));
   logger.warn(
-    `${failures.length} file${failures.length === 1 ? '' : 's'} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
+    `${pluralFiles(failures.length)} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
   );
 };

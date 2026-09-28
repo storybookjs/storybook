@@ -20,7 +20,7 @@ import type {
   Prompt,
 } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
-import { type FixFileFailure, reportFileFailures } from './helpers/failure-report.ts';
+import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import { applies, appliesAfterDetection, pluginsFor, runTransforms } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
@@ -457,10 +457,12 @@ export async function runFixes({
   const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
 
   for (const { fix: f, taskLog } of ran) {
-    fileFailures.push(
-      ...(applied.get(f.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: f.id }))
-    );
+    const errors = applied.get(f.id)?.errors ?? [];
+    fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: f.id })));
     logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
+    if (errors.length > 0) {
+      logger.warn(`${f.id}: ${pluralFiles(errors.length)} skipped`);
+    }
     fixResults[f.id] = FixStatus.SUCCEEDED;
     fixSummary.succeeded.push(f.id);
     taskLog.success(`Ran ${picocolors.cyan(f.id)} migration`);

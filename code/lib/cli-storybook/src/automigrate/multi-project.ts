@@ -9,7 +9,7 @@ import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
-import { type FixFileFailure, reportFileFailures } from './helpers/failure-report.ts';
+import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
 import { applies, appliesAfterDetection, pluginsFor, runTransforms } from './pipeline.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
@@ -421,9 +421,11 @@ export async function runAutomigrationsForProjects(
 
     const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
     for (const { fix } of ran) {
-      fileFailures.push(
-        ...(applied.get(fix.id)?.errors ?? []).map((failure) => ({ ...failure, fixId: fix.id }))
-      );
+      const errors = applied.get(fix.id)?.errors ?? [];
+      fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: fix.id })));
+      if (errors.length > 0) {
+        taskLog.message(CLI_COLORS.warning(`▲ ${fix.id}: ${pluralFiles(errors.length)} skipped`));
+      }
     }
 
     const automigrationsWithErrors = Object.values(fixResults).filter(

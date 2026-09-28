@@ -2,7 +2,7 @@ import { createFixFiles } from '../fix-files.ts';
 import {
   type FileFailure,
   applies,
-  appliesAfterDetection,
+  detectApplicable,
   pluginsFor,
   runTransforms,
 } from '../pipeline.ts';
@@ -22,14 +22,11 @@ export const checkFix = async <Result>(
     ...options,
     files: createFixFiles().files,
   })) as Result | null;
-  if (result === null || !fix.transform) {
-    return result;
+  if (result === null) {
+    return null;
   }
-  const project = options as ProjectOptions;
-  const detected = await runTransforms(project, pluginsFor([{ fix, result }], project), {
-    write: false,
-  });
-  return appliesAfterDetection(fix, detected.get(fix.id)) ? result : null;
+  const applicable = await detectApplicable(options as ProjectOptions, [{ fix, result }]);
+  return applicable.length > 0 ? result : null;
 };
 
 /**

@@ -10,7 +10,7 @@ import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import { applies, appliesAfterDetection, pluginsFor, runTransforms } from './pipeline.ts';
+import { applies, detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
 
@@ -120,18 +120,15 @@ export async function collectAutomigrationsAcrossProjects(
       }
     }
 
-    const detected = await runTransforms(
+    const applicable = await detectApplicable(
       project,
-      pluginsFor(
-        checks.filter(({ result }) => result !== null),
-        project
-      ),
-      { write: false }
+      checks.filter(({ result }) => result !== null)
     );
-    for (const { fix, result, failed } of checks) {
+    for (const check of checks) {
+      const { fix, result, failed } = check;
       if (failed) {
         collectResult(fix, project, 'check_failed');
-      } else if (result === null || !appliesAfterDetection(fix, detected.get(fix.id))) {
+      } else if (!applicable.includes(check)) {
         collectResult(fix, project, 'not_applicable');
       } else {
         collectResult(fix, project, 'check_succeeded', result);

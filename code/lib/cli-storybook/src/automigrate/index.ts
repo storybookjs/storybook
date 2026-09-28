@@ -21,7 +21,7 @@ import type {
 } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import { applies, appliesAfterDetection, pluginsFor, runTransforms } from './pipeline.ts';
+import { applies, detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -309,14 +309,12 @@ export async function runFixes({
   }
 
   const fileFailures: FixFileFailure[] = [];
-  const detected = await runTransforms(project, pluginsFor(checked, project), { write: false });
-  const applicable = checked.filter(({ fix }) => {
-    if (appliesAfterDetection(fix, detected.get(fix.id))) {
-      return true;
+  const applicable = await detectApplicable(project, checked);
+  for (const { fix } of checked) {
+    if (!applicable.some((check) => check.fix === fix)) {
+      fixResults[fix.id] = FixStatus.UNNECESSARY;
     }
-    fixResults[fix.id] = FixStatus.UNNECESSARY;
-    return false;
-  });
+  }
 
   const selected: { fix: Fix; result: unknown; taskLog: TaskLogInstance }[] = [];
 

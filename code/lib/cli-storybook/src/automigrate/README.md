@@ -12,8 +12,10 @@ check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` �
 
 - `check` gates the fix on things that are not file contents: dependencies, versions, flags.
   It returns a small result (paths and flags, not ASTs or generated code), or `null`.
-- The detection pass streams the project's files once through the `transform` hooks of every fix that passed `check`, without writing.
-  A fix with only `transform` applies when its hooks would change or fail on a file; detection failures are reported only if the user selects the fix and the apply pass hits them.
+- The detection pass decides whether a fix with `transform` and no `run` applies: it streams the project's files through those hooks without writing, and the fix applies when a hook would change or fail on a file.
+  Detection stops running a fix's hooks at its first such file, and stops reading once every fix has an answer.
+  Detection failures are reported only if the user selects the fix and the apply pass hits them.
+  A fix with its own `run` applies on its `check` alone, so its hooks do not run during detection.
 - After the prompt, each selected fix's `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
   A fix whose `run` throws keeps none of its edits: its staged `files` are discarded and its hooks skip the apply pass.
 - The apply pass then streams the files once more through the hooks of the fixes that ran, and writes each changed file before reading the next one, so it sees what `run` and `add()` wrote.
@@ -23,6 +25,7 @@ check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` �
 
 Modelled on Vite's `transform` hook.
 `transform(options)` returns hooks for one project and pass, so a hook may keep state across the files of that pass.
+Detection can stop early, so `run` cannot rely on anything a hook recorded; find it in `check` with `files.read` instead.
 
 ```ts
 transform: () => [

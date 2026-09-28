@@ -107,6 +107,9 @@ const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
 /**
  * Stream a project's files through every plugin's hooks: each file is read once, passed through
  * the hooks in plugin order, and written at most once before the next file is read.
+ *
+ * Without `write`, the pass only detects: a plugin stops once it has changed or failed on one
+ * file, and the pass stops reading once every plugin has.
  */
 export const runTransforms = async (
   project: ProjectPaths,
@@ -117,9 +120,17 @@ export const runTransforms = async (
     plugins.map(({ fixId }) => [fixId, { changed: [], errors: [] }])
   );
   const kinds = new Set(plugins.flatMap(({ hooks }) => hooks.flatMap(({ filter }) => filter.kind)));
+  const detected = (fixId: string) => {
+    const { changed, errors } = outcomes.get(fixId)!;
+    return changed.length > 0 || errors.length > 0;
+  };
 
   for (const context of await collectFiles(project, kinds)) {
-    const active = plugins.flatMap(({ fixId, hooks }) =>
+    const pending = write ? plugins : plugins.filter(({ fixId }) => !detected(fixId));
+    if (pending.length === 0) {
+      break;
+    }
+    const active = pending.flatMap(({ fixId, hooks }) =>
       hooks
         .filter(
           ({ filter }) =>
@@ -191,12 +202,22 @@ export const pluginsFor = (
 export const applies = async () => ({});
 
 /**
- * Whether a fix that passed `check` is offered after the detection pass. A fix with only `transform`
- * is offered when its hooks change a file or fail on one; failures are reported only once the user
- * selects the fix and the apply pass hits them.
+ * The detection pass: the checked fixes to offer. A fix with hooks and no `run` is offered only when
+ * a hook changes a file or fails on one, and failures are reported once the apply pass hits them.
+ * Every other checked fix is offered on its check alone, so its hooks do not run here.
  */
-export const appliesAfterDetection = (fix: Fix, outcome: TransformOutcome | undefined) =>
-  !fix.transform ||
-  !!fix.run ||
-  (outcome?.changed.length ?? 0) > 0 ||
-  (outcome?.errors.length ?? 0) > 0;
+export const detectApplicable = async <Checked extends { fix: Fix; result: unknown }>(
+  project: ProjectPaths & Omit<TransformOptions<unknown>, 'result'>,
+  checked: Checked[]
+): Promise<Checked[]> => {
+  const undecided = checked.filter(({ fix }) => fix.transform && !fix.run);
+  const outcomes = await runTransforms(project, pluginsFor(undecided, project), { write: false });
+  return checked.filter(({ fix }) => {
+    const outcome = outcomes.get(fix.id);
+    return (
+      !undecided.some((check) => check.fix === fix) ||
+      outcome!.changed.length > 0 ||
+      outcome!.errors.length > 0
+    );
+  });
+};

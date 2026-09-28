@@ -8,7 +8,8 @@ import { fs, vol } from 'memfs';
 
 import { reactViteToTanstackReact } from './fixes/react-vite-to-tanstack-react.ts';
 import { setConfigLayout } from './fixes/set-config-layout.ts';
-import { pluginsFor, runTransforms } from './pipeline.ts';
+import { detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
+import type { Fix } from './types.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -104,9 +105,8 @@ describe('runTransforms', () => {
     expect(fs.readFileSync(project.storiesPaths[1], 'utf8')).toBe('b inherits preview');
   });
 
-  it('isolates a failing fix to the files it failed on, and writes nothing on detection', async () => {
+  it('isolates a failing fix to the files it failed on', async () => {
     fs.unlinkSync(project.storiesPaths[1]);
-    const before = vol.toJSON();
 
     const outcomes = await runTransforms(
       project,
@@ -127,10 +127,10 @@ describe('runTransforms', () => {
           hooks: [{ filter: { kind: ['story'] }, handler: (code) => code.toUpperCase() }],
         },
       ],
-      { write: false }
+      { write: true }
     );
 
-    expect(vol.toJSON()).toEqual(before);
+    expect(fs.readFileSync(project.storiesPaths[0], 'utf8')).toBe('A');
     const unreadable = {
       file: project.storiesPaths[1],
       message: expect.stringContaining('ENOENT'),
@@ -142,6 +142,45 @@ describe('runTransforms', () => {
     expect(outcomes.get('lenient')).toEqual({
       changed: [project.storiesPaths[0]],
       errors: [unreadable],
+    });
+  });
+
+  it('stops detecting a fix at its first changed or failed file, and writes nothing', async () => {
+    const before = vol.toJSON();
+
+    const outcomes = await runTransforms(
+      project,
+      [
+        {
+          fixId: 'changes',
+          hooks: [{ filter: { kind: ['main', 'story'] }, handler: (code) => `${code}!` }],
+        },
+        {
+          fixId: 'fails',
+          hooks: [
+            {
+              filter: { kind: ['story'] },
+              handler: () => {
+                throw new Error('cannot migrate');
+              },
+            },
+          ],
+        },
+      ],
+      { write: false }
+    );
+
+    expect(vol.toJSON()).toEqual(before);
+    expect(vi.mocked(readFile).mock.calls.map(([path]) => path)).toEqual([
+      project.mainConfigPath,
+      project.storiesPaths[0],
+    ]);
+    expect(Object.fromEntries(outcomes)).toEqual({
+      changes: { changed: [project.mainConfigPath], errors: [] },
+      fails: {
+        changed: [],
+        errors: [{ file: project.storiesPaths[0], message: 'cannot migrate' }],
+      },
     });
   });
 
@@ -229,5 +268,54 @@ describe('runTransforms', () => {
 
     expect(outcomes.get('both')).toEqual({ changed: project.storiesPaths, errors: [] });
     expect(fs.readFileSync(project.mainConfigPath, 'utf8')).toBe('main');
+  });
+});
+
+describe('detectApplicable', () => {
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile)
+      .mockClear()
+      .mockImplementation(fs.promises.readFile as typeof readFile);
+    vol.fromJSON({
+      [project.mainConfigPath]: 'main',
+      [project.storiesPaths[0]]: 'a',
+      [project.storiesPaths[1]]: 'b',
+    });
+  });
+
+  afterEach(() => {
+    vi.mocked(readFile).mockRestore();
+  });
+
+  const hookOnly = (id: string, handler: (code: string) => string | null): Fix => ({
+    id,
+    prompt: () => id,
+    transform: () => [{ filter: { kind: ['main', 'story'] }, handler }],
+  });
+
+  it('offers a hook-only fix only when a hook changes a file', async () => {
+    const changes = { fix: hookOnly('changes', (code) => `${code}!`), result: {} };
+    const noop = { fix: hookOnly('noop', () => null), result: {} };
+
+    await expect(detectApplicable(project as never, [changes, noop])).resolves.toEqual([changes]);
+  });
+
+  it('offers a fix with its own run on its check alone, without running its hooks', async () => {
+    const handler = vi.fn(() => null);
+    const withRun: { fix: Fix; result: unknown } = {
+      fix: {
+        id: 'with-run',
+        prompt: () => 'with-run',
+        check: async () => ({}),
+        transform: () => [{ filter: { kind: ['main', 'story'] }, handler }],
+        run: async () => {},
+      },
+      result: {},
+    };
+
+    await expect(detectApplicable(project as never, [withRun])).resolves.toEqual([withRun]);
+    expect(handler).not.toHaveBeenCalled();
+    expect(readFile).not.toHaveBeenCalled();
   });
 });

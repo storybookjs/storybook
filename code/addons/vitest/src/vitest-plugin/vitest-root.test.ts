@@ -327,6 +327,33 @@ describe('story file selection in watch mode', () => {
     expect(watcher.emit).not.toHaveBeenCalled();
   });
 
+  it('does not announce story files again after recovering from the story globs', async () => {
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev'])
+    );
+    const plugin = await createPlugin();
+    const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];
+    const { watcher, onStoryFileChanged } = await runConfigureVitestHook(plugin, include);
+
+    vi.mocked(StoryIndexGenerator.prototype.getIndex).mockRejectedValueOnce(
+      new Error('Duplicate stories')
+    );
+    onStoryFileChanged(importPath(BUTTON_STORIES), false);
+    await vi.waitFor(() => expect(include).toEqual(['stories/**/*.stories.tsx']));
+
+    mockIndex(
+      storyEntry(BUTTON_STORIES, 'Primary', ['dev', 'test']),
+      storyEntry(HEADER_STORIES, 'LoggedIn', ['dev', 'test'])
+    );
+    onStoryFileChanged(importPath(HEADER_STORIES), false);
+
+    await vi.waitFor(() =>
+      expect(include).toEqual(['stories/Button.stories.tsx', 'stories/Header.stories.tsx'])
+    );
+    expect(watcher.emit).not.toHaveBeenCalled();
+  });
+
   it('stops watching the story files when Vitest closes', async () => {
     const plugin = await createPlugin();
     const include = (await runConfigHook(plugin, PACKAGE_ROOT)).test.include as string[];

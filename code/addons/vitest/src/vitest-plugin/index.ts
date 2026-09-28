@@ -563,7 +563,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             generator.invalidate(importPath, removed);
             refreshing = refreshing.then(async () => {
               try {
-                const previous = new Set(storyFilesWithTests);
+                // Undefined while falling back to the story globs, which already made every story
+                // file a test file.
+                const previous = storyFilesWithTests && new Set(storyFilesWithTests);
                 storyFilesWithTests = await selectStoryFilesWithTests(generator, {
                   ...finalOptions,
                   workingDir: WORKING_DIR,
@@ -582,12 +584,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                 // does so for changed ones.
                 if (
                   !removed &&
+                  previous &&
                   !previous.has(storyFile) &&
                   storyFilesWithTests.includes(storyFile)
                 ) {
                   context.vitest.vite.watcher.emit('add', absolutePath);
                 }
               } catch (err) {
+                storyFilesWithTests = undefined;
                 context.project.config.include.splice(
                   0,
                   context.project.config.include.length,

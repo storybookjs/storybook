@@ -1,7 +1,7 @@
 import type { Channel } from 'storybook/internal/channels';
 import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
 import {
-  experimental_UniversalStore,
+  internal_UniversalStore,
   experimental_getTestProviderStore,
 } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
@@ -70,7 +70,7 @@ const createTestRunnerStore = async ({ channel, options }: ResponderOptions): Pr
   const selectCachedState = (s: Partial<StoreState>): Partial<CachedState> => ({
     config: s.config,
   });
-  const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+  const store = internal_UniversalStore.create<StoreState, StoreEvent>({
     ...storeOptions,
     initialState: {
       ...storeOptions.initialState,

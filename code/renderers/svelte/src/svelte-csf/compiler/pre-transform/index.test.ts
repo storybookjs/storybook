@@ -279,4 +279,21 @@ describe(codemodLegacyNodes.name, () => {
       </script>"
     `);
   });
+
+  it('returns the same AST when there is no legacy syntax', async ({ expect }) => {
+    const code = dedent(`
+      <script module>
+        import { defineMeta } from "${pkg.name}";
+        import Button from "./Button.svelte";
+
+        const { Story } = defineMeta({ component: Button });
+      </script>
+
+      <Story name="Default" />
+    `);
+    const ast = getSvelteAST({ code });
+    const transformed = await codemodLegacyNodes({ ast });
+
+    expect(transformed).toBe(ast);
+  });
 });

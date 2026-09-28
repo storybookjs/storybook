@@ -27,8 +27,16 @@ export interface State {
    * We store it to ensure there's no more than one - we will throw error if there's more.
    */
   unidentifiedTemplateComponent?: SvelteAST.Component;
+  /**
+   * Set when the stories file uses any legacy syntax that needs a codemod.
+   */
+  isLegacy?: boolean;
 }
 
+/**
+ * Transform the legacy syntax in a stories file to the current syntax.
+ * If the file has no legacy syntax, it returns the given AST unchanged.
+ */
 export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root> {
   const { walk } = await import('zimmerframe');
 
@@ -85,6 +93,13 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       if (node.source.value === pkg.name) {
         state.componentIdentifierName = getComponentsIdentifiersNames(node.specifiers);
 
+        if (
+          state.currentScript !== 'module' ||
+          Object.keys(state.componentIdentifierName).length > 0
+        ) {
+          state.isLegacy = true;
+        }
+
         const transformed = transformImportDeclaration({ node, filename });
 
         if (state.currentScript !== 'module') {
@@ -114,6 +129,8 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       ) {
         return;
       }
+      state.isLegacy = true;
+
       const transformed = transformExportMetaToDefineMeta(node);
       const { currentScript } = state;
 
@@ -188,6 +205,10 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       }
     },
   });
+
+  if (!state.isLegacy) {
+    return ast;
+  }
 
   // Clean-up
   // TODO: To optimize it (stop walking on AST again)...

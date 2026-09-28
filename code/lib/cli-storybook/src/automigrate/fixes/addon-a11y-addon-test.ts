@@ -6,32 +6,14 @@ import path from 'path';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-// Relative path import to avoid dependency to storybook/test
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { assertConfigMutationSuccess } from '../helpers/config-object.ts';
 
-export const fileExtensions = [
-  '.js',
-  '.ts',
-  '.cts',
-  '.mts',
-  '.cjs',
-  '.mjs',
-  '.jsx',
-  '.tsx',
-] as const;
+const PREVIEW_EXTENSIONS = ['.js', '.ts', '.cts', '.mts', '.cjs', '.mjs', '.jsx', '.tsx'];
 
-interface AddonA11yAddonTestOptions {
-  previewFile: string | null;
-  canTransformPreview: boolean;
-}
-
-/**
- * If addon-a11y and addon-vitest are both installed, sets `parameters.a11y.test` in
- * `.storybook/preview.<ts|js>`, or prompts the user to do it when the file can't be transformed.
- */
-export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
+// `previewFile` is null when there is no preview file or it cannot be transformed.
+export const addonA11yAddonTest: Fix<{ previewFile: string | null }> = {
   id: 'addon-a11y-addon-test',
   link: 'https://storybook.js.org/docs/writing-tests/accessibility-testing#with-the-vitest-addon',
 
@@ -39,51 +21,40 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
 
   async check({ mainConfig, configDir, files }) {
     const addons = getAddonNames(mainConfig);
-
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
 
-    const hasA11yAddon = !!addons.find((addon) => addon.includes('@storybook/addon-a11y'));
-    const hasTestAddon = !!addons.find((addon) => addon.includes('@storybook/addon-vitest'));
-
     if (
-      !Object.keys(frameworkPackages).find((framework) => frameworkPackageName?.includes(framework))
+      !Object.keys(frameworkPackages).some((framework) =>
+        frameworkPackageName?.includes(framework)
+      ) ||
+      !addons.some((addon) => addon.includes('@storybook/addon-a11y')) ||
+      !addons.some((addon) => addon.includes('@storybook/addon-vitest')) ||
+      !configDir
     ) {
       return null;
     }
 
-    if (!hasA11yAddon || !hasTestAddon || !configDir) {
-      return null;
+    const previewFile = PREVIEW_EXTENSIONS.map((ext) => path.join(configDir, `preview${ext}`)).find(
+      (filePath) => existsSync(filePath)
+    );
+    if (!previewFile) {
+      return { previewFile: null };
     }
 
-    const previewFile =
-      fileExtensions
-        .map((ext) => path.join(configDir, `preview${ext}`))
-        .find((filePath) => existsSync(filePath)) ?? null;
-
-    let canTransformPreview = false;
-    if (previewFile) {
-      try {
-        if (!shouldPreviewFileBeTransformed(await files.read(previewFile))) {
-          return null;
-        }
-        await files.edit(previewFile, (source) => transformPreviewFile(source, previewFile));
-        canTransformPreview = true;
-      } catch {
-        // an unreadable or unparsable preview file is reported as a manual step by `run`
-      }
+    try {
+      const changed = await files.edit(previewFile, transformPreviewFile);
+      return changed.length > 0 ? { previewFile } : null;
+    } catch {
+      return { previewFile: null };
     }
-
-    return { previewFile, canTransformPreview };
   },
 
   prompt() {
     return 'We have detected that you have @storybook/addon-a11y and @storybook/addon-vitest installed. The automigration will configure both for the new testing experience';
   },
 
-  async run({ result, files }) {
-    const { previewFile, canTransformPreview } = result;
-
-    if (!previewFile || !canTransformPreview) {
+  async run({ result: { previewFile }, files }) {
+    if (!previewFile) {
       // eslint-disable-next-line local-rules/no-uncategorized-errors
       throw new Error(dedent`
         The ${this.id} automigration couldn't make the changes but here are instructions for doing them yourself:
@@ -100,50 +71,24 @@ export const addonA11yAddonTest: Fix<AddonA11yAddonTestOptions> = {
       `);
     }
 
-    await files.edit(previewFile, (source) => transformPreviewFile(source, previewFile));
+    await files.edit(previewFile, transformPreviewFile);
   },
 };
 
-export function transformPreviewFile(source: string, filePath: string) {
-  if (!shouldPreviewFileBeTransformed(source)) {
+export async function transformPreviewFile(source: string, filePath: string) {
+  const previewConfig = loadConfig(source).parse();
+  if (previewConfig.get(['parameters', 'a11y', 'test'])) {
     return source;
   }
-
-  const previewConfig = loadConfig(source).parse();
 
   previewConfig.set(['parameters', 'a11y', 'test'], 'todo');
   assertConfigMutationSuccess(previewConfig);
 
-  const formattedPreviewConfig = formatConfig(previewConfig);
-  const lines = formattedPreviewConfig.split('\n');
-
-  // Find the line with the "parameters.a11y.test" property
-  const parametersLineIndex = lines.findIndex(
-    (line) => line.includes('test: "todo"') || line.includes("test: 'todo'")
+  const withComment = formatConfig(previewConfig).replace(
+    /^([ \t]*).*test: (?:"todo"|'todo')/m,
+    (line, indent) =>
+      `${indent}// 'todo' - show a11y violations in the test UI only\n${indent}// 'error' - fail CI on a11y violations\n${indent}// 'off' - skip a11y checks entirely\n${line}`
   );
-  if (parametersLineIndex === -1) {
-    return formattedPreviewConfig;
-  }
 
-  // Determine the indentation level of the "tags" property
-  const parametersLine = lines[parametersLineIndex];
-  const indentation = parametersLine?.match(/^\s*/)?.[0];
-
-  // Add the comment with the same indentation level
-  const comment = `${indentation}// 'todo' - show a11y violations in the test UI only\n${indentation}// 'error' - fail CI on a11y violations\n${indentation}// 'off' - skip a11y checks entirely`;
-  lines.splice(parametersLineIndex, 0, comment);
-
-  return formatFileContent(filePath, lines.join('\n'));
-}
-
-export function shouldPreviewFileBeTransformed(source: string) {
-  const previewConfig = loadConfig(source).parse();
-  const parametersA11yTest = previewConfig.get(['parameters', 'a11y', 'test']);
-  assertConfigMutationSuccess(previewConfig);
-
-  if (parametersA11yTest) {
-    return false;
-  }
-
-  return true;
+  return formatFileContent(filePath, withComment);
 }

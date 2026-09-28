@@ -4,24 +4,11 @@ import { writeText } from 'tinyclip';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { FixFiles } from '../fix-files.ts';
 import type { Fix } from '../types.ts';
 
 export const REACT_VITE_PACKAGE = '@storybook/react-vite';
 export const TANSTACK_REACT_PACKAGE = '@storybook/tanstack-react';
-
-interface ReactViteToTanstackReactOptions {
-  /** Whether a preview, config, or story file sets up a TanStack Router decorator manually. */
-  hasTanstackRouterDecorator: boolean;
-}
-
-/** Markers that strongly suggest a manual TanStack Router decorator is configured in preview/stories. */
-const TANSTACK_ROUTER_DECORATOR_MARKERS = [
-  'createMemoryHistory',
-  'createRootRoute',
-  'createRouter',
-  'RouterProvider',
-];
+const DOCS_URL = 'https://storybook.js.org/docs/get-started/frameworks/tanstack-react';
 
 const TANSTACK_ROUTER_PACKAGES = [
   '@tanstack/react-router',
@@ -29,53 +16,17 @@ const TANSTACK_ROUTER_PACKAGES = [
   '@tanstack/start',
   '@tanstack/react-start',
 ];
-
-const fileLooksLikeTanstackRouterDecorator = (content: string): boolean => {
-  const importsTanstackRouter = TANSTACK_ROUTER_PACKAGES.some((pkg) =>
-    new RegExp(`from\\s+['"]${pkg.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}['"]`).test(content)
-  );
-  if (!importsTanstackRouter) {
-    return false;
-  }
-  return TANSTACK_ROUTER_DECORATOR_MARKERS.some((marker) => content.includes(marker));
-};
+const TANSTACK_ROUTER_IMPORT = new RegExp(
+  `from\\s+['"](${TANSTACK_ROUTER_PACKAGES.join('|')})['"]`
+);
+const TANSTACK_ROUTER_DECORATOR_MARKERS = [
+  'createMemoryHistory',
+  'createRootRoute',
+  'createRouter',
+  'RouterProvider',
+];
 
 const scriptFile = /\.[cm]?[jt]sx?$/;
-
-/**
- * Detect a manual TanStack Router decorator in the preview, any script in the config directory
- * (decorators are often factored out into `./withRouter.tsx`), or any story file.
- */
-const detectTanstackRouterDecorator = async ({
-  files,
-  previewConfigPath,
-  configDir,
-  storiesPaths,
-}: {
-  files: FixFiles;
-  previewConfigPath: string | undefined;
-  configDir: string | undefined;
-  storiesPaths: string[];
-}): Promise<boolean> => {
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-
-  const configFiles = configDir
-    ? await globby(`${configDir}/**/*`, { absolute: true, dot: true })
-    : [];
-  const candidates = new Set(
-    [...(previewConfigPath ? [previewConfigPath] : []), ...configFiles, ...storiesPaths].filter(
-      (file) => scriptFile.test(file)
-    )
-  );
-
-  for (const file of candidates) {
-    if (fileLooksLikeTanstackRouterDecorator(await files.read(file))) {
-      return true;
-    }
-  }
-  return false;
-};
 
 const buildAiMigrationPrompt = (previewConfigPath?: string) =>
   dedent`
@@ -86,7 +37,7 @@ const buildAiMigrationPrompt = (previewConfigPath?: string) =>
     safely transform.
 
     Reference documentation:
-    https://storybook.js.org/docs/get-started/frameworks/tanstack-react
+    ${DOCS_URL}
 
     # Background
 
@@ -237,34 +188,39 @@ const buildAiMigrationPrompt = (previewConfigPath?: string) =>
         that do specify a route do so via "parameters.tanstack.router".
   `;
 
-export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
+export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean }> = {
   id: 'react-vite-to-tanstack-react',
-  link: 'https://storybook.js.org/docs/get-started/frameworks/tanstack-react',
+  link: DOCS_URL,
   defaultSelected: false,
 
-  async check({
-    packageManager,
-    files,
-    previewConfigPath,
-    configDir,
-    storiesPaths,
-  }): Promise<ReactViteToTanstackReactOptions | null> {
+  async check({ packageManager, files, previewConfigPath, configDir, storiesPaths }) {
     const allDeps = packageManager.getAllDependencies();
-
-    const hasReactVitePackage = !!allDeps[REACT_VITE_PACKAGE];
-    const hasTanstackRouter = TANSTACK_ROUTER_PACKAGES.some((pkg) => !!allDeps[pkg]);
-    if (!hasReactVitePackage || !hasTanstackRouter) {
+    if (!allDeps[REACT_VITE_PACKAGE] || !TANSTACK_ROUTER_PACKAGES.some((pkg) => allDeps[pkg])) {
       return null;
     }
 
-    return {
-      hasTanstackRouterDecorator: await detectTanstackRouterDecorator({
-        files,
-        previewConfigPath,
-        configDir,
-        storiesPaths,
-      }),
-    };
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
+    // Decorators are often factored out of the preview into another config directory file.
+    const configFiles = configDir
+      ? await globby(`${configDir}/**/*`, { absolute: true, dot: true })
+      : [];
+    const candidates = new Set(
+      [...(previewConfigPath ? [previewConfigPath] : []), ...configFiles, ...storiesPaths].filter(
+        (file) => scriptFile.test(file)
+      )
+    );
+
+    for (const file of candidates) {
+      const content = await files.read(file);
+      if (
+        TANSTACK_ROUTER_IMPORT.test(content) &&
+        TANSTACK_ROUTER_DECORATOR_MARKERS.some((marker) => content.includes(marker))
+      ) {
+        return { hasTanstackRouterDecorator: true };
+      }
+    }
+    return { hasTanstackRouterDecorator: false };
   },
 
   prompt() {
@@ -297,40 +253,31 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
           ${picocolors.cyan(previewConfigPath ?? '.storybook/preview')}.
 
           ${picocolors.bold(TANSTACK_REACT_PACKAGE)} wraps every story in a TanStack Router
-          automatically (see ${picocolors.yellow(
-            'https://storybook.js.org/docs/get-started/frameworks/tanstack-react'
-          )}), so that decorator is no longer needed and should be removed.
+          automatically (see ${picocolors.yellow(DOCS_URL)}), so that decorator is no longer needed and should be removed.
         `
       );
 
-      const wantsAiPrompt = yes
-        ? true
-        : await prompt.confirm({
-            message:
-              'Would you like a ready-to-paste AI prompt to help remove the now-unused TanStack Router decorator?',
-            initialValue: true,
-          });
+      const wantsAiPrompt =
+        yes ||
+        (await prompt.confirm({
+          message:
+            'Would you like a ready-to-paste AI prompt to help remove the now-unused TanStack Router decorator?',
+          initialValue: true,
+        }));
 
       if (wantsAiPrompt) {
         const aiPrompt = buildAiMigrationPrompt(previewConfigPath);
         const separator = picocolors.dim('─'.repeat(60));
+        // Headless Linux and CI often lack a clipboard helper such as `xclip`.
+        const copied = await writeText(aiPrompt).then(
+          () => true,
+          () => false
+        );
 
-        let clipboardOk = false;
-        try {
-          await writeText(aiPrompt);
-          clipboardOk = true;
-        } catch {
-          // Clipboard access can fail in CI / headless Linux environments where the
-          // platform helper (e.g. `xclip`) isn't installed. We fall back to printing
-          // only — the prompt is logged below either way.
-        }
-
-        // Always log the prompt so coding agents running this automigration can read it
-        // directly from stdout (no clipboard available in agentic environments). Humans
-        // benefit too: the clipboard contents are visible for verification.
+        // Printed even when copied, so a coding agent running the migration can read it from stdout.
         logger.logBox(
           dedent`${
-            clipboardOk
+            copied
               ? 'AI migration prompt copied to clipboard. Full prompt below:'
               : 'Clipboard not available in this environment. Copy the AI migration prompt below manually:'
           }
@@ -342,8 +289,6 @@ export const reactViteToTanstackReact: Fix<ReactViteToTanstackReactOptions> = {
       }
     }
     logger.step('Migration completed successfully!');
-    logger.log(
-      `For more information, see: https://storybook.js.org/docs/get-started/frameworks/tanstack-react`
-    );
+    logger.log(`For more information, see: ${DOCS_URL}`);
   },
 };

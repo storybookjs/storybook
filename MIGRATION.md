@@ -564,7 +564,7 @@
 
 ### Addon `TAB` registration removed
 
-`addons.add` no longer accepts `type: types.TAB`. Storybook does not render addon tabs beside the canvas, and it ignores the `tab` query parameter. This is an addon-author change. There is no automigration.
+`addons.add` no longer accepts `type: types.TAB`. Storybook does not render addon tabs beside the canvas. This is an addon-author change. There is no automigration.
 
 Move the UI into a panel:
 

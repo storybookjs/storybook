@@ -65,16 +65,7 @@ const resolveIframeUrl = (baseUrl: string, { absolute }: { absolute: boolean }):
 // URL query params the manager consumes for layout/navigation. Everything else is a custom param
 // passed through to the preview iframe. Listing the boundary once keeps customQueryParams derived
 // identically at init (initialUrlSupport) and on every navigation (root.tsx), so they can't diverge.
-const LAYOUT_QUERY_PARAM_KEYS = [
-  'full',
-  'panel',
-  'nav',
-  'shortcuts',
-  'addonPanel',
-  'tab',
-  'tabs',
-  'path',
-];
+const LAYOUT_QUERY_PARAM_KEYS = ['full', 'panel', 'nav', 'shortcuts', 'addonPanel', 'tabs', 'path'];
 
 /** Single source of truth for the custom (non-layout) query params derived from the URL. */
 export const getCustomQueryParams = (

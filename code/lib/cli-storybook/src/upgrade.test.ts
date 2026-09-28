@@ -298,7 +298,6 @@ describe('toUpgradedDependencies', () => {
       const deps = {
         '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
-        '@storybook/test-runner': '^8.0.0',
         '@chromatic-com/storybook': '~3.0.0',
       };
 
@@ -314,7 +313,6 @@ describe('toUpgradedDependencies', () => {
       expect(result).toEqual([
         '@storybook/react@9.0.0',
         '@storybook/addon-designs@8.0.0',
-        '@storybook/test-runner@^9.0.0',
         '@chromatic-com/storybook@~3.0.0',
       ]);
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');

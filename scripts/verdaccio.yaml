@@ -153,10 +153,6 @@ packages:
     access: $all
     publish: $all
     proxy: npmjs
-  '@storybook/test-runner':
-    access: $all
-    publish: $all
-    proxy: npmjs
   '@storybook/expect':
     access: $all
     publish: $all

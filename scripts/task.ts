@@ -32,8 +32,6 @@ import { sandbox } from './tasks/sandbox.ts';
 import { serve } from './tasks/serve.ts';
 import { smokeTest } from './tasks/smoke-test.ts';
 import { syncDocs } from './tasks/sync-docs.ts';
-import { testRunnerBuild } from './tasks/test-runner-build.ts';
-import { testRunnerDev } from './tasks/test-runner-dev.ts';
 import { vitestTests } from './tasks/vitest-test.ts';
 import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
 import { findMostMatchText } from './utils/diff.ts';
@@ -96,8 +94,6 @@ export const tasks = {
   'smoke-test': smokeTest,
   build,
   serve,
-  'test-runner': testRunnerBuild,
-  'test-runner-dev': testRunnerDev,
   chromatic,
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,

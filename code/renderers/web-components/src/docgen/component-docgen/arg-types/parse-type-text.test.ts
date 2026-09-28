@@ -18,6 +18,18 @@ describe('parseTypeText', () => {
     },
     {
       input: "'a' | 'b' | string",
+      output: { type: { name: 'string' } },
+    },
+    {
+      input: "'a' | (string & {})",
+      output: { type: { name: 'enum', value: ['a'] } },
+    },
+    {
+      input: "'a' | ('b' | 'c')",
+      output: { type: { name: 'enum', value: ['a', 'b', 'c'] } },
+    },
+    {
+      input: "('a' | 'b') | undefined",
       output: { type: { name: 'enum', value: ['a', 'b'] } },
     },
     {
@@ -33,6 +45,14 @@ describe('parseTypeText', () => {
       output: { type: { name: 'string' } },
     },
     {
+      input: 'boolean | number',
+      output: { type: { name: 'other', value: 'boolean | number' }, control: 'object' },
+    },
+    {
+      input: 'number | boolean',
+      output: { type: { name: 'other', value: 'number | boolean' }, control: 'object' },
+    },
+    {
       input: 'number | SomeType',
       output: { type: { name: 'number' } },
     },
@@ -42,15 +62,31 @@ describe('parseTypeText', () => {
     },
     {
       input: "'a' | Foo",
-      output: { type: { name: 'enum', value: ['a'] } },
+      output: { type: { name: 'other', value: "'a' | Foo" }, control: 'object' },
     },
     {
-      input: "'a' | SomeType",
-      output: { type: { name: 'enum', value: ['a'] } },
+      input: "'a' | SomeAlias",
+      output: { type: { name: 'other', value: "'a' | SomeAlias" }, control: 'object' },
     },
     {
       input: "'auto' | true",
       output: { type: { name: 'other', value: "'auto' | true" }, control: 'object' },
+    },
+    {
+      input: "boolean | 'auto'",
+      output: { type: { name: 'other', value: "boolean | 'auto'" }, control: 'object' },
+    },
+    {
+      input: "'auto' | boolean",
+      output: { type: { name: 'other', value: "'auto' | boolean" }, control: 'object' },
+    },
+    {
+      input: "number | 'auto'",
+      output: { type: { name: 'other', value: "number | 'auto'" }, control: 'object' },
+    },
+    {
+      input: "object | 'a'",
+      output: { type: { name: 'other', value: "object | 'a'" }, control: 'object' },
     },
     {
       input: "'auto' | Date",
@@ -87,17 +123,13 @@ describe('parseTypeText', () => {
     {
       input: "Array<'a' | Foo>",
       output: {
-        type: { name: 'array', value: { name: 'enum', value: ['a'] } },
-        control: 'multi-select',
-        options: ['a'],
+        type: { name: 'array', value: { name: 'other', value: "'a' | Foo" } },
       },
     },
     {
       input: "('a' | Foo)[]",
       output: {
-        type: { name: 'array', value: { name: 'enum', value: ['a'] } },
-        control: 'multi-select',
-        options: ['a'],
+        type: { name: 'array', value: { name: 'other', value: "'a' | Foo" } },
       },
     },
     {
@@ -228,10 +260,17 @@ describe('parseTypeText', () => {
       input: undefined,
       output: undefined,
     },
-  ] satisfies { input: string | undefined; output: ParsedTypeText | undefined }[])(
-    '$input => $output',
-    ({ input, output }) => {
-      expect(parseTypeText(input)).toEqual(output);
-    }
-  );
+  ] satisfies {
+    input: string | undefined;
+    output: ParsedTypeText | undefined;
+  }[])('$input => $output', ({ input, output }) => {
+    expect(parseTypeText(input)).toEqual(output);
+  });
+
+  it('caps deeply nested array parsing', () => {
+    const deep = 'string' + '[]'.repeat(10_000);
+
+    expect(() => parseTypeText(deep)).not.toThrow();
+    expect(parseTypeText(deep)?.type.name).toBe('array');
+  });
 });

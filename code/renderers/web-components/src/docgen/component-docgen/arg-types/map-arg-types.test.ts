@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import type { ManifestClassField, ManifestDeclaration } from '../manifest/types.ts';
+import type {
+  ManifestAttribute,
+  ManifestClassField,
+  ManifestDeclaration,
+} from '../manifest/types.ts';
 import { mapArgTypes } from './map-arg-types.ts';
 
 const TYPE_PROPERTY = 'parsedType';
@@ -13,8 +17,132 @@ const declaration = (value: Partial<ManifestDeclaration>): ManifestDeclaration =
   ...value,
 });
 
+type MapArgTypesCase = {
+  name: string;
+  declaration: ManifestDeclaration;
+  typeProperty?: string;
+  expected: Record<string, unknown>;
+};
+
+function permutations<T>(items: T[]): T[][] {
+  if (items.length <= 1) {
+    return [items];
+  }
+
+  return items.flatMap((item, index) =>
+    permutations([...items.slice(0, index), ...items.slice(index + 1)]).map((rest) => [
+      item,
+      ...rest,
+    ])
+  );
+}
+
+function orderInvariantCases(): MapArgTypesCase[] {
+  const attributesForOneField: ManifestAttribute[] = [
+    { name: 'v', fieldName: 'v' },
+    { name: 'value', fieldName: 'v' },
+  ];
+  const collidingFields: ManifestClassField[] = [
+    { kind: 'field', name: 'a', type: { text: 'boolean' } },
+    { kind: 'field', name: 'b', type: { text: 'number' } },
+  ];
+  const inheritedAndOwnFields: ManifestClassField[] = [
+    {
+      kind: 'field',
+      name: 'x',
+      inheritedFrom: { name: 'BaseCard' },
+      type: { text: 'string' },
+    } as ManifestClassField,
+    { kind: 'field', name: 'x', type: { text: 'number' } },
+  ];
+
+  return [
+    ...permutations(attributesForOneField).map(
+      (attributes, index): MapArgTypesCase => ({
+        name: `two attributes on one field are order-independent ${index + 1}`,
+        declaration: declaration({
+          attributes,
+          members: [{ kind: 'field', name: 'v', type: { text: 'string' } }],
+        }),
+        expected: {
+          v: {
+            name: 'v',
+            description: undefined,
+            type: { name: 'string' },
+            table: {
+              category: 'attributes',
+              type: { summary: 'string' },
+              defaultValue: { summary: undefined },
+            },
+          },
+          value: {
+            name: 'value',
+            description: undefined,
+            type: { name: 'string' },
+            table: {
+              category: 'attributes',
+              type: { summary: 'string' },
+              defaultValue: { summary: undefined },
+            },
+          },
+        },
+      })
+    ),
+    ...permutations(collidingFields).map(
+      (members, index): MapArgTypesCase => ({
+        name: `attribute key wins over same-name field ${index + 1}`,
+        declaration: declaration({
+          attributes: [{ name: 'b', fieldName: 'a' }],
+          members,
+        }),
+        expected: {
+          a: {
+            name: 'a',
+            description: undefined,
+            type: { name: 'boolean' },
+            table: {
+              category: 'properties',
+              type: { summary: 'boolean' },
+              defaultValue: { summary: undefined },
+            },
+          },
+          b: {
+            name: 'b',
+            description: undefined,
+            type: { name: 'boolean' },
+            table: {
+              category: 'attributes',
+              type: { summary: 'boolean' },
+              defaultValue: { summary: undefined },
+            },
+          },
+        },
+      })
+    ),
+    ...permutations(inheritedAndOwnFields).map(
+      (members, index): MapArgTypesCase => ({
+        name: `own field beats inherited field ${index + 1}`,
+        declaration: declaration({ members }),
+        expected: {
+          x: {
+            name: 'x',
+            description: undefined,
+            type: { name: 'number' },
+            table: {
+              category: 'properties',
+              type: { summary: 'number' },
+              defaultValue: { summary: undefined },
+            },
+          },
+        },
+      })
+    ),
+  ];
+}
+
 describe('mapArgTypes', () => {
   it.each([
+    ...orderInvariantCases(),
     {
       name: 'attribute + field with the same name',
       declaration: declaration({
@@ -109,6 +237,28 @@ describe('mapArgTypes', () => {
           table: {
             category: 'attributes',
             type: { summary: '' },
+            defaultValue: { summary: undefined },
+          },
+        },
+      },
+    },
+    {
+      name: 'attribute fallback for non-string type text',
+      declaration: declaration({
+        attributes: [
+          { name: 'count', type: { text: 5 } } as ManifestAttribute & {
+            type: { text: number };
+          },
+        ],
+      }),
+      expected: {
+        count: {
+          name: 'count',
+          description: undefined,
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: undefined },
             defaultValue: { summary: undefined },
           },
         },
@@ -234,6 +384,71 @@ describe('mapArgTypes', () => {
       },
     },
     {
+      name: 'attribute data is used for an untyped backed field',
+      declaration: declaration({
+        attributes: [
+          {
+            name: 'size',
+            fieldName: 'sizeValue',
+            type: { text: 'Size' },
+            parsedType: { text: "'s' | 'm'" },
+            description: 'Size.',
+            default: "'s'",
+          } as ManifestAttribute & { parsedType: { text: string } },
+        ],
+        members: [{ kind: 'field', name: 'sizeValue' }],
+      }),
+      expected: {
+        sizeValue: {
+          name: 'sizeValue',
+          description: 'Size.',
+          type: { name: 'enum', value: ['s', 'm'] },
+          table: {
+            category: 'properties',
+            type: { summary: 'Size' },
+            defaultValue: { summary: "'s'" },
+          },
+        },
+        size: {
+          name: 'size',
+          description: 'Size.',
+          type: { name: 'enum', value: ['s', 'm'] },
+          table: {
+            category: 'attributes',
+            type: { summary: 'Size' },
+            defaultValue: { summary: "'s'" },
+          },
+        },
+      },
+    },
+    {
+      name: 'attribute deprecated tag is not masked by field deprecated false',
+      declaration: declaration({
+        attributes: [
+          {
+            name: 'tone',
+            fieldName: 'tone',
+            deprecated: 'Use variant.',
+            type: { text: 'string' },
+          },
+        ],
+        members: [{ kind: 'field', name: 'tone', deprecated: false, type: { text: 'string' } }],
+      }),
+      expected: {
+        tone: {
+          name: 'tone',
+          description: undefined,
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: 'string' },
+            defaultValue: { summary: undefined },
+            jsDocTags: { deprecated: 'Use variant.' },
+          },
+        },
+      },
+    },
+    {
       name: 'deprecated boolean',
       declaration: declaration({
         attributes: [{ name: 'tone', deprecated: true, type: { text: 'string' } }],
@@ -298,6 +513,31 @@ describe('mapArgTypes', () => {
           table: {
             category: 'properties',
             type: { summary: 'Size' },
+            defaultValue: { summary: undefined },
+          },
+        },
+      },
+    },
+    {
+      name: 'blank alt type falls back to raw type text',
+      declaration: declaration({
+        members: [
+          {
+            kind: 'field',
+            name: 'tone',
+            type: { text: "'a' | 'b'" },
+            parsedType: { text: '' },
+          } as ManifestClassField & { parsedType: { text: string } },
+        ],
+      }),
+      expected: {
+        tone: {
+          name: 'tone',
+          description: undefined,
+          type: { name: 'enum', value: ['a', 'b'] },
+          table: {
+            category: 'properties',
+            type: { summary: "'a' | 'b'" },
             defaultValue: { summary: undefined },
           },
         },

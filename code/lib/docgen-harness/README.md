@@ -91,6 +91,8 @@ src/
   Such a stub accepts a candidate that adds populated structure (an empty enum/union/object is not an improvement) or resolves it to the scalar or single literal it already named; an unrelated scalar or literal is a lateral change and fails.
   The markers that record nothing at all accept any candidate: `empty-enum`, `undefined`, and the empty string from today's Angular and Vue spellings, plus Web Components records with an undefined sbType `name` or a structural sbType `name` without a `value`.
   The legacy Web Components extractor records manifest type text as the sbType `name`, so an unknown name is read as `{ name: 'other', value: <text> }` and compared by the same stub-resolution rule.
+  Under `legacyManifestRuntime`, scalar text requires the same scalar and literal-union text requires an enum that keeps every member.
+  Same-named matches also require the same category, so a lost attribute is not rescued by a same-named slot.
   A resolution the rule cannot recognize (legacy `TSFunctionType` becoming a `function` sbType, say) fails rather than guessing; re-record and review the diff.
   A recorded `table.type.summary` must survive (dropping it is a violation), but its text may change freely outside `strictTable`.
   `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared (except `required` under `strictTable`); each would lock in a recorded lie (#28706) or engine-specific vocabulary.

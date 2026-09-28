@@ -238,4 +238,32 @@ describe('buildDocgenPayload', () => {
       )
     ).toBeUndefined();
   });
+
+  it.each([
+    { members: 'bad' },
+    { members: [null] },
+    { members: [{ kind: 'field' }] },
+    { attributes: [{ name: 'value', type: { text: 5 } }] },
+    { events: [{ name: 5 }] },
+    { slots: {} },
+    { cssProperties: 3 },
+    { cssParts: 'bad' },
+  ])('builds a payload for a declaration with malformed %j', (malformed) => {
+    givenStory("'x-card'");
+
+    expect(
+      buildDocgenPayload(
+        { entry },
+        context([
+          manifest({
+            name: 'XCard',
+            customElement: true,
+            kind: 'class',
+            tagName: 'x-card',
+            ...malformed,
+          } as unknown as ManifestDeclaration),
+        ])
+      )
+    ).toMatchObject({ name: 'x-card', renderer: 'web-components' });
+  });
 });

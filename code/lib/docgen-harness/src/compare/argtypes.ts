@@ -9,6 +9,11 @@ const LEGACY_MANIFEST_RUNTIME_SCALARS = new Set<SBType['name']>([
   'number',
   'string',
 ]);
+const STRICT_LEGACY_MANIFEST_RUNTIME_SCALARS = new Set<SBType['name']>([
+  'boolean',
+  'number',
+  'string',
+]);
 
 export interface CompareArgTypesOptions {
   /** Waive the legacy Angular pipeline's invented defaults, which must not be ratcheted. */
@@ -346,8 +351,11 @@ const resolvesStub = (stub: string, candidate: SBType, legacyManifestRuntime = f
   if (UNRESOLVED_STUBS.has(text)) {
     return true;
   }
-  if (legacyManifestRuntime && resolvesLegacyManifestRuntimeStub(text, candidate)) {
-    return true;
+  if (legacyManifestRuntime) {
+    const legacyManifestRuntimeVerdict = resolvesLegacyManifestRuntimeStub(text, candidate);
+    if (legacyManifestRuntimeVerdict !== undefined) {
+      return legacyManifestRuntimeVerdict;
+    }
   }
   if (candidate.name === 'literal') {
     return normalizeLiteral(candidate.value) === normalizeLiteral(text);
@@ -355,11 +363,15 @@ const resolvesStub = (stub: string, candidate: SBType, legacyManifestRuntime = f
   return isPopulatedStructure(candidate) || text === candidate.name;
 };
 
-function resolvesLegacyManifestRuntimeStub(text: string, candidate: SBType): boolean {
+function resolvesLegacyManifestRuntimeStub(text: string, candidate: SBType): boolean | undefined {
   if (text === 'void') {
     return true;
   }
   const nonNullableText = dropNullableLegacyUnionMembers(text);
+  const typeTextVerdict = resolvesLegacyManifestRuntimeTypeText(nonNullableText, candidate);
+  if (typeTextVerdict !== undefined) {
+    return typeTextVerdict;
+  }
   if (candidate.name === 'object' && isObjectLikeLegacyText(nonNullableText)) {
     return true;
   }
@@ -369,10 +381,53 @@ function resolvesLegacyManifestRuntimeStub(text: string, candidate: SBType): boo
   ) {
     return true;
   }
-  return (
-    candidate.name === 'function' &&
+  return candidate.name === 'function' &&
     (nonNullableText.includes('=>') || /\bFunction\b/.test(nonNullableText))
-  );
+    ? true
+    : undefined;
+}
+
+function resolvesLegacyManifestRuntimeTypeText(
+  text: string,
+  candidate: SBType
+): boolean | undefined {
+  const members = splitTopLevelUnion(text).filter(Boolean);
+  const scalar = members.length === 1 ? legacyManifestRuntimeScalar(members[0]) : undefined;
+  if (scalar !== undefined && STRICT_LEGACY_MANIFEST_RUNTIME_SCALARS.has(scalar)) {
+    return candidate.name === scalar;
+  }
+
+  const literals = members.map(legacyManifestRuntimeLiteral);
+  if (literals.length > 0 && literals.every((literal) => literal !== undefined)) {
+    if (candidate.name !== 'enum') {
+      return false;
+    }
+    const candidateValues = new Set(candidate.value.map(normalizeLiteral));
+    return literals.every((literal) => candidateValues.has(normalizeLiteral(literal)));
+  }
+
+  if (
+    literals.some((literal) => literal !== undefined) &&
+    members.some((member) => legacyManifestRuntimeScalar(member) !== undefined)
+  ) {
+    return false;
+  }
+
+  return undefined;
+}
+
+function legacyManifestRuntimeScalar(text: string): SBType['name'] | undefined {
+  const scalar = text.toLowerCase();
+  return LEGACY_MANIFEST_RUNTIME_SCALARS.has(scalar as SBType['name'])
+    ? (scalar as SBType['name'])
+    : undefined;
+}
+
+function legacyManifestRuntimeLiteral(text: string): string | number | undefined {
+  if (isQuotedToken(text)) {
+    return normalizeLiteral(text);
+  }
+  return /^-?(?:\d+|\d*\.\d+)$/.test(text) ? Number(text) : undefined;
 }
 
 const dropNullableLegacyUnionMembers = (text: string): string =>
@@ -390,9 +445,21 @@ const splitTopLevelUnion = (text: string): string[] => {
   let braceDepth = 0;
   let bracketDepth = 0;
   let parenDepth = 0;
+  let quote: string | undefined;
 
   for (let index = 0; index < text.length; index += 1) {
     const char = text[index];
+    const previous = text[index - 1];
+    if (quote !== undefined) {
+      if (char === quote && previous !== '\\') {
+        quote = undefined;
+      }
+      continue;
+    }
+    if (char === '"' || char === "'") {
+      quote = char;
+      continue;
+    }
     if (char === '<') {
       angleDepth += 1;
     } else if (char === '>') {
@@ -525,8 +592,11 @@ const findSameNamedCandidate = (
   candidate: StrictArgTypes
 ): StrictInputType | undefined => {
   const baseName = argName(arg, baseEntry);
+  const baseCategory = baseEntry.table?.category;
   return Object.entries(candidate).find(
-    ([candidateArg, candidateEntry]) => argName(candidateArg, candidateEntry) === baseName
+    ([candidateArg, candidateEntry]) =>
+      argName(candidateArg, candidateEntry) === baseName &&
+      (baseCategory === undefined || candidateEntry.table?.category === baseCategory)
   )?.[1];
 };
 

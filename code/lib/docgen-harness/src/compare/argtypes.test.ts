@@ -207,6 +207,204 @@ describe('compareArgTypes', () => {
       expectedViolations: [expect.objectContaining({ arg: 'label', kind: 'type-fidelity' })],
     },
     {
+      input: 'legacy manifest runtime does not resolve scalar-plus-literal text to a partial enum',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "boolean | 'auto'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['auto'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime requires literal-union enum members to survive',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['z'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime requires nullable literal-union enum members to survive',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b' | undefined" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime requires nullable scalar text to keep the scalar',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: 'boolean | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'array', value: { name: 'string' } },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime does not resolve nullable number text to an enum',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: 'number | null' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: [1] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
+      input: 'legacy manifest runtime resolves literal-union text to a covering enum',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a', 'b'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves nullable literal-union text to a covering enum',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a' | 'b' | undefined" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['b', 'a'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime resolves nullable boolean text to boolean',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: 'boolean | undefined' },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'boolean' },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime keeps exact mixed scalar text as other',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "boolean | 'auto'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "boolean | 'auto'" },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime keeps quoted pipes inside literal-union members',
+      output: 'passes',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a|b' | 'c'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a|b', 'c'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [],
+    },
+    {
+      input: 'legacy manifest runtime does not split quoted pipes into enum members',
+      output: 'type-fidelity',
+      baseline: {
+        arg: {
+          name: 'arg',
+          type: { name: 'other', value: "'a|b' | 'c'" },
+        },
+      } as StrictArgTypes,
+      candidate: {
+        arg: {
+          name: 'arg',
+          type: { name: 'enum', value: ['a', 'b', 'c'] },
+        },
+      } as StrictArgTypes,
+      options: { legacyBaseline: true, legacyManifestRuntime: true },
+      expectedViolations: [expect.objectContaining({ arg: 'arg', kind: 'type-fidelity' })],
+    },
+    {
       input: 'legacy manifest runtime resolves function-text stubs',
       output: 'passes',
       baseline: {
@@ -277,6 +475,30 @@ describe('compareArgTypes', () => {
       expect.objectContaining({ arg: 'createdAt', kind: 'type-fidelity' }),
       expect.objectContaining({ arg: 'onSelect', kind: 'type-fidelity' }),
     ]);
+  });
+
+  it('does not rescue a lost attribute with a same-named slot', () => {
+    const baseline = argTypes({
+      label: {
+        name: 'label',
+        table: { category: 'attributes' },
+        type: { name: 'string' },
+      },
+    });
+    const candidate = argTypes({
+      'label-slot': {
+        name: 'label',
+        table: { category: 'slots' },
+        type: { name: 'string' },
+      },
+    });
+
+    expect(
+      compareArgTypes(baseline, candidate, {
+        legacyBaseline: true,
+        legacyManifestRuntime: true,
+      })
+    ).toEqual([expect.objectContaining({ arg: 'label', kind: 'lost-arg' })]);
   });
 
   it('passes when the candidate has keys the baseline lacks', () => {

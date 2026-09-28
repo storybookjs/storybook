@@ -148,6 +148,15 @@ describe('manifest shape regressions', () => {
     expect({ ...v2, count: v2CountWithoutControl }).toEqual(v1);
   });
 
+  // Twins record two args on purpose on both paths; this pins the decision that retired the one-arg marker.
+  test('reflected booleans record both the attribute and the property arg on both paths', () => {
+    for (const prefix of ['', 'osa-'] as const) {
+      const argTypes = parseArgTypesSnapshot(baseline('basicArgTypes', prefix));
+      expect(argTypes).toHaveProperty('is-open');
+      expect(argTypes).toHaveProperty('isOpen');
+    }
+  });
+
   it.each([
     [
       'missing schemaVersion',

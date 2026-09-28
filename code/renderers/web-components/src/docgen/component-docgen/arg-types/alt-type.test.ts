@@ -29,6 +29,18 @@ describe('readTypeText', () => {
       expected: 'Size',
     },
     {
+      name: 'alt blank',
+      item: { type: { text: 'Size' }, parsedType: { text: '' } },
+      typeProperty: DEFAULT_TYPE_PROPERTY,
+      expected: 'Size',
+    },
+    {
+      name: 'type text malformed',
+      item: { type: { text: 5 } },
+      typeProperty: DEFAULT_TYPE_PROPERTY,
+      expected: undefined,
+    },
+    {
       name: 'neither',
       item: {},
       typeProperty: DEFAULT_TYPE_PROPERTY,

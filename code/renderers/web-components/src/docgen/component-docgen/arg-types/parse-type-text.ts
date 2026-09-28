@@ -1,7 +1,6 @@
 import type { SBType, StrictInputType } from 'storybook/internal/types';
 
 const ARRAY_RE = /^(?:Array<(.+)>|(.+)\[\])$/;
-const BARE_IDENTIFIER_RE = /^[A-Za-z_$][\w$]*$/;
 const DROPPED_MEMBERS = new Set([
   'undefined',
   'null',
@@ -12,10 +11,10 @@ const DROPPED_MEMBERS = new Set([
   'string & {}',
   '(string & {})',
 ]);
-const NON_ENUM_IDENTIFIERS = new Set(['true', 'false', 'Date', 'bigint', 'symbol']);
-const WIDENING_MEMBERS = new Set(['string', 'number', 'boolean', 'object', '{}', '[]']);
 const FUNCTION_RE = /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/;
 const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
+/** Real types nest a handful of levels; the cap only stops pathological input. */
+const MAX_ARRAY_DEPTH = 8;
 
 export interface ParsedTypeText {
   type: SBType;
@@ -24,7 +23,7 @@ export interface ParsedTypeText {
   options?: (string | number)[];
 }
 
-export function parseTypeText(text: string | undefined): ParsedTypeText | undefined {
+export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeText | undefined {
   const trimmed = text?.trim() ?? '';
   const members = normalizeMembers(trimmed);
 
@@ -32,22 +31,24 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     return undefined;
   }
 
-  const literalMembers = pickLiteralMembers(members);
-  if (literalMembers !== undefined) {
-    return { type: { name: 'enum', value: literalMembers } };
+  const literalMembers = members.map(parseLiteral);
+  const literalValues = literalMembers.filter((literal) => literal !== undefined);
+  if (literalValues.length === members.length) {
+    return { type: { name: 'enum', value: literalValues } };
   }
-  if (hasStructuralLiteralUnion(members)) {
+  if (literalValues.length > 0 && members.includes('string')) {
+    return { type: { name: 'string' } };
+  }
+  if (literalValues.length > 0) {
     return {
       type: { name: 'other', value: members.join(' | ') },
-      control: members.some((member) => parseLiteral(member) === undefined && isCallable(member))
-        ? false
-        : 'object',
+      control: pickObjectControl(members),
     };
   }
 
   const scalar = pickScalar(members);
   if (scalar !== undefined) {
-    return { type: scalar };
+    return scalar;
   }
 
   if (members.length === 1) {
@@ -55,8 +56,10 @@ export function parseTypeText(text: string | undefined): ParsedTypeText | undefi
     const array = ARRAY_RE.exec(member);
     if (array) {
       const element =
-        parseTypeText(stripWrappingParens(array[1] ?? array[2] ?? ''))?.type ??
-        UNKNOWN_ARRAY_ELEMENT_TYPE;
+        depth >= MAX_ARRAY_DEPTH
+          ? UNKNOWN_ARRAY_ELEMENT_TYPE
+          : (parseTypeText(stripWrappingParens(array[1] ?? array[2] ?? ''), depth + 1)?.type ??
+            UNKNOWN_ARRAY_ELEMENT_TYPE);
       return element.name === 'enum'
         ? {
             type: { name: 'array', value: element },
@@ -90,13 +93,15 @@ function normalizeMembers(text: string): string[] {
     return [];
   }
 
-  const members = splitTopLevel(text)
-    .map(stripWrappingParens)
-    .filter((member) => !DROPPED_MEMBERS.has(member));
-  const hasLiteral = members.some((member) => parseLiteral(member) !== undefined);
-  return (hasLiteral ? members.filter((member) => !WIDENING_MEMBERS.has(member)) : members).filter(
-    Boolean
-  );
+  return flattenMembers(text).filter((member) => member && !DROPPED_MEMBERS.has(member));
+}
+
+function flattenMembers(text: string): string[] {
+  return splitTopLevel(text).flatMap((part) => {
+    const member = stripWrappingParens(part);
+    const nestedMembers = splitTopLevel(member);
+    return nestedMembers.length > 1 ? flattenMembers(member) : [member];
+  });
 }
 
 function parseLiteral(text: string): string | number | undefined {
@@ -110,43 +115,30 @@ function parseLiteral(text: string): string | number | undefined {
   return undefined;
 }
 
-function pickScalar(members: string[]): SBType | undefined {
+function pickScalar(members: string[]): ParsedTypeText | undefined {
   if (members.includes('string')) {
-    return { name: 'string' };
+    return { type: { name: 'string' } };
   }
-  if (members.some((member) => member === 'boolean' || member === 'true' || member === 'false')) {
-    return { name: 'boolean' };
+
+  const hasBoolean = members.some(
+    (member) => member === 'boolean' || member === 'true' || member === 'false'
+  );
+  const hasNumber = members.some((member) => member === 'number' || member === 'bigint');
+  if (hasBoolean && hasNumber) {
+    return { type: { name: 'other', value: members.join(' | ') }, control: 'object' };
   }
-  if (members.some((member) => member === 'number' || member === 'bigint')) {
-    return { name: 'number' };
+
+  if (hasBoolean) {
+    return { type: { name: 'boolean' } };
+  }
+  if (hasNumber) {
+    return { type: { name: 'number' } };
   }
   return undefined;
 }
 
-/** Literal unions promote to enums unless non-literals include structural, callable, boolean or Date type text. */
-function pickLiteralMembers(members: string[]): (string | number)[] | undefined {
-  const literalMembers = members.map(parseLiteral).filter((literal) => literal !== undefined);
-  if (literalMembers.length === 0) {
-    return undefined;
-  }
-  return members.every((member) => parseLiteral(member) !== undefined || isEnumCompatible(member))
-    ? literalMembers
-    : undefined;
-}
-
-function hasStructuralLiteralUnion(members: string[]): boolean {
-  return (
-    members.some((member) => parseLiteral(member) !== undefined) &&
-    members.some((member) => parseLiteral(member) === undefined && !isEnumCompatible(member))
-  );
-}
-
-function isEnumCompatible(text: string): boolean {
-  return (
-    !isCallable(text) &&
-    !NON_ENUM_IDENTIFIERS.has(text) &&
-    (WIDENING_MEMBERS.has(text) || BARE_IDENTIFIER_RE.test(text))
-  );
+function pickObjectControl(members: string[]): StrictInputType['control'] {
+  return members.some(isCallable) ? false : 'object';
 }
 
 function isCallable(text: string): boolean {

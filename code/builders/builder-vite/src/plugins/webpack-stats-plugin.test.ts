@@ -124,6 +124,30 @@ describe('pluginWebpackStats', () => {
     ]);
   });
 
+  it('keeps a rooted id that is not a file in the graph', () => {
+    const names = getModuleNames({
+      '/project/src/Button.tsx': ['\0/@data-uri/data:text/javascript,export default 1'],
+    });
+
+    expect(names).toEqual([
+      '\0/@data-uri/data:text/javascript,export default 1',
+      './src/Button.tsx',
+    ]);
+  });
+
+  it('names a commonjs proxy of a hoisted dependency relative to the working directory', () => {
+    const names = getModuleNames({
+      '/project/src/Button.tsx': ['\0/node_modules/react/index.js?commonjs-es-import'],
+      '\0/node_modules/react/index.js?commonjs-es-import': ['/node_modules/react/index.js'],
+    });
+
+    expect(names).toEqual([
+      '\0./../node_modules/react/index.js?commonjs-es-import',
+      './../node_modules/react/index.js',
+      './src/Button.tsx',
+    ]);
+  });
+
   it('keeps ids that have no path of their own', () => {
     const names = getModuleNames({
       '/project/node_modules/react/index.js': ['\0commonjsHelpers.js', '\0vite/preload-helper.js'],

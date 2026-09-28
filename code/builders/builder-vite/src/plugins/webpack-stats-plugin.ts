@@ -29,33 +29,43 @@ const ROLLUP_VIRTUAL_PREFIX = '\0';
 
 type StatsModule = Module & { reasons: Reason[] };
 
-export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
+function splitQuery(id: string): [path: string, query: string] {
+  const queryIndex = id.indexOf('?');
+  return queryIndex === -1 ? [id, ''] : [id.slice(0, queryIndex), id.slice(queryIndex)];
+}
 
-export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
-  // Query params and rollup's `\0` prefix stay in the name so the stats have the same nodes as the
-  // bundler's graph; the consumer decides how to merge them.
-  function normalize(filename: string) {
-    const virtualPrefix = filename.startsWith(ROLLUP_VIRTUAL_PREFIX) ? ROLLUP_VIRTUAL_PREFIX : '';
-    const id = filename.slice(virtualPrefix.length);
+// Rollup's `\0` marks an id that is not a file, yet the commonjs plugin embeds a file path in its
+// proxy ids. A `\0` id is treated as a path only when the graph contains that path as a module.
+function createNormalizer(workingDir: string, ids: Iterable<string>) {
+  const filePaths = new Set<string>();
+  for (const id of ids) {
+    if (!id.startsWith(ROLLUP_VIRTUAL_PREFIX)) {
+      filePaths.add(splitQuery(id)[0]);
+    }
+  }
+
+  return function normalize(id: string) {
+    const virtualPrefix = id.startsWith(ROLLUP_VIRTUAL_PREFIX) ? ROLLUP_VIRTUAL_PREFIX : '';
+    const unprefixed = id.slice(virtualPrefix.length);
 
     // Turbosnap matches virtual modules by name, and expects the leading forward slash.
     // Reference: https://github.com/chromaui/chromatic-cli/blob/v11.25.2/node-src/lib/getDependentStoryFiles.ts#L53
-    if (id.startsWith('virtual:')) {
-      return `/${id}`;
+    if (unprefixed.startsWith('virtual:')) {
+      return `/${unprefixed}`;
     }
 
-    const queryIndex = id.indexOf('?');
-    const path = queryIndex === -1 ? id : id.slice(0, queryIndex);
-    const query = queryIndex === -1 ? '' : id.slice(queryIndex);
-
-    // Ids without a path of their own, such as rollup helpers, are connectivity only.
-    if (!isAbsolute(path)) {
-      return filename;
+    const [path, query] = splitQuery(unprefixed);
+    if (!isAbsolute(path) || (virtualPrefix && !filePaths.has(path))) {
+      return id;
     }
 
     return `${virtualPrefix}./${slash(relative(workingDir, path))}${query}`;
-  }
+  };
+}
 
+export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
+
+export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
   const importersById = new Map<string, Set<string>>();
 
   function record(id: string, importer?: string) {
@@ -81,6 +91,7 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     },
 
     storybookGetStats() {
+      const normalize = createNormalizer(workingDir, importersById.keys());
       const modulesByName = new Map<string, StatsModule>();
 
       for (const [id, importers] of importersById) {

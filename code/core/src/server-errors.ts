@@ -938,18 +938,6 @@ export class AddonVitestPostinstallPrerequisiteCheckError extends StorybookError
   }
 }
 
-export class AddonVitestPostinstallFailedAddonA11yError extends StorybookError {
-  constructor(public data: { error: unknown | Error }) {
-    super({
-      name: 'AddonVitestPostinstallFailedAddonA11yError',
-      message: "The @storybook/addon-a11y couldn't be set up for the Vitest addon",
-      category: Category.CLI_INIT,
-      isHandledError: true,
-      code: 6,
-    });
-  }
-}
-
 export class AddonVitestPostinstallWorkspaceUpdateError extends StorybookError {
   constructor(public data: { filePath: string }) {
     super({
@@ -1309,21 +1297,6 @@ export class NuxtModuleAddFailedError extends StorybookError {
       cause: data.cause,
       message: dedent`
         Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
-
-        ${formatExecaFailureDetails(data)}`,
-    });
-  }
-}
-
-export class AutomigrateAddonA11yTestError extends StorybookError {
-  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
-    super({
-      name: 'AutomigrateAddonA11yTestError',
-      category: Category.CLI_AUTOMIGRATE,
-      code: 3,
-      cause: data.cause,
-      message: dedent`
-        Failed while running the addon-a11y-addon-test automigration.
 
         ${formatExecaFailureDetails(data)}`,
     });

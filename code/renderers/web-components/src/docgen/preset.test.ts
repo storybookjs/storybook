@@ -58,7 +58,7 @@ describe('experimental_docgenProvider', () => {
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
-          manifestPaths: ['/workspace/dist/custom-elements.json'],
+          manifestPaths: [resolve('/workspace/dist/custom-elements.json')],
         },
       },
     ]);

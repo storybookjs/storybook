@@ -178,29 +178,26 @@ export function registerExtractionService<
   const resolveComponentEntries = async () =>
     selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
 
-  const extractComponent = async (
-    ctx: CommandCtx<TState>,
-    id: string
-  ): Promise<TState['components'][string] | undefined> => {
+  const resolveEntry = async (id: string) => {
     const entry = (await resolveComponentEntries()).get(id);
 
     if (!entry) {
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
 
-    const payload = await provider({ entry });
+    return entry;
+  };
 
-    if (!payload) {
-      ctx.self.setState((state) => {
-        delete state.components[id];
-      });
-      return undefined;
-    }
-
-    ctx.self.setState((state) => {
+  const writePayload = (
+    state: TState,
+    id: string,
+    payload: TState['components'][string] | undefined
+  ): void => {
+    if (payload) {
       state.components[id] = payload;
-    });
-    return payload;
+    } else {
+      delete state.components[id];
+    }
   };
 
   const runtime = registerService(definition, {
@@ -214,25 +211,36 @@ export function registerExtractionService<
     },
     commands: {
       [extractCommand]: {
-        handler: (input: { id: string }, ctx: CommandCtx<TState>) =>
-          extractComponent(ctx, input.id),
+        handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
+          const payload = await provider({ entry: await resolveEntry(input.id) });
+          ctx.self.setState((state) => writePayload(state, input.id, payload));
+          return payload;
+        },
       },
       [extractAllCommand]: {
+        // Every component is resolved first and the state written once: one sync entry for the
+        // whole extraction instead of one per component.
         handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
           const componentEntries = await resolveComponentEntries();
-          await Promise.all(
-            Array.from(componentEntries, ([id, entry]) =>
-              // A provider is not required to be total: `Promise.all` rejects on the first
-              // rejection, so an unguarded fan-out lets one component's failure discard every other
-              // component's payload.
-              extractComponent(ctx, id).catch((error: unknown) => {
-                const payload = buildErrorPayload({ id, entry, error: toExtractionError(error) });
-                ctx.self.setState((state) => {
-                  state.components[id] = payload;
-                });
-              })
-            )
+          const results = await Promise.all(
+            Array.from(componentEntries, async ([id, entry]) => {
+              try {
+                return [id, await provider({ entry })] as const;
+              } catch (error) {
+                // A provider is not required to be total, so one component's failure must not
+                // discard every other component's payload.
+                return [
+                  id,
+                  buildErrorPayload({ id, entry, error: toExtractionError(error) }),
+                ] as const;
+              }
+            })
           );
+          ctx.self.setState((state) => {
+            for (const [id, payload] of results) {
+              writePayload(state, id, payload);
+            }
+          });
         },
       },
     },

@@ -6,11 +6,7 @@ import { existsSync, readFileSync, writeFileSync } from 'fs';
 import path from 'path';
 import { dedent } from 'ts-dedent';
 
-import {
-  addonA11yAddonTest,
-  transformPreviewFile,
-  transformSetupFile,
-} from './addon-a11y-addon-test.ts';
+import { addonA11yAddonTest, transformPreviewFile } from './addon-a11y-addon-test.ts';
 
 vi.mock('storybook/internal/common', async (importOriginal) => {
   const mod = (await importOriginal()) as any;
@@ -85,33 +81,21 @@ describe('addonA11yAddonTest', () => {
       expect(result).toBeNull();
     });
 
-    it('should return null if vitest.setup file and preview file have the necessary transformations', async () => {
+    it('should return null if preview file has the necessary transformations', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
       vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return `
-            import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-            import { setProjectAnnotations } from 'storybook';
-            import * as projectAnnotations from './preview';
-
-            setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-          `;
-        } else {
-          return `
-            export default {
-              parameters: {
-                a11y: {
-                  test: 'todo'
-                }
-              }
+      vi.mocked(readFileSync).mockReturnValue(`
+        export default {
+          parameters: {
+            a11y: {
+              test: 'todo'
             }
-          `;
+          }
         }
-      });
+      `);
 
       const result = await addonA11yAddonTest.check({
         mainConfig: {
@@ -120,43 +104,6 @@ describe('addonA11yAddonTest', () => {
         configDir,
       } as any);
       expect(result).toBeNull();
-    });
-
-    it('should return setupFile and transformedSetupCode if vitest.setup file exists', async () => {
-      vi.mocked(getAddonNames).mockReturnValue([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-      vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return 'const annotations = setProjectAnnotations([]);';
-        } else {
-          return '';
-        }
-      });
-
-      const result = await addonA11yAddonTest.check({
-        mainConfig: {
-          framework: '@storybook/react-vite',
-        },
-        configDir,
-        hasCsfFactoryPreview: false,
-      } as any);
-      expect(result).toEqual({
-        setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: null,
-        transformedPreviewCode: null,
-        transformedSetupCode: expect.any(String),
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
-      });
     });
 
     it('should return previewFile and transformedPreviewCode if preview file exists', async () => {
@@ -164,20 +111,8 @@ describe('addonA11yAddonTest', () => {
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
-      vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('preview')) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('preview')) {
-          return 'export default {}';
-        } else {
-          return '';
-        }
-      });
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockReturnValue('export default {}');
 
       const result = await addonA11yAddonTest.check({
         mainConfig: {
@@ -186,42 +121,17 @@ describe('addonA11yAddonTest', () => {
         configDir,
       } as any);
       expect(result).toEqual({
-        setupFile: null,
         previewFile: path.join(configDir, 'preview.js'),
         transformedPreviewCode: expect.any(String),
-        transformedSetupCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: true,
       });
     });
 
-    it('should return null if vitest.setup file does not exist and preview file has the necessary transformations', async () => {
+    it('should return null transformedPreviewCode if there is no preview file', async () => {
       vi.mocked(getAddonNames).mockReturnValue([
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
-      vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('preview')) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('preview')) {
-          return `
-            export default {
-              parameters: {
-                a11y: {
-                  test: 'todo'
-                }
-              }
-            }
-          `;
-        } else {
-          return '';
-        }
-      });
+      vi.mocked(existsSync).mockReturnValue(false);
 
       const result = await addonA11yAddonTest.check({
         mainConfig: {
@@ -229,44 +139,7 @@ describe('addonA11yAddonTest', () => {
         },
         configDir,
       } as any);
-      expect(result).toBeNull();
-    });
-
-    it('should return setupFile and null transformedSetupCode if transformation fails', async () => {
-      vi.mocked(getAddonNames).mockReturnValue([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-      vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          throw new Error('Test error');
-        } else {
-          return '';
-        }
-      });
-
-      const result = await addonA11yAddonTest.check({
-        mainConfig: {
-          framework: '@storybook/sveltekit',
-        },
-        configDir,
-        hasCsfFactoryPreview: false,
-      } as any);
-      expect(result).toEqual({
-        setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: null,
-        transformedPreviewCode: null,
-        transformedSetupCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: false,
-      });
+      expect(result).toEqual({ previewFile: null, transformedPreviewCode: null });
     });
 
     it('should return previewFile and null transformedPreviewCode if transformation fails', async () => {
@@ -274,19 +147,9 @@ describe('addonA11yAddonTest', () => {
         '@storybook/addon-a11y',
         '@storybook/addon-vitest',
       ]);
-      vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('preview')) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('preview')) {
-          throw new Error('Test error');
-        } else {
-          return '';
-        }
+      vi.mocked(existsSync).mockReturnValue(true);
+      vi.mocked(readFileSync).mockImplementation(() => {
+        throw new Error('Test error');
       });
 
       const result = await addonA11yAddonTest.check({
@@ -294,356 +157,45 @@ describe('addonA11yAddonTest', () => {
           framework: '@storybook/sveltekit',
         },
         configDir,
-        hasCsfFactoryPreview: false,
       } as any);
       expect(result).toEqual({
-        setupFile: null,
         previewFile: path.join(configDir, 'preview.js'),
         transformedPreviewCode: null,
-        transformedSetupCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: true,
-      });
-    });
-
-    it('should return skipPreviewTransformation=true if preview file has the necessary change', async () => {
-      vi.mocked(getAddonNames).mockReturnValue([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return `
-            import { setProjectAnnotations } from 'storybook';
-            import * as projectAnnotations from './preview';
-
-            setProjectAnnotations([projectAnnotations]);
-          `;
-        } else {
-          return `
-            export default {
-              parameters: {
-                a11y: {
-                  test: 'todo'
-                }
-              }
-            }
-          `;
-        }
-      });
-
-      const result = await addonA11yAddonTest.check({
-        mainConfig: {
-          framework: '@storybook/sveltekit',
-        },
-        configDir,
-      } as any);
-      expect(result).toEqual({
-        setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: path.join(configDir, 'preview.js'),
-        transformedPreviewCode: null,
-        transformedSetupCode: expect.any(String),
-        skipPreviewTransformation: true,
-        skipVitestSetupTransformation: false,
-      });
-    });
-
-    it('should return skipVitestSetupTransformation=true if setup file has the necessary change', async () => {
-      vi.mocked(getAddonNames).mockReturnValue([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-      vi.mocked(existsSync).mockReturnValue(true);
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return `
-            import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-            import { setProjectAnnotations } from 'storybook';
-            import * as projectAnnotations from './preview';
-
-            setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);
-          `;
-        } else {
-          return `
-            export default {
-              tags: [],
-            }
-          `;
-        }
-      });
-
-      const result = await addonA11yAddonTest.check({
-        mainConfig: {
-          framework: '@storybook/sveltekit',
-        },
-        configDir,
-      } as any);
-      expect(result).toEqual({
-        setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: path.join(configDir, 'preview.js'),
-        transformedPreviewCode: expect.any(String),
-        transformedSetupCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: true,
-      });
-    });
-
-    it('should return skipVitestSetupTransformation=true if hasCsfFactoryPreview is true', async () => {
-      vi.mocked(getAddonNames).mockReturnValue([
-        '@storybook/addon-a11y',
-        '@storybook/addon-vitest',
-      ]);
-      vi.mocked(existsSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup') || p.toString().includes('preview.js')) {
-          return true;
-        } else {
-          return false;
-        }
-      });
-      vi.mocked(readFileSync).mockImplementation((p) => {
-        if (p.toString().includes('vitest.setup')) {
-          return 'const annotations = setProjectAnnotations([]);';
-        } else {
-          return '';
-        }
-      });
-
-      const result = await addonA11yAddonTest.check({
-        mainConfig: {
-          framework: '@storybook/react-vite',
-        },
-        configDir,
-        hasCsfFactoryPreview: true,
-      } as any);
-      expect(result).toEqual({
-        setupFile: path.join(configDir, 'vitest.setup.js'),
-        previewFile: path.join(configDir, 'preview.js'),
-        transformedPreviewCode: expect.any(String),
-        transformedSetupCode: null,
-        skipPreviewTransformation: false,
-        skipVitestSetupTransformation: true,
       });
     });
   });
 
   describe('run', () => {
-    it('should write transformed setup code to file', async () => {
-      const setupFile = '/path/to/vitest.setup.ts';
-      const transformedSetupCode = 'transformed code';
-
-      await addonA11yAddonTest.run?.({
-        result: {
-          setupFile,
-          transformedSetupCode,
-          previewFile: null,
-          transformedPreviewCode: null,
-          skipVitestSetupTransformation: false,
-          skipPreviewTransformation: true,
-        },
-      } as any);
-
-      expect(writeFileSync).toHaveBeenCalledWith(setupFile, transformedSetupCode, 'utf8');
-    });
-
     it('should write transformed preview code to file', async () => {
       const previewFile = '/path/to/preview.ts';
       const transformedPreviewCode = 'transformed code';
 
       await addonA11yAddonTest.run?.({
-        result: {
-          setupFile: null,
-          transformedSetupCode: null,
-          previewFile: previewFile,
-          transformedPreviewCode: transformedPreviewCode,
-          skipVitestSetupTransformation: true,
-          skipPreviewTransformation: false,
-        },
+        result: { previewFile, transformedPreviewCode },
       } as any);
 
       expect(writeFileSync).toHaveBeenCalledWith(previewFile, transformedPreviewCode, 'utf8');
     });
 
-    it('should not write to file if setupFile or transformedSetupCode is null', async () => {
-      await addonA11yAddonTest.run?.({
-        result: {
-          setupFile: null,
-          transformedSetupCode: null,
-          previewFile: null,
-          transformedPreviewCode: null,
-          skipVitestSetupTransformation: true,
-          skipPreviewTransformation: true,
-        },
-      } as any);
+    it('should throw with instructions when transformedPreviewCode is null', async () => {
+      await expect(
+        addonA11yAddonTest.run?.({
+          result: { previewFile: 'preview.js', transformedPreviewCode: null },
+        } as any)
+      ).rejects
+        .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
+We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
+
+export default {
+  ...
+  parameters: {
++   a11y: {
++      test: "todo"
++   }
+  }
+}]`);
 
       expect(writeFileSync).not.toHaveBeenCalled();
-    });
-
-    it('should throw with instructions when skipVitestSetupTransformation is false and transformedSetupCode is null', async () => {
-      await expect(
-        addonA11yAddonTest.run?.({
-          result: {
-            setupFile: 'vitest.setup.ts',
-            transformedSetupCode: null,
-            previewFile: null,
-            transformedPreviewCode: null,
-            skipPreviewTransformation: true,
-            skipVitestSetupTransformation: false,
-          },
-        } as any)
-      ).rejects.toMatchInlineSnapshot(
-        `[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
-1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
-Please manually update your vitest.setup.ts file to include the following:
-
-...   
-+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-
-setProjectAnnotations([
-  ...
-+ a11yAddonAnnotations,
-]);]`
-      );
-    });
-
-    it('should throw with instructions when skipPreviewTransformation is false and transformedPreviewCode is null', async () => {
-      await expect(
-        addonA11yAddonTest.run?.({
-          result: {
-            setupFile: null,
-            transformedSetupCode: null,
-            previewFile: 'preview.js',
-            transformedPreviewCode: null,
-            skipPreviewTransformation: false,
-            skipVitestSetupTransformation: true,
-          },
-        } as any)
-      ).rejects
-        .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
-1) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
-
-export default {
-  ...
-  parameters: {
-+   a11y: {
-+      test: "todo"
-+   }
-  }
-}]`);
-    });
-
-    it('should throw with full instructions when skipPreviewTransformation is false and both transformedSetupCode and transformedPreviewCode are null', async () => {
-      await expect(
-        addonA11yAddonTest.run?.({
-          result: {
-            setupFile: 'vitest.setup.ts',
-            transformedSetupCode: null,
-            previewFile: 'preview.js',
-            transformedPreviewCode: null,
-            skipPreviewTransformation: false,
-            skipVitestSetupTransformation: false,
-          },
-        } as any)
-      ).rejects
-        .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
-1) We couldn't find or automatically update .storybook/vitest.setup.<ts|js> in your project to smoothly set up project annotations from @storybook/addon-a11y. 
-Please manually update your vitest.setup.ts file to include the following:
-
-...   
-+ import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-
-setProjectAnnotations([
-  ...
-+ a11yAddonAnnotations,
-]);
-2) We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
-
-export default {
-  ...
-  parameters: {
-+   a11y: {
-+      test: "todo"
-+   }
-  }
-}]`);
-    });
-  });
-
-  describe('transformSetupFile', async () => {
-    it('should throw', async () => {
-      const setupFile = '/path/to/vitest.setup.ts';
-      const source = dedent`
-        import { setProjectAnnotations } from 'storybook';
-      `;
-
-      vi.mocked(readFileSync).mockReturnValue(source);
-
-      expect(() => transformSetupFile(setupFile)).toThrow();
-    });
-
-    it('should transform setup file correctly - 1', () => {
-      const setupFile = '/path/to/vitest.setup.ts';
-      const source = dedent`
-        import { setProjectAnnotations } from 'storybook';
-        import * as projectAnnotations from './preview';
-
-        setProjectAnnotations([projectAnnotations]);
-      `;
-      vi.mocked(readFileSync).mockReturnValue(source);
-
-      const s = readFileSync(setupFile, 'utf8');
-      const transformedCode = transformSetupFile(s);
-      expect(transformedCode).toMatchInlineSnapshot(`
-        "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { setProjectAnnotations } from 'storybook';
-        import * as projectAnnotations from './preview';
-
-        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
-      `);
-    });
-
-    it('should transform setup file correctly - 2 (different format)', () => {
-      const setupFile = '/path/to/vitest.setup.ts';
-      const source = dedent`
-        import { setProjectAnnotations } from 'storybook';
-        import * as projectAnnotations from './preview';
-
-        setProjectAnnotations([
-          projectAnnotations
-        ]);
-      `;
-      vi.mocked(readFileSync).mockReturnValue(source);
-
-      const s = readFileSync(setupFile, 'utf8');
-      const transformedCode = transformSetupFile(s);
-      expect(transformedCode).toMatchInlineSnapshot(`
-        "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { setProjectAnnotations } from 'storybook';
-        import * as projectAnnotations from './preview';
-
-        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
-      `);
-    });
-
-    it('should transform setup file correctly - project annotation is not an array', () => {
-      const setupFile = '/path/to/vitest.setup.ts';
-      const source = dedent`
-        import { setProjectAnnotations } from 'storybook';
-        import * as projectAnnotations from './preview';
-
-        setProjectAnnotations(projectAnnotations);
-      `;
-      vi.mocked(readFileSync).mockReturnValue(source);
-
-      const s = readFileSync(setupFile, 'utf8');
-      const transformedCode = transformSetupFile(s);
-      expect(transformedCode).toMatchInlineSnapshot(dedent`
-        "import * as a11yAddonAnnotations from "@storybook/addon-a11y/preview";
-        import { setProjectAnnotations } from 'storybook';
-        import * as projectAnnotations from './preview';
-
-        setProjectAnnotations([a11yAddonAnnotations, projectAnnotations]);"
-      `);
     });
   });
 

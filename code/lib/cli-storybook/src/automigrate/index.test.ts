@@ -92,7 +92,6 @@ const packageManager = new PackageManager() as unknown as JsPackageManager;
 
 const dryRun = false;
 const yes = true;
-const rendererPackage = 'storybook';
 const skipInstall = false;
 const configDir = '/path/to/config';
 const mainConfigPath = '/path/to/mainConfig';
@@ -104,14 +103,12 @@ const common = {
   dryRun,
   yes,
   mainConfig: { stories: [] },
-  rendererPackage,
   skipInstall,
   configDir,
   packageManager: packageManager,
   mainConfigPath,
   isUpgrade,
   storiesPaths: [],
-  hasCsfFactoryPreview: false,
 };
 
 const runFixWrapper = async ({ storybookVersion }: { storybookVersion: string }) => {

@@ -48,11 +48,11 @@
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {
-    "preact": "^10.5.13",
+    "preact": "^10.8.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "preact": "^8.0.0 || ^10.0.0 || >= 11.0.0-0",
+    "preact": "^10.8.0 || >= 11.0.0-0",
     "storybook": "workspace:^"
   },
   "publishConfig": {

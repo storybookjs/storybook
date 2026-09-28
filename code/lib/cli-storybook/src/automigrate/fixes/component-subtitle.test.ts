@@ -251,7 +251,7 @@ describe('component-subtitle file processing', () => {
     previewConfigPath,
     storiesPaths: [storyPath],
   };
-  const run = () => runFix(componentSubtitle, { ...options, result: { filesToChange: [] } });
+  const run = () => runFix(componentSubtitle, { ...options, result: {} });
 
   beforeEach(() => {
     vol.reset();
@@ -263,17 +263,15 @@ describe('component-subtitle file processing', () => {
     });
   });
 
-  it('reports the files to change without writing them', async () => {
+  it('applies when a file would change, without writing it', async () => {
     const before = vol.toJSON();
-    expect(await checkFix(componentSubtitle, options)).toEqual({
-      filesToChange: [previewConfigPath, storyPath],
-    });
+    expect(await checkFix(componentSubtitle, options)).toEqual({});
     expect(vol.toJSON()).toEqual(before);
   });
 
-  it('migrates the current preview and story contents', async () => {
+  it('migrates the preview and story contents', async () => {
     fs.writeFileSync(storyPath, "export default { parameters: { componentSubtitle: 'Edited' } };");
-    await run();
+    expect(await run()).toEqual([]);
     expect(fs.readFileSync(previewConfigPath, 'utf8')).toMatchInlineSnapshot(`
       "export default { parameters: { docs: {
         subtitle: 'Preview'
@@ -286,23 +284,17 @@ describe('component-subtitle file processing', () => {
     `);
   });
 
-  it('writes nothing when any file cannot be migrated safely', async () => {
-    fs.writeFileSync(
-      storyPath,
-      "export default { parameters: { ...shared, componentSubtitle: 'Story' } };"
-    );
-    const before = vol.toJSON();
-    await expect(checkFix(componentSubtitle, options)).rejects.toThrow(storyPath);
-    await expect(run()).rejects.toThrow(storyPath);
-    expect(vol.toJSON()).toEqual(before);
+  it('skips a story that cannot be migrated safely and still migrates the preview', async () => {
+    const unsafe = "export default { parameters: { ...shared, componentSubtitle: 'Story' } };";
+    fs.writeFileSync(storyPath, unsafe);
+
+    expect(await run()).toEqual([{ file: storyPath, message: expect.any(String) }]);
+    expect(fs.readFileSync(storyPath, 'utf8')).toBe(unsafe);
+    expect(fs.readFileSync(previewConfigPath, 'utf8')).toContain('subtitle: ');
   });
 
   it('does not require a preview', async () => {
-    await runFix(componentSubtitle, {
-      ...options,
-      previewConfigPath: undefined,
-      result: { filesToChange: [] },
-    });
+    await runFix(componentSubtitle, { ...options, previewConfigPath: undefined, result: {} });
     expect(fs.readFileSync(storyPath, 'utf8')).toContain('subtitle: ');
   });
 
@@ -339,34 +331,47 @@ describe('component-subtitle file processing', () => {
     }
   );
 
-  it('rejects a story migration when the preview subtitle can take precedence', async () => {
+  it('skips a story when the preview subtitle can take precedence', async () => {
     fs.writeFileSync(
       previewConfigPath,
       "export default { parameters: { docs: { subtitle: 'Current' } } };"
     );
     const before = vol.toJSON();
-    await expect(run()).rejects.toThrow(
-      'An inherited parameters.docs.subtitle value can take precedence'
-    );
+
+    expect(await run()).toEqual([
+      {
+        file: storyPath,
+        message: 'An inherited parameters.docs.subtitle value can take precedence',
+      },
+    ]);
     expect(vol.toJSON()).toEqual(before);
   });
 
   it('checks descendant subtitles in files without a legacy token', async () => {
     fs.writeFileSync(storyPath, "export default { parameters: { docs: { subtitle: '' } } };");
-    const before = vol.toJSON();
-    await expect(run()).rejects.toThrow(
-      'A descendant parameters.docs.subtitle can hide an inherited componentSubtitle fallback'
-    );
-    expect(vol.toJSON()).toEqual(before);
+
+    expect(await run()).toEqual([
+      {
+        file: storyPath,
+        message:
+          'A descendant parameters.docs.subtitle can hide an inherited componentSubtitle fallback',
+      },
+    ]);
   });
 
-  it('does not migrate stories when preview parameters cannot be inspected', async () => {
+  it('skips stories that need the preview when the preview cannot be inspected', async () => {
     fs.writeFileSync(
       previewConfigPath,
       "import parameters from './parameters'; export default { parameters };"
     );
     const before = vol.toJSON();
-    await expect(run()).rejects.toThrow(previewConfigPath);
+
+    expect(await run()).toEqual([
+      {
+        file: storyPath,
+        message: expect.stringContaining('The preview could not be migrated first'),
+      },
+    ]);
     expect(vol.toJSON()).toEqual(before);
   });
 
@@ -380,14 +385,16 @@ describe('component-subtitle file processing', () => {
     expect(await checkFix(componentSubtitle, options)).toBeNull();
   });
 
-  it('reports an unsafe preview legacy subtitle', async () => {
+  it('reports an unsafe preview legacy subtitle and leaves stories without one alone', async () => {
     fs.writeFileSync(
       previewConfigPath,
       "export default { parameters: { ...shared, componentSubtitle: 'Legacy' } };"
     );
     fs.writeFileSync(storyPath, 'export default { parameters: { docs: {} } };');
+    const before = vol.toJSON();
 
-    await expect(checkFix(componentSubtitle, options)).rejects.toThrow(previewConfigPath);
+    expect(await run()).toEqual([{ file: previewConfigPath, message: expect.any(String) }]);
+    expect(vol.toJSON()).toEqual(before);
   });
 
   it('migrates a named preview parameters export', async () => {

@@ -111,12 +111,12 @@ export abstract class AbstractRenderer {
       targetDOMNode.getAttribute(STORY_UID_ATTRIBUTE)
     );
     const componentSelector = storyUid !== null ? `${targetSelector}[${storyUid}]` : targetSelector;
+    const hostElement = targetDOMNode.querySelector(targetSelector);
     if (storyUid !== null) {
-      const element = targetDOMNode.querySelector(targetSelector);
-      if (!element) {
+      if (!hostElement) {
         throw new Error(`Storybook could not find the story root element "${targetSelector}"`);
       }
-      element.toggleAttribute(storyUid, true);
+      hostElement.toggleAttribute(storyUid, true);
     }
 
     const application = getApplication({
@@ -137,13 +137,19 @@ export abstract class AbstractRenderer {
     }
 
     const applicationRef = await queueBootstrapping(() => {
+      // A newer render (e.g. a docs page remount) removed this host while it waited in the queue
+      if (!hostElement?.isConnected) {
+        return Promise.resolve(null);
+      }
       return bootstrapApplication(application, {
         ...storyFnAngular.applicationConfig,
         providers,
       });
     });
 
-    applicationRefs.set(targetDOMNode, applicationRef);
+    if (applicationRef) {
+      applicationRefs.set(targetDOMNode, applicationRef);
+    }
   }
 
   /**

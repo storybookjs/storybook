@@ -152,10 +152,15 @@ export function getStoryContentRawCode(params: Params): string {
     filename,
   });
 
-  // NOTE: It should never be `undefined` in this particular case, otherwise Storybook wouldn't know what to render.
-  return dedent(`<${defineMetaComponentValue?.name} {...args}>
+  // If there's no component defined in defineMeta, return the raw code directly
+  // This handles static templates without a component wrapper
+  if (!defineMetaComponentValue) {
+    return rawCode;
+  }
+
+  return dedent(`<${defineMetaComponentValue.name} {...args}>
     ${rawCode}
-  </${defineMetaComponentValue?.name}>`);
+  </${defineMetaComponentValue.name}>`);
 }
 
 /**

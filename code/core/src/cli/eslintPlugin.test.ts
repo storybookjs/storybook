@@ -16,7 +16,7 @@ import {
 
 vi.mock('storybook/internal/common', async (importOriginal) => ({
   ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  formatFileContent: async (_path: string, content: string) => content,
+  formatExistingFile: async (_path: string, content: string) => content,
 }));
 
 vi.mock('empathic/find', () => ({

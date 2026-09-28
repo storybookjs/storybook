@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import {
   type JsPackageManager,
-  formatFileContent,
+  formatExistingFile,
   getProjectRoot,
 } from 'storybook/internal/common';
 import { readConfig, writeConfig } from 'storybook/internal/csf-tools';
@@ -326,7 +326,7 @@ export async function configureEslintPlugin({
         if (output === code) {
           return;
         }
-        await writeFile(eslintConfigFile, await formatFileContent(eslintConfigFile, output));
+        await writeFile(eslintConfigFile, await formatExistingFile(eslintConfigFile, output));
       } else {
         const eslint = await readConfig(eslintConfigFile);
         const existingExtends = normalizeExtends(eslint.getValue(['extends'])).filter(Boolean);

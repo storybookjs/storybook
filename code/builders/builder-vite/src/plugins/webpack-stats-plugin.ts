@@ -27,6 +27,8 @@ type WebpackStatsPluginOptions = {
 
 const ROLLUP_VIRTUAL_PREFIX = '\0';
 
+type StatsModule = Module & { reasons: Reason[] };
+
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
 export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
@@ -54,54 +56,46 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
     return `${virtualPrefix}./${slash(relative(workingDir, path))}${query}`;
   }
 
-  /** Helper to create Reason objects out of a list of string paths */
-  function createReasons(importers?: readonly string[]): Reason[] {
-    return (importers || []).map((i) => ({ moduleName: normalize(i) }));
-  }
+  const importersById = new Map<string, Set<string>>();
 
-  /** Helper function to build a `Module` given a filename and list of files that import it */
-  function createStatsMapModule(filename: string, importers?: readonly string[]): Module {
-    return {
-      id: filename,
-      name: filename,
-      reasons: createReasons(importers),
-    };
+  function record(id: string, importer?: string) {
+    let importers = importersById.get(id);
+    if (!importers) {
+      importers = new Set<string>();
+      importersById.set(id, importers);
+    }
+    if (importer !== undefined) {
+      importers.add(importer);
+    }
   }
-
-  const statsMap = new Map<string, Module>();
 
   return {
     name: 'storybook:rollup-plugin-webpack-stats',
     // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
     enforce: 'post',
-    moduleParsed: function (mod) {
-      // Entry modules have no importer, so they are only recorded here.
-      const modId = normalize(mod.id);
-      if (!statsMap.has(modId)) {
-        statsMap.set(modId, createStatsMapModule(modId));
+    moduleParsed(mod) {
+      record(mod.id);
+      for (const depId of mod.importedIds.concat(mod.dynamicallyImportedIds)) {
+        record(depId, mod.id);
       }
-
-      // Proxy and virtual modules are the only path from a component to its dependencies, so every
-      // edge is kept.
-      mod.importedIds.concat(mod.dynamicallyImportedIds).forEach((depIdUnsafe) => {
-        const depId = normalize(depIdUnsafe);
-        if (!statsMap.has(depId)) {
-          statsMap.set(depId, createStatsMapModule(depId, [mod.id]));
-          return;
-        }
-        const m = statsMap.get(depId);
-        if (!m) {
-          return;
-        }
-        m.reasons = (m.reasons ?? [])
-          .concat(createReasons([mod.id]))
-          .filter((r) => r.moduleName !== depId);
-        statsMap.set(depId, m);
-      });
     },
 
     storybookGetStats() {
-      const stats = { modules: Array.from(statsMap.values()) };
+      const modulesByName = new Map<string, StatsModule>();
+
+      for (const [id, importers] of importersById) {
+        const name = normalize(id);
+        const module = modulesByName.get(name) ?? { id: name, name, reasons: [] };
+        for (const importer of importers) {
+          const moduleName = normalize(importer);
+          if (moduleName !== name) {
+            module.reasons.push({ moduleName });
+          }
+        }
+        modulesByName.set(name, module);
+      }
+
+      const stats = { modules: Array.from(modulesByName.values()) };
       return { ...stats, toJson: () => stats };
     },
   };

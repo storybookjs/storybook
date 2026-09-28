@@ -20,7 +20,9 @@ function getStats(graph: RawGraph) {
 }
 
 function getModuleNames(graph: RawGraph) {
-  return getStats(graph).modules.map((module: { name: string }) => module.name);
+  return getStats(graph)
+    .modules.map((module: { name: string }) => module.name)
+    .sort();
 }
 
 function getImporters(graph: RawGraph, name: string) {
@@ -68,9 +70,9 @@ describe('pluginWebpackStats', () => {
     });
 
     expect(names).toEqual([
-      '/virtual:/@storybook/builder-vite/vite-app.js',
-      '/virtual:/@storybook/builder-vite/storybook-stories.js',
       '/virtual:/@storybook/builder-vite/project-annotations.js',
+      '/virtual:/@storybook/builder-vite/storybook-stories.js',
+      '/virtual:/@storybook/builder-vite/vite-app.js',
     ]);
   });
 
@@ -101,9 +103,9 @@ describe('pluginWebpackStats', () => {
     });
 
     expect(names).toEqual([
-      './src/Button.tsx',
       '\0./node_modules/react/index.js?commonjs-es-import',
       './node_modules/react/index.js',
+      './src/Button.tsx',
     ]);
   });
 
@@ -128,9 +130,9 @@ describe('pluginWebpackStats', () => {
     });
 
     expect(names).toEqual([
-      './node_modules/react/index.js',
       '\0commonjsHelpers.js',
       '\0vite/preload-helper.js',
+      './node_modules/react/index.js',
     ]);
   });
 

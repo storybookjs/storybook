@@ -78,6 +78,7 @@ const bootTestRunner = async ({
   const bridgedEventNames = new Set(universalStoreBridges.map((bridge) => bridge.eventName));
 
   let stderr: string[] = [];
+  let childErrorReported = false;
   const killChild = () => {
     for (const unsubscribe of unsubscribeBridges) {
       unsubscribe();
@@ -139,11 +140,12 @@ const bootTestRunner = async ({
           }
           resolve();
         } else if (event.type === 'uncaught-error') {
+          childErrorReported = true;
           store.send({
             type: 'FATAL_ERROR',
             payload: event.payload,
           });
-          reject();
+          reject(event.payload.error);
         } else if (bridgedEventNames.has(event.type)) {
           // Give the event to local store listeners only. emit() would also send it to browsers,
           // and the store leader already forwards that copy once.
@@ -166,13 +168,15 @@ const bootTestRunner = async ({
   );
 
   await Promise.race([startChildProcess(), timeout]).catch((error) => {
-    store.send({
-      type: 'FATAL_ERROR',
-      payload: {
-        message: 'Failed to start test runner process',
-        error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
-      },
-    });
+    if (!childErrorReported) {
+      store.send({
+        type: 'FATAL_ERROR',
+        payload: {
+          message: 'Failed to start test runner process',
+          error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
+        },
+      });
+    }
     eventQueue.length = 0;
     throw error;
   });

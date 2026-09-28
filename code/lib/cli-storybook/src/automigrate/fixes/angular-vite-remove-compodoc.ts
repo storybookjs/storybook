@@ -1,7 +1,7 @@
 import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
-import { formatFileContent, type JsPackageManager } from 'storybook/internal/common';
-import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
+import type { JsPackageManager } from 'storybook/internal/common';
+import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -10,11 +10,13 @@ import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import type { FixTransform } from '../pipeline.ts';
 import type { Fix } from '../types.ts';
 import {
   findWorkspaceFiles,
   findWorkspaceJsonFiles,
   getTargetGroups,
+  readJsonFile,
 } from './angular-workspace.ts';
 
 const COMPODOC_PACKAGE = '@compodoc/compodoc';
@@ -111,14 +113,6 @@ const compodocOptionPaths = (
   return [...fromTargets, ...fromTargetDefaults];
 };
 
-const readJson = async (files: FixFiles, filePath: string): Promise<any | null> => {
-  try {
-    return JSON.parse(await files.read(filePath));
-  } catch {
-    return null;
-  }
-};
-
 const DOCUMENTATION_JSON = /(^|[/\\])documentation\.json$/;
 
 const isModuleSource = (literal: t.StringLiteral, parent: t.Node): boolean =>
@@ -137,29 +131,33 @@ const isModuleSource = (literal: t.StringLiteral, parent: t.Node): boolean =>
  * Both markers are ordinary words in a comment or a string, so they are read off the syntax tree
  * rather than the source text.
  */
-const previewWiresCompodoc = (source: string): boolean => {
+const wiresCompodoc = (ast: t.File): boolean => {
   let wired = false;
 
+  traverse(ast, {
+    Identifier(path) {
+      if (path.node.name === SET_COMPODOC_JSON) {
+        wired = true;
+        path.stop();
+      }
+    },
+    StringLiteral(path) {
+      if (DOCUMENTATION_JSON.test(path.node.value) && isModuleSource(path.node, path.parent)) {
+        wired = true;
+        path.stop();
+      }
+    },
+  });
+
+  return wired;
+};
+
+const previewWiresCompodoc = (source: string): boolean => {
   try {
-    traverse(babelParse(source), {
-      Identifier(path) {
-        if (path.node.name === SET_COMPODOC_JSON) {
-          wired = true;
-          path.stop();
-        }
-      },
-      StringLiteral(path) {
-        if (DOCUMENTATION_JSON.test(path.node.value) && isModuleSource(path.node, path.parent)) {
-          wired = true;
-          path.stop();
-        }
-      },
-    });
+    return wiresCompodoc(babelParse(source));
   } catch {
     return false;
   }
-
-  return wired;
 };
 
 const SHELL_SEPARATORS = /&{1,2}|\|{1,2}|;|\n/;
@@ -218,7 +216,7 @@ const findCompodocScripts = async (
   const scripts: AngularViteRemoveCompodocOptions['compodocScripts'] = [];
   for (const packageJsonPath of paths) {
     for (const [scriptName, script] of Object.entries<string>(
-      (await readJson(files, packageJsonPath))?.scripts ?? {}
+      (await readJsonFile(files, packageJsonPath))?.scripts ?? {}
     )) {
       if (typeof script === 'string' && invokesCompodoc(script)) {
         scripts.push({ packageJsonPath, scriptName });
@@ -251,8 +249,35 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       We'll remove the Compodoc setup that has no effect anymore.
     `,
 
+  transform: compodocTransforms,
+
   run: (options) => removeCompodocSetup(options),
 };
+
+/** The Compodoc edits to the main and preview configs; `removeCompodocSetup` does the rest. */
+export function compodocTransforms(): FixTransform[] {
+  return [
+    {
+      filter: { kind: ['main'], code: 'compodoc' },
+      editConfig: (main, { id }) => {
+        const removed = COMPODOC_OPTIONS.filter(
+          (option) => main.remove(['framework', 'options', option]).changed
+        );
+        if (removed.length > 0) {
+          logger.debug(`Removed the Compodoc framework options from ${id}`);
+        }
+      },
+    },
+    {
+      filter: { kind: ['preview'], code: /setCompodocJson|documentation\.json/ },
+      editConfig: (preview, { id }) => {
+        if (wiresCompodoc(preview._ast)) {
+          removePreviewWiring(preview, id);
+        }
+      },
+    },
+  ];
+}
 
 export const findCompodocSetup = async ({
   files,
@@ -280,7 +305,7 @@ export const findCompodocSetup = async ({
     'angular.json',
     'nx.json',
   ])) {
-    const json = await readJson(files, filePath);
+    const json = await readJsonFile(files, filePath);
     if (json) {
       documents.push({ filePath, json });
     }
@@ -319,44 +344,22 @@ export const findCompodocSetup = async ({
   };
 };
 
+/** The Compodoc removal outside the main and preview configs; `compodocTransforms` edits those. */
 export const removeCompodocSetup = async ({
-  result,
+  result: { workspaceJsonEdits, compodocScripts, hasCompodocDependency },
   files,
-  mainConfigPath,
-  previewConfigPath,
   packageManager,
 }: {
   result: AngularViteRemoveCompodocOptions;
   files: FixFiles;
-  mainConfigPath: string;
-  previewConfigPath?: string;
   packageManager: JsPackageManager;
 }): Promise<void> => {
-  const {
-    hasFrameworkOptions,
-    hasPreviewWiring,
-    workspaceJsonEdits,
-    compodocScripts,
-    hasCompodocDependency,
-  } = result;
-
-  if (hasFrameworkOptions) {
-    await files.editConfig(mainConfigPath, (main) =>
-      COMPODOC_OPTIONS.forEach((option) => main.remove(['framework', 'options', option]))
-    );
-    logger.step(`Removed the Compodoc framework options from ${mainConfigPath}`);
-  }
-
-  if (hasPreviewWiring && previewConfigPath) {
-    await removePreviewWiring(files, previewConfigPath);
-  }
-
   for (const { filePath, optionPaths } of workspaceJsonEdits) {
     const changed = await files.edit(filePath, (source) =>
       optionPaths.reduce((text, path) => editJsonText(text, path, undefined), source)
     );
     if (changed.length > 0) {
-      logger.step(`Removed the Compodoc builder options from ${filePath}`);
+      logger.debug(`Removed the Compodoc builder options from ${filePath}`);
     }
   }
 
@@ -371,7 +374,7 @@ export const removeCompodocSetup = async ({
       );
     } else {
       await packageManager.removeDependencies([COMPODOC_PACKAGE]);
-      logger.step(`Removed ${COMPODOC_PACKAGE}`);
+      logger.debug(`Removed ${COMPODOC_PACKAGE}`);
       await removeCompodocOverrides(files, packageManager);
     }
   }
@@ -387,7 +390,7 @@ const removeCompodocOverrides = async (
   packageManager: JsPackageManager
 ): Promise<void> => {
   for (const packageJsonPath of packageManager.packageJsonPaths) {
-    const json = await readJson(files, packageJsonPath);
+    const json = await readJsonFile(files, packageJsonPath);
     const containers = OVERRIDE_CONTAINERS.map((path) =>
       path.reduce<any>((parent, key) => parent?.[key], json)
     ).filter((container) => container && COMPODOC_PACKAGE in container);
@@ -398,7 +401,7 @@ const removeCompodocOverrides = async (
 
     containers.forEach((container) => delete container[COMPODOC_PACKAGE]);
     packageManager.writePackageJson(json, dirname(packageJsonPath));
-    logger.step(`Removed the dangling ${COMPODOC_PACKAGE} override from ${packageJsonPath}`);
+    logger.debug(`Removed the dangling ${COMPODOC_PACKAGE} override from ${packageJsonPath}`);
   }
 };
 
@@ -432,70 +435,63 @@ const countReferences = (program: t.Program, name: string): number => {
  * anything that is not a plain top-level call is reported and left untouched. Imports survive
  * while any other code still reads them.
  */
-const removePreviewWiring = async (files: FixFiles, previewConfigPath: string): Promise<void> => {
-  const changed = await files.edit(previewConfigPath, async (source) => {
-    const preview = loadConfig(source, previewConfigPath).parse();
-    const program = preview._ast.program;
+const removePreviewWiring = (preview: ConfigFile, previewConfigPath: string): void => {
+  const program = preview._ast.program;
 
-    const callsToDrop = program.body.filter(
-      (node) =>
-        t.isExpressionStatement(node) &&
-        t.isCallExpression(node.expression) &&
-        t.isIdentifier(node.expression.callee, { name: SET_COMPODOC_JSON })
+  const callsToDrop = program.body.filter(
+    (node) =>
+      t.isExpressionStatement(node) &&
+      t.isCallExpression(node.expression) &&
+      t.isIdentifier(node.expression.callee, { name: SET_COMPODOC_JSON })
+  );
+
+  if (callsToDrop.length === 0) {
+    manualRemovalHint(
+      previewConfigPath,
+      countReferences(program, SET_COMPODOC_JSON) > 0
+        ? `${SET_COMPODOC_JSON} is not called at the top level`
+        : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
     );
-
-    if (callsToDrop.length === 0) {
-      manualRemovalHint(
-        previewConfigPath,
-        countReferences(program, SET_COMPODOC_JSON) > 0
-          ? `${SET_COMPODOC_JSON} is not called at the top level`
-          : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
-      );
-      return;
-    }
-
-    const withoutCalls = t.program(program.body.filter((node) => !callsToDrop.includes(node)));
-    if (countReferences(withoutCalls, SET_COMPODOC_JSON) > 0) {
-      manualRemovalHint(previewConfigPath, `${SET_COMPODOC_JSON} is still used elsewhere`);
-      return;
-    }
-
-    const droppableImportNames = new Set(
-      callsToDrop.flatMap((node) => {
-        const [argument] = ((node as t.ExpressionStatement).expression as t.CallExpression)
-          .arguments;
-        return t.isIdentifier(argument) && countReferences(withoutCalls, argument.name) === 0
-          ? [argument.name]
-          : [];
-      })
-    );
-
-    const isDroppableSpecifier = (
-      declaration: t.ImportDeclaration,
-      specifier: t.ImportDeclaration['specifiers'][number]
-    ) =>
-      declaration.source.value === ADDON_DOCS_ANGULAR
-        ? specifier.local.name === SET_COMPODOC_JSON
-        : droppableImportNames.has(specifier.local.name);
-
-    const remaining: t.Statement[] = [];
-    for (const node of withoutCalls.body) {
-      // A declaration without specifiers is imported for its side effects, so it stays as it is.
-      if (t.isImportDeclaration(node) && node.specifiers.length > 0) {
-        node.specifiers = node.specifiers.filter(
-          (specifier) => !isDroppableSpecifier(node, specifier)
-        );
-        if (node.specifiers.length === 0) {
-          continue;
-        }
-      }
-      remaining.push(node);
-    }
-
-    program.body = remaining;
-    return formatFileContent(previewConfigPath, formatConfig(preview));
-  });
-  if (changed.length > 0) {
-    logger.step(`Removed the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`);
+    return;
   }
+
+  const withoutCalls = t.program(program.body.filter((node) => !callsToDrop.includes(node)));
+  if (countReferences(withoutCalls, SET_COMPODOC_JSON) > 0) {
+    manualRemovalHint(previewConfigPath, `${SET_COMPODOC_JSON} is still used elsewhere`);
+    return;
+  }
+
+  const droppableImportNames = new Set(
+    callsToDrop.flatMap((node) => {
+      const [argument] = ((node as t.ExpressionStatement).expression as t.CallExpression).arguments;
+      return t.isIdentifier(argument) && countReferences(withoutCalls, argument.name) === 0
+        ? [argument.name]
+        : [];
+    })
+  );
+
+  const isDroppableSpecifier = (
+    declaration: t.ImportDeclaration,
+    specifier: t.ImportDeclaration['specifiers'][number]
+  ) =>
+    declaration.source.value === ADDON_DOCS_ANGULAR
+      ? specifier.local.name === SET_COMPODOC_JSON
+      : droppableImportNames.has(specifier.local.name);
+
+  const remaining: t.Statement[] = [];
+  for (const node of withoutCalls.body) {
+    // A declaration without specifiers is imported for its side effects, so it stays as it is.
+    if (t.isImportDeclaration(node) && node.specifiers.length > 0) {
+      node.specifiers = node.specifiers.filter(
+        (specifier) => !isDroppableSpecifier(node, specifier)
+      );
+      if (node.specifiers.length === 0) {
+        continue;
+      }
+    }
+    remaining.push(node);
+  }
+
+  program.body = remaining;
+  logger.debug(`Removed the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`);
 };

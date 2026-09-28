@@ -11,12 +11,12 @@ Vite pre-transform hook does codemod where this component gets transformed into 
 <script lang="ts">
   import type { Slots, TemplateProps } from '../legacy-types.d.ts';
 
-  export let id: string = 'default';
-  // silents the Svelte warning about 'id' being unused. It's only here for typing purposes.
-  const silentWarningAboutId = id;
-
-  type $$Props = TemplateProps;
+  // Props use `$props()` so this file compiles when `compilerOptions.runes` is `true`.
+  // It still renders a `<slot>`, because the typing of legacy `let:args` and `let:context` comes from `$$Slots`.
   type $$Slots = Slots;
+
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _props: TemplateProps = $props();
 
   let args!: $$Slots['default']['args'];
   let context!: $$Slots['default']['context'];

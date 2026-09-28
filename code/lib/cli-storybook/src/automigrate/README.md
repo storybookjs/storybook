@@ -61,7 +61,6 @@ Its edits are staged and committed after `run` resolves, and the commit refuses 
 - Do not read or write project files with `node:fs` in a fix, loop with `p-limit`, branch on `dryRun`, or catch per-file errors.
   Path discovery (`existsSync`, globbing) is fine.
 - `add()` and `removeAddon()` write `main.ts` directly; call them from `run`, which finishes before the apply pass reads the file.
-- Use `loadAnnotationFile` from `storybook/internal/csf-tools` when a migration edits both preview and story annotations; keep inheritance rules in the migration.
 - Remove a fix once upgrades no longer start from a version that needs it.
 
 ## Tests

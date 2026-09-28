@@ -577,18 +577,10 @@ To keep opening Storybook automatically, add `--open` to your command or package
 
 ### `parameters.componentSubtitle` removed
 
-The deprecated `parameters.componentSubtitle` fallback was removed. Move subtitles to
-`parameters.docs.subtitle`.
+The deprecated `parameters.componentSubtitle` fallback was removed.
+Use `parameters.docs.subtitle` instead.
 
-When you upgrade to Storybook 11, the upgrade command offers to move directly declared properties
-in preview configuration and CSF files when it can preserve their behavior. To run this
-automigration directly from your project root without the post-migration health check, use:
-
-```sh
-npx storybook@11 automigrate component-subtitle --skip-doctor
-```
-
-Use `--config-dir <path>` if the Storybook configuration is not in the root `.storybook` directory.
+The `component-subtitle` automigration moves it in your preview and story files when you upgrade, or when you run `npx storybook automigrate component-subtitle`:
 
 ```diff
 export default {
@@ -599,33 +591,13 @@ export default {
 };
 ```
 
-If `parameters.docs` already exists, add `subtitle` without replacing its other options:
+When the same object already sets `docs.subtitle`, the automigration keeps it and removes `componentSubtitle`, because `docs.subtitle` already took precedence.
+A `componentSubtitle` set on a single story never affected the Subtitle block, so the automigration leaves it in place for you to delete.
+Files it cannot edit safely, such as parameters built from a spread, are listed in `automigrations-summary.md` for you to change by hand.
 
-```diff
-export default {
-  parameters: {
--   componentSubtitle: 'Button variants',
-    docs: {
-+     subtitle: 'Button variants',
-      source: { type: 'code' },
-    },
-  },
-};
-```
-
-The migration also follows a single-use local object literal through a sole spread, such as
-`parameters: { ...localParameters }`. Shared or reassigned bindings and unresolved spreads require
-manual changes. An unresolved spread may supply an existing `docs.subtitle`, even when
-`componentSubtitle` appears after the spread.
-
-A truthy `docs.subtitle` keeps its value. For a statically known falsy value such as `''`, `false`,
-`0`, `null`, or `undefined`, the migration preserves the legacy fallback instead. It reports an
-error when it cannot prove this choice or preserve subtitle inheritance between preview, meta,
-and stories. Check descendant subtitle overrides when moving a preview or meta fallback manually.
-
-If any file fails the safety check, the migration reports the affected files before writing
-changes. It checks current contents again when you run it. Resolve the reported cases manually,
-then rerun the command to migrate the remaining files.
+Before, any `docs.subtitle` took precedence over any `componentSubtitle`, even one set in the preview over one set in a component's meta.
+After the migration, the more specific value wins, like every other parameter.
+If your preview sets `docs.subtitle`, check the subtitles on your Docs pages.
 
 ### Docs Code panel enabled by default
 

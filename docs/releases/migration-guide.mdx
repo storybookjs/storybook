@@ -113,9 +113,7 @@ export default {
 };
 ```
 
-If `parameters.docs` already exists, add `subtitle` while keeping its other options. The upgrade command offers the `component-subtitle` automigration when it can preserve the existing behavior. If it reports an inherited subtitle conflict or an expression it cannot safely move, migrate the affected values manually.
-
-Open the affected Docs pages and check that their subtitles remain correct. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed) for the standalone automigration command and more examples.
+The upgrade command offers the `component-subtitle` automigration to do this for you. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed) for what it cannot migrate and how subtitle precedence changes.
 
 ## Yarn PnP support removed
 

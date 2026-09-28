@@ -10,8 +10,8 @@ import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import { applies, detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
-import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
+import { applies, applyFixes, detectApplicable } from './pipeline.ts';
+import type { CheckOptions, Fix, FixId } from './types.ts';
 import { FixStatus } from './types.ts';
 
 export interface ProjectAutomigrationData {
@@ -358,74 +358,55 @@ export async function runAutomigrationsForProjects(
           am.fix.id === fix.id &&
           am.reports.some((report) => report.project.configDir === project.configDir)
       );
-    // Fixes whose `run` succeeded; only their hooks reach the apply pass, after every `run`.
-    const ran: typeof projectAutomigration = [];
-
-    for (const automigration of projectAutomigration) {
-      const { fix, result, project, status } = automigration;
-
+    const selected: { fix: Fix; result: unknown }[] = [];
+    for (const { fix, result, status } of projectAutomigration) {
       if (status === 'not_applicable') {
         fixResults[fix.id] = FixStatus.UNNECESSARY;
-        continue;
-      }
-
-      if (status === 'check_failed') {
+      } else if (status === 'check_failed') {
         fixResults[fix.id] = FixStatus.CHECK_FAILED;
-        continue;
-      }
-
-      if (!isSelected(fix)) {
+      } else if (!isSelected(fix)) {
         fixResults[fix.id] = FixStatus.SKIPPED;
-        continue;
-      }
-
-      try {
-        if (typeof fix.run === 'function') {
-          const { files, commit } = createFixFiles();
-          const runOptions: RunOptions<typeof result> = {
-            packageManager: project.packageManager,
-            result,
-            files,
-            mainConfigPath: project.mainConfigPath,
-            previewConfigPath: project.previewConfigPath,
-            mainConfig: project.mainConfig,
-            configDir: project.configDir,
-            skipInstall,
-            storybookVersion: project.storybookVersion,
-            storiesPaths: project.storiesPaths,
-            yes,
-            addonsToPostinstall,
-          };
-
-          if ((await fix.run(runOptions)) === false) {
-            fixResults[fix.id] = FixStatus.SKIPPED;
-            taskLog.message(CLI_COLORS.warning(`▲ ${fix.id}: cancelled`));
-            continue;
-          }
-          await commit();
-        }
-        if (fix.run || fix.transform) {
-          ran.push(automigration);
-          fixResults[fix.id] = FixStatus.SUCCEEDED;
-          taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
-        }
-      } catch (error) {
-        const errorMessage =
-          (error instanceof Error ? error.stack : String(error)) ?? 'Unknown error';
-        fixResults[fix.id] = FixStatus.FAILED;
-        fixFailures[fix.id] = sanitizeError(error as Error);
-        taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${automigration.fix.id}`));
-        logger.debug(errorMessage);
-        ErrorCollector.addError(error);
+      } else if (fix.run || fix.transform) {
+        selected.push({ fix, result });
       }
     }
 
-    const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
-    for (const { fix } of ran) {
-      const errors = applied.get(fix.id)?.errors ?? [];
-      fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: fix.id })));
-      if (errors.length > 0) {
-        taskLog.message(CLI_COLORS.warning(`▲ ${fix.id}: ${pluralFiles(errors.length)} skipped`));
+    const outcomes = await applyFixes(
+      {
+        packageManager: project.packageManager,
+        mainConfigPath: project.mainConfigPath,
+        previewConfigPath: project.previewConfigPath,
+        mainConfig: project.mainConfig,
+        configDir: project.configDir,
+        skipInstall,
+        storybookVersion: project.storybookVersion,
+        storiesPaths: project.storiesPaths,
+        yes,
+        addonsToPostinstall,
+      },
+      selected
+    );
+    for (const [fixId, outcome] of outcomes) {
+      if (outcome.status === 'skipped') {
+        fixResults[fixId] = FixStatus.SKIPPED;
+        taskLog.message(CLI_COLORS.warning(`▲ ${fixId}: cancelled`));
+        continue;
+      }
+      fileFailures.push(...outcome.fileFailures.map((failure) => ({ ...failure, fixId })));
+      const skipped = outcome.fileFailures.length;
+      if (outcome.status === 'failed') {
+        fixResults[fixId] = FixStatus.FAILED;
+        fixFailures[fixId] = sanitizeError(outcome.error as Error);
+        taskLog.message(CLI_COLORS.error(`${logger.SYMBOLS.error} ${fixId}`));
+        logger.debug(outcome.error instanceof Error ? outcome.error.stack : String(outcome.error));
+        ErrorCollector.addError(outcome.error);
+      } else {
+        fixResults[fixId] = FixStatus.SUCCEEDED;
+        taskLog.message(
+          CLI_COLORS.success(
+            `${logger.SYMBOLS.success} ${fixId}${skipped > 0 ? ` (${pluralFiles(skipped)} skipped)` : ''}`
+          )
+        );
       }
     }
 
@@ -524,10 +505,18 @@ export async function runAutomigrations(
     skipInstall: options.skipInstall,
   });
 
-  await reportFileFailures(
-    Object.values(automigrationResults).flatMap(({ fileFailures }) => fileFailures),
-    { dryRun: options.dryRun }
-  );
+  if (!options.dryRun) {
+    const results = Object.values(automigrationResults);
+    const fileFailures = results.flatMap((result) => result.fileFailures);
+    await reportFileFailures(fileFailures, [
+      ...results.flatMap(({ automigrationStatuses }) =>
+        Object.keys(automigrationStatuses).filter(
+          (fixId) => automigrationStatuses[fixId] === FixStatus.SUCCEEDED
+        )
+      ),
+      ...fileFailures.map(({ fixId }) => fixId),
+    ]);
+  }
 
   return {
     detectedAutomigrations,

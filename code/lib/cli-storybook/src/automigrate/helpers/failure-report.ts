@@ -1,4 +1,4 @@
-import { rm, writeFile } from 'node:fs/promises';
+import { readFile, rm, writeFile } from 'node:fs/promises';
 import { join, relative, sep } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
@@ -16,9 +16,17 @@ export type FixFileFailure = FileFailure & { fixId: string };
 
 const cell = (text: string) => text.replaceAll('|', '\\|').replace(/\s*\n\s*/g, ' ');
 
-export const renderFailureReport = (failures: FixFileFailure[], root: string) => {
-  const byFix = Map.groupBy(failures, ({ fixId }) => fixId);
-  const sections = [...byFix].map(([fixId, fixFailures]) =>
+const HEADER = [
+  '# Automigrations summary',
+  '',
+  'These files could not be migrated automatically.',
+  'Update them by hand.',
+  'A section disappears once its migration runs again without failures.',
+  'Delete this file when you are done.',
+].join('\n');
+
+const renderSections = (failures: FixFileFailure[], root: string) =>
+  [...Map.groupBy(failures, ({ fixId }) => fixId)].map(([fixId, fixFailures]) =>
     [
       `## ${fixId}`,
       '',
@@ -30,39 +38,38 @@ export const renderFailureReport = (failures: FixFileFailure[], root: string) =>
       ),
     ].join('\n')
   );
-  return [
-    '# Automigrations summary',
-    '',
-    'These files could not be migrated automatically.',
-    'Update them by hand, then run `npx storybook automigrate` to check that nothing is left.',
-    '',
-    sections.join('\n\n'),
-    '',
-  ].join('\n');
+
+const readSections = async (reportPath: string) => {
+  const report = await readFile(reportPath, 'utf-8').catch(() => '');
+  return report
+    .split(/\n(?=## )/)
+    .filter((section) => section.startsWith('## '))
+    .map((section) => ({
+      fixId: section.slice(3, section.indexOf('\n')).trim(),
+      text: section.trim(),
+    }));
 };
 
 /**
- * Write the files automigrations could not transform to `automigrations-summary.md` in the project
- * root and point the user to it, or remove a summary left by an earlier run when nothing failed. A
- * dry run only logs the list.
+ * Update `automigrations-summary.md` in the project root with the files that the fixes in `ran`
+ * could not transform, and point the user to it. Sections of fixes that did not run are kept, since
+ * nothing checked whether their files were fixed; the file is removed once no section is left.
  */
-export const reportFileFailures = async (failures: FixFileFailure[], { dryRun = false } = {}) => {
+export const reportFileFailures = async (failures: FixFileFailure[], ran: Iterable<string>) => {
   const root = getProjectRoot();
   const reportPath = join(root, REPORT_FILE_NAME);
-  if (dryRun) {
-    if (failures.length > 0) {
-      logger.warn(
-        `Some files could not be migrated automatically:\n\n${renderFailureReport(failures, root)}`
-      );
-    }
-    return;
-  }
-  if (failures.length === 0) {
+  const ranIds = new Set(ran);
+  const kept = (await readSections(reportPath)).filter(({ fixId }) => !ranIds.has(fixId));
+  const sections = [...kept.map(({ text }) => text), ...renderSections(failures, root)];
+  if (sections.length === 0) {
     await rm(reportPath, { force: true });
     return;
   }
-  await writeFile(reportPath, renderFailureReport(failures, root));
+  await writeFile(reportPath, [HEADER, ...sections].join('\n\n') + '\n');
+  const count = failures.length;
   logger.warn(
-    `${pluralFiles(failures.length)} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
+    count > 0
+      ? `${pluralFiles(count)} could not be migrated automatically. See ${picocolors.cyan(relative(process.cwd(), reportPath))} for which ones and why.`
+      : `${picocolors.cyan(relative(process.cwd(), reportPath))} still lists files that earlier runs could not migrate.`
   );
 };

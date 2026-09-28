@@ -11,7 +11,9 @@ import {
   printCsf,
 } from 'storybook/internal/csf-tools';
 
-import type { Fix, TransformOptions } from './types.ts';
+import { createFixFiles } from './fix-files.ts';
+import { editParsedFile } from './helpers/edit-parsed-file.ts';
+import type { Fix, RunOptions, TransformOptions } from './types.ts';
 
 /** Where a file sits in a Storybook project. Files are visited in this order. */
 export type FileKind = 'main' | 'preview' | 'manager' | 'config' | 'story';
@@ -30,6 +32,10 @@ type Handler = (
 
 type Edit<File> = (file: File, context: TransformContext) => unknown;
 
+type ConfigKind = Exclude<FileKind, 'story'>;
+
+type Filter<Kind extends FileKind> = { kind: readonly Kind[]; id?: RegExp; code?: string | RegExp };
+
 /**
  * A per-file transform, modelled on Vite's `transform` hook. `filter.code` skips files whose current
  * code does not contain it.
@@ -42,12 +48,16 @@ type Edit<File> = (file: File, context: TransformContext) => unknown;
  * A handler or edit that throws, or an edit that leaves mutation diagnostics, fails the fix for that
  * file without affecting the other fixes.
  */
-export type FixTransform = {
-  filter: { kind: readonly FileKind[]; id?: RegExp; code?: string | RegExp };
-} & (
-  | { handler: Handler; editConfig?: never; editCsf?: never }
-  | { handler?: never; editConfig?: Edit<ConfigFile>; editCsf?: Edit<CsfFile> }
-);
+export type FixTransform =
+  | { filter: Filter<FileKind>; handler: Handler; editConfig?: never; editCsf?: never }
+  | { filter: Filter<ConfigKind>; editConfig: Edit<ConfigFile>; handler?: never; editCsf?: never }
+  | { filter: Filter<'story'>; editCsf: Edit<CsfFile>; handler?: never; editConfig?: never }
+  | {
+      filter: Filter<FileKind>;
+      editConfig: Edit<ConfigFile>;
+      editCsf: Edit<CsfFile>;
+      handler?: never;
+    };
 
 export interface TransformPlugin {
   fixId: string;
@@ -56,6 +66,7 @@ export interface TransformPlugin {
 
 export interface FileFailure {
   file: string;
+  kind: FileKind;
   message: string;
 }
 
@@ -66,7 +77,8 @@ export interface TransformOutcome {
 
 interface ProjectPaths {
   configDir: string;
-  mainConfigPath: string;
+  /** Undefined when core cannot locate the main config. */
+  mainConfigPath?: string;
   previewConfigPath?: string;
   storiesPaths: string[];
 }
@@ -78,31 +90,28 @@ const parse = (code: string, { id, kind }: TransformContext): Parsed =>
     ? { csf: loadCsf(code, { fileName: id, makeTitle: (title) => title || id }).parse() }
     : { config: loadConfig(code, id).parse() };
 
-const hasHookFor = (hook: FixTransform, { kind }: TransformContext) =>
-  !!(hook.handler ?? (kind === 'story' ? hook.editCsf : hook.editConfig));
+const SCRIPT_FILE = /\.[cm]?[jt]sx?$/;
 
+// Edits need a parser: MDX, Svelte, and Vue stories only reach text handlers.
+const hasHookFor = (hook: FixTransform, { id, kind }: TransformContext) =>
+  !!(hook.handler ?? (SCRIPT_FILE.test(id) && (kind === 'story' ? hook.editCsf : hook.editConfig)));
+
+// `search` ignores `lastIndex`, so a `g` or `y` flag cannot make a filter skip every other file.
 const matchesCode = (filter: FixTransform['filter'], code: string) =>
   !filter.code ||
-  (typeof filter.code === 'string' ? code.includes(filter.code) : filter.code.test(code));
+  (typeof filter.code === 'string' ? code.includes(filter.code) : code.search(filter.code) !== -1);
 
 /**
  * Run one edit on the parsed file and resolve with the printed file. `changed` misses the legacy
  * `ConfigFile` mutators, so the runner compares the printed code instead.
  */
 const edit = async (hook: FixTransform, context: TransformContext, parsed: Parsed) => {
-  const file = 'csf' in parsed ? parsed.csf : parsed.config;
-  const diagnosticsBefore = file.mutationDiagnostics.length;
-  await ('csf' in parsed
-    ? hook.editCsf!(parsed.csf, context)
-    : hook.editConfig!(parsed.config, context));
-  const diagnostics = file.mutationDiagnostics.slice(diagnosticsBefore);
-  if (diagnostics.length > 0) {
-    const messages = diagnostics.map(({ message, loc }) =>
-      loc ? `line ${loc.start.line}: ${message}` : message
-    );
-    throw new HandledError([...new Set(messages)].join('; '));
+  if ('csf' in parsed) {
+    await editParsedFile(parsed.csf, (csf) => hook.editCsf!(csf, context));
+    return printCsf(parsed.csf).code;
   }
-  return 'csf' in parsed ? printCsf(parsed.csf).code : formatConfig(parsed.config);
+  await editParsedFile(parsed.config, (config) => hook.editConfig!(config, context));
+  return formatConfig(parsed.config);
 };
 
 /**
@@ -120,7 +129,6 @@ const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
     }
   };
 
-  // Undefined when core cannot locate the main config (for example `main.mts`), like the preview.
   if (project.mainConfigPath) {
     claim(project.mainConfigPath, 'main');
   }
@@ -135,9 +143,11 @@ const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
   if (kinds.has('config')) {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
-    (await globby(`${project.configDir}/**/*`, { absolute: true, dot: true })).forEach((id) =>
-      claim(id, 'config')
-    );
+    const configFiles = await globby(`${project.configDir}/**/*.{js,jsx,ts,tsx,mjs,cjs,mts,cts}`, {
+      absolute: true,
+      ignore: ['**/node_modules/**', '**/dist/**'],
+    });
+    configFiles.forEach((id) => claim(id, 'config'));
   }
 
   return [...files.values()]
@@ -160,7 +170,9 @@ export const runTransforms = async (
   const outcomes = new Map<string, TransformOutcome>(
     plugins.map(({ fixId }) => [fixId, { changed: [], errors: [] }])
   );
-  const kinds = new Set(plugins.flatMap(({ hooks }) => hooks.flatMap(({ filter }) => filter.kind)));
+  const kinds = new Set<FileKind>(
+    plugins.flatMap(({ hooks }) => hooks.flatMap(({ filter }) => filter.kind))
+  );
   const detected = (fixId: string) => {
     const { changed, errors } = outcomes.get(fixId)!;
     return changed.length > 0 || errors.length > 0;
@@ -175,8 +187,8 @@ export const runTransforms = async (
       hooks
         .filter(
           (hook) =>
-            hook.filter.kind.includes(context.kind) &&
-            (!hook.filter.id || hook.filter.id.test(context.id)) &&
+            (hook.filter.kind as readonly FileKind[]).includes(context.kind) &&
+            (!hook.filter.id || context.id.search(hook.filter.id) !== -1) &&
             hasHookFor(hook, context)
         )
         .map((hook) => ({ fixId, hook }))
@@ -188,17 +200,21 @@ export const runTransforms = async (
     const fail = (fixId: string, error: unknown) =>
       outcomes.get(fixId)!.errors.push({
         file: context.id,
+        kind: context.kind,
         message: error instanceof Error ? error.message : String(error),
       });
 
-    let source: string;
+    let raw: string;
     try {
-      source = await readFile(context.id, 'utf-8');
+      raw = await readFile(context.id, 'utf-8');
     } catch (error) {
       new Set(active.map(({ fixId }) => fixId)).forEach((fixId) => fail(fixId, error));
       continue;
     }
 
+    // Printers emit `\n`, so a CRLF file would otherwise always look changed.
+    const crlf = raw.includes('\r\n');
+    const source = crlf ? raw.replaceAll('\r\n', '\n') : raw;
     let code = source;
     // Kept across consecutive edits; dropped when a handler rewrites the text or an edit fails, so
     // the next edit parses `code`, the output of the last hook that succeeded.
@@ -233,7 +249,8 @@ export const runTransforms = async (
 
     if (write && code !== source) {
       try {
-        await writeFile(context.id, printed ? await formatFileContent(context.id, code) : code);
+        const output = printed ? await formatFileContent(context.id, code) : code;
+        await writeFile(context.id, crlf ? output.replace(/\r?\n/g, '\r\n') : output);
       } catch (error) {
         for (const [fixId, outcome] of outcomes) {
           if (outcome.changed.includes(context.id)) {
@@ -279,4 +296,82 @@ export const detectApplicable = async <Checked extends { fix: Fix; result: unkno
       outcome!.errors.length > 0
     );
   });
+};
+
+export type FixOutcome =
+  | { status: 'skipped' }
+  | { status: 'succeeded' | 'failed'; error?: unknown; fileFailures: FileFailure[] };
+
+type ProjectRunOptions = Omit<RunOptions<unknown>, 'result' | 'files'>;
+
+const failed = (fileFailures: FileFailure[]): FixOutcome => ({
+  status: 'failed',
+  error: new HandledError(
+    fileFailures.map(({ file, message }) => `${file}: ${message}`).join('\n')
+  ),
+  fileFailures,
+});
+
+// `run` changes dependencies that the main config must be rewritten to match.
+const failuresOnMain = async (
+  project: ProjectRunOptions & ProjectPaths,
+  { fix, result }: { fix: Fix; result: unknown }
+) => {
+  const hooks = fix
+    .transform?.({ ...project, result })
+    .filter(({ filter }) => (filter.kind as readonly FileKind[]).includes('main'));
+  if (!hooks?.length) {
+    return [];
+  }
+  const outcomes = await runTransforms(project, [{ fixId: fix.id, hooks }], { write: false });
+  return outcomes.get(fix.id)!.errors;
+};
+
+/**
+ * Run the selected fixes on one project: each `run` in order, committing its `files` edits, then one
+ * apply pass over the hooks of every fix whose `run` succeeded.
+ *
+ * A fix fails when its `run` throws, when its hooks fail on the main config, or when they fail on
+ * every file they touch. A fix whose `run` resolves `false` is skipped and keeps no edits.
+ */
+export const applyFixes = async (
+  project: ProjectRunOptions & ProjectPaths,
+  selected: { fix: Fix; result: unknown }[]
+): Promise<Map<string, FixOutcome>> => {
+  const outcomes = new Map<string, FixOutcome>();
+  const ran: typeof selected = [];
+  for (const entry of selected) {
+    const { fix, result } = entry;
+    if (fix.run) {
+      const mainFailures = await failuresOnMain(project, entry);
+      if (mainFailures.length > 0) {
+        outcomes.set(fix.id, failed(mainFailures));
+        continue;
+      }
+      const { files, commit } = createFixFiles();
+      try {
+        if ((await fix.run({ ...project, result, files })) === false) {
+          outcomes.set(fix.id, { status: 'skipped' });
+          continue;
+        }
+        await commit();
+      } catch (error) {
+        outcomes.set(fix.id, { status: 'failed', error, fileFailures: [] });
+        continue;
+      }
+    }
+    ran.push(entry);
+  }
+
+  const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
+  for (const { fix } of ran) {
+    const { changed, errors } = applied.get(fix.id) ?? { changed: [], errors: [] };
+    outcomes.set(
+      fix.id,
+      errors.some(({ kind }) => kind === 'main') || (errors.length > 0 && changed.length === 0)
+        ? failed(errors)
+        : { status: 'succeeded', fileFailures: errors }
+    );
+  }
+  return new Map(selected.map(({ fix }) => [fix.id, outcomes.get(fix.id)!]));
 };

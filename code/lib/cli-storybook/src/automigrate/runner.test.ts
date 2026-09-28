@@ -175,3 +175,67 @@ describe('a fix that fails during detection', () => {
     });
   });
 });
+
+describe('a fix whose hooks cannot migrate its files', () => {
+  const failOn = (id: string, kind: 'main' | 'story', run?: () => Promise<void>): Fix => ({
+    id,
+    prompt: () => id,
+    transform: () => [
+      {
+        filter: { kind: [kind] },
+        handler: () => {
+          throw new Error(`cannot migrate this ${kind}`);
+        },
+      },
+    ],
+    ...(run ? { run } : {}),
+  });
+
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vol.fromJSON({
+      [project.mainConfigPath]: "import 'healthy-old';",
+      [project.storiesPaths[0]]: "import 'healthy-old';",
+    });
+  });
+
+  it('fails when no file could be migrated', async () => {
+    const { fixResults, fileFailures } = await runFixes({
+      ...project,
+      fixes: [failOn('stories', 'story'), healthy],
+      yes: true,
+    });
+
+    expect(fixResults).toEqual({ stories: 'failed', healthy: 'succeeded' });
+    expect(fileFailures).toEqual([
+      {
+        fixId: 'stories',
+        file: project.storiesPaths[0],
+        kind: 'story',
+        message: 'cannot migrate this story',
+      },
+    ]);
+  });
+
+  it('fails before its run changes anything when it cannot migrate the main config', async () => {
+    const swapDependencies = vi.fn(async () => {});
+
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes: [failOn('swap', 'main', swapDependencies), healthy],
+      projects: [{ ...project, beforeVersion: '10.0.0' }],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+    const results = await runAutomigrationsForProjects(detected, {
+      automigrations: detected,
+      yes: true,
+    } as never);
+
+    expect(swapDependencies).not.toHaveBeenCalled();
+    expect(results[project.configDir]).toMatchObject({
+      automigrationStatuses: { swap: 'failed', healthy: 'succeeded' },
+      fileFailures: [{ fixId: 'swap', kind: 'main', message: 'cannot migrate this main' }],
+    });
+  });
+});

@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 import { HandledError } from 'storybook/internal/common';
 import { type ConfigFile, formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import { assertConfigMutationSuccess } from './helpers/config-object.ts';
+import { editParsedFile } from './helpers/edit-parsed-file.ts';
 
 type Transform = (
   source: string,
@@ -95,8 +95,7 @@ export const createFixFiles = () => {
     editConfig: async (path, editConfig) => {
       const changed = await edit(path, async (source) => {
         const config = loadConfig(source, path).parse();
-        await editConfig(config);
-        assertConfigMutationSuccess(config);
+        await editParsedFile(config, editConfig);
         return formatConfig(config);
       });
       return changed.length > 0;

@@ -9,7 +9,7 @@ import { fs, vol } from 'memfs';
 
 import { runFixes } from '../index.ts';
 import type { Fix } from '../types.ts';
-import { REPORT_FILE_NAME, renderFailureReport, reportFileFailures } from './failure-report.ts';
+import { REPORT_FILE_NAME, reportFileFailures } from './failure-report.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -69,7 +69,7 @@ describe('file failures', () => {
       storybookVersion: '11.0.0',
       storiesPaths: stories,
     });
-    await reportFileFailures(fileFailures);
+    await reportFileFailures(fileFailures, ['rename-legacy']);
 
     expect(fixResults).toEqual({ 'rename-legacy': 'succeeded' });
     expect(fs.readFileSync(stories[0], 'utf8')).toBe('export const modern = 1;');
@@ -79,7 +79,9 @@ describe('file failures', () => {
       "# Automigrations summary
 
       These files could not be migrated automatically.
-      Update them by hand, then run \`npx storybook automigrate\` to check that nothing is left.
+      Update them by hand.
+      A section disappears once its migration runs again without failures.
+      Delete this file when you are done.
 
       ## rename-legacy
 
@@ -90,36 +92,65 @@ describe('file failures', () => {
     `);
   });
 
-  it('only logs the summary on a dry run', async () => {
+  it('removes the sections of fixes that ran cleanly, and the file once none is left', async () => {
     await reportFileFailures(
-      [{ fixId: 'rename-legacy', file: stories[1], message: 'legacy is computed' }],
-      { dryRun: true }
+      [{ fixId: 'rename-legacy', file: stories[1], kind: 'story', message: 'legacy is computed' }],
+      ['rename-legacy']
     );
 
-    expect(fs.existsSync(`/project/${REPORT_FILE_NAME}`)).toBe(false);
-  });
-
-  it('removes a summary left by an earlier run once nothing fails', async () => {
-    fs.writeFileSync(`/project/${REPORT_FILE_NAME}`, '# stale');
-
-    await reportFileFailures([]);
+    await reportFileFailures([], ['rename-legacy']);
 
     expect(fs.existsSync(`/project/${REPORT_FILE_NAME}`)).toBe(false);
   });
 
-  it('shows paths inside the project relative to its root, in the reason too', () => {
-    const report = renderFailureReport(
+  it('keeps the sections of fixes that did not run again', async () => {
+    await reportFileFailures(
+      [{ fixId: 'swap-framework', file: stories[0], kind: 'story', message: 'unreadable' }],
+      ['swap-framework']
+    );
+
+    await reportFileFailures(
+      [{ fixId: 'rename-legacy', file: stories[1], kind: 'story', message: 'legacy is computed' }],
+      ['rename-legacy']
+    );
+
+    expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toMatchInlineSnapshot(`
+      "# Automigrations summary
+
+      These files could not be migrated automatically.
+      Update them by hand.
+      A section disappears once its migration runs again without failures.
+      Delete this file when you are done.
+
+      ## swap-framework
+
+      | File | Reason |
+      | ---- | ------ |
+      | \`src/A.stories.ts\` | unreadable |
+
+      ## rename-legacy
+
+      | File | Reason |
+      | ---- | ------ |
+      | \`src/B.stories.ts\` | legacy is computed |
+      "
+    `);
+  });
+
+  it('shows paths inside the project relative to its root, in the reason too', async () => {
+    await reportFileFailures(
       [
         {
           fixId: 'rename-legacy',
           file: stories[1],
+          kind: 'story',
           message: `EACCES: permission denied, open '${stories[1]}'`,
         },
       ],
-      '/project'
+      ['rename-legacy']
     );
 
-    expect(report).toContain(
+    expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
       "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
     );
   });

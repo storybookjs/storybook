@@ -30,24 +30,24 @@ export const checkFix = async <Result>(
 };
 
 /**
- * Apply a fix's hooks, then run it and commit its file edits, as the automigration runner does.
- * Resolves with the files the hooks could not transform.
+ * Run a fix, commit its file edits, then apply its hooks, as the automigration runner does. Resolves
+ * with the files the hooks could not transform; a declined `run` applies nothing.
  */
 export const runFix = async <Result>(
   fix: Fix<Result>,
   options: Omit<RunOptions<Result>, 'files'>
 ): Promise<FileFailure[]> => {
+  if (fix.run) {
+    const { files, commit } = createFixFiles();
+    if ((await fix.run({ ...options, files })) === false) {
+      return [];
+    }
+    await commit();
+  }
   const applied = await runTransforms(
     options,
     pluginsFor([{ fix, result: options.result }], options),
-    {
-      write: true,
-    }
+    { write: true }
   );
-  if (fix.run) {
-    const { files, commit } = createFixFiles();
-    await fix.run({ ...options, files });
-    await commit();
-  }
   return applied.get(fix.id)?.errors ?? [];
 };

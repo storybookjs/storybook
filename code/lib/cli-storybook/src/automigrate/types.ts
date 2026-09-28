@@ -77,7 +77,11 @@ export type TransformOptions<ResultType> = Omit<CheckOptions, 'files' | 'request
   result: ResultType;
 };
 
-type Run<ResultType> = (options: RunOptions<ResultType>) => Promise<void>;
+/**
+ * Resolve `false` to decline, for example when the user cancels a prompt: the runner then discards
+ * the fix's `files` edits, skips its hooks, and reports it as skipped.
+ */
+type Run<ResultType> = (options: RunOptions<ResultType>) => Promise<void | false>;
 
 /**
  * Create the fix's per-file hooks for one project. The runner calls it once per project and pass

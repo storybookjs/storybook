@@ -15,9 +15,19 @@ const argTypesSchema = v.custom<StrictArgTypes>(
   (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 );
 
+const manifestEntriesSchema = v.object({
+  componentIds: v.array(v.string()),
+  docs: v.array(v.object({ id: v.string(), name: v.string() })),
+});
+
+/** The component ids and standalone docs the story index publishes to manifests, in index order. */
+export type ManifestEntries = v.InferOutput<typeof manifestEntriesSchema>;
+
 type DocgenServiceState = {
   /** Extracted docgen keyed by component id. Populated by the `extractDocgen` command. */
   components: Record<string, DocgenPayload>;
+  /** Populated by the `_resolveManifestEntries` command. */
+  manifestEntries: ManifestEntries;
 };
 
 const docgenErrorSchema = v.object({
@@ -88,8 +98,21 @@ export const docgenServiceDef = defineService({
   internal: true,
   description:
     'Component documentation (name, description, props, JSDoc tags) keyed by component id.',
-  initialState: { components: {} } as DocgenServiceState,
+  initialState: {
+    components: {},
+    manifestEntries: { componentIds: [], docs: [] },
+  } as DocgenServiceState,
   queries: {
+    manifestEntries: {
+      description:
+        'Returns the component ids and standalone docs the story index publishes to manifests, in index order.',
+      input: v.void(),
+      output: manifestEntriesSchema,
+      handler: (_input, ctx) => ctx.self.state.manifestEntries,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._resolveManifestEntries(undefined);
+      },
+    },
     docgen: {
       description: 'Returns the docgen payload for one component id, or undefined when not loaded.',
       input: docgenInputSchema,
@@ -122,6 +145,14 @@ export const docgenServiceDef = defineService({
     extractAllDocgen: {
       description:
         'Extracts docgen for every component id in the story index by invoking `extractDocgen` for each.',
+      input: v.undefined(),
+      output: v.void(),
+      // Handler is supplied at registration time so it can close over the story index.
+    },
+    _resolveManifestEntries: {
+      internal: true,
+      description:
+        'Reads the manifest-tagged story index entries and stores the component ids and standalone docs they publish.',
       input: v.undefined(),
       output: v.void(),
       // Handler is supplied at registration time so it can close over the story index.

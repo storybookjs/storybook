@@ -9,10 +9,8 @@
  * suite exercises the default mode only.
  */
 
-import type { StoryIndex } from 'storybook/internal/types';
 import { describe, expect, it } from 'vitest';
 
-import { Tag } from '../../../constants/tags.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 import {
   buildComponentsRefManifest,
@@ -24,30 +22,6 @@ import { createServiceDocsAccess } from './access-service.ts';
 import { createDocsToolset } from './definition.ts';
 
 const ctx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
-
-const storyIndex = {
-  v: 5,
-  entries: {
-    'button--primary': {
-      id: 'button--primary',
-      title: 'Button',
-      name: 'Primary',
-      importPath: './src/Button.stories.tsx',
-      type: 'story',
-      subtype: 'story',
-      componentPath: './src/Button.tsx',
-      tags: [Tag.MANIFEST],
-    },
-    'guide--docs': {
-      id: 'guide--docs',
-      title: 'Guide',
-      name: 'Guide',
-      importPath: './src/Guide.mdx',
-      type: 'docs',
-      tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
-    },
-  },
-} as unknown as StoryIndex;
 
 // Angular-shaped: the framework authors its own Markdown rather than shipping a `react*` payload.
 const apiDescription = [
@@ -102,6 +76,12 @@ function serviceToolset() {
   const services: Record<string, unknown> = {
     'core/docgen': {
       queries: {
+        manifestEntries: {
+          loaded: async () => ({
+            componentIds: ['button'],
+            docs: [{ id: 'guide--docs', name: 'Guide' }],
+          }),
+        },
         docgenForAllComponents: { loaded: async () => ({ button: docgenPayload }) },
         docgen: {
           loaded: async ({ id }: { id: string }) => (id === 'button' ? docgenPayload : undefined),
@@ -128,10 +108,7 @@ function serviceToolset() {
   };
 
   return createDocsToolset({
-    docsAccess: createServiceDocsAccess({
-      storyIndex: { getIndex: async () => storyIndex },
-      getService: ((id: string) => services[id]) as never,
-    }),
+    docsAccess: createServiceDocsAccess({ getService: ((id: string) => services[id]) as never }),
   });
 }
 
@@ -231,30 +208,6 @@ describe('docs tools render the same text in both docgen modes', () => {
 describe('docs tools render the same text in dev and from a built Storybook', () => {
   const componentId = 'abstractions-billboard';
 
-  const componentlessIndex = {
-    v: 5,
-    entries: {
-      [`${componentId}--default`]: {
-        id: `${componentId}--default`,
-        title: 'Abstractions/Billboard',
-        name: 'Default',
-        importPath: './src/abstractions/billboard.stories.ts',
-        type: 'story',
-        subtype: 'story',
-        tags: [Tag.MANIFEST],
-      },
-      [`${componentId}--text`]: {
-        id: `${componentId}--text`,
-        title: 'Abstractions/Billboard',
-        name: 'Text',
-        importPath: './src/abstractions/billboard.stories.ts',
-        type: 'story',
-        subtype: 'story',
-        tags: [Tag.MANIFEST],
-      },
-    },
-  } as unknown as StoryIndex;
-
   const componentlessStoryDocs = {
     id: componentId,
     name: 'Billboard',
@@ -270,6 +223,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
     const services: Record<string, unknown> = {
       'core/docgen': {
         queries: {
+          manifestEntries: { loaded: async () => ({ componentIds: [componentId], docs: [] }) },
           docgenForAllComponents: { loaded: async () => ({}) },
           docgen: { loaded: async () => undefined },
         },
@@ -287,10 +241,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
       },
     };
 
-    return createServiceDocsAccess({
-      storyIndex: { getIndex: async () => componentlessIndex },
-      getService: ((id: string) => services[id]) as never,
-    });
+    return createServiceDocsAccess({ getService: ((id: string) => services[id]) as never });
   }
 
   function devToolset() {

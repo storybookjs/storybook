@@ -133,7 +133,6 @@ describe('angular-to-angular-vite', () => {
   const baseResult = {
     framework: ANGULAR_PACKAGE,
     hasWebpackFinal: false,
-    packageJsonFiles: [PACKAGE_JSON],
     angularVersion: '21.2.4',
   } as const;
 
@@ -546,7 +545,7 @@ describe('angular-to-angular-vite', () => {
 export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`;
       vol.fromJSON({ [MAIN]: mainConfig });
 
-      await runMigration({ result: { ...baseResult, packageJsonFiles: [] } });
+      await runMigration();
 
       expect(read(MAIN)).toBe(mainConfig);
     });

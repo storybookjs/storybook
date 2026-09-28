@@ -8,6 +8,11 @@ export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts'
 
 export { experimental_vueDocgenEngine } from './docgen/engine.ts';
 
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  componentsManifest: true,
+});
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

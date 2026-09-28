@@ -215,6 +215,9 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
       cwd,
       dot: true,
       gitignore: true,
+      // Packages like @nx/storybook ship .storybook templates, and globby misses .gitignore patterns
+      // like `**/**/node_modules/`, so never rely on .gitignore to skip them.
+      ignore: ['**/node_modules/**'],
       absolute: true,
       onlyDirectories: true,
       followSymbolicLinks: false,

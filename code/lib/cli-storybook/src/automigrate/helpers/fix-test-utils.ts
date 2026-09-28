@@ -1,5 +1,11 @@
 import { createFixFiles } from '../fix-files.ts';
-import { type FileFailure, applies, pluginsFor, runTransforms } from '../pipeline.ts';
+import {
+  type FileFailure,
+  applies,
+  appliesAfterDetection,
+  pluginsFor,
+  runTransforms,
+} from '../pipeline.ts';
 import type { CheckOptions, Fix, RunOptions } from '../types.ts';
 
 type ProjectOptions = Omit<CheckOptions, 'files'> & {
@@ -23,8 +29,7 @@ export const checkFix = async <Result>(
   const detected = await runTransforms(project, pluginsFor([{ fix, result }], project), {
     write: false,
   });
-  const { changed } = detected.get(fix.id)!;
-  return fix.run || changed.length > 0 ? result : null;
+  return appliesAfterDetection(fix, detected.get(fix.id)) ? result : null;
 };
 
 /**

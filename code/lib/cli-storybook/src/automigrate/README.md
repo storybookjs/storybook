@@ -13,7 +13,7 @@ check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` �
 - `check` gates the fix on things that are not file contents: dependencies, versions, flags.
   It returns a small result (paths and flags, not ASTs or generated code), or `null`.
 - The detection pass streams the project's files once through the `transform` hooks of every fix that passed `check`, without writing.
-  A fix with only `transform` applies when its hooks would change a file.
+  A fix with only `transform` applies when its hooks would change or fail on a file; detection failures are reported only if the user selects the fix and the apply pass hits them.
 - After the prompt, each selected fix's `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
   A fix whose `run` throws keeps none of its edits: its staged `files` are discarded and its hooks skip the apply pass.
 - The apply pass then streams the files once more through the hooks of the fixes that ran, and writes each changed file before reading the next one, so it sees what `run` and `add()` wrote.

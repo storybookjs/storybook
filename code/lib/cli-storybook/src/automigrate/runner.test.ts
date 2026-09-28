@@ -9,6 +9,7 @@ import { fs, vol } from 'memfs';
 import { runFixes } from './index.ts';
 import {
   collectAutomigrationsAcrossProjects,
+  promptForAutomigrations,
   runAutomigrationsForProjects,
 } from './multi-project.ts';
 import type { Fix } from './types.ts';
@@ -83,6 +84,48 @@ describe('a fix whose run fails', () => {
     expect(vol.toJSON()).toEqual({
       [project.mainConfigPath]: "import 'swap-old'; import 'healthy-new';",
       [project.storiesPaths[0]]: "import 'swap-old'; import 'healthy-new';",
+    });
+  });
+});
+
+describe('a fix that fails during detection', () => {
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vol.fromJSON({ [project.mainConfigPath]: 'export default {};' });
+  });
+
+  it('is still offered, and reports nothing when the user does not select it', async () => {
+    const optIn: Fix = {
+      id: 'opt-in',
+      prompt: () => 'opt-in',
+      defaultSelected: false,
+      transform: () => [
+        {
+          filter: { kind: ['main'] },
+          handler: () => {
+            throw new Error('cannot edit this main config');
+          },
+        },
+      ],
+    };
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes: [optIn],
+      projects: [{ ...project, beforeVersion: '10.0.0' }],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+    const selected = await promptForAutomigrations(detected, { yes: true } as never);
+
+    const results = await runAutomigrationsForProjects(selected, {
+      automigrations: detected,
+      yes: true,
+    } as never);
+
+    expect(detected[0].reports[0].status).toBe('check_succeeded');
+    expect(results[project.configDir]).toMatchObject({
+      automigrationStatuses: { 'opt-in': 'skipped' },
+      fileFailures: [],
     });
   });
 });

@@ -20,12 +20,8 @@ import type {
   Prompt,
 } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
-import {
-  type FixFileFailure,
-  REPORT_FILE_NAME,
-  reportFileFailures,
-} from './helpers/failure-report.ts';
-import { applies, pluginsFor, runTransforms } from './pipeline.ts';
+import { type FixFileFailure, reportFileFailures } from './helpers/failure-report.ts';
+import { applies, appliesAfterDetection, pluginsFor, runTransforms } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -315,17 +311,10 @@ export async function runFixes({
   const fileFailures: FixFileFailure[] = [];
   const detected = await runTransforms(project, pluginsFor(checked, project), { write: false });
   const applicable = checked.filter(({ fix }) => {
-    const { changed, errors } = detected.get(fix.id) ?? { changed: [], errors: [] };
-    if (!fix.transform || fix.run || changed.length > 0) {
+    if (appliesAfterDetection(fix, detected.get(fix.id))) {
       return true;
     }
-    if (errors.length > 0) {
-      fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: fix.id })));
-      fixSummary.failed[fix.id] = `No file could be migrated; see ${REPORT_FILE_NAME}`;
-      fixResults[fix.id] = FixStatus.CHECK_FAILED;
-    } else {
-      fixResults[fix.id] = FixStatus.UNNECESSARY;
-    }
+    fixResults[fix.id] = FixStatus.UNNECESSARY;
     return false;
   });
 

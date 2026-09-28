@@ -186,3 +186,14 @@ export const pluginsFor = (
 
 /** The check of a transform fix without its own gate: detection decides from the hooks' output. */
 export const applies = async () => ({});
+
+/**
+ * Whether a fix that passed `check` is offered after the detection pass. A fix with only `transform`
+ * is offered when its hooks change a file or fail on one; failures are reported only once the user
+ * selects the fix and the apply pass hits them.
+ */
+export const appliesAfterDetection = (fix: Fix, outcome: TransformOutcome | undefined) =>
+  !fix.transform ||
+  !!fix.run ||
+  (outcome?.changed.length ?? 0) > 0 ||
+  (outcome?.errors.length ?? 0) > 0;

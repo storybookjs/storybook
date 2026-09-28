@@ -10,7 +10,7 @@ import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, reportFileFailures } from './helpers/failure-report.ts';
-import { type FileFailure, applies, pluginsFor, runTransforms } from './pipeline.ts';
+import { applies, appliesAfterDetection, pluginsFor, runTransforms } from './pipeline.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
 
@@ -29,8 +29,6 @@ export interface AutomigrationCheckResultReport {
   result: any;
   status: 'check_succeeded' | 'check_failed' | 'not_applicable';
   project: ProjectAutomigrationData;
-  /** Files a transform-only fix failed on, when it could migrate no file at all. */
-  fileFailures?: FileFailure[];
 }
 
 export interface AutomigrationCheckResult<T = any> {
@@ -72,10 +70,9 @@ export async function collectAutomigrationsAcrossProjects(
     fix: Fix,
     project: ProjectAutomigrationData,
     status: 'check_succeeded' | 'check_failed' | 'not_applicable',
-    result?: any,
-    fileFailures?: FileFailure[]
+    result?: any
   ) {
-    const report = { project, result, status, fileFailures };
+    const report = { project, result, status };
     const existing = automigrationMap.get(fix.id);
     if (existing) {
       existing.reports.push(report);
@@ -132,17 +129,10 @@ export async function collectAutomigrationsAcrossProjects(
       { write: false }
     );
     for (const { fix, result, failed } of checks) {
-      const { changed, errors } = detected.get(fix.id) ?? { changed: [], errors: [] };
       if (failed) {
         collectResult(fix, project, 'check_failed');
-      } else if (result === null) {
+      } else if (result === null || !appliesAfterDetection(fix, detected.get(fix.id))) {
         collectResult(fix, project, 'not_applicable');
-      } else if (fix.transform && !fix.run && changed.length === 0) {
-        if (errors.length > 0) {
-          collectResult(fix, project, 'check_failed', undefined, errors);
-        } else {
-          collectResult(fix, project, 'not_applicable');
-        }
       } else {
         collectResult(fix, project, 'check_succeeded', result);
       }
@@ -312,7 +302,6 @@ export async function runAutomigrationsForProjects(
       project: ProjectAutomigrationData;
       result: any;
       status: AutomigrationCheckResultReport['status'];
-      fileFailures?: FileFailure[];
     }[]
   >();
 
@@ -385,9 +374,6 @@ export async function runAutomigrationsForProjects(
 
       if (status === 'check_failed') {
         fixResults[fix.id] = FixStatus.CHECK_FAILED;
-        fileFailures.push(
-          ...(automigration.fileFailures ?? []).map((failure) => ({ ...failure, fixId: fix.id }))
-        );
         continue;
       }
 

@@ -1,3 +1,5 @@
+import { formatFileContent } from 'storybook/internal/common';
+
 import picocolors from 'picocolors';
 
 import type { Fix } from '../types.ts';
@@ -58,7 +60,7 @@ export const componentSubtitle: Fix = {
     return [
       {
         filter: { kind: ['preview'] },
-        handler: (code) => {
+        handler: async (code, { id }) => {
           previewSource = code;
           if (!code.includes(LEGACY_SUBTITLE)) {
             return null;
@@ -66,7 +68,7 @@ export const componentSubtitle: Fix = {
           try {
             const migrated = transformAnnotations(code, 'preview', noInheritance);
             preview = { inheritance: migrated.inheritance };
-            return migrated.code;
+            return migrated.code && formatFileContent(id, migrated.code);
           } catch (error) {
             preview = { error };
             throw error;
@@ -75,13 +77,14 @@ export const componentSubtitle: Fix = {
       },
       {
         filter: { kind: ['story'] },
-        handler: (code) => {
+        handler: async (code, { id }) => {
           const inheritsLegacy =
             preview && 'inheritance' in preview && preview.inheritance.legacyCanBeInherited;
           if (!code.includes(LEGACY_SUBTITLE) && !inheritsLegacy) {
             return null;
           }
-          return transformAnnotations(code, 'stories', previewInheritance()).code;
+          const migrated = transformAnnotations(code, 'stories', previewInheritance()).code;
+          return migrated && formatFileContent(id, migrated);
         },
       },
     ];

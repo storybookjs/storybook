@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { JsPackageManager } from 'storybook/internal/common';
+import { formatFileContent, JsPackageManager } from 'storybook/internal/common';
 
 import { fs, vol } from 'memfs';
 
@@ -238,6 +238,7 @@ describe('component-subtitle', () => {
 });
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 
 describe('component-subtitle file processing', () => {
   const previewConfigPath = resolve('.storybook/preview.ts');
@@ -257,6 +258,7 @@ describe('component-subtitle file processing', () => {
     vol.reset();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
     vol.fromJSON({
       [previewConfigPath]: "export default { parameters: { componentSubtitle: 'Preview' } };",
       [storyPath]: "export default { parameters: { componentSubtitle: 'Story' } };",

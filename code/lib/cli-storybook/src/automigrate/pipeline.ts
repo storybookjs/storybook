@@ -79,7 +79,10 @@ const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
     }
   };
 
-  claim(project.mainConfigPath, 'main');
+  // Undefined when core cannot locate the main config (for example `main.mts`), like the preview.
+  if (project.mainConfigPath) {
+    claim(project.mainConfigPath, 'main');
+  }
   if (project.previewConfigPath) {
     claim(project.previewConfigPath, 'preview');
   }

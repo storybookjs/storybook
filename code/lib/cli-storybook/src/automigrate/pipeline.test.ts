@@ -214,4 +214,20 @@ describe('runTransforms', () => {
     expect(fs.readFileSync(first, 'utf8')).toBe('a');
     expect(fs.readFileSync(second, 'utf8')).toBe('B');
   });
+
+  it('skips the main config when the project has none, instead of failing the pass', async () => {
+    const outcomes = await runTransforms(
+      { ...project, mainConfigPath: undefined as unknown as string },
+      [
+        {
+          fixId: 'both',
+          hooks: [{ filter: { kind: ['main', 'story'] }, handler: (code) => `${code}!` }],
+        },
+      ],
+      { write: true }
+    );
+
+    expect(outcomes.get('both')).toEqual({ changed: project.storiesPaths, errors: [] });
+    expect(fs.readFileSync(project.mainConfigPath, 'utf8')).toBe('main');
+  });
 });

@@ -209,7 +209,7 @@ const invokesCompodoc = (script: string): boolean =>
  * dependency is gone.
  */
 const findCompodocScripts = async (
-  files: FixFiles,
+  files: Pick<FixFiles, 'read'>,
   packageJsonPaths: string[]
 ): Promise<AngularViteRemoveCompodocOptions['compodocScripts']> => {
   const paths = new Set([...packageJsonPaths, ...(await findWorkspaceFiles('package.json'))]);
@@ -286,7 +286,7 @@ export const findCompodocSetup = async ({
   packageManager,
   builderPackages = [ANGULAR_VITE_PACKAGE],
 }: {
-  files: FixFiles;
+  files: Pick<FixFiles, 'read'>;
   mainConfig: StorybookConfigRaw;
   previewConfigPath?: string;
   packageManager: JsPackageManager;
@@ -386,7 +386,7 @@ const OVERRIDE_CONTAINERS = [['overrides'], ['resolutions'], ['pnpm', 'overrides
 // `JsPackageManager` caches package.json process-wide, so a raw write would be undone by its next
 // dependency change.
 const removeCompodocOverrides = async (
-  files: FixFiles,
+  files: Pick<FixFiles, 'read'>,
   packageManager: JsPackageManager
 ): Promise<void> => {
   for (const packageJsonPath of packageManager.packageJsonPaths) {

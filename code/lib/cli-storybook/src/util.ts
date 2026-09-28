@@ -225,14 +225,6 @@ export const findStorybookProjects = async (cwd: string = process.cwd()): Promis
 
     logger.debug(`Found ${storybookDirs.length} Storybook projects`);
 
-    if (storybookDirs.length === 0) {
-      const answer = await prompt.text({
-        message:
-          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
-      });
-      return [answer];
-    }
-
     return storybookDirs;
   } catch (error) {
     logger.error('Failed to find Storybook projects');
@@ -712,6 +704,21 @@ export const getProjects = async (
     let detectedConfigDirs: string[] = options.configDir ?? [];
     if (!options.configDir || options.configDir.length === 0) {
       detectedConfigDirs = await findStorybookProjects();
+    }
+    if (detectedConfigDirs.length === 0) {
+      task.stop('No .storybook directory found');
+      if (options.yes) {
+        const message =
+          'No .storybook directory was found. Pass --config-dir <path> to upgrade a Storybook whose configuration lives elsewhere.';
+        logger.error(message);
+        throw new HandledError(message);
+      }
+      const configDir = await prompt.text({
+        message:
+          'No Storybook projects were found. Please enter the path to the .storybook directory for the project you want to upgrade.',
+      });
+      detectedConfigDirs = [configDir];
+      task.start('Detecting projects...');
     }
 
     let count = 0;

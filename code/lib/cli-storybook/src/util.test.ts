@@ -2,9 +2,12 @@ import { mkdirSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'nod
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { findStorybookProjects } from './util.ts';
+import { logger } from 'storybook/internal/node-logger';
+
+import type { UpgradeOptions } from './upgrade.ts';
+import { findStorybookProjects, getProjects } from './util.ts';
 
 let root: string;
 
@@ -27,5 +30,20 @@ describe('findStorybookProjects', () => {
     });
 
     expect(await findStorybookProjects(root)).toEqual([join(root, 'packages/ui/.storybook')]);
+  });
+});
+
+describe('getProjects', () => {
+  afterEach(() => {
+    vi.restoreAllMocks();
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('asks for --config-dir instead of prompting when --yes finds no .storybook directory', async () => {
+    createFixture({ 'storybook/main.ts': 'export default {};' });
+    vi.spyOn(process, 'cwd').mockReturnValue(root);
+
+    await expect(getProjects({ yes: true } as UpgradeOptions)).rejects.toThrow('--config-dir');
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('--config-dir'));
   });
 });

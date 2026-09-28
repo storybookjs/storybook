@@ -16,7 +16,7 @@ type FixturePackageJson = {
   };
 };
 
-/** The published packages of this monorepo, each with the monorepo packages it depends on. */
+// The published packages of this monorepo, each with the monorepo packages it depends on.
 export type StorybookWorkspace = Map<string, { dir: string; dependencies: string[] }>;
 
 export type EvalAgent = 'claude-code' | 'codex';
@@ -451,14 +451,12 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
   }
 }
 
-/**
- * Point every dependency on a package of this monorepo, in the sandbox root and workspace
- * manifests, at the code under test: a `yarn pack` tarball of this checkout, or with `'latest'`
- * the npm `latest` release (to check whether a behavior regressed since the last stable release).
- * Monorepo packages that are only reached transitively are forced onto their tarballs through
- * the root `overrides`, so no published Storybook code enters the tree. Returns the packages to
- * pack.
- */
+// Point every dependency on a package of this monorepo, in the sandbox root and workspace
+// manifests, at the code under test: a `yarn pack` tarball of this checkout, or with `'latest'`
+// the npm `latest` release (to check whether a behavior regressed since the last stable release).
+// Monorepo packages that are only reached transitively are forced onto their tarballs through
+// the root `overrides`, so no published Storybook code enters the tree. Returns the packages to
+// pack.
 export async function pinStorybookPackages(
   files: Record<string, string>,
   workspace: StorybookWorkspace,
@@ -549,7 +547,12 @@ function readStorybookWorkspace(): Promise<StorybookWorkspace> {
           const { location } = JSON.parse(line) as { location: string };
           const manifest = JSON.parse(
             await fs.readFile(path.join(REPO_ROOT, location, 'package.json'), 'utf8')
-          ) as { name: string; private?: boolean; dependencies?: Record<string, string> };
+          ) as {
+            name: string;
+            private?: boolean;
+            dependencies?: Record<string, string>;
+            peerDependencies?: Record<string, string>;
+          };
           return { location, manifest };
         })
     );
@@ -561,7 +564,11 @@ function readStorybookWorkspace(): Promise<StorybookWorkspace> {
         manifest.name,
         {
           dir: location,
-          dependencies: Object.keys(manifest.dependencies ?? {}).filter((name) => names.has(name)),
+          // npm installs peers too, so a peer left out here would come from the registry.
+          dependencies: Object.keys({
+            ...manifest.dependencies,
+            ...manifest.peerDependencies,
+          }).filter((name) => names.has(name)),
         },
       ])
     );
@@ -570,28 +577,27 @@ function readStorybookWorkspace(): Promise<StorybookWorkspace> {
 }
 
 const packedTarballs = new Map<string, Promise<string>>();
-let packDir: Promise<string> | undefined;
 
-/**
- * `yarn pack` applies each package's `files` list and rewrites its `workspace:` ranges, exactly
- * like a publish. The sandbox only takes text files and core ships binary assets, so the
- * tarballs travel base64-encoded; each package is packed once per process.
- */
+// `yarn pack` applies each package's `files` list and rewrites its `workspace:` ranges, exactly
+// like a publish. The sandbox only takes text files and core ships binary assets, so the
+// tarballs travel base64-encoded; each package is packed once per process.
 async function packCheckoutPackages(
   packageNames: string[],
   workspace: StorybookWorkspace
 ): Promise<Record<string, string>> {
   const entries = await Promise.all(
-    [...workspace]
-      .filter(([name]) => packageNames.includes(name))
-      .map(async ([name, { dir }]) => {
-        let packed = packedTarballs.get(name);
-        if (!packed) {
-          packed = packCheckoutPackage(name, path.join(REPO_ROOT, dir));
-          packedTarballs.set(name, packed);
-        }
-        return [`${checkoutTarballPath(name)}.base64`, await packed] as const;
-      })
+    packageNames.map(async (name) => {
+      const dir = workspace.get(name)?.dir;
+      if (dir === undefined) {
+        throw new Error(`${name} is not a package of this monorepo`);
+      }
+      let packed = packedTarballs.get(name);
+      if (!packed) {
+        packed = packCheckoutPackage(name, path.join(REPO_ROOT, dir));
+        packedTarballs.set(name, packed);
+      }
+      return [`${checkoutTarballPath(name)}.base64`, await packed] as const;
+    })
   );
   return Object.fromEntries(entries);
 }
@@ -605,16 +611,20 @@ async function packCheckoutPackage(name: string, packageDir: string): Promise<st
     );
   }
 
-  packDir ??= fs.mkdtemp(path.join(os.tmpdir(), 'agent-eval-packages-'));
-  const tarballPath = path.join(await packDir, path.posix.basename(checkoutTarballPath(name)));
-  await execFileAsync('yarn', ['pack', '--out', tarballPath], { cwd: packageDir });
-  return (await fs.readFile(tarballPath)).toString('base64');
+  const packDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agent-eval-packages-'));
+  try {
+    const tarballPath = path.join(packDir, path.posix.basename(checkoutTarballPath(name)));
+    await execFileAsync('yarn', ['pack', '--out', tarballPath], { cwd: packageDir });
+    return (await fs.readFile(tarballPath)).toString('base64');
+  } finally {
+    await fs.rm(packDir, { recursive: true, force: true });
+  }
 }
 
 async function decodeCheckoutPackages(sandbox: Sandbox): Promise<void> {
   const result = await sandbox.runCommand('bash', [
     '-c',
-    `cd ${CHECKOUT_PACKAGES_DIR} && for f in *.base64; do base64 -d "$f" > "\${f%.base64}" && rm "$f"; done`,
+    `set -e; cd ${CHECKOUT_PACKAGES_DIR}; for f in *.base64; do base64 -d "$f" > "\${f%.base64}"; rm "$f"; done`,
   ]);
 
   if (result.exitCode !== 0) {

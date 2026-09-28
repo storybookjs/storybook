@@ -1,6 +1,6 @@
 import { type JsPackageManager } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
-import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { type TaskLogInstance, logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -20,6 +20,7 @@ import type {
   Prompt,
 } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
+import { applies, pluginsFor, runTransforms, transformError } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -258,13 +259,23 @@ export async function runFixes({
   // Collects core addons that fixes add but whose postinstall must run after `installDependencies`.
   const addonsToPostinstall: string[] = [];
 
-  for (let i = 0; i < fixes.length; i += 1) {
-    const f = fixes[i] as Fix;
+  const project = {
+    packageManager,
+    configDir,
+    mainConfig,
+    storybookVersion,
+    previewConfigPath,
+    mainConfigPath,
+    storiesPaths,
+  };
+  const checked: { fix: Fix; result: unknown }[] = [];
+
+  for (const f of fixes as Fix[]) {
     let result;
 
     try {
       logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
-      result = await f.check({
+      result = await (f.check ?? applies)({
         packageManager,
         configDir,
         mainConfig,
@@ -286,137 +297,167 @@ export async function runFixes({
     }
 
     if (result) {
-      const promptType: Prompt =
-        typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
-
-      logger.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
-
-      const getTitle = () => {
-        switch (promptType) {
-          case 'auto':
-            return 'Automigration detected';
-          case 'manual':
-            return 'Manual migration detected';
-          case 'notification':
-            return 'Migration notification';
-        }
-      };
-
-      const currentTaskLogger = prompt.taskLog({
-        id: `automigrate-task-${f.id}`,
-        title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
-      });
-
-      logger.logBox(f.prompt());
-
-      let runAnswer: { fix: boolean } | undefined;
-
-      try {
-        if (dryRun) {
-          runAnswer = { fix: false };
-        } else if (yes) {
-          runAnswer = { fix: true };
-          if (promptType === 'manual') {
-            fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
-            fixSummary.manual.push(f.id);
-          }
-        } else if (promptType === 'manual') {
-          fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
-          fixSummary.manual.push(f.id);
-
-          const shouldContinue = await prompt.confirm(
-            {
-              message:
-                'Select continue once you have made the required changes, or quit to exit the migration process',
-              initialValue: true,
-              active: 'continue',
-              inactive: 'quit',
-            },
-            {
-              onCancel: () => {
-                throw new Error();
-              },
-            }
-          );
-
-          if (!shouldContinue) {
-            fixResults[f.id] = FixStatus.MANUAL_SKIPPED;
-            break;
-          }
-        } else if (promptType === 'auto') {
-          const shouldRun = yes
-            ? true
-            : await prompt.confirm(
-                {
-                  message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
-                  initialValue: f.defaultSelected ?? true,
-                },
-                {
-                  onCancel: () => {
-                    throw new Error();
-                  },
-                }
-              );
-          runAnswer = { fix: shouldRun };
-        } else if (promptType === 'notification') {
-          const shouldContinue = await prompt.confirm(
-            {
-              message: `Do you want to continue?`,
-            },
-            {
-              onCancel: () => {
-                throw new Error();
-              },
-            }
-          );
-          runAnswer = { fix: shouldContinue };
-        }
-      } catch (err) {
-        break;
-      }
-
-      if (promptType === 'auto') {
-        invariant(runAnswer, 'runAnswer must be defined if not promptOnly');
-        if (runAnswer.fix) {
-          try {
-            invariant(typeof f.run === 'function', 'run method should be available in fix.');
-            invariant(mainConfigPath, 'Main config path should be defined to run migration.');
-            const { files, commit } = createFixFiles();
-            await f.run({
-              result,
-              packageManager,
-              files,
-              mainConfigPath,
-              configDir,
-              previewConfigPath,
-              mainConfig,
-              skipInstall,
-              storybookVersion,
-              storiesPaths,
-              yes,
-              addonsToPostinstall,
-            });
-            await commit();
-            logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
-
-            fixResults[f.id] = FixStatus.SUCCEEDED;
-            fixSummary.succeeded.push(f.id);
-            currentTaskLogger.success(`Ran ${picocolors.cyan(f.id)} migration`);
-          } catch (error) {
-            fixResults[f.id] = FixStatus.FAILED;
-            const errorMessage = error instanceof Error ? error.message : 'Failed to run migration';
-            fixSummary.failed[f.id] = errorMessage;
-
-            currentTaskLogger.error(`Error when running ${picocolors.cyan(f.id)} migration`);
-          }
-        } else {
-          fixResults[f.id] = FixStatus.SKIPPED;
-          fixSummary.skipped.push(f.id);
-          currentTaskLogger.success(`Skipped ${picocolors.cyan(f.id)} migration`);
-        }
-      }
+      checked.push({ fix: f, result });
     } else {
       fixResults[f.id] = fixResults[f.id] || FixStatus.UNNECESSARY;
+    }
+  }
+
+  const detected = await runTransforms(project, pluginsFor(checked, project), { write: false });
+  const applicable = checked.filter(({ fix }) => {
+    const { changed, errors } = detected.get(fix.id) ?? { changed: [], errors: [] };
+    if (errors.length > 0) {
+      logger.warn(`⚠️  failed to check fix ${picocolors.bold(fix.id)}`);
+      fixSummary.failed[fix.id] = transformError(errors).message;
+      fixResults[fix.id] = FixStatus.CHECK_FAILED;
+      return false;
+    }
+    if (fix.transform && !fix.run && changed.length === 0) {
+      fixResults[fix.id] = FixStatus.UNNECESSARY;
+      return false;
+    }
+    return true;
+  });
+
+  const selected: { fix: Fix; result: unknown; taskLog: TaskLogInstance }[] = [];
+
+  for (const { fix: f, result } of applicable) {
+    const promptType: Prompt =
+      typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
+
+    logger.log(`🔎 found a '${picocolors.cyan(f.id)}' migration:`);
+
+    const getTitle = () => {
+      switch (promptType) {
+        case 'auto':
+          return 'Automigration detected';
+        case 'manual':
+          return 'Manual migration detected';
+        case 'notification':
+          return 'Migration notification';
+      }
+    };
+
+    const currentTaskLogger = prompt.taskLog({
+      id: `automigrate-task-${f.id}`,
+      title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
+    });
+
+    logger.logBox(f.prompt());
+
+    let runAnswer: { fix: boolean } | undefined;
+
+    try {
+      if (dryRun) {
+        runAnswer = { fix: false };
+      } else if (yes) {
+        runAnswer = { fix: true };
+        if (promptType === 'manual') {
+          fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
+          fixSummary.manual.push(f.id);
+        }
+      } else if (promptType === 'manual') {
+        fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
+        fixSummary.manual.push(f.id);
+
+        const shouldContinue = await prompt.confirm(
+          {
+            message:
+              'Select continue once you have made the required changes, or quit to exit the migration process',
+            initialValue: true,
+            active: 'continue',
+            inactive: 'quit',
+          },
+          {
+            onCancel: () => {
+              throw new Error();
+            },
+          }
+        );
+
+        if (!shouldContinue) {
+          fixResults[f.id] = FixStatus.MANUAL_SKIPPED;
+          break;
+        }
+      } else if (promptType === 'auto') {
+        const shouldRun = yes
+          ? true
+          : await prompt.confirm(
+              {
+                message: `Do you want to run the '${picocolors.cyan(f.id)}' migration on your project?`,
+                initialValue: f.defaultSelected ?? true,
+              },
+              {
+                onCancel: () => {
+                  throw new Error();
+                },
+              }
+            );
+        runAnswer = { fix: shouldRun };
+      } else if (promptType === 'notification') {
+        const shouldContinue = await prompt.confirm(
+          {
+            message: `Do you want to continue?`,
+          },
+          {
+            onCancel: () => {
+              throw new Error();
+            },
+          }
+        );
+        runAnswer = { fix: shouldContinue };
+      }
+    } catch (err) {
+      break;
+    }
+
+    if (promptType === 'auto') {
+      invariant(runAnswer, 'runAnswer must be defined if not promptOnly');
+      if (runAnswer.fix) {
+        selected.push({ fix: f, result, taskLog: currentTaskLogger });
+      } else {
+        fixResults[f.id] = FixStatus.SKIPPED;
+        fixSummary.skipped.push(f.id);
+        currentTaskLogger.success(`Skipped ${picocolors.cyan(f.id)} migration`);
+      }
+    }
+  }
+
+  const applied = await runTransforms(project, pluginsFor(selected, project), { write: true });
+
+  for (const { fix: f, result, taskLog } of selected) {
+    try {
+      const errors = applied.get(f.id)?.errors ?? [];
+      if (errors.length > 0) {
+        throw transformError(errors);
+      }
+      if (f.run) {
+        const { files, commit } = createFixFiles();
+        await f.run({
+          result,
+          packageManager,
+          files,
+          mainConfigPath,
+          configDir,
+          previewConfigPath,
+          mainConfig,
+          skipInstall,
+          storybookVersion,
+          storiesPaths,
+          yes,
+          addonsToPostinstall,
+        });
+        await commit();
+      }
+      logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
+
+      fixResults[f.id] = FixStatus.SUCCEEDED;
+      fixSummary.succeeded.push(f.id);
+      taskLog.success(`Ran ${picocolors.cyan(f.id)} migration`);
+    } catch (error) {
+      fixResults[f.id] = FixStatus.FAILED;
+      fixSummary.failed[f.id] = error instanceof Error ? error.message : 'Failed to run migration';
+      taskLog.error(`Error when running ${picocolors.cyan(f.id)} migration`);
     }
   }
 

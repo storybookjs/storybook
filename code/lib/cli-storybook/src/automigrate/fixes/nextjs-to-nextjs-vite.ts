@@ -5,71 +5,32 @@ import type { Fix } from '../types.ts';
 
 export const VITE_DEFAULT_VERSION = '^7.0.0';
 
-interface NextjsToNextjsViteOptions {
-  hasNextjsPackage: boolean;
-  packageJsonFiles: string[];
-}
-
-export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
+export const nextjsToNextjsVite: Fix = {
   id: 'nextjs-to-nextjs-vite',
   link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite',
   defaultSelected: false,
 
-  async check({ packageManager, files }): Promise<NextjsToNextjsViteOptions | null> {
-    const allDeps = packageManager.getAllDependencies();
-
-    // Check if @storybook/nextjs is present
-    if (!allDeps['@storybook/nextjs']) {
-      return null;
-    }
-
-    // Find package.json files that contain @storybook/nextjs
-    const packageJsonFiles: string[] = [];
-
-    for (const packageJsonPath of packageManager.packageJsonPaths) {
-      try {
-        const content = await files.read(packageJsonPath);
-        const packageJson = JSON.parse(content);
-
-        const hasNextjs = Object.keys({
-          ...(packageJson.dependencies || {}),
-          ...(packageJson.devDependencies || {}),
-        }).includes('@storybook/nextjs');
-
-        if (hasNextjs) {
-          packageJsonFiles.push(packageJsonPath);
-        }
-      } catch {
-        // Skip invalid package.json files
-        continue;
-      }
-    }
-
-    return {
-      hasNextjsPackage: true,
-      packageJsonFiles,
-    };
+  async check({ packageManager }) {
+    return packageManager.getAllDependencies()['@storybook/nextjs'] ? {} : null;
   },
 
   prompt() {
     return 'Migrate from @storybook/nextjs to @storybook/nextjs-vite (Vite framework)';
   },
 
-  async run({ files, mainConfigPath, storiesPaths, configDir, packageManager, storybookVersion }) {
-    logger.step('Migrating from @storybook/nextjs to @storybook/nextjs-vite...');
+  transform: () => [
+    {
+      filter: { kind: ['main'] },
+      // The negative lookahead keeps existing @storybook/nextjs-vite references intact
+      handler: (code) => code.replace(/@storybook\/nextjs(?!-vite)/g, '@storybook/nextjs-vite'),
+    },
+    {
+      filter: { kind: ['preview', 'manager', 'config', 'story'] },
+      handler: (code) => transformImports(code, { '@storybook/nextjs': '@storybook/nextjs-vite' }),
+    },
+  ],
 
-    // The negative lookahead keeps existing @storybook/nextjs-vite references intact
-    await files.edit(mainConfigPath, (source) =>
-      source.replace(/@storybook\/nextjs(?!-vite)/g, '@storybook/nextjs-vite')
-    );
-
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    const configFiles = await globby([`${configDir}/**/*`]);
-    await files.edit([...storiesPaths, ...configFiles], (source) =>
-      transformImports(source, { '@storybook/nextjs': '@storybook/nextjs-vite' })
-    );
-
+  async run({ packageManager, storybookVersion }) {
     const viteVersion = packageManager.getDependencyVersion('vite');
     await packageManager.removeDependencies(['@storybook/nextjs']);
     await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [

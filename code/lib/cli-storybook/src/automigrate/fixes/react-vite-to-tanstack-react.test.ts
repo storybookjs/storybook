@@ -51,14 +51,25 @@ describe('react-vite-to-tanstack-react', () => {
   });
 
   describe('check function', () => {
+    const project = {
+      mainConfigPath: '/project/.storybook/main.ts',
+      configDir: '/project/.storybook',
+      storiesPaths: [],
+    };
+
+    beforeEach(() => {
+      vol.fromJSON({ '/project/.storybook/main.ts': 'export default {};' });
+    });
+
     it('returns null if @storybook/react-vite is not installed', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         '@tanstack/react-router': '^1.0.0',
       });
 
       const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result).toBeNull();
     });
@@ -69,8 +80,9 @@ describe('react-vite-to-tanstack-react', () => {
       });
 
       const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result).toBeNull();
     });
@@ -82,9 +94,10 @@ describe('react-vite-to-tanstack-react', () => {
       });
 
       const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
         previewConfigPath: undefined,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result).toEqual({
         hasTanstackRouterDecorator: false,
@@ -98,6 +111,7 @@ describe('react-vite-to-tanstack-react', () => {
       });
 
       vol.fromJSON({
+        '/project/.storybook/main.ts': 'export default {};',
         '/project/.storybook/preview.tsx': `
         import { RouterProvider, createMemoryHistory, createRouter } from '@tanstack/react-router';
 
@@ -111,9 +125,10 @@ describe('react-vite-to-tanstack-react', () => {
       });
 
       const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
         previewConfigPath: '/project/.storybook/preview.tsx',
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
       expect(result?.hasTanstackRouterDecorator).toBe(true);
     });
@@ -130,6 +145,7 @@ describe('react-vite-to-tanstack-react', () => {
       ]);
 
       vol.fromJSON({
+        '/project/.storybook/main.ts': 'export default {};',
         '/project/.storybook/preview.tsx': `
         import { withRouter } from './decorators';
         export const decorators = [withRouter];
@@ -145,10 +161,9 @@ describe('react-vite-to-tanstack-react', () => {
       });
 
       const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
         packageManager: mockPackageManager,
         previewConfigPath: '/project/.storybook/preview.tsx',
-        configDir: '/project/.storybook',
-        storiesPaths: [],
       } as unknown as CheckOptions);
 
       expect(result?.hasTanstackRouterDecorator).toBe(true);

@@ -9,6 +9,7 @@ import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
+import { applies, pluginsFor, runTransforms, transformError } from './pipeline.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
 import { FixStatus } from './types.ts';
 
@@ -100,6 +101,8 @@ export async function collectAutomigrationsAcrossProjects(
     taskLog.message(`Checking automigrations for ${projectName}...`);
     logger.debug(`Processing project: ${projectName}`);
 
+    const checks: { fix: Fix; result: unknown; failed?: boolean }[] = [];
+
     for (const fix of fixes) {
       try {
         logger.debug(`Checking fix ${fix.id} for project ${projectName}...`);
@@ -116,21 +119,41 @@ export async function collectAutomigrationsAcrossProjects(
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
         };
-        const result = await fix.check(checkOptions);
+        const result = await (fix.check ?? applies)(checkOptions);
 
-        if (result !== null) {
-          collectResult(fix, project, 'check_succeeded', result);
-        } else {
-          collectResult(fix, project, 'not_applicable');
-        }
+        checks.push({ fix, result });
       } catch (error) {
-        collectResult(fix, project, 'check_failed');
+        checks.push({ fix, result: null, failed: true });
 
         logger.debug(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );
         logger.debug(`${error instanceof Error ? error.stack : String(error)}`);
         ErrorCollector.addError(error);
+      }
+    }
+
+    const detected = await runTransforms(
+      project,
+      pluginsFor(
+        checks.filter(({ result }) => result !== null),
+        project
+      ),
+      { write: false }
+    );
+    for (const { fix, result, failed } of checks) {
+      const { changed, errors } = detected.get(fix.id) ?? { changed: [], errors: [] };
+      if (failed) {
+        collectResult(fix, project, 'check_failed');
+      } else if (result === null) {
+        collectResult(fix, project, 'not_applicable');
+      } else if (errors.length > 0) {
+        collectResult(fix, project, 'check_failed');
+        ErrorCollector.addError(transformError(errors));
+      } else if (fix.transform && !fix.run && changed.length === 0) {
+        collectResult(fix, project, 'not_applicable');
+      } else {
+        collectResult(fix, project, 'check_succeeded', result);
       }
     }
   }
@@ -360,6 +383,23 @@ export async function runAutomigrationsForProjects(
     // Core addons added by fixes that must be configured after the upgrade installs dependencies.
     const addonsToPostinstall: string[] = [];
 
+    const isSelected = (fix: Fix) =>
+      selectedAutomigrations.some(
+        (am) =>
+          am.fix.id === fix.id &&
+          am.reports.some((report) => report.project.configDir === project.configDir)
+      );
+    const applied = await runTransforms(
+      project,
+      pluginsFor(
+        projectAutomigration.filter(
+          ({ fix, status }) => status === 'check_succeeded' && isSelected(fix)
+        ),
+        project
+      ),
+      { write: true }
+    );
+
     for (const automigration of projectAutomigration) {
       const { fix, result, project, status } = automigration;
 
@@ -373,20 +413,16 @@ export async function runAutomigrationsForProjects(
         continue;
       }
 
-      // it is only skipped when the current automigration
-      // is either not selected by the user (for a particular proejct)
-      // therefore we need to check for configDir as well as fix id matches
-      const hasBeenSelected = selectedAutomigrations.some(
-        (am) =>
-          am.fix.id === fix.id &&
-          am.reports.some((report) => report.project.configDir === project.configDir)
-      );
-      if (!hasBeenSelected) {
+      if (!isSelected(fix)) {
         fixResults[fix.id] = FixStatus.SKIPPED;
         continue;
       }
 
       try {
+        const errors = applied.get(fix.id)?.errors ?? [];
+        if (errors.length > 0) {
+          throw transformError(errors);
+        }
         if (typeof fix.run === 'function') {
           const { files, commit } = createFixFiles();
           const runOptions: RunOptions<typeof result> = {
@@ -406,6 +442,8 @@ export async function runAutomigrationsForProjects(
 
           await fix.run(runOptions);
           await commit();
+        }
+        if (fix.run || fix.transform) {
           fixResults[fix.id] = FixStatus.SUCCEEDED;
           taskLog.message(CLI_COLORS.success(`${logger.SYMBOLS.success} ${fix.id}`));
         }

@@ -66,7 +66,7 @@ const skipSourceRender = (context: Params['storyContext']) => {
 export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryObj['args'] }) => {
   // check if children is used in the template (e.g., {args.children})
   // if so, we should exclude it from the props to avoid it appearing twice
-  const childrenUsedInTemplate = /\bargs\.children\b/.test(code);
+  const childrenUsedInTemplate = /\bargs\??\.children\b/.test(code);
 
   const allPropsArray = Object.entries(args ?? {})
     .map(([argKey, argValue]) => {
@@ -88,6 +88,13 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
 
   let codeToEmit = code
     .replaceAll('{...args}', allPropsString)
+    // replace text expressions that reference a string arg with the plain text,
+    // eg. <Button>{args.children}</Button> => <Button>Click me</Button>
+    // attribute values like prop={args.something} are skipped
+    .replace(/(?<!=)\{\s*(args(?:[\w\d_$.?[\]"'])+)\s*\}/g, (match, argPath: string) => {
+      const value = get({ args }, argPath.replaceAll('?', ''));
+      return isPlainText(value) ? value : match;
+    })
     // replace single arg references with their actual value,
     // eg. myProp={args.something} => myProp={"actual"}
     // or <h1>{args.something}</h1> => <h1>"actual"</h1>
@@ -95,17 +102,17 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
       const path = argPath.replaceAll('?', ''); // remove optional chaining character
       const value = get({ args }, path);
       return valueToString(value);
-    })
-    // clean up string literals in slot content: {"string"} => string
-    // This handles cases like <Button>{"Click me"}</Button> => <Button>Click me</Button>
-    .replace(/>\s*\{(".*?")\}\s*</g, (match, stringLiteral) => {
-      // Remove the quotes from the string literal
-      const unwrapped = stringLiteral.slice(1, -1);
-      return `>${unwrapped}<`;
     });
 
   return codeToEmit;
 };
+
+/**
+ * A string can be shown as plain text if it has content and
+ * no characters that Svelte would read as markup, an expression or an entity
+ */
+const isPlainText = (value: unknown): value is string =>
+  typeof value === 'string' && value.trim() !== '' && !/[{}<>"\\&]/.test(value);
 
 type MockableFunction = ((...args: any[]) => any) & {
   getMockName?: () => string;

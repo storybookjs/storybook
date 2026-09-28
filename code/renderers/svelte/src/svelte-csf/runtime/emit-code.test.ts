@@ -147,12 +147,12 @@ describe('Emit Code', () => {
         ternaryProp={true ? "yup" : "nope"}
       >
         {args}
-        {"some text"}
-        {"optional text"}
+        some text
+        optional text
         {{ "nested": "deep" }}
         {{ "nested": "deep" }}
-        {"deep"}
-        {"second"}
+        deep
+        second
         {someUnnamedFn}
         {namedFunc}
         {vi.fn()}
@@ -227,5 +227,80 @@ describe('Emit Code', () => {
         },
       })
     ).toMatchInlineSnapshot(`"<div><p>First text</p><p>Second text</p></div>"`);
+  });
+
+  it('should unwrap multiple string args in the same element', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<p>Hello {args.first} and {args.second}</p>',
+        args: {
+          first: 'x',
+          second: 'y',
+        },
+      })
+    ).toMatchInlineSnapshot(`"<p>Hello x and y</p>"`);
+  });
+
+  it('should keep the whitespace around unwrapped string args', () => {
+    expect(
+      generateCodeToEmit({
+        code: dedent`<Button>
+          {args.label}
+        </Button>`,
+        args: {
+          label: 'Hi',
+        },
+      })
+    ).toMatchInlineSnapshot(`
+      "<Button>
+        Hi
+      </Button>"
+    `);
+  });
+
+  it('should not unwrap strings that Svelte would read as markup or expressions', () => {
+    expect(
+      generateCodeToEmit({
+        code: dedent`<p>{args.markup}</p>
+          <p>{args.braces}</p>
+          <p>{args.quotes}</p>
+          <p>{args.entity}</p>`,
+        args: {
+          markup: '<b>bold</b>',
+          braces: 'a {b} c',
+          quotes: 'say "hi"',
+          entity: 'a &amp; b',
+        },
+      })
+    ).toMatchInlineSnapshot(`
+      "<p>{"<b>bold</b>"}</p>
+      <p>{"a {b} c"}</p>
+      <p>{"say \\"hi\\""}</p>
+      <p>{"a &amp; b"}</p>"
+    `);
+  });
+
+  it('should not unwrap non-string args or attribute values', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Button label={args.label}>{args.count}</Button>',
+        args: {
+          label: 'Hi',
+          count: 42,
+        },
+      })
+    ).toMatchInlineSnapshot(`"<Button label={"Hi"}>{42}</Button>"`);
+  });
+
+  it('should exclude children from props when used with optional chaining', () => {
+    expect(
+      generateCodeToEmit({
+        code: '<Button {...args}>{args?.children}</Button>',
+        args: {
+          primary: true,
+          children: 'Click me',
+        },
+      })
+    ).toMatchInlineSnapshot(`"<Button primary>Click me</Button>"`);
   });
 });

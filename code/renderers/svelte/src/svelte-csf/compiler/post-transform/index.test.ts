@@ -2,8 +2,11 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 
+import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import dedent from 'dedent';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
+import { compile } from 'svelte/compiler';
 import { describe, it } from 'vitest';
 
 import { transformStoriesCode } from './index.js';
@@ -286,5 +289,47 @@ describe(transformStoriesCode.name, () => {
       };"
     `
     );
+  });
+
+  it('works with empty object and array literals', async ({ expect }) => {
+    const filename = 'Empty.stories.svelte';
+    const originalCode = dedent`
+      <script module>
+        import { defineMeta } from "${pkg.name}";
+
+        /** Description of the component */
+        const { Story } = defineMeta({});
+      </script>
+
+      <!-- Description of the story -->
+      <Story name="Default" parameters={{}} tags={[]} />
+    `;
+    const compiledCode = compile(originalCode, { filename, dev: true }).js.code;
+    const svelteASTNodes = await extractSvelteASTNodes({
+      ast: getSvelteAST({ code: originalCode, filename }),
+      filename,
+    });
+    // NOTE: Rollup's parser returns frozen arrays for empty object and array literals
+    const compiledASTNodes = await extractCompiledASTNodes({
+      ast: parseAst(compiledCode),
+      filename,
+    });
+    const code = new MagicString(compiledCode);
+
+    await transformStoriesCode({
+      code,
+      nodes: {
+        svelte: svelteASTNodes,
+        compiled: compiledASTNodes,
+      },
+      filename,
+      originalCode,
+    });
+
+    const output = code.toString();
+
+    expect(output).toContain('component: "Description of the component"');
+    expect(output).toContain('story: "Description of the story"');
+    expect(output).toContain('__svelteCsf');
   });
 });

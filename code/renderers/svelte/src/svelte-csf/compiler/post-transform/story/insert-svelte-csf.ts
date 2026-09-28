@@ -7,7 +7,11 @@ import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract
 import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story.js';
 import type { SvelteASTNodes, extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
 import { getStoryContentRawCode } from '$lib/parser/analyse/story/content.js';
-import { createASTObjectExpression, createASTProperty } from '$lib/parser/ast.js';
+import {
+  appendASTProperty,
+  createASTObjectExpression,
+  createASTProperty,
+} from '$lib/parser/ast.js';
 
 interface Params {
   nodes: {
@@ -41,7 +45,8 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
       node: storyPropsObjectExpression,
     }) === -1
   ) {
-    storyPropsObjectExpression.properties.push(
+    appendASTProperty(
+      storyPropsObjectExpression,
       createASTProperty('parameters', createASTObjectExpression())
     );
   }
@@ -54,11 +59,12 @@ export function insertSvelteCSFToStoryParameters(params: Params) {
     originalCode,
   });
 
-  getParametersPropertyValue({
-    filename,
-    component: component.svelte.component,
-    node: storyPropsObjectExpression,
-  }).properties.push(
+  appendASTProperty(
+    getParametersPropertyValue({
+      filename,
+      component: component.svelte.component,
+      node: storyPropsObjectExpression,
+    }),
     createASTProperty(
       '__svelteCsf',
       createASTObjectExpression([

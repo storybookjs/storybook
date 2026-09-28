@@ -69,6 +69,12 @@ const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
   'codex-browser-skill.md'
 );
 const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
+const CODEX_AGENTS_MD_REVIEW_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'mcp',
+  'codex-agents-review.md'
+);
 const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   '.agents',
   'skills',
@@ -728,11 +734,10 @@ export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
 // instructions only once the model searches its tools, which it skips for
 // tasks it thinks it can do alone. AGENTS.md is always in its context.
 export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
-  // codex-agents.md mirrors the review-off server instructions, which contradict the review flow.
-  if (isReviewEnabledFor('mcp')) {
-    return;
-  }
-  const instructions = await fs.readFile(CODEX_AGENTS_MD_SOURCE_PATH, 'utf8');
+  const instructions = await fs.readFile(
+    isReviewEnabledFor('mcp') ? CODEX_AGENTS_MD_REVIEW_SOURCE_PATH : CODEX_AGENTS_MD_SOURCE_PATH,
+    'utf8'
+  );
   await sandbox.writeFiles({
     'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
   });

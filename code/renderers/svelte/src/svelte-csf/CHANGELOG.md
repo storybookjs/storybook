@@ -1,5 +1,13 @@
 # @storybook/addon-svelte-csf
 
+## 5.1.5
+
+### Patch Changes
+
+- [#368](https://github.com/storybookjs/addon-svelte-csf/pull/368) [`4b546a7`](https://github.com/storybookjs/addon-svelte-csf/commit/4b546a78dec95254ad3c7f965f7bd0bc2445a2c7) Thanks [@JReinhold](https://github.com/JReinhold)! - Fix "Cannot add property 0, object is not extensible" with Vite 7 and older when `defineMeta` or a story gets an empty object or array.
+
+- [#370](https://github.com/storybookjs/addon-svelte-csf/pull/370) [`595ea66`](https://github.com/storybookjs/addon-svelte-csf/commit/595ea6691509c8b1a0e94c5e328ba7a4b05e3aef) Thanks [@JReinhold](https://github.com/JReinhold)! - Fix the last character of a legacy stories file being added to the story again.
+
 ## 5.1.4
 
 ### Patch Changes

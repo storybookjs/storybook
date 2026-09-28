@@ -6,7 +6,6 @@ import {
   getAddonNames,
   rendererPackages,
 } from 'storybook/internal/common';
-import { loadConfig } from 'storybook/internal/csf-tools';
 
 import jscodeshift from 'jscodeshift';
 import path from 'path';
@@ -95,9 +94,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     for (const configFile of candidateConfigFiles) {
       try {
         configSources.set(configFile, await files.read(configFile));
-      } catch {
-        // Skip config files that can't be read
-      }
+      } catch {}
     }
 
     // The plugin runs, and so does the runtime error, whether or not the addon is registered
@@ -112,42 +109,36 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
     const inheritsRootByDefault: ExtendsDefault =
       vitestVersion === null ? 'unknown' : semver.major(vitestVersion) >= 5;
 
-    const candidateSetupFiles = new Set<string>();
-
-    for (const extension of SETUP_FILE_EXTENSIONS) {
-      const filePath = path.join(configDir, `vitest.setup${extension}`);
-
-      if (existsSync(filePath)) {
-        candidateSetupFiles.add(filePath);
-      }
-    }
+    const candidateSetupFiles = new Set(
+      SETUP_FILE_EXTENSIONS.map((extension) =>
+        path.join(configDir, `vitest.setup${extension}`)
+      ).filter((filePath) => existsSync(filePath))
+    );
 
     const unresolvedEntries: VitestSetupFileOptions['unresolvedEntries'] = [];
-    const entriesByConfigFile = new Map<string, SetupFileEntry[]>();
     const referencesBySetupFile = new Map<string, { configFile: string; project: ProjectKind }[]>();
 
     for (const [configFile, source] of configSources) {
+      let entries: SetupFileEntry[];
       try {
-        const entries = extractSetupFileEntries(source, configFile, inheritsRootByDefault);
-        entriesByConfigFile.set(configFile, entries);
-
-        for (const entry of entries) {
-          if (entry.kind === 'unresolved') {
-            unresolvedEntries.push({
-              configFile,
-              expression: entry.expression,
-              project: entry.project,
-            });
-          } else if (existsSync(entry.path)) {
-            candidateSetupFiles.add(entry.path);
-
-            const references = referencesBySetupFile.get(entry.path) ?? [];
-            references.push({ configFile, project: entry.project });
-            referencesBySetupFile.set(entry.path, references);
-          }
-        }
+        entries = extractSetupFileEntries(source, configFile, inheritsRootByDefault);
       } catch {
-        // Skip config files that can't be parsed
+        continue;
+      }
+      for (const entry of entries) {
+        if (entry.kind === 'unresolved') {
+          unresolvedEntries.push({
+            configFile,
+            expression: entry.expression,
+            project: entry.project,
+          });
+        } else if (existsSync(entry.path)) {
+          candidateSetupFiles.add(entry.path);
+          referencesBySetupFile.set(entry.path, [
+            ...(referencesBySetupFile.get(entry.path) ?? []),
+            { configFile, project: entry.project },
+          ]);
+        }
       }
     }
 
@@ -208,16 +199,14 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
       return null;
     }
 
-    const setupFilePaths = new Set(setupFiles.map((setupFile) => setupFile.path));
     const configFiles = candidateConfigFiles.filter((configFile) =>
-      entriesByConfigFile
-        .get(configFile)
-        ?.some(
-          (entry) =>
-            entry.kind === 'resolved' &&
-            entry.project === 'storybook' &&
-            setupFilePaths.has(entry.path)
-        )
+      setupFiles.some((setupFile) =>
+        referencesBySetupFile
+          .get(setupFile.path)
+          ?.some(
+            (reference) => reference.configFile === configFile && reference.project === 'storybook'
+          )
+      )
     );
 
     return { setupFiles, configFiles, unresolvedEntries, inheritsRootByDefault };
@@ -230,12 +219,12 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
   async run({ result, files }) {
     const { setupFiles, configFiles, unresolvedEntries, inheritsRootByDefault } = result;
 
-    const deletedFiles = setupFiles.filter((setupFile) => setupFile.transform.kind === 'empty');
-    const rewrittenFiles = setupFiles.flatMap((setupFile) =>
-      setupFile.transform.kind === 'rewritten'
-        ? [{ path: setupFile.path, code: setupFile.transform.code }]
-        : []
+    const deletedPaths = new Set(
+      setupFiles.flatMap((setupFile) =>
+        setupFile.transform.kind === 'empty' ? [setupFile.path] : []
+      )
     );
+    const rewritesAny = setupFiles.some((setupFile) => setupFile.transform.kind === 'rewritten');
 
     const problems = setupFiles.flatMap((setupFile) =>
       setupFile.transform.kind === 'manual'
@@ -247,12 +236,12 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
       const location = `${picocolors.cyan(entry.configFile)}: ${picocolors.gray(entry.expression)} is computed at runtime`;
 
       // A computed entry may be the reference to a file we are about to delete
-      if (deletedFiles.length > 0) {
+      if (deletedPaths.size > 0) {
         problems.push(
           `${location}, so the ${picocolors.cyan('setupFiles')} it selects can't be matched without executing your config`
         );
       } else if (
-        rewrittenFiles.length > 0 &&
+        rewritesAny &&
         entry.project !== 'storybook' &&
         configFiles.includes(entry.configFile)
       ) {
@@ -284,32 +273,25 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
       );
     }
 
-    for (const setupFile of rewrittenFiles) {
-      files.write(setupFile.path, await formatFileContent(setupFile.path, setupFile.code));
-    }
-
-    const deletedPaths = new Set(deletedFiles.map((setupFile) => setupFile.path));
-
-    await files.edit(deletedFiles.length > 0 ? configFiles : [], (source, configFile) => {
-      const { code, changed } = removeSetupFileEntries(
-        source,
-        configFile,
-        (resolvedPath) => deletedPaths.has(resolvedPath),
-        inheritsRootByDefault
-      );
-
-      if (!changed) {
-        return null;
+    for (const { path: setupFile, transform } of setupFiles) {
+      if (transform.kind === 'rewritten') {
+        files.write(setupFile, await formatFileContent(setupFile, transform.code));
       }
-
-      // The rewritten config must still parse before we write it back
-      loadConfig(code, configFile);
-      return formatFileContent(configFile, code);
-    });
-
-    for (const setupFile of deletedFiles) {
-      files.remove(setupFile.path);
     }
+
+    if (deletedPaths.size > 0) {
+      await files.edit(configFiles, (source, configFile) => {
+        const code = removeSetupFileEntries(
+          source,
+          configFile,
+          deletedPaths,
+          inheritsRootByDefault
+        );
+        return code === null ? null : formatFileContent(configFile, code);
+      });
+    }
+
+    deletedPaths.forEach((setupFile) => files.remove(setupFile));
   },
 };
 
@@ -381,41 +363,37 @@ export function transformSetupFile(
   }
 
   const unsupportedAnnotation = (node: t.Node | null) => ({
-    ok: false as const,
+    kind: 'manual' as const,
     reason: `it passes annotations that are neither your ".storybook/preview" nor "${A11Y_PREVIEW_MODULE}": ${j(node as unknown as jscodeshift.ASTNode).toSource()}`,
   });
 
-  const classifyAnnotation = (
+  const annotationName = (
     node: t.Expression | t.SpreadElement | t.ArgumentPlaceholder | null
-  ): { ok: true; name: string } | { ok: false; reason: string } => {
+  ): string | { kind: 'manual'; reason: string } => {
     const identifier =
-      node?.type === 'Identifier'
-        ? node
-        : node?.type === 'MemberExpression' &&
-            !node.computed &&
-            node.property.type === 'Identifier' &&
-            node.property.name === 'composed' &&
-            node.object.type === 'Identifier'
-          ? node.object
-          : null;
-    const binding = identifier ? bindings.get(identifier.name) : undefined;
-    const isModuleImport =
-      binding?.specifier.type === 'ImportNamespaceSpecifier' ||
-      binding?.specifier.type === 'ImportDefaultSpecifier';
-
-    if (!identifier || !binding || !isModuleImport) {
+      node?.type === 'MemberExpression' &&
+      !node.computed &&
+      node.property.type === 'Identifier' &&
+      node.property.name === 'composed'
+        ? node.object
+        : node;
+    const binding = identifier?.type === 'Identifier' ? bindings.get(identifier.name) : undefined;
+    if (
+      binding?.specifier.type !== 'ImportNamespaceSpecifier' &&
+      binding?.specifier.type !== 'ImportDefaultSpecifier'
+    ) {
       return unsupportedAnnotation(node);
     }
 
     const importSource = String(binding.declaration.source.value);
     if (resolvesToPreview(importSource, options)) {
-      return { ok: true, name: identifier.name };
+      return binding.specifier.local.name;
     }
     if (importSource === A11Y_PREVIEW_MODULE) {
       return options.a11yRegistered
-        ? { ok: true, name: identifier.name }
+        ? binding.specifier.local.name
         : {
-            ok: false,
+            kind: 'manual',
             reason: `it passes "${A11Y_PREVIEW_MODULE}" annotations, but ${A11Y_ADDON_NAME} is not registered in the "addons" field of your .storybook/main`,
           };
     }
@@ -425,8 +403,6 @@ export function transformSetupFile(
   const removedStatements = new Set<t.Statement>();
   const capturedNames = new Set<string>();
   const annotationNames = new Set<string>();
-
-  let calls = 0;
 
   for (const statement of program.body) {
     const call =
@@ -443,8 +419,6 @@ export function transformSetupFile(
       continue;
     }
 
-    calls += 1;
-
     if (call.arguments.length > 1) {
       return {
         kind: 'manual',
@@ -457,13 +431,11 @@ export function transformSetupFile(
       argument?.type === 'ArrayExpression' ? argument.elements : argument ? [argument] : [];
 
     for (const element of elements) {
-      const classified = classifyAnnotation(element);
-
-      if (!classified.ok) {
-        return { kind: 'manual', reason: classified.reason };
+      const name = annotationName(element);
+      if (typeof name !== 'string') {
+        return name;
       }
-
-      annotationNames.add(classified.name);
+      annotationNames.add(name);
     }
 
     removedStatements.add(statement);
@@ -472,7 +444,7 @@ export function transformSetupFile(
     }
   }
 
-  if (countReferences(j, root, callBinding[0]) !== calls) {
+  if (countReferences(j, root, callBinding[0]) !== removedStatements.size) {
     return {
       kind: 'manual',
       reason:
@@ -583,17 +555,11 @@ function countReferences(j: jscodeshift.JSCodeshift, root: jscodeshift.Collectio
  * deleted setup file never stays referenced by an entry the fix could not read. `project` tells
  * whether the project (or root config) owning the entry loads the `storybookTest` plugin.
  */
-export type SetupFileEntry =
+type SetupFileEntry =
   | { kind: 'resolved'; path: string; project: ProjectKind }
   | { kind: 'unresolved'; expression: string; project: ProjectKind };
 
-/**
- * Collects the entries of every `setupFiles` value in a Vitest/Vite config, resolving each against
- * the config's directory. Recognized forms are string literals, substitution-free template
- * literals, and `path.join`/`path.resolve`/`path.dirname` chains anchored on `import.meta.dirname`,
- * `__dirname` or `fileURLToPath(import.meta.url)`; anything else is returned as `unresolved`.
- */
-export function extractSetupFileEntries(
+function extractSetupFileEntries(
   source: string,
   configFile: string,
   inheritsRootByDefault: ExtendsDefault
@@ -613,28 +579,20 @@ export function extractSetupFileEntries(
       // A root-level `setupFiles` is listed once per inheriting project, each resolved against
       // that project's root, so one inherited by a Storybook and a plain project surfaces as both
       const owners = getOwningConfigObjects(j, propertyPath, inheritsRootByDefault);
-      const resolutions =
-        owners === 'unknown'
-          ? [
-              {
-                project: 'unknown' as const,
-                base: getSetupFilesBaseDir(propertyPath, null, configFile),
-              },
-            ]
-          : owners.map((owner) => ({
-              project: classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault),
-              base: getSetupFilesBaseDir(propertyPath, owner, configFile),
-            }));
       const seen = new Set<string>();
+      const collect = (entry: SetupFileEntry) => {
+        const key = `${entry.project}:${entry.kind === 'resolved' ? entry.path : entry.expression}`;
+        if (!seen.has(key)) {
+          seen.add(key);
+          entries.push(entry);
+        }
+      };
 
-      for (const { project, base } of resolutions) {
-        const collect = (entry: SetupFileEntry) => {
-          const key = `${project}:${entry.kind === 'resolved' ? entry.path : entry.expression}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            entries.push(entry);
-          }
-        };
+      for (const owner of owners === 'unknown' ? [null] : owners) {
+        const project = owner
+          ? classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault)
+          : 'unknown';
+        const base = getSetupFilesBaseDir(propertyPath, owner, configFile);
         if ('unresolvedRoot' in base) {
           collect({
             kind: 'unresolved',
@@ -644,9 +602,15 @@ export function extractSetupFileEntries(
           continue;
         }
         for (const node of nodes) {
-          if (node) {
-            collect(toSetupFileEntry(j, node, configFile, base.baseDir, project));
+          if (!node) {
+            continue;
           }
+          const resolved = resolveStaticPath(node, configFile);
+          collect(
+            resolved === null
+              ? { kind: 'unresolved', expression: j(node).toSource(), project }
+              : { kind: 'resolved', path: path.resolve(base.baseDir, resolved), project }
+          );
         }
       }
     });
@@ -673,21 +637,6 @@ function getStorybookPluginNames(j: jscodeshift.JSCodeshift, root: jscodeshift.C
 
 type ObjectPropertyPath = jscodeshift.ASTPath<jscodeshift.ObjectProperty>;
 type ObjectExpressionPath = jscodeshift.ASTPath<jscodeshift.ObjectExpression>;
-
-function belongsToStorybookProject(
-  j: jscodeshift.JSCodeshift,
-  setupFilesPath: ObjectPropertyPath,
-  pluginNames: Set<string>,
-  inheritsRootByDefault: ExtendsDefault
-): boolean {
-  const owners = getOwningConfigObjects(j, setupFilesPath, inheritsRootByDefault);
-  return (
-    owners !== 'unknown' &&
-    owners.some(
-      (owner) => classifyConfigObject(j, owner, pluginNames, inheritsRootByDefault) === 'storybook'
-    )
-  );
-}
 
 // Vitest never runs a root config's `test` options as a project once `projects` is set; its
 // `setupFiles` only reach the inline projects that inherit it, which therefore own them. A project
@@ -766,7 +715,7 @@ function classifyConfigObject(
     plugins &&
     j(plugins)
       .find(j.CallExpression)
-      .some((call) => isCalleeOneOf(call.node.callee, pluginNames))
+      .some((call) => pluginNames.has(calleeName(call.node.callee) ?? ''))
   ) {
     return 'storybook';
   }
@@ -803,7 +752,7 @@ function isMergedConfig(configObject: ObjectExpressionPath) {
   for (let current = configObject.parent; current; current = current.parent) {
     if (
       current.node.type === 'CallExpression' &&
-      isCalleeOneOf(current.node.callee, new Set(['mergeConfig']))
+      calleeName(current.node.callee) === 'mergeConfig'
     ) {
       return true;
     }
@@ -811,15 +760,13 @@ function isMergedConfig(configObject: ObjectExpressionPath) {
   return false;
 }
 
-function isCalleeOneOf(callee: jscodeshift.ASTNode, names: Set<string>) {
+function calleeName(callee: jscodeshift.ASTNode) {
   if (callee.type === 'Identifier') {
-    return names.has(callee.name);
+    return callee.name;
   }
-  return (
-    callee.type === 'MemberExpression' &&
-    callee.property.type === 'Identifier' &&
-    names.has(callee.property.name)
-  );
+  return callee.type === 'MemberExpression' && callee.property.type === 'Identifier'
+    ? callee.property.name
+    : undefined;
 }
 
 /**
@@ -879,26 +826,6 @@ function getEnclosingRootConfig(configObject: ObjectExpressionPath): ObjectExpre
   return getEnclosingConfigObject(projectsProperty);
 }
 
-function toSetupFileEntry(
-  j: jscodeshift.JSCodeshift,
-  node: jscodeshift.ASTNode,
-  configFile: string,
-  baseDir: string,
-  project: ProjectKind
-): SetupFileEntry {
-  const resolved = resolveStaticPath(node, configFile);
-  if (resolved !== null) {
-    return { kind: 'resolved', path: path.resolve(baseDir, resolved), project };
-  }
-  let expression: string;
-  try {
-    expression = j(node).toSource();
-  } catch {
-    expression = String(node.type);
-  }
-  return { kind: 'unresolved', expression, project };
-}
-
 function resolveStaticPath(
   node: jscodeshift.ASTNode | null | undefined,
   configFile: string
@@ -924,7 +851,7 @@ function resolveStaticPath(
     return configDir;
   }
 
-  if (node.type === 'MemberExpression' && isImportMeta(node.object)) {
+  if (node.type === 'MemberExpression' && node.object.type === 'MetaProperty') {
     if (node.property.type === 'Identifier' && node.property.name === 'dirname') {
       return configDir;
     }
@@ -935,15 +862,15 @@ function resolveStaticPath(
     return null;
   }
 
-  if (isCalleeNamed(node.callee, 'fileURLToPath')) {
+  if (calleeName(node.callee) === 'fileURLToPath') {
     const [argument] = node.arguments;
-    if (node.arguments.length !== 1 || !argument) {
+    if (node.arguments.length !== 1) {
       return null;
     }
     if (isImportMetaUrl(argument)) {
       return configFile;
     }
-    if (argument.type === 'NewExpression' && isCalleeNamed(argument.callee, 'URL')) {
+    if (argument.type === 'NewExpression' && calleeName(argument.callee) === 'URL') {
       const [relative, base] = argument.arguments;
       if (argument.arguments.length !== 2 || !isImportMetaUrl(base)) {
         return null;
@@ -977,27 +904,12 @@ function resolveStaticPath(
   return pathMethod === 'join' ? path.join(...segments) : path.resolve(...segments);
 }
 
-function isImportMeta(node: jscodeshift.ASTNode | null | undefined): boolean {
-  return node?.type === 'MetaProperty' || (node?.type === 'Identifier' && node.name === 'import');
-}
-
 function isImportMetaUrl(node: jscodeshift.ASTNode | null | undefined): boolean {
   return (
     node?.type === 'MemberExpression' &&
-    isImportMeta(node.object) &&
+    node.object.type === 'MetaProperty' &&
     node.property?.type === 'Identifier' &&
     node.property.name === 'url'
-  );
-}
-
-function isCalleeNamed(callee: jscodeshift.ASTNode | null | undefined, name: string): boolean {
-  if (callee?.type === 'Identifier') {
-    return callee.name === name;
-  }
-  return (
-    callee?.type === 'MemberExpression' &&
-    callee.property.type === 'Identifier' &&
-    callee.property.name === name
   );
 }
 
@@ -1014,15 +926,10 @@ function getPathMethodName(
   return callee.object?.type === 'Identifier' ? method : null;
 }
 
-/**
- * Removes the entries resolving to a target path from every `setupFiles` value of a Storybook
- * project in the config, and drops the property when a single-valued `setupFiles` or an emptied
- * array pointed at them.
- */
-export function removeSetupFileEntries(
+function removeSetupFileEntries(
   source: string,
   configFile: string,
-  isTargetPath: (resolvedPath: string) => boolean,
+  targets: Set<string>,
   inheritsRootByDefault: ExtendsDefault
 ) {
   const j = jscodeshift.withParser('ts');
@@ -1032,11 +939,7 @@ export function removeSetupFileEntries(
 
   root
     .find(j.ObjectProperty)
-    .filter(
-      (propertyPath) =>
-        isKeyNamed(propertyPath.value.key, 'setupFiles') &&
-        belongsToStorybookProject(j, propertyPath, pluginNames, inheritsRootByDefault)
-    )
+    .filter((propertyPath) => isKeyNamed(propertyPath.value.key, 'setupFiles'))
     .forEach((propertyPath) => {
       const owners = getOwningConfigObjects(j, propertyPath, inheritsRootByDefault);
       const baseDirs = (owners === 'unknown' ? [] : owners)
@@ -1046,35 +949,35 @@ export function removeSetupFileEntries(
         )
         .map((owner) => getSetupFilesBaseDir(propertyPath, owner, configFile))
         .flatMap((base) => ('baseDir' in base ? [base.baseDir] : []));
-      const isTargetNode = (node: jscodeshift.ASTNode) =>
-        baseDirs.some((baseDir) => {
-          const entry = toSetupFileEntry(j, node, configFile, baseDir, 'storybook');
-          return entry.kind === 'resolved' && isTargetPath(entry.path);
-        });
+      const isTarget = (node: jscodeshift.ASTNode | null) => {
+        const resolved = resolveStaticPath(node, configFile);
+        return (
+          resolved !== null &&
+          baseDirs.some((baseDir) => targets.has(path.resolve(baseDir, resolved)))
+        );
+      };
       const value = propertyPath.value.value;
 
       if (value.type !== 'ArrayExpression') {
-        if (isTargetNode(value)) {
+        if (isTarget(value)) {
           propertyPath.prune();
           changed = true;
         }
         return;
       }
 
-      const elements = value.elements;
-      if (!elements.some((element) => element && isTargetNode(element))) {
+      const kept = value.elements.filter((element) => !isTarget(element));
+      if (kept.length === value.elements.length) {
         return;
       }
-
-      value.elements = elements.filter((element) => !(element && isTargetNode(element)));
       changed = true;
-
-      if (value.elements.length === 0) {
+      value.elements = kept;
+      if (kept.length === 0) {
         propertyPath.prune();
       }
     });
 
-  return { code: root.toSource(PRINT_OPTIONS), changed };
+  return changed ? root.toSource(PRINT_OPTIONS) : null;
 }
 
 function isKeyNamed(key: { type: string; name?: unknown; value?: unknown }, name: string) {

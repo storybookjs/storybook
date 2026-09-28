@@ -57,7 +57,7 @@ describe('addonA11yAddonTest', () => {
       ...options,
     });
 
-  const run = (result: { previewFile: string | null; canTransformPreview: boolean }) =>
+  const run = (result: { previewFile: string | null }) =>
     runFix(addonA11yAddonTest, {
       packageManager: {} as any,
       result,
@@ -151,7 +151,7 @@ describe('addonA11yAddonTest', () => {
         },
         configDir,
       });
-      expect(result).toEqual({ previewFile, canTransformPreview: true });
+      expect(result).toEqual({ previewFile });
       expect(vol.readFileSync(previewFile, 'utf8')).toBe('export default {}');
     });
 
@@ -168,7 +168,7 @@ describe('addonA11yAddonTest', () => {
         },
         configDir,
       });
-      expect(result).toEqual({ previewFile: null, canTransformPreview: false });
+      expect(result).toEqual({ previewFile: null });
     });
 
     it('should return a non-transformable previewFile if reading it fails', async () => {
@@ -185,7 +185,7 @@ describe('addonA11yAddonTest', () => {
         },
         configDir,
       });
-      expect(result).toEqual({ previewFile, canTransformPreview: false });
+      expect(result).toEqual({ previewFile: null });
     });
   });
 
@@ -193,7 +193,7 @@ describe('addonA11yAddonTest', () => {
     it('should write the transformed preview file', async () => {
       vol.fromJSON({ [previewFile]: 'export default {};' });
 
-      await run({ previewFile, canTransformPreview: true });
+      await run({ previewFile });
 
       expect(vol.readFileSync(previewFile, 'utf8')).toMatchInlineSnapshot(`
         "export default {
@@ -212,7 +212,7 @@ describe('addonA11yAddonTest', () => {
     it('should throw with instructions when the preview file cannot be transformed', async () => {
       vol.fromJSON({ [previewFile]: 'export default {};' });
 
-      await expect(run({ previewFile, canTransformPreview: false })).rejects
+      await expect(run({ previewFile: null })).rejects
         .toMatchInlineSnapshot(`[Error: The addon-a11y-addon-test automigration couldn't make the changes but here are instructions for doing them yourself:
 We couldn't find or automatically update your .storybook/preview.<ts|js> in your project to smoothly set up parameters.a11y.test from @storybook/addon-a11y. Please manually update your .storybook/preview.<ts|js> file to include the following:
 

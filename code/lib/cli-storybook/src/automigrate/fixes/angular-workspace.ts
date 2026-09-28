@@ -1,21 +1,18 @@
+import { existsSync } from 'node:fs';
+
 import type { JSONEditPath } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
 
 type JsonObject = Record<string, unknown>;
-
-export interface AngularTargetGroup {
-  pathPrefix: JSONEditPath;
-  targets: JsonObject;
-}
 
 const asObject = (value: unknown): JsonObject | undefined =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as JsonObject)
     : undefined;
 
-export const getTargetGroups = (json: unknown): AngularTargetGroup[] => {
+export const getTargetGroups = (json: unknown) => {
   const root = asObject(json);
-  const groups: AngularTargetGroup[] = [];
+  const groups: { pathPrefix: JSONEditPath; targets: JsonObject }[] = [];
 
   for (const [projectName, projectValue] of Object.entries(asObject(root?.projects) ?? {})) {
     const project = asObject(projectValue);
@@ -46,3 +43,11 @@ export const findWorkspaceFiles = async (
     absolute: true,
   });
 };
+
+/** The existing `siblings` of each package.json, plus every Nx `project.json`. */
+export const findWorkspaceJsonFiles = async (packageJsonPaths: string[], siblings: string[]) => [
+  ...packageJsonPaths
+    .flatMap((path) => siblings.map((name) => path.replace(/[/\\]package\.json$/, `/${name}`)))
+    .filter((path) => existsSync(path)),
+  ...(await findWorkspaceFiles('project.json')),
+];

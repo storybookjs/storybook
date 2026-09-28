@@ -5,38 +5,28 @@ import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import { existsSync } from 'node:fs';
-
 import { dirname } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import type { FixFiles } from '../fix-files.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
-import type { Fix, RunOptions } from '../types.ts';
-import { findWorkspaceFiles, getTargetGroups } from './angular-workspace.ts';
+import type { Fix } from '../types.ts';
+import {
+  findWorkspaceFiles,
+  findWorkspaceJsonFiles,
+  getTargetGroups,
+} from './angular-workspace.ts';
 
-export const COMPODOC_PACKAGE = '@compodoc/compodoc';
+const COMPODOC_PACKAGE = '@compodoc/compodoc';
 const SET_COMPODOC_JSON = 'setCompodocJson';
 const ADDON_DOCS_ANGULAR = '@storybook/addon-docs/angular';
 const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 
-/** A workspace JSON file and the exact option paths to delete from it. */
-export interface WorkspaceJsonEdit {
-  filePath: string;
-  optionPaths: JSONEditPath[];
-}
-
-/** A package.json script that runs the Compodoc binary, keyed by the file that declares it. */
-export interface CompodocScript {
-  packageJsonPath: string;
-  scriptName: string;
-}
-
-export interface AngularViteRemoveCompodocOptions {
+interface AngularViteRemoveCompodocOptions {
   hasFrameworkOptions: boolean;
   hasPreviewWiring: boolean;
-  workspaceJsonEdits: WorkspaceJsonEdit[];
-  compodocScripts: CompodocScript[];
+  workspaceJsonEdits: { filePath: string; optionPaths: JSONEditPath[] }[];
+  compodocScripts: { packageJsonPath: string; scriptName: string }[];
   hasCompodocDependency: boolean;
 }
 
@@ -111,15 +101,12 @@ const compodocOptionPaths = (
     )
   );
 
-  const targetDefaults = json?.targetDefaults;
-  const fromTargetDefaults =
-    targetDefaults && typeof targetDefaults === 'object'
-      ? Object.entries<any>(targetDefaults).flatMap(([targetName, target]) =>
-          ownsTargetDefault(targetName, target, builderPackages, everyStorybookTargetIsOwned)
-            ? optionPathsOf(['targetDefaults'], targetName, target)
-            : []
-        )
-      : [];
+  const fromTargetDefaults = Object.entries<any>(json?.targetDefaults ?? {}).flatMap(
+    ([targetName, target]) =>
+      ownsTargetDefault(targetName, target, builderPackages, everyStorybookTargetIsOwned)
+        ? optionPathsOf(['targetDefaults'], targetName, target)
+        : []
+  );
 
   return [...fromTargets, ...fromTargetDefaults];
 };
@@ -226,9 +213,9 @@ const invokesCompodoc = (script: string): boolean =>
 const findCompodocScripts = async (
   files: FixFiles,
   packageJsonPaths: string[]
-): Promise<CompodocScript[]> => {
+): Promise<AngularViteRemoveCompodocOptions['compodocScripts']> => {
   const paths = new Set([...packageJsonPaths, ...(await findWorkspaceFiles('package.json'))]);
-  const scripts: CompodocScript[] = [];
+  const scripts: AngularViteRemoveCompodocOptions['compodocScripts'] = [];
   for (const packageJsonPath of paths) {
     for (const [scriptName, script] of Object.entries<string>(
       (await readJson(files, packageJsonPath))?.scripts ?? {}
@@ -246,7 +233,7 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
   link: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
 
   async check({ files, mainConfig, mainConfigPath, previewConfigPath, packageManager }) {
-    if (!mainConfigPath || getFrameworkPackageName(mainConfig) !== '@storybook/angular-vite') {
+    if (!mainConfigPath || getFrameworkPackageName(mainConfig) !== ANGULAR_VITE_PACKAGE) {
       return null;
     }
 
@@ -264,16 +251,9 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       We'll remove the Compodoc setup that has no effect anymore.
     `,
 
-  run: (options: RunOptions<AngularViteRemoveCompodocOptions>) => removeCompodocSetup(options),
+  run: (options) => removeCompodocSetup(options),
 };
 
-/**
- * Every trace of the Compodoc setup, or `null` when the project carries none.
- *
- * Split from the fix so the angular-to-angular-vite migration can reach it: that migration switches
- * the framework mid-run, which no later fix can see, since every fix is checked against the main
- * config as it was when the run started.
- */
 export const findCompodocSetup = async ({
   files,
   mainConfig,
@@ -285,24 +265,21 @@ export const findCompodocSetup = async ({
   mainConfig: StorybookConfigRaw;
   previewConfigPath?: string;
   packageManager: JsPackageManager;
-  /**
-   * Builder packages whose Compodoc options are dead. `angular-to-angular-vite` also owns
-   * `@storybook/angular`: by the time it asks, every such target has been rewritten already.
-   */
+  /** Builder packages whose Compodoc options no longer have an effect. */
   builderPackages?: string[];
 }): Promise<AngularViteRemoveCompodocOptions | null> => {
   const frameworkOptions =
     typeof mainConfig.framework === 'string' ? undefined : mainConfig.framework?.options;
-  const hasFrameworkOptions = !!(
-    frameworkOptions &&
-    ('compodoc' in frameworkOptions || 'compodocArgs' in frameworkOptions)
-  );
+  const hasFrameworkOptions = COMPODOC_OPTIONS.some((option) => option in (frameworkOptions ?? {}));
 
   const hasPreviewWiring =
     !!previewConfigPath && previewWiresCompodoc(await files.read(previewConfigPath));
 
   const documents: { filePath: string; json: any }[] = [];
-  for (const filePath of await workspaceJsonCandidates(packageManager.packageJsonPaths)) {
+  for (const filePath of await findWorkspaceJsonFiles(packageManager.packageJsonPaths, [
+    'angular.json',
+    'nx.json',
+  ])) {
     const json = await readJson(files, filePath);
     if (json) {
       documents.push({ filePath, json });
@@ -342,7 +319,6 @@ export const findCompodocSetup = async ({
   };
 };
 
-/** Deletes what {@link findCompodocSetup} reported, wherever it lives. */
 export const removeCompodocSetup = async ({
   result,
   files,
@@ -365,10 +341,9 @@ export const removeCompodocSetup = async ({
   } = result;
 
   if (hasFrameworkOptions) {
-    await files.editConfig(mainConfigPath, (main) => {
-      main.remove(['framework', 'options', 'compodoc']);
-      main.remove(['framework', 'options', 'compodocArgs']);
-    });
+    await files.editConfig(mainConfigPath, (main) =>
+      COMPODOC_OPTIONS.forEach((option) => main.remove(['framework', 'options', option]))
+    );
     logger.step(`Removed the Compodoc framework options from ${mainConfigPath}`);
   }
 
@@ -377,7 +352,12 @@ export const removeCompodocSetup = async ({
   }
 
   for (const { filePath, optionPaths } of workspaceJsonEdits) {
-    await removeCompodocOptions(files, filePath, optionPaths);
+    const changed = await files.edit(filePath, (source) =>
+      optionPaths.reduce((text, path) => editJsonText(text, path, undefined), source)
+    );
+    if (changed.length > 0) {
+      logger.step(`Removed the Compodoc builder options from ${filePath}`);
+    }
   }
 
   if (hasCompodocDependency) {
@@ -400,13 +380,8 @@ export const removeCompodocSetup = async ({
 /** npm/bun, yarn and pnpm each declare version pins under a different key. */
 const OVERRIDE_CONTAINERS = [['overrides'], ['resolutions'], ['pnpm', 'overrides']] as const;
 
-/**
- * Drops version pins for a dependency nothing depends on anymore.
- *
- * The edit goes through the package manager rather than `node:fs`: `JsPackageManager` reads
- * package.json through a process-wide cache that no raw write invalidates, so every later
- * `addDependencies`/`removeDependencies` would serialise the pre-edit snapshot back over the file.
- */
+// `JsPackageManager` caches package.json process-wide, so a raw write would be undone by its next
+// dependency change.
 const removeCompodocOverrides = async (
   files: FixFiles,
   packageManager: JsPackageManager
@@ -434,7 +409,6 @@ const manualRemovalHint = (previewConfigPath: string, reason: string) =>
       `a documentation.json import on its own still ships in your bundle.`
   );
 
-/** Counts how often a binding is still read, so an import is only dropped once nothing needs it. */
 const countReferences = (program: t.Program, name: string): number => {
   let references = 0;
   traverse(t.file(program), {
@@ -523,37 +497,5 @@ const removePreviewWiring = async (files: FixFiles, previewConfigPath: string): 
   });
   if (changed.length > 0) {
     logger.step(`Removed the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`);
-  }
-};
-
-/**
- * `angular.json` and `nx.json` beside each package.json, plus every Nx `project.json`.
- *
- * Nx scatters `project.json` files (one per library) away from any package.json, so they have
- * to be globbed rather than derived, the same way the angular-to-angular-vite migration finds them.
- */
-const workspaceJsonCandidates = async (packageJsonPaths: string[]): Promise<string[]> => {
-  const siblingPaths = packageJsonPaths
-    .flatMap((pkgJsonPath) =>
-      ['angular.json', 'nx.json'].map((name) =>
-        pkgJsonPath.replace(/[/\\]package\.json$/, `/${name}`)
-      )
-    )
-    .filter((path) => existsSync(path));
-
-  return [...siblingPaths, ...(await findWorkspaceFiles('project.json'))];
-};
-
-/** Drops the `compodoc` and `compodocArgs` builder options, which angular-vite never read. */
-const removeCompodocOptions = async (
-  files: FixFiles,
-  workspaceJsonPath: string,
-  optionPaths: JSONEditPath[]
-): Promise<void> => {
-  const changed = await files.edit(workspaceJsonPath, (source) =>
-    optionPaths.reduce((text, path) => editJsonText(text, path, undefined), source)
-  );
-  if (changed.length > 0) {
-    logger.step(`Removed the Compodoc builder options from ${workspaceJsonPath}`);
   }
 };

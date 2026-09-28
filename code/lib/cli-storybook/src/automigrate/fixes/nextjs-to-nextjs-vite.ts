@@ -1,5 +1,4 @@
 import { transformImports } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 
 import type { Fix } from '../types.ts';
 
@@ -21,7 +20,6 @@ export const nextjsToNextjsVite: Fix = {
   transform: () => [
     {
       filter: { kind: ['main'] },
-      // The negative lookahead keeps existing @storybook/nextjs-vite references intact
       handler: (code) => code.replace(/@storybook\/nextjs(?!-vite)/g, '@storybook/nextjs-vite'),
     },
     {
@@ -35,12 +33,7 @@ export const nextjsToNextjsVite: Fix = {
     await packageManager.removeDependencies(['@storybook/nextjs']);
     await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
       `@storybook/nextjs-vite@${storybookVersion}`,
-      ...(viteVersion ? [] : [`vite@${VITE_DEFAULT_VERSION}`]), // Add vite if it's not installed yet
+      ...(viteVersion ? [] : [`vite@${VITE_DEFAULT_VERSION}`]),
     ]);
-
-    logger.step('Migration completed successfully!');
-    logger.log(
-      `For more information, see: https://storybook.js.org/docs/get-started/frameworks/nextjs-vite`
-    );
   },
 };

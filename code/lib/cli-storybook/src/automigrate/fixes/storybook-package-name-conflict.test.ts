@@ -22,9 +22,7 @@ const check = async (packageName: string) => {
 describe('storybookPackageNameConflict', () => {
   describe('check', () => {
     it('detects when package name is "storybook"', async () => {
-      await expect(check('storybook')).resolves.toEqual({
-        packageName: 'storybook',
-      });
+      await expect(check('storybook')).resolves.toEqual({});
     });
 
     it('returns null when package name is something else', async () => {

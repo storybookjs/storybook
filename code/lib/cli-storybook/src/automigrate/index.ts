@@ -435,7 +435,13 @@ export async function runFixes({
     return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
   }
 
-  const taskLog = prompt.taskLog({ id: 'automigrate-run', title: 'Running automigrations' });
+  const taskLog = prompt.taskLog({
+    id: 'automigrate-run',
+    title:
+      selected.length === 1
+        ? `Running ${picocolors.cyan(selected[0].fix.id)} migration`
+        : 'Running automigrations',
+  });
   const outcomes = await applyFixes(
     { ...project, skipInstall, yes, addonsToPostinstall },
     selected
@@ -462,10 +468,12 @@ export async function runFixes({
       );
     }
   }
+  const ran =
+    selected.length === 1 ? `${picocolors.cyan(selected[0].fix.id)} migration` : 'automigrations';
   if (Object.values(fixResults).includes(FixStatus.FAILED)) {
-    taskLog.error('Some automigrations failed');
+    taskLog.error(selected.length === 1 ? `Could not run ${ran}` : 'Some automigrations failed');
   } else {
-    taskLog.success('Ran automigrations');
+    taskLog.success(`Ran ${ran}`);
   }
 
   return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };

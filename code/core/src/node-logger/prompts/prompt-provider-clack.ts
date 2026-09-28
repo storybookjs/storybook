@@ -118,7 +118,9 @@ export class ClackPromptProvider extends PromptProvider {
 
   taskLog(options: TaskLogOptions): TaskLogInstance {
     const isCurrentTaskActive = !!getCurrentTaskLog();
-    const task = getCurrentTaskLog() || clack.taskLog(options);
+    // A log taller than the terminal is redrawn into the scrollback on every update; the trimmed
+    // lines are retained for a log shown on error.
+    const task = getCurrentTaskLog() || clack.taskLog({ limit: 10, retainLog: true, ...options });
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 

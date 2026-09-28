@@ -42,7 +42,7 @@ interface Results {
  * Cache the lookup so the config-file scan runs once per process instead of once per story file —
  * without this, projects without a `svelte.config.js` get one
  * "no Svelte config found ... using default configuration" log line per story file.
- * Trade-off: adding a svelte.config file while `storybook dev` runs requires a restart to be picked up.
+ * Trade-off: adding or changing a svelte.config file while `storybook dev` runs requires a restart to be picked up.
  */
 let svelteConfigPromise: Promise<Partial<SvelteConfig> | undefined> | undefined;
 

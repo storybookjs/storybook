@@ -36,7 +36,7 @@ describe('nextjs-to-nextjs-vite', () => {
   } as unknown as JsPackageManager;
 
   const runOptions = {
-    result: { hasNextjsPackage: true, packageJsonFiles: [] },
+    result: {},
     packageManager: mockPackageManager,
     mainConfigPath: '/project/.storybook/main.ts',
     storiesPaths: ['/project/src/Button.stories.tsx'],
@@ -64,41 +64,23 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(result).toBeNull();
     });
 
-    it('should return migration options if @storybook/nextjs is installed', async () => {
+    it('applies when @storybook/nextjs is installed and a file references it', async () => {
       mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
         '@storybook/nextjs': '^9.0.0',
-        '@storybook/react': '^9.0.0',
       });
       vol.fromJSON({
-        '/project/package.json': JSON.stringify({
-          dependencies: { '@storybook/nextjs': '^9.0.0' },
-        }),
+        '/project/.storybook/main.ts': "export default { framework: '@storybook/nextjs' };",
+        '/project/.storybook/preview.ts': 'export default {};',
+        '/project/src/Button.stories.tsx': 'export default {};',
       });
 
       const result = await checkFix(nextjsToNextjsVite, {
+        ...runOptions,
         packageManager: mockPackageManager,
-      } as CheckOptions);
+      } as unknown as CheckOptions);
 
-      expect(result).toEqual({
-        hasNextjsPackage: true,
-        packageJsonFiles: ['/project/package.json'],
-      });
-    });
-
-    it('should handle invalid package.json files gracefully', async () => {
-      mockPackageManager.getAllDependencies = vi.fn().mockReturnValue({
-        '@storybook/nextjs': '^9.0.0',
-      });
-      vol.fromJSON({ '/project/package.json': '{ invalid' });
-
-      const result = await checkFix(nextjsToNextjsVite, {
-        packageManager: mockPackageManager,
-      } as CheckOptions);
-
-      expect(result).toEqual({
-        hasNextjsPackage: true,
-        packageJsonFiles: [],
-      });
+      expect(result).toEqual({});
+      expect(vol.toJSON()['/project/.storybook/main.ts']).toContain("'@storybook/nextjs'");
     });
   });
 
@@ -165,13 +147,16 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(vol.toJSON()['/project/.storybook/main.ts']).toBe(mainConfig);
     });
 
-    it('should fail without touching dependencies when the main config cannot be read', async () => {
+    it('reports an unreadable main config and still migrates the other files', async () => {
       vol.unlinkSync('/project/.storybook/main.ts');
 
-      await expect(runFix(nextjsToNextjsVite, runOptions)).rejects.toThrow(
-        '/project/.storybook/main.ts'
-      );
-      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      const failures = await runFix(nextjsToNextjsVite, runOptions);
+
+      expect(failures).toEqual([
+        { file: '/project/.storybook/main.ts', message: expect.stringContaining('ENOENT') },
+      ]);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).toContain('@storybook/nextjs-vite');
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
     });
   });
 });

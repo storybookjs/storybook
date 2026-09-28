@@ -24,6 +24,7 @@ const check = () =>
   checkFix(setConfigLayout, {
     packageManager,
     configDir,
+    mainConfigPath: '/project/.storybook/main.ts',
     mainConfig,
     storybookVersion: '11.0.0',
     storiesPaths: [],

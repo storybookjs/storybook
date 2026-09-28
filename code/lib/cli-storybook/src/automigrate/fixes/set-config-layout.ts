@@ -1,7 +1,6 @@
-import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
+import { formatFileContent, HandledError } from 'storybook/internal/common';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
-import type { FixFiles } from '../fix-files.ts';
 import type { Fix } from '../types.ts';
 
 const managerApiPackages = new Set(['storybook/manager-api', '@storybook/manager-api']);
@@ -22,10 +21,6 @@ const optionGroups = {
   ],
   ui: ['enableShortcuts'],
 };
-
-interface SetConfigLayoutOptions {
-  managerConfigPath: string;
-}
 
 export const transformSetConfigLayout = (
   source: string,
@@ -51,32 +46,19 @@ export const transformSetConfigLayout = (
   return managerConfig.changed ? formatConfig(managerConfig) : source;
 };
 
-const migrateSetConfigLayout = (files: FixFiles, managerConfigPath: string) =>
-  files.edit(managerConfigPath, (source) => {
-    const transformed = transformSetConfigLayout(source, managerConfigPath);
-    return transformed === source ? null : formatFileContent(managerConfigPath, transformed);
-  });
-
-export const setConfigLayout: Fix<SetConfigLayoutOptions> = {
+export const setConfigLayout: Fix = {
   id: 'set-config-layout',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed',
 
-  async check({ configDir, files }) {
-    if (!configDir) {
-      return null;
-    }
-    const managerConfigPath = findConfigFile('manager', configDir);
-    if (!managerConfigPath) {
-      return null;
-    }
-
-    const changed = await migrateSetConfigLayout(files, managerConfigPath);
-    return changed.length > 0 ? { managerConfigPath } : null;
-  },
-
   prompt: () => 'Move top-level setConfig layout and UI options into their nested objects',
 
-  async run({ files, result }) {
-    await migrateSetConfigLayout(files, result.managerConfigPath);
-  },
+  transform: () => [
+    {
+      filter: { kind: ['manager'] },
+      handler: (code, { id }) => {
+        const transformed = transformSetConfigLayout(code, id);
+        return transformed === code ? null : formatFileContent(id, transformed);
+      },
+    },
+  ],
 };

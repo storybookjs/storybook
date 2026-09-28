@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
-import { type WrapGetAbsolutePathRunOptions, wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
+import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs/promises')>()),
@@ -18,7 +18,8 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as Omit<CheckOptions, 'files'>);
+        storiesPaths: [],
+      } as unknown as Omit<CheckOptions, 'files'>);
 
       await expect(check).resolves.toBeNull();
     });
@@ -30,13 +31,10 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as Omit<CheckOptions, 'files'>);
+        storiesPaths: [],
+      } as unknown as Omit<CheckOptions, 'files'>);
 
-      await expect(check).resolves.toEqual({
-        isConfigTypescript: false,
-        isStorybookInMonorepo: true,
-        storybookVersion: '7.0.0',
-      });
+      await expect(check).resolves.toEqual({});
     });
 
     it('should return null, if all fields have the require wrapper', async () => {
@@ -46,7 +44,8 @@ describe('wrapGetAbsolutePath', () => {
         },
         storybookVersion: '7.0.0',
         mainConfigPath: require.resolve('./__test__/main-config-with-wrappers.js'),
-      } as Omit<CheckOptions, 'files'>);
+        storiesPaths: [],
+      } as unknown as Omit<CheckOptions, 'files'>);
 
       await expect(check).resolves.toBeNull();
     });
@@ -56,10 +55,9 @@ describe('wrapGetAbsolutePath', () => {
     it('should wrap the require wrapper', async () => {
       await runFix(wrapGetAbsolutePath, {
         mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-        result: {
-          isConfigTypescript: false,
-        },
-      } as Omit<RunOptions<WrapGetAbsolutePathRunOptions>, 'files'>);
+        storiesPaths: [],
+        result: {},
+      } as unknown as Omit<RunOptions<object>, 'files'>);
 
       const writeFile = vi.mocked((await import('node:fs/promises')).writeFile);
 

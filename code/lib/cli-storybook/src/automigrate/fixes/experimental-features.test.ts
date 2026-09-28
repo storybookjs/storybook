@@ -50,7 +50,10 @@ const checkOptions = (overrides: Partial<CheckOptions> = {}): CheckOptions =>
 const withFeatures = (features: StorybookConfigRaw['features']): StorybookConfigRaw =>
   ({ ...REACT_MAIN_CONFIG, features }) as StorybookConfigRaw;
 
-const runOptions = { mainConfigPath: MAIN_CONFIG_PATH } as Omit<RunOptions<object>, 'files'>;
+const runOptions = { mainConfigPath: MAIN_CONFIG_PATH, storiesPaths: [] } as unknown as Omit<
+  RunOptions<object>,
+  'files'
+>;
 
 describe('experimental feature flag automigrations', () => {
   beforeEach(() => {
@@ -81,21 +84,21 @@ describe('experimental feature flag automigrations', () => {
       });
 
       it('is not offered on an upgrade that stops short of its own version', async () => {
-        const result = await futureFlag.check(
+        const result = await futureFlag.check!(
           checkOptions({ beforeVersion: '10.4.0', storybookVersion: '10.5.0' })
         );
         expect(result).toBeNull();
       });
 
       it('is offered on the upgrade that crosses its own version', async () => {
-        const result = await futureFlag.check(
+        const result = await futureFlag.check!(
           checkOptions({ beforeVersion: '10.6.0', storybookVersion: '10.7.0' })
         );
         expect(result).not.toBeNull();
       });
 
       it('is not written into a project older than its own version, even when requested', async () => {
-        const result = await futureFlag.check(
+        const result = await futureFlag.check!(
           checkOptions({ beforeVersion: undefined, storybookVersion: '10.6.0', requested: true })
         );
         expect(result).toBeNull();
@@ -110,28 +113,28 @@ describe('experimental feature flag automigrations', () => {
       ['already past the boundary', '10.5.0', '10.6.0', false],
       ['not reaching the boundary', '10.3.0', '10.4.0', false],
     ])('%s', async (_label, beforeVersion, storybookVersion, expected) => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ beforeVersion, storybookVersion })
       );
       expect(result !== null).toBe(expected);
     });
 
     it('is not offered outside an upgrade unless the fix was requested by name', async () => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ beforeVersion: undefined })
       );
       expect(result).toBeNull();
     });
 
     it('is offered outside an upgrade when the fix was requested by name', async () => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ beforeVersion: undefined, requested: true })
       );
       expect(result).not.toBeNull();
     });
 
     it('is offered on a project already past the boundary when requested by name', async () => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ beforeVersion: '10.5.0', storybookVersion: '10.6.0', requested: true })
       );
       expect(result).not.toBeNull();
@@ -140,7 +143,7 @@ describe('experimental feature flag automigrations', () => {
     it.each(['10.4.0', '9.1.0'])(
       'is never offered against Storybook %s, even when requested by name',
       async (storybookVersion) => {
-        const result = await enableExperimentalDocgenServer.check(
+        const result = await enableExperimentalDocgenServer.check!(
           checkOptions({ storybookVersion, beforeVersion: undefined, requested: true })
         );
         expect(result).toBeNull();
@@ -148,21 +151,21 @@ describe('experimental feature flag automigrations', () => {
     );
 
     it.each([true, false])('is not offered when already explicitly set to %s', async (value) => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ mainConfig: withFeatures({ experimentalDocgenServer: value }) })
       );
       expect(result).toBeNull();
     });
 
     it('is not offered without a resolvable main config', async () => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ mainConfigPath: undefined })
       );
       expect(result).toBeNull();
     });
 
     it('does not offer experimentalReview when changeDetection is explicitly disabled', async () => {
-      const result = await enableExperimentalReview.check(
+      const result = await enableExperimentalReview.check!(
         checkOptions({ mainConfig: withFeatures({ changeDetection: false }) })
       );
       expect(result).toBeNull();
@@ -181,14 +184,14 @@ describe('experimental feature flag automigrations', () => {
       ['@storybook/preact-vite', false],
       ['@storybook/angular', false],
     ])('%s offers enable-experimental-docgen-server: %s', async (framework, expected) => {
-      const result = await enableExperimentalDocgenServer.check(
+      const result = await enableExperimentalDocgenServer.check!(
         checkOptions({ mainConfig: { framework: { name: framework } } as StorybookConfigRaw })
       );
       expect(result !== null).toBe(expected);
     });
 
     it('offers enable-experimental-review regardless of the docgen provider', async () => {
-      const result = await enableExperimentalReview.check(
+      const result = await enableExperimentalReview.check!(
         checkOptions({
           mainConfig: { framework: { name: '@storybook/svelte-vite' } } as StorybookConfigRaw,
         })

@@ -476,7 +476,10 @@ describe('check', () => {
 });
 
 describe('run', () => {
-  const runWith = async (result: Awaited<ReturnType<typeof FixType.check>>, pm: JsPackageManager) =>
+  const runWith = async (
+    result: Awaited<ReturnType<NonNullable<typeof FixType.check>>>,
+    pm: JsPackageManager
+  ) =>
     runFix(angularViteRemoveCompodoc, {
       result: result!,
       mainConfigPath: MAIN,

@@ -2,6 +2,7 @@ import type { JsPackageManager, PackageManagerName } from 'storybook/internal/co
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import type { FixFiles } from './fix-files.ts';
+import type { FixTransform } from './pipeline.ts';
 
 export interface CheckOptions {
   packageManager: JsPackageManager;
@@ -59,9 +60,10 @@ export interface RunOptions<ResultType> {
  */
 export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 
+type Check<ResultType> = (options: CheckOptions) => Promise<ResultType | null>;
+
 type BaseFix<ResultType = any> = {
   id: string;
-  check: (options: CheckOptions) => Promise<ResultType | null>;
   /** Keep the prompt message short and concise. */
   prompt: () => string;
   /** Whether the automigration is selected by default when the user is prompted. */
@@ -73,13 +75,40 @@ type PromptType<ResultType = any, T = Prompt> =
   | T
   | ((result: ResultType) => Promise<Prompt> | Prompt);
 
+export type TransformOptions<ResultType> = Omit<CheckOptions, 'files' | 'requested'> & {
+  result: ResultType;
+};
+
+type Run<ResultType> = (options: RunOptions<ResultType>) => Promise<void>;
+
+/**
+ * Create the fix's per-file hooks for one project. The runner calls it once per project and pass
+ * (detection, then apply), so the hooks may keep state across the files of that pass.
+ */
+type Transform<ResultType> = (options: TransformOptions<ResultType>) => FixTransform[];
+
 export type Fix<ResultType = any> =
   | ({
       promptType?: PromptType<ResultType, 'auto'>;
-      run: (options: RunOptions<ResultType>) => Promise<void>;
-    } & BaseFix<ResultType>)
+    } & (
+      | {
+          /**
+           * File edits, applied in one read-transform-write pass shared by all selected fixes. A
+           * fix with only `transform` applies when its hooks would change a file.
+           */
+          transform: Transform<ResultType>;
+          /** Gate the fix before its hooks run; defaults to applying whenever the hooks change a file. */
+          check?: Check<ResultType>;
+          /** Work after the file pass that is not a file edit, such as dependency changes. */
+          run?: Run<ResultType>;
+        }
+      | { transform?: undefined; check: Check<ResultType>; run: Run<ResultType> }
+    ) &
+      BaseFix<ResultType>)
   | ({
       promptType: PromptType<ResultType, 'manual' | 'notification'>;
+      check: Check<ResultType>;
+      transform?: never;
       run?: never;
     } & BaseFix<ResultType>);
 
@@ -92,7 +121,7 @@ export type CommandFixRunOptions = Omit<RunOptions<null>, 'files' | 'addonsToPos
 export type CommandFix = {
   promptType: 'command';
   run: (options: CommandFixRunOptions) => Promise<void>;
-} & Omit<BaseFix, 'check' | 'prompt'>;
+} & Omit<BaseFix, 'prompt'>;
 
 export type FixId = string;
 

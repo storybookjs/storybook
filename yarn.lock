@@ -10765,21 +10765,35 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte@workspace:code/renderers/svelte"
   dependencies:
+    "@storybook/builder-vite": "workspace:*"
+    "@sveltejs/package": "npm:^2.5.4"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@testing-library/svelte": "npm:^5.2.4"
+    es-toolkit: "npm:^1.43.0"
+    esrap: "npm:1.2.2"
+    magic-string: "npm:^0.30.12"
+    rollup: "npm:^4.43.0"
     svelte: "npm:^5.39.5"
+    svelte-ast-print: "npm:^0.4.0"
     svelte-check: "npm:^4.4.8"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
+    zimmerframe: "npm:^1.1.2"
   peerDependencies:
+    "@sveltejs/vite-plugin-svelte": ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
     typescript: ^5.9.0 || ^6.0.0
+    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
   peerDependenciesMeta:
+    "@sveltejs/vite-plugin-svelte":
+      optional: true
     typescript:
+      optional: true
+    vite:
       optional: true
   languageName: unknown
   linkType: soft
@@ -10929,6 +10943,23 @@ __metadata:
   peerDependencies:
     acorn: ^8.9.0
   checksum: 10c0/0927a6ca5cfbdfb9da7aa258301e09dd6ef03cc61482e13f85c0a65dacb022569f23c5dd2445307bb3a10cb7d77403c0e3a0d4a536d99afa824b13c4c245e388
+  languageName: node
+  linkType: hard
+
+"@sveltejs/package@npm:^2.5.4":
+  version: 2.5.8
+  resolution: "@sveltejs/package@npm:2.5.8"
+  dependencies:
+    chokidar: "npm:^5.0.0"
+    kleur: "npm:^4.1.5"
+    sade: "npm:^1.8.1"
+    semver: "npm:^7.5.4"
+    svelte2tsx: "npm:~0.7.55"
+  peerDependencies:
+    svelte: ^3.44.0 || ^4.0.0 || ^5.0.0-next.1
+  bin:
+    svelte-package: svelte-package.js
+  checksum: 10c0/4c4858389eab7dd684e88b09dc771f2b3bdde7446dba98782e1bcedc48025c1573b7326d9f507da1d596af4332f265053e9f7b372da71b235036d4428555af41
   languageName: node
   linkType: hard
 
@@ -24683,7 +24714,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"kleur@npm:4.1.5":
+"kleur@npm:4.1.5, kleur@npm:^4.1.5":
   version: 4.1.5
   resolution: "kleur@npm:4.1.5"
   checksum: 10c0/e9de6cb49657b6fa70ba2d1448fd3d691a5c4370d8f7bbf1c2f64c24d461270f2117e1b0afe8cb3114f13bbd8e51de158c2a224953960331904e636a5e4c0f2a
@@ -31874,7 +31905,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sade@npm:^1.7.4":
+"sade@npm:^1.7.4, sade@npm:^1.8.1":
   version: 1.8.1
   resolution: "sade@npm:1.8.1"
   dependencies:
@@ -33862,16 +33893,16 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte2tsx@npm:^0.7.55":
-  version: 0.7.55
-  resolution: "svelte2tsx@npm:0.7.55"
+"svelte2tsx@npm:^0.7.55, svelte2tsx@npm:~0.7.55":
+  version: 0.7.61
+  resolution: "svelte2tsx@npm:0.7.61"
   dependencies:
     dedent-js: "npm:^1.0.1"
     scule: "npm:^1.3.0"
   peerDependencies:
     svelte: ^3.55 || ^4.0.0-next.0 || ^4.0 || ^5.0.0-next.0
     typescript: ^4.9.4 || ^5.0.0 || ^6.0.0
-  checksum: 10c0/781964da7a1b8fd9338242bfc164233aaeec63671365a5af303b6e0ec9d1262cf0485be9eb6b7b9cd75bb03e63324236b404372d6a52659e4b2d2779656356c6
+  checksum: 10c0/4aca1e93cc497b7808e2ff1cca99b7f5eebdbed40a95d45b0c7c67ba5364244b8e2710e49441a63eff0518693df8ca44ddb92f38595808004e8eff9eab908768
   languageName: node
   linkType: hard
 

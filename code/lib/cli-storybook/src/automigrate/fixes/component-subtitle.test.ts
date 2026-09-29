@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { formatFileContent, JsPackageManager } from 'storybook/internal/common';
+import { formatExistingFile, JsPackageManager } from 'storybook/internal/common';
 
 import { fs, vol } from 'memfs';
 
@@ -40,7 +40,7 @@ describe('component-subtitle', () => {
     vol.reset();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+    vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
   });
 
   afterEach(() => {
@@ -54,6 +54,16 @@ describe('component-subtitle', () => {
 
     fs.writeFileSync(storyPath, "export default { parameters: { componentSubtitle: 'A' } };");
     expect(await checkFix(componentSubtitle, options)).toEqual({});
+  });
+
+  it('leaves MDX docs that mention componentSubtitle to the author', async () => {
+    const docsPath = resolve('src/Intro.mdx');
+    vol.fromJSON({
+      [previewConfigPath]: 'export default {};',
+      [docsPath]: "<Meta parameters={{ componentSubtitle: 'A' }} />",
+    });
+
+    expect(await checkFix(componentSubtitle, { ...options, storiesPaths: [docsPath] })).toBeNull();
   });
 
   it('moves componentSubtitle to docs.subtitle in the preview and meta, where the Subtitle block read it', async () => {
@@ -101,7 +111,9 @@ describe('component-subtitle', () => {
 
     const result = await migrate({ story });
 
-    expect(result.failures).toEqual([{ file: storyPath, message: expect.any(String) }]);
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.any(String) },
+    ]);
     expect(result.story).toBe(story);
   });
 });

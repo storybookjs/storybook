@@ -30,7 +30,7 @@ export const componentSubtitle: Fix = {
 
   transform: () => [
     {
-      filter: { kind: ['preview', 'story'], id: /\.[cm]?[jt]sx?$/, code: 'componentSubtitle' },
+      filter: { kind: ['preview', 'story'], code: 'componentSubtitle' },
       editConfig: migrate,
       editCsf: (csf) => csf.objects({ stories: false }).forEach(migrate),
     },

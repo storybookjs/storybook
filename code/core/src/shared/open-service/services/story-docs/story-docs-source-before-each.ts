@@ -1,3 +1,4 @@
+import { logger } from 'storybook/internal/client-logger';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
 import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
@@ -56,6 +57,11 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
         context,
         snippet === undefined && warning ? `${warning} Showing the story source instead.` : warning
       );
+    })
+    // The snippet is a Code panel nicety; a failed load must not surface as an unhandled rejection
+    // that fails the story's play function.
+    .catch((error: unknown) => {
+      logger.debug(`Story docs snippet for ${storyId} unavailable: ${String(error)}`);
     });
 
   return () => {

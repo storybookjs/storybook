@@ -1,4 +1,4 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
 import dedent from 'dedent';
 import { print } from 'esrap';
 import { parseAst } from 'rollup/parseAst';
@@ -16,7 +16,7 @@ describe(insertDefineMetaParameters.name, () => {
   it('works when defineMeta gets an empty object', async ({ expect }) => {
     const code = dedent`
       <script module>
-        import { defineMeta } from "${pkg.name}";
+        import { defineMeta } from "${SVELTE_CSF_IMPORT_SOURCE}";
 
         /** Description of the component */
         const { Story } = defineMeta({});

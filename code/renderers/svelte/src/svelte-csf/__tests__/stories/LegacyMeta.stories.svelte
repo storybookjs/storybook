@@ -1,5 +1,5 @@
 <script context="module">
-  import { Meta, Story, Template } from '@storybook/addon-svelte-csf';
+  import { Meta, Story, Template } from '@storybook/svelte/csf';
   import { expect, within } from 'storybook/test';
 
   import LegacyMeta from './LegacyMeta.svelte';

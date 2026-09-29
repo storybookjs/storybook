@@ -18,12 +18,12 @@ describe(extractModuleNodes.name, () => {
       defineMeta(...) should be called inside a module script tag, like so:
 
       <script module>
-      import { defineMeta } from "@storybook/addon-svelte-csf";
+      import { defineMeta } from "@storybook/svelte/csf";
 
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
       ]
     `);
   });
@@ -35,17 +35,17 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
-      does not import defineMeta from "@storybook/addon-svelte-csf" inside the module context.
+      does not import defineMeta from "@storybook/svelte/csf" inside the module context.
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 
       <script module>
-      import { defineMeta } from "@storybook/addon-svelte-csf";
+      import { defineMeta } from "@storybook/svelte/csf";
 
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
       ]
     `);
   });
@@ -54,7 +54,7 @@ describe(extractModuleNodes.name, () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
         </script>
       `,
     });
@@ -65,12 +65,12 @@ describe(extractModuleNodes.name, () => {
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
-      import { defineMeta } from "@storybook/addon-svelte-csf";
+      import { defineMeta } from "@storybook/svelte/csf";
 
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -79,7 +79,7 @@ describe(extractModuleNodes.name, () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           defineMeta();
         </script>`,
     });
@@ -90,12 +90,12 @@ describe(extractModuleNodes.name, () => {
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
-      import { defineMeta } from "@storybook/addon-svelte-csf";
+      import { defineMeta } from "@storybook/svelte/csf";
 
       const { Story } = defineMeta({});
       </script>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
     `);
   });
@@ -104,7 +104,7 @@ describe(extractModuleNodes.name, () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>`,
     });
@@ -116,7 +116,7 @@ describe(extractModuleNodes.name, () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story, meta } = defineMeta();
         </script>
       `,
@@ -129,7 +129,7 @@ describe(extractModuleNodes.name, () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
       `,
@@ -148,7 +148,7 @@ describe(extractModuleNodes.name, () => {
     const { module } = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta as dm } from "@storybook/addon-svelte-csf"
+          import { defineMeta as dm } from "@storybook/svelte/csf"
           const { Story: S, meta: m } = dm();
         </script>
       `,

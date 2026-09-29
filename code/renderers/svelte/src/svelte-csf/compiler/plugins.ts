@@ -19,6 +19,7 @@ import { transformStoriesCode } from './post-transform/index.ts';
 import { getSvelteAST } from '../parser/ast.ts';
 import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.ts';
 import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.ts';
+import { SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE } from '../constants.ts';
 
 export async function preTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { print }] = await Promise.all([
@@ -88,7 +89,7 @@ export async function transformPlugin(): Promise<Plugin> {
     config() {
       return {
         optimizeDeps: {
-          include: ['@storybook/addon-svelte-csf/internal/create-runtime-stories'],
+          include: [SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE],
         },
       };
     },

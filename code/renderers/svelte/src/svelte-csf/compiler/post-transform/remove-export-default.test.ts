@@ -37,7 +37,7 @@ describe(removeExportDefault.name, () => {
       `
       [SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003 (NoExportDefaultError): Could not find 'export default' in the compiled output of the stories file: <path not specified>
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003
       ]
     `
     );

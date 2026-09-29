@@ -8,7 +8,7 @@ describe(createRuntimeStoriesImport.name, () => {
     const stringified = print(createRuntimeStoriesImport()).code;
 
     expect(stringified).toMatchInlineSnapshot(
-      `"import { createRuntimeStories } from "@storybook/addon-svelte-csf/internal/create-runtime-stories";"`
+      `"import { createRuntimeStories } from "@storybook/svelte/internal/svelte-csf/create-runtime-stories";"`
     );
   });
 });

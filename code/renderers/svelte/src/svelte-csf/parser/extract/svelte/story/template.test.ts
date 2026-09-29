@@ -11,7 +11,7 @@ describe(extractStoryTemplateSnippetBlock.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -39,7 +39,7 @@ describe(extractStoryTemplateSnippetBlock.name, () => {
   it('returns undefined, when a `<Story>` compponent is a self-closing tag', async ({ expect }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 

@@ -1,6 +1,7 @@
 import url from 'node:url';
 
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
 
 import type { SvelteAST } from '../parser/ast.ts';
 
@@ -11,8 +12,8 @@ import type { SvelteAST } from '../parser/ast.ts';
  */
 export abstract class StorybookSvelteCSFError extends Error {
   public static isStorybookCSFSvelteError = true;
-  public static packageName = pkg.name;
-  public static packageVersion = pkg.version;
+  public static importSource = SVELTE_CSF_IMPORT_SOURCE;
+  public static packageVersion = rendererPkg.version;
 
   public static readonly CATEGORY = {
     parserExtractSvelte: 'PARSER_EXTRACT_SVELTE',
@@ -88,7 +89,7 @@ export abstract class StorybookSvelteCSFError extends Error {
     let page: string | undefined;
 
     if (this.documentation === true) {
-      page = `https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#${this.fullErrorCode}`;
+      page = `https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#${this.fullErrorCode}`;
     } else if (typeof this.documentation === 'string') {
       page = this.documentation;
     } else if (Array.isArray(this.documentation)) {

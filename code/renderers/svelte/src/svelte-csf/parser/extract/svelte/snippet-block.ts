@@ -54,7 +54,7 @@ export function findStoryAttributeTemplateSnippetBlock(options: {
  *
  * ```svelte
  * <script>
- *   import { defineMeta } from "@storybook/addon-svelte-csf";
+ *   import { defineMeta } from "@storybook/svelte/csf";
  *
  *   const { Story } = defineMeta({
  *     render: myCustomTemplate,

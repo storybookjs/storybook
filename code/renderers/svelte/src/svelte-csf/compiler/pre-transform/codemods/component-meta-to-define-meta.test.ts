@@ -10,7 +10,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
   it('works with a simple example', async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Meta } from "@storybook/addon-svelte-csf";
+        import { Meta } from "@storybook/svelte/csf";
       </script>
 
       <Meta title="Atoms/Button" component={Button} />
@@ -31,7 +31,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
   it('leading comments are included', async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Meta } from "@storybook/addon-svelte-csf";
+        import { Meta } from "@storybook/svelte/csf";
       </script>
 
 			<!-- This is a description for the **Button** component stories. -->
@@ -57,7 +57,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
   it('supports <Meta> parameters with functions', async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Meta } from "@storybook/addon-svelte-csf";
+        import { Meta } from "@storybook/svelte/csf";
         import WithParameters from './WithParameters.svelte';
       </script>
 
@@ -114,7 +114,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Meta tags={"autodocs"} />
@@ -131,7 +131,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Meta tags="singular" />
@@ -146,7 +146,7 @@ describe(transformComponentMetaToDefineMeta.name, () => {
   it('tags with an array expression are left as-is', async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Meta tags={["autodocs", "!dev"]} />

@@ -1,4 +1,4 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
@@ -11,7 +11,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
   it('works with advanced example', async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Story, Template } from "${pkg.name}";
+        import { Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
 
         export const meta = {
           component: Button,
@@ -53,7 +53,7 @@ describe(transformExportMetaToDefineMeta.name, () => {
   it('leading comments are included', async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story, Template } from "${pkg.name}";
+        import { Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
 
         /**
          * This is a description for the **Button** component stories.

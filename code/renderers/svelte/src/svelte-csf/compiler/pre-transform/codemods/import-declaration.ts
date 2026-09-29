@@ -16,7 +16,7 @@ interface Params {
  * - Story,
  * - Template,
  * + defineMeta,
- * } from "@storybook/addon-svelte-csf";
+ * } from "@storybook/svelte/csf";
  * ```
  */
 export function transformImportDeclaration(params: Params): ESTreeAST.ImportDeclaration {

@@ -1,4 +1,4 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
@@ -11,7 +11,7 @@ describe(transformTemplateToSnippet.name, () => {
   it("covers a case without provided prop 'id'", async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Template } from "${pkg.name}";
+        import { Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
       <Template let:args>
@@ -30,7 +30,7 @@ describe(transformTemplateToSnippet.name, () => {
   it("covers a case with provided prop 'id'", async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Template } from "${pkg.name}";
+        import { Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
       <Template id="coolTemplate" let:args>
@@ -51,7 +51,7 @@ describe(transformTemplateToSnippet.name, () => {
   }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Template } from "${pkg.name}";
+        import { Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
       <Template id="cool-template" let:args>
@@ -70,7 +70,7 @@ describe(transformTemplateToSnippet.name, () => {
   it("works with 'let:context' directive", async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Template } from "${pkg.name}";
+        import { Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
       <Template let:context>

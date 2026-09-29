@@ -1,4 +1,4 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE } from '../../../constants.ts';
 
 import type { ESTreeAST } from '../../../parser/ast.ts';
 
@@ -17,7 +17,7 @@ export function createRuntimeStoriesImport(): ESTreeAST.ImportDeclaration {
     type: 'ImportDeclaration',
     source: {
       type: 'Literal',
-      value: `${pkg.name}/internal/create-runtime-stories`,
+      value: SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE,
     },
     specifiers: [
       {

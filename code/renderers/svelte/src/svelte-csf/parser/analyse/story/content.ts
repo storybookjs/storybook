@@ -59,7 +59,7 @@ export function getStoryContentRawCode(params: Params): string {
      *
      * ```svelte
      * <script module>
-     *     import { defineMeta } from "@storybook/addon-svelte-csf";
+     *     import { defineMeta } from "@storybook/svelte/csf";
      *
      *     const { Story } = defineMeta({
      *       render: myCustomTemplate,

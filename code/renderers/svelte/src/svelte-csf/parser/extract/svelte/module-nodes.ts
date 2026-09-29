@@ -1,4 +1,4 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
 import type { Visitors } from 'zimmerframe';
 
 import type { ESTreeAST, SvelteAST } from '../../ast.ts';
@@ -19,7 +19,7 @@ const AST_NODES_NAMES = {
 interface Result {
   /**
    * Import specifier for `defineMeta` imported from this addon package.
-   * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/addon-svelte-csf"`
+   * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/svelte/csf"`
    */
   defineMetaImport: ESTreeAST.ImportSpecifier;
   /**
@@ -58,7 +58,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
 
-      if (source.value === pkg.name) {
+      if (source.value === SVELTE_CSF_IMPORT_SOURCE) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
             throw new DefaultOrNamespaceImportUsedError(filename);

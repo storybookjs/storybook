@@ -10,26 +10,26 @@ describe(transformImportDeclaration.name, () => {
   it("removes legacy components and add 'defineMeta'", async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Story, Template } from "@storybook/addon-svelte-csf";
+        import { Story, Template } from "@storybook/svelte/csf";
       </script>
     `;
     const node = await parseAndExtractSvelteNode<any>(code, 'ImportDeclaration');
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
-      `"import { defineMeta } from "@storybook/addon-svelte-csf";"`
+      `"import { defineMeta } from "@storybook/svelte/csf";"`
     );
   });
 
   it("it doesn't remove existing 'defineMeta'", async ({ expect }) => {
     const code = `
       <script context="module" lang="ts">
-        import { Story, Template, defineMeta } from "@storybook/addon-svelte-csf";
+        import { Story, Template, defineMeta } from "@storybook/svelte/csf";
       </script>
     `;
     const node = await parseAndExtractSvelteNode<any>(code, 'ImportDeclaration');
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
-      `"import { defineMeta } from "@storybook/addon-svelte-csf";"`
+      `"import { defineMeta } from "@storybook/svelte/csf";"`
     );
   });
 });

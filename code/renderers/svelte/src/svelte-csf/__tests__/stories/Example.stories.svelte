@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { fn } from 'storybook/test';
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte/csf';
 
   import Example from './Example.svelte';
 

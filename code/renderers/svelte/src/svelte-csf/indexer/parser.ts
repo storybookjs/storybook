@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
@@ -133,7 +133,10 @@ export async function parseForIndexer(
       const { state, visit } = context;
 
       for (const statement of body) {
-        if (statement.type === 'ImportDeclaration' && statement.source.value === pkg.name) {
+        if (
+          statement.type === 'ImportDeclaration' &&
+          statement.source.value === SVELTE_CSF_IMPORT_SOURCE
+        ) {
           visit(statement, state);
         }
 

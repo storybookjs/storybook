@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte/csf';
 
   import RequiredSnippet from './RequiredSnippet.svelte';
 

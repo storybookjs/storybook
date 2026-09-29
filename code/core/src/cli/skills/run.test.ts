@@ -20,7 +20,10 @@ const deps = () => ({
     a11yEnabled: false,
     docgenServer: false,
   }),
-  getProjectInfo: vi.fn().mockResolvedValue({ ok: true, projectInfo: {} }),
+  getProjectInfo: vi.fn().mockResolvedValue({
+    ok: true,
+    projectInfo: { rendererPackage: '@storybook/react' },
+  }),
   getSetupMarkdown: vi
     .fn()
     .mockResolvedValue({ markdown: '# Storybook Setup', prompt: 'optimized-tests' }),
@@ -124,6 +127,56 @@ describe('runSkillsCommand', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toBe('# Storybook Setup');
     expect(d.loadStorybook).not.toHaveBeenCalled();
+  });
+
+  it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
+    'setup accepts renderer %s',
+    async (rendererPackage) => {
+      const d = deps();
+      d.getProjectInfo.mockResolvedValue({ ok: true, projectInfo: { rendererPackage } });
+
+      const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
+
+      expect(result.exitCode).toBe(0);
+      expect(result.output).toBe('# Storybook Setup');
+      expect(d.getSetupMarkdown).toHaveBeenCalledWith({ rendererPackage });
+    }
+  );
+
+  it.each([
+    '@storybook/svelte',
+    '@storybook/preact',
+    '@storybook/html',
+    '@storybook/web-components',
+    '@storybook/solid',
+    '@storybook/react-native',
+    '@custom/renderer',
+    null,
+  ])('setup rejects unsupported renderer %s', async (rendererPackage) => {
+    const d = deps();
+    d.getProjectInfo.mockResolvedValue({ ok: true, projectInfo: { rendererPackage } });
+
+    const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errorOutput).toContain('only available for React, Angular, and Vue projects');
+    expect(d.getSetupMarkdown).not.toHaveBeenCalled();
+  });
+
+  it('--all rejects an unsupported setup renderer without emitting partial instructions', async () => {
+    const d = deps();
+    d.getProjectInfo.mockResolvedValue({
+      ok: true,
+      projectInfo: { rendererPackage: '@storybook/svelte' },
+    });
+
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, d);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errorOutput).toContain('only available for React, Angular, and Vue projects');
+    expect(d.getSetupMarkdown).not.toHaveBeenCalled();
   });
 
   it('setup reports the probe failure message and exits nonzero', async () => {

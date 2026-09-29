@@ -6,13 +6,13 @@ sidebar:
 
 <Callout variant="info" icon="🧪">
 
-Storybook's agentic setup is currently only available for projects using the [React](?renderer=react) renderer with the [Vite](../builders/vite.mdx) builder. Support for additional renderers and builders will follow.
+Storybook's agentic setup is currently available for projects using the [React](?renderer=react), [Angular](?renderer=angular), or [Vue](?renderer=vue) renderer. Both `storybook skills setup` and the deprecated `storybook ai setup` command enforce this renderer allowlist. Individual docs and testing tools still depend on your framework, builder, and enabled addons; see [framework support](./mcp/overview.mdx#framework-support).
 
 The API may change in future releases. We welcome feedback and contributions to help improve this feature.
 
 </Callout>
 
-<If renderer={['react']}>
+<If renderer={['react', 'angular', 'vue']}>
 
 Configuring Storybook in an existing application is repetitive, project-specific work that AI agents handle well. When you add Storybook to a project using an agent, it analyzes your project (framework, renderer, builder, language, addons) and produces a Markdown guide with [step-by-step instructions](#generated-setup-instructions). By following this guide, your agent will configure your preview file, set up commonly needed mocks, and write stories for components in your codebase.
 
@@ -31,7 +31,7 @@ The agent first runs [`storybook init`](../api/cli-options.mdx#init) to add Stor
 The project-specific instructions cover the following steps:
 
 1. **Analyze the codebase:** read providers, global CSS, portals, and data-fetching patterns.
-2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), [global styles](../configure/styling-and-css.mdx), and any framework-level providers in `preview.tsx`.
+2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), [global styles](../configure/styling-and-css.mdx), and any framework-level providers in `preview.ts` (or `preview.tsx` for React).
 3. **Support portals:** ensure portal roots exist in the Storybook preview DOM.
 4. **Mock side effects:** intercept [network requests](../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) (via MSW), storage, timers, and navigation at the preview level rather than per-story.
 5. **Write [stories](../writing-stories/index.mdx):** add stories from up to 10 components, from simple to complex, [tagging](../writing-stories/tags.mdx) them as `ai-generated` for your review.

@@ -1,6 +1,7 @@
 #!/usr/bin/env node
 // Stand-in for the Claude desktop app's Browser pane in agent evals. Tool texts,
-// schemas and result shapes are copied from Claude.app 2.7032.0. It is
+// schemas and result shapes follow Claude.app 2.7032.0, minus references to its
+// `computer` and `form_input` tools, which this mock does not have. It is
 // registered as `Browser` because Claude Code refuses to load a server from
 // `.mcp.json` whose name sanitizes to the reserved `Claude_Browser`. Pages load
 // in headless Chromium from the workspace `playwright` install.
@@ -32,7 +33,7 @@ const TOOLS = [
   {
     name: 'preview_start',
     description:
-      'Open the Browser pane at a URL (a fresh browser tab; no dev server on this surface). Returns a `tabId` — pass it to read_page / computer / navigate / etc. to target that tab; omitting tabId acts on the fronted tab.',
+      'Open the Browser pane at a URL (a fresh browser tab; no dev server on this surface). Returns a `tabId` — pass it to read_page / navigate / etc. to target that tab; omitting tabId acts on the fronted tab.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -107,7 +108,7 @@ const TOOLS = [
   {
     name: 'read_page',
     description:
-      'Read the current page in the Browser pane as a YAML-style accessibility tree. Each interactive element is tagged `[ref_N]` for use with `computer`/`form_input`/`find`. Prefer this over screenshot for verifying text and structure. Output is limited to 50000 characters by default; if it exceeds the limit it is truncated with a note — pass a larger max_chars, or use ref_id/depth to focus.',
+      'Read the current page in the Browser pane as a YAML-style accessibility tree. Prefer this over screenshot for verifying text and structure. Output is limited to 50000 characters by default; if it exceeds the limit it is truncated with a note — pass a larger max_chars, or use ref_id/depth to focus.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -149,7 +150,7 @@ const TOOLS = [
   {
     name: 'find',
     description:
-      'Search the current page in the Browser pane for elements whose accessibility-tree line (role / name / text) contains `query`, case-insensitively. Returns up to 20 `ref_N` matches usable with `computer`/`form_input`.',
+      'Search the current page in the Browser pane for elements whose accessibility-tree line (role / name / text) contains `query`, case-insensitively. Returns up to 20 matches.',
     inputSchema: {
       type: 'object',
       properties: {
@@ -245,7 +246,7 @@ async function openBrowserTab(rawUrl) {
     navOk,
   };
   return text(
-    `${JSON.stringify(result, null, 2)}\nBrowser pane opened. Use serverId "${SERVER_ID}" with read_page / computer / navigate.`
+    `${JSON.stringify(result, null, 2)}\nBrowser pane opened. Use serverId "${SERVER_ID}" with read_page / navigate.`
   );
 }
 

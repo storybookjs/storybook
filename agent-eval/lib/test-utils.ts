@@ -408,11 +408,11 @@ export function expectPreviewBrowserStarted(): void {
       (event) =>
         event.type === 'tool_call' &&
         typeof event.tool?.originalName === 'string' &&
-        event.tool.originalName === 'mcp__preview-browser__preview_start'
+        event.tool.originalName.endsWith('__preview_start')
     );
     expect(
       started,
-      "Expected the Claude preview browser to be opened via the preview-browser server's preview_start tool"
+      'Expected the Claude preview browser to be opened via the preview_start tool'
     ).toBe(true);
     return;
   }
@@ -1133,28 +1133,53 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
   }
 }
 
-const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review\/?/;
+const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
 const PREVIEW_EVAL_NAVIGATION_PATTERN =
   /(?:location(?:\.href)?\s*=(?!=)|location\.(?:assign|replace)\(|window\.open\()\s*(['"`])(https?:\/\/[^'"`]+)\1/g;
 
 // Not tied to the link in the final response, so `localhost` versus
-// `127.0.0.1` or a slash difference cannot fail the cell.
+// `127.0.0.1` or a slash difference cannot fail the cell. Only navigations
+// after the last review-create count: opening the review page earlier, for
+// example to check that Storybook runs, does not show the published review.
 export function expectReviewOpenedInBrowser(): void {
-  const navigations = getInAppBrowserNavigations();
+  const steps = getBrowserStepsAroundReviews();
+  const navigations = steps
+    .slice(steps.findLastIndex((step) => step === REVIEW_CREATED) + 1)
+    .flatMap((step) => (step === REVIEW_CREATED ? [] : [step]));
 
   expect(
     navigations.length,
-    'Expected the agent to open a URL in the in-app browser (a navigate / preview_start call, a preview_eval that sets location, or a Codex goto), but the transcript holds no browser navigation at all. Every experiment that runs review must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).'
+    'Expected the agent to open a URL in the in-app browser after review-create (a navigate / preview_start call, a preview_eval that sets location, or a Codex goto), but the transcript holds no such browser navigation. Every experiment that runs review must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).'
   ).toBeGreaterThan(0);
   expect(
     navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
-    `Expected an in-app browser navigation to the review page on the local dev server. Navigated to:\n${navigations.join('\n')}`
+    `Expected an in-app browser navigation to the review page on the local dev server after review-create. Navigated to:\n${navigations.join('\n')}`
   ).toBe(true);
 }
 
-function getInAppBrowserNavigations(): string[] {
+const REVIEW_CREATED = Symbol('review-create');
+
+// In transcript order: each review-create call, and each URL the in-app
+// browser navigated to.
+function getBrowserStepsAroundReviews(): (string | typeof REVIEW_CREATED)[] {
   if (getEvalContext().agent === 'codex') {
-    return parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
+    return readFileSync(TRANSCRIPT_PATH, 'utf8')
+      .split('\n')
+      .flatMap((line) => {
+        const event = parseJson(line);
+        if (!isRecord(event) || event.type !== 'item.completed' || !isRecord(event.item)) {
+          return [];
+        }
+        const { item } = event;
+        const createsReview =
+          (item.type === 'mcp_tool_call' &&
+            typeof item.tool === 'string' &&
+            normalizeStorybookWorkflowName(item.tool) === 'review-create') ||
+          (item.type === 'command_execution' &&
+            typeof item.command === 'string' &&
+            isReviewCreateShellCommand(item.command));
+        return createsReview ? [REVIEW_CREATED] : parseCodexBrowserNavigations(line);
+      });
   }
 
   return getTranscript().events.flatMap((event) => {
@@ -1162,6 +1187,12 @@ function getInAppBrowserNavigations(): string[] {
     const args = event.tool?.args;
     if (event.type !== 'tool_call' || typeof name !== 'string' || !isRecord(args)) {
       return [];
+    }
+    if (
+      normalizeStorybookWorkflowName(name) === 'review-create' ||
+      (typeof args.command === 'string' && isReviewCreateShellCommand(args.command))
+    ) {
+      return [REVIEW_CREATED];
     }
     if (/^mcp__.+__(?:navigate|preview_start)$/.test(name)) {
       return typeof args.url === 'string' ? [args.url] : [];
@@ -1173,6 +1204,12 @@ function getInAppBrowserNavigations(): string[] {
     }
     return [];
   });
+}
+
+function isReviewCreateShellCommand(command: string): boolean {
+  return parseStorybookWorkflowShellCommands([command]).some((call) =>
+    workflowCallMatchesName(call, 'review-create')
+  );
 }
 
 // Substance floor only (relaxed 2026-07-03 after run 28663662412, where

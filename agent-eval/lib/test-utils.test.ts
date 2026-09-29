@@ -581,7 +581,7 @@ describe('expectReviewOpenedInBrowser', () => {
       }),
     });
 
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/no browser navigation at all/);
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
   });
 
   test('passes on a Codex goto of the review page', () => {
@@ -621,6 +621,71 @@ describe('expectReviewOpenedInBrowser', () => {
       transcript: claudeToolUseLine('mcp__storybook-dev-mcp__review-create', { title: 'Review' }),
     });
 
-    expect(() => expectReviewOpenedInBrowser()).toThrow(/no browser navigation at all/);
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('fails on a page whose path only starts with review', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: claudeToolUseLine('mcp__Browser__navigate', {
+        url: 'http://localhost:6006/?path=/reviewer',
+      }),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
+  });
+
+  test('ignores a Claude navigation to the review page before review-create', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeToolUseLine('mcp__Browser__navigate', {
+          url: 'http://localhost:6006/?path=/review/',
+        }),
+        claudeToolUseLine('mcp__storybook-dev-mcp__review-create', { title: 'Review' }),
+      ].join('\n'),
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('counts only navigations after a review published through the CLI', () => {
+    const reviewCreate = claudeToolUseLine('Bash', {
+      command: "npx storybook tools review create --title 'Review' --description 'Check it'",
+    });
+    const openReview = claudeToolUseLine('mcp__Browser__navigate', {
+      url: 'http://localhost:6006/?path=/review/',
+    });
+
+    mockSandbox({ agent: 'claude-code', transcript: [reviewCreate, openReview].join('\n') });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({ agent: 'claude-code', transcript: [openReview, reviewCreate].join('\n') });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('counts only Codex navigations after its last review-create', () => {
+    const goto = codexJsLine("await tab.goto('http://localhost:6006/?path=/review/');");
+    const mcpReviewCreate = JSON.stringify({
+      type: 'item.completed',
+      item: { type: 'mcp_tool_call', server: 'storybook', tool: 'review-create', arguments: {} },
+    });
+    const cliReviewCreate = JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'command_execution',
+        command:
+          "/bin/bash -lc \"npx storybook tools review create --title 'Review' --description 'Check it'\"",
+      },
+    });
+
+    mockSandbox({ agent: 'codex', transcript: [cliReviewCreate, goto].join('\n') });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({ agent: 'codex', transcript: [goto, cliReviewCreate].join('\n') });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+
+    mockSandbox({ agent: 'codex', transcript: [goto, mcpReviewCreate].join('\n') });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
   });
 });

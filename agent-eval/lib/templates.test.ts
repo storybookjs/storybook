@@ -244,12 +244,8 @@ describe('pointStorybookAtCheckout', () => {
 });
 
 describe('writeClaudeInAppBrowserMock', () => {
-  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
-    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
-    const files: Record<string, string> = {
-      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
-    };
-    const sandbox = {
+  function createSandbox(files: Record<string, string>): Sandbox {
+    return {
       writeFiles: async (written: Record<string, string>) => {
         Object.assign(files, written);
       },
@@ -260,9 +256,17 @@ describe('writeClaudeInAppBrowserMock', () => {
         }
         return content;
       },
+      fileExists: async (filePath: string) => filePath in files,
     } as unknown as Sandbox;
+  }
 
-    await writeClaudeInAppBrowserMock(sandbox);
+  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
+    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
+    const files: Record<string, string> = {
+      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
+    };
+
+    await writeClaudeInAppBrowserMock(createSandbox(files));
 
     expect(JSON.parse(files['.mcp.json'] ?? '')).toEqual({
       mcpServers: {
@@ -272,6 +276,14 @@ describe('writeClaudeInAppBrowserMock', () => {
     });
     expect(files['CLAUDE.md']).toContain('<built_in_browser>');
     expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
+  });
+
+  it('keeps an existing CLAUDE.md and appends the prompt block', async () => {
+    const files: Record<string, string> = { 'CLAUDE.md': '# Project rules' };
+
+    await writeClaudeInAppBrowserMock(createSandbox(files));
+
+    expect(files['CLAUDE.md']).toMatch(/^# Project rules\n\n[\s\S]*<built_in_browser>/);
   });
 });
 

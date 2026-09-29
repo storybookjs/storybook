@@ -208,7 +208,7 @@ describe.skipIf(!(await isChromiumInstalled()))(
         navOk: true,
       });
       expect(result).toContain(
-        'Browser pane opened. Use serverId "browser-pane" with read_page / computer / navigate.'
+        'Browser pane opened. Use serverId "browser-pane" with read_page / navigate.'
       );
     });
 

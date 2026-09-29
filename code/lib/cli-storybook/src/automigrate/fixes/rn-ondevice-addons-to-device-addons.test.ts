@@ -85,7 +85,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -105,7 +104,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -127,7 +125,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -153,7 +150,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
@@ -180,7 +176,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
@@ -203,7 +198,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
@@ -245,7 +239,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         configDir: '.storybook',
         storybookVersion: '9.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath: rnMainPath }] });

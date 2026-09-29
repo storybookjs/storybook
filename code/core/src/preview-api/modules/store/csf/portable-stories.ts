@@ -1,5 +1,8 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
+import {
+  MountMustBeDestructuredError,
+  ProjectAnnotationsAlreadyAppliedError,
+} from 'storybook/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -41,6 +44,9 @@ import { prepareContext, prepareStory } from './prepareStory.ts';
 declare global {
   var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
   var defaultProjectAnnotations: ProjectAnnotations<any>;
+  // Set by @storybook/addon-vitest once its setup file has applied the project annotations.
+  var __STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__: boolean | undefined;
+  var __STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__: boolean | undefined;
 }
 
 export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
@@ -58,6 +64,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
+  if (globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__) {
+    throw new ProjectAnnotationsAlreadyAppliedError();
+  }
+  globalThis.__STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__ = true;
+
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
   // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps

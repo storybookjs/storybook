@@ -42,8 +42,8 @@ export interface Expect extends AsymmetricMatchersContaining {
   extend(expects: MatchersObject): void;
   assertions(expected: number): Promise<void>;
   hasAssertions(): Promise<void>;
-  anything(): any;
-  any(constructor: unknown): any;
+  anything: ExpectStatic['anything'];
+  any: ExpectStatic['any'];
   getState(): MatcherState;
   setState(state: Partial<MatcherState>): void;
   not: AsymmetricMatchersContaining;

@@ -14,7 +14,7 @@ const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
 // EVAL_REVIEW is unset in unit-test runs, so this asserts the default gate:
 // plugin sandboxes are always review-on (the addon enables review for the
-// `storybook ai` CLI channel by default), MCP sandboxes review-off.
+// `storybook tools` CLI channel by default), MCP sandboxes review-off.
 describe('isReviewEnabledFor', () => {
   it('is always on for the plugin integration', () => {
     expect(isReviewEnabledFor('plugin')).toBe(true);

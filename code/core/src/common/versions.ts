@@ -34,7 +34,6 @@ export default {
   'create-storybook': '11.0.0-alpha.1',
   'eslint-plugin-storybook': '11.0.0-alpha.1',
   '@storybook/mcp': '11.0.0-alpha.1',
-  '@storybook/react-dom-shim': '11.0.0-alpha.1',
   'vite-plugin-storybook-nextjs': '11.0.0-alpha.1',
   '@storybook/preset-react-webpack': '11.0.0-alpha.1',
   '@storybook/preset-server-webpack': '11.0.0-alpha.1',

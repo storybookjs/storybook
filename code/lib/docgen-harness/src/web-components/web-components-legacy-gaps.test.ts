@@ -12,26 +12,48 @@ import { setCustomElementsManifest } from '../../../../renderers/web-components/
 import { BASELINE_PATH } from './baseline-path.ts';
 
 const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
+const OSA_CLOSED = new Set<string>();
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
 type ManifestWithSchemaVersion = { schemaVersion?: string };
 
-const BASELINES = {
-  basicArgTypes: 'lit-basic-attributes/argtypes.snapshot',
-  v2ArgTypes: 'lit-basic-attributes/v2-argtypes.snapshot',
-  wcaArgTypes: 'lit-basic-attributes/wca-argtypes.snapshot',
-  unionArgTypes: 'lit-union-jsdoc/argtypes.snapshot',
-  unionDescription: 'lit-union-jsdoc/description.snapshot',
-  eventsArgTypes: 'lit-events/argtypes.snapshot',
+const BASELINES = (prefix: '' | 'osa-') =>
+  ({
+    basicArgTypes: `lit-basic-attributes/${prefix}argtypes.snapshot`,
+    v2ArgTypes: `lit-basic-attributes/${prefix}v2-argtypes.snapshot`,
+    unionArgTypes: `lit-union-jsdoc/${prefix}argtypes.snapshot`,
+    unionDescription: `lit-union-jsdoc/${prefix}description.snapshot`,
+    eventsArgTypes: `lit-events/${prefix}argtypes.snapshot`,
+  }) as const;
+
+const FIXED = {
   argsDefaultSnippet: 'lit-basic-attributes/snippet-ArgsDefaultRender.snapshot',
   propertyOnlySnippet: 'lit-property-only/snippet-LitTemplate.snapshot',
   eventsSnippet: 'lit-events/snippet-LitTemplate.snapshot',
   backSideSnippet: 'demo-wc-card/snippet-Back.snapshot',
+  basicPayload: 'lit-basic-attributes/osa-payload.snapshot',
+  unionPayload: 'lit-union-jsdoc/osa-payload.snapshot',
 } as const;
 
-const baseline = (key: keyof typeof BASELINES) =>
-  readFileSync(join(fixturesDir, BASELINES[key]), 'utf-8');
+type ComparedBaseline = keyof ReturnType<typeof BASELINES>;
+type FixedBaseline = keyof typeof FIXED;
+
+const read = (relativePath: string) => readFileSync(join(fixturesDir, relativePath), 'utf-8');
+
+const baseline = (key: ComparedBaseline, prefix: '' | 'osa-' = '') => read(BASELINES(prefix)[key]);
+
+const fixedBaseline = (key: FixedBaseline) => read(FIXED[key]);
+
+const osaGapTest = (name: string) => (OSA_CLOSED.has(name) ? test : test.fails);
+
+function marker(
+  name: string,
+  assertion: (readBaseline: (key: ComparedBaseline) => string) => void
+) {
+  gapTest(`${name} (legacy)`, () => assertion((key) => baseline(key)));
+  osaGapTest(name)(`${name} (osa)`, () => assertion((key) => baseline(key, 'osa-')));
+}
 
 const readManifest = (fileName: string): ManifestWithSchemaVersion =>
   JSON.parse(readFileSync(join(fixturesDir, 'lit-basic-attributes', fileName), 'utf-8'));
@@ -42,49 +64,47 @@ afterEach(() => {
 });
 
 test('every baseline referenced by a red marker exists', () => {
-  for (const relativePath of Object.values(BASELINES)) {
+  for (const relativePath of [
+    ...Object.values(BASELINES('')),
+    ...Object.values(BASELINES('osa-')),
+    ...Object.values(FIXED),
+  ]) {
     expect(existsSync(join(fixturesDir, relativePath)), relativePath).toBe(true);
   }
 });
 
 describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', () => {
-  gapTest('reflected booleans record one arg', () => {
-    // Legacy: records both `is-open` under attributes and `isOpen` under properties.
-    const text = baseline('basicArgTypes');
+  marker('reflected booleans record one arg', (readBaseline) => {
+    const text = readBaseline('basicArgTypes');
     const reflectedKeys = [/^  "is-open": \{$/m.test(text), /^  "isOpen": \{$/m.test(text)].filter(
       Boolean
     );
     expect(reflectedKeys).toHaveLength(1);
   });
 
-  gapTest('literal unions and JSDoc tags reach argTypes structurally', () => {
-    // Legacy: records the union as free text and leaves @deprecated/@default out of jsDocTags.
-    expect(baseline('unionArgTypes')).toContain('"name": "enum"');
-    expect(baseline('unionArgTypes')).toMatch(/"jsDocTags": [[{]/);
-    expect(baseline('unionArgTypes')).toContain('deprecated');
-    expect(baseline('unionArgTypes')).toContain('default');
+  marker('literal unions and JSDoc tags reach argTypes structurally', (readBaseline) => {
+    expect(readBaseline('unionArgTypes')).toContain('"name": "enum"');
+    expect(readBaseline('unionArgTypes')).toMatch(/"jsDocTags": [[{]/);
+    expect(readBaseline('unionArgTypes')).toContain('deprecated');
+    expect(readBaseline('unionArgTypes')).toContain('default');
   });
 
-  gapTest('@summary reaches the component description', () => {
-    // Legacy: the manifest records @summary separately and the runtime reads only description.
-    expect(baseline('unionDescription')).toContain('Compact variant fixture.');
+  marker('@summary reaches the component description', (readBaseline) => {
+    expect(readBaseline('unionDescription')).toContain('Compact variant fixture.');
   });
 
-  // The manifest records deprecated on the declaration and the runtime reads only description.
-  gapTest('class-level @deprecated reaches the component description', () => {
-    expect(baseline('unionDescription')).toContain('Use lit-basic-attributes instead.');
+  marker('class-level @deprecated reaches the component description', (readBaseline) => {
+    expect(readBaseline('unionDescription')).toContain('Use lit-basic-attributes instead.');
   });
 
-  gapTest('events carry structured type information and descriptions', () => {
-    // Legacy: event argTypes use `void` as the sbType and lose structured CustomEvent detail.
-    const text = baseline('eventsArgTypes');
+  marker('events carry structured type information and descriptions', (readBaseline) => {
+    const text = readBaseline('eventsArgTypes');
     expect(text).not.toContain('"name": "void"');
     expect(text).not.toMatch(/^        "summary": "CustomEvent",$/m);
   });
 
-  gapTest('CEM 2.1.0 CSS states are recorded', () => {
-    // Legacy: cssStates is not mapped at all.
-    expect(baseline('v2ArgTypes')).toContain('  "open": {');
+  marker('CEM 2.1.0 CSS states are recorded', (readBaseline) => {
+    expect(readBaseline('v2ArgTypes')).toContain('  "open": {');
   });
 
   gapTest('the WCA experimental shape triggers a deprecation warning', async () => {
@@ -97,9 +117,35 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
   });
 });
 
+describe('OSA payload gaps (red until the server mapper closes them)', () => {
+  const componentTagsName = 'component-level jsDocTags carry the CEM deprecated and summary fields';
+
+  osaGapTest(componentTagsName)(componentTagsName, () => {
+    const payload = fixedBaseline('unionPayload');
+    expect(payload).not.toContain('"jsDocTags": {}');
+    expect(payload).toMatch(/"deprecated": \[\s*"Use lit-basic-attributes instead\."/);
+    expect(payload).toMatch(/"summary": \[\s*"Compact variant fixture\."/);
+  });
+
+  const storyMetaName = 'the story meta docblock reaches the payload description and jsDocTags';
+
+  osaGapTest(storyMetaName)(storyMetaName, () => {
+    const payload = fixedBaseline('basicPayload');
+    expect(payload).toContain(
+      '"description": "Story-level docs for the basic attributes fixture."'
+    );
+    expect(payload).toMatch(/"since": \[\s*"1\.2\.0"/);
+    expect(payload).toMatch(/"see": \[\s*"https:\/\/example\.com\/lit-basic-attributes"/);
+  });
+});
+
 describe('manifest shape regressions', () => {
   test('the 1.0.0 and 2.1.0 captures record the same argTypes today', () => {
     expect(baseline('v2ArgTypes')).toBe(baseline('basicArgTypes'));
+  });
+
+  test('the OSA 1.0.0 and 2.1.0 lit-basic-attributes argTypes recordings are byte-identical', () => {
+    expect(baseline('v2ArgTypes', 'osa-')).toBe(baseline('basicArgTypes', 'osa-'));
   });
 
   it.each([
@@ -126,24 +172,20 @@ describe('manifest shape regressions', () => {
 
 describe('legacy snippet gaps (red until a re-recorded baseline closes them)', () => {
   gapTest('default-render snippets carry args as attributes', () => {
-    // Legacy: default render assigns args as properties, so the snippet is empty.
-    expect(baseline('argsDefaultSnippet')).toContain('label=');
-    expect(baseline('argsDefaultSnippet')).toContain('count=');
-    expect(baseline('argsDefaultSnippet')).toContain('is-open');
+    expect(fixedBaseline('argsDefaultSnippet')).toContain('label=');
+    expect(fixedBaseline('argsDefaultSnippet')).toContain('count=');
+    expect(fixedBaseline('argsDefaultSnippet')).toContain('is-open');
   });
 
   gapTest('property-only values are represented or warned about', () => {
-    // Legacy: lit property bindings do not serialize into HTML.
-    expect(baseline('propertyOnlySnippet')).toMatch(/items=|config=|warning/i);
+    expect(fixedBaseline('propertyOnlySnippet')).toMatch(/items=|config=|warning/i);
   });
 
   gapTest('event listeners are represented or warned about', () => {
-    // Legacy: lit event listener bindings do not serialize into HTML.
-    expect(baseline('eventsSnippet')).toMatch(/my-change|my-close|warning/i);
+    expect(fixedBaseline('eventsSnippet')).toMatch(/my-change|my-close|warning/i);
   });
 
   gapTest('reflected Lit attributes are visible after property binding', () => {
-    // Legacy reads innerHTML before Lit reflects `.backSide=${true}` to `back-side`.
-    expect(baseline('backSideSnippet')).toContain('back-side');
+    expect(fixedBaseline('backSideSnippet')).toContain('back-side');
   });
 });

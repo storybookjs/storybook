@@ -98,7 +98,10 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
   if (process.env.EVAL_EXTRA_EVALS === '1') {
     return STORYBOOK_LATEST
       ? { core: [...PORTED_WORKFLOW_STORYBOOK_EVALS], lifecycle: [] }
-      : { core: [...CORE_STORYBOOK_EVALS], lifecycle: [...LIFECYCLE_STORYBOOK_EVALS] };
+      : {
+          core: [...CORE_STORYBOOK_EVALS],
+          lifecycle: [...LIFECYCLE_STORYBOOK_EVALS],
+        };
   }
 
   return STORYBOOK_LATEST
@@ -118,14 +121,6 @@ export const WORKFLOW_STORYBOOK_EVALS: EvalName[] = ACTIVE_EVALS.core;
 export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   ? []
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
-
-// Non-default model tiers run zero evals unless EVAL_EXTRA_MODELS=1, so
-// labeled CI runs only pay for the default-model experiments.
-export const EXTRA_MODEL_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
-
-export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];
 
 function attachUsageMetadata({ runData }: RunCompleteContext) {
   if (!runData.transcript) {
@@ -156,6 +151,9 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // The runner default of 600s is too tight for opus-high on the plugin
   // path: passing runs have taken up to 458s (2026-07-03 CI runs).
   timeout: 900,
+  // "auto" is recommended and uploads results to Vercel, making it easier to share
+  // with the team. Switch to "docker" to run evals on your local machine, e.g. for
+  // throwaway experiments, or in case of Vercel outage or payment issue.
   sandbox: 'auto',
   copyFiles: 'all',
   // Post-run script checks stay disabled: they fail on sandbox environment

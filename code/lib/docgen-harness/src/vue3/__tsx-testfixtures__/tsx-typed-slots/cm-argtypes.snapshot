@@ -1,0 +1,46 @@
+{
+  "default": {
+    "description": "The content rendered inside the card.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "[] | [{ content: string; }]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[] | [{ content: string; } | undefined]",
+    },
+  },
+  "header": {
+    "description": "Header region rendered above the content.",
+    "name": "header",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "[] | [{ title: string; }]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[] | [{ title: string; } | undefined]",
+    },
+  },
+  "label": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

@@ -8,7 +8,7 @@ import * as ButtonStoriesWithMetaSubtitleAsComponentSubtitle from '../examples/B
 import * as ButtonStoriesWithMetaSubtitleAsDocsSubtitle from '../examples/ButtonWithMetaSubtitleAsDocsSubtitle.stories';
 import { Subtitle } from './Subtitle';
 
-const meta: Meta<typeof Subtitle> = {
+const meta = {
   component: Subtitle,
   parameters: {
     layout: 'fullscreen',
@@ -21,7 +21,7 @@ const meta: Meta<typeof Subtitle> = {
     attached: false,
     docsStyles: true,
   },
-};
+} satisfies Meta<typeof Subtitle>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;

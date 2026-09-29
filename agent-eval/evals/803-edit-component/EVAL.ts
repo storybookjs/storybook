@@ -2,6 +2,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectPreviewBrowserStarted,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
@@ -24,6 +25,10 @@ describe('editing ReviewCard to add date and optional onReport', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('the review covers the edited ReviewCard component', () => {

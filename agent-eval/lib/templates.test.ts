@@ -2,6 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { Sandbox } from '@vercel/agent-eval';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
@@ -12,6 +13,7 @@ import {
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
   type WorkspacePackage,
+  writeClaudeInAppBrowserMock,
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
@@ -238,6 +240,38 @@ describe('pointStorybookAtCheckout', () => {
     await expect(pointStorybookAtCheckout(files, workspace)).rejects.toThrowError(
       /@storybook\/icons is not a published package of this monorepo/
     );
+  });
+});
+
+describe('writeClaudeInAppBrowserMock', () => {
+  it('registers the Browser server next to existing servers and writes the prompt block', async () => {
+    const storybookServer = { type: 'http', url: 'http://127.0.0.1:6006/mcp' };
+    const files: Record<string, string> = {
+      '.mcp.json': JSON.stringify({ mcpServers: { 'storybook-dev-mcp': storybookServer } }),
+    };
+    const sandbox = {
+      writeFiles: async (written: Record<string, string>) => {
+        Object.assign(files, written);
+      },
+      readFile: async (filePath: string) => {
+        const content = files[filePath];
+        if (content === undefined) {
+          throw new Error(`ENOENT: ${filePath}`);
+        }
+        return content;
+      },
+    } as unknown as Sandbox;
+
+    await writeClaudeInAppBrowserMock(sandbox);
+
+    expect(JSON.parse(files['.mcp.json'] ?? '')).toEqual({
+      mcpServers: {
+        'storybook-dev-mcp': storybookServer,
+        Browser: { command: 'node', args: ['.agent-eval/mcp/claude-browser-mock.mjs'] },
+      },
+    });
+    expect(files['CLAUDE.md']).toContain('<built_in_browser>');
+    expect(files['.agent-eval/mcp/claude-browser-mock.mjs']).toBeDefined();
   });
 });
 

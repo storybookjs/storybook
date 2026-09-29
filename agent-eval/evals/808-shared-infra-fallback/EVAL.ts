@@ -2,6 +2,7 @@ import {
   expectDisplayReviewForVisualChange,
   expectPreviewBrowserStarted,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
@@ -48,6 +49,10 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
   describe.runIf(review && !codexMcpReviewGap)('when review is enabled', () => {
     test('publishes a display review for the visual token change', () => {
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('the review surfaces the consumer stories, not the token file', () => {

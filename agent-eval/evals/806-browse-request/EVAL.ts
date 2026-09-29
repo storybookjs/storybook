@@ -2,6 +2,7 @@ import {
   expectDisplayReviewForBrowseRequest,
   expectPreviewBrowserStarted,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectStoryIdsInDisplayReview,
   expectValidStorybookLaunchConfig,
   getEvalContext,
@@ -15,6 +16,10 @@ describe('browsing existing ReviewCard Storybook states', () => {
   describe.runIf(review)('when review is enabled', () => {
     test('publishes a display review for a browse request without changed files', () => {
       expectDisplayReviewForBrowseRequest();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     // The prompt asks for ALL ReviewCard states; the fixture is untouched by a

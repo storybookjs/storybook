@@ -503,6 +503,9 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
+				## After success
+				Open reviewUrl in your in-app browser before your final response: find a tool or skill (including ones you still have to load) that opens a URL in a browser pane or preview tab, and call it. Skip only when you have none. Then share the link.
+
 				## When to call
 				- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; fall back to stories-find-by-component if that is unavailable. Include changedFiles.
 				- Browse request ("show me the Badge component"): resolve via stories-find-by-component / docs-list. Show exactly what was asked. Pass changedFiles: [].

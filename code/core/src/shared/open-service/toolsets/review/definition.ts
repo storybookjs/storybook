@@ -81,6 +81,9 @@ function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
   return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
+## After success
+Open reviewUrl in your in-app browser before your final response: find a tool or skill (including ones you still have to load) that opens a URL in a browser pane or preview tab, and call it. Skip only when you have none. Then share the link.
+
 ## When to call
 - Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
 - Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
@@ -125,7 +128,7 @@ function formatReviewApplied(
   return `${summary} Storybook is already running at ${ctx.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
-1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
+1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in a browser pane or preview tab (a navigate, open-URL or browser-control tool or skill). Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
 2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyNoun} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`;
 }
 

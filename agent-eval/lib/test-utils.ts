@@ -408,11 +408,11 @@ export function expectPreviewBrowserStarted(): void {
       (event) =>
         event.type === 'tool_call' &&
         typeof event.tool?.originalName === 'string' &&
-        event.tool.originalName.endsWith('__preview_start')
+        event.tool.originalName === 'mcp__preview-browser__preview_start'
     );
     expect(
       started,
-      'Expected the Claude preview browser to be opened via the preview_start tool'
+      "Expected the Claude preview browser to be opened via the preview-browser server's preview_start tool"
     ).toBe(true);
     return;
   }
@@ -1133,6 +1133,48 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
   }
 }
 
+const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review\/?/;
+const PREVIEW_EVAL_NAVIGATION_PATTERN =
+  /(?:location(?:\.href)?\s*=(?!=)|location\.(?:assign|replace)\(|window\.open\()\s*(['"`])(https?:\/\/[^'"`]+)\1/g;
+
+// Not tied to the link in the final response, so `localhost` versus
+// `127.0.0.1` or a slash difference cannot fail the cell.
+export function expectReviewOpenedInBrowser(): void {
+  const navigations = getInAppBrowserNavigations();
+
+  expect(
+    navigations.length,
+    'Expected the agent to open a URL in the in-app browser (a navigate / preview_start call, a preview_eval that sets location, or a Codex goto), but the transcript holds no browser navigation at all. Every experiment that runs review must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).'
+  ).toBeGreaterThan(0);
+  expect(
+    navigations.some((url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url)),
+    `Expected an in-app browser navigation to the review page on the local dev server. Navigated to:\n${navigations.join('\n')}`
+  ).toBe(true);
+}
+
+function getInAppBrowserNavigations(): string[] {
+  if (getEvalContext().agent === 'codex') {
+    return parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
+  }
+
+  return getTranscript().events.flatMap((event) => {
+    const name = event.tool?.originalName;
+    const args = event.tool?.args;
+    if (event.type !== 'tool_call' || typeof name !== 'string' || !isRecord(args)) {
+      return [];
+    }
+    if (/^mcp__.+__(?:navigate|preview_start)$/.test(name)) {
+      return typeof args.url === 'string' ? [args.url] : [];
+    }
+    if (/^mcp__.+__preview_eval$/.test(name) && typeof args.expression === 'string') {
+      return [...args.expression.matchAll(PREVIEW_EVAL_NAVIGATION_PATTERN)].flatMap((match) =>
+        match[2] === undefined ? [] : [match[2]]
+      );
+    }
+    return [];
+  });
+}
+
 // Substance floor only (relaxed 2026-07-03 after run 28663662412, where
 // correct reviews failed on presentation details): the user must get the
 // review link in the final response, and not a second set of individual
@@ -1146,7 +1188,7 @@ function expectFinalResponseSharesReviewLink(): void {
   }
 
   expect(finalMessage, 'Final response must include the Storybook review page link').toMatch(
-    /[?&]path=\/review\/?/
+    REVIEW_PAGE_URL_PATTERN
   );
   expect(
     finalMessage,

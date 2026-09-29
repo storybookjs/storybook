@@ -90,17 +90,17 @@ does not enable `EVAL_STORYBOOK_LATEST` or `EVAL_REVIEW`; use
 notify Slack.
 
 By default only the first core eval (`801-create-component-no-launch-config`)
-runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
+runs. Set `EVAL_FULL_SUITE=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals
 (`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_EXTRA_EVALS=1 yarn eval
+EVAL_FULL_SUITE=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 4
+A full `EVAL_FULL_SUITE=1` run (12 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
 lifecycle eval). The budget guardrail is **$75 per full run** — check the
@@ -175,7 +175,7 @@ matching input for each:
 
 | Label / input                                      | Effect                                                                           |
 | -------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `agent-eval:extra-evals` / `extra_evals`           | Full 8xx (+ 82x on plugins) instead of the default single smoke eval             |
+| `agent-eval:full-suite` / `full_suite`           | Full 8xx (+ 82x on plugins) instead of the default single smoke eval             |
 | `agent-eval:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
 | `agent-eval:review` / `review`                     | Force `experimentalReview` on and assert the review workflow for MCP cells too   |
 

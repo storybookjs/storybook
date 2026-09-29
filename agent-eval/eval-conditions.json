@@ -3,9 +3,9 @@
   "optInLabel": "agent-eval:eval",
   "conditions": [
     {
-      "id": "extra_evals",
-      "label": "agent-eval:extra-evals",
-      "input": "extra_evals",
+      "id": "full_suite",
+      "label": "agent-eval:full-suite",
+      "input": "full_suite",
       "description": "Run the full 8xx/82x eval line instead of the default smoke eval",
       "schedule": true
     },

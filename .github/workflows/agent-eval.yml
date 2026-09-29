@@ -18,10 +18,10 @@ on:
         type: string
         default: ''
       evals:
-        description: 'Comma-separated eval names to run (overrides extra_evals), e.g. 803-edit-component'
+        description: 'Comma-separated eval names to run (overrides full_suite), e.g. 803-edit-component'
         type: string
         default: ''
-      extra_evals:
+      full_suite:
         description: 'Run the full 8xx eval line instead of only the default eval'
         type: boolean
         default: false
@@ -114,7 +114,7 @@ jobs:
         env:
           CONFIG_FILE: agent-eval/eval-conditions.json
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
-          INPUT_EXTRA_EVALS: ${{ inputs.extra_evals || '' }}
+          INPUT_FULL_SUITE: ${{ inputs.full_suite || '' }}
           INPUT_STORYBOOK_LATEST: ${{ inputs.storybook_latest || '' }}
           INPUT_REVIEW: ${{ inputs.review || '' }}
         run: node agent-eval/scripts/resolve-conditions.mjs
@@ -180,7 +180,7 @@ jobs:
         run: yarn workspace agent-eval run eval
         env:
           EVAL_ONLY: ${{ inputs.evals || '' }}
-          EVAL_EXTRA_EVALS: ${{ steps.conditions.outputs.extra_evals }}
+          EVAL_FULL_SUITE: ${{ steps.conditions.outputs.full_suite }}
           EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
           EVAL_REVIEW: ${{ steps.conditions.outputs.review }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

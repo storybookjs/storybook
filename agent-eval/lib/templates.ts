@@ -1,6 +1,9 @@
+import { execFile } from 'node:child_process';
 import * as fs from 'node:fs/promises';
+import * as os from 'node:os';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
 
 import type { Sandbox } from '@vercel/agent-eval';
 
@@ -9,9 +12,18 @@ import { isRecord } from './utils/type.ts';
 type FixturePackageJson = {
   evals?: {
     template?: unknown;
-    pinStorybook?: unknown;
   };
 };
+
+// A published package of this monorepo. `dependencies` lists the monorepo packages npm installs
+// along with it.
+export type WorkspacePackage = {
+  name: string;
+  dir: string;
+  project: string;
+  dependencies: string[];
+};
+export type StorybookWorkspace = Map<string, WorkspacePackage>;
 
 export type EvalAgent = 'claude-code' | 'codex';
 // 'none' = bare sandbox: no Storybook tooling flavor recorded in the agent
@@ -26,6 +38,7 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AGENT_EVAL_ROOT = path.resolve(__dirname, '..');
 const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
+const EVALS_DIR = path.join(AGENT_EVAL_ROOT, 'evals');
 const TEMPLATE_METADATA_FILE = 'eval-template.json';
 const PREVIEW_BROWSER_MOCK_SOURCE_PATH = path.join(
   AGENT_EVAL_ROOT,
@@ -101,6 +114,11 @@ const TYPE_UTIL_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'utils', 'type.t
 const TYPE_UTIL_SANDBOX_PATH = path.posix.join('__agent_eval__', 'utils', 'type.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+const CHECKOUT_PACKAGES_DIR = 'local-packages';
+// Read by start-storybook-mcp.mjs to fail the install when npm took one of these from the registry.
+const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
+const WORKSPACE_SPEC = 'workspace:*';
+const execFileAsync = promisify(execFile);
 // EVAL_REVIEW=1 enables the `experimentalReview` feature flag in every
 // sandbox Storybook, turning review on for the MCP integration too. Plugin
 // runs don't need it: review is on by default for the `storybook tools` CLI
@@ -171,18 +189,21 @@ export async function setupSandbox(
     enableExperimentalReview(files);
   }
 
-  // Fixtures that intentionally ship an outdated Storybook (the upgrade-skill
-  // evals) opt out of pinning with `evals.pinStorybook: false`; everything
-  // else is pinned to the dist-tag so result snapshots record exact versions.
-  if (packageJson.evals?.pinStorybook !== false) {
-    await pinStorybookPackages(
-      files,
-      process.env.EVAL_STORYBOOK_LATEST === '1' ? 'latest' : 'next'
-    );
-  }
-
-  if (usesLocalStorybookMcpPackages(files)) {
-    Object.assign(files, await readLocalStorybookMcpPackages());
+  const workspace = await readStorybookWorkspace();
+  let packedCheckout = false;
+  if (process.env.EVAL_STORYBOOK_LATEST === '1') {
+    await pointStorybookAtLatest(files, workspace);
+  } else {
+    const packages = await pointStorybookAtCheckout(files, workspace);
+    if (packages.length > 0) {
+      Object.assign(files, await packCheckoutPackages(packages));
+      files[CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH] = JSON.stringify(packages.map((pkg) => pkg.name));
+      // Keeps the megabytes of tarballs out of the run's captured changes and saved results.
+      const gitignore = files['.gitignore'] ?? '';
+      files['.gitignore'] =
+        `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${CHECKOUT_PACKAGES_DIR}/\n`;
+      packedCheckout = true;
+    }
   }
 
   // The Storybook-starting postinstall script is maintained once in lib/mcp
@@ -197,6 +218,10 @@ export async function setupSandbox(
 
   await setupTemplateSandbox(sandbox, templateMetadata);
   await sandbox.writeFiles(files);
+
+  if (packedCheckout) {
+    await decodeCheckoutPackages(sandbox);
+  }
 }
 
 async function writeEvalSupportFiles(
@@ -440,24 +465,72 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
   }
 }
 
-// Pin every Storybook dependency in the sandbox package.json files (the root
-// and any workspace package) to the version currently behind the given npm
-// dist-tag, so result snapshots record the exact version each run used. The
-// local @storybook/addon-mcp and @storybook/mcp file: builds are always kept
-// as-is; EVAL_STORYBOOK_LATEST=1 only switches the Storybook release itself
-// to the `latest` tag, to test the current checkout against the last stable
-// release.
-export async function pinStorybookPackages(
+// Point every `workspace:*` dependency in the sandbox manifests at a `yarn pack` tarball of this
+// checkout, and force the packed packages onto their tarballs through the root `overrides`,
+// including the ones only reached through another monorepo package. Returns the packages to pack.
+export async function pointStorybookAtCheckout(
   files: Record<string, string>,
-  distTag: 'next' | 'latest'
+  workspace: StorybookWorkspace
+): Promise<WorkspacePackage[]> {
+  // npm resolves a `file:` override relative to the workspace package whose dependency it
+  // replaces, so these keep only their own spec.
+  const directInWorkspacePackage = new Set<string>();
+  const direct = await replaceWorkspaceSpecs(files, workspace, (pkg, manifestDir) => {
+    if (manifestDir !== '.') {
+      directInWorkspacePackage.add(pkg.name);
+    }
+    return checkoutPackageSpec(manifestDir, pkg.name);
+  });
+
+  const packages = new Map(direct.map((pkg) => [pkg.name, pkg]));
+  for (const pkg of packages.values()) {
+    for (const name of pkg.dependencies) {
+      const dependency = workspace.get(name);
+      if (dependency) {
+        packages.set(name, dependency);
+      }
+    }
+  }
+
+  const overridden = [...packages.keys()].filter((name) => !directInWorkspacePackage.has(name));
+  if (overridden.length > 0) {
+    const rootPackageJson = parseJsonFile('package.json', files['package.json'] ?? '', 'fixture');
+    if (!isRecord(rootPackageJson)) {
+      throw new Error('Expected the sandbox package.json to contain a JSON object');
+    }
+    rootPackageJson.overrides = {
+      ...(isRecord(rootPackageJson.overrides) ? rootPackageJson.overrides : {}),
+      ...Object.fromEntries(overridden.map((name) => [name, checkoutPackageSpec('.', name)])),
+    };
+    files['package.json'] = JSON.stringify(rootPackageJson, null, 2).concat('\n');
+  }
+
+  return [...packages.values()];
+}
+
+async function pointStorybookAtLatest(
+  files: Record<string, string>,
+  workspace: StorybookWorkspace
 ): Promise<void> {
+  await replaceWorkspaceSpecs(files, workspace, (pkg) => resolveDistTagVersion(pkg.name, 'latest'));
+}
+
+// Rewrites each `workspace:*` dependency in the sandbox root and workspace manifests with
+// `resolve`, and returns the monorepo packages it rewrote.
+async function replaceWorkspaceSpecs(
+  files: Record<string, string>,
+  workspace: StorybookWorkspace,
+  resolve: (pkg: WorkspacePackage, manifestDir: string) => string | Promise<string>
+): Promise<WorkspacePackage[]> {
+  const replaced: WorkspacePackage[] = [];
+
   for (const filePath of workspacePackageJsonPaths(files)) {
     const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
     if (!isRecord(packageJson)) {
       continue;
     }
 
-    let pinned = false;
+    let changed = false;
     for (const field of ['dependencies', 'devDependencies'] as const) {
       const dependencies = packageJson[field];
       if (!isRecord(dependencies)) {
@@ -465,22 +538,203 @@ export async function pinStorybookPackages(
       }
 
       for (const [name, spec] of Object.entries(dependencies)) {
-        if (name !== 'storybook' && !name.startsWith('@storybook/')) {
+        if (typeof spec !== 'string' || !spec.startsWith('workspace:')) {
           continue;
         }
-        if (typeof spec === 'string' && spec.startsWith('file:')) {
-          continue;
+        if (spec !== WORKSPACE_SPEC) {
+          throw new Error(`${filePath} depends on ${name}@${spec}; use ${WORKSPACE_SPEC}`);
         }
-        dependencies[name] = await resolveDistTagVersion(name, distTag);
-        pinned = true;
+        const pkg = workspace.get(name);
+        if (!pkg) {
+          throw new Error(
+            `${filePath} depends on ${name}@${WORKSPACE_SPEC}, but ${name} is not a published package of this monorepo`
+          );
+        }
+        dependencies[name] = await resolve(pkg, path.posix.dirname(filePath));
+        replaced.push(pkg);
+        changed = true;
       }
     }
 
     // Leave files without Storybook deps byte-identical to their source, so
     // sandbox snapshots don't pick up reformatting noise.
-    if (pinned) {
+    if (changed) {
       files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
     }
+  }
+
+  return replaced;
+}
+
+function checkoutPackageSpec(manifestDir: string, packageName: string): string {
+  return `file:${path.posix.relative(manifestDir, checkoutTarballPath(packageName))}`;
+}
+
+function checkoutTarballPath(packageName: string): string {
+  return path.posix.join(
+    CHECKOUT_PACKAGES_DIR,
+    `${packageName.replace(/^@/, '').replace('/', '-')}.tgz`
+  );
+}
+
+let storybookWorkspace: Promise<StorybookWorkspace> | undefined;
+
+export function readStorybookWorkspace(): Promise<StorybookWorkspace> {
+  storybookWorkspace ??= (async () => {
+    const { stdout } = await execYarn(['workspaces', 'list', '--json'], { cwd: REPO_ROOT });
+    const manifests = await Promise.all(
+      stdout
+        .trim()
+        .split('\n')
+        .map(async (line) => {
+          const { location } = JSON.parse(line) as { location: string };
+          const manifest = JSON.parse(
+            await fs.readFile(path.join(REPO_ROOT, location, 'package.json'), 'utf8')
+          ) as {
+            name: string;
+            private?: boolean;
+            dependencies?: Record<string, string>;
+            peerDependencies?: Record<string, string>;
+            peerDependenciesMeta?: Record<string, { optional?: boolean }>;
+          };
+          return { location, manifest };
+        })
+    );
+    const published = manifests.filter(({ manifest }) => !manifest.private);
+    const names = new Set(published.map(({ manifest }) => manifest.name));
+
+    const packages = await Promise.all(
+      published.map(async ({ location, manifest }): Promise<WorkspacePackage> => {
+        const project = JSON.parse(
+          await fs.readFile(path.join(REPO_ROOT, location, 'project.json'), 'utf8')
+        ) as { name: string };
+        return {
+          name: manifest.name,
+          dir: location,
+          project: project.name,
+          dependencies: [
+            ...Object.keys(manifest.dependencies ?? {}),
+            // npm installs required peers too, so one left out here would come from the registry.
+            ...Object.keys(manifest.peerDependencies ?? {}).filter(
+              (name) => !manifest.peerDependenciesMeta?.[name]?.optional
+            ),
+          ].filter((name) => names.has(name)),
+        };
+      })
+    );
+    return new Map(packages.map((pkg) => [pkg.name, pkg]));
+  })();
+  return storybookWorkspace;
+}
+
+const packedTarballs = new Map<string, string>();
+let packQueue: Promise<unknown> = Promise.resolve();
+
+// Compiles and packs each package once per process. Sandbox setups run concurrently, so the runs
+// are chained: a compile for one sandbox must not rewrite a `dist` another one is still packing.
+async function packCheckoutPackages(packages: WorkspacePackage[]): Promise<Record<string, string>> {
+  if (packages.every((pkg) => packedTarballs.has(pkg.name))) {
+    return readPackedTarballs(packages);
+  }
+
+  const run = packQueue.then(async () => {
+    const unpacked = packages.filter((pkg) => !packedTarballs.has(pkg.name));
+    if (unpacked.length > 0) {
+      await compileCheckoutPackages(unpacked);
+    }
+    await Promise.all(
+      unpacked.map(async (pkg) => packedTarballs.set(pkg.name, await packCheckoutPackage(pkg)))
+    );
+    return readPackedTarballs(packages);
+  });
+  packQueue = run.catch(() => undefined);
+  return run;
+}
+
+function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string> {
+  const names = new Set(packages.map((pkg) => pkg.name));
+  return Object.fromEntries(
+    [...packedTarballs]
+      .filter(([name]) => names.has(name))
+      .map(([name, tarball]) => [`${checkoutTarballPath(name)}.base64`, tarball])
+  );
+}
+
+// Every monorepo package a template or fixture installs from the checkout, so CI can compile them
+// before the evals start: sandbox setup runs inside each eval's timeout.
+export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]> {
+  const workspace = await readStorybookWorkspace();
+  const packages = new Map<string, WorkspacePackage>();
+  for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
+    for await (const manifestPath of fs.glob('**/package.json', {
+      cwd: sourceDir,
+      exclude: (name) => name === 'node_modules',
+    })) {
+      const content = await fs.readFile(path.join(sourceDir, manifestPath), 'utf8');
+      for (const pkg of await pointStorybookAtCheckout({ 'package.json': content }, workspace)) {
+        packages.set(pkg.name, pkg);
+      }
+    }
+  }
+  return [...packages.values()];
+}
+
+export async function compileCheckoutPackages(packages: WorkspacePackage[]): Promise<void> {
+  const projects = packages.map((pkg) => pkg.project).join(',');
+  try {
+    // Only the production build emits the type declarations a published package ships.
+    await execYarn(
+      ['nx', 'run-many', '-t', 'compile', '-c', 'production', '--projects', projects],
+      {
+        cwd: REPO_ROOT,
+        maxBuffer: 64 * 1024 * 1024,
+      }
+    );
+  } catch (error) {
+    const output = isRecord(error) ? `${error.stdout ?? ''}${error.stderr ?? ''}` : '';
+    throw new Error(
+      `Failed to compile ${projects}:\n${output.trimEnd().split('\n').slice(-40).join('\n')}`,
+      {
+        cause: error,
+      }
+    );
+  }
+}
+
+// `yarn pack` applies the package's `files` list and rewrites its `workspace:` ranges, exactly
+// like a publish. The sandbox only takes text files and core ships binary assets, so the tarball
+// travels base64-encoded.
+async function packCheckoutPackage(pkg: WorkspacePackage): Promise<string> {
+  const packDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agent-eval-packages-'));
+  try {
+    const tarballPath = path.join(packDir, path.posix.basename(checkoutTarballPath(pkg.name)));
+    await execYarn(['pack', '--out', tarballPath], {
+      cwd: path.join(REPO_ROOT, pkg.dir),
+    });
+    return (await fs.readFile(tarballPath)).toString('base64');
+  } finally {
+    await fs.rm(packDir, { recursive: true, force: true });
+  }
+}
+
+// Windows only finds `yarn.cmd` through a shell, which then needs paths with spaces quoted.
+function execYarn(args: string[], options: { cwd: string; maxBuffer?: number }) {
+  const isWindows = process.platform === 'win32';
+  return execFileAsync(
+    'yarn',
+    isWindows ? args.map((arg) => (/\s/.test(arg) ? `"${arg}"` : arg)) : args,
+    { ...options, shell: isWindows }
+  );
+}
+
+async function decodeCheckoutPackages(sandbox: Sandbox): Promise<void> {
+  const result = await sandbox.runCommand('bash', [
+    '-c',
+    `set -e; cd ${CHECKOUT_PACKAGES_DIR}; for f in *.base64; do base64 -d "$f" > "\${f%.base64}"; rm "$f"; done`,
+  ]);
+
+  if (result.exitCode !== 0) {
+    throw new Error(`Failed to decode the checkout packages: ${result.stderr || result.stdout}`);
   }
 }
 
@@ -490,13 +744,11 @@ function referencesStartStorybookScript(files: Record<string, string>): boolean 
   );
 }
 
-// The sandbox root package.json plus workspace packages; the injected
-// local-packages builds are never rewritten.
+// The sandbox root package.json plus workspace packages.
 function workspacePackageJsonPaths(files: Record<string, string>): string[] {
   return Object.keys(files).filter(
     (filePath) =>
       (filePath === 'package.json' || filePath.endsWith('/package.json')) &&
-      !filePath.startsWith('local-packages/') &&
       !filePath.includes('node_modules/')
   );
 }
@@ -527,152 +779,6 @@ async function resolveDistTagVersion(packageName: string, distTag: string): Prom
 
   distTagVersionCache.set(cacheKey, version);
   return version;
-}
-
-// A workspace package references the injected builds with a file: spec whose
-// target is the sandbox-root local-packages directory — `file:./local-packages/…`
-// from the root, `file:../../local-packages/…` from a workspace leaf.
-function usesLocalStorybookMcpPackages(files: Record<string, string>): boolean {
-  return workspacePackageJsonPaths(files).some((filePath) => {
-    const packageJson = JSON.parse(files[filePath] ?? '{}') as unknown;
-
-    if (!isRecord(packageJson)) {
-      return false;
-    }
-
-    return (
-      isLocalPackagesSpec(getDependencySpec(packageJson, '@storybook/addon-mcp'), 'addon-mcp') ||
-      isLocalPackagesSpec(getDependencySpec(packageJson, '@storybook/mcp'), 'mcp')
-    );
-  });
-}
-
-function isLocalPackagesSpec(spec: string | undefined, packageDir: string): boolean {
-  return (
-    spec !== undefined && spec.startsWith('file:') && spec.endsWith(`local-packages/${packageDir}`)
-  );
-}
-
-function getDependencySpec(packageJson: Record<string, unknown>, name: string): string | undefined {
-  const dependencies = isRecord(packageJson.dependencies) ? packageJson.dependencies : {};
-  const devDependencies = isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {};
-  const spec = dependencies[name] ?? devDependencies[name];
-
-  return typeof spec === 'string' ? spec : undefined;
-}
-
-async function readLocalStorybookMcpPackages(): Promise<Record<string, string>> {
-  return {
-    ...(await readLocalStorybookMcpPackage()),
-    ...(await readLocalStorybookAddonMcpPackage()),
-  };
-}
-
-async function readLocalStorybookMcpPackage(): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'code', 'lib', 'mcp');
-  const targetDir = path.posix.join('local-packages', 'mcp');
-  const files = await readPackageDistFiles(sourceDir, targetDir);
-
-  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir);
-
-  return files;
-}
-
-async function readLocalStorybookAddonMcpPackage(): Promise<Record<string, string>> {
-  const sourceDir = path.join(REPO_ROOT, 'code', 'addons', 'mcp');
-  const targetDir = path.posix.join('local-packages', 'addon-mcp');
-  const files = await readPackageDistFiles(sourceDir, targetDir);
-
-  files[path.posix.join(targetDir, 'preset.js')] = await fs.readFile(
-    path.join(sourceDir, 'preset.js'),
-    'utf8'
-  );
-  files[path.posix.join(targetDir, 'package.json')] = await readSandboxPackageJson(sourceDir);
-
-  return files;
-}
-
-async function readSandboxPackageJson(sourceDir: string): Promise<string> {
-  const packageJson = JSON.parse(
-    await fs.readFile(path.join(sourceDir, 'package.json'), 'utf8')
-  ) as unknown;
-
-  if (!isRecord(packageJson)) {
-    throw new Error(`Expected ${path.join(sourceDir, 'package.json')} to contain a JSON object`);
-  }
-
-  const sandboxPackageJson = rewritePackageSpecsForNpm(packageJson);
-  return JSON.stringify(sandboxPackageJson, null, 2).concat('\n');
-}
-
-export function rewritePackageSpecsForNpm(
-  packageJson: Record<string, unknown>
-): Record<string, unknown> {
-  const result = JSON.parse(JSON.stringify(packageJson)) as Record<string, unknown>;
-  const version = typeof result.version === 'string' ? result.version : undefined;
-  const dependencyFields = [
-    'dependencies',
-    'devDependencies',
-    'optionalDependencies',
-    'peerDependencies',
-  ] as const;
-
-  for (const field of dependencyFields) {
-    const dependencies = result[field];
-    if (!isRecord(dependencies)) {
-      continue;
-    }
-
-    for (const [name, spec] of Object.entries(dependencies)) {
-      if (typeof spec !== 'string') {
-        continue;
-      }
-
-      dependencies[name] = rewriteDependencySpec(name, spec, version);
-    }
-  }
-
-  return result;
-}
-
-function rewriteDependencySpec(name: string, spec: string, version: string | undefined): string {
-  if (spec === 'workspace:*' || spec === 'workspace:^' || spec === 'workspace:~') {
-    if (version === undefined) {
-      throw new Error(`Missing package version for workspace dependency ${name}`);
-    }
-
-    // Storybook publishes its monorepo packages in lockstep, so npm-facing
-    // workspace ranges use the package manifest's own version.
-    return spec === 'workspace:*' ? version : `${spec.at(-1)}${version}`;
-  }
-
-  if (spec.startsWith('workspace:')) {
-    throw new Error(`Unsupported workspace dependency for ${name}: ${spec}`);
-  }
-
-  return spec;
-}
-
-async function readPackageDistFiles(
-  sourceDir: string,
-  targetDir: string
-): Promise<Record<string, string>> {
-  const distDir = path.join(sourceDir, 'dist');
-  const packageName = path.basename(sourceDir);
-  try {
-    const distStat = await fs.stat(distDir);
-    if (!distStat.isDirectory()) {
-      throw new Error(`${distDir} exists but is not a directory`);
-    }
-  } catch {
-    throw new Error(
-      `Missing build output for ${packageName} at ${distDir}. Run \`yarn nx run-many -t compile --projects mcp,addon-mcp\` before running agent-eval.`
-    );
-  }
-
-  const files: Record<string, string> = {};
-  await collectFiles({ sourceDir, relativeDir: 'dist', targetDir, files });
-  return files;
 }
 
 async function collectFiles(options: {

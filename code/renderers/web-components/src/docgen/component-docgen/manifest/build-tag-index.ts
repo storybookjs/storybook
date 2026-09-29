@@ -39,15 +39,17 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
         continue;
       }
 
-      const declaration = findDeclarationByName(
-        manifest,
-        definition.declaration.name,
+      const modulePath =
         typeof definition.declaration.module === 'string'
           ? definition.declaration.module
           : typeof module.path === 'string'
             ? module.path
-            : undefined
-      );
+            : undefined;
+      if (modulePath === undefined) {
+        continue;
+      }
+
+      const declaration = findDeclarationByName(manifest, definition.declaration.name, modulePath);
       if (declaration) {
         tags.set(definition.name, declaration);
       }
@@ -60,14 +62,14 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
 function findDeclarationByName(
   manifest: ManifestPackage,
   name: string,
-  modulePath: string | undefined
+  modulePath: string
 ): ManifestDeclaration | undefined {
   for (const module of manifest.modules) {
     if (!isRecord(module) || !Array.isArray(module.declarations)) {
       continue;
     }
 
-    if (modulePath !== undefined && module.path !== modulePath) {
+    if (module.path !== modulePath) {
       continue;
     }
     const declaration = module.declarations?.find(

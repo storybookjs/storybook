@@ -15,7 +15,7 @@ export interface WebComponentsDocgenOptions {
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
-  /** Surfaced to payload consumers such as the docs toolset; no docs block renders it yet. */
+  /** Set while the manifest is served from its last valid version after a failed reload. */
   warning?: string;
   customElementsManifest?: {
     manifestPath: string;

@@ -278,13 +278,14 @@ describe('buildDocgenPayload', () => {
           tags: [
             tag(
               { name: 'XCard', customElement: true, kind: 'class', tagName: 'x-card' },
-              'custom-elements.json has 1 schema violation(s); first: /modules/0 must match'
+              'Invalid Custom Elements Manifest at custom-elements.json: Unexpected token; using the last valid version'
             ),
           ],
         })
       )
     ).toMatchObject({
-      warning: 'custom-elements.json has 1 schema violation(s); first: /modules/0 must match',
+      warning:
+        'Invalid Custom Elements Manifest at custom-elements.json: Unexpected token; using the last valid version',
     });
   });
 

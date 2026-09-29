@@ -57,5 +57,4 @@
   "path": "./input.stories.ts",
   "renderer": "web-components",
   "summary": undefined,
-  "warning": "custom-elements.json has 1 schema violation(s); first: /modules/0/declarations/0/members/0 must have required property 'kind'",
 }

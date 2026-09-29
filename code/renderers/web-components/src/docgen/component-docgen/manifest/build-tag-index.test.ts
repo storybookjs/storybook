@@ -182,7 +182,7 @@ describe('buildTagIndex', () => {
     expect(buildTagIndex(manifest).get(tag)?.name).toBe(expectedDeclarationName);
   });
 
-  it('skips malformed modules, declarations, and custom-element-definition exports', () => {
+  it('skips malformed modules, declarations, exports and exports without a module path', () => {
     const index = buildTagIndex({
       schemaVersion: '1.0.0',
       modules: [
@@ -205,6 +205,21 @@ describe('buildTagIndex', () => {
         },
         {
           kind: 'javascript-module',
+          exports: [
+            {
+              kind: 'custom-element-definition',
+              name: 'x-missing-path',
+              declaration: { name: 'SameName' },
+            },
+          ],
+        },
+        {
+          kind: 'javascript-module',
+          path: 'other.js',
+          declarations: [{ name: 'SameName', kind: 'class', customElement: true }],
+        },
+        {
+          kind: 'javascript-module',
           path: 'good.js',
           declarations: [
             {
@@ -220,5 +235,6 @@ describe('buildTagIndex', () => {
 
     expect([...index.keys()]).toEqual(['x-good']);
     expect(index.get('x-good')?.name).toBe('GoodElement');
+    expect(index.get('x-missing-path')).toBeUndefined();
   });
 });

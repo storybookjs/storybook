@@ -1,6 +1,7 @@
 import { logger } from 'storybook/internal/node-logger';
 
 import { readFile, stat } from 'node:fs/promises';
+import { resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,7 +15,7 @@ vi.mock('storybook/internal/node-logger', { spy: true });
 
 beforeEach(() => {
   vol.reset();
-  vi.spyOn(process, 'cwd').mockReturnValue('/workspace');
+  vi.spyOn(process, 'cwd').mockReturnValue(WORKSPACE);
   vi.mocked(readFile).mockImplementation(memfs.promises.readFile as typeof readFile);
   vi.mocked(stat).mockImplementation(memfs.promises.stat as typeof stat);
   vi.mocked(logger.warn).mockImplementation(() => {});
@@ -25,8 +26,9 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-const MANIFEST_PATH = '/workspace/custom-elements.json';
-const SECOND_MANIFEST_PATH = '/workspace/second-elements.json';
+const WORKSPACE = resolve('/workspace');
+const MANIFEST_PATH = resolve(WORKSPACE, 'custom-elements.json');
+const SECOND_MANIFEST_PATH = resolve(WORKSPACE, 'second-elements.json');
 
 const manifest = (tagName: string, name = 'XElement'): ManifestPackage => ({
   schemaVersion: '1.0.0',
@@ -39,32 +41,12 @@ const manifest = (tagName: string, name = 'XElement'): ManifestPackage => ({
   ],
 });
 
-const schemaWarningManifest = (): ManifestPackage =>
-  ({
-    schemaVersion: '1.0.0',
-    modules: [
-      {
-        kind: 'javascript-module',
-        path: 'element.js',
-        declarations: [
-          {
-            name: 'XElement',
-            kind: 'class',
-            customElement: true,
-            tagName: 'x-schema',
-            members: [{ name: 'value' }],
-          },
-        ],
-      },
-    ],
-  }) as unknown as ManifestPackage;
-
 const writeManifest = (
   path: string,
   source: ManifestPackage | Record<string, unknown> | string,
   mtimeMs = 1_000
 ): void => {
-  memfs.mkdirSync('/workspace', { recursive: true });
+  memfs.mkdirSync(WORKSPACE, { recursive: true });
   memfs.writeFileSync(path, typeof source === 'string' ? source : JSON.stringify(source));
   memfs.utimesSync(path, new Date(mtimeMs), new Date(mtimeMs));
 };
@@ -76,9 +58,85 @@ describe('CemManager', () => {
 
     const [first, second] = await Promise.all([manager.refresh(), manager.refresh()]);
 
-    expect(first).toBe(second);
     expect(first.tags.get('x-card')?.declaration.name).toBe('XElement');
+    expect(second.tags.get('x-card')?.declaration.name).toBe('XElement');
     expect(readFile).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs every reload at debug level', async () => {
+    writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
+    const manager = new CemManager([MANIFEST_PATH]);
+    await manager.refresh();
+
+    writeManifest(MANIFEST_PATH, manifest('x-new'), 2_000);
+    await manager.refresh();
+
+    expect(logger.debug).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not re-log an unchanged stale warning when the invalid file is touched', async () => {
+    writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
+    const manager = new CemManager([MANIFEST_PATH]);
+    await manager.refresh();
+
+    writeManifest(MANIFEST_PATH, '{ not json', 2_000);
+    await manager.refresh();
+    writeManifest(MANIFEST_PATH, '{ not json', 3_000);
+    await manager.refresh();
+
+    expect(logger.warn).toHaveBeenCalledTimes(1);
+  });
+
+  it('logs the stale warning again after a clean load in between', async () => {
+    writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
+    const manager = new CemManager([MANIFEST_PATH]);
+    await manager.refresh();
+    writeManifest(MANIFEST_PATH, '{ not json', 2_000);
+    await manager.refresh();
+    writeManifest(MANIFEST_PATH, manifest('x-old'), 3_000);
+    await manager.refresh();
+    writeManifest(MANIFEST_PATH, '{ not json', 4_000);
+    await manager.refresh();
+
+    expect(logger.warn).toHaveBeenCalledTimes(2);
+  });
+
+  it('serves a write that lands while a shared refresh awaits stat', async () => {
+    writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
+    const manager = new CemManager([MANIFEST_PATH]);
+    await manager.refresh();
+    let releaseStat!: () => void;
+    const statGate = new Promise<void>((resolveGate) => {
+      releaseStat = resolveGate;
+    });
+    vi.mocked(stat).mockImplementationOnce((async (path: string) => {
+      const stats = await memfs.promises.stat(path);
+      await statGate;
+      return stats;
+    }) as typeof stat);
+
+    const inFlight = manager.refresh();
+    await vi.waitFor(() => expect(stat).toHaveBeenCalledTimes(2));
+    writeManifest(MANIFEST_PATH, manifest('x-new'), 2_000);
+    const afterWrite = manager.refresh();
+    releaseStat();
+    await inFlight;
+
+    expect((await afterWrite).tags.get('x-new')?.declaration.name).toBe('XElement');
+  });
+
+  it('reloads after a stat failure clears', async () => {
+    writeManifest(MANIFEST_PATH, manifest('x-old'), 1_000);
+    const manager = new CemManager([MANIFEST_PATH]);
+    await manager.refresh();
+    vi.mocked(stat).mockRejectedValueOnce(Object.assign(new Error('EISDIR'), { code: 'EISDIR' }));
+    const failed = await manager.refresh();
+    expect(failed.tags.get('x-old')?.warning).toContain('using the last valid version');
+
+    const recovered = await manager.refresh();
+
+    expect(recovered.tags.get('x-old')?.warning).toBeUndefined();
+    expect(readFile).toHaveBeenCalledTimes(2);
   });
 
   it('resolves changed tags after mtime bumps', async () => {
@@ -168,17 +226,6 @@ describe('CemManager', () => {
     expect(logger.warn).toHaveBeenCalledTimes(1);
   });
 
-  it('keeps schema-violating manifests with a warning', async () => {
-    writeManifest(MANIFEST_PATH, schemaWarningManifest());
-    const manager = new CemManager([MANIFEST_PATH]);
-
-    const tag = (await manager.refresh()).tags.get('x-schema');
-
-    expect(tag?.warning).toMatch(/1 schema violation/);
-    expect(tag?.warning).toContain('/modules/0/declarations/0/members/0');
-    expect(tag?.declaration.name).toBe('XElement');
-  });
-
   it('keeps valid tags from manifests with malformed nested values', async () => {
     writeManifest(MANIFEST_PATH, {
       schemaVersion: '1.0.0',
@@ -222,21 +269,19 @@ describe('CemManager', () => {
     expect(snapshot.errors).toEqual([]);
     expect([...snapshot.tags.keys()]).toEqual(['x-good']);
     expect(tag?.declaration.name).toBe('GoodElement');
-    expect(tag?.warning).toMatch(/^custom-elements\.json has \d+ schema violation\(s\);/);
+    expect(tag?.warning).toBeUndefined();
   });
 
-  it('keeps the handed-out schema warning snapshot untouched after a failed reload', async () => {
-    writeManifest(MANIFEST_PATH, schemaWarningManifest(), 1_000);
+  it('keeps a handed-out snapshot untouched after a failed reload', async () => {
+    writeManifest(MANIFEST_PATH, manifest('x-valid'), 1_000);
     const manager = new CemManager([MANIFEST_PATH]);
     const loaded = await manager.refresh();
-    const schemaWarning = loaded.tags.get('x-schema')?.warning;
 
     writeManifest(MANIFEST_PATH, '{nope', 2_000);
     const stale = await manager.refresh();
 
-    expect(stale.tags.get('x-schema')?.warning).toMatch(/using the last valid version$/);
-    expect(loaded.tags.get('x-schema')?.warning).toBe(schemaWarning);
-    expect(schemaWarning).toContain('schema violation');
+    expect(stale.tags.get('x-valid')?.warning).toMatch(/using the last valid version$/);
+    expect(loaded.tags.get('x-valid')?.warning).toBeUndefined();
   });
 
   it('resolves duplicate tags from the first manifest in configuration order', async () => {

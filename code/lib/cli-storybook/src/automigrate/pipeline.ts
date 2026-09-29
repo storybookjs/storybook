@@ -13,7 +13,7 @@ import {
 
 import { createFixFiles } from './fix-files.ts';
 import { editParsedFile } from './helpers/edit-parsed-file.ts';
-import type { Fix, RunOptions, TransformOptions } from './types.ts';
+import type { CheckOptions, Fix, RunOptions, TransformOptions } from './types.ts';
 
 /** Where a file sits in a Storybook project. Files are visited in this order. */
 export type FileKind = 'main' | 'preview' | 'manager' | 'config' | 'story';
@@ -282,6 +282,37 @@ export const pluginsFor = (
 /** The check of a transform fix without its own gate: detection decides from the hooks' output. */
 export const applies = async () => ({});
 
+export interface CheckedFix {
+  fix: Fix;
+  result: unknown;
+  /**
+   * Resolves the check's result again, re-running `check` when a file it read through `files`
+   * changed on disk since, for instance because an earlier fix edited it.
+   */
+  recheck?: () => Promise<unknown>;
+}
+
+export const runCheck = async (
+  fix: Fix,
+  options: Omit<CheckOptions, 'files'>
+): Promise<CheckedFix> => {
+  const check = async () => {
+    const { files, readsChanged } = createFixFiles();
+    return { result: await (fix.check ?? applies)({ ...options, files }), readsChanged };
+  };
+  let latest = await check();
+  return {
+    fix,
+    result: latest.result,
+    recheck: async () => {
+      if (await latest.readsChanged()) {
+        latest = await check();
+      }
+      return latest.result;
+    },
+  };
+};
+
 /**
  * The detection pass: the checked fixes to offer. A fix with hooks and no `run` is offered only when
  * a hook changes a file or fails on one, and failures are reported once the apply pass hits them.
@@ -350,38 +381,71 @@ const failuresOnMain = async (
  * A fix fails when its `run` throws or its hooks fail on the main config; its hooks run on the main
  * config without writing before its `run`, so such a fix changes nothing. A fix whose `run` resolves
  * `false` is skipped and keeps no edits.
+ *
+ * Right before a fix runs, or before the apply pass for a fix without `run`, its `check` runs again
+ * when an earlier fix changed a file that the check read. A fix whose check no longer applies
+ * succeeds without changes.
  */
 export const applyFixes = async (
   project: ProjectRunOptions & ProjectPaths,
-  selected: { fix: Fix; result: unknown }[]
+  selected: CheckedFix[]
 ): Promise<Map<string, FixOutcome>> => {
   const outcomes = new Map<string, FixOutcome>();
-  const ran: typeof selected = [];
-  for (const entry of selected) {
-    const { fix, result } = entry;
-    if (fix.run) {
-      const mainFailures = await failuresOnMain(project, entry);
-      if (mainFailures.length > 0) {
-        outcomes.set(fix.id, failed(mainFailures));
+  const refresh = async ({ fix, result, recheck }: CheckedFix) => {
+    if (!recheck) {
+      return { fix, result };
+    }
+    try {
+      const current = await recheck();
+      if (!current) {
+        outcomes.set(fix.id, { status: 'succeeded', fileFailures: [] });
+        return undefined;
+      }
+      return { fix, result: current };
+    } catch (error) {
+      outcomes.set(fix.id, { status: 'failed', error, fileFailures: [] });
+      return undefined;
+    }
+  };
+
+  const ran: CheckedFix[] = [];
+  for (const checked of selected) {
+    if (!checked.fix.run) {
+      ran.push(checked);
+      continue;
+    }
+    const entry = await refresh(checked);
+    if (!entry) {
+      continue;
+    }
+    const mainFailures = await failuresOnMain(project, entry);
+    if (mainFailures.length > 0) {
+      outcomes.set(entry.fix.id, failed(mainFailures));
+      continue;
+    }
+    const { files, commit } = createFixFiles();
+    try {
+      if ((await entry.fix.run!({ ...project, result: entry.result, files })) === false) {
+        outcomes.set(entry.fix.id, { status: 'skipped' });
         continue;
       }
-      const { files, commit } = createFixFiles();
-      try {
-        if ((await fix.run({ ...project, result, files })) === false) {
-          outcomes.set(fix.id, { status: 'skipped' });
-          continue;
-        }
-        await commit();
-      } catch (error) {
-        outcomes.set(fix.id, { status: 'failed', error, fileFailures: [] });
-        continue;
-      }
+      await commit();
+    } catch (error) {
+      outcomes.set(entry.fix.id, { status: 'failed', error, fileFailures: [] });
+      continue;
     }
     ran.push(entry);
   }
 
-  const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
-  for (const { fix } of ran) {
+  const toApply: CheckedFix[] = [];
+  for (const entry of ran) {
+    const current = entry.fix.run ? entry : await refresh(entry);
+    if (current) {
+      toApply.push(current);
+    }
+  }
+  const applied = await runTransforms(project, pluginsFor(toApply, project), { write: true });
+  for (const { fix } of toApply) {
     const errors = applied.get(fix.id)?.errors ?? [];
     outcomes.set(
       fix.id,

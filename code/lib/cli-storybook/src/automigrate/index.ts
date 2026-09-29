@@ -19,9 +19,8 @@ import type {
   PreCheckFailure,
   Prompt,
 } from './fixes/index.ts';
-import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import { applies, applyFixes, detectApplicable } from './pipeline.ts';
+import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -286,14 +285,14 @@ export async function runFixes({
     mainConfigPath,
     storiesPaths,
   };
-  const checked: { fix: Fix; result: unknown }[] = [];
+  const checked: CheckedFix[] = [];
 
   for (const f of fixes as Fix[]) {
-    let result;
+    let check: CheckedFix | undefined;
 
     try {
       logger.debug(`Running ${picocolors.cyan(f.id)} migration checks`);
-      result = await (f.check ?? applies)({
+      check = await runCheck(f, {
         packageManager,
         configDir,
         mainConfig,
@@ -302,7 +301,6 @@ export async function runFixes({
         mainConfigPath,
         storiesPaths,
         requested: fixId === f.id,
-        files: createFixFiles().files,
       });
       logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {
@@ -314,8 +312,8 @@ export async function runFixes({
       fixResults[f.id] = FixStatus.CHECK_FAILED;
     }
 
-    if (result) {
-      checked.push({ fix: f, result });
+    if (check?.result) {
+      checked.push(check);
     } else {
       fixResults[f.id] = fixResults[f.id] || FixStatus.UNNECESSARY;
     }
@@ -333,9 +331,10 @@ export async function runFixes({
     }
   }
 
-  const selected: { fix: Fix; result: unknown }[] = [];
+  const selected: CheckedFix[] = [];
 
-  for (const { fix: f, result } of applicable) {
+  for (const check of applicable) {
+    const { fix: f, result } = check;
     const promptType: Prompt =
       typeof f.promptType === 'function' ? await f.promptType(result) : (f.promptType ?? 'auto');
 
@@ -424,7 +423,7 @@ export async function runFixes({
     if (promptType === 'auto') {
       invariant(runAnswer, 'runAnswer must be defined if not promptOnly');
       if (runAnswer.fix) {
-        selected.push({ fix: f, result });
+        selected.push(check);
       } else {
         fixResults[f.id] = FixStatus.SKIPPED;
         fixSummary.skipped.push(f.id);

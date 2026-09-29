@@ -279,3 +279,67 @@ describe('a fix whose hooks cannot migrate its files', () => {
     });
   });
 });
+
+describe('a fix whose check read a file that an earlier fix changed', () => {
+  const setupFile = '/project/vitest.setup.ts';
+
+  const appendOnRun = (id: string, { skipWhen }: { skipWhen?: string } = {}): Fix<string> => ({
+    id,
+    prompt: () => id,
+    check: async ({ files }) => {
+      const source = await files.read(setupFile);
+      return skipWhen && source.includes(skipWhen) ? null : source;
+    },
+    run: async ({ result, files }) => {
+      files.write(setupFile, `${result}+${id}`);
+    },
+  });
+
+  const runMultiProject = async (fixes: Fix[]) => {
+    const detected = await collectAutomigrationsAcrossProjects({
+      fixes,
+      projects: [{ ...project, beforeVersion: '10.0.0' }],
+      taskLog: { message: () => {}, error: () => {}, success: () => {} } as never,
+    });
+    const results = await runAutomigrationsForProjects(detected, {
+      automigrations: detected,
+      yes: true,
+    } as never);
+    return results[project.configDir].automigrationStatuses;
+  };
+
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vol.fromJSON({ [project.mainConfigPath]: 'export default {};', [setupFile]: 'setup' });
+  });
+
+  it('checks again before it runs, keeping the earlier edit in a single-project run', async () => {
+    const { fixResults } = await runFixes({
+      ...project,
+      fixes: [appendOnRun('first'), appendOnRun('second')],
+      yes: true,
+    });
+
+    expect(fixResults).toEqual({ first: 'succeeded', second: 'succeeded' });
+    expect(vol.toJSON()[setupFile]).toBe('setup+first+second');
+  });
+
+  it('checks again before it runs, keeping the earlier edit in a multi-project run', async () => {
+    const statuses = await runMultiProject([appendOnRun('first'), appendOnRun('second')]);
+
+    expect(statuses).toEqual({ first: 'succeeded', second: 'succeeded' });
+    expect(vol.toJSON()[setupFile]).toBe('setup+first+second');
+  });
+
+  it('changes nothing once its check no longer applies', async () => {
+    const statuses = await runMultiProject([
+      appendOnRun('first'),
+      appendOnRun('second', { skipWhen: '+first' }),
+    ]);
+
+    expect(statuses).toEqual({ first: 'succeeded', second: 'succeeded' });
+    expect(vol.toJSON()[setupFile]).toBe('setup+first');
+  });
+});

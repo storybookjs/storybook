@@ -8,10 +8,9 @@ import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
 import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
-import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import { applies, applyFixes, detectApplicable } from './pipeline.ts';
-import type { CheckOptions, Fix, FixId } from './types.ts';
+import { applyFixes, type CheckedFix, detectApplicable, runCheck } from './pipeline.ts';
+import type { Fix, FixId } from './types.ts';
 import { FixStatus } from './types.ts';
 
 export interface ProjectAutomigrationData {
@@ -31,6 +30,7 @@ export interface AutomigrationCheckResultReport {
   project: ProjectAutomigrationData;
   /** The fix's hooks went through every file and would change none. */
   verified?: boolean;
+  recheck?: CheckedFix['recheck'];
 }
 
 export interface AutomigrationCheckResult<T = any> {
@@ -73,9 +73,10 @@ export async function collectAutomigrationsAcrossProjects(
     project: ProjectAutomigrationData,
     status: 'check_succeeded' | 'check_failed' | 'not_applicable',
     result?: any,
-    verified?: boolean
+    verified?: boolean,
+    recheck?: CheckedFix['recheck']
   ) {
-    const report = { project, result, status, verified };
+    const report = { project, result, status, verified, recheck };
     const existing = automigrationMap.get(fix.id);
     if (existing) {
       existing.reports.push(report);
@@ -91,27 +92,25 @@ export async function collectAutomigrationsAcrossProjects(
     taskLog.message(`Checking automigrations for ${projectName}...`);
     logger.debug(`Processing project: ${projectName}`);
 
-    const checks: { fix: Fix; result: unknown; failed?: boolean }[] = [];
+    const checks: (CheckedFix & { failed?: boolean })[] = [];
 
     for (const fix of fixes) {
       try {
         logger.debug(`Checking fix ${fix.id} for project ${projectName}...`);
 
-        const checkOptions: CheckOptions = {
-          packageManager: project.packageManager,
-          configDir: project.configDir,
-          mainConfig: project.mainConfig,
-          storybookVersion: project.storybookVersion,
-          beforeVersion: project.beforeVersion,
-          files: createFixFiles().files,
-          requested: requestedFixIds?.includes(fix.id),
-          previewConfigPath: project.previewConfigPath,
-          mainConfigPath: project.mainConfigPath,
-          storiesPaths: project.storiesPaths,
-        };
-        const result = await (fix.check ?? applies)(checkOptions);
-
-        checks.push({ fix, result });
+        checks.push(
+          await runCheck(fix, {
+            packageManager: project.packageManager,
+            configDir: project.configDir,
+            mainConfig: project.mainConfig,
+            storybookVersion: project.storybookVersion,
+            beforeVersion: project.beforeVersion,
+            requested: requestedFixIds?.includes(fix.id),
+            previewConfigPath: project.previewConfigPath,
+            mainConfigPath: project.mainConfigPath,
+            storiesPaths: project.storiesPaths,
+          })
+        );
       } catch (error) {
         checks.push({ fix, result: null, failed: true });
 
@@ -140,7 +139,7 @@ export async function collectAutomigrationsAcrossProjects(
           result !== null && !!fix.transform && !fix.run
         );
       } else {
-        collectResult(fix, project, 'check_succeeded', result);
+        collectResult(fix, project, 'check_succeeded', result, undefined, check.recheck);
       }
     }
   }
@@ -308,6 +307,7 @@ export async function runAutomigrationsForProjects(
       project: ProjectAutomigrationData;
       result: any;
       status: AutomigrationCheckResultReport['status'];
+      recheck?: CheckedFix['recheck'];
     }[]
   >();
 
@@ -367,8 +367,8 @@ export async function runAutomigrationsForProjects(
           am.fix.id === fix.id &&
           am.reports.some((report) => report.project.configDir === project.configDir)
       );
-    const selected: { fix: Fix; result: unknown }[] = [];
-    for (const { fix, result, status } of projectAutomigration) {
+    const selected: CheckedFix[] = [];
+    for (const { fix, result, status, recheck } of projectAutomigration) {
       if (status === 'not_applicable') {
         fixResults[fix.id] = FixStatus.UNNECESSARY;
       } else if (status === 'check_failed') {
@@ -376,7 +376,7 @@ export async function runAutomigrationsForProjects(
       } else if (!isSelected(fix)) {
         fixResults[fix.id] = FixStatus.SKIPPED;
       } else if (fix.run || fix.transform) {
-        selected.push({ fix, result });
+        selected.push({ fix, result, recheck });
       }
     }
 

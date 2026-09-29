@@ -102,11 +102,32 @@ export const createFixFiles = () => {
     },
   };
 
+  const changedOnDisk = async (key: string, path: string) => {
+    const original = originals.get(key);
+    if (original === undefined) {
+      return false;
+    }
+    try {
+      return original !== (await readFile(path, 'utf-8'));
+    } catch {
+      return true;
+    }
+  };
+
+  /** Whether a file read through `files` changed on disk since. */
+  const readsChanged = async () => {
+    for (const key of originals.keys()) {
+      if (await changedOnDisk(key, key)) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   const commit = async () => {
     const overwritten: string[] = [];
     for (const [key, { path }] of staged) {
-      const original = originals.get(key);
-      if (original !== undefined && original !== (await readFile(path, 'utf-8'))) {
+      if (await changedOnDisk(key, path)) {
         overwritten.push(`- ${path}`);
       }
     }
@@ -120,5 +141,5 @@ export const createFixFiles = () => {
     }
   };
 
-  return { files, commit };
+  return { files, commit, readsChanged };
 };

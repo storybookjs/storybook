@@ -704,7 +704,7 @@ export default defineConfig({
   globalSetup: './playwright/stories-setup.ts',
   use: { baseURL: storybookUrl },
   fullyParallel: true,
-  webServer: storybookUrl
+  webServer: process.env.STORYBOOK_URL
     ? undefined
     : {
         command: 'npm run storybook -- --ci',

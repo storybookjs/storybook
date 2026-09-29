@@ -11,7 +11,7 @@ import { getAddonToolMetadata } from './tool-registry.ts';
 const MCP_CLIENT_DESCRIPTION_CHAR_LIMIT = 2048;
 
 // Bold, italics and code spans add characters without changing what the model reads.
-const MARKDOWN_EMPHASIS = /\*\*|`|(?<![\w$])_\w+_(?!\w)/;
+const MARKDOWN_EMPHASIS = /\*\*|`|(?<![\w$])_\w+_(?!\w)|(?<![\w*])\*\w(?:[^*\n]*\w)?\*(?![\w*])/;
 
 const bools = [true, false] as const;
 

@@ -1,5 +1,15 @@
 import type { SBType, StrictInputType } from 'storybook/internal/types';
 
+/** Server argTypes skip the client normalizer, so controls are always the object form. */
+export type ServiceControl = Exclude<StrictInputType['control'], string>;
+
+export interface ParsedTypeText {
+  type: SBType;
+  /** Only when core's `inferControls` would not derive it from `type`. */
+  control?: ServiceControl;
+  options?: (string | number)[];
+}
+
 const ARRAY_RE = /^(?:Array<(.+)>|(.+)\[\])$/;
 const DROPPED_MEMBERS = new Set([
   'undefined',
@@ -15,13 +25,6 @@ const FUNCTION_RE = /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/;
 const UNKNOWN_ARRAY_ELEMENT_TYPE = { name: 'other', value: '' } as const;
 /** Real types nest a handful of levels; the cap only stops pathological input. */
 const MAX_ARRAY_DEPTH = 8;
-
-export interface ParsedTypeText {
-  type: SBType;
-  /** Only when core's `inferControls` would not derive it from `type`; object form, since service argTypes skip the preview normalizer. */
-  control?: Exclude<StrictInputType['control'], string>;
-  options?: (string | number)[];
-}
 
 export function parseTypeText(text: string | undefined, depth = 0): ParsedTypeText | undefined {
   const trimmed = text?.trim() ?? '';

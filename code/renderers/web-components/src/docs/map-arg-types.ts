@@ -4,7 +4,7 @@ import type {
   CustomElementsItem,
   CustomElementsItemGroups,
 } from './custom-elements-manifest-types.ts';
-import { eventActionName } from './event-action-name.ts';
+import { eventActionName } from '../docgen/component-docgen/arg-types/event-action-name.ts';
 
 type TableDefaultSummary = NonNullable<
   NonNullable<StrictInputType['table']>['defaultValue']

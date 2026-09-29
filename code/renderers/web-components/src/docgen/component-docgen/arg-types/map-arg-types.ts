@@ -1,6 +1,6 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import { eventActionName } from '../../../docs/event-action-name.ts';
+import { eventActionName } from './event-action-name.ts';
 import { deprecationMessage, namedItems, trimmedOrUndefined } from '../utils.ts';
 import type {
   ManifestAttribute,
@@ -8,24 +8,25 @@ import type {
   ManifestClassMethod,
   ManifestClassMember,
   ManifestCssCustomProperty,
+  ManifestCssCustomState,
+  ManifestCssPart,
   ManifestDeclaration,
   ManifestEvent,
   ManifestParameter,
+  ManifestSlot,
 } from '../manifest/types.ts';
-import { readTypeText } from './alt-type.ts';
-import { parseTypeText } from './parse-type-text.ts';
+import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
+import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
 
 type ArgTypeCategory = 'attributes' | 'properties';
 type ArgTypeSource = ManifestAttribute | ManifestClassField;
-type CssCustomPropertyWithType = ManifestCssCustomProperty & { type?: { text?: string } };
-type MemberItem = {
-  name: string;
+type DocSource = {
   summary?: string;
   description?: string;
-  deprecated?: ManifestAttribute['deprecated'];
+  deprecated?: string | boolean;
 };
-type MemberArgTypeRest = Omit<StrictInputType, 'name' | 'description' | 'table' | 'control'> & {
-  control?: Exclude<StrictInputType['control'], string>;
+type ArgTypeFields = Omit<StrictInputType, 'name' | 'description' | 'table' | 'control'> & {
+  control?: ServiceControl;
   table?: Omit<NonNullable<StrictInputType['table']>, 'category' | 'jsDocTags'>;
 };
 
@@ -47,42 +48,35 @@ export function mapArgTypes(
   declaration: ManifestDeclaration,
   typeProperty: string
 ): StrictArgTypes {
-  const events = namedItems<ManifestEvent>(declaration.events);
-  const members = namedItems<ManifestClassMember>(declaration.members);
-  const slots = namedItems<{ name: string; summary?: string; description?: string }>(
-    declaration.slots
-  );
-  const cssParts = namedItems<{ name: string; summary?: string; description?: string }>(
-    declaration.cssParts
-  );
-  const cssStates = namedItems<{ name: string; summary?: string; description?: string }>(
-    declaration.cssStates
-  );
-  const cssProperties = namedItems<CssCustomPropertyWithType>(declaration.cssProperties);
+  const events = namedItems(declaration.events);
+  const members = collectMembers(namedItems(declaration.members));
+  const slots = namedItems(declaration.slots);
+  const cssParts = namedItems(declaration.cssParts);
+  const cssStates = namedItems(declaration.cssStates);
+  const cssProperties = namedItems(declaration.cssProperties);
 
   return {
     ...Object.fromEntries([
       ...events.flatMap((event) => eventEntries(event, typeProperty)),
       ...members.filter(isMethod).filter(isPublicMember).map(methodEntry),
-      ...slots.map((slot) =>
-        namedEntry({ ...slot, name: slot.name || 'default' }, 'slot', 'slots')
-      ),
+      ...slots.map((slot) => namedEntry(slot, 'slot', 'slots')),
       ...cssParts.map((part) => namedEntry(part, 'part', 'css shadow parts')),
       ...cssStates.map((state) => namedEntry(state, 'state', 'css states')),
-      ...cssProperties.map(cssPropertyEntry),
+      ...cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
     ]),
-    ...mapAttributesAndProperties(declaration, typeProperty),
+    ...mapAttributesAndProperties(declaration, members, typeProperty),
   };
 }
 
 function mapAttributesAndProperties(
   declaration: ManifestDeclaration,
+  members: ManifestClassMember[],
   typeProperty: string
 ): StrictArgTypes {
   const argTypes: StrictArgTypes = {};
-  const fields = collectFields(namedItems<ManifestClassMember>(declaration.members));
+  const fields = members.filter(isField);
   const publicFields = fields.filter(isPublicField);
-  const attributes = namedItems<ManifestAttribute>(declaration.attributes);
+  const attributes = namedItems(declaration.attributes);
 
   for (const field of publicFields) {
     if (attributes.some((attribute) => attribute.name === field.name)) {
@@ -133,14 +127,8 @@ function toArgType({ key, category, sources, typeProperty }: ToArgTypeOptions): 
   const readonly = firstValue(sources, (source) =>
     'readonly' in source && source.readonly === true ? true : undefined
   );
-  const item = {
-    name: key,
-    summary: firstValue(sources, (source) => source.summary),
-    description: firstValue(sources, (source) => source.description),
-    deprecated: findDeprecated(sources),
-  };
 
-  return memberArgType(item, category, {
+  return memberArgType(key, sources, category, {
     ...parsed,
     ...(readonly ? { control: false } : {}),
     table: {
@@ -160,7 +148,7 @@ function eventEntries(
   return [
     [
       `${event.name}-event`,
-      memberArgType(event, 'events', {
+      memberArgType(event.name, [event], 'events', {
         type: { name: 'other', value: text },
         control: false,
         table: { type: { summary: text } },
@@ -180,23 +168,31 @@ function eventEntries(
 function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
   return [
     `${method.name}-method`,
-    memberArgType(method, 'methods', {
+    memberArgType(method.name, [method], 'methods', {
       type: { name: 'function' },
       table: { type: { summary: methodSignature(method) } },
     }),
   ];
 }
 
-function namedEntry(item: MemberItem, suffix: string, category: string): [string, StrictInputType] {
-  return [`${item.name}-${suffix}`, memberArgType(item, category, { type: { name: 'string' } })];
+function namedEntry(
+  item: ManifestSlot | ManifestCssPart | ManifestCssCustomState,
+  suffix: string,
+  category: string
+): [string, StrictInputType] {
+  const name = item.name || 'default';
+  return [`${name}-${suffix}`, memberArgType(name, [item], category, { type: { name: 'string' } })];
 }
 
-function cssPropertyEntry(property: CssCustomPropertyWithType): [string, StrictInputType] {
-  const syntax = property.syntax ?? property.type?.text;
+function cssPropertyEntry(
+  property: ManifestCssCustomProperty,
+  typeProperty: string
+): [string, StrictInputType] {
+  const syntax = readCssPropertySyntax(property, typeProperty);
 
   return [
     property.name,
-    memberArgType(property, 'css custom properties', {
+    memberArgType(property.name, [property], 'css custom properties', {
       ...cssCustomPropertyControl(syntax),
       table: {
         type: { summary: syntax },
@@ -207,48 +203,44 @@ function cssPropertyEntry(property: CssCustomPropertyWithType): [string, StrictI
 }
 
 function memberArgType(
-  item: MemberItem,
+  name: string,
+  sources: DocSource[],
   category: string,
-  rest: MemberArgTypeRest
+  rest: ArgTypeFields
 ): StrictInputType {
   const { table, ...input } = rest;
+  const { deprecated, ...fields } = docFields(sources);
 
   return {
-    name: item.name,
-    description: itemDescription(item),
+    name,
+    ...fields,
     ...input,
     table: {
       ...table,
       category,
-      ...deprecatedTableTags(item.deprecated),
+      ...(deprecated ? { jsDocTags: { deprecated } } : {}),
     },
   };
 }
 
-function deprecatedTableTags(deprecated: ManifestAttribute['deprecated']): {
-  jsDocTags?: { deprecated: string };
-} {
-  const message = deprecationMessage(deprecated);
-  return message ? { jsDocTags: { deprecated: message } } : {};
+function docFields(sources: DocSource[]): { description?: string; deprecated?: string } {
+  return {
+    description: firstValue(sources, (source) =>
+      trimmedOrUndefined(source.summary ?? source.description)
+    ),
+    deprecated: firstValue(sources, (source) => deprecationMessage(source.deprecated)),
+  };
 }
 
-function itemDescription(item: { summary?: string; description?: string }): string | undefined {
-  return trimmedOrUndefined(item.summary ?? item.description);
-}
-
-function collectFields(members: ManifestClassMember[]): ManifestClassField[] {
-  const fields = new Map<string, ManifestClassField>();
+function collectMembers(members: ManifestClassMember[]): ManifestClassMember[] {
+  const items = new Map<string, ManifestClassMember>();
   for (const member of members) {
-    if (!isField(member)) {
-      continue;
-    }
-
-    const existing = fields.get(member.name);
+    const existing = items.get(member.name);
     if (!existing || (existing.inheritedFrom && !member.inheritedFrom)) {
-      fields.set(member.name, member);
+      items.set(member.name, member);
     }
   }
-  return [...fields.values()];
+  return [...items.values()];
 }
 
 function sourcesForField(
@@ -259,10 +251,10 @@ function sourcesForField(
   return attribute ? [field, attribute] : [field];
 }
 
-function firstValue<T>(
-  sources: ArgTypeSource[],
-  read: (source: ArgTypeSource) => T | undefined
-): T | undefined {
+function firstValue<TSource, TValue>(
+  sources: TSource[],
+  read: (source: TSource) => TValue | undefined
+): TValue | undefined {
   for (const source of sources) {
     const value = read(source);
     if (value !== undefined) {
@@ -270,19 +262,6 @@ function firstValue<T>(
     }
   }
   return undefined;
-}
-
-function findDeprecated(sources: ArgTypeSource[]): string | boolean | undefined {
-  return firstValue(sources, (source) => {
-    const { deprecated } = source;
-    if (deprecated === true) {
-      return deprecated;
-    }
-    if (typeof deprecated === 'string' && deprecated.trim()) {
-      return deprecated;
-    }
-    return undefined;
-  });
 }
 
 function methodSignature(method: ManifestClassMethod): string {
@@ -302,7 +281,7 @@ function formatParameter(parameter: ManifestParameter): string {
 
 function cssCustomPropertyControl(
   syntax: string | undefined
-): Pick<MemberArgTypeRest, 'control' | 'type'> {
+): Pick<ArgTypeFields, 'control' | 'type'> {
   const lowerSyntax = syntax?.toLowerCase();
 
   if (lowerSyntax === '<color>') {

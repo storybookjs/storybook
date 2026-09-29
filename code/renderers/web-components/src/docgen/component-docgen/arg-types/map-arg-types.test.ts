@@ -173,6 +173,25 @@ describe('mapArgTypes', () => {
       },
     },
     {
+      name: 'field description wins over attribute summary',
+      declaration: declaration({
+        attributes: [{ name: 'label', fieldName: 'label', summary: 'attr summary' }],
+        members: [{ kind: 'field', name: 'label', description: 'field description' }],
+      }),
+      expected: {
+        label: {
+          name: 'label',
+          description: 'field description',
+          type: { name: 'string' },
+          table: {
+            category: 'attributes',
+            type: { summary: undefined },
+            defaultValue: { summary: undefined },
+          },
+        },
+      },
+    },
+    {
       name: 'attribute + field with different names',
       declaration: declaration({
         attributes: [{ name: 'is-open', fieldName: 'isOpen', type: { text: 'boolean' } }],
@@ -757,6 +776,56 @@ describe('mapArgTypes', () => {
       },
     },
     {
+      name: 'own method beats an inherited duplicate',
+      declaration: declaration({
+        members: [
+          { kind: 'method', name: 'focusIt', description: 'own override' },
+          {
+            kind: 'method',
+            name: 'focusIt',
+            description: 'inherited base',
+            inheritedFrom: { name: 'Base' },
+          },
+        ],
+      }),
+      expected: {
+        'focusIt-method': {
+          name: 'focusIt',
+          description: 'own override',
+          type: { name: 'function' },
+          table: {
+            category: 'methods',
+            type: { summary: '()' },
+          },
+        },
+      },
+    },
+    {
+      name: 'own method beats an inherited duplicate when inherited is listed first',
+      declaration: declaration({
+        members: [
+          {
+            kind: 'method',
+            name: 'focusIt',
+            description: 'inherited base',
+            inheritedFrom: { name: 'Base' },
+          },
+          { kind: 'method', name: 'focusIt', description: 'own override' },
+        ],
+      }),
+      expected: {
+        'focusIt-method': {
+          name: 'focusIt',
+          description: 'own override',
+          type: { name: 'function' },
+          table: {
+            category: 'methods',
+            type: { summary: '()' },
+          },
+        },
+      },
+    },
+    {
       name: 'public method without return type',
       declaration: declaration({
         members: [
@@ -776,6 +845,38 @@ describe('mapArgTypes', () => {
           table: {
             category: 'methods',
             type: { summary: '(to?: number = 0)' },
+          },
+        },
+      },
+    },
+    {
+      name: 'whitespace-only deprecated is dropped on every category',
+      declaration: declaration({
+        events: [{ name: 'ready', deprecated: '   ' } as ManifestEvent],
+        slots: [{ name: 'actions', description: 'Actions slot.', deprecated: '   ' }],
+      }),
+      expected: {
+        'ready-event': {
+          name: 'ready',
+          description: undefined,
+          type: { name: 'other', value: 'CustomEvent' },
+          control: false,
+          table: {
+            category: 'events',
+            type: { summary: 'CustomEvent' },
+          },
+        },
+        onReady: {
+          name: 'onReady',
+          action: { name: 'ready' },
+          table: { disable: true },
+        },
+        'actions-slot': {
+          name: 'actions',
+          description: 'Actions slot.',
+          type: { name: 'string' },
+          table: {
+            category: 'slots',
           },
         },
       },

@@ -3,7 +3,7 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /** The records with a string `name` in a manifest list. */
-export function namedItems<T extends { name: string }>(value: unknown): T[] {
+export function namedItems<T extends { name: string }>(value: readonly T[] | undefined): T[] {
   return (
     Array.isArray(value)
       ? value.filter((item) => isRecord(item) && typeof item.name === 'string')
@@ -22,5 +22,5 @@ export function deprecationMessage(deprecated: string | boolean | undefined): st
   if (!deprecated) {
     return undefined;
   }
-  return typeof deprecated === 'string' ? deprecated : 'deprecated';
+  return typeof deprecated === 'string' ? trimmedOrUndefined(deprecated) : 'deprecated';
 }

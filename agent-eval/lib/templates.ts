@@ -733,19 +733,20 @@ export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
 // In code mode (the default for GPT-6 models) Codex shows MCP server
 // instructions only once the model searches its tools, which it skips for
 // tasks it thinks it can do alone. AGENTS.md is always in its context.
+// Eval-only: Storybook writes no AGENTS.md for real Codex users, so remove
+// this once SB-2127 fixes it in the product:
+// https://linear.app/chromaui/issue/SB-2127
 export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
+  // The copies match the checkout's server; the stable server from npm serves other text.
+  if (process.env.EVAL_STORYBOOK_LATEST === '1') {
+    return;
+  }
   const instructions = await fs.readFile(
     isReviewEnabledFor('mcp') ? CODEX_AGENTS_MD_REVIEW_SOURCE_PATH : CODEX_AGENTS_MD_SOURCE_PATH,
     'utf8'
   );
-  let existing = '';
-  try {
-    existing = `${(await sandbox.readFile('AGENTS.md')).trimEnd()}\n\n`;
-  } catch {
-    // No AGENTS.md in the fixture.
-  }
   await sandbox.writeFiles({
-    'AGENTS.md': `${existing}# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
+    'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
   });
 }
 

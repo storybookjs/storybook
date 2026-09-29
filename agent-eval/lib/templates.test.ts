@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   enableExperimentalReview,
@@ -73,16 +73,19 @@ describe('enableExperimentalReview', () => {
 
 // The Codex MCP experiment copies the server instructions into AGENTS.md, so a
 // change to them must update the copies too.
-describe('Codex AGENTS.md instructions', async () => {
-  // Imported by path: agent-eval's tsc would otherwise type-check core's sources.
-  const builderPath = join(
-    AGENT_EVAL_ROOT,
-    '..',
-    'code/core/src/cli/skills/content/build-server-instructions.ts'
-  );
-  const { buildServerInstructions } = (await import(builderPath)) as {
-    buildServerInstructions: (options: Record<string, unknown>) => string;
-  };
+describe('Codex AGENTS.md instructions', () => {
+  let buildServerInstructions: (options: Record<string, unknown>) => string;
+
+  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's
+  // sources. Inside `beforeAll`, a moved file fails only these tests.
+  beforeAll(async () => {
+    ({ buildServerInstructions } = await import(
+      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/skills/content/build-server-instructions.ts')
+    ));
+  });
+
+  // The server derives these flags from the sandbox (`getToolAvailability`); they match the MCP
+  // fixtures, which are all react-vite with addon-vitest, docs and MCP. Keep them in sync.
   const serverInstructions = (reviewEnabled: boolean) =>
     buildServerInstructions({
       transport: 'mcp',

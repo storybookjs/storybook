@@ -135,7 +135,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
+- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (the review-on text with `EVAL_REVIEW=1`, none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Known Failures

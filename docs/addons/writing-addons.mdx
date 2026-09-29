@@ -121,12 +121,10 @@ Moving onto the manager, here we register the addon with Storybook using a uniqu
 
 ### Conditionally render the addon
 
-Notice the `match` property. It allows you to control the view mode (story or docs) and tab (the story canvas or [custom tabs](./addon-types.mdx#tabs)) where the toolbar addon is visible. For example:
+Notice the `match` property. It allows you to control the view mode (story or docs) where the toolbar addon is visible. For example:
 
-- `({ tabId }) => tabId === 'my-addon/tab'` will show your addon when viewing the tab with the ID `my-addon/tab`.
 - `({ viewMode }) => viewMode === 'story'` will show your addon when viewing a story in the canvas.
 - `({ viewMode }) => viewMode === 'docs'` will show your addon when viewing the documentation for a component.
-- `({ tabId, viewMode }) => !tabId && viewMode === 'story'` will show your addon when viewing a story in the canvas and not in a custom tab (i.e. when `tabId === undefined`).
 
 Run the `start` script to build and start Storybook and verify that the addon is registered correctly and showing in the UI.
 

@@ -65,7 +65,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'logfile'
     | 'statsJson'
     | 'loglevel'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
@@ -135,7 +134,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           open,
           loglevel,
           statsJson,
-          previewUrl,
           sourceMap = false,
           preserveSymlinks = false,
           zoneless = true,
@@ -189,7 +187,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           open,
           statsJson,
           loglevel,
-          previewUrl,
         };
 
         // Bridge angularBuilderOptions to the addon-vitest child process

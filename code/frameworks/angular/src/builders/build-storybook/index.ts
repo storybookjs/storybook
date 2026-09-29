@@ -61,7 +61,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'disableTelemetry'
     | 'debugWebpack'
     | 'logfile'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & { [key: string]: any };
@@ -118,7 +117,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     debugWebpack,
     disableTelemetry,
     assets,
-    previewUrl,
     sourceMap = false,
     preserveSymlinks = false,
     // Angular 21+ always supports zoneless; users still opt out via `experimentalZoneless: false`
@@ -153,7 +151,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     webpackStatsJson,
     statsJson,
     debugWebpack,
-    previewUrl,
   };
 
   await runInstance({ ...standaloneOptions, mode: 'static' });

@@ -1,0 +1,112 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'Basic label'",
+          "description": "Text shown in the component.",
+          "fieldName": "label",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "2",
+          "description": "Number of items to display.",
+          "fieldName": "count",
+          "name": "count",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "default": "false",
+          "description": "Whether the panel is disabled.",
+          "fieldName": "disabled",
+          "name": "disabled",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "default": "false",
+          "description": "Whether the panel is open.",
+          "fieldName": "isOpen",
+          "name": "is-open",
+          "type": {
+            "text": "boolean",
+          },
+        },
+      ],
+      "cssStates": [
+        {
+          "description": "Set while the panel is open.",
+          "name": "open",
+        },
+      ],
+      "customElement": true,
+      "description": "Panel with string, number and boolean attributes.",
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "label",
+          "default": "'Basic label'",
+          "description": "Text shown in the component.",
+          "kind": "field",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "attribute": "count",
+          "default": "2",
+          "description": "Number of items to display.",
+          "kind": "field",
+          "name": "count",
+          "readonly": true,
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "attribute": "disabled",
+          "default": "false",
+          "description": "Whether the panel is disabled.",
+          "kind": "field",
+          "name": "disabled",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "attribute": "is-open",
+          "default": "false",
+          "description": "Whether the panel is open.",
+          "kind": "field",
+          "name": "isOpen",
+          "reflects": true,
+          "type": {
+            "text": "boolean",
+          },
+        },
+      ],
+      "name": "LitBasicAttributes",
+      "summary": "Attribute fixture.",
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-basic-attributes",
+    },
+    "manifestPath": "custom-elements.v2.json",
+  },
+  "description": "Panel with string, number and boolean attributes.",
+  "id": "lit-basic-attributes",
+  "jsDocTags": {},
+  "name": "lit-basic-attributes",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": "Attribute fixture.",
+}

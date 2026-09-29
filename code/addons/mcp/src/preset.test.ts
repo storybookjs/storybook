@@ -750,7 +750,6 @@ describe('experimental_devServer', () => {
 
     await (experimental_devServer as any)(mockApp, optionsWithRefs);
 
-    // The preset should have called presets.apply('refs')
     expect(apply).toHaveBeenCalledWith('refs', {});
   });
 
@@ -787,7 +786,6 @@ describe('experimental_devServer', () => {
       },
     } as unknown as Options;
 
-    // Should not throw
     const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
     expect(result).toBe(mockApp);
   });

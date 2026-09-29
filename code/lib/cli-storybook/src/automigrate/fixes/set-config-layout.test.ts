@@ -26,7 +26,6 @@ const check = () =>
     mainConfig,
     storybookVersion: '11.0.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 
 const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boolean) =>

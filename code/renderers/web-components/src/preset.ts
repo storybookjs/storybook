@@ -2,6 +2,8 @@ import { fileURLToPath } from 'node:url';
 
 import type { PresetProperty } from 'storybook/internal/types';
 
+export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   input = [],
   options

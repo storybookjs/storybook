@@ -35,10 +35,7 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
       ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
       'args'
     > & { args?: MetaArgs<TArgs & TRenderer['args'], TMetaArgKeys> }
-  ): Meta<
-    RequireMetaArgs<TRenderer & { args: TArgs }, TMetaArgKeys>,
-    MetaArgKeys<TArgs & TRenderer['args'], TMetaArgKeys>
-  >;
+  ): Meta<RequireMetaArgs<TRenderer & { args: TArgs }, TMetaArgKeys>, TMetaArgKeys>;
 
   type<T>(): Preview<TRenderer & T>;
 }
@@ -110,20 +107,31 @@ export type MetaArgKeys<TArgs, TKeys extends PropertyKey> = string extends TKeys
   ? never
   : TKeys & keyof TArgs;
 
+/** `TArgs` with the args set in `preview.meta()` marked as present. */
+export type WithMetaArgs<TArgs, TKeys extends PropertyKey> = TArgs &
+  Required<Pick<TArgs, MetaArgKeys<TArgs, TKeys>>>;
+
+/** Marks the args set in `preview.meta()` as present in its stories. */
+export type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
+  args: WithMetaArgs<TRenderer['args'], TKeys>;
+};
+
+/** The args a story must still provide: the ones `preview.meta()` didn't set. */
+export type StoryArgs<TArgs, TKeys extends PropertyKey> = SetOptional<
+  TArgs,
+  MetaArgKeys<TArgs, TKeys>
+>;
+
 /**
- * The args a typed `render` adds to those of the meta's `component`. A `render` typed as `any` or
+ * Adds the args of a typed `render` to those of the meta's `component`. A `render` typed as `any` or
  * `Args` adds none, and it can't change the types of the component's args.
  */
-export type RenderArgs<TRenderArgs, TComponentArgs> = 0 extends 1 & TRenderArgs
-  ? unknown
-  : string extends keyof TRenderArgs
+export type WithRenderArgs<TComponentArgs, TRenderArgs> = TComponentArgs &
+  (0 extends 1 & TRenderArgs
     ? unknown
-    : Omit<TRenderArgs, keyof TComponentArgs>;
-
-/** Makes the args set in `preview.meta()` required in its stories. */
-export type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
-  args: Required<Pick<TRenderer['args'], MetaArgKeys<TRenderer['args'], TKeys>>>;
-};
+    : string extends keyof TRenderArgs
+      ? unknown
+      : Omit<TRenderArgs, keyof TComponentArgs>);
 
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
@@ -134,15 +142,13 @@ export type InferMetaTypes<TRenderer extends Renderer, TArgs, Decorators> = TRen
   args: Simplify<TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<TRenderer, Decorators>>>>;
 };
 
-export interface Meta<
-  TRenderer extends Renderer,
-  TMetaArgKeys extends keyof TRenderer['args'] = never,
-> {
+export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyKey = never> {
   readonly _tag: 'Meta';
   input: Omit<ComponentAnnotations<TRenderer, TRenderer['args']>, 'args'> & {
-    args: [TMetaArgKeys] extends [never]
+    args: [MetaArgKeys<TRenderer['args'], TMetaArgKeys>] extends [never]
       ? Partial<TRenderer['args']> | undefined
-      : Pick<TRenderer['args'], TMetaArgKeys> & Partial<TRenderer['args']>;
+      : Pick<TRenderer['args'], MetaArgKeys<TRenderer['args'], TMetaArgKeys>> &
+          Partial<TRenderer['args']>;
   };
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
@@ -155,7 +161,7 @@ export interface Meta<
     TInput extends StoryAnnotations<
       TRenderer,
       TRenderer['args'],
-      SetOptional<TRenderer['args'], TMetaArgKeys>
+      StoryArgs<TRenderer['args'], TMetaArgKeys>
     >,
   >(
     input?: TInput

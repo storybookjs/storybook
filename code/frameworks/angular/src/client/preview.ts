@@ -4,9 +4,10 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
-  MetaArgKeys,
-  RenderArgs,
   RequireMetaArgs,
+  StoryArgs,
+  WithMetaArgs,
+  WithRenderArgs,
   Preview,
   PreviewAddon,
   Story,
@@ -21,7 +22,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { SetOptional, Simplify } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as angularAnnotations from './config.ts';
 import * as angularDocsAnnotations from './docs/config.ts';
@@ -109,7 +110,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       args?: MetaArgs<
         InferAngularTypes<
           T,
-          InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+          WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
           Decorators
         >['args'],
         TMetaArgKeys
@@ -118,35 +119,18 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
     } & Omit<
       ComponentAnnotations<
         AngularRenderer & T,
-        RequireMetaArgs<
-          AngularRenderer &
-            T & {
-              args: InferComponentArgs<C> &
-                NoInfer<RenderArgs<TRenderArgs, InferComponentArgs<C>>> &
-                T['args'];
-            },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<
+          WithMetaArgs<WithRenderArgs<InferComponentArgs<C>, TRenderArgs> & T['args'], TMetaArgKeys>
+        >
       >,
       'decorators' | 'component' | 'args' | 'render'
     >
   ): AngularMeta<
     RequireMetaArgs<
-      InferAngularTypes<
-        T,
-        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
-        Decorators
-      >,
+      InferAngularTypes<T, WithRenderArgs<InferComponentArgs<C>, TRenderArgs>, Decorators>,
       TMetaArgKeys
     >,
-    MetaArgKeys<
-      InferAngularTypes<
-        T,
-        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
-        Decorators
-      >['args'],
-      TMetaArgKeys
-    >
+    TMetaArgKeys
   >;
 
   meta<
@@ -164,16 +148,13 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
     } & Omit<
       ComponentAnnotations<
         AngularRenderer & T,
-        RequireMetaArgs<
-          AngularRenderer & T & { args: NoInfer<TArgs> & T['args'] },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>
       >,
       'decorators' | 'args' | 'render' | 'component'
     >
   ): AngularMeta<
     RequireMetaArgs<InferAngularTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    MetaArgKeys<InferAngularTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
+    TMetaArgKeys
   >;
 }
 
@@ -186,7 +167,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
  */
 export interface AngularMeta<
   T extends AngularRenderer,
-  TMetaArgKeys extends keyof T['args'] = never,
+  TMetaArgKeys extends PropertyKey = never,
 > extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
@@ -244,7 +225,7 @@ export interface AngularMeta<
    * ```
    */
   story<
-    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): AngularStory<T, TInput>;
@@ -253,7 +234,7 @@ export interface AngularMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -267,7 +248,7 @@ export interface AngularMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): AngularStory<T, {}>;
 }
 

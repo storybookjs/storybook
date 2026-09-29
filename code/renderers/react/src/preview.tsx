@@ -7,8 +7,9 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
-  MetaArgKeys,
   RequireMetaArgs,
+  StoryArgs,
+  WithMetaArgs,
   Preview,
   Story,
 } from 'storybook/internal/csf';
@@ -22,7 +23,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { SetOptional, Simplify } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview.tsx';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
@@ -123,16 +124,10 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
       decorators?: Decorators | Decorators[];
       args?: MetaArgs<InferReactTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
     } & Omit<
-      ComponentAnnotations<
-        ReactTypes & T,
-        RequireMetaArgs<ReactTypes & T & { args: NoInfer<TArgs> }, NoInfer<TMetaArgKeys>>['args']
-      >,
+      ComponentAnnotations<ReactTypes & T, NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): ReactMeta<
-    RequireMetaArgs<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    MetaArgKeys<InferReactTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
-  >;
+  ): ReactMeta<RequireMetaArgs<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**
@@ -144,7 +139,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
  */
 export interface ReactMeta<
   T extends ReactTypes,
-  TMetaArgKeys extends keyof T['args'] = never,
+  TMetaArgKeys extends PropertyKey = never,
 > extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
@@ -197,7 +192,7 @@ export interface ReactMeta<
    * ```
    */
   story<
-    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): ReactStory<T, TInput>;
@@ -206,7 +201,7 @@ export interface ReactMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -220,7 +215,7 @@ export interface ReactMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): ReactStory<T, {}>;
 }
 

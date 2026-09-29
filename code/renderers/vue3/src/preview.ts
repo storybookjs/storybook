@@ -4,9 +4,10 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
-  MetaArgKeys,
-  RenderArgs,
   RequireMetaArgs,
+  StoryArgs,
+  WithMetaArgs,
+  WithRenderArgs,
   Preview,
   PreviewAddon,
   Story,
@@ -20,7 +21,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { SetOptional, Simplify } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as vueAnnotations from './entry-preview.ts';
 import * as vueDocsAnnotations from './entry-preview-docs.ts';
@@ -103,46 +104,25 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       component: C;
       render?: ArgsStoryFn<VueTypes & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
       args?: MetaArgs<
-        InferVueTypes<
-          T,
-          InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
-          Decorators
-        >['args'],
+        InferVueTypes<T, WithRenderArgs<InferComponentArgs<C>, TRenderArgs>, Decorators>['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<
         VueTypes & T,
-        RequireMetaArgs<
-          VueTypes &
-            T & {
-              args: InferComponentArgs<C> &
-                NoInfer<RenderArgs<TRenderArgs, InferComponentArgs<C>>> &
-                T['args'];
-            },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<
+          WithMetaArgs<WithRenderArgs<InferComponentArgs<C>, TRenderArgs> & T['args'], TMetaArgKeys>
+        >
       >,
       'decorators' | 'component' | 'args' | 'render'
     >
   ): VueMeta<
     RequireMetaArgs<
-      InferVueTypes<
-        T,
-        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
-        Decorators
-      >,
+      InferVueTypes<T, WithRenderArgs<InferComponentArgs<C>, TRenderArgs>, Decorators>,
       TMetaArgKeys
     >,
-    MetaArgKeys<
-      InferVueTypes<
-        T,
-        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
-        Decorators
-      >['args'],
-      TMetaArgKeys
-    >
+    TMetaArgKeys
   >;
 
   meta<
@@ -155,19 +135,10 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       args?: MetaArgs<InferVueTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<
-        VueTypes & T,
-        RequireMetaArgs<
-          VueTypes & T & { args: NoInfer<TArgs> & T['args'] },
-          NoInfer<TMetaArgKeys>
-        >['args']
-      >,
+      ComponentAnnotations<VueTypes & T, NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): VueMeta<
-    RequireMetaArgs<InferVueTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    MetaArgKeys<InferVueTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
-  >;
+  ): VueMeta<RequireMetaArgs<InferVueTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**
@@ -177,10 +148,10 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
  * provided in meta become optional in stories, while missing required args must be provided at the
  * story level.
  */
-export interface VueMeta<
-  T extends VueTypes,
-  TMetaArgKeys extends keyof T['args'] = never,
-> extends Meta<T, TMetaArgKeys> {
+export interface VueMeta<T extends VueTypes, TMetaArgKeys extends PropertyKey = never> extends Meta<
+  T,
+  TMetaArgKeys
+> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -234,7 +205,7 @@ export interface VueMeta<
    * ```
    */
   story<
-    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): VueStory<T, TInput>;
@@ -243,7 +214,7 @@ export interface VueMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -257,7 +228,7 @@ export interface VueMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): VueStory<T, {}>;
 }
 

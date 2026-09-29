@@ -5,8 +5,8 @@ import type {
   InferMetaTypes,
   InferTypes,
   MetaArgs,
-  MetaArgKeys,
   RequireMetaArgs,
+  WithMetaArgs,
   PreviewAddon,
 } from 'storybook/internal/csf';
 import type {
@@ -123,10 +123,7 @@ export interface TanStackPreview<
     } & Omit<
       ComponentAnnotations<
         ReactTypes & TanStackTypes<TMetaRoute, TPath> & T,
-        RequireMetaArgs<
-          ReactTypes & TanStackTypes<TMetaRoute, TPath> & T & { args: NoInfer<TArgs> },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<WithMetaArgs<TArgs & (TanStackTypes<TMetaRoute, TPath> & T)['args'], TMetaArgKeys>>
       >,
       'decorators' | 'component' | 'args' | 'render' | 'parameters'
     >
@@ -135,10 +132,7 @@ export interface TanStackPreview<
       InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>,
       TMetaArgKeys
     >,
-    MetaArgKeys<
-      InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>['args'],
-      TMetaArgKeys
-    >
+    TMetaArgKeys
   >;
 
   // Overload 2: without route — uses the preview-level TRoute
@@ -164,10 +158,7 @@ export interface TanStackPreview<
     } & Omit<
       ComponentAnnotations<
         ReactTypes & TanStackTypes<TRoute, TPath> & T,
-        RequireMetaArgs<
-          ReactTypes & TanStackTypes<TRoute, TPath> & T & { args: NoInfer<TArgs> },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<WithMetaArgs<TArgs & (TanStackTypes<TRoute, TPath> & T)['args'], TMetaArgKeys>>
       >,
       'decorators' | 'component' | 'args' | 'render' | 'parameters'
     >
@@ -176,9 +167,6 @@ export interface TanStackPreview<
       InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>,
       TMetaArgKeys
     >,
-    MetaArgKeys<
-      InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>['args'],
-      TMetaArgKeys
-    >
+    TMetaArgKeys
   >;
 }

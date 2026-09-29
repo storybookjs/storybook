@@ -4,9 +4,10 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
-  MetaArgKeys,
-  RenderArgs,
   RequireMetaArgs,
+  StoryArgs,
+  WithMetaArgs,
+  WithRenderArgs,
   Preview,
   PreviewAddon,
   Story,
@@ -21,7 +22,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { SetOptional, Simplify } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as webComponentsAnnotations from './entry-preview.ts';
 import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
@@ -123,7 +124,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       args?: MetaArgs<
         InferWebComponentsTypes<
           T,
-          InferArgsFromComponent<C> & RenderArgs<TRenderArgs, InferArgsFromComponent<C>>,
+          WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
           Decorators
         >['args'],
         TMetaArgKeys
@@ -132,15 +133,12 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     } & Omit<
       ComponentAnnotations<
         WebComponentsTypes & T,
-        RequireMetaArgs<
-          WebComponentsTypes &
-            T & {
-              args: InferArgsFromComponent<C> &
-                NoInfer<RenderArgs<TRenderArgs, InferArgsFromComponent<C>>> &
-                T['args'];
-            },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<
+          WithMetaArgs<
+            WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs> & T['args'],
+            TMetaArgKeys
+          >
+        >
       >,
       'decorators' | 'component' | 'args' | 'render'
     >
@@ -148,19 +146,12 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     RequireMetaArgs<
       InferWebComponentsTypes<
         T,
-        InferArgsFromComponent<C> & RenderArgs<TRenderArgs, InferArgsFromComponent<C>>,
+        WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
         Decorators
       >,
       TMetaArgKeys
     >,
-    MetaArgKeys<
-      InferWebComponentsTypes<
-        T,
-        InferArgsFromComponent<C> & RenderArgs<TRenderArgs, InferArgsFromComponent<C>>,
-        Decorators
-      >['args'],
-      TMetaArgKeys
-    >
+    TMetaArgKeys
   >;
 
   meta<
@@ -178,16 +169,13 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     } & Omit<
       ComponentAnnotations<
         WebComponentsTypes & T,
-        RequireMetaArgs<
-          WebComponentsTypes & T & { args: NoInfer<TArgs> & T['args'] },
-          NoInfer<TMetaArgKeys>
-        >['args']
+        NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>
       >,
       'decorators' | 'component' | 'args' | 'render'
     >
   ): WebComponentsMeta<
     RequireMetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    MetaArgKeys<InferWebComponentsTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
+    TMetaArgKeys
   >;
 }
 
@@ -200,7 +188,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
  */
 export interface WebComponentsMeta<
   T extends WebComponentsTypes,
-  TMetaArgKeys extends keyof T['args'] = never,
+  TMetaArgKeys extends PropertyKey = never,
 > extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
@@ -256,7 +244,7 @@ export interface WebComponentsMeta<
    * ```
    */
   story<
-    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): WebComponentsStory<T, TInput>;
@@ -265,7 +253,7 @@ export interface WebComponentsMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -279,7 +267,7 @@ export interface WebComponentsMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): WebComponentsStory<T, {}>;
 }
 

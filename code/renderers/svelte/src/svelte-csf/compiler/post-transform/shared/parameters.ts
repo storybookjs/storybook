@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import { createASTObjectExpression, type ESTreeAST, type SvelteAST } from '../../../parser/ast.ts';
 

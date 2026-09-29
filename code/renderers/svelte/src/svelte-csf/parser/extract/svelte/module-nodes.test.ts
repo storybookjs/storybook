@@ -18,9 +18,9 @@ describe(extractModuleNodes.name, () => {
       defineMeta(...) should be called inside a module script tag, like so:
 
       <script module>
-      import { defineMeta } from "@storybook/svelte/csf";
-
-      const { Story } = defineMeta({});
+        import { defineMeta } from "@storybook/svelte/csf";
+        
+        const { Story } = defineMeta({});
       </script>
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
@@ -40,9 +40,9 @@ describe(extractModuleNodes.name, () => {
       Make sure to import defineMeta from the package and use it inside the module context like so:
 
       <script module>
-      import { defineMeta } from "@storybook/svelte/csf";
-
-      const { Story } = defineMeta({});
+        import { defineMeta } from "@storybook/svelte/csf";
+        
+        const { Story } = defineMeta({});
       </script>
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
@@ -65,9 +65,9 @@ describe(extractModuleNodes.name, () => {
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
-      import { defineMeta } from "@storybook/svelte/csf";
-
-      const { Story } = defineMeta({});
+        import { defineMeta } from "@storybook/svelte/csf";
+        
+        const { Story } = defineMeta({});
       </script>
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
@@ -90,9 +90,9 @@ describe(extractModuleNodes.name, () => {
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
-      import { defineMeta } from "@storybook/svelte/csf";
-
-      const { Story } = defineMeta({});
+        import { defineMeta } from "@storybook/svelte/csf";
+        
+        const { Story } = defineMeta({});
       </script>
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004

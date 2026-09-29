@@ -1,6 +1,6 @@
 import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
 import { SVELTE_CSF_IMPORT_SOURCE } from '../../constants.ts';
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 

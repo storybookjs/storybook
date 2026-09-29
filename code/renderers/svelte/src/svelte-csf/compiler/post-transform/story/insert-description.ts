@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import {
   findASTPropertyIndex,
@@ -130,7 +130,7 @@ export function insertStoryHTMLCommentAsDescription(params: Params) {
     }),
     createASTProperty('story', {
       type: 'Literal',
-      value: dedent(comment.data),
+      value: dedent(comment.data).trim(),
     })
   );
 

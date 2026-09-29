@@ -1,5 +1,5 @@
 import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 import { print } from 'esrap';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';

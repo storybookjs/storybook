@@ -4,7 +4,7 @@ import { getStoryContentRawCode } from './content.ts';
 
 import { getSvelteAST } from '../../ast.ts';
 import { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 describe(getStoryContentRawCode.name, () => {
   describe('When a `<Story />` is a self-closing tag...', () => {

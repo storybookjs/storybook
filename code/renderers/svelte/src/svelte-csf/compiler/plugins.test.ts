@@ -1,5 +1,5 @@
 import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 import { describe, it } from 'vitest';
 
 import { preTransformPlugin } from './plugins.ts';

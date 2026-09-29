@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import type { SvelteAST } from '../../../../parser/ast.ts';
 import type { SvelteASTNodes } from '../../../../parser/extract/svelte/nodes.ts';

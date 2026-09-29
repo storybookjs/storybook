@@ -3,7 +3,7 @@ import path from 'node:path';
 import url from 'node:url';
 
 import { SVELTE_CSF_IMPORT_SOURCE } from '../../constants.ts';
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';

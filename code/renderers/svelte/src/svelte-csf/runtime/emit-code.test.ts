@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import { generateCodeToEmit } from './emit-code.ts';
 

@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import { getDefineMetaComponentValue } from '../define-meta/component-identifier.ts';
 import type { SvelteAST } from '../../ast.ts';
@@ -130,7 +130,7 @@ export function getStoryContentRawCode(params: Params): string {
   const { fragment } = component;
   const firstNode = fragment.nodes[0];
   const lastNode = fragment.nodes[fragment.nodes.length - 1];
-  const rawCode = dedent(originalCode.slice(firstNode.start, lastNode.end));
+  const rawCode = dedent(originalCode.slice(firstNode.start, lastNode.end)).trim();
 
   if (asChild) {
     return rawCode;
@@ -160,7 +160,7 @@ export function getStoryContentRawCode(params: Params): string {
 
   return dedent(`<${defineMetaComponentValue.name} {...args}>
     ${rawCode}
-  </${defineMetaComponentValue.name}>`);
+  </${defineMetaComponentValue.name}>`).trim();
 }
 
 /**
@@ -192,5 +192,5 @@ function getSnippetBlockBodyRawCode(originalCode: string, node: SvelteAST.Snippe
   const lastNode = nodes[nodes.length - 1];
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return dedent(rawCode);
+  return dedent(rawCode).trim();
 }

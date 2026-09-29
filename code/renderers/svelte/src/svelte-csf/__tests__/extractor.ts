@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 import { type Context } from 'zimmerframe';
 
 import { getSvelteAST, type SvelteAST } from '../parser/ast.ts';

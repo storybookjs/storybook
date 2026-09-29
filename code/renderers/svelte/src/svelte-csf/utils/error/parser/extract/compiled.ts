@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import { StorybookSvelteCSFError } from '../../../error.ts';
 import type { extractStoriesNodesFromExportDefaultFn } from '../../../../parser/extract/compiled/stories.ts';

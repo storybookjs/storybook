@@ -1,4 +1,4 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
 import type { getStoryIdentifiers } from '../../../../parser/analyse/story/attributes/identifiers.ts';
 import type { ESTreeAST, SvelteAST } from '../../../../parser/ast.ts';

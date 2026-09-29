@@ -1,11 +1,11 @@
-import {
-  findPropertyParametersIndex,
-  getParametersPropertyValue,
-} from '../shared/parameters.ts';
+import { findPropertyParametersIndex, getParametersPropertyValue } from '../shared/parameters.ts';
 
 import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
 import { getStoryPropsObjectExpression } from '../../../parser/extract/compiled/story.ts';
-import type { SvelteASTNodes, extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+import type {
+  SvelteASTNodes,
+  extractSvelteASTNodes,
+} from '../../../parser/extract/svelte/nodes.ts';
 import { getStoryContentRawCode } from '../../../parser/analyse/story/content.ts';
 import {
   appendASTProperty,

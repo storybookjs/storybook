@@ -91,13 +91,12 @@ process.exitCode = 1;
 // local-packages/packages.json only when it installs Storybook from the checkout.
 async function assertCheckoutPackagesInstalled() {
   let checkoutPackages;
-  let lockfile;
   try {
     checkoutPackages = new Set(JSON.parse(await readFile('local-packages/packages.json', 'utf8')));
-    lockfile = JSON.parse(await readFile('package-lock.json', 'utf8'));
   } catch {
     return;
   }
+  const lockfile = JSON.parse(await readFile('package-lock.json', 'utf8'));
 
   const fromRegistry = Object.entries(lockfile.packages)
     .filter(([location, entry]) => {

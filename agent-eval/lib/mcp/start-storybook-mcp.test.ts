@@ -21,7 +21,7 @@ afterEach(() => {
 
 function runInstall(options: {
   checkoutPackages?: string[];
-  lockfilePackages: Record<string, { resolved?: string }>;
+  lockfilePackages?: Record<string, { resolved?: string }>;
 }) {
   projectDir = mkdtempSync(path.join(tmpdir(), 'start-storybook-mcp-'));
   if (options.checkoutPackages) {
@@ -31,10 +31,12 @@ function runInstall(options: {
       JSON.stringify(options.checkoutPackages)
     );
   }
-  writeFileSync(
-    path.join(projectDir, 'package-lock.json'),
-    JSON.stringify({ lockfileVersion: 3, packages: options.lockfilePackages })
-  );
+  if (options.lockfilePackages) {
+    writeFileSync(
+      path.join(projectDir, 'package-lock.json'),
+      JSON.stringify({ lockfileVersion: 3, packages: options.lockfilePackages })
+    );
+  }
 
   // Nothing listens on port 1 and there is no Storybook to start, so a run that passes the check
   // ends in the readiness failure after the 1ms timeout.
@@ -70,7 +72,15 @@ describe('the checkout package check', () => {
     expect(result.stderr).not.toContain('did not become ready');
   });
 
-  it('accepts tarballs, packages it did not pack, and workspace folders named like a package', () => {
+  it('fails the install when npm wrote no lockfile to check', () => {
+    const result = runInstall({ checkoutPackages: ['storybook'] });
+
+    expect(result.status).toBe(1);
+    expect(result.stderr).toContain('package-lock.json');
+    expect(result.stderr).not.toContain('did not become ready');
+  });
+
+  it('accepts tarballs and packages it did not pack', () => {
     const result = runInstall({
       checkoutPackages: ['storybook'],
       lockfilePackages: {
@@ -79,8 +89,6 @@ describe('the checkout package check', () => {
         'node_modules/@storybook/addon-themes': {
           resolved: 'https://registry.npmjs.org/@storybook/addon-themes/-/addon-themes-11.0.0.tgz',
         },
-        'packages/ui-storybook': {},
-        'node_modules/ui-storybook': { resolved: 'packages/ui-storybook' },
       },
     });
 

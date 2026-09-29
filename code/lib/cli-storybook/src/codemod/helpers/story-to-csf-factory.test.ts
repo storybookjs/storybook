@@ -900,4 +900,172 @@ describe('stories codemod', () => {
       expect(logger.log).not.toHaveBeenCalled();
     });
   });
+
+  describe('mock API on args', () => {
+    it('wraps mock calls on args in play, beforeEach, afterEach and loaders in mocked()', async () => {
+      await expect(
+        transform(dedent`
+          import { expect, fn } from 'storybook/test';
+
+          export default {
+            component: Component,
+            args: { getUsers: fn(), onClick: fn() },
+            beforeEach: ({ args }) => {
+              args.getUsers.mockResolvedValue([]);
+            },
+            loaders: [async ({ args }) => { args.getUsers.mockClear(); }],
+          };
+
+          export const A = {
+            async play({ args, canvas }) {
+              args.getUsers.mockReturnValue([{ id: 1 }]);
+              args.onClick.mockImplementation(() => {});
+              await expect(args.onClick).toHaveBeenCalled();
+              expect(args.onClick.mock.calls).toHaveLength(1);
+            },
+            afterEach: async (context) => {
+              context.args.onClick.mockReset();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { expect, fn, mocked } from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+          args: { getUsers: fn(), onClick: fn() },
+
+          beforeEach: ({ args }) => {
+            mocked(args.getUsers).mockResolvedValue([]);
+          },
+
+          loaders: [
+            async ({ args }) => {
+              mocked(args.getUsers).mockClear();
+            },
+          ],
+        });
+
+        export const A = meta.story({
+          async play({ args, canvas }) {
+            mocked(args.getUsers).mockReturnValue([{ id: 1 }]);
+            mocked(args.onClick).mockImplementation(() => {});
+            await expect(args.onClick).toHaveBeenCalled();
+            expect(mocked(args.onClick).mock.calls).toHaveLength(1);
+          },
+          afterEach: async (context) => {
+            mocked(context.args.onClick).mockReset();
+          },
+        });
+      `);
+    });
+
+    it('wraps destructured and renamed args', async () => {
+      await expect(
+        transform(dedent`
+          export default { component: Component };
+
+          export const A = {
+            play: async ({ args: { getUsers, onClick: click } }) => {
+              getUsers.mockResolvedValueOnce([]);
+              click.mockRejectedValue(new Error());
+            },
+          };
+
+          export const B = {
+            play: async ({ args: storyArgs }) => {
+              storyArgs.getUsers.mockName('getUsers');
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { mocked } from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+        });
+
+        export const A = meta.story({
+          play: async ({ args: { getUsers, onClick: click } }) => {
+            mocked(getUsers).mockResolvedValueOnce([]);
+            mocked(click).mockRejectedValue(new Error());
+          },
+        });
+
+        export const B = meta.story({
+          play: async ({ args: storyArgs }) => {
+            mocked(storyArgs.getUsers).mockName("getUsers");
+          },
+        });
+      `);
+    });
+
+    it('reuses an existing mocked import and adds one only when needed', async () => {
+      await expect(
+        transform(dedent`
+          import { mocked as m } from 'storybook/test';
+
+          export default { component: Component };
+
+          export const A = {
+            play: async ({ args }) => {
+              args.getUsers.mockClear();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { mocked as m } from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+        });
+
+        export const A = meta.story({
+          play: async ({ args }) => {
+            m(args.getUsers).mockClear();
+          },
+        });
+      `);
+    });
+
+    it('leaves mock calls on values that are not args untouched', async () => {
+      await expect(
+        transform(dedent`
+          import { fn } from 'storybook/test';
+
+          const getUsers = fn();
+
+          export default { component: Component };
+
+          export const A = {
+            play: async ({ args }) => {
+              getUsers.mockClear();
+              const args2 = { getUsers };
+              args2.getUsers.mockClear();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { fn } from "storybook/test";
+
+        const getUsers = fn();
+
+        const meta = preview.meta({
+          component: Component,
+        });
+
+        export const A = meta.story({
+          play: async ({ args }) => {
+            getUsers.mockClear();
+            const args2 = { getUsers };
+            args2.getUsers.mockClear();
+          },
+        });
+      `);
+    });
+  });
 });

@@ -1,7 +1,9 @@
 import type {
   AddonTypes,
+  InferMetaTypes,
   InferTypes,
   Meta,
+  MetaArgs,
   Preview,
   PreviewAddon,
   Story,
@@ -12,11 +14,10 @@ import type {
   ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { SetOptional, Simplify } from 'type-fest';
 
 import * as webComponentsAnnotations from './entry-preview.ts';
 import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
@@ -52,12 +53,11 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   return preview;
 }
 
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<WebComponentsTypes & T, Decorators>>>
+type InferWebComponentsTypes<T, TArgs, Decorators> = InferMetaTypes<
+  WebComponentsTypes & T,
+  TArgs,
+  Decorators
 >;
-
-type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
 /**
  * Infers args from a web component's HTMLElement type, allowing both camelCase properties and
@@ -100,14 +100,21 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   type<S>(): WebComponentsPreview<T & S>;
 
   meta<
-    C extends keyof HTMLElementTagNameMap,
-    Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends InferArgsFromComponent<C> & Partial<T['args']>,
+    C extends keyof HTMLElementTagNameMap = never,
+    Decorators extends DecoratorFunction<WebComponentsTypes & T, any> = DecoratorFunction<
+      WebComponentsTypes & T,
+      any
+    >,
+    TMetaArgKeys extends keyof NoInfer<
+      InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>['args']
+    > = never,
   >(
     meta: {
-      component?: C;
-      args?: TMetaArgs;
+      component: C;
+      args?: MetaArgs<
+        InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>['args'],
+        TMetaArgKeys
+      >;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<WebComponentsTypes & T, InferArgsFromComponent<C> & T['args']>,
@@ -115,40 +122,25 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     >
   ): WebComponentsMeta<
     InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>,
-    Omit<
-      ComponentAnnotations<InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>>,
-      'args'
-    > & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
+    TMetaArgKeys
   >;
 
   meta<
     TArgs,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    TMetaArgKeys extends keyof NoInfer<InferWebComponentsTypes<T, TArgs, Decorators>['args']> =
+      never,
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
-      args?: TMetaArgs;
+      args?: MetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): WebComponentsMeta<
-    InferWebComponentsTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferWebComponentsTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+  ): WebComponentsMeta<InferWebComponentsTypes<T, TArgs, Decorators>, TMetaArgKeys>;
 }
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
 
 /**
  * Web Components-specific Meta interface returned by `preview.meta()`.
@@ -159,8 +151,8 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  */
 export interface WebComponentsMeta<
   T extends WebComponentsTypes,
-  MetaInput extends ComponentAnnotations<T>,
-> extends Meta<T, MetaInput> {
+  TMetaArgKeys extends keyof T['args'] = never,
+> extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -215,13 +207,7 @@ export interface WebComponentsMeta<
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        T['args'],
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): WebComponentsStory<T, TInput>;
@@ -244,12 +230,7 @@ export interface WebComponentsMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
   ): WebComponentsStory<T, {}>;
 }
 

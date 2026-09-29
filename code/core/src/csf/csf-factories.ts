@@ -3,6 +3,7 @@ import { combineTags } from 'storybook/internal/csf';
 import type {
   ComponentAnnotations,
   ComposedStoryFn,
+  DecoratorFunction,
   NormalizedProjectAnnotations,
   ProjectAnnotations,
   Renderer,
@@ -10,7 +11,7 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
-import type { SetOptional } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import {
   combineParameters,
@@ -28,12 +29,12 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<
-    TArgs,
-    TInput extends ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
-  >(
-    input: TInput
-  ): Meta<TRenderer & { args: TArgs }, TInput>;
+  meta<TArgs, TMetaArgKeys extends keyof NoInfer<TArgs & TRenderer['args']> = never>(
+    input: Omit<
+      ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
+      'args'
+    > & { args?: MetaArgs<TArgs & TRenderer['args'], TMetaArgKeys> }
+  ): Meta<TRenderer & { args: TArgs }, TMetaArgKeys>;
 
   type<T>(): Preview<TRenderer & T>;
 }
@@ -89,12 +90,34 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
+/**
+ * Types the `args` of `preview.meta()` by the keys provided. Each value is checked against `TArgs`
+ * but never used to infer it, so literals don't widen and callbacks get their parameter types.
+ *
+ * Constrain the keys with `keyof NoInfer<TArgs>` as well: TypeScript infers `TArgs` from the
+ * values through a plain `keyof TArgs` constraint.
+ */
+export type MetaArgs<TArgs, TKeys extends keyof NoInfer<TArgs>> = Pick<NoInfer<TArgs>, TKeys> &
+  // Lets editors suggest the other arg names, as `TKeys` is not inferred yet while completing.
+  Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
+
+type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
+  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
+>;
+
+/** Adds `TArgs` and the args read by `Decorators` to the args of `TRenderer`. */
+export type InferMetaTypes<TRenderer extends Renderer, TArgs, Decorators> = TRenderer & {
+  args: Simplify<TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<TRenderer, Decorators>>>>;
+};
+
 export interface Meta<
   TRenderer extends Renderer,
-  TMetaInput extends { args?: object } = ComponentAnnotations<TRenderer, TRenderer['args']>,
+  TMetaArgKeys extends keyof TRenderer['args'] = never,
 > {
   readonly _tag: 'Meta';
-  input: TMetaInput;
+  input: Omit<ComponentAnnotations<TRenderer, TRenderer['args']>, 'args'> & {
+    args: Pick<TRenderer['args'], TMetaArgKeys>;
+  };
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;
 
@@ -106,7 +129,7 @@ export interface Meta<
     TInput extends StoryAnnotations<
       TRenderer,
       TRenderer['args'],
-      SetOptional<TRenderer['args'], keyof TRenderer['args'] & keyof TMetaInput['args']>
+      SetOptional<TRenderer['args'], TMetaArgKeys>
     >,
   >(
     input?: TInput
@@ -117,16 +140,16 @@ export function isMeta(input: unknown): input is Meta<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
 }
 
-function defineMeta<
-  TRenderer extends Renderer,
-  TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
-    TRenderer,
-    TRenderer['args']
-  >,
->(input: TInput, preview: Preview<TRenderer>): Meta<TRenderer, TInput> {
+function defineMeta<TRenderer extends Renderer>(
+  input: ComponentAnnotations<TRenderer, TRenderer['args']>,
+  preview: Preview<TRenderer>
+): Meta<TRenderer> {
   return {
     _tag: 'Meta',
-    input: { ...input, parameters: { ...input.parameters, csfFactory: true } },
+    input: {
+      ...input,
+      parameters: { ...input.parameters, csfFactory: true },
+    } as Meta<TRenderer>['input'],
     preview,
     // @ts-expect-error hard
     story(

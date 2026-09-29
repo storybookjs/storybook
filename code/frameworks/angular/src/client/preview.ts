@@ -1,7 +1,9 @@
 import type {
   AddonTypes,
+  InferMetaTypes,
   InferTypes,
   Meta,
+  MetaArgs,
   Preview,
   PreviewAddon,
   Story,
@@ -12,11 +14,10 @@ import type {
   ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { SetOptional, Simplify } from 'type-fest';
 
 import * as angularAnnotations from './config.ts';
 import * as angularDocsAnnotations from './docs/config.ts';
@@ -53,16 +54,15 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   return preview;
 }
 
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
->;
-
 type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<
   TransformComponentType<InstanceType<C>>
 >;
 
-type InferAngularTypes<T, TArgs, Decorators> = AngularRenderer &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
+type InferAngularTypes<T, TArgs, Decorators> = InferMetaTypes<
+  AngularRenderer & T,
+  TArgs,
+  Decorators
+>;
 
 /**
  * Angular-specific Preview interface that provides type-safe CSF factory methods.
@@ -96,49 +96,38 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     C extends abstract new (...args: any) => any,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<InferComponentArgs<C> & T['args']>,
+    TMetaArgKeys extends keyof NoInfer<
+      InferAngularTypes<T, InferComponentArgs<C>, Decorators>['args']
+    > = never,
   >(
     meta: {
-      component?: C;
-      args?: TMetaArgs;
+      component: C;
+      args?: MetaArgs<
+        InferAngularTypes<T, InferComponentArgs<C>, Decorators>['args'],
+        TMetaArgKeys
+      >;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<AngularRenderer & T, InferComponentArgs<C> & T['args']>,
       'decorators' | 'component' | 'args'
     >
-  ): AngularMeta<
-    InferAngularTypes<T, InferComponentArgs<C>, Decorators>,
-    Omit<ComponentAnnotations<InferAngularTypes<T, InferComponentArgs<C>, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+  ): AngularMeta<InferAngularTypes<T, InferComponentArgs<C>, Decorators>, TMetaArgKeys>;
 
   meta<
     TArgs,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    TMetaArgKeys extends keyof NoInfer<InferAngularTypes<T, TArgs, Decorators>['args']> = never,
   >(
     meta: {
       render?: ArgsStoryFn<AngularRenderer & T, TArgs & T['args']>;
-      args?: TMetaArgs;
+      args?: MetaArgs<InferAngularTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<AngularRenderer & T, TArgs & T['args']>,
       'decorators' | 'args' | 'render' | 'component'
     >
-  ): AngularMeta<
-    InferAngularTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferAngularTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+  ): AngularMeta<InferAngularTypes<T, TArgs, Decorators>, TMetaArgKeys>;
 }
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
 
 /**
  * Angular-specific Meta interface returned by `preview.meta()`.
@@ -149,8 +138,8 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  */
 export interface AngularMeta<
   T extends AngularRenderer,
-  MetaInput extends ComponentAnnotations<T>,
-> extends Meta<T, MetaInput> {
+  TMetaArgKeys extends keyof T['args'] = never,
+> extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -207,13 +196,7 @@ export interface AngularMeta<
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        T['args'],
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): AngularStory<T, TInput>;
@@ -236,12 +219,7 @@ export interface AngularMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
   ): AngularStory<T, {}>;
 }
 

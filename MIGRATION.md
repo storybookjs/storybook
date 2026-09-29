@@ -7,6 +7,9 @@
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
+  - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
+  - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
@@ -641,6 +644,70 @@ During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.
 Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
+### CSF Next: meta args no longer need `as const`
+
+`preview.meta()` now remembers which args you set, not the values you wrote, and checks each value against the component's props. Literal, enum and template-literal props in meta args are no longer widened, so the story no longer asks for them again and `as const` is not needed:
+
+```diff
+ // Button props: { variant: 'primary' | 'secondary'; label: string }
+ const meta = preview.meta({
+   component: Button,
+-  args: { variant: 'primary' as const },
++  args: { variant: 'primary' },
+ });
+
+ export const Default = meta.story({ args: { label: 'Hi' } });
+```
+
+`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`.
+
+The second type argument of `ReactMeta`, `VueMeta`, `AngularMeta`, `WebComponentsMeta` and `Meta` from `storybook/internal/csf` is now the union of the arg names set in meta, instead of the meta input type.
+
+### CSF Next: use `mocked()` for the mock API on args
+
+Args in `play`, `beforeEach`, `afterEach` and `loaders`, and in `meta.input.args`, are typed as the component declares them. An arg set to `fn()` is no longer typed as a `Mock`. Wrap it in `mocked()` from `storybook/test` to use the mock API, as you would with Vitest's `vi.mocked()`:
+
+```diff
+-import { fn } from 'storybook/test';
++import { fn, mocked } from 'storybook/test';
+
+ const meta = preview.meta({ component: EventForm, args: { getUsers: fn() } });
+
+ export const Submits = meta.story({
+   beforeEach: async ({ args }) => {
+-    args.getUsers.mockResolvedValue(users);
++    mocked(args.getUsers).mockResolvedValue(users);
+   },
+ });
+```
+
+Assertions such as `expect(args.onSubmit).toHaveBeenCalled()` keep working without `mocked()`. On Storybook 10, the `Mock` type was already lost as soon as meta args contained a literal, enum or template-literal prop, and it was never kept for args set in a story.
+
+The `csf-factories` automigration adds `mocked()` when it converts CSF 3 stories. Stories already written in CSF Next have to be updated by hand; TypeScript points at every place with an error such as `Property 'mockResolvedValue' does not exist`.
+
+### CSF Next: every key in meta args must be an arg
+
+Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component (or of the `render` function's args), an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. On Storybook 10, an unknown key was accepted as long as the same `args` object also contained a real prop, and it was then ignored when working out which args a story still has to provide. A meta whose args contained only unknown keys was already an error.
+
+Declare args that are not props with `preview.type`:
+
+```diff
+-const meta = preview.meta({
++const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+   component: Button,
+   args: { label: 'Hi', theme: 'dark' },
+ });
+```
+
+For components whose props are a union, meta args can set the props that every member of the union has. Set props that only some members have in the story, where TypeScript checks them together with the rest of that member:
+
+```ts
+// Props: { label: string } & ({ kind: 'link'; href: string } | { kind: 'button'; onClick: () => void })
+const meta = preview.meta({ component: Action, args: { label: 'Go', kind: 'link' } });
+
+export const Link = meta.story({ args: { href: '/' } });
+```
 
 ### Yarn PnP support removed
 

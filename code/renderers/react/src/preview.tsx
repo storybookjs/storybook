@@ -1,7 +1,15 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { AddonTypes, InferTypes, Meta, Preview, Story } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferMetaTypes,
+  InferTypes,
+  Meta,
+  MetaArgs,
+  Preview,
+  Story,
+} from 'storybook/internal/csf';
 import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
@@ -9,29 +17,17 @@ import type {
   ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { SetOptional, Simplify } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview.tsx';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
 import * as reactDocsAnnotations from './entry-preview-docs.ts';
-import type { AddMocks } from './public-types.ts';
 import type { ReactTypes } from './types.ts';
 
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
-
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
->;
-
-type InferReactTypes<T, TArgs, Decorators> = ReactTypes &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
+type InferReactTypes<T, TArgs, Decorators> = InferMetaTypes<ReactTypes & T, TArgs, Decorators>;
 
 /**
  * Creates a React-specific preview configuration with CSF factories support.
@@ -117,24 +113,18 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    TMetaArgKeys extends keyof NoInfer<InferReactTypes<T, TArgs, Decorators>['args']> = never,
   >(
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
-      args?: TMetaArgs;
+      args?: MetaArgs<InferReactTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
     } & Omit<
       ComponentAnnotations<ReactTypes & T, TArgs>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): ReactMeta<
-    InferReactTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferReactTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+  ): ReactMeta<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>;
 }
 
 /**
@@ -146,8 +136,8 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
  */
 export interface ReactMeta<
   T extends ReactTypes,
-  MetaInput extends ComponentAnnotations<T>,
-> extends Meta<T, MetaInput> {
+  TMetaArgKeys extends keyof T['args'] = never,
+> extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -199,14 +189,7 @@ export interface ReactMeta<
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        // TODO: infer mocks from story itself as well
-        AddMocks<T['args'], MetaInput['args']>,
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], SetOptional<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): ReactStory<T, TInput>;
@@ -229,12 +212,7 @@ export interface ReactMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends SetOptional<T['args'], TMetaArgKeys> ? [] : [never]
   ): ReactStory<T, {}>;
 }
 

@@ -1,6 +1,12 @@
 import type { ComponentType } from 'react';
 
-import type { AddonTypes, InferTypes, PreviewAddon } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferMetaTypes,
+  InferTypes,
+  MetaArgs,
+  PreviewAddon,
+} from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
@@ -8,10 +14,8 @@ import type {
   DecoratorFunction,
   Parameters,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
-import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 import type { AnyRoute, FileRoutesByPath } from '@tanstack/react-router';
 
 import type { ReactMeta, ReactPreview } from '@storybook/react';
@@ -34,21 +38,7 @@ export type {
   RouterParameters,
 } from './routing/types.ts';
 
-// -- Helper types replicating private types from @storybook/react --
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
-
-type InferCombinedTypes<T, TArgs, Decorators> = ReactTypes &
-  T & {
-    args: Simplify<
-      TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
-    >;
-  };
-
-// -------
+type InferCombinedTypes<T, TArgs, Decorators> = InferMetaTypes<ReactTypes & T, TArgs, Decorators>;
 
 export type Preview<TRoute extends AnyRoute | undefined = undefined> = ProjectAnnotations<
   ReactTypes & TanStackTypes<TRoute>
@@ -112,9 +102,9 @@ export interface TanStackPreview<
     TArgs extends Args = Args,
     Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TMetaRoute, TPath> & T, any> =
       DecoratorFunction<ReactTypes & TanStackTypes<TMetaRoute, TPath> & T, any>,
-    TMetaArgs extends Partial<TArgs & (TanStackTypes<TMetaRoute, TPath> & T)['args']> = Partial<
-      TArgs & (TanStackTypes<TMetaRoute, TPath> & T)['args']
-    >,
+    TMetaArgKeys extends keyof NoInfer<
+      InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>['args']
+    > = never,
   >(
     meta: {
       render?: ArgsStoryFn<
@@ -123,7 +113,10 @@ export interface TanStackPreview<
       >;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
-      args?: TMetaArgs;
+      args?: MetaArgs<
+        InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>['args'],
+        TMetaArgKeys
+      >;
       parameters?: TanStackParameters<TMetaRoute, TPath> &
         Parameters &
         (ReactTypes & T)['parameters'];
@@ -133,14 +126,7 @@ export interface TanStackPreview<
     >
   ): ReactMeta<
     InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>,
-    Omit<
-      ComponentAnnotations<
-        InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>
-      >,
-      'args'
-    > & {
-      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
-    }
+    TMetaArgKeys
   >;
 
   // Overload 2: without route — uses the preview-level TRoute
@@ -149,9 +135,9 @@ export interface TanStackPreview<
     TArgs extends Args = Args,
     Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TRoute, TPath> & T, any> =
       DecoratorFunction<ReactTypes & TanStackTypes<TRoute, TPath> & T, any>,
-    TMetaArgs extends Partial<TArgs & (TanStackTypes<TRoute, TPath> & T)['args']> = Partial<
-      TArgs & (TanStackTypes<TRoute, TPath> & T)['args']
-    >,
+    TMetaArgKeys extends keyof NoInfer<
+      InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>['args']
+    > = never,
   >(
     meta: {
       render?: ArgsStoryFn<
@@ -160,7 +146,10 @@ export interface TanStackPreview<
       >;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
-      args?: TMetaArgs;
+      args?: MetaArgs<
+        InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>['args'],
+        TMetaArgKeys
+      >;
       parameters?: TanStackParameters<TRoute, TPath> & Parameters & (ReactTypes & T)['parameters'];
     } & Omit<
       ComponentAnnotations<ReactTypes & TanStackTypes<TRoute, TPath> & T, TArgs>,
@@ -168,11 +157,6 @@ export interface TanStackPreview<
     >
   ): ReactMeta<
     InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>,
-    Omit<
-      ComponentAnnotations<InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>>,
-      'args'
-    > & {
-      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
-    }
+    TMetaArgKeys
   >;
 }

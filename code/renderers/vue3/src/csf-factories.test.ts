@@ -3,8 +3,12 @@ import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
 import type { Canvas } from 'storybook/internal/types';
 
+import type { FunctionalComponent, HTMLAttributes } from 'vue';
 import { h } from 'vue';
 
+import { fn, mocked } from 'storybook/test';
+
+import Badge from './__tests__/Badge.vue';
 import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
 import Decorator2TsVue from './__tests__/Decorator2.vue';
@@ -227,5 +231,198 @@ describe('Generic components (issue #24238)', () => {
 
     // Verify the story has the correct args
     expect(Story.input.args?.items).toHaveLength(1);
+  });
+});
+
+it('Literal props of an SFC need no `as const` in meta args, issue #36125', () => {
+  const meta = preview.meta({ component: Badge, args: { variant: 'primary' } });
+  const Default = meta.story({ args: { label: 'Hi' } });
+  expectTypeOf(meta.input.args.variant).toEqualTypeOf<'primary' | 'secondary'>();
+});
+
+describe('Meta args are typed by the keys you provide', () => {
+  enum Size {
+    Small = 'small',
+    Large = 'large',
+  }
+  type UserId = string & { readonly brand: unique symbol };
+  const userId = (id: string) => id as UserId;
+  class Store {
+    #count = 0;
+    increment() {
+      this.#count++;
+    }
+  }
+  type Shape = { kind: 'circle'; radius: number } | { kind: 'square'; side: number };
+  type CardProps = {
+    label: string;
+    variant: 'primary' | 'secondary';
+    size: Size;
+    icon: `icon-${string}`;
+    userId: UserId;
+    range: [min: number, max: number];
+    items: string[];
+    config: { theme: { mode: 'light' | 'dark'; accents: { tone: 'warm' | 'cool' }[] } };
+    shape: Shape;
+    store: Store;
+    onClick: () => void;
+    onChange: (value: number) => void;
+    handlers: { onSelect: (item: string) => void; onReset: () => void };
+    getUsers: () => Promise<string[]>;
+  };
+  const Card: FunctionalComponent<CardProps> = () => h('div');
+
+  const meta = preview.meta({
+    component: Card,
+    args: {
+      variant: 'primary',
+      size: Size.Small,
+      icon: 'icon-star',
+      userId: userId('1'),
+      range: [0, 10],
+      items: ['a'],
+      config: { theme: { mode: 'dark', accents: [{ tone: 'warm' }] } },
+      shape: { kind: 'circle', radius: 1 },
+      store: new Store(),
+      onClick: () => {},
+      onChange: (value) => expectTypeOf(value).toEqualTypeOf<number>(),
+      handlers: {
+        onSelect: (item) => expectTypeOf(item).toEqualTypeOf<string>(),
+        onReset: function () {},
+      },
+      getUsers: fn(),
+    },
+  });
+
+  it('literal, enum, template literal and branded props need no `as const`', () => {
+    expectTypeOf(meta.input.args.variant).toEqualTypeOf<'primary' | 'secondary'>();
+    expectTypeOf(meta.input.args.size).toEqualTypeOf<Size>();
+    expectTypeOf(meta.input.args.icon).toEqualTypeOf<`icon-${string}`>();
+    expectTypeOf(meta.input.args.userId).toEqualTypeOf<UserId>();
+
+    const Default = meta.story({ args: { label: 'Hi' } });
+    // @ts-expect-error label is required
+    const Missing = meta.story();
+  });
+
+  it('meta.input.args keeps the declared prop types', () => {
+    const items: string[] = meta.input.args.items;
+    expectTypeOf(meta.input.args.range).toEqualTypeOf<[min: number, max: number]>();
+    expectTypeOf(meta.input.args.config.theme.accents[0].tone).toEqualTypeOf<'warm' | 'cool'>();
+    expectTypeOf(meta.input.args.store).toEqualTypeOf<Store>();
+
+    const { shape } = meta.input.args;
+    if (shape.kind === 'circle') {
+      expectTypeOf(shape.radius).toEqualTypeOf<number>();
+    }
+  });
+
+  it('callbacks without parameters or return values need no annotations', () => {
+    preview.meta({
+      component: Card,
+      args: {
+        onClick: () => undefined,
+        handlers: { onSelect: () => {}, onReset: () => undefined },
+      },
+    });
+  });
+
+  it('fn() args are typed as declared, mocked() gives the mock API', () => {
+    const Default = meta.story({
+      args: { label: 'Hi' },
+      play: async ({ args }) => {
+        expectTypeOf(args.getUsers).toEqualTypeOf<() => Promise<string[]>>();
+        mocked(args.getUsers).mockResolvedValue(['Ada']);
+      },
+    });
+  });
+
+  it('invalid meta args are rejected', () => {
+    // @ts-expect-error not a variant
+    preview.meta({ component: Card, args: { variant: 'tertiary' } });
+    // @ts-expect-error not a mode
+    preview.meta({ component: Card, args: { config: { theme: { mode: 'dim', accents: [] } } } });
+    // @ts-expect-error max must be a number
+    preview.meta({ component: Card, args: { range: [0, 'ten'] } });
+    // @ts-expect-error not a prop of Card
+    preview.meta({ component: Card, args: { variant: 'primary', unknown: true } });
+  });
+
+  it('stories override meta args and infer callback parameters', () => {
+    const Default = meta.story({
+      args: {
+        label: 'Hi',
+        variant: 'secondary',
+        onClick: () => {},
+        handlers: {
+          onSelect: (item) => expectTypeOf(item).toEqualTypeOf<string>(),
+          onReset: () => undefined,
+        },
+      },
+    });
+    const Extended = Default.extend({ args: { variant: 'primary', onClick: function () {} } });
+    // @ts-expect-error not a variant
+    Default.extend({ args: { variant: 'tertiary' } });
+  });
+
+  it('meta.story() needs no args when meta provides all required args', () => {
+    const complete = preview.meta({
+      component: Button,
+      args: { label: 'Hi', disabled: false },
+    });
+    const Default = complete.story();
+  });
+
+  it('props with HTML attributes', () => {
+    const HtmlButton: FunctionalComponent<HTMLAttributes & { variant: 'solid' | 'ghost' }> = () =>
+      h('button');
+
+    const htmlMeta = preview.meta({
+      component: HtmlButton,
+      args: {
+        variant: 'ghost',
+        'aria-label': 'Save',
+        onClick: (event) => expectTypeOf(event).toMatchTypeOf<MouseEvent>(),
+      },
+    });
+    const Default = htmlMeta.story();
+  });
+
+  it('union props accept keys shared by every member', () => {
+    type Props = { label: string } & (
+      | { kind: 'link'; href: string }
+      | { kind: 'button'; onPress: () => void }
+    );
+    const Action: FunctionalComponent<Props> = () => h('a');
+
+    const actionMeta = preview.meta({ component: Action, args: { label: 'Go', kind: 'link' } });
+    const Link = actionMeta.story({ args: { href: '/' } });
+
+    // @ts-expect-error href is not a prop of every member, set it per story
+    preview.meta({ component: Action, args: { kind: 'link', href: '/' } });
+  });
+
+  it('args declared with preview.type<>() and decorators', () => {
+    const withTheme: Decorator<{ theme: 'light' | 'dark' }> = () => ({ template: '<story />' });
+
+    const typedMeta = preview.type<{ args: { locale: 'en' | 'nl' } }>().meta({
+      component: Button,
+      decorators: [withTheme],
+      args: { locale: 'nl', theme: 'dark', label: 'Hi' },
+    });
+    const Default = typedMeta.story({ args: { disabled: false } });
+    expectTypeOf(typedMeta.input.args.locale).toEqualTypeOf<'en' | 'nl'>();
+  });
+
+  it('render-only meta', () => {
+    const renderMeta = preview.meta({
+      render: (args: { mode: 'compact' | 'wide'; count: number }) => ({
+        template: `<div>{{ ${args.count} }}</div>`,
+      }),
+      args: { mode: 'wide' },
+    });
+    const Default = renderMeta.story({ args: { count: 1 } });
+    // @ts-expect-error count is required
+    const Missing = renderMeta.story();
   });
 });

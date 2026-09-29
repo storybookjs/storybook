@@ -168,6 +168,8 @@ export const Primary = meta.story({
 });
 ```
 
+Every key in the `args` of `preview.meta` must be an arg of your stories: a prop of the component, an arg used by one of its decorators, or an arg declared with `preview.type`. The values are checked against those types, so literal values like `variant: 'primary'` need no `as const`.
+
 For more information on typing your stories, refer to the [writing stories in TypeScript guide](../../writing-stories/typescript.mdx).
 
 ### `meta.story`
@@ -447,6 +449,23 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
     // ...story object is unchanged
 + });
 - };
+```
+
+</details>
+
+<details>
+<summary>Mock functions in args</summary>
+
+Args in `play`, `beforeEach`, and other functions are typed as your component declares them, so an arg set to `fn()` is not typed as a mock. Wrap it in `mocked()` from `storybook/test` to use the mock API. The automatic upgrade does this for you.
+
+```diff title="EventForm.stories.js|ts"
+- import { fn } from 'storybook/test';
++ import { fn, mocked } from 'storybook/test';
+
+  beforeEach: async ({ args }) => {
+-   args.getUsers.mockResolvedValue(users);
++   mocked(args.getUsers).mockResolvedValue(users);
+  },
 ```
 
 </details>

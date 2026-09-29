@@ -729,7 +729,6 @@ Server-side component metadata extraction is enabled by default for every React 
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
-If both flags are set, it keeps `docgenServer`.
 You can also run it with `storybook automigrate docgen-server`.
 
 Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.

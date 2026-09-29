@@ -26,6 +26,17 @@ export async function reactDocgen({
   let usePool = false;
   let pool: ReactDocgenPool | undefined;
 
+  const stopUsingPool = (failedPool: ReactDocgenPool | undefined, reason: unknown) => {
+    // Several in-flight transforms can report the same failure; only the first one acts on it.
+    if (pool !== failedPool) {
+      return;
+    }
+    usePool = false;
+    pool = undefined;
+    void failedPool?.close();
+    logger.debug(`react-docgen workers unavailable, parsing on the main thread: ${reason}`);
+  };
+
   return {
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
@@ -44,13 +55,22 @@ export async function reactDocgen({
         try {
           pool = new ReactDocgenPool();
         } catch (error) {
-          usePool = false;
-          logger.debug(`react-docgen workers unavailable, parsing on the main thread: ${error}`);
+          stopUsingPool(undefined, error);
         }
       }
-      return pool
-        ? pool.transform(src, id, tsconfigPaths)
-        : transformWithReactDocgen(src, id, tsconfigPaths);
+      const activePool = pool;
+      if (activePool) {
+        try {
+          return await activePool.transform(src, id, tsconfigPaths);
+        } catch (error) {
+          // A react-docgen error from a working pool is this file's real error.
+          if (!activePool.failed) {
+            throw error;
+          }
+          stopUsingPool(activePool, error);
+        }
+      }
+      return transformWithReactDocgen(src, id, tsconfigPaths);
     },
     async buildEnd() {
       await pool?.close();

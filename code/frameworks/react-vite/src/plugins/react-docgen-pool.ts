@@ -64,6 +64,11 @@ export class ReactDocgenPool {
     }
   }
 
+  // True once a worker crashed or failed to start; every later transform rejects.
+  get failed() {
+    return this.#failure !== undefined;
+  }
+
   transform(src: string, id: string, tsconfigPaths: TsconfigPathsConfig | undefined) {
     if (this.#failure) {
       return Promise.reject(this.#failure);

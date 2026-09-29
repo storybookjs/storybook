@@ -281,7 +281,7 @@ To use the legacy builder-based docgen path, turn the server off:
 
 ### Migrating from Storybook 10
 
-The Storybook 11 automigration renames an explicit `experimentalDocgenServer` option to `docgenServer` while preserving its value and surrounding expression:
+The Storybook 11 automigration renames an explicit `experimentalDocgenServer` option to `docgenServer` and keeps its value:
 
 ```diff title=".storybook/main.ts"
  import type { StorybookConfig } from '@storybook/react-vite';
@@ -298,18 +298,11 @@ The Storybook 11 automigration renames an explicit `experimentalDocgenServer` op
 ```
 
 If both options are present, the automigration keeps `docgenServer`.
-If the configuration is too dynamic to transform safely, the automigration reports the file and the change you must make.
 Storybook 11 no longer reads `experimentalDocgenServer`.
 
-When neither option is set, the automigration writes `docgenServer: false` to keep these Storybook 10 choices:
-
-- React's `typescript.reactDocgen: false` or `'react-docgen-typescript'`
-- Vue's `framework.options.docgen: false` or `true`, an explicit engine, or a custom `tsconfig`
-
-Storybook does not check for these settings at runtime.
-If you skip the automigration, server-side docgen replaces them.
-
-There is no automatic translation for `reactDocgenTypescriptOptions`, including `propFilter`, or for a custom Vue docgen `tsconfig`. Keep `docgenServer: false` if your project depends on those settings.
+Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
+There is no translation for `reactDocgenTypescriptOptions`, including `propFilter`, or for a custom Vue docgen `tsconfig`.
+Set `docgenServer: false` if your project depends on those settings.
 
 On `@storybook/angular-vite`, `framework.options.compodoc: false` only prevents Compodoc from running on the legacy path. It does not turn off `docgenServer`; use the feature option for that.
 

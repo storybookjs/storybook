@@ -109,7 +109,7 @@ the fields to change and provide migration-specific error guidance.
 - Ship a provider by exporting `experimental_docgenProvider` from a preset; do not add framework defaults or allowlists.
   A provider must not read `features.docgenServer`: only consumers gate on it.
 - Svelte and Web Components keep their providers unexported until they ship.
-- Legacy React and Vue extractor settings are preserved only by the `docgen-server` automigration, which writes `docgenServer: false`.
+- The `docgen-server` automigration only renames `experimentalDocgenServer`; legacy React and Vue extractor settings are not preserved.
   Angular `compodoc: false` controls only the legacy Compodoc run and is not a server opt-out.
 
 ## Agent-facing skills

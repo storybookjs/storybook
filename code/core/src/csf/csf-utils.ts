@@ -55,11 +55,16 @@ export const parseKind = (kind: string, { rootSeparator, groupSeparator }: Separ
 /** Combine a set of project / meta / story tags, removing duplicates and handling negations. */
 export const combineTags = (...tags: string[]): string[] => {
   const result = tags.reduce((acc, tag) => {
+    // A later tag wins over an earlier contradiction: `foo` cancels a previous
+    // `!foo`, and `!foo` cancels a previous `foo`. The negation itself is kept,
+    // so a partial combination (a story extending another) still carries it to
+    // the final combination with the project and meta tags.
     if (tag.startsWith('!')) {
       acc.delete(tag.slice(1));
     } else {
-      acc.add(tag);
+      acc.delete(`!${tag}`);
     }
+    acc.add(tag);
     return acc;
   }, new Set<string>());
   return Array.from(result);

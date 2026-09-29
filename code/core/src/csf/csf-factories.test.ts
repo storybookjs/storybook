@@ -122,7 +122,7 @@ describe('extend', () => {
   test('concatenates the base tags and the extension tags as written', () => {
     const base = meta.story({ tags: ['a', 'b'] });
     const extended = base.extend({ tags: ['!a', 'c'] });
-    expect(extended.input.tags).toEqual(['a', 'b', '!a', 'c']);
+    expect(extended.input.tags).toEqual(['b', '!a', 'c']);
   });
 });
 

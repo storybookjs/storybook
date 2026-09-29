@@ -68,6 +68,13 @@ const CODEX_BROWSER_SKILL_SOURCE_PATH = path.join(
   'mcp',
   'codex-browser-skill.md'
 );
+const CODEX_AGENTS_MD_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md');
+const CODEX_AGENTS_MD_REVIEW_SOURCE_PATH = path.join(
+  AGENT_EVAL_ROOT,
+  'lib',
+  'mcp',
+  'codex-agents-review.md'
+);
 const CODEX_BROWSER_SKILL_SANDBOX_PATH = path.posix.join(
   '.agents',
   'skills',
@@ -721,6 +728,26 @@ export async function writeClaudeMcpConfig(sandbox: Sandbox): Promise<void> {
 
 export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
   await writeStorybookMcpConfig(sandbox, 'codex');
+}
+
+// In code mode (the default for GPT-6 models) Codex shows MCP server
+// instructions only once the model searches its tools, which it skips for
+// tasks it thinks it can do alone. AGENTS.md is always in its context.
+// Eval-only: Storybook writes no AGENTS.md for real Codex users, so remove
+// this once SB-2127 fixes it in the product:
+// https://linear.app/chromaui/issue/SB-2127
+export async function writeCodexAgentsMd(sandbox: Sandbox): Promise<void> {
+  // The copies match the checkout's server; the stable server from npm serves other text.
+  if (process.env.EVAL_STORYBOOK_LATEST === '1') {
+    return;
+  }
+  const instructions = await fs.readFile(
+    isReviewEnabledFor('mcp') ? CODEX_AGENTS_MD_REVIEW_SOURCE_PATH : CODEX_AGENTS_MD_SOURCE_PATH,
+    'utf8'
+  );
+  await sandbox.writeFiles({
+    'AGENTS.md': `# Storybook\n\nThis project has the Storybook MCP server \`${STORYBOOK_MCP_SERVER_NAME}\`. The tools named below are its tools.\n\n${instructions}`,
+  });
 }
 
 /**

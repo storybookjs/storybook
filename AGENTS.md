@@ -65,7 +65,6 @@ yarn storybook:vitest
 | Run Storybook Vitest tests      | `yarn storybook:vitest`                                                        |
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
-| Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
@@ -93,7 +92,7 @@ yarn storybook:vitest
 1. Edit the relevant package under `code/addons/`, `code/frameworks/`, or `code/renderers/`
 2. Recompile with NX, starting without `-c production`
 3. Generate a matching sandbox
-4. Run the relevant test-runner, E2E, or Storybook UI validation flow
+4. Run the relevant Vitest, E2E, or Storybook UI validation flow
 
 ## Pull Request Requirements
 
@@ -116,7 +115,6 @@ Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth 
 - Prefer focused unit-test runs during iteration — the full suite is large: `yarn test <pattern>` (e.g. `yarn test csf-tools`)
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
-- Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
 - Use `yarn task smoke-test --start-from auto` for smoke checks
 - Use `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` for tools attach coverage (same checkout as the running internal UI)
 

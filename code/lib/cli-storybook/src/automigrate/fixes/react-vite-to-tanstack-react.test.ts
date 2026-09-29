@@ -133,6 +133,28 @@ describe('react-vite-to-tanstack-react', () => {
       expect(result?.hasTanstackRouterDecorator).toBe(true);
     });
 
+    it('looks past an unreadable story for the decorator', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [REACT_VITE_PACKAGE]: '^10.0.0',
+        '@tanstack/react-router': '^1.0.0',
+      });
+      vol.fromJSON({
+        '/project/.storybook/main.ts': 'export default {};',
+        '/project/src/Page.stories.tsx': `
+        import { RouterProvider, createRouter } from '@tanstack/react-router';
+        export default { decorators: [(Story) => <RouterProvider router={createRouter({})} />] };
+      `,
+      });
+
+      const result = await checkFix(reactViteToTanstackReact, {
+        ...project,
+        packageManager: mockPackageManager,
+        storiesPaths: ['/project/src/Missing.stories.tsx', '/project/src/Page.stories.tsx'],
+      } as unknown as CheckOptions);
+
+      expect(result?.hasTanstackRouterDecorator).toBe(true);
+    });
+
     it('detects a manual tanstack router decorator in a story file', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [REACT_VITE_PACKAGE]: '^10.0.0',
@@ -204,16 +226,20 @@ describe('react-vite-to-tanstack-react', () => {
       });
     });
 
-    it('reports an unreadable main config and still migrates the other files', async () => {
+    it('fails before changing dependencies when the main config cannot be migrated', async () => {
       vol.unlinkSync('/project/.storybook/main.ts');
 
       const failures = await runFix(reactViteToTanstackReact, runOptions);
 
       expect(failures).toEqual([
-        { file: '/project/.storybook/main.ts', message: expect.stringContaining('ENOENT') },
+        {
+          file: '/project/.storybook/main.ts',
+          kind: 'main',
+          message: expect.stringContaining('ENOENT'),
+        },
       ]);
-      expect(vol.toJSON()['/project/src/Button.stories.tsx']).toContain(TANSTACK_REACT_PACKAGE);
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([REACT_VITE_PACKAGE]);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).not.toContain(TANSTACK_REACT_PACKAGE);
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
 
     it('asks the user for an AI prompt when a decorator is detected', async () => {

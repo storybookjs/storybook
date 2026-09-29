@@ -3,6 +3,7 @@ import {
   ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   editJsonText,
   isStorybookTarget,
+  parseJsonText,
   type StorybookBuilderTarget,
   toDevkitVersion,
 } from 'storybook/internal/cli';
@@ -18,6 +19,7 @@ import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
+import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
 import type { Fix } from '../types.ts';
 import { findWorkspaceJsonFiles, getTargetGroups, readJsonFile } from './angular-workspace.ts';
 import {
@@ -174,7 +176,7 @@ const resolveZoneJs = (
 const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
   files.edit(paths, (source) => {
     let content = source;
-    for (const { pathPrefix, targets } of getTargetGroups(JSON.parse(source))) {
+    for (const { pathPrefix, targets } of getTargetGroups(parseJsonText(source))) {
       for (const [targetName, target] of Object.entries(targets)) {
         if (!isMigratableStorybookTarget(target)) {
           continue;
@@ -355,15 +357,27 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     logger.debug(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);
 
-    // `check()` reads the framework off the evaluated config, so it may be inherited from a shared
-    // base file that this migration cannot rewrite.
-    if (!(await files.read(mainConfigPath)).includes(result.framework)) {
-      throw new Error(dedent`
-        The \`framework\` field could not be rewritten in ${mainConfigPath}.
-        That file names no \`${result.framework}\`, so it most likely inherits the framework from a shared config.
-        Point \`framework\` at \`${ANGULAR_VITE_PACKAGE}\` where it is declared, then run this migration again.
-      `);
-    }
+    await assertMainConfigNamesFramework(files, mainConfigPath, result.framework, {
+      from: result.framework,
+      to: ANGULAR_VITE_PACKAGE,
+    });
+
+    // Everything that can fail runs before the first dependency change or `add()`.
+    const changedPaths = await rewriteWorkspaceJson(
+      files,
+      await findWorkspaceJsonFiles(packageManager.packageJsonPaths, ['angular.json'])
+    );
+    changedPaths.forEach((path) => logger.debug(`Updated Storybook builder references in ${path}`));
+
+    // `angular-vite-remove-compodoc` cannot do this: every fix is checked against the main config
+    // as it stood before this run switched the framework.
+    const compodocSetup = await findCompodocSetup({
+      files,
+      mainConfig,
+      previewConfigPath,
+      packageManager,
+      builderPackages: [ANGULAR_VITE_PACKAGE, ...MIGRATABLE_FRAMEWORKS],
+    });
 
     const wantsVitest =
       yes ||
@@ -415,7 +429,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
         skipPostinstall: true,
         yes: !!yes,
       });
-      addonsToPostinstall?.push('@storybook/addon-a11y');
     }
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as a peer, so an Analog project
@@ -456,12 +469,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
         : []),
     ]);
 
-    const changedPaths = await rewriteWorkspaceJson(
-      files,
-      await findWorkspaceJsonFiles(packageManager.packageJsonPaths, ['angular.json'])
-    );
-    changedPaths.forEach((path) => logger.debug(`Updated Storybook builder references in ${path}`));
-
     // `JsPackageManager` caches package.json process-wide, so a raw write would be undone by the
     // next `addDependencies`.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
@@ -477,15 +484,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // `angular-vite-remove-compodoc` cannot do this: every fix is checked against the main config
-    // as it stood before this run switched the framework.
-    const compodocSetup = await findCompodocSetup({
-      files,
-      mainConfig,
-      previewConfigPath,
-      packageManager,
-      builderPackages: [ANGULAR_VITE_PACKAGE, ...MIGRATABLE_FRAMEWORKS],
-    });
     if (compodocSetup) {
       await removeCompodocSetup({ result: compodocSetup, files, packageManager });
     }

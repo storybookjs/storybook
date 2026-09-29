@@ -17,10 +17,11 @@ check ──▶ detection pass ──▶ prompt ──▶ run + commit `files` �
   Detection failures are reported only if the user selects the fix and the apply pass hits them.
   A fix with its own `run` applies on its `check` alone, so its hooks do not run during detection.
 - After the prompt, each selected fix's `run` does what is not a per-file transform: dependency changes, `add()`, prompts, and file work through `files`.
-  A fix whose `run` throws keeps none of its edits: its staged `files` are discarded and its hooks skip the apply pass.
+  Before a `run`, the runner tries the fix's `main` hooks without writing; a fix whose hooks cannot migrate the main config fails before its `run` changes anything.
+  A fix whose `run` throws keeps none of its `files` edits and its hooks skip the apply pass, but dependency changes and `add()` already happened, so do everything that can fail before them.
   `run` can also resolve `false` to decline, for example when the user cancels a prompt; the fix keeps no edits and is reported as skipped.
 - The apply pass then streams the files once more through the hooks of the fixes that ran, and writes each changed file before reading the next one, so it sees what `run` and `add()` wrote.
-  A dry run stops before `run`.
+  A dry run stops before `run` and writes nothing, not even the summary.
 
 ## `transform`
 
@@ -39,15 +40,20 @@ transform: () => [
 ],
 ```
 
-- `filter.kind` selects `main`, `preview`, `manager`, `config` (anything else in the config directory), or `story` files, visited in that order; `filter.id` narrows by path, and `filter.code` skips files whose current code does not contain that string or match that pattern.
+- `filter.kind` selects `main`, `preview`, `manager`, `config` (other scripts in the config directory, outside `node_modules` and `dist`), or `story` files, visited in that order; `filter.id` narrows by path, and `filter.code` skips files whose current code does not contain that string or match that pattern.
   Each file has one kind whichever fixes run: a story inside the config directory is a `story`, and the manager config is a `manager`, so list every kind a hook needs.
 - A hook either edits the parsed file or rewrites its text.
   `editConfig(config, { id, kind })` receives a `ConfigFile` for every kind except `story`, and `editCsf(csf, { id, kind })` receives a `CsfFile` for stories.
+  Edits only see script files: MDX, Svelte, and Vue stories reach `handler` hooks only.
   Consecutive edits share one parse, and the runner prints the file after each edit.
   `handler(code, { id, kind })` receives the output of the fixes before it and returns new code, or `null` to leave the file unchanged; use it for text edits such as renaming an import.
 - A hook that throws, an edit that leaves mutation diagnostics, or a file that cannot be read or parsed skips that file for that fix only: the fix still migrates its other files, and later fixes see the file as the last successful hook left it.
-  The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run; a dry run only logs the list.
-- The runner formats a file that an edit changed with the project's formatter before writing it, so hooks neither check diagnostics nor format; text from a `handler` is written as returned.
+  The runner writes every skipped file and the reason to `automigrations-summary.md` in the project root and points the user to it at the end of the run.
+- A fix fails when its hooks fail on the main config, and then leaves the other files alone; otherwise it succeeds and reports the files it skipped.
+  `storybook automigrate` exits with an error while any fix failed or skipped files.
+- The summary keeps a fix's section until the fix runs again, or until the detection pass finds nothing left for it to change.
+- The runner formats a file that an edit changed with the project's own Prettier and Prettier config before writing it, and leaves it as printed when the project has none, so hooks neither check diagnostics nor format; a file that only `handler` hooks changed is written as returned.
+- Hooks see `\n` line endings; a CRLF file is written back with CRLF.
 - Files that no active hook asks for are never read.
 
 ## `files`
@@ -65,7 +71,7 @@ Its edits are staged and committed after `run` resolves, and the commit refuses 
 
 ## Rules
 
-- Do not read or write project files with `node:fs` in a fix, loop with `p-limit`, branch on `dryRun`, or catch per-file errors.
+- Do not read or write project files with `node:fs` in a fix, loop with `p-limit`, branch on `dryRun`, or catch per-file errors outside `check`; the runner reports a file that fails in a hook or cannot be read.
   Path discovery (`existsSync`, globbing) is fine.
 - `add()` and `removeAddon()` write `main.ts` directly; call them from `run`, which finishes before the apply pass reads the file.
 - Remove a fix once upgrades no longer start from a version that needs it.

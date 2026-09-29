@@ -476,6 +476,10 @@ describe('check', () => {
 });
 
 describe('run', () => {
+  beforeEach(() => {
+    vol.fromJSON({ [MAIN]: "export default { framework: '@storybook/angular-vite' };" });
+  });
+
   const runWith = async (
     result: Awaited<ReturnType<NonNullable<typeof FixType.check>>>,
     pm: JsPackageManager

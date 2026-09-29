@@ -1,7 +1,7 @@
 import { existsSync } from 'fs';
 
 import {
-  formatFileContent,
+  formatExistingFile,
   frameworkPackages,
   getAddonNames,
   rendererPackages,
@@ -275,7 +275,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
 
     for (const { path: setupFile, transform } of setupFiles) {
       if (transform.kind === 'rewritten') {
-        files.write(setupFile, await formatFileContent(setupFile, transform.code));
+        files.write(setupFile, await formatExistingFile(setupFile, transform.code));
       }
     }
 
@@ -287,7 +287,7 @@ export const vitestSetupFile: Fix<VitestSetupFileOptions> = {
           deletedPaths,
           inheritsRootByDefault
         );
-        return code === null ? null : formatFileContent(configFile, code);
+        return code === null ? null : formatExistingFile(configFile, code);
       });
     }
 

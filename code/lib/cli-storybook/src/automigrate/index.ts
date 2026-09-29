@@ -1,6 +1,6 @@
 import { type JsPackageManager } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
-import { type TaskLogInstance, logTracker, logger, prompt } from 'storybook/internal/node-logger';
+import { logTracker, logger, prompt } from 'storybook/internal/node-logger';
 import { AutomigrateError } from 'storybook/internal/server-errors';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
@@ -21,7 +21,7 @@ import type {
 } from './fixes/index.ts';
 import { createFixFiles } from './fix-files.ts';
 import { type FixFileFailure, pluralFiles, reportFileFailures } from './helpers/failure-report.ts';
-import { applies, detectApplicable, pluginsFor, runTransforms } from './pipeline.ts';
+import { applies, applyFixes, detectApplicable } from './pipeline.ts';
 import { FixStatus, allFixes, commandFixes } from './fixes/index.ts';
 import { upgradeStorybookRelatedDependencies } from './fixes/upgrade-storybook-related-dependencies.ts';
 import { logMigrationSummary } from './helpers/logMigrationSummary.ts';
@@ -101,15 +101,17 @@ export const doAutomigrate = async (options: AutofixOptionsFromCLI) => {
     await doctor({ configDir, packageManager: options.packageManager });
   }
 
-  if (hasFailures(outcome?.fixResults)) {
-    const failedMigrations = Object.entries(outcome?.fixResults ?? {})
-      .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
-      .map(([id, status]) => {
-        const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
-        return `${picocolors.cyan(id)} (${statusLabel})`;
-      });
-
-    throw new AutomigrateError({ errors: failedMigrations });
+  const failedMigrations = Object.entries(outcome?.fixResults ?? {})
+    .filter(([, status]) => status === FixStatus.FAILED || status === FixStatus.CHECK_FAILED)
+    .map(([id, status]) => {
+      const statusLabel = status === FixStatus.CHECK_FAILED ? 'check failed' : 'failed';
+      return `${picocolors.cyan(id)} (${statusLabel})`;
+    });
+  const skippedFiles = [...Map.groupBy(outcome?.fileFailures ?? [], ({ fixId }) => fixId)]
+    .filter(([id]) => outcome?.fixResults[id] === FixStatus.SUCCEEDED)
+    .map(([id, failures]) => `${picocolors.cyan(id)} (${pluralFiles(failures.length)} skipped)`);
+  if (failedMigrations.length > 0 || skippedFiles.length > 0) {
+    throw new AutomigrateError({ errors: [...failedMigrations, ...skippedFiles] });
   }
 };
 
@@ -136,6 +138,7 @@ export const automigrate = async ({
   preCheckFailure?: PreCheckFailure;
   /** Core addons added by fixes that must be configured after dependencies are installed. */
   addonsToPostinstall?: string[];
+  fileFailures: FixFileFailure[];
 } | null> => {
   if (list) {
     logAvailableMigrations();
@@ -188,7 +191,7 @@ export const automigrate = async ({
 
   logger.step('Checking possible migrations..');
 
-  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall, fileFailures } =
+  const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall, fileFailures, verified } =
     await runFixes({
       fixes,
       fixId,
@@ -205,7 +208,13 @@ export const automigrate = async ({
       storiesPaths,
     });
 
-  await reportFileFailures(fileFailures, { dryRun });
+  if (!dryRun) {
+    await reportFileFailures(fileFailures, [
+      ...fixSummary.succeeded,
+      ...fileFailures.map(({ fixId }) => fixId),
+      ...verified,
+    ]);
+  }
 
   // if migration failed, display a log file in the users cwd
   if (hasFailures(fixResults)) {
@@ -216,10 +225,12 @@ export const automigrate = async ({
     logMigrationSummary({
       fixResults,
       fixSummary,
+      skippedFiles: fileFailures.filter(({ fixId }) => fixResults[fixId] === FixStatus.SUCCEEDED)
+        .length,
     });
   }
 
-  return { fixResults, preCheckFailure, addonsToPostinstall };
+  return { fixResults, preCheckFailure, addonsToPostinstall, fileFailures };
 };
 
 type RunFixesOptions = {
@@ -258,6 +269,8 @@ export async function runFixes({
   fixSummary: FixSummary;
   addonsToPostinstall: string[];
   fileFailures: FixFileFailure[];
+  /** Fixes whose hooks went through every file and would change none. */
+  verified: FixId[];
 }> {
   const fixResults = {} as Record<FixId, FixStatus>;
   const fixSummary: FixSummary = { succeeded: [], failed: {}, manual: [], skipped: [] };
@@ -310,13 +323,17 @@ export async function runFixes({
 
   const fileFailures: FixFileFailure[] = [];
   const applicable = await detectApplicable(project, checked);
+  const verified: FixId[] = [];
   for (const { fix } of checked) {
     if (!applicable.some((check) => check.fix === fix)) {
       fixResults[fix.id] = FixStatus.UNNECESSARY;
+      if (fix.transform && !fix.run) {
+        verified.push(fix.id);
+      }
     }
   }
 
-  const selected: { fix: Fix; result: unknown; taskLog: TaskLogInstance }[] = [];
+  const selected: { fix: Fix; result: unknown }[] = [];
 
   for (const { fix: f, result } of applicable) {
     const promptType: Prompt =
@@ -335,11 +352,7 @@ export async function runFixes({
       }
     };
 
-    const currentTaskLogger = prompt.taskLog({
-      id: `automigrate-task-${f.id}`,
-      title: `${getTitle()}: ${picocolors.cyan(f.id)}`,
-    });
-
+    logger.step(`${getTitle()}: ${picocolors.cyan(f.id)}`);
     logger.logBox(f.prompt());
 
     let runAnswer: { fix: boolean } | undefined;
@@ -411,67 +424,59 @@ export async function runFixes({
     if (promptType === 'auto') {
       invariant(runAnswer, 'runAnswer must be defined if not promptOnly');
       if (runAnswer.fix) {
-        selected.push({ fix: f, result, taskLog: currentTaskLogger });
+        selected.push({ fix: f, result });
       } else {
         fixResults[f.id] = FixStatus.SKIPPED;
         fixSummary.skipped.push(f.id);
-        currentTaskLogger.success(`Skipped ${picocolors.cyan(f.id)} migration`);
+        logger.log(`Skipped ${picocolors.cyan(f.id)} migration`);
       }
     }
   }
 
-  // `run` goes first so a fix whose dependency work fails leaves no file edits behind, and so the
-  // apply pass reads what `add()` wrote to the main config.
-  const ran: typeof selected = [];
-  for (const entry of selected) {
-    const { fix: f, result, taskLog } = entry;
-    try {
-      if (f.run) {
-        const { files, commit } = createFixFiles();
-        const outcome = await f.run({
-          result,
-          packageManager,
-          files,
-          mainConfigPath,
-          configDir,
-          previewConfigPath,
-          mainConfig,
-          skipInstall,
-          storybookVersion,
-          storiesPaths,
-          yes,
-          addonsToPostinstall,
-        });
-        if (outcome === false) {
-          fixResults[f.id] = FixStatus.SKIPPED;
-          fixSummary.skipped.push(f.id);
-          taskLog.success(`Skipped ${picocolors.cyan(f.id)} migration`);
-          continue;
-        }
-        await commit();
-      }
-      ran.push(entry);
-    } catch (error) {
-      fixResults[f.id] = FixStatus.FAILED;
-      fixSummary.failed[f.id] = error instanceof Error ? error.message : 'Failed to run migration';
-      taskLog.error(`Error when running ${picocolors.cyan(f.id)} migration`);
-    }
+  if (selected.length === 0) {
+    return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
   }
 
-  const applied = await runTransforms(project, pluginsFor(ran, project), { write: true });
-
-  for (const { fix: f, taskLog } of ran) {
-    const errors = applied.get(f.id)?.errors ?? [];
-    fileFailures.push(...errors.map((failure) => ({ ...failure, fixId: f.id })));
-    logger.log(`✅ ran ${picocolors.cyan(f.id)} migration`);
-    fixResults[f.id] = FixStatus.SUCCEEDED;
-    fixSummary.succeeded.push(f.id);
-    taskLog.success(`Ran ${picocolors.cyan(f.id)} migration`);
-    // After `success`, which clears the lines logged while the task log was open.
-    if (errors.length > 0) {
-      logger.warn(`${f.id}: ${pluralFiles(errors.length)} skipped`);
+  const taskLog = prompt.taskLog({
+    id: 'automigrate-run',
+    title:
+      selected.length === 1
+        ? `Running ${picocolors.cyan(selected[0].fix.id)} migration`
+        : 'Running automigrations',
+  });
+  const outcomes = await applyFixes(
+    { ...project, skipInstall, yes, addonsToPostinstall },
+    selected
+  );
+  for (const [fixId, outcome] of outcomes) {
+    if (outcome.status === 'skipped') {
+      fixResults[fixId] = FixStatus.SKIPPED;
+      fixSummary.skipped.push(fixId);
+      taskLog.message(`Skipped ${picocolors.cyan(fixId)} migration`);
+      continue;
+    }
+    fileFailures.push(...outcome.fileFailures.map((failure) => ({ ...failure, fixId })));
+    if (outcome.status === 'failed') {
+      fixResults[fixId] = FixStatus.FAILED;
+      fixSummary.failed[fixId] =
+        outcome.error instanceof Error ? outcome.error.message : 'Failed to run migration';
+      taskLog.message(`${logger.SYMBOLS.error} ${picocolors.cyan(fixId)}`);
+    } else {
+      fixResults[fixId] = FixStatus.SUCCEEDED;
+      fixSummary.succeeded.push(fixId);
+      const skipped = outcome.fileFailures.length;
+      taskLog.message(
+        `${logger.SYMBOLS.success} ${picocolors.cyan(fixId)}${skipped > 0 ? ` (${pluralFiles(skipped)} skipped)` : ''}`
+      );
     }
   }
+  const ran =
+    selected.length === 1 ? `${picocolors.cyan(selected[0].fix.id)} migration` : 'automigrations';
+  if (Object.values(fixResults).includes(FixStatus.FAILED)) {
+    taskLog.error(selected.length === 1 ? `Could not run ${ran}` : 'Some automigrations failed');
+  } else {
+    taskLog.success(`Ran ${ran}`);
+  }
 
-  return { fixResults, fixSummary, addonsToPostinstall, fileFailures };
+  return { fixResults, fixSummary, addonsToPostinstall, fileFailures, verified };
 }

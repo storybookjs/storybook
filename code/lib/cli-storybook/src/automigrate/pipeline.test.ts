@@ -2,7 +2,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findConfigFile, formatFileContent } from 'storybook/internal/common';
+import { findConfigFile, formatExistingFile } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
 
 import { fs, vol } from 'memfs';
@@ -16,11 +16,14 @@ import type { ConfigFile } from 'storybook/internal/csf-tools';
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/csf-tools', { spy: true });
-vi.mock('globby', () => ({
-  globby: vi.fn(async (pattern: string) =>
-    Object.keys(vol.toJSON()).filter((file) => file.startsWith(pattern.replace('/**/*', '/')))
-  ),
-}));
+vi.mock('globby', async (importOriginal) => {
+  const { globby } = await importOriginal<typeof import('globby')>();
+  const { fs: memoryFs } = await import('memfs');
+  return {
+    globby: (patterns: string, options: object) =>
+      globby(patterns, { ...options, fs: memoryFs as never }),
+  };
+});
 
 const project = {
   configDir: '/project/.storybook',
@@ -136,10 +139,11 @@ describe('runTransforms', () => {
     expect(fs.readFileSync(project.storiesPaths[0], 'utf8')).toBe('A');
     const unreadable = {
       file: project.storiesPaths[1],
+      kind: 'story',
       message: expect.stringContaining('ENOENT'),
     };
     expect(outcomes.get('strict')?.errors).toEqual([
-      { file: project.storiesPaths[0], message: 'cannot migrate a' },
+      { file: project.storiesPaths[0], kind: 'story', message: 'cannot migrate a' },
       unreadable,
     ]);
     expect(outcomes.get('lenient')).toEqual({
@@ -182,7 +186,7 @@ describe('runTransforms', () => {
       changes: { changed: [project.mainConfigPath], errors: [] },
       fails: {
         changed: [],
-        errors: [{ file: project.storiesPaths[0], message: 'cannot migrate' }],
+        errors: [{ file: project.storiesPaths[0], kind: 'story', message: 'cannot migrate' }],
       },
     });
   });
@@ -199,7 +203,7 @@ describe('runTransforms', () => {
       [storyInConfigDir]: "import type { Meta } from '@storybook/react-vite';",
     });
     vi.mocked(findConfigFile).mockReturnValue(managerConfigPath);
-    vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+    vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
     const withStory = { ...project, storiesPaths: [...project.storiesPaths, storyInConfigDir] };
     const result = { hasTanstackRouterDecorator: false };
 
@@ -227,6 +231,32 @@ describe('runTransforms', () => {
     );
   });
 
+  it('offers config-directory scripts to config hooks, skipping node_modules and dist', async () => {
+    const decorators = `${project.configDir}/decorators.tsx`;
+    const skipped = [
+      `${project.configDir}/node_modules/pkg/index.js`,
+      `${project.configDir}/dist/generated.js`,
+      `${project.configDir}/preview-head.html`,
+    ];
+    vol.fromJSON(
+      Object.fromEntries([decorators, ...skipped].map((file) => [file, "import 'old';"]))
+    );
+
+    await runTransforms(
+      project,
+      [
+        {
+          fixId: 'rename',
+          hooks: [{ filter: { kind: ['config'] }, handler: (code) => code.replace('old', 'new') }],
+        },
+      ],
+      { write: true }
+    );
+
+    expect(fs.readFileSync(decorators, 'utf8')).toBe("import 'new';");
+    skipped.forEach((file) => expect(fs.readFileSync(file, 'utf8')).toBe("import 'old';"));
+  });
+
   it('reports a failed write for the fixes that changed the file and keeps going', async () => {
     const [first, second] = project.storiesPaths;
     vi.mocked(writeFile).mockImplementation(async (path, data) => {
@@ -250,7 +280,7 @@ describe('runTransforms', () => {
 
     expect(outcomes.get('upper')).toEqual({
       changed: [second],
-      errors: [{ file: first, message: 'EACCES: permission denied' }],
+      errors: [{ file: first, kind: 'story', message: 'EACCES: permission denied' }],
     });
     expect(outcomes.get('untouched')).toEqual({ changed: [], errors: [] });
     expect(fs.readFileSync(first, 'utf8')).toBe('a');
@@ -287,7 +317,7 @@ describe('edit hooks', () => {
     vi.mocked(loadConfig).mockClear();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
-    vi.mocked(formatFileContent)
+    vi.mocked(formatExistingFile)
       .mockClear()
       .mockImplementation(async (_path, source) => `${source}\n// formatted`);
     vol.fromJSON({ [mainConfigPath]: 'export default { features: {} };' });
@@ -309,7 +339,7 @@ describe('edit hooks', () => {
     );
 
     expect(loadConfig).toHaveBeenCalledTimes(1);
-    expect(formatFileContent).toHaveBeenCalledTimes(1);
+    expect(formatExistingFile).toHaveBeenCalledTimes(1);
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toMatchInlineSnapshot(`
       "export default { features: {
         a: true,
@@ -318,6 +348,51 @@ describe('edit hooks', () => {
       // formatted"
     `);
     expect(outcomes.get('b')).toEqual({ changed: [mainConfigPath], errors: [] });
+  });
+
+  it('sees no change in a CRLF file that an edit leaves alone, and keeps CRLF when it writes', async () => {
+    vol.fromJSON({ [mainConfigPath]: 'export default {\r\n  features: {},\r\n};\r\n' });
+    const untouched = { filter: { kind: ['main'] as const }, editConfig: () => {} };
+
+    const detection = await runTransforms(project, [{ fixId: 'noop', hooks: [untouched] }], {
+      write: false,
+    });
+    await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], { write: true });
+
+    expect(detection.get('noop')).toEqual({ changed: [], errors: [] });
+    expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe(
+      'export default {\r\n  features: {\r\n    a: true\r\n  },\r\n};\r\n\r\n// formatted'
+    );
+  });
+
+  it('writes a file with mixed line endings with LF only', async () => {
+    vol.fromJSON({ [mainConfigPath]: 'export default {\r\n  features: {},\n};\n' });
+
+    await runTransforms(project, [{ fixId: 'a', hooks: [setFeature('a')] }], { write: true });
+
+    expect(fs.readFileSync(mainConfigPath, 'utf8')).not.toContain('\r');
+  });
+
+  it('passes MDX stories to text handlers only', async () => {
+    const mdx = '/project/src/Intro.mdx';
+    vol.fromJSON({ [mdx]: "import { Meta } from '@storybook/addon-docs/blocks';" });
+    const editCsf = vi.fn();
+
+    const outcomes = await runTransforms(
+      { ...project, storiesPaths: [mdx] },
+      [
+        { fixId: 'edit', hooks: [{ filter: { kind: ['story'] }, editCsf }] },
+        {
+          fixId: 'rename',
+          hooks: [{ filter: { kind: ['story'] }, handler: (code) => code.replace('blocks', 'x') }],
+        },
+      ],
+      { write: true }
+    );
+
+    expect(editCsf).not.toHaveBeenCalled();
+    expect(outcomes.get('edit')).toEqual({ changed: [], errors: [] });
+    expect(outcomes.get('rename')).toEqual({ changed: [mdx], errors: [] });
   });
 
   it('drops the edits of a failed hook and keeps the others', async () => {
@@ -351,7 +426,7 @@ describe('edit hooks', () => {
     `);
     expect(outcomes.get('broken')).toEqual({
       changed: [],
-      errors: [{ file: mainConfigPath, message: 'cannot finish' }],
+      errors: [{ file: mainConfigPath, kind: 'main', message: 'cannot finish' }],
     });
   });
 
@@ -363,7 +438,7 @@ describe('edit hooks', () => {
     });
 
     expect(outcomes.get('a')?.errors).toEqual([
-      { file: mainConfigPath, message: expect.stringMatching(/^line 2: /) },
+      { file: mainConfigPath, kind: 'main', message: expect.stringMatching(/^line 2: /) },
     ]);
     expect(writeFile).not.toHaveBeenCalled();
   });
@@ -381,7 +456,7 @@ describe('edit hooks', () => {
     );
 
     expect(fs.readFileSync(mainConfigPath, 'utf8')).toBe('export default {};');
-    expect(formatFileContent).not.toHaveBeenCalled();
+    expect(formatExistingFile).not.toHaveBeenCalled();
   });
 
   it('runs a hook only on files whose code matches filter.code, and formats nothing on detection', async () => {
@@ -400,7 +475,7 @@ describe('edit hooks', () => {
 
     expect(handler).toHaveBeenCalledTimes(1);
     expect(outcomes.get('hit')?.changed).toEqual([mainConfigPath]);
-    expect(formatFileContent).not.toHaveBeenCalled();
+    expect(formatExistingFile).not.toHaveBeenCalled();
   });
 });
 

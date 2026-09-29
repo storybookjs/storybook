@@ -4,6 +4,7 @@ import { writeText } from 'tinyclip';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
+import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
 import type { Fix } from '../types.ts';
 
 export const REACT_VITE_PACKAGE = '@storybook/react-vite';
@@ -188,6 +189,8 @@ const buildAiMigrationPrompt = (previewConfigPath?: string) =>
         that do specify a route do so via "parameters.tanstack.router".
   `;
 
+const MIGRATED_OR_NOT = new RegExp(`${REACT_VITE_PACKAGE}|${TANSTACK_REACT_PACKAGE}`);
+
 export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean }> = {
   id: 'react-vite-to-tanstack-react',
   link: DOCS_URL,
@@ -204,7 +207,8 @@ export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean
     );
 
     for (const file of candidates) {
-      const content = await files.read(file);
+      // An unreadable file is reported by the apply pass, not by this check.
+      const content = await files.read(file).catch(() => '');
       if (
         TANSTACK_ROUTER_IMPORT.test(content) &&
         TANSTACK_ROUTER_DECORATOR_MARKERS.some((marker) => content.includes(marker))
@@ -230,7 +234,19 @@ export const reactViteToTanstackReact: Fix<{ hasTanstackRouterDecorator: boolean
     },
   ],
 
-  async run({ result, previewConfigPath, packageManager, storybookVersion, yes }) {
+  async run({
+    result,
+    files,
+    mainConfigPath,
+    previewConfigPath,
+    packageManager,
+    storybookVersion,
+    yes,
+  }) {
+    await assertMainConfigNamesFramework(files, mainConfigPath, MIGRATED_OR_NOT, {
+      from: REACT_VITE_PACKAGE,
+      to: TANSTACK_REACT_PACKAGE,
+    });
     logger.step(`Migrating from ${REACT_VITE_PACKAGE} to ${TANSTACK_REACT_PACKAGE}...`);
 
     await packageManager.removeDependencies([REACT_VITE_PACKAGE]);

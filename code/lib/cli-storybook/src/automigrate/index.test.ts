@@ -25,6 +25,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     info: vi.fn(),
     debug: vi.fn(),
     step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
   },
   prompt: {
     confirm: vi.fn(),

@@ -137,16 +137,31 @@ describe('nextjs-to-nextjs-vite', () => {
       expect(vol.toJSON()['/project/.storybook/main.ts']).toBe(mainConfig);
     });
 
-    it('reports an unreadable main config and still migrates the other files', async () => {
+    it('fails before changing dependencies when the main config inherits the framework', async () => {
+      vol.fromJSON({ '/project/.storybook/main.ts': "export { default } from '../../base-main';" });
+
+      await expect(runFix(nextjsToNextjsVite, runOptions)).rejects.toThrow(
+        'most likely inherits the framework from a shared config'
+      );
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+    });
+
+    it('fails before changing dependencies when the main config cannot be migrated', async () => {
       vol.unlinkSync('/project/.storybook/main.ts');
 
       const failures = await runFix(nextjsToNextjsVite, runOptions);
 
       expect(failures).toEqual([
-        { file: '/project/.storybook/main.ts', message: expect.stringContaining('ENOENT') },
+        {
+          file: '/project/.storybook/main.ts',
+          kind: 'main',
+          message: expect.stringContaining('ENOENT'),
+        },
       ]);
-      expect(vol.toJSON()['/project/src/Button.stories.tsx']).toContain('@storybook/nextjs-vite');
-      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@storybook/nextjs']);
+      expect(vol.toJSON()['/project/src/Button.stories.tsx']).not.toContain(
+        '@storybook/nextjs-vite'
+      );
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
   });
 });

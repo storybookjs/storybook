@@ -25,7 +25,7 @@ on:
         type: boolean
         default: false
       storybook_latest:
-        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local build'
+        description: 'Install every Storybook package from the npm latest tag instead of this checkout'
         type: boolean
         default: false
       review:
@@ -76,6 +76,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          # The PR head rather than GitHub's temporary merge commit, so the commit each result
+          # records can still be looked up later.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Resolve PR for the eval gate thread
@@ -144,10 +147,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build local MCP packages
+      # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
+      - name: Compile the Storybook packages the sandboxes install
+        if: ${{ steps.conditions.outputs.storybook_latest != '1' }}
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+        run: yarn workspace agent-eval run compile:checkout
 
       - name: Type check agent eval config
         run: yarn workspace agent-eval run typecheck

@@ -1,3 +1,8 @@
+import { execFile } from 'node:child_process';
+import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import { promisify } from 'node:util';
+
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
 import { collectTranscriptUsage } from './usage.ts';
 
@@ -122,28 +127,43 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
   ? []
   : [...ACTIVE_EVALS.core, ...ACTIVE_EVALS.lifecycle];
 
-function attachUsageMetadata({ runData }: RunCompleteContext) {
-  if (!runData.transcript) {
-    return;
-  }
+const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
+const execFileAsync = promisify(execFile);
+let checkoutRevision: Promise<{ commit: string; dirty: boolean }> | undefined;
 
-  const usage = collectTranscriptUsage(runData.transcript, runData.result.observedModel);
+function readCheckoutRevision(): Promise<{ commit: string; dirty: boolean }> {
+  checkoutRevision ??= Promise.all([
+    execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT }),
+    execFileAsync('git', ['status', '--porcelain'], { cwd: REPO_ROOT }),
+  ]).then(([head, status]) => ({
+    commit: head.stdout.trim(),
+    dirty: status.stdout.trim() !== '',
+  }));
+  return checkoutRevision;
+}
 
-  if (!usage) {
-    return;
-  }
+async function attachRunMetadata({ runData }: RunCompleteContext) {
+  const usage = runData.transcript
+    ? collectTranscriptUsage(runData.transcript, runData.result.observedModel)
+    : undefined;
+  // Recording the commit is bookkeeping; a git failure must not fail the eval itself.
+  const checkout = await readCheckoutRevision().catch(() => undefined);
 
   return {
     ...runData,
     result: {
       ...runData.result,
-      metadata: { ...runData.result.metadata, usage },
+      metadata: {
+        ...runData.result.metadata,
+        ...(checkout ? { checkout } : {}),
+        ...(usage ? { usage } : {}),
+      },
     },
   };
 }
 
 export const DEFAULT_EXPERIMENT_CONFIG = {
-  onRunComplete: attachUsageMetadata,
+  onRunComplete: attachRunMetadata,
   // Keep runs at 1: the runner starts all attempts in parallel (earlyExit only
   // aborts in-flight runs), so runs > 1 spins up extra sandboxes even on a pass.
   runs: 1,

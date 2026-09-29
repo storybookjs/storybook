@@ -8,16 +8,16 @@
     "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook"
   },
   "devDependencies": {
-    "@storybook/addon-a11y": "next",
-    "@storybook/addon-docs": "next",
-    "@storybook/addon-mcp": "file:./local-packages/addon-mcp",
-    "@storybook/addon-vitest": "next",
-    "@storybook/mcp": "file:./local-packages/mcp",
-    "@storybook/react": "next",
-    "@storybook/react-vite": "next",
+    "@storybook/addon-a11y": "workspace:*",
+    "@storybook/addon-docs": "workspace:*",
+    "@storybook/addon-mcp": "workspace:*",
+    "@storybook/addon-vitest": "workspace:*",
+    "@storybook/mcp": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/react-vite": "workspace:*",
     "@vitest/browser-playwright": "4.0.6",
     "playwright": "1.56.1",
-    "storybook": "next"
+    "storybook": "workspace:*"
   },
   "evals": {
     "template": "vite-app"

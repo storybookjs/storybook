@@ -270,11 +270,9 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
 export interface Canvas extends BoundFunctions<typeof queries> {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
-  extends StoryIdentifier, Required<StoryContextUpdate<TArgs>> {
-  component?: (TRenderer & { T: any })['component'];
-  subcomponents?: Record<string, (TRenderer & { T: any })['component']>;
-  parameters: Parameters;
-  initialArgs: TArgs;
+  extends
+    Omit<StoryContextForEnhancers<TRenderer, TArgs>, 'argTypes'>,
+    Required<StoryContextUpdate<TArgs>> {
   loaded: Record<string, any>;
   abortSignal: AbortSignal;
   canvasElement: TRenderer['canvasElement'];

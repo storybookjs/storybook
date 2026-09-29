@@ -212,14 +212,32 @@ describe('stories.preview', () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }]);
       const mcpOutcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toEqual([previewUrl]);
       expect(outcome.markdown).toEqual(mcpOutcome.markdown);
     });
 
-    it('returns one text block per URL for MCP', async () => {
+    it('appends an in-app browser nudge once a URL resolved and reviews do not exist', async () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toEqual([previewUrl]);
+      expect(outcome.markdown).toEqual([
+        previewUrl,
+        "Open the preview URL that best shows your change in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.",
+      ]);
+    });
+
+    it('names no harness-specific browser tool in its description or result', async () => {
+      const description = resolveToolsetDescription(toolset.methods.preview.description, mcpCtx);
+      const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
+
+      for (const harnessTool of [
+        'preview_eval',
+        'preview_start',
+        'Claude_Browser',
+        'browser_navigate',
+        'node_repl',
+      ]) {
+        expect(description).not.toContain(harnessTool);
+        expect(String(outcome.markdown)).not.toContain(harnessTool);
+      }
     });
 
     it('appends a review nudge for MCP once a URL resolved and reviews exist', async () => {
@@ -232,12 +250,18 @@ describe('stories.preview', () => {
       ]);
     });
 
-    it('leaves an all-error result unnudged, since there is nothing to curate', async () => {
-      const withReviews = createToolset({ reviewEnabled: true });
-      const outcome = await runPreview([{ storyId: 'gone--story' }], mcpCtx, withReviews);
+    it.each([true, false])(
+      'leaves an all-error result unnudged, since there is nothing to curate or open (reviews: %s)',
+      async (reviewEnabled) => {
+        const outcome = await runPreview(
+          [{ storyId: 'gone--story' }],
+          mcpCtx,
+          createToolset({ reviewEnabled })
+        );
 
-      expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
-    });
+        expect(outcome.markdown).toEqual(['No story found for story ID "gone--story"']);
+      }
+    );
   });
 });
 
@@ -525,7 +549,8 @@ describe('descriptions', () => {
     expect(resolveToolsetDescription(toolset.methods.preview.description, mcpCtx))
       .toBe(`Use this tool to get one or more Storybook preview URLs.
 Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
-Include each returned preview URL in your final user-facing response so users can open them directly.`);
+Include each returned preview URL in your final user-facing response so users can open them directly.
+Before your final response, open the preview URL that best shows your change in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`);
   });
 
   it('demotes preview to a mid-loop tool when reviews are enabled', () => {

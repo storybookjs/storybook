@@ -40,8 +40,11 @@ The rest of this guide will help you upgrade successfully, either automatically 
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+  - [`--preview-url` and `--force-build-preview` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preview-url-and-force-build-preview-removed)
 - Internal tooling changes
   - [Update custom CSF tooling to the unified mutation API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-csf-tools-use-the-unified-mutation-api)
+- Testing
+  - [Test runner support ended](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended)
 - Package removals
   - [`@storybook/react-dom-shim` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookreact-dom-shim-removed)
 - [Changes for addon authors](../addons/addon-migration-guide.mdx)
@@ -118,4 +121,4 @@ The Webpack-based `@storybook/nextjs` framework is deprecated but remains suppor
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project is built with Vite and uses React, Vue, Angular, Web Components, or Svelte, you should consider following the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx).
+Official support for the `test-runner` has ended. It still runs with Storybook 11, but it no longer receives fixes or compatibility updates. `addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) replace it: follow the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx). If your project uses a Webpack-based framework, the [test runner migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) explain how to switch to Vite first.

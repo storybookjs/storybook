@@ -241,17 +241,22 @@ function renderShowStory(
 }
 
 const storybookIdField = {
-  storybookId: v.pipe(
-    v.string(),
-    v.description('The ID of the Storybook source to query (e.g., "local", "design-system")')
+  storybookId: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        'The ID of the Storybook source to query (e.g., "local", "design-system"). Defaults to "local", this Storybook.'
+      )
+    ),
+    'local'
   ),
 };
 
 /**
  * Picks the access for a lookup, or explains which source the caller should have named.
  *
- * In a composition the id alone is ambiguous, so a missing or unknown `storybookId` is a result the
- * agent can act on — the available ids and where to find them — rather than a thrown error.
+ * In a composition the id alone is ambiguous, so an unknown `storybookId` is a result the agent can
+ * act on — the available ids and where to find them — rather than a thrown error.
  */
 function selectSource(
   sources: DocsSource[] | undefined,
@@ -264,10 +269,6 @@ function selectSource(
 
   const available = sources.map(({ source }) => source.id).join(', ');
   const listRef = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`;
-
-  if (!storybookId) {
-    return { sourceError: `storybookId is required. Available sources: ${available}. ${listRef}` };
-  }
 
   const match = sources.find(({ source }) => source.id === storybookId);
   if (!match) {
@@ -296,7 +297,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     throw new Error('createDocsToolset requires a docsAccess or at least one source.');
   }
 
-  // A composition needs the caller to say which Storybook they mean; a single one must not ask.
+  // A composition lets the caller name the Storybook, defaulting to this one; a single one must
+  // not ask.
   const showSchema = multiSource
     ? v.object({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),

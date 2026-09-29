@@ -279,7 +279,6 @@ describe('toUpgradedDependencies', () => {
         storiesPaths: [],
         versionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123',
         versionInstalled: '10.0.0',
-        hasCsfFactoryPreview: false,
       });
 
       const results = await collectProjects({ force: true } as any, ['.storybook'], () => {});
@@ -299,7 +298,6 @@ describe('toUpgradedDependencies', () => {
       const deps = {
         '@storybook/react': '8.0.0',
         '@storybook/addon-designs': '8.0.0',
-        '@storybook/test-runner': '^8.0.0',
         '@chromatic-com/storybook': '~3.0.0',
       };
 
@@ -315,7 +313,6 @@ describe('toUpgradedDependencies', () => {
       expect(result).toEqual([
         '@storybook/react@9.0.0',
         '@storybook/addon-designs@8.0.0',
-        '@storybook/test-runner@^9.0.0',
         '@chromatic-com/storybook@~3.0.0',
       ]);
       expect(mockPackageManager.latestVersion).toHaveBeenCalledWith('@storybook/addon-designs');
@@ -404,7 +401,6 @@ describe('collectProjects', () => {
       packageManager,
       storiesPaths: [],
       versionInstalled: '8.0.0',
-      hasCsfFactoryPreview: false,
     } as unknown as Awaited<ReturnType<typeof getStorybookData>>);
 
     const results = await collectProjects(

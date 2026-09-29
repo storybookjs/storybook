@@ -11,272 +11,9 @@ import {
   isLocalDevServerUrl,
   isLocalStorybookPreviewUrl,
   parseCodexBrowserNavigations,
-  parseStorybookWorkflowShellCommands,
   parseWorkflowToolResults,
   selectFinalRunStoryTestsReport,
-  workflowCallMatchesName,
-  workflowCallIncludesStory,
-  workflowCallUsesStoryId,
 } from './test-utils.ts';
-
-describe('parseStorybookWorkflowShellCommands', () => {
-  test('records `skills <id>` invocations literally, with their skill id', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
-      'npx storybook skills stories',
-      'npx storybook skills',
-    ]);
-
-    expect(calls).toEqual([
-      { name: 'skills-get', input: { id: 'write-story' }, source: 'cli' },
-      { name: 'skills-get', input: { id: 'stories' }, source: 'cli' },
-    ]);
-  });
-
-  test('matches write-story and --all, but not other ids, to the historic instructions name', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story',
-      'npx storybook skills --all',
-      'npx storybook skills stories',
-      'npx storybook skills all',
-    ]);
-
-    expect(calls.map((call) => call.input)).toEqual([
-      { id: 'write-story' },
-      { all: true },
-      { id: 'stories' },
-      { id: 'all' },
-    ]);
-    expect(
-      calls.map((call) => workflowCallMatchesName(call, 'get-storybook-story-instructions'))
-    ).toEqual([true, true, false, false]);
-  });
-
-  test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills write-story --help',
-      'npx storybook skills write-story -h && npx storybook skills --all --help',
-      'npx storybook skills stories --all',
-      'npx storybook skills --all stories',
-      "echo 'storybook skills write-story'",
-    ]);
-
-    expect(calls).toHaveLength(0);
-  });
-
-  test('preserves repeated workflow calls across separate plugin commands', () => {
-    const command =
-      'storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
-
-    const calls = parseStorybookWorkflowShellCommands([command, command]);
-
-    expect(calls).toHaveLength(2);
-    expect(calls.map((call) => call.name)).toEqual(['test-run', 'test-run']);
-    expect(calls.every(workflowCallUsesStoryId)).toBe(true);
-  });
-
-  test('preserves repeated workflow calls chained in one plugin command', () => {
-    const command =
-      'storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\' && storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
-
-    const calls = parseStorybookWorkflowShellCommands([command]);
-
-    expect(calls).toHaveLength(2);
-    expect(calls.map((call) => call.name)).toEqual(['test-run', 'test-run']);
-    expect(calls.every(workflowCallUsesStoryId)).toBe(true);
-  });
-
-  test('parses storybook ai path and export JSON input', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'storybook ai stories-preview --json \'{"stories":[{"absoluteStoryPath":"stories/Button.stories.tsx","exportName":"Primary"}]}\'',
-    ]);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('stories-preview');
-    expect(
-      calls.some((call) =>
-        workflowCallIncludesStory(call, {
-          absoluteStoryPath: 'stories/Button.stories.tsx',
-          exportName: 'Primary',
-        })
-      )
-    ).toBe(true);
-  });
-
-  test('parses inline storybook ai JSON input', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'storybook ai test-run --json=\'{"stories":[{"storyId":"example-button--primary"}],"a11y":false}\'',
-    ]);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('test-run');
-    expect(calls[0]?.input.a11y).toBe(false);
-    expect(
-      calls.some((call) => workflowCallIncludesStory(call, { storyId: 'example-button--primary' }))
-    ).toBe(true);
-  });
-
-  test('keeps backslashes literal inside single-quoted JSON payloads', () => {
-    // POSIX single quotes preserve backslashes, so the CLI receives valid JSON
-    // with escaped inner quotes. The tokenizer must not consume them.
-    const command = [
-      "STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 39497 review-create --json '{",
-      '  "title": "Accessible ToggleSwitch component",',
-      '  "description": "A switch with `role=\\"switch\\"` semantics.",',
-      '  "collections": [',
-      '    {',
-      '      "title": "ToggleSwitch states",',
-      '      "rationale": "All states.",',
-      '      "storyIds": ["components-toggleswitch--off"]',
-      '    }',
-      '  ]',
-      "}' 2>&1 | tail -30",
-    ].join('\n');
-
-    const calls = parseStorybookWorkflowShellCommands([command]);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('review-create');
-    expect(calls[0]?.input.title).toBe('Accessible ToggleSwitch component');
-    expect(calls[0]?.input.description).toBe('A switch with `role="switch"` semantics.');
-    expect(calls[0]?.input.collections).toEqual([
-      {
-        title: 'ToggleSwitch states',
-        rationale: 'All states.',
-        storyIds: ['components-toggleswitch--off'],
-      },
-    ]);
-  });
-
-  test('resolves review-create --json from a same-command cat heredoc', () => {
-    const command = `cat > /tmp/review.json <<'EOF'
-{
-  "title": "New ProfileCard component",
-  "description": "A new ProfileCard.",
-  "collections": [
-    {
-      "title": "The full card",
-      "rationale": "Default composition.",
-      "storyIds": ["src-components-profilecard--default"]
-    }
-  ],
-  "changedFiles": ["src/components/ProfileCard.tsx"]
-}
-EOF
-STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai -p 36917 review-create --json "$(cat /tmp/review.json)" 2>&1 | tail -20`;
-
-    const calls = parseStorybookWorkflowShellCommands([command]);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('review-create');
-    expect(calls[0]?.input.title).toBe('New ProfileCard component');
-    expect(calls[0]?.input.collections).toEqual([
-      {
-        title: 'The full card',
-        rationale: 'Default composition.',
-        storyIds: ['src-components-profilecard--default'],
-      },
-    ]);
-    expect(calls[0]?.input.changedFiles).toEqual(['src/components/ProfileCard.tsx']);
-  });
-
-  test('parses --json placed before the workflow command name', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 43383 --json '{
-  "title": "ReviewCard with date and report button",
-  "description": "ReviewCard now shows a date.",
-  "collections": [
-    {
-      "title": "ReviewCard states",
-      "rationale": "Default plus report.",
-      "storyIds": ["reviews-reviewcard--default"]
-    }
-  ],
-  "changedFiles": ["src/components/ReviewCard.tsx"]
-}' review-create 2>&1`,
-    ]);
-
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('review-create');
-    expect(calls[0]?.input.title).toBe('ReviewCard with date and report button');
-    expect(calls[0]?.input.collections).toEqual([
-      {
-        title: 'ReviewCard states',
-        rationale: 'Default plus report.',
-        storyIds: ['reviews-reviewcard--default'],
-      },
-    ]);
-  });
-
-  test('does not credit ad hoc MCP invocations from the shell', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'node scripts/mcp-call.mjs test-run \'{"stories":[{"storyId":"example-button--primary"}]}\'',
-      'curl http://127.0.0.1:6006/mcp/stories-preview --data \'{"params":{"arguments":{"stories":[{"storyId":"example-button--secondary"}]}}}\'',
-    ]);
-
-    expect(calls).toHaveLength(0);
-  });
-
-  test('ignores shell redirections in storybook ai commands', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai stories-changed 2>&1',
-      'npx storybook ai --port 6006 test-run >out.txt 2> err.log',
-    ]);
-
-    expect(calls).toHaveLength(2);
-    expect(calls[0]?.input).toEqual({});
-    expect(calls[1]?.input).not.toHaveProperty('json');
-  });
-
-  test('does not mistake a non-shell -c flag for a bash -c wrapper', () => {
-    // Regression: cc-plugin 802 (2026-07-03 CI run 28647682172) chained
-    // `head -c 800` before a real stories-changed call in one compound
-    // command; the parser recursed into the literal `800` as if it were a
-    // `bash -c` payload and dropped the workflow call.
-    const calls = parseStorybookWorkflowShellCommands([
-      'sleep 3; curl -s http://localhost:40097/index.json 2>/dev/null | head -c 800; echo; echo "---changed---"; STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 40097 stories-changed 2>&1 | grep -v "No story files" | head -40',
-      'curl -c cookies.txt http://localhost:6006/ && npx storybook ai stories-changed',
-      'grep -c foo bar.txt; npx storybook ai stories-find-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
-    ]);
-
-    expect(calls.map((call) => call.name)).toEqual([
-      'stories-changed',
-      'stories-changed',
-      'stories-find-by-component',
-    ]);
-  });
-
-  test('still unwraps genuine shell wrappers around storybook ai calls', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      "bash -c 'npx storybook ai stories-changed'",
-      "/bin/sh -lc 'npx storybook ai --port 6006 test-run'",
-      "env bash -x -c 'npx storybook ai stories-find-by-component'",
-    ]);
-
-    expect(calls.map((call) => call.name)).toEqual([
-      'stories-changed',
-      'test-run',
-      'stories-find-by-component',
-    ]);
-  });
-
-  test('parses storybook tools toolset/method pairs', () => {
-    const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook tools test run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'',
-      'npx storybook tools stories find-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
-      'npx storybook tools review create --json \'{"title":"Pass","description":"x","collections":[]}\'',
-    ]);
-
-    expect(calls.map((call) => call.name)).toEqual([
-      'test-run',
-      'stories-find-by-component',
-      'review-create',
-    ]);
-    expect(calls[0]?.input).toMatchObject({
-      stories: [{ storyId: 'example-button--primary' }],
-    });
-  });
-});
 
 describe('parseWorkflowToolResults', () => {
   function claudeToolUseLine(id: string, name: string, input: Record<string, unknown>): string {
@@ -312,10 +49,10 @@ describe('parseWorkflowToolResults', () => {
     expect(results[0]?.isError).toBe(false);
   });
 
-  test('extracts Claude plugin-path results from storybook ai shell invocations', () => {
+  test('extracts Claude plugin-path results from storybook tools shell invocations', () => {
     const transcript = [
       claudeToolUseLine('toolu_1', 'Bash', {
-        command: 'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 6006 test-run',
+        command: 'npx storybook tools --port 6006 test run',
       }),
       claudeToolResultLine('toolu_1', '## Failing Stories\n\n### example-button--primary'),
     ].join('\n');
@@ -374,7 +111,7 @@ describe('parseWorkflowToolResults', () => {
         type: 'item.completed',
         item: {
           type: 'command_execution',
-          command: "/bin/bash -lc 'npx storybook ai --port 6006 test-run'",
+          command: "/bin/bash -lc 'npx storybook tools --port 6006 test run'",
           aggregated_output: '## Passing Stories\n\n- a--b\n\n## Failing Stories\n\n### a--c',
           exit_code: 0,
           status: 'completed',
@@ -396,6 +133,175 @@ describe('parseWorkflowToolResults', () => {
     ].join('\n');
 
     expect(parseWorkflowToolResults(transcript, 'test-run')).toHaveLength(0);
+  });
+
+  function codexTestRunLine(
+    aggregatedOutput: string,
+    command = 'npx storybook tools test run --input \'{"stories":[{"storyId":"reviews-reviewcard--default"}]}\' --json'
+  ): string {
+    return JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'command_execution',
+        command,
+        aggregated_output: aggregatedOutput,
+        exit_code: 0,
+        status: 'completed',
+      },
+    });
+  }
+
+  function codexTestRunJsonLine(output: unknown): string {
+    return codexTestRunLine(`${JSON.stringify(output, null, 2)}\n`);
+  }
+
+  function status(storyId: string, value: string, typeId = 'storybook/component-test') {
+    return { storyId, typeId, value, title: '', description: '', sidebarContextMenu: false };
+  }
+
+  test('renders --json test-run output as the markdown report', () => {
+    // Shape observed in codex-plugin-gpt-6-sol-medium 803 (2026-09-24).
+    const transcript = codexTestRunJsonLine({
+      status: 'completed',
+      a11y: true,
+      result: {
+        config: { coverage: false, a11y: true },
+        componentTestStatuses: [
+          status('reviews-reviewcard--default', 'status-value:success'),
+          status('reviews-reviewcard--with-report-action', 'status-value:success'),
+        ],
+        a11yStatuses: [
+          status('reviews-reviewcard--default', 'status-value:success', 'storybook/a11y'),
+        ],
+        a11yReports: {
+          'reviews-reviewcard--default': [
+            {
+              violations: [],
+              passes: [{ id: 'button-name', description: 'Buttons have discernible text' }],
+              inapplicable: [{ id: 'color-contrast' }],
+            },
+          ],
+        },
+        unhandledErrors: [],
+      },
+    });
+
+    const results = parseWorkflowToolResults(transcript, 'test-run');
+
+    expect(results).toHaveLength(1);
+    expect(results[0]?.output).toBe(
+      '## Passing Stories\n\n- reviews-reviewcard--default\n- reviews-reviewcard--with-report-action'
+    );
+  });
+
+  test('renders failing stories, a11y violations, and unhandled errors from --json output', () => {
+    const transcript = codexTestRunJsonLine({
+      status: 'completed',
+      a11y: true,
+      result: {
+        config: { coverage: false, a11y: true },
+        componentTestStatuses: [
+          status('a--b', 'status-value:success'),
+          { ...status('a--c', 'status-value:error'), description: 'expected 1 to be 2' },
+        ],
+        a11yStatuses: [],
+        a11yReports: {
+          'a--b': [
+            {
+              violations: [
+                {
+                  id: 'button-name',
+                  description: 'Buttons must have discernible text',
+                  nodes: [{ impact: 'critical', html: '<button></button>' }],
+                },
+              ],
+              passes: [],
+            },
+          ],
+          'a--c': [{ error: { message: 'axe crashed' } }],
+        },
+        unhandledErrors: [{ name: 'TypeError', message: 'x is not a function' }],
+      },
+    });
+
+    expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
+      [
+        '## Passing Stories\n\n- a--b',
+        '## Failing Stories\n\n- a--c',
+        '## Accessibility Violations\n\n- a--b - button-name',
+        '## Unhandled Errors\n\n- TypeError',
+      ].join('\n\n')
+    );
+  });
+
+  test('omits accessibility violations when the run had a11y off', () => {
+    const transcript = codexTestRunJsonLine({
+      status: 'completed',
+      a11y: false,
+      result: {
+        config: { coverage: false, a11y: true },
+        componentTestStatuses: [status('a--b', 'status-value:success')],
+        a11yStatuses: [],
+        a11yReports: {
+          'a--b': [{ violations: [{ id: 'button-name', description: 'x', nodes: [] }] }],
+        },
+        unhandledErrors: [],
+      },
+    });
+
+    expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
+      '## Passing Stories\n\n- a--b'
+    );
+  });
+
+  test('renders --json output surrounded by diverted log lines', () => {
+    const json = JSON.stringify(
+      {
+        status: 'completed',
+        a11y: true,
+        result: {
+          config: { coverage: false, a11y: true },
+          componentTestStatuses: [status('a--b', 'status-value:success')],
+          a11yStatuses: [],
+          a11yReports: {},
+          unhandledErrors: [],
+        },
+      },
+      null,
+      2
+    );
+    const transcript = codexTestRunLine(
+      `npm warn exec The following package was not found and will be installed: storybook@10.3.0\n${json}\nOutput written to /tmp/run.json\n`,
+      'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\' --json 2>&1'
+    );
+
+    expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
+      '## Passing Stories\n\n- a--b'
+    );
+  });
+
+  test('renders a --json no-stories outcome as the markdown report marker', () => {
+    const transcript = codexTestRunJsonLine({
+      status: 'no-stories',
+      notFoundMessages: ['No story with id a--b'],
+    });
+
+    expect(parseWorkflowToolResults(transcript, 'test-run')[0]?.output).toBe(
+      'No stories found matching the provided input.'
+    );
+  });
+
+  test('leaves markdown and unrecognized JSON output untouched', () => {
+    const markdown = codexTestRunLine(
+      '## Passing Stories\n\n- a--b',
+      'npx storybook tools test run --stories \'[{"storyId":"a--b"}]\''
+    );
+    const unrelatedJson = codexTestRunJsonLine({ reviewUrl: 'http://localhost:6006' });
+
+    expect(parseWorkflowToolResults(markdown, 'test-run')[0]?.output).toBe(
+      '## Passing Stories\n\n- a--b'
+    );
+    expect(parseWorkflowToolResults(unrelatedJson, 'test-run')[0]?.output).toContain('reviewUrl');
   });
 });
 

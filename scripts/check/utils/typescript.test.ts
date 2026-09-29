@@ -77,6 +77,24 @@ describe('filterToPackageDiagnostics', () => {
     expect(kept).toEqual([`${inside}(2,2): error TS2: inside.`]);
   });
 
+  it('keeps only diagnostics in the given files, and in tsconfigs', () => {
+    const output = [
+      'src/strict.test.ts(1,1): error TS2: in a listed file.',
+      'src/renderer.ts(2,2): error TS18047: imported by a listed file.',
+      'tsconfig.strict.json(3,3): error TS5023: Unknown compiler option.',
+      '',
+    ].join('\n');
+
+    const { kept } = filterToPackageDiagnostics(output, packageDir, [
+      resolve(packageDir, 'src/strict.test.ts'),
+    ]);
+
+    expect(kept).toEqual([
+      'src/strict.test.ts(1,1): error TS2: in a listed file.',
+      'tsconfig.strict.json(3,3): error TS5023: Unknown compiler option.',
+    ]);
+  });
+
   it('handles CRLF line endings', () => {
     const output = 'src/globals.ts(6,16): error TS2339: Property does not exist.\r\n';
 

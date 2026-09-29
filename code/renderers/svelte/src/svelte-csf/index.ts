@@ -7,7 +7,7 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
-import type { Cmp, ComponentAnnotations } from './types.ts';
+import type { Cmp, ComponentAnnotations, StoryComponent as StoryComponentType } from './types.ts';
 export type { StoryContext } from './types.ts';
 import type { ComponentProps, Snippet } from 'svelte';
 
@@ -30,7 +30,7 @@ export function defineMeta<TSnippet, TCmp extends Cmp>(
     'render' | 'component' | 'args'
   >
 ): {
-  Story: typeof StoryComponent<
+  Story: StoryComponentType<
     TSnippet extends Snippet<[infer TArgs extends Record<string, any>, any]>
       ? TArgs
       : ComponentProps<TCmp>,
@@ -53,12 +53,10 @@ export function defineMeta<TSnippet, TCmp extends Cmp>(
  * {/snippet}
  * ```
  */
-export type Args<TStoryCmp> = TStoryCmp extends typeof StoryComponent<
-  infer TArgs extends Record<string, any>,
-  Cmp
->
-  ? TArgs
-  : never;
+export type Args<TStoryCmp> =
+  TStoryCmp extends StoryComponentType<infer TArgs extends Record<string, any>, Cmp>
+    ? TArgs
+    : never;
 
 // TODO: Remove in next major release
 export {

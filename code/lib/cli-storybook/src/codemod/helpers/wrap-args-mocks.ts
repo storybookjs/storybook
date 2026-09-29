@@ -34,8 +34,19 @@ function withoutDefault(node: t.Node) {
   return t.isAssignmentPattern(node) ? node.left : node;
 }
 
+function withoutTypeCast(node: t.Node): t.Node {
+  return t.isTSNonNullExpression(node) ||
+    t.isTSAsExpression(node) ||
+    t.isTSSatisfiesExpression(node)
+    ? withoutTypeCast(node.expression)
+    : node;
+}
+
 function isMember(node: t.Node): node is t.MemberExpression | t.OptionalMemberExpression {
-  return (t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) && !node.computed;
+  return (
+    (t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) &&
+    (!node.computed || t.isStringLiteral(node.property))
+  );
 }
 
 // Wraps mock API access on args in `mocked()`, so `args.onClick.mockClear()` becomes
@@ -61,8 +72,12 @@ export function wrapArgsMocks(ast: t.File) {
     }
   };
 
-  const isArgsObject = (path: NodePath, node: t.Node) =>
-    isBoundIn(argsObjects, path, node) || (isMember(node) && keyName(node.property) === 'args');
+  const isArgsObject = (path: NodePath, expression: t.Node) => {
+    const node = withoutTypeCast(expression);
+    return (
+      isBoundIn(argsObjects, path, node) || (isMember(node) && keyName(node.property) === 'args')
+    );
+  };
 
   const addArgs = (path: NodePath, pattern: t.Node) => {
     const target = withoutDefault(pattern);
@@ -89,10 +104,10 @@ export function wrapArgsMocks(ast: t.File) {
   };
 
   const collectTarget = (path: NodePath<t.MemberExpression | t.OptionalMemberExpression>) => {
-    const { object, property, computed } = path.node;
-    if (computed || !mockMembers.includes(keyName(property) ?? '')) {
+    if (!isMember(path.node) || !mockMembers.includes(keyName(path.node.property) ?? '')) {
       return;
     }
+    const object = withoutTypeCast(path.node.object);
     if (
       isBoundIn(argValues, path, object) ||
       (isMember(object) && isArgsObject(path, object.object))
@@ -132,19 +147,28 @@ export function wrapArgsMocks(ast: t.File) {
   );
   const specifiers = testImports.flatMap((node) => node.specifiers);
   const existing = specifiers.find(
-    (specifier) => t.isImportSpecifier(specifier) && keyName(specifier.imported) === 'mocked'
+    (specifier) =>
+      t.isImportSpecifier(specifier) &&
+      specifier.importKind !== 'type' &&
+      keyName(specifier.imported) === 'mocked'
   );
   const namespace = specifiers.find((specifier) => t.isImportNamespaceSpecifier(specifier));
 
+  const refersTo = (name: string, binding: Binding | undefined) =>
+    targets.every((target) => target.scope.getBinding(name) === binding);
+
   let callee: () => t.Expression;
-  if (existing) {
+  if (existing && refersTo(existing.local.name, program.scope.getBinding(existing.local.name))) {
     callee = () => t.identifier(existing.local.name);
-  } else if (namespace) {
+  } else if (
+    namespace &&
+    refersTo(namespace.local.name, program.scope.getBinding(namespace.local.name))
+  ) {
     callee = () => t.memberExpression(t.identifier(namespace.local.name), t.identifier('mocked'));
   } else {
-    const name = targets.some((target) => target.scope.hasBinding('mocked'))
-      ? program.scope.generateUidIdentifier('mocked').name
-      : 'mocked';
+    const name = refersTo('mocked', undefined)
+      ? 'mocked'
+      : program.scope.generateUidIdentifier('mocked').name;
     callee = () => t.identifier(name);
     const specifier = t.importSpecifier(t.identifier(name), t.identifier('mocked'));
     const namedImport = testImports.find((node) =>

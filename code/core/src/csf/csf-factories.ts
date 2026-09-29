@@ -96,11 +96,12 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
  * but never used to infer it, so literals don't widen and callbacks get their parameter types.
  *
  * Constrain the keys with `keyof NoInfer<TArgs>` as well: TypeScript infers `TArgs` from the
- * values through a plain `keyof TArgs` constraint.
+ * values through a plain `keyof TArgs` constraint. The other arg names are listed so editors can
+ * suggest them, as `TKeys` is not inferred yet while completing.
  */
 export type MetaArgs<TArgs, TKeys extends keyof NoInfer<TArgs>> = {
   [K in TKeys]?: NoInfer<TArgs>[K];
-} & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>; // Lets editors suggest the other arg names, as `TKeys` is not inferred yet while completing.
+} & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
 
 /** Makes the args set in `preview.meta()` required in its stories. */
 export type RequireMetaArgs<

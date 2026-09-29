@@ -53,14 +53,14 @@ import { EventForm } from './event-form.component';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);
@@ -443,14 +443,14 @@ import { users } from '../mocks/users';
 
 const meta = preview.meta({
   component: 'demo-event-form',
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);
@@ -485,14 +485,14 @@ import { users } from '../mocks/users';
 
 const meta = preview.meta({
   component: 'demo-event-form',
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);
@@ -528,14 +528,14 @@ import { EventForm } from './EventForm';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);
@@ -573,14 +573,14 @@ import { EventForm } from './EventForm';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);
@@ -616,14 +616,14 @@ import EventForm from './EventForm.vue';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);
@@ -661,14 +661,14 @@ import EventForm from './EventForm.vue';
 
 const meta = preview.meta({
   component: EventForm,
-});
-
-export const Submits = meta.story({
   // Mock functions so we can manipulate and spy on them
   args: {
     getUsers: fn(),
     onSubmit: fn(),
   },
+});
+
+export const Submits = meta.story({
   beforeEach: async ({ args }) => {
     // Manipulate `getUsers` mock to return mocked value
     mocked(args.getUsers).mockResolvedValue(users);

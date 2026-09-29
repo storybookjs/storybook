@@ -660,7 +660,7 @@ There is no automatic source migration. Updating the compiler can expose errors 
  export const Default = meta.story({ args: { label: 'Hi' } });
 ```
 
-`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present, both in `meta.input.args` and in the args of its stories.
+`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present, both in `meta.input.args` and in the args of its stories. This also holds when meta args come from a `Partial` object, so only pass objects whose keys are set.
 
 The second type argument of `ReactMeta`, `VueMeta`, `AngularMeta`, `WebComponentsMeta` and `Meta` from `storybook/internal/csf` is now the union of the arg names set in meta, instead of the meta input type.
 

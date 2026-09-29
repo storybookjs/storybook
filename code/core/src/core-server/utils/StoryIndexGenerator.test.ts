@@ -2620,6 +2620,108 @@ describe('StoryIndexGenerator', () => {
         await generator.getIndex();
         expect(loadCsfMock).toHaveBeenCalledTimes(1);
       });
+
+      it('extracts a story file again if it changes while it is being extracted', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        let pauseIndexing = Promise.resolve();
+        let onIndexingPaused = () => {};
+        const indexA = vi.fn<Indexer['createIndex']>(async (fileName, indexerOptions) => {
+          onIndexingPaused();
+          await pauseIndexing;
+          return csfIndexer.createIndex(fileName, indexerOptions);
+        });
+
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          indexers: [{ test: /A\.stories\.js$/, createIndex: indexA }, csfIndexer],
+        });
+        await generator.initialize();
+        await generator.getIndex();
+
+        let resumeIndexing = () => {};
+        pauseIndexing = new Promise((resolve) => {
+          resumeIndexing = resolve;
+        });
+        const indexingPaused = new Promise<void>((resolve) => {
+          onIndexingPaused = resolve;
+        });
+
+        indexA.mockClear();
+        generator.invalidate('./src/A.stories.js', false);
+        const indexPromise = generator.getIndex();
+        await indexingPaused;
+        generator.invalidate('./src/A.stories.js', false);
+        resumeIndexing();
+
+        expect(Object.keys((await indexPromise).entries)).toContain('a--story-one');
+        // Once for the first change, and once more for the change made while it was running
+        expect(indexA).toHaveBeenCalledTimes(2);
+      });
+
+      it('extracts a changed story file before the docs files that use it', async () => {
+        const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.(ts|js|mjs|jsx)',
+          options
+        );
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/docs2/MetaOf.mdx',
+          options
+        );
+
+        let pauseIndexing = Promise.resolve();
+        let onIndexingPaused = () => {};
+        let slowDownA = false;
+        const indexers: Indexer[] = [
+          {
+            test: /B\.stories\.ts$/,
+            createIndex: async (fileName, indexerOptions) => {
+              onIndexingPaused();
+              await pauseIndexing;
+              return csfIndexer.createIndex(fileName, indexerOptions);
+            },
+          },
+          {
+            test: /A\.stories\.js$/,
+            createIndex: async (fileName, indexerOptions) => {
+              if (slowDownA) {
+                await new Promise((resolve) => setTimeout(resolve, 100));
+              }
+              return csfIndexer.createIndex(fileName, indexerOptions);
+            },
+          },
+          csfIndexer,
+        ];
+
+        const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], {
+          ...options,
+          indexers,
+        });
+        await generator.initialize();
+        await generator.getIndex();
+
+        let resumeIndexing = () => {};
+        pauseIndexing = new Promise((resolve) => {
+          resumeIndexing = resolve;
+        });
+        const indexingPaused = new Promise<void>((resolve) => {
+          onIndexingPaused = resolve;
+        });
+
+        // A changes while B is being extracted, so A (and MetaOf.mdx, which uses A)
+        // are empty again when the story pass ends
+        generator.invalidate('./src/B.stories.ts', false);
+        const indexPromise = generator.getIndex();
+        await indexingPaused;
+        slowDownA = true;
+        generator.invalidate('./src/A.stories.js', false);
+        resumeIndexing();
+
+        expect(Object.keys((await indexPromise).entries)).toContain('a--metaof');
+      });
     });
   });
 });

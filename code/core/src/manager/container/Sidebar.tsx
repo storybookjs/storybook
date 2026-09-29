@@ -29,6 +29,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       indexError,
       previewInitialized,
       refs,
+      docsOptions,
     } = state;
 
     const whatsNewNotificationsEnabled =
@@ -52,6 +53,7 @@ const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
       isNavShown: api.getIsNavShown(),
       menuHighlighted: whatsNewNotificationsEnabled && api.isWhatsNewUnread(),
       enableShortcuts,
+      docsDefaultName: docsOptions.defaultName,
     };
   };
 

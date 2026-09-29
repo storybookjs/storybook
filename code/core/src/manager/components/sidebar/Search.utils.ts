@@ -26,22 +26,33 @@ export const fuseOptions = {
   ],
 } as FuseOptions<SearchItem>;
 
-export const createDocsAnchorItem = (page: DocsSearchItem, anchor: DocsAnchor): SearchItem => {
-  const namePostfix = page.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+export const createDocsAnchorItem = (
+  page: DocsSearchItem,
+  anchor: DocsAnchor,
+  docsDefaultName: string | undefined
+): SearchItem => {
+  // Every page named after the docs option reads the same, so only its parent tells them apart
+  const label = page.name === docsDefaultName ? (page.path.at(-1) ?? page.name) : page.name;
 
   return {
     ...page,
     anchors: [anchor],
     // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
     id: `${page.id}#${anchor.id}`,
-    name: `${page.name}${namePostfix}`,
+    name: `${label} / ${anchor.title}`,
   };
 };
 
-export const createDocsSearchItems = (item: DocsSearchItem): SearchItem[] => {
+export const createDocsSearchItems = (
+  item: DocsSearchItem,
+  docsDefaultName: string | undefined
+): SearchItem[] => {
   const { anchors, ...page } = item;
 
-  return [page, ...(anchors ?? []).map((anchor) => createDocsAnchorItem(item, anchor))];
+  return [
+    page,
+    ...(anchors ?? []).map((anchor) => createDocsAnchorItem(item, anchor, docsDefaultName)),
+  ];
 };
 
 export const distinctSearchResults = (matches: SearchResult[]): SearchResult[] => {

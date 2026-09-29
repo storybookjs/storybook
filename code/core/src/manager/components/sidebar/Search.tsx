@@ -154,6 +154,7 @@ const FocusContainer = styled.div({
 export type SearchProps = {
   children: SearchChildrenFn;
   dataset: CombinedDataset;
+  docsDefaultName?: string;
   enableShortcuts?: boolean;
   getLastViewed: () => Selection[];
   initialQuery?: string;
@@ -164,6 +165,7 @@ export type SearchProps = {
 export const Search = React.memo<SearchProps>(function Search({
   children,
   dataset,
+  docsDefaultName,
   enableShortcuts = true,
   getLastViewed,
   initialQuery = '',
@@ -211,13 +213,16 @@ export const Search = React.memo<SearchProps>(function Search({
         }
 
         list.push(
-          ...createDocsSearchItems({ ...searchItem(datasetValue, dataset.hash[refId]), status })
+          ...createDocsSearchItems(
+            { ...searchItem(datasetValue, dataset.hash[refId]), status },
+            docsDefaultName
+          )
         );
       }
     }
 
     return new Fuse(list, fuseOptions);
-  }, [dataset]);
+  }, [dataset, docsDefaultName]);
 
   const getResults = useCallback(
     (input: string) => {
@@ -377,7 +382,7 @@ export const Search = React.memo<SearchProps>(function Search({
                 if (anchor && baseItem.type === 'docs') {
                   const matchingAnchor = baseItem.anchors?.find((a) => a.id === anchor);
                   if (matchingAnchor) {
-                    resultItem = createDocsAnchorItem(baseItem, matchingAnchor);
+                    resultItem = createDocsAnchorItem(baseItem, matchingAnchor, docsDefaultName);
                   }
                 }
                 // @ts-expect-error (non strict)

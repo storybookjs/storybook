@@ -30,7 +30,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
       // ${configDir}/preview.${tsx}
       import { definePreview } from '${typeImport}';
       import '../src/index.css';
+      // Only include MockDate when selected stories depend on the current date or time.
       import MockDate from 'mockdate';
+      // Only include MSW when selected stories make network requests.
       import addonMsw from 'msw-storybook-addon';
       ${providerImport}
       import { mswHandlers } from './msw-handlers';
@@ -53,7 +55,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
       \`\`\`${tsx}
       // ${configDir}/preview.${tsx}
       import '../src/index.css';
+      // Only include MockDate when selected stories depend on the current date or time.
       import MockDate from 'mockdate';
+      // Only include MSW when selected stories make network requests.
       import { mswLoader } from 'msw-storybook-addon/csf3';
       ${providerImport}
       import { mswHandlers } from './msw-handlers';
@@ -78,7 +82,9 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
     // ${configDir}/preview.${tsx}
     import type { Preview } from '${typeImport}';
     import '../src/index.css';
+    // Only include MockDate when selected stories depend on the current date or time.
     import MockDate from 'mockdate';
+    // Only include MSW when selected stories make network requests.
     import { mswLoader } from 'msw-storybook-addon/csf3';
     ${providerImport}
     import { mswHandlers } from './msw-handlers';

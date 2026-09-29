@@ -155,9 +155,9 @@ export function buildSharedPreviewStep(
 
   return {
     title: 'Build the shared preview',
-    body: dedent`    Set up Storybook **once** so most stories work without per-story setup. **Edit the existing \`${configDir}/preview.${tsx}\`** (created by \`storybook init\`) — add to its existing config object, don't replace it.
+    body: dedent`    Set up Storybook **once** so most stories work without per-story setup. **Edit the existing \`${configDir}/preview.${tsx}\`** (created by \`storybook init\`) — add to its existing config object, don't replace it. Add MSW only if a selected story makes network requests. Add MockDate only if a selected story's rendered output depends on the current date or time. Omit their imports and hooks otherwise.
 
-    The complete shape should look like this (merge the new pieces into what's already there):
+    The example below shows both optional paths. Merge only the pieces the selected stories need into what's already there:
 
     ${getPreviewExample(projectInfo)}
 
@@ -190,7 +190,7 @@ export function buildPortalStep(
 
 export function mswStep(
   projectInfo: ProjectInfo,
-  { configDir, mswInstall, packageManager, ts }: InstructionsContext
+  { configDir, mockDateInstall, mswInstall, packageManager, ts }: InstructionsContext
 ): { title: string; body: string } {
   const mswInit = getMswInitCommand(packageManager);
   const mswAddonAdd = packageManager.getPackageCommand([
@@ -206,8 +206,8 @@ export function mswStep(
     : '';
 
   return {
-    title: 'MSW handlers (only what stories will hit)',
-    body: `Use \`msw-storybook-addon\`. Register it with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), then install its peer dependencies and generate the worker script:
+    title: 'Add only the test infrastructure the selected stories need',
+    body: `If a selected story makes network requests during rendering or interaction, register \`msw-storybook-addon\` with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), install MSW, and generate the worker script:
 
     \`\`\`bash
     ${mswAddonAdd}
@@ -231,6 +231,14 @@ ${csfNextNote}
       ),
     ];
     \`\`\`
+
+    If a selected story's rendered output depends on the current date or time, install MockDate and configure it in \`beforeEach\`:
+
+    \`\`\`bash
+    ${mockDateInstall}
+    \`\`\`
+
+    If neither condition applies, skip this step. Do not create an empty MSW handler file or install unused dependencies.
 `,
   };
 }

@@ -35,3 +35,7 @@ export function typeCheckPassesWhenExpectedDOD(ctx: SetupInstructionsContext): s
 export function sharedPreviewDOD(ctx: SetupInstructionsContext): string {
   return dedent`The shared preview is strong enough that stories don't need per-story fetch/provider workarounds.`;
 }
+
+export function optionalTestInfrastructureDOD(_ctx: SetupInstructionsContext): string {
+  return dedent`MSW is absent unless at least one selected story makes network requests. MockDate is absent unless at least one selected story depends on the current date or time. When present, each dependency is exercised by at least one verified story.`;
+}

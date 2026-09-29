@@ -120,6 +120,18 @@ it('does not assume React when project framework metadata is unavailable', async
   expect(markdown).not.toMatch(/react|jsx|tsx|<Story|SessionProvider/i);
 });
 
+it('keeps MSW and MockDate optional and installs them separately', async () => {
+  vi.stubEnv('EVAL_SETUP_PROMPT', '');
+  const { markdown } = await getSetupMarkdownOutput(projectInfo);
+
+  expect(markdown).toContain('Add MSW only if a selected story makes network requests');
+  expect(markdown).toContain(
+    "Add MockDate only if a selected story's rendered output depends on the current date or time"
+  );
+  expect(markdown).toContain('If neither condition applies, skip this step');
+  expect(markdown).not.toMatch(/npm install[^\n]*msw[^\n]*mockdate/i);
+});
+
 it('uses the detected renderer instead of guessing React from a custom framework name', async () => {
   vi.stubEnv('EVAL_SETUP_PROMPT', '');
   const { markdown } = await getSetupMarkdownOutput({

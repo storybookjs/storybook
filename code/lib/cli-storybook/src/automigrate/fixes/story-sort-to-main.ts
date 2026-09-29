@@ -1,75 +1,70 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
 import { HandledError } from 'storybook/internal/common';
-import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
+import { type ConfigFile, type CsfValue, loadConfig } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
 
 import type { Fix } from '../types.ts';
 
 interface StorySortToMainOptions {
-  mainConfigPath: string;
-  mainSource: string;
-  previewConfigPath: string;
-  previewSource: string;
+  storySort: CsfValue | undefined;
+  // Why the preview cannot give up `storySort` safely; the main config then stays untouched too.
+  previewProblem?: string;
 }
 
 const storySortPath = ['parameters', 'options', 'storySort'];
+
+const fail = (reason: string): never => {
+  throw new HandledError(
+    `Cannot automigrate storySort: ${reason}. Move parameters.options.storySort from the preview to top-level storySort in the main config manually, reconcile any existing value, and remove the preview property.`
+  );
+};
+
+const firstProblem = (config: ConfigFile) => config.mutationDiagnostics[0]?.message;
 
 export const storySortToMain: Fix<StorySortToMainOptions> = {
   id: 'story-sort-to-main',
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-moved-to-main',
 
-  async check({ mainConfigPath, previewConfigPath }) {
-    if (!mainConfigPath || !previewConfigPath) {
+  async check({ files, previewConfigPath }) {
+    if (!previewConfigPath) {
       return null;
     }
-
-    const [mainSource, previewSource] = await Promise.all([
-      readFile(mainConfigPath, 'utf8'),
-      readFile(previewConfigPath, 'utf8'),
-    ]);
-    const main = loadConfig(mainSource, mainConfigPath).parse();
-    const preview = loadConfig(previewSource, previewConfigPath).parse();
+    const preview = loadConfig(await files.read(previewConfigPath), previewConfigPath).parse();
     const storySort = preview.getValue(storySortPath);
     if (storySort === undefined && preview.mutationDiagnostics.length === 0) {
       return null;
     }
-
-    const fail = (reason: string): never => {
-      throw new HandledError(
-        `Cannot automigrate storySort: ${reason}. Move parameters.options.storySort from ${previewConfigPath} to top-level storySort in ${mainConfigPath} manually, reconcile any existing value, and remove the preview property.`
-      );
-    };
-    if (main.get(['storySort'])) {
-      fail('Both main and preview define storySort');
-    }
-    if (storySort === null || typeof storySort !== 'object') {
-      fail('storySort must be a statically readable object or array');
-    }
-
-    main.set(['storySort'], storySort);
+    // The main config is visited first, so its hook learns here whether the preview edit will fail.
     preview.remove(storySortPath);
-    const [diagnostic] = [...preview.mutationDiagnostics, ...main.mutationDiagnostics];
-    if (diagnostic) {
-      fail(diagnostic.message);
-    }
-
-    return {
-      mainConfigPath,
-      mainSource: formatConfig(main),
-      previewConfigPath,
-      previewSource: formatConfig(preview),
-    };
+    return { storySort, previewProblem: firstProblem(preview) };
   },
 
   prompt: () =>
     `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySort')} in main?`,
 
-  async run({ dryRun, result }) {
-    if (!dryRun) {
-      await writeFile(result.mainConfigPath, result.mainSource);
-      await writeFile(result.previewConfigPath, result.previewSource);
-    }
-  },
+  transform: ({ result: { storySort, previewProblem } }) => [
+    {
+      filter: { kind: ['main'] },
+      editConfig: (main) => {
+        if (previewProblem) {
+          fail(previewProblem);
+        }
+        if (main.get(['storySort'])) {
+          fail('Both main and preview define storySort');
+        }
+        if (storySort === null || typeof storySort !== 'object') {
+          fail('storySort must be a statically readable object or array');
+        }
+        main.set(['storySort'], storySort);
+        const mainProblem = firstProblem(main);
+        if (mainProblem) {
+          fail(mainProblem);
+        }
+      },
+    },
+    {
+      filter: { kind: ['preview'], code: 'storySort' },
+      editConfig: (preview) => preview.remove(storySortPath),
+    },
+  ],
 };

@@ -1,132 +1,147 @@
-import * as fsp from 'node:fs/promises';
-import { join } from 'node:path';
+import { readFile, writeFile } from 'node:fs/promises';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { formatExistingFile, type JsPackageManager } from 'storybook/internal/common';
 import { loadConfig } from 'storybook/internal/csf-tools';
 
+import { fs, vol } from 'memfs';
+
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import { storySortToMain } from './story-sort-to-main.ts';
 
-vi.mock('node:fs/promises', async () => import('../../../../../__mocks__/fs/promises.ts'));
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 
-const mainConfigPath = join('.storybook', 'main.ts');
-const previewConfigPath = join('.storybook', 'preview.ts');
+const mainConfigPath = '/project/.storybook/main.ts';
+const previewConfigPath = '/project/.storybook/preview.ts';
 
-const check = async (main: string, preview: string) => {
-  vi.mocked<typeof import('../../../../../__mocks__/fs/promises')>(fsp as any).__setMockFiles({
-    [mainConfigPath]: main,
-    [previewConfigPath]: preview,
-  });
-  return storySortToMain.check({
-    packageManager: {} as any,
-    configDir: '.storybook',
-    mainConfig: {} as any,
-    mainConfigPath,
-    previewConfigPath,
-    storybookVersion: '11.0.0',
-    storiesPaths: [],
-    hasCsfFactoryPreview: false,
-  });
+const options = {
+  packageManager: {} as JsPackageManager,
+  configDir: '/project/.storybook',
+  mainConfig: { stories: [] },
+  mainConfigPath,
+  previewConfigPath,
+  storybookVersion: '11.0.0',
+  storiesPaths: [],
 };
 
-const run = async (main: string, preview: string, dryRun = false) => {
-  const result = await check(main, preview);
-  expect(result).toBeTruthy();
-  await storySortToMain.run?.({ result, dryRun } as any);
-  return vi.mocked(fsp.writeFile).mock.calls.map(([path, contents]) => [path, String(contents)]);
+const migrate = async (main: string, preview: string) => {
+  vol.fromJSON({ [mainConfigPath]: main, [previewConfigPath]: preview });
+  const result = await checkFix(storySortToMain, options);
+  const failures = result ? await runFix(storySortToMain, { ...options, result }) : [];
+  return {
+    applies: result !== null,
+    failures,
+    main: fs.readFileSync(mainConfigPath, 'utf8') as string,
+    preview: fs.readFileSync(previewConfigPath, 'utf8') as string,
+  };
 };
+
+const expectMoved = async (main: string, preview: string, storySort: unknown) => {
+  const migrated = await migrate(main, preview);
+  expect(migrated.failures).toEqual([]);
+  expect(loadConfig(migrated.main).parse().getValue(['storySort'])).toEqual(storySort);
+  expect(
+    loadConfig(migrated.preview).parse().get(['parameters', 'options', 'storySort'])
+  ).toBeUndefined();
+  return migrated;
+};
+
+const expectUntouched = async (main: string, preview: string) => {
+  const migrated = await migrate(main, preview);
+  expect(migrated.failures).toEqual([
+    {
+      file: mainConfigPath,
+      kind: 'main',
+      message: expect.stringContaining('Cannot automigrate storySort'),
+    },
+  ]);
+  expect(migrated.main).toBe(main);
+  expect(migrated.preview).toBe(preview);
+};
+
+const legacy = `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`;
 
 beforeEach(() => {
-  vi.mocked(fsp.writeFile).mockClear();
+  vol.reset();
+  vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+  vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+  vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
+});
+
+afterEach(() => {
+  vi.mocked(readFile).mockRestore();
+  vi.mocked(writeFile).mockRestore();
 });
 
 describe('story-sort-to-main', () => {
-  it('does nothing when preview has no storySort', async () => {
-    await expect(
-      check(`export default { stories: [] }`, `export default { tags: ['test'] }`)
-    ).resolves.toBeNull();
-  });
-
-  it('ignores an unrelated storySort property', async () => {
-    await expect(
-      check(
-        `export default { stories: [] }`,
-        `const unrelated = { storySort: { order: ['Intro'] } }; export default { tags: ['test'] }`
-      )
-    ).resolves.toBeNull();
-  });
-
-  it('moves a literal object and preserves unrelated configuration', async () => {
-    const writes = await run(
-      `export default { stories: ['./src/**/*.stories.ts'] }`,
-      `export default { parameters: { options: { storySort: { order: ['Intro', '*'], method: 'alphabetical' }, showPanel: false }, docs: { source: {} } } }`
-    );
-
-    expect(writes).toHaveLength(2);
-    expect(writes[0]?.[0]).toBe(mainConfigPath);
-    expect(writes[0]?.[1]).toContain('storySort: {');
-    expect(loadConfig(String(writes[0]?.[1])).parse().getValue(['storySort', 'order'])).toEqual([
-      'Intro',
-      '*',
-    ]);
-    expect(loadConfig(String(writes[0]?.[1])).parse().getValue(['storySort', 'method'])).toBe(
-      'alphabetical'
-    );
-    expect(writes[1]?.[1]).not.toContain('storySort');
-    expect(writes[1]?.[1]).toContain('showPanel: false');
-    expect(writes[1]?.[1]).toContain('docs: { source: {} }');
-  });
-
-  it('moves a literal array and prunes empty containers', async () => {
-    const writes = await run(
+  it('does not apply when the preview has no storySort', async () => {
+    const migrated = await migrate(
       `export default { stories: [] }`,
-      `export default { parameters: { options: { storySort: ['Intro', ['Start', '*']] } }, tags: ['test'] }`
+      `const unrelated = { storySort: { order: ['Intro'] } }; export default { tags: ['test'] }`
     );
 
-    expect(writes[0]?.[1]).toContain('storySort: ["Intro", ["Start", "*"]]');
-    expect(writes[1]?.[1]).not.toContain('parameters');
-    expect(writes[1]?.[1]).toContain(`tags: ['test']`);
+    expect(migrated.applies).toBe(false);
   });
 
-  it('moves storySort from a named parameters export', async () => {
-    const writes = await run(
-      `const config = { stories: [] }; export default config;`,
-      `export const parameters = { options: { storySort: { order: ['Intro'] } } }; export const tags = ['test'];`
+  it('moves a literal object and keeps unrelated configuration', async () => {
+    const { preview } = await expectMoved(
+      `export default { stories: ['./src/**/*.stories.ts'] }`,
+      `export default { parameters: { options: { storySort: { order: ['Intro', '*'], method: 'alphabetical' }, showPanel: false }, docs: { source: {} } } }`,
+      { order: ['Intro', '*'], method: 'alphabetical' }
     );
 
-    expect(writes[0]?.[1]).toContain('storySort: {');
-    expect(writes[1]?.[1]).not.toContain('parameters');
-    expect(writes[1]?.[1]).toContain(`export const tags = ['test']`);
+    expect(preview).toContain('showPanel: false');
+    expect(preview).toContain('docs: { source: {} }');
+  });
+
+  it('moves a literal array and prunes the containers it empties', async () => {
+    const { preview } = await expectMoved(
+      `export default { stories: [] }`,
+      `export default { parameters: { options: { storySort: ['Intro', ['Start', '*']] } }, tags: ['test'] }`,
+      ['Intro', ['Start', '*']]
+    );
+
+    expect(preview).not.toContain('parameters');
+    expect(preview).toContain(`tags: ['test']`);
+  });
+
+  it('moves storySort from a named parameters export and keeps sibling declarators', async () => {
+    const { preview } = await expectMoved(
+      `const config = { stories: [] }; export default config;`,
+      `export const parameters = { options: { storySort: { order: ['Intro'] } } }, tags = ['test'];`,
+      { order: ['Intro'] }
+    );
+
+    expect(preview).not.toContain('parameters');
+    expect(preview).toContain(`tags = ['test']`);
+  });
+
+  it('inlines a local constant, so main does not reference the preview module', async () => {
+    const { main } = await expectMoved(
+      `export default { stories: [] }`,
+      `const sortOrder = ['Intro', ['Start', '*']]; export default { parameters: { options: { storySort: { order: sortOrder } } } };`,
+      { order: ['Intro', ['Start', '*']] }
+    );
+
+    expect(main).not.toContain('sortOrder');
   });
 
   it.each([
-    ['satisfies', `({ order: ['Intro'] } satisfies Record<string, unknown>)`],
-    ['as const', `(['Intro', '*'] as const)`],
-  ])('moves a static value wrapped with %s', async (_name, storySort) => {
-    const writes = await run(
+    ['satisfies', `({ order: ['Intro'] } satisfies Record<string, unknown>)`, { order: ['Intro'] }],
+    ['as const', `(['Intro', '*'] as const)`, ['Intro', '*']],
+  ])('moves a static value wrapped with %s', async (_name, storySort, value) => {
+    await expectMoved(
       `export default { stories: [] }`,
-      `export default { parameters: { options: { storySort: ${storySort} } } }`
+      `export default { parameters: { options: { storySort: ${storySort} } } }`,
+      value
     );
-
-    expect(writes[0]?.[1]).toContain('storySort:');
-    expect(writes[0]?.[1]).not.toContain('satisfies');
-    expect(writes[0]?.[1]).not.toContain('as const');
-    expect(writes[1]?.[1]).not.toContain('storySort');
-  });
-
-  it('rejects duplicate preview storySort properties', async () => {
-    await expect(
-      check(
-        `export default { stories: [] }`,
-        `export default { parameters: { options: { storySort: { order: ['First'] }, storySort: { order: ['Second'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
   });
 
   it.each([
     [
-      'identifier',
+      'an options identifier',
       `const options = { storySort: { order: ['Intro'] } }; export default { parameters: { options } }`,
     ],
     [
@@ -134,53 +149,56 @@ describe('story-sort-to-main', () => {
       `export default definePreview({ parameters: { options: { storySort: { order: ['Intro'] } } } })`,
     ],
     [
-      'root export',
+      'a root export identifier',
       `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default config`,
     ],
     [
-      'parameters property',
+      'a parameters shorthand',
       `const parameters = { options: { storySort: { order: ['Intro'] } } }; export default { parameters }`,
     ],
     [
-      'options property',
-      `const options = { storySort: { order: ['Intro'] } }; export default { parameters: { options } }`,
-    ],
-    [
-      'named export specifier',
+      'a named export specifier',
       `const parameters = { options: { storySort: { order: ['Intro'] } } }; export { parameters }`,
     ],
     [
-      'CommonJS root',
+      'a CommonJS root',
       `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; module.exports = config`,
     ],
     [
-      'root computed property',
+      'a root computed property',
       `export default { [key]: legacy, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'parameters computed property',
+      'a parameters computed property',
       `export default { parameters: { [key]: legacy, options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'root spread before parameters',
+      'a root spread before parameters',
       `export default { ...shared, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'parameters spread before options',
+      'a parameters spread before options',
       `export default { parameters: { ...shared, options: { storySort: { order: ['Intro'] } } } }`,
     ],
   ])('moves storySort from %s', async (_name, preview) => {
-    const writes = await run('export default { stories: [] }', preview);
-    expect(loadConfig(String(writes[0]?.[1])).parse().getValue(['storySort'])).toEqual({
-      order: ['Intro'],
-    });
-    expect(
-      loadConfig(String(writes[1]?.[1])).parse().get(['parameters', 'options', 'storySort'])
-    ).toBeUndefined();
+    await expectMoved('export default { stories: [] }', preview, { order: ['Intro'] });
   });
+
+  it.each([
+    ['a direct object', `module.exports = { stories: [] }`],
+    ['a const object alias', `const config = { stories: [] }; module.exports = config`],
+    ['a known factory', `module.exports = definePreview({ stories: [] })`],
+    [
+      'a known factory alias',
+      `const config = definePreview({ stories: [] }); module.exports = config satisfies StorybookConfig`,
+    ],
+  ])('moves storySort into a CommonJS main with %s', async (_name, main) => {
+    await expectMoved(main, legacy, { order: ['Legacy'] });
+  });
+
   it.each([
     [
-      'spread',
+      'a preview spread',
       `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default { ...legacy }`,
     ],
     [
@@ -188,347 +206,176 @@ describe('story-sort-to-main', () => {
       `export default Object.assign({ parameters: { options: { storySort: { order: ['First'] } } } }, { parameters: { options: { storySort: { order: ['Second'] } } } })`,
     ],
     [
-      'CommonJS bracket root',
+      'a CommonJS bracket root',
       `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; module['exports'] = config`,
     ],
     [
-      'options computed property',
+      'an options computed property',
       `export default { parameters: { options: { [key]: legacy, storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'root spread after parameters',
+      'a root spread after parameters',
       `export default { parameters: { options: { storySort: { order: ['Intro'] } } }, ...shared }`,
     ],
     [
-      'parameters spread after options',
+      'a parameters spread after options',
       `export default { parameters: { options: { storySort: { order: ['Intro'] } }, ...shared } }`,
     ],
     [
-      'options spread before storySort',
+      'an options spread before storySort',
       `export default { parameters: { options: { ...shared, storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'options spread after storySort',
+      'an options spread after storySort',
       `export default { parameters: { options: { storySort: { order: ['Intro'] }, ...shared } } }`,
     ],
-  ])('leaves both files untouched for %s', async (_name, preview) => {
-    await expect(check('export default { stories: [] }', preview)).rejects.toThrow(
-      'Cannot automigrate storySort'
-    );
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects a storySort reached through a definePreview spread', async () => {
-    await expect(
-      check(
-        `export default { stories: [] }`,
-        `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default definePreview({ ...legacy })`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
     [
-      'aliased preview factory',
+      'a definePreview spread',
+      `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default definePreview({ ...legacy })`,
+    ],
+    [
+      'an aliased preview factory spread',
       `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default makePreview({ ...legacy })`,
     ],
     [
-      'namespace preview factory',
+      'a namespace preview factory spread',
       `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default preview.define({ ...legacy })`,
     ],
-  ])('rejects a storySort reached through an %s spread', async (_name, preview) => {
-    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
-      'Cannot automigrate storySort'
-    );
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
     [
-      'computed parameters key',
+      'a computed parameters key',
       `export default { [key]: { options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'computed options key',
+      'a computed options key',
       `export default { parameters: { [key]: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'computed storySort key',
+      'a computed storySort key',
       `export default { parameters: { options: { [key]: { order: ['Intro'] } } } }`,
     ],
-  ])('rejects a legacy value behind a %s', async (_name, preview) => {
-    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
-      'Cannot automigrate storySort'
-    );
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects storySort declared through both default and named exports', async () => {
-    await expect(
-      check(
-        `export default { stories: [] }`,
-        `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { options: { storySort: { order: ['Default'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
     [
-      'storySort method',
+      'both default and named exports',
+      `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { options: { storySort: { order: ['Default'] } } } }`,
+    ],
+    [
+      'mixed default and named parameters roots',
+      `export const parameters = { docs: {} }; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'a storySort method',
       `export default { parameters: { options: { storySort(a, b) { return 0 } } } }`,
     ],
     [
-      'storySort getter',
+      'a storySort getter',
       `export default { parameters: { options: { get storySort() { return legacy } } } }`,
     ],
     [
-      'options getter',
+      'an options getter',
       `export default { parameters: { get options() { return { storySort: { order: ['Intro'] } } } } }`,
     ],
     [
-      'parameters getter',
+      'a parameters getter',
       `export default { get parameters() { return { options: { storySort: { order: ['Intro'] } } } } }`,
     ],
     [
-      'parameters getter with control flow',
+      'a parameters getter with control flow',
       `export default { get parameters() { if (enabled) return { options: { storySort: { order: ['Intro'] } } }; return {} } }`,
     ],
     [
-      'computed getter',
+      'a computed getter',
       `export default { get [key]() { return { options: { storySort: { order: ['Intro'] } } } } }`,
     ],
-  ])('rejects a preview %s', async (_name, preview) => {
-    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
-      'Cannot automigrate storySort'
-    );
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
     [
-      'parameters when storySort is in the final declaration',
-      'parameters',
+      'duplicate storySort properties',
+      `export default { parameters: { options: { storySort: { order: ['First'] }, storySort: { order: ['Second'] } } } }`,
+    ],
+    [
+      'duplicate parameters, storySort in the last',
       `export default { parameters: { docs: {} }, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'parameters when storySort is in the first declaration',
-      'parameters',
+      'duplicate parameters, storySort in the first',
       `export default { parameters: { options: { storySort: { order: ['Intro'] } } }, parameters: { docs: {} } }`,
     ],
     [
-      'options when storySort is in the first declaration',
-      'options',
+      'duplicate options, storySort in the first',
       `export default { parameters: { options: { storySort: { order: ['Intro'] } }, options: { showPanel: false } } }`,
     ],
     [
-      'options when storySort is in the final declaration',
-      'options',
+      'duplicate options, storySort in the last',
       `export default { parameters: { options: { showPanel: false }, options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'computed parameters',
-      'parameters',
+      'a computed duplicate parameters',
       `export default { ['parameters']: { options: { storySort: { order: ['First'] } } }, parameters: { options: { storySort: { order: ['Second'] } } } }`,
     ],
     [
-      'parameters accessor',
-      'parameters',
+      'a parameters accessor next to parameters',
       `export default { get parameters() { return legacy }, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'computed options',
-      'options',
+      'a computed duplicate options',
       `export default { parameters: { ['options']: { storySort: { order: ['First'] } }, options: { storySort: { order: ['Second'] } } } }`,
     ],
     [
-      'options accessor',
-      'options',
+      'an options accessor next to options',
       `export default { parameters: { get options() { return legacy }, options: { storySort: { order: ['Intro'] } } } }`,
     ],
     [
-      'computed storySort',
-      'storySort',
+      'a computed duplicate storySort',
       `export default { parameters: { options: { storySort: { order: ['First'] }, ['storySort']: { order: ['Second'] } } } }`,
     ],
-  ])('rejects duplicate preview %s', async (_name, property, preview) => {
-    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
-      'Cannot automigrate storySort'
-    );
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects an unresolved spread in main before adding storySort', async () => {
-    await expect(
-      check(
-        `const shared = { stories: [] }; export default { ...shared }`,
-        `export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('preserves sibling declarators when parameters becomes empty', async () => {
-    const writes = await run(
-      `export default { stories: [] }`,
-      `export const parameters = { options: { storySort: { order: ['Intro'] } } }, tags = ['test'];`
-    );
-
-    expect(writes[1]?.[1]).not.toContain('parameters');
-    expect(writes[1]?.[1]).toContain(`tags = ['test']`);
-  });
-
-  it('rejects mixed default and named parameters roots without mutating either one', async () => {
-    await expect(
-      check(
-        `export default { stories: [] }`,
-        `export const parameters = { docs: {} }; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('serializes a local constant value without leaving a reference to the preview module', async () => {
-    const writes = await run(
-      `export default { stories: [] }`,
-      `const sortOrder = ['Intro', ['Start', '*']]; export default { parameters: { options: { storySort: { order: sortOrder } } } };`
-    );
-    const main = loadConfig(String(writes[0]?.[1])).parse();
-    expect(main.getValue(['storySort'])).toEqual({ order: ['Intro', ['Start', '*']] });
-    expect(writes[0]?.[1]).not.toContain('sortOrder');
-    await expect(check(String(writes[0]?.[1]), String(writes[1]?.[1]))).resolves.toBeNull();
-  });
-
-  it('does not write during a dry run', async () => {
-    await run(
-      `export default { stories: [] }`,
-      `export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`,
-      true
-    );
-
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects a main conflict before writing', async () => {
-    await expect(
-      check(
-        `export default { stories: [], storySort: { order: ['Existing'] } }`,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ['method', `export default { stories: [], storySort(a, b) { return 0 } }`],
-    ['getter', `export default { stories: [], get storySort() { return existingSort } }`],
-  ])('rejects a main storySort %s conflict before writing', async (_name, main) => {
-    await expect(
-      check(
-        main,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects an unsupported bracket CommonJS main export before writing', async () => {
-    await expect(
-      check(
-        `module['exports'] = { stories: [] }`,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ['direct', `export default configure({ stories: [] })`],
     [
-      'indirect',
+      'a comparator function',
+      `export default { parameters: { options: { storySort: (a, b) => a.title.localeCompare(b.title) } } }`,
+    ],
+    ['an identifier', `export default { parameters: { options: { storySort } } }`],
+    ['a call', `export default { parameters: { options: { storySort: createSort() } } }`],
+    [
+      'a value spread',
+      `export default { parameters: { options: { storySort: { order: ['Intro'], ...shared } } } }`,
+    ],
+    [
+      'a value computed key',
+      `export default { parameters: { options: { storySort: { [key]: 'value' } } } }`,
+    ],
+  ])('leaves both files untouched for a preview with %s', async (_name, preview) => {
+    await expectUntouched('export default { stories: [] }', preview);
+  });
+
+  it.each([
+    ['an existing storySort', `export default { stories: [], storySort: { order: ['Existing'] } }`],
+    ['a storySort method', `export default { stories: [], storySort(a, b) { return 0 } }`],
+    [
+      'a storySort getter',
+      `export default { stories: [], get storySort() { return existingSort } }`,
+    ],
+    ['an unresolved spread', `const shared = { stories: [] }; export default { ...shared }`],
+    ['a bracket CommonJS export', `module['exports'] = { stories: [] }`],
+    ['a direct call wrapper', `export default configure({ stories: [] })`],
+    [
+      'an indirect call wrapper',
       `const config = configure({ stories: [] }); export default config satisfies StorybookConfig`,
     ],
-    ['chained', `export default configure({ stories: [] }).finalize()`],
-  ])('rejects an arbitrary %s main call wrapper before writing', async (_name, main) => {
-    await expect(
-      check(
-        main,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
+    ['a chained call wrapper', `export default configure({ stories: [] }).finalize()`],
+    ['a chained CommonJS factory', `module.exports = definePreview({ stories: [] }).finalize()`],
+    [
+      'a CommonJS alias assigned after its declaration',
+      `let config; config = definePreview({ stories: [] }); module.exports = config`,
+    ],
+    [
+      'a CommonJS alias mutated before the export',
+      `const existing = { order: ['Runtime'] }; const config = { stories: [] }; Object.assign(config, { storySort: existing }); module.exports = config`,
+    ],
+  ])('leaves both files untouched for a main with %s', async (_name, main) => {
+    await expectUntouched(main, legacy);
   });
 
-  it.each([
-    `module.exports = definePreview({ stories: [] })`,
-    `const config = definePreview({ stories: [] }); module.exports = config satisfies StorybookConfig`,
-  ])('moves storySort into a known CommonJS factory config: %s', async (main) => {
-    const writes = await run(
-      main,
-      `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-    );
-    expect(loadConfig(String(writes[0]?.[1])).parse().getValue(['storySort'])).toEqual({
+  it('does not apply again once storySort lives in main', async () => {
+    const { main, preview } = await expectMoved(`export default { stories: [] }`, legacy, {
       order: ['Legacy'],
     });
-  });
 
-  it('rejects an arbitrary chained CommonJS main call wrapper', async () => {
-    await expect(
-      check(
-        `module.exports = definePreview({ stories: [] }).finalize()`,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects a CommonJS main alias assigned after its declaration before writing', async () => {
-    await expect(
-      check(
-        `let config; config = definePreview({ stories: [] }); module.exports = config`,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it('rejects a CommonJS main alias mutated before export without writing', async () => {
-    await expect(
-      check(
-        `const existing = { order: ['Runtime'] }; const config = { stories: [] }; Object.assign(config, { storySort: existing }); module.exports = config`,
-        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
-  });
-
-  it.each([
-    ['direct object', `module.exports = { stories: [] }`],
-    ['const object alias', `const config = { stories: [] }; module.exports = config`],
-  ])('moves storySort into a writable CommonJS main %s', async (_name, main) => {
-    const writes = await run(
-      main,
-      `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
-    );
-
-    expect(writes[0]?.[1]).toContain('storySort: {');
-    expect(writes[1]?.[1]).not.toContain('storySort');
-  });
-
-  it.each([
-    ['function', `(a, b) => a.title.localeCompare(b.title)`],
-    ['identifier', `storySort`],
-    ['call', `createSort()`],
-    ['spread', `{ order: ['Intro'], ...shared }`],
-    ['computed key', `{ [key]: 'value' }`],
-  ])('rejects a dynamic %s before writing', async (_name, value) => {
-    await expect(
-      check(
-        `export default { stories: [] }`,
-        `export default { parameters: { options: { storySort: ${value} } } }`
-      )
-    ).rejects.toThrow('Cannot automigrate storySort');
-    expect(fsp.writeFile).not.toHaveBeenCalled();
+    expect((await migrate(main, preview)).applies).toBe(false);
   });
 });

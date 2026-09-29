@@ -53,6 +53,7 @@ export enum Category {
   FRAMEWORK_VUE3_WEBPACK5 = 'FRAMEWORK_VUE3-WEBPACK5',
   FRAMEWORK_WEB_COMPONENTS_VITE = 'FRAMEWORK_WEB-COMPONENTS-VITE',
   FRAMEWORK_WEB_COMPONENTS_WEBPACK5 = 'FRAMEWORK_WEB-COMPONENTS-WEBPACK5',
+  RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
 }
 
 export class NxProjectDetectedError extends StorybookError {
@@ -306,6 +307,30 @@ export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 30,
       message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
+    });
+  }
+}
+
+export class OpenServiceAsyncRecipeError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceAsyncRecipeError',
+      category: Category.CORE_COMMON,
+      code: 31,
+      message:
+        'setState recipes must be synchronous. A write after an await would change state without authoring a sync entry. Split the command into one setState per synchronous step.',
+    });
+  }
+}
+
+export class OpenServiceCyclicStateError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceCyclicStateError',
+      category: Category.CORE_COMMON,
+      code: 32,
+      message:
+        'Service state must be JSON-serializable, but the value is cyclic or nested more than 256 levels deep. Store an id and look the value up in a query instead of a reference.',
     });
   }
 }

@@ -6,13 +6,8 @@
       "id": "extra_evals",
       "label": "agent-eval:extra-evals",
       "input": "extra_evals",
-      "description": "Run the full 8xx/82x eval line instead of the default smoke eval"
-    },
-    {
-      "id": "extra_models",
-      "label": "agent-eval:extra-models",
-      "input": "extra_models",
-      "description": "Run non-default model experiments (e.g. cc-plugin-sonnet-medium)"
+      "description": "Run the full 8xx/82x eval line instead of the default smoke eval",
+      "schedule": true
     },
     {
       "id": "storybook_latest",

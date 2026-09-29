@@ -43,7 +43,6 @@ const checkOptions = (overrides: Partial<CheckOptions> = {}): CheckOptions =>
     storybookVersion: '10.5.0',
     beforeVersion: '10.4.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
     ...overrides,
   }) as CheckOptions;
 

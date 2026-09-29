@@ -1,6 +1,6 @@
 {
   "name": "@storybook/web-components",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.1",
   "description": "Storybook Web Components renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -35,6 +35,12 @@
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-argtypes": "./dist/entry-preview-argtypes.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
+    "./internal/docgen": {
+      "types": "./dist/docgen/index.d.ts",
+      "code": "./src/docgen/index.ts",
+      "default": "./dist/docgen/index.js"
+    },
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
   },

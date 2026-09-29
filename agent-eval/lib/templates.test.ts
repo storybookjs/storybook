@@ -2,7 +2,7 @@ import { readdirSync, readFileSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   enableExperimentalReview,
@@ -14,7 +14,7 @@ const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
 // EVAL_REVIEW is unset in unit-test runs, so this asserts the default gate:
 // plugin sandboxes are always review-on (the addon enables review for the
-// `storybook ai` CLI channel by default), MCP sandboxes review-off.
+// `storybook tools` CLI channel by default), MCP sandboxes review-off.
 describe('isReviewEnabledFor', () => {
   it('is always on for the plugin integration', () => {
     expect(isReviewEnabledFor('plugin')).toBe(true);
@@ -68,6 +68,46 @@ describe('enableExperimentalReview', () => {
       expect(() => enableExperimentalReview(files), mainFile).not.toThrow();
       expect(files['.storybook/main.ts'], mainFile).toContain('experimentalReview: true');
     }
+  });
+});
+
+// The Codex MCP experiment copies the server instructions into AGENTS.md, so a
+// change to them must update the copies too.
+describe('Codex AGENTS.md instructions', () => {
+  let buildServerInstructions: (options: Record<string, unknown>) => string;
+
+  // Imported by path, not statically: agent-eval's tsc would otherwise type-check core's
+  // sources. Inside `beforeAll`, a moved file fails only these tests.
+  beforeAll(async () => {
+    ({ buildServerInstructions } = await import(
+      join(AGENT_EVAL_ROOT, '..', 'code/core/src/cli/skills/content/build-server-instructions.ts')
+    ));
+  });
+
+  // The server derives these flags from the sandbox (`getToolAvailability`); they match the MCP
+  // fixtures, which are all react-vite with addon-vitest, docs and MCP. Keep them in sync.
+  const serverInstructions = (reviewEnabled: boolean) =>
+    buildServerInstructions({
+      transport: 'mcp',
+      devEnabled: true,
+      testSupported: true,
+      docsEnabled: true,
+      changeDetectionEnabled: true,
+      moduleGraphSupported: true,
+      reviewEnabled,
+    }).trim();
+
+  it('match the review-off server instructions', () => {
+    const copy = readFileSync(join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents.md'), 'utf8');
+    expect(copy.trim()).toBe(serverInstructions(false));
+  });
+
+  it('match the review-on server instructions', () => {
+    const copy = readFileSync(
+      join(AGENT_EVAL_ROOT, 'lib', 'mcp', 'codex-agents-review.md'),
+      'utf8'
+    );
+    expect(copy.trim()).toBe(serverInstructions(true));
   });
 });
 

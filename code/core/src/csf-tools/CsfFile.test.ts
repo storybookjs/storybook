@@ -12,6 +12,7 @@ import {
   isModuleMock,
   isValidPreviewPath,
   loadCsf,
+  printCsf,
 } from './CsfFile.ts';
 
 expect.addSnapshotSerializer({
@@ -35,6 +36,21 @@ const transform = (code: string, options: Partial<CsfOptions> = { makeTitle }) =
 };
 
 describe('CsfFile', () => {
+  it('prints CRLF sources with LF output', async () => {
+    const os = (await import('node:os')).default;
+    const original = os.EOL;
+    Object.defineProperty(os, 'EOL', { value: '\r\n' });
+    try {
+      const source = ['export default { title: "foo/bar" };', '', 'export const Story = {};'].join(
+        '\r\n'
+      );
+      const csf = loadCsf(source, { makeTitle }).parse();
+      expect(printCsf(csf).code).not.toContain('\r');
+    } finally {
+      Object.defineProperty(os, 'EOL', { value: original });
+    }
+  });
+
   describe('basic', () => {
     it('filters out non-story exports', () => {
       const code = `

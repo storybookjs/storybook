@@ -1182,6 +1182,21 @@ describe('ConfigFile', () => {
       expect(printed).toContain("from 'node:url'");
       expect(printed).not.toContain('from "node:url"');
     });
+
+    it('infers quotes and prints LF output for CRLF sources', () => {
+      const source = [
+        "import { addons } from 'storybook/manager-api';",
+        '',
+        'export const tags = [];',
+      ].join('\r\n');
+      const config = loadConfig(source).parse();
+      config.set(['tags'], ['autodocs']);
+
+      const printed = printConfig(config).code;
+      expect(printed).not.toContain('\r');
+      expect(printed).toContain("'autodocs'");
+      expect(printed).not.toContain('"autodocs"');
+    });
   });
 
   describe('config helpers', () => {

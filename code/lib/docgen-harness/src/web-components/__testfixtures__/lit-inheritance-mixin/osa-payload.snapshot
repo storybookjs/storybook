@@ -1,0 +1,60 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "1",
+          "description": "Count declared by the final class.",
+          "fieldName": "count",
+          "name": "count",
+          "type": {
+            "text": "number",
+          },
+        },
+      ],
+      "customElement": true,
+      "description": "Element composed from a base class and a mixin.",
+      "kind": "class",
+      "members": [
+        {
+          "kind": "field",
+          "name": "baseLabel",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "kind": "field",
+          "name": "mixedActive",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "attribute": "count",
+          "default": "1",
+          "description": "Count declared by the final class.",
+          "kind": "field",
+          "name": "count",
+          "type": {
+            "text": "number",
+          },
+        },
+      ],
+      "name": "LitInheritanceMixin",
+      "superclass": {
+        "module": "lit-inheritance-mixin.ts",
+        "name": "SelectableBase",
+      },
+      "tagName": "lit-inheritance-mixin",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Element composed from a base class and a mixin.",
+  "id": "lit-inheritance-mixin",
+  "jsDocTags": {},
+  "name": "lit-inheritance-mixin",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

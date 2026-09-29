@@ -114,6 +114,11 @@ const config = defineMain({
       titlePrefix: 'addons/vitest',
       files: 'stories.tsx',
     },
+    {
+      directory: '../renderers/react/src/__test__',
+      titlePrefix: 'renderer/react',
+      files: '@(ReactDomClient|RenderToCanvas).stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-onboarding',

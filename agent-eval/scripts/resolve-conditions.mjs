@@ -1,6 +1,6 @@
 // Resolves which eval features run for this workflow execution. A condition is
 // active when its workflow_dispatch input was set or its label is on the PR;
-// scheduled runs activate every condition (the weekly full-suite run).
+// scheduled runs activate the conditions marked `schedule` (the weekly full-suite run).
 //
 // Prints one `name=value` line per condition plus `scope_line` (the labels of
 // the active conditions) as step outputs, and fails on labels under the
@@ -31,7 +31,7 @@ if (unknown.length > 0) {
 
 const active = config.conditions.filter(
   (condition) =>
-    process.env.GITHUB_EVENT_NAME === 'schedule' ||
+    (process.env.GITHUB_EVENT_NAME === 'schedule' && condition.schedule === true) ||
     inputActive(condition.input) ||
     labels.includes(condition.label)
 );

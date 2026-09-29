@@ -11,7 +11,7 @@ addons.register('my-addon', () => {
     //👇 Sets the type of UI element in Storybook
     type: types.TOOL,
     //👇 Shows the Toolbar UI element if the story canvas is being viewed
-    match: ({ tabId, viewMode }) => !tabId && viewMode === 'story',
+    match: ({ viewMode }) => viewMode === 'story',
     render: ({ active }) => (
       <ToggleButton
         key="Example"

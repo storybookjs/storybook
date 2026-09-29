@@ -224,7 +224,7 @@ cmd_result() {
           echo
           echo "- The eval run passed for head \`${sha:0:7}\`, but resolving the gate thread failed. Re-dispatch the Agent eval workflow to retry (or resolve the thread manually)."
         } >> "${GITHUB_STEP_SUMMARY:-/dev/null}"
-        output "result=resolved"
+        output "result=resolve-failed"
       # A synchronize run can unresolve concurrently (the dispatch and
       # synchronize jobs have separate concurrency groups). A resolved thread
       # must never cover an unevaluated head: re-check and reopen if stale.

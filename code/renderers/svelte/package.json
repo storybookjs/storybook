@@ -1,6 +1,6 @@
 {
   "name": "@storybook/svelte",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.1",
   "description": "Storybook Svelte renderer: Develop, document, and test UI components in isolation.",
   "keywords": [
     "storybook",
@@ -34,6 +34,7 @@
     "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",
     "./internal/createReactiveProps": "./static/createReactiveProps.svelte.js",
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"
@@ -62,7 +63,13 @@
   },
   "peerDependencies": {
     "storybook": "workspace:^",
-    "svelte": "^5.0.0"
+    "svelte": "^5.0.0",
+    "typescript": "^5.9.0 || ^6.0.0"
+  },
+  "peerDependenciesMeta": {
+    "typescript": {
+      "optional": true
+    }
   },
   "publishConfig": {
     "access": "public"

@@ -24,10 +24,6 @@ on:
         description: 'Run the full 8xx eval line instead of only the default eval'
         type: boolean
         default: false
-      extra_models:
-        description: 'Also run evals for non-default model experiments (e.g. cc-plugin-sonnet-medium)'
-        type: boolean
-        default: false
       storybook_latest:
         description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local build'
         type: boolean
@@ -38,7 +34,8 @@ on:
         default: false
 
 concurrency:
-  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  # Adding an unrelated label gets its own group, so it cannot cancel a running eval.
+  group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:') && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
 env:
@@ -47,12 +44,14 @@ env:
 jobs:
   eval:
     name: Run agent eval experiments
-    # Skip synchronize: sticky `agent-eval:eval` must not re-bill on every push.
+    # Skip synchronize and unrelated labels: sticky `agent-eval:eval` must not
+    # re-bill on every push or label change.
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
       (github.event_name == 'pull_request' &&
         github.event.action != 'synchronize' &&
+        (github.event.action != 'labeled' || startsWith(github.event.label.name, 'agent-eval:')) &&
         !github.event.pull_request.head.repo.fork &&
         contains(github.event.pull_request.labels.*.name, 'agent-eval:eval'))
     runs-on: ubuntu-latest
@@ -71,7 +70,6 @@ jobs:
       evaluated_head_sha: ${{ steps.gate_head.outputs.evaluated_head_sha }}
       gate_pr_number: ${{ steps.gate_pr.outputs.pr_number }}
       extra_evals: ${{ steps.conditions.outputs.extra_evals }}
-      extra_models: ${{ steps.conditions.outputs.extra_models }}
       storybook_latest: ${{ steps.conditions.outputs.storybook_latest }}
       review: ${{ steps.conditions.outputs.review }}
     steps:
@@ -110,14 +108,13 @@ jobs:
 
       # Which eval features run: declared in agent-eval/eval-conditions.json,
       # activated by PR labels or workflow_dispatch inputs (scheduled runs
-      # activate every condition). Consumed below as step outputs.
+      # activate the conditions marked `schedule`). Consumed below as step outputs.
       - name: Resolve eval conditions
         id: conditions
         env:
           CONFIG_FILE: agent-eval/eval-conditions.json
           PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
           INPUT_EXTRA_EVALS: ${{ inputs.extra_evals || '' }}
-          INPUT_EXTRA_MODELS: ${{ inputs.extra_models || '' }}
           INPUT_STORYBOOK_LATEST: ${{ inputs.storybook_latest || '' }}
           INPUT_REVIEW: ${{ inputs.review || '' }}
         run: node agent-eval/scripts/resolve-conditions.mjs
@@ -182,7 +179,6 @@ jobs:
         env:
           EVAL_ONLY: ${{ inputs.eval_only || '' }}
           EVAL_EXTRA_EVALS: ${{ steps.conditions.outputs.extra_evals }}
-          EVAL_EXTRA_MODELS: ${{ steps.conditions.outputs.extra_models }}
           EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
           EVAL_REVIEW: ${{ steps.conditions.outputs.review }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
@@ -207,6 +203,13 @@ jobs:
           fi
 
           echo "has_result_files=true" >> "$GITHUB_OUTPUT"
+
+      - name: Compute offline metrics
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        # Write analysis.json next to each run's result.json so the metrics ride
+        # along in the uploaded artifact.
+        continue-on-error: true
+        run: yarn workspace agent-eval run results:analyze
 
       - name: Archive eval results
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
@@ -235,8 +238,8 @@ jobs:
           fi
 
       # Vercel CLI commands run from the repository root: the storybook-evals
-      # project's Root Directory setting is agent-eval, and in a monorepo the
-      # CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
+      # project's Root Directory setting is agent-eval, and in a monorepo
+      # the CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
       # or `deploy --prebuilt` resolves trace paths against the wrong base.
       - name: Link Vercel project
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
@@ -320,7 +323,7 @@ jobs:
             echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"
 
-      # Weekly / next-dispatch summary for the #team-storybook channel.
+      # Weekly / next-dispatch summary for the #sb-monitoring channel.
       - name: Notify Slack
         if: >-
           always() &&
@@ -335,7 +338,7 @@ jobs:
           EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
         run: |
           if [[ -z "$SLACK_WEBHOOK_URL" ]]; then
-            echo "::warning title=Missing Slack webhook::SLACK_AGENT_EVAL_WEBHOOK_URL is not set; skipping #team-storybook notify."
+            echo "::warning title=Missing Slack webhook::SLACK_AGENT_EVAL_WEBHOOK_URL is not set; skipping #sb-monitoring notify."
             exit 0
           fi
 

@@ -29,11 +29,12 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
     if (!previewConfigPath) {
       return null;
     }
-    const preview = loadConfig(await files.read(previewConfigPath), previewConfigPath).parse();
-    const storySort = preview.getValue(storySortPath);
-    if (storySort === undefined && preview.mutationDiagnostics.length === 0) {
+    const source = await files.read(previewConfigPath);
+    if (!source.includes('storySort')) {
       return null;
     }
+    const preview = loadConfig(source, previewConfigPath).parse();
+    const storySort = preview.getValue(storySortPath);
     // The main config is visited first, so its hook learns here whether the preview edit will fail.
     preview.remove(storySortPath);
     return { storySort, previewProblem: firstProblem(preview) };

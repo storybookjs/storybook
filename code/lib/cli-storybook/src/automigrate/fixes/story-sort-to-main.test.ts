@@ -76,13 +76,25 @@ afterEach(() => {
 });
 
 describe('story-sort-to-main', () => {
-  it('does not apply when the preview has no storySort', async () => {
-    const migrated = await migrate(
+  it.each([
+    ['a static object', `export default { tags: ['test'] }`],
+    ['a spread', `export default { ...shared }`],
+    ['an imported factory argument', `export default definePreview(importedConfig)`],
+    [
+      'a computed options key',
+      `export default { parameters: { options: { [key]: { order: ['Intro'] } } } }`,
+    ],
+  ])('does not apply to a preview without storySort that has %s', async (_name, preview) => {
+    const migrated = await migrate(`export default { stories: [] }`, preview);
+
+    expect(migrated.applies).toBe(false);
+  });
+
+  it('fails when storySort appears only outside the parameters, leaving both files untouched', async () => {
+    await expectUntouched(
       `export default { stories: [] }`,
       `const unrelated = { storySort: { order: ['Intro'] } }; export default { tags: ['test'] }`
     );
-
-    expect(migrated.applies).toBe(false);
   });
 
   it('moves a literal object and keeps unrelated configuration', async () => {
@@ -248,10 +260,6 @@ describe('story-sort-to-main', () => {
     [
       'a computed options key',
       `export default { parameters: { [key]: { storySort: { order: ['Intro'] } } } }`,
-    ],
-    [
-      'a computed storySort key',
-      `export default { parameters: { options: { [key]: { order: ['Intro'] } } } }`,
     ],
     [
       'both default and named exports',

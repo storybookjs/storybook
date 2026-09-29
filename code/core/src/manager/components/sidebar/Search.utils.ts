@@ -2,7 +2,7 @@ import type { FuseOptions } from 'fuse.js';
 
 import type { DocsAnchor } from 'storybook/internal/types';
 
-import type { SearchItem } from './types.ts';
+import type { SearchItem, SearchResult } from './types.ts';
 
 type DocsSearchItem = Extract<SearchItem, { type: 'docs' }>;
 
@@ -40,4 +40,17 @@ export const createDocsSearchItems = (item: DocsSearchItem): SearchItem[] => {
   const { anchors, ...page } = item;
 
   return [page, ...(anchors ?? []).map((anchor) => createDocsAnchorItem(item, anchor))];
+};
+
+export const distinctSearchResults = (matches: SearchResult[]): SearchResult[] => {
+  const resultIds: Set<string> = new Set();
+
+  return matches.filter(({ item }) => {
+    // @ts-expect-error (non strict)
+    if (resultIds.has(item.parent)) {
+      return false;
+    }
+    resultIds.add(item.id);
+    return true;
+  });
 };

@@ -16,7 +16,12 @@ import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { scrollIntoView, searchItem } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { createDocsAnchorItem, createDocsSearchItems, fuseOptions } from './Search.utils.ts';
+import {
+  distinctSearchResults,
+  createDocsAnchorItem,
+  createDocsSearchItems,
+  fuseOptions,
+} from './Search.utils.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import type {
   CombinedDataset,
@@ -223,19 +228,12 @@ export const Search = React.memo<SearchProps>(function Search({
       }
 
       let results: DownshiftItem[] = [];
-      const resultIds: Set<string> = new Set();
 
-      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
-          // @ts-expect-error (non strict)
-          resultIds.has(item.parent)
-        ) {
-          return false;
-        }
-        resultIds.add(item.id);
-        return true;
+      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
       });
+
+      const distinctResults = distinctSearchResults(allMatches);
 
       if (distinctResults.length) {
         results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);

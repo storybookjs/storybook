@@ -259,6 +259,19 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
+  let vitestVersion: string | undefined;
+
+  // Vitest 5 dropped the `@vitest/browser/context` alias, but Vitest 3 only knows that specifier
+  const browserContextPlugin: Plugin = {
+    name: 'storybook:vitest-browser-context',
+    enforce: 'pre',
+    resolveId(id, importer, options) {
+      if (id === '@vitest/browser/context' && vitestVersion && !vitestVersion.startsWith('3')) {
+        return this.resolve('vitest/browser', importer, { ...options, skipSelf: true });
+      }
+      return null;
+    },
+  };
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
@@ -488,6 +501,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       return config;
     },
     async configureVitest(context) {
+      vitestVersion = context.vitest.version;
       context.vitest.config.coverage.exclude.push('storybook-static');
 
       const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
@@ -576,7 +590,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(createComponentTestTransformPlugin(presets, finalOptions.configDir));
   }
 
-  plugins.push(storybookTestPlugin);
+  plugins.push(browserContextPlugin, storybookTestPlugin);
 
   // When running tests via the Storybook UI, we need
   // to find the right project to run, thus we override

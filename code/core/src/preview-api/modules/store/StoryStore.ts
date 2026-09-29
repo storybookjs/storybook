@@ -26,6 +26,7 @@ import { HooksContext } from '../addons/index.ts';
 import { ArgsStore } from './ArgsStore.ts';
 import { GlobalsStore } from './GlobalsStore.ts';
 import { StoryIndexStore } from './StoryIndexStore.ts';
+import { getDocgenServiceArgTypes, mergeDocgenServiceArgTypes } from './docgenServiceArgTypes.ts';
 import {
   composeProjectAnnotationsWithCore,
   normalizeProjectAnnotations,
@@ -257,9 +258,16 @@ export class StoryStore<TRenderer extends Renderer> {
     const userGlobals = this.userGlobals.get();
     const { initialGlobals } = this.userGlobals;
     const reporting = new ReporterAPI();
+    // Server docgen: merge the (latest known) extracted argTypes into every render context so a
+    // payload that arrived after `prepareStory` still reaches the renderer and Controls-derived
+    // consumers. The prepared story's argTypes stay untouched.
+    const serverArgTypes = getDocgenServiceArgTypes(story.componentId);
     return prepareContext({
       ...story,
       args: forceInitialArgs ? story.initialArgs : this.args.get(story.id),
+      argTypes: serverArgTypes
+        ? mergeDocgenServiceArgTypes({ serverArgTypes, argTypes: story.argTypes })
+        : story.argTypes,
       initialGlobals,
       globalTypes: this.projectAnnotations.globalTypes,
       userGlobals,

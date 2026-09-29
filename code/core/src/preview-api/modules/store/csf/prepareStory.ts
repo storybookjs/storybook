@@ -26,6 +26,7 @@ import { applyHooks } from '../../addons/index.ts';
 import { mountDestructured } from '../../preview-web/render/mount-utils.ts';
 import { UNTARGETED, groupArgsByTarget } from '../args.ts';
 import { defaultDecorateStory } from '../decorators.ts';
+import { getDocgenServiceArgTypes, mergeDocgenServiceArgTypes } from '../docgenServiceArgTypes.ts';
 import { combineParameters } from '../parameters.ts';
 import { normalizeArrays } from './normalizeArrays.ts';
 
@@ -265,10 +266,23 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     storyGlobals,
   };
 
+  // Server docgen: layer the extracted argTypes beneath the story's custom argTypes so the
+  // prepared context carries slot-categorized server argTypes (customArgTypes win). Sync read:
+  // on a cold start the payload usually arrives mid-render; `StoryRender` waits for it and
+  // `getStoryContext` re-merges per render.
+  const serverArgTypes = getDocgenServiceArgTypes(componentAnnotations.id);
+  if (serverArgTypes) {
+    contextForEnhancers.argTypes = mergeDocgenServiceArgTypes({
+      serverArgTypes,
+      argTypes: contextForEnhancers.argTypes,
+    });
+  }
+
   contextForEnhancers.argTypes = argTypesEnhancers
     .filter((enhancer) => {
-      // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
-      // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
+      // Under server docgen, argTypes are not inferred in the preview: the server payload (or
+      // the UI read, which runs `mergeServiceArgTypes`) provides types instead, so second-pass
+      // enhancers are skipped to keep `customArgTypes` annotation-only.
       if (global.FEATURES?.experimentalDocgenServer && enhancer.secondPass) {
         return false;
       }

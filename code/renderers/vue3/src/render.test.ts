@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import type { Args, Globals } from 'storybook/internal/types';
+import type { Args, Globals, StoryContext } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
 import { computed, reactive } from 'vue';
 
-import { updateArgs } from './render.ts';
+import { getSlots, updateArgs } from './render.ts';
+import type { VueRenderer } from './types.ts';
 
 describe('Render Story', () => {
   it('update reactive Args updateArgs()', () => {
@@ -114,5 +115,43 @@ describe('Render Story', () => {
     expect(watcher.value).toBe('dark');
     expect(observedTheme).toBe('dark');
     expect(reactiveGlobals).toEqual({ theme: 'dark', locale: 'en' });
+  });
+});
+
+describe('getSlots', () => {
+  const contextWith = (argTypes: StoryContext<VueRenderer, Args>['argTypes']) =>
+    ({ argTypes }) as StoryContext<VueRenderer, Args>;
+
+  it('maps args categorized as slots into slot render functions', () => {
+    const slots = getSlots(
+      { default: 'Hello slot', label: 'plain prop' },
+      contextWith({
+        default: { name: 'default', table: { category: 'slots' } },
+        label: { name: 'label', table: { category: 'props' } },
+      })
+    );
+
+    expect(Object.keys(slots)).toEqual(['default']);
+    expect(slots.default()).toBe('Hello slot');
+  });
+
+  it('passes function args through unchanged for function slots', () => {
+    const renderFn = (bind: { num: number }) => `num=${bind.num}`;
+    const slots = getSlots(
+      { named: renderFn },
+      contextWith({ named: { name: 'named', table: { category: 'slots' } } })
+    );
+
+    expect(slots.named).toBe(renderFn);
+    expect(slots.named({ num: 123 })).toBe('num=123');
+  });
+
+  it('ignores args without the slots category', () => {
+    const slots = getSlots(
+      { label: 'plain' },
+      contextWith({ label: { name: 'label', table: { category: 'props' } } })
+    );
+
+    expect(slots).toEqual({});
   });
 });

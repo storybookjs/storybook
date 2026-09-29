@@ -121,7 +121,7 @@ export async function renderToCanvas(
 }
 
 /** Generate slots for default story without render function template */
-function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
+export function getSlots(props: Args, context: StoryContext<VueRenderer, Args>) {
   const { argTypes } = context;
   const slots = Object.entries(props)
     .filter(([key]) => argTypes[key]?.table?.category === 'slots')

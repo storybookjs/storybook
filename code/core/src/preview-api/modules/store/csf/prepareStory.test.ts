@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
+  Args,
   ArgsEnhancer,
   NormalizedComponentAnnotations,
   NormalizedStoryAnnotations,
@@ -9,11 +10,13 @@ import type {
   Renderer,
   SBScalarType,
   StoryContext,
+  StoryContextForEnhancers,
 } from 'storybook/internal/types';
 
 import type { UserEventObject } from 'storybook/test';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
+import { getService } from '../../../../shared/open-service/preview.ts';
 import { HooksContext, addons } from '../../addons/index.ts';
 import { UNTARGETED } from '../args.ts';
 import { composeConfigs } from './composeConfigs.ts';
@@ -21,6 +24,10 @@ import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
 vi.mock('@storybook/global', { spy: true });
+vi.mock('../../../../shared/open-service/preview.ts', () => ({
+  getService: vi.fn(),
+  registerService: vi.fn(),
+}));
 
 const id = 'id';
 const name = 'name';
@@ -726,12 +733,33 @@ describe('prepareStory', () => {
   });
 
   describe('with `FEATURES.experimentalDocgenServer`', () => {
+    const docgenServicePayload = {
+      argTypes: {
+        size: { name: 'size', type: stringType, table: { category: 'props' } },
+        default: { name: 'default', table: { category: 'slots' } },
+      },
+    };
+
+    const mockDocgenService = (payload?: { argTypes?: unknown }) => {
+      // The real `getService` returns a strongly-typed service instance; tests only need the
+      // `core/docgen` query surface consumed by `docgenServiceArgTypes.ts`.
+      vi.mocked(getService).mockReturnValue({
+        queries: {
+          docgen: {
+            get: vi.fn(() => payload),
+            loaded: vi.fn(async () => payload),
+          },
+        },
+      } as unknown as ReturnType<typeof getService>);
+    };
+
     beforeEach(() => {
       vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
     });
 
     afterEach(() => {
       vi.unstubAllGlobals();
+      vi.mocked(getService).mockReset();
     });
 
     it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {
@@ -773,6 +801,86 @@ describe('prepareStory', () => {
 
       expect(argTypes.size).toEqual({ name: 'size', control: 'select' });
       expect(argTypes.size?.type).toBeUndefined();
+    });
+
+    it('merges server argTypes beneath customArgTypes, never inferring missing types', () => {
+      mockDocgenService(docgenServicePayload);
+      const { argTypes } = prepareStory(
+        {
+          id,
+          name,
+          args: { size: 'large', label: 'Button' },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          // User override for a key the server also provides — customArgTypes win wholesale.
+          argTypes: { default: { name: 'default', control: 'text' } },
+        },
+        { render }
+      );
+
+      // customArgTypes > server payload: combineParameters deep-merges per key (user fields win,
+      // server-only fields like `table` survive), mirroring the manager-side mergeServiceArgTypes.
+      expect(argTypes.default).toEqual({
+        name: 'default',
+        control: 'text',
+        table: { category: 'slots' },
+      });
+      // server payload > inferred
+      expect(argTypes.size).toEqual({
+        name: 'size',
+        type: stringType,
+        table: { category: 'props' },
+      });
+      // no inference for args the server knows nothing about (second-pass enhancers filtered)
+      expect(argTypes.label).toBeUndefined();
+    });
+
+    it('still filters second-pass enhancers when a server payload is present', () => {
+      mockDocgenService(docgenServicePayload);
+      const firstPassEnhancer = Object.assign(
+        vi.fn((context: StoryContextForEnhancers<Renderer, Args>) => ({
+          ...context.argTypes,
+          first: { name: 'first' },
+        })),
+        { secondPass: false }
+      );
+      const secondPassEnhancer = Object.assign(
+        vi.fn((context: StoryContextForEnhancers<Renderer, Args>) => ({
+          ...context.argTypes,
+          injected: { name: 'injected' },
+        })),
+        { secondPass: true }
+      );
+      const { argTypes } = prepareStory(
+        { id, name, args: { size: 'large' }, moduleExport },
+        { id, title },
+        { render, argTypesEnhancers: [firstPassEnhancer, secondPassEnhancer] }
+      );
+
+      // First-pass enhancers see the merged argTypes (server payload included)…
+      expect(firstPassEnhancer).toHaveBeenCalledWith(
+        expect.objectContaining({
+          argTypes: expect.objectContaining({
+            size: expect.anything(),
+            default: expect.anything(),
+          }),
+        })
+      );
+      expect(argTypes.first).toEqual({ name: 'first' });
+      // …second-pass enhancers are still filtered out, even with a server payload available.
+      expect(secondPassEnhancer).not.toHaveBeenCalled();
+      expect(argTypes.injected).toBeUndefined();
+    });
+  });
+
+  describe('with `FEATURES.experimentalDocgenServer` off', () => {
+    it('never consults the docgen service', () => {
+      prepareStory({ id, name, args: { size: 'large' }, moduleExport }, { id, title }, { render });
+
+      expect(getService).not.toHaveBeenCalled();
     });
   });
 });

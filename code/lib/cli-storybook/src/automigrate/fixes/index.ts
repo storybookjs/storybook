@@ -8,10 +8,7 @@ import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import { docgenServer } from './docgen-server.ts';
-import {
-  enableExperimentalDocgenServer,
-  enableExperimentalReview,
-} from './experimental-features.ts';
+import { enableExperimentalReview } from './experimental-features.ts';
 import { nextjsToNextjsVite } from './nextjs-to-nextjs-vite.ts';
 import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
@@ -40,7 +37,6 @@ export const allFixes: Fix[] = [
   setConfigLayout,
   csfNextMockedArgs,
   enableExperimentalReview,
-  enableExperimentalDocgenServer,
   docgenServer,
 ];
 

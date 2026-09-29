@@ -61,7 +61,6 @@ export const enableExperimentalReview = createExperimentalFeatureFix({
     'Enable experimentalReview to offer the agentic review workflow to all MCP clients, not just the storybook ai CLI.',
 });
 
-
 const FEATURE_FLAG_FIXES = {
   experimentalReview: enableExperimentalReview,
 } satisfies Partial<Record<keyof StorybookFeatures, Fix>>;

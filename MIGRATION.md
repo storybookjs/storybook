@@ -724,22 +724,26 @@ Decorators and `render` functions keep receiving `argTypes`, because renderers r
 
 ### `docgenServer` is stable and enabled by default
 
-The `experimentalDocgenServer` feature is now `docgenServer`. Server-side component metadata extraction is enabled by default for React frameworks, including Webpack, and for the Angular and Vue 3 Vite frameworks. Unsupported frameworks keep it disabled even when the flag is `true`.
+The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, and for `@storybook/angular-vite`.
+Other frameworks keep builder docgen.
 
-The `docgen-server` automigration runs when an upgrade crosses into Storybook 11. It renames the deprecated flag while preserving its value or expression. If both flags have literal boolean values, it keeps `docgenServer`. Unsafe dynamic configs receive manual migration instructions instead of being overwritten. You can also run `storybook automigrate docgen-server` explicitly on Storybook 11.
+The `docgen-server` automigration runs when an upgrade crosses into Storybook 11, or explicitly with `storybook automigrate docgen-server`.
+It renames `experimentalDocgenServer` to `docgenServer` and preserves its value or expression.
+If both flags have literal boolean values, it keeps `docgenServer`.
+On frameworks without server-side docgen, it removes `experimentalDocgenServer`.
+Dynamic configs it cannot transform safely are left unchanged and listed with manual instructions.
 
-With neither flag present, the migration adds `features.docgenServer: false` to preserve these explicit legacy settings:
+With neither flag present, the automigration adds `features.docgenServer: false` to keep these legacy settings:
 
 - React `typescript.reactDocgen: false` or `'react-docgen-typescript'`, including custom RDT options such as `propFilter`.
 - Vue `framework.options.docgen: false` or `true`, an explicit engine, or an engine configuration with a custom `tsconfig`.
 
-The migration also keeps Svelte-Vite and Web Components-Vite on `docgenServer: false` until their server-side providers ship separately.
-
-Storybook 11 also preserves these settings at runtime when migration is skipped or cannot safely transform a dynamic config. This compatibility rule and the deprecated flag alias will be removed in Storybook 12. The stable flag takes precedence over the deprecated flag, which takes precedence over legacy settings and the supported framework default.
-
-An explicit `features.docgenServer: true` selects server extraction and warns when it overrides these legacy settings. RDT `propFilter` and Vue docgen `tsconfig` have no equivalent server option and are not translated. Set `features.docgenServer: false` to keep builder extraction. For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
-
-The older opt-in automigration for `experimentalDocgenServer` applies only to Storybook 10 targets and is not offered when upgrading to Storybook 11.
+Storybook does not check for these settings at runtime.
+If you skip the automigration, server-side docgen replaces them.
+RDT `propFilter` and Vue docgen `tsconfig` have no equivalent server option and are not translated.
+Set `features.docgenServer: false` to keep builder extraction.
+For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.
 
 ### Node.js 22.12 or higher
 

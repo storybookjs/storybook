@@ -181,7 +181,7 @@ matching input for each:
 
 The labels are declared in `eval-conditions.json`. A run fails when the PR has
 an `agent-eval:` label that is not declared there, so a typo cannot silently
-reduce the eval scope. The `eval_only` input (dispatch only) targets specific
+reduce the eval scope. The `evals` input (dispatch only) targets specific
 evals. All of these are human-triggered spend decisions; agents never apply the
 labels or dispatch the workflow.
 

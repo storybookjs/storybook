@@ -17,7 +17,7 @@ on:
         description: 'PR number for the eval gate thread (optional; inferred from the branch if omitted)'
         type: string
         default: ''
-      eval_only:
+      evals:
         description: 'Comma-separated eval names to run (overrides extra_evals), e.g. 803-edit-component'
         type: string
         default: ''
@@ -179,7 +179,7 @@ jobs:
         id: run_evals
         run: yarn workspace agent-eval run eval
         env:
-          EVAL_ONLY: ${{ inputs.eval_only || '' }}
+          EVAL_ONLY: ${{ inputs.evals || '' }}
           EVAL_EXTRA_EVALS: ${{ steps.conditions.outputs.extra_evals }}
           EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
           EVAL_REVIEW: ${{ steps.conditions.outputs.review }}

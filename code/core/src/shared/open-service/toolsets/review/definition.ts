@@ -79,14 +79,14 @@ export type ReviewCreateOutput = {
 
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
-  return `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the active review; call again when the user iterates.
+  return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
 ## When to call
-- **Visual change** (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`${ref('stories.changed')}\`; fall back to \`${ref('stories.findByComponent')}\` if that is unavailable. Include \`changedFiles\`.
-- **Browse request** ("show me the Badge component"): resolve via \`${ref('stories.findByComponent')}\` / \`${ref('docs.list')}\`. Show exactly what was asked. Pass \`changedFiles: []\`.
+- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
+- Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
-1. Every \`storyId\` MUST come from those tools, never from file paths, story names or memory.
+1. Every storyId MUST come from those tools, never from file paths, story names or memory.
 2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
 3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 4. In follow-up reviews, keep collection and story order stable.

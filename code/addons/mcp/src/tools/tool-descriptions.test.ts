@@ -10,6 +10,9 @@ import { getAddonToolMetadata } from './tool-registry.ts';
 // never reaches the model.
 const MCP_CLIENT_DESCRIPTION_CHAR_LIMIT = 2048;
 
+// Bold, italics and code spans add characters without changing what the model reads.
+const MARKDOWN_EMPHASIS = /\*\*|`|(?<![\w$])_\w+_(?!\w)/;
+
 const bools = [true, false] as const;
 
 function availabilityWith(testSupported: boolean, a11yEnabled: boolean): ToolAvailability {
@@ -50,7 +53,7 @@ function toolMetadataFor(options: {
 }
 
 describe('MCP tool descriptions', () => {
-  it('stay within the MCP client truncation limit for every tool in every configuration', () => {
+  it('stay plain text within the MCP client truncation limit for every tool in every configuration', () => {
     const seenTools = new Set<string>();
 
     for (const reviewEnabled of bools)
@@ -65,6 +68,9 @@ describe('MCP tool descriptions', () => {
               expect
                 .soft(length, `${tool.name} exceeds the limit for ${JSON.stringify(options)}`)
                 .toBeLessThanOrEqual(MCP_CLIENT_DESCRIPTION_CHAR_LIMIT);
+              expect
+                .soft(tool.description, `${tool.name} spends its budget on markdown emphasis`)
+                .not.toMatch(MARKDOWN_EMPHASIS);
             }
           }
 

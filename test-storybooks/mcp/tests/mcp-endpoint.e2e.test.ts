@@ -382,11 +382,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get changed stories metadata",
 				  },
 				  {
-				    "description": "Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index; hand these to stories-preview or review-create instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
+				    "description": "Map component source files to the stories that render them, returning grounded storyId values from the live Storybook index; hand these to stories-preview or review-create instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
-				Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass _their_ paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try \`stories-changed\` first when available; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
+				Use it whenever you need story IDs: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass their paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try stories-changed first when available; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 
-				Results are sorted by \`distance\` (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default \`maxDistance: 3\` keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For review-create, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
+				Results are sorted by distance (0 = the path is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrappers, so distance 1 is often empty; the default maxDistance: 3 keeps the cascade visible while capping noise from wide decorators. Raise it for recall, lower it for precision. For review-create, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer. Among a component's stories at one distance, prefer the variant whose name signals it renders the changed surface.
 
 				Only IDs returned by discovery tools resolve: never derive them from file names, feature names, titles (authors can override them) or memory.
 
@@ -501,14 +501,14 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Get stories for component files",
 				  },
 				  {
-				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the active review; call again when the user iterates.
+				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
 
 				## When to call
-				- **Visual change** (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`stories-changed\`; fall back to \`stories-find-by-component\` if that is unavailable. Include \`changedFiles\`.
-				- **Browse request** ("show me the Badge component"): resolve via \`stories-find-by-component\` / \`docs-list\`. Show exactly what was asked. Pass \`changedFiles: []\`.
+				- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; fall back to stories-find-by-component if that is unavailable. Include changedFiles.
+				- Browse request ("show me the Badge component"): resolve via stories-find-by-component / docs-list. Show exactly what was asked. Pass changedFiles: [].
 
 				## Hard rules
-				1. Every \`storyId\` MUST come from those tools, never from file paths, story names or memory.
+				1. Every storyId MUST come from those tools, never from file paths, story names or memory.
 				2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
 				3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 				4. In follow-up reviews, keep collection and story order stable.
@@ -703,7 +703,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "title": "Run Storybook tests",
 				  },
 				  {
-				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with docs-show, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.",
+				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with docs-show, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -722,7 +722,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Get documentation for a UI component or docs entry.
 
-				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the docs-show-story tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as \`storyId\`.
+				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the docs-show-story tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as storyId.
 
 				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {

@@ -259,15 +259,11 @@ Unlike the current implementation, this method reads the actual stories source f
 
 Type: `boolean`
 
-Default: `true` for every React framework and the Angular and Vue 3 Vite frameworks. `false` for other frameworks.
+Default: `true` when the framework ships a server-side docgen provider: every React and Vue 3 framework, and `@storybook/angular-vite`. `false` otherwise.
 
 Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 
 Snippets are static: they won't update if you change values in the Controls table.
-
-Setting this option to `true` on an unsupported framework has no effect. Storybook keeps the resolved value `false` because that framework has no server-side docgen provider.
-
-Storybook resolves the setting in this order: an explicit `docgenServer` value, the deprecated `experimentalDocgenServer` value, Storybook 10 legacy-setting preservation, then the framework default.
 
 </If>
 
@@ -301,14 +297,17 @@ The Storybook 11 automigration renames an explicit `experimentalDocgenServer` op
  export default config;
 ```
 
-If the configuration is too dynamic to transform safely, the automigration reports the file and the change you must make. Storybook 11 still reads `experimentalDocgenServer`, but it is deprecated and will be removed in Storybook 12. If both options are present, `docgenServer` takes precedence.
+If both options are present, the automigration keeps `docgenServer`.
+If the configuration is too dynamic to transform safely, the automigration reports the file and the change you must make.
+Storybook 11 no longer reads `experimentalDocgenServer`.
 
-When neither option is explicit, Storybook 11 preserves these Storybook 10 choices by keeping server-side docgen off:
+When neither option is set, the automigration writes `docgenServer: false` to keep these Storybook 10 choices:
 
 - React's `typescript.reactDocgen: false` or `'react-docgen-typescript'`
 - Vue's `framework.options.docgen: false` or `true`, an explicit engine, or a custom `tsconfig`
 
-The automigration writes `docgenServer: false` when it finds one of these choices. Set `docgenServer: true` only after you are ready to stop using the legacy setting. The stable option wins and Storybook warns that the legacy setting is ignored.
+Storybook does not check for these settings at runtime.
+If you skip the automigration, server-side docgen replaces them.
 
 There is no automatic translation for `reactDocgenTypescriptOptions`, including `propFilter`, or for a custom Vue docgen `tsconfig`. Keep `docgenServer: false` if your project depends on those settings.
 
@@ -322,7 +321,7 @@ On `@storybook/angular-vite`, `framework.options.compodoc: false` only prevents 
 
 Type: `boolean`
 
-Deprecated: Use [`docgenServer`](#docgenserver). This compatibility option is available in Storybook 11 and will be removed in Storybook 12.
+Deprecated: Renamed to [`docgenServer`](#docgenserver). This option has no effect.
 
 </If>
 

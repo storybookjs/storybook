@@ -903,9 +903,12 @@ tool_timeout_sec = 180
 // The sandbox CLAUDE.md stands in for the `<built_in_browser>` block the
 // desktop app injects, so the agent knows it has that browser.
 export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<void> {
-  const existingClaudeMd = (await sandbox.fileExists(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH))
-    ? `${await sandbox.readFile(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH)}\n\n`
-    : '';
+  let existingClaudeMd = '';
+  try {
+    existingClaudeMd = `${(await sandbox.readFile(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH)).trimEnd()}\n\n`;
+  } catch {
+    // No CLAUDE.md yet.
+  }
   await sandbox.writeFiles({
     [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
     [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]:

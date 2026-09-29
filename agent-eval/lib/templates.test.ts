@@ -256,7 +256,6 @@ describe('writeClaudeInAppBrowserMock', () => {
         }
         return content;
       },
-      fileExists: async (filePath: string) => filePath in files,
     } as unknown as Sandbox;
   }
 

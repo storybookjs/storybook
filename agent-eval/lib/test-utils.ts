@@ -473,32 +473,41 @@ export function findDevServerKillCommands(commands: string[], navigatedUrls: str
 // (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
 // loud rather than as a false-pass.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
+  return readCodexCompletedItems(rawTranscript).flatMap(getCodexItemNavigations);
+}
+
+function readCodexCompletedItems(rawTranscript: string): Record<string, unknown>[] {
   return rawTranscript.split('\n').flatMap((line) => {
     const event = parseJson(line);
-    if (!isRecord(event) || event.type !== 'item.completed' || !isRecord(event.item)) {
-      return [];
-    }
-
-    const item = event.item;
-    if (
-      item.type !== 'mcp_tool_call' ||
-      item.server !== 'node_repl' ||
-      item.tool !== 'js' ||
-      item.status !== 'completed' ||
-      (item.error !== null && item.error !== undefined)
-    ) {
-      return [];
-    }
-
-    const code = isRecord(item.arguments) ? item.arguments.code : undefined;
-    if (typeof code !== 'string') {
-      return [];
-    }
-
-    return [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
-      match[2] === undefined ? [] : [match[2]]
-    );
+    return isRecord(event) && event.type === 'item.completed' && isRecord(event.item)
+      ? [event.item]
+      : [];
   });
+}
+
+function getCodexItemNavigations(item: Record<string, unknown>): string[] {
+  if (item.server !== 'node_repl' || item.tool !== 'js' || !codexItemSucceeded(item)) {
+    return [];
+  }
+
+  const code = isRecord(item.arguments) ? item.arguments.code : undefined;
+  if (typeof code !== 'string') {
+    return [];
+  }
+
+  return [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
+    match[2] === undefined ? [] : [match[2]]
+  );
+}
+
+function codexItemSucceeded(item: Record<string, unknown>): boolean {
+  if (item.type === 'mcp_tool_call') {
+    return item.status === 'completed' && (item.error === null || item.error === undefined);
+  }
+  if (item.type === 'command_execution') {
+    return item.exit_code === 0;
+  }
+  return false;
 }
 
 export function isLocalDevServerUrl(value: string): boolean {
@@ -778,6 +787,10 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return false;
   }
 
+  return shellCommandRunsWorkflow(command, workflowName);
+}
+
+function shellCommandRunsWorkflow(command: string, workflowName: string): boolean {
   return parseStorybookWorkflowShellCommands([command]).some((call) =>
     workflowCallMatchesName(call, workflowName)
   );
@@ -811,9 +824,7 @@ function collectCodexWorkflowToolResult(
   if (
     item.type === 'command_execution' &&
     typeof item.command === 'string' &&
-    parseStorybookWorkflowShellCommands([item.command]).some((call) =>
-      workflowCallMatchesName(call, workflowName)
-    )
+    shellCommandRunsWorkflow(item.command, workflowName)
   ) {
     results.push({
       output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',
@@ -1139,13 +1150,20 @@ const PREVIEW_EVAL_NAVIGATION_PATTERN =
 
 // Not tied to the link in the final response, so `localhost` versus
 // `127.0.0.1` or a slash difference cannot fail the cell. Only navigations
-// after the last review-create count: opening the review page earlier, for
-// example to check that Storybook runs, does not show the published review.
+// after the last successful review-create count: the step under test is
+// bringing the user to the review just published, so an earlier visit (for
+// example to check that Storybook runs) does not qualify.
 export function expectReviewOpenedInBrowser(): void {
   const steps = getBrowserStepsAroundReviews();
+  const lastReviewCreate = steps.findLastIndex((step) => step === REVIEW_CREATED);
+  if (lastReviewCreate === -1) {
+    expect.fail(
+      'Expected a successful review-create call before the in-app browser check, but the transcript holds none.'
+    );
+  }
   const navigations = steps
-    .slice(steps.findLastIndex((step) => step === REVIEW_CREATED) + 1)
-    .flatMap((step) => (step === REVIEW_CREATED ? [] : [step]));
+    .slice(lastReviewCreate + 1)
+    .filter((step): step is string => typeof step === 'string');
 
   expect(
     navigations.length,
@@ -1160,29 +1178,28 @@ export function expectReviewOpenedInBrowser(): void {
 const REVIEW_CREATED = Symbol('review-create');
 
 // In transcript order: each review-create call, and each URL the in-app
-// browser navigated to.
+// browser navigated to. Claude's parsed transcript does not pair tool calls
+// with their results, so there a failed review-create still counts.
 function getBrowserStepsAroundReviews(): (string | typeof REVIEW_CREATED)[] {
   if (getEvalContext().agent === 'codex') {
-    return readFileSync(TRANSCRIPT_PATH, 'utf8')
-      .split('\n')
-      .flatMap((line) => {
-        const event = parseJson(line);
-        if (!isRecord(event) || event.type !== 'item.completed' || !isRecord(event.item)) {
-          return [];
-        }
-        const { item } = event;
-        const createsReview =
-          (item.type === 'mcp_tool_call' &&
-            typeof item.tool === 'string' &&
-            normalizeStorybookWorkflowName(item.tool) === 'review-create') ||
-          (item.type === 'command_execution' &&
-            typeof item.command === 'string' &&
-            isReviewCreateShellCommand(item.command));
-        return createsReview ? [REVIEW_CREATED] : parseCodexBrowserNavigations(line);
-      });
+    return readCodexCompletedItems(readFileSync(TRANSCRIPT_PATH, 'utf8')).flatMap<
+      string | typeof REVIEW_CREATED
+    >((item) => {
+      const createsReview =
+        (item.type === 'mcp_tool_call' &&
+          typeof item.tool === 'string' &&
+          normalizeStorybookWorkflowName(item.tool) === 'review-create') ||
+        (item.type === 'command_execution' &&
+          typeof item.command === 'string' &&
+          shellCommandRunsWorkflow(item.command, 'review-create'));
+      if (createsReview) {
+        return codexItemSucceeded(item) ? [REVIEW_CREATED] : [];
+      }
+      return getCodexItemNavigations(item);
+    });
   }
 
-  return getTranscript().events.flatMap((event) => {
+  return getTranscript().events.flatMap<string | typeof REVIEW_CREATED>((event) => {
     const name = event.tool?.originalName;
     const args = event.tool?.args;
     if (event.type !== 'tool_call' || typeof name !== 'string' || !isRecord(args)) {
@@ -1190,7 +1207,7 @@ function getBrowserStepsAroundReviews(): (string | typeof REVIEW_CREATED)[] {
     }
     if (
       normalizeStorybookWorkflowName(name) === 'review-create' ||
-      (typeof args.command === 'string' && isReviewCreateShellCommand(args.command))
+      (typeof args.command === 'string' && shellCommandRunsWorkflow(args.command, 'review-create'))
     ) {
       return [REVIEW_CREATED];
     }
@@ -1204,12 +1221,6 @@ function getBrowserStepsAroundReviews(): (string | typeof REVIEW_CREATED)[] {
     }
     return [];
   });
-}
-
-function isReviewCreateShellCommand(command: string): boolean {
-  return parseStorybookWorkflowShellCommands([command]).some((call) =>
-    workflowCallMatchesName(call, 'review-create')
-  );
 }
 
 // Substance floor only (relaxed 2026-07-03 after run 28663662412, where

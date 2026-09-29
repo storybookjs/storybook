@@ -1,11 +1,11 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import StoryComponent from './runtime/Story.svelte';
+import StoryComponent from '@storybook/svelte/internal/svelte-csf/Story.svelte';
 // TODO: Remove in next major release
-import LegacyMetaComponent from './runtime/LegacyMeta.svelte';
+import LegacyMetaComponent from '@storybook/svelte/internal/svelte-csf/LegacyMeta.svelte';
 // TODO: Remove in next major release
-import LegacyStoryComponent from './runtime/LegacyStory.svelte';
+import LegacyStoryComponent from '@storybook/svelte/internal/svelte-csf/LegacyStory.svelte';
 // TODO: Remove in next major release
-import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
+import LegacyTemplateComponent from '@storybook/svelte/internal/svelte-csf/LegacyTemplate.svelte';
 
 import type { Cmp, ComponentAnnotations, StoryComponent as StoryComponentType } from './types.ts';
 export type { StoryContext } from './types.ts';

@@ -1,12 +1,9 @@
 <script lang="ts">
   import type { Component } from 'svelte';
 
-  import type { Cmp } from '../types.js';
+  import type { Cmp, StoriesRepository } from '../../src/svelte-csf/types.ts';
 
-  import {
-    type StoriesRepository,
-    createStoriesExtractorContext,
-  } from './contexts/extractor.svelte';
+  import { createStoriesExtractorContext } from '@storybook/svelte/internal/svelte-csf/contexts/extractor';
 
   interface Props {
     Stories: Component;

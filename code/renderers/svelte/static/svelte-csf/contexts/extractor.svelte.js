@@ -1,16 +1,11 @@
+// Types: see the .d.ts file next to this one.
 import { getContext, hasContext, setContext } from 'svelte';
 
-import type { Cmp, StoryProps } from '../../types.ts';
-import { storyNameToExportName } from '../../utils/identifier-utils.ts';
+import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
-export interface StoriesExtractorContextProps<TCmp extends Cmp> {
-  isExtracting: boolean;
-  register: (storyCmpProps: StoryProps<Record<string, any>, TCmp>) => void;
-}
-
-function buildContext<TCmp extends Cmp>(storyCmpProps: StoriesExtractorContextProps<TCmp>) {
+function buildContext(storyCmpProps) {
   const isExtracting = $state(storyCmpProps.isExtracting);
   const register = $state(storyCmpProps.register);
 
@@ -24,37 +19,29 @@ function buildContext<TCmp extends Cmp>(storyCmpProps: StoriesExtractorContextPr
   };
 }
 
-export type StoriesExtractorContext<TCmp extends Cmp> = ReturnType<typeof buildContext<TCmp>>;
-
-export type StoriesRepository<TCmp extends Cmp> = {
-  stories: Map<string, StoryProps<Record<string, any>, TCmp>>;
-};
-
-export function createStoriesExtractorContext<TCmp extends Cmp>(
-  repository: StoriesRepository<TCmp>
-): void {
+export function createStoriesExtractorContext(repository) {
   const { stories } = repository;
 
-  const ctx = buildContext<TCmp>({
+  const ctx = buildContext({
     isExtracting: true,
     register: (s) => {
-      stories.set(s.exportName ?? storyNameToExportName(s.name!), s);
+      stories.set(s.exportName ?? storyNameToExportName(s.name), s);
     },
   });
 
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoriesExtractor<TCmp extends Cmp>() {
+export function useStoriesExtractor() {
   if (!hasContext(CONTEXT_KEY)) {
     setContext(
       CONTEXT_KEY,
-      buildContext<TCmp>({
+      buildContext({
         isExtracting: false,
         register: () => {},
       })
     );
   }
 
-  return getContext<StoriesExtractorContext<TCmp>>(CONTEXT_KEY);
+  return getContext(CONTEXT_KEY);
 }

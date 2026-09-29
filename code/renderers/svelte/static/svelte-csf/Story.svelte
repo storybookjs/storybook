@@ -4,12 +4,14 @@
 >
   import type { Snippet } from 'svelte';
 
-  import { useStoriesExtractor } from './contexts/extractor.svelte.js';
-  import { useStoryRenderer } from './contexts/renderer.svelte.js';
+  import { useStoriesExtractor } from '@storybook/svelte/internal/svelte-csf/contexts/extractor';
+  import { useStoryRenderer } from '@storybook/svelte/internal/svelte-csf/contexts/renderer';
 
-  import { storyNameToExportName } from '../utils/identifier-utils.js';
-  import type { Cmp, StoryProps } from '../types.js';
-  import { SVELTE_CSF_V4_TAG } from '../constants.js';
+  import {
+    storyNameToExportName,
+    SVELTE_CSF_V4_TAG,
+  } from '@storybook/svelte/internal/svelte-csf/component-helpers';
+  import type { Cmp, StoryProps } from '../../src/svelte-csf/types.ts';
 
   type Props = StoryProps<TArgs, TCmp, TChildren>;
   let {

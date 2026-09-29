@@ -9,7 +9,7 @@ Vite pre-transform hook does codemod where this component gets transformed into 
 @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
 -->
 <script lang="ts">
-  import type { Slots, TemplateProps } from '../legacy-types.d.ts';
+  import type { Slots, TemplateProps } from '../../src/svelte-csf/legacy-types.d.ts';
 
   // Props use `$props()` so this file compiles when `compilerOptions.runes` is `true`.
   // It still renders a `<slot>`, because the typing of legacy `let:args` and `let:context` comes from `$$Slots`.

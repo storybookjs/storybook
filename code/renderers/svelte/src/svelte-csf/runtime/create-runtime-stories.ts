@@ -2,11 +2,10 @@
 import type { StoryObj } from '@storybook/svelte';
 import { mount, unmount, type Component } from 'svelte';
 
-import type { StoriesRepository } from './contexts/extractor.svelte.ts';
-import type { Cmp, ComponentAnnotations } from '../types.ts';
+import type { Cmp, ComponentAnnotations, StoriesRepository } from '../types.ts';
 
-import StoriesExtractor from './StoriesExtractor.svelte';
-import StoryRenderer from './StoryRenderer.svelte';
+import StoriesExtractor from '@storybook/svelte/internal/svelte-csf/StoriesExtractor.svelte';
+import StoryRenderer from '@storybook/svelte/internal/svelte-csf/StoryRenderer.svelte';
 
 const createFragment = document.createDocumentFragment
   ? () => document.createDocumentFragment()

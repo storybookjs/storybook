@@ -1,25 +1,15 @@
-import { getContext, hasContext, setContext, type Snippet } from 'svelte';
-
-import type { Cmp, StoryAnnotations, StoryContext } from '../../types.ts';
+// Types: see the .d.ts file next to this one.
+import { getContext, hasContext, setContext } from 'svelte';
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
 
-interface ContextProps<TCmp extends Cmp> {
-  currentStoryExportName: string | undefined;
-  args: NonNullable<StoryAnnotations<Record<string, any>, TCmp>['args']>;
-  storyContext: StoryContext<TCmp>;
-  metaRenderSnippet?: Snippet<
-    [StoryAnnotations<Record<string, any>, TCmp>['args'], StoryContext<TCmp>]
-  >;
-}
-
-function buildContext<TCmp extends Cmp>(props: ContextProps<TCmp>) {
+function buildContext(props) {
   let currentStoryExportName = $state(props.currentStoryExportName);
   let args = $state(props.args);
   let storyContext = $state(props.storyContext);
   let metaRenderSnippet = $state(props.metaRenderSnippet);
 
-  function set(props: ContextProps<TCmp>) {
+  function set(props) {
     currentStoryExportName = props.currentStoryExportName;
     args = props.args;
     storyContext = props.storyContext;
@@ -43,23 +33,20 @@ function buildContext<TCmp extends Cmp>(props: ContextProps<TCmp>) {
   };
 }
 
-export type StoryRendererContext<TCmp extends Cmp = Cmp> = ReturnType<typeof buildContext<TCmp>>;
-
-function createStoryRendererContext<TCmp extends Cmp>(): void {
-  const ctx = buildContext<TCmp>({
+function createStoryRendererContext() {
+  const ctx = buildContext({
     currentStoryExportName: undefined,
     args: {},
-    // @ts-expect-error FIXME: I don't know how to satisfy this one
     storyContext: {},
   });
 
   setContext(CONTEXT_KEY, ctx);
 }
 
-export function useStoryRenderer<TCmp extends Cmp>() {
+export function useStoryRenderer() {
   if (!hasContext(CONTEXT_KEY)) {
-    createStoryRendererContext<TCmp>();
+    createStoryRendererContext();
   }
 
-  return getContext<StoryRendererContext<TCmp>>(CONTEXT_KEY);
+  return getContext(CONTEXT_KEY);
 }

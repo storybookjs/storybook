@@ -142,3 +142,33 @@ export type StoryProps<
 export type StoryComponent<TArgs extends Record<string, any>, TCmp extends Cmp> = Component<
   StoryProps<TArgs, TCmp>
 >;
+
+// The contexts in static/svelte-csf/contexts/, which are JavaScript, use these types through JSDoc.
+export interface StoriesExtractorContextProps<TCmp extends Cmp> {
+  isExtracting: boolean;
+  register: (storyCmpProps: StoryProps<Record<string, any>, TCmp>) => void;
+}
+
+export type StoriesExtractorContext<TCmp extends Cmp> = Readonly<
+  StoriesExtractorContextProps<TCmp>
+>;
+
+export type StoriesRepository<TCmp extends Cmp> = {
+  stories: Map<string, StoryProps<Record<string, any>, TCmp>>;
+};
+
+export interface StoryRendererContextProps<TCmp extends Cmp> {
+  currentStoryExportName: string | undefined;
+  args: NonNullable<StoryAnnotations<Record<string, any>, TCmp>['args']>;
+  storyContext: StoryContext<TCmp>;
+  metaRenderSnippet?: Snippet<
+    [StoryAnnotations<Record<string, any>, TCmp>['args'], StoryContext<TCmp>]
+  >;
+}
+
+export type StoryRendererContext<TCmp extends Cmp = Cmp> = Readonly<
+  Required<Omit<StoryRendererContextProps<TCmp>, 'metaRenderSnippet'>>
+> & {
+  readonly metaRenderSnippet: StoryRendererContextProps<TCmp>['metaRenderSnippet'];
+  set(props: StoryRendererContextProps<TCmp>): void;
+};

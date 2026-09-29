@@ -1,11 +1,12 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { Args, Globals } from 'storybook/internal/types';
+import type { Args, Globals, StoryContext } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
-import { computed, reactive } from 'vue';
+import { computed, defineComponent, h, reactive, type VNode } from 'vue';
 
-import { updateArgs } from './render.ts';
+import { render, updateArgs } from './render.ts';
+import type { VueRenderer } from './types.ts';
 
 describe('Render Story', () => {
   it('update reactive Args updateArgs()', () => {
@@ -114,5 +115,41 @@ describe('Render Story', () => {
     expect(watcher.value).toBe('dark');
     expect(observedTheme).toBe('dark');
     expect(reactiveGlobals).toEqual({ theme: 'dark', locale: 'en' });
+  });
+});
+
+describe('render slots', () => {
+  const Layout = defineComponent({ props: ['label', 'is-open'], render: () => null });
+  const args = {
+    label: 'Storybook',
+    isOpen: true,
+    onClick: () => {},
+    default: () => 'Default slot',
+    footer: h('p', 'Footer'),
+  };
+  const slotNames = (argTypes: StoryContext<VueRenderer>['argTypes'] = {}) => {
+    const storyFn = render(args, {
+      id: 'layout--default',
+      component: Layout,
+      argTypes,
+    } as unknown as StoryContext<VueRenderer>) as () => VNode;
+    const vnode = storyFn();
+    return Object.keys((vnode.children ?? {}) as object).filter((key) => !key.startsWith('_'));
+  };
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('passes args documented as slots by docgen', () => {
+    expect(slotNames({ footer: { name: 'footer', table: { category: 'slots' } } })).toEqual([
+      'footer',
+    ]);
+  });
+
+  it('passes every undeclared, non-listener arg as a slot under server docgen', () => {
+    vi.stubGlobal('FEATURES', { docgenServer: true });
+
+    expect(slotNames()).toEqual(['default', 'footer']);
   });
 });

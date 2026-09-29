@@ -124,7 +124,7 @@ export interface TanStackPreview<
       ComponentAnnotations<
         ReactTypes & TanStackTypes<TMetaRoute, TPath> & T,
         RequireMetaArgs<
-          ReactTypes & TanStackTypes<TMetaRoute, TPath> & T & { args: TArgs },
+          ReactTypes & TanStackTypes<TMetaRoute, TPath> & T & { args: NoInfer<TArgs> },
           NoInfer<TMetaArgKeys>
         >['args']
       >,
@@ -165,7 +165,7 @@ export interface TanStackPreview<
       ComponentAnnotations<
         ReactTypes & TanStackTypes<TRoute, TPath> & T,
         RequireMetaArgs<
-          ReactTypes & TanStackTypes<TRoute, TPath> & T & { args: TArgs },
+          ReactTypes & TanStackTypes<TRoute, TPath> & T & { args: NoInfer<TArgs> },
           NoInfer<TMetaArgKeys>
         >['args']
       >,

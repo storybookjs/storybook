@@ -705,3 +705,12 @@ it('a meta like the Button stories of the sandboxes', () => {
   // @ts-expect-error not a size
   const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
 });
+
+it('argTypes of a meta without component do not type its args', () => {
+  const meta = preview.meta({
+    render: (args) => <div>{String(args.label)}</div>,
+    argTypes: { size: { control: 'select', options: ['small', 'large'] } },
+  });
+
+  const Default = meta.story({ args: { label: 'Hi' } });
+});

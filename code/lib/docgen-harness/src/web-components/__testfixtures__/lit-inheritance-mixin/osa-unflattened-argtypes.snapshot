@@ -1,0 +1,82 @@
+{
+  "base-label": {
+    "description": "Label inherited from the base class.",
+    "name": "base-label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Base'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "baseLabel": {
+    "description": "Label inherited from the base class.",
+    "name": "baseLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "'Base'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "count": {
+    "description": "Count declared by the final class.",
+    "name": "count",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "mixed-active": {
+    "description": "Whether the mixed-in state is active.",
+    "name": "mixed-active",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "mixedActive": {
+    "description": "Whether the mixed-in state is active.",
+    "name": "mixedActive",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+}

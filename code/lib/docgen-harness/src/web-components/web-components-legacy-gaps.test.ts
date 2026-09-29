@@ -16,10 +16,12 @@ const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
 const COMPONENT_TAGS_MARKER =
   'component-level jsDocTags carry the CEM deprecated and summary fields';
 const STORY_META_MARKER = 'the story meta docblock reaches the payload description and jsDocTags';
+const INHERITANCE_MARKER = 'superclass and mixin members are resolved from unflattened manifests';
 const OSA_CLOSED = new Set<string>([
   'literal unions and JSDoc tags reach argTypes structurally',
   'events carry structured type information and descriptions',
   'CEM 2.1.0 CSS states are recorded',
+  INHERITANCE_MARKER,
   COMPONENT_TAGS_MARKER,
   STORY_META_MARKER,
 ]);
@@ -35,6 +37,8 @@ const BASELINES = (prefix: '' | 'osa-') =>
     unionArgTypes: `lit-union-jsdoc/${prefix}argtypes.snapshot`,
     unionDescription: `lit-union-jsdoc/${prefix}description.snapshot`,
     eventsArgTypes: `lit-events/${prefix}argtypes.snapshot`,
+    inheritanceArgTypes: `lit-inheritance-mixin/${prefix}argtypes.snapshot`,
+    unflattenedArgTypes: `lit-inheritance-mixin/${prefix}unflattened-argtypes.snapshot`,
   }) as const;
 
 const FIXED = {
@@ -115,6 +119,11 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     );
   });
 
+  marker(INHERITANCE_MARKER, (readBaseline) => {
+    const argTypes = parseArgTypesSnapshot(readBaseline('unflattenedArgTypes'));
+    expect(Object.keys(argTypes)).toEqual(expect.arrayContaining(['base-label', 'mixed-active']));
+  });
+
   gapTest('the WCA experimental shape triggers a deprecation warning', async () => {
     // Legacy: the shape is accepted silently.
     const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
@@ -146,6 +155,10 @@ describe('OSA payload gaps (red until the server mapper closes them)', () => {
 describe('manifest shape regressions', () => {
   test('the 1.0.0 and 2.1.0 captures record the same argTypes today', () => {
     expect(baseline('v2ArgTypes')).toBe(baseline('basicArgTypes'));
+  });
+
+  test('the resolved unflattened manifest records the same argTypes as the analyzer-flattened one', () => {
+    expect(baseline('unflattenedArgTypes', 'osa-')).toBe(baseline('inheritanceArgTypes', 'osa-'));
   });
 
   test('the 2.1.0 recording differs from 1.0.0 only by the readonly control on count and cssStates', () => {

@@ -2,6 +2,11 @@ export function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object';
 }
 
+/** Manifests disagree on a leading `./` or `/` in module paths; references and `modules[].path` compare without it. */
+export function normalizeModulePath(modulePath: string): string {
+  return modulePath.replace(/^\.?\//, '');
+}
+
 /** The records with a string `name` in a manifest list. */
 export function namedItems<T extends { name: string }>(value: readonly T[] | undefined): T[] {
   return (

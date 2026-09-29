@@ -1,0 +1,19 @@
+{
+  "count": {
+    "description": "Count declared by the final class.",
+    "name": "count",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+}

@@ -39,6 +39,7 @@ const readCommitted = (path: string): string | undefined =>
 const VARIANTS = [
   { manifest: 'custom-elements.json', osaPrefix: 'osa-', legacyPrefix: '' },
   { manifest: 'custom-elements.v2.json', osaPrefix: 'osa-v2-', legacyPrefix: 'v2-' },
+  { manifest: 'custom-elements.unflattened.json', osaPrefix: 'osa-unflattened-', legacyPrefix: '' },
 ] as const;
 
 beforeEach(() => {

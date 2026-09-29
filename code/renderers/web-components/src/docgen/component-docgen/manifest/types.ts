@@ -10,11 +10,10 @@ export type {
   Event as ManifestEvent,
   Package as ManifestPackage,
   Parameter as ManifestParameter,
+  Reference as ManifestReference,
   Slot as ManifestSlot,
 } from 'custom-elements-manifest';
-import type {
-  CustomElementDeclaration,
-  CustomElementMixinDeclaration,
-} from 'custom-elements-manifest';
+import type { CustomElementDeclaration, Declaration } from 'custom-elements-manifest';
 
-export type ManifestDeclaration = CustomElementDeclaration | CustomElementMixinDeclaration;
+export type ManifestDeclaration = CustomElementDeclaration;
+export type ManifestClassLikeDeclaration = Extract<Declaration, { kind: 'class' | 'mixin' }>;

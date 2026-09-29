@@ -50,6 +50,34 @@ describe('buildTagIndex', () => {
       expectedDeclarationName: 'ExportedElement',
     },
     {
+      name: 'matches export declaration modules with and without a leading ./',
+      manifest: {
+        schemaVersion: '1.0.0',
+        modules: [
+          {
+            kind: 'javascript-module',
+            path: 'first.js',
+            declarations: [
+              {
+                name: 'ExportedElement',
+                kind: 'class',
+                customElement: true,
+              },
+            ],
+            exports: [
+              {
+                kind: 'custom-element-definition',
+                name: 'exported-element',
+                declaration: { name: 'ExportedElement', module: './first.js' },
+              },
+            ],
+          },
+        ],
+      } satisfies ManifestPackage,
+      tag: 'exported-element',
+      expectedDeclarationName: 'ExportedElement',
+    },
+    {
       name: 'picks the first declaration in the same module',
       manifest: {
         schemaVersion: '1.0.0',
@@ -182,6 +210,40 @@ describe('buildTagIndex', () => {
     expect(buildTagIndex(manifest).get(tag)?.name).toBe(expectedDeclarationName);
   });
 
+  it('returns indexed tags with resolved inheritance', () => {
+    const index = buildTagIndex({
+      schemaVersion: '1.0.0',
+      modules: [
+        {
+          kind: 'javascript-module',
+          path: 'element.js',
+          declarations: [
+            {
+              name: 'Base',
+              kind: 'class',
+              members: [{ kind: 'field', name: 'a' }],
+            },
+            {
+              name: 'Child',
+              kind: 'class',
+              customElement: true,
+              tagName: 'x-child',
+              superclass: { name: 'Base' },
+              members: [{ kind: 'field', name: 'b' }],
+            },
+          ],
+        },
+      ],
+    } satisfies ManifestPackage);
+
+    expect(index.get('x-child')?.members?.map((member) => member.name)).toMatchInlineSnapshot(`
+      [
+        "b",
+        "a",
+      ]
+    `);
+  });
+
   it('skips malformed modules, declarations, exports and exports without a module path', () => {
     const index = buildTagIndex({
       schemaVersion: '1.0.0',
@@ -200,6 +262,24 @@ describe('buildTagIndex', () => {
               kind: 'custom-element-definition',
               name: 'x-broken',
               declaration: null,
+            },
+          ],
+        },
+        {
+          kind: 'javascript-module',
+          path: 'mixin-export.js',
+          declarations: [
+            {
+              name: 'MixinElement',
+              kind: 'mixin',
+              customElement: true,
+            },
+          ],
+          exports: [
+            {
+              kind: 'custom-element-definition',
+              name: 'x-mixin',
+              declaration: { name: 'MixinElement' },
             },
           ],
         },
@@ -236,5 +316,6 @@ describe('buildTagIndex', () => {
     expect([...index.keys()]).toEqual(['x-good']);
     expect(index.get('x-good')?.name).toBe('GoodElement');
     expect(index.get('x-missing-path')).toBeUndefined();
+    expect(index.get('x-mixin')).toBeUndefined();
   });
 });

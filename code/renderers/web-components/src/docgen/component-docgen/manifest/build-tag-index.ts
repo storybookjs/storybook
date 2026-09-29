@@ -1,15 +1,24 @@
 import type { ManifestDeclaration, ManifestPackage } from './types.ts';
+import {
+  createDeclarationLookup,
+  createInheritanceResolver,
+  isManifestClassLike,
+} from './resolve-inheritance.ts';
 import { isRecord } from '../utils.ts';
 
 export type TagIndex = ReadonlyMap<string, ManifestDeclaration>;
 
 export function buildTagIndex(manifest: ManifestPackage): TagIndex {
   const tags = new Map<string, ManifestDeclaration>();
+  const lookup = createDeclarationLookup(manifest);
+  const resolveInheritance = createInheritanceResolver(manifest);
 
   for (const module of manifest.modules) {
     if (!isRecord(module) || !Array.isArray(module.declarations)) {
       continue;
     }
+
+    const modulePath = typeof module.path === 'string' ? module.path : undefined;
 
     for (const declaration of module.declarations) {
       if (
@@ -17,7 +26,7 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
         declaration.tagName &&
         !tags.has(declaration.tagName)
       ) {
-        tags.set(declaration.tagName, declaration);
+        tags.set(declaration.tagName, resolveInheritance(declaration, modulePath));
       }
     }
   }
@@ -49,9 +58,12 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
         continue;
       }
 
-      const declaration = findDeclarationByName(manifest, definition.declaration.name, modulePath);
-      if (declaration) {
-        tags.set(definition.name, declaration);
+      const resolvedDeclaration = lookup(modulePath, definition.declaration.name);
+      if (resolvedDeclaration && isManifestDeclaration(resolvedDeclaration.declaration)) {
+        tags.set(
+          definition.name,
+          resolveInheritance(resolvedDeclaration.declaration, resolvedDeclaration.modulePath)
+        );
       }
     }
   }
@@ -59,34 +71,10 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
   return tags;
 }
 
-function findDeclarationByName(
-  manifest: ManifestPackage,
-  name: string,
-  modulePath: string
-): ManifestDeclaration | undefined {
-  for (const module of manifest.modules) {
-    if (!isRecord(module) || !Array.isArray(module.declarations)) {
-      continue;
-    }
-
-    if (module.path !== modulePath) {
-      continue;
-    }
-    const declaration = module.declarations?.find(
-      (candidate): candidate is ManifestDeclaration =>
-        isManifestDeclaration(candidate) && candidate.name === name
-    );
-    if (declaration) {
-      return declaration;
-    }
-  }
-  return undefined;
-}
-
 function isManifestDeclaration(candidate: unknown): candidate is ManifestDeclaration {
   return (
-    isRecord(candidate) &&
-    (candidate.kind === 'class' || candidate.kind === 'mixin') &&
+    isManifestClassLike(candidate) &&
+    candidate.kind === 'class' &&
     'customElement' in candidate &&
     candidate.customElement === true
   );

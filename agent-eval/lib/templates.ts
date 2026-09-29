@@ -233,25 +233,11 @@ async function writeEvalSupportFiles(
         agent: options.agent,
         integration: options.integration,
         review: isReviewEnabledFor(options.integration),
-        checkout: await readCheckoutRevision(),
       },
       null,
       2
     ).concat('\n'),
   });
-}
-
-let checkoutRevision: Promise<{ commit: string; dirty: boolean }> | undefined;
-
-function readCheckoutRevision(): Promise<{ commit: string; dirty: boolean }> {
-  checkoutRevision ??= Promise.all([
-    execFileAsync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT }),
-    execFileAsync('git', ['status', '--porcelain'], { cwd: REPO_ROOT }),
-  ]).then(([head, status]) => ({
-    commit: head.stdout.trim(),
-    dirty: status.stdout.trim() !== '',
-  }));
-  return checkoutRevision;
 }
 
 async function readFixturePackageJson(sandbox: Sandbox): Promise<FixturePackageJson> {

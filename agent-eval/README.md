@@ -93,9 +93,9 @@ into `local-packages/`, and points the sandbox manifests and the root
 `overrides` at those tarballs. The sandbox `postinstall` then fails the install
 if `package-lock.json` resolves any of those packages from the registry,
 because the checkout usually carries the same version as a published release,
-so such a mix-up would otherwise go unnoticed. `__agent_eval__/agent.json` in
-each result snapshot records the commit the run used and whether the working
-tree was dirty.
+so such a mix-up would otherwise go unnoticed. Each run's `result.json`
+records the commit the run used and whether the working tree was dirty, under
+`metadata.checkout`.
 
 Setup runs inside each eval's timeout, so warm the nx cache before a run,
 as CI does:

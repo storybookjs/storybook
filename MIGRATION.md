@@ -684,7 +684,7 @@ In React, an arg set to `fn()` in meta was typed as a `Mock` in `play`, `beforeE
 
 Assertions such as `expect(args.onSubmit).toHaveBeenCalled()` keep working without `mocked()`. On Storybook 10, the React `Mock` type was already lost as soon as meta args contained a literal, enum or template-literal prop, and it was never kept for args set in a story.
 
-The `csf-factories` automigration wraps mock API calls on args in `mocked()` when it converts CSF 3 stories. Stories already written in CSF Next have to be updated by hand; TypeScript points at every place with an error such as `Property 'mockResolvedValue' does not exist`.
+The `csf-factories` automigration wraps mock API calls on args in `mocked()` when it converts CSF 3 stories. For stories already written in CSF Next, `storybook upgrade` runs the `csf-next-mocked-args` automigration, which does the same. Run it later with `npx storybook automigrate csf-next-mocked-args`. TypeScript points at anything it misses with an error such as `Property 'mockResolvedValue' does not exist`.
 
 ### CSF Next: every key in meta args must be an arg
 

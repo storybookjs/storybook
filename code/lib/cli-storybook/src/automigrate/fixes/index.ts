@@ -3,6 +3,7 @@ import type { CommandFix, Fix } from '../types.ts';
 import { addonA11yAddonTest } from './addon-a11y-addon-test.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
+import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonMcp } from './addon-mcp.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import {
@@ -34,6 +35,7 @@ export const allFixes: Fix[] = [
   wrapGetAbsolutePath,
   storybookPackageNameConflict,
   setConfigLayout,
+  csfNextMockedArgs,
   enableExperimentalReview,
   enableExperimentalDocgenServer,
 ];

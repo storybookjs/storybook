@@ -456,7 +456,7 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 <details>
 <summary>Mock functions in args</summary>
 
-Args in `play`, `beforeEach`, and other functions are typed as your component declares them, so an arg set to `fn()` is not typed as a mock. Wrap it in `mocked()` from `storybook/test` to use the mock API. The CSF 3 to CSF Next automigration does this for you; update stories already written in CSF Next by hand.
+Args in `play`, `beforeEach`, and other functions are typed as your component declares them, so an arg set to `fn()` is not typed as a mock. Wrap it in `mocked()` from `storybook/test` to use the mock API. The automigrations do this for you: `csf-factories` when converting CSF 3 stories, and `csf-next-mocked-args` for stories already written in CSF Next.
 
 ```diff title="EventForm.stories.js|ts"
 - import { fn } from 'storybook/test';

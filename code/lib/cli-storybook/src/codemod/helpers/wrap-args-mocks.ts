@@ -136,7 +136,7 @@ export function wrapArgsMocks(ast: t.File) {
   });
 
   if (targets.length === 0 || !program) {
-    return;
+    return false;
   }
 
   const testImports = ast.program.body.filter(
@@ -189,4 +189,5 @@ export function wrapArgsMocks(ast: t.File) {
   for (const target of targets) {
     target.replaceWith(t.callExpression(callee(), [target.node]));
   }
+  return true;
 }

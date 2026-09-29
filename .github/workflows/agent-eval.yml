@@ -2,7 +2,8 @@ name: Agent eval
 
 on:
   schedule:
-    # Weekly full 8xx/82x suite on `next` (repo default). Monday 08:00 UTC.
+    # Weekly on `next`, Monday 08:00 UTC. Conditions with `"schedule": true` in
+    # agent-eval/eval-conditions.json (the full 8xx/82x line) are on for this run.
     - cron: '0 8 * * 1'
   pull_request:
     types:
@@ -34,7 +35,10 @@ on:
         default: false
 
 concurrency:
-  # Adding an unrelated label gets its own group, so it cannot cancel a running eval.
+  # One run per PR at a time. A push or an `agent-eval:` label cancels the running eval, because its
+  # result would not cover the new head or scope. Any other label (e.g. `qa:needed`) also triggers
+  # this workflow, and GitHub applies the concurrency group before the job `if` can skip the run.
+  # The run ID suffix gives that run its own group, so it cannot cancel the running eval.
   group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event.action == 'labeled' && !startsWith(github.event.label.name, 'agent-eval:') && format('-{0}', github.run_id) || '' }}
   cancel-in-progress: true
 
@@ -44,8 +48,9 @@ env:
 jobs:
   eval:
     name: Run agent eval experiments
-    # Skip synchronize and unrelated labels: sticky `agent-eval:eval` must not
-    # re-bill on every push or label change.
+    # Evals start when an `agent-eval:` label is added, or when a PR with `agent-eval:eval` is
+    # opened or reopened. Pushes and other labels do not start them, because every run costs money.
+    # A push reopens the gate thread instead (see reopen-eval-gate below).
     if: >-
       github.event_name == 'schedule' ||
       github.event_name == 'workflow_dispatch' ||
@@ -66,12 +71,6 @@ jobs:
       contents: write
       deployments: write
       pull-requests: write
-    outputs:
-      evaluated_head_sha: ${{ steps.gate_head.outputs.evaluated_head_sha }}
-      gate_pr_number: ${{ steps.gate_pr.outputs.pr_number }}
-      extra_evals: ${{ steps.conditions.outputs.extra_evals }}
-      storybook_latest: ${{ steps.conditions.outputs.storybook_latest }}
-      review: ${{ steps.conditions.outputs.review }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -99,10 +98,8 @@ jobs:
           fi
           echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
 
-      # pull_request: the PR head (checkout may be the merge commit).
-      # dispatch/schedule: the pushed ref head. Compared against the live PR
-      # head at the end of the run so a late finish never resolves the thread
-      # for a commit it did not evaluate.
+      # The result step compares this with the live PR head, so a run that finishes after a new
+      # push does not resolve the gate thread for a commit it did not evaluate.
       - name: Capture evaluated head SHA
         id: gate_head
         env:
@@ -328,6 +325,29 @@ jobs:
             echo "- URL: $PLAYGROUND_URL"
           } >> "$GITHUB_STEP_SUMMARY"
 
+      # Terminal gate write: resolve the thread only when the successful run
+      # evaluated the live PR head; stale, failed, cancelled, or skipped runs
+      # keep it open with a summary. Never fails the job: a thread mutation
+      # failure after evals is a warning and a step-summary note, and
+      # re-dispatching the workflow retries it.
+      - name: Update the eval gate thread with the result
+        if: >-
+          always() &&
+          !cancelled() &&
+          steps.gate_thread.outcome == 'success'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
+          EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
+          EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
+        run: |
+          summary_file="$(mktemp)"
+          PLAYGROUND_URL="$PLAYGROUND_URL" RUN_URL="$RUN_URL" \
+            node agent-eval/scripts/render-results-summary.mjs > "$summary_file" || true
+          SUMMARY_FILE="$summary_file" bash agent-eval/scripts/eval-gate-thread.sh result
+
       # Weekly / next-dispatch summary for the #sb-monitoring channel.
       - name: Notify Slack
         if: >-
@@ -351,29 +371,6 @@ jobs:
           payload="$(jq -n --arg text "$text" '{text: $text}')"
           curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
             -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
-
-      # Terminal gate write: resolve the thread only when the successful run
-      # evaluated the live PR head; stale, failed, cancelled, or skipped runs
-      # keep it open with a summary. Never fails the job: a thread mutation
-      # failure after evals is a warning and a step-summary note, and
-      # re-dispatching the workflow retries it.
-      - name: Update the eval gate thread with the result
-        if: >-
-          always() &&
-          !cancelled() &&
-          steps.gate_thread.outcome == 'success'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ steps.gate_pr.outputs.pr_number }}
-          EVALUATED_HEAD_SHA: ${{ steps.gate_head.outputs.evaluated_head_sha }}
-          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          PLAYGROUND_URL: ${{ steps.deploy_playground.outputs.url }}
-          EVAL_OUTCOME: ${{ steps.run_evals.outcome }}
-        run: |
-          summary_file="$(mktemp)"
-          PLAYGROUND_URL="$PLAYGROUND_URL" RUN_URL="$RUN_URL" \
-            node agent-eval/scripts/render-results-summary.mjs > "$summary_file" || true
-          SUMMARY_FILE="$summary_file" bash agent-eval/scripts/eval-gate-thread.sh result
 
   # New push on an agent-eval:eval PR: previous eval results no longer cover
   # the head. Pushes do not auto-reopen resolved review threads, so explicitly

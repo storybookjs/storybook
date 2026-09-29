@@ -10,6 +10,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -703,6 +704,21 @@ option exists in both places, keep the nested value because it was authoritative
 `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working - the parameter is optional.
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
+
+### Test runner support ended
+
+Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
+
+If your Storybook uses a Vite-based framework, we recommend migrating to the Vitest addon by following the [migration guide](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide).
+
+The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack, switch frameworks first:
+
+- `@storybook/nextjs` → `@storybook/nextjs-vite`: run `npx storybook automigrate nextjs-to-nextjs-vite`.
+- `@storybook/angular` → `@storybook/angular-vite`: run `npx storybook automigrate angular-to-angular-vite`.
+- `@storybook/react-webpack5` → `@storybook/react-vite`: follow the [React Vite migration steps](https://storybook.js.org/docs/get-started/frameworks/react-vite#how-do-i-migrate-from-the-react-webpack-framework).
+- Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
+
+If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

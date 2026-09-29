@@ -356,10 +356,6 @@ Storybook allows you to use most characters while naming your stories. Still, sp
 
 This is a known issue with Storybook. If you're interested in getting it fixed, open an issue with a [working reproduction](./contribute/how-to-reproduce.mdx) so that it can be triaged and fixed in future releases.
 
-## Why isn't Storybook's test runner working?
-
-There's an issue with Storybook's test runner and the latest version of Jest (i.e., version 28), which prevents it from running effectively. As a workaround, you can downgrade Jest to the previous stable version (i.e., version 27), and you'll be able to run it. See the following [issue](https://github.com/storybookjs/test-runner/issues/99) for more information.
-
 ## How does Storybook handle environment variables?
 
 Storybook has built-in support for [environment variables](./configure/environment-variables.mdx). By default, environment variables are only available in Node.js code and are not available in the browser as some variables should be kept secret (e.g., API keys) and **not** exposed to anyone visiting the published Storybook.

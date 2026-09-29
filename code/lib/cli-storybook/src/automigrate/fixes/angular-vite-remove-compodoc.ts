@@ -235,9 +235,10 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       return null;
     }
 
-    if (
-      (mainConfig.features?.docgenServer ?? mainConfig.features?.experimentalDocgenServer) === false
-    ) {
+    // Checks run before `docgen-server` renames the flag, so an unmigrated config still has it.
+    const features: { docgenServer?: boolean; experimentalDocgenServer?: boolean } =
+      mainConfig.features ?? {};
+    if ((features.docgenServer ?? features.experimentalDocgenServer) === false) {
       return null;
     }
 

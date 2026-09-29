@@ -22,7 +22,6 @@ Type:
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
   experimentalCodeExamples?: boolean;
-  experimentalDocgenServer?: boolean;
   experimentalReview?: boolean;
   experimentalTestSyntax?: boolean;
   highlight?: boolean;
@@ -52,7 +51,6 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
-  experimentalDocgenServer?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   measure?: boolean;
@@ -79,7 +77,6 @@ Type:
   controls?: boolean;
   developmentModeForBuild?: boolean;
   docgenServer?: boolean;
-  experimentalDocgenServer?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   measure?: boolean;
@@ -311,16 +308,6 @@ If you skip the automigration, server-side docgen replaces them.
 There is no automatic translation for `reactDocgenTypescriptOptions`, including `propFilter`, or for a custom Vue docgen `tsconfig`. Keep `docgenServer: false` if your project depends on those settings.
 
 On `@storybook/angular-vite`, `framework.options.compodoc: false` only prevents Compodoc from running on the legacy path. It does not turn off `docgenServer`; use the feature option for that.
-
-</If>
-
-<If renderer={['react','angular','vue']}>
-
-## `experimentalDocgenServer`
-
-Type: `boolean`
-
-Deprecated: Renamed to [`docgenServer`](#docgenserver). This option has no effect.
 
 </If>
 

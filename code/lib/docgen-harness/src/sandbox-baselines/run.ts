@@ -6,7 +6,7 @@
 // `yarn task build --template <template> --start-from auto`:
 //   yarn baselines:sandbox                              # verify every server-docgen template
 //   yarn baselines:sandbox --update                     # re-record after reviewing the diff
-//   yarn baselines:sandbox --template angular-vite/docgen-server-ts
+//   yarn baselines:sandbox --template angular-vite/default-ts
 import {
   existsSync,
   mkdirSync,

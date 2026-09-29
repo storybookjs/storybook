@@ -135,8 +135,8 @@ const COLOR_PICKER_ID = 'stories-frameworks-angular-vite-model-signal-color-pick
 const DEFINE_MODEL_ID = 'stories-renderers-vue3-vue3-vite-default-ts-component-meta-definemodel';
 
 const isReactSandbox = templateName === 'react-vite/default-ts';
-const isAngularSandbox = templateName === 'angular-vite/docgen-server-ts';
-const isVueSandbox = templateName === 'vue3-vite/docgen-server-ts';
+const isAngularSandbox = templateName === 'angular-vite/default-ts';
+const isVueSandbox = templateName === 'vue3-vite/default-ts';
 
 test.describe('addon-mcp', () => {
   test.skip(

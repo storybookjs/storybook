@@ -514,31 +514,16 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      useCsfFactory: true,
-    },
-    skipTasks: ['bench'],
-  },
-  'vue3-vite/docgen-server-ts': {
-    name: 'Vue Server Docgen v3 (Vite | TypeScript)',
-    script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
-    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
-    expected: {
-      framework: '@storybook/vue3-vite',
-      renderer: '@storybook/vue3',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
       extraDevDependencies: ['@storybook/addon-mcp'],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       useCsfFactory: true,
-      storiesVariant: 'vue3-vite-default-ts',
       mainConfig: {
         features: {
           componentsManifest: true,
         },
       },
     },
-    skipTasks: ['bench', 'chromatic'],
+    skipTasks: ['bench'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
@@ -705,43 +690,12 @@ export const baseTemplates = {
       // `@compodoc/compodoc` is no longer installed by `storybook init` for the Vite builder, but
       // the sandbox harness prepends its own `docs:json` Compodoc pass to every Angular sandbox
       // (see `sandbox-parts.ts`), so the sandboxes still have to carry the binary themselves.
-      extraDependencies: ['@angular/forms@^22', 'typescript@^6', '@compodoc/compodoc'],
-      useCsfFactory: true,
-      // The docgen server is on by default, so guarding the browser
-      // docgen path is now an explicit opt-out rather than the absence of a flag.
-      mainConfig: {
-        features: {
-          docgenServer: false,
-        },
-      },
-    },
-    extraCiSteps: {
-      ensureMinNodeVersion: true,
-    },
-    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
-    expected: {
-      framework: '@storybook/angular-vite',
-      renderer: '@storybook/angular-vite',
-      builder: '@storybook/builder-vite',
-    },
-    skipTasks: ['bench'],
-    initOptions: { builder: SupportedBuilder.VITE },
-  },
-  'angular-vite/docgen-server-ts': {
-    name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
-    // Kept separate from the default template so both docgen paths have dedicated coverage.
-    script:
-      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
-    modifications: {
-      // Compodoc is unused under the flag, but the sandbox harness runs it regardless.
       extraDependencies: [
         '@angular/forms@^22',
         '@angular/animations@^22',
         'typescript@^6',
         '@compodoc/compodoc',
       ],
-      // The only Angular sandbox on the docgen-server path, so it is the only one that can prove
-      // what an agent reads about an Angular component.
       extraDevDependencies: ['@storybook/addon-mcp'],
       editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       useCsfFactory: true,
@@ -760,11 +714,7 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
-    // This sandbox exists to guard the docgen baselines, and it differs from
-    // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
-    // execution are already covered there on every run, so repeating them here would double the
-    // Angular cost for no extra signal.
-    skipTasks: ['bench', 'chromatic'],
+    skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {
@@ -1100,14 +1050,6 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
-  // The sandboxes that record docgen baselines. Running them daily meant a change to the
-  // extraction could merge without ever touching them, which is how the props-table visibility
-  // rules landed on a stale recording.
-  // TODO(11.0): remove these templates. The standard sandboxes ship the new docgen approach by
-  // default from then on, so the `default-ts` templates carry the baselines and these are
-  // redundant.
-  'angular-vite/docgen-server-ts',
-  'vue3-vite/docgen-server-ts',
 ];
 
 export const merged: TemplateKey[] = [

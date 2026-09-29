@@ -682,10 +682,15 @@ export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]
 export async function compileCheckoutPackages(packages: WorkspacePackage[]): Promise<void> {
   const projects = packages.map((pkg) => pkg.project).join(',');
   try {
-    await execFileAsync('yarn', ['nx', 'run-many', '-t', 'compile', '--projects', projects], {
-      cwd: REPO_ROOT,
-      maxBuffer: 64 * 1024 * 1024,
-    });
+    // Only the production build emits the type declarations a published package ships.
+    await execFileAsync(
+      'yarn',
+      ['nx', 'run-many', '-t', 'compile', '-c', 'production', '--projects', projects],
+      {
+        cwd: REPO_ROOT,
+        maxBuffer: 64 * 1024 * 1024,
+      }
+    );
   } catch (error) {
     const output = isRecord(error) ? `${error.stdout ?? ''}${error.stderr ?? ''}` : '';
     throw new Error(

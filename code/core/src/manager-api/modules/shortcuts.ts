@@ -1,6 +1,7 @@
 import {
   FORCE_REMOUNT,
   PREVIEW_KEYDOWN,
+  SIDEBAR_OPEN_CONTEXT_MENU,
   STORIES_COLLAPSE_ALL,
   STORIES_EXPAND_ALL,
 } from 'storybook/internal/core-events';
@@ -85,15 +86,16 @@ export interface SubAPI {
    * Handles a keydown event.
    *
    * @param event The event to handle.
+   * @returns The name of the matched shortcut action, or `undefined` when no shortcut matches.
    */
-  handleKeydownEvent(event: KeyboardEventLike): void;
+  handleKeydownEvent(event: KeyboardEventLike): API_MatchableAction | undefined;
   /**
    * Handles a shortcut feature.
    *
    * @param feature The feature to handle.
    * @param event The event to handle.
    */
-  handleShortcutFeature(feature: API_Action, event: KeyboardEventLike): void;
+  handleShortcutFeature(feature: API_MatchableAction, event: KeyboardEventLike): void;
 }
 
 export type API_KeyCollection = string[];
@@ -114,7 +116,6 @@ export interface API_Shortcuts {
   nextStory: API_KeyCollection;
   shortcutsPage: API_KeyCollection;
   aboutPage: API_KeyCollection;
-  escape: API_KeyCollection;
   collapseAll: API_KeyCollection;
   expandAll: API_KeyCollection;
   remount: API_KeyCollection;
@@ -123,11 +124,19 @@ export interface API_Shortcuts {
   copyStoryLink: API_KeyCollection;
   goToPreviousLandmark: API_KeyCollection;
   goToNextLandmark: API_KeyCollection;
+  contextMenu: API_KeyCollection;
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: API_KeyCollection;
 }
 
 export type API_Action = keyof API_Shortcuts;
+
+/**
+ * A built-in shortcut action, or the id of a shortcut that `setAddonShortcut` registers
+ * (`` `${addon}-${actionName}` ``). The `(string & {})` member accepts an addon id and keeps the
+ * autocompletion of the built-in names.
+ */
+export type API_MatchableAction = API_Action | (string & {});
 
 interface API_AddonShortcut {
   label: string;
@@ -156,7 +165,6 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   nextStory: ['alt', 'ArrowRight'],
   shortcutsPage: [controlOrMetaKey(), 'shift', ','],
   aboutPage: [controlOrMetaKey(), ','],
-  escape: ['escape'], // This one is not customizable
   collapseAll: [controlOrMetaKey(), 'shift', 'ArrowUp'],
   expandAll: [controlOrMetaKey(), 'shift', 'ArrowDown'],
   remount: ['alt', 'R'],
@@ -165,6 +173,7 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
   copyStoryLink: ['alt', 'shift', 'L'],
   goToPreviousLandmark: ['shift', 'F6'], // hardcoded in react-aria
   goToNextLandmark: ['F6'], // hardcoded in react-aria
+  contextMenu: [controlOrMetaKey(), 'shift', 'U'],
   // TODO: bring this back once we want to add shortcuts for this
   // copyStoryName: ['alt', 'shift', 'C'],
 });
@@ -244,15 +253,37 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // Listening to shortcut events
     handleKeydownEvent(event) {
+      // Report no match while shortcuts are disabled. The capture listener stops propagation
+      // for a matched shortcut, so a match here would swallow the key and run no action.
+      if (!store.getState().ui.enableShortcuts) {
+        return undefined;
+      }
       const shortcut = eventToShortcut(event);
       const shortcuts = api.getShortcutKeys();
       const actions = keys(shortcuts);
-      const matchedFeature = actions.find((feature: API_Action) =>
-        shortcutMatchesShortcut(shortcut!, shortcuts[feature])
-      );
+      const matchedFeature = actions.find((feature: API_Action) => {
+        if (!shortcutMatchesShortcut(shortcut!, shortcuts[feature])) {
+          return false;
+        }
+
+        // Do not match the sidebar shortcuts while the sidebar is hidden.
+        const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
+        if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
+          return false;
+        }
+
+        // An old addon or Storybook version can leave an orphaned binding in localStorage.
+        // Such a binding must not match, because the capture listener then calls
+        // stopPropagation() and the key reaches nothing else.
+        if (!(feature in defaultShortcuts)) {
+          return feature in addonsShortcuts;
+        }
+        return true;
+      });
       if (matchedFeature) {
         api.handleShortcutFeature(matchedFeature, event);
       }
+      return matchedFeature;
     },
 
     // warning: event might not have a full prototype chain because it may originate from the channel
@@ -279,16 +310,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         event.preventDefault();
       }
       switch (feature) {
-        case 'escape': {
-          if (fullAPI.getIsFullscreen()) {
-            fullAPI.toggleFullscreen(false);
-          } else if (isDesktopViewport() && fullAPI.getIsNavShown()) {
-            // On mobile toggleNav opens the drawer, so Escape must not reach it — only the desktop nav.
-            fullAPI.toggleNav(true);
-          }
-          break;
-        }
-
         // Handled by @react-aria/interactions and useLandmarkIndicator
         case 'goToNextLandmark':
         case 'goToPreviousLandmark':
@@ -467,6 +488,10 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
           fullAPI.emit(STORIES_EXPAND_ALL);
           break;
         }
+        case 'contextMenu': {
+          fullAPI.emit(SIDEBAR_OPEN_CONTEXT_MENU);
+          break;
+        }
         case 'remount': {
           fullAPI.emit(FORCE_REMOUNT, { storyId });
           break;
@@ -518,16 +543,56 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
   };
 
   const initModule = () => {
-    // Listen for keydown events in the manager
-    document.addEventListener('keydown', (event: KeyboardEvent) => {
-      if (!shouldSkipShortcut(event)) {
-        api.handleKeydownEvent(event);
+    // Listen for keydown events in the manager.
+    // The capture phase runs before React Aria and other component libraries call
+    // stopPropagation(). Such a call stops every bubble-phase listener.
+    // A matched shortcut also stops propagation. React Aria re-dispatches ArrowUp and ArrowDown
+    // events, which would run the action twice and move the tree selection.
+    // The landmark shortcuts (F6 and Shift+F6) are the exception. Storybook does nothing for
+    // them, so React Aria must receive them.
+    document.addEventListener(
+      'keydown',
+      (event: KeyboardEvent) => {
+        if (!shouldSkipShortcut(event)) {
+          const matched = api.handleKeydownEvent(event);
+          if (matched && matched !== 'goToNextLandmark' && matched !== 'goToPreviousLandmark') {
+            event.stopPropagation();
+          }
+        }
+      },
+      { capture: true }
+    );
+
+    // Escape is not part of the shortcut map. React Aria overlays (menus, popovers, modals)
+    // handle Escape on the element and stop propagation when they consume it. This bubble-phase
+    // listener therefore receives only the presses that no overlay claimed, and it exits
+    // fullscreen. A capture-phase listener would close an overlay and exit fullscreen with one
+    // press.
+    window.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        !shouldSkipShortcut(event) &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        event.preventDefault();
+        fullAPI.toggleFullscreen(false);
       }
     });
 
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {
       api.handleKeydownEvent(data.event);
+      // The preview forwards a keydown event only when the focus is outside an input field.
+      // Escape from the story therefore exits fullscreen, the same as Escape in the manager.
+      if (
+        data.event.key === 'Escape' &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        fullAPI.toggleFullscreen(false);
+      }
     });
   };
 

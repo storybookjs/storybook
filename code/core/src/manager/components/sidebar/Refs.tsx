@@ -1,5 +1,7 @@
-import type { FC, MutableRefObject } from 'react';
+import type { FC } from 'react';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+
+import { BookIcon } from '@storybook/icons';
 
 import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -10,82 +12,82 @@ import { AuthBlock, EmptyBlock, ErrorBlock, LoaderBlock } from './RefBlocks.tsx'
 import { RefIndicator } from './RefIndicator.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
-import { CollapseIcon } from './components/CollapseIcon.tsx';
-import type { Highlight, RefType } from './types.ts';
+import { CollapseIcon } from './CollapseIcon.tsx';
+import type { RefType } from './types.ts';
+import { iconSwap, truncatedLabel } from './treeRowStyles.ts';
 
 export interface RefProps {
   isLoading: boolean;
-  isBrowsing: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
-  highlightedRef: MutableRefObject<Highlight>;
-  setHighlighted: (highlight: Highlight) => void;
 }
 
-const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
+// Every block takes its natural height and stacks in the sidebar's one scroll area, so a block
+// can never be squeezed to nothing or come to rest below the visible area.
+const Wrapper = styled.div({
+  display: 'flex',
+  flexDirection: 'column',
   position: 'relative',
-  marginTop: isMain ? undefined : 0,
-}));
+});
 
 const RefHead = styled.div(({ theme }) => ({
-  fontWeight: theme.typography.weight.bold,
-  fontSize: theme.typography.size.s2,
-
-  // Similar to ListItem.tsx
-  textDecoration: 'none',
-  lineHeight: '16px',
+  position: 'relative',
   display: 'flex',
   alignItems: 'center',
-  justifyContent: 'space-between',
   background: 'transparent',
-
+  minHeight: 28,
+  borderRadius: 4,
   width: '100%',
-  marginTop: 20,
-  paddingTop: 16,
-  paddingBottom: 12,
-  borderTop: `1px solid ${theme.appBorderColor}`,
-
+  marginTop: 28,
   color: theme.color.defaultText,
+
+  '&:hover, &:has(button:focus-visible)': {
+    background: theme.background.hoverable,
+    color: theme.barHoverColor,
+  },
+
+  // Show the BookIcon at rest. Show the CollapseIcon on hover and on keyboard focus.
+  ...iconSwap(['&:hover', '&:has(button:focus-visible)']),
 }));
 
-const RefTitle = styled.div({
-  textOverflow: 'ellipsis',
-  whiteSpace: 'nowrap',
-  flex: 1,
-  overflow: 'hidden',
-  marginLeft: 2,
-});
+const RefTitle = styled.span(truncatedLabel);
 
 const CollapseButton = styled.button(({ theme }) => ({
   all: 'unset',
   display: 'flex',
-  padding: '0px 8px',
-  gap: 6,
   alignItems: 'center',
+  flex: '1 1 auto',
+  minHeight: 28,
+  paddingInlineStart: 7,
+  gap: 6,
   cursor: 'pointer',
   overflow: 'hidden',
+  borderRadius: 4,
+  boxSizing: 'border-box',
 
-  '&:focus': {
-    borderColor: theme.color.secondary,
-    'span:first-of-type': {
-      borderLeftColor: theme.color.secondary,
-    },
+  '&:focus-visible': {
+    outline: 'none',
+    boxShadow: `0 0 0 2px ${theme.background.app}, 0 0 0 4px ${theme.color.secondary}`,
   },
 }));
 
+const RefBookIcon = styled(BookIcon)({
+  width: 14,
+  height: 14,
+  flex: '0 0 auto',
+  color: 'currentColor',
+});
+
 export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
-  const storybookState = useStorybookState();
   const api = useStorybookApi();
+  const storybookState = useStorybookState();
   const {
     filteredIndex: index,
     id: refId,
     title = refId,
     isLoading: isLoadingMain,
-    isBrowsing,
     hasEntries,
     selectedStoryId,
-    highlightedRef,
-    setHighlighted,
     loginUrl,
     type,
     expanded = true,
@@ -117,32 +119,34 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
 
   const handleClick = useCallback(() => setExpanded((value) => !value), []);
 
-  const setHighlightedItemId = useCallback(
-    (itemId: string) => setHighlighted({ itemId, refId }),
-    [setHighlighted, refId]
-  );
-
   const onSelectStoryId = useCallback(
-    (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
+    (storyId: string) => api.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
     [api, isMain, refId]
   );
 
   return (
     <>
       {isMain || (
-        <RefHead
-          aria-label={`${isExpanded ? 'Hide' : 'Show'} ${title} stories`}
-          aria-expanded={isExpanded}
-        >
-          <CollapseButton data-action="collapse-ref" onClick={handleClick}>
-            <CollapseIcon isExpanded={isExpanded} />
+        <RefHead>
+          <CollapseButton
+            data-action="collapse-ref"
+            onClick={handleClick}
+            aria-label={`${isExpanded ? 'Hide' : 'Show'} ${title} stories`}
+            aria-expanded={isExpanded}
+          >
+            <span className="static-only">
+              <RefBookIcon />
+            </span>
+            <span className="hover-only">
+              <CollapseIcon isExpanded={isExpanded} />
+            </span>
             <RefTitle title={title}>{title}</RefTitle>
           </CollapseButton>
           <RefIndicator {...props} state={state} ref={indicatorRef} />
         </RefHead>
       )}
       {isExpanded && (
-        <Wrapper data-title={title} isMain={isMain}>
+        <Wrapper data-title={title}>
           {/* @ts-expect-error (non strict) */}
           {state === 'auth' && <AuthBlock id={refId} loginUrl={loginUrl} />}
           {/* @ts-expect-error (non strict) */}
@@ -155,20 +159,14 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
               activeFilterCount={activeFilterCount}
             />
           )}
-          {state === 'ready' && (
+          {state === 'ready' && index && (
             <Tree
               allStatuses={allStatuses}
-              isBrowsing={isBrowsing}
-              isMain={isMain}
+              includedStatusFilters={storybookState.includedStatusFilters}
               refId={refId}
-              // @ts-expect-error (non strict)
               data={index}
-              // @ts-expect-error (non strict)
-              docsMode={storybookState.docsOptions.docsMode}
               selectedStoryId={selectedStoryId}
               onSelectStoryId={onSelectStoryId}
-              highlightedRef={highlightedRef}
-              setHighlightedItemId={setHighlightedItemId}
             />
           )}
         </Wrapper>

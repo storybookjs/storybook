@@ -52,10 +52,9 @@ const spin = keyframes({
   '100%': { transform: 'rotate(360deg)' },
 });
 
-// Half the layer's width plus half its height projects exactly one hue cycle onto the 45°
-// gradient axis, so the loop wraps seamlessly at any card size. Animating transform instead
-// of background-position keeps the infinite shimmer on the compositor — background-position
-// forced a main-thread repaint on every frame for as long as the card was mounted.
+// Half the layer width plus half the layer height is exactly one hue cycle along the 45° gradient
+// axis, so the loop repeats without a seam at any card size. The animation uses transform to avoid
+// main-thread repaint.
 const slide = keyframes({
   to: {
     transform: 'translate(-50%, 50%)',
@@ -109,15 +108,20 @@ const CardOutline = styled.div<{
       height: '200%',
       top: '-100%',
       animation: `${slide} 10s infinite linear, ${fadeInOut} 60s infinite linear`,
-      // 13 stops: 6 hues twice plus the first hue again, so the hue pattern repeats at
-      // exactly 50% of the gradient line.
+      // The gradient lists the 6 hues twice and then repeats the first hue. The hue pattern
+      // therefore repeats at exactly 50% of the gradient line.
       backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
       willChange: 'transform, opacity',
+
+      // The static ring is softened to a simpler gradient in reduced motion, as the
+      // original rainbow gradient would be too visually loud.
       '@media (prefers-reduced-motion: reduce)': {
-        animation: 'none',
         width: '100%',
         height: '100%',
         top: 0,
+        animation: 'none',
+        backgroundImage: `linear-gradient(45deg, rgba(181, 0, 181, 0.35), rgba(234, 0, 0, 0.35), rgba(255, 157, 0, 0.35))`,
+        willChange: 'auto',
       },
     }),
 
@@ -142,6 +146,12 @@ const CardOutline = styled.div<{
               ? `conic-gradient(transparent 90deg, rgba(114,58,166,0.65) 150deg, rgba(157,98,214,0.6) 210deg, transparent 270deg)`
               : `conic-gradient(transparent 90deg, #b6a7ff 150deg, #d8aeff 210deg, transparent 270deg)`
             : `conic-gradient(transparent 90deg, #029CFD 150deg, #37D5D3 210deg, transparent 270deg)`,
+
+      // Frozen at 0deg, showing a dim glow on the bottom edge of the card.
+      '@media (prefers-reduced-motion: reduce)': {
+        animation: 'none',
+        opacity: 0.6,
+      },
     }),
   },
 }));

@@ -205,7 +205,7 @@ const DocgenServiceArgTypesRows: FC<ResolvedArgTypes & { componentId: string }> 
 };
 
 const ArgTypesImpl: FC<ArgTypesProps> = (props) => {
-  return globalThis.FEATURES?.experimentalDocgenServer ? (
+  return globalThis.FEATURES?.docgenServer ? (
     <DocgenServiceArgTypes {...props} />
   ) : (
     <LegacyArgTypes {...props} />

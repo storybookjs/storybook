@@ -102,7 +102,7 @@ describe('shouldSkipStoryDocsEmit', () => {
 describe('storyDocsSourceBeforeEach', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.stubGlobal('FEATURES', { docgenServer: true });
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
   });

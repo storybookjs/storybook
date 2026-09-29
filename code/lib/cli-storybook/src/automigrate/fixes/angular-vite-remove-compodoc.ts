@@ -235,8 +235,9 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       return null;
     }
 
-    // An explicit opt-out means the user still runs Compodoc, so their setup has to stay.
-    if (mainConfig.features?.experimentalDocgenServer === false) {
+    if (
+      (mainConfig.features?.docgenServer ?? mainConfig.features?.experimentalDocgenServer) === false
+    ) {
       return null;
     }
 

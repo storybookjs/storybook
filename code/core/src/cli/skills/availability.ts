@@ -39,7 +39,7 @@ export interface ToolAvailability {
   testSupported: boolean;
   /** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `test-run`. */
   a11yEnabled: boolean;
-  /** `experimentalDocgenServer` mode: read manifest data in-process from the open services. */
+  /** `docgenServer` mode: read manifest data in-process from the open services. */
   docgenServer: boolean;
 }
 

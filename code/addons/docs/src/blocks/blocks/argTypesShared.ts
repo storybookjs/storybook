@@ -42,7 +42,7 @@ export type DocgenServiceRows = {
 
 /**
  * Shared docgen-service recipe for the ArgTypes and Controls blocks behind
- * `experimentalDocgenServer`.
+ * `docgenServer`.
  *
  * Subscribes to the `core/docgen` service for the component's server-extracted argTypes and merges
  * them with the locally-prepared `customArgTypes` (the service only carries extracted component

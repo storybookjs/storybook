@@ -12,7 +12,7 @@ const optionsWith = (features: Record<string, boolean> = {}): Options =>
   }) as unknown as Options;
 
 const existing: DocgenProviderDescriptor[] = [{ moduleSpecifier: '/addon/docgen-worker.js' }];
-const docgenServerOn = { experimentalDocgenServer: true };
+const docgenServerOn = { docgenServer: true };
 
 describe('experimental_docgenProvider', () => {
   it('appends the renderer worker', async () => {

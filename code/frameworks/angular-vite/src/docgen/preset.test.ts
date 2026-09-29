@@ -36,17 +36,14 @@ describe('experimental_docgenProvider', () => {
     // user's behalf. It switches the Compodoc run, which does not happen under the flag at all.
     const result = await experimental_docgenProvider(
       [],
-      optionsWith({ experimentalDocgenServer: true }, { compodoc: false })
+      optionsWith({ docgenServer: true }, { compodoc: false })
     );
 
     expect(result).toHaveLength(1);
   });
 
   it('contributes the worker descriptor when the flag is on and Compodoc is not opted out', async () => {
-    const result = await experimental_docgenProvider(
-      [],
-      optionsWith({ experimentalDocgenServer: true })
-    );
+    const result = await experimental_docgenProvider([], optionsWith({ docgenServer: true }));
 
     expect(result).toHaveLength(1);
     expect(result[0].moduleSpecifier).toContain('docgen-worker');
@@ -56,7 +53,7 @@ describe('experimental_docgenProvider', () => {
   it('hands the worker the mode the deprecated feature maps onto', async () => {
     const result = await experimental_docgenProvider(
       [],
-      optionsWith({ experimentalDocgenServer: true, angularFilterNonInputControls: true })
+      optionsWith({ docgenServer: true, angularFilterNonInputControls: true })
     );
 
     expect(result[0].options).toEqual({ propsTable: 'inputs' });
@@ -66,7 +63,7 @@ describe('experimental_docgenProvider', () => {
     const result = await experimental_docgenProvider(
       [],
       optionsWith(
-        { experimentalDocgenServer: true, angularFilterNonInputControls: true },
+        { docgenServer: true, angularFilterNonInputControls: true },
         { propsTable: 'all' }
       )
     );

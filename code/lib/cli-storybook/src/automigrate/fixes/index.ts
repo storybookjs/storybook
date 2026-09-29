@@ -7,6 +7,7 @@ import { addonMcp } from './addon-mcp.ts';
 import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
+import { docgenServer } from './docgen-server.ts';
 import {
   enableExperimentalDocgenServer,
   enableExperimentalReview,
@@ -40,6 +41,7 @@ export const allFixes: Fix[] = [
   csfNextMockedArgs,
   enableExperimentalReview,
   enableExperimentalDocgenServer,
+  docgenServer,
 ];
 
 export const commandFixes: CommandFix[] = [csfFactories];

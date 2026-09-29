@@ -9,7 +9,7 @@ const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR || '';
 const type = process.env.STORYBOOK_TYPE || 'dev';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
-/** Only this template runs the docgen open service (experimentalDocgenServer) for Angular. */
+/** Only this template runs the docgen open service (docgenServer) for Angular. */
 const SUPPORTED_TEMPLATES = ['angular-vite/docgen-server-ts'];
 
 const PREVIEW_STORY_TIMEOUT = 30_000;
@@ -79,9 +79,9 @@ test.describe('docgen open service hot updates (Angular)', () => {
             Boolean(
               (
                 globalThis as {
-                  FEATURES?: { experimentalDocgenServer?: boolean };
+                  FEATURES?: { docgenServer?: boolean };
                 }
-              ).FEATURES?.experimentalDocgenServer
+              ).FEATURES?.docgenServer
             )
           ),
         { timeout: PREVIEW_STORY_TIMEOUT }

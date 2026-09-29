@@ -10,7 +10,7 @@ export const core: PresetProperty<'core'> = {
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
   const features = await presets.apply('features', {});
 
-  if (features?.experimentalDocgenServer) {
+  if (features?.docgenServer) {
     // The docgen service extracts React metadata on the server. Keep the preview bundle free of
     // build-time `__docgenInfo` injection so custom argTypes remain docgen-free.
     return config;

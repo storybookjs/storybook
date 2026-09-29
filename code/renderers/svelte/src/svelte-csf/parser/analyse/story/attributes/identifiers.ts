@@ -1,4 +1,4 @@
-import { getStringValueFromAttribute } from '../attributes.ts';
+import { getLiteralValueFromAttribute, getStringValueFromAttribute } from '../attributes.ts';
 import type { SvelteAST } from '../../../ast.ts';
 import type { SvelteASTNodes } from '../../../extract/svelte/nodes.ts';
 import { extractStoryAttributesNodes } from '../../../extract/svelte/story/attributes.ts';
@@ -24,7 +24,9 @@ interface GetIdentifiersParams {
 export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentifiers {
   const { nameNode, exportNameNode, filename, component } = options;
 
-  let exportName = getStringValueFromAttribute({
+  // Unlike `name`, `exportName` may be any literal: a falsy one means "derive it from `name`", and
+  // any other non-string is an invalid export name.
+  const exportNameValue = getLiteralValueFromAttribute({
     node: exportNameNode,
     filename,
     component,
@@ -34,8 +36,9 @@ export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentif
     filename,
     component,
   });
+  let exportName: string;
 
-  if (!exportName) {
+  if (!exportNameValue) {
     if (!name) {
       throw new NoStoryIdentifierError({
         component,
@@ -43,6 +46,14 @@ export function getStoryIdentifiers(options: GetIdentifiersParams): StoryIdentif
       });
     }
     exportName = storyNameToExportName(name);
+  } else if (typeof exportNameValue === 'string') {
+    exportName = exportNameValue;
+  } else {
+    throw new InvalidStoryExportNameError({
+      filename,
+      component,
+      value: String(exportNameValue),
+    });
   }
 
   if (!isValidVariableName(exportName)) {

@@ -85,4 +85,24 @@ describe(transformTemplateToSnippet.name, () => {
       {/snippet}"
     `);
   });
+
+  it.for(['{null}', '{0}', '{false}'])(
+    "uses the default snippet name when prop 'id' is %s",
+    async (value, { expect }) => {
+      const code = `
+        <script context="module" lang="ts">
+          import { Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
+        </script>
+
+        <Template id=${value} let:args>
+          <Button {...args} />
+        </Template>
+      `;
+      const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+      expect(print(transformTemplateToSnippet({ component }))).toContain(
+        '{#snippet sb_default_template(args)}'
+      );
+    }
+  );
 });

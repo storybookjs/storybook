@@ -1,4 +1,4 @@
-import { getStringValueFromAttribute } from '../../../parser/analyse/story/attributes.ts';
+import { getOptionalStringValueFromAttribute } from '../../../parser/analyse/story/attributes.ts';
 import type { SvelteAST } from '../../../parser/ast.ts';
 import { hashTemplateName } from '../../../utils/identifier-utils.ts';
 
@@ -38,7 +38,7 @@ export function transformTemplateToSnippet(params: Params): SvelteAST.SnippetBlo
     return attr.type === 'Attribute' && attr.name === 'id';
   }) as SvelteAST.Attribute | undefined;
 
-  const id = getStringValueFromAttribute({
+  const id = getOptionalStringValueFromAttribute({
     node: attributeId,
     component,
   });

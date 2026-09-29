@@ -1,4 +1,4 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
 import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from './attributes.ts';
 
@@ -42,6 +42,36 @@ describe(getStringValueFromAttribute.name, () => {
         More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
         ]
       `);
+  });
+  it.each([
+    ['a number literal', '{1}'],
+    ['a variable', '{storyName}'],
+  ])("throws error when a `<Story />` 'name' attribute value is %s", async (_, value) => {
+    const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte/csf";
+
+          import SampleComponent from "./SampleComponent.svelte";
+
+          const { Story } = defineMeta({
+            component: SampleComponent,
+          });
+          const storyName = 'Default';
+        </script>
+
+        <Story name=${value} />
+      `;
+    const ast = getSvelteAST({ code });
+    const { storyComponents } = await extractSvelteASTNodes({ ast });
+    const component = storyComponents[0].component;
+    const { name } = extractStoryAttributesNodes({
+      attributes: ['name'],
+      component,
+    });
+
+    expect(() => getStringValueFromAttribute({ component, node: name })).toThrowError(
+      /has a prop 'name' whose value must be a static literal string/
+    );
   });
 });
 

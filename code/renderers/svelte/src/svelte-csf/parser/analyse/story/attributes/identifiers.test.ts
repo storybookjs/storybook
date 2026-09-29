@@ -339,4 +339,50 @@ describe(getStoriesIdentifiers.name, () => {
     `
     );
   });
+
+  // Only `name` must be a string. A falsy `exportName` literal means "derive it from `name`", and a
+  // truthy non-string one is an invalid export name.
+  const getIdentifiersOf = async (storyTag: string) => {
+    const ast = getSvelteAST({
+      code: `
+        <script module>
+          import { defineMeta } from "@storybook/svelte/csf"
+          const { Story } = defineMeta();
+        </script>
+        ${storyTag}
+      `,
+    });
+    const nodes = await extractSvelteASTNodes({ ast });
+    const { component } = nodes.storyComponents[0];
+    const { exportName, name } = extractStoryAttributesNodes({
+      component,
+      attributes: ['exportName', 'name'],
+    });
+
+    return () => getStoryIdentifiers({ exportNameNode: exportName, nameNode: name, component });
+  };
+
+  it.each(['{null}', '{0}', '{false}'])(
+    "derives 'exportName' from 'name' when 'exportName' is %s",
+    async (value) => {
+      const getIdentifiers = await getIdentifiersOf(
+        `<Story name="Some name" exportName=${value} />`
+      );
+
+      expect(getIdentifiers()).toEqual({ exportName: 'SomeName', name: 'Some name' });
+    }
+  );
+
+  it.each(['{1}', '{true}'])(
+    "throws InvalidStoryExportNameError when 'exportName' is %s",
+    async (value) => {
+      const getIdentifiers = await getIdentifiersOf(
+        `<Story name="Some name" exportName=${value} />`
+      );
+
+      expect(getIdentifiers).toThrow(
+        expect.objectContaining({ fullErrorCode: 'SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0005' })
+      );
+    }
+  );
 });

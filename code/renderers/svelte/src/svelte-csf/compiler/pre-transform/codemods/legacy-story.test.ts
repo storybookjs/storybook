@@ -395,4 +395,48 @@ describe(transformLegacyStory.name, () => {
       </Story>"
     `);
   });
+
+  it("transforms a 'template' id prop written as an expression, like the text form", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/svelte/csf";
+      </script>
+
+      <Story name="Default" template={"someTemplate"} />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(
+      `"<Story name="Default" template={someTemplate} tags={["svelte-csf-v4"]} />"`
+    );
+  });
+
+  it("drops a 'source' prop whose value isn't a static string", async ({ expect }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/svelte/csf";
+      </script>
+
+      <Story name="Default" source={someVariable} />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["svelte-csf-v4"]} />"`);
+  });
 });

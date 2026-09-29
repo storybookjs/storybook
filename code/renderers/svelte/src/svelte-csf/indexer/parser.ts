@@ -10,7 +10,7 @@ import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attr
 import { getStoryIdentifiers } from '../parser/analyse/story/attributes/identifiers.ts';
 import {
   getArrayOfStringsValueFromAttribute,
-  getStringValueFromAttribute,
+  getOptionalStringValueFromAttribute,
 } from '../parser/analyse/story/attributes.ts';
 import {
   getPropertyArrayOfStringsValue,
@@ -302,7 +302,7 @@ export async function parseForIndexer(
             const { name } = attribute;
 
             if (name === 'title') {
-              state.meta.title = getStringValueFromAttribute({
+              state.meta.title = getOptionalStringValueFromAttribute({
                 component: node,
                 node: attribute,
                 filename,

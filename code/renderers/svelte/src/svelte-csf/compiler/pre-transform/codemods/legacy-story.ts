@@ -251,10 +251,14 @@ function getSourceValue(attribute: SvelteAST.Attribute): string | undefined {
     if (value.expression.type === 'TemplateLiteral') {
       return value.expression.quasis.map((q) => q.value.cooked).join('');
     }
+
+    return;
   }
 
-  if (value[0].type === 'Text') {
-    return value[0].raw;
+  const [first] = value;
+
+  if (first.type === 'Text') {
+    return first.raw;
   }
 }
 
@@ -268,6 +272,8 @@ function templateToChildren(
     throw new InvalidTemplateAttribute({ attribute, filename });
   }
 
+  const first = Array.isArray(value) ? value[0] : value;
+
   return {
     ...rest,
     name: 'template',
@@ -275,9 +281,9 @@ function templateToChildren(
       createASTExpressionTag({
         type: 'Identifier',
         name: hashTemplateName(
-          value[0].type === 'Text'
-            ? value[0].data
-            : ((value[0].expression as ESTreeAST.Literal).value as string)
+          first.type === 'Text'
+            ? first.data
+            : ((first.expression as ESTreeAST.Literal).value as string)
         ),
       }),
     ],

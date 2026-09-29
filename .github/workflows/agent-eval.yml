@@ -18,7 +18,7 @@ on:
         type: boolean
         default: false
       storybook_latest:
-        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of this checkout'
+        description: 'Install every Storybook package from the npm latest tag instead of this checkout'
         type: boolean
         default: false
       review:
@@ -65,10 +65,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
+      # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
       - name: Compile the Storybook packages the sandboxes install
+        if: ${{ !(inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) }}
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn nx run-many -t compile
+        run: yarn workspace agent-eval run compile:checkout
 
       - name: Type check agent eval config
         run: yarn workspace agent-eval run typecheck

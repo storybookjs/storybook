@@ -6,9 +6,12 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   enableExperimentalReview,
+  installStorybookFromCheckout,
   isReviewEnabledFor,
-  pinStorybookPackages,
+  readStorybookWorkspace,
+  readTemplateCheckoutPackages,
   type StorybookWorkspace,
+  type WorkspacePackage,
 } from './templates.ts';
 
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
@@ -112,63 +115,94 @@ describe('Codex AGENTS.md instructions', () => {
   });
 });
 
-describe('pinStorybookPackages', () => {
-  const workspace: StorybookWorkspace = new Map([
-    ['storybook', { dir: 'code/core', dependencies: [] }],
+describe('readStorybookWorkspace', () => {
+  it('lists the published packages with the monorepo packages npm installs along with them', async () => {
+    const workspace = await readStorybookWorkspace();
+
+    expect(workspace.get('storybook')).toMatchObject({ dir: 'code/core', project: 'core' });
+    expect(workspace.get('@storybook/react-vite')?.dependencies).toEqual(
+      expect.arrayContaining(['@storybook/builder-vite', '@storybook/react', 'storybook'])
+    );
+    expect(workspace.get('@storybook/addon-mcp')?.dependencies).toContain('storybook');
+    expect(workspace.get('@storybook/addon-mcp')?.dependencies).not.toContain(
+      '@storybook/addon-vitest'
+    );
+    expect(workspace.has('agent-eval')).toBe(false);
+  });
+});
+
+describe('readTemplateCheckoutPackages', () => {
+  it('collects the packages the templates and fixtures install from the checkout', async () => {
+    const packages = (await readTemplateCheckoutPackages()).map((pkg) => pkg.name);
+
+    expect(packages).toEqual(
+      expect.arrayContaining(['storybook', '@storybook/react-vite', '@storybook/builder-vite'])
+    );
+  });
+});
+
+describe('installStorybookFromCheckout', () => {
+  const workspacePackage = (name: string, dependencies: string[] = []): WorkspacePackage => ({
+    name,
+    dir: `code/${name}`,
+    project: name,
+    dependencies,
+  });
+  const workspace: StorybookWorkspace = new Map(
     [
-      '@storybook/react-vite',
-      {
-        dir: 'code/frameworks/react-vite',
-        dependencies: ['@storybook/builder-vite', '@storybook/react'],
-      },
-    ],
-    ['@storybook/builder-vite', { dir: 'code/builders/builder-vite', dependencies: [] }],
-    [
-      '@storybook/react',
-      { dir: 'code/renderers/react', dependencies: ['@storybook/react-dom-shim'] },
-    ],
-    ['@storybook/react-dom-shim', { dir: 'code/lib/react-dom-shim', dependencies: [] }],
-    ['@storybook/addon-mcp', { dir: 'code/addons/mcp', dependencies: [] }],
-  ]);
+      workspacePackage('storybook'),
+      workspacePackage('@storybook/react-vite', [
+        '@storybook/builder-vite',
+        '@storybook/react',
+        'storybook',
+      ]),
+      workspacePackage('@storybook/builder-vite', ['storybook']),
+      workspacePackage('@storybook/react', ['@storybook/react-dom-shim', 'storybook']),
+      workspacePackage('@storybook/react-dom-shim'),
+      workspacePackage('@storybook/addon-mcp', ['storybook']),
+    ].map((pkg) => [pkg.name, pkg])
+  );
 
   const manifest = (packageJson: Record<string, unknown>) =>
     JSON.stringify(packageJson, null, 2).concat('\n');
 
-  it('points every monorepo dependency at its checkout tarball and overrides the transitive ones', async () => {
+  it('points every workspace:* dependency at its checkout tarball and overrides the packages no workspace package lists', async () => {
     const files = {
       'package.json': manifest({
         workspaces: ['packages/*'],
         devDependencies: {
-          storybook: 'next',
-          '@storybook/addon-mcp': 'file:./local-packages/addon-mcp',
+          '@storybook/addon-mcp': 'workspace:*',
           vite: '7.2.2',
         },
+        overrides: { vite: '7.2.2' },
       }),
       'packages/ui/package.json': manifest({
-        devDependencies: { '@storybook/react-vite': 'next', react: '19.2.0' },
+        devDependencies: { '@storybook/react-vite': 'workspace:*', react: '19.2.0' },
       }),
     };
 
-    const packed = await pinStorybookPackages(files, workspace, 'checkout');
+    const packages = await installStorybookFromCheckout(files, workspace);
 
     expect(JSON.parse(files['package.json'])).toEqual({
       workspaces: ['packages/*'],
       devDependencies: {
-        storybook: 'file:local-packages/storybook.tgz',
         '@storybook/addon-mcp': 'file:local-packages/storybook-addon-mcp.tgz',
         vite: '7.2.2',
       },
       overrides: {
+        vite: '7.2.2',
+        '@storybook/addon-mcp': 'file:local-packages/storybook-addon-mcp.tgz',
         '@storybook/builder-vite': 'file:local-packages/storybook-builder-vite.tgz',
         '@storybook/react': 'file:local-packages/storybook-react.tgz',
         '@storybook/react-dom-shim': 'file:local-packages/storybook-react-dom-shim.tgz',
+        storybook: 'file:local-packages/storybook.tgz',
       },
     });
     expect(JSON.parse(files['packages/ui/package.json']).devDependencies).toEqual({
       '@storybook/react-vite': 'file:../../local-packages/storybook-react-vite.tgz',
       react: '19.2.0',
     });
-    expect(packed.sort()).toEqual([
+    expect(packages.map((pkg) => pkg.name).sort()).toEqual([
       '@storybook/addon-mcp',
       '@storybook/builder-vite',
       '@storybook/react',
@@ -178,14 +212,32 @@ describe('pinStorybookPackages', () => {
     ]);
   });
 
-  it('leaves a manifest without monorepo dependencies byte-identical', async () => {
-    const source = '{"dependencies":{"react":"19.2.0"}}';
+  it('keeps exact Storybook versions and leaves their manifest byte-identical', async () => {
+    const source = '{"devDependencies":{"storybook":"9.1.20","react":"19.2.0"}}';
     const files = { 'package.json': source };
 
-    const packed = await pinStorybookPackages(files, workspace, 'checkout');
+    const packages = await installStorybookFromCheckout(files, workspace);
 
     expect(files['package.json']).toBe(source);
-    expect(packed).toEqual([]);
+    expect(packages).toEqual([]);
+  });
+
+  it('rejects workspace ranges other than workspace:*', async () => {
+    const files = { 'package.json': manifest({ devDependencies: { storybook: 'workspace:^' } }) };
+
+    await expect(installStorybookFromCheckout(files, workspace)).rejects.toThrowError(
+      /storybook@workspace:\^; use workspace:\*/
+    );
+  });
+
+  it('rejects workspace:* on a package this monorepo does not publish', async () => {
+    const files = {
+      'package.json': manifest({ devDependencies: { '@storybook/icons': 'workspace:*' } }),
+    };
+
+    await expect(installStorybookFromCheckout(files, workspace)).rejects.toThrowError(
+      /@storybook\/icons is not a published package of this monorepo/
+    );
   });
 });
 

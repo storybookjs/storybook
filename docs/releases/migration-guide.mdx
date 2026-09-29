@@ -17,6 +17,8 @@ This guide is meant to help you **upgrade from Storybook 10.x to 11** successful
 
 You'll first need to [upgrade to Storybook 10](./migration-guide-from-older-version.mdx). Then you can return to this guide.
 
+Storybook 11 [no longer ships the automigrations](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#automigrations-for-storybook-10-and-earlier-removed) that migrate a project into 8.1, 8.2, 9.0, or 10.0, so upgrading straight to 11 leaves that configuration in place and Storybook fails on it instead of fixing it.
+
 </Callout>
 
 ## Major breaking changes
@@ -40,11 +42,14 @@ The rest of this guide will help you upgrade successfully, either automatically 
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
-  - [`--preview-url` and `--force-build-preview` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preview-url-and-force-build-preview-removed)
+  - [`--preview-url` and `--force-build-preview` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#--preview-url-and---force-build-preview-removed)
+  - [Addon tabs no longer render, including `parameters.previewTabs` and `layout.showTabs`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-tab-registration-removed)
 - Internal tooling changes
   - [Update custom CSF tooling to the unified mutation API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-csf-tools-use-the-unified-mutation-api)
+  - [`experimental_UniversalStore` is now internal](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-universalstore-api-is-now-internal)
 - Testing
   - [Test runner support ended](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended)
+  - [Remove `setProjectAnnotations` calls from Vitest setup files](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
 - Package removals
   - [`@storybook/react-dom-shim` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookreact-dom-shim-removed)
 - [Changes for addon authors](../addons/addon-migration-guide.mdx)

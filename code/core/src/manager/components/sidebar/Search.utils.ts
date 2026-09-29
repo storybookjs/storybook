@@ -2,9 +2,11 @@ import type { FuseOptions } from 'fuse.js';
 
 import type { DocsAnchor } from 'storybook/internal/types';
 
-import type { SearchItem, SearchResult } from './types.ts';
+import type { Match, SearchItem, SearchResult } from './types.ts';
 
 type DocsSearchItem = Extract<SearchItem, { type: 'docs' }>;
+
+const ANCHOR_TITLE_KEY = 'anchors.title';
 
 export const fuseOptions = {
   shouldSort: true,
@@ -20,7 +22,7 @@ export const fuseOptions = {
   keys: [
     { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
-    { name: 'anchors.title', weight: 0.1 },
+    { name: ANCHOR_TITLE_KEY, weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -45,7 +47,13 @@ export const createDocsSearchItems = (item: DocsSearchItem): SearchItem[] => {
 export const distinctSearchResults = (matches: SearchResult[]): SearchResult[] => {
   const resultIds: Set<string> = new Set();
 
-  return matches.filter(({ item }) => {
+  return matches.filter(({ item, matches: itemMatches }) => {
+    // Headings are separate navigation targets, so their component doesn't hide them,
+    // but they only show when the query matches the heading itself, not just its page
+    if (item.id.includes('#')) {
+      return itemMatches.some(({ key }: Match) => key === ANCHOR_TITLE_KEY);
+    }
+
     // @ts-expect-error (non strict)
     if (resultIds.has(item.parent)) {
       return false;

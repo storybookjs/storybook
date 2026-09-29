@@ -1125,6 +1125,17 @@ function getBrowserStepsAroundWorkflowCalls(
     if (/^mcp__.+__(?:navigate|preview_start)$/.test(name)) {
       return typeof args.url === 'string' ? [args.url] : [];
     }
+    if (/^mcp__.+__browser_batch$/.test(name) && Array.isArray(args.actions)) {
+      return args.actions.flatMap((action) =>
+        isRecord(action) &&
+        typeof action.name === 'string' &&
+        action.name.replace(/^mcp__.+?__/, '') === 'navigate' &&
+        isRecord(action.input) &&
+        typeof action.input.url === 'string'
+          ? [action.input.url]
+          : []
+      );
+    }
     return [];
   });
 }

@@ -495,6 +495,37 @@ describe('expectPreviewOpenedInBrowser', () => {
     expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
   });
 
+  test('passes on a Claude browser_batch that navigates to a story', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeStoriesPreview,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            { name: 'navigate', input: { url: storyUrl } },
+            { name: 'computer', input: { action: 'screenshot' } },
+          ],
+        }),
+      ],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeStoriesPreview,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [{ name: 'mcp__Browser__navigate', input: { url: storyUrl } }],
+        }),
+      ],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
+  });
+
   test('ignores a navigation before stories-preview', () => {
     mockSandbox({
       agent: 'claude-code',

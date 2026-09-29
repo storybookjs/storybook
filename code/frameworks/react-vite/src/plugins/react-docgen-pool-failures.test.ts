@@ -56,4 +56,16 @@ describe('ReactDocgenPool failures', () => {
       surviving.emit('message', { taskId: surviving.posted[0].taskId, result: undefined })
     ).not.toThrow();
   });
+
+  it('rejects transforms that are still in flight when it closes', async () => {
+    const pool = new ReactDocgenPool(1);
+    const pending = pool.transform('export {}', id, undefined);
+
+    await pool.close();
+
+    await expect(pending).rejects.toThrow('react-docgen pool closed before the transform finished');
+    await expect(pool.transform('export {}', id, undefined)).rejects.toThrow(
+      'react-docgen pool is closed'
+    );
+  });
 });

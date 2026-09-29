@@ -68,6 +68,9 @@ export class ReactDocgenPool {
     if (this.#failure) {
       return Promise.reject(this.#failure);
     }
+    if (this.#closed) {
+      return Promise.reject(new Error('react-docgen pool is closed'));
+    }
     const slot = this.#slots.reduce((least, candidate) =>
       candidate.tasks.size < least.tasks.size ? candidate : least
     );
@@ -88,11 +91,16 @@ export class ReactDocgenPool {
 
   async close() {
     this.#closed = true;
+    this.#rejectAll(new Error('react-docgen pool closed before the transform finished'));
     await Promise.all(this.#slots.map(({ worker }) => worker.terminate()));
   }
 
   #fail(error: unknown) {
     this.#failure ??= error;
+    this.#rejectAll(error);
+  }
+
+  #rejectAll(error: unknown) {
     for (const slot of this.#slots) {
       for (const task of slot.tasks.values()) {
         task.reject(error);

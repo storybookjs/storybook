@@ -128,7 +128,7 @@ export class ChangeDetectionService {
   private gitDiffProvider: GitDiffProvider | undefined;
   private indexBaselineService: IndexBaselineService | undefined;
   private unsubscribeModuleGraphStatus: (() => void) | undefined;
-  private unsubscribeModuleGraphRevision: (() => void) | undefined;
+  private unsubscribeFileActivity: (() => void) | undefined;
   private readonly workingDir: string;
   private readonly debounceMs: number;
 
@@ -150,7 +150,11 @@ export class ChangeDetectionService {
   }
 
   private getModuleGraph() {
-    return getService('core/module-graph');
+    return getService('core/module-graph', { internal: true });
+  }
+
+  private getModuleGraphIndex() {
+    return getService('core/module-graph-index', { internal: true });
   }
 
   /** True while the service is live and change-detection status publishing is enabled. */
@@ -238,7 +242,9 @@ export class ChangeDetectionService {
         }
       }
     );
-    this.unsubscribeModuleGraphRevision = moduleGraph.queries.graphRevision.subscribe(
+    // Watch file activity (not graphRevision): out-of-graph / path-mismatched edits still need a
+    // git rescan, while graphRevision stays in-graph-only for review staleness.
+    this.unsubscribeFileActivity = moduleGraph.queries.fileActivityRevision.subscribe(
       undefined,
       ({ data }) => {
         if ((data ?? 0) > 0) {
@@ -299,8 +305,8 @@ export class ChangeDetectionService {
     this.gitDiffProvider?.dispose();
     this.unsubscribeModuleGraphStatus?.();
     this.unsubscribeModuleGraphStatus = undefined;
-    this.unsubscribeModuleGraphRevision?.();
-    this.unsubscribeModuleGraphRevision = undefined;
+    this.unsubscribeFileActivity?.();
+    this.unsubscribeFileActivity = undefined;
   }
 
   private scheduleScan(delayMs: number): void {
@@ -406,8 +412,8 @@ export class ChangeDetectionService {
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
-    const moduleGraph = this.getModuleGraph();
-    const lookupResults = await moduleGraph.queries.storiesForFiles.loaded({
+    const moduleGraphIndex = this.getModuleGraphIndex();
+    const lookupResults = await moduleGraphIndex.queries.storiesForFiles.loaded({
       files: scannedFilesArray,
     });
 

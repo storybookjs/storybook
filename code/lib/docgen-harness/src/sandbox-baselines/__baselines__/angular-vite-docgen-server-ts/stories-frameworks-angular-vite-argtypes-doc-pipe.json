@@ -1,0 +1,24 @@
+{
+  "argTypes": {
+    "transform": {
+      "description": "Transforms a string into uppercase.",
+      "name": "transform",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(value: string) => string"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "description": "This is an Angular Pipe example that has a Prop Table.",
+  "id": "stories-frameworks-angular-vite-argtypes-doc-pipe",
+  "jsDocTags": {},
+  "name": "DocPipe",
+  "path": "./src/stories/frameworks/angular-vite/argTypes/doc-pipe/doc-pipe.stories.ts"
+}

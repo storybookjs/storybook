@@ -1,0 +1,119 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-inheritance-mixin.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "",
+          "name": "BaseElement",
+          "members": [
+            {
+              "kind": "field",
+              "name": "baseLabel",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Base'",
+              "description": "Label inherited from the base class.",
+              "attribute": "base-label"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "base-label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Base'",
+              "description": "Label inherited from the base class.",
+              "fieldName": "baseLabel"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "customElement": true
+        },
+        {
+          "kind": "class",
+          "description": "Element composed from a base class and a mixin.",
+          "name": "LitInheritanceMixin",
+          "members": [
+            {
+              "kind": "field",
+              "name": "baseLabel",
+              "type": {
+                "text": "string"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "mixedActive",
+              "type": {
+                "text": "boolean"
+              }
+            },
+            {
+              "kind": "field",
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "default": "1",
+              "description": "Count declared by the final class.",
+              "attribute": "count"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "count",
+              "type": {
+                "text": "number"
+              },
+              "default": "1",
+              "description": "Count declared by the final class.",
+              "fieldName": "count"
+            }
+          ],
+          "superclass": {
+            "name": "SelectableBase",
+            "module": "lit-inheritance-mixin.ts"
+          },
+          "tagName": "lit-inheritance-mixin",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "BaseElement",
+          "declaration": {
+            "name": "BaseElement",
+            "module": "lit-inheritance-mixin.ts"
+          }
+        },
+        {
+          "kind": "js",
+          "name": "LitInheritanceMixin",
+          "declaration": {
+            "name": "LitInheritanceMixin",
+            "module": "lit-inheritance-mixin.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-inheritance-mixin",
+          "declaration": {
+            "name": "LitInheritanceMixin",
+            "module": "lit-inheritance-mixin.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

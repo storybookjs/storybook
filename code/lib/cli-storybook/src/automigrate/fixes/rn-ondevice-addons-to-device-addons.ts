@@ -149,12 +149,7 @@ export const rnOndeviceAddonsToDeviceAddons: Fix<RnOndeviceAddonsOptions> = {
   async run({ result, dryRun }) {
     for (const { mainConfigPath } of result.targets) {
       await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, (main) => {
-        const node = main.getFieldNode(['addons']);
-        if (!node) {
-          return;
-        }
-        main.setFieldNode(['deviceAddons'], node as any);
-        main.removeField(['addons']);
+        main.rename(['addons'], 'deviceAddons');
       });
     }
   },

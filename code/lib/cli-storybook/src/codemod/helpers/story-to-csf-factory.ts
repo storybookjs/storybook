@@ -27,7 +27,13 @@ export async function storyToCsfFactory(
   info: FileInfo,
   { previewConfigPath, useSubPathImports }: Options
 ) {
-  const csf = loadCsf(info.source, { makeTitle: () => 'FIXME' });
+  let csf;
+  try {
+    csf = loadCsf(info.source, { makeTitle: () => 'FIXME' });
+  } catch {
+    logger.log(`Error when parsing ${info.path}, skipping: file could not be parsed`);
+    return info.source;
+  }
   try {
     csf.parse();
   } catch (err) {

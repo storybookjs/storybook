@@ -5,7 +5,7 @@ import { SELECT_STORY } from 'storybook/internal/core-events';
 
 import { addons } from 'storybook/preview-api';
 
-import { hrefTo, linkTo } from './utils.ts';
+import { hrefTo, hrefToSync, linkTo } from './utils.ts';
 
 vi.mock('storybook/preview-api');
 vi.mock('@storybook/global', () => ({
@@ -83,6 +83,13 @@ describe('preview', () => {
   describe('hrefTo()', () => {
     it('should return promise resolved with story href', async () => {
       const href = await hrefTo('title', 'name');
+      expect(href).toContain('?path=/story/title--name');
+    });
+  });
+
+  describe('hrefToSync()', () => {
+    it('should return story href synchronously', () => {
+      const href = hrefToSync('title', 'name');
       expect(href).toContain('?path=/story/title--name');
     });
   });

@@ -1,0 +1,14 @@
+{
+  "id": "slot-scoped",
+  "name": "ScopedList",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slot-scoped--primary": {
+      "description": undefined,
+      "id": "forms-slot-scoped--primary",
+      "name": "Primary",
+      "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
+    },
+  },
+}

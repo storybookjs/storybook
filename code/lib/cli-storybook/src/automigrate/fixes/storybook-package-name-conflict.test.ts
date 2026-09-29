@@ -15,7 +15,6 @@ const check = async (packageName: string) => {
     mainConfig: mockMainConfig,
     storybookVersion: '8.0.0',
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 };
 
@@ -37,7 +36,6 @@ describe('storybookPackageNameConflict', () => {
         mainConfig: mockMainConfig,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
       expect(result).toBeNull();
     });

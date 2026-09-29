@@ -31,7 +31,6 @@ import * as pkg from 'empathic/package';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import { runCompodoc } from '../utils/run-compodoc.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
-import { VERSION } from '@angular/core';
 import { Channel } from 'storybook/internal/channels';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -70,7 +69,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'webpackStatsJson'
     | 'statsJson'
     | 'loglevel'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
@@ -143,10 +141,10 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           loglevel,
           webpackStatsJson,
           statsJson,
-          previewUrl,
           sourceMap = false,
           preserveSymlinks = false,
-          experimentalZoneless = !!(VERSION.major && Number(VERSION.major) >= 21),
+          // Angular 21+ always supports zoneless; users still opt out via `experimentalZoneless: false`
+          experimentalZoneless = true,
         } = options;
 
         const packageJsonPath = pkg.up({ cwd: __dirname });
@@ -185,7 +183,6 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           webpackStatsJson,
           statsJson,
           loglevel,
-          previewUrl,
         };
 
         const startedPort = await runInstance(standaloneOptions);

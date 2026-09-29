@@ -1,13 +1,13 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
-import { useId } from '@react-aria/utils';
-import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { useId } from 'react-aria/useId';
+import { type API_KeyCollection, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../../hooks/useLandmark.ts';
@@ -46,31 +46,42 @@ const useFullStoryName = () => {
   const api = useStorybookApi();
   const currentStory = api.getCurrentStoryData();
 
+  // Merging every ref index allocates an object as large as the whole sidebar; only rebuild
+  // it when the indexes actually change, not on every state-driven re-render.
+  const combinedIndex = useMemo(() => combineIndexes(index, refs || {}), [index, refs]);
+
   if (!currentStory) {
-    return '';
+    return { fullStoryAriaLabel: '', fullStoryName: '' };
   }
-  const combinedIndex = combineIndexes(index, refs || {});
-  const storyLabel = currentStory.renderLabel?.(currentStory, api);
+  // renderLabel may return any ReactNode; the bottom bar concatenates names into plain
+  // strings (visible label and aria-label alike), so anything else falls back to the entry
+  // name rather than stringifying to "[object Object]".
+  const labelContext = { isMobile: true, location: 'bottom-bar' } as const;
+  const storyLabel = currentStory.renderLabel?.(currentStory, api, labelContext);
   let fullStoryName = typeof storyLabel === 'string' ? storyLabel : currentStory.name;
+  const storyAriaLabel = currentStory.renderAriaLabel?.(currentStory, api, labelContext);
+  let fullStoryAriaLabel = typeof storyAriaLabel === 'string' ? storyAriaLabel : fullStoryName;
 
   let node = combinedIndex[currentStory.id];
 
-  while (
-    node &&
-    'parent' in node &&
-    node.parent &&
-    combinedIndex[node.parent] &&
-    fullStoryName.length < 24
-  ) {
+  while (node && 'parent' in node && node.parent && combinedIndex[node.parent]) {
     node = combinedIndex[node.parent];
-    const parentLabel = node.renderLabel?.(node, api);
+    const parentLabel = node.renderLabel?.(node, api, labelContext);
     const parentName = typeof parentLabel === 'string' ? parentLabel : node.name;
-    fullStoryName = `${parentName}/${fullStoryName}`;
+    const parentAriaOutput = node.renderAriaLabel?.(node, api, labelContext);
+    const parentAriaLabel = typeof parentAriaOutput === 'string' ? parentAriaOutput : parentName;
+
+    // Limit length of name shown in UI due to layout constraints.
+    if (fullStoryName.length < 24) {
+      fullStoryName = `${parentName}/${fullStoryName}`;
+    }
+    fullStoryAriaLabel = `${parentAriaLabel}/${fullStoryAriaLabel}`;
   }
-  return fullStoryName;
+  return { fullStoryAriaLabel, fullStoryName };
 };
 
 interface MobileBottomBarContentProps {
+  fullStoryAriaLabel: string;
   fullStoryName: string;
   isMobileMenuOpen: boolean;
   setMobileMenuOpen: (isOpen: boolean) => void;
@@ -78,6 +89,7 @@ interface MobileBottomBarContentProps {
   setMobilePanelOpen: (isOpen: boolean) => void;
   showMenu: boolean;
   showPanel: boolean;
+  navShortcut?: API_KeyCollection;
 }
 
 /**
@@ -88,6 +100,7 @@ interface MobileBottomBarContentProps {
  * time another landmark is registered.
  */
 const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
+  fullStoryAriaLabel,
   fullStoryName,
   isMobileMenuOpen,
   setMobileMenuOpen,
@@ -95,6 +108,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
   setMobilePanelOpen,
   showMenu,
   showPanel,
+  navShortcut,
 }) => {
   const headingId = useId();
   const sectionRef = useRef<HTMLElement>(null);
@@ -115,14 +129,15 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
           onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
           ariaLabel="Open navigation menu"
           aria-expanded={isMobileMenuOpen}
-          aria-controls="storybook-mobile-menu"
+          aria-controls={isMobileMenuOpen ? 'storybook-mobile-menu' : undefined}
+          shortcut={navShortcut}
         >
           <MenuIcon />
           <Text>{fullStoryName}</Text>
         </BottomBarButton>
       )}
       <span className="sb-sr-only" aria-current="page">
-        {fullStoryName}
+        Current page: {fullStoryAriaLabel}
       </span>
       {showPanel && (
         <BottomBarButton
@@ -131,7 +146,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
           onClick={() => setMobilePanelOpen(true)}
           ariaLabel="Open addon panel"
           aria-expanded={isMobilePanelOpen}
-          aria-controls="storybook-mobile-addon-panel"
+          aria-controls={isMobilePanelOpen ? 'storybook-mobile-addon-panel' : undefined}
         >
           <BottomBarToggleIcon />
         </BottomBarButton>
@@ -147,9 +162,27 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   showPanel,
   ...props
 }) => {
-  const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
-    useLayout();
-  const fullStoryName = useFullStoryName();
+  const { isMobilePanelOpen, setMobilePanelOpen } = useLayout();
+  const { fullStoryAriaLabel, fullStoryName } = useFullStoryName();
+  const api = useStorybookApi();
+  // The drawer's open state is the manager-api layout field, the single source of truth. On mobile
+  // `api.toggleNav()` flips this field, so the sidebar keyboard shortcut opens the drawer too.
+  const { layout, ui } = useStorybookState();
+  const isMobileMenuOpen = layout.showMobileNavigation;
+  // Stable identity: the `showMenu` effect below lists this in its deps.
+  const setMobileMenuOpen = useCallback((open: boolean) => api.setMobileNavigation(open), [api]);
+
+  // Reset the drawer state when the mobile nav leaves the tree (e.g. resizing to desktop), so a
+  // drawer left open on mobile does not linger as stale store state. Read `api` through a ref so the
+  // reset only runs on unmount, not whenever the api identity changes.
+  const apiRef = useRef(api);
+  apiRef.current = api;
+  useEffect(() => () => apiRef.current.setMobileNavigation(false), []);
+
+  // Read `enableShortcuts` from the store, the same source the shortcut handler checks, so the
+  // button never advertises a shortcut the handler would ignore.
+  const enableShortcuts = ui.enableShortcuts ?? true;
+  const navShortcut = enableShortcuts ? api.getShortcutKeys().toggleNav : undefined;
 
   useLayoutEffect(() => {
     if (!showMenu) {
@@ -179,6 +212,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
 
       {!isMobilePanelOpen && (showMenu || showPanel) && (
         <MobileBottomBarContent
+          fullStoryAriaLabel={fullStoryAriaLabel}
           fullStoryName={fullStoryName}
           isMobileMenuOpen={isMobileMenuOpen}
           setMobileMenuOpen={setMobileMenuOpen}
@@ -186,6 +220,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
           setMobilePanelOpen={setMobilePanelOpen}
           showMenu={showMenu}
           showPanel={showPanel}
+          navShortcut={navShortcut}
         />
       )}
     </Container>

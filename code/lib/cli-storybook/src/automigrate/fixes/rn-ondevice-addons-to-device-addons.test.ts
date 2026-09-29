@@ -4,22 +4,16 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
 import * as storybookCommon from 'storybook/internal/common';
+import { type ConfigFile, loadConfig, printConfig } from 'storybook/internal/csf-tools';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 
-// vi.hoisted ensures these are available when vi.mock factories run (before module imports)
 const mocks = vi.hoisted(() => {
-  const addonsNode = { type: 'ArrayExpression', __mock: 'addons-node' };
-  const configFile = {
-    getFieldNode: vi.fn(),
-    setFieldNode: vi.fn(),
-    removeField: vi.fn(),
-  };
   const updateMainConfig = vi.fn();
   return {
-    addonsNode,
-    configFile,
+    source: '',
+    output: '',
     updateMainConfig,
     /** When set, `existsSync` in the automigrate fix uses this instead of the real fs (ESM-safe). */
     existsSyncOverride: null as null | ((p: string) => boolean),
@@ -63,15 +57,16 @@ describe('rn-ondevice-addons-to-device-addons', () => {
     mocks.existsSyncOverride = null;
     vi.mocked(storybookCommon.findConfigFile).mockImplementation(() => null);
     vi.mocked(storybookCommon.loadMainConfig).mockReset();
-    mocks.configFile.getFieldNode.mockImplementation((path: string[]) =>
-      path[0] === 'addons' ? mocks.addonsNode : undefined
-    );
+    mocks.source = `export default { addons: ['@storybook/addon-ondevice-controls'] };`;
+    mocks.output = '';
     mocks.updateMainConfig.mockImplementation(
       async (
         _opts: { mainConfigPath: string; dryRun: boolean },
-        callback: (cfg: unknown) => Promise<void>
+        callback: (cfg: ConfigFile) => Promise<void>
       ) => {
-        await callback(mocks.configFile);
+        const config = loadConfig(mocks.source).parse();
+        await callback(config);
+        mocks.output = printConfig(config).code;
       }
     );
   });
@@ -90,7 +85,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -110,7 +104,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -132,7 +125,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath: join(process.cwd(), '.rnstorybook', 'main.ts'),
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toBeNull();
@@ -158,7 +150,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
@@ -185,7 +176,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
@@ -208,7 +198,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         mainConfigPath,
         storybookVersion: '8.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath }] });
@@ -250,7 +239,6 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         configDir: '.storybook',
         storybookVersion: '9.0.0',
         storiesPaths: [],
-        hasCsfFactoryPreview: false,
       });
 
       expect(result).toEqual({ targets: [{ mainConfigPath: rnMainPath }] });
@@ -275,18 +263,13 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         storiesPaths: [],
       });
 
-      expect(mocks.configFile.getFieldNode).toHaveBeenCalledWith(['addons']);
-      expect(mocks.configFile.setFieldNode).toHaveBeenCalledTimes(1);
-      expect(mocks.configFile.setFieldNode).toHaveBeenCalledWith(
-        ['deviceAddons'],
-        mocks.addonsNode
+      expect(mocks.output).toBe(
+        `export default { deviceAddons: ['@storybook/addon-ondevice-controls'] };`
       );
-      expect(mocks.configFile.removeField).toHaveBeenCalledTimes(1);
-      expect(mocks.configFile.removeField).toHaveBeenCalledWith(['addons']);
     });
 
     it('does nothing when `addons` is missing in the parsed AST', async () => {
-      mocks.configFile.getFieldNode.mockImplementation(() => undefined);
+      mocks.source = 'export default {};';
 
       await rnOndeviceAddonsToDeviceAddons.run?.({
         result: {
@@ -301,8 +284,7 @@ describe('rn-ondevice-addons-to-device-addons', () => {
         storiesPaths: [],
       });
 
-      expect(mocks.configFile.setFieldNode).not.toHaveBeenCalled();
-      expect(mocks.configFile.removeField).not.toHaveBeenCalled();
+      expect(mocks.output).toBe(mocks.source);
     });
 
     it('passes dryRun flag to updateMainConfig', async () => {

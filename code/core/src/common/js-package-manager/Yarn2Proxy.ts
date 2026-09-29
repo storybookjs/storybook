@@ -1,6 +1,5 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { pathToFileURL } from 'node:url';
 
 import { prompt } from 'storybook/internal/node-logger';
 import {
@@ -8,8 +7,6 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
-import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
@@ -178,55 +175,7 @@ export class Yarn2Proxy extends JsPackageManager {
     }
   }
 
-  // TODO: Remove pnp compatibility code in SB11
   async getModulePackageJSON(packageName: string): Promise<PackageJson | null> {
-    const pnpapiPath = find.any(['.pnp.js', '.pnp.cjs'], {
-      cwd: this.primaryPackageJson.operationDir,
-      last: getProjectRoot(),
-    });
-
-    if (pnpapiPath) {
-      try {
-        /*
-          This is a rather fragile way to access Yarn's PnP API, essentially manually loading it.
-          The proper way to do this would be to just do await import('pnpapi'),
-          as documented at https://yarnpkg.com/advanced/pnpapi#requirepnpapi
-
-          However the 'pnpapi' module is only injected when the Node process is started via Yarn,
-          which is not always the case for us, because we spawn child processes directly with Node,
-          eg. when running automigrations.
-        */
-        const { default: pnpApi } = await import(pathToFileURL(pnpapiPath).href);
-
-        const resolvedPath = pnpApi.resolveToUnqualified(
-          packageName,
-          this.primaryPackageJson.operationDir,
-          {
-            considerBuiltins: false,
-          }
-        );
-
-        const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
-        const pkg = pnpApi.getPackageInformation(pkgLocator);
-
-        const zipOpenFs = new ZipOpenFS({
-          libzip: getLibzipSync(),
-        });
-
-        const virtualFs = new VirtualFS({ baseFs: zipOpenFs });
-        const crossFs = new PosixFS(virtualFs);
-
-        const virtualPath = join(pkg.packageLocation, 'package.json');
-
-        return crossFs.readJsonSync(virtualPath);
-      } catch (error: any) {
-        if (error.code !== 'ERR_MODULE_NOT_FOUND') {
-          console.error('Error while fetching package version in Yarn PnP mode:', error);
-        }
-        return null;
-      }
-    }
-
     const wantedPath = join('node_modules', packageName, 'package.json');
     const packageJsonPath = find.up(wantedPath, {
       cwd: this.primaryPackageJson.operationDir,

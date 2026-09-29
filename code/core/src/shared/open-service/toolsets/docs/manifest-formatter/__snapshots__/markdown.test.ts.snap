@@ -1,0 +1,349 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MarkdownFormatter - formatComponentManifest > formats all full fixtures 1`] = `
+"# Button
+
+ID: button
+
+A versatile button component that supports multiple variants, sizes, and states.
+
+The Button component is a fundamental building block for user interactions. It can be styled as primary, secondary, or tertiary actions, and supports disabled and loading states.
+
+## Usage
+
+Buttons should be used for actions that affect the current page or trigger operations. For navigation, consider using a Link component instead.
+
+## Stories
+
+### Primary
+
+Story ID: button--primary
+
+The primary button variant is used for the main call-to-action on a page. It has the highest visual prominence and should be used sparingly to guide users toward the most important action.
+
+## Best Practices
+
+- Use only one primary button per section
+- Keep button text concise and action-oriented
+- Ensure sufficient contrast for accessibility
+
+\`\`\`
+import { Button } from '@storybook/design-system';
+
+const Primary = () => <Button variant="primary">Click Me</Button>
+\`\`\`
+
+### Secondary
+
+Story ID: button--secondary
+
+The secondary button variant is used for secondary actions that are still important but not the primary focus of the page.
+
+Secondary buttons have less visual weight than primary buttons and can be used multiple times on a page.
+
+\`\`\`
+import { Button } from '@storybook/design-system';
+
+const Secondary = () => <Button variant="secondary">Cancel</Button>
+\`\`\`
+
+### With Sizes
+
+Story ID: button--with-sizes
+
+Buttons are available in three sizes: small, medium (default), and large.
+
+Choose the appropriate size based on the context and hierarchy of actions. Larger buttons are more prominent and easier to tap on mobile devices.
+
+\`\`\`
+import { Button } from '@storybook/design-system';
+
+const WithSizes = () => (
+  <>
+    <Button size="small">Small</Button>
+    <Button size="medium">Medium</Button>
+    <Button size="large">Large</Button>
+  </>
+)
+\`\`\`
+
+### Other Stories
+
+- Loading (button--loading): Button in loading state during async operations
+- Danger (button--danger): Danger button for destructive actions
+
+## Props
+
+\`\`\`
+export type Props = {
+  /**
+    The visual style variant of the button
+  */
+  variant?: "primary" | "secondary" | "tertiary" | "danger" = "primary";
+  /**
+    The size of the button
+  */
+  size?: "small" | "medium" | "large" = "medium";
+  /**
+    Whether the button is disabled
+  */
+  disabled?: boolean = false;
+  /**
+    Whether the button is in a loading state
+  */
+  loading?: boolean = false;
+  /**
+    Whether the button should take up the full width of its container
+  */
+  fullWidth?: boolean = false;
+  /**
+    Callback function when the button is clicked
+  */
+  onClick?: (event: MouseEvent) => void;
+  /**
+    The content of the button
+  */
+  children: ReactNode;
+}
+\`\`\`"
+`;
+
+exports[`MarkdownFormatter - formatComponentManifest > formats all full fixtures 2`] = `
+"# Card
+
+ID: card
+
+A flexible container component for grouping related content with optional header, footer, and action areas.
+
+The Card component provides a consistent way to present information in a contained, elevated surface. It's commonly used for displaying articles, products, user profiles, or any grouped content that benefits from visual separation.
+
+## Design Principles
+
+- Cards should contain a single subject or action
+- Maintain consistent padding and spacing
+- Use elevation to indicate interactive vs static cards
+- Keep content hierarchy clear with proper use of typography
+
+## Stories
+
+### Basic
+
+Story ID: card--basic
+
+A basic card with just content.
+
+The default elevated variant provides subtle depth through shadow, making the card appear to float above the page. This is ideal for creating visual hierarchy and grouping related information.
+
+\`\`\`
+import { Card } from '@storybook/design-system';
+
+const Basic = () => (
+  <Card>
+    <h3>Card Title</h3>
+    <p>This is some card content that provides information to the user.</p>
+  </Card>
+)
+\`\`\`
+
+### With Header and Footer
+
+Story ID: card--with-header-and-footer
+
+A card with distinct header and footer sections.
+
+Headers typically contain titles, subtitles, or avatars. Footers often contain actions like buttons or metadata like timestamps. The header and footer are visually separated from the main content area.
+
+\`\`\`
+import { Card } from '@storybook/design-system';
+
+const WithHeaderAndFooter = () => (
+  <Card
+    header={<h3>Article Title</h3>}
+    footer={<Button variant="tertiary">Read More</Button>}
+  >
+    <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</p>
+  </Card>
+)
+\`\`\`
+
+### Clickable
+
+Story ID: card--clickable
+
+An interactive card that responds to clicks.
+
+Clickable cards add hover effects and cursor changes to indicate interactivity. This pattern is useful for navigation cards, product cards, or any scenario where the entire card acts as a single interactive element.
+
+## Accessibility
+
+Clickable cards are rendered as buttons with proper keyboard support and ARIA attributes.
+
+\`\`\`
+import { Card } from '@storybook/design-system';
+
+const Clickable = () => (
+  <Card clickable onClick={() => alert('Card clicked!')}>
+    <h3>Product Name</h3>
+    <p>Click anywhere on this card to view details.</p>
+  </Card>
+)
+\`\`\`
+
+### Other Stories
+
+- Variants (card--variants): Card visual variants (elevated, outlined, flat)
+- User Profile (card--user-profile): Complete user profile card example
+
+## Props
+
+\`\`\`
+export type Props = {
+  /**
+    The visual style variant of the card
+  */
+  variant?: "elevated" | "outlined" | "flat" = "elevated";
+  /**
+    The amount of internal padding
+  */
+  padding?: "none" | "small" | "medium" | "large" = "medium";
+  /**
+    Whether the entire card is clickable/interactive
+  */
+  clickable?: boolean = false;
+  /**
+    Content to display in the card header
+  */
+  header?: ReactNode;
+  /**
+    Content to display in the card footer
+  */
+  footer?: ReactNode;
+  /**
+    The main content of the card
+  */
+  children: ReactNode;
+  /**
+    Callback function when the card is clicked (requires clickable=true)
+  */
+  onClick?: (event: MouseEvent) => void;
+}
+\`\`\`"
+`;
+
+exports[`MarkdownFormatter - formatComponentManifest > formats all full fixtures 3`] = `
+"# Input
+
+ID: input
+
+A flexible text input component that supports various input types, validation states, and accessibility features.
+
+The Input component is a foundational form element that wraps the native HTML input with consistent styling and behavior. It includes support for labels, error messages, helper text, and different visual states.
+
+## Accessibility
+
+The Input component automatically manages ARIA attributes for labels, descriptions, and error messages to ensure screen reader compatibility.
+
+## Stories
+
+### Basic
+
+Story ID: input--basic
+
+A basic text input with a label.
+
+This is the most common use case for the Input component. Always include a label for accessibility, even if it's visually hidden in your design.
+
+\`\`\`
+import { Input } from '@storybook/design-system';
+
+const Basic = () => <Input label="Full Name" placeholder="Enter your name" />
+\`\`\`
+
+### With Error
+
+Story ID: input--with-error
+
+An input displaying an error state with an error message.
+
+Error messages should be clear, concise, and provide actionable guidance to help users fix the issue. The input border and message text are styled in red to indicate the error state.
+
+\`\`\`
+import { Input } from '@storybook/design-system';
+
+const WithError = () => <Input label="Email" type="email" value="invalid-email" error="Please enter a valid email address" />
+\`\`\`
+
+### With Helper Text
+
+Story ID: input--with-helper-text
+
+An input with helper text providing additional context or instructions.
+
+Helper text appears below the input and provides guidance without being an error. Use it to clarify format expectations, character limits, or provide helpful hints.
+
+\`\`\`
+import { Input } from '@storybook/design-system';
+
+const WithHelperText = () => <Input label="Password" type="password" helperText="Must be at least 8 characters with one uppercase letter and one number" />
+\`\`\`
+
+### Other Stories
+
+- Types (input--types): Various input types (email, tel, url, number)
+- Disabled (input--disabled): Disabled input state
+
+## Props
+
+\`\`\`
+export type Props = {
+  /**
+    The type of input field
+  */
+  type?: "text" | "email" | "password" | "number" | "tel" | "url" = "text";
+  /**
+    The label text for the input
+  */
+  label?: string;
+  /**
+    Placeholder text shown when the input is empty
+  */
+  placeholder?: string;
+  /**
+    The controlled value of the input
+  */
+  value?: string;
+  /**
+    The initial value for an uncontrolled input
+  */
+  defaultValue?: string;
+  /**
+    Whether the input is disabled
+  */
+  disabled?: boolean = false;
+  /**
+    Whether the input is required
+  */
+  required?: boolean = false;
+  /**
+    Error message to display below the input
+  */
+  error?: string;
+  /**
+    Helper text to display below the input
+  */
+  helperText?: string;
+  /**
+    Callback function when the input value changes
+  */
+  onChange?: (event: ChangeEvent<HTMLInputElement>) => void;
+}
+\`\`\`"
+`;
+
+exports[`MarkdownFormatter - formatManifestsToLists > formats the full manifest fixture 1`] = `
+"# Components
+
+- Button (button): A versatile button component for user interactions
+- Card (card): A flexible container component for grouping related content
+- Input (input): A flexible text input component with validation support"
+`;

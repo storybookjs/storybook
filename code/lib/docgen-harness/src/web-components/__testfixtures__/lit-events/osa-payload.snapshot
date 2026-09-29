@@ -1,0 +1,70 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'ready'",
+          "description": "Current text value.",
+          "fieldName": "value",
+          "name": "value",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "customElement": true,
+      "description": "Emits changes from the text field.",
+      "events": [
+        {
+          "description": "Fired when the value changes.",
+          "name": "my-change",
+          "type": {
+            "text": "CustomEvent",
+          },
+        },
+        {
+          "description": "Fired when the panel closes.",
+          "name": "my-close",
+          "type": {
+            "text": "CustomEvent",
+          },
+        },
+      ],
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "value",
+          "default": "'ready'",
+          "description": "Current text value.",
+          "kind": "field",
+          "name": "value",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "kind": "method",
+          "name": "emitChange",
+        },
+        {
+          "kind": "method",
+          "name": "close",
+        },
+      ],
+      "name": "LitEvents",
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-events",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Emits changes from the text field.",
+  "id": "lit-events",
+  "jsDocTags": {},
+  "name": "lit-events",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

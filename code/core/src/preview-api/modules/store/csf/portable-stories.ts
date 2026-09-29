@@ -1,5 +1,8 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
+import {
+  MountMustBeDestructuredError,
+  ProjectAnnotationsAlreadyAppliedError,
+} from 'storybook/internal/preview-errors';
 import type {
   Args,
   Canvas,
@@ -20,7 +23,6 @@ import type {
 } from 'storybook/internal/types';
 
 import type { UserEventObject } from 'storybook/test';
-import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons.ts';
 import {
@@ -42,6 +44,9 @@ import { prepareContext, prepareStory } from './prepareStory.ts';
 declare global {
   var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
   var defaultProjectAnnotations: ProjectAnnotations<any>;
+  // Set by @storybook/addon-vitest once its setup file has applied the project annotations.
+  var __STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__: boolean | undefined;
+  var __STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__: boolean | undefined;
 }
 
 export function setDefaultProjectAnnotations<TRenderer extends Renderer = Renderer>(
@@ -59,6 +64,11 @@ export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
+  if (globalThis.__STORYBOOK_ADDON_VITEST_PROJECT_ANNOTATIONS_APPLIED__) {
+    throw new ProjectAnnotationsAlreadyAppliedError();
+  }
+  globalThis.__STORYBOOK_SET_PROJECT_ANNOTATIONS_CALLED__ = true;
+
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
   // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
   // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps
@@ -301,77 +311,6 @@ export function composeStories<TModule extends Store_CSFExports>(
   );
 
   return composedStories;
-}
-
-type WrappedStoryRef =
-  | { __pw_type: 'jsx'; props: Record<string, any> }
-  | { __pw_type: 'importRef' };
-type UnwrappedJSXStoryRef = {
-  __pw_type: 'jsx';
-  type: UnwrappedImportStoryRef;
-};
-type UnwrappedImportStoryRef = ComposedStoryFn;
-
-declare global {
-  function __pwUnwrapObject(
-    storyRef: WrappedStoryRef
-  ): Promise<UnwrappedJSXStoryRef | UnwrappedImportStoryRef>;
-}
-
-export function createPlaywrightTest<TFixture extends { extend: any }>(
-  baseTest: TFixture
-): TFixture {
-  return baseTest.extend({
-    mount: async ({ mount, page }: any, use: any) => {
-      await use(async (storyRef: WrappedStoryRef, ...restArgs: any) => {
-        // Playwright CT deals with JSX import references differently than normal imports
-        // and we can currently only handle JSX import references
-        if (
-          !('__pw_type' in storyRef) ||
-          ('__pw_type' in storyRef && storyRef.__pw_type !== 'jsx')
-        ) {
-          // eslint-disable-next-line local-rules/no-uncategorized-errors
-          throw new Error(dedent`
-              Portable stories in Playwright CT only work when referencing JSX elements.
-              Please use JSX format for your components such as:
-
-              instead of:
-              await mount(MyComponent, { props: { foo: 'bar' } })
-
-              do:
-              await mount(<MyComponent foo="bar"/>)
-
-              More info: https://storybook.js.org/docs/api/portable-stories/portable-stories-playwright?ref=error
-            `);
-        }
-
-        // Props are not necessarily serialisable and so can't be passed to browser via
-        // `page.evaluate`. Regardless they are not needed for storybook load/play steps.
-        const { props, ...storyRefWithoutProps } = storyRef;
-
-        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
-          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
-          const story =
-            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
-          return story?.load?.();
-        }, storyRefWithoutProps);
-
-        // mount the story
-        const mountResult = await mount(storyRef, ...restArgs);
-
-        // play the story in the browser
-        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
-          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
-          const story =
-            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
-          const canvasElement = document.querySelector('#root');
-          return story?.play?.({ canvasElement });
-        }, storyRefWithoutProps);
-
-        return mountResult;
-      });
-    },
-  });
 }
 
 // TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.

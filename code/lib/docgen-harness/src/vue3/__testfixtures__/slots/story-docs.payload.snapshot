@@ -1,0 +1,47 @@
+{
+  "id": "slots",
+  "name": "SlotsShowcase",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots--scoped-bindings": {
+      "description": undefined,
+      "id": "forms-slots--scoped-bindings",
+      "name": "Scoped Bindings",
+      "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
+    },
+    "forms-slots--string-child": {
+      "description": undefined,
+      "id": "forms-slots--string-child",
+      "name": "String Child",
+      "snippet": "<script lang="ts" setup>
+import SlotsShowcase from './SlotsShowcase.vue';
+</script>
+
+<template>
+  <SlotsShowcase heading="Plain">
+    Plain text content
+  </SlotsShowcase>
+</template>",
+      "summary": undefined,
+    },
+    "forms-slots--v-node-child": {
+      "description": undefined,
+      "id": "forms-slots--v-node-child",
+      "name": "V Node Child",
+      "snippet": "<script lang="ts" setup>
+import SlotsShowcase from './SlotsShowcase.vue';
+</script>
+
+<template>
+  <SlotsShowcase heading="Structured">
+    <p class="body">Body content</p>
+    <template #header>
+      <strong>Header content</strong>
+    </template>
+  </SlotsShowcase>
+</template>",
+      "summary": undefined,
+    },
+  },
+}

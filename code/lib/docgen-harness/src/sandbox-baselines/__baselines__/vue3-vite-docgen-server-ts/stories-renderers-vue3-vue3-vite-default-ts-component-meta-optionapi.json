@@ -1,0 +1,108 @@
+{
+  "argTypes": {
+    "arrayDefault": {
+      "defaultValue": {
+        "summary": "[1, 2, 3]"
+      },
+      "description": "Array prop with default",
+      "name": "arrayDefault",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "[1, 2, 3]"
+        },
+        "type": {
+          "summary": "unknown[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "unknown[] | undefined"
+      }
+    },
+    "complexDefault": {
+      "defaultValue": {
+        "summary": "(props: any) => {\n    if (props.arrayDefault.length > props.numberDefault) {\n        return [];\n    }\n    return undefined;\n}"
+      },
+      "description": "Default function more complex",
+      "name": "complexDefault",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "(props: any) => {\n    if (props.arrayDefault.length > props.numberDefault) {\n        return [];\n    }\n    return undefined;\n}"
+        },
+        "type": {
+          "summary": "unknown[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "unknown[] | undefined"
+      }
+    },
+    "numberDefault": {
+      "defaultValue": {
+        "summary": "42"
+      },
+      "description": "Number prop with default",
+      "name": "numberDefault",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "42"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "objectDefault": {
+      "defaultValue": {
+        "summary": "{\n    foo: 'bar',\n}"
+      },
+      "description": "Object prop with default",
+      "name": "objectDefault",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "{\n    foo: 'bar',\n}"
+        },
+        "type": {
+          "summary": "Record<string, any>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "Record<string, any> | undefined"
+      }
+    },
+    "submit": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "submit",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[SubmitPayload]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[SubmitPayload]"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-optionapi",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/OptionApi.stories.ts"
+}

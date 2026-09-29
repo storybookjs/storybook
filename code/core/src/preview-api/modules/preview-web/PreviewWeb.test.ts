@@ -426,7 +426,8 @@ describe('PreviewWeb', () => {
         expect(preview.view.prepareForStory).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'component-one--a',
-          })
+          }),
+          { scrollReset: true }
         );
       });
 
@@ -2694,7 +2695,8 @@ describe('PreviewWeb', () => {
         expect(preview.view.prepareForStory).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'component-one--a',
-          })
+          }),
+          { scrollReset: true }
         );
       });
 
@@ -2997,7 +2999,10 @@ describe('PreviewWeb', () => {
           : componentTwoExports;
       });
 
-      it('calls renderToCanvas teardown', async () => {
+      // Regression test for https://github.com/storybookjs/storybook/issues/22057. The outgoing
+      // render must keep its DOM mounted until the new render replaces it in place; unmounting
+      // it first collapses the document and loses the user's scroll position.
+      it('does NOT call renderToCanvas teardown (the DOM is replaced by the new render)', async () => {
         document.location.search = '?id=component-one--a';
         const preview = await createAndRenderPreview();
         mockChannel.emit.mockClear();
@@ -3005,7 +3010,22 @@ describe('PreviewWeb', () => {
         preview.onStoriesChanged({ importFn: newImportFn });
         await waitForRender();
 
-        expect(teardownrenderToCanvas).toHaveBeenCalled();
+        expect(teardownrenderToCanvas).not.toHaveBeenCalled();
+      });
+
+      // Also part of https://github.com/storybookjs/storybook/issues/22057: the delayed
+      // "preparing" spinner hides the whole document when it fires, which equally collapses
+      // the document and loses the scroll position mid-re-render.
+      it('does NOT show the preparing spinner (previous content stays visible)', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+        vi.mocked(preview.view.showPreparingStory).mockClear();
+        mockChannel.emit.mockClear();
+
+        preview.onStoriesChanged({ importFn: newImportFn });
+        await waitForRender();
+
+        expect(preview.view.showPreparingStory).not.toHaveBeenCalled();
       });
 
       it('does not emit STORY_UNCHANGED', async () => {
@@ -3219,6 +3239,22 @@ describe('PreviewWeb', () => {
         await waitForRender();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+      });
+
+      // Regression test for https://github.com/storybookjs/storybook/issues/22057. The HMR
+      // re-render must pass scrollReset: false so the user's scroll position is preserved.
+      it('calls view.prepareForStory with scrollReset: false to preserve scroll on HMR', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+
+        mockChannel.emit.mockClear();
+        preview.onStoriesChanged({ importFn: newImportFn });
+        await waitForRender();
+
+        expect(preview.view.prepareForStory).toHaveBeenLastCalledWith(
+          expect.objectContaining({ id: 'component-one--a' }),
+          { scrollReset: false }
+        );
       });
     });
 
@@ -3684,7 +3720,9 @@ describe('PreviewWeb', () => {
       );
     });
 
-    it('calls renderToCanvas teardown', async () => {
+    // Same-story re-render: the DOM is kept mounted until the new render replaces it, so the
+    // scroll position survives editing preview annotations (#22057).
+    it('does NOT call renderToCanvas teardown', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();
 
@@ -3693,7 +3731,7 @@ describe('PreviewWeb', () => {
       preview.onGetProjectAnnotationsChanged({ getProjectAnnotations: newGetProjectAnnotations });
       await waitForRender();
 
-      expect(teardownrenderToCanvas).toHaveBeenCalled();
+      expect(teardownrenderToCanvas).not.toHaveBeenCalled();
     });
 
     it('rerenders the current story with new global meta-generated context', async () => {

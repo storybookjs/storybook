@@ -1,0 +1,54 @@
+{
+  "label": {
+    "defaultValue": undefined,
+    "description": "Accessible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "optional": {
+    "defaultValue": {
+      "summary": "false",
+    },
+    "description": "Whether the field may be left empty.",
+    "name": "optional",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": false,
+    },
+  },
+  "value": {
+    "defaultValue": undefined,
+    "description": "The current value.",
+    "name": "value",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

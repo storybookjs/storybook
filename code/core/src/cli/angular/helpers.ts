@@ -4,18 +4,49 @@ import { resolve } from 'node:path';
 import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
-import { applyEdits, modify } from 'jsonc-parser';
+import { type FormattingOptions, applyEdits, modify } from 'jsonc-parser';
+import semver from 'semver';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
+
+/** Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares. */
+export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.5.2';
+
+export const toDevkitVersion = (ngRange?: string | null): string | undefined => {
+  if (!ngRange) {
+    return undefined;
+  }
+  const min = semver.validRange(ngRange) ? semver.minVersion(ngRange) : null;
+
+  if (!min) {
+    return undefined;
+  }
+  const pre = min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
+  const versionCore = `0.${min.major * 100 + min.minor}.${min.patch}${pre}`;
+
+  return ngRange.trim().startsWith('^') ? `^${versionCore}` : versionCore;
+};
 
 /** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
 export type JSONEditPath = (string | number)[];
 
-const JSON_EDIT_FORMATTING = { insertSpaces: true, tabSize: 2, eol: '\n' } as const;
+// `jsonc-parser` re-indents the lines it touches, so a wrong tab size leaves the document with
+// mixed indentation.
+const detectIndentation = (text: string): FormattingOptions => {
+  const indent = /^[ \t]+(?=[^\s])/m.exec(text)?.[0];
+
+  if (!indent) {
+    return { insertSpaces: true, tabSize: 2 };
+  }
+
+  return indent.startsWith('\t')
+    ? { insertSpaces: false, tabSize: 1 }
+    : { insertSpaces: true, tabSize: indent.length };
+};
 
 /** Apply a format-preserving edit to a JSON string at `path`. `value === undefined` removes it. */
 export const editJsonText = (text: string, path: JSONEditPath, value: unknown): string =>
-  applyEdits(text, modify(text, path, value, { formattingOptions: JSON_EDIT_FORMATTING }));
+  applyEdits(text, modify(text, path, value, { formattingOptions: detectIndentation(text) }));
 
 /** An `angular.json` architect target or Nx `project.json` target. */
 export interface StorybookBuilderTarget {
@@ -23,20 +54,32 @@ export interface StorybookBuilderTarget {
   executor?: string;
   options?: {
     compodoc?: boolean;
+    zoneless?: boolean;
     experimentalZoneless?: boolean;
     [key: string]: unknown;
   };
 }
 
-export const isStorybookTarget = (target: unknown): target is StorybookBuilderTarget => {
+/**
+ * Whether `target` runs Storybook, narrowed to `builderPackage` when one is given.
+ *
+ * `@storybook/angular`, `@storybook/angular-vite` and `@analogjs/storybook-angular` all end in
+ * `:start-storybook`, so a caller that edits options one of them owns must pass `builderPackage`.
+ */
+export const isStorybookTarget = (
+  target: unknown,
+  builderPackage?: string
+): target is StorybookBuilderTarget => {
   if (typeof target !== 'object' || target === null) {
     return false;
   }
   const ref =
     (target as StorybookBuilderTarget).builder ?? (target as StorybookBuilderTarget).executor;
-  return (
-    typeof ref === 'string' &&
-    (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
+  if (typeof ref !== 'string') {
+    return false;
+  }
+  return ['start-storybook', 'build-storybook'].some((command) =>
+    builderPackage ? ref === `${builderPackage}:${command}` : ref.endsWith(`:${command}`)
   );
 };
 

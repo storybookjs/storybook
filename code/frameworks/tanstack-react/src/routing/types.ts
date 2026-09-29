@@ -183,10 +183,11 @@ export interface RouterParameters<
    */
   routeOverrides?: RouteTreeOverrides;
 
-  context?: Record<string, unknown>;
+  /** Object or factory; the factory runs before initial router load outside React, so loader and beforeLoad can read its values. */
+  context?:
+    | Record<string, unknown>
+    | ((options: { storyContext: Parameters<Decorator>[1] }) => Record<string, unknown>);
 
-  /**
-   *
-   */
+  /** React hook render context reaches components, not the initial loader or beforeLoad; use the context factory for loader-visible values. */
   useRouterContext?: ({ storyContext }: { storyContext: Parameters<Decorator>[1] }) => AnyContext;
 }

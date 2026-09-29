@@ -32,7 +32,6 @@ const check = async ({
     mainConfig: mainConfig as any,
     storybookVersion,
     storiesPaths: [],
-    hasCsfFactoryPreview: false,
   });
 };
 
@@ -56,8 +55,8 @@ describe('upgrade-storybook-related-dependencies fix', () => {
         hasIncompatibleDependencies: false,
       },
       {
-        packageName: '@storybook/preset-create-react-app',
-        packageVersion: '3.2.0',
+        packageName: '@storybook/addon-a11y',
+        packageVersion: '7.0.0',
         availableUpgrade: '8.0.0',
         hasIncompatibleDependencies: true,
       },
@@ -74,7 +73,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     const mockPackageJson = {
       dependencies: {
         '@storybook/jest': '0.2.3',
-        '@storybook/preset-create-react-app': '3.2.0',
+        '@storybook/addon-a11y': '7.0.0',
       },
       devDependencies: {
         '@chromatic-com/storybook': '1.2.9',
@@ -114,8 +113,8 @@ describe('upgrade-storybook-related-dependencies fix', () => {
           },
           {
             "afterVersion": "8.0.0",
-            "beforeVersion": "3.2.0",
-            "packageName": "@storybook/preset-create-react-app",
+            "beforeVersion": "7.0.0",
+            "packageName": "@storybook/addon-a11y",
           },
         ],
       }

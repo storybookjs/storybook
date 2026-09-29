@@ -3,14 +3,19 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 export interface CheckOptions {
   packageManager: JsPackageManager;
-  rendererPackage?: string;
   configDir?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
+  /** Version installed before the upgrade. Only set when running as part of `storybook upgrade`. */
+  beforeVersion?: string;
+  /**
+   * The user named this fix explicitly (`storybook automigrate <fixId>` or `storybook upgrade
+   * --features <flag>`). Opt-in fixes may treat this as consent and skip their own gating.
+   */
+  requested?: boolean;
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
 }
 
 export interface RunOptions<ResultType> {
@@ -76,7 +81,7 @@ export type Fix<ResultType = any> =
 export type CommandFix<ResultType = any> = {
   promptType: PromptType<ResultType, 'command'>;
   run: (options: RunOptions<ResultType>) => Promise<void>;
-} & Omit<BaseFix<ResultType>, 'versionRange' | 'check' | 'prompt'>;
+} & Omit<BaseFix<ResultType>, 'check' | 'prompt'>;
 
 export type FixId = string;
 
@@ -96,7 +101,6 @@ export interface AutofixOptions extends Omit<AutofixOptionsFromCLI, 'packageMana
   isUpgrade: boolean;
   isLatest: boolean;
   storiesPaths: string[];
-  hasCsfFactoryPreview: boolean;
 }
 export interface AutofixOptionsFromCLI {
   fixId?: FixId;
@@ -106,7 +110,6 @@ export interface AutofixOptionsFromCLI {
   packageManager?: PackageManagerName;
   dryRun?: boolean;
   configDir: string;
-  renderer?: string;
   skipInstall?: boolean;
   hideMigrationSummary?: boolean;
   skipDoctor?: boolean;

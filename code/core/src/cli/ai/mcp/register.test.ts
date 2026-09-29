@@ -134,7 +134,7 @@ describe('without the feature flag (no registration)', () => {
 
   it('rejects tool names like today (excess arguments)', async () => {
     const { program } = buildProgram({ withPassthrough: false });
-    await expect(parse(program, ['ai', 'list-all-documentation'])).rejects.toMatchObject({
+    await expect(parse(program, ['ai', 'docs-list'])).rejects.toMatchObject({
       code: 'commander.excessArguments',
     });
     expect(runAiTool).not.toHaveBeenCalled();
@@ -151,8 +151,8 @@ describe('without the feature flag (no registration)', () => {
 describe('with the feature flag (passthrough registered)', () => {
   it('forwards `ai <tool>` with pass-through tokens to runAiTool', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', 'get-documentation', '--id', 'button-docs']);
-    expect(runAiTool).toHaveBeenCalledWith('get-documentation', ['--id', 'button-docs'], {
+    await parse(program, ['ai', 'docs-show', '--id', 'button-docs']);
+    expect(runAiTool).toHaveBeenCalledWith('docs-show', ['--id', 'button-docs'], {
       cwd: undefined,
       configDir: undefined,
       port: undefined,
@@ -170,12 +170,12 @@ describe('with the feature flag (passthrough registered)', () => {
       'config/storybook',
       '--port',
       '6007',
-      'preview-stories',
+      'stories-preview',
       '--storyIds',
       '["button--primary"]',
     ]);
     expect(runAiTool).toHaveBeenCalledWith(
-      'preview-stories',
+      'stories-preview',
       ['--storyIds', '["button--primary"]'],
       {
         cwd: '/repo',
@@ -188,8 +188,8 @@ describe('with the feature flag (passthrough registered)', () => {
 
   it('parses --json before the tool name as the command argument escape hatch', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', '--json', '{"a":1}', 'get-documentation']);
-    expect(runAiTool).toHaveBeenCalledWith('get-documentation', [], {
+    await parse(program, ['ai', '--json', '{"a":1}', 'docs-show']);
+    expect(runAiTool).toHaveBeenCalledWith('docs-show', [], {
       cwd: undefined,
       configDir: undefined,
       port: undefined,
@@ -199,8 +199,8 @@ describe('with the feature flag (passthrough registered)', () => {
 
   it('parses -c before the tool name as a config-dir CLI option', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', '-c', 'config/storybook', 'get-documentation']);
-    expect(runAiTool).toHaveBeenCalledWith('get-documentation', [], {
+    await parse(program, ['ai', '-c', 'config/storybook', 'docs-show']);
+    expect(runAiTool).toHaveBeenCalledWith('docs-show', [], {
       cwd: undefined,
       configDir: 'config/storybook',
       port: undefined,
@@ -327,8 +327,8 @@ describe('with the feature flag (passthrough registered)', () => {
 
   it('shows single-tool help for `ai --help <tool>`', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', '--help', 'get-documentation']);
-    expect(runAiToolHelp).toHaveBeenCalledWith('get-documentation', {
+    await parse(program, ['ai', '--help', 'docs-show']);
+    expect(runAiToolHelp).toHaveBeenCalledWith('docs-show', {
       cwd: undefined,
       configDir: undefined,
       port: undefined,
@@ -339,8 +339,8 @@ describe('with the feature flag (passthrough registered)', () => {
 
   it('passes a --help token after the tool name through to runAiTool', async () => {
     const { program } = buildProgram({ withPassthrough: true });
-    await parse(program, ['ai', 'get-documentation', '--help']);
-    expect(runAiTool).toHaveBeenCalledWith('get-documentation', ['--help'], {
+    await parse(program, ['ai', 'docs-show', '--help']);
+    expect(runAiTool).toHaveBeenCalledWith('docs-show', ['--help'], {
       cwd: undefined,
       configDir: undefined,
       port: undefined,

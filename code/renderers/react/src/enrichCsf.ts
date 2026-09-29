@@ -21,7 +21,7 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
       let node;
       let snippet;
       try {
-        node = getCodeSnippet(csfSource, key, csfSource._meta?.component);
+        node = getCodeSnippet(csfSource, key, csfSource._meta?.component).node;
       } catch (e) {
         if (!(e instanceof Error)) {
           return;

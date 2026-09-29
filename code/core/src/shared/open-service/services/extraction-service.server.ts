@@ -29,10 +29,25 @@ type ComponentPayloadQuery = { get(input: { id: string }): unknown };
 
 type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
 
+/** The `{ name, message }` shape both extraction payloads carry under `error`. */
+export type ExtractionError = { name: string; message: string };
+
+const toExtractionError = (error: unknown): ExtractionError =>
+  error instanceof Error
+    ? { name: error.name, message: error.message }
+    : { name: 'Error', message: String(error) };
+
 export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   workingDir: string;
   getIndex: () => Promise<StoryIndex>;
   provider: ExtractionProvider<TPayload>;
+  /**
+   * Builds the payload stored for a component whose provider threw during the fan-out.
+   *
+   * Supplied per service because the payload shapes differ and both are validated against their
+   * service's output schema.
+   */
+  buildErrorPayload: (input: { id: string; entry: IndexEntry; error: ExtractionError }) => TPayload;
   /**
    * Query whose `staticInputs` enumerate the eligible component ids, and whose `.get({ id })` the
    * hot-refresh subscription reads to decide which components are already extracted. Typed as a key
@@ -138,7 +153,15 @@ export function registerExtractionService<
   definition: ServiceDefinition<TState, TQueries, TCommands>,
   options: RegisterExtractionServiceOptions<TState['components'][string], TQueries, TCommands>
 ) {
-  const { workingDir, getIndex, provider, queryName, extractCommand, extractAllCommand } = options;
+  const {
+    workingDir,
+    getIndex,
+    provider,
+    buildErrorPayload,
+    queryName,
+    extractCommand,
+    extractAllCommand,
+  } = options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
   // which defeats TS's per-key checking. Assert the names exist on the definition so a typo fails here
@@ -155,29 +178,26 @@ export function registerExtractionService<
   const resolveComponentEntries = async () =>
     selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
 
-  const extractComponent = async (
-    ctx: CommandCtx<TState>,
-    id: string
-  ): Promise<TState['components'][string] | undefined> => {
+  const resolveEntry = async (id: string) => {
     const entry = (await resolveComponentEntries()).get(id);
 
     if (!entry) {
       throw new OpenServiceDocgenMissingComponentError({ id });
     }
 
-    const payload = await provider({ entry });
+    return entry;
+  };
 
-    if (!payload) {
-      ctx.self.setState((state) => {
-        delete state.components[id];
-      });
-      return undefined;
-    }
-
-    ctx.self.setState((state) => {
+  const writePayload = (
+    state: TState,
+    id: string,
+    payload: TState['components'][string] | undefined
+  ): void => {
+    if (payload) {
       state.components[id] = payload;
-    });
-    return payload;
+    } else {
+      delete state.components[id];
+    }
   };
 
   const runtime = registerService(definition, {
@@ -191,19 +211,42 @@ export function registerExtractionService<
     },
     commands: {
       [extractCommand]: {
-        handler: (input: { id: string }, ctx: CommandCtx<TState>) =>
-          extractComponent(ctx, input.id),
+        handler: async (input: { id: string }, ctx: CommandCtx<TState>) => {
+          const payload = await provider({ entry: await resolveEntry(input.id) });
+          ctx.self.setState((state) => writePayload(state, input.id, payload));
+          return payload;
+        },
       },
       [extractAllCommand]: {
+        // Every component is resolved first and the state written once: one sync entry for the
+        // whole extraction instead of one per component.
         handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
-          const ids = Array.from((await resolveComponentEntries()).keys());
-          await Promise.all(ids.map((id) => extractComponent(ctx, id)));
+          const componentEntries = await resolveComponentEntries();
+          const results = await Promise.all(
+            Array.from(componentEntries, async ([id, entry]) => {
+              try {
+                return [id, await provider({ entry })] as const;
+              } catch (error) {
+                // A provider is not required to be total, so one component's failure must not
+                // discard every other component's payload.
+                return [
+                  id,
+                  buildErrorPayload({ id, entry, error: toExtractionError(error) }),
+                ] as const;
+              }
+            })
+          );
+          ctx.self.setState((state) => {
+            for (const [id, payload] of results) {
+              writePayload(state, id, payload);
+            }
+          });
         },
       },
     },
   } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>);
 
-  const moduleGraph = getService('core/module-graph');
+  const moduleGraph = getService('core/module-graph', { internal: true });
   subscribeExtractionServiceRefresh(moduleGraph, {
     workingDir,
     getIndex,

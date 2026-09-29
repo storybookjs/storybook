@@ -1,0 +1,14 @@
+{
+  "id": "template-unsupported",
+  "name": "TemplateUnsupportedPanel",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-unsupported--primary": {
+      "description": undefined,
+      "id": "forms-template-unsupported--primary",
+      "name": "Primary",
+      "summary": undefined,
+      "warning": "No static snippet: the story template could not be resolved statically.",
+    },
+  },
+}

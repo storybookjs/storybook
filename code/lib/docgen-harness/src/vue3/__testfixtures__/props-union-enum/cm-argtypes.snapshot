@@ -1,0 +1,53 @@
+{
+  "size": {
+    "defaultValue": undefined,
+    "description": "The visual size of the control.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": ""medium" | "small" | "large"",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "required": true,
+      "value": [
+        "medium",
+        "small",
+        "large",
+      ],
+    },
+  },
+  "status": {
+    "defaultValue": undefined,
+    "description": "Loose value that accepts several primitive shapes.",
+    "name": "status",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string | number | boolean",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "string",
+          "required": false,
+        },
+        {
+          "name": "number",
+          "required": false,
+        },
+        {
+          "name": "boolean",
+          "required": false,
+        },
+      ],
+    },
+  },
+}

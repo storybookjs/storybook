@@ -160,9 +160,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
 export interface WebComponentsMeta<
   T extends WebComponentsTypes,
   MetaInput extends ComponentAnnotations<T>,
->
-  /** @ts-expect-error WebComponentsMeta requires two type parameters, but Meta's constraints differ */
-  extends Meta<T, MetaInput> {
+> extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.
    *

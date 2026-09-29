@@ -1,0 +1,49 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "defaultValue": {
+        "summary": "'red'"
+      },
+      "description": "@defaultValue: false<br>@control: color<br>@group: Style<br><br>This is a description of the prop",
+      "name": "backgroundColor",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "'red'"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "size": {
+      "defaultValue": {
+        "summary": "'medium'"
+      },
+      "description": "@defaultValue: 'medium'<br>@values: 'small', 'medium', 'large'<br>@control: select<br>@group: Size<br><br>This is a description of the prop",
+      "name": "size",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "'medium'"
+        },
+        "type": {
+          "summary": "\"small\" | \"medium\" | \"large\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": ["small", "medium", "large"]
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-tsnameexport",
+  "jsDocTags": {},
+  "name": "ComponentA",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/TsNameExport.stories.ts"
+}

@@ -40,7 +40,7 @@ export const extractArgTypesFromDocgenTypescript = async ({
       savePropValueAsString: true,
     };
 
-    const tsConfig = await getTsConfig();
+    const tsConfig = await getTsConfig(componentFilePath);
 
     const mergedOptions = {
       ...defaultOptions,

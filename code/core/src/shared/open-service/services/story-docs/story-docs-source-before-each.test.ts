@@ -250,6 +250,18 @@ describe('storyDocsSourceBeforeEach', () => {
     expect(mockedEmitTransformCode).not.toHaveBeenCalled();
   });
 
+  it('settles without rejecting when the story docs load fails', async () => {
+    mockStoryDocsService(() => Promise.reject(new Error('no runtime acknowledged the command')));
+
+    const cleanup = storyDocsSourceBeforeEach({
+      id: storyId,
+      parameters: { __isArgsStory: true },
+    } as unknown as StoryContext);
+
+    await expect(cleanup?.()).resolves.toBeUndefined();
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+  });
+
   it('does not emit after cleanup cancels an in-flight load', async () => {
     let resolveLoaded: (value: StoryDocsPayload) => void = () => {};
     const loaded = new Promise<StoryDocsPayload>((resolve) => {

@@ -195,13 +195,11 @@ export async function generateBundle({
     outDir,
     chunkDir,
     useGlobals,
-    tieSetupToInit,
   }: {
     entryPoint: string;
     outDir: string;
     chunkDir: string;
     useGlobals: boolean;
-    tieSetupToInit: boolean;
   }) => {
     const name = basename(entryPoint).replace(/\.[^.]+$/, '');
     const alias = Object.fromEntries(
@@ -238,7 +236,7 @@ export async function generateBundle({
     });
     await build.close();
 
-    if (tieSetupToInit) {
+    if (outDir === 'preview' && name === 'runtime') {
       const entryFile = join(DIR_CWD, 'dist', outDir, `${name}.js`);
       await writeFile(entryFile, tiePreviewRuntimeSetup(await readFile(entryFile, 'utf8')));
     }
@@ -326,7 +324,6 @@ export async function generateBundle({
       outDir,
       chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
       useGlobals,
-      tieSetupToInit: outDir === 'preview',
     };
   };
 

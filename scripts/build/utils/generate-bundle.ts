@@ -1,5 +1,5 @@
 import { existsSync, watch } from 'node:fs';
-import { mkdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
 import * as esbuild from 'esbuild';
 import { raw as rawPlugin } from 'esbuild-raw-plugin';
@@ -22,6 +22,7 @@ import {
   type EsbuildContextOptions,
   getExternal,
 } from './entry-utils.ts';
+import { tiePreviewRuntimeSetup } from './preview-runtime-entry.ts';
 
 // repo root/bench/esbuild-metafiles/core
 const DIR_METAFILE_BASE = join(
@@ -194,11 +195,13 @@ export async function generateBundle({
     outDir,
     chunkDir,
     useGlobals,
+    tieSetupToInit,
   }: {
     entryPoint: string;
     outDir: string;
     chunkDir: string;
     useGlobals: boolean;
+    tieSetupToInit: boolean;
   }) => {
     const name = basename(entryPoint).replace(/\.[^.]+$/, '');
     const alias = Object.fromEntries(
@@ -234,6 +237,11 @@ export async function generateBundle({
       },
     });
     await build.close();
+
+    if (tieSetupToInit) {
+      const entryFile = join(DIR_CWD, 'dist', outDir, `${name}.js`);
+      await writeFile(entryFile, tiePreviewRuntimeSetup(await readFile(entryFile, 'utf8')));
+    }
   };
 
   const contexts: Array<ReturnType<typeof esbuild.context>> = [];
@@ -318,6 +326,7 @@ export async function generateBundle({
       outDir,
       chunkDir: outDir === 'manager' ? '_manager-chunks' : '_chunks',
       useGlobals,
+      tieSetupToInit: outDir === 'preview',
     };
   };
 

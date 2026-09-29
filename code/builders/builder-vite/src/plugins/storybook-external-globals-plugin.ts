@@ -1,6 +1,6 @@
 import { existsSync } from 'node:fs';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join, sep } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { globalsNameReferenceMap } from 'storybook/internal/preview/globals';
 import type { Options } from 'storybook/internal/types';
@@ -124,16 +124,15 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   } satisfies Plugin;
 }
 
-const bundledPreviewRuntimeDir = `${sep}dist${sep}preview${sep}`;
+const bundledPreviewRuntimePattern = /[/\\]dist[/\\]preview[/\\]/;
 
-// setup() assigns these globals from inside the chunked runtime's init wrapper.
-// Importing that module first makes Rollup run init before this binding is read.
+// Call setup() so init still runs when side-effect imports of this package are dropped.
 export function ensurePreviewRuntimePrecedesGlobals(code: string, id: string) {
-  if (id.includes(bundledPreviewRuntimeDir)) {
+  if (bundledPreviewRuntimePattern.test(id.split('?')[0])) {
     return code;
   }
 
-  return `import ${JSON.stringify(previewRuntimePath)};\n${code}`;
+  return `import { setup as __sbInitializePreviewGlobals } from ${JSON.stringify(previewRuntimePath)};\n__sbInitializePreviewGlobals();\n${code}`;
 }
 
 function getDefaultImportReplacement(match: string) {

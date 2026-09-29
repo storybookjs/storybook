@@ -52,17 +52,31 @@ function toolMetadataFor(options: {
   });
 }
 
+const TOOL_NAMES = [
+  'docs-list',
+  'docs-show',
+  'docs-show-story',
+  'get-storybook-story-instructions',
+  'review-create',
+  'stories-changed',
+  'stories-find-by-component',
+  'stories-preview',
+  'test-run',
+];
+
 describe('MCP tool descriptions', () => {
   it('stay plain text within the MCP client truncation limit for every tool in every configuration', () => {
-    const seenTools = new Set<string>();
-
     for (const reviewEnabled of bools)
       for (const multiSource of bools)
         for (const testSupported of bools)
           for (const a11yEnabled of bools) {
             const options = { reviewEnabled, multiSource, testSupported, a11yEnabled };
-            for (const tool of toolMetadataFor(options)) {
-              seenTools.add(tool.name);
+            const tools = toolMetadataFor(options);
+
+            expect(tools.map((tool) => tool.name).sort()).toEqual(
+              TOOL_NAMES.filter((name) => testSupported || name !== 'test-run')
+            );
+            for (const tool of tools) {
               const length = tool.description?.length ?? 0;
               expect.soft(length, `${tool.name} has no description`).toBeGreaterThan(0);
               expect
@@ -73,17 +87,5 @@ describe('MCP tool descriptions', () => {
                 .not.toMatch(MARKDOWN_EMPHASIS);
             }
           }
-
-    expect([...seenTools].sort()).toEqual([
-      'docs-list',
-      'docs-show',
-      'docs-show-story',
-      'get-storybook-story-instructions',
-      'review-create',
-      'stories-changed',
-      'stories-find-by-component',
-      'stories-preview',
-      'test-run',
-    ]);
   });
 });

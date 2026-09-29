@@ -522,7 +522,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
 				        "changedFiles": {
-				          "description": "Paths of the files you changed, most central first. Pass an empty array \`[]\` only when no code changed (browse requests).",
+				          "description": "Paths of the files you changed, most central first. Pass an empty array \`[]\` only when no code changed (e.g. browse requests).",
 				          "items": {
 				            "type": "string",
 				          },

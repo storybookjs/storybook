@@ -55,7 +55,7 @@ const reviewCreateInputSchema = v.object({
   changedFiles: v.pipe(
     v.array(v.string()),
     v.description(
-      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (browse requests).'
+      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (e.g. browse requests).'
     )
   ),
 });

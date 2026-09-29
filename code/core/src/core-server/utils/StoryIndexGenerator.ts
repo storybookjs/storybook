@@ -9,7 +9,7 @@ import {
   normalizeStoryPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
@@ -786,12 +786,15 @@ export class StoryIndexGenerator {
         throw new MultipleIndexingError(duplicateErrors);
       }
 
+      if (previewCode?.includes('storySort')) {
+        once.warn(dedent`
+          parameters.options.storySort in the preview no longer sorts stories.
+          Move it to storySorts in .storybook/main, or run: npx storybook automigrate story-sort-to-main
+        `);
+      }
       const sorted = await this.sortStories(
         indexEntries,
-        combineStorySorts([
-          ...(this.options.storySorts ?? []),
-          ...(previewCode ? [getStorySortParameter(previewCode)] : []),
-        ])
+        combineStorySorts(this.options.storySorts ?? [])
       );
 
       this.lastStats = stats;

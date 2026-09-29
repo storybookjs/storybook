@@ -15,7 +15,7 @@ const storySortPath = ['parameters', 'options', 'storySort'];
 
 const fail = (reason: string): never => {
   throw new HandledError(
-    `Cannot automigrate storySort: ${reason}. The preview's parameters.options.storySort keeps working. To migrate manually, add it to storySorts in the main config and remove the preview property.`
+    `Cannot automigrate storySort: ${reason}. Storybook no longer reads parameters.options.storySort from the preview. Move it to storySorts in the main config manually and remove the preview property.`
   );
 };
 
@@ -23,7 +23,7 @@ const firstProblem = (config: ConfigFile) => config.mutationDiagnostics[0]?.mess
 
 export const storySortToMain: Fix<StorySortToMainOptions> = {
   id: 'story-sort-to-main',
-  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysorts-in-main-replace-storysort-in-the-preview',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main',
 
   async check({ files, previewConfigPath }) {
     if (!previewConfigPath) {

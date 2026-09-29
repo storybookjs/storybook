@@ -115,11 +115,4 @@ The following configuration shows `Intro` and `Components` first and sorts all o
 
 <CodeSnippets path="main-config-story-sorts.md" />
 
-<Callout variant="info">
-
-Storybook still reads `parameters.options.storySort` from `.storybook/preview.js|ts` and applies it after all `storySorts`.
-Run `npx storybook automigrate story-sort-to-main` to move it to `storySorts`.
-
-</Callout>
-
 Note that the `order` option is independent of the `method` option; stories are sorted first by the `order` array and then by either the `method: 'alphabetical'` or the default `configure()` import order.

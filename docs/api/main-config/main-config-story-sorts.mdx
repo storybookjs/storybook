@@ -73,9 +73,3 @@ export default {
   storySorts: (existing = []) => [{ order: ['Intro'] }, ...existing],
 };
 ```
-
-## Sorting from the preview
-
-Storybook still reads a `parameters.options.storySort` value from `.storybook/preview.js|ts`.
-It sorts after all `storySorts`, so it only decides the order of stories that every sorter in main considers equal.
-Run `npx storybook automigrate story-sort-to-main` to move a statically readable value from the preview to `storySorts`.

@@ -37,6 +37,5 @@ it('passes a single sorter through and leaves an empty list to the file order', 
   const byTitle = (a: IndexEntry, b: IndexEntry) => a.title.localeCompare(b.title);
 
   expect(combineStorySorts([byTitle])).toBe(byTitle);
-  expect(combineStorySorts([undefined, byTitle])).toBe(byTitle);
   expect(combineStorySorts([])).toBeUndefined();
 });

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf/csf-utils';
-import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
+import { loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type {
   DocsIndexEntry,
@@ -34,13 +34,11 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   return {
     ...csfTools,
     loadCsf: vi.fn(csfTools.loadCsf),
-    getStorySortParameter: vi.fn(csfTools.getStorySortParameter),
   };
 });
 
 const toIdMock = vi.mocked(toId);
 const loadCsfMock = vi.mocked(loadCsf);
-const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
   configDir: join(__dirname, '__mockdata__'),
@@ -55,7 +53,6 @@ describe('StoryIndexGenerator', () => {
     vi.mocked(once.warn).mockClear();
     toIdMock.mockClear();
     loadCsfMock.mockClear();
-    getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
   it.each([
@@ -2264,12 +2261,14 @@ describe('StoryIndexGenerator', () => {
         options
       );
 
-      const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
-      await generator.initialize();
-
-      getStorySortParameterMock.mockReturnValueOnce({
+      const storySort = {
         order: ['docs2', 'D', 'B', 'nested', 'A', 'second-nested', 'first-nested/deeply'],
+      };
+      const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], {
+        ...options,
+        storySorts: [storySort],
       });
+      await generator.initialize();
 
       expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
         [
@@ -2302,25 +2301,25 @@ describe('StoryIndexGenerator', () => {
       `);
     });
 
-    it('breaks the ties of the main storySorts with the preview storySort', async () => {
+    it('warns that a storySort in the preview no longer sorts stories', async () => {
       const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
         './src/**/*.stories.(ts|js|mjs|jsx)',
         options
       );
-      const generator = new StoryIndexGenerator([storiesSpecifier], {
-        ...options,
-        storySorts: [{ order: ['B'] }],
-      });
+      const generator = new StoryIndexGenerator([storiesSpecifier], options);
+      vi.spyOn(generator, 'getPreviewCode').mockResolvedValue(
+        `export default { parameters: { options: { storySort: { order: ['D'] } } } };`
+      );
       await generator.initialize();
 
-      getStorySortParameterMock.mockReturnValueOnce({ order: ['D'] });
+      const { entries } = await generator.getIndex();
 
-      expect(Object.keys((await generator.getIndex()).entries).slice(0, 4)).toEqual([
-        'b--docs',
-        'b--story-one',
-        'd--docs',
-        'd--story-one',
-      ]);
+      expect(Object.keys(entries)[0]).not.toBe('d--story-one');
+      expect(once.warn).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'parameters.options.storySort in the preview no longer sorts stories'
+        )
+      );
     });
   });
 
@@ -2372,8 +2371,10 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        getStorySortParameterMock.mockReturnValue(sortFn);
-        const generator = new StoryIndexGenerator([specifier], options);
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [sortFn],
+        });
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
@@ -2455,8 +2456,10 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        getStorySortParameterMock.mockReturnValue(sortFn);
-        const generator = new StoryIndexGenerator([specifier], options);
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [sortFn],
+        });
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
@@ -2496,8 +2499,10 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        getStorySortParameterMock.mockReturnValue(sortFn);
-        const generator = new StoryIndexGenerator([specifier], options);
+        const generator = new StoryIndexGenerator([specifier], {
+          ...options,
+          storySorts: [sortFn],
+        });
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();

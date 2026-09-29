@@ -25,9 +25,8 @@ const toComparator = (storySortParameter: Addon_StorySortParameterV7): Addon_Com
 
 // Each sorter breaks the ties of the ones before it.
 export const combineStorySorts = (
-  sorters: (Addon_StorySortParameterV7 | undefined)[]
+  storySorts: Addon_StorySortParameterV7[]
 ): Addon_StorySortParameterV7 | undefined => {
-  const storySorts = sorters.filter((sorter) => sorter !== undefined);
   if (storySorts.length <= 1) {
     return storySorts[0];
   }

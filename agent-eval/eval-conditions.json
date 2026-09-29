@@ -6,20 +6,20 @@
       "id": "full_suite",
       "label": "agent-eval:full-suite",
       "input": "full_suite",
-      "description": "Run the full 8xx/82x eval line instead of the default smoke eval",
+      "description": "Agent evals, full suite: for changes to one agent workflow (all 8xx/82x evals)",
       "schedule": true
     },
     {
       "id": "storybook_latest",
       "label": "agent-eval:storybook-latest",
       "input": "storybook_latest",
-      "description": "Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local builds"
+      "description": "Agent evals on Storybook latest: check if a problem exists in the stable release"
     },
     {
       "id": "review",
       "label": "agent-eval:review",
       "input": "review",
-      "description": "Enable the experimentalReview feature flag in eval sandboxes and assert the review workflow"
+      "description": "Agent evals with review on: for changes to the review workflow"
     }
   ]
 }

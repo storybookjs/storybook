@@ -228,6 +228,16 @@ describe('Story args can be inferred', () => {
     const WithHandler = meta.story({ args: { disabled: false, disabledChange: true } });
   });
 
+  it('argTypes do not add args', () => {
+    const meta = preview.type<{ args: ButtonProps }>().meta({
+      component: ButtonComponent,
+      argTypes: { disabledChange: { action: 'changed' } },
+      args: { disabled: false },
+    });
+
+    const Basic = meta.story({ args: { label: 'good' } });
+  });
+
   it('Correct args are inferred when type is added in renderer', () => {
     const meta = preview.type<{ args: ButtonProps }>().meta({
       component: ButtonComponent,

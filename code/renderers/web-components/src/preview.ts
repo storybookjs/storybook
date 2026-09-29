@@ -128,7 +128,8 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       ComponentAnnotations<
         WebComponentsTypes & T,
         RequireMetaArgs<
-          WebComponentsTypes & T & { args: InferArgsFromComponent<C> & TRenderArgs & T['args'] },
+          WebComponentsTypes &
+            T & { args: InferArgsFromComponent<C> & NoInfer<TRenderArgs> & T['args'] },
           NoInfer<TMetaArgKeys>
         >['args']
       >,

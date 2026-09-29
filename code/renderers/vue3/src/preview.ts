@@ -105,7 +105,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       ComponentAnnotations<
         VueTypes & T,
         RequireMetaArgs<
-          VueTypes & T & { args: ComponentPropsAndSlots<C> & TRenderArgs & T['args'] },
+          VueTypes & T & { args: ComponentPropsAndSlots<C> & NoInfer<TRenderArgs> & T['args'] },
           NoInfer<TMetaArgKeys>
         >['args']
       >,

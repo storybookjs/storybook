@@ -114,7 +114,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       ComponentAnnotations<
         AngularRenderer & T,
         RequireMetaArgs<
-          AngularRenderer & T & { args: InferComponentArgs<C> & TRenderArgs & T['args'] },
+          AngularRenderer & T & { args: InferComponentArgs<C> & NoInfer<TRenderArgs> & T['args'] },
           NoInfer<TMetaArgKeys>
         >['args']
       >,

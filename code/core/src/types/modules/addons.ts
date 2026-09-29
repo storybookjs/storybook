@@ -62,6 +62,7 @@ export type Addon_StorySortParameterV7 =
 // TODO: remove all these types, they belong in the renderer and csf-package
 
 export interface Addon_OptionsParameter extends Object {
+  storySort?: Addon_StorySortParameter;
   theme?: {
     base: string;
     brandTitle?: string;
@@ -70,6 +71,7 @@ export interface Addon_OptionsParameter extends Object {
 }
 
 export interface Addon_OptionsParameterV7 extends Object {
+  storySort?: Addon_StorySortParameterV7;
   theme?: {
     base: string;
     brandTitle?: string;

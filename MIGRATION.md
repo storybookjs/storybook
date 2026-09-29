@@ -18,7 +18,7 @@
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
-  - [`storySort` moved to main](#storysort-moved-to-main)
+  - [`storySorts` in main replace `storySort` in the preview](#storysorts-in-main-replace-storysort-in-the-preview)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
@@ -860,9 +860,11 @@ export default config;
 
 Before adding a polyfill, check whether the import can be removed instead. Most browser code does not need Node.js built-ins, and `@storybook/nextjs-vite` does not polyfill them at all.
 
-### `storySort` moved to main
+### `storySorts` in main replace `storySort` in the preview
 
-The `parameters.options.storySort` preview configuration has been removed. Configure story sorting as a top-level field in `.storybook/main.js|ts` instead.
+Story sorting moves from `parameters.options.storySort` in `.storybook/preview.js|ts` to the `storySorts` array in `.storybook/main.js|ts`.
+Each sorter only orders the stories that the sorters before it consider equal, and presets can add their own sorters.
+Storybook still reads the preview's `storySort` and applies it after all `storySorts`, so existing projects keep their order.
 
 Before:
 
@@ -883,11 +885,12 @@ After:
 // .storybook/main.ts
 export default {
   stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  storySort: { order: ['Introduction', 'Components'] },
+  storySorts: [{ order: ['Introduction', 'Components'] }],
 };
 ```
 
-Run `npx storybook automigrate story-sort-to-main` to move statically readable object and array configurations automatically, including local constants used only by that configuration. Comparator functions, imported values, and shared or reassigned variables require manual migration. Move those values and their dependencies to the top-level `storySort` field in main manually.
+Run `npx storybook automigrate story-sort-to-main` to move statically readable object and array configurations automatically, including local constants used only by that configuration.
+Comparator functions, imported values, and shared or reassigned variables keep working from the preview. Move them to `storySorts` manually.
 
 ### Angular: requires Angular 21 or higher
 

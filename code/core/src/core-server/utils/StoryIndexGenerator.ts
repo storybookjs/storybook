@@ -9,7 +9,7 @@ import {
   normalizeStoryPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { loadConfig } from 'storybook/internal/csf-tools';
+import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
@@ -37,7 +37,7 @@ import * as TsconfigPaths from 'tsconfig-paths';
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
 import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
 import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
-import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
+import { combineStorySorts, sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -71,7 +71,7 @@ export type StoryIndexGeneratorOptions = {
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
   features?: StorybookConfigRaw['features'];
-  storySort?: StorybookConfigRaw['storySort'];
+  storySorts?: StorybookConfigRaw['storySorts'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -786,7 +786,13 @@ export class StoryIndexGenerator {
         throw new MultipleIndexingError(duplicateErrors);
       }
 
-      const sorted = await this.sortStories(indexEntries, this.options.storySort);
+      const sorted = await this.sortStories(
+        indexEntries,
+        combineStorySorts([
+          ...(this.options.storySorts ?? []),
+          ...(previewCode ? [getStorySortParameter(previewCode)] : []),
+        ])
+      );
 
       this.lastStats = stats;
       this.lastIndex = {

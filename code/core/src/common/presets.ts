@@ -323,8 +323,6 @@ function applyPresets(
           ...options,
           presetsList: presets,
           presets: {
-            get: (ext: keyof StorybookConfigRaw) =>
-              presets.findLast(({ preset }) => preset[ext] !== undefined)?.preset[ext],
             apply: async (ext: string, c: any, a = {}) =>
               applyPresets(presets, ext, c, a, storybookOptions),
           },
@@ -355,8 +353,6 @@ export async function getPresets(
   const loadedPresets: LoadedPreset[] = await loadPresets(presets, 0, storybookOptions);
 
   return {
-    get: (extension) =>
-      loadedPresets.findLast(({ preset }) => preset[extension] !== undefined)?.preset[extension],
     apply: async (extension: string, config?: any, args = {}) =>
       applyPresets(loadedPresets, extension, config, args, storybookOptions),
   };

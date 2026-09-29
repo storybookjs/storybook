@@ -114,6 +114,12 @@ type StorySortFn = (a: Story, b: Story) => number;
 
 Specifies the order in which stories are displayed in the Storybook UI.
 
+<Callout variant="info">
+
+Prefer [`storySorts`](./main-config/main-config-story-sorts.mdx) in your main configuration. Storybook applies `options.storySort` after all `storySorts`.
+
+</Callout>
+
 When specifying a configuration object, the following options are available:
 
 - **includeNames**: Whether to include the story name in the sorting algorithm. Defaults to `false`.

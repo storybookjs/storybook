@@ -94,7 +94,6 @@ interface DirectoryMapping {
 }
 
 export interface Presets {
-  get?<T extends keyof StorybookConfigRaw>(extension: T): StorybookConfigRaw[T] | undefined;
   apply(
     extension: 'typescript',
     config: TypescriptOptions,
@@ -694,7 +693,7 @@ export interface StorybookConfigRaw {
   logLevel?: string;
   features?: StorybookFeatures;
 
-  storySort?: Addon_StorySortParameterV7;
+  storySorts?: Addon_StorySortParameterV7[];
 
   build?: TestBuildConfig;
 
@@ -791,8 +790,12 @@ export interface StorybookConfig {
   logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
   features?: PresetValue<StorybookConfigRaw['features']>;
 
-  /** Configure the order in which stories are displayed. */
-  storySort?: StorybookConfigRaw['storySort'];
+  /**
+   * Sort the stories in the sidebar. Each sorter is a comparator function, a sort object such as `{
+   * order: ['Intro', '*'] }`, or an order array, and breaks the ties of the sorters before it.
+   * Presets add their sorters with `(sorters) => [...sorters, sorter]`.
+   */
+  storySorts?: PresetValue<StorybookConfigRaw['storySorts']>;
 
   build?: PresetValue<StorybookConfigRaw['build']>;
 

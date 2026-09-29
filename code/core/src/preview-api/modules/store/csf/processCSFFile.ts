@@ -25,8 +25,10 @@ const checkGlobals = (parameters: Parameters) => {
 };
 
 const checkStorySort = (parameters: Parameters) => {
-  if (parameters.options?.storySort) {
-    logger.error('storySort must be configured as a top-level field in .storybook/main');
+  const { options } = parameters;
+
+  if (options?.storySort) {
+    logger.error('The storySort option parameter can only be set globally');
   }
 };
 

@@ -41,7 +41,7 @@ const migrate = async (main: string, preview: string) => {
 const expectMoved = async (main: string, preview: string, storySort: unknown) => {
   const migrated = await migrate(main, preview);
   expect(migrated.failures).toEqual([]);
-  expect(loadConfig(migrated.main).parse().getValue(['storySort'])).toEqual(storySort);
+  expect(loadConfig(migrated.main).parse().getValue(['storySorts'])).toEqual([storySort]);
   expect(
     loadConfig(migrated.preview).parse().get(['parameters', 'options', 'storySort'])
   ).toBeUndefined();
@@ -344,11 +344,17 @@ describe('story-sort-to-main', () => {
   });
 
   it.each([
-    ['an existing storySort', `export default { stories: [], storySort: { order: ['Existing'] } }`],
-    ['a storySort method', `export default { stories: [], storySort(a, b) { return 0 } }`],
     [
-      'a storySort getter',
-      `export default { stories: [], get storySort() { return existingSort } }`,
+      'existing storySorts',
+      `export default { stories: [], storySorts: [{ order: ['Existing'] }] }`,
+    ],
+    [
+      'a storySorts method',
+      `export default { stories: [], storySorts(sorters) { return sorters } }`,
+    ],
+    [
+      'a storySorts getter',
+      `export default { stories: [], get storySorts() { return existingSorters } }`,
     ],
     ['an unresolved spread', `const shared = { stories: [] }; export default { ...shared }`],
     ['a bracket CommonJS export', `module['exports'] = { stories: [] }`],
@@ -365,13 +371,13 @@ describe('story-sort-to-main', () => {
     ],
     [
       'a CommonJS alias mutated before the export',
-      `const existing = { order: ['Runtime'] }; const config = { stories: [] }; Object.assign(config, { storySort: existing }); module.exports = config`,
+      `const existing = { order: ['Runtime'] }; const config = { stories: [] }; Object.assign(config, { storySorts: [existing] }); module.exports = config`,
     ],
   ])('leaves both files untouched for a main with %s', async (_name, main) => {
     await expectUntouched(main, legacy);
   });
 
-  it('does not apply again once storySort lives in main', async () => {
+  it('does not apply again once storySort lives in the main storySorts', async () => {
     const { main, preview } = await expectMoved(`export default { stories: [] }`, legacy, {
       order: ['Legacy'],
     });

@@ -5,7 +5,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
 import { toId } from 'storybook/internal/csf/csf-utils';
-import { loadCsf } from 'storybook/internal/csf-tools';
+import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type {
   DocsIndexEntry,
@@ -34,11 +34,13 @@ vi.mock('storybook/internal/csf-tools', async (importOriginal) => {
   return {
     ...csfTools,
     loadCsf: vi.fn(csfTools.loadCsf),
+    getStorySortParameter: vi.fn(csfTools.getStorySortParameter),
   };
 });
 
 const toIdMock = vi.mocked(toId);
 const loadCsfMock = vi.mocked(loadCsf);
+const getStorySortParameterMock = vi.mocked(getStorySortParameter);
 
 const options: StoryIndexGeneratorOptions = {
   configDir: join(__dirname, '__mockdata__'),
@@ -53,6 +55,7 @@ describe('StoryIndexGenerator', () => {
     vi.mocked(once.warn).mockClear();
     toIdMock.mockClear();
     loadCsfMock.mockClear();
+    getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
   it.each([
@@ -2261,14 +2264,12 @@ describe('StoryIndexGenerator', () => {
         options
       );
 
-      const storySort = {
-        order: ['docs2', 'D', 'B', 'nested', 'A', 'second-nested', 'first-nested/deeply'],
-      };
-      const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], {
-        ...options,
-        storySort,
-      });
+      const generator = new StoryIndexGenerator([docsSpecifier, storiesSpecifier], options);
       await generator.initialize();
+
+      getStorySortParameterMock.mockReturnValueOnce({
+        order: ['docs2', 'D', 'B', 'nested', 'A', 'second-nested', 'first-nested/deeply'],
+      });
 
       expect(Object.keys((await generator.getIndex()).entries)).toMatchInlineSnapshot(`
         [
@@ -2299,6 +2300,27 @@ describe('StoryIndexGenerator', () => {
           "first-nested-deeply-features--with-csf-1",
         ]
       `);
+    });
+
+    it('breaks the ties of the main storySorts with the preview storySort', async () => {
+      const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+        './src/**/*.stories.(ts|js|mjs|jsx)',
+        options
+      );
+      const generator = new StoryIndexGenerator([storiesSpecifier], {
+        ...options,
+        storySorts: [{ order: ['B'] }],
+      });
+      await generator.initialize();
+
+      getStorySortParameterMock.mockReturnValueOnce({ order: ['D'] });
+
+      expect(Object.keys((await generator.getIndex()).entries).slice(0, 4)).toEqual([
+        'b--docs',
+        'b--story-one',
+        'd--docs',
+        'd--story-one',
+      ]);
     });
   });
 
@@ -2350,7 +2372,8 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        const generator = new StoryIndexGenerator([specifier], { ...options, storySort: sortFn });
+        getStorySortParameterMock.mockReturnValue(sortFn);
+        const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
@@ -2432,7 +2455,8 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        const generator = new StoryIndexGenerator([specifier], { ...options, storySort: sortFn });
+        getStorySortParameterMock.mockReturnValue(sortFn);
+        const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();
@@ -2472,7 +2496,8 @@ describe('StoryIndexGenerator', () => {
         );
 
         const sortFn = vi.fn();
-        const generator = new StoryIndexGenerator([specifier], { ...options, storySort: sortFn });
+        getStorySortParameterMock.mockReturnValue(sortFn);
+        const generator = new StoryIndexGenerator([specifier], options);
         await generator.initialize();
         await generator.getIndex();
         expect(sortFn).toHaveBeenCalled();

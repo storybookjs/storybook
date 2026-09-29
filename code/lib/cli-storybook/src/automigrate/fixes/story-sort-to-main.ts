@@ -15,7 +15,7 @@ const storySortPath = ['parameters', 'options', 'storySort'];
 
 const fail = (reason: string): never => {
   throw new HandledError(
-    `Cannot automigrate storySort: ${reason}. Move parameters.options.storySort from the preview to top-level storySort in the main config manually, reconcile any existing value, and remove the preview property.`
+    `Cannot automigrate storySort: ${reason}. The preview's parameters.options.storySort keeps working. To migrate manually, add it to storySorts in the main config and remove the preview property.`
   );
 };
 
@@ -23,7 +23,7 @@ const firstProblem = (config: ConfigFile) => config.mutationDiagnostics[0]?.mess
 
 export const storySortToMain: Fix<StorySortToMainOptions> = {
   id: 'story-sort-to-main',
-  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-moved-to-main',
+  link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysorts-in-main-replace-storysort-in-the-preview',
 
   async check({ files, previewConfigPath }) {
     if (!previewConfigPath) {
@@ -40,7 +40,7 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
   },
 
   prompt: () =>
-    `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySort')} in main?`,
+    `Move ${picocolors.cyan('parameters.options.storySort')} from preview to ${picocolors.cyan('storySorts')} in main?`,
 
   transform: ({ result: { storySort, previewProblem } }) => [
     {
@@ -49,13 +49,13 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         if (previewProblem) {
           fail(previewProblem);
         }
-        if (main.get(['storySort'])) {
-          fail('Both main and preview define storySort');
+        if (main.get(['storySorts'])) {
+          fail('The main config already defines storySorts');
         }
         if (storySort === null || typeof storySort !== 'object') {
           fail('storySort must be a statically readable object or array');
         }
-        main.set(['storySort'], storySort);
+        main.set(['storySorts'], [storySort]);
         const mainProblem = firstProblem(main);
         if (mainProblem) {
           fail(mainProblem);

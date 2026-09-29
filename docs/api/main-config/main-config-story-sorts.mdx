@@ -1,0 +1,81 @@
+---
+title: storySorts
+sidebar:
+  order: 21
+---
+
+Parent: [main.js|ts configuration](./main-config.mdx)
+
+Type: `(StorySortConfig | StorySortOrder | StorySortFn)[]`
+
+Default: `[]`
+
+Sorts the stories in the sidebar.
+Without sorters, stories appear in the order in which they are imported.
+See [the guide](../../writing-stories/naming-components-and-hierarchy.mdx#sorting-stories) for usage examples.
+
+<CodeSnippets path="main-config-story-sorts.md" />
+
+Each sorter compares two stories.
+When a sorter considers two stories equal, the next sorter decides their order.
+In the example above, `Intro` and `Components` come first, and the alphabetical sorter orders every other story.
+
+## `StorySortConfig`
+
+```ts
+type StorySortConfig = {
+  includeNames?: boolean;
+  locales?: string;
+  method?: 'alphabetical' | 'configure';
+  order?: StorySortOrder;
+};
+```
+
+- **includeNames**: Whether to compare story names as well as titles. Defaults to `false`.
+- **locales**: The locale to use for alphabetical sorting. Defaults to your system locale.
+- **method**: `'alphabetical'` sorts the stories not listed in `order` alphabetically. `'configure'` keeps them in import order.
+- **order**: The titles to show first, in the given order.
+
+## `StorySortOrder`
+
+```ts
+type StorySortOrder = (string | StorySortOrder)[];
+```
+
+An array is shorthand for `{ order: [...] }`.
+A nested array orders the second level of the title before it, as in `['Intro', 'Pages', ['Home', 'Login'], 'Components']`.
+A `'*'` entry marks where all unlisted stories go.
+
+## `StorySortFn`
+
+```ts
+type StorySortFn = (a: IndexEntry, b: IndexEntry) => number;
+```
+
+A comparator like the one passed to `Array.prototype.sort`.
+It receives two story index entries, each with an `id`, `title`, `name`, and `importPath`, and returns a negative number, zero, or a positive number.
+The comparator runs in Node.js when Storybook builds the story index, so it cannot use browser APIs.
+
+## Adding a sorter from a preset
+
+Presets and addons can add sorters too.
+Storybook [applies](../../addons/writing-presets.mdx) `storySorts` like other preset fields, so a preset receives the sorters defined so far and returns the new list:
+
+```js title="my-addon/preset.js"
+export const storySorts = (existing = []) => [...existing, { method: 'alphabetical' }];
+```
+
+Storybook applies the main configuration after all addons, so a plain `storySorts` array in main comes after the sorters that addons add.
+To give your own sorters precedence over them, write `storySorts` as a function and put yours first:
+
+```js title=".storybook/main.js"
+export default {
+  storySorts: (existing = []) => [{ order: ['Intro'] }, ...existing],
+};
+```
+
+## Sorting from the preview
+
+Storybook still reads a `parameters.options.storySort` value from `.storybook/preview.js|ts`.
+It sorts after all `storySorts`, so it only decides the order of stories that every sorter in main considers equal.
+Run `npx storybook automigrate story-sort-to-main` to move a statically readable value from the preview to `storySorts`.

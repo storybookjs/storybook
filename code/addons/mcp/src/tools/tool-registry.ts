@@ -23,6 +23,7 @@ import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
   registerToolsetTool,
+  type McpToolsetGroup,
   type ToolsetToolOptions,
 } from './toolset-tools.ts';
 
@@ -52,12 +53,11 @@ export type AddonToolRegistryContext = {
   options?: Options;
 };
 
-type AddonToolset = keyof NonNullable<AddonContext['toolsets']>;
 type ToolEnabled = Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'];
 
 type AddonToolDefinition = {
   name: string;
-  toolset: AddonToolset;
+  toolset: McpToolsetGroup;
   available?: (context: AddonToolRegistryContext) => boolean;
   getMetadata: (context: AddonToolRegistryContext) => ToolMetadata;
   register: (
@@ -68,8 +68,10 @@ type AddonToolDefinition = {
   getLocalTool?: (context: AddonToolRegistryContext & { options: Options }) => StorybookAiLocalTool;
 };
 
-const isToolsetEnabled = (toolset: AddonToolset, toolsets: AddonContext['toolsets'] | undefined) =>
-  toolsets?.[toolset] ?? true;
+const isToolsetEnabled = (
+  toolset: McpToolsetGroup,
+  toolsets: AddonContext['toolsets'] | undefined
+) => toolsets?.[toolset] ?? true;
 
 const isToolAvailable = (definition: AddonToolDefinition, context: AddonToolRegistryContext) =>
   definition.available?.(context) ?? true;
@@ -80,7 +82,7 @@ const isMetadataToolEnabled = (
 ) => isToolsetEnabled(definition.toolset, context.toolsets) && isToolAvailable(definition, context);
 
 const createToolsetEnabled =
-  (server: McpServer<any, AddonContext>, toolset: AddonToolset): ToolEnabled =>
+  (server: McpServer<any, AddonContext>, toolset: McpToolsetGroup): ToolEnabled =>
   () =>
     server.ctx.custom?.toolsets?.[toolset] ?? true;
 
@@ -139,14 +141,19 @@ function compositionDocsToolset(server?: McpServer<any, AddonContext>): DocsTool
   });
 }
 
+const DOCS_EVENT_NAMES = {
+  'docs.list': 'tool:listAllDocumentation',
+  'docs.show': 'tool:getDocumentation',
+  'docs.showStory': 'tool:getDocumentationForStory',
+} as const;
+
 /** The docs tools, in the two shapes the registry needs: registered toolset, or per-request one. */
-function docsToolDefinition(
-  method: 'docs.list' | 'docs.show' | 'docs.showStory'
-): AddonToolDefinition {
-  const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions =>
-    context.multiSource
-      ? { method, resolveToolset: (server) => compositionDocsToolset(server) }
-      : { method };
+function docsToolDefinition(method: keyof typeof DOCS_EVENT_NAMES): AddonToolDefinition {
+  const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions => ({
+    method,
+    mcpEventName: DOCS_EVENT_NAMES[method],
+    ...(context.multiSource ? { resolveToolset: (server) => compositionDocsToolset(server) } : {}),
+  });
 
   return {
     name: toMcpToolName(method),
@@ -170,6 +177,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
     toolset: 'dev',
     options: {
       method: 'stories.preview',
+      mcpEventName: 'tool:previewStories',
       extras: { _meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } } },
     },
   }),
@@ -204,12 +212,12 @@ const addonToolDefinitions: AddonToolDefinition[] = [
   fromToolset({
     toolset: 'dev',
     available: ({ availability }) => availability.changeDetectionEnabled,
-    options: { method: 'stories.changed' },
+    options: { method: 'stories.changed', mcpEventName: 'tool:getChangedStories' },
   }),
   fromToolset({
     toolset: 'dev',
     available: ({ availability }) => availability.moduleGraphSupported,
-    options: { method: 'stories.findByComponent' },
+    options: { method: 'stories.findByComponent', mcpEventName: 'tool:getStoriesByComponent' },
   }),
   fromToolset({
     toolset: 'dev',
@@ -224,13 +232,14 @@ const addonToolDefinitions: AddonToolDefinition[] = [
         (server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled),
     options: {
       method: 'review.create',
+      mcpEventName: 'tool:displayReview',
       wrapSchema: withFriendlyErrors,
     },
   }),
   fromToolset({
     toolset: 'test',
     available: ({ availability }) => availability.testSupported,
-    options: { method: 'test.run' },
+    options: { method: 'test.run', mcpEventName: 'tool:runStoryTests' },
   }),
   // Docs run on the core docs toolset in both modes. A composition builds its toolset per request,
   // because the sources it reads and the provider that fetches them belong to the request.

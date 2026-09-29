@@ -12,6 +12,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { OpenServiceToolsetOutputMismatchError } from 'storybook/internal/server-errors';
 import {
   getToolset,
+  invokeToolsetMethod,
+  parseToolsetMethodId,
   resolveToolsetDescription,
   toMcpToolName,
   type AnyToolsetDefinition,
@@ -19,6 +21,7 @@ import {
   type ToolsetCtx,
   type ToolsetMethod,
   type ToolsetMethodId,
+  type ToolsetMethodReport,
 } from 'storybook/open-service';
 import type { McpServer } from 'tmcp';
 
@@ -31,9 +34,18 @@ import type { StorybookAiToolCallResult } from './tool-registry.ts';
 type Server = McpServer<any, AddonContext>;
 type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 
+// The grouping behind the enable gate and the `X-MCP-Toolsets` header; not a telemetry field.
+export type McpToolsetGroup = keyof NonNullable<AddonContext['toolsets']>;
+
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
   method: ToolsetMethodId;
+  /**
+   * The `event` of this tool's `addon-mcp` record. These names predate the toolsets
+   * (`tool:getChangedStories`) and replace the generated `tool:stories_changed` on this surface
+   * only, so MCP usage data stays continuous across versions. The toolsets know nothing of them.
+   */
+  mcpEventName: string;
   /** Extra MCP-only tool metadata, e.g. the preview app resource. */
   extras?: Record<string, unknown>;
   /** Wraps the input schema before publishing it (used for friendlier validation errors). */
@@ -52,16 +64,14 @@ function resolveToolset(options: ToolsetToolOptions, server?: Server): AnyToolse
   if (options.resolveToolset) {
     return options.resolveToolset(server);
   }
-  const [toolsetId] = options.method.split('.');
-  return getToolset(toolsetId);
+  return getToolset(parseToolsetMethodId(options.method).toolsetId);
 }
 
 function resolveMethod(
   toolset: AnyToolsetDefinition,
   options: ToolsetToolOptions
 ): ToolsetMethod<any, AnyToolsetOutcome> {
-  const [, methodName] = options.method.split('.');
-  return toolset.methods[methodName];
+  return toolset.methods[parseToolsetMethodId(options.method).methodName];
 }
 
 /**
@@ -95,22 +105,24 @@ async function toStructuredContent(
 }
 
 function buildContext(server: Server): ToolsetCtx {
-  const custom = server.ctx.custom;
   return {
     transport: 'mcp',
     // The toolset origin is the complete UI base URL, including any deployment subpath.
-    origin: resolveToolsetOrigin(custom ?? {}),
+    origin: resolveToolsetOrigin(server.ctx.custom ?? {}),
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
-    telemetry: custom?.disableTelemetry
-      ? undefined
-      : async (event, payload) => {
-          await collectTelemetry({
-            event,
-            server,
-            ...payload,
-          });
-        },
   };
+}
+
+async function reportToolsetTelemetry(
+  server: Server,
+  event: string,
+  report: ToolsetMethodReport | undefined
+): Promise<void> {
+  if (!report || server.ctx.custom?.disableTelemetry) {
+    return;
+  }
+  const { payload, toolset, tool } = report;
+  await collectTelemetry({ event, server, ...payload, toolset, tool });
 }
 
 /** Runs one toolset method and unwraps its outcome into an MCP tool result. */
@@ -120,11 +132,12 @@ export async function callToolsetMethod(
   input: unknown
 ): Promise<StorybookAiToolCallResult> {
   const toolset = resolveToolset(options, server);
-  const method = resolveMethod(toolset, options);
-  const ctx = buildContext(server);
+  const { methodName } = parseToolsetMethodId(options.method);
+  const method = toolset.methods[methodName];
 
   try {
-    const outcome = await method.handler(input as never, ctx);
+    const outcome = await invokeToolsetMethod(toolset, methodName, input, buildContext(server));
+    await reportToolsetTelemetry(server, options.mcpEventName, outcome.telemetry);
     const structuredContent = await toStructuredContent(method.output, outcome.data);
     const blocks = Array.isArray(outcome.markdown) ? outcome.markdown : [outcome.markdown];
 

@@ -44,6 +44,7 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_FEATURES_PROVIDE_KEY,
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
@@ -258,6 +259,19 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
   let agent: ReturnType<typeof detectAgent> | undefined;
   let withinAgenticSetupSession = false;
+  let vitestVersion: string | undefined;
+
+  // Vitest 5 dropped the `@vitest/browser/context` alias, but Vitest 3 only knows that specifier
+  const browserContextPlugin: Plugin = {
+    name: 'storybook:vitest-browser-context',
+    enforce: 'pre',
+    resolveId(id, importer, options) {
+      if (id === '@vitest/browser/context' && vitestVersion && !vitestVersion.startsWith('3')) {
+        return this.resolve('vitest/browser', importer, { ...options, skipSelf: true });
+      }
+      return null;
+    },
+  };
 
   const storybookTestPlugin: Plugin = {
     name: 'vite-plugin-storybook-test',
@@ -391,6 +405,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           provide: {
+            [STORYBOOK_TEST_FEATURES_PROVIDE_KEY]: features,
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
             [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
               !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
@@ -486,6 +501,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       return config;
     },
     async configureVitest(context) {
+      vitestVersion = context.vitest.version;
       context.vitest.config.coverage.exclude.push('storybook-static');
 
       const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
@@ -574,7 +590,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     plugins.push(createComponentTestTransformPlugin(presets, finalOptions.configDir));
   }
 
-  plugins.push(storybookTestPlugin);
+  plugins.push(browserContextPlugin, storybookTestPlugin);
 
   // When running tests via the Storybook UI, we need
   // to find the right project to run, thus we override

@@ -30,7 +30,8 @@
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
-  - [`--preview-url` and `--force-build-preview` removed](#preview-url-and-force-build-preview-removed)
+  - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
+  - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -728,7 +729,30 @@ If your custom tooling imports `canUpdateVitestWorkspaceFile` from `storybook/in
 
 ### Vitest Addon: `setProjectAnnotations` must not be called in setup files
 
-TODO
+`@storybook/addon-vitest` applies your project annotations itself: your `.storybook/preview` file and the previews of the addons registered in `.storybook/main`. `setProjectAnnotations` replaces whatever was applied before it, so a leftover call in a Vitest setup file silently discards the addon's annotations. Storybook 11 throws instead of running with the wrong annotations:
+
+```text
+SB_ADDON_VITEST_0002 (ProjectAnnotationsAlreadyAppliedError): setProjectAnnotations() was called
+from a Vitest setup file, but @storybook/addon-vitest applies your project annotations itself
+```
+
+Run the automigration to remove the calls it can handle - those that only pass your `.storybook/preview` annotations, or `@storybook/addon-a11y/preview` when that addon is already registered in `.storybook/main`:
+
+```sh
+npx storybook automigrate vitest-setup-file
+```
+
+It rewrites those setup files, deletes the ones that end up empty, and drops their `setupFiles` entries from the Vitest or Vite config that referenced them. It stops with per-file instructions when a call cannot be removed safely, which includes custom annotations, a setup file it cannot parse, a `setupFiles` entry computed at runtime, and a file shared with a Vitest project that has no Storybook plugin.
+
+To migrate a file yourself:
+
+1. If the call only passes your `.storybook/preview` annotations, delete it.
+2. If it passes an addon's annotations, register that addon in the `addons` field of `.storybook/main` and delete the call.
+3. If it passes custom annotations, move them into `.storybook/preview` and delete the call.
+4. If nothing else remains in the file, delete it and remove its entry from `setupFiles` in your Vitest config.
+5. If the file is shared with a Vitest project that uses portable stories directly, list it only in that project's `setupFiles`.
+
+Calling `setProjectAnnotations` outside a Vitest setup file is unaffected. Portable stories in plain Vitest projects, and in Jest or other runners, still need the call.
 
 ### Vite: `publicDir` is handled by Storybook's `staticDirs`
 
@@ -870,7 +894,7 @@ Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`.
 
 ### Internal `satisfies` helper removed
 
-The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-higher).
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
 
 Replace calls with the native operator:
 
@@ -933,6 +957,38 @@ This has been the default since Storybook 7. If you still had the flag set to `t
 Storybook 11 removes `--preview-url` and `--force-build-preview`. Those options pointed the canvas iframe at a custom URL and skipped compiling Storybook's own preview. The Angular builder `previewUrl` option is removed for the same reason.
 
 Storybook always builds its preview and always loads `iframe.html`. There is no replacement. If you used `--preview-url` so Storybook could be served from a subdirectory or CDN, configure that host's public path or [`staticDirs`](https://storybook.js.org/docs/configure/images-and-assets#serving-static-files-via-storybook) instead.
+
+### Automigrations for Storybook 10 and earlier removed
+
+`storybook upgrade` and `storybook automigrate` no longer ship the fixes that migrated a project into Storybook 8.1, 8.2, 9.0, or 10.0. A Storybook 10.x project has already applied all of them.
+
+| Removed automigration          | Migrated                                                          |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `initial-globals`              | preview `globals` to `initialGlobals`                             |
+| `remove-docs-autodocs`         | main `docs.autodocs` to the `autodocs` tag                        |
+| `addon-a11y-parameters`        | `a11y.element` to `a11y.context`                                  |
+| `addon-experimental-test`      | `@storybook/experimental-addon-test` to `@storybook/addon-vitest` |
+| `addon-globals-api`            | viewport and backgrounds parameters to globals                    |
+| `addon-mdx-gfm-remove`         | removed `@storybook/addon-mdx-gfm`                                |
+| `addon-storysource-code-panel` | storysource to `docs.codePanel`                                   |
+| `consolidated-imports`         | consolidated `@storybook/*` packages                              |
+| `remove-addon-interactions`    | removed `@storybook/addon-interactions`                           |
+| `remove-essentials`            | essentials addons moved into core                                 |
+| `renderer-to-framework`        | renderer imports to framework imports                             |
+| `rnstorybook-config`           | React Native `.storybook` to `.rnstorybook`                       |
+| `fix-faux-esm-require`         | `require` and `__dirname` in an ESM main config                   |
+| `migrate-addon-console`        | `@storybook/addon-console` to `spyOn` in the preview              |
+
+If your project is still on Storybook 9 or earlier, upgrade to Storybook 10 first so these migrations run, then upgrade to 11:
+
+```sh
+npx storybook@^10 upgrade
+npx storybook@latest upgrade
+```
+
+Upgrading straight to 11 leaves that configuration in place, and you have to apply every migration in the table above by hand.
+
+The `--renderer` flag of `storybook automigrate` is also removed. Only the removed fixes read it, so it now fails as an unknown option; drop it from any script that passes it.
 
 ## From version 10.5.x to 10.6.0
 
@@ -3952,7 +4008,7 @@ The new CLI commands remove the following flags:
 
 | flag     | migration                                                                                     |
 | -------- | --------------------------------------------------------------------------------------------- |
-| --modern | No migration needed. [All ESM code is modern in SB7](#modern-esm--ie11-support-discontinued). |
+| --modern | No migration needed. [All ESM code is modern in SB7](#modern-browser-support). |
 
 #### New Framework API
 

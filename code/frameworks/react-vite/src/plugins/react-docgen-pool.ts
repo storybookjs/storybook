@@ -39,7 +39,11 @@ export class ReactDocgenPool {
       // Only a worker with tasks in flight holds the event loop open.
       slot.worker.unref();
       slot.worker.on('message', ({ taskId, result, error }: ReactDocgenWorkerResponse) => {
-        const task = slot.tasks.get(taskId)!;
+        const task = slot.tasks.get(taskId);
+        // Already rejected when another worker failed.
+        if (!task) {
+          return;
+        }
         slot.tasks.delete(taskId);
         if (slot.tasks.size === 0) {
           slot.worker.unref();

@@ -4,6 +4,7 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  RequireMetaArgs,
   Preview,
   PreviewAddon,
   Story,
@@ -103,7 +104,10 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C> & T['args']>,
       'decorators' | 'component' | 'args'
     >
-  ): VueMeta<InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>, TMetaArgKeys>;
+  ): VueMeta<
+    RequireMetaArgs<InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>, TMetaArgKeys>,
+    TMetaArgKeys
+  >;
 
   meta<
     TArgs extends Args,
@@ -118,7 +122,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       ComponentAnnotations<VueTypes & T, TArgs & T['args']>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): VueMeta<InferVueTypes<T, TArgs, Decorators>, TMetaArgKeys>;
+  ): VueMeta<RequireMetaArgs<InferVueTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**

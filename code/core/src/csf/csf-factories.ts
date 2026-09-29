@@ -1,6 +1,7 @@
 import type { AddonTypes, StoryContext } from 'storybook/internal/csf';
 import { combineTags } from 'storybook/internal/csf';
 import type {
+  Args,
   ComponentAnnotations,
   ComposedStoryFn,
   DecoratorFunction,
@@ -29,12 +30,12 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<TArgs, TMetaArgKeys extends keyof NoInfer<TArgs & TRenderer['args']> = never>(
+  meta<TArgs = Args, TMetaArgKeys extends keyof NoInfer<TArgs & TRenderer['args']> = never>(
     input: Omit<
       ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
       'args'
     > & { args?: MetaArgs<TArgs & TRenderer['args'], TMetaArgKeys> }
-  ): Meta<TRenderer & { args: TArgs }, TMetaArgKeys>;
+  ): Meta<RequireMetaArgs<TRenderer & { args: TArgs }, TMetaArgKeys>, TMetaArgKeys>;
 
   type<T>(): Preview<TRenderer & T>;
 }
@@ -97,9 +98,15 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
  * Constrain the keys with `keyof NoInfer<TArgs>` as well: TypeScript infers `TArgs` from the
  * values through a plain `keyof TArgs` constraint.
  */
-export type MetaArgs<TArgs, TKeys extends keyof NoInfer<TArgs>> = Pick<NoInfer<TArgs>, TKeys> &
-  // Lets editors suggest the other arg names, as `TKeys` is not inferred yet while completing.
-  Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
+export type MetaArgs<TArgs, TKeys extends keyof NoInfer<TArgs>> = {
+  [K in TKeys]?: NoInfer<TArgs>[K];
+} & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>; // Lets editors suggest the other arg names, as `TKeys` is not inferred yet while completing.
+
+/** Makes the args set in `preview.meta()` required in its stories. */
+export type RequireMetaArgs<
+  TRenderer extends Renderer,
+  TMetaArgKeys extends keyof TRenderer['args'],
+> = TRenderer & { args: Required<Pick<TRenderer['args'], TMetaArgKeys>> };
 
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown

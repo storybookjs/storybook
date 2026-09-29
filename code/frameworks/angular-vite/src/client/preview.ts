@@ -4,12 +4,14 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  RequireMetaArgs,
   Preview,
   PreviewAddon,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
+  Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
@@ -111,11 +113,17 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       ComponentAnnotations<AngularRenderer & T, InferComponentArgs<C> & T['args']>,
       'decorators' | 'component' | 'args'
     >
-  ): AngularMeta<InferAngularTypes<T, InferComponentArgs<C>, Decorators>, TMetaArgKeys>;
+  ): AngularMeta<
+    RequireMetaArgs<InferAngularTypes<T, InferComponentArgs<C>, Decorators>, TMetaArgKeys>,
+    TMetaArgKeys
+  >;
 
   meta<
-    TArgs,
-    Decorators extends DecoratorFunction<AngularRenderer & T, any>,
+    TArgs = Args,
+    Decorators extends DecoratorFunction<AngularRenderer & T, any> = DecoratorFunction<
+      AngularRenderer & T,
+      any
+    >,
     TMetaArgKeys extends keyof NoInfer<InferAngularTypes<T, TArgs, Decorators>['args']> = never,
   >(
     meta: {
@@ -126,7 +134,10 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       ComponentAnnotations<AngularRenderer & T, TArgs & T['args']>,
       'decorators' | 'args' | 'render' | 'component'
     >
-  ): AngularMeta<InferAngularTypes<T, TArgs, Decorators>, TMetaArgKeys>;
+  ): AngularMeta<
+    RequireMetaArgs<InferAngularTypes<T, TArgs, Decorators>, TMetaArgKeys>,
+    TMetaArgKeys
+  >;
 }
 
 /**

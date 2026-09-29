@@ -1031,6 +1031,113 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('wraps optional calls, aliases of args and shared play functions', async () => {
+      await expect(
+        transform(dedent`
+          const sharedPlay = async (context) => {
+            const { getUsers } = context.args;
+            getUsers.mockClear();
+          };
+
+          const meta = { component: Component, args: { onClick: fn() } };
+          export default meta;
+
+          export const A = {
+            play: async ({ args }) => {
+              args.onClick?.mockClear();
+              const storyArgs = args;
+              storyArgs.onClick.mockReset();
+              meta.args.onClick.mockRestore();
+            },
+          };
+
+          export const B = { play: sharedPlay };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { mocked } from "storybook/test";
+        const sharedPlay = async (context) => {
+          const { getUsers } = context.args;
+          mocked(getUsers).mockClear();
+        };
+
+        const meta = preview.meta({ component: Component, args: { onClick: fn() } });
+
+        export const A = meta.story({
+          play: async ({ args }) => {
+            mocked(args.onClick)?.mockClear();
+            const storyArgs = args;
+            mocked(storyArgs.onClick).mockReset();
+            mocked(meta.input.args.onClick).mockRestore();
+          },
+        });
+
+        export const B = meta.story({ play: sharedPlay });
+      `);
+    });
+
+    it('uses a namespace import of storybook/test', async () => {
+      await expect(
+        transform(dedent`
+          import * as test from 'storybook/test';
+
+          export default { component: Component };
+
+          export const A = {
+            play: async ({ args }) => {
+              args.onClick.mockClear();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import * as test from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+        });
+
+        export const A = meta.story({
+          play: async ({ args }) => {
+            test.mocked(args.onClick).mockClear();
+          },
+        });
+      `);
+    });
+
+    it('renames the import when mocked is already taken', async () => {
+      await expect(
+        transform(dedent`
+          import { fn } from 'storybook/test';
+          import { mocked } from './utils';
+
+          export default { component: Component };
+
+          export const A = {
+            play: async ({ args }) => {
+              mocked(args.onClick);
+              args.onClick.mockClear();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { fn, mocked as _mocked } from "storybook/test";
+        import { mocked } from "./utils";
+
+        const meta = preview.meta({
+          component: Component,
+        });
+
+        export const A = meta.story({
+          play: async ({ args }) => {
+            mocked(args.onClick);
+            _mocked(args.onClick).mockClear();
+          },
+        });
+      `);
+    });
+
     it('leaves mock calls on values that are not args untouched', async () => {
       await expect(
         transform(dedent`

@@ -296,10 +296,10 @@ describe('Meta args are typed by the keys you provide', () => {
   });
 
   it('literal, enum, template literal and branded props need no `as const`', () => {
-    expectTypeOf(meta.input.args.variant).toEqualTypeOf<'primary' | 'secondary' | undefined>();
-    expectTypeOf(meta.input.args.size).toEqualTypeOf<Size | undefined>();
-    expectTypeOf(meta.input.args.icon).toEqualTypeOf<`icon-${string}` | undefined>();
-    expectTypeOf(meta.input.args.userId).toEqualTypeOf<UserId | undefined>();
+    expectTypeOf(meta.input.args.variant).toEqualTypeOf<'primary' | 'secondary'>();
+    expectTypeOf(meta.input.args.size).toEqualTypeOf<Size>();
+    expectTypeOf(meta.input.args.icon).toEqualTypeOf<`icon-${string}`>();
+    expectTypeOf(meta.input.args.userId).toEqualTypeOf<UserId>();
 
     const Default = meta.story({ args: { label: 'Hi' } });
     // @ts-expect-error label is required
@@ -307,13 +307,13 @@ describe('Meta args are typed by the keys you provide', () => {
   });
 
   it('meta.input.args keeps the declared prop types', () => {
-    const items: string[] | undefined = meta.input.args.items;
-    expectTypeOf(meta.input.args.range).toEqualTypeOf<[min: number, max: number] | undefined>();
-    expectTypeOf(meta.input.args.config!.theme.accents[0].tone).toEqualTypeOf<'warm' | 'cool'>();
-    expectTypeOf(meta.input.args.store).toEqualTypeOf<Store | undefined>();
+    const items: string[] = meta.input.args.items;
+    expectTypeOf(meta.input.args.range).toEqualTypeOf<[min: number, max: number]>();
+    expectTypeOf(meta.input.args.config.theme.accents[0].tone).toEqualTypeOf<'warm' | 'cool'>();
+    expectTypeOf(meta.input.args.store).toEqualTypeOf<Store>();
 
     const { shape } = meta.input.args;
-    if (shape?.kind === 'circle') {
+    if (shape.kind === 'circle') {
       expectTypeOf(shape.radius).toEqualTypeOf<number>();
     }
   });
@@ -332,8 +332,8 @@ describe('Meta args are typed by the keys you provide', () => {
     const Default = meta.story({
       args: { label: 'Hi' },
       play: async ({ args }) => {
-        expectTypeOf(args.getUsers).toEqualTypeOf<(() => Promise<string[]>) | undefined>();
-        mocked(args.getUsers!).mockResolvedValue(['Ada']);
+        expectTypeOf(args.getUsers).toEqualTypeOf<() => Promise<string[]>>();
+        mocked(args.getUsers).mockResolvedValue(['Ada']);
       },
     });
   });
@@ -379,18 +379,13 @@ describe('Meta args are typed by the keys you provide', () => {
       | { kind: 'link'; href: string }
       | { kind: 'button'; onPress: () => void }
     );
+    const render = (args: Props) => html`<a>${args.label}</a>`;
 
-    const actionMeta = preview.meta({
-      render: (args: Props) => html`<a>${args.label}</a>`,
-      args: { label: 'Go', kind: 'link' },
-    });
+    const actionMeta = preview.meta({ render, args: { label: 'Go', kind: 'link' } });
     const Link = actionMeta.story({ args: { href: '/' } });
 
-    preview.meta({
-      render: (args: Props) => html`<a>${args.label}</a>`,
-      // @ts-expect-error href is not a prop of every member, set it per story
-      args: { kind: 'link', href: '/' },
-    });
+    // @ts-expect-error href is not a prop of every member, set it per story
+    preview.meta({ render, args: { kind: 'link', href: '/' } });
   });
 
   it('args declared with preview.type<>() and decorators', () => {
@@ -413,5 +408,10 @@ describe('Meta args are typed by the keys you provide', () => {
     const Default = renderMeta.story({ args: { count: 1 } });
     // @ts-expect-error count is required
     const Missing = renderMeta.story();
+  });
+
+  it('meta without component or render accepts any args', () => {
+    const titleMeta = preview.meta({ title: 'Card', args: { count: 1 } });
+    const count: number = titleMeta.input.args.count;
   });
 });

@@ -1,7 +1,7 @@
 import { types as t, traverse } from 'storybook/internal/babel';
 import type { NodePath } from 'storybook/internal/babel';
 
-const contextFunctionKeys = ['play', 'beforeEach', 'afterEach', 'loaders'];
+type Binding = NonNullable<ReturnType<NodePath['scope']['getBinding']>>;
 
 const mockMembers = [
   'mock',
@@ -30,117 +30,139 @@ function keyName(node: t.Node) {
   return t.isStringLiteral(node) ? node.value : undefined;
 }
 
-function isContextFunction(path: NodePath<t.Function>) {
-  if (path.isObjectMethod()) {
-    return contextFunctionKeys.includes(keyName(path.node.key) ?? '');
-  }
-  const owner = path.parentPath.isArrayExpression() ? path.parentPath.parentPath : path.parentPath;
-  return !!owner?.isObjectProperty() && contextFunctionKeys.includes(keyName(owner.node.key) ?? '');
+function withoutDefault(node: t.Node) {
+  return t.isAssignmentPattern(node) ? node.left : node;
 }
 
-function patternIdentifier(node: t.Node) {
-  const target = t.isAssignmentPattern(node) ? node.left : node;
-  return t.isIdentifier(target) ? target.name : undefined;
+function isMember(node: t.Node): node is t.MemberExpression | t.OptionalMemberExpression {
+  return (t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) && !node.computed;
 }
 
-/** Names that the first parameter of a play function binds to the story context and its args. */
-function contextNames(param: t.Node | undefined) {
-  const names = { context: [] as string[], args: [] as string[], argValues: [] as string[] };
-  const context = param && patternIdentifier(param);
-  if (context) {
-    names.context.push(context);
-  }
-  const pattern = t.isAssignmentPattern(param) ? param.left : param;
-  if (!t.isObjectPattern(pattern)) {
-    return names;
-  }
-  for (const property of pattern.properties) {
-    if (!t.isObjectProperty(property) || keyName(property.key) !== 'args') {
-      continue;
+// Wraps mock API access on args in `mocked()`, so `args.onClick.mockClear()` becomes
+// `mocked(args.onClick).mockClear()`. CSF factories type args as the component declares them.
+export function wrapArgsMocks(ast: t.File) {
+  const argsObjects = new Set<Binding>();
+  const argValues = new Set<Binding>();
+  const targets: NodePath<t.Expression>[] = [];
+  let program: NodePath<t.Program> | undefined;
+
+  const bindingOf = (path: NodePath, node: t.Node | undefined) =>
+    t.isIdentifier(node) ? path.scope.getBinding(node.name) : undefined;
+
+  const isBoundIn = (bindings: Set<Binding>, path: NodePath, node: t.Node) => {
+    const binding = bindingOf(path, node);
+    return !!binding && bindings.has(binding);
+  };
+
+  const bind = (bindings: Set<Binding>, path: NodePath, node: t.Node | undefined) => {
+    const binding = bindingOf(path, node);
+    if (binding) {
+      bindings.add(binding);
     }
-    const args = patternIdentifier(property.value);
-    if (args) {
-      names.args.push(args);
-    }
-    const argsPattern = t.isAssignmentPattern(property.value)
-      ? property.value.left
-      : property.value;
-    if (t.isObjectPattern(argsPattern)) {
-      for (const arg of argsPattern.properties) {
-        const name = t.isObjectProperty(arg) ? patternIdentifier(arg.value) : undefined;
-        if (name) {
-          names.argValues.push(name);
+  };
+
+  const isArgsObject = (path: NodePath, node: t.Node) =>
+    isBoundIn(argsObjects, path, node) || (isMember(node) && keyName(node.property) === 'args');
+
+  const addArgs = (path: NodePath, pattern: t.Node) => {
+    const target = withoutDefault(pattern);
+    bind(argsObjects, path, target);
+    if (t.isObjectPattern(target)) {
+      for (const property of target.properties) {
+        if (t.isObjectProperty(property)) {
+          bind(argValues, path, withoutDefault(property.value));
         }
       }
     }
-  }
-  return names;
-}
+  };
 
-/**
- * Wraps mock API access on args in `mocked()`, so `args.onClick.mockClear()` becomes
- * `mocked(args.onClick).mockClear()`. CSF factories type args as the component declares them, not
- * as `Mock`.
- */
-export function wrapArgsMocks(ast: t.File) {
-  const imports = ast.program.body.filter((node) => t.isImportDeclaration(node));
-  const testImport = imports.find(
-    (node) => node.source.value === 'storybook/test' && node.importKind !== 'type'
-  );
-  const existingMocked = testImport?.specifiers.find(
-    (specifier) => t.isImportSpecifier(specifier) && keyName(specifier.imported) === 'mocked'
-  );
-  const mockedName = existingMocked?.local.name ?? 'mocked';
-  let wrapped = false;
+  const addContext = (path: NodePath, pattern: t.Node | undefined) => {
+    const target = pattern && withoutDefault(pattern);
+    if (!t.isObjectPattern(target)) {
+      return;
+    }
+    for (const property of target.properties) {
+      if (t.isObjectProperty(property) && keyName(property.key) === 'args') {
+        addArgs(path, property.value);
+      }
+    }
+  };
+
+  const collectTarget = (path: NodePath<t.MemberExpression | t.OptionalMemberExpression>) => {
+    const { object, property, computed } = path.node;
+    if (computed || !mockMembers.includes(keyName(property) ?? '')) {
+      return;
+    }
+    if (
+      isBoundIn(argValues, path, object) ||
+      (isMember(object) && isArgsObject(path, object.object))
+    ) {
+      targets.push(path.get('object'));
+    }
+  };
 
   traverse(ast, {
-    Function(functionPath) {
-      if (!isContextFunction(functionPath)) {
-        return;
-      }
-      const names = contextNames(functionPath.node.params[0]);
-      const isParam = (node: t.Node, path: NodePath, candidates: string[]) =>
-        t.isIdentifier(node) &&
-        candidates.includes(node.name) &&
-        path.scope.getBinding(node.name) === functionPath.scope.getBinding(node.name);
-
-      const isArgsObject = (node: t.Node, path: NodePath) =>
-        isParam(node, path, names.args) ||
-        (t.isMemberExpression(node) &&
-          keyName(node.property) === 'args' &&
-          isParam(node.object, path, names.context));
-
-      functionPath.traverse({
-        MemberExpression(path) {
-          const { object, property, computed } = path.node;
-          if (computed || !mockMembers.includes(keyName(property) ?? '')) {
-            return;
-          }
-          const isArgValue =
-            isParam(object, path, names.argValues) ||
-            (t.isMemberExpression(object) && isArgsObject(object.object, path));
-          if (isArgValue) {
-            path.get('object').replaceWith(t.callExpression(t.identifier(mockedName), [object]));
-            wrapped = true;
-          }
-        },
-      });
+    Program(path) {
+      program = path;
     },
+    Function(path) {
+      addContext(path, path.node.params[0]);
+    },
+    VariableDeclarator(path) {
+      const { id, init } = path.node;
+      if (init && isArgsObject(path, init)) {
+        addArgs(path, id);
+      } else {
+        addContext(path, id);
+      }
+    },
+    MemberExpression: collectTarget,
+    OptionalMemberExpression: collectTarget,
   });
 
-  if (!wrapped || existingMocked) {
+  if (targets.length === 0 || !program) {
     return;
   }
-  const mocked = t.importSpecifier(t.identifier('mocked'), t.identifier('mocked'));
-  if (testImport) {
-    testImport.specifiers.push(mocked);
+
+  const testImports = ast.program.body.filter(
+    (node): node is t.ImportDeclaration =>
+      t.isImportDeclaration(node) &&
+      node.source.value === 'storybook/test' &&
+      node.importKind !== 'type'
+  );
+  const specifiers = testImports.flatMap((node) => node.specifiers);
+  const existing = specifiers.find(
+    (specifier) => t.isImportSpecifier(specifier) && keyName(specifier.imported) === 'mocked'
+  );
+  const namespace = specifiers.find((specifier) => t.isImportNamespaceSpecifier(specifier));
+
+  let callee: () => t.Expression;
+  if (existing) {
+    callee = () => t.identifier(existing.local.name);
+  } else if (namespace) {
+    callee = () => t.memberExpression(t.identifier(namespace.local.name), t.identifier('mocked'));
   } else {
-    const lastImport = imports.at(-1);
-    const index = lastImport ? ast.program.body.indexOf(lastImport) + 1 : 0;
-    ast.program.body.splice(
-      index,
-      0,
-      t.importDeclaration([mocked], t.stringLiteral('storybook/test'))
+    const name = targets.some((target) => target.scope.hasBinding('mocked'))
+      ? program.scope.generateUidIdentifier('mocked').name
+      : 'mocked';
+    callee = () => t.identifier(name);
+    const specifier = t.importSpecifier(t.identifier(name), t.identifier('mocked'));
+    const namedImport = testImports.find((node) =>
+      node.specifiers.every((s) => !t.isImportNamespaceSpecifier(s))
     );
+    if (namedImport) {
+      namedImport.specifiers.push(specifier);
+    } else {
+      const lastImport = ast.program.body.findLastIndex((node) => t.isImportDeclaration(node));
+      ast.program.body.splice(
+        lastImport + 1,
+        0,
+        t.importDeclaration([specifier], t.stringLiteral('storybook/test'))
+      );
+    }
+  }
+
+  for (const target of targets) {
+    target.replaceWith(t.callExpression(callee(), [target.node]));
   }
 }

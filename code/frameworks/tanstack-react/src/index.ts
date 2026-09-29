@@ -5,6 +5,7 @@ import type {
   InferMetaTypes,
   InferTypes,
   MetaArgs,
+  RequireMetaArgs,
   PreviewAddon,
 } from 'storybook/internal/csf';
 import type {
@@ -125,7 +126,10 @@ export interface TanStackPreview<
       'decorators' | 'component' | 'args' | 'render' | 'parameters'
     >
   ): ReactMeta<
-    InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>,
+    RequireMetaArgs<
+      InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>,
+      TMetaArgKeys
+    >,
     TMetaArgKeys
   >;
 
@@ -156,7 +160,10 @@ export interface TanStackPreview<
       'decorators' | 'component' | 'args' | 'render' | 'parameters'
     >
   ): ReactMeta<
-    InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>,
+    RequireMetaArgs<
+      InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>,
+      TMetaArgKeys
+    >,
     TMetaArgKeys
   >;
 }

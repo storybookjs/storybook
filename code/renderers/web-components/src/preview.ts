@@ -4,12 +4,14 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  RequireMetaArgs,
   Preview,
   PreviewAddon,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
+  Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
@@ -100,6 +102,8 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   type<S>(): WebComponentsPreview<T & S>;
 
   meta<
+    // Without this default, a meta without `component` expands every tag name while checking this
+    // overload and fails with "union type too complex" instead of trying the next one.
     C extends keyof HTMLElementTagNameMap = never,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any> = DecoratorFunction<
       WebComponentsTypes & T,
@@ -121,13 +125,19 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       'decorators' | 'component' | 'args'
     >
   ): WebComponentsMeta<
-    InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>,
+    RequireMetaArgs<
+      InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>,
+      TMetaArgKeys
+    >,
     TMetaArgKeys
   >;
 
   meta<
-    TArgs,
-    Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
+    TArgs = Args,
+    Decorators extends DecoratorFunction<WebComponentsTypes & T, any> = DecoratorFunction<
+      WebComponentsTypes & T,
+      any
+    >,
     TMetaArgKeys extends keyof NoInfer<InferWebComponentsTypes<T, TArgs, Decorators>['args']> =
       never,
   >(
@@ -139,7 +149,10 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): WebComponentsMeta<InferWebComponentsTypes<T, TArgs, Decorators>, TMetaArgKeys>;
+  ): WebComponentsMeta<
+    RequireMetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>, TMetaArgKeys>,
+    TMetaArgKeys
+  >;
 }
 
 /**

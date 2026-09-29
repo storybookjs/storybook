@@ -613,6 +613,27 @@ describe('Meta args are typed by the keys you provide', () => {
     const Missing = renderMeta.story();
   });
 
+  it('meta args can come from a Partial object, a spread or an Args record', () => {
+    const shared: Partial<ButtonProps> = { disabled: false };
+    const record: Args = { label: 'Hi' };
+    preview.meta({ component: Button, args: shared });
+    preview.meta({ component: Button, args: { ...shared, label: 'Hi' } });
+    preview.meta({ component: Button, args: record });
+  });
+
+  it('optional props set in meta are present in its stories', () => {
+    const buttonMeta = preview.meta({ component: Button, args: { onKeyDown: fn() } });
+    buttonMeta.input.args.onKeyDown();
+
+    const Default = buttonMeta.story({
+      args: { label: 'Hi', disabled: false },
+      play: async ({ args }) => {
+        expectTypeOf(args.onKeyDown).toEqualTypeOf<() => void>();
+        mocked(args.onKeyDown).mockClear();
+      },
+    });
+  });
+
   it('composes meta and story args at runtime', () => {
     const Default = meta.story({ args: { label: 'Hi', variant: 'secondary' } });
 

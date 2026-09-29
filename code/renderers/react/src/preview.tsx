@@ -7,6 +7,7 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  RequireMetaArgs,
   Preview,
   Story,
 } from 'storybook/internal/csf';
@@ -124,7 +125,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
       ComponentAnnotations<ReactTypes & T, TArgs>,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): ReactMeta<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>;
+  ): ReactMeta<RequireMetaArgs<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**

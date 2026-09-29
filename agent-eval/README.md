@@ -49,45 +49,10 @@ Run a single experiment:
 yarn exec agent-eval cc-mcp-opus-5.5-medium
 ```
 
-Pull requests with the `agent-eval:eval` label run the experiments in CI when
-an `agent-eval:` label is applied, not on every later push. All `agent-eval:`
-labels are applied by **humans only**. Labeled runs are expensive, so an AI
-agent must never add them to a PR (nor start `workflow_dispatch` eval runs).
-Agents validate their changes locally instead: only the specific evals affected
-by the change (or the eval being fixed), one experiment at a time, via
-`EVAL_ONLY`. Never a full line, never multiple experiments in parallel.
-
-### Eval merge gate
-
-The `Agent eval` workflow owns one review thread per PR, marked with
-`<!-- agent-eval-gate -->` and anchored to a changed file. This thread is the
-merge proof for `agent-eval:eval`: it resolves only when a successful eval run
-has evaluated the current PR head.
-
-| PR state                                                  | Gate thread                                                             |
-| --------------------------------------------------------- | ----------------------------------------------------------------------- |
-| `agent-eval:eval` absent                                  | No gate thread; evals not required                                      |
-| Evals pending or running                                  | Open: "evals required for head `<sha>`"                                 |
-| Evals failed, cancelled, timed out or skipped             | Open, with a failure summary and run and playground links               |
-| Evals passed, head unchanged                              | Resolved, with the pass summary (counts, tokens, cost, links)           |
-| Evals passed, but a newer head was pushed in the meantime | Open, with the result marked stale                                      |
-| New push on an `agent-eval:eval` PR                       | Reopened: "evals required for new head `<sha>`"; evals do **not** rerun |
-| Weekly schedule, or dispatch without a PR                 | No PR thread is touched                                                 |
-
-Blocking the merge on this thread depends on the **Require conversation
-resolution before merging** branch protection setting for the target branch.
-
-Rerun evals by removing and re-adding `agent-eval:eval`, or with
-`workflow_dispatch` on the PR branch. The optional `pr_number` input selects the
-PR (otherwise it is inferred from the branch). A dispatch run with a PR updates
-the gate thread in the same way as a labeled run.
-
-A scheduled weekly run (Monday 08:00 UTC) runs the full 8xx/82x line on `next`,
-deploys the playground to the Vercel production target, and posts a summary to
-Slack `#sb-monitoring` through the `SLACK_AGENT_EVAL_WEBHOOK_URL` secret. It
-does not enable `EVAL_STORYBOOK_LATEST` or `EVAL_REVIEW`; use
-`workflow_dispatch` for those. Manual `workflow_dispatch` runs on `next` also
-notify Slack.
+AI agents validate their changes locally: only the evals affected by the change
+(or the eval being fixed), one experiment at a time, with `EVAL_ONLY`. Never a
+full line, and never several experiments in parallel. For runs on a pull
+request, see [Running evals in CI](#running-evals-in-ci).
 
 By default only the first core eval (`801-create-component-no-launch-config`)
 runs. Set `EVAL_FULL_SUITE=1` to run the full hand-crafted line — the 8xx
@@ -170,27 +135,6 @@ workflow too:
 EVAL_REVIEW=1 yarn eval
 ```
 
-In CI, these labels add to `agent-eval:eval`, and `workflow_dispatch` has a
-matching input for each:
-
-| Label / input                                      | Effect                                                                           |
-| -------------------------------------------------- | -------------------------------------------------------------------------------- |
-| `agent-eval:full-suite` / `full_suite`           | Full 8xx (+ 82x on plugins) instead of the default single smoke eval             |
-| `agent-eval:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
-| `agent-eval:review` / `review`                     | Force `experimentalReview` on and assert the review workflow for MCP cells too   |
-
-The labels are declared in `eval-conditions.json`. A run fails when the PR has
-an `agent-eval:` label that is not declared there, so a typo cannot silently
-reduce the eval scope. The `evals` input (dispatch only) targets specific
-evals. All of these are human-triggered spend decisions; agents never apply the
-labels or dispatch the workflow.
-
-CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
-`VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
-`VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and
-Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
-runtime/build contexts.
-
 Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 `OPENAI_API_KEY`):
@@ -199,6 +143,104 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
 - `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (the review-on text with `EVAL_REVIEW=1`, none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
+
+## Running evals in CI
+
+The Agent eval workflow (`.github/workflows/agent-eval.yml`) runs the evals in
+CI in two cases:
+
+- Every Monday at 08:00 UTC it runs the full suite on `next`, deploys the
+  results playground to Vercel production, and posts a summary to
+  `#sb-monitoring` in Slack. Manual `workflow_dispatch` runs on `next` do the
+  same.
+- On a pull request, it runs when a maintainer adds the `agent-eval:eval`
+  label.
+
+Every run costs money in agent tokens. The default smoke eval is cheap, a
+full-suite run costs roughly $30–45.
+
+### When to use
+
+Add `agent-eval:eval` to a PR that can change how coding agents work with
+Storybook. For example, changes to:
+
+- the MCP server and addon (`code/lib/mcp`, `code/addons/mcp`)
+- the agent skills and instructions (`code/core/src/cli/skills`)
+- the `storybook tools` CLI
+- the eval suite itself (`agent-eval/`)
+
+Other PRs do not need it. The weekly run catches regressions from other
+changes.
+
+Only humans add `agent-eval:` labels. An AI agent must never add them to a PR,
+and must never start a `workflow_dispatch` eval run.
+
+### How it works
+
+Adding `agent-eval:eval` starts an eval run. Pushing more commits does not
+start a new run, because every run costs money.
+
+The workflow keeps one review thread on the PR: the eval gate thread. It is a
+file-level review comment on the first changed file, and the workflow finds it
+again by the `<!-- agent-eval-gate -->` marker in its first comment. The thread
+is the merge proof for `agent-eval:eval`: the workflow resolves it only when
+evals passed for the current PR head, and the target branch does not allow a
+merge while a conversation is unresolved.
+
+| PR state                                            | Gate thread                                                |
+| --------------------------------------------------- | ---------------------------------------------------------- |
+| Evals pending or running                            | Open: "evals required for head `<sha>`"                    |
+| Evals failed, cancelled, timed out or skipped       | Open, with the outcome and links to the run and playground |
+| Evals passed                                        | Resolved, with the results summary                         |
+| Evals passed, but new commits were pushed meanwhile | Open, with the result marked stale                         |
+| New commits pushed after that                       | Reopened: "evals required for new head `<sha>`"            |
+
+The thread reopens on every push, also when someone resolved it by hand.
+
+To run evals again, for example after a push or a failure, remove and re-add
+the `agent-eval:eval` label. You can also run the workflow with
+`workflow_dispatch` on the PR branch. The `pr_number` input selects the PR when
+the branch has more than one open PR. The gate thread itself also explains
+this.
+
+A push, or adding another `agent-eval:` label, cancels a running eval, because
+its result would not cover the new head or scope.
+
+### Options
+
+Add these labels next to `agent-eval:eval`. `workflow_dispatch` has a matching
+input for each.
+
+| Label / input                                      | Effect                                                                                                                                                                                                                    | When to use                                                                                                                                                                                            |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `agent-eval:full-suite` / `full_suite`             | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-component-no-launch-config` | The smoke eval shows that the setup works and that the agent finds Storybook. Use the full suite when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
+| `agent-eval:storybook-latest` / `storybook_latest` | Installs the published `latest` Storybook packages instead of the packages built from the PR, and runs the 9xx line                                                                                                       | Check whether a problem also exists in the last stable release. This is not related to the target branch of the PR: without this label, evals always use the code of the PR.                           |
+| `agent-eval:review` / `review`                     | Turns on the `experimentalReview` feature flag, and asserts the review workflow in the MCP experiments too                                                                                                                | Changes to the review workflow, such as `review-create` or the review UI.                                                                                                                              |
+
+The `evals` input (dispatch only) runs specific evals by name, for example
+`803-edit-component`.
+
+The labels are declared in `eval-conditions.json`. An `agent-eval:` label that
+is not declared there gives a warning and has no effect.
+
+### Troubleshooting
+
+- **The label is on the PR, but evals did not start.** Evals only start when a
+  label is added, not on push. Remove and re-add `agent-eval:eval`. PRs from
+  forks never run evals, because they have no access to the secrets.
+- **Evals passed, but the gate thread is still open.** The PR head changed
+  during the run, so the result is stale. Or resolving the thread failed; the
+  job summary says so. Run evals again, or resolve the thread by hand.
+- **The gate thread does not block the merge.** The target branch needs the
+  **Require conversation resolution before merging** branch protection
+  setting.
+- **No Slack message after a weekly run.** The `SLACK_AGENT_EVAL_WEBHOOK_URL`
+  secret is missing or stale. The Slack step warns and continues.
+- **Vercel Sandbox authentication fails.** CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,
+  `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static
+  `VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and
+  Vercel-issued OIDC is only refreshed automatically inside Vercel-managed
+  runtime/build contexts.
 
 ## Known Failures
 
@@ -272,9 +314,9 @@ Fixtures can opt into a shared starter project with package metadata:
 
 ```json
 {
-	"evals": {
-		"template": "reshaped-storybook"
-	}
+  "evals": {
+    "template": "reshaped-storybook"
+  }
 }
 ```
 

@@ -9661,9 +9661,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-svelte-csf@npm:^5.1.2":
-  version: 5.1.2
-  resolution: "@storybook/addon-svelte-csf@npm:5.1.2"
+"@storybook/addon-svelte-csf@npm:^5.1.4":
+  version: 5.1.4
+  resolution: "@storybook/addon-svelte-csf@npm:5.1.4"
   dependencies:
     "@storybook/csf": "npm:^0.1.13"
     dedent: "npm:^1.5.3"
@@ -9673,12 +9673,12 @@ __metadata:
     svelte-ast-print: "npm:^0.4.0"
     zimmerframe: "npm:^1.1.2"
   peerDependencies:
-    "@storybook/svelte": ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+    "@storybook/svelte": ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
     "@sveltejs/vite-plugin-svelte": ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
-    storybook: ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0
+    storybook: ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
     svelte: ^5.0.0
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/d51f28aded8a4f4a64b830c154c730388d3d573a584c7e55bd272325649db25f67cac8231b1c708581e7ed94af6419df3d997dd73eedbf55ff913bfae7be151d
+  checksum: 10c0/3196b18d1e7fbf9f4f3bed905ac13f511c4576fe9f66ff3582b6cacafd573b7a4abf15da283267848c96d7c163e1423996ca478f00fd744d396b8901a3c495a2
   languageName: node
   linkType: hard
 
@@ -10139,7 +10139,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@compodoc/compodoc": "npm:2.0.0"
-    "@storybook/addon-svelte-csf": "npm:^5.1.2"
+    "@storybook/addon-svelte-csf": "npm:^5.1.4"
     "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/angular-vite": "workspace:*"

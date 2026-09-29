@@ -227,7 +227,7 @@ When a particular sandbox is failing, it's preferred to debug locally, but if th
 Inside of here you can edit the filter-function:
 https://github.com/storybookjs/storybook/blob/3d49093954243d4d520774243866de840f298bf4/scripts/ci/main.ts#L70-L88
 
-In fact you can filter on any job you wish, only running `test-runner`, `e2e`, `vite`-sandboxes, etc.
+In fact you can filter on any job you wish, only running `vitest`, `e2e`, `vite`-sandboxes, etc.
 
 ## Troubleshooting 
 

@@ -64,8 +64,6 @@ export const sandbox: Task = {
     // This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
     const tasksAfterSandbox: TaskKey[] = [
       'vitest-integration',
-      'test-runner',
-      'test-runner-dev',
       'e2e-tests',
       'e2e-tests-dev',
       'smoke-test',
@@ -111,12 +109,6 @@ export const sandbox: Task = {
       '@types/lodash-es',
       '@types/aria-query',
       'uuid',
-    ];
-
-    const extraDevDeps = [
-      ...(details.template.modifications?.extraDevDependencies ?? []),
-      // Always installed regardless of the template.
-      '@storybook/test-runner@latest',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -184,7 +176,7 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
-      extraDevDeps,
+      extraDevDeps: details.template.modifications?.extraDevDependencies,
       removeDeps: details.template.modifications?.removeDependencies,
       removeDevDeps: details.template.modifications?.removeDevDependencies,
       resolutions: details.template.modifications?.resolutions,

@@ -2,14 +2,15 @@ import * as fsp from 'node:fs/promises';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { findConfigFile, formatFileContent } from 'storybook/internal/common';
+import { findConfigFile, formatExistingFile } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
-import { setConfigLayout, transformSetConfigLayout } from './set-config-layout.ts';
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { setConfigLayout } from './set-config-layout.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/common', { spy: true });
@@ -20,19 +21,19 @@ const packageManager = {} as JsPackageManager;
 const mainConfig = {} as StorybookConfigRaw;
 
 const check = () =>
-  setConfigLayout.check({
+  checkFix(setConfigLayout, {
     packageManager,
     configDir,
+    mainConfigPath: '/project/.storybook/main.ts',
     mainConfig,
     storybookVersion: '11.0.0',
     storiesPaths: [],
   });
 
-const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boolean) =>
-  setConfigLayout.run!({
+const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>) =>
+  runFix(setConfigLayout, {
     packageManager,
     result,
-    dryRun,
     mainConfigPath: '/project/.storybook/main.ts',
     mainConfig,
     configDir,
@@ -43,7 +44,7 @@ const run = (result: NonNullable<Awaited<ReturnType<typeof check>>>, dryRun: boo
 beforeEach(() => {
   vol.reset();
   vi.mocked(findConfigFile).mockReturnValue(managerConfigPath);
-  vi.mocked(formatFileContent).mockImplementation(async (_path, source) => source);
+  vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
   vi.mocked(fsp.readFile).mockImplementation(vol.promises.readFile as typeof fsp.readFile);
   vi.mocked(fsp.writeFile).mockImplementation(vol.promises.writeFile as typeof fsp.writeFile);
 });
@@ -52,15 +53,24 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-describe('transformSetConfigLayout', () => {
-  it('moves top-level layout and UI options into nested objects', () => {
+const migrate = async (source: string) => {
+  vol.fromJSON({ [managerConfigPath]: source });
+  const failures = await run({});
+  if (failures.length > 0) {
+    throw new Error(failures.map(({ message }) => message).join('\n'));
+  }
+  return vol.readFileSync(managerConfigPath, 'utf8') as string;
+};
+
+describe('set-config-layout transform', () => {
+  it('moves top-level layout and UI options into nested objects', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
 
       addons.setConfig({ showNav: false, panelPosition: 'right', enableShortcuts: false, theme });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
 
       addons.setConfig({
@@ -78,7 +88,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('reports conflicts because nested layout and UI options are authoritative', () => {
+  it('reports conflicts because nested layout and UI options are authoritative', async () => {
     const source = dedent`
       import { addons as managerAddons } from '@storybook/manager-api';
 
@@ -90,30 +100,30 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the showNav option exists at both top level and inside layout, where the nested value is authoritative'
     );
   });
 
-  it('does not change a spread config without an explicit deprecated option', () => {
+  it('does not change a spread config without an explicit deprecated option', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ ...config, theme });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ ...config, theme });"
     `);
   });
 
-  it('preserves a TypeScript satisfies wrapper around the config argument', () => {
+  it('preserves a TypeScript satisfies wrapper around the config argument', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false } satisfies Addon_Config);
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: {
         showNav: false
@@ -121,13 +131,13 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('preserves a TypeScript as wrapper around the config argument', () => {
+  it('preserves a TypeScript as wrapper around the config argument', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false } as Addon_Config);
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: {
         showNav: false
@@ -135,13 +145,13 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('preserves a TypeScript non-null wrapper around the config argument', () => {
+  it('preserves a TypeScript non-null wrapper around the config argument', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false }!);
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: {
         showNav: false
@@ -149,7 +159,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('moves a statically wrapped option into a statically wrapped layout object', () => {
+  it('moves a statically wrapped option into a statically wrapped layout object', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -158,7 +168,7 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({
         layout: {
@@ -168,7 +178,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('reports a recentVisibleSizes conflict instead of deep-merging it', () => {
+  it('reports a recentVisibleSizes conflict instead of deep-merging it', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -177,29 +187,29 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the recentVisibleSizes option exists at both top level and inside layout, where the nested value is authoritative'
     );
   });
 
-  it('reports a spread in an existing nested object', () => {
+  it('reports a spread in an existing nested object', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: true, layout: { ...layout, showPanel: false } });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the existing layout object contains a spread property'
     );
   });
 
-  it('migrates a destructured CommonJS import', () => {
+  it('migrates a destructured CommonJS import', async () => {
     const source = dedent`
       const { addons } = require('storybook/manager-api');
       addons.setConfig({ showNav: false });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "const { addons } = require('storybook/manager-api');
       addons.setConfig({ layout: {
         showNav: false
@@ -207,14 +217,14 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('migrates multiple setConfig calls independently', () => {
+  it('migrates multiple setConfig calls independently', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: { showNav: false } });
       addons.setConfig({ showPanel: false });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: { showNav: false } });
       addons.setConfig({ layout: {
@@ -223,29 +233,29 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('reports the location of an unsafe call after an independently safe call', () => {
+  it('reports the location of an unsafe call after an independently safe call', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showPanel: false });
       addons.setConfig({ showNav: false, layout: { showNav: true } });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 3: the showNav option exists at both top level and inside layout'
+    await expect(migrate(source)).rejects.toThrow(
+      'line 3: the showNav option exists at both top level and inside layout'
     );
   });
 
-  it('is idempotent', () => {
+  it('is idempotent', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false, showPanel: true, theme });
     `;
-    const transformed = transformSetConfigLayout(source);
+    const transformed = await migrate(source);
 
-    expect(transformSetConfigLayout(transformed)).toBe(transformed);
+    expect(await migrate(transformed)).toBe(transformed);
   });
 
-  it('reports non-contiguous properties whose grouping could change evaluation order', () => {
+  it('reports non-contiguous properties whose grouping could change evaluation order', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -255,18 +265,18 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the top-level layout options are not contiguous, so grouping them could change expression evaluation order'
     );
   });
 
-  it('reports a side-effectful relocation into an existing group', () => {
+  it('reports a side-effectful relocation into an existing group', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: readPreference(), theme, layout: {} });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the showNav option has a CallExpression value whose relocation into the existing layout object could change expression evaluation order'
     );
   });
@@ -277,35 +287,33 @@ describe('transformSetConfigLayout', () => {
     ['construction', 'new Boolean(false)'],
     ['assignment', '(preference = false)'],
     ['an update', 'counter++'],
-  ])('reports %s relocated into an existing group', (_label, value) => {
+  ])('reports %s relocated into an existing group', async (_label, value) => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: ${value}, layout: {} });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'could change expression evaluation order'
-    );
+    await expect(migrate(source)).rejects.toThrow('could change expression evaluation order');
   });
 
-  it('reports a duplicate destination group', () => {
+  it('reports a duplicate destination group', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false, layout: {}, layout: {} });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the configuration defines layout more than once'
     );
   });
 
-  it('reports a UI conflict independently of layout', () => {
+  it('reports a UI conflict independently of layout', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ enableShortcuts: false, ui: { enableShortcuts: true } });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the enableShortcuts option exists at both top level and inside ui'
     );
   });
@@ -313,13 +321,13 @@ describe('transformSetConfigLayout', () => {
   it.each([
     ['a computed string key', "['showPanel']: false"],
     ['a computed template key', '[`showPanel`]: false'],
-  ])('reports %s in an existing nested object', (_label, property) => {
+  ])('reports %s in an existing nested object', async (_label, property) => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false, layout: { ${property} } });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the existing layout object contains a computed property'
     );
   });
@@ -327,92 +335,92 @@ describe('transformSetConfigLayout', () => {
   it.each([
     ['a method', 'showPanel() {}'],
     ['an accessor', 'get showPanel() { return false; }'],
-  ])('reports %s in an existing nested object', (_label, property) => {
+  ])('reports %s in an existing nested object', async (_label, property) => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false, layout: { ${property} } });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the existing layout object contains a method or accessor'
     );
   });
 
-  it('does not change unrelated setConfig calls', () => {
+  it('does not change unrelated setConfig calls', async () => {
     const source = dedent`
       const addons = getAddons();
       addons.setConfig({ showNav: false });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+    expect(await migrate(source)).toMatchInlineSnapshot(`
       "const addons = getAddons();
       addons.setConfig({ showNav: false });"
     `);
   });
 
-  it('reports manual guidance for a dynamic argument', () => {
+  it('reports the line of a dynamic argument', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig(config);
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 2: the call argument is not an object literal. Move top-level layout options into `layout` and `enableShortcuts` into `ui` manually. Keep nested values when an option exists in both places and retain expression evaluation order.'
+    await expect(migrate(source)).rejects.toThrow(
+      'line 2: the call argument is not an object literal'
     );
   });
 
-  it('reports manual guidance for a spread property', () => {
+  it('reports the line of a spread property', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ ...config, showNav: false });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 2: the configuration contains a spread property'
+    await expect(migrate(source)).rejects.toThrow(
+      'line 2: the configuration contains a spread property'
     );
   });
 
-  it('reports manual guidance for a computed legacy property', () => {
+  it('reports the line of a computed legacy property', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ ['showNav']: false });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 2: the configuration contains a computed property'
+    await expect(migrate(source)).rejects.toThrow(
+      'line 2: the configuration contains a computed property'
     );
   });
 
-  it('reports manual guidance for a computed-template legacy property', () => {
+  it('reports the line of a computed-template legacy property', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ [\`showNav\`]: false });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 2: the configuration contains a computed property'
+    await expect(migrate(source)).rejects.toThrow(
+      'line 2: the configuration contains a computed property'
     );
   });
 
-  it('reports a top-level deprecated method that cannot be moved as a value', () => {
+  it('reports a top-level deprecated method that cannot be moved as a value', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav() {} });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+    await expect(migrate(source)).rejects.toThrow(
       'the top-level showNav layout option is a method or accessor, not a movable value property'
     );
   });
 
-  it('reports manual guidance for a dynamic nested layout', () => {
+  it('reports the line of a dynamic nested layout', async () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: false, layout: getLayout() });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'on line 2: the existing layout value is not an object literal'
+    await expect(migrate(source)).rejects.toThrow(
+      'line 2: the existing layout value is not an object literal'
     );
   });
 });
@@ -430,33 +438,13 @@ describe('setConfigLayout', () => {
       throw new Error('expected a migration result');
     }
 
-    await run(result, false);
+    await run(result);
 
     await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: {
         showToolbar: false
       } });"
-    `);
-  });
-
-  it('does not write the manager config during a dry run', async () => {
-    const source = dedent`
-      import { addons } from 'storybook/manager-api';
-      addons.setConfig({ showToolbar: false });
-    `;
-    vol.fromJSON({ [managerConfigPath]: source });
-
-    const result = await check();
-    if (!result) {
-      throw new Error('expected a migration result');
-    }
-
-    await run(result, true);
-
-    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
-      "import { addons } from 'storybook/manager-api';
-      addons.setConfig({ showToolbar: false });"
     `);
   });
 

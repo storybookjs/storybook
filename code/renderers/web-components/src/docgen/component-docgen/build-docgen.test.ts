@@ -316,15 +316,17 @@ describe('buildDocgenPayload', () => {
     expect(
       buildDocgenPayload(
         { entry },
-        context([
-          manifest({
-            name: 'XCard',
-            customElement: true,
-            kind: 'class',
-            tagName: 'x-card',
-            ...malformed,
-          } as unknown as ManifestDeclaration),
-        ])
+        context({
+          tags: [
+            tag({
+              name: 'XCard',
+              customElement: true,
+              kind: 'class',
+              tagName: 'x-card',
+              ...malformed,
+            } as unknown as ManifestDeclaration),
+          ],
+        })
       )
     ).toMatchObject({ name: 'x-card', renderer: 'web-components' });
   });

@@ -220,7 +220,7 @@ describe('stories.preview', () => {
 
       expect(outcome.markdown).toEqual([
         previewUrl,
-        "Open the preview URL that best shows your change in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.",
+        "Open the preview URL that best shows the result in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.",
       ]);
     });
 
@@ -550,7 +550,7 @@ describe('descriptions', () => {
       .toBe(`Use this tool to get one or more Storybook preview URLs.
 Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
 Include each returned preview URL in your final user-facing response so users can open them directly.
-Before your final response, open the preview URL that best shows your change in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`);
+Before your final response, open the preview URL that best shows the result in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`);
   });
 
   it('demotes preview to a mid-loop tool when reviews are enabled', () => {

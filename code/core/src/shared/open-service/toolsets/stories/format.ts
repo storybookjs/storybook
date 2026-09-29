@@ -19,14 +19,14 @@ function previewReviewNudge(ctx: ToolsetCtx): string {
   return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
 }
 
+const PREVIEW_BROWSER_NUDGE =
+  "Open the preview URL that best shows the result in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.";
+
 /**
  * Splits a preview result into the text blocks a consumer shows.
  *
  * MCP renders one block per URL; the CLI adapter joins the blocks into one document.
  */
-const PREVIEW_BROWSER_NUDGE =
-  "Open the preview URL that best shows your change in your in-app browser now. Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it before you write your final response, and still include every preview URL there. Skip this only when you have no such tool.";
-
 export function formatPreviewStories(
   { stories }: PreviewStoriesOutput,
   ctx: ToolsetCtx,

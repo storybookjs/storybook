@@ -197,7 +197,7 @@ export function expectPreviewStoriesWithFinalLinks(options?: {
 
   const finalMessage = getFinalAssistantMessage() ?? '';
   expect(finalMessage, 'Final response must include a story preview link').toMatch(
-    /(?:\?path=\/story\/|\/iframe\.html\?id=)/
+    STORY_PREVIEW_URL_PATTERN
   );
   expect(
     finalMessage,
@@ -398,7 +398,7 @@ function codexItemSucceeded(item: Record<string, unknown>): boolean {
   return false;
 }
 
-export function isLocalDevServerUrl(value: string): boolean {
+function isLocalDevServerUrl(value: string): boolean {
   try {
     const { protocol, hostname } = new URL(value);
     return (
@@ -410,15 +410,10 @@ export function isLocalDevServerUrl(value: string): boolean {
   }
 }
 
-// The URL shapes the Storybook workflow hands out: manager page links
-// (?path=/review/…, ?path=/story/…) and iframe preview links
-// (/iframe.html?id=…). A bare local origin does not count — navigating to
-// the app's own dev server (or just Storybook's root) is not opening the
-// Storybook result the skill demands.
-const STORYBOOK_PREVIEW_URL_PATTERN = /[?&]path=\/|\/iframe\.html\?/;
+const STORY_PREVIEW_URL_PATTERN = /[?&]path=\/story\/|\/iframe\.html\?id=/;
 
-export function isLocalStorybookPreviewUrl(value: string): boolean {
-  return isLocalDevServerUrl(value) && STORYBOOK_PREVIEW_URL_PATTERN.test(value);
+function isLocalStoryPreviewUrl(value: string): boolean {
+  return isLocalDevServerUrl(value) && STORY_PREVIEW_URL_PATTERN.test(value);
 }
 
 // Story IDs must come from a discovery tool (stories-changed, or the
@@ -1056,7 +1051,7 @@ export function expectPreviewOpenedInBrowser(): void {
     workflowName: 'stories-preview',
     after: 'first',
     target: 'a story preview',
-    isTargetUrl: isLocalStorybookPreviewUrl,
+    isTargetUrl: isLocalStoryPreviewUrl,
   });
 }
 

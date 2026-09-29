@@ -186,7 +186,7 @@ function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
     return `Use this tool to get one or more Storybook preview URLs.
 Call it after editing anything that changes how the UI looks — components, stories, styles, CSS, themes, colors, or design tokens — no exceptions. A shared file has no stories of its own: preview the stories of the components that consume it.
 Include each returned preview URL in your final user-facing response so users can open them directly.
-Before your final response, open the preview URL that best shows your change in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`;
+Before your final response, open the preview URL that best shows the result in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none.`;
   }
 
   // With reviews available this is strictly a mid-loop tool: no "include the URLs in your final

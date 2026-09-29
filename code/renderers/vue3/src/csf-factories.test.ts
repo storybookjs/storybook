@@ -121,6 +121,17 @@ describe('Story args can be inferred', () => {
     const Basic = meta.story({ args: { theme: 'light', label: 'good' } });
   });
 
+  it('Args of a typed render can be set in meta', () => {
+    const meta = preview.meta({
+      component: Button,
+      render: (args: ButtonProps & { theme: ThemeData }) =>
+        h('div', [h('div', `Use the theme ${args.theme}`), h(Button, args)]),
+      args: { theme: 'light', disabled: false },
+    });
+
+    const Basic = meta.story({ args: { label: 'good' } });
+  });
+
   const withDecorator: Decorator<{ decoratorArg: string }> = (
     storyFn,
     { args: { decoratorArg } }

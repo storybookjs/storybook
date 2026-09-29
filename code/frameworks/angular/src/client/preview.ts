@@ -4,6 +4,7 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  MetaArgKeys,
   RequireMetaArgs,
   Preview,
   PreviewAddon,
@@ -98,24 +99,36 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     C extends abstract new (...args: any) => any,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    TMetaArgKeys extends keyof NoInfer<
-      InferAngularTypes<T, InferComponentArgs<C>, Decorators>['args']
-    > = never,
+    TRenderArgs = unknown,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       component: C;
+      render?: ArgsStoryFn<AngularRenderer & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
       args?: MetaArgs<
-        InferAngularTypes<T, InferComponentArgs<C>, Decorators>['args'],
+        InferAngularTypes<T, InferComponentArgs<C> & TRenderArgs, Decorators>['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<AngularRenderer & T, InferComponentArgs<C> & T['args']>,
-      'decorators' | 'component' | 'args'
+      ComponentAnnotations<
+        AngularRenderer & T,
+        RequireMetaArgs<
+          AngularRenderer & T & { args: InferComponentArgs<C> & TRenderArgs & T['args'] },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
+      'decorators' | 'component' | 'args' | 'render'
     >
   ): AngularMeta<
-    RequireMetaArgs<InferAngularTypes<T, InferComponentArgs<C>, Decorators>, TMetaArgKeys>,
-    TMetaArgKeys
+    RequireMetaArgs<
+      InferAngularTypes<T, InferComponentArgs<C> & TRenderArgs, Decorators>,
+      TMetaArgKeys
+    >,
+    MetaArgKeys<
+      InferAngularTypes<T, InferComponentArgs<C> & TRenderArgs, Decorators>['args'],
+      TMetaArgKeys
+    >
   >;
 
   meta<
@@ -124,19 +137,25 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       AngularRenderer & T,
       any
     >,
-    TMetaArgKeys extends keyof NoInfer<InferAngularTypes<T, TArgs, Decorators>['args']> = never,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<AngularRenderer & T, TArgs & T['args']>;
       args?: MetaArgs<InferAngularTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<AngularRenderer & T, TArgs & T['args']>,
+      ComponentAnnotations<
+        AngularRenderer & T,
+        RequireMetaArgs<
+          AngularRenderer & T & { args: TArgs & T['args'] },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
       'decorators' | 'args' | 'render' | 'component'
     >
   ): AngularMeta<
     RequireMetaArgs<InferAngularTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    TMetaArgKeys
+    MetaArgKeys<InferAngularTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
   >;
 }
 

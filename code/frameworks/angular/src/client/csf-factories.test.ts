@@ -229,7 +229,7 @@ describe('Story args can be inferred', () => {
   });
 
   it('Correct args are inferred when type is added in renderer', () => {
-    const meta = preview.type<{ args: ButtonProps & { disabledChangeToggle?: boolean } }>().meta({
+    const meta = preview.type<{ args: ButtonProps }>().meta({
       component: ButtonComponent,
       args: { label: 'hello', disabledChangeToggle: false },
       render: ({

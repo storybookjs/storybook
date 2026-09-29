@@ -4,6 +4,7 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  MetaArgKeys,
   RequireMetaArgs,
   Preview,
   PreviewAddon,
@@ -109,27 +110,39 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       WebComponentsTypes & T,
       any
     >,
-    TMetaArgKeys extends keyof NoInfer<
-      InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>['args']
-    > = never,
+    TRenderArgs = unknown,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       component: C;
+      render?: ArgsStoryFn<
+        WebComponentsTypes & T,
+        InferArgsFromComponent<C> & TRenderArgs & T['args']
+      >;
       args?: MetaArgs<
-        InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>['args'],
+        InferWebComponentsTypes<T, InferArgsFromComponent<C> & TRenderArgs, Decorators>['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<WebComponentsTypes & T, InferArgsFromComponent<C> & T['args']>,
-      'decorators' | 'component' | 'args'
+      ComponentAnnotations<
+        WebComponentsTypes & T,
+        RequireMetaArgs<
+          WebComponentsTypes & T & { args: InferArgsFromComponent<C> & TRenderArgs & T['args'] },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
+      'decorators' | 'component' | 'args' | 'render'
     >
   ): WebComponentsMeta<
     RequireMetaArgs<
-      InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>,
+      InferWebComponentsTypes<T, InferArgsFromComponent<C> & TRenderArgs, Decorators>,
       TMetaArgKeys
     >,
-    TMetaArgKeys
+    MetaArgKeys<
+      InferWebComponentsTypes<T, InferArgsFromComponent<C> & TRenderArgs, Decorators>['args'],
+      TMetaArgKeys
+    >
   >;
 
   meta<
@@ -138,20 +151,25 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       WebComponentsTypes & T,
       any
     >,
-    TMetaArgKeys extends keyof NoInfer<InferWebComponentsTypes<T, TArgs, Decorators>['args']> =
-      never,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
       args?: MetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,
+      ComponentAnnotations<
+        WebComponentsTypes & T,
+        RequireMetaArgs<
+          WebComponentsTypes & T & { args: TArgs & T['args'] },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
       'decorators' | 'component' | 'args' | 'render'
     >
   ): WebComponentsMeta<
     RequireMetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    TMetaArgKeys
+    MetaArgKeys<InferWebComponentsTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
   >;
 }
 

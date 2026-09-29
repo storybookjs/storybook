@@ -30,12 +30,15 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
-  meta<TArgs = Args, TMetaArgKeys extends keyof NoInfer<TArgs & TRenderer['args']> = never>(
+  meta<TArgs = Args, TMetaArgKeys extends PropertyKey = never>(
     input: Omit<
       ComponentAnnotations<TRenderer & { args: TArgs }, TArgs & TRenderer['args']>,
       'args'
     > & { args?: MetaArgs<TArgs & TRenderer['args'], TMetaArgKeys> }
-  ): Meta<RequireMetaArgs<TRenderer & { args: TArgs }, TMetaArgKeys>, TMetaArgKeys>;
+  ): Meta<
+    RequireMetaArgs<TRenderer & { args: TArgs }, TMetaArgKeys>,
+    MetaArgKeys<TArgs & TRenderer['args'], TMetaArgKeys>
+  >;
 
   type<T>(): Preview<TRenderer & T>;
 }
@@ -94,20 +97,23 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
 /**
  * Types the `args` of `preview.meta()` by the keys provided. Each value is checked against `TArgs`
  * but never used to infer it, so literals don't widen and callbacks get their parameter types.
- *
- * Constrain the keys with `keyof NoInfer<TArgs>` as well: TypeScript infers `TArgs` from the
- * values through a plain `keyof TArgs` constraint. The other arg names are listed so editors can
- * suggest them, as `TKeys` is not inferred yet while completing.
+ * The other arg names are listed so editors can suggest them.
  */
-export type MetaArgs<TArgs, TKeys extends keyof NoInfer<TArgs>> = {
-  [K in TKeys]?: NoInfer<TArgs>[K];
-} & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
+export type MetaArgs<TArgs, TKeys extends PropertyKey> = string extends TKeys
+  ? Partial<NoInfer<TArgs>>
+  : {
+      [K in TKeys]?: K extends keyof NoInfer<TArgs> ? NoInfer<TArgs>[K] : never;
+    } & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
+
+/** The arg names set in `preview.meta()`. An `Args` record doesn't say which, so it sets none. */
+export type MetaArgKeys<TArgs, TKeys extends PropertyKey> = string extends TKeys
+  ? never
+  : TKeys & keyof TArgs;
 
 /** Makes the args set in `preview.meta()` required in its stories. */
-export type RequireMetaArgs<
-  TRenderer extends Renderer,
-  TMetaArgKeys extends keyof TRenderer['args'],
-> = TRenderer & { args: Required<Pick<TRenderer['args'], TMetaArgKeys>> };
+export type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
+  args: Required<Pick<TRenderer['args'], MetaArgKeys<TRenderer['args'], TKeys>>>;
+};
 
 type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
   Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
@@ -124,7 +130,9 @@ export interface Meta<
 > {
   readonly _tag: 'Meta';
   input: Omit<ComponentAnnotations<TRenderer, TRenderer['args']>, 'args'> & {
-    args: Pick<TRenderer['args'], TMetaArgKeys>;
+    args: [TMetaArgKeys] extends [never]
+      ? Partial<TRenderer['args']> | undefined
+      : Pick<TRenderer['args'], TMetaArgKeys> & Partial<TRenderer['args']>;
   };
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;

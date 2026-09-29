@@ -4,6 +4,7 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  MetaArgKeys,
   RequireMetaArgs,
   Preview,
   PreviewAddon,
@@ -89,40 +90,58 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   meta<
     C,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    TMetaArgKeys extends keyof NoInfer<
-      InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>['args']
-    > = never,
+    TRenderArgs = unknown,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       component: C;
+      render?: ArgsStoryFn<VueTypes & T, ComponentPropsAndSlots<C> & TRenderArgs & T['args']>;
       args?: MetaArgs<
-        InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>['args'],
+        InferVueTypes<T, ComponentPropsAndSlots<C> & TRenderArgs, Decorators>['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C> & T['args']>,
-      'decorators' | 'component' | 'args'
+      ComponentAnnotations<
+        VueTypes & T,
+        RequireMetaArgs<
+          VueTypes & T & { args: ComponentPropsAndSlots<C> & TRenderArgs & T['args'] },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
+      'decorators' | 'component' | 'args' | 'render'
     >
   ): VueMeta<
-    RequireMetaArgs<InferVueTypes<T, ComponentPropsAndSlots<C>, Decorators>, TMetaArgKeys>,
-    TMetaArgKeys
+    RequireMetaArgs<
+      InferVueTypes<T, ComponentPropsAndSlots<C> & TRenderArgs, Decorators>,
+      TMetaArgKeys
+    >,
+    MetaArgKeys<
+      InferVueTypes<T, ComponentPropsAndSlots<C> & TRenderArgs, Decorators>['args'],
+      TMetaArgKeys
+    >
   >;
 
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    TMetaArgKeys extends keyof NoInfer<InferVueTypes<T, TArgs, Decorators>['args']> = never,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<VueTypes & T, TArgs>;
       args?: MetaArgs<InferVueTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
       decorators?: Decorators | Decorators[];
     } & Omit<
-      ComponentAnnotations<VueTypes & T, TArgs & T['args']>,
+      ComponentAnnotations<
+        VueTypes & T,
+        RequireMetaArgs<VueTypes & T & { args: TArgs & T['args'] }, NoInfer<TMetaArgKeys>>['args']
+      >,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): VueMeta<RequireMetaArgs<InferVueTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
+  ): VueMeta<
+    RequireMetaArgs<InferVueTypes<T, TArgs, Decorators>, TMetaArgKeys>,
+    MetaArgKeys<InferVueTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
+  >;
 }
 
 /**

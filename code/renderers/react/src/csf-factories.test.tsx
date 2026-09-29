@@ -618,7 +618,17 @@ describe('Meta args are typed by the keys you provide', () => {
     const record: Args = { label: 'Hi' };
     preview.meta({ component: Button, args: shared });
     preview.meta({ component: Button, args: { ...shared, label: 'Hi' } });
-    preview.meta({ component: Button, args: record });
+    const recordMeta = preview.meta({ component: Button, args: record });
+    // @ts-expect-error an Args record doesn't say which args it sets, so label is still required
+    recordMeta.story({ args: { disabled: false } });
+  });
+
+  it('meta args from a variable or a spread must be args too', () => {
+    const shared = { label: 'Hi', extra: 1 };
+    // @ts-expect-error extra is not an arg
+    preview.meta({ component: Button, args: shared });
+    // @ts-expect-error extra is not an arg
+    preview.meta({ component: Button, args: { ...shared, disabled: false } });
   });
 
   it('optional props set in meta are present in its stories', () => {
@@ -632,6 +642,22 @@ describe('Meta args are typed by the keys you provide', () => {
         mocked(args.onKeyDown).mockClear();
       },
     });
+  });
+
+  it('optional props set in meta are present in its own hooks', () => {
+    preview.meta({
+      component: Button,
+      args: { onKeyDown: fn() },
+      beforeEach: ({ args }) => {
+        mocked(args.onKeyDown).mockClear();
+      },
+      loaders: [async ({ args }) => ({ result: args.onKeyDown() })],
+    });
+  });
+
+  it('stories expose the args of their meta', () => {
+    const Default = meta.story({ args: { label: 'Hi' } });
+    expectTypeOf(Default.meta.input.args?.label).toEqualTypeOf<string | undefined>();
   });
 
   it('composes meta and story args at runtime', () => {

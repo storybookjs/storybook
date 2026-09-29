@@ -5,6 +5,7 @@ import type {
   InferMetaTypes,
   InferTypes,
   MetaArgs,
+  MetaArgKeys,
   RequireMetaArgs,
   PreviewAddon,
 } from 'storybook/internal/csf';
@@ -103,9 +104,7 @@ export interface TanStackPreview<
     TArgs extends Args = Args,
     Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TMetaRoute, TPath> & T, any> =
       DecoratorFunction<ReactTypes & TanStackTypes<TMetaRoute, TPath> & T, any>,
-    TMetaArgKeys extends keyof NoInfer<
-      InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>['args']
-    > = never,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<
@@ -122,7 +121,13 @@ export interface TanStackPreview<
         Parameters &
         (ReactTypes & T)['parameters'];
     } & Omit<
-      ComponentAnnotations<ReactTypes & TanStackTypes<TMetaRoute, TPath> & T, TArgs>,
+      ComponentAnnotations<
+        ReactTypes & TanStackTypes<TMetaRoute, TPath> & T,
+        RequireMetaArgs<
+          ReactTypes & TanStackTypes<TMetaRoute, TPath> & T & { args: TArgs },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
       'decorators' | 'component' | 'args' | 'render' | 'parameters'
     >
   ): ReactMeta<
@@ -130,7 +135,10 @@ export interface TanStackPreview<
       InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>,
       TMetaArgKeys
     >,
-    TMetaArgKeys
+    MetaArgKeys<
+      InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>['args'],
+      TMetaArgKeys
+    >
   >;
 
   // Overload 2: without route — uses the preview-level TRoute
@@ -139,9 +147,7 @@ export interface TanStackPreview<
     TArgs extends Args = Args,
     Decorators extends DecoratorFunction<ReactTypes & TanStackTypes<TRoute, TPath> & T, any> =
       DecoratorFunction<ReactTypes & TanStackTypes<TRoute, TPath> & T, any>,
-    TMetaArgKeys extends keyof NoInfer<
-      InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>['args']
-    > = never,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<
@@ -156,7 +162,13 @@ export interface TanStackPreview<
       >;
       parameters?: TanStackParameters<TRoute, TPath> & Parameters & (ReactTypes & T)['parameters'];
     } & Omit<
-      ComponentAnnotations<ReactTypes & TanStackTypes<TRoute, TPath> & T, TArgs>,
+      ComponentAnnotations<
+        ReactTypes & TanStackTypes<TRoute, TPath> & T,
+        RequireMetaArgs<
+          ReactTypes & TanStackTypes<TRoute, TPath> & T & { args: TArgs },
+          NoInfer<TMetaArgKeys>
+        >['args']
+      >,
       'decorators' | 'component' | 'args' | 'render' | 'parameters'
     >
   ): ReactMeta<
@@ -164,6 +176,9 @@ export interface TanStackPreview<
       InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>,
       TMetaArgKeys
     >,
-    TMetaArgKeys
+    MetaArgKeys<
+      InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>['args'],
+      TMetaArgKeys
+    >
   >;
 }

@@ -168,7 +168,7 @@ export const Primary = meta.story({
 });
 ```
 
-Every key in the `args` of `preview.meta` must be an arg of your stories: a prop of the component, an arg used by one of its decorators, or an arg declared with `preview.type`. The values are checked against those types, so literal values like `variant: 'primary'` need no `as const`.
+Every key in the `args` of `preview.meta` must be an arg of your stories: a prop of the component, an arg of its typed `render` function, an arg used by one of its decorators, or an arg declared with `preview.type`. The values are checked against those types, so literal values like `variant: 'primary'` need no `as const`.
 
 For more information on typing your stories, refer to the [writing stories in TypeScript guide](../../writing-stories/typescript.mdx).
 

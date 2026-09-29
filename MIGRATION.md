@@ -660,13 +660,13 @@ There is no automatic source migration. Updating the compiler can expose errors 
  export const Default = meta.story({ args: { label: 'Hi' } });
 ```
 
-`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present, both in `meta.input.args` and in the args of its stories. This also holds when meta args come from a `Partial` object, so only pass objects whose keys are set.
+`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present: in `meta.input.args`, in the meta's own `play`, `beforeEach`, `afterEach` and `loaders`, and in the args of its stories. This also holds when meta args come from a `Partial` object, so only pass objects whose keys are set. An `Args` record doesn't say which args it sets, so it counts as setting none.
 
 The second type argument of `ReactMeta`, `VueMeta`, `AngularMeta`, `WebComponentsMeta` and `Meta` from `storybook/internal/csf` is now the union of the arg names set in meta, instead of the meta input type.
 
 ### CSF Next: use `mocked()` for the mock API on args
 
-In React, an arg set to `fn()` in meta was typed as a `Mock` in `play`, `beforeEach`, `afterEach` and `loaders`, and in `meta.input.args`. It is now typed as the component declares it, as other renderers already did. Wrap it in `mocked()` from `storybook/test` to use the mock API, as you would with Vitest's `vi.mocked()`:
+An arg set to `fn()` in meta was typed as a `Mock` in `meta.input.args`, and in React also in `play`, `beforeEach`, `afterEach` and `loaders`. It is now typed as the component declares it. Wrap it in `mocked()` from `storybook/test` to use the mock API, as you would with Vitest's `vi.mocked()`:
 
 ```diff
 -import { fn } from 'storybook/test';
@@ -688,7 +688,7 @@ The `csf-factories` automigration wraps mock API calls on args in `mocked()` whe
 
 ### CSF Next: every key in meta args must be an arg
 
-Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component (or, in a meta without `component`, of the `render` function's args), an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. On Storybook 10, an unknown key was accepted as long as the same `args` object also contained a real prop, and it was then ignored when working out which args a story still has to provide. A meta whose args contained only unknown keys was already an error. A meta with neither `component` nor `render` still accepts any args.
+Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component, an arg of the meta's typed `render` function, an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. This includes args passed as a variable or a spread. On Storybook 10, an unknown key was accepted as long as the same `args` object also contained a real prop, or always when the args came from a variable, and it was then ignored when working out which args a story still has to provide. A meta whose args contained only unknown keys was already an error. A meta with neither `component` nor `render` still accepts any args.
 
 Declare args that are not props with `preview.type`:
 

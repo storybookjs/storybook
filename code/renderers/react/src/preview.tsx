@@ -7,6 +7,7 @@ import type {
   InferTypes,
   Meta,
   MetaArgs,
+  MetaArgKeys,
   RequireMetaArgs,
   Preview,
   Story,
@@ -114,7 +115,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
-    TMetaArgKeys extends keyof NoInfer<InferReactTypes<T, TArgs, Decorators>['args']> = never,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;
@@ -122,10 +123,16 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
       decorators?: Decorators | Decorators[];
       args?: MetaArgs<InferReactTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
     } & Omit<
-      ComponentAnnotations<ReactTypes & T, TArgs>,
+      ComponentAnnotations<
+        ReactTypes & T,
+        RequireMetaArgs<ReactTypes & { args: TArgs }, NoInfer<TMetaArgKeys>>['args']
+      >,
       'decorators' | 'component' | 'args' | 'render'
     >
-  ): ReactMeta<RequireMetaArgs<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
+  ): ReactMeta<
+    RequireMetaArgs<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>,
+    MetaArgKeys<InferReactTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>
+  >;
 }
 
 /**

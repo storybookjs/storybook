@@ -125,7 +125,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
     } & Omit<
       ComponentAnnotations<
         ReactTypes & T,
-        RequireMetaArgs<ReactTypes & { args: TArgs }, NoInfer<TMetaArgKeys>>['args']
+        RequireMetaArgs<ReactTypes & T & { args: TArgs }, NoInfer<TMetaArgKeys>>['args']
       >,
       'decorators' | 'component' | 'args' | 'render'
     >

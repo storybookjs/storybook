@@ -43,12 +43,21 @@ function withoutTypeCast(node: t.Node): t.Node {
 }
 
 function isRender(path: NodePath<t.Function>) {
-  const key = t.isObjectMethod(path.node)
-    ? path.node.key
-    : t.isObjectProperty(path.parent) && path.parent.value === path.node
-      ? path.parent.key
-      : undefined;
-  return !!key && keyName(key) === 'render';
+  if (t.isObjectMethod(path.node)) {
+    return keyName(path.node.key) === 'render';
+  }
+  let value: NodePath = path;
+  while (
+    value.parentPath?.isTSAsExpression() ||
+    value.parentPath?.isTSSatisfiesExpression() ||
+    value.parentPath?.isTSNonNullExpression()
+  ) {
+    value = value.parentPath;
+  }
+  const { parent } = value;
+  return (
+    t.isObjectProperty(parent) && parent.value === value.node && keyName(parent.key) === 'render'
+  );
 }
 
 function isMember(node: t.Node): node is t.MemberExpression | t.OptionalMemberExpression {

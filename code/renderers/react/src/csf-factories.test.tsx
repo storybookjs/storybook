@@ -598,6 +598,9 @@ describe('Meta args are typed by the keys you provide', () => {
       component: Button,
       decorators: [withTheme],
       args: { locale: 'nl', theme: 'dark', label: 'Hi' },
+      beforeEach: ({ args }) => {
+        expectTypeOf(args.locale).toEqualTypeOf<'en' | 'nl'>();
+      },
     });
     const Default = typedMeta.story({ args: { disabled: false } });
     expectTypeOf(typedMeta.input.args.locale).toEqualTypeOf<'en' | 'nl'>();

@@ -1125,6 +1125,13 @@ describe('stories codemod', () => {
             },
           };
 
+          export const Cast = {
+            render: ((args) => {
+              args.onClick.mockClear();
+              return null;
+            }) as any,
+          };
+
           export const B = {
             render({ onClick }) {
               onClick.mockReset();
@@ -1150,6 +1157,13 @@ describe('stories codemod', () => {
             mocked(args.onClick).mockClear();
             return null;
           },
+        });
+
+        export const Cast = meta.story({
+          render: ((args) => {
+            mocked(args.onClick).mockClear();
+            return null;
+          }) as any,
         });
 
         export const B = meta.story({

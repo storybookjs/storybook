@@ -7,7 +7,6 @@ import type { ModuleExport, StoryContext, StoryDocsPayload } from 'storybook/int
 import { registerService } from 'storybook/preview-api';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { vi } from 'vitest';
 
 import { expect, userEvent, waitFor, within } from 'storybook/test';
 import { dedent } from 'ts-dedent';
@@ -56,7 +55,8 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
     // The docs blocks only consume the story-docs service when this feature is enabled, but it is
     // disabled by default in production builds (e.g. Chromatic). Enable it here so the service-backed
     // story renders the mocked data instead of falling back to the non-service path.
-    vi.stubGlobal('FEATURES', { ...globalThis.FEATURES, docgenServer: true });
+    const previousFeatures = globalThis.FEATURES;
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
 
     const payload = createStoryDocsPayload(docsContext, of, data);
     unregisterService('core/story-docs');
@@ -83,7 +83,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 
     return () => {
       unregisterService('core/story-docs');
-      vi.unstubAllGlobals();
+      globalThis.FEATURES = previousFeatures;
     };
   };
 }

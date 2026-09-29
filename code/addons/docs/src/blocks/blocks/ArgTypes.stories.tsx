@@ -2,7 +2,6 @@
 import type { PlayFunctionContext } from 'storybook/internal/csf';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
-import { vi } from 'vitest';
 
 import * as ExampleStories from '../examples/ArgTypesParameters.stories';
 import * as SubcomponentsExampleStories from '../examples/ArgTypesWithSubcomponentsParameters.stories';
@@ -67,8 +66,11 @@ export const OfComponentWithoutAStory: Story = {
   },
   beforeEach: async () => {
     // The block only consults the docgen service behind this feature, which is off by default here.
-    vi.stubGlobal('FEATURES', { ...globalThis.FEATURES, docgenServer: true });
-    return () => vi.unstubAllGlobals();
+    const previousFeatures = globalThis.FEATURES;
+    globalThis.FEATURES = { ...previousFeatures, docgenServer: true };
+    return () => {
+      globalThis.FEATURES = previousFeatures;
+    };
   },
 };
 

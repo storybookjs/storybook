@@ -1161,7 +1161,7 @@ export const enablesDocgenServer = (key: string, template: Template): boolean =>
   const features = mainConfig?.features;
   const supported =
     template.expected.renderer === '@storybook/react' ||
-    template.expected.framework === '@storybook/vue3-vite' ||
+    template.expected.renderer === '@storybook/vue3' ||
     template.expected.framework === '@storybook/angular-vite';
   return supported && features?.componentsManifest === true && features.docgenServer !== false;
 };

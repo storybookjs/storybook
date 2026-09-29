@@ -245,7 +245,7 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 const babelPresetEnvMajor = getBabelPresetEnvMajor();
 
-export const features: PresetProperty<'features'> = async (existing) => ({
+export const features: PresetProperty<'features'> = async (existing, options) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
@@ -255,6 +255,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
+  docgenServer: !!options.presetsList?.some(({ preset }) => preset.experimental_docgenProvider),
   highlight: true,
   interactions: true,
   measure: true,

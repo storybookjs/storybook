@@ -18,11 +18,6 @@ export const experimental_docgenProvider = async (
   existing: DocgenProviderDescriptor[] = [],
   options: Options
 ): Promise<DocgenProviderDescriptor[]> => {
-  const features = await options.presets.apply('features', {});
-  if (!features?.docgenServer) {
-    return existing;
-  }
-
   const frameworkOptions =
     (await options.presets.apply<WebComponentsFrameworkOptions | null | undefined>(
       'frameworkOptions'

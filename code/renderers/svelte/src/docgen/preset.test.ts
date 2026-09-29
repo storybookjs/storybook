@@ -7,27 +7,19 @@ import { experimental_docgenProvider, experimental_manifests } from './preset.ts
 
 const EXISTING: DocgenProviderDescriptor[] = [{ moduleSpecifier: '/addon/docgen-worker.js' }];
 
-const optionsWith = (features: Record<string, boolean>): Options =>
+const optionsWith = (features: Record<string, unknown>): Options =>
   ({
     presets: { apply: async (key: string) => (key === 'features' ? features : undefined) },
   }) as Options;
 
 describe('experimental_docgenProvider', () => {
   it('appends the Svelte docgen worker after existing descriptors', async () => {
-    await expect(
-      experimental_docgenProvider(EXISTING, optionsWith({ docgenServer: true }))
-    ).resolves.toEqual([
+    await expect(experimental_docgenProvider(EXISTING)).resolves.toEqual([
       EXISTING[0],
       {
         moduleSpecifier: expect.stringMatching(/svelte[\\/]dist[\\/]docgen[\\/]docgen-worker\.js$/),
       },
     ]);
-  });
-
-  it('registers nothing when the docgen server is off', async () => {
-    await expect(
-      experimental_docgenProvider(EXISTING, optionsWith({ docgenServer: false }))
-    ).resolves.toBe(EXISTING);
   });
 });
 

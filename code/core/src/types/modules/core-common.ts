@@ -649,13 +649,14 @@ export interface StorybookFeatures {
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * Defaults to true for React frameworks, Vue3-Vite and Angular-Vite. In Storybook 11, explicit
-   * legacy extractor settings preserve builder extraction unless this flag is set. Unsupported
-   * frameworks keep server-side extraction disabled.
+   * @default true when any preset contributes an `experimental_docgenProvider`
    */
   docgenServer?: boolean;
 
-  /** @deprecated Use `docgenServer`. This alias will be removed in Storybook 12. */
+  /**
+   * @deprecated Renamed to `docgenServer` and has no effect. `storybook automigrate docgen-server`
+   * renames it.
+   */
   experimentalDocgenServer?: boolean;
 
   /**

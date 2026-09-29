@@ -1,14 +1,17 @@
 import { describe, expect, it } from 'vitest';
 
-import type { StorybookFeatures } from '../../types/modules/core-common.ts';
+import type { Options, StorybookFeatures } from '../../types/modules/core-common.ts';
 import { features as defaultFeaturesPreset } from '../../core-server/presets/common-preset.ts';
 import { isReviewFeatureEnabled } from './features.ts';
 
 describe('isReviewFeatureEnabled', () => {
   it('is enabled with the untouched default features preset', async () => {
     const defaults = (await (
-      defaultFeaturesPreset as (existing?: StorybookFeatures) => Promise<StorybookFeatures>
-    )(undefined))!;
+      defaultFeaturesPreset as (
+        existing: StorybookFeatures | undefined,
+        options: Options
+      ) => Promise<StorybookFeatures>
+    )(undefined, {} as Options))!;
 
     expect(isReviewFeatureEnabled(defaults)).toBe(true);
   });

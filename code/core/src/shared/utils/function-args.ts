@@ -67,7 +67,11 @@ export function serializeArgFunctions<T>(value: T, depth = 0, seen = new WeakSet
   if (Array.isArray(value)) {
     seen.add(value);
     // `map` keeps sparse-array holes intact, unlike an index-by-index copy.
-    return value.map((element) => serializeArgFunctions(element, depth + 1, seen)) as T;
+    const copy = value.map((element) => serializeArgFunctions(element, depth + 1, seen)) as T;
+    // `seen` is the current ancestor chain, not every object visited: an object shared by two
+    // sibling paths is serialized at both, while a cycle still stops at the second visit.
+    seen.delete(value);
+    return copy;
   }
   if (!isPlainObject(value)) {
     return value;
@@ -77,6 +81,7 @@ export function serializeArgFunctions<T>(value: T, depth = 0, seen = new WeakSet
   for (const key of Object.keys(value)) {
     copy[key] = serializeArgFunctions(value[key], depth + 1, seen);
   }
+  seen.delete(value);
   if (hasOwn(value, FUNCTION_MARKER) || hasOwn(value, ESCAPE_MARKER)) {
     // User data that looks like a marker (or like the escape wrapper) must survive the round
     // trip as data; brand it so the reviver takes the branch below instead of the marker branch.
@@ -134,14 +139,17 @@ export function createArgFunctionReviver(): {
     if (Array.isArray(value)) {
       seen.add(value);
       const currentArray = Array.isArray(current) ? current : undefined;
-      return value.map((element, index) =>
+      const copy = value.map((element, index) =>
         reviveNode(element, currentArray?.[index], [...path, index], false, depth + 1, seen)
       );
+      // Ancestor chain, same as in `serializeArgFunctions`: sibling paths share nothing, cycles
+      // still stop at the second visit.
+      seen.delete(value);
+      return copy;
     }
     if (!isPlainObject(value)) {
       return value;
     }
-    seen.add(value);
     const keys = Object.keys(value);
     if (
       !escaped &&
@@ -151,11 +159,15 @@ export function createArgFunctionReviver(): {
     ) {
       // Our escape wrapper: the object inside is literal user data, so its own `__function__` key
       // must not be treated as a marker, while its children get normal codec treatment.
-      return reviveNode(value[ESCAPE_MARKER], current, path, true, depth + 1, seen);
+      seen.add(value);
+      const revived = reviveNode(value[ESCAPE_MARKER], current, path, true, depth + 1, seen);
+      seen.delete(value);
+      return revived;
     }
     if (!escaped && hasOwn(value, FUNCTION_MARKER)) {
       return reviveMarker(value[FUNCTION_MARKER], current, path);
     }
+    seen.add(value);
     const currentObject =
       current !== null && typeof current === 'object' ? (current as PlainObject) : undefined;
     const copy: Record<string, unknown> = {};
@@ -169,6 +181,7 @@ export function createArgFunctionReviver(): {
         seen
       );
     }
+    seen.delete(value);
     return copy;
   };
 

@@ -94,6 +94,17 @@ describe('serializeArgFunctions', () => {
 
     expect(() => serializeArgFunctions(circular)).not.toThrow();
   });
+
+  it('serializes a function-holding object shared by two sibling paths', () => {
+    const shared = { onClick: function handleShared() {}, href: '#' };
+    const args = { first: shared, second: shared };
+
+    const wire = overTheWire(serializeArgFunctions(args));
+
+    const marker = { __function__: { name: 'handleShared' } };
+    expect(wire.first).toEqual({ onClick: marker, href: '#' });
+    expect(wire.second).toEqual({ onClick: marker, href: '#' });
+  });
 });
 
 describe('reviveArgFunctions', () => {
@@ -187,6 +198,27 @@ describe('reviveArgFunctions', () => {
     const second = reviveArgFunctions(marker, first);
 
     expect(second.onClick).toBe(first.onClick);
+  });
+
+  it('revives markers in an object shared by two sibling paths', () => {
+    const shared = { onClick: { __function__: { name: 'handleShared' } } };
+
+    const revived = reviveArgFunctions({ first: shared, second: shared });
+
+    expect(typeof (revived.first as Record<string, unknown>).onClick).toBe('function');
+    expect(typeof (revived.second as Record<string, unknown>).onClick).toBe('function');
+    expect(((revived.second as Record<string, unknown>).onClick as () => void).name).toBe(
+      'handleShared'
+    );
+  });
+
+  it('still terminates on circular references', () => {
+    const circular: Record<string, unknown> = {
+      onClick: { __function__: { name: 'onClick' } },
+    };
+    circular.self = circular;
+
+    expect(() => reviveArgFunctions(circular)).not.toThrow();
   });
 
   it('round-trips through serialize, telejson, and revive', () => {

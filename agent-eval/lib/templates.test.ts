@@ -6,7 +6,7 @@ import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
   enableExperimentalReview,
-  installStorybookFromCheckout,
+  pointStorybookAtCheckout,
   isReviewEnabledFor,
   readStorybookWorkspace,
   readTemplateCheckoutPackages,
@@ -141,7 +141,7 @@ describe('readTemplateCheckoutPackages', () => {
   });
 });
 
-describe('installStorybookFromCheckout', () => {
+describe('pointStorybookAtCheckout', () => {
   const workspacePackage = (name: string, dependencies: string[] = []): WorkspacePackage => ({
     name,
     dir: `code/${name}`,
@@ -181,7 +181,7 @@ describe('installStorybookFromCheckout', () => {
       }),
     };
 
-    const packages = await installStorybookFromCheckout(files, workspace);
+    const packages = await pointStorybookAtCheckout(files, workspace);
 
     expect(JSON.parse(files['package.json'])).toEqual({
       workspaces: ['packages/*'],
@@ -216,7 +216,7 @@ describe('installStorybookFromCheckout', () => {
     const source = '{"devDependencies":{"storybook":"9.1.20","react":"19.2.0"}}';
     const files = { 'package.json': source };
 
-    const packages = await installStorybookFromCheckout(files, workspace);
+    const packages = await pointStorybookAtCheckout(files, workspace);
 
     expect(files['package.json']).toBe(source);
     expect(packages).toEqual([]);
@@ -225,7 +225,7 @@ describe('installStorybookFromCheckout', () => {
   it('rejects workspace ranges other than workspace:*', async () => {
     const files = { 'package.json': manifest({ devDependencies: { storybook: 'workspace:^' } }) };
 
-    await expect(installStorybookFromCheckout(files, workspace)).rejects.toThrowError(
+    await expect(pointStorybookAtCheckout(files, workspace)).rejects.toThrowError(
       /storybook@workspace:\^; use workspace:\*/
     );
   });
@@ -235,7 +235,7 @@ describe('installStorybookFromCheckout', () => {
       'package.json': manifest({ devDependencies: { '@storybook/icons': 'workspace:*' } }),
     };
 
-    await expect(installStorybookFromCheckout(files, workspace)).rejects.toThrowError(
+    await expect(pointStorybookAtCheckout(files, workspace)).rejects.toThrowError(
       /@storybook\/icons is not a published package of this monorepo/
     );
   });

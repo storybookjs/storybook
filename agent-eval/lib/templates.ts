@@ -114,7 +114,7 @@ const TYPE_UTIL_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'utils', 'type.t
 const TYPE_UTIL_SANDBOX_PATH = path.posix.join('__agent_eval__', 'utils', 'type.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-const CHECKOUT_PACKAGES_DIR = 'local-packages';
+export const CHECKOUT_PACKAGES_DIR = 'local-packages';
 // Read by start-storybook-mcp.mjs to fail the install when npm took one of these from the registry.
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
@@ -192,9 +192,9 @@ export async function setupSandbox(
   const workspace = await readStorybookWorkspace();
   let packedCheckout = false;
   if (process.env.EVAL_STORYBOOK_LATEST === '1') {
-    await installStorybookFromLatest(files, workspace);
+    await pointStorybookAtLatest(files, workspace);
   } else {
-    const packages = await installStorybookFromCheckout(files, workspace);
+    const packages = await pointStorybookAtCheckout(files, workspace);
     if (packages.length > 0) {
       Object.assign(files, await packCheckoutPackages(packages));
       files[CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH] = JSON.stringify(packages.map((pkg) => pkg.name));
@@ -464,7 +464,7 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
 // Point every `workspace:*` dependency in the sandbox manifests at a `yarn pack` tarball of this
 // checkout, and force the packed packages onto their tarballs through the root `overrides`,
 // including the ones only reached through another monorepo package. Returns the packages to pack.
-export async function installStorybookFromCheckout(
+export async function pointStorybookAtCheckout(
   files: Record<string, string>,
   workspace: StorybookWorkspace
 ): Promise<WorkspacePackage[]> {
@@ -504,7 +504,7 @@ export async function installStorybookFromCheckout(
   return [...packages.values()];
 }
 
-async function installStorybookFromLatest(
+async function pointStorybookAtLatest(
   files: Record<string, string>,
   workspace: StorybookWorkspace
 ): Promise<void> {
@@ -672,7 +672,7 @@ export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]
     if (path.posix.basename(filePath) !== 'package.json') {
       continue;
     }
-    for (const pkg of await installStorybookFromCheckout({ 'package.json': content }, workspace)) {
+    for (const pkg of await pointStorybookAtCheckout({ 'package.json': content }, workspace)) {
       packages.set(pkg.name, pkg);
     }
   }

@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
+import { CHECKOUT_PACKAGES_DIR } from './templates.ts';
 import { collectTranscriptUsage } from './usage.ts';
 
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
@@ -146,14 +147,25 @@ async function attachRunMetadata({ runData }: RunCompleteContext) {
   const usage = runData.transcript
     ? collectTranscriptUsage(runData.transcript, runData.result.observedModel)
     : undefined;
+  // Recording the commit is bookkeeping; a git failure must not fail the eval itself.
+  const checkout = await readCheckoutRevision().catch(() => undefined);
 
   return {
     ...runData,
+    // The packed checkout tarballs are megabytes each, and every run would carry them into the
+    // results archive and the playground deploy.
+    generatedFiles:
+      runData.generatedFiles &&
+      Object.fromEntries(
+        Object.entries(runData.generatedFiles).filter(
+          ([filePath]) => !filePath.startsWith(`${CHECKOUT_PACKAGES_DIR}/`)
+        )
+      ),
     result: {
       ...runData.result,
       metadata: {
         ...runData.result.metadata,
-        checkout: await readCheckoutRevision(),
+        ...(checkout ? { checkout } : {}),
         ...(usage ? { usage } : {}),
       },
     },

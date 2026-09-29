@@ -114,6 +114,10 @@ export async function collectAutomigrationsAcrossProjects(
       } catch (error) {
         checks.push({ fix, result: null, failed: true });
 
+        taskLog.message(
+          CLI_COLORS.error(`${fix.id}: ${error instanceof Error ? error.message : String(error)}`)
+        );
+
         logger.debug(
           `Failed to check fix ${fix.id} for project ${shortenPath(project.configDir)}.`
         );

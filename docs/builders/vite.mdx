@@ -114,7 +114,7 @@ If you need to override it, you can use the `viteFinal` function and adjust it.
 
 ### ArgTypes are not generated automatically
 
-Currently, [automatic argType inference](../api/arg-types.mdx#automatic-argtype-inference) is only available for React, Vue 3, and Svelte (JSDocs only). With React, the Vite builder defaults to `react-docgen`, a faster alternative to `react-docgen-typescript` for parsing React components. If you run into any issues, you can revert to `react-docgen-typescript` by updating your Storybook configuration file as follows:
+Currently, [automatic argType inference](../api/arg-types.mdx#automatic-argtype-inference) is only available for React, Vue 3, and Svelte (JSDocs only). React frameworks use server-side docgen by default. If you need the legacy `react-docgen-typescript` Vite plugin, turn off [`docgenServer`](../api/main-config/main-config-features.mdx#docgenserver) and update your Storybook configuration as follows:
 
 <CodeSnippets path="storybook-vite-builder-react-docgen.md" />
 

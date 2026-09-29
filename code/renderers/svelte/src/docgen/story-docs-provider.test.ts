@@ -22,12 +22,12 @@ const DOWNSTREAM: StoryDocsPayload = {
   stories: {},
 };
 
-const optionsWith = (apply: (key: string) => Promise<unknown>): Options =>
-  ({ presets: { apply } }) as unknown as Options;
+const optionsWith = (apply: (key: string) => Promise<object | undefined>): Options =>
+  ({ presets: { apply } }) as Options;
 
 const SVELTE_DESCRIPTORS = await experimental_docgenProvider(
   [],
-  optionsWith(async () => ({ experimentalDocgenServer: true }))
+  optionsWith(async () => ({ docgenServer: true }))
 );
 
 const svelteWorkerOptions = optionsWith(async () => SVELTE_DESCRIPTORS);

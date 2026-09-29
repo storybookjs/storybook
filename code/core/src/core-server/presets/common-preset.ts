@@ -426,7 +426,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerToolset(reviewToolset);
   }
 
-  if (features?.experimentalDocgenServer) {
+  if (features?.docgenServer) {
     const [docgenDescriptors, storyDocsProvider] = await Promise.all([
       options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
       options.presets.apply<StoryDocsProvider>(

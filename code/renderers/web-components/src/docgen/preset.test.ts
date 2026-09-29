@@ -65,15 +65,13 @@ describe('renderer preset exports', () => {
 
 describe('experimental_docgenProvider', () => {
   it('contributes no descriptor when the docgen server flag is off', async () => {
-    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
+    expect(await experimental_docgenProvider([], optionsWith({ docgenServer: false }))).toEqual([]);
   });
 
   it('contributes the docgen worker descriptor', async () => {
     givenManifestPackage();
 
-    expect(
-      await experimental_docgenProvider([], optionsWith({ experimentalDocgenServer: true }))
-    ).toEqual([
+    expect(await experimental_docgenProvider([], optionsWith({ docgenServer: true }))).toEqual([
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
@@ -93,7 +91,7 @@ describe('experimental_docgenProvider', () => {
       await experimental_docgenProvider(
         [],
         optionsWith(
-          { experimentalDocgenServer: true },
+          { docgenServer: true },
           {
             customElementsManifest: 'custom-elements.json',
             docgen: { typeProperty: 'resolvedType' },
@@ -115,10 +113,10 @@ describe('experimental_docgenProvider', () => {
 describe('experimental_manifests', () => {
   it.each([
     ['docgen server flag off', { componentsManifest: true }, {}],
-    ['components manifest flag off', { experimentalDocgenServer: true }, {}],
+    ['components manifest flag off', { docgenServer: true }, {}],
     [
       'both flags on',
-      { experimentalDocgenServer: true, componentsManifest: true },
+      { docgenServer: true, componentsManifest: true },
       {
         components: {
           v: 0,

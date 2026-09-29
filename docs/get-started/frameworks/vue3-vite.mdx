@@ -67,32 +67,35 @@ setup((app) => {
 });
 ```
 
-### Using `vue-component-meta`
+### Component documentation
 
 <Callout variant="info">
 
-`vue-component-meta` is only available in Storybook ≥ 8. It is currently an opt-in, but it will become the default in a future version of Storybook. The `vue-docgen-api` default is deprecated since Storybook 10.6 and will be removed in the next major version of Storybook, so we recommend switching to `vue-component-meta`.
+Storybook 11 uses server-side docgen with `vue-component-meta` by default. If your Storybook 10 configuration explicitly selects a `docgen` engine, disables docgen, or provides a custom `tsconfig`, Storybook 11 preserves that choice by keeping the server off. This compatibility behavior will be removed in Storybook 12.
 
 </Callout>
 
 [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
 
-If you want to use `vue-component-meta`, you can configure it in your `.storybook/main.js|ts` file:
+New projects do not need any docgen configuration. To migrate an existing project that selects `vue-component-meta`, remove the legacy framework option and let Storybook use the server:
 
-```ts title=".storybook/main.ts"
-import type { StorybookConfig } from '@storybook/vue3-vite';
+```diff title=".storybook/main.ts"
+ import type { StorybookConfig } from '@storybook/vue3-vite';
 
-const config: StorybookConfig = {
-  framework: {
-    name: '@storybook/vue3-vite',
-    options: {
-      docgen: 'vue-component-meta',
-    },
-  },
-};
+ const config: StorybookConfig = {
+-  framework: {
+-    name: '@storybook/vue3-vite',
+-    options: {
+-      docgen: 'vue-component-meta',
+-    },
+-  },
++  framework: '@storybook/vue3-vite',
+ };
 
-export default config;
+ export default config;
 ```
+
+You can also set `features.docgenServer: true` explicitly. The stable feature takes precedence, and Storybook warns that the legacy `docgen` option is ignored.
 
 `vue-component-meta` comes with many benefits and enables more documentation features, such as:
 
@@ -215,7 +218,7 @@ The definition above will generate the following controls:
 
 ![Controls generated from exposed properties and methods](../../_assets/get-started/vue-component-meta-exposed-types-controls.png)
 
-#### Override the default configuration
+#### Keep a custom `vue-component-meta` configuration
 
 If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../../configure/index.mdx) configuration file and add the following:
 
@@ -223,6 +226,9 @@ If you're working with a project that relies on [`tsconfig references`](https://
 import type { StorybookConfig } from '@storybook/vue3-vite';
 
 const config: StorybookConfig = {
+  features: {
+    docgenServer: false,
+  },
   framework: {
     name: '@storybook/vue3-vite',
     options: {
@@ -236,6 +242,8 @@ const config: StorybookConfig = {
 
 export default config;
 ```
+
+The server does not translate a custom docgen `tsconfig`. Keep `docgenServer: false` to continue using that builder-based configuration in Storybook 11.
 
 <Callout variant="info">
 
@@ -281,28 +289,31 @@ Configure options for the [framework's builder](../../api/main-config/main-confi
 
 Type: `'vue-docgen-api' | 'vue-component-meta' | boolean`
 
-Default: `'vue-docgen-api'`
+Default: server-side `vue-component-meta`. When [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) is off, the builder default is `'vue-docgen-api'`.
 
 Since: `8.0`
 
-Choose which docgen tool to use when generating controls for your components. See [Using `vue-component-meta`](#using-vue-component-meta) for more information.
+Choose which builder-based docgen tool to use when generating controls for your components. This option is ignored when [`docgenServer`](../../api/main-config/main-config-features.mdx#docgenserver) is on. See [Component documentation](#component-documentation) for more information.
 
 <Callout variant="warning">
 
-`'vue-docgen-api'` (the current default, also selected by `true`) is deprecated since Storybook 10.6 and will be removed in the next major version of Storybook. Set `docgen: 'vue-component-meta'` to migrate, or enable [server-side docgen](../../api/main-config/main-config-features.mdx) with `features: { experimentalDocgenServer: true }`, which becomes the default in Storybook 11 and also uses `vue-component-meta`.
+`'vue-docgen-api'` (also selected by `true`) is deprecated. The builder-based compatibility path remains available in Storybook 11 and will be removed in Storybook 12. Remove the `docgen` option to use the default server-side `vue-component-meta` implementation.
 
 </Callout>
 
-Set to `false` to disable docgen processing entirely for improved build performance.
+To disable docgen processing entirely in Storybook 11, turn off both the server and the builder fallback:
 
 ```ts title=".storybook/main.ts"
 import type { StorybookConfig } from '@storybook/vue3-vite';
 
 const config: StorybookConfig = {
+  features: {
+    docgenServer: false,
+  },
   framework: {
     name: '@storybook/vue3-vite',
     options: {
-      docgen: false, // Disable docgen for better performance
+      docgen: false,
     },
   },
 };

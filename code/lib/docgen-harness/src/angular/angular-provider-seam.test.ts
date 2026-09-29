@@ -19,7 +19,7 @@ const optionsWithFeatures = (features: Record<string, unknown>) =>
 test('angular-vite registers a docgen provider pointing at a worker module that exists', async () => {
   const descriptors = await experimental_docgenProvider(
     [],
-    optionsWithFeatures({ experimentalDocgenServer: true, angularFilterNonInputControls: true })
+    optionsWithFeatures({ docgenServer: true, angularFilterNonInputControls: true })
   );
 
   expect(descriptors).toHaveLength(1);

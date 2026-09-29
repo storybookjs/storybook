@@ -363,6 +363,25 @@ describe('parseCodexBrowserNavigations', () => {
     ]);
   });
 
+  test('counts the URL literals of a call that passes a variable to goto', () => {
+    const transcript = jsToolCallLine(
+      "for (const url of ['http://localhost:6006/?path=/story/a--b','http://localhost:6006/?path=/story/a--c']) { const tab = await browser.tabs.new(); await tab.goto(url); }"
+    );
+
+    expect(parseCodexBrowserNavigations(transcript)).toEqual([
+      'http://localhost:6006/?path=/story/a--b',
+      'http://localhost:6006/?path=/story/a--c',
+    ]);
+  });
+
+  test('yields only the literal base of a composed goto URL', () => {
+    const transcript = jsToolCallLine(
+      "const base = 'http://localhost:6006'; await tab.goto(base + '/?path=/story/a--b');"
+    );
+
+    expect(parseCodexBrowserNavigations(transcript)).toEqual(['http://localhost:6006']);
+  });
+
   test('ignores failed js calls, other servers, and code without a goto', () => {
     const transcript = [
       jsToolCallLine("await tab.goto('http://localhost:6006/');", { status: 'failed' }),

@@ -357,9 +357,11 @@ export function findDevServerKillCommands(commands: string[]): string[] {
 // URLs the Codex in-app browser navigated to, from the codex raw transcript:
 // each successful node_repl `js` tool call is scanned for `goto('<url>')`
 // string literals in its code argument. This mirrors how plugin workflow calls
-// are parsed out of `storybook tools` shell commands. A dynamically composed URL
-// (`goto(baseUrl + path)`) escapes the literal match, so it counts as no
-// navigation rather than a wrong one.
+// are parsed out of `storybook tools` shell commands. When a call passes a
+// variable (`for (const url of [...]) await tab.goto(url)`), the full URL
+// literals in that code count instead. A dynamically composed URL
+// (`goto(baseUrl + path)`) yields at most its literal base, so it never counts
+// as a navigation to the page it composes.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
   return readCodexCompletedItems(rawTranscript).flatMap(getCodexItemNavigations);
 }
@@ -383,9 +385,16 @@ function getCodexItemNavigations(item: Record<string, unknown>): string[] {
     return [];
   }
 
-  return [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
+  const literalGotos = [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
     match[2] === undefined ? [] : [match[2]]
   );
+  if (!/\.goto\(\s*[A-Za-z_$]/.test(code)) {
+    return literalGotos;
+  }
+  const urlLiterals = [...code.matchAll(/(['"`])(https?:\/\/[^'"`\s]+)\1/g)].flatMap((match) =>
+    match[2] === undefined ? [] : [match[2]]
+  );
+  return [...new Set([...literalGotos, ...urlLiterals])];
 }
 
 function codexItemSucceeded(item: Record<string, unknown>): boolean {

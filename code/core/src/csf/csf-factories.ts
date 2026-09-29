@@ -110,6 +110,16 @@ export type MetaArgKeys<TArgs, TKeys extends PropertyKey> = string extends TKeys
   ? never
   : TKeys & keyof TArgs;
 
+/**
+ * The args a typed `render` adds to those of the meta's `component`. A `render` typed as `any` or
+ * `Args` adds none, and it can't change the types of the component's args.
+ */
+export type RenderArgs<TRenderArgs, TComponentArgs> = 0 extends 1 & TRenderArgs
+  ? unknown
+  : string extends keyof TRenderArgs
+    ? unknown
+    : Omit<TRenderArgs, keyof TComponentArgs>;
+
 /** Makes the args set in `preview.meta()` required in its stories. */
 export type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
   args: Required<Pick<TRenderer['args'], MetaArgKeys<TRenderer['args'], TKeys>>>;

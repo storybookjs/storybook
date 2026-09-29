@@ -5,6 +5,7 @@ import type {
   Meta,
   MetaArgs,
   MetaArgKeys,
+  RenderArgs,
   RequireMetaArgs,
   Preview,
   PreviewAddon,
@@ -120,7 +121,11 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
         InferArgsFromComponent<C> & TRenderArgs & T['args']
       >;
       args?: MetaArgs<
-        InferWebComponentsTypes<T, InferArgsFromComponent<C> & TRenderArgs, Decorators>['args'],
+        InferWebComponentsTypes<
+          T,
+          InferArgsFromComponent<C> & RenderArgs<TRenderArgs, InferArgsFromComponent<C>>,
+          Decorators
+        >['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
@@ -129,7 +134,11 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
         WebComponentsTypes & T,
         RequireMetaArgs<
           WebComponentsTypes &
-            T & { args: InferArgsFromComponent<C> & NoInfer<TRenderArgs> & T['args'] },
+            T & {
+              args: InferArgsFromComponent<C> &
+                NoInfer<RenderArgs<TRenderArgs, InferArgsFromComponent<C>>> &
+                T['args'];
+            },
           NoInfer<TMetaArgKeys>
         >['args']
       >,
@@ -137,11 +146,19 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     >
   ): WebComponentsMeta<
     RequireMetaArgs<
-      InferWebComponentsTypes<T, InferArgsFromComponent<C> & TRenderArgs, Decorators>,
+      InferWebComponentsTypes<
+        T,
+        InferArgsFromComponent<C> & RenderArgs<TRenderArgs, InferArgsFromComponent<C>>,
+        Decorators
+      >,
       TMetaArgKeys
     >,
     MetaArgKeys<
-      InferWebComponentsTypes<T, InferArgsFromComponent<C> & TRenderArgs, Decorators>['args'],
+      InferWebComponentsTypes<
+        T,
+        InferArgsFromComponent<C> & RenderArgs<TRenderArgs, InferArgsFromComponent<C>>,
+        Decorators
+      >['args'],
       TMetaArgKeys
     >
   >;
@@ -162,7 +179,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
       ComponentAnnotations<
         WebComponentsTypes & T,
         RequireMetaArgs<
-          WebComponentsTypes & T & { args: TArgs & T['args'] },
+          WebComponentsTypes & T & { args: NoInfer<TArgs> & T['args'] },
           NoInfer<TMetaArgKeys>
         >['args']
       >,

@@ -586,3 +586,27 @@ it('a meta like the Button stories of the sandboxes', () => {
   // @ts-expect-error not a size
   const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
 });
+
+it('argTypes of a meta without component do not type its args', () => {
+  const meta = preview.meta({
+    render: (args) => ({ props: args }),
+    argTypes: { size: { control: 'select', options: ['small', 'large'] } },
+  });
+
+  const Default = meta.story({ args: { label: 'Hi' } });
+});
+
+it('a render typed as any or as the component keeps the component args', () => {
+  const anyRender = preview.meta({
+    component: ButtonComponent,
+    render: (args: any) => ({ props: args }),
+  });
+  // @ts-expect-error not a boolean
+  const Invalid = anyRender.story({ args: { disabled: 'yes' } });
+
+  const componentRender = preview.meta({
+    component: ButtonComponent,
+    render: (args: ButtonComponent) => ({ props: args }),
+  });
+  const Default = componentRender.story({ args: { label: 'Hi' } });
+});

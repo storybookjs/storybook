@@ -5,6 +5,7 @@ import type {
   Meta,
   MetaArgs,
   MetaArgKeys,
+  RenderArgs,
   RequireMetaArgs,
   Preview,
   PreviewAddon,
@@ -106,7 +107,11 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       component: C;
       render?: ArgsStoryFn<AngularRenderer & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
       args?: MetaArgs<
-        InferAngularTypes<T, InferComponentArgs<C> & TRenderArgs, Decorators>['args'],
+        InferAngularTypes<
+          T,
+          InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+          Decorators
+        >['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
@@ -114,7 +119,12 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       ComponentAnnotations<
         AngularRenderer & T,
         RequireMetaArgs<
-          AngularRenderer & T & { args: InferComponentArgs<C> & NoInfer<TRenderArgs> & T['args'] },
+          AngularRenderer &
+            T & {
+              args: InferComponentArgs<C> &
+                NoInfer<RenderArgs<TRenderArgs, InferComponentArgs<C>>> &
+                T['args'];
+            },
           NoInfer<TMetaArgKeys>
         >['args']
       >,
@@ -122,11 +132,19 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
     >
   ): AngularMeta<
     RequireMetaArgs<
-      InferAngularTypes<T, InferComponentArgs<C> & TRenderArgs, Decorators>,
+      InferAngularTypes<
+        T,
+        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+        Decorators
+      >,
       TMetaArgKeys
     >,
     MetaArgKeys<
-      InferAngularTypes<T, InferComponentArgs<C> & TRenderArgs, Decorators>['args'],
+      InferAngularTypes<
+        T,
+        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+        Decorators
+      >['args'],
       TMetaArgKeys
     >
   >;
@@ -147,7 +165,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
       ComponentAnnotations<
         AngularRenderer & T,
         RequireMetaArgs<
-          AngularRenderer & T & { args: TArgs & T['args'] },
+          AngularRenderer & T & { args: NoInfer<TArgs> & T['args'] },
           NoInfer<TMetaArgKeys>
         >['args']
       >,

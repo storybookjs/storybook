@@ -458,3 +458,22 @@ it('a meta like the Button stories of the sandboxes', () => {
   // @ts-expect-error not a size
   const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
 });
+
+it('argTypes of a meta without component do not type its args', () => {
+  const meta = preview.meta({
+    render: (args) => html`<my-button .label=${args.label}></my-button>`,
+    argTypes: { size: { control: 'select', options: ['small', 'large'] } },
+    args: { onClick: fn() },
+  });
+
+  const Default = meta.story({ args: { label: 'Hi' } });
+});
+
+it('a render typed as any keeps the component args', () => {
+  const meta = preview.meta({
+    component: 'my-button',
+    render: (args: any) => html`<my-button .label=${args.label}></my-button>`,
+  });
+  // @ts-expect-error not a boolean
+  const Invalid = meta.story({ args: { disabled: 'yes', label: 'Hi' } });
+});

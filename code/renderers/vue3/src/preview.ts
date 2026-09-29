@@ -5,6 +5,7 @@ import type {
   Meta,
   MetaArgs,
   MetaArgKeys,
+  RenderArgs,
   RequireMetaArgs,
   Preview,
   PreviewAddon,
@@ -58,6 +59,11 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 
 type InferVueTypes<T, TArgs, Decorators> = InferMetaTypes<VueTypes & T, TArgs, Decorators>;
 
+// A component typed as `any` or by a `*.vue` shim has no known props, so it takes any args.
+type InferComponentArgs<C> = [keyof ComponentPropsAndSlots<C>] extends [never]
+  ? Args
+  : ComponentPropsAndSlots<C>;
+
 /**
  * Vue3-specific Preview interface that provides type-safe CSF factory methods.
  *
@@ -95,9 +101,13 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   >(
     meta: {
       component: C;
-      render?: ArgsStoryFn<VueTypes & T, ComponentPropsAndSlots<C> & TRenderArgs & T['args']>;
+      render?: ArgsStoryFn<VueTypes & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
       args?: MetaArgs<
-        InferVueTypes<T, ComponentPropsAndSlots<C> & TRenderArgs, Decorators>['args'],
+        InferVueTypes<
+          T,
+          InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+          Decorators
+        >['args'],
         TMetaArgKeys
       >;
       decorators?: Decorators | Decorators[];
@@ -105,7 +115,12 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
       ComponentAnnotations<
         VueTypes & T,
         RequireMetaArgs<
-          VueTypes & T & { args: ComponentPropsAndSlots<C> & NoInfer<TRenderArgs> & T['args'] },
+          VueTypes &
+            T & {
+              args: InferComponentArgs<C> &
+                NoInfer<RenderArgs<TRenderArgs, InferComponentArgs<C>>> &
+                T['args'];
+            },
           NoInfer<TMetaArgKeys>
         >['args']
       >,
@@ -113,11 +128,19 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
     >
   ): VueMeta<
     RequireMetaArgs<
-      InferVueTypes<T, ComponentPropsAndSlots<C> & TRenderArgs, Decorators>,
+      InferVueTypes<
+        T,
+        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+        Decorators
+      >,
       TMetaArgKeys
     >,
     MetaArgKeys<
-      InferVueTypes<T, ComponentPropsAndSlots<C> & TRenderArgs, Decorators>['args'],
+      InferVueTypes<
+        T,
+        InferComponentArgs<C> & RenderArgs<TRenderArgs, InferComponentArgs<C>>,
+        Decorators
+      >['args'],
       TMetaArgKeys
     >
   >;
@@ -134,7 +157,10 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
     } & Omit<
       ComponentAnnotations<
         VueTypes & T,
-        RequireMetaArgs<VueTypes & T & { args: TArgs & T['args'] }, NoInfer<TMetaArgKeys>>['args']
+        RequireMetaArgs<
+          VueTypes & T & { args: NoInfer<TArgs> & T['args'] },
+          NoInfer<TMetaArgKeys>
+        >['args']
       >,
       'decorators' | 'component' | 'args' | 'render'
     >

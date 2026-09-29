@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
 import type { Canvas } from 'storybook/internal/types';
 
-import type { FunctionalComponent, HTMLAttributes } from 'vue';
+import type { DefineComponent, FunctionalComponent, HTMLAttributes } from 'vue';
 import { h } from 'vue';
 
 import { fn, mocked } from 'storybook/test';
@@ -467,4 +467,27 @@ it('a meta like the Button stories of the sandboxes', () => {
   const Large = meta.story({ args: { size: 'large', label: 'Button' } });
   // @ts-expect-error not a size
   const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
+});
+
+it('argTypes of a meta without component do not type its args', () => {
+  const meta = preview.meta({
+    render: (args) => h('div', String(args.label)),
+    argTypes: { size: { control: 'select', options: ['small', 'large'] } },
+  });
+
+  const Default = meta.story({ args: { label: 'Hi' } });
+});
+
+it('components without known props accept any args', () => {
+  const shim = {} as DefineComponent<{}, {}, any>;
+  const component: any = Button;
+
+  preview.meta({ component: shim, args: { label: 'Hi' } });
+  preview.meta({ component, args: { label: 'Hi' } });
+});
+
+it('a render typed as any keeps the component args', () => {
+  const meta = preview.meta({ component: Button, render: (args: any) => h(Button, args) });
+  // @ts-expect-error not a boolean
+  const Invalid = meta.story({ args: { disabled: 'yes', label: 'Hi' } });
 });

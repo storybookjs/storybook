@@ -14,9 +14,6 @@ interface CsfNextMockedArgsOptions {
 }
 
 export const transformCsfNextMockedArgs = (source: string) => {
-  if (!source.includes('.meta(')) {
-    return source;
-  }
   let csf;
   try {
     csf = loadCsf(source, { makeTitle: () => 'FIXME' }).parse();

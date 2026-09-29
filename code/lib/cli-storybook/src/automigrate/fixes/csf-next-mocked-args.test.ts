@@ -73,6 +73,12 @@ describe('transformCsfNextMockedArgs', () => {
     `);
   });
 
+  it('finds the meta factory however the call is formatted', () => {
+    const spaced = csfNextStory.replace('preview.meta(', 'preview.meta (');
+
+    expect(transformCsfNextMockedArgs(spaced)).toContain('mocked(args.onClick).mockClear();');
+  });
+
   it('leaves CSF 3 stories and CSF Next stories without mock calls unchanged', () => {
     const csf3 = dedent`
       export default { component: Button };

@@ -25,14 +25,15 @@ export const fuseOptions = {
 } as FuseOptions<SearchItem>;
 
 export const createDocsAnchorItem = (page: DocsSearchItem, anchor: DocsAnchor): SearchItem => {
-  const namePostfix = page.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+  // Autodocs pages are all named "Docs", so only the page label tells same-named headings apart
+  const label = page.path.at(-1) ?? page.name;
 
   return {
     ...page,
     anchors: [anchor],
     // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
     id: `${page.id}#${anchor.id}`,
-    name: `${page.name}${namePostfix}`,
+    name: label === anchor.title ? label : `${label} / ${anchor.title}`,
   };
 };
 

@@ -23,6 +23,37 @@ const autodocsPage = (title: string, headings: string[]) =>
     })),
   }) as unknown as Extract<SearchItem, { type: 'docs' }>;
 
+const search = (query: string) => {
+  const list = [
+    ...createDocsSearchItems(autodocsPage('Text', ['Default', 'Disabled'])),
+    ...createDocsSearchItems(autodocsPage('Text Filter', ['Default', 'Disabled'])),
+  ];
+
+  return (new Fuse(list, fuseOptions).search(query) as SearchResult[]).map(({ item }) => item.name);
+};
+
+describe('createDocsSearchItems', () => {
+  it('labels a heading with the page it belongs to, not with the docs entry name', () => {
+    expect(createDocsSearchItems(autodocsPage('Text Filter', ['Disabled']))).toMatchObject([
+      { id: 'example-text-filter--docs', name: 'Docs' },
+      {
+        id: 'example-text-filter--docs#anchor--example-text-filter--disabled',
+        name: 'Text Filter / Disabled',
+      },
+    ]);
+  });
+
+  it('ranks a heading of the page named in the query above the same heading elsewhere', () => {
+    expect(search('Text Filter Disabled')[0]).toBe('Text Filter / Disabled');
+  });
+
+  it('still finds a heading that is searched for on its own', () => {
+    expect(search('Disabled')).toEqual(
+      expect.arrayContaining(['Text / Disabled', 'Text Filter / Disabled'])
+    );
+  });
+});
+
 describe('distinctSearchResults', () => {
   const autodocsComponent = (title: string) =>
     ({

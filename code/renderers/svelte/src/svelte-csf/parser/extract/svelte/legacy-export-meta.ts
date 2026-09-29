@@ -1,6 +1,7 @@
 import type { ObjectExpression, Property } from 'estree';
 
 import type { SvelteASTNodes } from './nodes.ts';
+import { isOneOf } from '../../../utils/is-one-of.ts';
 import type { CompiledASTNodes } from '../compiled/nodes.ts';
 
 import { GetDefineMetaFirstArgumentError } from '../../../utils/error/parser/extract/svelte.ts';
@@ -32,7 +33,7 @@ export function extractLegacyExportMetaPropertiesNodes<
     if (
       property.type === 'Property' &&
       property.key.type === 'Identifier' &&
-      properties.includes(property.key.name as Properties[number])
+      isOneOf<Properties[number]>(properties, property.key.name)
     ) {
       results[property.key.name] = property;
     }

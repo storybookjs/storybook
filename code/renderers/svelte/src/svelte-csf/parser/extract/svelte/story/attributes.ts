@@ -1,6 +1,7 @@
 import type { ComponentProps } from 'svelte';
 
 import type { SvelteAST } from '../../../ast.ts';
+import { isOneOf } from '../../../../utils/is-one-of.ts';
 import type { Cmp } from '../../../../types.ts';
 import type Story from '../../../../runtime/Story.svelte';
 
@@ -26,7 +27,7 @@ export function extractStoryAttributesNodes<const Attributes extends StoryAttrib
   for (const attributeNode of component.attributes) {
     if (
       attributeNode.type === 'Attribute' &&
-      attributes.includes(attributeNode.name as Attributes[number])
+      isOneOf<Attributes[number]>(attributes, attributeNode.name)
     ) {
       results[attributeNode.name] = attributeNode;
     }

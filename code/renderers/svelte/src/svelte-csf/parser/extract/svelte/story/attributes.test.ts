@@ -25,7 +25,7 @@ describe(extractStoryAttributesNodes.name, () => {
 
     expect(attributes.name).not.toBeUndefined();
     expect(attributes.name?.name).toBe('name');
-    expect(attributes.name?.value[0].data).toBe('Default');
+    expect(attributes.name?.value).toMatchObject([{ type: 'Text', data: 'Default' }]);
     expect(attributes.args).toBeUndefined();
   });
 
@@ -50,7 +50,7 @@ describe(extractStoryAttributesNodes.name, () => {
 
     expect(attributes.name).not.toBeUndefined();
     expect(attributes.name?.name).toBe('name');
-    expect(attributes.name?.value[0].data).toBe('Default');
+    expect(attributes.name?.value).toMatchObject([{ type: 'Text', data: 'Default' }]);
     expect(attributes.args).toBeUndefined();
   });
 });

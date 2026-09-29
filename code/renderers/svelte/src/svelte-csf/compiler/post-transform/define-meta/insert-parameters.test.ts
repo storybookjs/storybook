@@ -5,12 +5,12 @@ import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
 import { describe, it } from 'vitest';
 
-import { insertDefineMetaParameters } from './insert-parameters.js';
+import { insertDefineMetaParameters } from './insert-parameters.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { getDefineMetaFirstArgumentObjectExpression } from '$lib/parser/extract/svelte/define-meta.js';
+import { getSvelteAST } from '../../../parser/ast.ts';
+import { extractCompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
+import { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+import { getDefineMetaFirstArgumentObjectExpression } from '../../../parser/extract/svelte/define-meta.ts';
 
 describe(insertDefineMetaParameters.name, () => {
   it('works when defineMeta gets an empty object', async ({ expect }) => {

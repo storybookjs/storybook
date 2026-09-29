@@ -6,10 +6,10 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { removeExportDefault } from './remove-export-default.js';
+import { removeExportDefault } from './remove-export-default.ts';
 
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
+import { StorybookSvelteCSFError } from '../../utils/error.ts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -17,7 +17,7 @@ describe(removeExportDefault.name, () => {
   it('removes pre-transformed export default correctly', async ({ expect }) => {
     const compiledPreTransformCode = fs
       .readFileSync(
-        path.resolve(__dirname, '../../../tests/__compiled__/pre-transform/Example.stories.dev.js')
+        path.resolve(__dirname, '../../__tests__/__compiled__/pre-transform/Example.stories.dev.js')
       )
       .toString();
     const compiledASTNodes = await extractCompiledASTNodes({

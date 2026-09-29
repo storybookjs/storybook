@@ -1,4 +1,4 @@
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import { StorybookSvelteCSFError } from '../../../error.ts';
 import dedent from 'dedent';
 import type * as ESTreeAST from 'estree';
 

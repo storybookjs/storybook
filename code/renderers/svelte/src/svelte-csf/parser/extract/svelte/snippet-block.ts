@@ -1,9 +1,9 @@
-import type { SvelteAST } from '$lib/parser/ast.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
+import type { SvelteAST } from '../../ast.ts';
+import type { SvelteASTNodes } from './nodes.ts';
+import { extractStoryAttributesNodes } from './story/attributes.ts';
 
-import { InvalidStoryTemplateAttributeError } from '$lib/utils/error/parser/extract/svelte.js';
-import { getDefineMetaRenderValue } from '../../analyse/define-meta/render-identifier.js';
+import { InvalidStoryTemplateAttributeError } from '../../../utils/error/parser/extract/svelte.ts';
+import { getDefineMetaRenderValue } from '../../analyse/define-meta/render-identifier.ts';
 
 /**
  * For example:

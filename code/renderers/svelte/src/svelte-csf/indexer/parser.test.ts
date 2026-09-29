@@ -8,7 +8,7 @@ const loadSvelteConfig = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock('@sveltejs/vite-plugin-svelte', () => ({ loadSvelteConfig }));
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const storyFile = resolve(currentDir, '../../examples/Button.stories.svelte');
+const storyFile = resolve(currentDir, '../__examples__/Button.stories.svelte');
 
 describe('parseForIndexer', () => {
   beforeEach(() => {
@@ -18,8 +18,8 @@ describe('parseForIndexer', () => {
   });
 
   it('loads the Svelte config once across multiple story files', async ({ expect }) => {
-    const { parseForIndexer } = await import('./parser.js');
-    const files = [storyFile, resolve(currentDir, '../../examples/ExportName.stories.svelte')];
+    const { parseForIndexer } = await import('./parser.ts');
+    const files = [storyFile, resolve(currentDir, '../__examples__/ExportName.stories.svelte')];
 
     for (const file of files) {
       await parseForIndexer(file, { legacyTemplate: false });
@@ -31,7 +31,7 @@ describe('parseForIndexer', () => {
   it('retries the Svelte config lookup after a failure instead of caching it', async ({
     expect,
   }) => {
-    const { parseForIndexer } = await import('./parser.js');
+    const { parseForIndexer } = await import('./parser.ts');
     loadSvelteConfig.mockRejectedValueOnce(new Error('broken config'));
 
     await expect(parseForIndexer(storyFile, { legacyTemplate: false })).rejects.toThrow(

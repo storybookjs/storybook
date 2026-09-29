@@ -1,13 +1,13 @@
-import { getStringValueFromAttribute } from '$lib/parser/analyse/story/attributes.js';
-import type { SvelteAST } from '$lib/parser/ast.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
-import { isValidVariableName, storyNameToExportName } from '$lib/utils/identifier-utils.js';
+import { getStringValueFromAttribute } from '../attributes.ts';
+import type { SvelteAST } from '../../../ast.ts';
+import type { SvelteASTNodes } from '../../../extract/svelte/nodes.ts';
+import { extractStoryAttributesNodes } from '../../../extract/svelte/story/attributes.ts';
+import { isValidVariableName, storyNameToExportName } from '../../../../utils/identifier-utils.ts';
 import {
   DuplicateStoryIdentifiersError,
   InvalidStoryExportNameError,
   NoStoryIdentifierError,
-} from '$lib/utils/error/parser/analyse/story.js';
+} from '../../../../utils/error/parser/analyse/story.ts';
 
 type StoryIdentifiers = {
   exportName: string;

@@ -1,7 +1,7 @@
-import { extractModuleNodes } from './module-nodes.js';
-import { extractFragmentNodes } from './fragment-nodes.js';
+import { extractModuleNodes } from './module-nodes.ts';
+import { extractFragmentNodes } from './fragment-nodes.ts';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
+import type { SvelteAST } from '../../ast.ts';
 
 /**
  * Selected nodes extracted from the Svelte AST via `svelte.compile`,

@@ -1,9 +1,9 @@
-import type { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
+import type { getStoriesIdentifiers } from '../../../parser/analyse/story/attributes/identifiers.ts';
 import {
   type ESTreeAST,
   createASTArrayExpression,
   createASTExportSpecifier,
-} from '$lib/parser/ast.js';
+} from '../../../parser/ast.ts';
 
 interface ExportOrderVariableDeclarationParams {
   storiesIdentifiers: ReturnType<typeof getStoriesIdentifiers>;

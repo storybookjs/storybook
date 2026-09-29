@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { getStoryContentRawCode } from './content.js';
+import { getStoryContentRawCode } from './content.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { getSvelteAST } from '../../ast.ts';
+import { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
 import dedent from 'dedent';
 
 describe(getStoryContentRawCode.name, () => {

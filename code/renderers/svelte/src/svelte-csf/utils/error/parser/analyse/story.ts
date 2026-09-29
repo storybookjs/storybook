@@ -1,8 +1,8 @@
 import dedent from 'dedent';
 
-import type { getStoryIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
-import type { ESTreeAST, SvelteAST } from '$lib/parser/ast.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import type { getStoryIdentifiers } from '../../../../parser/analyse/story/attributes/identifiers.ts';
+import type { ESTreeAST, SvelteAST } from '../../../../parser/ast.ts';
+import { StorybookSvelteCSFError } from '../../../error.ts';
 
 export class AttributeNotStringError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserAnalyseStory;

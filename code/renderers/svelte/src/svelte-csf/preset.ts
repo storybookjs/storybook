@@ -1,8 +1,8 @@
 import type { StorybookConfig } from '@storybook/svelte-vite';
 import type { Options } from 'storybook/internal/types';
 
-import { transformPlugin, preTransformPlugin } from '$lib/compiler/plugins.js';
-import { createIndexer } from '$lib/indexer/index.js';
+import { transformPlugin, preTransformPlugin } from './compiler/plugins.ts';
+import { createIndexer } from './indexer/index.ts';
 
 export interface StorybookAddonSvelteCsFOptions extends Options {
   /**

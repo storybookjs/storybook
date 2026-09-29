@@ -14,11 +14,11 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { codemodLegacyNodes } from '$lib/compiler/pre-transform/index.js';
-import { transformStoriesCode } from '$lib/compiler/post-transform/index.js';
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { codemodLegacyNodes } from './pre-transform/index.ts';
+import { transformStoriesCode } from './post-transform/index.ts';
+import { getSvelteAST } from '../parser/ast.ts';
+import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.ts';
+import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.ts';
 
 export async function preTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { print }] = await Promise.all([

@@ -1,14 +1,14 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 import type { Visitors } from 'zimmerframe';
 
-import type { ESTreeAST, SvelteAST } from '$lib/parser/ast.js';
+import type { ESTreeAST, SvelteAST } from '../../ast.ts';
 import {
   DefaultOrNamespaceImportUsedError,
   MissingDefineMetaImportError,
   MissingDefineMetaVariableDeclarationError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '$lib/utils/error/parser/extract/svelte.js';
+} from '../../../utils/error/parser/extract/svelte.ts';
 import type { Identifier } from 'estree';
 
 const AST_NODES_NAMES = {

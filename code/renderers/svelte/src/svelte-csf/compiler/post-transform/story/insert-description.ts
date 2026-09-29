@@ -8,17 +8,17 @@ import {
   getParametersPropertyValue,
   getDocsPropertyValue,
   getDescriptionPropertyValue,
-} from '$lib/compiler/post-transform/shared/parameters.js';
+} from '../shared/parameters.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
   createASTProperty,
-} from '$lib/parser/ast.js';
+} from '../../../parser/ast.ts';
 
-import type { ESTreeAST } from '$lib/parser/ast.js';
-import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
-import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import type { ESTreeAST } from '../../../parser/ast.ts';
+import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
+import { getStoryPropsObjectExpression } from '../../../parser/extract/compiled/story.ts';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
 interface Params {
   nodes: {

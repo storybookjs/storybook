@@ -1,8 +1,8 @@
 import type { Visitors } from 'zimmerframe';
 
-import type { CompiledASTNodes } from './nodes.js';
+import type { CompiledASTNodes } from './nodes.ts';
 
-import type { ESTreeAST } from '$lib/parser/ast.js';
+import type { ESTreeAST } from '../../ast.ts';
 
 interface Params {
   nodes: CompiledASTNodes;

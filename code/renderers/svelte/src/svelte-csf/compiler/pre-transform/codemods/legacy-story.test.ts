@@ -1,10 +1,10 @@
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformLegacyStory } from './legacy-story.js';
+import { transformLegacyStory } from './legacy-story.ts';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
+import type { SvelteAST } from '../../../parser/ast.ts';
+import { parseAndExtractSvelteNode } from '../../../__tests__/extractor.ts';
 
 describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {

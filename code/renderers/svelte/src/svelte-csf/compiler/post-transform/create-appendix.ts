@@ -1,17 +1,17 @@
 import { print } from 'esrap';
 import MagicString from 'magic-string';
 
-import { createExportOrderVariableDeclaration } from './appendix/create-export-order.js';
-import { createRuntimeStoriesImport } from './appendix/create-import.js';
-import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.js';
-import { createNamedExportStories } from './appendix/create-named-export-stories.js';
+import { createExportOrderVariableDeclaration } from './appendix/create-export-order.ts';
+import { createRuntimeStoriesImport } from './appendix/create-import.ts';
+import { createVariableFromRuntimeStoriesCall } from './appendix/create-variable-from-runtime-stories-call.ts';
+import { createNamedExportStories } from './appendix/create-named-export-stories.ts';
 
-import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
-import { createASTIdentifier, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
-import { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
-import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { createRuntimeStoryVariableDeclaration } from './appendix/create-runtime-story-variable-declaration.js';
+import { STORYBOOK_META_IDENTIFIER } from '../../constants.ts';
+import { createASTIdentifier, type ESTreeAST, type SvelteAST } from '../../parser/ast.ts';
+import { getStoriesIdentifiers } from '../../parser/analyse/story/attributes/identifiers.ts';
+import type { CompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
+import type { SvelteASTNodes } from '../../parser/extract/svelte/nodes.ts';
+import { createRuntimeStoryVariableDeclaration } from './appendix/create-runtime-story-variable-declaration.ts';
 
 interface Params {
   code: MagicString;

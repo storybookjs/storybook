@@ -1,10 +1,10 @@
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformComponentMetaToDefineMeta } from './component-meta-to-define-meta.js';
+import { transformComponentMetaToDefineMeta } from './component-meta-to-define-meta.ts';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
+import type { SvelteAST } from '../../../parser/ast.ts';
+import { parseAndExtractSvelteNode } from '../../../__tests__/extractor.ts';
 
 describe(transformComponentMetaToDefineMeta.name, () => {
   it('works with a simple example', async ({ expect }) => {

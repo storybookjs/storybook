@@ -1,11 +1,11 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createASTArrayExpression, createASTIdentifier } from '$lib/parser/ast.js';
-import { SVELTE_CSF_V4_TAG } from '$lib/constants.js';
+import { createASTArrayExpression, createASTIdentifier } from '../../../parser/ast.ts';
+import { SVELTE_CSF_V4_TAG } from '../../../constants.ts';
 
-import { createRuntimeStoryVariableDeclaration } from './create-runtime-story-variable-declaration.js';
-import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
+import { createRuntimeStoryVariableDeclaration } from './create-runtime-story-variable-declaration.ts';
+import { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
 
 describe(createRuntimeStoryVariableDeclaration, () => {
   it('correctly creates a runtime story variable', ({ expect }) => {

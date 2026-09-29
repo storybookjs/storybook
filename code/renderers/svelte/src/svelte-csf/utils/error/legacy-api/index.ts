@@ -1,8 +1,8 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import { StorybookSvelteCSFError } from '../../error.ts';
 import dedent from 'dedent';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
+import type { SvelteAST } from '../../../parser/ast.ts';
 
 export class InvalidTemplateAttribute extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.legacyAPI;

@@ -1,6 +1,6 @@
-import { STORYBOOK_INTERNAL_PREFIX } from '$lib/constants.js';
-import type { getStoriesIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
-import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
+import { STORYBOOK_INTERNAL_PREFIX } from '../../../constants.ts';
+import type { getStoriesIdentifiers } from '../../../parser/analyse/story/attributes/identifiers.ts';
+import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
 
 interface NamedExportStoriesParams {
   storiesIdentifiers: ReturnType<typeof getStoriesIdentifiers>;

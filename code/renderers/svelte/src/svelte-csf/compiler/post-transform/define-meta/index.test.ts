@@ -7,25 +7,25 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { createMetaVariableDeclaration, transformDefineMeta } from './index.js';
+import { createMetaVariableDeclaration, transformDefineMeta } from './index.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { insertDefineMetaParameters } from './insert-parameters.js';
-import { replaceDefineMetaArgument } from './replace-argument.js';
+import { getSvelteAST } from '../../../parser/ast.ts';
+import { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+import { extractCompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
+import { insertDefineMetaParameters } from './insert-parameters.ts';
+import { replaceDefineMetaArgument } from './replace-argument.ts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformDefineMeta.name, () => {
   it("transformed 'defineMeta' matches inlined snapshot", async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../../tests/stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
         path.resolve(
           __dirname,
-          '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js'
+          '../../../__tests__/__compiled__/pre-transform/Example.stories.dev.js'
         )
       )
       .toString();
@@ -61,13 +61,13 @@ describe(transformDefineMeta.name, () => {
 
 describe(createMetaVariableDeclaration.name, () => {
   it('parameters are transformed correctly', async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../../tests/stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
         path.resolve(
           __dirname,
-          '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js'
+          '../../../__tests__/__compiled__/pre-transform/Example.stories.dev.js'
         )
       )
       .toString();

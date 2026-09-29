@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { extractModuleNodes } from './module-nodes.js';
+import { extractModuleNodes } from './module-nodes.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import { getSvelteAST } from '../../ast.ts';
+import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
 describe(extractModuleNodes.name, () => {
   it('fails when module tag not found', async ({ expect }) => {

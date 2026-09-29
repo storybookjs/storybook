@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import dedent from 'dedent';
 
-import { generateCodeToEmit } from './emit-code.js';
+import { generateCodeToEmit } from './emit-code.ts';
 
 describe('Emit Code', () => {
   it('should replace short spread args with single-line props', () => {

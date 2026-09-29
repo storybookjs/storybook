@@ -6,12 +6,12 @@ import {
   createASTProperty,
   type ESTreeAST,
   type SvelteAST,
-} from '$lib/parser/ast.js';
-import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
+} from '../../../parser/ast.ts';
+import { InvalidTemplateAttribute } from '../../../utils/error/legacy-api/index.ts';
 
-import { hashTemplateName } from '$lib/utils/identifier-utils.js';
-import { SVELTE_CSF_V4_TAG } from '../../../constants.js';
-import type { State } from '../index.js';
+import { hashTemplateName } from '../../../utils/identifier-utils.ts';
+import { SVELTE_CSF_V4_TAG } from '../../../constants.ts';
+import type { State } from '../index.ts';
 
 interface Params {
   component: SvelteAST.Component;

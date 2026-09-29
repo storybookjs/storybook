@@ -1,12 +1,12 @@
 import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
 
-import { transformComponentMetaToDefineMeta } from '$lib/compiler/pre-transform/codemods/component-meta-to-define-meta.js';
-import { transformExportMetaToDefineMeta } from '$lib/compiler/pre-transform/codemods/export-const-to-define-meta.js';
-import { transformImportDeclaration } from '$lib/compiler/pre-transform/codemods/import-declaration.js';
-import { transformLegacyStory } from '$lib/compiler/pre-transform/codemods/legacy-story.js';
-import { transformTemplateToSnippet } from '$lib/compiler/pre-transform/codemods/template-to-snippet.js';
-import { createASTScript, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
-import { DuplicatedUnidentifiedTemplateError } from '$lib/utils/error/legacy-api/index.js';
+import { transformComponentMetaToDefineMeta } from './codemods/component-meta-to-define-meta.ts';
+import { transformExportMetaToDefineMeta } from './codemods/export-const-to-define-meta.ts';
+import { transformImportDeclaration } from './codemods/import-declaration.ts';
+import { transformLegacyStory } from './codemods/legacy-story.ts';
+import { transformTemplateToSnippet } from './codemods/template-to-snippet.ts';
+import { createASTScript, type ESTreeAST, type SvelteAST } from '../../parser/ast.ts';
+import { DuplicatedUnidentifiedTemplateError } from '../../utils/error/legacy-api/index.ts';
 
 interface Params {
   ast: SvelteAST.Root;

@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
-import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers.js';
+import { getStoryIdentifiers, getStoriesIdentifiers } from './identifiers.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import { getSvelteAST } from '../../../ast.ts';
+import { extractSvelteASTNodes } from '../../../extract/svelte/nodes.ts';
+import { extractStoryAttributesNodes } from '../../../extract/svelte/story/attributes.ts';
+import { StorybookSvelteCSFError } from '../../../../utils/error.ts';
 
 describe(getStoryIdentifiers.name, () => {
   it("extracts 'exportName' attribute when is a Text string", async () => {

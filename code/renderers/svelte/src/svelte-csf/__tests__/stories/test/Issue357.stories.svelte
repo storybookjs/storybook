@@ -2,8 +2,8 @@
   import { defineMeta } from '@storybook/addon-svelte-csf';
   import type { ComponentProps } from 'svelte';
 
-  import Button from '../../../examples/components/Button.svelte';
-  import Layout from '../../../examples/components/Layout.svelte';
+  import Button from '../../../__examples__/components/Button.svelte';
+  import Layout from '../../../__examples__/components/Layout.svelte';
 
   const { Story } = defineMeta({
     title: 'Test/Issue 357',

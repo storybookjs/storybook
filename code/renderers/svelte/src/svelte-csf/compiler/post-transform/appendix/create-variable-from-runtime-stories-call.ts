@@ -1,5 +1,5 @@
-import { RUNTIME_STORIES_IDENTIFIER, STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
-import { createASTIdentifier, type ESTreeAST } from '$lib/parser/ast.js';
+import { RUNTIME_STORIES_IDENTIFIER, STORYBOOK_META_IDENTIFIER } from '../../../constants.ts';
+import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
 
 interface Params {
   storiesFunctionDeclaration: ESTreeAST.FunctionDeclaration;

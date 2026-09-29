@@ -1,6 +1,6 @@
 import dedent from 'dedent';
 
-import { createASTObjectExpression, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
+import { createASTObjectExpression, type ESTreeAST, type SvelteAST } from '../../../parser/ast.ts';
 
 interface FindPropertyOptions {
   name: string;

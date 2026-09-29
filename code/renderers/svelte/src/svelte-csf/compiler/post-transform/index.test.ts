@@ -9,21 +9,21 @@ import { parseAst } from 'rollup/parseAst';
 import { compile } from 'svelte/compiler';
 import { describe, it } from 'vitest';
 
-import { transformStoriesCode } from './index.js';
+import { transformStoriesCode } from './index.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import { getSvelteAST } from '../../parser/ast.ts';
+import { extractSvelteASTNodes } from '../../parser/extract/svelte/nodes.ts';
+import { extractCompiledASTNodes } from '../../parser/extract/compiled/nodes.ts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(transformStoriesCode.name, () => {
   it('transformed code matches inlined snapshot', async ({ expect }) => {
-    const filename = path.resolve(__dirname, '../../../tests/stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
-        path.resolve(__dirname, '../../../tests/__compiled__/pre-transform/Example.stories.dev.js')
+        path.resolve(__dirname, '../../__tests__/__compiled__/pre-transform/Example.stories.dev.js')
       )
       .toString();
     const svelteAST = getSvelteAST({ code: originalCode, filename });

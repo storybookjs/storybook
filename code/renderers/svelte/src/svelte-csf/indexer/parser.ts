@@ -5,31 +5,31 @@ import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
 
-import { getSvelteAST, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
-import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
-import { getStoryIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
+import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
+import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.ts';
+import { getStoryIdentifiers } from '../parser/analyse/story/attributes/identifiers.ts';
 import {
   getArrayOfStringsValueFromAttribute,
   getStringValueFromAttribute,
-} from '$lib/parser/analyse/story/attributes.js';
+} from '../parser/analyse/story/attributes.ts';
 import {
   getPropertyArrayOfStringsValue,
   getPropertyStringValue,
-} from '$lib/parser/analyse/define-meta/properties.js';
-import type { StorybookAddonSvelteCsFOptions } from '$lib/preset.js';
+} from '../parser/analyse/define-meta/properties.ts';
+import type { StorybookAddonSvelteCsFOptions } from '../preset.ts';
 import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '$lib/utils/error/parser/extract/svelte.js';
-import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
+} from '../utils/error/parser/extract/svelte.ts';
+import { NoDestructuredDefineMetaCallError } from '../utils/error/parser/analyse/define-meta.ts';
 import {
   StoryTemplateAndChildrenError,
   StoryTemplateAndAsChildError,
   StoryAsChildWithoutChildrenError,
-} from '$lib/utils/error/parser/analyse/story.js';
-import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.js';
+} from '../utils/error/parser/analyse/story.ts';
+import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.ts';
 
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;

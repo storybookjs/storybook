@@ -2,7 +2,7 @@ import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' }
 import dedent from 'dedent';
 import { describe, it } from 'vitest';
 
-import { preTransformPlugin } from './plugins.js';
+import { preTransformPlugin } from './plugins.ts';
 
 async function runPreTransform(code: string) {
   const plugin = await preTransformPlugin();

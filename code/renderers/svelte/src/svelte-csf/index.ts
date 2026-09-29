@@ -7,8 +7,8 @@ import LegacyStoryComponent from './runtime/LegacyStory.svelte';
 // TODO: Remove in next major release
 import LegacyTemplateComponent from './runtime/LegacyTemplate.svelte';
 
-import type { Cmp, ComponentAnnotations } from './types.js';
-export type { StoryContext } from './types.js';
+import type { Cmp, ComponentAnnotations } from './types.ts';
+export type { StoryContext } from './types.ts';
 import type { ComponentProps, Snippet } from 'svelte';
 
 export function defineMeta<TSnippet, TCmp extends Cmp>(

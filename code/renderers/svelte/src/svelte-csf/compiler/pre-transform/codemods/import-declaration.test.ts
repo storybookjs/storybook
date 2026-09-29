@@ -1,10 +1,10 @@
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformImportDeclaration } from './import-declaration.js';
+import { transformImportDeclaration } from './import-declaration.ts';
 
-import type { ESTreeAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
+import type { ESTreeAST } from '../../../parser/ast.ts';
+import { parseAndExtractSvelteNode } from '../../../__tests__/extractor.ts';
 
 describe(transformImportDeclaration.name, () => {
   it("removes legacy components and add 'defineMeta'", async ({ expect }) => {

@@ -1,7 +1,7 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createNamedExportStories } from './create-named-export-stories.js';
+import { createNamedExportStories } from './create-named-export-stories.ts';
 
 describe(createNamedExportStories, () => {
   it('works', ({ expect }) => {

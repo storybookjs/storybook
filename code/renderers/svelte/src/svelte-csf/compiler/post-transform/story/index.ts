@@ -1,11 +1,11 @@
 import { print } from 'esrap';
 import type MagicString from 'magic-string';
 
-import { insertStoryHTMLCommentAsDescription } from './insert-description.js';
-import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf.js';
+import { insertStoryHTMLCommentAsDescription } from './insert-description.ts';
+import { insertSvelteCSFToStoryParameters } from './insert-svelte-csf.ts';
 
-import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
 
 interface Params {
   code: MagicString;

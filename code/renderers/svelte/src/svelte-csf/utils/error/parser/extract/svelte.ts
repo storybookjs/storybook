@@ -1,8 +1,8 @@
 import dedent from 'dedent';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import type { SvelteAST } from '../../../../parser/ast.ts';
+import type { SvelteASTNodes } from '../../../../parser/extract/svelte/nodes.ts';
+import { StorybookSvelteCSFError } from '../../../error.ts';
 
 const BASE_INITIAL_SNIPPET = dedent`
 <script module>

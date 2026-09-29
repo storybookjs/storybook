@@ -87,8 +87,9 @@ effort explicitly, so a CLI default change cannot silently change what runs.
 Sandbox setup installs every Storybook package from the checkout under test,
 so an eval run measures the code of the branch it runs on. Template and fixture
 manifests list those packages as `workspace:*`. Setup compiles each of them
-(with `yarn nx run-many -t compile`, so an unchanged package is a cache hit),
-together with the monorepo packages they depend on, packs them with `yarn pack`
+with `yarn nx run-many -t compile -c production`, the build a publish uses
+(only it emits type declarations), together with the monorepo packages they
+depend on, packs them with `yarn pack`
 into `local-packages/`, and points the sandbox manifests and the root
 `overrides` at those tarballs. The sandbox `postinstall` then fails the install
 if `package-lock.json` resolves any of those packages from the registry,
@@ -98,7 +99,8 @@ records the commit the run used and whether the working tree was dirty, under
 `metadata.checkout`.
 
 Setup runs inside each eval's timeout, so warm the nx cache before a run,
-as CI does:
+as CI does. A plain `yarn nx run-many -t compile` does not warm it, because the
+production build is cached separately:
 
 ```bash
 yarn workspace agent-eval run compile:checkout
@@ -108,7 +110,12 @@ This covers what the sandbox installs up front. An agent that installs
 Storybook packages itself still gets them from npm: 820 (init) runs whatever
 CLI the agent downloads (for example `npm create storybook@latest`), and
 `storybook add` during any eval adds a published addon next to the checkout
-packages, with the same version number.
+packages, with the same version number. Right after the version on `next` is
+bumped and before that version is published, `storybook add` therefore fails.
+
+The tarballs are left out of the saved result projects, so a saved
+`package.json` that points at `local-packages/` cannot be installed as-is;
+rerun the eval from the commit in `metadata.checkout` instead.
 
 Set `EVAL_STORYBOOK_LATEST=1` to install the published `latest` release of
 every Storybook package instead, to check whether a behavior change (e.g. in

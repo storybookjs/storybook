@@ -4,7 +4,6 @@ import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
-import { CHECKOUT_PACKAGES_DIR } from './templates.ts';
 import { collectTranscriptUsage } from './usage.ts';
 
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
@@ -152,15 +151,6 @@ async function attachRunMetadata({ runData }: RunCompleteContext) {
 
   return {
     ...runData,
-    // The packed checkout tarballs are megabytes each, and every run would carry them into the
-    // results archive and the playground deploy.
-    generatedFiles:
-      runData.generatedFiles &&
-      Object.fromEntries(
-        Object.entries(runData.generatedFiles).filter(
-          ([filePath]) => !filePath.startsWith(`${CHECKOUT_PACKAGES_DIR}/`)
-        )
-      ),
     result: {
       ...runData.result,
       metadata: {

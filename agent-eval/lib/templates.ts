@@ -114,7 +114,7 @@ const TYPE_UTIL_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'utils', 'type.t
 const TYPE_UTIL_SANDBOX_PATH = path.posix.join('__agent_eval__', 'utils', 'type.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
-export const CHECKOUT_PACKAGES_DIR = 'local-packages';
+const CHECKOUT_PACKAGES_DIR = 'local-packages';
 // Read by start-storybook-mcp.mjs to fail the install when npm took one of these from the registry.
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
@@ -198,6 +198,10 @@ export async function setupSandbox(
     if (packages.length > 0) {
       Object.assign(files, await packCheckoutPackages(packages));
       files[CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH] = JSON.stringify(packages.map((pkg) => pkg.name));
+      // Keeps the megabytes of tarballs out of the run's captured changes and saved results.
+      const gitignore = files['.gitignore'] ?? '';
+      files['.gitignore'] =
+        `${gitignore}${gitignore === '' || gitignore.endsWith('\n') ? '' : '\n'}${CHECKOUT_PACKAGES_DIR}/\n`;
       packedCheckout = true;
     }
   }
@@ -577,9 +581,7 @@ let storybookWorkspace: Promise<StorybookWorkspace> | undefined;
 
 export function readStorybookWorkspace(): Promise<StorybookWorkspace> {
   storybookWorkspace ??= (async () => {
-    const { stdout } = await execFileAsync('yarn', ['workspaces', 'list', '--json'], {
-      cwd: REPO_ROOT,
-    });
+    const { stdout } = await execYarn(['workspaces', 'list', '--json'], { cwd: REPO_ROOT });
     const manifests = await Promise.all(
       stdout
         .trim()
@@ -662,18 +664,16 @@ function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string
 // before the evals start: sandbox setup runs inside each eval's timeout.
 export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]> {
   const workspace = await readStorybookWorkspace();
-  const files: Record<string, string> = {};
-  for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
-    await collectFiles({ sourceDir, targetDir: path.basename(sourceDir), files });
-  }
-
   const packages = new Map<string, WorkspacePackage>();
-  for (const [filePath, content] of Object.entries(files)) {
-    if (path.posix.basename(filePath) !== 'package.json') {
-      continue;
-    }
-    for (const pkg of await pointStorybookAtCheckout({ 'package.json': content }, workspace)) {
-      packages.set(pkg.name, pkg);
+  for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
+    for await (const manifestPath of fs.glob('**/package.json', {
+      cwd: sourceDir,
+      exclude: (name) => name === 'node_modules',
+    })) {
+      const content = await fs.readFile(path.join(sourceDir, manifestPath), 'utf8');
+      for (const pkg of await pointStorybookAtCheckout({ 'package.json': content }, workspace)) {
+        packages.set(pkg.name, pkg);
+      }
     }
   }
   return [...packages.values()];
@@ -683,8 +683,7 @@ export async function compileCheckoutPackages(packages: WorkspacePackage[]): Pro
   const projects = packages.map((pkg) => pkg.project).join(',');
   try {
     // Only the production build emits the type declarations a published package ships.
-    await execFileAsync(
-      'yarn',
+    await execYarn(
       ['nx', 'run-many', '-t', 'compile', '-c', 'production', '--projects', projects],
       {
         cwd: REPO_ROOT,
@@ -709,13 +708,23 @@ async function packCheckoutPackage(pkg: WorkspacePackage): Promise<string> {
   const packDir = await fs.mkdtemp(path.join(os.tmpdir(), 'agent-eval-packages-'));
   try {
     const tarballPath = path.join(packDir, path.posix.basename(checkoutTarballPath(pkg.name)));
-    await execFileAsync('yarn', ['pack', '--out', tarballPath], {
+    await execYarn(['pack', '--out', tarballPath], {
       cwd: path.join(REPO_ROOT, pkg.dir),
     });
     return (await fs.readFile(tarballPath)).toString('base64');
   } finally {
     await fs.rm(packDir, { recursive: true, force: true });
   }
+}
+
+// Windows only finds `yarn.cmd` through a shell, which then needs paths with spaces quoted.
+function execYarn(args: string[], options: { cwd: string; maxBuffer?: number }) {
+  const isWindows = process.platform === 'win32';
+  return execFileAsync(
+    'yarn',
+    isWindows ? args.map((arg) => (/\s/.test(arg) ? `"${arg}"` : arg)) : args,
+    { ...options, shell: isWindows }
+  );
 }
 
 async function decodeCheckoutPackages(sandbox: Sandbox): Promise<void> {

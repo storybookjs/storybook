@@ -228,16 +228,6 @@ describe('Story args can be inferred', () => {
     const WithHandler = meta.story({ args: { disabled: false, disabledChange: true } });
   });
 
-  it('argTypes do not add args', () => {
-    const meta = preview.type<{ args: ButtonProps }>().meta({
-      component: ButtonComponent,
-      argTypes: { disabledChange: { action: 'changed' } },
-      args: { disabled: false },
-    });
-
-    const Basic = meta.story({ args: { label: 'good' } });
-  });
-
   it('Correct args are inferred when type is added in renderer', () => {
     const meta = preview.type<{ args: ButtonProps }>().meta({
       component: ButtonComponent,
@@ -563,4 +553,36 @@ describe('Meta args are typed by the keys you provide', () => {
     const titleMeta = preview.meta({ title: 'Card', args: { count: 1 } });
     const count: number = titleMeta.input.args.count;
   });
+});
+
+it('a meta like the Button stories of the sandboxes', () => {
+  @Component({ selector: 'example-button', template: '' })
+  class ExampleButton {
+    @Input() primary = false;
+    @Input() backgroundColor?: string;
+    @Input() size: 'small' | 'medium' | 'large' = 'medium';
+    @Input() label = 'Button';
+    @Output() onClick = new EventEmitter<Event>();
+  }
+
+  const meta = preview.meta({
+    title: 'Example/Button',
+    component: ExampleButton,
+    tags: ['autodocs'],
+    argTypes: {
+      backgroundColor: { control: 'color' },
+      size: { control: { type: 'select' }, options: ['small', 'medium', 'large'] },
+    },
+    args: { onClick: fn() },
+  });
+
+  const Primary = meta.story({
+    args: { primary: true, label: 'Button' },
+    play: async ({ args }) => {
+      mocked(args.onClick).mockClear();
+    },
+  });
+  const Large = meta.story({ args: { size: 'large', label: 'Button' } });
+  // @ts-expect-error not a size
+  const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
 });

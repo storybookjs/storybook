@@ -437,3 +437,34 @@ describe('Meta args are typed by the keys you provide', () => {
     const Missing = renderMeta.story();
   });
 });
+
+it('a meta like the Button stories of the sandboxes', () => {
+  const ExampleButton: FunctionalComponent<{
+    primary?: boolean;
+    backgroundColor?: string;
+    size?: 'small' | 'medium' | 'large';
+    label: string;
+    onClick?: (event: MouseEvent) => void;
+  }> = () => h('button');
+
+  const meta = preview.meta({
+    title: 'Example/Button',
+    component: ExampleButton,
+    tags: ['autodocs'],
+    argTypes: {
+      backgroundColor: { control: 'color' },
+      size: { control: { type: 'select' }, options: ['small', 'medium', 'large'] },
+    },
+    args: { onClick: fn() },
+  });
+
+  const Primary = meta.story({
+    args: { primary: true, label: 'Button' },
+    play: async ({ args }) => {
+      mocked(args.onClick).mockClear();
+    },
+  });
+  const Large = meta.story({ args: { size: 'large', label: 'Button' } });
+  // @ts-expect-error not a size
+  const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
+});

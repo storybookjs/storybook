@@ -58,8 +58,17 @@ class MyCard extends LitElement {
   getUsers!: () => Promise<string[]>;
 }
 
+class ExampleButton extends LitElement {
+  primary?: boolean;
+  backgroundColor?: string;
+  size?: 'small' | 'medium' | 'large';
+  label!: string;
+  onClick?: (event: MouseEvent) => void;
+}
+
 declare global {
   interface HTMLElementTagNameMap {
+    'example-button': ExampleButton;
     'my-button': MyButton;
     'my-component': MyComponent;
     'my-card': MyCard;
@@ -425,4 +434,27 @@ describe('Meta args are typed by the keys you provide', () => {
     const titleMeta = preview.meta({ title: 'Card', args: { count: 1 } });
     const count: number = titleMeta.input.args.count;
   });
+});
+
+it('a meta like the Button stories of the sandboxes', () => {
+  const meta = preview.meta({
+    title: 'Example/Button',
+    component: 'example-button',
+    tags: ['autodocs'],
+    argTypes: {
+      backgroundColor: { control: 'color' },
+      size: { control: { type: 'select' }, options: ['small', 'medium', 'large'] },
+    },
+    args: { onClick: fn() },
+  });
+
+  const Primary = meta.story({
+    args: { primary: true, label: 'Button' },
+    play: async ({ args }) => {
+      mocked(args.onClick).mockClear();
+    },
+  });
+  const Large = meta.story({ args: { size: 'large', label: 'Button' } });
+  // @ts-expect-error not a size
+  const Huge = meta.story({ args: { size: 'huge', label: 'Button' } });
 });

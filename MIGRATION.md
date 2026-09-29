@@ -2,6 +2,7 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
@@ -10,6 +11,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
@@ -24,10 +26,13 @@
   - [Internal WebSocket heartbeat controls removed](#internal-websocket-heartbeat-controls-removed)
   - [Internal toolset telemetry now returns with the outcome](#internal-toolset-telemetry-now-returns-with-the-outcome)
   - [Internal `satisfies` helper removed](#internal-satisfies-helper-removed)
+  - [Experimental `UniversalStore` API is now internal](#experimental-universalstore-api-is-now-internal)
   - [React: Require v18 and up](#react-require-v18-and-up)
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
+  - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
+  - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -560,6 +565,35 @@
 
 ## From version 10.x to 11.0.0
 
+### Addon `TAB` registration removed
+
+`addons.add` no longer accepts `type: types.TAB`. Storybook does not render addon tabs beside the canvas. This is an addon-author change. There is no automigration.
+
+Move the UI into a panel:
+
+```diff
+import { addons, types } from 'storybook/manager-api';
+
+addons.register('my-addon', () => {
+  addons.add('my-addon/panel', {
+-   type: types.TAB,
+-   title: 'My Addon',
+-   render: () => <div>Hello World</div>,
++   type: types.PANEL,
++   title: 'My Addon',
++   render: ({ active }) => (active ? <div>Hello World</div> : null),
+  });
+});
+```
+
+A panel stays next to the story. A tab replaced the canvas. For a short-lived action, register a `TOOL` that opens a modal instead.
+
+`match` no longer receives `tabId`. Drop checks such as `!tabId` or `tabId === 'my-addon/tab'`. Use `viewMode` when a tool should appear only for stories or docs.
+
+`parameters.previewTabs`, `layout.showTabs`, and the `tabs` URL parameter no longer change the manager UI.
+
+See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-type-removed) for the same instructions in the addon-author guide.
+
 ### `storybook dev` no longer opens a browser by default
 
 Storybook now starts the development server without automatically opening it in a browser. The CLI
@@ -697,6 +731,21 @@ option exists in both places, keep the nested value because it was authoritative
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
 
+### Test runner support ended
+
+Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
+
+If your Storybook uses a Vite-based framework, we recommend migrating to the Vitest addon by following the [migration guide](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide).
+
+The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack, switch frameworks first:
+
+- `@storybook/nextjs` → `@storybook/nextjs-vite`: run `npx storybook automigrate nextjs-to-nextjs-vite`.
+- `@storybook/angular` → `@storybook/angular-vite`: run `npx storybook automigrate angular-to-angular-vite`.
+- `@storybook/react-webpack5` → `@storybook/react-vite`: follow the [React Vite migration steps](https://storybook.js.org/docs/get-started/frameworks/react-vite#how-do-i-migrate-from-the-react-webpack-framework).
+- Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
+
+If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
 ### Vitest Addon: requires Vitest 4.0 or higher
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
@@ -705,7 +754,30 @@ If your custom tooling imports `canUpdateVitestWorkspaceFile` from `storybook/in
 
 ### Vitest Addon: `setProjectAnnotations` must not be called in setup files
 
-TODO
+`@storybook/addon-vitest` applies your project annotations itself: your `.storybook/preview` file and the previews of the addons registered in `.storybook/main`. `setProjectAnnotations` replaces whatever was applied before it, so a leftover call in a Vitest setup file silently discards the addon's annotations. Storybook 11 throws instead of running with the wrong annotations:
+
+```text
+SB_ADDON_VITEST_0002 (ProjectAnnotationsAlreadyAppliedError): setProjectAnnotations() was called
+from a Vitest setup file, but @storybook/addon-vitest applies your project annotations itself
+```
+
+Run the automigration to remove the calls it can handle - those that only pass your `.storybook/preview` annotations, or `@storybook/addon-a11y/preview` when that addon is already registered in `.storybook/main`:
+
+```sh
+npx storybook automigrate vitest-setup-file
+```
+
+It rewrites those setup files, deletes the ones that end up empty, and drops their `setupFiles` entries from the Vitest or Vite config that referenced them. It stops with per-file instructions when a call cannot be removed safely, which includes custom annotations, a setup file it cannot parse, a `setupFiles` entry computed at runtime, and a file shared with a Vitest project that has no Storybook plugin.
+
+To migrate a file yourself:
+
+1. If the call only passes your `.storybook/preview` annotations, delete it.
+2. If it passes an addon's annotations, register that addon in the `addons` field of `.storybook/main` and delete the call.
+3. If it passes custom annotations, move them into `.storybook/preview` and delete the call.
+4. If nothing else remains in the file, delete it and remove its entry from `setupFiles` in your Vitest config.
+5. If the file is shared with a Vitest project that uses portable stories directly, list it only in that project's `setupFiles`.
+
+Calling `setProjectAnnotations` outside a Vitest setup file is unaffected. Portable stories in plain Vitest projects, and in Jest or other runners, still need the call.
 
 ### Vite: `publicDir` is handled by Storybook's `staticDirs`
 
@@ -847,7 +919,7 @@ Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`.
 
 ### Internal `satisfies` helper removed
 
-The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-higher).
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
 
 Replace calls with the native operator:
 
@@ -860,6 +932,10 @@ Replace calls with the native operator:
 -});
 +} satisfies Meta<typeof Button>;
 ```
+
+### Experimental `UniversalStore` API is now internal
+
+`experimental_UniversalStore` and `experimental_useUniversalStore` are no longer exported from `storybook/manager-api` and `storybook/internal/core-server`. The store is internal to Storybook, and `UniversalStore.create()` now throws for store ids that Storybook does not own. We are working on a replacement called Open Services, but it is not ready for third-party addons yet.
 
 ### React: Require v18 and up
 
@@ -900,6 +976,44 @@ The official Preact framework is `@storybook/preact-vite`. Custom frameworks and
 The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applies addon and framework decorators outside of decorators defined in `.storybook/preview.js` / `preview.ts`.
 
 This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
+
+### `--preview-url` and `--force-build-preview` removed
+
+Storybook 11 removes `--preview-url` and `--force-build-preview`. Those options pointed the canvas iframe at a custom URL and skipped compiling Storybook's own preview. The Angular builder `previewUrl` option is removed for the same reason.
+
+Storybook always builds its preview and always loads `iframe.html`. There is no replacement. If you used `--preview-url` so Storybook could be served from a subdirectory or CDN, configure that host's public path or [`staticDirs`](https://storybook.js.org/docs/configure/images-and-assets#serving-static-files-via-storybook) instead.
+
+### Automigrations for Storybook 10 and earlier removed
+
+`storybook upgrade` and `storybook automigrate` no longer ship the fixes that migrated a project into Storybook 8.1, 8.2, 9.0, or 10.0. A Storybook 10.x project has already applied all of them.
+
+| Removed automigration          | Migrated                                                          |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `initial-globals`              | preview `globals` to `initialGlobals`                             |
+| `remove-docs-autodocs`         | main `docs.autodocs` to the `autodocs` tag                        |
+| `addon-a11y-parameters`        | `a11y.element` to `a11y.context`                                  |
+| `addon-experimental-test`      | `@storybook/experimental-addon-test` to `@storybook/addon-vitest` |
+| `addon-globals-api`            | viewport and backgrounds parameters to globals                    |
+| `addon-mdx-gfm-remove`         | removed `@storybook/addon-mdx-gfm`                                |
+| `addon-storysource-code-panel` | storysource to `docs.codePanel`                                   |
+| `consolidated-imports`         | consolidated `@storybook/*` packages                              |
+| `remove-addon-interactions`    | removed `@storybook/addon-interactions`                           |
+| `remove-essentials`            | essentials addons moved into core                                 |
+| `renderer-to-framework`        | renderer imports to framework imports                             |
+| `rnstorybook-config`           | React Native `.storybook` to `.rnstorybook`                       |
+| `fix-faux-esm-require`         | `require` and `__dirname` in an ESM main config                   |
+| `migrate-addon-console`        | `@storybook/addon-console` to `spyOn` in the preview              |
+
+If your project is still on Storybook 9 or earlier, upgrade to Storybook 10 first so these migrations run, then upgrade to 11:
+
+```sh
+npx storybook@^10 upgrade
+npx storybook@latest upgrade
+```
+
+Upgrading straight to 11 leaves that configuration in place, and you have to apply every migration in the table above by hand.
+
+The `--renderer` flag of `storybook automigrate` is also removed. Only the removed fixes read it, so it now fails as an unknown option; drop it from any script that passes it.
 
 ## From version 10.5.x to 10.6.0
 
@@ -3919,7 +4033,7 @@ The new CLI commands remove the following flags:
 
 | flag     | migration                                                                                     |
 | -------- | --------------------------------------------------------------------------------------------- |
-| --modern | No migration needed. [All ESM code is modern in SB7](#modern-esm--ie11-support-discontinued). |
+| --modern | No migration needed. [All ESM code is modern in SB7](#modern-browser-support). |
 
 #### New Framework API
 

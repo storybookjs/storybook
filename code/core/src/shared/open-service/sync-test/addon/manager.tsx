@@ -34,7 +34,7 @@ addons.register(OPEN_SERVICE_DEMO_ADDON_ID, () => {
     title: 'Open Service',
     type: types.PANEL,
     paramKey: OPEN_SERVICE_DEMO_PARAM_KEY,
-    match: ({ viewMode, tabId }) => !!viewMode?.match(/^(story|docs)$/) && !tabId,
+    match: ({ viewMode }) => !!viewMode?.match(/^(story|docs)$/),
     disabled: isOpenServiceDemoDisabled,
     render: ({ active }) => {
       if (!active) {

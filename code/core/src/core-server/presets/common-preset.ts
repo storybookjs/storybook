@@ -236,7 +236,7 @@ export const core = async (existing: CoreConfig, options: Options): Promise<Core
 
 const babelPresetEnvMajor = getBabelPresetEnvMajor();
 
-export const features: PresetProperty<'features'> = async (existing) => ({
+export const features: PresetProperty<'features'> = async (existing, options) => ({
   ...existing,
   actions: true,
   argTypeTargetsV7: true,
@@ -246,6 +246,7 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
+  docgenServer: !!options.presetsList?.some(({ preset }) => preset.experimental_docgenProvider),
   // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling
   // (`@storybook/addon-mcp`) enables review for the `storybook ai` CLI channel unless the user
   // explicitly sets `false`, so an explicit default would be indistinguishable from a user

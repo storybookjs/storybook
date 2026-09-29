@@ -3,7 +3,6 @@ import { fileURLToPath } from 'node:url';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
-  Options,
   PresetPropertyFn,
   StorybookConfigRaw,
 } from 'storybook/internal/types';
@@ -15,22 +14,11 @@ const VUE_COMPONENT_META = 'vue-component-meta' satisfies VueDocgenPlugin;
 
 /** Contributes the Vue docgen worker descriptor. */
 export const experimental_docgenProvider = async (
-  existing: DocgenProviderDescriptor[] = [],
-  options: Options
-): Promise<DocgenProviderDescriptor[]> => {
-  const features = await options.presets.apply('features', {});
-
-  if (features?.docgenServer !== true) {
-    return existing;
-  }
-
-  return [
-    ...existing,
-    {
-      moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
-    },
-  ];
-};
+  existing: DocgenProviderDescriptor[] = []
+): Promise<DocgenProviderDescriptor[]> => [
+  ...existing,
+  { moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)) },
+];
 
 /** Declares the Vue component manifest engine. */
 export const experimental_manifests: PresetPropertyFn<

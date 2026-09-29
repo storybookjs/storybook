@@ -654,12 +654,6 @@ export interface StorybookFeatures {
   docgenServer?: boolean;
 
   /**
-   * @deprecated Renamed to `docgenServer` and has no effect. `storybook automigrate docgen-server`
-   * renames it.
-   */
-  experimentalDocgenServer?: boolean;
-
-  /**
    * Enable change detection. Agentic review depends on it, so `false` also turns review off.
    * @default true
    */

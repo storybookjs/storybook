@@ -16,7 +16,12 @@ import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { scrollIntoView, searchItem } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { createDocsAnchorItem, createDocsSearchItems, fuseOptions } from './Search.utils.ts';
+import {
+  distinctSearchResults,
+  createDocsAnchorItem,
+  createDocsSearchItems,
+  fuseOptions,
+} from './Search.utils.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import type {
   CombinedDataset,
@@ -216,59 +221,12 @@ export const Search = React.memo<SearchProps>(function Search({
       }
 
       let results: DownshiftItem[] = [];
-      const resultIds: Set<string> = new Set();
 
       const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
         return item.type === 'component' || item.type === 'docs' || item.type === 'story';
       });
 
-      // When the index is being created, we have a legacy piece of logic that
-      // wraps every docs page inside a component entry. This originates from
-      // Storybook 6 and has never been removed. Because of it, we must dedupe
-      // docs entries that are hidden under a fake component entry.
-      // See https://github.com/storybookjs/storybook/issues/35513 for details.
-      const docsParentIds = new Set<string>();
-      allMatches.forEach(({ item }) => {
-        if (item.type === 'docs' && item.parent) {
-          docsParentIds.add(item.parent);
-        }
-      });
-
-      // Components suppressed in favor of a matching docs child that hasn't been rendered yet.
-      // The suppressed component still occupies its slot in `resultIds` so that sibling stories
-      // ranked between the component and its docs entry are deduplicated, as they were before.
-      const pendingDocsReplacements = new Set<string>();
-
-      const distinctResults = allMatches.filter(({ item }) => {
-        // This always gets called before the corresponding docs item
-        // because of the sorting performed by the search index. So it's
-        // safe to use `pendingDocsReplacements` in a single-pass lookup.
-        if (item.type === 'component' && docsParentIds.has(item.id)) {
-          if (!resultIds.has(item.id)) {
-            resultIds.add(item.id);
-            pendingDocsReplacements.add(item.id);
-          }
-          return false;
-        }
-
-        // When we reach this, we know we found an unattached MDX page with
-        // a synthetic docs wrapper. Like in Tree.tsx, remove the wrapper
-        // and present the docs item to end users.
-        if (item.type === 'docs' && item.parent && pendingDocsReplacements.has(item.parent)) {
-          pendingDocsReplacements.delete(item.parent);
-          resultIds.add(item.id);
-          return true;
-        }
-        // @ts-expect-error (non strict)
-        if (resultIds.has(item.parent)) {
-          return false;
-        }
-        resultIds.add(item.id);
-        if (item.type === 'docs' && item.parent) {
-          resultIds.add(item.parent);
-        }
-        return true;
-      });
+      const distinctResults = distinctSearchResults(allMatches);
 
       if (distinctResults.length) {
         results = distinctResults.slice(0, allComponents ? 1000 : DEFAULT_MAX_SEARCH_RESULTS);

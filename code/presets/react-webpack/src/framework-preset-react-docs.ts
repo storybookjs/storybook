@@ -1,5 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
+import { deprecate } from 'storybook/internal/node-logger';
+
 import type { Configuration } from 'webpack';
 
 import type { StorybookConfig } from './types.ts';
@@ -24,6 +26,11 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (
   if (typeof reactDocgen !== 'string') {
     return config;
   }
+
+  deprecate(
+    `Builder docgen (\`typescript.reactDocgen: '${reactDocgen}'\`) is deprecated and will be removed in Storybook 12. ` +
+      `It runs because \`features.docgenServer\` is off. Remove \`docgenServer: false\` from your \`.storybook/main.ts\` to use server-side docgen.`
+  );
 
   if (reactDocgen !== 'react-docgen-typescript') {
     return {

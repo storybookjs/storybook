@@ -295,7 +295,9 @@ Choose which builder-based docgen tool to use when generating controls for your 
 
 <Callout variant="warning">
 
-`'vue-docgen-api'` (also selected by `true`) is deprecated. The builder-based compatibility path remains available in Storybook 11 and will be removed in Storybook 12. Remove the `docgen` option to use the default server-side `vue-component-meta` implementation.
+Builder docgen is deprecated and will be removed in Storybook 12, with both `'vue-docgen-api'` and `'vue-component-meta'`.
+Storybook warns when it runs.
+Remove `features.docgenServer: false` and the `docgen` option to use the default server-side `vue-component-meta` implementation.
 
 </Callout>
 

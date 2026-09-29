@@ -4,10 +4,9 @@ import type { FrameworkOptions, VueDocgenPlugin } from '../types.ts';
 
 export const VUE_COMPONENT_META = 'vue-component-meta' satisfies VueDocgenPlugin;
 
-export const VUE_DOCGEN_API_DEPRECATION =
-  `\`vue-docgen-api\` is deprecated and will be removed in the next major release of Storybook. It is used when server-side docgen is disabled and you have not set the \`docgen\` framework option. ` +
-  `Server-side docgen is enabled by default. Remove \`features: { docgenServer: false }\` from your \`.storybook/main.ts\`, ` +
-  `or set \`framework: { name: '@storybook/vue3-vite', options: { docgen: 'vue-component-meta' } }\` to keep docgen in the builder.`;
+export const VUE_BUILDER_DOCGEN_DEPRECATION =
+  `Builder docgen (the \`docgen\` option of \`@storybook/vue3-vite\`, with \`vue-docgen-api\` or \`vue-component-meta\`) is deprecated and will be removed in Storybook 12. ` +
+  `It runs because \`features.docgenServer\` is off. Remove \`docgenServer: false\` from your \`.storybook/main.ts\` to use server-side docgen.`;
 
 export type ResolvedDocgenOptions = false | { plugin: VueDocgenPlugin; tsconfig?: string };
 

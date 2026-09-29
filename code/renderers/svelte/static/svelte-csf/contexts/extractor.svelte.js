@@ -1,3 +1,4 @@
+// @ts-check
 import { getContext, hasContext, setContext } from 'svelte';
 
 import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
@@ -35,12 +36,15 @@ function buildContext(storyCmpProps) {
 export function createStoriesExtractorContext(repository) {
   const { stories } = repository;
 
-  const ctx = buildContext({
-    isExtracting: true,
-    register: (s) => {
-      stories.set(s.exportName ?? storyNameToExportName(s.name), s);
-    },
-  });
+  const ctx = buildContext(
+    /** @type {StoriesExtractorContextProps<TCmp>} */ ({
+      isExtracting: true,
+      register: (s) => {
+        // A story has `name` when it has no `exportName`
+        stories.set(s.exportName ?? storyNameToExportName(/** @type {string} */ (s.name)), s);
+      },
+    })
+  );
 
   setContext(CONTEXT_KEY, ctx);
 }

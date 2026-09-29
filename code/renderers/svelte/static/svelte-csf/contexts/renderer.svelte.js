@@ -1,7 +1,8 @@
+// @ts-check
 import { getContext, hasContext, setContext } from 'svelte';
 
 /**
- * @import { Cmp, StoryRendererContext, StoryRendererContextProps } from '../../../src/svelte-csf/types.ts'
+ * @import { Cmp, StoryContext, StoryRendererContext, StoryRendererContextProps } from '../../../src/svelte-csf/types.ts'
  */
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';
@@ -42,11 +43,16 @@ function buildContext(props) {
   };
 }
 
+/**
+ * @template {Cmp} TCmp
+ * @returns {void}
+ */
 function createStoryRendererContext() {
   const ctx = buildContext({
     currentStoryExportName: undefined,
     args: {},
-    storyContext: {},
+    // The renderer sets the real story context before any story reads it
+    storyContext: /** @type {StoryContext<TCmp>} */ ({}),
   });
 
   setContext(CONTEXT_KEY, ctx);

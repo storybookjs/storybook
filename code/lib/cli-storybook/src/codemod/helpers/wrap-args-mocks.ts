@@ -42,6 +42,15 @@ function withoutTypeCast(node: t.Node): t.Node {
     : node;
 }
 
+function isRender(path: NodePath<t.Function>) {
+  const key = t.isObjectMethod(path.node)
+    ? path.node.key
+    : t.isObjectProperty(path.parent) && path.parent.value === path.node
+      ? path.parent.key
+      : undefined;
+  return !!key && keyName(key) === 'render';
+}
+
 function isMember(node: t.Node): node is t.MemberExpression | t.OptionalMemberExpression {
   return (
     (t.isMemberExpression(node) || t.isOptionalMemberExpression(node)) &&
@@ -121,12 +130,20 @@ export function wrapArgsMocks(ast: t.File) {
       program = path;
     },
     Function(path) {
-      addContext(path, path.node.params[0]);
+      const [first] = path.node.params;
+      if (first && isRender(path)) {
+        addArgs(path, first);
+      } else {
+        addContext(path, first);
+      }
     },
     VariableDeclarator(path) {
       const { id, init } = path.node;
+      const value = init && withoutTypeCast(init);
       if (init && isArgsObject(path, init)) {
         addArgs(path, id);
+      } else if (value && isMember(value) && isArgsObject(path, value.object)) {
+        bind(argValues, path, id);
       } else {
         addContext(path, id);
       }

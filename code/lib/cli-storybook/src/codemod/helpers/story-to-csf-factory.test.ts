@@ -1111,6 +1111,60 @@ describe('stories codemod', () => {
       `);
     });
 
+    it('follows render args and args read into a variable', async () => {
+      await expect(
+        transform(dedent`
+          import { fn } from 'storybook/test';
+
+          export default { component: Component, args: { onClick: fn() } };
+
+          export const A = {
+            render: (args) => {
+              args.onClick.mockClear();
+              return null;
+            },
+          };
+
+          export const B = {
+            render({ onClick }) {
+              onClick.mockReset();
+              return null;
+            },
+            play: async ({ args }) => {
+              const onClick = args.onClick;
+              onClick.mockRestore();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { fn, mocked } from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+          args: { onClick: fn() },
+        });
+
+        export const A = meta.story({
+          render: (args) => {
+            mocked(args.onClick).mockClear();
+            return null;
+          },
+        });
+
+        export const B = meta.story({
+          render({ onClick }) {
+            mocked(onClick).mockReset();
+            return null;
+          },
+          play: async ({ args }) => {
+            const onClick = args.onClick;
+            mocked(onClick).mockRestore();
+          },
+        });
+      `);
+    });
+
     it('uses a namespace import of storybook/test', async () => {
       await expect(
         transform(dedent`

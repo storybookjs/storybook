@@ -22,7 +22,7 @@ export const viteFinal: StorybookConfigVite['viteFinal'] = async (
   config,
   options: StorybookAddonSvelteCsFOptions
 ) => {
-  let { plugins = [], ...restConfig } = config;
+  const { plugins = [], ...restConfig } = config;
   const { legacyTemplate = false } = options;
 
   if (legacyTemplate) {

@@ -39,7 +39,7 @@ export const getParametersPropertyValue = (
   options: Omit<FindPropertyOptions, 'name'>
 ): ESTreeAST.ObjectExpression => {
   const { filename, component } = options;
-  let property = getParametersProperty(options);
+  const property = getParametersProperty(options);
 
   // NOTE: is a getter property - `get parameters()`
   // WARN: This is probably a bad idea. Need second opinion.

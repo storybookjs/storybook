@@ -86,7 +86,7 @@ export const generateCodeToEmit = ({ code, args }: { code: string; args: StoryOb
     allPropsString = `\n  ${allPropsArray.join('\n  ')}\n`;
   }
 
-  let codeToEmit = code
+  const codeToEmit = code
     .replaceAll('{...args}', allPropsString)
     // replace text expressions that reference a string arg with the plain text,
     // eg. <Button>{args.children}</Button> => <Button>Click me</Button>

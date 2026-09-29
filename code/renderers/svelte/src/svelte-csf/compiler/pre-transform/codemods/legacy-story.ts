@@ -21,8 +21,9 @@ interface Params {
 
 export function transformLegacyStory(params: Params): SvelteAST.Component {
   const { component, filename, state } = params;
-  let { attributes, fragment, ...rest } = component;
-  let newAttributes: SvelteAST.Component['attributes'] = [];
+  const { attributes, fragment: initialFragment, ...rest } = component;
+  let fragment = initialFragment;
+  const newAttributes: SvelteAST.Component['attributes'] = [];
   let autodocs: SvelteAST.Attribute | undefined;
   let source: SvelteAST.Attribute | undefined;
   let parameters: SvelteAST.Attribute | undefined;
@@ -148,7 +149,8 @@ interface InsertAutodocsParams {
   newAttributes: SvelteAST.Component['attributes'];
 }
 function transformAutodocs(params: InsertAutodocsParams): void {
-  let { autodocs, tags, newAttributes } = params;
+  const { autodocs, newAttributes } = params;
+  let { tags } = params;
 
   if (!autodocs) {
     return;
@@ -176,7 +178,8 @@ interface InsertSourceParams {
   newAttributes: SvelteAST.Component['attributes'];
 }
 function transformSource(params: InsertSourceParams): void {
-  let { source, parameters, newAttributes } = params;
+  const { source, newAttributes } = params;
+  let { parameters } = params;
 
   if (!source) return;
 
@@ -287,9 +290,9 @@ interface TransformFragmentParams {
   fragment: SvelteAST.Fragment;
 }
 function transformFragment(params: TransformFragmentParams): SvelteAST.Fragment {
-  let { letDirectiveArgs, letDirectiveContext, fragment } = params;
+  const { letDirectiveArgs, letDirectiveContext, fragment } = params;
 
-  let parameters: SvelteAST.SnippetBlock['parameters'] = [
+  const parameters: SvelteAST.SnippetBlock['parameters'] = [
     {
       type: 'Identifier',
       name: letDirectiveArgs ? 'args' : '_args',

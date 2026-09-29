@@ -216,7 +216,15 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
   // but I haven't managed to get it to work properly
   transformedAst = walk(transformedAst, state, {
     Root(node, context) {
-      let { fragment, instance, module, ...rest } = node;
+      const {
+        fragment: initialFragment,
+        instance: initialInstance,
+        module: initialModule,
+        ...rest
+      } = node;
+      let fragment = initialFragment;
+      let instance = initialInstance;
+      let module = initialModule;
       const { state, visit } = context;
 
       // NOTE: At this point, we decide for walker where it should walk first instead of using `next(state)`
@@ -251,7 +259,8 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
     },
 
     Script(node, context) {
-      let { content, context: scriptContext, ...rest } = node;
+      const { content: initialContent, context: scriptContext, ...rest } = node;
+      let content = initialContent;
       const { state, visit } = context;
 
       state.currentScript = scriptContext === 'module' ? 'module' : 'instance';
@@ -263,7 +272,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
     Program(node, context) {
       if (context.state.pkgImportDeclaration && context.state.currentScript === 'instance') {
-        let instanceBody: ESTreeAST.Program['body'] = [];
+        const instanceBody: ESTreeAST.Program['body'] = [];
 
         for (const declaration of node.body) {
           if (declaration.type === 'ImportDeclaration') {
@@ -327,7 +336,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       const { componentIdentifierName, defineMetaFromComponentMeta } = state;
 
       if (defineMetaFromComponentMeta) {
-        let { nodes, ...rest } = node;
+        const { nodes, ...rest } = node;
 
         const componentMetaIndex = nodes.findIndex(
           (node) => node.type === 'Component' && node.name === componentIdentifierName.Meta
@@ -369,7 +378,7 @@ interface ComponentIdentifierName {
 function getComponentsIdentifiersNames(
   specifiers: ESTreeAST.ImportDeclaration['specifiers']
 ): ComponentIdentifierName {
-  let results: ComponentIdentifierName = {};
+  const results: ComponentIdentifierName = {};
 
   for (const specifier of specifiers) {
     if (specifier.imported.name === 'Meta') {

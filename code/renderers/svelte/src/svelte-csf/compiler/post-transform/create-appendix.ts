@@ -1,5 +1,5 @@
 import { print } from 'esrap';
-import MagicString from 'magic-string';
+import type MagicString from 'magic-string';
 
 import { createExportOrderVariableDeclaration } from './appendix/create-export-order.ts';
 import { createRuntimeStoriesImport } from './appendix/create-import.ts';

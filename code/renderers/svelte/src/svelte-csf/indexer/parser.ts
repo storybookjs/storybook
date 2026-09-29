@@ -61,13 +61,14 @@ export async function parseForIndexer(
   filename: string,
   options: Partial<StorybookAddonSvelteCsFOptions>
 ): Promise<Results> {
-  let [code, { walk }, svelteConfig] = await Promise.all([
+  const [rawCode, { walk }, svelteConfig] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
     loadCachedSvelteConfig(),
   ]);
 
   const { legacyTemplate } = options;
+  let code = rawCode;
 
   if (svelteConfig?.preprocess) {
     code = (
@@ -78,7 +79,7 @@ export async function parseForIndexer(
   }
 
   const svelteAST = getSvelteAST({ code, filename });
-  let results: Results & {
+  const results: Results & {
     defineMetaImport?: ESTreeAST.ImportSpecifier;
     legacyMetaImport?: ESTreeAST.ImportSpecifier;
     legacyStoryImport?: ESTreeAST.ImportSpecifier;

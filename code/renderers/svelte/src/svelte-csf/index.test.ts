@@ -6,7 +6,7 @@ import { createRawSnippet, mount, type ComponentProps, type Snippet } from 'svel
 import type { StoryContext as StorybookStoryContext } from 'storybook/internal/types';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import StoryComponent from './runtime/Story.svelte';
+import type StoryComponent from './runtime/Story.svelte';
 
 import { defineMeta, type StoryContext } from './index.ts';
 import type {

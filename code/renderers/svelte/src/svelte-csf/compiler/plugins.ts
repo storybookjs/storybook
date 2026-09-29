@@ -56,7 +56,7 @@ export async function preTransformPlugin(): Promise<Plugin> {
           };
         }
 
-        let magicCode = new MagicString(code);
+        const magicCode = new MagicString(code);
 
         magicCode.overwrite(0, code.length, print(transformedSvelteAST));
 
@@ -97,7 +97,7 @@ export async function transformPlugin(): Promise<Plugin> {
       if (!filter(id)) return undefined;
 
       const compiledAST = this.parse(compiledCode);
-      let magicCompiledCode = new MagicString(compiledCode);
+      const magicCompiledCode = new MagicString(compiledCode);
       let rawCode =
         (this.getModuleInfo(id)?.meta._storybook_csf_pre_transform as string | undefined) ??
         fs.readFileSync(id).toString();

@@ -51,7 +51,7 @@ export function transformTemplateToSnippet(params: Params): SvelteAST.SnippetBlo
     return attr.type === 'LetDirective' && attr.name === 'context';
   }) as SvelteAST.LetDirective | undefined;
 
-  let parameters: SvelteAST.SnippetBlock['parameters'] = [];
+  const parameters: SvelteAST.SnippetBlock['parameters'] = [];
 
   if (letDirectiveArgs || letDirectiveContext) {
     parameters.push({

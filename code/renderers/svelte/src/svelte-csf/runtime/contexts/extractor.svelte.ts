@@ -13,8 +13,8 @@ export interface StoriesExtractorContextProps<TCmp extends Cmp> {
 }
 
 function buildContext<TCmp extends Cmp>(storyCmpProps: StoriesExtractorContextProps<TCmp>) {
-  let isExtracting = $state(storyCmpProps.isExtracting);
-  let register = $state(storyCmpProps.register);
+  const isExtracting = $state(storyCmpProps.isExtracting);
+  const register = $state(storyCmpProps.register);
 
   return {
     get isExtracting() {

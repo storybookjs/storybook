@@ -21,9 +21,9 @@ interface Params {
  */
 export function transformImportDeclaration(params: Params): ESTreeAST.ImportDeclaration {
   const { node, filename } = params;
-  let { specifiers, ...rest } = node;
+  const { specifiers, ...rest } = node;
 
-  let newSpecifiers: typeof specifiers = [];
+  const newSpecifiers: typeof specifiers = [];
   let hasDefineMeta = false;
 
   for (const specifier of specifiers) {

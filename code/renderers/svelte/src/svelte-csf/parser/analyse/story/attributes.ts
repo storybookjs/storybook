@@ -74,7 +74,7 @@ export function getArrayOfStringsValueFromAttribute(params: Params) {
       });
     }
 
-    let arrayOfStrings: string[] = [];
+    const arrayOfStrings: string[] = [];
 
     for (const element of value.expression.elements) {
       if (element?.type !== 'Literal' || typeof element.value !== 'string') {

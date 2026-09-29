@@ -63,6 +63,11 @@ export const distinctSearchResults = (matches: SearchResult[]): SearchResult[] =
   const pendingDocsReplacements = new Set<string>();
 
   return matches.filter(({ item }) => {
+    // A heading is its own navigation target, so it neither stands in for nor hides its page
+    if (item.id.includes('#')) {
+      return true;
+    }
+
     // This always gets called before the corresponding docs item
     // because of the sorting performed by the search index. So it's
     // safe to use `pendingDocsReplacements` in a single-pass lookup.

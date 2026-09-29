@@ -10,8 +10,8 @@ import {
 describe('docgenServerTemplates', () => {
   it('includes supported default-on templates that record component manifests', () => {
     expect(docgenServerTemplates()).toEqual([
-      'vue3-vite/docgen-server-ts',
-      'angular-vite/docgen-server-ts',
+      'vue3-vite/default-ts',
+      'angular-vite/default-ts',
     ]);
   });
 
@@ -44,7 +44,7 @@ describe('docgenServerTemplates', () => {
   });
 
   it('excludes supported manifest templates that explicitly disable server docgen', () => {
-    const vue = baseTemplates['vue3-vite/docgen-server-ts'];
+    const vue = baseTemplates['vue3-vite/default-ts'];
 
     expect(
       enablesDocgenServer('disabled', {

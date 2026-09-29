@@ -60,11 +60,10 @@ describe('MCP tool descriptions', () => {
             const options = { reviewEnabled, multiSource, testSupported, a11yEnabled };
             for (const tool of toolMetadataFor(options)) {
               seenTools.add(tool.name);
+              const length = tool.description?.length ?? 0;
+              expect.soft(length, `${tool.name} has no description`).toBeGreaterThan(0);
               expect
-                .soft(
-                  tool.description?.length ?? 0,
-                  `${tool.name} exceeds the limit for ${JSON.stringify(options)}`
-                )
+                .soft(length, `${tool.name} exceeds the limit for ${JSON.stringify(options)}`)
                 .toBeLessThanOrEqual(MCP_CLIENT_DESCRIPTION_CHAR_LIMIT);
             }
           }

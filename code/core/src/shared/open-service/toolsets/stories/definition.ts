@@ -214,7 +214,7 @@ function describeFindByComponent(ctx: ToolsetCtx, reviewEnabled: boolean): strin
     ? `For ${ref('review.create')}, the distance buckets map onto the visual cascade (component → direct importers → page context), one collection per layer.`
     : `The distance buckets map onto the visual cascade (component → direct importers → page context); use them to pick stories to preview.`;
 
-  return `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index; hand these to ${handOffTargets} instead of guessing. A component with no matches has no stories yet: say so, never fabricate IDs.
+  return `Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index; hand these to ${handOffTargets} instead of guessing. When the result says a component has no stories found, it has none yet: say so, never fabricate IDs.
 
 Use it whenever you need story IDs: ${inputShapes}. First resolve the input to absolute component file paths yourself (grep / Glob / find, code reading); this tool starts there. Shared infrastructure (theme or design token, util, hook, CSS module) is not a component: grep for its consumers and pass _their_ paths. If the symbol is one of a related group (sibling tokens, neighboring exports), widen to the whole group; a too-narrow grep silently drops stories. For "I just edited X", try \`${ref('stories.changed')}\` first when available; for any touched file missing from its response, treat it as shared infrastructure and pass its consumers here.
 

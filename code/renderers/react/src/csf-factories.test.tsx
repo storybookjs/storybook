@@ -59,6 +59,15 @@ test('legacy annotation namespaces are accepted as addons', () => {
     addons: [legacyAnnotations],
   });
 
+  const meta = previewWithLegacyAnnotations.meta({
+    component: Button,
+    args: { disabled: false },
+    parameters: { layout: 'centered' },
+    decorators: [(Story) => <Story />],
+  });
+  const story = meta.story({ args: { label: 'Legacy' } });
+
+  expect(story.input.args?.label).toBe('Legacy');
   expect(previewWithLegacyAnnotations.composed.parameters).toMatchObject({
     legacyAddon: true,
   });

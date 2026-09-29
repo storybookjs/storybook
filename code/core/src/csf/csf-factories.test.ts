@@ -3,6 +3,8 @@ import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
 
 import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
+import * as legacyDefault from './__testfixtures__/legacy-preview-default.ts';
+import * as legacyNamed from './__testfixtures__/legacy-preview-named.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 import type { Tag } from './story.ts';
 
@@ -19,13 +21,6 @@ interface Addon2Types {
 const addon2 = definePreviewAddon<Addon2Types>({});
 
 const preview = definePreview({ addons: [addon, addon2], renderToCanvas: () => {} });
-const legacyAnnotations = {
-  default: {
-    parameters: {
-      legacyAddon: true,
-    },
-  },
-};
 
 const meta = preview.type<{ args: { label: string } }>().meta({
   args: { label: 'foo' },
@@ -57,30 +52,44 @@ test('addon parameters are inferred', () => {
   });
 });
 
-test('legacy annotation namespaces are composed without collapsing factory addon types', () => {
-  const previewWithLegacyAnnotations = definePreview({
-    addons: [legacyAnnotations, addon],
-    renderToCanvas: () => {},
-  });
-  const meta = previewWithLegacyAnnotations.meta({
-    parameters: {
-      foo: {
-        value: 'typed',
+describe('legacy preview annotation namespaces', () => {
+  test('keep factory addon types when mixed with factory addons', () => {
+    const mixedPreview = definePreview({
+      addons: [legacyDefault, legacyNamed, addon],
+      renderToCanvas: () => {},
+    });
+    const mixedMeta = mixedPreview.meta({ parameters: { foo: { value: 'typed' } } });
+
+    mixedMeta.story({
+      parameters: {
+        foo: {
+          // @ts-expect-error factory addon parameter types remain enforced
+          value: 1,
+        },
       },
-    },
+    });
+
+    expect(mixedPreview.composed.parameters).toMatchObject({
+      legacyDefault: true,
+      legacyNamed: true,
+    });
   });
 
-  meta.story({
-    parameters: {
-      foo: {
-        // @ts-expect-error factory addon parameter types remain enforced
-        value: 1,
-      },
-    },
+  test('do not collapse preview types when used without factory addons', () => {
+    const legacyPreview = definePreview({
+      addons: [legacyDefault],
+      renderToCanvas: () => {},
+    });
+
+    legacyPreview.meta({ parameters: { layout: 'centered' } });
   });
 
-  expect(previewWithLegacyAnnotations.composed.parameters).toMatchObject({
-    legacyAddon: true,
+  test('uncalled addon factories are rejected', () => {
+    definePreview({
+      // @ts-expect-error the factory must be called
+      addons: [() => addon],
+      renderToCanvas: () => {},
+    });
   });
 });
 

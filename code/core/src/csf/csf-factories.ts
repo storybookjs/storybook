@@ -39,17 +39,17 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
 }
 
 /**
- * An addon entry can be a typed CSF factory addon or a legacy preview annotations namespace.
- * Legacy namespaces are composed at runtime but do not contribute additional inferred types.
+ * A typed addon created with `definePreviewAddon`, or a legacy preview annotations module namespace
+ * (`import * as addon from 'some-addon/preview'`). Legacy namespaces add no types to the preview.
  */
-export type PreviewAddonEntry = object;
+export type PreviewAddonEntry = PreviewAddon<never> | Record<string, unknown>;
 
 type InferAddonTypes<T> = T extends PreviewAddon<infer C> ? C : never;
 
+type IntersectAddonTypes<U> = [U] extends [never] ? unknown : UnionToIntersection<U>;
+
 export type InferTypes<T extends PreviewAddonEntry[]> = AddonTypes &
-  ([T[number]] extends [never] ? unknown : UnionToIntersection<InferAddonTypes<T[number]>>) & {
-    csf4: true;
-  };
+  IntersectAddonTypes<InferAddonTypes<T[number]>> & { csf4: true };
 
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[] = []>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
@@ -84,13 +84,9 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   return preview;
 }
 
-declare const previewAddonTypes: unique symbol;
-
 export interface PreviewAddon<
   in TExtraContext extends AddonTypes = AddonTypes,
-> extends ProjectAnnotations<Renderer> {
-  readonly [previewAddonTypes]?: (types: TExtraContext) => void;
-}
+> extends ProjectAnnotations<Renderer> {}
 
 export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
   preview: ProjectAnnotations<Renderer>

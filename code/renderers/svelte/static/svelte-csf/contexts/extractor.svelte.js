@@ -1,10 +1,18 @@
-// Types: see the .d.ts file next to this one.
 import { getContext, hasContext, setContext } from 'svelte';
 
 import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
+/**
+ * @import { Cmp, StoriesExtractorContext, StoriesExtractorContextProps, StoriesRepository } from '../../../src/svelte-csf/types.ts'
+ */
+
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
+/**
+ * @template {Cmp} TCmp
+ * @param {StoriesExtractorContextProps<TCmp>} storyCmpProps
+ * @returns {StoriesExtractorContext<TCmp>}
+ */
 function buildContext(storyCmpProps) {
   const isExtracting = $state(storyCmpProps.isExtracting);
   const register = $state(storyCmpProps.register);
@@ -19,6 +27,11 @@ function buildContext(storyCmpProps) {
   };
 }
 
+/**
+ * @template {Cmp} TCmp
+ * @param {StoriesRepository<TCmp>} repository
+ * @returns {void}
+ */
 export function createStoriesExtractorContext(repository) {
   const { stories } = repository;
 
@@ -32,6 +45,10 @@ export function createStoriesExtractorContext(repository) {
   setContext(CONTEXT_KEY, ctx);
 }
 
+/**
+ * @template {Cmp} TCmp
+ * @returns {StoriesExtractorContext<TCmp>}
+ */
 export function useStoriesExtractor() {
   if (!hasContext(CONTEXT_KEY)) {
     setContext(

@@ -10,7 +10,6 @@ import type {
 } from 'storybook/internal/types';
 
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
-// @ts-expect-error Don't know why TS doesn't pick up the types export here
 import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import {

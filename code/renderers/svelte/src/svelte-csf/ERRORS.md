@@ -1,6 +1,6 @@
 # Errors
 
-This document is a list of known errors that this addon throws.
+This document is a list of known errors that Svelte CSF throws.
 
 ## `PARSER_EXTRACT_SVELTE`
 
@@ -14,7 +14,7 @@ Ensure the stories file which caused this error has the following initial code:
 
 ```svelte
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte/csf';
 
   const { Story } = defineMeta({
     // define your stories meta here
@@ -26,24 +26,24 @@ Ensure the stories file which caused this error has the following initial code:
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002`
 
-A **default or namespace import** was used to import from this addon package, which is not supported. Only named imports are supported (this only applies to imports from `@storybook/addon-svelte-csf`).
+A **default or namespace import** of `@storybook/svelte/csf` was used, which is not supported. Only named imports are supported.
 
 Change your import to a named import instead:
 
 ```diff
-- import svelteCsf from "@storybook/addon-svelte-csf";
-+ import { defineMeta } from "@storybook/addon-svelte-csf";
+- import svelteCsf from "@storybook/svelte/csf";
++ import { defineMeta } from "@storybook/svelte/csf";
 ```
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003`
 
-No import of `defineMeta` from this addon package was found in the **[module context]**.
+No import of `defineMeta` from `@storybook/svelte/csf` was found in the **[module context]**.
 
 You might have forgotten to import it:
 
 ```diff
 <script module>
-+ import { defineMeta } from "@storybook/addon-svelte-csf";
++ import { defineMeta } from "@storybook/svelte/csf";
   ...
 </script>
 ```
@@ -54,7 +54,7 @@ No variable declaration from the `defineMeta()` call was found. While you might 
 
 ```diff
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
+  import { defineMeta } from "@storybook/svelte/csf";
 
 - defineMeta(...);
 + const { Story } = defineMeta({
@@ -112,7 +112,7 @@ This error indicates that the `template` prop was passed, but it was not correct
 ### SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009
 
 Storybook stories indexer parser threw an unrecognized error.
-If you see this error, [please report it on the issue tracker on GitHub](https://github.com/storybookjs/addon-svelte-csf/issues/new?assignees=&labels=bug&projects=&template=bug_report.md&title=%5BBug%5D).
+If you see this error, [please report it on the issue tracker on GitHub](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml).
 
 ## `PARSER_EXTRACT_COMPILED`
 
@@ -121,11 +121,11 @@ If you see this error, [please report it on the issue tracker on GitHub](https:/
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0001`
 
-The import of `defineMeta` from this addon could not be found while parsing the _compiled_ code.
+The import of `defineMeta` from `@storybook/svelte/csf` could not be found while parsing the _compiled_ code.
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0002`
 
@@ -133,7 +133,7 @@ A variable declaration with the `defineMeta` call could not be found while parsi
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0003`
 
@@ -141,7 +141,7 @@ A default export could not be found while parsing the _compiled_ code. The Svelt
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0004`
 
@@ -149,7 +149,7 @@ A `Story` identifier could not be found while parsing the _compiled_ code.
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0005`
 
@@ -157,7 +157,7 @@ A main function component could not be found while parsing the _compiled_ code.
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0006`
 
@@ -165,7 +165,7 @@ A Story-component's props could not be extracted as an object expression from th
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
-https://github.com/storybookjs/addon-svelte-csf/issues/new
+https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml
 
 ## `PARSER_ANALYSE_DEFINE_META`
 
@@ -178,7 +178,7 @@ Ensure you're using the correct syntax, following the example below:
 
 ```svelte
 <script module>
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta } from '@storybook/svelte/csf';
 
   import Button from './Button.svelte';
 
@@ -220,6 +220,28 @@ Dynamically generating the array or the entries with functions or with template 
 When analysing the object passed to `defineMeta({ ... })`, invalid properties were found. The `tags` property must be a **static array of static string literals**, but got something else
 
 Dynamically generating the array or the entries with functions or with template strings is not supported.
+
+### `SB_SVELTE_CSF_PARSER_ANALYSE_DEFINE_META_0006`
+
+The `render` property in `defineMeta` must reference a snippet defined at the root of the stories file.
+It expected an identifier but got something else, for example an inline function.
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/svelte/csf';
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    render: template,
+  });
+</script>
+
+{#snippet template(args)}
+  <Button {...args} />
+{/snippet}
+```
 
 ## `PARSER_ANALYSE_STORY`
 
@@ -378,7 +400,7 @@ It cannot be a shorthand or a dynamic value.
 ### `SB_SVELTE_CSF_LEGACY_API_0002`
 
 You are using legacy template API, with deprecated components.\
-To enable support for legacy API, tweak this addon options in your _(`./.storybook/main.(j|t)s`)_ file:
+To enable support for the legacy API, set the `legacyTemplate` option in your _(`./.storybook/main.(j|t)s`)_ file:
 
 See [the Legacy API section](./README.md#legacy-api) for more details.
 

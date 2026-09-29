@@ -2,22 +2,31 @@ import { describe, expect, it } from 'vitest';
 
 import { parse, stringify } from 'telejson';
 
-import { reviveArgFunctions, serializeArgFunctions } from './function-args.ts';
+import {
+  createArgFunctionReviver,
+  reviveArgFunctions,
+  serializeArgFunctions,
+} from './function-args.ts';
+
+const overTheWire = <T>(value: T): T => parse(stringify(value, { maxDepth: 25 }));
 
 describe('serializeArgFunctions', () => {
   it('replaces nested functions with a name marker, at any depth', () => {
     const handleLinkClick = function handleLinkClick() {};
+
     const serialized = serializeArgFunctions({
-      label: 'open',
-      link: { onClick: handleLinkClick, href: '#', children: [1, { onSelect: () => {} }] },
+      link: {
+        onClick: handleLinkClick,
+        href: '#',
+        // an inline arrow assigned to a property infers the property name
+        children: [1, { onSelect: () => {} }],
+      },
     });
 
     expect(serialized).toEqual({
-      label: 'open',
       link: {
         onClick: { __function__: { name: handleLinkClick.name } },
         href: '#',
-        // an inline arrow assigned to a property infers the property name
         children: [1, { onSelect: { __function__: { name: 'onSelect' } } }],
       },
     });
@@ -42,21 +51,48 @@ describe('serializeArgFunctions', () => {
   it('survives telejson, where the real function does not', () => {
     const args = { link: { onClick: function handleOpen() {}, href: '#' } };
 
-    const overTheWire = parse(stringify(serializeArgFunctions(args), { maxDepth: 25 }));
-
-    expect(overTheWire).toEqual({
+    expect(overTheWire(serializeArgFunctions(args))).toEqual({
       link: { onClick: { __function__: { name: 'handleOpen' } }, href: '#' },
     });
-    expect(parse(stringify(args, { maxDepth: 25 })).link).not.toHaveProperty('onClick');
+    expect(overTheWire(args).link).not.toHaveProperty('onClick');
+  });
+
+  it('escapes plain objects that look like a function marker', () => {
+    const args = { meta: { __function__: { name: 'not-a-function' } }, href: '#' };
+
+    expect(serializeArgFunctions(args)).toEqual({
+      meta: { __sb_function_escape__: { __function__: { name: 'not-a-function' } } },
+      href: '#',
+    });
+  });
+
+  it('escapes plain objects that look like the escape wrapper itself', () => {
+    const args = { meta: { __sb_function_escape__: { trick: true } }, href: '#' };
+
+    expect(serializeArgFunctions(args)).toEqual({
+      meta: { __sb_function_escape__: { __sb_function_escape__: { trick: true } } },
+      href: '#',
+    });
+  });
+
+  it('keeps escaping marker-shaped data nested inside escaped data', () => {
+    const args = { meta: { __function__: { name: 'a' }, nested: { __function__: { name: 'b' } } } };
+
+    expect(serializeArgFunctions(args)).toEqual({
+      meta: {
+        __sb_function_escape__: {
+          __function__: { name: 'a' },
+          nested: { __sb_function_escape__: { __function__: { name: 'b' } } },
+        },
+      },
+    });
   });
 
   it('stops at the transport max depth instead of recursing forever', () => {
-    let deep: { nested?: unknown; fn?: unknown } = { fn: function deepest() {} };
-    for (let i = 0; i < 30; i += 1) {
-      deep = { nested: deep };
-    }
+    const circular: any = { name: 'value' };
+    circular.self = circular;
 
-    expect(() => serializeArgFunctions(deep)).not.toThrow();
+    expect(() => serializeArgFunctions(circular)).not.toThrow();
   });
 });
 
@@ -71,15 +107,6 @@ describe('reviveArgFunctions', () => {
     expect(revived.link.href).toBe('#');
   });
 
-  it('restores the same function identity for the same name across calls', () => {
-    // Args are diffed by reference in the manager (URL args, save-story); two events describing
-    // the same unchanged function must not produce distinct instances.
-    const first = reviveArgFunctions({ onClick: { __function__: { name: 'handleLinkClick' } } });
-    const second = reviveArgFunctions({ onClick: { __function__: { name: 'handleLinkClick' } } });
-
-    expect(second.onClick).toBe(first.onClick);
-  });
-
   it('does not mutate the input', () => {
     const payload = { onClick: { __function__: { name: 'handleLinkClick' } } };
 
@@ -88,22 +115,114 @@ describe('reviveArgFunctions', () => {
     expect(payload.onClick).toEqual({ __function__: { name: 'handleLinkClick' } });
   });
 
-  it('round-trips through serialize, telejson, and revive', () => {
-    const args = {
-      link: {
-        onClick: function handleLinkClick() {},
-        items: [1, 'two', [{ onSelect: function handleSelect() {} }]],
-      },
+  it('resolves a marker against the function stored at the same path', () => {
+    const realCallback = function onClick() {};
+    const current = { link: { href: '#', onClick: realCallback } };
+    const incoming = {
+      link: { href: 'https://example.com', onClick: { __function__: { name: 'onClick' } } },
     };
 
-    const overTheWire = reviveArgFunctions(
-      parse(stringify(serializeArgFunctions(args), { maxDepth: 25 }))
+    const revived = reviveArgFunctions(incoming, current);
+
+    // The sibling edit applies, and the live callback survives it.
+    expect(revived.link.href).toBe('https://example.com');
+    expect(revived.link.onClick).toBe(realCallback);
+  });
+
+  it('falls back to a fresh function when the stored value is not a matching function', () => {
+    const current = { onDelete: () => {} };
+
+    const revived = reviveArgFunctions(
+      { onDelete: { __function__: { name: 'handleDelete' } } },
+      current
     );
 
-    expect(typeof overTheWire.link.onClick).toBe('function');
-    expect(overTheWire.link.onClick.name).toBe('handleLinkClick');
-    expect(overTheWire.link.items.slice(0, 2)).toEqual([1, 'two']);
-    expect(typeof overTheWire.link.items[2][0].onSelect).toBe('function');
-    expect(overTheWire.link.items[2][0].onSelect.name).toBe('handleSelect');
+    expect(typeof revived.onDelete).toBe('function');
+    expect((revived.onDelete as () => void).name).toBe('handleDelete');
+    expect(revived.onDelete).not.toBe(current.onDelete);
+  });
+
+  it('returns marker-shaped user data untouched, over the wire and back', () => {
+    const args = { meta: { __function__: { name: 'not-a-function' } } };
+
+    const roundTripped = reviveArgFunctions(overTheWire(serializeArgFunctions(args)));
+
+    expect(roundTripped).toEqual(args);
+    expect(typeof (roundTripped.meta as Record<string, unknown>).__function__).toBe('object');
+  });
+
+  it('returns escape-shaped user data untouched', () => {
+    const args = { meta: { __sb_function_escape__: { trick: true } } };
+
+    expect(reviveArgFunctions(overTheWire(serializeArgFunctions(args)))).toEqual(args);
+  });
+
+  it('never shares identity between same-named functions at different paths', () => {
+    const revived = reviveArgFunctions({
+      a: { onClick: { __function__: { name: 'onClick' } } },
+      b: { onClick: { __function__: { name: 'onClick' } } },
+    });
+
+    expect(revived.a.onClick).not.toBe(revived.b.onClick);
+  });
+
+  it('keeps one identity per path within a single event', () => {
+    const reviver = createArgFunctionReviver();
+    const initialArgs = { link: { onClick: { __function__: { name: 'onClick' } } } };
+    const args = {
+      href: '#',
+      link: { onClick: { __function__: { name: 'onClick' } } },
+    };
+
+    const revivedInitialArgs = reviver.revive(initialArgs);
+    const revivedArgs = reviver.revive(args);
+
+    expect(revivedArgs.link.onClick).toBe(revivedInitialArgs.link.onClick);
+  });
+
+  it('keeps identity stable across events by resolving against stored args', () => {
+    const marker = { onClick: { __function__: { name: 'onClick' } } };
+    const first = reviveArgFunctions(marker);
+
+    const second = reviveArgFunctions(marker, first);
+
+    expect(second.onClick).toBe(first.onClick);
+  });
+
+  it('round-trips through serialize, telejson, and revive', () => {
+    const args = { link: { onClick: function handleLinkClick() {}, href: '#' } };
+
+    const roundTripped = reviveArgFunctions(overTheWire(serializeArgFunctions(args)));
+
+    expect(roundTripped.link.href).toBe('#');
+    expect(typeof roundTripped.link.onClick).toBe('function');
+    expect(roundTripped.link.onClick.name).toBe('handleLinkClick');
+  });
+
+  it('survives the full preview to manager to sibling edit to preview round trip', () => {
+    const realCallback = function onClick() {};
+    const initial = { link: { href: '#', onClick: realCallback } };
+
+    // Preview sends STORY_PREPARED over the channel.
+    const wire = overTheWire(serializeArgFunctions(initial));
+
+    // Manager revives the pair with one reviver, twice over two events.
+    const managerReviver = createArgFunctionReviver();
+    const managerInitialArgs = managerReviver.revive(wire);
+    const managerArgs = managerReviver.revive(wire);
+    expect(managerArgs.link.onClick).toBe(managerInitialArgs.link.onClick);
+
+    // User edits a sibling key in Controls; the manager sends the whole object back, its
+    // function slot now holding the placeholder.
+    const siblingEdit = {
+      link: { href: 'https://example.com', onClick: managerArgs.link.onClick },
+    };
+    const editWire = overTheWire(serializeArgFunctions(siblingEdit));
+
+    // Preview applies the update against its live args.
+    const applied = reviveArgFunctions(editWire, initial);
+
+    expect(applied.link.href).toBe('https://example.com');
+    expect(applied.link.onClick).toBe(realCallback);
   });
 });

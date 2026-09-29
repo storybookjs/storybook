@@ -45,7 +45,7 @@ import type {
 
 import { global } from '@storybook/global';
 
-import { serializeArgFunctions } from '../../../shared/utils/function-args.ts';
+import { reviveArgFunctions, serializeArgFunctions } from '../../../shared/utils/function-args.ts';
 import { StoryStore, composeProjectAnnotationsWithCore } from '../../store.ts';
 import { addons } from '../addons/index.ts';
 import type { CsfDocsRender } from './render/CsfDocsRender.ts';
@@ -352,7 +352,12 @@ export class Preview<TRenderer extends Renderer> {
     if (!this.storyStoreValue) {
       throw new CalledPreviewMethodBeforeInitializationError({ methodName: 'onUpdateArgs' });
     }
-    this.storyStoreValue.args.update(storyId, updatedArgs);
+    // Markers stand for functions the channel dropped; resolving them against the live args
+    // keeps the original callback in place when a sibling key of the same object was edited.
+    this.storyStoreValue.args.update(
+      storyId,
+      reviveArgFunctions(updatedArgs, this.storyStoreValue.args.get(storyId))
+    );
 
     await Promise.all(
       this.storyRenders

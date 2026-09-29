@@ -54,7 +54,11 @@ import { global } from '@storybook/global';
 import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
-import { reviveArgFunctions } from '../../shared/utils/function-args.ts';
+import {
+  createArgFunctionReviver,
+  reviveArgFunctions,
+  serializeArgFunctions,
+} from '../../shared/utils/function-args.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
 import { getEventMetadata } from '../lib/events.ts';
 import {
@@ -760,7 +764,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       const { id: storyId, refId } = story;
       provider.channel?.emit(UPDATE_STORY_ARGS, {
         storyId,
-        updatedArgs,
+        // The manager's args hold revived placeholder functions; send them back as markers so
+        // the preview can restore the live callbacks (a sibling edit must not drop them).
+        updatedArgs: serializeArgFunctions(updatedArgs),
         options: { target: refId },
       });
     },
@@ -1205,14 +1211,20 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     STORY_PREPARED,
     function handler(this: any, { id, ...update }: StoryPreparedPayload) {
       const { ref, sourceType } = getEventMetadata(this, fullAPI)!;
+      const current = (ref?.index ?? store.getState().index)?.[id] as
+        | { args?: Args; initialArgs?: Args }
+        | undefined;
+      const revive = createArgFunctionReviver();
       api.updateStory(
         id,
         {
           ...update,
           // Function-valued args arrive as `{ __function__: { name } }` markers; the channel drops
           // functions outright, which is why object args lose their function keys in Controls.
-          args: reviveArgFunctions(update.args),
-          initialArgs: reviveArgFunctions(update.initialArgs),
+          // One reviver for the pair: unchanged functions keep one identity across `args` and
+          // `initialArgs`, and successive events resolve against the stored value at each path.
+          args: revive.revive(update.args, current?.args),
+          initialArgs: revive.revive(update.initialArgs, current?.initialArgs),
           prepared: true,
         },
         ref
@@ -1318,7 +1330,10 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       { storyId, args }: { storyId: StoryId; args: Args }
     ) {
       const { ref } = getEventMetadata(this, fullAPI)!;
-      api.updateStory(storyId, { args: reviveArgFunctions(args) }, ref);
+      const current = (ref?.index ?? store.getState().index)?.[storyId] as
+        | { args?: Args }
+        | undefined;
+      api.updateStory(storyId, { args: reviveArgFunctions(args, current?.args) }, ref);
     }
   );
 

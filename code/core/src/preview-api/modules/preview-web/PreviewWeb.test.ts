@@ -1011,6 +1011,36 @@ describe('PreviewWeb', () => {
       });
     });
 
+    it('restores a function marker to the live callback on a sibling edit (#29207)', async () => {
+      document.location.search = '?id=component-one--a';
+      const preview = await createAndRenderPreview();
+      const onLinkClick = function onLinkClick() {};
+      emitter.emit(UPDATE_STORY_ARGS, {
+        storyId: 'component-one--a',
+        updatedArgs: { link: { href: '#', onClick: onLinkClick } },
+      });
+
+      // A sibling edit in Controls sends the whole object back over the channel, which drops
+      // functions; the manager re-marks the slot so the preview can restore the real callback.
+      emitter.emit(UPDATE_STORY_ARGS, {
+        storyId: 'component-one--a',
+        updatedArgs: {
+          link: {
+            href: 'https://example.com',
+            onClick: { __function__: { name: onLinkClick.name } },
+          },
+        },
+      });
+      // Flush both updates' async continuations so they cannot leak into the next test.
+      await waitForEvents([STORY_ARGS_UPDATED]);
+      await waitForEvents([STORY_ARGS_UPDATED]);
+
+      expect(
+        // @ts-expect-error Ignore protected property
+        (preview.storyStoreValue as StoryStore<Renderer>)?.args.get('component-one--a')
+      ).toEqual({ foo: 'a', one: 1, link: { href: 'https://example.com', onClick: onLinkClick } });
+    });
+
     it('sets new args on the store', async () => {
       document.location.search = '?id=component-one--a';
       const preview = await createAndRenderPreview();

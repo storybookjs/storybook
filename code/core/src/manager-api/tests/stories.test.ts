@@ -907,6 +907,33 @@ describe('stories API', () => {
         },
       });
     });
+    it('updateStoryArgs sends function values as markers, keeping their slots alive (#29207)', () => {
+      const fullAPI = { updateRef: vi.fn() };
+      const moduleArgs = createMockModuleArgs({ fullAPI });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      const listener = vi.fn();
+      provider.channel.on(UPDATE_STORY_ARGS, listener);
+
+      api.setIndex({ v: 5, entries: preparedEntries });
+      // A sibling edit in Controls sends the whole object; the function slot holds the manager's
+      // revived placeholder. The channel would drop a function value outright.
+      api.updateStoryArgs({ id: 'a--1' } as API_StoryEntry, {
+        link: { href: 'https://example.com', onClick: function onClick() {} },
+      });
+
+      expect(listener).toHaveBeenCalledWith({
+        storyId: 'a--1',
+        updatedArgs: {
+          link: {
+            href: 'https://example.com',
+            onClick: { __function__: { name: 'onClick' } },
+          },
+        },
+        options: { target: undefined },
+      });
+    });
     it('refId to the local frame and does not change anything', () => {
       const fullAPI = { updateRef: vi.fn() };
       const moduleArgs = createMockModuleArgs({ fullAPI });

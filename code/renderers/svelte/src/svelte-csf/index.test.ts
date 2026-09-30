@@ -8,7 +8,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import type StoryComponent from '../../static/svelte-csf/Story.svelte';
 
-import { defineMeta, type StoryContext } from './index.ts';
+import { defineMeta, type Args, type StoryContext } from './index.ts';
 import type {
   StoryAnnotations,
   StoryComponent as StoryComponentType,
@@ -42,6 +42,7 @@ describe(defineMeta.name, () => {
     type TStoryComponent = StoryComponentType<ComponentProps<typeof Button>, typeof Button>;
 
     expectTypeOf(Story).toEqualTypeOf<TStoryComponent>();
+    expectTypeOf<Args<typeof Story>>().toEqualTypeOf<ComponentProps<typeof Button>>();
     // The Story.svelte component must fit the type that `defineMeta` declares for it
     expectTypeOf<
       typeof StoryComponent<ComponentProps<typeof Button>, typeof Button>

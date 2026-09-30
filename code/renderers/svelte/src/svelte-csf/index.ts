@@ -54,7 +54,8 @@ export function defineMeta<TSnippet, TCmp extends Cmp>(
  * ```
  */
 export type Args<TStoryCmp> =
-  TStoryCmp extends StoryComponentType<infer TArgs extends Record<string, any>, Cmp>
+  // The component type is `any`: `Component` props are contravariant, so matching on `Cmp` infers nothing
+  TStoryCmp extends StoryComponentType<infer TArgs extends Record<string, any>, any>
     ? TArgs
     : never;
 

@@ -2,7 +2,11 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
-import { STORY_FINISHED } from 'storybook/internal/core-events';
+import {
+  STORY_FINISHED,
+  STORY_RENDERED,
+  STORY_RENDER_PHASE_CHANGED,
+} from 'storybook/internal/core-events';
 import type {
   PreparedStory,
   Renderer,
@@ -13,6 +17,10 @@ import type {
 import { ReporterAPI, type StoryStore } from '../../store/index.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { StoryRender, serializeError } from './StoryRender.ts';
+import { waitForAnimations } from './animation-utils.ts';
+
+// happy-dom has no document.getAnimations, so the completing phase would never wait.
+vi.mock('./animation-utils.ts', { spy: true });
 
 const entry = {
   type: 'story',
@@ -376,6 +384,38 @@ describe('StoryRender', () => {
       openImportGate();
 
       await expect(preparePromise).rejects.toThrowError(PREPARE_ABORTED);
+    });
+
+    it('stops after the completing phase when torn down during it', async () => {
+      const [completingGate, openCompletingGate] = createGate();
+      vi.mocked(waitForAnimations).mockImplementationOnce(() => completingGate);
+      const story = buildStory({ playFunction: undefined });
+      const channel = new Channel({});
+      const emitSpy = vi.spyOn(channel, 'emit');
+      const render = new StoryRender(
+        channel,
+        buildStore(),
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('completing'));
+      await render.teardown();
+      openCompletingGate();
+      await tick();
+
+      const phases = emitSpy.mock.calls
+        .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+        .map(([, { newPhase }]) => newPhase);
+      expect(phases).toEqual(['loading', 'rendering', 'completing', 'aborted']);
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_RENDERED, expect.anything());
+      expect(emitSpy).not.toHaveBeenCalledWith(STORY_FINISHED, expect.anything());
+      expect(story.applyAfterEach).not.toHaveBeenCalled();
     });
 
     it('reloads the page when tearing down during loading', async () => {

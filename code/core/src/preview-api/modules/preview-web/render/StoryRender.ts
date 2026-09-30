@@ -386,6 +386,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         }
       });
 
+      if (abortSignal.aborted) {
+        return;
+      }
+
       await this.runPhase(abortSignal, 'completed', async () => {
         this.channel.emit(STORY_RENDERED, id);
       });

@@ -64,7 +64,7 @@ CI type-checks the monorepo with TypeScript 7 (`yarn task check` and the `*.test
 
 To use the TypeScript 7 language server in VS Code instead (optional):
 
-1. Install the [TypeScript 7 extension](https://marketplace.visualstudio.com/items?itemName=TypeScriptTeam.native-preview) (`TypeScriptTeam.native-preview`). On first install it sets `"js/ts.experimental.useTsgo": true` in your user settings.
+1. Install the [TypeScript 7 extension](https://marketplace.visualstudio.com/items?itemName=TypeScriptTeam.native-preview) (`TypeScriptTeam.native-preview`). When it first activates, it sets `"js/ts.experimental.useTsgo": true` in your user settings.
 2. Switch back and forth with the **TypeScript: Enable TypeScript 7 Language Server** and **TypeScript: Disable TypeScript 7 Language Server** commands.
 
 The Vue and Svelte extensions still rely on TypeScript 6 plugins. While TypeScript 7 is on, TypeScript features inside `.vue` files and types of `.svelte` imports in `.ts` files are unavailable, so disable it when working on the Vue or Svelte packages.

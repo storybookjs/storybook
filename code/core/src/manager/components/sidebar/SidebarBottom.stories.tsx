@@ -89,6 +89,8 @@ const meta = {
       clearNotification: fn(),
       updateTestProviderState: fn(),
       emit: fn(),
+      setFilter: fn(),
+      setFilters: fn(),
       experimental_setFilter: fn(),
       experimental_setFilters: fn(),
       getChannel: fn(),

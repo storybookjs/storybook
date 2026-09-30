@@ -14,6 +14,8 @@ import { reactViteToTanstackReact } from './react-vite-to-tanstack-react.ts';
 import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-addons.ts';
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 import { setConfigLayout } from './set-config-layout.ts';
+import { sidebarFilters } from './sidebar-filters.ts';
+import { tagFilterApi } from './tag-filter-api.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { vitestSetupFile } from './vitest-setup-file.ts';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
@@ -34,6 +36,8 @@ export const allFixes: Fix[] = [
   wrapGetAbsolutePath,
   storybookPackageNameConflict,
   setConfigLayout,
+  tagFilterApi,
+  sidebarFilters,
   enableExperimentalReview,
   enableExperimentalDocgenServer,
 ];

@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Tag filtering API](#tag-filtering-api)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -564,6 +565,27 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Tag filtering API
+
+Storybook 11 stabilizes sidebar tag filtering. The old names still work and will be removed in Storybook 12.
+
+| Old | New |
+| --- | --- |
+| `experimental_setFilter` | `setFilter` |
+| `experimental_setFilters` | `setFilters` |
+| `tags.<name>.excludeFromSidebar` | `tags.<name>.hideFromSidebar` |
+| `tags.<name>.excludeFromDocsStories` | `tags.<name>.hideFromAutodocs` |
+
+`setFilter(id, filter)` registers one sidebar filter. A story or docs entry is shown only when every registered filter passes. Call `setFilter(id, () => true)` to stop filtering for that id. `setFilters` registers several filters in one index rebuild.
+
+`hideFromSidebar` removes matching stories from the sidebar. Clearing the filter menu does not bring them back. `hideFromAutodocs` removes matching stories from autodocs pages.
+
+`hideFromFilterPanel` hides a tag from the filter menu and leaves the stories visible. A hidden tag can still be an active filter when `defaultFilterSelection` or the URL selects it. The menu then shows an active-filter count and no checkbox for that tag. Do not combine `hideFromFilterPanel` with a default or URL selection for the same tag.
+
+`sidebar.filters` in `manager.ts` is deprecated and will be removed in Storybook 12. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. There is no automigration for `sidebar.filters`.
+
+`storybook automigrate` rewrites the tag option keys in `main.ts` and renames `experimental_setFilter` / `experimental_setFilters` in `.storybook` and story files. Rename those calls yourself in addon source outside those files.
 
 ### Addon `TAB` registration removed
 

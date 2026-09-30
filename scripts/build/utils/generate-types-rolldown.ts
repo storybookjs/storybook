@@ -1,20 +1,27 @@
-import { spawnSync } from 'node:child_process';
+import { type ExecFileException, execFile } from 'node:child_process';
 import { readFile, rm, writeFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import { sep } from 'node:path';
+import { pathToFileURL } from 'node:url';
+import { promisify } from 'node:util';
 
 import { basename, dirname, join, relative } from 'pathe';
 import picocolors from 'picocolors';
 import type { Plugin } from 'rolldown';
-import { rolldown } from 'rolldown';
-import { dts } from 'rolldown-plugin-dts';
-import ts from 'typescript';
+import type TS from 'typescript';
 
 import type { BuildEntries } from './entry-utils.ts';
-import { getExternal } from './entry-utils.ts';
+import { createPackageMatcher, getExternal } from './entry-utils.ts';
 
 const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
 const DIR_ROOT = join(DIR_CODE, '..');
+
+const require = createRequire(import.meta.url);
+
+let typescript: typeof TS | undefined;
+// `require` skips the ESM loader's module-format detection and export lexing of this 9 MB
+// CommonJS file, which is most of what `import` costs.
+const getTypeScript = () => (typescript ??= require('typescript') as typeof TS);
 
 const DTS_EXCLUDES = [
   '**/*.test.*',
@@ -83,8 +90,9 @@ function createTextAssetStubPlugin(): Plugin {
 }
 
 function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean): Plugin {
+  const ts = getTypeScript();
   const cache = new Map<string, string | null>();
-  const compilerOptions: ts.CompilerOptions = {
+  const compilerOptions: TS.CompilerOptions = {
     moduleResolution: ts.ModuleResolutionKind.Bundler,
     resolveJsonModule: true,
   };
@@ -142,7 +150,7 @@ function dtsEmitCompilerOptions(outDir: string) {
     rewriteRelativeImportExtensions: true,
     outDir,
     rootDir: DIR_ROOT,
-  } satisfies ts.CompilerOptions;
+  } satisfies TS.CompilerOptions;
 }
 
 /**
@@ -151,6 +159,7 @@ function dtsEmitCompilerOptions(outDir: string) {
  * side-effect imports like `import './typings.d.ts'` resolve in the tree.
  */
 function copyHandwrittenDeclarations(fileNames: readonly string[], outDir: string): void {
+  const ts = getTypeScript();
   for (const fileName of fileNames) {
     if (/\.d\.[cm]?ts$/.test(fileName)) {
       const target = join(outDir, relative(DIR_ROOT, fileName));
@@ -159,7 +168,8 @@ function copyHandwrittenDeclarations(fileNames: readonly string[], outDir: strin
   }
 }
 
-function parseWrapperTsconfig(wrapperTsconfig: string): ts.ParsedCommandLine {
+function parseWrapperTsconfig(wrapperTsconfig: string): TS.ParsedCommandLine {
+  const ts = getTypeScript();
   const parsed = ts.getParsedCommandLineOfConfigFile(wrapperTsconfig, undefined, {
     ...ts.sys,
     onUnRecoverableConfigFileDiagnostic: (diagnostic) => {
@@ -184,6 +194,7 @@ function parseWrapperTsconfig(wrapperTsconfig: string): ts.ParsedCommandLine {
  * load order produces byte-different output across runs.
  */
 function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void {
+  const ts = getTypeScript();
   const parsed = parseWrapperTsconfig(wrapperTsconfig);
 
   const program = ts.createProgram({
@@ -218,6 +229,42 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
   copyHandwrittenDeclarations(parsed.fileNames, outDir);
 }
 
+const execFileAsync = promisify(execFile);
+
+// The package's `exports` map only exposes the new API entry points, so resolve the package root
+// via package.json and use the helper behind its tsc launcher to locate the native binary, which
+// then runs without an intermediate node process.
+async function resolveNativeTscPath(): Promise<string> {
+  const packageRoot = dirname(require.resolve('typescript-native/package.json'));
+  const { default: getExePath } = await import(
+    pathToFileURL(join(packageRoot, 'lib', 'getExePath.js')).href
+  );
+  return getExePath();
+}
+
+// Like `spawnSync`: only spawn/IO failures throw; a non-zero exit or a signal is returned.
+async function runProcess(
+  file: string,
+  args: string[]
+): Promise<{ status: number | null; stdout: string; stderr: string }> {
+  try {
+    const { stdout, stderr } = await execFileAsync(file, args, {
+      encoding: 'utf8',
+      maxBuffer: 64 * 1024 * 1024,
+    });
+    return { status: 0, stdout, stderr };
+  } catch (error) {
+    const { code, stdout, stderr } = error as ExecFileException & {
+      stdout: string;
+      stderr: string;
+    };
+    if (typeof code === 'string') {
+      throw error;
+    }
+    return { status: code ?? null, stdout, stderr };
+  }
+}
+
 /**
  * Same contract as `emitPackageDeclarations`, but the emit runs on the
  * TypeScript 7 native compiler (the `typescript-native` npm alias). TS 7
@@ -225,30 +272,24 @@ function emitPackageDeclarations(wrapperTsconfig: string, outDir: string): void 
  * tsconfig and the emit is one `tsc -p` child process — still a single
  * whole-program pass over the package, like the TS 6 path.
  */
-function emitPackageDeclarationsNative(
+async function emitPackageDeclarationsNative(
+  tscPath: string,
   emitTsconfig: string,
   wrapperTsconfig: string,
   outDir: string
-): void {
-  const require = createRequire(import.meta.url);
-  // The package's `exports` map only exposes the new API entry points, so
-  // resolve the package root via package.json and spawn its tsc launcher.
-  const tscPath = join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc');
-
-  const result = spawnSync(
-    process.execPath,
-    [tscPath, '--project', emitTsconfig, '--pretty', 'false'],
-    { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }
-  );
-  if (result.error) {
-    throw result.error;
-  }
+): Promise<void> {
+  // Spawned before anything else is awaited, so the esbuild bundle, the TypeScript load and the
+  // config parse all overlap with the emit.
+  const [result, { fileNames }] = await Promise.all([
+    runProcess(tscPath, ['--project', emitTsconfig, '--pretty', 'false']),
+    Promise.resolve().then(() => parseWrapperTsconfig(wrapperTsconfig)),
+  ]);
   // With `noCheck` + `noEmitOnError: false`, diagnostics are advisory (the
   // JS-API path behaves the same); only fail when nothing was emitted.
   if (result.status !== 0) {
     console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
   }
-  const emitted = ts.sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
+  const emitted = getTypeScript().sys.readDirectory(outDir, ['.d.ts', '.d.mts', '.d.cts']);
   if (emitted.length === 0) {
     console.error(`${result.stdout ?? ''}${result.stderr ?? ''}`);
     throw new Error(
@@ -256,7 +297,7 @@ function emitPackageDeclarationsNative(
     );
   }
 
-  copyHandwrittenDeclarations(parseWrapperTsconfig(wrapperTsconfig).fileNames, outDir);
+  copyHandwrittenDeclarations(fileNames, outDir);
 }
 
 export async function generateTypesFiles(
@@ -277,13 +318,7 @@ export async function generateTypesFiles(
 
   const { typesExternal: external } = await getExternal(cwd);
 
-  const externalFn = (id: string) =>
-    external.some(
-      (dep: string) =>
-        id === dep ||
-        id.startsWith(`${dep}/`) ||
-        id.includes(`${sep}node_modules${sep}${dep}${sep}`)
-    );
+  const externalFn = createPackageMatcher(external, sep);
 
   // ./src/client-logger/index.ts -> client-logger/index
   const entryName = (entryPoint: string) =>
@@ -341,19 +376,28 @@ export async function generateTypesFiles(
   const emitTsconfig = join(DIR_ROOT, `tsconfig.dts-tmp-${basename(cwd)}-emit.json`);
 
   try {
+    let nativeEmit: Promise<void> | undefined;
     if (useTsgo) {
-      await writeFile(
-        emitTsconfig,
-        JSON.stringify({
-          compilerOptions: { ...compilerOptions, ...dtsEmitCompilerOptions(emitDir) },
-          include,
-          exclude,
-        })
-      );
-      emitPackageDeclarationsNative(emitTsconfig, wrapperTsconfig, emitDir);
+      const [tscPath] = await Promise.all([
+        resolveNativeTscPath(),
+        writeFile(
+          emitTsconfig,
+          JSON.stringify({
+            compilerOptions: { ...compilerOptions, ...dtsEmitCompilerOptions(emitDir) },
+            include,
+            exclude,
+          })
+        ),
+      ]);
+      nativeEmit = emitPackageDeclarationsNative(tscPath, emitTsconfig, wrapperTsconfig, emitDir);
     } else {
       emitPackageDeclarations(wrapperTsconfig, emitDir);
     }
+    const [, { rolldown }, { dts }] = await Promise.all([
+      nativeEmit,
+      import('rolldown'),
+      import('rolldown-plugin-dts'),
+    ]);
 
     const input: Record<string, string> = Object.fromEntries(
       Object.entries(entryMap).map(([name, sourcePath]) => [

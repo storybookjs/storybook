@@ -44,7 +44,6 @@ import serverRendererConfig from '../../code/renderers/server/build-config.ts';
 import svelteRendererConfig from '../../code/renderers/svelte/build-config.ts';
 import vue3RendererConfig from '../../code/renderers/vue3/build-config.ts';
 import webComponentsRendererConfig from '../../code/renderers/web-components/build-config.ts';
-import type { BuildEntriesByPackageName } from './utils/entry-utils.ts';
 
 export const buildEntries = {
   storybook: storybookConfig,
@@ -109,12 +108,4 @@ export const buildEntries = {
 
 export function isBuildEntries(key: string): key is keyof typeof buildEntries {
   return key in buildEntries;
-}
-
-export function hasPrebuild(
-  entry: BuildEntriesByPackageName[keyof BuildEntriesByPackageName]
-): entry is BuildEntriesByPackageName[keyof BuildEntriesByPackageName] & {
-  prebuild: (cwd: string) => Promise<void>;
-} {
-  return 'prebuild' in entry;
 }

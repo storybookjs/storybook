@@ -24,6 +24,11 @@ if (BASELINE_PATH !== 'legacy') {
   );
 }
 
+type Variant = { manifest: string; osaPrefix: string } & (
+  | { legacyArgTypes: string; sameArgTypesAs?: never }
+  | { sameArgTypesAs: string; legacyArgTypes?: never }
+);
+
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
@@ -36,11 +41,19 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
 const readCommitted = (path: string): string | undefined =>
   existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 
-const VARIANTS = [
-  { manifest: 'custom-elements.json', osaPrefix: 'osa-', legacyPrefix: '' },
-  { manifest: 'custom-elements.v2.json', osaPrefix: 'osa-v2-', legacyPrefix: 'v2-' },
-  { manifest: 'custom-elements.unflattened.json', osaPrefix: 'osa-unflattened-', legacyPrefix: '' },
-] as const;
+const VARIANTS: Variant[] = [
+  { manifest: 'custom-elements.json', osaPrefix: 'osa-', legacyArgTypes: 'argtypes.snapshot' },
+  {
+    manifest: 'custom-elements.v2.json',
+    osaPrefix: 'osa-v2-',
+    legacyArgTypes: 'v2-argtypes.snapshot',
+  },
+  {
+    manifest: 'custom-elements.unflattened.json',
+    osaPrefix: 'osa-unflattened-',
+    sameArgTypesAs: 'custom-elements.json',
+  },
+];
 
 beforeEach(() => {
   vi.mocked(logger.warn).mockImplementation(() => {});
@@ -169,7 +182,10 @@ describe('web-components server-side docgen baselines', () => {
     const testDir = join(fixturesDir, fixtureCase);
     const entry = entryForFixture(fixtureCase, testDir);
 
-    for (const [index, { manifest, osaPrefix, legacyPrefix }] of VARIANTS.entries()) {
+    const argTypesByManifest = new Map<string, WebComponentsDocgenPayload['argTypes']>();
+
+    for (const [index, variant] of VARIANTS.entries()) {
+      const { manifest, osaPrefix } = variant;
       const manifestPath = join(testDir, manifest);
       if (!existsSync(manifestPath)) {
         continue;
@@ -184,23 +200,35 @@ describe('web-components server-side docgen baselines', () => {
       const argTypes = payload?.argTypes;
       expect(argTypes, `${fixtureCase}: no OSA argTypes recorded`).toBeDefined();
 
-      const legacyArgTypesPath = join(testDir, `${legacyPrefix}argtypes.snapshot`);
-      const committedLegacyArgTypes = readCommitted(legacyArgTypesPath);
-      expect(committedLegacyArgTypes, `missing legacy ${legacyArgTypesPath}`).toBeDefined();
-      await recordArgTypesSnapshot({
-        path: join(testDir, `${osaPrefix}argtypes.snapshot`),
-        label: `${fixtureCase}/${osaPrefix}argtypes.snapshot`,
-        candidate: argTypes!,
-        extraGates: [
-          {
-            committed: committedLegacyArgTypes!,
-            label: `${fixtureCase}/${legacyPrefix}argtypes.snapshot`,
-            legacyBaseline: true,
-            legacyManifestRuntime: true,
-            waivedArgs: hiddenMemberNames(payload!),
-          },
-        ],
-      });
+      argTypesByManifest.set(manifest, argTypes);
+
+      if (variant.sameArgTypesAs !== undefined) {
+        expect(
+          argTypesByManifest.has(variant.sameArgTypesAs),
+          `${fixtureCase}: ${variant.sameArgTypesAs} must be recorded before ${manifest}`
+        ).toBe(true);
+        expect(argTypes, `${fixtureCase}: ${manifest} argTypes`).toEqual(
+          argTypesByManifest.get(variant.sameArgTypesAs)
+        );
+      } else {
+        const legacyArgTypesPath = join(testDir, variant.legacyArgTypes);
+        const committedLegacyArgTypes = readCommitted(legacyArgTypesPath);
+        expect(committedLegacyArgTypes, `missing legacy ${legacyArgTypesPath}`).toBeDefined();
+        await recordArgTypesSnapshot({
+          path: join(testDir, `${osaPrefix}argtypes.snapshot`),
+          label: `${fixtureCase}/${osaPrefix}argtypes.snapshot`,
+          candidate: argTypes!,
+          extraGates: [
+            {
+              committed: committedLegacyArgTypes!,
+              label: `${fixtureCase}/${variant.legacyArgTypes}`,
+              legacyBaseline: true,
+              legacyManifestRuntime: true,
+              waivedArgs: hiddenMemberNames(payload!),
+            },
+          ],
+        });
+      }
 
       await expect(withoutArgTypes(payload)).toMatchFileSnapshot(
         join(testDir, `${osaPrefix}payload.snapshot`)

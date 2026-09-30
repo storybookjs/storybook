@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { indexDeclarations } from './declaration-index.ts';
+import {
+  indexDeclarations,
+  type DeclarationIndex,
+  type IndexedDeclaration,
+} from './declaration-index.ts';
 import { createInheritanceResolver } from './resolve-inheritance.ts';
 import type {
   ManifestAnyDeclaration,
@@ -354,6 +358,50 @@ describe('resolveInheritance', () => {
       expected: { members: ['a', 'b<-B'] },
     },
     {
+      name: 'keeps an own item over an inherited duplicate listed first',
+      declarations: [
+        {
+          name: 'A',
+          kind: 'class',
+          customElement: true,
+          members: [
+            {
+              kind: 'method',
+              name: 'focusIt',
+              description: 'inherited base',
+              inheritedFrom: { name: 'Base' },
+            },
+            { kind: 'method', name: 'focusIt', description: 'own override' },
+          ],
+        },
+      ],
+      declarationName: 'A',
+      modulePath: 'x.js',
+      expected: { members: ['focusIt'] },
+    },
+    {
+      name: 'keeps an own item over an inherited duplicate listed after it',
+      declarations: [
+        {
+          name: 'A',
+          kind: 'class',
+          customElement: true,
+          members: [
+            { kind: 'method', name: 'focusIt', description: 'own override' },
+            {
+              kind: 'method',
+              name: 'focusIt',
+              description: 'inherited base',
+              inheritedFrom: { name: 'Base' },
+            },
+          ],
+        },
+      ],
+      declarationName: 'A',
+      modulePath: 'x.js',
+      expected: { members: ['focusIt'] },
+    },
+    {
       name: 'matches module paths with and without a leading ./',
       manifest: {
         schemaVersion: '1.0.0',
@@ -385,115 +433,239 @@ describe('resolveInheritance', () => {
       expected: { members: ['child', 'base<-Base'] },
     },
   ] satisfies ResolveCase[])('$name', (row) => {
-    const manifest = manifestFor(row);
-    const declaration = findDeclaration(manifest, row.declarationName);
-    const result = createInheritanceResolver(indexDeclarations(manifest))(
-      declaration,
-      row.modulePath
+    const index = indexDeclarations(manifestFor(row));
+    const result = createInheritanceResolver(index)(
+      entryFor(index, row.modulePath, row.declarationName)
     );
 
-    expect(outputNames(result)).toEqual(row.expected);
+    expect(outputNames(result as ManifestDeclaration)).toEqual(row.expected);
   });
 
-  it('returns the declaration unchanged when nothing is inherited', () => {
-    const manifest = manifestFor({
-      name: 'plain',
-      declarations: [
-        {
-          name: 'Plain',
-          kind: 'class',
-          customElement: true,
-          tagName: 'x-plain',
-        },
-      ],
-      declarationName: 'Plain',
-      modulePath: 'x.js',
-      expected: {},
-    });
-    const declaration = findDeclaration(manifest, 'Plain');
-    const result = createInheritanceResolver(indexDeclarations(manifest))(declaration, 'x.js');
-
-    expect(result).toEqual(declaration);
-    expect('members' in result).toBe(false);
-  });
-
-  it('replaces a non-array list on the child with the inherited items', () => {
-    const manifest = manifestFor({
-      name: 'malformed',
+  it.each([
+    {
+      name: 'merges an override over the parent item it redeclares',
       declarations: [
         {
           name: 'Base',
           kind: 'class',
-          members: [{ kind: 'field', name: 'base' }],
+          members: [
+            {
+              kind: 'field',
+              name: 'label',
+              type: { text: 'string' },
+              default: "'base'",
+              description: 'The label.',
+            },
+          ],
         },
         {
           name: 'Child',
           kind: 'class',
           customElement: true,
           superclass: { name: 'Base' },
-          members: 'oops',
+          members: [{ kind: 'field', name: 'label', default: "'child'" }],
         },
-      ] as unknown as ManifestAnyDeclaration[],
-      declarationName: 'Child',
-      modulePath: 'x.js',
-      expected: {},
-    });
-    const declaration = findDeclaration(manifest, 'Child');
-    const result = createInheritanceResolver(indexDeclarations(manifest))(declaration, 'x.js');
+      ],
+      expected: [
+        {
+          kind: 'field',
+          name: 'label',
+          type: { text: 'string' },
+          default: "'child'",
+          description: 'The label.',
+        },
+      ],
+    },
+    {
+      name: 'keeps an override own when the parent inherited that item itself',
+      declarations: [
+        {
+          name: 'G',
+          kind: 'class',
+          members: [{ kind: 'field', name: 'label', description: 'From the grandparent.' }],
+        },
+        { name: 'B', kind: 'class', superclass: { name: 'G' } },
+        {
+          name: 'Child',
+          kind: 'class',
+          customElement: true,
+          superclass: { name: 'B' },
+          members: [{ kind: 'field', name: 'label', default: "'child'" }],
+        },
+      ],
+      expected: [
+        { kind: 'field', name: 'label', default: "'child'", description: 'From the grandparent.' },
+      ],
+    },
+    {
+      name: 'leaves an override the analyzer already flattened as it is',
+      declarations: [
+        {
+          name: 'Base',
+          kind: 'class',
+          members: [{ kind: 'field', name: 'label', description: 'The label.' }],
+        },
+        {
+          name: 'Child',
+          kind: 'class',
+          customElement: true,
+          superclass: { name: 'Base' },
+          members: [
+            { kind: 'field', name: 'label', default: "'child'", inheritedFrom: { name: 'Base' } },
+          ],
+        },
+      ],
+      expected: [
+        { kind: 'field', name: 'label', default: "'child'", inheritedFrom: { name: 'Base' } },
+      ],
+    },
+    {
+      name: 'fills an override from every parent, the first one winning',
+      declarations: [
+        {
+          name: 'M',
+          kind: 'mixin',
+          members: [{ kind: 'field', name: 'label', description: 'From the mixin.' }],
+        },
+        {
+          name: 'B',
+          kind: 'class',
+          members: [
+            {
+              kind: 'field',
+              name: 'label',
+              description: 'From the superclass.',
+              type: { text: 'string' },
+            },
+          ],
+        },
+        {
+          name: 'Child',
+          kind: 'class',
+          customElement: true,
+          mixins: [{ name: 'M' }],
+          superclass: { name: 'B' },
+          members: [{ kind: 'field', name: 'label', default: "'child'" }],
+        },
+      ],
+      expected: [
+        {
+          kind: 'field',
+          name: 'label',
+          default: "'child'",
+          description: 'From the mixin.',
+          type: { text: 'string' },
+        },
+      ],
+    },
+  ] satisfies {
+    name: string;
+    declarations: ManifestAnyDeclaration[];
+    expected: unknown[];
+  }[])('$name', ({ declarations, expected }) => {
+    const index = indexDeclarations(manifestFor({ declarations }));
+    const result = createInheritanceResolver(index)(entryFor(index, 'x.js', 'Child'));
+
+    expect(result.members).toEqual(expected);
+  });
+
+  it('caches a declaration inside a cycle with the view it had when the cycle was cut', () => {
+    const index = indexDeclarations(
+      manifestFor({
+        declarations: [
+          {
+            name: 'A',
+            kind: 'class',
+            customElement: true,
+            superclass: { name: 'B' },
+            members: [{ kind: 'field', name: 'a' }],
+          },
+          {
+            name: 'B',
+            kind: 'class',
+            customElement: true,
+            superclass: { name: 'A' },
+            members: [{ kind: 'field', name: 'b' }],
+          },
+        ],
+      })
+    );
+    const resolver = createInheritanceResolver(index);
+
+    resolver(entryFor(index, 'x.js', 'A'));
+
+    expect(names(resolver(entryFor(index, 'x.js', 'B')).members ?? [])).toEqual(['b']);
+  });
+
+  it('returns the declaration unchanged when nothing is inherited', () => {
+    const index = indexDeclarations(
+      manifestFor({
+        declarations: [{ name: 'Plain', kind: 'class', customElement: true, tagName: 'x-plain' }],
+      })
+    );
+    const entry = entryFor(index, 'x.js', 'Plain');
+    const result = createInheritanceResolver(index)(entry);
+
+    expect(result).toEqual(entry.declaration);
+    expect('members' in result).toBe(false);
+  });
+
+  it('replaces a non-array list on the child with the inherited items', () => {
+    const index = indexDeclarations(
+      manifestFor({
+        declarations: [
+          { name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'base' }] },
+          {
+            name: 'Child',
+            kind: 'class',
+            customElement: true,
+            superclass: { name: 'Base' },
+            members: 'oops',
+          },
+        ] as unknown as ManifestAnyDeclaration[],
+      })
+    );
+    const result = createInheritanceResolver(index)(entryFor(index, 'x.js', 'Child'));
 
     expect(names(result.members ?? [])).toEqual(['base<-Base']);
   });
 
   it('does not mutate the input manifest', () => {
     const clone = structuredClone(MATERIAL_LIKE);
-    const declaration = findDeclaration(MATERIAL_LIKE, 'MdFilledButton');
+    const index = indexDeclarations(MATERIAL_LIKE);
 
-    createInheritanceResolver(indexDeclarations(MATERIAL_LIKE))(
-      declaration,
-      'button/filled-button.js'
-    );
+    createInheritanceResolver(index)(entryFor(index, 'button/filled-button.js', 'MdFilledButton'));
 
     expect(MATERIAL_LIKE).toEqual(clone);
   });
 
   it('returns the same resolved object when resolving a cached declaration twice', () => {
-    const resolver = createInheritanceResolver(indexDeclarations(MATERIAL_LIKE));
-    const declaration = findDeclaration(MATERIAL_LIKE, 'MdFilledButton');
+    const index = indexDeclarations(MATERIAL_LIKE);
+    const resolver = createInheritanceResolver(index);
+    const entry = entryFor(index, 'button/filled-button.js', 'MdFilledButton');
 
-    const first = resolver(declaration, 'button/filled-button.js');
-    const second = resolver(declaration, 'button/filled-button.js');
-
-    expect(second).toBe(first);
+    expect(resolver(entry)).toBe(resolver(entry));
   });
 });
 
-function manifestFor(row: ResolveCase): ManifestPackage {
+function manifestFor({
+  manifest,
+  declarations = [],
+}: Pick<ResolveCase, 'manifest' | 'declarations'>): ManifestPackage {
   return (
-    row.manifest ?? {
+    manifest ?? {
       schemaVersion: '1.0.0',
-      modules: [
-        {
-          kind: 'javascript-module',
-          path: 'x.js',
-          declarations: row.declarations ?? [],
-        },
-      ],
+      modules: [{ kind: 'javascript-module', path: 'x.js', declarations }],
     }
   );
 }
 
-function findDeclaration(manifest: ManifestPackage, name: string): ManifestDeclaration {
-  for (const module of manifest.modules) {
-    const declaration = module.declarations?.find(
-      (candidate): candidate is ManifestDeclaration =>
-        'customElement' in candidate && candidate.customElement === true && candidate.name === name
-    );
-    if (declaration) {
-      return declaration;
-    }
+function entryFor(index: DeclarationIndex, modulePath: string, name: string): IndexedDeclaration {
+  const entry = index.get(modulePath, name);
+  if (!entry) {
+    throw new Error(`Missing declaration ${name}`);
   }
-
-  throw new Error(`Missing declaration ${name}`);
+  return entry;
 }
 
 function outputNames(declaration: ManifestDeclaration): NamedOutput {

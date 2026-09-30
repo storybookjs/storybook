@@ -89,6 +89,15 @@
               "default": "1",
               "description": "Count declared by the final class.",
               "attribute": "count"
+            },
+            {
+              "kind": "field",
+              "name": "baseLabel",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Final'",
+              "attribute": "base-label"
             }
           ],
           "attributes": [
@@ -100,6 +109,14 @@
               "default": "1",
               "description": "Count declared by the final class.",
               "fieldName": "count"
+            },
+            {
+              "name": "base-label",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Final'",
+              "fieldName": "baseLabel"
             }
           ],
           "mixins": [

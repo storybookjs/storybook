@@ -1,15 +1,10 @@
-import {
-  declarationKey,
-  type DeclarationIndex,
-  type IndexedDeclaration,
-} from './declaration-index.ts';
+import type { DeclarationIndex, IndexedDeclaration } from './declaration-index.ts';
 import type { ManifestClassLikeDeclaration, ManifestReference } from './types.ts';
-import { isRecord, namedItems } from '../utils.ts';
+import { namedItems } from '../utils.ts';
 
-export type InheritanceResolver = <T extends ManifestClassLikeDeclaration>(
-  declaration: T,
-  modulePath: string
-) => T;
+export type InheritanceResolver = (entry: IndexedDeclaration) => ManifestClassLikeDeclaration;
+
+const IN_PROGRESS = Symbol('in progress');
 
 const LIST_KEYS = [
   'members',
@@ -27,47 +22,39 @@ type ManifestNamedItem = { name: string; inheritedFrom?: ManifestReference };
 
 type InheritedParent = { declaration: ManifestClassLikeDeclaration; from: ManifestReference };
 
-export function createInheritanceResolver(declarations: DeclarationIndex): InheritanceResolver {
-  const flattened = new Map<ManifestClassLikeDeclaration, ManifestClassLikeDeclaration>();
-  const inProgress = new Set<ManifestClassLikeDeclaration>();
+export function createInheritanceResolver(index: DeclarationIndex): InheritanceResolver {
+  const flattened = new Map<
+    ManifestClassLikeDeclaration,
+    ManifestClassLikeDeclaration | typeof IN_PROGRESS
+  >();
 
-  function flatten(
-    declaration: ManifestClassLikeDeclaration,
-    modulePath: string
-  ): ManifestClassLikeDeclaration {
-    const cached = flattened.get(declaration);
-    if (cached) {
+  function flatten(entry: IndexedDeclaration): ManifestClassLikeDeclaration {
+    const cached = flattened.get(entry.declaration);
+    if (cached !== undefined && cached !== IN_PROGRESS) {
       return cached;
     }
 
-    inProgress.add(declaration);
-    const references: unknown[] = [
-      ...(Array.isArray(declaration.mixins) ? declaration.mixins : []),
-      declaration.superclass,
-    ];
-    const parents = references
-      .filter(isRecord)
-      .map((reference) => resolveReference(reference, declarations, modulePath))
-      .filter(
-        (parent): parent is IndexedDeclaration =>
-          parent !== undefined && !inProgress.has(parent.declaration)
-      )
-      .map(
-        (parent): InheritedParent => ({
-          declaration: flatten(parent.declaration, parent.modulePath),
-          from: { name: parent.declaration.name, module: parent.modulePath },
-        })
-      );
-    const merged = mergeInherited(declaration, parents);
-    inProgress.delete(declaration);
-    flattened.set(declaration, merged);
+    flattened.set(entry.declaration, IN_PROGRESS);
+    const parents: InheritedParent[] = [];
+    for (const reference of entry.references) {
+      const parent = resolveReference(reference, index, entry.modulePath);
+      if (parent && flattened.get(parent.declaration) !== IN_PROGRESS) {
+        parents.push({
+          declaration: flatten(parent),
+          from: {
+            name: parent.declaration.name,
+            ...(parent.modulePath ? { module: parent.modulePath } : {}),
+          },
+        });
+      }
+    }
 
+    const merged = mergeInherited(entry.declaration, parents);
+    flattened.set(entry.declaration, merged);
     return merged;
   }
 
-  // Flattening only appends list items, so the result keeps the declaration's own kind.
-  return <T extends ManifestClassLikeDeclaration>(declaration: T, modulePath: string): T =>
-    flatten(declaration, modulePath) as T;
+  return flatten;
 }
 
 function mergeInherited(
@@ -77,21 +64,33 @@ function mergeInherited(
   const lists: Partial<Record<ManifestListKey, ManifestNamedItem[]>> = {};
 
   for (const key of LIST_KEYS) {
-    const own = listOf(declaration, key) ?? [];
-    const seen = new Set(namedItems(own).map((item) => item.name));
-    const inherited: ManifestNamedItem[] = [];
+    const own = namedItems(listOf(declaration, key));
+    const items = new Map<string, ManifestNamedItem>();
+    for (const item of own) {
+      const existing = items.get(item.name);
+      if (!existing || (existing.inheritedFrom && !item.inheritedFrom)) {
+        items.set(item.name, item);
+      }
+    }
 
+    let changed = items.size !== own.length;
     for (const parent of parents) {
       for (const item of namedItems(listOf(parent.declaration, key))) {
-        if (!seen.has(item.name)) {
-          seen.add(item.name);
-          inherited.push({ ...item, inheritedFrom: item.inheritedFrom ?? parent.from });
+        const existing = items.get(item.name);
+        if (!existing) {
+          items.set(item.name, { ...item, inheritedFrom: item.inheritedFrom ?? parent.from });
+          changed = true;
+        } else if (!existing.inheritedFrom) {
+          // Like the analyzer, an override keeps the documentation it does not redeclare.
+          const { inheritedFrom: _, ...parentFields } = item;
+          items.set(item.name, { ...parentFields, ...existing });
+          changed = true;
         }
       }
     }
 
-    if (inherited.length > 0) {
-      lists[key] = [...own, ...inherited];
+    if (changed) {
+      lists[key] = [...items.values()];
     }
   }
 
@@ -109,18 +108,15 @@ function listOf(
 // Lit analyzer output names the manifest's own package on every reference,
 // so a `module` is looked up in the manifest even when `package` is set.
 function resolveReference(
-  reference: Record<string, unknown>,
-  declarations: DeclarationIndex,
+  reference: ManifestReference,
+  index: DeclarationIndex,
   modulePath: string
 ): IndexedDeclaration | undefined {
-  if (typeof reference.name !== 'string') {
-    return undefined;
+  if (reference.module !== undefined) {
+    return index.get(reference.module, reference.name);
   }
-  if (typeof reference.module === 'string') {
-    return declarations.get(declarationKey(reference.module, reference.name));
-  }
-  if (reference.module === undefined && reference.package === undefined) {
-    return declarations.get(declarationKey(modulePath, reference.name));
+  if (reference.package === undefined) {
+    return index.get(modulePath, reference.name);
   }
   return undefined;
 }

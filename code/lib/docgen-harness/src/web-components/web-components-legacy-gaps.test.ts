@@ -38,7 +38,11 @@ const BASELINES = (prefix: '' | 'osa-') =>
     unionDescription: `lit-union-jsdoc/${prefix}description.snapshot`,
     eventsArgTypes: `lit-events/${prefix}argtypes.snapshot`,
     inheritanceArgTypes: `lit-inheritance-mixin/${prefix}argtypes.snapshot`,
-    unflattenedArgTypes: `lit-inheritance-mixin/${prefix}unflattened-argtypes.snapshot`,
+    // The server baselines assert the unflattened manifest yields the flattened argTypes.
+    unflattenedArgTypes:
+      prefix === 'osa-'
+        ? 'lit-inheritance-mixin/osa-argtypes.snapshot'
+        : 'lit-inheritance-mixin/unflattened-argtypes.snapshot',
   }) as const;
 
 const FIXED = {
@@ -155,10 +159,6 @@ describe('OSA payload gaps (red until the server mapper closes them)', () => {
 describe('manifest shape regressions', () => {
   test('the 1.0.0 and 2.1.0 captures record the same argTypes today', () => {
     expect(baseline('v2ArgTypes')).toBe(baseline('basicArgTypes'));
-  });
-
-  test('the resolved unflattened manifest records the same argTypes as the analyzer-flattened one', () => {
-    expect(baseline('unflattenedArgTypes', 'osa-')).toBe(baseline('inheritanceArgTypes', 'osa-'));
   });
 
   test('the 2.1.0 recording differs from 1.0.0 only by the readonly control on count and cssStates', () => {

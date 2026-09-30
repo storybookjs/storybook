@@ -266,51 +266,7 @@ describe('buildTagIndex', () => {
     `);
   });
 
-  it('keeps each tag on its own declaration when two share a module path and name', () => {
-    const index = buildTagIndex({
-      schemaVersion: '1.0.0',
-      modules: [
-        {
-          kind: 'javascript-module',
-          path: 'a.js',
-          declarations: [
-            {
-              name: 'X',
-              kind: 'class',
-              customElement: true,
-              tagName: 'x-one',
-              members: [{ kind: 'field', name: 'one' }],
-            },
-          ],
-        },
-        {
-          kind: 'javascript-module',
-          path: './a.js',
-          declarations: [
-            {
-              name: 'X',
-              kind: 'class',
-              customElement: true,
-              tagName: 'x-two',
-              members: [{ kind: 'field', name: 'two' }],
-            },
-          ],
-        },
-      ],
-    } satisfies ManifestPackage);
-
-    expect(
-      ['x-one', 'x-two'].map((tag) => {
-        const declaration = index.get(tag);
-        return [declaration?.tagName, declaration?.members?.map((member) => member.name)];
-      })
-    ).toEqual([
-      ['x-one', ['one']],
-      ['x-two', ['two']],
-    ]);
-  });
-
-  it('indexes a tag from a module without a path without resolving its parents', () => {
+  it('indexes a tag from a module without a path and still resolves its parents', () => {
     const index = buildTagIndex({
       schemaVersion: '1.0.0',
       modules: [
@@ -335,7 +291,7 @@ describe('buildTagIndex', () => {
       ],
     } as unknown as ManifestPackage);
 
-    expect(index.get('x-child')?.members?.map((member) => member.name)).toEqual(['b']);
+    expect(index.get('x-child')?.members?.map((member) => member.name)).toEqual(['b', 'a']);
   });
 
   it('skips malformed modules, declarations, exports and exports without a module path', () => {

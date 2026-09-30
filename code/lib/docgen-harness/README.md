@@ -150,7 +150,7 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.
-  Optional hand-written 2.1.0, WCA and unflattened manifests live next to the capture and record under a prefix; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
+  Optional hand-written 2.1.0, WCA and unflattened manifests live next to the capture and record under a prefix, except the server argTypes of an unflattened manifest, which must equal the capture's; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
 
 ### Svelte story formats
 
@@ -312,7 +312,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
 - An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
-- The analyzer flattens superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/custom-elements.json` is a regression baseline; its hand-written `custom-elements.unflattened.json` keeps the members on the parents and records the legacy gap under the `unflattened-` prefix, which the server-side resolver closes, with same-manifest references carrying the package name the way `@lit-labs/analyzer` output does.
+- The analyzer flattens superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/custom-elements.json` is a regression baseline; its hand-written `custom-elements.unflattened.json` keeps the members on the parents and records the legacy gap under the `unflattened-` prefix; the server baselines assert that the resolver closes it by yielding the capture's argTypes exactly, including for an undocumented override. Same-manifest references carry the package name the way `@lit-labs/analyzer` output does.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 
 ## Issue-linked cases (web-components)

@@ -11,7 +11,7 @@ const DIAGNOSTIC_HEAD = /^(.+?)\(\d+,\d+\): (?:error|warning) TS\d+:/;
  * the checked package fail its check — the same contract as the previous
  * TS 6 compiler-API implementation, which filtered by file path. Indented
  * lines are elaboration of the preceding diagnostic and follow its verdict.
- * With `files`, only diagnostics in those files (or in a tsconfig) count.
+ * With `files`, only diagnostics in those files count.
  */
 export function filterToPackageDiagnostics(output: string, packageDir: string, files?: string[]) {
   const kept: string[] = [];
@@ -24,10 +24,7 @@ export function filterToPackageDiagnostics(output: string, packageDir: string, f
       sawDiagnostic = true;
       const file = resolve(packageDir, head[1]);
       const rel = relative(packageDir, file);
-      keepBlock =
-        !rel.startsWith('..') &&
-        !isAbsolute(rel) &&
-        (!files || files.includes(file) || file.endsWith('.json'));
+      keepBlock = !rel.startsWith('..') && !isAbsolute(rel) && (!files || files.includes(file));
       if (keepBlock) {
         kept.push(line);
       }

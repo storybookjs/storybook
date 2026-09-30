@@ -102,7 +102,7 @@ if (existsSync(strictTsconfigPath)) {
   const { fileNames } = getTSFilesAndConfig(strictTsconfigPath, normalizedCwd);
   checkProject(
     strictTsconfigPath,
-    fileNames.map((file) => resolve(file))
+    [...fileNames, strictTsconfigPath].map((file) => resolve(file))
   );
 }
 

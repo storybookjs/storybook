@@ -77,7 +77,7 @@ describe('filterToPackageDiagnostics', () => {
     expect(kept).toEqual([`${inside}(2,2): error TS2: inside.`]);
   });
 
-  it('keeps only diagnostics in the given files, and in tsconfigs', () => {
+  it('keeps only diagnostics in the given files', () => {
     const output = [
       'src/strict.test.ts(1,1): error TS2: in a listed file.',
       'src/renderer.ts(2,2): error TS18047: imported by a listed file.',
@@ -87,6 +87,7 @@ describe('filterToPackageDiagnostics', () => {
 
     const { kept } = filterToPackageDiagnostics(output, packageDir, [
       resolve(packageDir, 'src/strict.test.ts'),
+      resolve(packageDir, 'tsconfig.strict.json'),
     ]);
 
     expect(kept).toEqual([

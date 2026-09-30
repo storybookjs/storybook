@@ -660,7 +660,7 @@ There is no automatic source migration. Updating the compiler can expose errors 
  export const Default = meta.story({ args: { label: 'Hi' } });
 ```
 
-`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present: in `meta.input.args`, in the meta's own `play`, `beforeEach`, `afterEach` and `loaders`, and in the args of its stories. This also holds when meta args come from a `Partial` object, so only pass objects whose keys are set. An `Args` record doesn't say which args it sets, so it counts as setting none.
+`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present: in `meta.input.args`, in the meta's own `play`, `beforeEach`, `afterEach` and `loaders`, and in the args of its stories. Keys of a `Partial` object passed as meta args count as set too, so pass only objects whose keys are set. An `Args` record sets none.
 
 The second type argument of `ReactMeta`, `VueMeta`, `AngularMeta`, `WebComponentsMeta` and `Meta` from `storybook/internal/csf` is now the union of the arg names set in meta, instead of the meta input type.
 
@@ -682,13 +682,13 @@ An arg set to `fn()` in meta was typed as a `Mock` in `meta.input.args`, and in 
  });
 ```
 
-Assertions such as `expect(args.onSubmit).toHaveBeenCalled()` keep working without `mocked()`. On Storybook 10, the React `Mock` type was already lost as soon as meta args contained a literal, enum or template-literal prop, and it was never kept for args set in a story.
+Assertions such as `expect(args.onSubmit).toHaveBeenCalled()` keep working without `mocked()`.
 
 The `csf-factories` automigration wraps mock API calls on args in `mocked()` when it converts CSF 3 stories. For stories already written in CSF Next, `storybook upgrade` runs the `csf-next-mocked-args` automigration, which does the same. Run it later with `npx storybook automigrate csf-next-mocked-args`. TypeScript points at anything it misses with an error such as `Property 'mockResolvedValue' does not exist`.
 
 ### CSF Next: every key in meta args must be an arg
 
-Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component, an arg of the meta's typed `render` function, an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. This includes args passed as a variable or a spread. On Storybook 10, an unknown key was accepted as long as the same `args` object also contained a real prop, or always when the args came from a variable, and it was then ignored when working out which args a story still has to provide. A meta whose args contained only unknown keys was already an error. A meta with neither `component` nor `render` still accepts any args.
+Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component, an arg of the meta's typed `render` function, an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. This includes args passed as a variable or a spread. Previously, such keys were often accepted and silently ignored. A meta with neither `component` nor `render` still accepts any args.
 
 Declare args that are not props with `preview.type`:
 

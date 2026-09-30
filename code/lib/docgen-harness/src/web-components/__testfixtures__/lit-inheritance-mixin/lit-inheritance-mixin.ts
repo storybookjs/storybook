@@ -9,26 +9,17 @@ export class BaseElement extends LitElement {
   baseLabel = 'Base';
 }
 
-const SelectableMixin = <T extends Constructor<LitElement>>(Base: T) => {
+export function SelectableMixin<T extends Constructor<LitElement>>(Base: T) {
   class SelectableElement extends Base {
     /** Whether the mixed-in state is active. */
+    @property({ attribute: 'mixed-active', type: Boolean })
     mixedActive = false;
-
-    static properties = {
-      mixedActive: { attribute: 'mixed-active', type: Boolean },
-    };
   }
-
-  return SelectableElement as Constructor<LitElement & { mixedActive: boolean }> & T;
-};
-
-const SelectableBase = SelectableMixin(BaseElement);
+  return SelectableElement;
+}
 
 /** Element composed from a base class and a mixin. */
-export class LitInheritanceMixin extends SelectableBase {
-  declare baseLabel: string;
-  declare mixedActive: boolean;
-
+export class LitInheritanceMixin extends SelectableMixin(BaseElement) {
   /** Count declared by the final class. */
   @property({ type: Number })
   count = 1;

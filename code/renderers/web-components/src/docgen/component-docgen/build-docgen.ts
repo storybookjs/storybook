@@ -3,28 +3,29 @@ import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/type
 
 import { resolve } from 'node:path';
 
-import { mapArgTypes } from '../../docs/map-arg-types.ts';
+import { mapArgTypes } from './arg-types/map-arg-types.ts';
 import { isFailedManifest, type ManifestLoadResult } from './manifest/load-manifest.ts';
 import { resolveDeclarationForTag } from './manifest/resolve-declaration.ts';
+import type { ManifestDeclaration } from './manifest/types.ts';
 import { resolveStoryComponent } from './resolve-component/resolve-component.ts';
+import { trimmedOrUndefined } from './utils.ts';
 
 export interface WebComponentsDocgenOptions {
   manifestPaths: string[];
+  typeProperty: string;
 }
 
 export type WebComponentsDocgenPayload = DocgenPayload & {
   customElementsManifest?: {
     manifestPath: string;
-    declaration: Record<string, unknown>;
+    declaration: ManifestDeclaration;
   };
 };
 
 export interface BuildDocgenContext {
   manifests: ManifestLoadResult[];
+  typeProperty: string;
 }
-
-const trimmedOrUndefined = (text: unknown): string | undefined =>
-  typeof text === 'string' ? text.trim() || undefined : undefined;
 
 export function buildDocgenPayload(
   input: DocgenProviderInput,
@@ -80,7 +81,7 @@ export function buildDocgenPayload(
     description: trimmedOrUndefined(found.declaration.description),
     summary: trimmedOrUndefined(found.declaration.summary),
     jsDocTags: {},
-    argTypes: mapArgTypes(found.declaration),
+    argTypes: mapArgTypes(found.declaration, context.typeProperty),
     renderer: 'web-components',
     customElementsManifest: {
       manifestPath: found.manifestPath,

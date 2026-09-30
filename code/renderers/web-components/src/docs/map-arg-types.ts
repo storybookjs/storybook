@@ -49,7 +49,7 @@ function mapItem(item: CustomElementsItem, category: string): StrictInputType {
     name: item.name,
     required: false,
     description: item.description,
-    // The runtime writes the manifest's type text as the sbType name; mapping it to real SBTypes is PR B.
+    // The legacy runtime keeps manifest type text as the sbType name; server docgen maps real SBTypes.
     type: { name: typeName } as StrictInputType['type'],
     table: {
       category,

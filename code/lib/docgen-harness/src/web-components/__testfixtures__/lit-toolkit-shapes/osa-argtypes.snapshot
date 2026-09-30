@@ -1,0 +1,364 @@
+{
+  "--toolkit-color": {
+    "description": "Text color.",
+    "name": "--toolkit-color",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "<color>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--toolkit-font": {
+    "description": "Font shorthand.",
+    "name": "--toolkit-font",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--toolkit-gap": {
+    "description": "Gap with a default.",
+    "name": "--toolkit-gap",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": "4px",
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--toolkit-scale": {
+    "description": "Scale factor.",
+    "name": "--toolkit-scale",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "<number>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "base": {
+    "description": "The wrapper.",
+    "name": "base",
+    "required": false,
+    "table": {
+      "category": "css shadow parts",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "click": {
+    "description": "Native click passthrough.",
+    "name": "click",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "computed": {
+    "control": false,
+    "description": "Read-only computed value.",
+    "name": "computed",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "label": {
+    "description": "Plain label; collides with the `label` slot.",
+    "name": "label",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'Label'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "level": {
+    "description": "Inline literal union with a numeric member.",
+    "name": "level",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "1 | 2 | 3",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        1,
+        2,
+        3,
+      ],
+    },
+  },
+  "old-size": {
+    "description": "Old size field.",
+    "name": "old-size",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use `size` instead.",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "oldSize": {
+    "description": "Old size field.",
+    "name": "oldSize",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "''",
+      },
+      "jsDocTags": {
+        "deprecated": "Use `size` instead.",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "onClick": {
+    "action": {
+      "name": "click",
+    },
+    "name": "onClick",
+    "table": {
+      "disable": true,
+    },
+  },
+  "onSelect": {
+    "description": "Callback property.",
+    "name": "onSelect",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "undefined",
+      },
+      "type": {
+        "summary": "((size: Size) => void) | undefined",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
+  "onToolkitResize": {
+    "action": {
+      "name": "toolkit-resize",
+    },
+    "name": "onToolkitResize",
+    "table": {
+      "disable": true,
+    },
+  },
+  "pressed": {
+    "description": "Internal reactive state.",
+    "name": "pressed",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "size": {
+    "description": "Named alias union.",
+    "name": "size",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'medium'",
+      },
+      "type": {
+        "summary": "Size",
+      },
+    },
+    "type": {
+      "name": "enum",
+      "value": [
+        "small",
+        "medium",
+        "large",
+      ],
+    },
+  },
+  "tags": {
+    "control": "multi-select",
+    "description": "Array of literals.",
+    "name": "tags",
+    "options": [
+      "a",
+      "b",
+    ],
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "['a']",
+      },
+      "type": {
+        "summary": "Array<'a' | 'b'>",
+      },
+    },
+    "type": {
+      "name": "array",
+      "value": {
+        "name": "enum",
+        "value": [
+          "a",
+          "b",
+        ],
+      },
+    },
+  },
+  "target": {
+    "control": "object",
+    "description": "Mixed literal/object union.",
+    "name": "target",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'self'",
+      },
+      "type": {
+        "summary": "'self' | { id: string }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "'self' | { id: string }",
+    },
+  },
+  "toolkit-resize": {
+    "description": "Fired when the size changes.",
+    "name": "toolkit-resize",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "CustomEvent<{ size: Size }>",
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "version": {
+    "control": false,
+    "description": "Readonly field.",
+    "name": "version",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "'1.0.0'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "when": {
+    "control": "date",
+    "description": "Date value.",
+    "name": "when",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "new Date(0)",
+      },
+      "type": {
+        "summary": "Date",
+      },
+    },
+    "type": {
+      "name": "date",
+    },
+  },
+}

@@ -1,0 +1,345 @@
+{
+  "customElementsManifest": {
+    "declaration": {
+      "attributes": [
+        {
+          "default": "'medium'",
+          "description": "Named alias union.",
+          "fieldName": "size",
+          "name": "size",
+          "parsedType": {
+            "text": "'small' | 'medium' | 'large'",
+          },
+          "type": {
+            "text": "Size",
+          },
+        },
+        {
+          "default": "1",
+          "description": "Inline literal union with a numeric member.",
+          "fieldName": "level",
+          "name": "level",
+          "type": {
+            "text": "1 | 2 | 3",
+          },
+        },
+        {
+          "default": "['a']",
+          "description": "Array of literals.",
+          "fieldName": "tags",
+          "name": "tags",
+          "type": {
+            "text": "Array<'a' | 'b'>",
+          },
+        },
+        {
+          "default": "'self'",
+          "description": "Mixed literal/object union.",
+          "fieldName": "target",
+          "name": "target",
+          "type": {
+            "text": "'self' | { id: string }",
+          },
+        },
+        {
+          "default": "'Label'",
+          "description": "Plain label; collides with the `label` slot.",
+          "fieldName": "label",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "new Date(0)",
+          "description": "Date value.",
+          "fieldName": "when",
+          "name": "when",
+          "type": {
+            "text": "Date",
+          },
+        },
+        {
+          "default": "''",
+          "deprecated": "Use `size` instead.",
+          "description": "Old size field.",
+          "fieldName": "oldSize",
+          "name": "old-size",
+          "type": {
+            "text": "string",
+          },
+        },
+      ],
+      "cssParts": [
+        {
+          "description": "The wrapper.",
+          "name": "base",
+        },
+      ],
+      "cssProperties": [
+        {
+          "description": "Text color.",
+          "name": "--toolkit-color",
+          "type": {
+            "text": "<color>",
+          },
+        },
+        {
+          "description": "Scale factor.",
+          "name": "--toolkit-scale",
+          "type": {
+            "text": "<number>",
+          },
+        },
+        {
+          "description": "Font shorthand.",
+          "name": "--toolkit-font",
+        },
+        {
+          "default": "4px",
+          "description": "Gap with a default.",
+          "name": "--toolkit-gap",
+        },
+      ],
+      "cssStates": [
+        {
+          "description": "Set while active.",
+          "name": "active",
+        },
+      ],
+      "customElement": true,
+      "description": "Exercises the shapes the wc-toolkit helpers special-case.",
+      "events": [
+        {
+          "description": "Fired when the size changes.",
+          "name": "toolkit-resize",
+          "parsedType": {
+            "text": "CustomEvent<{ size: 'small' | 'medium' | 'large' }>",
+          },
+          "type": {
+            "text": "CustomEvent<{ size: Size }>",
+          },
+        },
+        {
+          "description": "Native click passthrough.",
+          "name": "click",
+        },
+      ],
+      "kind": "class",
+      "members": [
+        {
+          "attribute": "size",
+          "default": "'medium'",
+          "description": "Named alias union.",
+          "kind": "field",
+          "name": "size",
+          "parsedType": {
+            "text": "'small' | 'medium' | 'large'",
+          },
+          "type": {
+            "text": "Size",
+          },
+        },
+        {
+          "attribute": "level",
+          "default": "1",
+          "description": "Inline literal union with a numeric member.",
+          "kind": "field",
+          "name": "level",
+          "type": {
+            "text": "1 | 2 | 3",
+          },
+        },
+        {
+          "attribute": "tags",
+          "default": "['a']",
+          "description": "Array of literals.",
+          "kind": "field",
+          "name": "tags",
+          "type": {
+            "text": "Array<'a' | 'b'>",
+          },
+        },
+        {
+          "attribute": "target",
+          "default": "'self'",
+          "description": "Mixed literal/object union.",
+          "kind": "field",
+          "name": "target",
+          "type": {
+            "text": "'self' | { id: string }",
+          },
+        },
+        {
+          "attribute": "label",
+          "default": "'Label'",
+          "description": "Plain label; collides with the `label` slot.",
+          "kind": "field",
+          "name": "label",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "attribute": "when",
+          "default": "new Date(0)",
+          "description": "Date value.",
+          "kind": "field",
+          "name": "when",
+          "type": {
+            "text": "Date",
+          },
+        },
+        {
+          "description": "Read-only computed value.",
+          "kind": "field",
+          "name": "computed",
+          "readonly": true,
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "'1.0.0'",
+          "description": "Readonly field.",
+          "kind": "field",
+          "name": "version",
+          "readonly": true,
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "'lit-toolkit-shapes'",
+          "description": "Static member, excluded.",
+          "kind": "field",
+          "name": "tagName",
+          "readonly": true,
+          "static": true,
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "0",
+          "description": "Private field, excluded.",
+          "kind": "field",
+          "name": "internalCounter",
+          "privacy": "private",
+          "type": {
+            "text": "number",
+          },
+        },
+        {
+          "default": "'h'",
+          "description": "Protected field, excluded.",
+          "kind": "field",
+          "name": "helper",
+          "privacy": "protected",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "'s'",
+          "description": "ES private, excluded.",
+          "kind": "field",
+          "name": "#secret",
+          "privacy": "private",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "false",
+          "description": "Internal reactive state.",
+          "kind": "field",
+          "name": "pressed",
+          "type": {
+            "text": "boolean",
+          },
+        },
+        {
+          "attribute": "old-size",
+          "default": "''",
+          "deprecated": "Use `size` instead.",
+          "description": "Old size field.",
+          "kind": "field",
+          "name": "oldSize",
+          "type": {
+            "text": "string",
+          },
+        },
+        {
+          "default": "undefined",
+          "description": "Callback property.",
+          "kind": "field",
+          "name": "onSelect",
+          "type": {
+            "text": "((size: Size) => void) | undefined",
+          },
+        },
+        {
+          "description": "Public method with params.",
+          "kind": "method",
+          "name": "focusItem",
+          "parameters": [
+            {
+              "name": "index",
+              "type": {
+                "text": "number",
+              },
+            },
+            {
+              "name": "options",
+              "optional": true,
+              "type": {
+                "text": "{ smooth: boolean }",
+              },
+            },
+          ],
+          "return": {
+            "type": {
+              "text": "boolean",
+            },
+          },
+        },
+        {
+          "description": "Private method, excluded.",
+          "kind": "method",
+          "name": "tick",
+          "privacy": "private",
+          "return": {
+            "type": {
+              "text": "void",
+            },
+          },
+        },
+      ],
+      "name": "LitToolkitShapes",
+      "slots": [
+        {
+          "description": "Default content.",
+          "name": "",
+        },
+        {
+          "description": "Rich label content; collides with the `label` attribute.",
+          "name": "label",
+        },
+      ],
+      "superclass": {
+        "name": "LitElement",
+        "package": "lit",
+      },
+      "tagName": "lit-toolkit-shapes",
+    },
+    "manifestPath": "custom-elements.json",
+  },
+  "description": "Exercises the shapes the wc-toolkit helpers special-case.",
+  "id": "lit-toolkit-shapes",
+  "jsDocTags": {},
+  "name": "lit-toolkit-shapes",
+  "path": "./input.stories.ts",
+  "renderer": "web-components",
+  "summary": undefined,
+}

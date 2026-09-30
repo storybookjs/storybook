@@ -10,9 +10,16 @@ const codexSkillsDir = resolve(packageRoot, '../codex-plugin/plugins/storybook/s
 
 const codexSkills = readdirSync(claudeSkillsDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
-  .map((entry) =>
-    renderCodexSkill(readFileSync(resolve(claudeSkillsDir, entry.name, 'SKILL.md'), 'utf8'))
-  );
+  .map((entry) => {
+    const skillDir = resolve(claudeSkillsDir, entry.name);
+    const files = readdirSync(skillDir).filter((file) => !file.startsWith('.'));
+    if (files.join() !== 'SKILL.md') {
+      throw new Error(
+        `${skillDir} holds files the Codex render does not copy: ${files.join(', ')}`
+      );
+    }
+    return renderCodexSkill(readFileSync(resolve(skillDir, 'SKILL.md'), 'utf8'));
+  });
 
 rmSync(codexSkillsDir, { recursive: true, force: true });
 

@@ -119,15 +119,14 @@ describe('stories skill', () => {
   });
 });
 
-// Compared against HEAD rather than the working tree: CI runs `compile` before
-// `yarn test`, so a working-tree comparison would pass even when the render
-// was never committed.
+// Compared against HEAD rather than the working tree, so a render that was
+// compiled locally but never committed still fails.
 describe('committed Codex skills', () => {
   it.each(claudeSkills)('$name equals the render of the canonical skill', async ({ content }) => {
     const rendered = renderCodexSkill(content);
     const committed = await git(['show', `HEAD:${codexSkillsPath}/${rendered.name}/SKILL.md`]);
 
-    expect(committed.exitCode, RENDER_HINT).toBe(0);
+    expect(committed.exitCode, `${RENDER_HINT}\n${committed.stderr}`).toBe(0);
     expect(committed.stdout, RENDER_HINT).toBe(rendered.content);
   });
 

@@ -9,7 +9,7 @@ import { match } from 'minimatch';
 // Files we want to exclude from analysis should be negated project patterns, not `ignores`
 // docs: https://knip.dev/guides/configuring-project-files
 const project = [
-  'src/**/*.{js,jsx,ts,tsx}',
+  'src/**/*.{js,jsx,ts,tsx,mdx}',
   '!**/__search-files-tests__/**',
   '!**/__testfixtures__/**',
   '!**/__mocks-ng-workspace__/**',

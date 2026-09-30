@@ -47,3 +47,11 @@ Use Vitest's global stubbing instead, which is tracked and restorable:
 - Never capture-and-restore by hand (`const original = globalThis.X; ... globalThis.X = original`); `vi.stubGlobal` + `vi.unstubAllGlobals()` does this correctly, including deleting keys that did not previously exist.
 
 This applies to all ambient globals, not just `FEATURES` (e.g. `window`, `document`, `navigator`, `fetch`, `IS_REACT_ACT_ENVIRONMENT`).
+
+## Type tests (`*.test-d.ts`)
+
+Vitest type-checks `*.test-d.ts` files with the TypeScript 7 native compiler, the same one `yarn task check` uses. They are never executed at runtime.
+
+- A package with type tests sets `test.typecheck.enabled: true` in its `vitest.config.ts`; the checker itself comes from `code/vitest.shared.ts`.
+- Run them with `yarn vitest run --project <project-name> test-d`.
+- Assert with `expectTypeOf` and use `// @ts-expect-error` for inputs that must be rejected; an unused directive fails the test.

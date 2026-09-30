@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { filterToPackageDiagnostics } from './typescript.ts';
+import { filterToPackageDiagnostics } from './diagnostics.ts';
 
 const packageDir = resolve('/repo/code/renderers/react');
 

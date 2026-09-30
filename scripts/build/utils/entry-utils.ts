@@ -39,7 +39,7 @@ export type BuildEntries = {
    * API instead of the TypeScript 7 native compiler for packages where the
    * native emit misbehaves.
    */
-  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown';
   /**
    * The map of extra outputs to be added to the package.json's exports
    *

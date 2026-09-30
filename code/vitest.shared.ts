@@ -1,7 +1,10 @@
-import { resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, join, resolve } from 'node:path';
 
 import type { Plugin } from 'vite';
 import { defineConfig } from 'vitest/config';
+
+const require = createRequire(import.meta.url);
 
 /**
  * Loads .md/.html imports as text, matching the esbuild `loader` option in
@@ -26,5 +29,11 @@ export const vitestCommonConfig = defineConfig({
     globals: false,
     testTimeout: 10000,
     environment: 'node',
+    // Projects with `*.test-d.ts` files set `enabled`; the checker matches `yarn task check`.
+    typecheck: {
+      checker: join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc'),
+      // Diagnostics outside the type test files are `yarn task check`'s job.
+      ignoreSourceErrors: true,
+    },
   },
 });

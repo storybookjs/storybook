@@ -34,13 +34,30 @@ const csfNextStory = dedent`
   });
 `;
 
-const check = (options: { beforeVersion?: string; requested?: boolean }) =>
+const check = (options: {
+  beforeVersion?: string;
+  requested?: boolean;
+  storybookVersion?: string;
+  storiesPaths?: string[];
+}) =>
   csfNextMockedArgs.check({
     packageManager,
     mainConfig,
     storybookVersion: '11.0.0',
     storiesPaths: [storyPath],
     ...options,
+  });
+
+const run = (result: { files: { path: string; source: string }[] }, dryRun = false) =>
+  csfNextMockedArgs.run!({
+    packageManager,
+    result,
+    dryRun,
+    mainConfigPath: '/project/.storybook/main.ts',
+    mainConfig,
+    configDir: '/project/.storybook',
+    storybookVersion: '11.0.0',
+    storiesPaths: [storyPath],
   });
 
 beforeEach(() => {
@@ -98,27 +115,35 @@ describe('csfNextMockedArgs', () => {
     expect(await check({ requested: true })).toMatchObject({ files: [{ path: storyPath }] });
     expect(await check({ beforeVersion: '11.0.0-alpha.2' })).toBeNull();
     expect(await check({})).toBeNull();
+    expect(await check({ requested: true, storybookVersion: '10.3.0' })).toBeNull();
+  });
+
+  it('only lists the stories it changes, and finds nothing left to do after running', async () => {
+    const otherPath = '/project/src/Header.stories.ts';
+    const docsPath = '/project/src/Intro.mdx';
+    vol.fromJSON({
+      [storyPath]: csfNextStory,
+      [otherPath]: csfNextStory.replace('args.onClick.mockClear();', ''),
+      [docsPath]: '# Mocking\n\nUse `args.onClick.mockClear()` in a play function.',
+    });
+    const storiesPaths = [storyPath, otherPath, docsPath];
+
+    const result = (await check({ requested: true, storiesPaths }))!;
+    expect(result.files.map((file) => file.path)).toEqual([storyPath]);
+
+    await run(result);
+    expect(await check({ requested: true, storiesPaths })).toBeNull();
   });
 
   it('writes the transformed stories unless it is a dry run', async () => {
     vol.fromJSON({ [storyPath]: csfNextStory });
     const result = (await check({ requested: true }))!;
-    const run = (dryRun: boolean) =>
-      csfNextMockedArgs.run!({
-        packageManager,
-        result,
-        dryRun,
-        mainConfigPath: '/project/.storybook/main.ts',
-        mainConfig,
-        configDir: '/project/.storybook',
-        storybookVersion: '11.0.0',
-        storiesPaths: [storyPath],
-      });
 
-    await run(true);
+    await run(result, true);
     expect(vol.readFileSync(storyPath, 'utf8')).toBe(csfNextStory);
 
-    await run(false);
+    await run(result);
     expect(vol.readFileSync(storyPath, 'utf8')).toContain('mocked(args.onClick).mockClear();');
+    expect(formatFileContent).toHaveBeenCalledWith(storyPath, expect.any(String));
   });
 });

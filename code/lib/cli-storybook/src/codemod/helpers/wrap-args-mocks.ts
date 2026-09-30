@@ -130,12 +130,13 @@ export function wrapArgsMocks(ast: t.File) {
 
   traverse(ast, {
     Function(path) {
-      const [first] = path.node.params;
-      if (first && isRender(path)) {
-        addArgs(path, first);
-      } else {
-        addContext(path, first);
-      }
+      path.node.params.forEach((param, index) => {
+        if (index === 0 && isRender(path)) {
+          addArgs(path, param);
+        } else {
+          addContext(path, param);
+        }
+      });
     },
     VariableDeclarator(path) {
       const { id, init } = path.node;

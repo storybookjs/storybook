@@ -354,14 +354,8 @@ export function findDevServerKillCommands(commands: string[]): string[] {
   );
 }
 
-// URLs the Codex in-app browser navigated to, from the codex raw transcript:
-// each successful node_repl `js` tool call is scanned for `goto('<url>')`
-// string literals in its code argument. This mirrors how plugin workflow calls
-// are parsed out of `storybook tools` shell commands. When a call passes a
-// variable (`for (const url of [...]) await tab.goto(url)`), the full URL
-// literals in that code count instead. A dynamically composed URL
-// (`goto(baseUrl + path)`) yields at most its literal base, so it never counts
-// as a navigation to the page it composes.
+// URLs the Codex in-app browser navigated to: `goto('<url>')` literals in
+// successful node_repl `js` calls.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
   return readCodexCompletedItems(rawTranscript).flatMap(getCodexItemNavigations);
 }
@@ -375,6 +369,8 @@ function readCodexCompletedItems(rawTranscript: string): Record<string, unknown>
   });
 }
 
+// A call that passes a variable to `goto` (a loop over URLs) counts the full
+// URL literals in its code instead; a composed URL yields only its literal base.
 function getCodexItemNavigations(item: Record<string, unknown>): string[] {
   if (item.server !== 'node_repl' || item.tool !== 'js' || !codexItemSucceeded(item)) {
     return [];
@@ -1040,13 +1036,12 @@ const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
 
 // Not tied to the link in the final response, so `localhost` versus
 // `127.0.0.1` or a slash difference cannot fail the cell. Only navigations
-// after the last successful review-create count: the step under test is
-// bringing the user to the review just published, so an earlier visit (for
-// example to check that Storybook runs) does not qualify.
+// after the first successful review-create count: an earlier visit (for
+// example to check that Storybook runs) does not qualify, while a re-publish
+// updates the already open review page in place.
 export function expectReviewOpenedInBrowser(): void {
   expectOpenedInBrowserAfter({
     workflowName: 'review-create',
-    after: 'last',
     target: 'the review page',
     isTargetUrl: (url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url),
   });
@@ -1058,7 +1053,6 @@ export function expectReviewOpenedInBrowser(): void {
 export function expectPreviewOpenedInBrowser(): void {
   expectOpenedInBrowserAfter({
     workflowName: 'stories-preview',
-    after: 'first',
     target: 'a story preview',
     isTargetUrl: isLocalStoryPreviewUrl,
   });
@@ -1066,14 +1060,12 @@ export function expectPreviewOpenedInBrowser(): void {
 
 function expectOpenedInBrowserAfter(options: {
   workflowName: string;
-  after: 'first' | 'last';
   target: string;
   isTargetUrl: (url: string) => boolean;
 }): void {
   const { workflowName, target, isTargetUrl } = options;
   const steps = getBrowserStepsAroundWorkflowCalls(workflowName);
-  const workflowCall =
-    options.after === 'first' ? steps.indexOf(WORKFLOW_CALLED) : steps.lastIndexOf(WORKFLOW_CALLED);
+  const workflowCall = steps.indexOf(WORKFLOW_CALLED);
   if (workflowCall === -1) {
     expect.fail(
       `Expected a successful ${workflowName} call before the in-app browser check, but the transcript holds none.`

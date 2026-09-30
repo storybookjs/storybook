@@ -771,7 +771,7 @@ describe('expectReviewOpenedInBrowser', () => {
     expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
   });
 
-  test('counts only Codex navigations after its last successful review-create', () => {
+  test('counts Codex navigations after its first successful review-create', () => {
     mockSandbox({ agent: 'codex', transcript: [codexCliReviewCreateLine(0), codexOpenReview] });
     expect(() => expectReviewOpenedInBrowser()).not.toThrow();
 
@@ -782,6 +782,16 @@ describe('expectReviewOpenedInBrowser', () => {
       agent: 'codex',
       transcript: [
         codexMcpReviewCreateLine('completed'),
+        codexOpenReview,
+        codexMcpReviewCreateLine('completed'),
+      ],
+    });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({
+      agent: 'codex',
+      transcript: [
+        codexMcpReviewCreateLine('failed'),
         codexOpenReview,
         codexMcpReviewCreateLine('completed'),
       ],

@@ -894,9 +894,7 @@ export async function writeClaudeInAppBrowserMock(sandbox: Sandbox): Promise<voi
   let existingClaudeMd = '';
   try {
     existingClaudeMd = `${(await sandbox.readFile(CLAUDE_BROWSER_PROMPT_SANDBOX_PATH)).trimEnd()}\n\n`;
-  } catch {
-    // No CLAUDE.md yet.
-  }
+  } catch {}
   await sandbox.writeFiles({
     [CLAUDE_BROWSER_MOCK_SANDBOX_PATH]: await fs.readFile(CLAUDE_BROWSER_MOCK_SOURCE_PATH, 'utf8'),
     [CLAUDE_BROWSER_PROMPT_SANDBOX_PATH]:

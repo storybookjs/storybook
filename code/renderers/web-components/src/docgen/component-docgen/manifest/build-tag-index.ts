@@ -1,24 +1,19 @@
 import type { ManifestDeclaration, ManifestPackage } from './types.ts';
-import {
-  createDeclarationLookup,
-  createInheritanceResolver,
-  isManifestClassLike,
-} from './resolve-inheritance.ts';
+import { declarationKey, indexDeclarations } from './declaration-index.ts';
+import { createInheritanceResolver } from './resolve-inheritance.ts';
 import { isRecord } from '../utils.ts';
 
 export type TagIndex = ReadonlyMap<string, ManifestDeclaration>;
 
 export function buildTagIndex(manifest: ManifestPackage): TagIndex {
   const tags = new Map<string, ManifestDeclaration>();
-  const lookup = createDeclarationLookup(manifest);
-  const resolveInheritance = createInheritanceResolver(manifest);
+  const declarations = indexDeclarations(manifest);
+  const flatten = createInheritanceResolver(declarations);
 
   for (const module of manifest.modules) {
     if (!isRecord(module) || !Array.isArray(module.declarations)) {
       continue;
     }
-
-    const modulePath = typeof module.path === 'string' ? module.path : undefined;
 
     for (const declaration of module.declarations) {
       if (
@@ -26,7 +21,10 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
         declaration.tagName &&
         !tags.has(declaration.tagName)
       ) {
-        tags.set(declaration.tagName, resolveInheritance(declaration, modulePath));
+        tags.set(
+          declaration.tagName,
+          typeof module.path === 'string' ? flatten(declaration, module.path) : declaration
+        );
       }
     }
   }
@@ -58,12 +56,9 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
         continue;
       }
 
-      const resolvedDeclaration = lookup(modulePath, definition.declaration.name);
-      if (resolvedDeclaration && isManifestDeclaration(resolvedDeclaration.declaration)) {
-        tags.set(
-          definition.name,
-          resolveInheritance(resolvedDeclaration.declaration, resolvedDeclaration.modulePath)
-        );
+      const resolved = declarations.get(declarationKey(modulePath, definition.declaration.name));
+      if (resolved && isManifestDeclaration(resolved.declaration)) {
+        tags.set(definition.name, flatten(resolved.declaration, resolved.modulePath));
       }
     }
   }
@@ -73,8 +68,8 @@ export function buildTagIndex(manifest: ManifestPackage): TagIndex {
 
 function isManifestDeclaration(candidate: unknown): candidate is ManifestDeclaration {
   return (
-    isManifestClassLike(candidate) &&
-    candidate.kind === 'class' &&
+    isRecord(candidate) &&
+    (candidate.kind === 'class' || candidate.kind === 'mixin') &&
     'customElement' in candidate &&
     candidate.customElement === true
   );

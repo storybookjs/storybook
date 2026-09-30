@@ -13,7 +13,11 @@ export type {
   Reference as ManifestReference,
   Slot as ManifestSlot,
 } from 'custom-elements-manifest';
-import type { CustomElementDeclaration, Declaration } from 'custom-elements-manifest';
+import type {
+  CustomElementDeclaration,
+  CustomElementMixinDeclaration,
+  Declaration,
+} from 'custom-elements-manifest';
 
-export type ManifestDeclaration = CustomElementDeclaration;
+export type ManifestDeclaration = CustomElementDeclaration | CustomElementMixinDeclaration;
 export type ManifestClassLikeDeclaration = Extract<Declaration, { kind: 'class' | 'mixin' }>;

@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { createInheritanceResolver, isManifestClassLike } from './resolve-inheritance.ts';
+import { indexDeclarations } from './declaration-index.ts';
+import { createInheritanceResolver } from './resolve-inheritance.ts';
 import type {
   ManifestAnyDeclaration,
-  ManifestClassLikeDeclaration,
   ManifestDeclaration,
   ManifestPackage,
   ManifestReference,
@@ -24,7 +24,7 @@ type ResolveCase = {
   manifest?: ManifestPackage;
   declarations?: ManifestAnyDeclaration[];
   declarationName: string;
-  modulePath: string | undefined;
+  modulePath: string;
   expected: NamedOutput;
 };
 
@@ -333,22 +333,6 @@ describe('resolveInheritance', () => {
       expected: { members: ['child', 'base<-Base'] },
     },
     {
-      name: 'skips a reference without module when the module path is unknown',
-      declarations: [
-        { name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'base' }] },
-        {
-          name: 'Child',
-          kind: 'class',
-          customElement: true,
-          superclass: { name: 'Base' },
-          members: [{ kind: 'field', name: 'child' }],
-        },
-      ],
-      declarationName: 'Child',
-      modulePath: undefined,
-      expected: { members: ['child'] },
-    },
-    {
       name: 'stops on a cycle',
       declarations: [
         {
@@ -402,8 +386,11 @@ describe('resolveInheritance', () => {
     },
   ] satisfies ResolveCase[])('$name', (row) => {
     const manifest = manifestFor(row);
-    const declaration = findDeclaration(manifest, row.declarationName) as ManifestDeclaration;
-    const result = createInheritanceResolver(manifest)(declaration, row.modulePath);
+    const declaration = findDeclaration(manifest, row.declarationName);
+    const result = createInheritanceResolver(indexDeclarations(manifest))(
+      declaration,
+      row.modulePath
+    );
 
     expect(outputNames(result)).toEqual(row.expected);
   });
@@ -423,8 +410,8 @@ describe('resolveInheritance', () => {
       modulePath: 'x.js',
       expected: {},
     });
-    const declaration = findDeclaration(manifest, 'Plain') as ManifestDeclaration;
-    const result = createInheritanceResolver(manifest)(declaration, 'x.js');
+    const declaration = findDeclaration(manifest, 'Plain');
+    const result = createInheritanceResolver(indexDeclarations(manifest))(declaration, 'x.js');
 
     expect(result).toEqual(declaration);
     expect('members' in result).toBe(false);
@@ -451,24 +438,27 @@ describe('resolveInheritance', () => {
       modulePath: 'x.js',
       expected: {},
     });
-    const declaration = findDeclaration(manifest, 'Child') as ManifestDeclaration;
-    const result = createInheritanceResolver(manifest)(declaration, 'x.js');
+    const declaration = findDeclaration(manifest, 'Child');
+    const result = createInheritanceResolver(indexDeclarations(manifest))(declaration, 'x.js');
 
     expect(names(result.members ?? [])).toEqual(['base<-Base']);
   });
 
   it('does not mutate the input manifest', () => {
     const clone = structuredClone(MATERIAL_LIKE);
-    const declaration = findDeclaration(MATERIAL_LIKE, 'MdFilledButton') as ManifestDeclaration;
+    const declaration = findDeclaration(MATERIAL_LIKE, 'MdFilledButton');
 
-    createInheritanceResolver(MATERIAL_LIKE)(declaration, 'button/filled-button.js');
+    createInheritanceResolver(indexDeclarations(MATERIAL_LIKE))(
+      declaration,
+      'button/filled-button.js'
+    );
 
     expect(MATERIAL_LIKE).toEqual(clone);
   });
 
   it('returns the same resolved object when resolving a cached declaration twice', () => {
-    const resolver = createInheritanceResolver(MATERIAL_LIKE);
-    const declaration = findDeclaration(MATERIAL_LIKE, 'MdFilledButton') as ManifestDeclaration;
+    const resolver = createInheritanceResolver(indexDeclarations(MATERIAL_LIKE));
+    const declaration = findDeclaration(MATERIAL_LIKE, 'MdFilledButton');
 
     const first = resolver(declaration, 'button/filled-button.js');
     const second = resolver(declaration, 'button/filled-button.js');
@@ -492,11 +482,11 @@ function manifestFor(row: ResolveCase): ManifestPackage {
   );
 }
 
-function findDeclaration(manifest: ManifestPackage, name: string): ManifestClassLikeDeclaration {
+function findDeclaration(manifest: ManifestPackage, name: string): ManifestDeclaration {
   for (const module of manifest.modules) {
     const declaration = module.declarations?.find(
-      (candidate): candidate is ManifestClassLikeDeclaration =>
-        isManifestClassLike(candidate) && candidate.name === name
+      (candidate): candidate is ManifestDeclaration =>
+        'customElement' in candidate && candidate.customElement === true && candidate.name === name
     );
     if (declaration) {
       return declaration;

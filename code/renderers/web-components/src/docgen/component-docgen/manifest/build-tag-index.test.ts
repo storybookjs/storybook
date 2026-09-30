@@ -196,6 +196,28 @@ describe('buildTagIndex', () => {
       expectedDeclarationName: undefined,
     },
     {
+      name: 'indexes a custom element mixin through its definition export',
+      manifest: {
+        schemaVersion: '1.0.0',
+        modules: [
+          {
+            kind: 'javascript-module',
+            path: 'mixin.js',
+            declarations: [{ name: 'MixinElement', kind: 'mixin', customElement: true }],
+            exports: [
+              {
+                kind: 'custom-element-definition',
+                name: 'x-mixin',
+                declaration: { name: 'MixinElement' },
+              },
+            ],
+          },
+        ],
+      } satisfies ManifestPackage,
+      tag: 'x-mixin',
+      expectedDeclarationName: 'MixinElement',
+    },
+    {
       name: 'returns undefined when no declaration resolves the tag',
       manifest: cem,
       tag: 'missing-tag',
@@ -244,6 +266,78 @@ describe('buildTagIndex', () => {
     `);
   });
 
+  it('keeps each tag on its own declaration when two share a module path and name', () => {
+    const index = buildTagIndex({
+      schemaVersion: '1.0.0',
+      modules: [
+        {
+          kind: 'javascript-module',
+          path: 'a.js',
+          declarations: [
+            {
+              name: 'X',
+              kind: 'class',
+              customElement: true,
+              tagName: 'x-one',
+              members: [{ kind: 'field', name: 'one' }],
+            },
+          ],
+        },
+        {
+          kind: 'javascript-module',
+          path: './a.js',
+          declarations: [
+            {
+              name: 'X',
+              kind: 'class',
+              customElement: true,
+              tagName: 'x-two',
+              members: [{ kind: 'field', name: 'two' }],
+            },
+          ],
+        },
+      ],
+    } satisfies ManifestPackage);
+
+    expect(
+      ['x-one', 'x-two'].map((tag) => {
+        const declaration = index.get(tag);
+        return [declaration?.tagName, declaration?.members?.map((member) => member.name)];
+      })
+    ).toEqual([
+      ['x-one', ['one']],
+      ['x-two', ['two']],
+    ]);
+  });
+
+  it('indexes a tag from a module without a path without resolving its parents', () => {
+    const index = buildTagIndex({
+      schemaVersion: '1.0.0',
+      modules: [
+        {
+          kind: 'javascript-module',
+          path: 'base.js',
+          declarations: [{ name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'a' }] }],
+        },
+        {
+          kind: 'javascript-module',
+          declarations: [
+            {
+              name: 'Child',
+              kind: 'class',
+              customElement: true,
+              tagName: 'x-child',
+              superclass: { name: 'Base', module: 'base.js' },
+              members: [{ kind: 'field', name: 'b' }],
+            },
+          ],
+        },
+      ],
+    } as unknown as ManifestPackage);
+
+    expect(index.get('x-child')?.members?.map((member) => member.name)).toEqual(['b']);
+  });
+
   it('skips malformed modules, declarations, exports and exports without a module path', () => {
     const index = buildTagIndex({
       schemaVersion: '1.0.0',
@@ -262,24 +356,6 @@ describe('buildTagIndex', () => {
               kind: 'custom-element-definition',
               name: 'x-broken',
               declaration: null,
-            },
-          ],
-        },
-        {
-          kind: 'javascript-module',
-          path: 'mixin-export.js',
-          declarations: [
-            {
-              name: 'MixinElement',
-              kind: 'mixin',
-              customElement: true,
-            },
-          ],
-          exports: [
-            {
-              kind: 'custom-element-definition',
-              name: 'x-mixin',
-              declaration: { name: 'MixinElement' },
             },
           ],
         },
@@ -316,6 +392,5 @@ describe('buildTagIndex', () => {
     expect([...index.keys()]).toEqual(['x-good']);
     expect(index.get('x-good')?.name).toBe('GoodElement');
     expect(index.get('x-missing-path')).toBeUndefined();
-    expect(index.get('x-mixin')).toBeUndefined();
   });
 });

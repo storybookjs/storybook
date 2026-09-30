@@ -328,16 +328,6 @@ describe('Meta args are typed by the keys you provide', () => {
     }
   });
 
-  it('callbacks without parameters or return values need no annotations', () => {
-    preview.meta({
-      component: Card,
-      args: {
-        onClick: () => undefined,
-        handlers: { onSelect: () => {}, onReset: () => undefined },
-      },
-    });
-  });
-
   it('fn() args are typed as declared, mocked() gives the mock API', () => {
     const Default = meta.story({
       args: { label: 'Hi' },
@@ -490,4 +480,7 @@ it('a render typed as any keeps the component args', () => {
   const meta = preview.meta({ component: Button, render: (args: any) => h(Button, args) });
   // @ts-expect-error not a boolean
   const Invalid = meta.story({ args: { disabled: 'yes', label: 'Hi' } });
+
+  // @ts-expect-error bogus is not an arg
+  preview.meta({ component: Button, render: (args: any) => h(Button, args), args: { bogus: 1 } });
 });

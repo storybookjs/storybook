@@ -3,13 +3,11 @@ import type { ComponentType } from 'react';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
   AddonTypes,
-  InferMetaTypes,
   InferTypes,
   Meta,
-  MetaArgs,
-  RequireMetaArgs,
+  MetaInput,
+  MetaTypes,
   StoryArgs,
-  WithMetaArgs,
   Preview,
   Story,
 } from 'storybook/internal/csf';
@@ -17,7 +15,6 @@ import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
-  ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
   StoryAnnotations,
@@ -29,8 +26,6 @@ import * as reactAnnotations from './entry-preview.tsx';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
 import * as reactDocsAnnotations from './entry-preview-docs.ts';
 import type { ReactTypes } from './types.ts';
-
-type InferReactTypes<T, TArgs, Decorators> = InferMetaTypes<ReactTypes & T, TArgs, Decorators>;
 
 /**
  * Creates a React-specific preview configuration with CSF factories support.
@@ -121,13 +116,8 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;
       component?: ComponentType<TArgs>;
-      decorators?: Decorators | Decorators[];
-      args?: MetaArgs<InferReactTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
-    } & Omit<
-      ComponentAnnotations<ReactTypes & T, NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>>,
-      'decorators' | 'component' | 'args' | 'render'
-    >
-  ): ReactMeta<RequireMetaArgs<InferReactTypes<T, TArgs, Decorators>, TMetaArgKeys>, TMetaArgKeys>;
+    } & MetaInput<ReactTypes & T, TArgs, Decorators, TMetaArgKeys>
+  ): ReactMeta<MetaTypes<ReactTypes & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**

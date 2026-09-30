@@ -1,12 +1,10 @@
 import type {
   AddonTypes,
-  InferMetaTypes,
   InferTypes,
   Meta,
-  MetaArgs,
-  RequireMetaArgs,
+  MetaInput,
+  MetaTypes,
   StoryArgs,
-  WithMetaArgs,
   WithRenderArgs,
   Preview,
   PreviewAddon,
@@ -16,7 +14,6 @@ import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
-  ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
   StoryAnnotations,
@@ -57,12 +54,6 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 
   return preview;
 }
-
-type InferWebComponentsTypes<T, TArgs, Decorators> = InferMetaTypes<
-  WebComponentsTypes & T,
-  TArgs,
-  Decorators
->;
 
 /**
  * Infers args from a web component's HTMLElement type, allowing both camelCase properties and
@@ -121,34 +112,17 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
         WebComponentsTypes & T,
         InferArgsFromComponent<C> & TRenderArgs & T['args']
       >;
-      args?: MetaArgs<
-        InferWebComponentsTypes<
-          T,
-          WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
-          Decorators
-        >['args'],
-        TMetaArgKeys
-      >;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<
-        WebComponentsTypes & T,
-        NoInfer<
-          WithMetaArgs<
-            WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs> & T['args'],
-            TMetaArgKeys
-          >
-        >
-      >,
-      'decorators' | 'component' | 'args' | 'render'
+    } & MetaInput<
+      WebComponentsTypes & T,
+      WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
     >
   ): WebComponentsMeta<
-    RequireMetaArgs<
-      InferWebComponentsTypes<
-        T,
-        WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
-        Decorators
-      >,
+    MetaTypes<
+      WebComponentsTypes & T,
+      WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
+      Decorators,
       TMetaArgKeys
     >,
     TMetaArgKeys
@@ -164,17 +138,9 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
-      args?: MetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<
-        WebComponentsTypes & T,
-        NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>
-      >,
-      'decorators' | 'component' | 'args' | 'render'
-    >
+    } & MetaInput<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): WebComponentsMeta<
-    RequireMetaArgs<InferWebComponentsTypes<T, TArgs, Decorators>, TMetaArgKeys>,
+    MetaTypes<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>,
     TMetaArgKeys
   >;
 }

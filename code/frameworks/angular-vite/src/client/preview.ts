@@ -1,12 +1,10 @@
 import type {
   AddonTypes,
-  InferMetaTypes,
   InferTypes,
   Meta,
-  MetaArgs,
-  RequireMetaArgs,
+  MetaInput,
+  MetaTypes,
   StoryArgs,
-  WithMetaArgs,
   WithRenderArgs,
   Preview,
   PreviewAddon,
@@ -16,7 +14,6 @@ import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
-  ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
   StoryAnnotations,
@@ -63,12 +60,6 @@ type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<
   TransformComponentType<InstanceType<C>>
 >;
 
-type InferAngularTypes<T, TArgs, Decorators> = InferMetaTypes<
-  AngularRenderer & T,
-  TArgs,
-  Decorators
->;
-
 /**
  * Angular-specific Preview interface that provides type-safe CSF factory methods.
  *
@@ -107,27 +98,17 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
     meta: {
       component: C;
       render?: ArgsStoryFn<AngularRenderer & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
-      args?: MetaArgs<
-        InferAngularTypes<
-          T,
-          WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
-          Decorators
-        >['args'],
-        TMetaArgKeys
-      >;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<
-        AngularRenderer & T,
-        NoInfer<
-          WithMetaArgs<WithRenderArgs<InferComponentArgs<C>, TRenderArgs> & T['args'], TMetaArgKeys>
-        >
-      >,
-      'decorators' | 'component' | 'args' | 'render'
+    } & MetaInput<
+      AngularRenderer & T,
+      WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
     >
   ): AngularMeta<
-    RequireMetaArgs<
-      InferAngularTypes<T, WithRenderArgs<InferComponentArgs<C>, TRenderArgs>, Decorators>,
+    MetaTypes<
+      AngularRenderer & T,
+      WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
+      Decorators,
       TMetaArgKeys
     >,
     TMetaArgKeys
@@ -143,19 +124,8 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   >(
     meta: {
       render?: ArgsStoryFn<AngularRenderer & T, TArgs & T['args']>;
-      args?: MetaArgs<InferAngularTypes<T, TArgs, Decorators>['args'], TMetaArgKeys>;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<
-        AngularRenderer & T,
-        NoInfer<WithMetaArgs<TArgs & T['args'], TMetaArgKeys>>
-      >,
-      'decorators' | 'args' | 'render' | 'component'
-    >
-  ): AngularMeta<
-    RequireMetaArgs<InferAngularTypes<T, TArgs, Decorators>, TMetaArgKeys>,
-    TMetaArgKeys
-  >;
+    } & MetaInput<AngularRenderer & T, TArgs, Decorators, TMetaArgKeys>
+  ): AngularMeta<MetaTypes<AngularRenderer & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**

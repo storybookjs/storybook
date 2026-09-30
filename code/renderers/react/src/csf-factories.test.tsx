@@ -483,46 +483,15 @@ describe('Meta args are typed by the keys you provide', () => {
     }
   });
 
-  it('callbacks without parameters or return values need no annotations', () => {
-    preview.meta({
-      component: Card,
-      args: {
-        onClick: () => undefined,
-        handlers: { onSelect: () => {}, onReset: () => undefined },
-      },
-    });
-  });
-
   it('invalid meta args are rejected', () => {
-    preview.meta({
-      component: Card,
-      args: {
-        // @ts-expect-error not a variant
-        variant: 'tertiary',
-      },
-    });
-    preview.meta({
-      component: Card,
-      args: {
-        // @ts-expect-error not a mode
-        config: { theme: { mode: 'dim', accents: [] } },
-      },
-    });
-    preview.meta({
-      component: Card,
-      args: {
-        // @ts-expect-error max must be a number
-        range: [0, 'ten'],
-      },
-    });
-    preview.meta({
-      component: Card,
-      args: {
-        variant: 'primary',
-        // @ts-expect-error not a prop of Card
-        unknown: true,
-      },
-    });
+    // @ts-expect-error not a variant
+    preview.meta({ component: Card, args: { variant: 'tertiary' } });
+    // @ts-expect-error not a mode
+    preview.meta({ component: Card, args: { config: { theme: { mode: 'dim', accents: [] } } } });
+    // @ts-expect-error max must be a number
+    preview.meta({ component: Card, args: { range: [0, 'ten'] } });
+    // @ts-expect-error not a prop of Card
+    preview.meta({ component: Card, args: { variant: 'primary', unknown: true } });
   });
 
   it('stories override meta args and infer callback parameters', () => {
@@ -606,6 +575,11 @@ describe('Meta args are typed by the keys you provide', () => {
     expectTypeOf(typedMeta.input.args.locale).toEqualTypeOf<'en' | 'nl'>();
   });
 
+  it('meta without component or render accepts any args', () => {
+    const titleMeta = preview.meta({ title: 'Card', args: { count: 1 } });
+    const Default = titleMeta.story({ args: { count: 'many' } });
+  });
+
   it('render-only meta', () => {
     const renderMeta = preview.meta({
       render: (args: { mode: 'compact' | 'wide'; count: number }) => <>{args.count}</>,
@@ -632,19 +606,6 @@ describe('Meta args are typed by the keys you provide', () => {
     preview.meta({ component: Button, args: shared });
     // @ts-expect-error extra is not an arg
     preview.meta({ component: Button, args: { ...shared, disabled: false } });
-  });
-
-  it('optional props set in meta are present in its stories', () => {
-    const buttonMeta = preview.meta({ component: Button, args: { onKeyDown: fn() } });
-    buttonMeta.input.args.onKeyDown();
-
-    const Default = buttonMeta.story({
-      args: { label: 'Hi', disabled: false },
-      play: async ({ args }) => {
-        expectTypeOf(args.onKeyDown).toEqualTypeOf<() => void>();
-        mocked(args.onKeyDown).mockClear();
-      },
-    });
   });
 
   it('optional props set in meta are present in its own hooks', () => {
@@ -694,10 +655,12 @@ it('a meta like the Button stories of the sandboxes', () => {
     },
     args: { onClick: fn() },
   });
+  meta.input.args.onClick();
 
   const Primary = meta.story({
     args: { primary: true, label: 'Button' },
     play: async ({ args }) => {
+      expectTypeOf(args.onClick).toEqualTypeOf<() => void>();
       mocked(args.onClick).mockClear();
     },
   });

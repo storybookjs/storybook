@@ -2,11 +2,9 @@ import type { ComponentType } from 'react';
 
 import type {
   AddonTypes,
-  InferMetaTypes,
   InferTypes,
-  MetaArgs,
-  RequireMetaArgs,
-  WithMetaArgs,
+  MetaInput,
+  MetaTypes,
   PreviewAddon,
 } from 'storybook/internal/csf';
 import type {
@@ -39,8 +37,6 @@ export type {
   StoryRouteOptions,
   RouterParameters,
 } from './routing/types.ts';
-
-type InferCombinedTypes<T, TArgs, Decorators> = InferMetaTypes<ReactTypes & T, TArgs, Decorators>;
 
 export type Preview<TRoute extends AnyRoute | undefined = undefined> = ProjectAnnotations<
   ReactTypes & TanStackTypes<TRoute>
@@ -112,26 +108,17 @@ export interface TanStackPreview<
         TArgs & (TanStackTypes<TMetaRoute, TPath> & T)['args']
       >;
       component?: ComponentType<TArgs>;
-      decorators?: Decorators | Decorators[];
-      args?: MetaArgs<
-        InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>['args'],
-        TMetaArgKeys
-      >;
       parameters?: TanStackParameters<TMetaRoute, TPath> &
         Parameters &
         (ReactTypes & T)['parameters'];
-    } & Omit<
-      ComponentAnnotations<
-        ReactTypes & TanStackTypes<TMetaRoute, TPath> & T,
-        NoInfer<WithMetaArgs<TArgs & (TanStackTypes<TMetaRoute, TPath> & T)['args'], TMetaArgKeys>>
-      >,
-      'decorators' | 'component' | 'args' | 'render' | 'parameters'
+    } & MetaInput<
+      ReactTypes & TanStackTypes<TMetaRoute, TPath> & T,
+      TArgs,
+      Decorators,
+      TMetaArgKeys
     >
   ): ReactMeta<
-    RequireMetaArgs<
-      InferCombinedTypes<TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators>,
-      TMetaArgKeys
-    >,
+    MetaTypes<ReactTypes & TanStackTypes<TMetaRoute, TPath> & T, TArgs, Decorators, TMetaArgKeys>,
     TMetaArgKeys
   >;
 
@@ -149,24 +136,10 @@ export interface TanStackPreview<
         TArgs & (TanStackTypes<TRoute, TPath> & T)['args']
       >;
       component?: ComponentType<TArgs>;
-      decorators?: Decorators | Decorators[];
-      args?: MetaArgs<
-        InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>['args'],
-        TMetaArgKeys
-      >;
       parameters?: TanStackParameters<TRoute, TPath> & Parameters & (ReactTypes & T)['parameters'];
-    } & Omit<
-      ComponentAnnotations<
-        ReactTypes & TanStackTypes<TRoute, TPath> & T,
-        NoInfer<WithMetaArgs<TArgs & (TanStackTypes<TRoute, TPath> & T)['args'], TMetaArgKeys>>
-      >,
-      'decorators' | 'component' | 'args' | 'render' | 'parameters'
-    >
+    } & MetaInput<ReactTypes & TanStackTypes<TRoute, TPath> & T, TArgs, Decorators, TMetaArgKeys>
   ): ReactMeta<
-    RequireMetaArgs<
-      InferCombinedTypes<TanStackTypes<TRoute, TPath> & T, TArgs, Decorators>,
-      TMetaArgKeys
-    >,
+    MetaTypes<ReactTypes & TanStackTypes<TRoute, TPath> & T, TArgs, Decorators, TMetaArgKeys>,
     TMetaArgKeys
   >;
 }

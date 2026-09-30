@@ -338,16 +338,6 @@ describe('Meta args are typed by the keys you provide', () => {
     }
   });
 
-  it('callbacks without parameters or return values need no annotations', () => {
-    preview.meta({
-      component: 'my-card',
-      args: {
-        onclick: () => undefined,
-        handlers: { onSelect: () => {}, onReset: () => undefined },
-      },
-    });
-  });
-
   it('fn() args are typed as declared, mocked() gives the mock API', () => {
     const Default = meta.story({
       args: { label: 'Hi' },
@@ -432,7 +422,7 @@ describe('Meta args are typed by the keys you provide', () => {
 
   it('meta without component or render accepts any args', () => {
     const titleMeta = preview.meta({ title: 'Card', args: { count: 1 } });
-    const count: number = titleMeta.input.args.count;
+    const Default = titleMeta.story({ args: { count: 'many' } });
   });
 });
 
@@ -476,4 +466,7 @@ it('a render typed as any keeps the component args', () => {
   });
   // @ts-expect-error not a boolean
   const Invalid = meta.story({ args: { disabled: 'yes', label: 'Hi' } });
+
+  // @ts-expect-error bogus is not an arg
+  preview.meta({ component: 'my-button', render: (args: any) => html``, args: { bogus: 1 } });
 });

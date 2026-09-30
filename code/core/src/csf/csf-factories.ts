@@ -91,30 +91,57 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
-/**
- * Types the `args` of `preview.meta()` by the keys provided. Each value is checked against `TArgs`
- * but never used to infer it, so literals don't widen and callbacks get their parameter types.
- * The other arg names are listed so editors can suggest them.
- */
-export type MetaArgs<TArgs, TKeys extends PropertyKey> = string extends TKeys
+// Types the `args` of `preview.meta()` by the keys provided. Each value is checked against `TArgs`
+// but never used to infer it, so literals don't widen and callbacks get their parameter types. The
+// other arg names are listed so editors can suggest them.
+type MetaArgs<TArgs, TKeys extends PropertyKey> = string extends TKeys
   ? Partial<NoInfer<TArgs>>
   : {
       [K in TKeys]?: K extends keyof NoInfer<TArgs> ? NoInfer<TArgs>[K] : never;
     } & Partial<Record<Exclude<keyof NoInfer<TArgs>, TKeys>, unknown>>;
 
-/** The arg names set in `preview.meta()`. An `Args` record doesn't say which, so it sets none. */
-export type MetaArgKeys<TArgs, TKeys extends PropertyKey> = string extends TKeys
+// An `Args` record doesn't say which args it sets, so it sets none.
+type MetaArgKeys<TArgs, TKeys extends PropertyKey> = string extends TKeys
   ? never
   : TKeys & keyof TArgs;
 
-/** `TArgs` with the args set in `preview.meta()` marked as present. */
-export type WithMetaArgs<TArgs, TKeys extends PropertyKey> = TArgs &
+type WithMetaArgs<TArgs, TKeys extends PropertyKey> = TArgs &
   Required<Pick<TArgs, MetaArgKeys<TArgs, TKeys>>>;
 
-/** Marks the args set in `preview.meta()` as present in its stories. */
-export type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
+type RequireMetaArgs<TRenderer extends Renderer, TKeys extends PropertyKey> = TRenderer & {
   args: WithMetaArgs<TRenderer['args'], TKeys>;
 };
+
+type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
+  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
+>;
+
+type InferMetaTypes<TRenderer extends Renderer, TArgs, Decorators> = TRenderer & {
+  args: Simplify<TArgs & OmitIndexSignature<DecoratorsArgs<TRenderer, Decorators>>>;
+};
+
+/**
+ * The input of a renderer's `preview.meta()`, apart from `component` and `render`. `args` are
+ * typed by the keys provided, and the meta's own hooks see those args as present.
+ */
+export type MetaInput<TRenderer extends Renderer, TArgs, Decorators, TKeys extends PropertyKey> = {
+  args?: MetaArgs<InferMetaTypes<TRenderer, TArgs, Decorators>['args'], TKeys>;
+  decorators?: Decorators | Decorators[];
+} & Omit<
+  ComponentAnnotations<TRenderer, NoInfer<WithMetaArgs<TArgs & TRenderer['args'], TKeys>>>,
+  'args' | 'component' | 'decorators' | 'render'
+>;
+
+/**
+ * The renderer types of the meta returned by `preview.meta()`: `TArgs` plus the args read by
+ * `Decorators`, with the args set in meta present.
+ */
+export type MetaTypes<
+  TRenderer extends Renderer,
+  TArgs,
+  Decorators,
+  TKeys extends PropertyKey,
+> = RequireMetaArgs<InferMetaTypes<TRenderer, TArgs, Decorators>, TKeys>;
 
 /** The args a story must still provide: the ones `preview.meta()` didn't set. */
 export type StoryArgs<TArgs, TKeys extends PropertyKey> = SetOptional<
@@ -127,28 +154,14 @@ export type StoryArgs<TArgs, TKeys extends PropertyKey> = SetOptional<
  * `Args` adds none, and it can't change the types of the component's args.
  */
 export type WithRenderArgs<TComponentArgs, TRenderArgs> = TComponentArgs &
-  (0 extends 1 & TRenderArgs
-    ? unknown
-    : string extends keyof TRenderArgs
-      ? unknown
-      : Omit<TRenderArgs, keyof TComponentArgs>);
-
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
-
-/** Adds `TArgs` and the args read by `Decorators` to the args of `TRenderer`. */
-export type InferMetaTypes<TRenderer extends Renderer, TArgs, Decorators> = TRenderer & {
-  args: Simplify<TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<TRenderer, Decorators>>>>;
-};
+  (string extends keyof TRenderArgs ? unknown : Omit<TRenderArgs, keyof TComponentArgs>);
 
 export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyKey = never> {
   readonly _tag: 'Meta';
   input: Omit<ComponentAnnotations<TRenderer, TRenderer['args']>, 'args'> & {
     args: [MetaArgKeys<TRenderer['args'], TMetaArgKeys>] extends [never]
       ? Partial<TRenderer['args']> | undefined
-      : Pick<TRenderer['args'], MetaArgKeys<TRenderer['args'], TMetaArgKeys>> &
-          Partial<TRenderer['args']>;
+      : WithMetaArgs<Partial<TRenderer['args']>, TMetaArgKeys>;
   };
   // composed: NormalizedComponentAnnotations<TRenderer>;
   preview: Preview<TRenderer>;

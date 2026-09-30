@@ -18,8 +18,8 @@ const AST_NODES_NAMES = {
 
 interface Result {
   /**
-   * Import specifier for `defineMeta` imported from this addon package.
-   * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/svelte/csf"`
+   * Import specifier for `defineMeta`, imported from one of `SVELTE_CSF_IMPORT_SOURCES`.
+   * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/svelte"`
    */
   defineMetaImport: ESTreeAST.ImportSpecifier;
   /**
@@ -28,7 +28,7 @@ interface Result {
    */
   defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
   /**
-   * An identifier for the addon's component `<Story />`.
+   * An identifier for the `<Story />` component.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
   storyIdentifier: ESTreeAST.Identifier;
@@ -54,6 +54,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
   const { walk } = await import('zimmerframe');
 
   const state: Partial<Result> = {};
+  let hasDefaultOrNamespaceImport = false;
   const visitors: Visitors<SvelteAST.SvelteNode, typeof state> = {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
@@ -61,7 +62,9 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
       if (source.value === SVELTE_CSF_IMPORT_SOURCE) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
-            throw new DefaultOrNamespaceImportUsedError(filename);
+            // The main entry has other exports, so this is only an error without a named `defineMeta` import
+            hasDefaultOrNamespaceImport = true;
+            continue;
           }
 
           visit(specifier, state);
@@ -107,6 +110,10 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
   const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } = state;
 
   if (!defineMetaImport) {
+    if (hasDefaultOrNamespaceImport) {
+      throw new DefaultOrNamespaceImportUsedError(filename);
+    }
+
     throw new MissingDefineMetaImportError(filename);
   }
 

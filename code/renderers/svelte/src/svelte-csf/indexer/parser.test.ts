@@ -68,4 +68,59 @@ describe('parseForIndexer', () => {
       expect(stories.map((story) => story.exportName)).toEqual(['Default']);
     }
   );
+
+  describe('other imports of @storybook/svelte', () => {
+    async function writeStoriesFile(moduleScript: string) {
+      const file = join(await mkdtemp(join(tmpdir(), 'svelte-csf-')), 'Example.stories.svelte');
+      await writeFile(
+        file,
+        `<script module lang="ts">
+          ${moduleScript}
+        </script>
+
+        <Story name="Default" />
+        `
+      );
+      return file;
+    }
+
+    it('indexes a file with type-only, other named and namespace imports', async ({ expect }) => {
+      const { parseForIndexer } = await import('./parser.ts');
+      const file = await writeStoriesFile(`
+        import * as SB from '@storybook/svelte';
+        import type { Meta } from '@storybook/svelte';
+        import { composeStories, defineMeta } from '@storybook/svelte';
+        const { Story } = defineMeta({ title: 'Example' });
+      `);
+
+      const { meta, stories } = await parseForIndexer(file, { legacyTemplate: false });
+
+      expect(meta.title).toBe('Example');
+      expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+    });
+
+    it('does not throw 0002 when defineMeta is imported by name next to a namespace import', async ({
+      expect,
+    }) => {
+      const { parseForIndexer } = await import('./parser.ts');
+      const file = await writeStoriesFile(`
+        import * as SB from '@storybook/svelte';
+        import { defineMeta } from '@storybook/svelte';
+      `);
+
+      await expect(parseForIndexer(file, { legacyTemplate: false })).resolves.toBeDefined();
+    });
+
+    it('fails with only a namespace import', async ({ expect }) => {
+      const { parseForIndexer } = await import('./parser.ts');
+      const file = await writeStoriesFile(`
+        import * as SB from '@storybook/svelte';
+        const { Story } = SB.defineMeta({ title: 'Example' });
+      `);
+
+      await expect(parseForIndexer(file, { legacyTemplate: false })).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002'
+      );
+    });
+  });
 });

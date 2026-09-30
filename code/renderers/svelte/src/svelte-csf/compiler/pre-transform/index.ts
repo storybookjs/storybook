@@ -1,4 +1,4 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../constants.ts';
+import { SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../../constants.ts';
 
 import { transformComponentMetaToDefineMeta } from './codemods/component-meta-to-define-meta.ts';
 import { transformExportMetaToDefineMeta } from './codemods/export-const-to-define-meta.ts';
@@ -90,7 +90,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
     ImportDeclaration(node, context) {
       const { state } = context;
 
-      if (node.source.value === SVELTE_CSF_IMPORT_SOURCE) {
+      if (node.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE) {
         state.componentIdentifierName = getComponentsIdentifiersNames(node.specifiers);
 
         if (
@@ -276,7 +276,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
         for (const declaration of node.body) {
           if (declaration.type === 'ImportDeclaration') {
-            if (declaration.source.value === SVELTE_CSF_IMPORT_SOURCE) {
+            if (declaration === context.state.pkgImportDeclaration) {
               continue;
             }
 

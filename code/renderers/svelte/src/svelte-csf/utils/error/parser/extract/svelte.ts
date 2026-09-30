@@ -6,7 +6,7 @@ import { StorybookSvelteCSFError } from '../../../error.ts';
 
 const BASE_INITIAL_SNIPPET = dedent`
 <script module>
-  import { defineMeta } from "@storybook/svelte/csf";
+  import { defineMeta } from "@storybook/svelte";
   
   const { Story } = defineMeta({});
 </script>
@@ -45,8 +45,9 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      is using the default/namespace import from "${StorybookSvelteCSFError.importSource}".
-      Only named imports are supported.
+      is using the default/namespace import from "${StorybookSvelteCSFError.importSource}",
+      and doesn't import defineMeta by name. Import it with a named import:
+      import { defineMeta } from "${StorybookSvelteCSFError.importSource}";
     `;
   }
 }

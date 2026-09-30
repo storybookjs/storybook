@@ -28,10 +28,12 @@ const resetCompiledComponents = async () => {
  * bootstrapping more that one application at a time.
  *
  * @param fn Callback that should complete the bootstrap process
- * @returns ApplicationRef from the completed bootstrap process
+ * @returns ApplicationRef from the completed bootstrap process, or null if `fn` skipped it
  */
-export const queueBootstrapping = (fn: () => Promise<ApplicationRef>): Promise<ApplicationRef> => {
-  return new Promise<ApplicationRef>((resolve, reject) => {
+export const queueBootstrapping = (
+  fn: () => Promise<ApplicationRef | null>
+): Promise<ApplicationRef | null> => {
+  return new Promise<ApplicationRef | null>((resolve, reject) => {
     queue.push(() => fn().then(resolve).catch(reject));
 
     if (!isProcessing) {

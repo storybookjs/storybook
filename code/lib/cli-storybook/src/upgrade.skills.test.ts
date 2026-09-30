@@ -23,7 +23,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
     JsPackageManagerFactory: Object.assign(actual.JsPackageManagerFactory, {
       getPackageManager: () => ({
         type: 'npm',
-        installDependencies: vi.fn(),
+        installDependencies: vi.fn().mockResolvedValue(undefined),
         isStorybookInMonorepo: () => false,
       }),
     }),
@@ -42,7 +42,7 @@ const project = (configDir: string): CollectProjectsSuccessResult =>
     packageManager: {
       type: 'npm',
       packageJsonPaths: [],
-      precheckStorybookPackageInstall: vi.fn(),
+      precheckStorybookPackageInstall: vi.fn().mockResolvedValue(undefined),
     } as Partial<JsPackageManager> as JsPackageManager,
   }) as unknown as CollectProjectsSuccessResult;
 

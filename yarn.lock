@@ -10037,7 +10037,7 @@ __metadata:
     terser-webpack-plugin: "npm:^5.3.17"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^6.0.3"
-    webpack: "npm:5"
+    webpack: "npm:^5.101.0"
     webpack-dev-middleware: "npm:^8.3.0"
     webpack-hot-middleware: "npm:^2.25.1"
     webpack-virtual-modules: "npm:^0.6.0"
@@ -36794,7 +36794,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"webpack@npm:5, webpack@npm:5.105.2, webpack@npm:^5, webpack@npm:^5.65.0":
+"webpack@npm:5, webpack@npm:5.105.2, webpack@npm:^5, webpack@npm:^5.101.0, webpack@npm:^5.65.0":
   version: 5.105.2
   resolution: "webpack@npm:5.105.2"
   dependencies:

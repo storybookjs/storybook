@@ -10,8 +10,6 @@ export type AllTemplatesType = Record<AllTemplatesKey, TemplateType>;
 
 export type SkippableTask =
   | 'smoke-test'
-  | 'test-runner'
-  | 'test-runner-dev'
   | 'vitest-integration'
   | 'chromatic'
   | 'e2e-tests'
@@ -380,26 +378,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
-  'react-webpack/17-ts': {
-    name: 'React v17 (Webpack | TypeScript)',
-    script: 'npx create-webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
-    expected: {
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        swc: { swcrc: false },
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
   'react-webpack/prerelease-ts': {
     name: 'React Prerelease (Webpack | TypeScript)',
     /**
@@ -558,7 +536,7 @@ export const baseTemplates = {
         },
       },
     },
-    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    skipTasks: ['bench', 'chromatic'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
@@ -785,9 +763,8 @@ export const baseTemplates = {
     // This sandbox exists to guard the docgen baselines, and it differs from
     // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
     // execution are already covered there on every run, so repeating them here would double the
-    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
-    // latter swaps in a test-runner job rather than dropping one.
-    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    // Angular cost for no extra signal.
+    skipTasks: ['bench', 'chromatic'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
   'lit-vite/default-js': {
@@ -1047,14 +1024,7 @@ const benchTemplates = {
       skipTemplateStories: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'chromatic',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
   },
   'bench/react-webpack-18-ts': {
@@ -1065,14 +1035,7 @@ const benchTemplates = {
       skipTemplateStories: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'chromatic',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
   },
   'bench/react-vite-default-ts-nodocs': {
     ...baseTemplates['react-vite/default-ts'],
@@ -1083,14 +1046,7 @@ const benchTemplates = {
       disableDocs: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'chromatic',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'chromatic', 'vitest-integration'],
     typeCheck: false,
   },
   'bench/react-vite-default-ts-test-build': {
@@ -1102,13 +1058,7 @@ const benchTemplates = {
       testBuild: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
     typeCheck: false,
   },
   'bench/react-webpack-18-ts-test-build': {
@@ -1120,13 +1070,7 @@ const benchTemplates = {
       testBuild: true,
       skipMocking: true,
     },
-    skipTasks: [
-      'e2e-tests',
-      'test-runner',
-      'test-runner-dev',
-      'e2e-tests-dev',
-      'vitest-integration',
-    ],
+    skipTasks: ['e2e-tests', 'e2e-tests-dev', 'vitest-integration'],
   },
 } satisfies Record<string, Template & { isInternal: true }>;
 
@@ -1169,7 +1113,6 @@ export const normal: TemplateKey[] = [
 export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
-  'react-webpack/17-ts',
   'nextjs/15-ts',
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',

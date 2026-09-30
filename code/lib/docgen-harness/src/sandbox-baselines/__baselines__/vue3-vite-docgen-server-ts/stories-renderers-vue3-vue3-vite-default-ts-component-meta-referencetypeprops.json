@@ -78,6 +78,7 @@
       "table": {
         "category": "props",
         "type": {
+          "detail": "MyEnum {\n  Small = 0\n  Medium = 1\n  Large = 2\n}",
           "summary": "MyEnum"
         }
       },
@@ -137,6 +138,7 @@
       "table": {
         "category": "props",
         "type": {
+          "detail": "MyNestedProps {\n  nestedProp: string — nested prop documentation\n}",
           "summary": "MyNestedProps"
         }
       },
@@ -193,6 +195,7 @@
       "table": {
         "category": "props",
         "type": {
+          "detail": "MyNestedRecursiveProps {\n  recursive: MyNestedRecursiveProps\n}",
           "summary": "MyNestedRecursiveProps"
         }
       },

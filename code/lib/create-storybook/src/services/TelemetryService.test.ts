@@ -1,15 +1,17 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { ProjectType } from 'storybook/internal/cli';
+import { getProcessAncestry } from 'storybook/internal/common';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
-
-import { getProcessAncestry } from 'process-ancestry';
 
 import { TelemetryService } from './TelemetryService.ts';
 
 vi.mock('storybook/internal/telemetry', { spy: true });
-vi.mock('process-ancestry', { spy: true });
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('storybook/internal/common')>()),
+  getProcessAncestry: vi.fn(),
+}));
 
 describe('TelemetryService', () => {
   beforeEach(() => {

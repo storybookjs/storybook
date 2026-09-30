@@ -5,6 +5,7 @@ import {
   isCI,
   isCorePackage,
   resolveStorybookVersionSpecifier,
+  getProcessAncestry,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -23,7 +24,6 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import { getProcessAncestry } from 'process-ancestry';
 import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
@@ -520,8 +520,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
-    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
+    // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
     if (!options.dryRun && !options.skipInstall) {
       for (const project of storybookProjects) {

@@ -64,6 +64,11 @@ set). `--json` keeps only the tool result.
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
+`docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
+source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote
+manifests are fetched without credentials and with a 3 second timeout in every mode; a ref that
+cannot be read gets its own error section.
+
 ```bash
 npx storybook tools docs list
 npx storybook tools --attach docs list

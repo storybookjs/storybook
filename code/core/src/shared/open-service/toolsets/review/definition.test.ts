@@ -218,8 +218,8 @@ Two things you must do now, both of them:
         mcpCtx
       );
 
-      expect(description).toContain('Start from `stories-changed`');
-      expect(description).toContain('fall back to `stories-find-by-component`');
+      expect(description).toContain('Start from stories-changed;');
+      expect(description).toContain('fall back to stories-find-by-component if');
     });
 
     it('names the discovery tools as CLI commands', () => {
@@ -228,8 +228,10 @@ Two things you must do now, both of them:
         cliCtx
       );
 
-      expect(description).toContain('Start from `npx storybook tools stories changed`');
-      expect(description).toContain('fall back to `npx storybook tools stories find-by-component`');
+      expect(description).toContain('Start from npx storybook tools stories changed;');
+      expect(description).toContain(
+        'fall back to npx storybook tools stories find-by-component if'
+      );
     });
   });
 });

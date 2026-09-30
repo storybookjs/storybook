@@ -58,6 +58,34 @@ describe('StoryIndexGenerator', () => {
     getStorySortParameterMock.mockClear();
     StoryIndexGenerator.clearFindMatchingFilesCache();
   });
+  it.each([
+    'export default { tags: ["autodocs"] };',
+    'const tags = ["autodocs"]; export default { tags };',
+  ])('reads project tags statically from %s', (source) => {
+    const generator = new StoryIndexGenerator([], options);
+    expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST, 'autodocs']);
+    expect(once.warn).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'export default { tags: getTags() };',
+    'export default { tags: [1] };',
+    'export default { tags: "autodocs" };',
+  ])('warns and retains default tags for %s', (source) => {
+    const generator = new StoryIndexGenerator([], options);
+    expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST]);
+    expect(once.warn).toHaveBeenCalledWith(expect.stringContaining('Unable to parse tags'));
+  });
+
+  it.each([
+    'export default { ...basePreview, parameters: {} };',
+    'export default definePreview(importedConfig);',
+  ])('retains default tags without warning for %s', (source) => {
+    const generator = new StoryIndexGenerator([], options);
+    expect(generator.getProjectTags(source)).toEqual([Tag.DEV, Tag.TEST, Tag.MANIFEST]);
+    expect(once.warn).not.toHaveBeenCalled();
+  });
+
   describe('extraction', () => {
     const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
       './src/A.stories.(ts|js|mjs|jsx)',

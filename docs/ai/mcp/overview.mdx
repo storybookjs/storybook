@@ -220,7 +220,7 @@ Runs tests for specific stories and returns results, including any accessibility
 
 ## Composition
 
-If you need to develop UI using components from multiple Storybooks, you can take advantage of [Storybook composition](../../sharing/storybook-composition.mdx). If a composed Storybook has [manifests](../manifests.mdx), the MCP server will automatically include the content from those manifests in its responses, allowing your agent to access the combined knowledge from all composed Storybooks. This means that your agent can find and reference components from any of the composed Storybooks when generating UI.
+If you need to develop UI using components from multiple Storybooks, you can take advantage of [Storybook composition](../../sharing/storybook-composition.mdx). If a composed Storybook has [manifests](../manifests.mdx), the MCP server will automatically include the content from those manifests in its responses, allowing your agent to access the combined knowledge from all composed Storybooks. This means that your agent can find and reference components from any of the composed Storybooks when generating UI. The `storybook tools docs` CLI, which the Claude Code and Codex plugins use, honours the same `refs` and lists every composed Storybook as well.
 
 ## FAQ
 

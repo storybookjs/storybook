@@ -816,6 +816,35 @@ describe('stories codemod', () => {
       // expect(transformed).toContain('C = meta.story');
     });
 
+    it('should skip and report when the file could not be parsed', async () => {
+      vi.mocked(logger.log).mockClear();
+      const source = 'export const A = {';
+      const result = await storyToCsfFactory(
+        { source, path: 'Broken.stories.tsx' },
+        { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
+      );
+
+      expect(result).toBe(source);
+      expect(vi.mocked(logger.log).mock.calls[0][0]).toBe(
+        'Error when parsing Broken.stories.tsx, skipping: file could not be parsed'
+      );
+      expect(vi.mocked(logger.log).mock.calls[0][0]).not.toContain('missing default export');
+    });
+
+    it('should keep the missing default export message for a file that parses', async () => {
+      vi.mocked(logger.log).mockClear();
+      const source = dedent`
+        export const A = () => {};
+      `;
+      const result = await storyToCsfFactory(
+        { source, path: 'NoMeta.stories.tsx' },
+        { previewConfigPath: '#.storybook/preview', useSubPathImports: true }
+      );
+
+      expect(result).toBe(source);
+      expect(vi.mocked(logger.log).mock.calls[0][0]).toContain('missing default export');
+    });
+
     it('should bail transformation when no stories can be transformed', async () => {
       const source = dedent`
         export default {

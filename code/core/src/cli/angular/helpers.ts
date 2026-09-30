@@ -4,7 +4,14 @@ import { resolve } from 'node:path';
 import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
-import { type FormattingOptions, applyEdits, modify } from 'jsonc-parser';
+import {
+  type FormattingOptions,
+  type ParseError,
+  applyEdits,
+  modify,
+  parse,
+  printParseErrorCode,
+} from 'jsonc-parser';
 import semver from 'semver';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
@@ -42,6 +49,21 @@ const detectIndentation = (text: string): FormattingOptions => {
   return indent.startsWith('\t')
     ? { insertSpaces: false, tabSize: 1 }
     : { insertSpaces: true, tabSize: indent.length };
+};
+
+/**
+ * Parse a workspace JSON file, which Angular and Nx allow to contain comments and trailing commas.
+ *
+ * @throws When the text is not valid JSON with comments.
+ */
+export const parseJsonText = (text: string): unknown => {
+  const errors: ParseError[] = [];
+  const value = parse(text, errors, { allowTrailingComma: true });
+  if (errors.length > 0) {
+    const [{ error, offset }] = errors;
+    throw new SyntaxError(`${printParseErrorCode(error)} at offset ${offset}`);
+  }
+  return value;
 };
 
 /** Apply a format-preserving edit to a JSON string at `path`. `value === undefined` removes it. */

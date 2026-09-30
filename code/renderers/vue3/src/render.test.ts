@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { Args, Globals, StoryContext } from 'storybook/internal/types';
+import type { Args, Globals, StoryContextForRender } from 'storybook/internal/types';
 
 import { expectTypeOf } from 'expect-type';
 import { computed, defineComponent, h, reactive, type VNode } from 'vue';
@@ -127,12 +127,12 @@ describe('render slots', () => {
     default: () => 'Default slot',
     footer: h('p', 'Footer'),
   };
-  const slotNames = (argTypes: StoryContext<VueRenderer>['argTypes'] = {}) => {
+  const slotNames = (argTypes: StoryContextForRender<VueRenderer>['argTypes'] = {}) => {
     const storyFn = render(args, {
       id: 'layout--default',
       component: Layout,
       argTypes,
-    } as unknown as StoryContext<VueRenderer>) as () => VNode;
+    } as unknown as StoryContextForRender<VueRenderer>) as () => VNode;
     const vnode = storyFn();
     return Object.keys((vnode.children ?? {}) as object).filter((key) => !key.startsWith('_'));
   };

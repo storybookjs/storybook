@@ -1,7 +1,10 @@
 // This reader is outside the Custom Elements Manifest spec: analyzer plugins such as
 // `@wc-toolkit/type-parser` write resolved alias text under a sibling key, defaulting to
-// `parsedType`, which Storybook reads before spec `type.text`; everything else is spec-only.
+// `parsedType`, and the analyzer also writes non-spec `type` on CSS custom properties.
+import type { ManifestCssCustomProperty } from '../manifest/types.ts';
 import { isRecord } from '../utils.ts';
+
+type CssCustomPropertyWithType = ManifestCssCustomProperty & { type?: { text?: unknown } };
 
 export const DEFAULT_TYPE_PROPERTY = 'parsedType';
 
@@ -14,4 +17,11 @@ export function readTypeText(
     return alternate.text;
   }
   return typeof item.type?.text === 'string' ? item.type.text : undefined;
+}
+
+export function readCssPropertySyntax(
+  property: CssCustomPropertyWithType,
+  typeProperty: string
+): string | undefined {
+  return property.syntax ?? readTypeText(property, typeProperty);
 }

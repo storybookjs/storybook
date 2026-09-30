@@ -15,6 +15,19 @@
       "name": "string",
     },
   },
+  "clear-method": {
+    "description": "Resets the rating to zero.",
+    "name": "clear",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "() => Promise<void>",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
   "hovered": {
     "description": "Internal hover state.",
     "name": "hovered",
@@ -98,38 +111,47 @@
       "disable": true,
     },
   },
-  "ratingChange": {
+  "ratingChange-event": {
+    "control": false,
     "description": "Emitted when the rating changes.",
     "name": "ratingChange",
-    "required": false,
     "table": {
       "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
       "type": {
         "summary": "EventEmitter<number>",
       },
     },
     "type": {
-      "name": "void",
+      "name": "other",
+      "value": "EventEmitter<number>",
     },
   },
-  "stencil-reset": {
+  "render-method": {
+    "description": undefined,
+    "name": "render",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "()",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
+  "stencil-reset-event": {
+    "control": false,
     "description": "Emitted under a custom event name.",
     "name": "stencil-reset",
-    "required": false,
     "table": {
       "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
       "type": {
         "summary": "EventEmitter<void>",
       },
     },
     "type": {
-      "name": "void",
+      "name": "other",
+      "value": "EventEmitter<void>",
     },
   },
   "value": {

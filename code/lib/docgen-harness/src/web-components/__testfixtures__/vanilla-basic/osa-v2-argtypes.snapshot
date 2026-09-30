@@ -31,6 +31,16 @@
       "name": "string",
     },
   },
+  "disabled-state": {
+    "description": "Set while the element is disabled.",
+    "name": "disabled",
+    "table": {
+      "category": "css states",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
   "label": {
     "description": undefined,
     "name": "label",

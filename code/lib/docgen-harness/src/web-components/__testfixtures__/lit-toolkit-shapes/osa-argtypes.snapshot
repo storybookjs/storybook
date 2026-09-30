@@ -1,8 +1,10 @@
 {
   "--toolkit-color": {
+    "control": {
+      "type": "color",
+    },
     "description": "Text color.",
     "name": "--toolkit-color",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -13,13 +15,12 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
   "--toolkit-font": {
     "description": "Font shorthand.",
     "name": "--toolkit-font",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -30,13 +31,12 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
   "--toolkit-gap": {
     "description": "Gap with a default.",
     "name": "--toolkit-gap",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -47,13 +47,12 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
   "--toolkit-scale": {
     "description": "Scale factor.",
     "name": "--toolkit-scale",
-    "required": false,
     "table": {
       "category": "css custom properties",
       "defaultValue": {
@@ -64,41 +63,42 @@
       },
     },
     "type": {
-      "name": "void",
+      "name": "number",
     },
   },
-  "base": {
+  "active-state": {
+    "description": "Set while active.",
+    "name": "active",
+    "table": {
+      "category": "css states",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "base-part": {
     "description": "The wrapper.",
     "name": "base",
-    "required": false,
     "table": {
       "category": "css shadow parts",
-      "defaultValue": {
-        "summary": undefined,
-      },
-      "type": {
-        "summary": undefined,
-      },
     },
     "type": {
-      "name": "void",
+      "name": "string",
     },
   },
-  "click": {
+  "click-event": {
+    "control": false,
     "description": "Native click passthrough.",
     "name": "click",
-    "required": false,
     "table": {
       "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
       "type": {
-        "summary": undefined,
+        "summary": "CustomEvent",
       },
     },
     "type": {
-      "name": "void",
+      "name": "other",
+      "value": "CustomEvent",
     },
   },
   "computed": {
@@ -118,6 +118,29 @@
       "name": "string",
     },
   },
+  "default-slot": {
+    "description": "Default content.",
+    "name": "default",
+    "table": {
+      "category": "slots",
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "focusItem-method": {
+    "description": "Public method with params.",
+    "name": "focusItem",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "(index: number, options?: { smooth: boolean }) => boolean",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
   "label": {
     "description": "Plain label; collides with the `label` slot.",
     "name": "label",
@@ -129,6 +152,16 @@
       "type": {
         "summary": "string",
       },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "label-slot": {
+    "description": "Rich label content; collides with the `label` attribute.",
+    "name": "label",
+    "table": {
+      "category": "slots",
     },
     "type": {
       "name": "string",
@@ -265,7 +298,9 @@
     },
   },
   "tags": {
-    "control": "multi-select",
+    "control": {
+      "type": "multi-select",
+    },
     "description": "Array of literals.",
     "name": "tags",
     "options": [
@@ -293,7 +328,6 @@
     },
   },
   "target": {
-    "control": "object",
     "description": "Mixed literal/object union.",
     "name": "target",
     "table": {
@@ -310,21 +344,19 @@
       "value": "'self' | { id: string }",
     },
   },
-  "toolkit-resize": {
+  "toolkit-resize-event": {
+    "control": false,
     "description": "Fired when the size changes.",
     "name": "toolkit-resize",
-    "required": false,
     "table": {
       "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
       "type": {
-        "summary": "CustomEvent<{ size: Size }>",
+        "summary": "CustomEvent<{ size: 'small' | 'medium' | 'large' }>",
       },
     },
     "type": {
-      "name": "void",
+      "name": "other",
+      "value": "CustomEvent<{ size: 'small' | 'medium' | 'large' }>",
     },
   },
   "version": {
@@ -345,7 +377,9 @@
     },
   },
   "when": {
-    "control": "date",
+    "control": {
+      "type": "date",
+    },
     "description": "Date value.",
     "name": "when",
     "table": {

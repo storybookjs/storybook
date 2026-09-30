@@ -1,6 +1,6 @@
 import { Component, Input, Output } from '@angular/core';
 import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
-import { describe, expect, it } from 'vitest';
+import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
 import decorateStory from './decorateStory.ts';
@@ -248,14 +248,17 @@ describe('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 1] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 2] } };
         },
         (s) => {
           const story = s();
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, 3] } };
         },
       ];
@@ -268,14 +271,17 @@ describe('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 2 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
         (s, c) => {
           const story = s({ ...c, k: 3 });
+          assert(story.props);
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
       ];
@@ -288,6 +294,7 @@ describe('decorateStory', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
         (s, c) => {
           const story = s({ ...c, k: 1, parameters: { p: 1 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -295,6 +302,7 @@ describe('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 2, parameters: { p: 2 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -302,6 +310,7 @@ describe('decorateStory', () => {
         },
         (s, c) => {
           const story = s({ ...c, k: 3, parameters: { p: 3 } });
+          assert(story.props);
           return {
             ...story,
             props: { a: [...story.props.a, c.k], p: [...story.props.p, c.parameters.p] },
@@ -347,7 +356,7 @@ class FooComponent {}
 })
 class ParentComponent {
   @Input()
-  parentInput: string;
+  parentInput?: string;
 
   @Output()
   parentOutput: any;

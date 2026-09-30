@@ -418,6 +418,52 @@ describe('StoryRender', () => {
       expect(story.applyAfterEach).not.toHaveBeenCalled();
     });
 
+    it('does not report a remounted render as aborted when its previous cycle finishes late', async () => {
+      const [completingGate, openCompletingGate] = createGate();
+      const [playGate, openPlayGate] = createGate();
+      vi.mocked(waitForAnimations).mockImplementationOnce(() => completingGate);
+      const story = buildStory({
+        playFunction: vi
+          .fn()
+          .mockImplementationOnce(async () => {})
+          .mockImplementationOnce(() => playGate),
+      });
+      const channel = new Channel({});
+      const emitSpy = vi.spyOn(channel, 'emit');
+      const render = new StoryRender(
+        channel,
+        buildStore(),
+        vi.fn() as any,
+        {} as any,
+        entry.id,
+        'story',
+        { autoplay: true },
+        story
+      );
+
+      render.renderToElement({} as any);
+      await vi.waitFor(() => expect(render.phase).toBe('completing'));
+      const remounted = render.remount();
+      await vi.waitFor(() => expect(render.phase).toBe('playing'));
+      openCompletingGate();
+      await tick();
+      openPlayGate();
+      await remounted;
+
+      const phases = emitSpy.mock.calls
+        .filter(([event]) => event === STORY_RENDER_PHASE_CHANGED)
+        .map(([, { newPhase }]) => newPhase);
+      expect(phases.slice(phases.lastIndexOf('rendering'))).toEqual([
+        'rendering',
+        'playing',
+        'played',
+        'completing',
+        'completed',
+        'afterEach',
+        'finished',
+      ]);
+    });
+
     it('reloads the page when tearing down during loading', async () => {
       // Arrange - setup StoryRender and async gate blocking applyLoaders
       const [loaderGate] = createGate();

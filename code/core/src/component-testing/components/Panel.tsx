@@ -32,6 +32,7 @@ import {
   type ControlStates,
   type LogItem,
   type RenderPhase,
+  type SyncPayload,
 } from '../../instrumenter/types.ts';
 import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 import { InteractionsPanel, type SerializedError } from './InteractionsPanel.tsx';
@@ -173,17 +174,17 @@ export interface RenderTracker {
 export const trackRenderPhase = (
   tracker: RenderTracker,
   event: { storyId: string; newPhase: RenderPhase; renderId?: number },
-  currentStoryId: string
-): { tracker: RenderTracker; isLatestRender: boolean } => {
+  currentStoryId: string | undefined
+): { tracker: RenderTracker; isCurrentRender: boolean } => {
   // A render torn down by a story switch can still report phases after the new story started.
   if (event.storyId !== currentStoryId) {
-    return { tracker, isLatestRender: false };
+    return { tracker, isCurrentRender: false };
   }
 
   // A rerender cycle may not actually make it to the rendering phase.
   // We don't want to update any state until it does.
   if (tracker.storyId === event.storyId && ['preparing', 'loading'].includes(event.newPhase)) {
-    return { tracker, isLatestRender: false };
+    return { tracker, isCurrentRender: false };
   }
 
   // When we switch stories, the render id might decrease if our users have mocked Date.now()
@@ -195,7 +196,7 @@ export const trackRenderPhase = (
 
   return {
     tracker: { storyId: event.storyId, renderId },
-    isLatestRender: renderId === event.renderId,
+    isCurrentRender: renderId === event.renderId,
   };
 };
 
@@ -287,7 +288,10 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
-        [EVENTS.SYNC]: (payload) => {
+        [EVENTS.SYNC]: (payload: SyncPayload) => {
+          if (payload.storyId && payload.storyId !== api.getUrlState().storyId) {
+            return;
+          }
           log.current = [getInternalRenderLogItem(CallStates.DONE), ...payload.logItems];
           set((state) =>
             getPanelState(
@@ -297,13 +301,14 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          const { tracker, isLatestRender } = trackRenderPhase(
+          // Read the store rather than the `storyId` prop, which lags until this handler is resubscribed.
+          const { tracker, isCurrentRender } = trackRenderPhase(
             renderTracker.current,
             event,
-            storyId
+            api.getUrlState().storyId
           );
           renderTracker.current = tracker;
-          if (!isLatestRender) {
+          if (!isCurrentRender) {
             return;
           }
 

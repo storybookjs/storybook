@@ -633,7 +633,7 @@ describe('Panel', () => {
       return events.flatMap((event) => {
         const result = trackRenderPhase(tracker, event, currentStoryId);
         tracker = result.tracker;
-        return result.isLatestRender ? [`${event.storyId}:${event.newPhase}`] : [];
+        return result.isCurrentRender ? [`${event.storyId}:${event.newPhase}`] : [];
       });
     };
 

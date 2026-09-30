@@ -42,5 +42,3 @@ export const experimental_indexers: StorybookConfig['experimental_indexers'] = (
 ) => {
   return [createIndexer(options.legacyTemplate ?? false), ...(indexers || [])];
 };
-
-export const optimizeViteDeps = ['@storybook/svelte'];

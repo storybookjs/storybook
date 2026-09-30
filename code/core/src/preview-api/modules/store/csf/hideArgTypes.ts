@@ -9,7 +9,7 @@ export function hideArgTypes<TRenderer extends Renderer>(
   return new Proxy(context, {
     get(target, key, receiver) {
       if (key === HIDDEN_KEY) {
-        throw new ArgTypesRemovedFromStoryContextError();
+        throw new ArgTypesRemovedFromStoryContextError({ storyId: target.id });
       }
       if (key === 'context') {
         return receiver;

@@ -313,7 +313,7 @@ export class StatusTypeIdMismatchError extends StorybookError {
 }
 
 export class ArgTypesRemovedFromStoryContextError extends StorybookError {
-  constructor() {
+  constructor(public data: { storyId: string }) {
     super({
       name: 'ArgTypesRemovedFromStoryContextError',
       category: Category.PREVIEW_API,
@@ -322,6 +322,8 @@ export class ArgTypesRemovedFromStoryContextError extends StorybookError {
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach',
       message: dedent`
         \`argTypes\` is no longer part of the story context passed to loaders, beforeEach, play and afterEach.
+
+        Story: ${data.storyId}
 
         With server-side docgen the preview only holds the arg types you declared yourself, so this object was incomplete while looking complete.
         - Read \`args\` for the values passed to the story.

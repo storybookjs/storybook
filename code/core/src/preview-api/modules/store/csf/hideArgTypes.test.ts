@@ -21,6 +21,7 @@ describe('hideArgTypes', () => {
     const hidden = hideArgTypes(createContext());
 
     expect(() => hidden.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(() => hidden.argTypes).toThrow(/Story: component--a/);
   });
 
   it('omits argTypes from enumeration and membership checks', () => {

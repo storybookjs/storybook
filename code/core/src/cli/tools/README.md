@@ -74,7 +74,8 @@ npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-
 
 ## Modes
 
-**Attached.** Discover `~/.storybook/instances/*.json`, connect a Node WebSocket to
+**Attached.** Discover instance records in `$XDG_STATE_HOME/storybook/instances`, or
+`~/.storybook/instances` when unset, reading both when they differ. Connect a Node WebSocket to
 `/storybook-server-channel?token=…` (no Origin), load the instance config as a **leaf** and
 **follower**, set `setDelegatedMode(true)` before the first `registerService`. This path never
 `chdir`s the host process. Two processes never attach across `storybook` installations: when the

@@ -3,7 +3,10 @@ import { join } from 'node:path';
 
 import * as v from 'valibot';
 
-import { getInstanceRegistryDir } from '../../../common/utils/storybook-config-dir.ts';
+import {
+  getInstanceRegistryDir,
+  getLegacyStorybookConfigDir,
+} from '../../../common/utils/storybook-config-dir.ts';
 import { type StorybookInstanceRecord, StorybookInstanceRecordSchema } from './types.ts';
 
 /**
@@ -14,15 +17,31 @@ import { type StorybookInstanceRecord, StorybookInstanceRecordSchema } from './t
 const SOFT_REGISTRY_ERRORS = new Set(['ENOENT', 'EACCES', 'EPERM', 'ENOTDIR']);
 
 /**
- * Read all Storybook instance records from `registryDir`.
+ * Read all Storybook instance records from `registryDir` and, when it differs, from
+ * `legacyRegistryDir` too — a dev server started before `XDG_STATE_HOME` was set (or one from an
+ * older Storybook) still writes there.
  *
  * Each file is expected to be a single JSON object matching {@link StorybookInstanceRecord}.
  * Records whose PID is no longer alive are filtered out (and their files removed). Malformed files
  * are skipped silently — the command should degrade to "no instance" rather than fail loudly.
  */
 export async function readRegistry(
-  registryDir: string = getInstanceRegistryDir()
+  registryDir: string = getInstanceRegistryDir(),
+  legacyRegistryDir: string = join(getLegacyStorybookConfigDir(), 'instances')
 ): Promise<StorybookInstanceRecord[]> {
+  if (registryDir === legacyRegistryDir) {
+    return readRegistryDir(registryDir);
+  }
+
+  const [current, legacy] = await Promise.all([
+    readRegistryDir(registryDir),
+    readRegistryDir(legacyRegistryDir),
+  ]);
+
+  return [...current, ...legacy];
+}
+
+async function readRegistryDir(registryDir: string): Promise<StorybookInstanceRecord[]> {
   let entries: string[];
   try {
     entries = await fs.readdir(registryDir);

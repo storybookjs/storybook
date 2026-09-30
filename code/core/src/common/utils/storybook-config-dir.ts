@@ -1,5 +1,5 @@
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 
 /** The `~/.storybook` location Storybook has always written per-user files to. */
 export function getLegacyStorybookConfigDir(): string {
@@ -15,7 +15,7 @@ export function getLegacyStorybookConfigDir(): string {
 export function getStorybookConfigDir(): string {
   const xdgConfigHome = process.env.XDG_CONFIG_HOME?.trim();
 
-  if (xdgConfigHome) {
+  if (xdgConfigHome && isAbsolute(xdgConfigHome)) {
     return join(xdgConfigHome, 'storybook');
   }
 
@@ -30,7 +30,7 @@ export function getStorybookConfigDir(): string {
 export function getStorybookStateDir(): string {
   const xdgStateHome = process.env.XDG_STATE_HOME?.trim();
 
-  if (xdgStateHome) {
+  if (xdgStateHome && isAbsolute(xdgStateHome)) {
     return join(xdgStateHome, 'storybook');
   }
 

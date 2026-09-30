@@ -7,6 +7,7 @@ import {
   getInstanceRegistryDir,
   getLegacyStorybookConfigDir,
   getStorybookConfigDir,
+  getStorybookStateDir,
 } from './storybook-config-dir.ts';
 
 afterEach(() => {
@@ -30,6 +31,32 @@ describe('getStorybookConfigDir', () => {
     vi.stubEnv('XDG_CONFIG_HOME', '/home/user/.config');
 
     expect(getStorybookConfigDir()).toBe(join('/home/user/.config', 'storybook'));
+  });
+
+  it('falls back to ~/.storybook when XDG_CONFIG_HOME is relative', () => {
+    vi.stubEnv('XDG_CONFIG_HOME', 'relative/config');
+
+    expect(getStorybookConfigDir()).toBe(join(homedir(), '.storybook'));
+  });
+});
+
+describe('getStorybookStateDir', () => {
+  it('falls back to ~/.storybook when XDG_STATE_HOME is not set', () => {
+    vi.stubEnv('XDG_STATE_HOME', undefined);
+
+    expect(getStorybookStateDir()).toBe(join(homedir(), '.storybook'));
+  });
+
+  it('uses $XDG_STATE_HOME/storybook when the variable is set', () => {
+    vi.stubEnv('XDG_STATE_HOME', '/home/user/.local/state');
+
+    expect(getStorybookStateDir()).toBe(join('/home/user/.local/state', 'storybook'));
+  });
+
+  it('falls back to ~/.storybook when XDG_STATE_HOME is relative', () => {
+    vi.stubEnv('XDG_STATE_HOME', 'relative/state');
+
+    expect(getStorybookStateDir()).toBe(join(homedir(), '.storybook'));
   });
 });
 

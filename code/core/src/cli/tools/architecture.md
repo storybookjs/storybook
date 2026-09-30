@@ -18,9 +18,9 @@ syncs service state, runs the toolset handler in the caller, and dispatches ever
 to the instance. Cold-boot work (docgen, tests) runs where the warm resources already live.
 
 The caller connects to `/storybook-server-channel` over WebSocket. The instance writes its channel
-token into `~/.storybook/instances/<id>.json` (file `0600`, dir `0700`). The endpoint is
-`record.url` plus that path. The upgrade handler accepts a missing `Origin` when the token is
-valid.
+token into `$XDG_STATE_HOME/storybook/instances/<id>.json`, or `~/.storybook/instances/<id>.json`
+when unset (file `0600`, dir `0700`). The endpoint is `record.url` plus that path. The upgrade
+handler accepts a missing `Origin` when the token is valid.
 
 CLI default is `auto`: attach when a matching instance is running, otherwise load locally.
 `--attach` requires attachment. `--no-attach` forces local. A missing instance falls back to
@@ -125,7 +125,8 @@ consumer amortizes config load across many calls on the live synced runtime.
 
 ## End-to-end flow (attached)
 
-1. **Discover.** Read `~/.storybook/instances/*.json` (pid-liveness-checked). Match by cwd /
+1. **Discover.** Read instance records from `$XDG_STATE_HOME/storybook/instances`, or
+   `~/.storybook/instances` when unset, both when they differ (pid-liveness-checked). Match by cwd /
    configDir — or, with `--port`, by port alone across all projects (the record supplies the
    project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
    bucket, then the most recently started; the siblings surface as a stderr warning naming
@@ -185,7 +186,8 @@ the same no-instance text. Config drift and an unacknowledged command are post-a
   state; commands do work that produces state.
 - **Thin-trigger load**: a query `load` hook that only awaits commands, so delegation is
   transitive.
-- **Instance registry**: `~/.storybook/instances/<id>.json`, written by running dev servers,
+- **Instance registry**: `$XDG_STATE_HOME/storybook/instances/<id>.json`, or
+  `~/.storybook/instances/<id>.json` when unset, written by running dev servers,
   pid-liveness-checked; carries the channel token and the server's `storybookPath`.
 - **Tools SDK**: `storybook/internal/tools` — owns both modes. `createTools` → `{ describe, call,
 close, mode, storybook }`.

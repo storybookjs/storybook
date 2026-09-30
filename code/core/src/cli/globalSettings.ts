@@ -4,6 +4,7 @@ import { dirname, join } from 'node:path';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
+import { migrateLegacySettings } from '../common/utils/migrate-legacy-settings.ts';
 import { getStorybookConfigDir } from '../common/utils/storybook-config-dir.ts';
 import { invariant } from '../common/utils/utils.ts';
 
@@ -65,6 +66,10 @@ let settings: Settings | undefined;
 export async function globalSettings(filePath = getDefaultSettingsPath()) {
   if (settings) {
     return settings;
+  }
+
+  if (filePath === getDefaultSettingsPath()) {
+    await migrateLegacySettings();
   }
 
   try {

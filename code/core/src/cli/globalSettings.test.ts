@@ -5,12 +5,14 @@ import { afterEach } from 'node:test';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { migrateLegacySettings } from '../common/utils/migrate-legacy-settings.ts';
 import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings.ts';
 
 const legacySettingsPath = join(homedir(), '.storybook', 'settings.json');
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
+vi.mock('../common/utils/migrate-legacy-settings.ts');
 
 const userSince = new Date();
 const baseSettings = { version: 1, userSince: +userSince };
@@ -90,6 +92,22 @@ describe('globalSettings default path', () => {
       join('/tmp/xdg-config', 'storybook', 'settings.json'),
       'utf8'
     );
+  });
+
+  it('migrates legacy settings when using the default path', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings();
+
+    expect(migrateLegacySettings).toHaveBeenCalled();
+  });
+
+  it('does not migrate legacy settings for an explicit path', async () => {
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings(TEST_SETTINGS_FILE);
+
+    expect(migrateLegacySettings).not.toHaveBeenCalled();
   });
 });
 

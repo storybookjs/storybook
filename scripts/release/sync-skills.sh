@@ -16,7 +16,7 @@ trap 'rm -rf "$CLONE_DIR"' EXIT
 git clone --quiet --depth 1 --no-tags --branch "$BRANCH" "$SKILLS_REPO_URL" "$CLONE_DIR"
 
 rm -rf "$CLONE_DIR/skills"
-git -C "$STORYBOOK_DIR" archive --prefix=skills/ "$STORYBOOK_REF:code/lib/claude-plugin/skills" | tar -x -C "$CLONE_DIR"
+git -C "$STORYBOOK_DIR" archive --prefix=skills/ "$STORYBOOK_REF:code/lib/claude-plugin/skills" | tar -xf - -C "$CLONE_DIR"
 compgen -G "$CLONE_DIR/skills/*/SKILL.md" >/dev/null || { echo "No skills found at $STORYBOOK_REF" >&2; exit 1; }
 
 cd "$CLONE_DIR"

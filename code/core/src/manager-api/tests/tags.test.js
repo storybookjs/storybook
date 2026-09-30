@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { computeStaticFilterFn, parseTagsParam, serializeTagsParam } from '../modules/tags';
 
@@ -51,11 +51,22 @@ describe('computeStaticFilterFn', () => {
     ).toBe(true);
   });
 
-  it('hides entries that carry a tag marked excludeFromSidebar', () => {
+  it('hides entries that carry a tag marked hideFromSidebar', () => {
+    const filterWithExclude = computeStaticFilterFn({
+      dev: { hideFromSidebar: true },
+    });
+    expect(filterWithExclude({ id: 's1', type: 'story', tags: ['dev'] })).toBe(false);
+  });
+
+  it('still hides entries marked with the deprecated excludeFromSidebar option', () => {
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
     const filterWithExclude = computeStaticFilterFn({
       dev: { excludeFromSidebar: true },
     });
     expect(filterWithExclude({ id: 's1', type: 'story', tags: ['dev'] })).toBe(false);
+    expect(console.warn).toHaveBeenCalledWith(
+      expect.stringContaining('`excludeFromSidebar` is deprecated')
+    );
   });
 });
 

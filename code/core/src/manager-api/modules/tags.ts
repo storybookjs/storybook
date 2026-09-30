@@ -1,7 +1,9 @@
+import { deprecate } from 'storybook/internal/client-logger';
 import type {
   API_PreparedIndexEntry,
   FilterFunction,
   Tag,
+  TagOptions,
   TagsOptions,
 } from 'storybook/internal/types';
 
@@ -55,12 +57,19 @@ export const getDefaultTagsFromPreset = memoize(1)((
   };
 });
 
+const hidesFromSidebar = (option: Partial<TagOptions>) => {
+  if (option.excludeFromSidebar) {
+    deprecate(
+      '`excludeFromSidebar` is deprecated. Use `hideFromSidebar` instead. It will be removed in Storybook 12.'
+    );
+  }
+  return Boolean(option.hideFromSidebar || option.excludeFromSidebar);
+};
+
 export const computeStaticFilterFn = (tagPresets: TagsOptions) => {
   const staticExcludeTags = Object.entries(tagPresets).reduce(
-    (acc, entry) => {
-      const [tag, option] = entry;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      if ((option as any).excludeFromSidebar) {
+    (acc, [tag, option]) => {
+      if (hidesFromSidebar(option)) {
         acc[tag] = true;
       }
       return acc;

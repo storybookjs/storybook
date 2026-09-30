@@ -76,6 +76,35 @@ In this example, the `experimental` tag has been excluded and the Documentation 
 
 Filtering by tags is a powerful way to focus on a subset of stories, especially in large Storybook projects. When searching, the filter is applied first, so search results are limited to the currently filtered tags.
 
+### Hiding stories and tags
+
+Configure a tag in `.storybook/main.ts` when the filter menu is the wrong tool:
+
+```ts
+tags: {
+  internal: {
+    hideFromSidebar: true,
+    hideFromAutodocs: true,
+    hideFromFilterPanel: true,
+  },
+}
+```
+
+`hideFromSidebar` removes matching stories from the sidebar, and clearing filters does not bring them back. `hideFromAutodocs` removes them from autodocs pages. `hideFromFilterPanel` hides the tag from the filter menu and leaves the stories visible.
+
+Addons can register a filter function at runtime. A story or docs entry is shown only when every registered filter passes. Call `setFilter` with a function that always returns true to stop filtering for that id:
+
+```ts
+// .storybook/manager.ts
+import { addons } from 'storybook/manager-api';
+
+addons.register('internal-stories', (api) => {
+  void api.setFilter('internal-stories', (item) => !item.tags?.includes('internal'));
+});
+```
+
+`sidebar.filters` and the `experimental_setFilter` name are deprecated. See the [migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#tag-filtering-api).
+
 ## Recipes
 
 ### Docs-only stories

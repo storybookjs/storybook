@@ -1,5 +1,5 @@
 import type { Mocked } from 'vitest';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CONFIG_ERROR,
@@ -90,6 +90,15 @@ function createMockModuleArgs({
 }
 
 describe('stories API', () => {
+  beforeEach(() => {
+    vi.spyOn(console, 'warn').mockImplementation((message?: unknown, ...rest: unknown[]) => {
+      if (typeof message === 'string' && message.includes('is deprecated')) {
+        return;
+      }
+      expect.fail(`Unexpected console.warn call with arguments:\n${[message, ...rest].join('\n')}`);
+    });
+  });
+
   it('sets a sensible initialState', () => {
     const moduleArgs = createMockModuleArgs({});
     const { state } = initStories({
@@ -1553,6 +1562,18 @@ describe('stories API', () => {
       expect(listener).toHaveBeenCalledTimes(2);
       expect(listener).toHaveBeenCalledWith({ id: 'one' });
       expect(listener).toHaveBeenCalledWith({ id: 'two' });
+    });
+  });
+  describe('setFilter', () => {
+    it('registers one filter under the stable name', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: mockEntries });
+      await api.setFilter('myCustomFilter', () => true);
+
+      expect(store.getState().filters.myCustomFilter).toEqual(expect.any(Function));
     });
   });
   describe('experimental_setFilter', () => {

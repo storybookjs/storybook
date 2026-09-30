@@ -65,7 +65,7 @@ const strip = (object: Editable, file: Diagnostics) => {
       throw new HandledError(MANUAL);
     }
     if (!entry || !t.isObjectExpression(entry)) {
-      continue;
+      throw new HandledError(MANUAL);
     }
     if (isUnsafeObject(entry)) {
       throw new HandledError(MANUAL);

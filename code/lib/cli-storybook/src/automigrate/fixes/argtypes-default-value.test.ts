@@ -99,6 +99,19 @@ describe('argtypes-default-value', () => {
     expect(story).toContain("control: 'number'");
   });
 
+  it('reports a factory call instead of editing it', async () => {
+    const story = [
+      'const makeArgType = (argType) => argType;',
+      "export default { argTypes: { label: makeArgType({ defaultValue: 'Hi' }) } };",
+    ].join('\n');
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('args.<name>') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
   it('leaves a spread in place and reports the manual replacement', async () => {
     const story =
       "import { shared } from './shared';\nexport default { argTypes: { ...shared, label: { defaultValue: 'A' } } };";

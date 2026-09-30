@@ -6,16 +6,16 @@ import {
   getDescriptionPropertyValue,
   getDocsPropertyValue,
   getParametersPropertyValue,
-} from '$lib/compiler/post-transform/shared/parameters.js';
+} from '../shared/parameters.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
   createASTProperty,
   type ESTreeAST,
-} from '$lib/parser/ast.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { getDefineMetaFirstArgumentObjectExpression } from '$lib/parser/extract/svelte/define-meta.js';
+} from '../../../parser/ast.ts';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
+import { getDefineMetaFirstArgumentObjectExpression } from '../../../parser/extract/svelte/define-meta.ts';
 
 interface Params {
   nodes: {

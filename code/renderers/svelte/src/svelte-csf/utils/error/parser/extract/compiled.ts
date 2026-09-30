@@ -1,7 +1,7 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
-import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
+import { StorybookSvelteCSFError } from '../../../error.ts';
+import type { extractStoriesNodesFromExportDefaultFn } from '../../../../parser/extract/compiled/stories.ts';
 
 export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.parserExtractCompiled;
@@ -14,7 +14,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Could not find the import statement of 'defineMeta' from the "${StorybookSvelteCSFError.packageName}" in the compiled output of: ${this.filepathURL}
+      Could not find the import statement of 'defineMeta' from the "${StorybookSvelteCSFError.importSource}" in the compiled output of: ${this.filepathURL}
     `;
   }
 }

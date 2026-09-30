@@ -1,10 +1,10 @@
-import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.js';
-import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.js';
-import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.js';
-import { getDefineMetaFirstArgumentObjectExpression } from '../../../parser/extract/svelte/define-meta.js';
-import { NoDestructuredDefineMetaCallError } from '../../../utils/error/parser/analyse/define-meta.js';
+import { createASTIdentifier, type ESTreeAST } from '../../../parser/ast.ts';
+import type { CompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
+import type { SvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+import { getDefineMetaFirstArgumentObjectExpression } from '../../../parser/extract/svelte/define-meta.ts';
+import { NoDestructuredDefineMetaCallError } from '../../../utils/error/parser/analyse/define-meta.ts';
 
-import { STORYBOOK_META_IDENTIFIER } from '$lib/constants.js';
+import { STORYBOOK_META_IDENTIFIER } from '../../../constants.ts';
 
 interface Params {
   nodes: {

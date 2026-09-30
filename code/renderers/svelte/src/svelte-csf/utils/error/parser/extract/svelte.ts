@@ -1,12 +1,12 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import type { SvelteAST } from '../../../../parser/ast.ts';
+import type { SvelteASTNodes } from '../../../../parser/extract/svelte/nodes.ts';
+import { StorybookSvelteCSFError } from '../../../error.ts';
 
 const BASE_INITIAL_SNIPPET = dedent`
 <script module>
-  import { defineMeta } from "@storybook/addon-svelte-csf";
+  import { defineMeta } from "@storybook/svelte/csf";
   
   const { Story } = defineMeta({});
 </script>
@@ -45,7 +45,7 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      is using the default/namespace import from "${StorybookSvelteCSFError.packageName}".
+      is using the default/namespace import from "${StorybookSvelteCSFError.importSource}".
       Only named imports are supported.
     `;
   }
@@ -63,7 +63,7 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      does not import defineMeta from "${StorybookSvelteCSFError.packageName}" inside the module context.
+      does not import defineMeta from "${StorybookSvelteCSFError.importSource}" inside the module context.
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 

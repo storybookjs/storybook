@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractStoryAttributesNodes } from './attributes.js';
+import { extractStoryAttributesNodes } from './attributes.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { getSvelteAST } from '../../../ast.ts';
+import { extractSvelteASTNodes } from '../nodes.ts';
 
 describe(extractStoryAttributesNodes.name, () => {
   it("extracts '<Story />' attributes correctly", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
         <Story name="Default" />
@@ -25,7 +25,7 @@ describe(extractStoryAttributesNodes.name, () => {
 
     expect(attributes.name).not.toBeUndefined();
     expect(attributes.name?.name).toBe('name');
-    expect(attributes.name?.value[0].data).toBe('Default');
+    expect(attributes.name?.value).toMatchObject([{ type: 'Text', data: 'Default' }]);
     expect(attributes.args).toBeUndefined();
   });
 
@@ -33,7 +33,7 @@ describe(extractStoryAttributesNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
         <Story name="Default">
@@ -50,7 +50,7 @@ describe(extractStoryAttributesNodes.name, () => {
 
     expect(attributes.name).not.toBeUndefined();
     expect(attributes.name?.name).toBe('name');
-    expect(attributes.name?.value[0].data).toBe('Default');
+    expect(attributes.name?.value).toMatchObject([{ type: 'Text', data: 'Default' }]);
     expect(attributes.args).toBeUndefined();
   });
 });

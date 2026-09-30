@@ -1,17 +1,18 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import dedent from 'dedent';
+import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../../constants.ts';
+import { dedent } from 'ts-dedent';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { codemodLegacyNodes } from './index.js';
+import { codemodLegacyNodes } from './index.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
+import { getSvelteAST } from '../../parser/ast.ts';
 
 describe(codemodLegacyNodes.name, () => {
   it("replaces 'export const meta' with 'defineMeta'", async ({ expect }) => {
     const code = dedent(`
       <script context="module">
-        import { Story } from "${pkg.name}";
+        import { Story } from "${SVELTE_CSF_IMPORT_SOURCE}";
 
         /** This is a description for the **Button** component stories. */
   		export const meta = {
@@ -28,7 +29,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module">
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
 
       	/** This is a description for the **Button** component stories. */
       	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
@@ -42,7 +43,7 @@ describe(codemodLegacyNodes.name, () => {
   it("replaces 'Meta' with inserting 'defineMeta' to module tag", async ({ expect }) => {
     const code = dedent(`
       <script context="module">
-        import { Meta, Template } from "${pkg.name}";
+        import { Meta, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
   	<!-- This is a description for the **Button** component stories. -->
@@ -54,7 +55,7 @@ describe(codemodLegacyNodes.name, () => {
     expect(print(transformed)).toMatchInlineSnapshot(
       `
       "<script context="module">
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
 
       	/** This is a description for the **Button** component stories. */
       	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
@@ -66,7 +67,7 @@ describe(codemodLegacyNodes.name, () => {
   it("replaces 'Template' with snippet block", async ({ expect }) => {
     const code = dedent(`
       <script>
-        import { Meta, Template } from "${pkg.name}";
+        import { Meta, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
   	<!-- This is a description for the **Button** component stories. -->
@@ -83,7 +84,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script module>
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
 
       	/** This is a description for the **Button** component stories. */
       	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
@@ -99,7 +100,7 @@ describe(codemodLegacyNodes.name, () => {
   it('transforms legacy syntax correctly', async ({ expect }) => {
     const code = dedent(`
       <script context="module">
-        import { Meta, Story, Template } from "${pkg.name}";
+        import { Meta, Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
   	  <!-- This is a description for the **Button** component stories. -->
@@ -120,7 +121,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module">
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
 
       	/** This is a description for the **Button** component stories. */
       	const { Story } = defineMeta({ title: "Atoms/Button", component: Button });
@@ -145,7 +146,7 @@ describe(codemodLegacyNodes.name, () => {
   it('moves package import declaration from instance to module tag', async ({ expect }) => {
     const code = dedent(`
       <script>
-        import { Meta, Story, Template } from "${pkg.name}";
+        import { Meta, Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
     `);
     const ast = getSvelteAST({ code });
@@ -153,7 +154,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script module>
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
       </script>"
     `);
   });
@@ -161,7 +162,7 @@ describe(codemodLegacyNodes.name, () => {
   it('moves transformed export const meta from instance to module tag', async ({ expect }) => {
     const code = dedent(`
       <script>
-        import { Story, Template } from "${pkg.name}";
+        import { Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
 
         export const meta = {
           args: {
@@ -176,7 +177,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script module>
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
 
       	const { Story } = defineMeta({
       		args: { primary: true },
@@ -191,7 +192,7 @@ describe(codemodLegacyNodes.name, () => {
   }) => {
     const code = dedent(`
       <script>
-        import { Story, Template } from "${pkg.name}";
+        import { Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
 
         export const meta = {
@@ -208,7 +209,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script module>
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
       	import Button from "./Button.svelte";
 
       	const { Story } = defineMeta({
@@ -223,7 +224,7 @@ describe(codemodLegacyNodes.name, () => {
   it('throws error on more than one unidentified <Template> components', async ({ expect }) => {
     const code = `
       <script module lang="ts">
-        import { Story, Template } from "${pkg.name}";
+        import { Story, Template } from "${SVELTE_CSF_IMPORT_SOURCE}";
       </script>
 
       <Template let:context>
@@ -246,7 +247,7 @@ describe(codemodLegacyNodes.name, () => {
       Please provide an 'id' to one of them.
       And for the '<Story />' component(s) which are supposed to use it, add the 'template' prop with the same 'id' value.
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${pkg.version}/ERRORS.md#SB_SVELTE_CSF_LEGACY_API_0003
+      More info: https://github.com/storybookjs/storybook/blob/v${rendererPkg.version}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_LEGACY_API_0003
       ]
     `);
   });
@@ -262,7 +263,7 @@ describe(codemodLegacyNodes.name, () => {
       </script>
 
       <script>
-        import { Story } from "${pkg.name}";
+        import { Story } from "${SVELTE_CSF_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
       </script>
     `;
@@ -272,7 +273,7 @@ describe(codemodLegacyNodes.name, () => {
 
     expect(print(transformed)).toMatchInlineSnapshot(`
       "<script context="module" lang="ts">
-      	import { defineMeta } from "@storybook/addon-svelte-csf";
+      	import { defineMeta } from "@storybook/svelte/csf";
       	import Button from "./Button.svelte";
 
       	const { Story } = defineMeta({ component: Button });
@@ -283,7 +284,7 @@ describe(codemodLegacyNodes.name, () => {
   it('returns the same AST when there is no legacy syntax', async ({ expect }) => {
     const code = dedent(`
       <script module>
-        import { defineMeta } from "${pkg.name}";
+        import { defineMeta } from "${SVELTE_CSF_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
 
         const { Story } = defineMeta({ component: Button });

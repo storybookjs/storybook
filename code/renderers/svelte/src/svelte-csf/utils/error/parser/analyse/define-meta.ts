@@ -1,5 +1,5 @@
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
-import dedent from 'dedent';
+import { StorybookSvelteCSFError } from '../../../error.ts';
+import { dedent } from 'ts-dedent';
 import type * as ESTreeAST from 'estree';
 
 export class InvalidComponentValueError extends StorybookSvelteCSFError {

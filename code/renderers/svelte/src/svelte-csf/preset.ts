@@ -1,8 +1,8 @@
-import type { StorybookConfig } from '@storybook/svelte-vite';
-import type { Options } from 'storybook/internal/types';
+import type { StorybookConfigVite } from '@storybook/builder-vite';
+import type { Options, StorybookConfig } from 'storybook/internal/types';
 
-import { transformPlugin, preTransformPlugin } from '$lib/compiler/plugins.js';
-import { createIndexer } from '$lib/indexer/index.js';
+import { transformPlugin, preTransformPlugin } from './compiler/plugins.ts';
+import { createIndexer } from './indexer/index.ts';
 
 export interface StorybookAddonSvelteCsFOptions extends Options {
   /**
@@ -18,11 +18,11 @@ export interface StorybookAddonSvelteCsFOptions extends Options {
   legacyTemplate?: boolean;
 }
 
-export const viteFinal: StorybookConfig['viteFinal'] = async (
+export const viteFinal: StorybookConfigVite['viteFinal'] = async (
   config,
   options: StorybookAddonSvelteCsFOptions
 ) => {
-  let { plugins = [], ...restConfig } = config;
+  const { plugins = [], ...restConfig } = config;
   const { legacyTemplate = false } = options;
 
   if (legacyTemplate) {
@@ -43,4 +43,4 @@ export const experimental_indexers: StorybookConfig['experimental_indexers'] = (
   return [createIndexer(options.legacyTemplate ?? false), ...(indexers || [])];
 };
 
-export const optimizeViteDeps = ['@storybook/addon-svelte-csf'];
+export const optimizeViteDeps = ['@storybook/svelte/csf'];

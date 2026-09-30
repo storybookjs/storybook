@@ -1,16 +1,16 @@
 import { describe, expect, it } from 'vitest';
 
-import { extractFragmentNodes } from './fragment-nodes.js';
-import { extractModuleNodes } from './module-nodes.js';
+import { extractFragmentNodes } from './fragment-nodes.ts';
+import { extractModuleNodes } from './module-nodes.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
+import { getSvelteAST } from '../../ast.ts';
 
 describe(extractFragmentNodes.name, () => {
   it("extracts '<Story />' AST nodes correctly", async () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
         <Story name="1" />
@@ -37,7 +37,7 @@ describe(extractFragmentNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
         <!-- Comment 1 -->
@@ -68,7 +68,7 @@ describe(extractFragmentNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta({
             render,
           });

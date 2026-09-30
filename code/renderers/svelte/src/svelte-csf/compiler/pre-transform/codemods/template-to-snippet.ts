@@ -1,6 +1,6 @@
-import { getStringValueFromAttribute } from '$lib/parser/analyse/story/attributes.js';
-import type { SvelteAST } from '$lib/parser/ast.js';
-import { hashTemplateName } from '$lib/utils/identifier-utils.js';
+import { getOptionalStringValueFromAttribute } from '../../../parser/analyse/story/attributes.ts';
+import type { SvelteAST } from '../../../parser/ast.ts';
+import { hashTemplateName } from '../../../utils/identifier-utils.ts';
 
 interface Params {
   component: SvelteAST.Component;
@@ -38,7 +38,7 @@ export function transformTemplateToSnippet(params: Params): SvelteAST.SnippetBlo
     return attr.type === 'Attribute' && attr.name === 'id';
   }) as SvelteAST.Attribute | undefined;
 
-  const id = getStringValueFromAttribute({
+  const id = getOptionalStringValueFromAttribute({
     node: attributeId,
     component,
   });
@@ -51,7 +51,7 @@ export function transformTemplateToSnippet(params: Params): SvelteAST.SnippetBlo
     return attr.type === 'LetDirective' && attr.name === 'context';
   }) as SvelteAST.LetDirective | undefined;
 
-  let parameters: SvelteAST.SnippetBlock['parameters'] = [];
+  const parameters: SvelteAST.SnippetBlock['parameters'] = [];
 
   if (letDirectiveArgs || letDirectiveContext) {
     parameters.push({

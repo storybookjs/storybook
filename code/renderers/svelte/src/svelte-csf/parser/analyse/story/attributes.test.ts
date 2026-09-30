@@ -1,11 +1,11 @@
-import { describe, it } from 'vitest';
+import { describe, expect, it } from 'vitest';
 
-import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from './attributes.js';
+import { getArrayOfStringsValueFromAttribute, getStringValueFromAttribute } from './attributes.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
+import { getSvelteAST } from '../../ast.ts';
+import { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
+import { extractStoryAttributesNodes } from '../../extract/svelte/story/attributes.ts';
+import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
 describe(getStringValueFromAttribute.name, () => {
   it("throws error when a `<Story />` 'name' attribute value is not a string", async ({
@@ -13,7 +13,7 @@ describe(getStringValueFromAttribute.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -39,9 +39,39 @@ describe(getStringValueFromAttribute.name, () => {
 
         A '<Story name="undefined" />' has a prop 'name' whose value must be a static literal string.
 
-        More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
+        More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0001
         ]
       `);
+  });
+  it.each([
+    ['a number literal', '{1}'],
+    ['a variable', '{storyName}'],
+  ])("throws error when a `<Story />` 'name' attribute value is %s", async (_, value) => {
+    const code = `
+        <script module>
+          import { defineMeta } from "@storybook/svelte/csf";
+
+          import SampleComponent from "./SampleComponent.svelte";
+
+          const { Story } = defineMeta({
+            component: SampleComponent,
+          });
+          const storyName = 'Default';
+        </script>
+
+        <Story name=${value} />
+      `;
+    const ast = getSvelteAST({ code });
+    const { storyComponents } = await extractSvelteASTNodes({ ast });
+    const component = storyComponents[0].component;
+    const { name } = extractStoryAttributesNodes({
+      attributes: ['name'],
+      component,
+    });
+
+    expect(() => getStringValueFromAttribute({ component, node: name })).toThrowError(
+      /has a prop 'name' whose value must be a static literal string/
+    );
   });
 });
 
@@ -51,7 +81,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -80,7 +110,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       A '<Story name="Default" />' has a prop'tags' whose value was expected to be a static array.
       Instead the value type is '0'.
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0002
       ]
     `
     );
@@ -91,7 +121,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -120,7 +150,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
       A '<Story name="Default" />' has attribute 'tags' whose value was expected to be an array expression.
       All elements in the array must be static literal strings only, but one of the elements is of type 'undefined'.
 
-      More info: https://github.com/storybookjs/addon-svelte-csf/blob/v${StorybookSvelteCSFError.packageVersion}/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003
+      More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_ANALYSE_STORY_0003
       ]
     `
     );
@@ -130,7 +160,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
         <Story name="Default" tags={["autodocs", "!dev"]} />
@@ -155,7 +185,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
           const { Story } = defineMeta();
         </script>
         <Story name="Default" />

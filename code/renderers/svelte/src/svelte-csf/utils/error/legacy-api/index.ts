@@ -1,8 +1,7 @@
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
-import { StorybookSvelteCSFError } from '$lib/utils/error.js';
-import dedent from 'dedent';
+import { StorybookSvelteCSFError } from '../../error.ts';
+import { dedent } from 'ts-dedent';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
+import type { SvelteAST } from '../../../parser/ast.ts';
 
 export class InvalidTemplateAttribute extends StorybookSvelteCSFError {
   readonly category = StorybookSvelteCSFError.CATEGORY.legacyAPI;
@@ -46,7 +45,7 @@ export class LegacyTemplateNotEnabledError extends StorybookSvelteCSFError {
       Stories file: ${this.filename}
       is using legacy API.
 
-      To enable support for it, enable 'legacyTemplate' in "${pkg.name}" option.
+      To enable support for it, enable 'legacyTemplate' in "@storybook/addon-svelte-csf" option.
     `;
   }
 }

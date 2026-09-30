@@ -1,14 +1,14 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 
-import { getDefineMetaComponentValue } from '$lib/parser/analyse/define-meta/component-identifier.js';
-import type { SvelteAST } from '$lib/parser/ast.js';
-import type { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractStoryTemplateSnippetBlock } from '$lib/parser/extract/svelte/story/template.js';
+import { getDefineMetaComponentValue } from '../define-meta/component-identifier.ts';
+import type { SvelteAST } from '../../ast.ts';
+import type { extractSvelteASTNodes } from '../../extract/svelte/nodes.ts';
+import { extractStoryTemplateSnippetBlock } from '../../extract/svelte/story/template.ts';
 import {
   findMetaRenderSnippetBlock,
   findStoryAttributeTemplateSnippetBlock,
-} from '$lib/parser/extract/svelte/snippet-block.js';
-import { extractStoryAttributesNodes } from '../../extract/svelte/story/attributes.js';
+} from '../../extract/svelte/snippet-block.ts';
+import { extractStoryAttributesNodes } from '../../extract/svelte/story/attributes.ts';
 
 interface Params {
   nodes: {
@@ -59,7 +59,7 @@ export function getStoryContentRawCode(params: Params): string {
      *
      * ```svelte
      * <script module>
-     *     import { defineMeta } from "@storybook/addon-svelte-csf";
+     *     import { defineMeta } from "@storybook/svelte/csf";
      *
      *     const { Story } = defineMeta({
      *       render: myCustomTemplate,
@@ -130,7 +130,7 @@ export function getStoryContentRawCode(params: Params): string {
   const { fragment } = component;
   const firstNode = fragment.nodes[0];
   const lastNode = fragment.nodes[fragment.nodes.length - 1];
-  const rawCode = dedent(originalCode.slice(firstNode.start, lastNode.end));
+  const rawCode = dedent(originalCode.slice(firstNode.start, lastNode.end)).trim();
 
   if (asChild) {
     return rawCode;
@@ -160,7 +160,7 @@ export function getStoryContentRawCode(params: Params): string {
 
   return dedent(`<${defineMetaComponentValue.name} {...args}>
     ${rawCode}
-  </${defineMetaComponentValue.name}>`);
+  </${defineMetaComponentValue.name}>`).trim();
 }
 
 /**
@@ -192,5 +192,5 @@ function getSnippetBlockBodyRawCode(originalCode: string, node: SvelteAST.Snippe
   const lastNode = nodes[nodes.length - 1];
   const rawCode = originalCode.slice(firstNode.start, lastNode.end);
 
-  return dedent(rawCode);
+  return dedent(rawCode).trim();
 }

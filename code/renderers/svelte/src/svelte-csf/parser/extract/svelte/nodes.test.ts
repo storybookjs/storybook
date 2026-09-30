@@ -1,15 +1,15 @@
 import { describe, it } from 'vitest';
 
-import { extractSvelteASTNodes } from './nodes.js';
+import { extractSvelteASTNodes } from './nodes.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
+import { getSvelteAST } from '../../ast.ts';
 
 describe(extractSvelteASTNodes.name, () => {
   it('works with a simple example', async ({ expect }) => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
 
           import Button from "./Button.svelte";
 

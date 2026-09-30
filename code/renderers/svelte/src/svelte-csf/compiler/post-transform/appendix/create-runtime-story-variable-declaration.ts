@@ -2,16 +2,16 @@ import {
   STORYBOOK_INTERNAL_PREFIX,
   SVELTE_CSF_TAG_PREFIX,
   SVELTE_CSF_V5_TAG,
-} from '$lib/constants.js';
+} from '../../../constants.ts';
 import {
   createASTArrayExpression,
   createASTIdentifier,
   createASTObjectExpression,
   createASTProperty,
   type ESTreeAST,
-} from '$lib/parser/ast.js';
+} from '../../../parser/ast.ts';
 
-import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.js';
+import type { createVariableFromRuntimeStoriesCall } from './create-variable-from-runtime-stories-call.ts';
 
 interface RuntimeStoryVariableDeclarationParams {
   exportName: string;

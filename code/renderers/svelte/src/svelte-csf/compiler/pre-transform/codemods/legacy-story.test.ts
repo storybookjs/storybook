@@ -1,16 +1,16 @@
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
 
-import { transformLegacyStory } from './legacy-story.js';
+import { transformLegacyStory } from './legacy-story.ts';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
-import { parseAndExtractSvelteNode } from '../../../../tests/extractor.js';
+import type { SvelteAST } from '../../../parser/ast.ts';
+import { parseAndExtractSvelteNode } from '../../../__tests__/extractor.ts';
 
 describe(transformLegacyStory.name, () => {
   it("it moves 'autodocs' prop to 'tags' correctly", async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" autodocs />
@@ -30,7 +30,7 @@ describe(transformLegacyStory.name, () => {
   it("moving 'autodocs' prop doesn't break with existing 'tags' prop", async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" autodocs tags={["!dev"]} />
@@ -52,7 +52,7 @@ describe(transformLegacyStory.name, () => {
   it("'source' prop when is a shorthand gets removed", async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" source />
@@ -74,7 +74,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" source="'<Button primary />'" />
@@ -102,7 +102,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="With source as text" source="<LegacyStory>Hi</LegacyStory>">
@@ -136,7 +136,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story
@@ -173,7 +173,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" template="someTemplate" />
@@ -197,7 +197,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" template="some template with non valid identifier" />
@@ -221,7 +221,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" let:args>
@@ -251,7 +251,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" let:context>
@@ -281,7 +281,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story name="Default" let:args let:context>
@@ -311,7 +311,7 @@ describe(transformLegacyStory.name, () => {
   it('leaves existing Story parameters untouched', async ({ expect }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story
@@ -366,7 +366,7 @@ describe(transformLegacyStory.name, () => {
   }) => {
     const code = `
       <script context="module">
-        import { Story } from "@storybook/addon-svelte-csf";
+        import { Story } from "@storybook/svelte/csf";
       </script>
 
       <Story
@@ -394,5 +394,49 @@ describe(transformLegacyStory.name, () => {
       	<h1>{"Test"}</h1>
       </Story>"
     `);
+  });
+
+  it("transforms a 'template' id prop written as an expression, like the text form", async ({
+    expect,
+  }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/svelte/csf";
+      </script>
+
+      <Story name="Default" template={"someTemplate"} />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(
+      `"<Story name="Default" template={someTemplate} tags={["svelte-csf-v4"]} />"`
+    );
+  });
+
+  it("drops a 'source' prop whose value isn't a static string", async ({ expect }) => {
+    const code = `
+      <script context="module">
+        import { Story } from "@storybook/svelte/csf";
+      </script>
+
+      <Story name="Default" source={someVariable} />
+    `;
+    const component = await parseAndExtractSvelteNode<SvelteAST.Component>(code, 'Component');
+
+    expect(
+      print(
+        transformLegacyStory({
+          component,
+          state: { componentIdentifierName: {} },
+        })
+      )
+    ).toMatchInlineSnapshot(`"<Story name="Default" tags={["svelte-csf-v4"]} />"`);
   });
 });

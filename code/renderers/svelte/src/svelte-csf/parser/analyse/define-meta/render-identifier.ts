@@ -1,7 +1,7 @@
-import type { ESTreeAST } from '$lib/parser/ast.js';
-import { extractDefineMetaPropertiesNodes } from '$lib/parser/extract/svelte/define-meta.js';
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { InvalidRenderValueError } from '$lib/utils/error/parser/analyse/define-meta.js';
+import type { ESTreeAST } from '../../ast.ts';
+import { extractDefineMetaPropertiesNodes } from '../../extract/svelte/define-meta.ts';
+import type { SvelteASTNodes } from '../../extract/svelte/nodes.ts';
+import { InvalidRenderValueError } from '../../../utils/error/parser/analyse/define-meta.ts';
 
 interface Params {
   nodes: SvelteASTNodes;

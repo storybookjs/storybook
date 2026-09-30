@@ -1,5 +1,5 @@
-import type { ESTreeAST } from '$lib/parser/ast.js';
-import { DefaultOrNamespaceImportUsedError } from '$lib/utils/error/parser/extract/svelte.js';
+import type { ESTreeAST } from '../../../parser/ast.ts';
+import { DefaultOrNamespaceImportUsedError } from '../../../utils/error/parser/extract/svelte.ts';
 
 interface Params {
   node: ESTreeAST.ImportDeclaration;
@@ -16,14 +16,14 @@ interface Params {
  * - Story,
  * - Template,
  * + defineMeta,
- * } from "@storybook/addon-svelte-csf";
+ * } from "@storybook/svelte/csf";
  * ```
  */
 export function transformImportDeclaration(params: Params): ESTreeAST.ImportDeclaration {
   const { node, filename } = params;
-  let { specifiers, ...rest } = node;
+  const { specifiers, ...rest } = node;
 
-  let newSpecifiers: typeof specifiers = [];
+  const newSpecifiers: typeof specifiers = [];
   let hasDefineMeta = false;
 
   for (const specifier of specifiers) {

@@ -1,7 +1,7 @@
 import { print } from 'esrap';
 import { describe, it } from 'vitest';
 
-import { createExportOrderVariableDeclaration } from './create-export-order.js';
+import { createExportOrderVariableDeclaration } from './create-export-order.ts';
 
 describe(createExportOrderVariableDeclaration.name, () => {
   it('correctly creates a variable with named exports order', ({ expect }) => {

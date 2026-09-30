@@ -1,5 +1,5 @@
 <script context="module" lang="ts">
-  import { Story, Template, type StoryProps } from '@storybook/addon-svelte-csf';
+  import { Story, Template, type StoryProps } from '@storybook/svelte/csf';
   import { expect, within } from 'storybook/test';
 
   import LegacyStory from './LegacyStory.svelte';

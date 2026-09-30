@@ -7,12 +7,12 @@ import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
 import { describe, it } from 'vitest';
 
-import { transformStory } from './index.js';
+import { transformStory } from './index.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
+import { getSvelteAST } from '../../../parser/ast.ts';
+import { extractSvelteASTNodes } from '../../../parser/extract/svelte/nodes.ts';
+import { extractCompiledASTNodes } from '../../../parser/extract/compiled/nodes.ts';
+import { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
 
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
@@ -20,13 +20,13 @@ describe(transformStory.name, () => {
   it("each transformed compiled 'Story' component matches inlined snapshots", async ({
     expect,
   }) => {
-    const filename = path.resolve(__dirname, '../../../../tests/stories/Example.stories.svelte');
+    const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
     const compiledPreTransformCode = fs
       .readFileSync(
         path.resolve(
           __dirname,
-          '../../../../tests/__compiled__/pre-transform/Example.stories.dev.js'
+          '../../../__tests__/__compiled__/pre-transform/Example.stories.dev.js'
         )
       )
       .toString();

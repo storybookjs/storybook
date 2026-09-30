@@ -1,9 +1,9 @@
 import { describe, it } from 'vitest';
 
-import { extractStoryTemplateSnippetBlock } from './template.js';
+import { extractStoryTemplateSnippetBlock } from './template.ts';
 
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { getSvelteAST } from '../../../ast.ts';
+import { extractSvelteASTNodes } from '../nodes.ts';
 
 describe(extractStoryTemplateSnippetBlock.name, () => {
   it('returns correctly AST node, when a `<Story>` compponent has a snippet block `template` inside', async ({
@@ -11,7 +11,7 @@ describe(extractStoryTemplateSnippetBlock.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -39,7 +39,7 @@ describe(extractStoryTemplateSnippetBlock.name, () => {
   it('returns undefined, when a `<Story>` compponent is a self-closing tag', async ({ expect }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf";
+          import { defineMeta } from "@storybook/svelte/csf";
 
           import SampleComponent from "./SampleComponent.svelte";
 

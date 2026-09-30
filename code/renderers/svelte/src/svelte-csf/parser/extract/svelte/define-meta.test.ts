@@ -1,16 +1,16 @@
 import { describe, it } from 'vitest';
 
-import { extractDefineMetaPropertiesNodes } from './define-meta.js';
+import { extractDefineMetaPropertiesNodes } from './define-meta.ts';
 
-import { getSvelteAST, type ESTreeAST } from '$lib/parser/ast.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { getSvelteAST, type ESTreeAST } from '../../ast.ts';
+import { extractSvelteASTNodes } from './nodes.ts';
 
 describe(extractDefineMetaPropertiesNodes.name, () => {
   it('extracts correctly selected properties', async ({ expect }) => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/addon-svelte-csf"
+          import { defineMeta } from "@storybook/svelte/csf"
 
           const { Story } = defineMeta({
             title: "My Story",

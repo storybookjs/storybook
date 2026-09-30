@@ -31,6 +31,7 @@
     "code/core/src/core-server/utils/__search-files-tests__",
     "code/core/src/core-server/utils/__mockdata__/src/Empty.stories.ts",
     "code/lib/codemod/src/transforms/__testfixtures__",
+    "code/renderers/svelte/src/svelte-csf/__tests__/__compiled__",
     "code/frameworks/angular/template/**",
     ".prettierrc",
     "test-storybooks",

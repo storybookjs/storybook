@@ -1,9 +1,9 @@
-import type { ESTreeAST } from '$lib/parser/ast.js';
+import type { ESTreeAST } from '../../ast.ts';
 import {
   ArrayElementNotStringError,
   NoArrayExpressionError,
   NoStringLiteralError,
-} from '$lib/utils/error/parser/analyse/define-meta.js';
+} from '../../../utils/error/parser/analyse/define-meta.ts';
 
 interface GetStringOptions {
   node: ESTreeAST.Property;

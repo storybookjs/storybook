@@ -6,12 +6,12 @@ import {
   createASTProperty,
   type ESTreeAST,
   type SvelteAST,
-} from '$lib/parser/ast.js';
-import { InvalidTemplateAttribute } from '$lib/utils/error/legacy-api/index.js';
+} from '../../../parser/ast.ts';
+import { InvalidTemplateAttribute } from '../../../utils/error/legacy-api/index.ts';
 
-import { hashTemplateName } from '$lib/utils/identifier-utils.js';
-import { SVELTE_CSF_V4_TAG } from '../../../constants.js';
-import type { State } from '../index.js';
+import { hashTemplateName } from '../../../utils/identifier-utils.ts';
+import { SVELTE_CSF_V4_TAG } from '../../../constants.ts';
+import type { State } from '../index.ts';
 
 interface Params {
   component: SvelteAST.Component;
@@ -21,8 +21,9 @@ interface Params {
 
 export function transformLegacyStory(params: Params): SvelteAST.Component {
   const { component, filename, state } = params;
-  let { attributes, fragment, ...rest } = component;
-  let newAttributes: SvelteAST.Component['attributes'] = [];
+  const { attributes, fragment: initialFragment, ...rest } = component;
+  let fragment = initialFragment;
+  const newAttributes: SvelteAST.Component['attributes'] = [];
   let autodocs: SvelteAST.Attribute | undefined;
   let source: SvelteAST.Attribute | undefined;
   let parameters: SvelteAST.Attribute | undefined;
@@ -148,7 +149,8 @@ interface InsertAutodocsParams {
   newAttributes: SvelteAST.Component['attributes'];
 }
 function transformAutodocs(params: InsertAutodocsParams): void {
-  let { autodocs, tags, newAttributes } = params;
+  const { autodocs, newAttributes } = params;
+  let { tags } = params;
 
   if (!autodocs) {
     return;
@@ -176,7 +178,8 @@ interface InsertSourceParams {
   newAttributes: SvelteAST.Component['attributes'];
 }
 function transformSource(params: InsertSourceParams): void {
-  let { source, parameters, newAttributes } = params;
+  const { source, newAttributes } = params;
+  let { parameters } = params;
 
   if (!source) return;
 
@@ -248,10 +251,14 @@ function getSourceValue(attribute: SvelteAST.Attribute): string | undefined {
     if (value.expression.type === 'TemplateLiteral') {
       return value.expression.quasis.map((q) => q.value.cooked).join('');
     }
+
+    return;
   }
 
-  if (value[0].type === 'Text') {
-    return value[0].raw;
+  const [first] = value;
+
+  if (first.type === 'Text') {
+    return first.raw;
   }
 }
 
@@ -265,6 +272,8 @@ function templateToChildren(
     throw new InvalidTemplateAttribute({ attribute, filename });
   }
 
+  const first = Array.isArray(value) ? value[0] : value;
+
   return {
     ...rest,
     name: 'template',
@@ -272,9 +281,9 @@ function templateToChildren(
       createASTExpressionTag({
         type: 'Identifier',
         name: hashTemplateName(
-          value[0].type === 'Text'
-            ? value[0].data
-            : ((value[0].expression as ESTreeAST.Literal).value as string)
+          first.type === 'Text'
+            ? first.data
+            : ((first.expression as ESTreeAST.Literal).value as string)
         ),
       }),
     ],
@@ -287,9 +296,9 @@ interface TransformFragmentParams {
   fragment: SvelteAST.Fragment;
 }
 function transformFragment(params: TransformFragmentParams): SvelteAST.Fragment {
-  let { letDirectiveArgs, letDirectiveContext, fragment } = params;
+  const { letDirectiveArgs, letDirectiveContext, fragment } = params;
 
-  let parameters: SvelteAST.SnippetBlock['parameters'] = [
+  const parameters: SvelteAST.SnippetBlock['parameters'] = [
     {
       type: 'Identifier',
       name: letDirectiveArgs ? 'args' : '_args',

@@ -14,11 +14,12 @@ import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
 import type { Plugin } from 'vite';
 
-import { codemodLegacyNodes } from '$lib/compiler/pre-transform/index.js';
-import { transformStoriesCode } from '$lib/compiler/post-transform/index.js';
-import { getSvelteAST } from '$lib/parser/ast.js';
-import { extractCompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
-import { extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
+import { codemodLegacyNodes } from './pre-transform/index.ts';
+import { transformStoriesCode } from './post-transform/index.ts';
+import { getSvelteAST } from '../parser/ast.ts';
+import { extractCompiledASTNodes } from '../parser/extract/compiled/nodes.ts';
+import { extractSvelteASTNodes } from '../parser/extract/svelte/nodes.ts';
+import { SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE } from '../constants.ts';
 
 export async function preTransformPlugin(): Promise<Plugin> {
   const [{ createFilter }, { print }] = await Promise.all([
@@ -55,7 +56,7 @@ export async function preTransformPlugin(): Promise<Plugin> {
           };
         }
 
-        let magicCode = new MagicString(code);
+        const magicCode = new MagicString(code);
 
         magicCode.overwrite(0, code.length, print(transformedSvelteAST));
 
@@ -88,7 +89,7 @@ export async function transformPlugin(): Promise<Plugin> {
     config() {
       return {
         optimizeDeps: {
-          include: ['@storybook/addon-svelte-csf/internal/create-runtime-stories'],
+          include: [SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE],
         },
       };
     },
@@ -96,7 +97,7 @@ export async function transformPlugin(): Promise<Plugin> {
       if (!filter(id)) return undefined;
 
       const compiledAST = this.parse(compiledCode);
-      let magicCompiledCode = new MagicString(compiledCode);
+      const magicCompiledCode = new MagicString(compiledCode);
       let rawCode =
         (this.getModuleInfo(id)?.meta._storybook_csf_pre_transform as string | undefined) ??
         fs.readFileSync(id).toString();

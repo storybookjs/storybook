@@ -1,16 +1,16 @@
 import type { IndexInput, Indexer } from 'storybook/internal/types';
 
-import { parseForIndexer } from '$lib/indexer/parser.js';
+import { parseForIndexer } from './parser.ts';
 import {
   GetDefineMetaFirstArgumentError,
   IndexerParseError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '$lib/utils/error/parser/extract/svelte.js';
-import { LegacyTemplateNotEnabledError } from '$lib/utils/error/legacy-api/index.js';
-import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
-import { isStorybookSvelteCSFError } from '$lib/utils/error.js';
-import { SVELTE_CSF_V4_TAG, SVELTE_CSF_V5_TAG } from '$lib/constants.js';
+} from '../utils/error/parser/extract/svelte.ts';
+import { LegacyTemplateNotEnabledError } from '../utils/error/legacy-api/index.ts';
+import { NoDestructuredDefineMetaCallError } from '../utils/error/parser/analyse/define-meta.ts';
+import { isStorybookSvelteCSFError } from '../utils/error.ts';
+import { SVELTE_CSF_V4_TAG, SVELTE_CSF_V5_TAG } from '../constants.ts';
 export const createIndexer = (legacyTemplate: boolean): Indexer => ({
   test: /\.svelte$/,
   createIndex: async (filename, { makeTitle }) => {

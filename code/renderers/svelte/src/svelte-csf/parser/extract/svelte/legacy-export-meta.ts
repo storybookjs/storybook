@@ -1,10 +1,11 @@
 import type { ObjectExpression, Property } from 'estree';
 
-import type { SvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import type { CompiledASTNodes } from '$lib/parser/extract/compiled/nodes.js';
+import type { SvelteASTNodes } from './nodes.ts';
+import { isOneOf } from '../../../utils/is-one-of.ts';
+import type { CompiledASTNodes } from '../compiled/nodes.ts';
 
-import { GetDefineMetaFirstArgumentError } from '$lib/utils/error/parser/extract/svelte.js';
-import type { Cmp, ComponentAnnotations } from '$lib/types.js';
+import { GetDefineMetaFirstArgumentError } from '../../../utils/error/parser/extract/svelte.ts';
+import type { Cmp, ComponentAnnotations } from '../../../types.ts';
 
 interface Options<Properties extends Array<keyof ComponentAnnotations<Cmp>>> {
   nodes: SvelteASTNodes | CompiledASTNodes;
@@ -32,7 +33,7 @@ export function extractLegacyExportMetaPropertiesNodes<
     if (
       property.type === 'Property' &&
       property.key.type === 'Identifier' &&
-      properties.includes(property.key.name as Properties[number])
+      isOneOf<Properties[number]>(properties, property.key.name)
     ) {
       results[property.key.name] = property;
     }

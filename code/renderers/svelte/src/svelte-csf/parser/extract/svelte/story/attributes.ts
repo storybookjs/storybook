@@ -1,8 +1,9 @@
 import type { ComponentProps } from 'svelte';
 
-import type { SvelteAST } from '$lib/parser/ast.js';
-import type { Cmp } from '$lib/types.js';
-import type Story from '$lib/runtime/Story.svelte';
+import type { SvelteAST } from '../../../ast.ts';
+import { isOneOf } from '../../../../utils/is-one-of.ts';
+import type { Cmp } from '../../../../types.ts';
+import type Story from '../../../../runtime/Story.svelte';
 
 type StoryAttributes = Array<keyof ComponentProps<typeof Story<Record<string, any>, Cmp>>>;
 
@@ -26,7 +27,7 @@ export function extractStoryAttributesNodes<const Attributes extends StoryAttrib
   for (const attributeNode of component.attributes) {
     if (
       attributeNode.type === 'Attribute' &&
-      attributes.includes(attributeNode.name as Attributes[number])
+      isOneOf<Attributes[number]>(attributes, attributeNode.name)
     ) {
       results[attributeNode.name] = attributeNode;
     }

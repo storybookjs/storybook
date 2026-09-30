@@ -1,7 +1,7 @@
 declare module 'svelte/compiler' {
-  import { Node as ESTreeNode } from 'estree';
+  import type { Node as ESTreeNode } from 'estree';
 
-  declare namespace AST {
+  namespace AST {
     export interface BaseNode {
       // NOTE: We are overriding the type here, because we don't need those
       start?: number;

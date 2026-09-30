@@ -1,7 +1,7 @@
-import dedent from 'dedent';
+import { dedent } from 'ts-dedent';
 import { type Context } from 'zimmerframe';
 
-import { getSvelteAST, type SvelteAST } from '$lib/parser/ast.js';
+import { getSvelteAST, type SvelteAST } from '../parser/ast.ts';
 
 export async function extractSvelteNode<TNode extends SvelteAST.SvelteNode | SvelteAST.Script>(
   parsed: SvelteAST.SvelteNode | SvelteAST.Script,

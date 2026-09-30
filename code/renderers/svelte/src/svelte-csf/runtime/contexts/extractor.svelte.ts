@@ -2,8 +2,8 @@ import { getContext, hasContext, setContext, type ComponentProps } from 'svelte'
 
 import type Story from '../Story.svelte';
 
-import type { Cmp } from '../../types.js';
-import { storyNameToExportName } from '../../utils/identifier-utils.js';
+import type { Cmp } from '../../types.ts';
+import { storyNameToExportName } from '../../utils/identifier-utils.ts';
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';
 
@@ -13,8 +13,8 @@ export interface StoriesExtractorContextProps<TCmp extends Cmp> {
 }
 
 function buildContext<TCmp extends Cmp>(storyCmpProps: StoriesExtractorContextProps<TCmp>) {
-  let isExtracting = $state(storyCmpProps.isExtracting);
-  let register = $state(storyCmpProps.register);
+  const isExtracting = $state(storyCmpProps.isExtracting);
+  const register = $state(storyCmpProps.register);
 
   return {
     get isExtracting() {

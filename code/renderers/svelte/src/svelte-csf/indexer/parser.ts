@@ -1,35 +1,35 @@
 import fs from 'node:fs/promises';
 
-import pkg from '@storybook/addon-svelte-csf/package.json' with { type: 'json' };
+import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
 
-import { getSvelteAST, type ESTreeAST, type SvelteAST } from '$lib/parser/ast.js';
-import { extractStoryAttributesNodes } from '$lib/parser/extract/svelte/story/attributes.js';
-import { getStoryIdentifiers } from '$lib/parser/analyse/story/attributes/identifiers.js';
+import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
+import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.ts';
+import { getStoryIdentifiers } from '../parser/analyse/story/attributes/identifiers.ts';
 import {
   getArrayOfStringsValueFromAttribute,
-  getStringValueFromAttribute,
-} from '$lib/parser/analyse/story/attributes.js';
+  getOptionalStringValueFromAttribute,
+} from '../parser/analyse/story/attributes.ts';
 import {
   getPropertyArrayOfStringsValue,
   getPropertyStringValue,
-} from '$lib/parser/analyse/define-meta/properties.js';
-import type { StorybookAddonSvelteCsFOptions } from '$lib/preset.js';
+} from '../parser/analyse/define-meta/properties.ts';
+import type { StorybookAddonSvelteCsFOptions } from '../preset.ts';
 import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
-} from '$lib/utils/error/parser/extract/svelte.js';
-import { NoDestructuredDefineMetaCallError } from '$lib/utils/error/parser/analyse/define-meta.js';
+} from '../utils/error/parser/extract/svelte.ts';
+import { NoDestructuredDefineMetaCallError } from '../utils/error/parser/analyse/define-meta.ts';
 import {
   StoryTemplateAndChildrenError,
   StoryTemplateAndAsChildError,
   StoryAsChildWithoutChildrenError,
-} from '$lib/utils/error/parser/analyse/story.js';
-import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.js';
+} from '../utils/error/parser/analyse/story.ts';
+import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story/template.ts';
 
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;
@@ -61,13 +61,14 @@ export async function parseForIndexer(
   filename: string,
   options: Partial<StorybookAddonSvelteCsFOptions>
 ): Promise<Results> {
-  let [code, { walk }, svelteConfig] = await Promise.all([
+  const [rawCode, { walk }, svelteConfig] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
     loadCachedSvelteConfig(),
   ]);
 
   const { legacyTemplate } = options;
+  let code = rawCode;
 
   if (svelteConfig?.preprocess) {
     code = (
@@ -78,7 +79,7 @@ export async function parseForIndexer(
   }
 
   const svelteAST = getSvelteAST({ code, filename });
-  let results: Results & {
+  const results: Results & {
     defineMetaImport?: ESTreeAST.ImportSpecifier;
     legacyMetaImport?: ESTreeAST.ImportSpecifier;
     legacyStoryImport?: ESTreeAST.ImportSpecifier;
@@ -133,7 +134,10 @@ export async function parseForIndexer(
       const { state, visit } = context;
 
       for (const statement of body) {
-        if (statement.type === 'ImportDeclaration' && statement.source.value === pkg.name) {
+        if (
+          statement.type === 'ImportDeclaration' &&
+          statement.source.value === SVELTE_CSF_IMPORT_SOURCE
+        ) {
           visit(statement, state);
         }
 
@@ -298,7 +302,7 @@ export async function parseForIndexer(
             const { name } = attribute;
 
             if (name === 'title') {
-              state.meta.title = getStringValueFromAttribute({
+              state.meta.title = getOptionalStringValueFromAttribute({
                 component: node,
                 node: attribute,
                 filename,

@@ -6,16 +6,16 @@ import { createRawSnippet, mount, type ComponentProps, type Snippet } from 'svel
 import type { StoryContext as StorybookStoryContext } from 'storybook/internal/types';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import StoryComponent from './runtime/Story.svelte';
+import type StoryComponent from './runtime/Story.svelte';
 
-import { defineMeta, type StoryContext } from './index.js';
+import { defineMeta, type StoryContext } from './index.ts';
 import type {
   StoryAnnotations,
   StoryContext as BaseStoryContext,
   SvelteRenderer,
-} from '$lib/types.js';
+} from './types.ts';
 
-import Button from '../examples/components/Button.svelte';
+import Button from './__examples__/components/Button.svelte';
 
 describe(defineMeta.name, () => {
   it('works with provided meta entry "component" entry', () => {

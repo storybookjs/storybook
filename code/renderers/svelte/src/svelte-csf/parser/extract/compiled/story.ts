@@ -1,6 +1,6 @@
-import type { ESTreeAST } from '$lib/parser/ast.js';
-import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
-import { NoCompiledStoryPropsObjectExpression } from '$lib/utils/error/parser/extract/compiled.js';
+import type { ESTreeAST } from '../../ast.ts';
+import type { extractStoriesNodesFromExportDefaultFn } from './stories.ts';
+import { NoCompiledStoryPropsObjectExpression } from '../../../utils/error/parser/extract/compiled.ts';
 
 interface Params {
   node: Awaited<ReturnType<typeof extractStoriesNodesFromExportDefaultFn>>[number];

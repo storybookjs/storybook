@@ -2,9 +2,9 @@ import type { StoryContext } from 'storybook/internal/types';
 import { createRawSnippet, type Component, type ComponentProps } from 'svelte';
 import { describe, expectTypeOf, it } from 'vitest';
 
-import type { SvelteRenderer, ComponentAnnotations } from '$lib/types.js';
+import type { SvelteRenderer, ComponentAnnotations } from './types.ts';
 
-import Button from '../examples/components/Button.svelte';
+import Button from './__examples__/components/Button.svelte';
 
 describe('Meta', () => {
   it(`works correctly when no 'meta.component' entry provided`, () => {

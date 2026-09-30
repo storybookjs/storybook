@@ -1,17 +1,17 @@
-import {
-  findPropertyParametersIndex,
-  getParametersPropertyValue,
-} from '$lib/compiler/post-transform/shared/parameters.js';
+import { findPropertyParametersIndex, getParametersPropertyValue } from '../shared/parameters.ts';
 
-import type { extractStoriesNodesFromExportDefaultFn } from '$lib/parser/extract/compiled/stories.js';
-import { getStoryPropsObjectExpression } from '$lib/parser/extract/compiled/story.js';
-import type { SvelteASTNodes, extractSvelteASTNodes } from '$lib/parser/extract/svelte/nodes.js';
-import { getStoryContentRawCode } from '$lib/parser/analyse/story/content.js';
+import type { extractStoriesNodesFromExportDefaultFn } from '../../../parser/extract/compiled/stories.ts';
+import { getStoryPropsObjectExpression } from '../../../parser/extract/compiled/story.ts';
+import type {
+  SvelteASTNodes,
+  extractSvelteASTNodes,
+} from '../../../parser/extract/svelte/nodes.ts';
+import { getStoryContentRawCode } from '../../../parser/analyse/story/content.ts';
 import {
   appendASTProperty,
   createASTObjectExpression,
   createASTProperty,
-} from '$lib/parser/ast.js';
+} from '../../../parser/ast.ts';
 
 interface Params {
   nodes: {

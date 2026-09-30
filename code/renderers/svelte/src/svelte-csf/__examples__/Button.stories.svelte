@@ -1,6 +1,7 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta, type StoryContext } from '@storybook/svelte/csf';
   import { fn } from 'storybook/test';
+  import type { ComponentProps } from 'svelte';
 
   import Button from './components/Button.svelte';
 
@@ -15,7 +16,7 @@
     tags: ['autodocs'],
     args: {
       onclick: onclickFn,
-      children: 'Click me' as any,
+      children: 'Click me',
     },
     argTypes: {
       backgroundColor: { control: 'color' },
@@ -27,10 +28,13 @@
     },
     render: template,
   });
+
+  // `children` is a text control here, not the component's snippet prop
+  type Args = Omit<ComponentProps<typeof Button>, 'children'> & { children?: string };
 </script>
 
-{#snippet template(args, context)}
-  <Button {...args}>{args.children}</Button>
+{#snippet template({ children, ...args }: Args, context: StoryContext<Args>)}
+  <Button {...args}>{children}</Button>
 {/snippet}
 
 <!-- Only use this sparingly as the main CTA. -->
@@ -46,7 +50,7 @@
 <Story name="Long content">The very long content</Story>
 
 <Story name="Custom template">
-  {#snippet template(args, context)}
+  {#snippet template({ children: _children, ...args }, context)}
     <Button {...args}>🩷 Storybook</Button>
     <Button {...args}>🧡 Svelte</Button>
   {/snippet}

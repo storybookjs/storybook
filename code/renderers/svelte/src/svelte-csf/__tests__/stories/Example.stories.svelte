@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { fn } from 'storybook/test';
-  import { defineMeta } from '@storybook/addon-svelte-csf';
+  import { defineMeta, type StoryContext } from '@storybook/svelte/csf';
 
   import Example from './Example.svelte';
 
@@ -33,7 +33,7 @@
   }
 </script>
 
-{#snippet template(args, context)}
+{#snippet template(args: import('svelte').ComponentProps<typeof Example>, context: StoryContext<import('svelte').ComponentProps<typeof Example>>)}
   <Example {...args} onclick={handleClick}>
     <p>{context.name}</p>
     You clicked: {count}<br />

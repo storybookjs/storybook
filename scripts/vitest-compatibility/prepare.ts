@@ -49,9 +49,11 @@ async function pack(name: string) {
   delete manifest.devDependencies;
   delete manifest.scripts;
   for (const field of ['dependencies', 'peerDependencies', 'optionalDependencies'] as const) {
-    for (const [dependency, range] of Object.entries(manifest[field] ?? {})) {
+    const packageDependencies = manifest[field];
+    if (!packageDependencies) continue;
+    for (const [dependency, range] of Object.entries(packageDependencies)) {
       if (String(range).startsWith('workspace:')) {
-        manifest[field][dependency] = packages.get(dependency)!.manifest.version;
+        packageDependencies[dependency] = packages.get(dependency)!.manifest.version;
         await pack(dependency);
       }
     }
@@ -59,7 +61,10 @@ async function pack(name: string) {
   await writeFile(join(staging, 'package.json'), JSON.stringify(manifest, null, 2));
   await cp(join(pkg.path, 'dist'), join(staging, 'dist'), { recursive: true });
   for (const entry of await readdir(pkg.path)) {
-    if (['templates', 'assets', 'static'].includes(entry) || /\.(mjs|cjs|js|ts)$/.test(entry)) {
+    if (
+      ['templates', 'assets', 'static', 'input'].includes(entry) ||
+      /\.(mjs|cjs|js|ts)$/.test(entry)
+    ) {
       await cp(join(pkg.path, entry), join(staging, entry), { recursive: true });
     }
   }

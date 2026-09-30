@@ -6,14 +6,15 @@ import { fork, execFile, type ChildProcess } from 'node:child_process';
 import { mkdir, readFile, writeFile, readdir, rm } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { Channel, type ChannelEvent } from 'storybook/internal/channels';
+import type { ChannelEvent } from 'storybook/internal/channels';
 import {
-  experimental_UniversalStore as UniversalStore,
+  internal_UniversalStore as UniversalStore,
+  prepareHeadlessUniversalStores,
   internal_universalStatusStore,
   internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
 import { loadCsf } from 'storybook/internal/csf-tools';
-import { storeOptions } from '@storybook/addon-vitest/constants';
+import { storeOptions, STORY_INDEX_CHANNEL_EVENT_NAME } from '@storybook/addon-vitest/constants';
 
 const environment = JSON.parse(await readFile('environment.json', 'utf8'));
 const version = JSON.parse(await readFile('node_modules/vitest/package.json', 'utf8')).version;
@@ -56,12 +57,7 @@ import { playwright } from '@vitest/browser-playwright';
 export default defineConfig({ test: { coverage: { provider: 'v8', include: ['Button.jsx'], watermarks: { statements: [90, 100] }, reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, projects: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: playwright(), instances: [{ browser: 'chromium' }] } } }] } });`
 );
 let child: ChildProcess | undefined;
-const channel = new Channel({ async: true });
-// Published declarations omit this internal method; the fixture must prepare the packed runtime.
-const internalStore = UniversalStore as typeof UniversalStore & {
-  __prepare(channel: Channel, environment: typeof UniversalStore.Environment.SERVER): void;
-};
-internalStore.__prepare(channel, UniversalStore.Environment.SERVER);
+const channel = prepareHeadlessUniversalStores();
 const inputs = loadCsf(stories, {
   fileName: resolve('Button.stories.jsx'),
   makeTitle: (title) => title,
@@ -84,11 +80,13 @@ const entries = Object.fromEntries(
     ];
   })
 );
-const childId = inputs.find((input) => input.name === 'renders [ready]').__id;
+const selectedInput = inputs.find((input) => input.name === 'renders [ready]');
+assert(selectedInput?.__id);
+const childId = selectedInput.__id;
 const store = UniversalStore.create<StoreState, StoreEvent>({
   ...storeOptions,
   leader: true,
-  initialState: { ...storeOptions.initialState, index: { v: 5, entries } },
+  initialState: storeOptions.initialState,
 });
 function bridge<State, CustomEvent extends { type: string }>(
   source: UniversalStore<State, CustomEvent>,
@@ -147,6 +145,7 @@ try {
     else channel.receive(event);
   });
   await waitFor(() => ready, 'backend startup');
+  child.send({ type: STORY_INDEX_CHANNEL_EVENT_NAME, args: [{ v: 5, entries }] });
   assert.equal(events.filter((event) => event.type === 'TEST_RUN_COMPLETED').length, 0);
   const results: CurrentRun[] = [];
   async function run(storyIds?: string[], coverage = false) {

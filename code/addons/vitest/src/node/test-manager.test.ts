@@ -69,10 +69,7 @@ const createVitest = mockCreateVitest;
 beforeEach(() => {
   vi.clearAllMocks();
   mockVitestVersion.value = '4.1.6';
-  mockStore.setState(() => ({
-    ...storeOptions.initialState,
-    index: mockIndex,
-  }));
+  mockStore.setState(() => storeOptions.initialState);
   vitest.projects = [{}];
   vitest.config.coverage.enabled = false;
   createVitest.mockResolvedValue(vitest);

@@ -29,7 +29,7 @@ export const vitestCommonConfig = defineConfig({
     globals: false,
     testTimeout: 10000,
     environment: 'node',
-    // Projects with `*.test-d.ts` files set `enabled`; the checker matches `yarn task check`.
+    // `enabled` is set per project with `*.test-d.ts` files: Vitest warns once per enabling project.
     typecheck: {
       checker: join(dirname(require.resolve('typescript-native/package.json')), 'bin', 'tsc'),
       // Diagnostics outside the type test files are `yarn task check`'s job.

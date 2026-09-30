@@ -1,15 +1,10 @@
 import { isAbsolute, relative, resolve } from 'node:path';
 
-/** Matches the head line of a tsc `--pretty false` diagnostic: `path(line,col): error TSxxxx:`. */
+// Head line of a tsc `--pretty false` diagnostic: `path(line,col): error TSxxxx:`.
 const DIAGNOSTIC_HEAD = /^(.+?)\(\d+,\d+\): (?:error|warning) TS\d+:/;
 
-/**
- * A `tsc -p` run reports diagnostics for the whole program, including files
- * pulled in from other workspace packages. Only diagnostics located inside
- * the checked package fail its check — the same contract as the previous
- * TS 6 compiler-API implementation, which filtered by file path. Indented
- * lines are elaboration of the preceding diagnostic and follow its verdict.
- */
+// `tsc -p` reports the whole program, including files from other workspace packages; only
+// diagnostics inside the checked package count. Indented lines elaborate the preceding diagnostic.
 export function filterToPackageDiagnostics(output: string, packageDir: string) {
   const kept: string[] = [];
   let sawDiagnostic = false;

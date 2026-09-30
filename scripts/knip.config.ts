@@ -24,7 +24,9 @@ const project = [
 const importMatcher = /import[^'"]+['"]([^'"]+)['"]/g;
 const fencedCodeBlockMatcher = /```[\s\S]*?```/g;
 const mdx = (text: string) =>
-  [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)].join('\n');
+  [...text.replace(fencedCodeBlockMatcher, '').matchAll(importMatcher)]
+    .map(([statement]) => statement)
+    .join(';\n');
 
 const baseConfig = {
   // storybook itself configured (only) in root

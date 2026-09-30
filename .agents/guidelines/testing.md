@@ -53,5 +53,5 @@ This applies to all ambient globals, not just `FEATURES` (e.g. `window`, `docume
 Vitest type-checks `*.test-d.ts` files with the TypeScript 7 native compiler, the same one `yarn task check` uses. They are never executed at runtime.
 
 - A package with type tests sets `test.typecheck.enabled: true` in its `vitest.config.ts`; the checker itself comes from `code/vitest.shared.ts`.
-- Run them with `yarn vitest run --project <project-name> test-d`.
+- Run them from the repo root with `yarn vitest run --project <project> test-d`, where `<project>` is the config's `test.name` or else the package name (e.g. `core`, `@storybook/angular`).
 - Assert with `expectTypeOf` and use `// @ts-expect-error` for inputs that must be rejected; an unused directive fails the test.

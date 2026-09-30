@@ -34,6 +34,7 @@
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
+  - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -1047,6 +1048,33 @@ npx storybook@latest upgrade
 Upgrading straight to 11 leaves that configuration in place, and you have to apply every migration in the table above by hand.
 
 The `--renderer` flag of `storybook automigrate` is also removed. Only the removed fixes read it, so it now fails as an unknown option; drop it from any script that passes it.
+
+### Web Components: server-side docgen suffixes event, slot and part argType keys
+
+With `features.experimentalDocgenServer`, `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
+
+| Manifest item       | Runtime docgen key | Server docgen key |
+| ------------------- | ------------------ | ----------------- |
+| event `my-change`   | `my-change`        | `my-change-event` |
+| slot `actions`      | `actions`          | `actions-slot`    |
+| CSS part `label`    | `label`            | `label-part`      |
+
+Attributes, properties and CSS custom properties keep their names.
+Methods, CSS states and the default slot are new rows, keyed `<name>-method`, `<name>-state` and `default-slot`.
+
+`argTypes` you wrote against the runtime keys no longer reach those rows.
+`argTypes` are merged by key, so the old key adds a separate row without a category instead of changing the documented one.
+The Controls table still shows the raw name, so the suffix is not visible there.
+Add the suffix to the key:
+
+```ts
+// Before
+argTypes: { 'my-change': { table: { disable: true } } },
+
+// After
+argTypes: { 'my-change-event': { table: { disable: true } } },
+```
 
 ## From version 10.5.x to 10.6.0
 

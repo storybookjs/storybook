@@ -4,7 +4,7 @@ import { getContext, hasContext, setContext } from 'svelte';
 import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
 /**
- * @import { Cmp, StoriesExtractorContext, StoriesExtractorContextProps, StoriesRepository } from '../../../src/svelte-csf/types.ts'
+ * @import { Cmp, StoriesExtractorContext, StoriesExtractorContextProps, StoriesRepository } from '@storybook/svelte/internal/svelte-csf/component-helpers'
  */
 
 const CONTEXT_KEY = 'storybook-stories-extractor-context';

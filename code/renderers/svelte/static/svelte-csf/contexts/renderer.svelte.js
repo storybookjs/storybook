@@ -2,7 +2,7 @@
 import { getContext, hasContext, setContext } from 'svelte';
 
 /**
- * @import { Cmp, StoryContext, StoryRendererContext, StoryRendererContextProps } from '../../../src/svelte-csf/types.ts'
+ * @import { Cmp, StoryContext, StoryRendererContext, StoryRendererContextProps } from '@storybook/svelte/internal/svelte-csf/component-helpers'
  */
 
 const CONTEXT_KEY = 'storybook-story-renderer-context';

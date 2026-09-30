@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { Component } from 'svelte';
 
-  import type { Cmp, StoriesRepository } from '../../src/svelte-csf/types.ts';
+  import type { Cmp, StoriesRepository } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   import { createStoriesExtractorContext } from '@storybook/svelte/internal/svelte-csf/contexts/extractor';
 

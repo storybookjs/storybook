@@ -11,7 +11,7 @@
     storyNameToExportName,
     SVELTE_CSF_V4_TAG,
   } from '@storybook/svelte/internal/svelte-csf/component-helpers';
-  import type { Cmp, StoryProps } from '../../src/svelte-csf/types.ts';
+  import type { Cmp, StoryProps } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   type Props = StoryProps<TArgs, TCmp, TChildren>;
   let {

@@ -4,7 +4,7 @@
   import { useStoryRenderer } from '@storybook/svelte/internal/svelte-csf/contexts/renderer';
   import { emitCode } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
-  import type { Cmp, StoryContext } from '../../src/svelte-csf/types.ts';
+  import type { Cmp, StoryContext } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   type Props = {
     Stories: Component;

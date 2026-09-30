@@ -165,6 +165,40 @@ export const getPanelState = (
     }
   );
 
+export interface RenderTracker {
+  storyId?: string;
+  renderId: number;
+}
+
+export const trackRenderPhase = (
+  tracker: RenderTracker,
+  event: { storyId: string; newPhase: RenderPhase; renderId?: number },
+  currentStoryId: string
+): { tracker: RenderTracker; isLatestRender: boolean } => {
+  // A render torn down by a story switch can still report phases after the new story started.
+  if (event.storyId !== currentStoryId) {
+    return { tracker, isLatestRender: false };
+  }
+
+  // A rerender cycle may not actually make it to the rendering phase.
+  // We don't want to update any state until it does.
+  if (tracker.storyId === event.storyId && ['preparing', 'loading'].includes(event.newPhase)) {
+    return { tracker, isLatestRender: false };
+  }
+
+  // When we switch stories, the render id might decrease if our users have mocked Date.now()
+  // via addons or manually in their code, so we must reset it.
+  const renderId =
+    tracker.storyId === event.storyId
+      ? Math.max(tracker.renderId, event.renderId || 0)
+      : event.renderId || 0;
+
+  return {
+    tracker: { storyId: event.storyId, renderId },
+    isLatestRender: renderId === event.renderId,
+  };
+};
+
 const getInternalRenderCall = (storyId: string, exception?: Call['exception']): Call => ({
   id: INTERNAL_RENDER_CALL_ID,
   method: 'render',
@@ -249,8 +283,9 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
-    const lastStoryId = useRef<string>(undefined);
-    const latestRenderId = useRef<number>(0);
+    const currentStoryId = useRef(storyId);
+    currentStoryId.current = storyId;
+    const renderTracker = useRef<RenderTracker>({ renderId: 0 });
     const emit = useChannel(
       {
         [EVENTS.CALL]: setCall,
@@ -264,27 +299,13 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           );
         },
         [STORY_RENDER_PHASE_CHANGED]: (event) => {
-          if (
-            lastStoryId.current === event.storyId &&
-            ['preparing', 'loading'].includes(event.newPhase)
-          ) {
-            // A rerender cycle may not actually make it to the rendering phase.
-            // We don't want to update any state until it does.
-            return;
-          }
-
-          // Update lastRenderId and lastStoryId. When we switch stories, lastRenderId's
-          // value might decrease if our users have mocked Date.now() via addons or
-          // manually in their code, so we must reset it.
-          if (lastStoryId.current === event.storyId) {
-            latestRenderId.current = Math.max(latestRenderId.current, event.renderId || 0);
-          } else {
-            latestRenderId.current = event.renderId || 0;
-            lastStoryId.current = event.storyId;
-          }
-
-          // Bail out if concurrent renders are ongoing for the same story (only keep the latest one).
-          if (latestRenderId.current !== event.renderId) {
+          const { tracker, isLatestRender } = trackRenderPhase(
+            renderTracker.current,
+            event,
+            currentStoryId.current
+          );
+          renderTracker.current = tracker;
+          if (!isLatestRender) {
             return;
           }
 

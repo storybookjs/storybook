@@ -22,7 +22,7 @@ const deps = () => ({
   }),
   getProjectInfo: vi.fn().mockResolvedValue({
     ok: true,
-    projectInfo: { rendererPackage: '@storybook/react' },
+    projectInfo: { rendererPackage: '@storybook/react', builderPackage: '@storybook/builder-vite' },
   }),
   getSetupMarkdown: vi
     .fn()
@@ -133,13 +133,14 @@ describe('runSkillsCommand', () => {
     'setup accepts renderer %s',
     async (rendererPackage) => {
       const d = deps();
-      d.getProjectInfo.mockResolvedValue({ ok: true, projectInfo: { rendererPackage } });
+      const projectInfo = { rendererPackage, builderPackage: '@storybook/builder-vite' };
+      d.getProjectInfo.mockResolvedValue({ ok: true, projectInfo });
 
       const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
 
       expect(result.exitCode).toBe(0);
       expect(result.output).toBe('# Storybook Setup');
-      expect(d.getSetupMarkdown).toHaveBeenCalledWith({ rendererPackage });
+      expect(d.getSetupMarkdown).toHaveBeenCalledWith(projectInfo);
     }
   );
 
@@ -154,7 +155,10 @@ describe('runSkillsCommand', () => {
     null,
   ])('setup rejects unsupported renderer %s', async (rendererPackage) => {
     const d = deps();
-    d.getProjectInfo.mockResolvedValue({ ok: true, projectInfo: { rendererPackage } });
+    d.getProjectInfo.mockResolvedValue({
+      ok: true,
+      projectInfo: { rendererPackage, builderPackage: '@storybook/builder-vite' },
+    });
 
     const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
 
@@ -168,7 +172,10 @@ describe('runSkillsCommand', () => {
     const d = deps();
     d.getProjectInfo.mockResolvedValue({
       ok: true,
-      projectInfo: { rendererPackage: '@storybook/svelte' },
+      projectInfo: {
+        rendererPackage: '@storybook/svelte',
+        builderPackage: '@storybook/builder-vite',
+      },
     });
 
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, d);
@@ -178,6 +185,24 @@ describe('runSkillsCommand', () => {
     expect(result.errorOutput).toContain('only available for React, Angular, and Vue projects');
     expect(d.getSetupMarkdown).not.toHaveBeenCalled();
   });
+
+  it.each(['@storybook/react', '@storybook/angular', '@storybook/vue3'])(
+    'setup rejects renderer %s without the Vite builder',
+    async (rendererPackage) => {
+      const d = deps();
+      d.getProjectInfo.mockResolvedValue({
+        ok: true,
+        projectInfo: { rendererPackage, builderPackage: '@storybook/builder-webpack5' },
+      });
+
+      const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
+
+      expect(result.exitCode).toBe(1);
+      expect(result.output).toBe('');
+      expect(result.errorOutput).toContain('using the Vite builder');
+      expect(d.getSetupMarkdown).not.toHaveBeenCalled();
+    }
+  );
 
   it('setup reports the probe failure message and exits nonzero', async () => {
     const d = deps();

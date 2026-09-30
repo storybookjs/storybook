@@ -29,35 +29,38 @@ afterEach(() => vi.unstubAllEnvs());
 
 describe.each(['ts', 'js'] as const)('setup instructions in %s projects', (language) => {
   it.each([
-    ['@storybook/angular-vite', SupportedRenderer.ANGULAR],
-    ['@storybook/angular', SupportedRenderer.ANGULAR],
-    ['@storybook/vue3-vite', SupportedRenderer.VUE3],
-    ['@storybook/svelte-vite', SupportedRenderer.SVELTE],
-    ['@storybook/preact-vite', SupportedRenderer.PREACT],
-  ] as const)('keeps all prompts free of React examples for %s', async (framework, renderer) => {
-    for (const name of new Set(PROMPT_NAMES)) {
-      vi.stubEnv('EVAL_SETUP_PROMPT', name);
-      const { markdown, prompt } = await getSetupMarkdownOutput({
-        ...projectInfo,
-        framework,
-        rendererPackage: frameworkToRendererMap[framework],
-        renderer,
-        language,
-      });
+    ['@storybook/angular-vite', SupportedRenderer.ANGULAR, 'angular'],
+    ['@storybook/angular', SupportedRenderer.ANGULAR, 'angular'],
+    ['@storybook/vue3-vite', SupportedRenderer.VUE3, 'vue'],
+    ['@storybook/svelte-vite', SupportedRenderer.SVELTE, 'svelte'],
+    ['@storybook/preact-vite', SupportedRenderer.PREACT, 'preact'],
+  ] as const)(
+    'keeps all prompts free of React examples for %s',
+    async (framework, renderer, docsRenderer) => {
+      for (const name of new Set(PROMPT_NAMES)) {
+        vi.stubEnv('EVAL_SETUP_PROMPT', name);
+        const { markdown, prompt } = await getSetupMarkdownOutput({
+          ...projectInfo,
+          framework,
+          rendererPackage: frameworkToRendererMap[framework],
+          renderer,
+          language,
+        });
 
-      expect(markdown).toContain(framework);
-      expect(markdown).toContain(`preview.${language}`);
-      expect(markdown).toContain(`*.stories.${language}`);
-      expect(markdown).toContain(`renderer=${renderer}`);
-      expect(markdown).toContain('return Story();');
-      expect(markdown).not.toMatch(
-        /\breact\b|jsx|tsx|<Story|SessionProvider|ThemeProvider|createPortal|children:/i
-      );
-      expect(prompt).toBe(
-        ['setup', 'pattern-copy-play'].includes(name) ? DEFAULT_PROMPT_NAME : name
-      );
+        expect(markdown).toContain(framework);
+        expect(markdown).toContain(`preview.${language}`);
+        expect(markdown).toContain(`*.stories.${language}`);
+        expect(markdown).toContain(`renderer=${docsRenderer}&`);
+        expect(markdown).toContain('return Story();');
+        expect(markdown).not.toMatch(
+          /\breact\b|jsx|tsx|<Story|SessionProvider|ThemeProvider|createPortal|children:/i
+        );
+        expect(prompt).toBe(
+          ['setup', 'pattern-copy-play'].includes(name) ? DEFAULT_PROMPT_NAME : name
+        );
+      }
     }
-  });
+  );
 
   it.each(['@storybook/react-vite', '@storybook/nextjs-vite'])(
     'preserves React examples for %s',

@@ -55,12 +55,10 @@ afterEach(() => {
 
 describe('aiSetup', () => {
   it.each([
-    ['@storybook/angular-vite', SupportedRenderer.ANGULAR, '@storybook/builder-vite'],
-    ['@storybook/angular', SupportedRenderer.ANGULAR, '@storybook/builder-webpack5'],
-    ['@storybook/vue3-vite', SupportedRenderer.VUE3, '@storybook/builder-vite'],
-    ['@storybook/react-vite', SupportedRenderer.REACT, '@storybook/builder-vite'],
-    ['@storybook/react-webpack5', SupportedRenderer.REACT, '@storybook/builder-webpack5'],
-  ] as const)('prints setup instructions for %s', async (framework, renderer, builderPackage) => {
+    ['@storybook/angular-vite', SupportedRenderer.ANGULAR, 'angular'],
+    ['@storybook/vue3-vite', SupportedRenderer.VUE3, 'vue'],
+    ['@storybook/react-vite', SupportedRenderer.REACT, 'react'],
+  ] as const)('prints setup instructions for %s', async (framework, renderer, docsRenderer) => {
     vi.mocked(getProjectInfo).mockResolvedValue({
       ok: true,
       projectInfo: {
@@ -68,7 +66,6 @@ describe('aiSetup', () => {
         framework,
         renderer,
         rendererPackage: `@storybook/${renderer}`,
-        builderPackage,
       },
     });
 
@@ -77,7 +74,7 @@ describe('aiSetup', () => {
     expect(process.stdout.write).toHaveBeenCalledWith(expect.stringContaining('# Storybook Setup'));
     expect(process.stdout.write).toHaveBeenCalledWith(expect.stringContaining(framework));
     expect(process.stdout.write).toHaveBeenCalledWith(
-      expect.stringContaining(`renderer=${renderer}`)
+      expect.stringContaining(`renderer=${docsRenderer}&`)
     );
     expect(process.stderr.write).toHaveBeenCalledWith(
       expect.stringContaining('Use `npx storybook skills setup` instead.')
@@ -156,6 +153,28 @@ describe('aiSetup', () => {
     expect(process.stdout.write).not.toHaveBeenCalled();
     expect(writeFile).not.toHaveBeenCalled();
     expect(cache.set).not.toHaveBeenCalled();
+    expect(telemetry).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['@storybook/angular', '@storybook/angular'],
+    ['@storybook/react-webpack5', '@storybook/react'],
+    ['@storybook/nextjs', '@storybook/react'],
+  ])('rejects %s because it does not use the Vite builder', async (framework, rendererPackage) => {
+    vi.mocked(getProjectInfo).mockResolvedValue({
+      ok: true,
+      projectInfo: {
+        ...projectInfo,
+        framework,
+        rendererPackage,
+        builderPackage: '@storybook/builder-webpack5',
+      },
+    });
+
+    await aiSetup({ runId: 'setup-test' });
+
+    expect(logger.error).toHaveBeenCalledWith(expect.stringContaining('using the Vite builder'));
+    expect(process.stdout.write).not.toHaveBeenCalled();
     expect(telemetry).not.toHaveBeenCalled();
   });
 

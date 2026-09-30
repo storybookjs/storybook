@@ -1,3 +1,5 @@
+import { SupportedRenderer } from 'storybook/internal/types';
+
 import type { ProjectInfo } from '../../project-info.ts';
 
 /**
@@ -12,7 +14,7 @@ export function getDocsMarkdownUrl(
   const versionSegment = majorVersion ? `/${majorVersion}` : '';
   const params = new URLSearchParams();
   if (renderer) {
-    params.set('renderer', renderer);
+    params.set('renderer', renderer === SupportedRenderer.VUE3 ? 'vue' : renderer);
   }
   params.set('language', language);
   const query = params.toString();

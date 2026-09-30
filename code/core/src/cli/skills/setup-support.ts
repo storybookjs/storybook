@@ -4,10 +4,15 @@ const SUPPORTED_SETUP_RENDERERS = ['@storybook/react', '@storybook/angular', '@s
 
 export function getSetupSupportError({
   rendererPackage,
-}: Pick<ProjectInfo, 'rendererPackage'>): string | undefined {
-  if (rendererPackage && SUPPORTED_SETUP_RENDERERS.includes(rendererPackage)) {
+  builderPackage,
+}: Pick<ProjectInfo, 'rendererPackage' | 'builderPackage'>): string | undefined {
+  if (
+    rendererPackage &&
+    SUPPORTED_SETUP_RENDERERS.includes(rendererPackage) &&
+    builderPackage === '@storybook/builder-vite'
+  ) {
     return undefined;
   }
 
-  return `AI-assisted setup is currently only available for React, Angular, and Vue projects. Detected renderer: ${rendererPackage ?? 'unknown'}.`;
+  return `AI-assisted setup is currently only available for React, Angular, and Vue projects using the Vite builder. Detected renderer: ${rendererPackage ?? 'unknown'}, builder: ${builderPackage ?? 'unknown'}.`;
 }

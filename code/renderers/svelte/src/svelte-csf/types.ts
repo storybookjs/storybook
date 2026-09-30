@@ -2,10 +2,13 @@
 import type {
   ComponentAnnotations as BaseComponentAnnotations,
   StoryAnnotations as BaseStoryAnnotations,
-  StoryContext as BaseStoryContext,
   WebRenderer,
 } from 'storybook/internal/types';
 import type { Component, ComponentProps, Snippet } from 'svelte';
+
+import type { StoryContext } from '../public-types.ts';
+
+export type { StoryContext };
 
 export type Cmp = Component<any>;
 
@@ -36,13 +39,6 @@ export interface SvelteStoryResult<TCmp extends Cmp> {
   props?: ComponentProps<TCmp>;
   decorator?: TCmp;
 }
-
-export type StoryContext<TArgs extends Record<string, any>> = BaseStoryContext<
-  // Renderer
-  SvelteRenderer<Component<TArgs>>,
-  // Args
-  TArgs
->;
 
 export type StoryAnnotations<
   TArgs extends Record<string, any>,
@@ -160,9 +156,9 @@ export type StoriesRepository<TCmp extends Cmp> = {
 export interface StoryRendererContextProps<TCmp extends Cmp> {
   currentStoryExportName: string | undefined;
   args: NonNullable<StoryAnnotations<Record<string, any>, TCmp>['args']>;
-  storyContext: StoryContext<TCmp>;
+  storyContext: StoryContext<Record<string, any>>;
   metaRenderSnippet?: Snippet<
-    [StoryAnnotations<Record<string, any>, TCmp>['args'], StoryContext<TCmp>]
+    [StoryAnnotations<Record<string, any>, TCmp>['args'], StoryContext<Record<string, any>>]
   >;
 }
 

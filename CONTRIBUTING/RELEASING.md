@@ -12,6 +12,7 @@
   - [Non-patch Releases](#non-patch-releases)
   - [Publishing](#publishing)
     - [Syncing the skills](#syncing-the-skills)
+      - [When the skills were not synced](#when-the-skills-were-not-synced)
 - [👉 How to Release](#-how-to-release)
   - [1. Find the Prepared Pull Request](#1-find-the-prepared-pull-request)
   - [2. Freeze the Pull Request and run CI](#2-freeze-the-pull-request-and-run-ci)
@@ -233,7 +234,7 @@ The publish workflow runs in the "release" GitHub environment, which has the npm
 
 #### Syncing the skills
 
-The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) publishes them outside the plugins, as the source for Vercel's `skills` CLI, whose installs count on [skills.sh](https://skills.sh). `storybook init` and `storybook upgrade` are planned to install them from there, at the tag of the project's Storybook version. That repository is release output: only the publish workflow writes to it, nobody edits it by hand, and a skill change ships with the next Storybook release.
+The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) makes them installable without the plugins, with Vercel's `skills` CLI, and [skills.sh](https://skills.sh) counts those installs. `storybook init` and `storybook upgrade` are planned to install them from there, at the tag of the project's Storybook version. That repository is release output: only the publish workflow writes to it, nobody edits it by hand, and a skill change ships with the next Storybook release.
 
 Step 8 runs [`scripts/release/sync-skills.sh`](../scripts/release/sync-skills.sh), which:
 
@@ -246,22 +247,27 @@ The tag is the version; there is no version file. A release without a skill chan
 
 The step runs last, so a failure turns the publish workflow red without skipping any other release task. It has no condition, so the "skip publish" dispatch syncs too. Syncing a version twice is harmless: an unchanged tree adds no commit, a tag that already points at the same commit is accepted, and a tag that points elsewhere makes the atomic push reject branch and tag together, so nothing moves.
 
-The push uses the `SKILLS_SYNC_TOKEN` secret in the "release" environment: a fine-grained personal access token created by an org admin, with resource owner `storybookjs`, repository access limited to `storybookjs/skills`, and the single permission **Contents: Read and write**. When it expires, or its owner leaves the org, create a new one with the same scope and replace the secret.
+The clone and push use the `SKILLS_SYNC_TOKEN` secret in the "Release" environment: a fine-grained personal access token created by an org admin, with resource owner `storybookjs`, repository access limited to `storybookjs/skills`, and the single permission **Contents: Read and write**. When it expires, or its owner leaves the org, create a new one with the same scope and replace the secret.
 
 ##### When the skills were not synced
 
-The Discord message says that publishing failed, even when only "Sync skills to storybookjs/skills" is red. In that case npm publish, the GitHub Release and the merges are done. The skills are also not synced when the run failed at an earlier step after npm publish, for example the merge.
+The Discord message says that publishing failed, whichever step is red. Open the run and check which step failed:
 
-Fix the cause (for the sync step, usually the token), finish the release, and then sync that version by hand. Re-running the failed workflow run does not help: it starts again from the commit before the version bump and stops at the bump step. Anyone with write access to `storybookjs/skills` (the core, maintainers and developer-experience teams) can run the script from a checkout of `next`, with their own git credentials:
+- **Only "Sync skills to storybookjs/skills".** npm publish, the GitHub Release and the merges are done. Fix the cause (usually the token) and sync by hand, as below. Don't use the "skip publish" dispatch for this: it also repeats the merge, the `CHANGELOG.md` commit and, for a stable minor or major, the force-push of `next` to `main` and `latest-release`.
+- **An earlier step after npm publish, for example the merge.** Fix it and finish the release with the "skip publish" dispatch. That run syncs the skills too; check that its last step is green. If you finish the release by hand instead, sync by hand as well.
+
+Don't re-run a failed run that a push started: it starts again from the commit before the version bump and stops at the bump step.
+
+To sync by hand, you need write access to `storybookjs/skills` (the core, maintainers and developer-experience teams have it). From the root of any checkout that has `scripts/release/sync-skills.sh`, where `origin` is `storybookjs/storybook`, run:
 
 ```bash
 git fetch origin tag v<version>
 VERSION=<version> STORYBOOK_REF=v<version> SKILLS_REPO_URL=https://github.com/storybookjs/skills.git ./scripts/release/sync-skills.sh
 ```
 
-Use the SSH URL instead if that is how you push. The script's last line, for example `next is at 4db2487, tagged v11.0.0-alpha.1`, is also what `git ls-remote --tags https://github.com/storybookjs/skills refs/tags/v<version>` shows afterwards.
+Use the SSH URL instead if that is how you push. The script ends with a line like `next is at 4db2487, tagged v11.0.0-alpha.1`. To check later, `git ls-remote --tags https://github.com/storybookjs/skills refs/tags/v<version>` shows the same commit.
 
-Do this before the next publish on the same channel. Once a newer version has synced, syncing an untagged older one commits its older skills on top of the newer ones. If that moment has passed, leave the gap: that version stays untagged. For the same reason, releases of older minor versions, which are published by hand, are not synced.
+Sync a missed version before the next publish to the same branch of the skills repo (`next` for prereleases, `main` for releases). Once a newer version has synced, syncing an untagged older one commits its older skills on top of the newer ones. If that moment has passed, leave the gap: that version stays untagged. For the same reason, releases of older minor versions, which are published by hand, are not synced.
 
 ## 👉 How to Release
 
@@ -359,6 +365,8 @@ When the pull request was frozen, a CI run was triggered on the branch. If it's 
 ### 7. See the "Publish" Workflow Finish
 
 Merging the pull request will trigger [the publish workflow](https://github.com/storybookjs/storybook/actions/workflows/publish.yml), which does the final version bumping and publishing. As a Releaser, you're responsible for this to finish successfully, so you should watch it until the end. If it fails, it will notify in Discord, so you can monitor that instead if you want to.
+
+If it fails, see which step is red: when it is only the last step, "Sync skills to storybookjs/skills", the release itself is done. See [When the skills were not synced](#when-the-skills-were-not-synced).
 
 Done! 🚀
 

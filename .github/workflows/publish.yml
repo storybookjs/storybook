@@ -294,9 +294,9 @@ jobs:
           release: ${{ steps.version.outputs.current-version }}
           environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
 
-      # Runs last so a failure turns the run red without skipping any release bookkeeping. No condition, so
-      # the skip_publish dispatch syncs too; a second sync of a version is a no-op. Reads the release tag, not
-      # the branch, which a later run for the same version (after the force-push to latest-release) may have moved.
+      # Last step: a failure turns the run red without skipping any release bookkeeping. No condition, so the
+      # skip_publish dispatch syncs too (a repeat sync is a no-op). Reads the skills from the release tag, so a
+      # second run for the same version syncs the same tree even if the branch has moved on.
       - name: Sync skills to storybookjs/skills
         env:
           VERSION: ${{ steps.version.outputs.current-version }}

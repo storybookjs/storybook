@@ -108,10 +108,10 @@
     "vitest": "^5.0.0"
   },
   "peerDependencies": {
-    "@vitest/browser": "^3.0.0 || ^4.0.0 || ^5.0.0",
+    "@vitest/browser": "^4.0.0 || ^5.0.0",
     "@vitest/browser-playwright": "^4.0.0 || ^5.0.0",
     "storybook": "workspace:^",
-    "vitest": "^3.0.0 || ^4.0.0 || ^5.0.0"
+    "vitest": "^4.0.0 || ^5.0.0"
   },
   "peerDependenciesMeta": {
     "@vitest/browser": {

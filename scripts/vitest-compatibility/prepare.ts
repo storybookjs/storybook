@@ -11,6 +11,7 @@ assert(
   'Usage: node scripts/vitest-compatibility/prepare.ts DIRECTORY VERSION FRAMEWORK'
 );
 assert(['react', 'vue3', 'svelte'].includes(framework));
+assert(/^[45]\./.test(version), 'Supported compatibility versions are Vitest 4 and 5');
 const directory = resolve(destination);
 type Manifest = {
   name: string;
@@ -72,7 +73,7 @@ await pack(`@storybook/${framework}-vite`);
 Object.assign(dependencies, {
   vitest: version,
   '@vitest/coverage-v8': version,
-  [version.startsWith('3.') ? '@vitest/browser' : '@vitest/browser-playwright']: version,
+  '@vitest/browser-playwright': version,
   playwright: '1.58.2',
   vite: version.startsWith('5.') ? '7.3.1' : '6.3.6',
   typescript: '6.0.3',

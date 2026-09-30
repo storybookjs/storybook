@@ -18,6 +18,7 @@ import { storeOptions } from '@storybook/addon-vitest/constants';
 const environment = JSON.parse(await readFile('environment.json', 'utf8'));
 const version = JSON.parse(await readFile('node_modules/vitest/package.json', 'utf8')).version;
 assert.equal(version, environment.version);
+assert(/^[45]\./.test(version), 'Supported compatibility versions are Vitest 4 and 5');
 assert.equal(process.versions.node, '22.22.3');
 const configDir = resolve('.storybook');
 await mkdir(configDir, { recursive: true });
@@ -51,8 +52,8 @@ await writeFile(
   'vitest.config.mjs',
   `import { defineConfig } from 'vitest/config';
 import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
-${version.startsWith('3.') ? '' : "import { playwright } from '@vitest/browser-playwright';"}
-export default defineConfig({ test: { coverage: { provider: 'v8', include: ['Button.jsx'], watermarks: { statements: [90, 100] }, reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, ${version === '3.0.0' ? 'workspace' : 'projects'}: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: ${version.startsWith('3.') ? "'playwright'" : 'playwright()'}, instances: [{ browser: 'chromium' }] } } }] } });`
+import { playwright } from '@vitest/browser-playwright';
+export default defineConfig({ test: { coverage: { provider: 'v8', include: ['Button.jsx'], watermarks: { statements: [90, 100] }, reporter: ['json-summary'], reportsDirectory: './coverage-cli' }, projects: [{ extends: true, optimizeDeps: { include: ['@storybook/react'] }, plugins: [storybookTest({ configDir: ${JSON.stringify(configDir)} })], test: { name: 'storybook', browser: { enabled: true, headless: true, provider: playwright(), instances: [{ browser: 'chromium' }] } } }] } });`
 );
 let child: ChildProcess | undefined;
 const channel = new Channel({ async: true });

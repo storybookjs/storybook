@@ -4,10 +4,10 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 import { promisify } from 'node:util';
 
-const [vitest3, vitest4, vitest5, outputDirectory] = process.argv.slice(2);
+const [vitest4, vitest5, outputDirectory] = process.argv.slice(2);
 assert(
-  vitest3 && vitest4 && vitest5 && outputDirectory,
-  'Usage: node scripts/vitest-compatibility/regressions.ts VITEST3_DIRECTORY VITEST4_DIRECTORY VITEST5_DIRECTORY OUTPUT_DIRECTORY'
+  vitest4 && vitest5 && outputDirectory,
+  'Usage: node scripts/vitest-compatibility/regressions.ts VITEST4_DIRECTORY VITEST5_DIRECTORY OUTPUT_DIRECTORY'
 );
 const output = resolve(outputDirectory);
 await mkdir(output, { recursive: true });
@@ -44,15 +44,6 @@ const probes = [
     pattern: /  StorybookCoverageReporter as "module.exports"/,
     replacement: '',
     expected: /not a constructor|Failed to run tests/,
-  },
-  {
-    name: 'vitest3-browser-alias',
-    directory: vitest3,
-    file: 'vitest-plugin/index.js',
-    pattern: /replacement: "@vitest\/browser\/context"/,
-    replacement: 'replacement: "vitest/browser"',
-    expected:
-      /Failed to resolve import "vitest\/browser"|Failed to fetch dynamically imported module/,
   },
 ];
 const results = [];

@@ -1,3 +1,4 @@
+import { babelParse, babelPrint, traverse } from 'storybook/internal/babel';
 import type { CsfValue } from 'storybook/internal/csf-tools';
 
 import picocolors from 'picocolors';
@@ -12,14 +13,37 @@ const tagOptionRenames = {
 const isRecord = (value: CsfValue): value is Record<string, CsfValue> =>
   !!value && typeof value === 'object' && !Array.isArray(value);
 
+const setFilterRenames: Record<string, string> = {
+  experimental_setFilters: 'setFilters',
+  experimental_setFilter: 'setFilter',
+};
+
 const renameSetFilterIdentifiers = (code: string) => {
   if (!code.includes('experimental_setFilter')) {
     return undefined;
   }
-  const next = code
-    .replaceAll('experimental_setFilters', 'setFilters')
-    .replaceAll('experimental_setFilter', 'setFilter');
-  return next === code ? undefined : next;
+  let ast;
+  try {
+    ast = babelParse(code);
+  } catch {
+    return undefined;
+  }
+  let changed = false;
+  traverse(ast, {
+    Identifier(path) {
+      const next = setFilterRenames[path.node.name];
+      if (!next) {
+        return;
+      }
+      path.node.name = next;
+      changed = true;
+    },
+  });
+  if (!changed) {
+    return undefined;
+  }
+  const printed = babelPrint(ast);
+  return printed === code ? undefined : printed;
 };
 
 export const tagFilterApi: Fix = {
@@ -47,6 +71,9 @@ export const tagFilterApi: Fix = {
               continue;
             }
             if (to in option) {
+              if (option[from] === true && option[to] !== true) {
+                main.set(['tags', tagName, to], true);
+              }
               main.remove(['tags', tagName, from]);
             } else {
               main.rename(['tags', tagName, from], to);

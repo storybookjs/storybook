@@ -294,16 +294,23 @@ jobs:
           release: ${{ steps.version.outputs.current-version }}
           environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
 
-      # Last step: a failure turns the run red without skipping any release bookkeeping. No condition, so the
-      # skip_publish dispatch syncs too (a repeat sync is a no-op). Reads the skills from the release tag, so a
-      # second run for the same version syncs the same tree even if the branch has moved on.
+      - name: Create a storybookjs/skills token
+        id: skills-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ vars.STORYBOOK_BOT_APP_ID }}
+          private-key: ${{ secrets.STORYBOOK_BOT_APP_PRIVATE_KEY }}
+          owner: storybookjs
+          repositories: skills
+          permission-contents: write
+
       - name: Sync skills to storybookjs/skills
         env:
           VERSION: ${{ steps.version.outputs.current-version }}
-          SKILLS_REPO_URL: https://x-access-token:${{ secrets.SKILLS_SYNC_TOKEN }}@github.com/storybookjs/skills.git
+          SKILLS_REPO_URL: https://x-access-token:${{ steps.skills-token.outputs.token }}@github.com/storybookjs/skills.git
         run: |
           git fetch --quiet origin tag "v$VERSION"
-          STORYBOOK_REF="v$VERSION" ./release/sync-skills.sh
+          STORYBOOK_REF="v$VERSION" yarn release:sync-skills
 
       - name: Report job failure to Discord
         if: failure()

@@ -182,7 +182,8 @@ export const internalStorybookE2e = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_playwright',
-      class: 'medium+',
+      // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),

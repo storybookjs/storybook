@@ -227,9 +227,9 @@ describe('getComponentInputsOutputs (signal-based I/O)', () => {
   it('detects @Input / @Output (decorator path, unchanged)', () => {
     @Component({ template: '', standalone: false })
     class FooComponent {
-      @Input() public input: string;
+      @Input() public input?: string;
 
-      @Input('inputPropertyName') public inputWithBindingPropertyName: string;
+      @Input('inputPropertyName') public inputWithBindingPropertyName?: string;
 
       @Output() public output = new EventEmitter<Event>();
 

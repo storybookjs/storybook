@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
 
-import { vi, describe, it, expect, beforeEach, afterEach } from 'vitest';
+import { vi, assert, describe, it, expect, beforeEach, afterEach } from 'vitest';
 import { Component, ɵresetJitOptions } from '@angular/core';
 import { platformBrowserDynamicTesting } from '@angular/platform-browser-dynamic/testing';
 import { platformBrowserDynamic } from '@angular/platform-browser-dynamic';
@@ -22,10 +22,14 @@ describe('RendererFactory', () => {
     document.body.innerHTML =
       '<div id="storybook-root"></div><div id="root-docs"><div id="story-in-docs"></div></div>' +
       '<div id="storybook-docs"></div>';
-    rootTargetDOMNode = global.document.getElementById('storybook-root');
+    const root = global.document.getElementById('storybook-root');
+    assert(root);
+    rootTargetDOMNode = root;
     // The renderer's `getRenderType` requires the docs target to be inside (or be)
     // `#storybook-docs` — the legacy `#root-docs` fixture node no longer qualifies.
-    rootDocstargetDOMNode = global.document.getElementById('storybook-docs');
+    const docsRoot = global.document.getElementById('storybook-docs');
+    assert(docsRoot);
+    rootDocstargetDOMNode = docsRoot;
     (platformBrowserDynamic as any).mockImplementation(platformBrowserDynamicTesting);
     vi.spyOn(console, 'log').mockImplementation(() => {});
     // @ts-expect-error Ignore
@@ -181,13 +185,11 @@ describe('RendererFactory', () => {
       });
 
       it('should reset root HTML', async () => {
-        global.document
-          .getElementById('storybook-root')
-          .appendChild(global.document.createElement('👾'));
+        rootTargetDOMNode.appendChild(global.document.createElement('👾'));
 
-        expect(global.document.getElementById('storybook-root').innerHTML).toContain('Canvas 🖼');
+        expect(rootTargetDOMNode.innerHTML).toContain('Canvas 🖼');
         await rendererFactory.getRendererInstance(rootDocstargetDOMNode);
-        expect(global.document.getElementById('storybook-root').innerHTML).toBe('');
+        expect(rootTargetDOMNode.innerHTML).toBe('');
       });
     });
 
@@ -201,13 +203,13 @@ describe('RendererFactory', () => {
         @Component({ selector: 'foo', template: '🦊' })
         class FooComponent {}
 
-        const render = await rendererFactory.getRendererInstance(
-          global.document.getElementById('storybook-docs')
-        );
+        const docsRoot = global.document.getElementById('storybook-docs');
+        assert(docsRoot);
+        const render = await rendererFactory.getRendererInstance(docsRoot);
 
         const targetDOMNode1 = global.document.createElement('div');
         targetDOMNode1.id = 'story-1';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode1);
+        docsRoot.appendChild(targetDOMNode1);
         await render?.render({
           storyFnAngular: {
             props: {},
@@ -220,7 +222,7 @@ describe('RendererFactory', () => {
 
         const targetDOMNode2 = global.document.createElement('div');
         targetDOMNode2.id = 'story-1';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode2);
+        docsRoot.appendChild(targetDOMNode2);
         await render?.render({
           storyFnAngular: {
             props: {},
@@ -245,17 +247,17 @@ describe('RendererFactory', () => {
         @Component({ selector: 'foo', template: '🦊' })
         class FooComponent {}
 
-        const render = await rendererFactory.getRendererInstance(
-          global.document.getElementById('storybook-docs')
-        );
+        const docsRoot = global.document.getElementById('storybook-docs');
+        assert(docsRoot);
+        const render = await rendererFactory.getRendererInstance(docsRoot);
 
         const targetDOMNode1 = global.document.createElement('div');
         targetDOMNode1.id = 'story-1';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode1);
+        docsRoot.appendChild(targetDOMNode1);
 
         const targetDOMNode2 = global.document.createElement('div');
         targetDOMNode2.id = 'story-2';
-        global.document.getElementById('storybook-docs').appendChild(targetDOMNode2);
+        docsRoot.appendChild(targetDOMNode2);
 
         await Promise.all([
           render.render({
@@ -274,10 +276,10 @@ describe('RendererFactory', () => {
           }),
         ]);
 
-        expect(global.document.querySelector('#story-1 > story-1').innerHTML).toBe(
+        expect(global.document.querySelector('#story-1 > story-1')?.innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
-        expect(global.document.querySelector('#story-2 > story-2').innerHTML).toBe(
+        expect(global.document.querySelector('#story-2 > story-2')?.innerHTML).toBe(
           '<foo>🦊</foo><!--container-->'
         );
       });

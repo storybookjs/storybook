@@ -41,19 +41,21 @@ import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options.t
 export const extraAddons = ['@storybook/addon-a11y'];
 
 export type Path = string;
-export type TemplateDetails = {
-  key: TemplateKey;
+export type MonorepoDetails = {
   selectedTask: TaskKey;
-  template: Template;
   codeDir: Path;
+  junitFilename?: Path;
+};
+export type TemplateDetails = MonorepoDetails & {
+  key: TemplateKey;
+  template: Template;
   sandboxDir: Path;
   builtSandboxDir: Path;
-  junitFilename: Path;
 };
 
 type MaybePromise<T> = T | Promise<T>;
 
-export type Task = {
+export type Task<Details extends MonorepoDetails = TemplateDetails> = {
   /** A description of the task for a prompt */
   description: string;
   /**
@@ -65,14 +67,11 @@ export type Task = {
    */
   service?: boolean;
   /** Which tasks must be ready before this task can run */
-  dependsOn?: TaskKey[] | ((details: TemplateDetails, options: PassedOptionValues) => TaskKey[]);
+  dependsOn?: TaskKey[] | ((details: Details, options: PassedOptionValues) => TaskKey[]);
   /** Is this task already "ready", and potentially not required? */
-  ready: (details: TemplateDetails, options?: PassedOptionValues) => MaybePromise<boolean>;
+  ready: (details: Details, options: PassedOptionValues) => MaybePromise<boolean>;
   /** Run the task */
-  run: (
-    details: TemplateDetails,
-    options: PassedOptionValues
-  ) => MaybePromise<void | AbortController>;
+  run: (details: Details, options: PassedOptionValues) => MaybePromise<void | AbortController>;
   /** Does this task handle its own junit results? */
   junit?: boolean;
 };
@@ -103,16 +102,36 @@ export const tasks = {
 };
 export type TaskKey = keyof typeof tasks;
 
+const monorepoTasks: Task<MonorepoDetails>[] = [
+  install,
+  compile,
+  check,
+  publish,
+  syncDocs,
+  runRegistryTask,
+  e2eTestsInternal,
+];
+
+function isMonorepoTask(task: Task): task is Task<MonorepoDetails> {
+  return monorepoTasks.some((monorepoTask) => monorepoTask === task);
+}
+
 function isSandboxTask(taskKey: TaskKey) {
-  return ![
-    'install',
-    'compile',
-    'publish',
-    'run-registry',
-    'check',
-    'sync-docs',
-    'e2e-tests-internal',
-  ].includes(taskKey);
+  return !isMonorepoTask(tasks[taskKey]);
+}
+
+function withTaskDetails<Result>(
+  task: Task,
+  details: MonorepoDetails | TemplateDetails,
+  call: <Details extends MonorepoDetails>(task: Task<Details>, details: Details) => Result
+): Result {
+  if ('template' in details) {
+    return call(task, details);
+  }
+  if (isMonorepoTask(task)) {
+    return call(task, details);
+  }
+  throw new Error(`Task ${getTaskKey(task)} needs a sandbox template, pass one with --template`);
 }
 
 export const options = createOptions({
@@ -228,7 +247,7 @@ async function outputFile(file: string, data: string) {
 
 async function writeJunitXml(
   taskKey: TaskKey,
-  templateKey: TemplateKey,
+  templateKey: TemplateKey | undefined,
   startTime: Date,
   err?: Error,
   systemError?: boolean
@@ -247,7 +266,9 @@ async function writeJunitXml(
   // system-err won't turn the whole test suite as failing, which makes it a reasonable candidate
   const metadata: TestCase = {
     name: `${name} - metadata`,
-    systemErr: [JSON.stringify({ ...TEMPLATES[templateKey], id: templateKey, version })],
+    systemErr: [
+      JSON.stringify({ ...(templateKey && TEMPLATES[templateKey]), id: templateKey, version }),
+    ],
   };
   const suite = { name, timestamp: startTime, time, testCases: [testCase, metadata] };
   const junitXml = getJunitXml({ time, name, suites: [suite] });
@@ -257,31 +278,37 @@ async function writeJunitXml(
 }
 
 function getTaskKey(task: Task): TaskKey {
-  return (Object.entries(tasks) as [TaskKey, Task][]).find(([_, t]) => t === task)[0];
+  const entry = (Object.entries(tasks) as [TaskKey, Task][]).find(([_, t]) => t === task);
+  invariant(entry, `Unknown task: ${task.description}`);
+  return entry[0];
 }
 
 /** Get a list of tasks that need to be (possibly) run, in order, to be able to run `finalTask`. */
-function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: PassedOptionValues) {
+function getTaskList(
+  finalTask: Task,
+  details: MonorepoDetails | TemplateDetails,
+  optionValues: PassedOptionValues
+) {
   const taskDeps = new Map<Task, Task[]>();
   // Which tasks depend on a given task
   const tasksThatDepend = new Map<Task, Task[]>();
 
   const addTask = (task: Task, dependent?: Task) => {
-    if (tasksThatDepend.has(task)) {
+    const existingDependents = tasksThatDepend.get(task);
+    if (existingDependents) {
       if (!dependent) {
         throw new Error('Unexpected task without dependent seen a second time');
       }
-      tasksThatDepend.set(task, tasksThatDepend.get(task).concat(dependent));
+      tasksThatDepend.set(task, existingDependents.concat(dependent));
       return;
     }
 
     // This is the first time we've seen this task
     tasksThatDepend.set(task, dependent ? [dependent] : []);
 
-    const dependedTaskNames =
-      typeof task.dependsOn === 'function'
-        ? task.dependsOn(details, optionValues)
-        : task.dependsOn || [];
+    const dependedTaskNames = withTaskDetails(task, details, (t, d) =>
+      typeof t.dependsOn === 'function' ? t.dependsOn(d, optionValues) : t.dependsOn || []
+    );
     const dependedTasks = dependedTaskNames.map((n) => tasks[n]);
     taskDeps.set(task, dependedTasks);
 
@@ -302,10 +329,12 @@ function getTaskList(finalTask: Task, details: TemplateDetails, optionValues: Pa
     }
 
     sortedTasks.unshift(task);
-    taskDeps.get(task).forEach((depTask) => {
-      const remainingTasksThatDepend = tasksThatDepend
-        .get(depTask)
-        .filter((t) => !sortedTasks.includes(t));
+    const deps = taskDeps.get(task);
+    invariant(deps, `Missing dependencies of task ${getTaskKey(task)}`);
+    deps.forEach((depTask) => {
+      const dependents = tasksThatDepend.get(depTask);
+      invariant(dependents, `Missing dependents of task ${getTaskKey(depTask)}`);
+      const remainingTasksThatDepend = dependents.filter((t) => !sortedTasks.includes(t));
 
       if (remainingTasksThatDepend.length === 0) {
         tasksWithoutDependencies.push(depTask);
@@ -342,37 +371,42 @@ function writeTaskList(statusMap: Map<Task, TaskStatus>) {
   logger.info();
 }
 
-async function runTask(task: Task, details: TemplateDetails, optionValues: PassedOptionValues) {
+async function runTask(
+  task: Task,
+  details: MonorepoDetails | TemplateDetails,
+  optionValues: PassedOptionValues
+) {
   const { junitFilename } = details;
+  const templateKey = 'template' in details ? details.key : undefined;
+  const modifications = 'template' in details ? details.template.modifications : undefined;
   const startTime = new Date();
   try {
     let updatedOptions = optionValues;
-    if (details.template?.modifications?.skipTemplateStories) {
+    if (modifications?.skipTemplateStories) {
       updatedOptions = { ...updatedOptions, skipTemplateStories: true };
     }
-    if (details.template?.modifications?.disableDocs) {
+    if (modifications?.disableDocs) {
       updatedOptions = { ...updatedOptions, disableDocs: true };
     }
-    const controller = await task.run(details, updatedOptions);
+    const controller = await withTaskDetails(task, details, (t, d) => t.run(d, updatedOptions));
 
     if (junitFilename && !task.junit) {
-      await writeJunitXml(getTaskKey(task), details.key, startTime);
+      await writeJunitXml(getTaskKey(task), templateKey, startTime);
     }
 
     return controller;
   } catch (err) {
     invariant(err instanceof Error);
-    const hasJunitFile = await pathExists(junitFilename);
     // If there's a non-test related error (junit report has not been reported already), we report the general failure in a junit report
-    if (junitFilename && !hasJunitFile) {
-      await writeJunitXml(getTaskKey(task), details.key, startTime, err, true);
+    if (junitFilename && !(await pathExists(junitFilename))) {
+      await writeJunitXml(getTaskKey(task), templateKey, startTime, err, true);
     }
 
     throw err;
   } finally {
-    if (await pathExists(junitFilename)) {
+    if (templateKey && junitFilename && (await pathExists(junitFilename))) {
       const junitXml = await (await readFile(junitFilename)).toString();
-      const prefixedXml = junitXml.replace(/classname="(.*)"/g, `classname="${details.key} $1"`);
+      const prefixedXml = junitXml.replace(/classname="(.*)"/g, `classname="${templateKey} $1"`);
       await outputFile(junitFilename, prefixedXml);
     }
   }
@@ -405,22 +439,25 @@ async function run() {
 
   const finalTask = tasks[taskKey];
   const { template: templateKey, dir } = optionValues;
-  const template = TEMPLATES[templateKey];
 
-  const templateSandboxDir =
-    templateKey && join(SANDBOX_DIRECTORY, dir ?? templateKey.replace('/', '-'));
-  const details: TemplateDetails = {
-    key: templateKey,
-    template,
+  let details: MonorepoDetails | TemplateDetails = {
     codeDir: CODE_DIRECTORY,
     selectedTask: taskKey,
-    sandboxDir: templateSandboxDir,
-    builtSandboxDir: templateKey && join(templateSandboxDir, 'storybook-static'),
-    junitFilename: junit && getJunitFilename(taskKey),
+    junitFilename: junit ? getJunitFilename(taskKey) : undefined,
   };
+  if (templateKey) {
+    const sandboxDir = join(SANDBOX_DIRECTORY, dir ?? templateKey.replace('/', '-'));
+    details = {
+      ...details,
+      key: templateKey,
+      template: TEMPLATES[templateKey],
+      sandboxDir,
+      builtSandboxDir: join(sandboxDir, 'storybook-static'),
+    };
+  }
   const { sortedTasks, tasksThatDepend } = getTaskList(finalTask, details, optionValues);
   const sortedTasksReady = await Promise.all(
-    sortedTasks.map((t) => t.ready(details, optionValues))
+    sortedTasks.map((t) => withTaskDetails(t, details, (task, d) => task.ready(d, optionValues)))
   );
 
   if (templateKey) {
@@ -519,7 +556,7 @@ async function run() {
     if (status === 'notserving') {
       shouldRun =
         finalTask === task ||
-        !!tasksThatDepend.get(task).find((t) => statuses.get(t) === 'unready');
+        !!tasksThatDepend.get(task)?.find((t) => statuses.get(t) === 'unready');
     }
 
     if (startFrom === 'task') {
@@ -543,8 +580,8 @@ async function run() {
       } catch (err) {
         invariant(err instanceof Error);
         let errorTitle = `Error running task ${picocolors.bold(getTaskKey(task))}`;
-        if (details.key) {
-          errorTitle += ` for ${picocolors.bgCyan(picocolors.white(details.key))}:`;
+        if (templateKey) {
+          errorTitle += ` for ${picocolors.bgCyan(picocolors.white(templateKey))}:`;
         }
         logger.error(errorTitle);
         logger.error(err);

@@ -37,6 +37,8 @@ addToGlobalContext('cliVersion', versions.storybook);
 export type StorybookBuilderOptions = JsonObject & {
   browserTarget?: string | null;
   tsConfig?: string;
+  configDir: string;
+  outputDir: string;
   test: boolean;
   docs: boolean;
   compodoc: boolean;
@@ -176,12 +178,17 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
     );
   }
 
-  return {
-    tsConfig:
-      options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
-      browserOptions.tsConfig,
-  };
+  const tsConfig =
+    options.tsConfig ??
+    find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
+    browserOptions?.tsConfig;
+  if (tsConfig === undefined) {
+    throw new Error(
+      'Storybook could not find a tsconfig.json. Set the "tsConfig" or "browserTarget" option of the Storybook builder.'
+    );
+  }
+
+  return { tsConfig };
 }
 
 async function runInstance(options: StandaloneBuildOptions) {

@@ -49,7 +49,7 @@ vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }
 
 beforeEach(() => {
   vi.clearAllMocks();
-  vi.mocked(findConfigFile).mockReturnValue(undefined);
+  vi.mocked(findConfigFile).mockReturnValue(null);
   vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
   vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(mergeConfig).mockImplementation(
@@ -89,7 +89,7 @@ const optionsWith = (
         return key === 'features' ? featureFlags : fallback;
       },
     },
-  }) as unknown as StandaloneOptions;
+  }) as unknown as Parameters<typeof viteFinal>[1];
 
 function runConfig(stylePreprocessorOptions: Record<string, unknown> | undefined) {
   const options = {

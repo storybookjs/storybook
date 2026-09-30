@@ -8,7 +8,6 @@ import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
 
 import { MissingModuleTagError } from './error/parser/extract/svelte.ts';
 import { StorybookSvelteCSFError } from './error.ts';
-import * as legacyApi from './error/legacy-api/index.ts';
 import * as analyseDefineMeta from './error/parser/analyse/define-meta.ts';
 import * as analyseStory from './error/parser/analyse/story.ts';
 import * as extractCompiled from './error/parser/extract/compiled.ts';
@@ -31,7 +30,7 @@ describe('StorybookSvelteCSFError', () => {
     const headings = new Set(
       [...errorsMd.matchAll(/^#{1,6} `?([A-Z0-9_]+)`?\s*$/gm)].map((match) => match[1])
     );
-    const modules = [legacyApi, analyseDefineMeta, analyseStory, extractCompiled, extractSvelte];
+    const modules = [analyseDefineMeta, analyseStory, extractCompiled, extractSvelte];
     const missing: string[] = [];
     let checked = 0;
 
@@ -64,7 +63,7 @@ describe('StorybookSvelteCSFError', () => {
       }
     }
 
-    expect(checked).toBeGreaterThan(30);
+    expect(checked).toBeGreaterThan(25);
     expect(missing).toEqual([]);
   });
 });

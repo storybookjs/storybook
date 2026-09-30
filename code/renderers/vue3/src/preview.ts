@@ -50,7 +50,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   const preview = definePreviewBase({
     ...input,
     addons: [vueAnnotations, vueDocsAnnotations, ...(input.addons ?? [])],
-  }) as unknown as VuePreview<VueTypes & InferTypes<Addons>>;
+  }) as VuePreview<VueTypes & InferTypes<Addons>>;
 
   return preview;
 }

@@ -50,7 +50,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   const preview = definePreviewBase({
     ...input,
     addons: [webComponentsAnnotations, webComponentsDocsAnnotations, ...(input.addons ?? [])],
-  }) as unknown as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
+  }) as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
 
   return preview;
 }

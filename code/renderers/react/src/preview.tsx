@@ -57,7 +57,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       reactDocsAnnotations,
       ...(input.addons ?? []),
     ],
-  }) as unknown as ReactPreview<ReactTypes & InferTypes<Addons>>;
+  }) as ReactPreview<ReactTypes & InferTypes<Addons>>;
 
   const defineMeta = preview.meta.bind(preview);
   preview.meta = (_input) => {
@@ -92,8 +92,10 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
  * export const Primary = meta.story({ args: { label: 'Click me' } });
  * ```
  */
-/** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
-export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
+export interface ReactPreview<T extends AddonTypes> extends Omit<
+  Preview<ReactTypes & T>,
+  'meta' | 'type'
+> {
   /**
    * Narrows the type of the preview to include additional type information. This is useful when you
    * need to add args that aren't inferred from the component.

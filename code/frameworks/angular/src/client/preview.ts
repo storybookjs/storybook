@@ -51,7 +51,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   const preview = definePreviewBase({
     ...input,
     addons: [angularAnnotations, angularDocsAnnotations, ...(input.addons ?? [])],
-  }) as unknown as AngularPreview<AngularRenderer & InferTypes<Addons>>;
+  }) as AngularPreview<AngularRenderer & InferTypes<Addons>>;
 
   return preview;
 }

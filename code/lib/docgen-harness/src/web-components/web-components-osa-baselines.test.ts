@@ -10,7 +10,7 @@ import { isPublicField } from '../../../../renderers/web-components/src/docgen/c
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
-import { entryForFixture, runProvider } from './osa-provider.ts';
+import { entryForFixture, runProvider } from './osa-provider-test-utils.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(

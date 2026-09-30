@@ -1,4 +1,4 @@
-import type { IndexEntry } from 'storybook/internal/types';
+import type { DocgenProvider, IndexEntry } from 'storybook/internal/types';
 import { toId } from 'storybook/internal/csf';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
@@ -10,7 +10,6 @@ import { vi } from 'vitest';
 import {
   createDocgenProvider,
   DEFAULT_TYPE_PROPERTY,
-  type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
 
 export function entryForFixture(fixtureCase: string, testDir: string): IndexEntry {
@@ -30,15 +29,15 @@ export function entryForFixture(fixtureCase: string, testDir: string): IndexEntr
   };
 }
 
-export async function runProvider(
+export function runProvider(
   testDir: string,
   entry: IndexEntry,
   manifestPath: string
-): Promise<WebComponentsDocgenPayload | undefined> {
+): ReturnType<DocgenProvider> {
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [manifestPath],
     typeProperty: DEFAULT_TYPE_PROPERTY,
   })(async () => undefined);
-  return provider({ entry }) as Promise<WebComponentsDocgenPayload | undefined>;
+  return provider({ entry });
 }

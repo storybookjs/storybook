@@ -8,6 +8,7 @@ import { docgenServiceDef } from '../../../../core/src/shared/open-service/servi
 import { clearRegistry } from '../../../../core/src/shared/open-service/service-registry.ts';
 import type { StoryContext } from '../types.ts';
 import { getComponentDocgen, loadComponentDocgen } from './component-docgen.ts';
+import { registerDocgenPayload } from './docgen-test-utils.ts';
 
 vi.mock('storybook/internal/client-logger', { spy: true });
 
@@ -19,7 +20,13 @@ describe('component docgen render access', () => {
   });
 
   it('does not read the service when the flag is off', async () => {
-    const handler = vi.fn();
+    const handler = registerDocgenPayload({
+      id: 'card-a',
+      name: 'x-card',
+      path: './x.stories.ts',
+      jsDocTags: {},
+      argTypes: { label: { name: 'label' } },
+    });
     const context = { id: 'card-a--front', componentId: 'card-a' } as StoryContext;
 
     await loadComponentDocgen(context);
@@ -36,7 +43,7 @@ describe('component docgen render access', () => {
       jsDocTags: {},
       argTypes: { label: { name: 'label' } },
     };
-    const handler = registerDocgen(payload);
+    const handler = registerDocgenPayload(payload);
     const context = { id: 'card-b--front', componentId: 'card-b' } as StoryContext;
     vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
 
@@ -62,26 +69,6 @@ describe('component docgen render access', () => {
     expect(handler).toHaveBeenCalledOnce();
   });
 });
-
-function registerDocgen(payload: DocgenPayload): ReturnType<typeof vi.fn> {
-  const handler = vi.fn();
-
-  registerService(docgenServiceDef, {
-    commands: {
-      extractDocgen: {
-        handler: async (input, ctx) => {
-          handler();
-          ctx.self.setState((state) => {
-            state.components[input.id] = payload;
-          });
-          return payload;
-        },
-      },
-    },
-  });
-
-  return handler;
-}
 
 function registerRejectingDocgen(error: Error): ReturnType<typeof vi.fn> {
   const handler = vi.fn();

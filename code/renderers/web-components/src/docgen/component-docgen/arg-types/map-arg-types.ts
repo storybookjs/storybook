@@ -16,7 +16,7 @@ import type {
   ManifestSlot,
 } from '../manifest/types.ts';
 import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
-import { ARG_TYPE_CATEGORIES, type ArgTypeCategory } from './categories.ts';
+import { ARG_TYPE_CATEGORIES, type ArgTypeCategory } from '../../../arg-type-categories.ts';
 import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
 
 type MemberCategory = typeof ARG_TYPE_CATEGORIES.attributes | typeof ARG_TYPE_CATEGORIES.properties;

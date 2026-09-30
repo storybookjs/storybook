@@ -6,20 +6,18 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { StoryContextForRender } from 'storybook/internal/types';
 
-import { Channel, setChannel } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/node-logger';
-import { registerService } from 'storybook/preview-api';
 
-import { docgenServiceDef } from '../../../../core/src/shared/open-service/services/docgen/definition.ts';
 import { clearRegistry } from '../../../../core/src/shared/open-service/service-registry.ts';
 import { loadComponentDocgen } from '../../../../renderers/web-components/src/docgen-render/component-docgen.ts';
+import { registerDocgenPayload } from '../../../../renderers/web-components/src/docgen-render/docgen-test-utils.ts';
 import { renderStorySource } from '../../../../renderers/web-components/src/docs/sourceDecorator.ts';
 import { render } from '../../../../renderers/web-components/src/render.ts';
 import type { WebComponentsRenderer } from '../../../../renderers/web-components/src/types.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 import type { Meta, Story } from './csf-types.ts';
-import { entryForFixture, runProvider } from './osa-provider.ts';
+import { entryForFixture, runProvider } from './osa-provider-test-utils.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
@@ -68,21 +66,7 @@ describe('web-components OSA render baselines', () => {
 
     expect(payload?.argTypes).toBeDefined();
     vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
-    // happy-dom files start without an addons channel; registerService throws without one.
-    setChannel(new Channel({ transport: { setHandler: vi.fn(), send: vi.fn() } }));
-    registerService(docgenServiceDef, {
-      commands: {
-        extractDocgen: {
-          handler: async (input, ctx) => {
-            const payloadForInput = { ...payload!, id: input.id };
-            ctx.self.setState((state) => {
-              state.components[input.id] = payloadForInput;
-            });
-            return payloadForInput;
-          },
-        },
-      },
-    });
+    registerDocgenPayload(payload!);
 
     const recordedSnippetFiles: string[] = [];
 

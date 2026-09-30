@@ -1,13 +1,35 @@
-import type { Args, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
+import type { Args, Parameters, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import { ARG_TYPE_CATEGORIES } from '../docgen/component-docgen/arg-types/categories.ts';
+import { action } from 'storybook/actions';
 
-const BOOLEAN_TYPE_NAME = 'boolean';
+import { ARG_TYPE_CATEGORIES, type ArgTypeCategory } from '../arg-type-categories.ts';
+
 const DEFAULT_SLOT_NAME = 'default';
 
 /** Bind args by the category of the server docgen argTypes and return the node to mount. */
-export function bindArgs(element: HTMLElement, args: Args, argTypes: StrictArgTypes): Node {
+export function bindArgs(
+  element: HTMLElement,
+  args: Args,
+  argTypes: StrictArgTypes,
+  parameters: Parameters
+): Node {
   const styleRules: string[] = [];
+
+  for (const [key, argType] of Object.entries(argTypes)) {
+    const eventName = actionEventName(argType);
+    if (!eventName) {
+      continue;
+    }
+
+    if (Object.hasOwn(args, key)) {
+      const value = args[key];
+      if (typeof value === 'function') {
+        element.addEventListener(eventName, value as EventListener);
+      }
+    } else if (!parameters.actions?.disable) {
+      element.addEventListener(eventName, action(key));
+    }
+  }
 
   for (const [key, value] of Object.entries(args)) {
     const argType = argTypes[key];
@@ -17,16 +39,12 @@ export function bindArgs(element: HTMLElement, args: Args, argTypes: StrictArgTy
       continue;
     }
 
-    const eventName = actionEventName(argType);
-    if (eventName) {
-      if (typeof value === 'function') {
-        element.addEventListener(eventName, value as EventListener);
-      }
+    if (actionEventName(argType)) {
       continue;
     }
 
     const name = argType.name;
-    const category = argType.table?.category;
+    const category = argType.table?.category as ArgTypeCategory | undefined;
 
     switch (category) {
       case ARG_TYPE_CATEGORIES.attributes:
@@ -51,6 +69,13 @@ export function bindArgs(element: HTMLElement, args: Args, argTypes: StrictArgTy
         }
         break;
       }
+      case ARG_TYPE_CATEGORIES.events:
+      case ARG_TYPE_CATEGORIES.methods:
+      case undefined:
+        break;
+      default:
+        assertKnownCategory(category);
+        assignProperty(element, key, value);
     }
   }
 
@@ -66,8 +91,9 @@ export function bindArgs(element: HTMLElement, args: Args, argTypes: StrictArgTy
   return fragment;
 }
 
-/** The DOM event an action twin row listens to; `undefined` for the string form and non-twin rows. */
-export function actionEventName(argType: StrictInputType): string | undefined {
+function assertKnownCategory(_category: never): void {}
+
+function actionEventName(argType: StrictInputType): string | undefined {
   return typeof argType.action?.name === 'string' ? argType.action.name : undefined;
 }
 
@@ -75,18 +101,13 @@ function assignProperty(element: HTMLElement, key: string, value: unknown): void
   (element as HTMLElement & Record<string, unknown>)[key] = value;
 }
 
-/** Toggle booleans by type or value; serialize object values as JSON. */
 function bindAttribute(element: HTMLElement, argType: StrictInputType, value: unknown): void {
-  if (value === undefined || value === null) {
+  if (value === undefined || value === null || value === false) {
     return;
   }
 
-  if (argType.type?.name === BOOLEAN_TYPE_NAME || typeof value === 'boolean') {
-    if (value) {
-      element.setAttribute(argType.name, '');
-    } else {
-      element.removeAttribute(argType.name);
-    }
+  if (value === true) {
+    element.setAttribute(argType.name, '');
     return;
   }
 

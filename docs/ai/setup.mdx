@@ -31,9 +31,9 @@ The agent first runs [`storybook init`](../api/cli-options.mdx#init) to add Stor
 The project-specific instructions cover the following steps:
 
 1. **Analyze the codebase:** read providers, global CSS, portals, and data-fetching patterns.
-2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), [global styles](../configure/styling-and-css.mdx), and any framework-level providers in `preview.ts` (or `preview.tsx` for React).
+2. **Configure the [preview](../configure/story-rendering.mdx):** set up [decorators](../writing-stories/decorators.mdx), [global styles](../configure/styling-and-css.mdx), and any framework-level providers in the existing preview file (for example, `.storybook/preview.ts`).
 3. **Support portals:** ensure portal roots exist in the Storybook preview DOM.
-4. **Mock side effects:** intercept [network requests](../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) (via MSW), storage, timers, and navigation at the preview level rather than per-story.
+4. **Mock side effects:** when the selected stories need it, intercept [network requests](../writing-stories/mocking-data-and-modules/mocking-network-requests.mdx) (via MSW), storage, timers, and navigation at the preview level rather than per-story.
 5. **Write [stories](../writing-stories/index.mdx):** add stories from up to 10 components, from simple to complex, [tagging](../writing-stories/tags.mdx) them as `ai-generated` for your review.
 6. **Add [play functions](../writing-stories/play-function.mdx):** implement [interaction tests](../writing-tests/interaction-testing.mdx) for the most important flows.
 7. **Cover additional patterns:** expand coverage across the components the agent has already touched.

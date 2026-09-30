@@ -37,5 +37,5 @@ export function sharedPreviewDOD(ctx: SetupInstructionsContext): string {
 }
 
 export function optionalTestInfrastructureDOD(_ctx: SetupInstructionsContext): string {
-  return dedent`MSW is absent unless at least one selected story makes network requests. MockDate is absent unless at least one selected story depends on the current date or time. When present, each dependency is exercised by at least one verified story.`;
+  return dedent`MSW was added only if at least one selected story makes network requests, and MockDate only if at least one selected story depends on the current date or time. Each dependency you added is exercised by at least one verified story. Existing MSW or MockDate setup in the project is left in place.`;
 }

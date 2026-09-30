@@ -1,4 +1,4 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
+import { isSvelteCsfImportSource } from '../../../utils/import-source.ts';
 import type { ProgramNode } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
@@ -71,7 +71,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
 
-      if (source.value === SVELTE_CSF_IMPORT_SOURCE) {
+      if (isSvelteCsfImportSource(source.value)) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
             // The main entry has other exports, so this is only an error without a named `defineMeta` import

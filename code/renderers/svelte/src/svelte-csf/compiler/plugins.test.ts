@@ -1,4 +1,7 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
+import {
+  SVELTE_CSF_LEGACY_IMPORT_SOURCE,
+  SVELTE_CSF_RENDERER_IMPORT_SOURCE,
+} from '../constants.ts';
 import { dedent } from 'ts-dedent';
 import { describe, it } from 'vitest';
 
@@ -17,7 +20,7 @@ describe(preTransformPlugin.name, () => {
   it('keeps the original code when there is no legacy syntax', async ({ expect }) => {
     const code = dedent(`
       <script module>
-        import { defineMeta } from "${SVELTE_CSF_IMPORT_SOURCE}";
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
 
         const { Story } = defineMeta({ component: Button });
@@ -40,7 +43,7 @@ describe(preTransformPlugin.name, () => {
   it('transforms legacy syntax', async ({ expect }) => {
     const code = dedent(`
       <script context="module">
-        import { Story } from "${SVELTE_CSF_IMPORT_SOURCE}";
+        import { Story } from "${SVELTE_CSF_LEGACY_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
 
         export const meta = { component: Button };
@@ -58,7 +61,7 @@ describe(preTransformPlugin.name, () => {
   it('does not repeat the last character of a legacy file', async ({ expect }) => {
     const code = dedent(`
       <script context="module">
-        import { Story } from "${SVELTE_CSF_IMPORT_SOURCE}";
+        import { Story } from "${SVELTE_CSF_LEGACY_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
 
         export const meta = { component: Button };

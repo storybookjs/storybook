@@ -1,9 +1,11 @@
 import url from 'node:url';
 
 import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
-import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
+import { SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES } from '../constants.ts';
 
 import type { SvelteAST } from '../parser/ast.ts';
+
+const [SVELTE_VITE_IMPORT_SOURCE, SVELTEKIT_IMPORT_SOURCE] = SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES;
 
 /**
  * Adopted from: {@link https://github.com/storybookjs/storybook/blob/next/code/lib/core-events/src/errors/storybook-error.ts}
@@ -12,7 +14,12 @@ import type { SvelteAST } from '../parser/ast.ts';
  */
 export abstract class StorybookSvelteCSFError extends Error {
   public static isStorybookCSFSvelteError = true;
-  public static importSource = SVELTE_CSF_IMPORT_SOURCE;
+  // Users import `defineMeta` from their framework. The messages name both frameworks.
+  public static importSource = SVELTE_VITE_IMPORT_SOURCE;
+  public static sveltekitImportSource = SVELTEKIT_IMPORT_SOURCE;
+  public static importSourcesText = SVELTE_CSF_FRAMEWORK_IMPORT_SOURCES.map(
+    (source) => `"${source}"`
+  ).join(' or ');
   public static packageVersion = rendererPkg.version;
 
   public static readonly CATEGORY = {

@@ -1,4 +1,4 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
+import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../../constants.ts';
 import type { ESTreeAST } from '../../../parser/ast.ts';
 import { DefaultOrNamespaceImportUsedError } from '../../../utils/error/parser/extract/svelte.ts';
 
@@ -58,7 +58,7 @@ export function transformImportDeclaration(params: Params): ESTreeAST.ImportDecl
     specifiers: newSpecifiers,
     source: {
       type: 'Literal',
-      value: SVELTE_CSF_IMPORT_SOURCE,
+      value: SVELTE_CSF_RENDERER_IMPORT_SOURCE,
     },
   };
 }

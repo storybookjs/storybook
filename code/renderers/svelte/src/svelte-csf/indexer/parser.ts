@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 
-import { SVELTE_CSF_IMPORT_SOURCE, SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../constants.ts';
+import { SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../constants.ts';
+import { isSvelteCsfImportSource } from '../utils/import-source.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
@@ -92,6 +93,8 @@ export async function parseForIndexer(
 
   let foundMeta = false;
   let hasDefaultOrNamespaceImport = false;
+  // TODO: Remove it in the next major version
+  let hasLegacyImport = false;
 
   walk(svelteAST as SvelteAST.SvelteNode | SvelteAST.Script, results, {
     _(_node, context) {
@@ -137,7 +140,7 @@ export async function parseForIndexer(
       for (const statement of body) {
         if (
           statement.type === 'ImportDeclaration' &&
-          (statement.source.value === SVELTE_CSF_IMPORT_SOURCE ||
+          (isSvelteCsfImportSource(statement.source.value) ||
             // TODO: Remove it in the next major version
             (legacyTemplate && statement.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE))
         ) {
@@ -164,6 +167,8 @@ export async function parseForIndexer(
       const { state } = context;
       // TODO: Remove it in the next major version
       const isLegacySource = source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE;
+      // The legacy codemod adds a named `defineMeta` import
+      hasLegacyImport ||= isLegacySource;
 
       for (const specifier of specifiers) {
         if (specifier.type !== 'ImportSpecifier') {
@@ -388,7 +393,7 @@ export async function parseForIndexer(
     },
   });
 
-  if (!results.defineMetaImport && !foundMeta && hasDefaultOrNamespaceImport) {
+  if (!results.defineMetaImport && !foundMeta && !hasLegacyImport && hasDefaultOrNamespaceImport) {
     throw new DefaultOrNamespaceImportUsedError(filename);
   }
 

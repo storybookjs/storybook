@@ -1,5 +1,8 @@
 import rendererPkg from '@storybook/svelte/package.json' with { type: 'json' };
-import { SVELTE_CSF_IMPORT_SOURCE, SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../../constants.ts';
+import {
+  SVELTE_CSF_RENDERER_IMPORT_SOURCE,
+  SVELTE_CSF_LEGACY_IMPORT_SOURCE,
+} from '../../constants.ts';
 import { dedent } from 'ts-dedent';
 import { print } from 'svelte-ast-print';
 import { describe, it } from 'vitest';
@@ -284,7 +287,7 @@ describe(codemodLegacyNodes.name, () => {
   it('returns the same AST when there is no legacy syntax', async ({ expect }) => {
     const code = dedent(`
       <script module>
-        import { defineMeta } from "${SVELTE_CSF_IMPORT_SOURCE}";
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
         import Button from "./Button.svelte";
 
         const { Story } = defineMeta({ component: Button });
@@ -296,5 +299,62 @@ describe(codemodLegacyNodes.name, () => {
     const transformed = await codemodLegacyNodes({ ast });
 
     expect(transformed).toBe(ast);
+  });
+
+  describe('with the legacy import split into several import statements', () => {
+    const imports = [
+      `import { Meta } from "${SVELTE_CSF_LEGACY_IMPORT_SOURCE}";`,
+      `import { Story } from "${SVELTE_CSF_LEGACY_IMPORT_SOURCE}";`,
+      `import { composeStories } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";`,
+      `import Button from "./Button.svelte";`,
+    ];
+    const orders: number[][] = [];
+    const permute = (rest: number[], order: number[] = []) => {
+      if (rest.length === 0) {
+        orders.push(order);
+      }
+      rest.forEach((index) =>
+        permute(
+          rest.filter((other) => other !== index),
+          [...order, index]
+        )
+      );
+    };
+    permute([0, 1, 2, 3]);
+
+    it.for(orders)(
+      'has one defineMeta import and keeps the other imports, in the order %j',
+      async (order, { expect }) => {
+        const code = dedent(`
+          <script>
+            ${order.map((index) => imports[index]).join('\n')}
+          </script>
+
+          <Meta title="Atoms/Button" component={Button} />
+
+          <Story name="Default" />
+        `);
+        const transformed = await codemodLegacyNodes({
+          ast: getSvelteAST({ code }),
+        });
+        const printed = print(transformed);
+        const reparsed = getSvelteAST({ code: printed });
+        const importsOf = (script: typeof reparsed.module) =>
+          (script?.content.body ?? []).flatMap((statement) =>
+            statement.type === 'ImportDeclaration'
+              ? [`${statement.source.value}: ${statement.specifiers.map((s) => s.local.name)}`]
+              : []
+          );
+
+        expect(importsOf(reparsed.module)).toEqual([
+          `${SVELTE_CSF_RENDERER_IMPORT_SOURCE}: defineMeta`,
+        ]);
+        expect(importsOf(reparsed.instance).sort()).toEqual(
+          [`${SVELTE_CSF_RENDERER_IMPORT_SOURCE}: composeStories`, './Button.svelte: Button'].sort()
+        );
+        expect(printed).toContain('defineMeta({ title: "Atoms/Button", component: Button })');
+        expect(printed).not.toContain('<Meta');
+      }
+    );
   });
 });

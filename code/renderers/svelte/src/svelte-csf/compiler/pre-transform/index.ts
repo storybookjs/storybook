@@ -20,6 +20,8 @@ export interface State {
   defineMetaFromComponentMeta?: ESTreeAST.VariableDeclaration;
   currentScript?: 'instance' | 'module';
   pkgImportDeclaration?: ESTreeAST.ImportDeclaration;
+  // A file can import from the legacy package in more than one statement
+  legacyImportDeclarations?: ESTreeAST.ImportDeclaration[];
   storiesComponentIdentifier?: ESTreeAST.Identifier;
   storiesComponentImportDeclaration?: ESTreeAST.ImportDeclaration;
   /**
@@ -91,7 +93,10 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
       const { state } = context;
 
       if (node.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE) {
-        state.componentIdentifierName = getComponentsIdentifiersNames(node.specifiers);
+        state.componentIdentifierName = {
+          ...state.componentIdentifierName,
+          ...getComponentsIdentifiersNames(node.specifiers),
+        };
 
         if (
           state.currentScript !== 'module' ||
@@ -102,10 +107,12 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
         const transformed = transformImportDeclaration({ node, filename });
 
+        (state.legacyImportDeclarations ??= []).push(transformed);
+
         if (state.currentScript !== 'module') {
           // NOTE: We store current node in AST walker state.
           // And will remove it from instance & append it to module in the "clean-up" walk after this one.
-          state.pkgImportDeclaration = transformed;
+          state.pkgImportDeclaration ??= transformed;
         }
 
         return transformed;
@@ -276,7 +283,7 @@ export async function codemodLegacyNodes(params: Params): Promise<SvelteAST.Root
 
         for (const declaration of node.body) {
           if (declaration.type === 'ImportDeclaration') {
-            if (declaration === context.state.pkgImportDeclaration) {
+            if (context.state.legacyImportDeclarations?.includes(declaration)) {
               continue;
             }
 

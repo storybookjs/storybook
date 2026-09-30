@@ -6,10 +6,12 @@ import { StorybookSvelteCSFError } from '../../../error.ts';
 
 const BASE_INITIAL_SNIPPET = dedent`
 <script module>
-  import { defineMeta } from "@storybook/svelte";
+  import { defineMeta } from "${StorybookSvelteCSFError.importSource}";
   
   const { Story } = defineMeta({});
 </script>
+
+In a SvelteKit project, import defineMeta from "${StorybookSvelteCSFError.sveltekitImportSource}".
 `;
 
 export class MissingModuleTagError extends StorybookSvelteCSFError {
@@ -45,9 +47,12 @@ export class DefaultOrNamespaceImportUsedError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      is using the default/namespace import from "${StorybookSvelteCSFError.importSource}",
-      and doesn't import defineMeta by name. Import it with a named import:
+      is using a default or namespace import of ${StorybookSvelteCSFError.importSourcesText},
+      and doesn't import defineMeta by name. Import it with a named import, like so:
+
       import { defineMeta } from "${StorybookSvelteCSFError.importSource}";
+
+      In a SvelteKit project, import defineMeta from "${StorybookSvelteCSFError.sveltekitImportSource}".
     `;
   }
 }
@@ -64,7 +69,7 @@ export class MissingDefineMetaImportError extends StorybookSvelteCSFError {
   template() {
     return dedent`
       The file '${this.filepathURL}'
-      does not import defineMeta from "${StorybookSvelteCSFError.importSource}" inside the module context.
+      does not import defineMeta from ${StorybookSvelteCSFError.importSourcesText} inside the module context.
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 

@@ -2,6 +2,8 @@ import { describe, it } from 'vitest';
 
 import { extractModuleNodes } from './module-nodes.ts';
 
+import { SVELTE_CSF_IMPORT_SOURCES } from '../../../constants.ts';
+
 import { getSvelteAST } from '../../ast.ts';
 import { StorybookSvelteCSFError } from '../../../utils/error.ts';
 
@@ -18,10 +20,12 @@ describe(extractModuleNodes.name, () => {
       defineMeta(...) should be called inside a module script tag, like so:
 
       <script module>
-        import { defineMeta } from "@storybook/svelte";
+        import { defineMeta } from "@storybook/svelte-vite";
         
         const { Story } = defineMeta({});
       </script>
+
+      In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001
       ]
@@ -35,15 +39,17 @@ describe(extractModuleNodes.name, () => {
 
     await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
       [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003 (MissingDefineMetaImportError): The file '<path not specified>'
-      does not import defineMeta from "@storybook/svelte" inside the module context.
+      does not import defineMeta from "@storybook/svelte-vite" or "@storybook/sveltekit" inside the module context.
 
       Make sure to import defineMeta from the package and use it inside the module context like so:
 
       <script module>
-        import { defineMeta } from "@storybook/svelte";
+        import { defineMeta } from "@storybook/svelte-vite";
         
         const { Story } = defineMeta({});
       </script>
+
+      In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003
       ]
@@ -65,10 +71,12 @@ describe(extractModuleNodes.name, () => {
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
-        import { defineMeta } from "@storybook/svelte";
+        import { defineMeta } from "@storybook/svelte-vite";
         
         const { Story } = defineMeta({});
       </script>
+
+      In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
@@ -90,10 +98,12 @@ describe(extractModuleNodes.name, () => {
       it's return value needs to be stored and destructured for the parsing to succeed, eg.:
 
       <script module>
-        import { defineMeta } from "@storybook/svelte";
+        import { defineMeta } from "@storybook/svelte-vite";
         
         const { Story } = defineMeta({});
       </script>
+
+      In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
       More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0004
       ]
@@ -161,6 +171,24 @@ describe(extractModuleNodes.name, () => {
     expect(nodes.storyIdentifier.name).toBe('S');
   });
 
+  it.for(SVELTE_CSF_IMPORT_SOURCES)(
+    'finds defineMeta imported from %s',
+    async (source, { expect }) => {
+      const { module } = getSvelteAST({
+        code: `
+        <script module>
+          import { defineMeta } from "${source}";
+          const { Story } = defineMeta();
+        </script>
+      `,
+      });
+
+      const nodes = await extractModuleNodes({ module });
+
+      expect(nodes.defineMetaImport.local.name).toBe('defineMeta');
+    }
+  );
+
   describe('other imports of @storybook/svelte', () => {
     it('ignores a type-only import next to defineMeta', async ({ expect }) => {
       const { module } = getSvelteAST({
@@ -222,9 +250,12 @@ describe(extractModuleNodes.name, () => {
 
       await expect(extractModuleNodes({ module })).rejects.toThrowErrorMatchingInlineSnapshot(`
         [SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002 (DefaultOrNamespaceImportUsedError): The file '<path not specified>'
-        is using the default/namespace import from "@storybook/svelte",
-        and doesn't import defineMeta by name. Import it with a named import:
-        import { defineMeta } from "@storybook/svelte";
+        is using a default or namespace import of "@storybook/svelte-vite" or "@storybook/sveltekit",
+        and doesn't import defineMeta by name. Import it with a named import, like so:
+
+        import { defineMeta } from "@storybook/svelte-vite";
+
+        In a SvelteKit project, import defineMeta from "@storybook/sveltekit".
 
         More info: https://github.com/storybookjs/storybook/blob/v${StorybookSvelteCSFError.packageVersion}/code/renderers/svelte/src/svelte-csf/ERRORS.md#SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002
         ]

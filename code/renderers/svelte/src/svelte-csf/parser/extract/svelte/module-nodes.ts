@@ -1,4 +1,4 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
+import { isSvelteCsfImportSource } from '../../../utils/import-source.ts';
 import type { Visitors } from 'zimmerframe';
 
 import type { ESTreeAST, SvelteAST } from '../../ast.ts';
@@ -59,7 +59,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
     ImportDeclaration(node, { state, visit }) {
       const { source, specifiers } = node;
 
-      if (source.value === SVELTE_CSF_IMPORT_SOURCE) {
+      if (isSvelteCsfImportSource(source.value)) {
         for (const specifier of specifiers) {
           if (specifier.type !== 'ImportSpecifier') {
             // The main entry has other exports, so this is only an error without a named `defineMeta` import

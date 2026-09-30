@@ -11,8 +11,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { logger } from 'storybook/internal/node-logger';
 import {
   createDocgenProvider,
+  DEFAULT_TYPE_PROPERTY,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
+import { isPublicField } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/map-arg-types.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -69,6 +71,7 @@ const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: str
   vi.spyOn(process, 'cwd').mockReturnValue(testDir);
   const provider = createDocgenProvider({
     manifestPaths: [manifestPath],
+    typeProperty: DEFAULT_TYPE_PROPERTY,
   })(async () => undefined);
   return provider({ entry });
 };
@@ -80,6 +83,85 @@ const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {
   const { argTypes: _argTypes, ...rest } = payload;
   return rest;
 };
+
+const hiddenMemberNames = (payload: WebComponentsDocgenPayload): ReadonlySet<string> => {
+  const declaration = payload.customElementsManifest?.declaration;
+  const members = declaration?.members ?? [];
+  const attributes = declaration?.attributes ?? [];
+  const publicFieldNames = new Set(
+    members
+      .filter(isPublicField)
+      .flatMap((member) => (typeof member.name === 'string' ? [member.name] : []))
+  );
+  const hiddenFieldNames = new Set(
+    members
+      .filter(
+        (member) =>
+          member.kind === 'field' &&
+          typeof member.name === 'string' &&
+          !isPublicField(member) &&
+          !publicFieldNames.has(member.name) &&
+          !attributes.some(
+            (attribute) => attribute.fieldName === member.name && attribute.name === member.name
+          )
+      )
+      .map((member) => member.name)
+  );
+  for (const attribute of attributes) {
+    if (attribute.fieldName !== undefined && hiddenFieldNames.has(attribute.fieldName)) {
+      hiddenFieldNames.add(attribute.name);
+    }
+  }
+  return hiddenFieldNames;
+};
+
+describe('hiddenMemberNames', () => {
+  const payloadFor = (declaration: {
+    members?: unknown[];
+    attributes?: unknown[];
+  }): WebComponentsDocgenPayload => ({
+    id: 'hidden-members--test',
+    jsDocTags: {},
+    name: 'hidden-members',
+    path: './input.stories.ts',
+    customElementsManifest: {
+      manifestPath: 'custom-elements.json',
+      declaration: declaration as NonNullable<
+        WebComponentsDocgenPayload['customElementsManifest']
+      >['declaration'],
+    },
+  });
+
+  it('does not waive hidden fields shadowed by public fields or same-named attributes', () => {
+    expect(
+      [
+        ...hiddenMemberNames(
+          payloadFor({
+            members: [
+              { kind: 'field', name: 'size', static: true },
+              { kind: 'field', name: 'size' },
+              { kind: 'field', name: 'value', privacy: 'private' },
+            ],
+            attributes: [{ name: 'value', fieldName: 'value' }],
+          })
+        ),
+      ].sort()
+    ).toEqual([]);
+  });
+
+  it('waives a private backing field and its public attribute', () => {
+    expect(
+      [
+        ...hiddenMemberNames(
+          payloadFor({
+            members: [{ kind: 'field', name: '_value', privacy: 'private' }],
+            attributes: [{ name: 'value', fieldName: '_value' }],
+          })
+        ),
+      ].sort()
+    ).toEqual(['_value', 'value']);
+  });
+});
 
 describe('web-components server-side docgen baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
@@ -113,6 +195,8 @@ describe('web-components server-side docgen baselines', () => {
             committed: committedLegacyArgTypes!,
             label: `${fixtureCase}/${legacyPrefix}argtypes.snapshot`,
             legacyBaseline: true,
+            legacyManifestRuntime: true,
+            waivedArgs: hiddenMemberNames(payload!),
           },
         ],
       });

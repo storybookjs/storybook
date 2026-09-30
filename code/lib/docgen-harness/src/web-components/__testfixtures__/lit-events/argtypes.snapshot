@@ -9,7 +9,7 @@
         "summary": undefined,
       },
       "type": {
-        "summary": "CustomEvent",
+        "summary": "CustomEvent<{ value: string }>",
       },
     },
     "type": {
@@ -26,7 +26,7 @@
         "summary": undefined,
       },
       "type": {
-        "summary": "CustomEvent",
+        "summary": "CustomEvent<void>",
       },
     },
     "type": {

@@ -4,9 +4,7 @@ import { findFilesUp } from 'storybook/internal/common';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 
-export type WebComponentsFrameworkOptions = {
-  customElementsManifest?: string | string[];
-};
+import type { WebComponentsFrameworkOptions } from '../../../types.ts';
 
 export class MissingCustomElementsManifestError extends StorybookError {
   constructor(public data: { path: string }) {

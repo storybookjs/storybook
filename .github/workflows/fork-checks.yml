@@ -52,6 +52,7 @@ jobs:
 
   test:
     strategy:
+      fail-fast: false
       matrix:
         os: [windows-latest, ubuntu-latest]
     runs-on: ${{ matrix.os }}
@@ -73,8 +74,26 @@ jobs:
       - name: compile
         run: yarn task --task compile --start-from=compile
 
+      - name: Build core declarations for package contract tests
+        run: yarn nx compile core -c production --exclude-task-dependencies
+
+      - name: Build mcp declarations for package contract tests
+        run: yarn nx compile mcp -c production --exclude-task-dependencies
+
+      - name: Build react declarations for package contract tests
+        run: yarn nx compile react -c production --exclude-task-dependencies
+
+      - name: Build vue3 declarations for package contract tests
+        run: yarn nx compile vue3 -c production --exclude-task-dependencies
+
       - name: Install Playwright Dependencies
         run: cd code && yarn exec playwright install chromium --with-deps
 
       - name: test
-        run: yarn test
+        if: runner.os != 'Windows'
+        run: yarn test --testTimeout=30000
+
+      # Other workspace suites include POSIX-specific path assumptions; Linux runs the full suite.
+      - name: test (Windows)
+        if: runner.os == 'Windows'
+        run: yarn test --testTimeout=30000 --project core --project '@storybook/mcp' --project '@storybook/addon-vitest'

@@ -429,8 +429,11 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         },
 
         optimizeDeps: {
+          // Vite must load the virtual module through Storybook's project annotations plugin.
+          exclude: ['virtual:/@storybook/builder-vite/project-annotations.js'],
           include: [
             '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
             '@storybook/addon-vitest/internal/setup-file.browser.4',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',

@@ -69,22 +69,6 @@ export function getStringValueFromAttribute(params: Params): string | undefined 
   return value;
 }
 
-// For attributes where a falsy literal (`{null}`, `{0}`, `{false}`) means "not set".
-export function getOptionalStringValueFromAttribute(params: Params): string | undefined {
-  const { node, filename, component } = params;
-  const value = getLiteralValueFromAttribute(params);
-
-  if (typeof value === 'string') {
-    return value;
-  }
-
-  if (!node || !value) {
-    return undefined;
-  }
-
-  throw new AttributeNotStringError({ filename, component, attribute: node });
-}
-
 export function getArrayOfStringsValueFromAttribute(params: Params) {
   const { node, filename, component } = params;
 

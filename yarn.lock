@@ -10766,7 +10766,6 @@ __metadata:
   resolution: "@storybook/svelte@workspace:code/renderers/svelte"
   dependencies:
     "@storybook/builder-vite": "workspace:*"
-    "@sveltejs/package": "npm:^2.5.4"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"
     "@testing-library/svelte": "npm:^5.2.4"
     es-toolkit: "npm:^1.43.0"
@@ -10943,23 +10942,6 @@ __metadata:
   peerDependencies:
     acorn: ^8.9.0
   checksum: 10c0/0927a6ca5cfbdfb9da7aa258301e09dd6ef03cc61482e13f85c0a65dacb022569f23c5dd2445307bb3a10cb7d77403c0e3a0d4a536d99afa824b13c4c245e388
-  languageName: node
-  linkType: hard
-
-"@sveltejs/package@npm:^2.5.4":
-  version: 2.5.8
-  resolution: "@sveltejs/package@npm:2.5.8"
-  dependencies:
-    chokidar: "npm:^5.0.0"
-    kleur: "npm:^4.1.5"
-    sade: "npm:^1.8.1"
-    semver: "npm:^7.5.4"
-    svelte2tsx: "npm:~0.7.55"
-  peerDependencies:
-    svelte: ^3.44.0 || ^4.0.0 || ^5.0.0-next.1
-  bin:
-    svelte-package: svelte-package.js
-  checksum: 10c0/4c4858389eab7dd684e88b09dc771f2b3bdde7446dba98782e1bcedc48025c1573b7326d9f507da1d596af4332f265053e9f7b372da71b235036d4428555af41
   languageName: node
   linkType: hard
 
@@ -24714,7 +24696,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"kleur@npm:4.1.5, kleur@npm:^4.1.5":
+"kleur@npm:4.1.5":
   version: 4.1.5
   resolution: "kleur@npm:4.1.5"
   checksum: 10c0/e9de6cb49657b6fa70ba2d1448fd3d691a5c4370d8f7bbf1c2f64c24d461270f2117e1b0afe8cb3114f13bbd8e51de158c2a224953960331904e636a5e4c0f2a
@@ -31905,7 +31887,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sade@npm:^1.7.4, sade@npm:^1.8.1":
+"sade@npm:^1.7.4":
   version: 1.8.1
   resolution: "sade@npm:1.8.1"
   dependencies:
@@ -33893,7 +33875,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte2tsx@npm:^0.7.55, svelte2tsx@npm:~0.7.55":
+"svelte2tsx@npm:^0.7.55":
   version: 0.7.61
   resolution: "svelte2tsx@npm:0.7.61"
   dependencies:

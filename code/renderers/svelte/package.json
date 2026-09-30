@@ -32,7 +32,6 @@
     "./csf": {
       "types": "./dist/svelte-csf/index.d.ts",
       "code": "./src/svelte-csf/index.ts",
-      "svelte": "./dist/svelte-csf/index.js",
       "default": "./dist/svelte-csf/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
@@ -42,6 +41,13 @@
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
+    "./internal/svelte-csf/component-helpers": {
+      "types": "./dist/svelte-csf/runtime/component-helpers.d.ts",
+      "code": "./src/svelte-csf/runtime/component-helpers.ts",
+      "default": "./dist/svelte-csf/runtime/component-helpers.js"
+    },
+    "./internal/svelte-csf/contexts/extractor": "./static/svelte-csf/contexts/extractor.svelte.js",
+    "./internal/svelte-csf/contexts/renderer": "./static/svelte-csf/contexts/renderer.svelte.js",
     "./internal/svelte-csf/create-runtime-stories": {
       "types": "./dist/svelte-csf/runtime/create-runtime-stories.d.ts",
       "code": "./src/svelte-csf/runtime/create-runtime-stories.ts",
@@ -52,6 +58,12 @@
       "code": "./src/svelte-csf/indexer/index.ts",
       "default": "./dist/svelte-csf/indexer/index.js"
     },
+    "./internal/svelte-csf/LegacyMeta.svelte": "./static/svelte-csf/LegacyMeta.svelte",
+    "./internal/svelte-csf/LegacyStory.svelte": "./static/svelte-csf/LegacyStory.svelte",
+    "./internal/svelte-csf/LegacyTemplate.svelte": "./static/svelte-csf/LegacyTemplate.svelte",
+    "./internal/svelte-csf/StoriesExtractor.svelte": "./static/svelte-csf/StoriesExtractor.svelte",
+    "./internal/svelte-csf/Story.svelte": "./static/svelte-csf/Story.svelte",
+    "./internal/svelte-csf/StoryRenderer.svelte": "./static/svelte-csf/StoryRenderer.svelte",
     "./internal/svelte-csf/vite-plugins": {
       "types": "./dist/svelte-csf/compiler/plugins.d.ts",
       "code": "./src/svelte-csf/compiler/plugins.ts",
@@ -76,7 +88,6 @@
   },
   "devDependencies": {
     "@storybook/builder-vite": "workspace:*",
-    "@sveltejs/package": "^2.5.4",
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@testing-library/svelte": "^5.2.4",
     "esrap": "1.2.2",

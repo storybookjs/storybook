@@ -30,7 +30,7 @@ type DecoratorReturnType =
  * </script>
  * ```
  */
-interface StoryProps extends BaseAnnotations<any, DecoratorReturnType, WebRenderer> {
+export interface StoryProps extends BaseAnnotations<any, DecoratorReturnType, WebRenderer> {
   /**
    * Id of the story.
    *
@@ -91,7 +91,7 @@ interface StoryProps extends BaseAnnotations<any, DecoratorReturnType, WebRender
  * Use Svelte v5 snippet blocks instead.
  * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#template-component-removed}
  */
-interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
+export interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
   /**
    * Id of the template.
    *
@@ -105,7 +105,7 @@ interface TemplateProps extends BaseAnnotations<any, DecoratorReturnType> {
  * Use `defineMeta()` inside the module script tag instead.
  * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#meta-component-removed-in-favor-of-definemeta}
  */
-interface MetaProps extends BaseMeta<any>, BaseAnnotations<any, DecoratorReturnType> {
+export interface MetaProps extends BaseMeta<any>, BaseAnnotations<any, DecoratorReturnType> {
   /**
    * Enable the tag 'autodocs'.
    *

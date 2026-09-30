@@ -1,10 +1,10 @@
 <script lang="ts">
   import type { Component, Snippet } from 'svelte';
 
-  import { useStoryRenderer } from './contexts/renderer.svelte';
-  import { emitCode } from './emit-code.js';
+  import { useStoryRenderer } from '@storybook/svelte/internal/svelte-csf/contexts/renderer';
+  import { emitCode } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
-  import type { Cmp, StoryContext } from '../types.js';
+  import type { Cmp, StoryContext } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   type Props = {
     Stories: Component;

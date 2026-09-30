@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
 
-import type { Task } from '../task.ts';
+import type { MonorepoDetails, Task } from '../task.ts';
 import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
 import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 import { getCodeWorkspaces } from '../utils/workspace.ts';
@@ -40,7 +40,7 @@ function getCheckCommand(name: string, cwd: string) {
   return `node ${script} --cwd ${cwd}`;
 }
 
-export const check: Task = {
+export const check: Task<MonorepoDetails> = {
   description: 'Typecheck the source code of the monorepo',
   async ready() {
     return false;

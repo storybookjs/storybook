@@ -14,7 +14,7 @@ import type {
   Parameters,
   PartialStoryFn as PartialStoryFnForFramework,
   Renderer,
-  StoryContext as StoryContextForFramework,
+  StoryContextForRender as StoryContextForFramework,
   StoryFn as StoryFnForFramework,
   StoryId,
   StoryKind,

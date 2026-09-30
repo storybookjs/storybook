@@ -70,6 +70,44 @@ describe('tag-filter-api', () => {
     expect(fs.readFileSync(storyPath, 'utf8')).not.toContain('experimental_setFilter');
   });
 
+  it('keeps string literals and longer identifiers', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: 'export default { stories: [] };',
+      [managerConfigPath]: 'export {};',
+      [storyPath]: [
+        "const title = 'API/experimental_setFilter';",
+        'const experimental_setFilterExtra = true;',
+        'api.experimental_setFilter("x", () => true);',
+        "api['experimental_setFilters'](() => true);",
+      ].join('\n'),
+    });
+
+    const failures = await runFix(tagFilterApi, { ...options, result: {} });
+    expect(failures).toEqual([]);
+    const story = fs.readFileSync(storyPath, 'utf8') as string;
+    expect(story).toContain("const title = 'API/experimental_setFilter';");
+    expect(story).toContain('const experimental_setFilterExtra = true;');
+    expect(story).toContain('api.setFilter("x", () => true);');
+    expect(story).toContain("api['experimental_setFilters'](() => true);");
+  });
+
+  it('keeps a story hidden when only the deprecated alias is true', async () => {
+    vol.fromJSON({
+      [mainConfigPath]:
+        'export default { tags: { internal: { hideFromSidebar: false, excludeFromSidebar: true, hideFromAutodocs: false, excludeFromDocsStories: true } } };',
+      [managerConfigPath]: 'export {};',
+      [storyPath]: 'export default {};',
+    });
+
+    const failures = await runFix(tagFilterApi, { ...options, result: {} });
+    expect(failures).toEqual([]);
+    const main = fs.readFileSync(mainConfigPath, 'utf8') as string;
+    expect(main).toContain('hideFromSidebar: true');
+    expect(main).toContain('hideFromAutodocs: true');
+    expect(main).not.toContain('excludeFromSidebar');
+    expect(main).not.toContain('excludeFromDocsStories');
+  });
+
   it('drops a deprecated key when the new name is already set', async () => {
     vol.fromJSON({
       [mainConfigPath]:

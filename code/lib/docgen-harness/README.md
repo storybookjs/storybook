@@ -64,7 +64,7 @@ src/
 │                                 # snippet-<story>.snapshot, plain-csf-snippet-<story>.snapshot,
 │                                 # osa-argtypes.snapshot, osa-payload.snapshot, osa-description.snapshot
 ├── web-components/
-│   ├── osa-provider.ts
+│   ├── osa-provider-test-utils.ts
 │   ├── web-components-osa-baselines.test.ts
 │   ├── web-components-osa-render.test.ts
 │   ├── web-components-baselines.test.ts

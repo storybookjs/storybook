@@ -101,7 +101,7 @@ describe('bindArgs', () => {
         'active-state': 'border: 0;',
       },
       expected:
-        '<style>style + x-demo::part(panel) { color: red; }\nstyle + x-demo:state(active) { border: 0; }</style><x-demo></x-demo>',
+        '<style>@scope {\n  x-demo::part(panel) { color: red; }\n  x-demo:state(active) { border: 0; }\n}</style><x-demo></x-demo>',
     },
     {
       name: 'returns the element when no scoped style rules are bound',

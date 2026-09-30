@@ -85,7 +85,7 @@ export function bindArgs(
 
   const fragment = document.createDocumentFragment();
   const style = document.createElement('style');
-  style.textContent = styleRules.join('\n');
+  style.textContent = `@scope {\n  ${styleRules.join('\n  ')}\n}`;
   fragment.append(style, element);
 
   return fragment;
@@ -162,7 +162,7 @@ function toNamedSlotNode(node: ChildNode, name: string): ChildNode | undefined {
   return undefined;
 }
 
-/** The `<style>` is the element's previous sibling, so `+` scopes rules to this instance without a docs-visible attribute. */
+// A prelude-less `@scope` limits rules to the `<style>`'s parent, so stories sharing a page do not style each other.
 function scopedCssRule(
   element: HTMLElement,
   selectorSuffix: string,
@@ -171,5 +171,5 @@ function scopedCssRule(
   if (value === undefined || value === '') {
     return undefined;
   }
-  return `style + ${element.localName}${selectorSuffix} { ${String(value)} }`;
+  return `${element.localName}${selectorSuffix} { ${String(value)} }`;
 }

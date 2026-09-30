@@ -283,8 +283,6 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
       return () => observer?.disconnect();
     }, []);
 
-    const currentStoryId = useRef(storyId);
-    currentStoryId.current = storyId;
     const renderTracker = useRef<RenderTracker>({ renderId: 0 });
     const emit = useChannel(
       {
@@ -302,7 +300,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           const { tracker, isLatestRender } = trackRenderPhase(
             renderTracker.current,
             event,
-            currentStoryId.current
+            storyId
           );
           renderTracker.current = tracker;
           if (!isLatestRender) {
@@ -361,7 +359,7 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
           set((state) => ({ ...state, unhandledErrors, hasException: true }));
         },
       },
-      [collapsed]
+      [collapsed, storyId]
     );
 
     useEffect(() => {

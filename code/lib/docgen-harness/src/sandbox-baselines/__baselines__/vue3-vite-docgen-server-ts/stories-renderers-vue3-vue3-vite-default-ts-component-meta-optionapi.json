@@ -1,9 +1,6 @@
 {
   "argTypes": {
     "arrayDefault": {
-      "defaultValue": {
-        "summary": "[1, 2, 3]"
-      },
       "description": "Array prop with default",
       "name": "arrayDefault",
       "table": {
@@ -22,9 +19,6 @@
       }
     },
     "complexDefault": {
-      "defaultValue": {
-        "summary": "(props: any) => {\n    if (props.arrayDefault.length > props.numberDefault) {\n        return [];\n    }\n    return undefined;\n}"
-      },
       "description": "Default function more complex",
       "name": "complexDefault",
       "table": {
@@ -43,9 +37,6 @@
       }
     },
     "numberDefault": {
-      "defaultValue": {
-        "summary": "42"
-      },
       "description": "Number prop with default",
       "name": "numberDefault",
       "table": {
@@ -63,9 +54,6 @@
       }
     },
     "objectDefault": {
-      "defaultValue": {
-        "summary": "{\n    foo: 'bar',\n}"
-      },
       "description": "Object prop with default",
       "name": "objectDefault",
       "table": {

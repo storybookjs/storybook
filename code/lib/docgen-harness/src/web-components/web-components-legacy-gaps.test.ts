@@ -38,11 +38,6 @@ const BASELINES = (prefix: '' | 'osa-') =>
     unionDescription: `lit-union-jsdoc/${prefix}description.snapshot`,
     eventsArgTypes: `lit-events/${prefix}argtypes.snapshot`,
     inheritanceArgTypes: `lit-inheritance-mixin/${prefix}argtypes.snapshot`,
-    // The server baselines assert the unflattened manifest yields the flattened argTypes.
-    unflattenedArgTypes:
-      prefix === 'osa-'
-        ? 'lit-inheritance-mixin/osa-argtypes.snapshot'
-        : 'lit-inheritance-mixin/unflattened-argtypes.snapshot',
   }) as const;
 
 const FIXED = {
@@ -52,6 +47,8 @@ const FIXED = {
   backSideSnippet: 'demo-wc-card/snippet-Back.snapshot',
   basicPayload: 'lit-basic-attributes/osa-payload.snapshot',
   unionPayload: 'lit-union-jsdoc/osa-payload.snapshot',
+  inheritanceArgTypes: 'lit-inheritance-mixin/osa-argtypes.snapshot',
+  unflattenedArgTypes: 'lit-inheritance-mixin/unflattened-argtypes.snapshot',
 } as const;
 
 type ComparedBaseline = keyof ReturnType<typeof BASELINES>;
@@ -123,8 +120,13 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     );
   });
 
-  marker(INHERITANCE_MARKER, (readBaseline) => {
-    const argTypes = parseArgTypesSnapshot(readBaseline('unflattenedArgTypes'));
+  gapTest(`${INHERITANCE_MARKER} (legacy)`, () => {
+    const argTypes = parseArgTypesSnapshot(fixedBaseline('unflattenedArgTypes'));
+    expect(Object.keys(argTypes)).toEqual(expect.arrayContaining(['base-label', 'mixed-active']));
+  });
+
+  osaGapTest(INHERITANCE_MARKER)(`${INHERITANCE_MARKER} (osa)`, () => {
+    const argTypes = parseArgTypesSnapshot(fixedBaseline('inheritanceArgTypes'));
     expect(Object.keys(argTypes)).toEqual(expect.arrayContaining(['base-label', 'mixed-active']));
   });
 

@@ -1,17 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import {
-  indexDeclarations,
-  type DeclarationIndex,
-  type IndexedDeclaration,
-} from './declaration-index.ts';
-import { createInheritanceResolver } from './resolve-inheritance.ts';
+import { flattenInheritance } from './flatten-inheritance.ts';
 import type {
   ManifestAnyDeclaration,
+  ManifestClassLikeDeclaration,
   ManifestDeclaration,
   ManifestPackage,
   ManifestReference,
 } from './types.ts';
+
+type BaseFlattenCase = {
+  name: string;
+  declarations?: ManifestAnyDeclaration[];
+  manifest?: ManifestPackage;
+  declarationName: string;
+};
+
+type NameFlattenCase = BaseFlattenCase & { expected: NamedOutput };
+
+type OverrideFlattenCase = BaseFlattenCase & { expected: unknown[] };
 
 type NamedOutput = {
   members?: string[];
@@ -21,15 +28,6 @@ type NamedOutput = {
   cssParts?: string[];
   cssProperties?: string[];
   cssStates?: string[];
-};
-
-type ResolveCase = {
-  name: string;
-  manifest?: ManifestPackage;
-  declarations?: ManifestAnyDeclaration[];
-  declarationName: string;
-  modulePath: string;
-  expected: NamedOutput;
 };
 
 const MATERIAL_LIKE = {
@@ -119,13 +117,12 @@ const MATERIAL_LIKE = {
   ],
 } satisfies ManifestPackage;
 
-describe('resolveInheritance', () => {
+describe('flattenInheritance', () => {
   it.each([
     {
       name: 'merges a superclass chain with a superclass mixin',
       manifest: MATERIAL_LIKE,
       declarationName: 'MdFilledButton',
-      modulePath: 'button/filled-button.js',
       expected: {
         attributes: ['disabled<-Button'],
         cssProperties: ['--md-filled-button-container-color<-FilledButton'],
@@ -138,7 +135,6 @@ describe('resolveInheritance', () => {
       name: 'skips a package reference without a module',
       manifest: MATERIAL_LIKE,
       declarationName: 'Button',
-      modulePath: 'button/internal/button.js',
       expected: {
         attributes: ['disabled'],
         events: ['md-focus'],
@@ -175,7 +171,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a', 'dup<-M', 'm<-M', 'b<-B'] },
     },
     {
@@ -198,7 +193,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a', 'm<-M', 'b<-B'] },
     },
     {
@@ -213,7 +207,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a'] },
     },
     {
@@ -233,7 +226,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { cssParts: ['label<-B'], cssStates: ['checked<-B'] },
     },
     {
@@ -248,7 +240,6 @@ describe('resolveInheritance', () => {
         },
       ] as unknown as ManifestAnyDeclaration[],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a'] },
     },
     {
@@ -263,7 +254,6 @@ describe('resolveInheritance', () => {
         },
       ] as unknown as ManifestAnyDeclaration[],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a'] },
     },
     {
@@ -278,7 +268,6 @@ describe('resolveInheritance', () => {
         },
       ] as unknown as ManifestAnyDeclaration[],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a'] },
     },
     {
@@ -302,7 +291,6 @@ describe('resolveInheritance', () => {
         ],
       } satisfies ManifestPackage,
       declarationName: 'Child',
-      modulePath: 'child.js',
       expected: { members: ['own'] },
     },
     {
@@ -317,7 +305,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a'] },
     },
     {
@@ -333,7 +320,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'Child',
-      modulePath: 'x.js',
       expected: { members: ['child', 'base<-Base'] },
     },
     {
@@ -354,7 +340,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['a', 'b<-B'] },
     },
     {
@@ -376,7 +361,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['focusIt'] },
     },
     {
@@ -398,7 +382,6 @@ describe('resolveInheritance', () => {
         },
       ],
       declarationName: 'A',
-      modulePath: 'x.js',
       expected: { members: ['focusIt'] },
     },
     {
@@ -429,16 +412,57 @@ describe('resolveInheritance', () => {
         ],
       } satisfies ManifestPackage,
       declarationName: 'Child',
-      modulePath: 'child.js',
       expected: { members: ['child', 'base<-Base'] },
     },
-  ] satisfies ResolveCase[])('$name', (row) => {
-    const index = indexDeclarations(manifestFor(row));
-    const result = createInheritanceResolver(index)(
-      entryFor(index, row.modulePath, row.declarationName)
+  ] satisfies NameFlattenCase[])('$name', (row) => {
+    expect(outputNames(declarationFor(row) as ManifestDeclaration)).toEqual(row.expected);
+  });
+
+  it('leaves duplicate declarations after the first normalized key unflattened', () => {
+    const manifest = {
+      schemaVersion: '1.0.0',
+      modules: [
+        {
+          kind: 'javascript-module',
+          path: 'base.js',
+          declarations: [
+            { name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'base' }] },
+          ],
+        },
+        {
+          kind: 'javascript-module',
+          path: 'a.js',
+          declarations: [{ name: 'X', kind: 'class', members: [{ kind: 'field', name: 'x' }] }],
+        },
+        {
+          kind: 'javascript-module',
+          path: './a.js',
+          declarations: [
+            {
+              name: 'X',
+              kind: 'class',
+              superclass: { name: 'Base', module: 'base.js' },
+              members: [{ kind: 'field', name: 'duplicate' }],
+            },
+          ],
+        },
+      ],
+    } satisfies ManifestPackage;
+
+    const xs = flattenInheritance(manifest).modules.flatMap((module) =>
+      Array.isArray(module.declarations)
+        ? module.declarations.filter(
+            (declaration): declaration is ManifestClassLikeDeclaration =>
+              (declaration.kind === 'class' || declaration.kind === 'mixin') &&
+              declaration.name === 'X'
+          )
+        : []
     );
 
-    expect(outputNames(result as ManifestDeclaration)).toEqual(row.expected);
+    expect(xs.map((declaration) => outputNames(declaration as ManifestDeclaration))).toEqual([
+      { members: ['x'] },
+      { members: ['duplicate'] },
+    ]);
   });
 
   it.each([
@@ -466,6 +490,7 @@ describe('resolveInheritance', () => {
           members: [{ kind: 'field', name: 'label', default: "'child'" }],
         },
       ],
+      declarationName: 'Child',
       expected: [
         {
           kind: 'field',
@@ -493,6 +518,7 @@ describe('resolveInheritance', () => {
           members: [{ kind: 'field', name: 'label', default: "'child'" }],
         },
       ],
+      declarationName: 'Child',
       expected: [
         { kind: 'field', name: 'label', default: "'child'", description: 'From the grandparent.' },
       ],
@@ -515,6 +541,7 @@ describe('resolveInheritance', () => {
           ],
         },
       ],
+      declarationName: 'Child',
       expected: [
         { kind: 'field', name: 'label', default: "'child'", inheritedFrom: { name: 'Base' } },
       ],
@@ -548,6 +575,7 @@ describe('resolveInheritance', () => {
           members: [{ kind: 'field', name: 'label', default: "'child'" }],
         },
       ],
+      declarationName: 'Child',
       expected: [
         {
           kind: 'field',
@@ -558,100 +586,89 @@ describe('resolveInheritance', () => {
         },
       ],
     },
-  ] satisfies {
-    name: string;
-    declarations: ManifestAnyDeclaration[];
-    expected: unknown[];
-  }[])('$name', ({ declarations, expected }) => {
-    const index = indexDeclarations(manifestFor({ declarations }));
-    const result = createInheritanceResolver(index)(entryFor(index, 'x.js', 'Child'));
-
-    expect(result.members).toEqual(expected);
-  });
-
-  it('caches a declaration inside a cycle with the view it had when the cycle was cut', () => {
-    const index = indexDeclarations(
-      manifestFor({
-        declarations: [
-          {
-            name: 'A',
-            kind: 'class',
-            customElement: true,
-            superclass: { name: 'B' },
-            members: [{ kind: 'field', name: 'a' }],
-          },
-          {
-            name: 'B',
-            kind: 'class',
-            customElement: true,
-            superclass: { name: 'A' },
-            members: [{ kind: 'field', name: 'b' }],
-          },
-        ],
-      })
-    );
-    const resolver = createInheritanceResolver(index);
-
-    resolver(entryFor(index, 'x.js', 'A'));
-
-    expect(names(resolver(entryFor(index, 'x.js', 'B')).members ?? [])).toEqual(['b']);
+    {
+      name: 'does not inherit access or mutability flags into overrides',
+      declarations: [
+        {
+          name: 'Base',
+          kind: 'class',
+          members: [
+            { kind: 'field', name: 'a', privacy: 'protected', description: 'A.' },
+            { kind: 'field', name: 'b', readonly: true, description: 'B.' },
+            { kind: 'field', name: 'c', static: true, description: 'C.' },
+          ],
+        },
+        {
+          name: 'Child',
+          kind: 'class',
+          customElement: true,
+          superclass: { name: 'Base' },
+          members: [
+            { kind: 'field', name: 'a' },
+            { kind: 'field', name: 'b' },
+            { kind: 'field', name: 'c' },
+          ],
+        },
+      ],
+      declarationName: 'Child',
+      expected: [
+        { kind: 'field', name: 'a', description: 'A.' },
+        { kind: 'field', name: 'b', description: 'B.' },
+        { kind: 'field', name: 'c', description: 'C.' },
+      ],
+    },
+  ] satisfies OverrideFlattenCase[])('$name', (row) => {
+    expect(declarationFor(row).members).toEqual(row.expected);
   });
 
   it('returns the declaration unchanged when nothing is inherited', () => {
-    const index = indexDeclarations(
-      manifestFor({
-        declarations: [{ name: 'Plain', kind: 'class', customElement: true, tagName: 'x-plain' }],
-      })
-    );
-    const entry = entryFor(index, 'x.js', 'Plain');
-    const result = createInheritanceResolver(index)(entry);
+    const manifest = manifestFor({
+      declarations: [{ name: 'Plain', kind: 'class', customElement: true, tagName: 'x-plain' }],
+    });
 
-    expect(result).toEqual(entry.declaration);
+    const result = declarationFor({ manifest, declarationName: 'Plain' });
+
+    expect(result).toEqual({
+      name: 'Plain',
+      kind: 'class',
+      customElement: true,
+      tagName: 'x-plain',
+    });
     expect('members' in result).toBe(false);
   });
 
   it('replaces a non-array list on the child with the inherited items', () => {
-    const index = indexDeclarations(
-      manifestFor({
-        declarations: [
-          { name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'base' }] },
-          {
-            name: 'Child',
-            kind: 'class',
-            customElement: true,
-            superclass: { name: 'Base' },
-            members: 'oops',
-          },
-        ] as unknown as ManifestAnyDeclaration[],
-      })
-    );
-    const result = createInheritanceResolver(index)(entryFor(index, 'x.js', 'Child'));
+    const manifest = manifestFor({
+      declarations: [
+        { name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'base' }] },
+        {
+          name: 'Child',
+          kind: 'class',
+          customElement: true,
+          superclass: { name: 'Base' },
+          members: 'oops',
+        },
+      ] as unknown as ManifestAnyDeclaration[],
+    });
 
-    expect(names(result.members ?? [])).toEqual(['base<-Base']);
+    expect(names(declarationFor({ manifest, declarationName: 'Child' }).members ?? [])).toEqual([
+      'base<-Base',
+    ]);
   });
 
   it('does not mutate the input manifest', () => {
     const clone = structuredClone(MATERIAL_LIKE);
-    const index = indexDeclarations(MATERIAL_LIKE);
 
-    createInheritanceResolver(index)(entryFor(index, 'button/filled-button.js', 'MdFilledButton'));
+    flattenInheritance(MATERIAL_LIKE);
 
     expect(MATERIAL_LIKE).toEqual(clone);
-  });
-
-  it('returns the same resolved object when resolving a cached declaration twice', () => {
-    const index = indexDeclarations(MATERIAL_LIKE);
-    const resolver = createInheritanceResolver(index);
-    const entry = entryFor(index, 'button/filled-button.js', 'MdFilledButton');
-
-    expect(resolver(entry)).toBe(resolver(entry));
   });
 });
 
 function manifestFor({
   manifest,
   declarations = [],
-}: Pick<ResolveCase, 'manifest' | 'declarations'>): ManifestPackage {
+}: Pick<BaseFlattenCase, 'manifest' | 'declarations'>): ManifestPackage {
   return (
     manifest ?? {
       schemaVersion: '1.0.0',
@@ -660,12 +677,25 @@ function manifestFor({
   );
 }
 
-function entryFor(index: DeclarationIndex, modulePath: string, name: string): IndexedDeclaration {
-  const entry = index.get(modulePath, name);
-  if (!entry) {
-    throw new Error(`Missing declaration ${name}`);
+function declarationFor(
+  row: Pick<BaseFlattenCase, 'manifest' | 'declarations' | 'declarationName'>
+): ManifestClassLikeDeclaration {
+  const matches = flattenInheritance(manifestFor(row)).modules.flatMap((module) =>
+    Array.isArray(module.declarations)
+      ? module.declarations.filter(
+          (declaration): declaration is ManifestClassLikeDeclaration =>
+            (declaration.kind === 'class' || declaration.kind === 'mixin') &&
+            declaration.name === row.declarationName
+        )
+      : []
+  );
+
+  if (matches.length !== 1) {
+    throw new Error(
+      `Expected one declaration named ${row.declarationName}, found ${matches.length}`
+    );
   }
-  return entry;
+  return matches[0];
 }
 
 function outputNames(declaration: ManifestDeclaration): NamedOutput {

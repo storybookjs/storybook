@@ -15,6 +15,7 @@ import {
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
 import { isPublicField } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/map-arg-types.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -23,11 +24,6 @@ if (BASELINE_PATH !== 'legacy') {
     'web-components-osa-baselines.test.ts gates the server recorder against the legacy runtime baselines; update the recorder or baseline-path.ts'
   );
 }
-
-type Variant = { manifest: string; osaPrefix: string } & (
-  | { legacyArgTypes: string; sameArgTypesAs?: never }
-  | { sameArgTypesAs: string; legacyArgTypes?: never }
-);
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -41,7 +37,7 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
 const readCommitted = (path: string): string | undefined =>
   existsSync(path) ? readFileSync(path, 'utf8') : undefined;
 
-const VARIANTS: Variant[] = [
+const VARIANTS = [
   { manifest: 'custom-elements.json', osaPrefix: 'osa-', legacyArgTypes: 'argtypes.snapshot' },
   {
     manifest: 'custom-elements.v2.json',
@@ -51,9 +47,9 @@ const VARIANTS: Variant[] = [
   {
     manifest: 'custom-elements.unflattened.json',
     osaPrefix: 'osa-unflattened-',
-    sameArgTypesAs: 'custom-elements.json',
+    sameArgTypesAs: 'osa-argtypes.snapshot',
   },
-];
+] as const;
 
 beforeEach(() => {
   vi.mocked(logger.warn).mockImplementation(() => {});
@@ -182,8 +178,6 @@ describe('web-components server-side docgen baselines', () => {
     const testDir = join(fixturesDir, fixtureCase);
     const entry = entryForFixture(fixtureCase, testDir);
 
-    const argTypesByManifest = new Map<string, WebComponentsDocgenPayload['argTypes']>();
-
     for (const [index, variant] of VARIANTS.entries()) {
       const { manifest, osaPrefix } = variant;
       const manifestPath = join(testDir, manifest);
@@ -200,15 +194,13 @@ describe('web-components server-side docgen baselines', () => {
       const argTypes = payload?.argTypes;
       expect(argTypes, `${fixtureCase}: no OSA argTypes recorded`).toBeDefined();
 
-      argTypesByManifest.set(manifest, argTypes);
-
-      if (variant.sameArgTypesAs !== undefined) {
-        expect(
-          argTypesByManifest.has(variant.sameArgTypesAs),
-          `${fixtureCase}: ${variant.sameArgTypesAs} must be recorded before ${manifest}`
-        ).toBe(true);
+      if ('sameArgTypesAs' in variant) {
+        const sameArgTypesPath = join(testDir, variant.sameArgTypesAs);
+        const committedArgTypes = readCommitted(sameArgTypesPath);
+        const label = `${fixtureCase}/${variant.sameArgTypesAs}`;
+        expect(committedArgTypes, `missing ${label}`).toBeDefined();
         expect(argTypes, `${fixtureCase}: ${manifest} argTypes`).toEqual(
-          argTypesByManifest.get(variant.sameArgTypesAs)
+          parseArgTypesSnapshot(committedArgTypes!, label)
         );
       } else {
         const legacyArgTypesPath = join(testDir, variant.legacyArgTypes);

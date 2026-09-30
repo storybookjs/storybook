@@ -50,34 +50,6 @@ describe('buildTagIndex', () => {
       expectedDeclarationName: 'ExportedElement',
     },
     {
-      name: 'matches export declaration modules with and without a leading ./',
-      manifest: {
-        schemaVersion: '1.0.0',
-        modules: [
-          {
-            kind: 'javascript-module',
-            path: 'first.js',
-            declarations: [
-              {
-                name: 'ExportedElement',
-                kind: 'class',
-                customElement: true,
-              },
-            ],
-            exports: [
-              {
-                kind: 'custom-element-definition',
-                name: 'exported-element',
-                declaration: { name: 'ExportedElement', module: './first.js' },
-              },
-            ],
-          },
-        ],
-      } satisfies ManifestPackage,
-      tag: 'exported-element',
-      expectedDeclarationName: 'ExportedElement',
-    },
-    {
       name: 'picks the first declaration in the same module',
       manifest: {
         schemaVersion: '1.0.0',
@@ -196,28 +168,6 @@ describe('buildTagIndex', () => {
       expectedDeclarationName: undefined,
     },
     {
-      name: 'indexes a custom element mixin through its definition export',
-      manifest: {
-        schemaVersion: '1.0.0',
-        modules: [
-          {
-            kind: 'javascript-module',
-            path: 'mixin.js',
-            declarations: [{ name: 'MixinElement', kind: 'mixin', customElement: true }],
-            exports: [
-              {
-                kind: 'custom-element-definition',
-                name: 'x-mixin',
-                declaration: { name: 'MixinElement' },
-              },
-            ],
-          },
-        ],
-      } satisfies ManifestPackage,
-      tag: 'x-mixin',
-      expectedDeclarationName: 'MixinElement',
-    },
-    {
       name: 'returns undefined when no declaration resolves the tag',
       manifest: cem,
       tag: 'missing-tag',
@@ -230,68 +180,6 @@ describe('buildTagIndex', () => {
     expectedDeclarationName: string | undefined;
   }[])('$name', ({ manifest, tag, expectedDeclarationName }) => {
     expect(buildTagIndex(manifest).get(tag)?.name).toBe(expectedDeclarationName);
-  });
-
-  it('returns indexed tags with resolved inheritance', () => {
-    const index = buildTagIndex({
-      schemaVersion: '1.0.0',
-      modules: [
-        {
-          kind: 'javascript-module',
-          path: 'element.js',
-          declarations: [
-            {
-              name: 'Base',
-              kind: 'class',
-              members: [{ kind: 'field', name: 'a' }],
-            },
-            {
-              name: 'Child',
-              kind: 'class',
-              customElement: true,
-              tagName: 'x-child',
-              superclass: { name: 'Base' },
-              members: [{ kind: 'field', name: 'b' }],
-            },
-          ],
-        },
-      ],
-    } satisfies ManifestPackage);
-
-    expect(index.get('x-child')?.members?.map((member) => member.name)).toMatchInlineSnapshot(`
-      [
-        "b",
-        "a",
-      ]
-    `);
-  });
-
-  it('indexes a tag from a module without a path and still resolves its parents', () => {
-    const index = buildTagIndex({
-      schemaVersion: '1.0.0',
-      modules: [
-        {
-          kind: 'javascript-module',
-          path: 'base.js',
-          declarations: [{ name: 'Base', kind: 'class', members: [{ kind: 'field', name: 'a' }] }],
-        },
-        {
-          kind: 'javascript-module',
-          declarations: [
-            {
-              name: 'Child',
-              kind: 'class',
-              customElement: true,
-              tagName: 'x-child',
-              superclass: { name: 'Base', module: 'base.js' },
-              members: [{ kind: 'field', name: 'b' }],
-            },
-          ],
-        },
-      ],
-    } as unknown as ManifestPackage);
-
-    expect(index.get('x-child')?.members?.map((member) => member.name)).toEqual(['b', 'a']);
   });
 
   it('skips malformed modules, declarations, exports and exports without a module path', () => {

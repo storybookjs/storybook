@@ -10773,7 +10773,6 @@ __metadata:
     magic-string: "npm:^0.30.12"
     rollup: "npm:^4.43.0"
     svelte: "npm:^5.39.5"
-    svelte-ast-print: "npm:^0.4.0"
     svelte-check: "npm:^4.4.8"
     sveltedoc-parser: "npm:^4.2.1"
     ts-dedent: "npm:^2.0.0"

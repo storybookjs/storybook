@@ -22,12 +22,9 @@ describe(transformStory.name, () => {
   }) => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
-    const compiledPreTransformCode = fs
+    const compiledCode = fs
       .readFileSync(
-        path.resolve(
-          __dirname,
-          '../../../__tests__/__compiled__/pre-transform/Example.stories.dev.js'
-        )
+        path.resolve(__dirname, '../../../__tests__/__compiled__/Example.stories.dev.js')
       )
       .toString();
     const svelteAST = getSvelteAST({ code: originalCode, filename });
@@ -36,16 +33,16 @@ describe(transformStory.name, () => {
       filename,
     });
     const compiledASTNodes = await extractCompiledASTNodes({
-      ast: parseAst(compiledPreTransformCode),
+      ast: parseAst(compiledCode),
       filename,
     });
-    const code = new MagicString(compiledPreTransformCode);
+    const code = new MagicString(compiledCode);
     const extractedCompiledStoriesNodes = await extractStoriesNodesFromExportDefaultFn({
       nodes: compiledASTNodes,
       filename,
     });
     const svelteStories = [...svelteASTNodes.storyComponents].reverse();
-    const compiledPreTransformedStories = [...extractedCompiledStoriesNodes].reverse();
+    const compiledStories = [...extractedCompiledStoriesNodes].reverse();
 
     svelteStories.forEach((svelte, index) => {
       transformStory({
@@ -54,7 +51,7 @@ describe(transformStory.name, () => {
           svelte: svelteASTNodes,
           component: {
             svelte,
-            compiled: compiledPreTransformedStories[index],
+            compiled: compiledStories[index],
           },
         },
         filename,

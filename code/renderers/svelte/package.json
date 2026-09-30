@@ -29,11 +29,6 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
-    "./csf": {
-      "types": "./dist/svelte-csf/legacy.d.ts",
-      "code": "./src/svelte-csf/legacy.ts",
-      "default": "./dist/svelte-csf/legacy.js"
-    },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
     "./internal/AddStorybookIdDecorator.svelte": "./static/AddStorybookIdDecorator.svelte",
@@ -58,9 +53,6 @@
       "code": "./src/svelte-csf/indexer/index.ts",
       "default": "./dist/svelte-csf/indexer/index.js"
     },
-    "./internal/svelte-csf/LegacyMeta.svelte": "./static/svelte-csf/LegacyMeta.svelte",
-    "./internal/svelte-csf/LegacyStory.svelte": "./static/svelte-csf/LegacyStory.svelte",
-    "./internal/svelte-csf/LegacyTemplate.svelte": "./static/svelte-csf/LegacyTemplate.svelte",
     "./internal/svelte-csf/StoriesExtractor.svelte": "./static/svelte-csf/StoriesExtractor.svelte",
     "./internal/svelte-csf/Story.svelte": "./static/svelte-csf/Story.svelte",
     "./internal/svelte-csf/StoryRenderer.svelte": "./static/svelte-csf/StoryRenderer.svelte",
@@ -94,7 +86,6 @@
     "magic-string": "^0.30.12",
     "rollup": "^4.43.0",
     "svelte": "^5.39.5",
-    "svelte-ast-print": "^0.4.0",
     "svelte-check": "^4.4.8",
     "sveltedoc-parser": "^4.2.1",
     "typescript": "^6.0.3",

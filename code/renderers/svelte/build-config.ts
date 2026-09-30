@@ -18,11 +18,6 @@ const config: BuildEntries = {
         dts: false,
       },
       {
-        // TODO: Remove with the legacy syntax.
-        exportEntries: ['./csf'],
-        entryPoint: './src/svelte-csf/legacy.ts',
-      },
-      {
         exportEntries: ['./internal/svelte-csf/create-runtime-stories'],
         entryPoint: './src/svelte-csf/runtime/create-runtime-stories.ts',
       },
@@ -60,9 +55,6 @@ const config: BuildEntries = {
     './internal/svelte-csf/Story.svelte': './static/svelte-csf/Story.svelte',
     './internal/svelte-csf/StoriesExtractor.svelte': './static/svelte-csf/StoriesExtractor.svelte',
     './internal/svelte-csf/StoryRenderer.svelte': './static/svelte-csf/StoryRenderer.svelte',
-    './internal/svelte-csf/LegacyMeta.svelte': './static/svelte-csf/LegacyMeta.svelte',
-    './internal/svelte-csf/LegacyStory.svelte': './static/svelte-csf/LegacyStory.svelte',
-    './internal/svelte-csf/LegacyTemplate.svelte': './static/svelte-csf/LegacyTemplate.svelte',
     './internal/svelte-csf/contexts/extractor': './static/svelte-csf/contexts/extractor.svelte.js',
     './internal/svelte-csf/contexts/renderer': './static/svelte-csf/contexts/renderer.svelte.js',
   },

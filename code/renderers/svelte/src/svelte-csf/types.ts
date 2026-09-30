@@ -2,13 +2,13 @@
 import type {
   ComponentAnnotations as BaseComponentAnnotations,
   StoryAnnotations as BaseStoryAnnotations,
-  WebRenderer,
 } from 'storybook/internal/types';
-import type { Component, ComponentProps, Snippet } from 'svelte';
+import type { Component, Snippet } from 'svelte';
 
 import type { StoryContext } from '../public-types.ts';
+import type { SvelteRenderer } from '../types.ts';
 
-export type { StoryContext };
+export type { StoryContext, SvelteRenderer };
 
 export type Cmp = Component<any>;
 
@@ -28,17 +28,6 @@ export type ComponentAnnotations<
   // them out of TCmp inference so they do not widen the story args type.
   subcomponents?: Record<string, Cmp>;
 };
-
-export interface SvelteRenderer<TCmp extends Cmp> extends WebRenderer {
-  component: TCmp;
-  storyResult: SvelteStoryResult<TCmp>;
-}
-
-export interface SvelteStoryResult<TCmp extends Cmp> {
-  Component?: TCmp;
-  props?: ComponentProps<TCmp>;
-  decorator?: TCmp;
-}
 
 export type StoryAnnotations<
   TArgs extends Record<string, any>,

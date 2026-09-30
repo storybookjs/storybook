@@ -55,7 +55,7 @@ describe(transformStoriesCode.name, () => {
 
       import * as $ from 'svelte/internal/client';
       import { fn } from 'storybook/test';
-      import { defineMeta } from '@storybook/svelte/csf';
+      import { defineMeta } from '@storybook/svelte';
       import Example from './Example.svelte';
 
       /**

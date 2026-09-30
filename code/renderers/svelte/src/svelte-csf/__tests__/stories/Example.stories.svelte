@@ -1,6 +1,6 @@
 <script module lang="ts">
   import { fn } from 'storybook/test';
-  import { defineMeta, type StoryContext } from '@storybook/svelte/csf';
+  import { defineMeta, type StoryContext } from '@storybook/svelte';
 
   import Example from './Example.svelte';
 

@@ -12,7 +12,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story exportName="Text" />
@@ -41,7 +41,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story exportName={"ExpressionWithLiteral"} />
@@ -70,7 +70,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story />
@@ -105,7 +105,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story exportName="Default">
@@ -136,7 +136,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story exportName="SomeExportName" name="some name" />
@@ -165,7 +165,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story name="some name" />
@@ -194,7 +194,7 @@ describe(getStoryIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story exportName="default" />
@@ -234,7 +234,7 @@ describe(getStoriesIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
 
@@ -271,7 +271,7 @@ describe(getStoriesIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
 
@@ -308,7 +308,7 @@ describe(getStoriesIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
 
@@ -346,7 +346,7 @@ describe(getStoriesIdentifiers.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         ${storyTag}

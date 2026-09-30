@@ -10,7 +10,7 @@ describe(extractStoryAttributesNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story name="Default" />
@@ -33,7 +33,7 @@ describe(extractStoryAttributesNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story name="Default">

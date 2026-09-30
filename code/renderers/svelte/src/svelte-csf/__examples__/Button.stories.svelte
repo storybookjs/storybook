@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { defineMeta, type StoryContext } from '@storybook/svelte/csf';
+  import { defineMeta, type StoryContext } from '@storybook/svelte';
   import { fn } from 'storybook/test';
   import type { ComponentProps } from 'svelte';
 

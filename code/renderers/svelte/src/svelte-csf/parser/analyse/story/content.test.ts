@@ -13,7 +13,7 @@ describe(getStoryContentRawCode.name, () => {
     }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -46,7 +46,7 @@ describe(getStoryContentRawCode.name, () => {
     it('works when `render` is set in `defineMeta`', async ({ expect }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -82,7 +82,7 @@ describe(getStoryContentRawCode.name, () => {
     }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -122,7 +122,7 @@ describe(getStoryContentRawCode.name, () => {
     }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -153,7 +153,7 @@ describe(getStoryContentRawCode.name, () => {
     it('works when a static children content provided with asChild', async ({ expect }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -186,7 +186,7 @@ describe(getStoryContentRawCode.name, () => {
     }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -219,7 +219,7 @@ describe(getStoryContentRawCode.name, () => {
     it("works when a `template` svelte's snippet block used inside", async ({ expect }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -254,7 +254,7 @@ describe(getStoryContentRawCode.name, () => {
     }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -293,7 +293,7 @@ describe(getStoryContentRawCode.name, () => {
     }) => {
       const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           const { Story } = defineMeta({
             title: 'Templating',

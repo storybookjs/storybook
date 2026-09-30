@@ -1076,7 +1076,7 @@ describe('stories codemod', () => {
       `);
     });
 
-    it('sees through non-null assertions, casts and string keys', async () => {
+    it('sees through non-null assertions, casts and string keys, and avoids a type-only mocked', async () => {
       await expect(
         transform(dedent`
           import { type mocked } from 'storybook/test';

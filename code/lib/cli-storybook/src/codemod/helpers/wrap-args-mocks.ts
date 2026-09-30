@@ -43,21 +43,16 @@ function withoutTypeCast(node: t.Node): t.Node {
 }
 
 function isRender(path: NodePath<t.Function>) {
-  if (t.isObjectMethod(path.node)) {
+  if (path.isObjectMethod()) {
     return keyName(path.node.key) === 'render';
   }
-  let value: NodePath = path;
-  while (
-    value.parentPath?.isTSAsExpression() ||
-    value.parentPath?.isTSSatisfiesExpression() ||
-    value.parentPath?.isTSNonNullExpression()
-  ) {
-    value = value.parentPath;
-  }
-  const { parent } = value;
-  return (
-    t.isObjectProperty(parent) && parent.value === value.node && keyName(parent.key) === 'render'
+  const owner = path.findParent(
+    (parent) =>
+      !parent.isTSAsExpression() &&
+      !parent.isTSSatisfiesExpression() &&
+      !parent.isTSNonNullExpression()
   );
+  return !!owner?.isObjectProperty() && keyName(owner.node.key) === 'render';
 }
 
 function isMember(node: t.Node): node is t.MemberExpression | t.OptionalMemberExpression {
@@ -73,7 +68,6 @@ export function wrapArgsMocks(ast: t.File) {
   const argsObjects = new Set<Binding>();
   const argValues = new Set<Binding>();
   const targets: NodePath<t.Expression>[] = [];
-  let program: NodePath<t.Program> | undefined;
 
   const bindingOf = (path: NodePath, node: t.Node | undefined) =>
     t.isIdentifier(node) ? path.scope.getBinding(node.name) : undefined;
@@ -135,9 +129,6 @@ export function wrapArgsMocks(ast: t.File) {
   };
 
   traverse(ast, {
-    Program(path) {
-      program = path;
-    },
     Function(path) {
       const [first] = path.node.params;
       if (first && isRender(path)) {
@@ -161,9 +152,10 @@ export function wrapArgsMocks(ast: t.File) {
     OptionalMemberExpression: collectTarget,
   });
 
-  if (targets.length === 0 || !program) {
+  if (targets.length === 0) {
     return false;
   }
+  const programScope = targets[0].scope.getProgramParent();
 
   const testImports = ast.program.body.filter(
     (node): node is t.ImportDeclaration =>
@@ -180,22 +172,19 @@ export function wrapArgsMocks(ast: t.File) {
   );
   const namespace = specifiers.find((specifier) => t.isImportNamespaceSpecifier(specifier));
 
-  const refersTo = (name: string, binding: Binding | undefined) =>
-    targets.every((target) => target.scope.getBinding(name) === binding);
+  const isUnshadowed = (name: string) =>
+    targets.every((target) => target.scope.getBinding(name) === programScope.getBinding(name));
 
-  let callee: () => t.Expression;
-  if (existing && refersTo(existing.local.name, program.scope.getBinding(existing.local.name))) {
-    callee = () => t.identifier(existing.local.name);
-  } else if (
-    namespace &&
-    refersTo(namespace.local.name, program.scope.getBinding(namespace.local.name))
-  ) {
-    callee = () => t.memberExpression(t.identifier(namespace.local.name), t.identifier('mocked'));
+  let callee: t.Expression;
+  if (existing && isUnshadowed(existing.local.name)) {
+    callee = t.identifier(existing.local.name);
+  } else if (namespace && isUnshadowed(namespace.local.name)) {
+    callee = t.memberExpression(t.identifier(namespace.local.name), t.identifier('mocked'));
   } else {
-    const name = refersTo('mocked', undefined)
-      ? 'mocked'
-      : program.scope.generateUidIdentifier('mocked').name;
-    callee = () => t.identifier(name);
+    const name = targets.some((target) => target.scope.getBinding('mocked'))
+      ? programScope.generateUidIdentifier('mocked').name
+      : 'mocked';
+    callee = t.identifier(name);
     const specifier = t.importSpecifier(t.identifier(name), t.identifier('mocked'));
     const namedImport = testImports.find((node) =>
       node.specifiers.every((s) => !t.isImportNamespaceSpecifier(s))
@@ -213,7 +202,7 @@ export function wrapArgsMocks(ast: t.File) {
   }
 
   for (const target of targets) {
-    target.replaceWith(t.callExpression(callee(), [target.node]));
+    target.replaceWith(t.callExpression(t.cloneNode(callee), [target.node]));
   }
   return true;
 }

@@ -4,6 +4,7 @@
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
+  - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
@@ -632,6 +633,36 @@ Files it cannot edit safely, such as parameters built from a spread, are listed 
 Before, any `docs.subtitle` took precedence over any `componentSubtitle`, even one set in the preview over one set in a component's meta.
 After the migration, the more specific value wins, like every other parameter.
 If your preview sets `docs.subtitle`, check the subtitles on your Docs pages.
+
+### `argTypes` `defaultValue` removed
+
+`argTypes.<name>.defaultValue` is removed. It has not set the value of an arg since Storybook 7.0. Delete the property.
+
+To choose the value a story starts with, set `args`:
+
+```js
+export default {
+  args: {
+    label: 'Hello',
+  },
+};
+```
+
+To choose the text shown in the docs table, set `table.defaultValue`:
+
+```js
+export default {
+  argTypes: {
+    label: {
+      table: { defaultValue: { summary: 'Hello' } },
+    },
+  },
+};
+```
+
+`table.defaultValue` and `globalTypes.defaultValue` are unchanged.
+
+The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When the configuration is not a static object, including a spread, a computed name, or an MDX or Svelte story, the file is left unchanged and listed in `automigrations-summary.md` with instructions to delete the property yourself.
 
 ### Docs Code panel enabled by default
 

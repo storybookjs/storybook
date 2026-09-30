@@ -1,0 +1,132 @@
+import { readFile, writeFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+import { formatExistingFile, JsPackageManager } from 'storybook/internal/common';
+
+import { fs, vol } from 'memfs';
+
+import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { argtypesDefaultValue } from './argtypes-default-value.ts';
+
+vi.mock('node:fs/promises', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
+
+const previewConfigPath = resolve('.storybook/preview.ts');
+const storyPath = resolve('src/Button.stories.ts');
+const options = {
+  packageManager: vi.mocked(JsPackageManager.prototype),
+  mainConfig: { stories: [] },
+  mainConfigPath: resolve('.storybook/main.ts'),
+  configDir: resolve('.storybook'),
+  storybookVersion: '11.0.0',
+  previewConfigPath,
+  storiesPaths: [storyPath],
+};
+
+const migrate = async (files: { preview?: string; story?: string }, storiesPaths = [storyPath]) => {
+  vol.fromJSON({
+    [previewConfigPath]: files.preview ?? 'export default {};',
+    [storyPath]: files.story ?? 'export default {};',
+  });
+  const failures = await runFix(argtypesDefaultValue, {
+    ...options,
+    storiesPaths,
+    result: {},
+  });
+  return {
+    failures,
+    preview: fs.readFileSync(previewConfigPath, 'utf8') as string,
+    story: fs.readFileSync(storyPath, 'utf8') as string,
+  };
+};
+
+describe('argtypes-default-value', () => {
+  beforeEach(() => {
+    vol.reset();
+    vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
+    vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
+    vi.mocked(formatExistingFile).mockImplementation(async (_path, source) => source);
+  });
+
+  afterEach(() => {
+    vi.mocked(readFile).mockRestore();
+    vi.mocked(writeFile).mockRestore();
+  });
+
+  it('does not apply when defaultValue is only the docs-table field', async () => {
+    vol.fromJSON({
+      [previewConfigPath]:
+        "export default { globalTypes: { locale: { defaultValue: 'en' } }, argTypes: { label: { table: { defaultValue: { summary: 'Hi' } } } } };",
+      [storyPath]: 'export default {};',
+    });
+
+    expect(await checkFix(argtypesDefaultValue, options)).toBeNull();
+  });
+
+  it('deletes a static argTypes defaultValue and leaves args, table.defaultValue, and globalTypes', async () => {
+    const { failures, preview, story } = await migrate({
+      preview: [
+        'export default {',
+        "  globalTypes: { locale: { defaultValue: 'en' } },",
+        '  argTypes: {',
+        "    label: { defaultValue: 'Preview', control: 'text' },",
+        '  },',
+        '};',
+      ].join('\n'),
+      story: [
+        'export default {',
+        '  args: { label: "Keep" },',
+        '  argTypes: {',
+        "    label: { defaultValue: 'Meta', table: { defaultValue: { summary: 'Shown' } } },",
+        '  },',
+        '};',
+        'export const Primary = {',
+        "  argTypes: { value: { 'defaultValue': 0, control: 'number' } },",
+        '};',
+      ].join('\n'),
+    });
+
+    expect(failures).toEqual([]);
+    expect(preview).toContain("defaultValue: 'en'");
+    expect(preview).not.toContain("defaultValue: 'Preview'");
+    expect(preview).toContain("control: 'text'");
+    expect(story).toContain('label: "Keep"');
+    expect(story).not.toContain("defaultValue: 'Meta'");
+    expect(story).toContain("summary: 'Shown'");
+    expect(story).not.toContain("'defaultValue': 0");
+    expect(story).toContain("control: 'number'");
+  });
+
+  it('leaves a spread in place and reports the manual replacement', async () => {
+    const story =
+      "import { shared } from './shared';\nexport default { argTypes: { ...shared, label: { defaultValue: 'A' } } };";
+    const result = await migrate({ story });
+
+    expect(result.failures).toEqual([
+      { file: storyPath, kind: 'story', message: expect.stringContaining('args.<name>') },
+    ]);
+    expect(result.story).toBe(story);
+  });
+
+  it('reports an MDX story instead of editing it', async () => {
+    const docsPath = resolve('src/Intro.mdx');
+    const source = '<Meta argTypes={{ value: { defaultValue: 0 } }} />';
+    vol.fromJSON({
+      [previewConfigPath]: 'export default {};',
+      [docsPath]: source,
+    });
+
+    const failures = await runFix(argtypesDefaultValue, {
+      ...options,
+      storiesPaths: [docsPath],
+      result: {},
+    });
+
+    expect(failures).toEqual([
+      { file: docsPath, kind: 'story', message: expect.stringContaining('table.defaultValue') },
+    ]);
+    expect(fs.readFileSync(docsPath, 'utf8')).toBe(source);
+  });
+});

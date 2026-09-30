@@ -141,10 +141,10 @@ export interface InputType {
   /** @see https://storybook.js.org/docs/api/arg-types#type */
   type?: SBType | SBScalarType['name'];
   /**
-   * @deprecated Use `table.defaultValue.summary` instead.
-   * @see https://storybook.js.org/docs/api/arg-types#defaultvalue
+   * Removed. Set the story value with `args`, or the docs-table text with `table.defaultValue`.
+   * The index signature would otherwise still accept this field.
    */
-  defaultValue?: any;
+  defaultValue?: never;
   [key: string]: any;
 }
 
@@ -377,8 +377,8 @@ export interface BaseAnnotations<TRenderer extends Renderer = Renderer, TArgs = 
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
-   * arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name` and `description`. These get
+   * automatically filled in by Storybook Docs.
    *
    * @see [ArgTypes](https://storybook.js.org/docs/api/arg-types)
    */

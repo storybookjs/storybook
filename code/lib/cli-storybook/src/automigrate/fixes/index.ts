@@ -3,6 +3,7 @@ import type { CommandFix, Fix } from '../types.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
 import { addonMcp } from './addon-mcp.ts';
+import { argtypesDefaultValue } from './argtypes-default-value.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import {
@@ -25,6 +26,7 @@ export const allFixes: Fix[] = [
   upgradeStorybookRelatedDependencies,
   vitestSetupFile,
   componentSubtitle,
+  argtypesDefaultValue,
   rnOndeviceAddonsToDeviceAddons,
   nextjsToNextjsVite,
   angularToAngularVite,

@@ -63,13 +63,11 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   preview.meta = (_input) => {
     const meta = defineMeta(_input);
     const defineStory = meta.story.bind(meta);
-    // @ts-expect-error internal code that is hard to type
-    meta.story = (__input: any) => {
+    meta.story = (__input?: any) => {
       const story = defineStory(__input);
       // TODO: [test-syntax] Are we sure we want this? the Component construct was for
       // compatibility with raw portable stories. We don't actually use this in vitest.
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore this is a private property used only here
+      // @ts-expect-error `__compose` is internal to `storybook/internal/csf`
       story.Component = story.__compose();
       return story;
     };

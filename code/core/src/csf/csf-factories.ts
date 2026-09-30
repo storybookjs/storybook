@@ -69,8 +69,11 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       return this;
     },
     meta(meta) {
-      // @ts-expect-error hard
-      return defineMeta(meta, this);
+      type TPreviewRenderer = TRenderer & InferTypes<Addons>;
+      return defineMeta(
+        meta as ComponentAnnotations<TPreviewRenderer, TPreviewRenderer['args']>,
+        this
+      );
     },
   } as Preview<TRenderer & InferTypes<Addons>>;
   globalThis.globalProjectAnnotations = preview.composed;
@@ -196,7 +199,7 @@ function defineMeta<TRenderer extends Renderer>(
       parameters: { ...input.parameters, csfFactory: true },
     } as Meta<TRenderer>['input'],
     preview,
-    // @ts-expect-error hard
+    // @ts-expect-error one implementation can't match the generic overloads of `Meta['story']`
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {
@@ -246,7 +249,13 @@ export function isStory<TRenderer extends Renderer>(input: unknown): input is St
 function defineStory<
   TRenderer extends Renderer,
   TInput extends StoryAnnotations<TRenderer, TRenderer['args']>,
->(input: TInput, meta: Meta<TRenderer>): Story<TRenderer, TInput> {
+>(
+  input: TInput,
+  meta: Meta<TRenderer>
+): Story<TRenderer, TInput> & {
+  __compose: () => ComposedStoryFn<TRenderer>;
+  __children: Story<TRenderer>[];
+} {
   let composed: ComposedStoryFn<TRenderer>;
   const compose = () => {
     if (!composed) {
@@ -266,7 +275,6 @@ function defineStory<
     _tag: 'Story',
     input,
     meta,
-    // @ts-expect-error this is a private property used only once in renderers/react/src/preview
     __compose: compose,
     __children,
     get composed() {
@@ -284,7 +292,7 @@ function defineStory<
       name: string,
       overridesOrTestFn: StoryAnnotations<TRenderer, TRenderer['args']> | TestFunction<TRenderer>,
       testFn?: TestFunction<TRenderer, TRenderer['args']>
-    ): void {
+    ) {
       const annotations = typeof overridesOrTestFn !== 'function' ? overridesOrTestFn : {};
       const testFunction = typeof overridesOrTestFn !== 'function' ? testFn! : overridesOrTestFn;
 
@@ -309,7 +317,7 @@ function defineStory<
       });
       __children.push(test);
 
-      return test as unknown as void;
+      return test;
     },
     extend<TInput extends StoryAnnotations<TRenderer, TRenderer['args']>>(input: TInput) {
       return defineStory(

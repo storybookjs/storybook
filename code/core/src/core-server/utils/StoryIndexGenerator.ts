@@ -786,12 +786,6 @@ export class StoryIndexGenerator {
         throw new MultipleIndexingError(duplicateErrors);
       }
 
-      if (previewCode?.includes('storySort')) {
-        once.warn(dedent`
-          parameters.options.storySort in the preview no longer sorts stories.
-          Move it to storySorts in .storybook/main, or run: npx storybook automigrate story-sort-to-main
-        `);
-      }
       const sorted = await this.sortStories(
         indexEntries,
         combineStorySorts(this.options.storySorts ?? [])

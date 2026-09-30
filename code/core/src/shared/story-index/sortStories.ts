@@ -33,7 +33,8 @@ export const combineStorySorts = (
   const comparators = storySorts.map(toComparator);
   return (a: IndexEntry, b: IndexEntry) => {
     for (const comparator of comparators) {
-      const result = Number(comparator(a, b));
+      // A comparator that returns nothing (or `false`) considers the stories equal, as in Array.sort.
+      const result = Number(comparator(a, b)) || 0;
       if (result !== 0) {
         return result;
       }

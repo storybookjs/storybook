@@ -39,3 +39,28 @@ it('passes a single sorter through and leaves an empty list to the file order', 
   expect(combineStorySorts([byTitle])).toBe(byTitle);
   expect(combineStorySorts([])).toBeUndefined();
 });
+
+it('treats a sorter that returns nothing as considering the stories equal', () => {
+  const stories = [
+    { id: 'b--one', title: 'B', name: 'One' },
+    { id: 'intro--one', title: 'Intro', name: 'One' },
+    { id: 'a--one', title: 'A', name: 'One' },
+  ] as IndexEntry[];
+  // @ts-expect-error A sorter written without strict return checks may return undefined.
+  const pinIntro: (a: IndexEntry, b: IndexEntry) => number = (a, b) => {
+    if (a.title === 'Intro') {
+      return -1;
+    }
+    if (b.title === 'Intro') {
+      return 1;
+    }
+  };
+
+  const sorted = sortStoriesV7(
+    stories,
+    combineStorySorts([pinIntro, { method: 'alphabetical' }]),
+    []
+  );
+
+  expect(sorted.map(({ id }) => id)).toEqual(['intro--one', 'a--one', 'b--one']);
+});

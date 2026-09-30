@@ -24,19 +24,12 @@ const checkGlobals = (parameters: Parameters) => {
   }
 };
 
-const checkStorySort = (parameters: Parameters) => {
-  if (parameters.options?.storySort) {
-    logger.error('storySort must be configured as storySorts in .storybook/main');
-  }
-};
-
 const checkDisallowedParameters = (parameters?: Parameters) => {
   if (!parameters) {
     return;
   }
 
   checkGlobals(parameters);
-  checkStorySort(parameters);
 };
 
 // Given the raw exports of a CSF file, check and normalize it.

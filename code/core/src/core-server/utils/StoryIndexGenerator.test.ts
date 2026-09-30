@@ -2300,27 +2300,6 @@ describe('StoryIndexGenerator', () => {
         ]
       `);
     });
-
-    it('warns that a storySort in the preview no longer sorts stories', async () => {
-      const storiesSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
-        './src/**/*.stories.(ts|js|mjs|jsx)',
-        options
-      );
-      const generator = new StoryIndexGenerator([storiesSpecifier], options);
-      vi.spyOn(generator, 'getPreviewCode').mockResolvedValue(
-        `export default { parameters: { options: { storySort: { order: ['D'] } } } };`
-      );
-      await generator.initialize();
-
-      const { entries } = await generator.getIndex();
-
-      expect(Object.keys(entries)[0]).not.toBe('d--story-one');
-      expect(once.warn).toHaveBeenCalledWith(
-        expect.stringContaining(
-          'parameters.options.storySort in the preview no longer sorts stories'
-        )
-      );
-    });
   });
 
   describe('caching', () => {

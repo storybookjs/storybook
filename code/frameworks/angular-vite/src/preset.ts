@@ -139,7 +139,7 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
     );
   }
 
-  const zoneless = resolveZoneless(options?.angularBuilderOptions);
+  const zoneless = resolveZoneless(options.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof frameworkOptions?.jit !== 'undefined' ? frameworkOptions?.jit : true,
     liveReload:
@@ -147,7 +147,7 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
     tsconfig:
       typeof frameworkOptions?.tsconfig !== 'undefined'
         ? frameworkOptions?.tsconfig
-        : (options?.tsConfig ?? './.storybook/tsconfig.json'),
+        : (options.tsConfig ?? './.storybook/tsconfig.json'),
     inlineStylesExtension:
       typeof frameworkOptions?.inlineStylesExtension !== 'undefined'
         ? frameworkOptions?.inlineStylesExtension
@@ -229,7 +229,7 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
-      ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
+      ...(docgenServer && options.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({

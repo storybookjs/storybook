@@ -76,16 +76,17 @@ export type Task<Details extends MonorepoDetails = TemplateDetails> = {
   junit?: boolean;
 };
 
-export const tasks = {
-  // These tasks pertain to the whole monorepo, rather than an
-  // individual template/sandbox
+const monorepoTasks = {
   install,
   compile,
   check,
   publish,
   'sync-docs': syncDocs,
   'run-registry': runRegistryTask,
-  // These tasks pertain to a single sandbox in the ../sandboxes dir
+  'e2e-tests-internal': e2eTestsInternal,
+};
+
+const sandboxTasks = {
   generate,
   sandbox,
   'check-sandbox': checkSandbox,
@@ -96,28 +97,21 @@ export const tasks = {
   chromatic,
   'e2e-tests': e2eTestsBuild,
   'e2e-tests-dev': e2eTestsDev,
-  'e2e-tests-internal': e2eTestsInternal,
   bench,
   'vitest-integration': vitestTests,
 };
+
+export const tasks = { ...monorepoTasks, ...sandboxTasks };
 export type TaskKey = keyof typeof tasks;
 
-const monorepoTasks: Task<MonorepoDetails>[] = [
-  install,
-  compile,
-  check,
-  publish,
-  syncDocs,
-  runRegistryTask,
-  e2eTestsInternal,
-];
+const monorepoTaskList: Task<MonorepoDetails>[] = Object.values(monorepoTasks);
 
 function isMonorepoTask(task: Task): task is Task<MonorepoDetails> {
-  return monorepoTasks.some((monorepoTask) => monorepoTask === task);
+  return monorepoTaskList.some((monorepoTask) => monorepoTask === task);
 }
 
 function isSandboxTask(taskKey: TaskKey) {
-  return !isMonorepoTask(tasks[taskKey]);
+  return taskKey in sandboxTasks;
 }
 
 function withTaskDetails<Result>(

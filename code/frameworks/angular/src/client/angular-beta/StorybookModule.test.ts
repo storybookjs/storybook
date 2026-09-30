@@ -365,7 +365,7 @@ describe('StorybookModule', () => {
   async function configureTestingModule(ngModule: NgModule & { imports: [Type<unknown>] }) {
     await TestBed.configureTestingModule(ngModule).compileComponents();
 
-    const fixture = TestBed.createComponent(ngModule.imports[0] as any);
+    const fixture = TestBed.createComponent(ngModule.imports[0]);
 
     return {
       fixture,

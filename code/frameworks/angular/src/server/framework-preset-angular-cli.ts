@@ -134,9 +134,14 @@ export async function getBuilderOptions(options: PresetOptions, builderContext: 
   // `options.angularBuilderOptions` implicitly adds all options a target can have
   // To figure out what user-land actually has explicitly defined in their target options, we
   // manually need to read them
-  const explicitAngularBuilderOptions = builderContext.target
-    ? await builderContext.getTargetOptions(builderContext.target)
-    : null;
+  if (!builderContext.target) {
+    throw new Error(
+      'The Storybook builder must run as an Angular target to read the options it declares.'
+    );
+  }
+  const explicitAngularBuilderOptions = await builderContext.getTargetOptions(
+    builderContext.target
+  );
 
   /**
    * Merge target options from browser target options and from storybook options Use deep merge to

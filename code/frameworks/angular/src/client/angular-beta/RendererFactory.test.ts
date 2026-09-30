@@ -50,7 +50,7 @@ describe('RendererFactory', () => {
 
     it('should render my-story for story template', async () => {
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-      await render?.render({
+      await render.render({
         storyFnAngular: {
           template: '🦊',
           props: {},
@@ -67,7 +67,7 @@ describe('RendererFactory', () => {
       class FooComponent {}
 
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-      await render?.render({
+      await render.render({
         storyFnAngular: {
           props: {},
         },
@@ -94,7 +94,7 @@ describe('RendererFactory', () => {
 
       const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
 
-      await render?.render({
+      await render.render({
         storyFnAngular: {
           template: '🦊',
           props: {},
@@ -112,7 +112,7 @@ describe('RendererFactory', () => {
       beforeEach(async () => {
         // Init first render
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             template: '{{ logo }}: {{ name }}',
             props: {
@@ -135,7 +135,7 @@ describe('RendererFactory', () => {
       it('should not be re-rendered when only props change', async () => {
         // only props change
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             props: {
               logo: '👾',
@@ -153,7 +153,7 @@ describe('RendererFactory', () => {
 
       it('should be re-rendered when template change', async () => {
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             template: '{{ beer }}',
             props: {
@@ -175,7 +175,7 @@ describe('RendererFactory', () => {
       beforeEach(async () => {
         // Init first Canvas render
         const render = await rendererFactory.getRendererInstance(rootTargetDOMNode);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             template: 'Canvas 🖼',
           },
@@ -211,7 +211,7 @@ describe('RendererFactory', () => {
         const targetDOMNode1 = global.document.createElement('div');
         targetDOMNode1.id = 'story-1';
         docsRoot.appendChild(targetDOMNode1);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             props: {},
           },
@@ -224,7 +224,7 @@ describe('RendererFactory', () => {
         const targetDOMNode2 = global.document.createElement('div');
         targetDOMNode2.id = 'story-1';
         docsRoot.appendChild(targetDOMNode2);
-        await render?.render({
+        await render.render({
           storyFnAngular: {
             props: {},
           },

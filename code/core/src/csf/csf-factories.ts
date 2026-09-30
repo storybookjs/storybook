@@ -199,11 +199,14 @@ function defineMeta<TRenderer extends Renderer>(
       parameters: { ...input.parameters, csfFactory: true },
     } as Meta<TRenderer>['input'],
     preview,
-    // @ts-expect-error one implementation can't match the generic overloads of `Meta['story']`
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {
-      return defineStory(typeof story === 'function' ? { render: story } : story, this);
+      // The overloads of `Meta['story']` type the input; one implementation serves them all.
+      return defineStory(typeof story === 'function' ? { render: story } : story, this) as Story<
+        TRenderer,
+        any
+      >;
     },
   };
 }

@@ -15,6 +15,7 @@ import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
+  ComposedStoryFn,
   DecoratorFunction,
   ProjectAnnotations,
   StoryAnnotations,
@@ -67,8 +68,11 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       const story = defineStory(__input);
       // TODO: [test-syntax] Are we sure we want this? the Component construct was for
       // compatibility with raw portable stories. We don't actually use this in vitest.
-      // @ts-expect-error `__compose` is internal to `storybook/internal/csf`
-      story.Component = story.__compose();
+      story.Component = (
+        story as typeof story & {
+          __compose: () => ComposedStoryFn<ReactTypes & InferTypes<Addons>>;
+        }
+      ).__compose();
       return story;
     };
     return meta;

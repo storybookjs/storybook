@@ -1,5 +1,5 @@
 {
-  "name": "801-create-component-no-launch-config",
+  "name": "801-create-accessible-component",
   "type": "module",
   "evals": {
     "template": "reshaped-storybook"

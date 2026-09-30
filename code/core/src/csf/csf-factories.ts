@@ -47,7 +47,8 @@ export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon
 export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
-  let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
+  type TPreviewRenderer = TRenderer & InferTypes<Addons>;
+  let composed: NormalizedProjectAnnotations<TPreviewRenderer>;
   const preview = {
     _tag: 'Preview',
     input: input,
@@ -59,7 +60,7 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       // The composed result already includes the core annotations. Mark it so that downstream
       // consumers (StoryStore / portable setProjectAnnotations) don't prepend them a second time.
       composed = markAsComposedWithCoreAnnotations(
-        normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
+        normalizeProjectAnnotations<TPreviewRenderer>(
           composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
         )
       );
@@ -69,13 +70,12 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
       return this;
     },
     meta(meta) {
-      type TPreviewRenderer = TRenderer & InferTypes<Addons>;
       return defineMeta(
         meta as ComponentAnnotations<TPreviewRenderer, TPreviewRenderer['args']>,
         this
       );
     },
-  } as Preview<TRenderer & InferTypes<Addons>>;
+  } as Preview<TPreviewRenderer>;
   globalThis.globalProjectAnnotations = preview.composed;
   return preview;
 }
@@ -202,11 +202,9 @@ function defineMeta<TRenderer extends Renderer>(
     story(
       story: StoryAnnotations<TRenderer, TRenderer['args']> | (() => TRenderer['storyResult']) = {}
     ) {
-      // The overloads of `Meta['story']` type the input; one implementation serves them all.
-      return defineStory(typeof story === 'function' ? { render: story } : story, this) as Story<
-        TRenderer,
-        any
-      >;
+      const annotations = typeof story === 'function' ? { render: story } : story;
+      // The overloads of `Meta['story']` type the story's input.
+      return defineStory(annotations, this) as Story<TRenderer, any>;
     },
   };
 }

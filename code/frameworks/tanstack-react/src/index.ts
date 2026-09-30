@@ -52,10 +52,11 @@ export function definePreview<
     route?: TRoute;
   } & ProjectAnnotations<ReactTypes & TanStackTypes<NoInfer<TRoute>, TPath> & InferTypes<Addons>>
 ): TanStackPreview<InferTypes<Addons>, TRoute> {
-  // @ts-expect-error ReactPreview doesn't know the TanStack types of the annotations and the result
   return __definePreview({
     ...preview,
-    addons: [tanstackPreview, ...(preview.addons ?? [])],
+    addons: [tanstackPreview, ...(preview.addons ?? [])] as PreviewAddon<
+      TanStackTypes<TRoute, TPath> & InferTypes<Addons>
+    >[],
   });
 }
 

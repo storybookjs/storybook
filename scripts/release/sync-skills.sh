@@ -24,9 +24,9 @@ git add --all skills
 if git diff --cached --quiet; then
   echo "skills/ on $BRANCH already matches"
 else
-  git -c user.name=storybook-bot -c user.email=32066757+storybook-bot@users.noreply.github.com \
+  git -c user.name=storybook-bot -c user.email=32066757+storybook-bot@users.noreply.github.com -c commit.gpgSign=false \
     commit --quiet -m "Sync skills from storybook v$VERSION"
 fi
-git tag "$TAG"
+git -c tag.gpgSign=false tag "$TAG"
 git push --quiet --atomic origin "$BRANCH" "$TAG"
 echo "$BRANCH is at $(git rev-parse --short HEAD), tagged $TAG"

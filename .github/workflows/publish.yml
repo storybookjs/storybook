@@ -294,14 +294,16 @@ jobs:
           release: ${{ steps.version.outputs.current-version }}
           environment: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'prerelease' || 'latest' }}
 
-      # Runs last so a failure turns the run red without skipping any release bookkeeping. No condition,
-      # so the skip_publish dispatch syncs too: syncing a version twice adds no commit and re-pushes the same tag.
+      # Runs last so a failure turns the run red without skipping any release bookkeeping. No condition, so
+      # the skip_publish dispatch syncs too; a second sync of a version is a no-op. Reads the release tag, not
+      # the branch, which a later run for the same version (after the force-push to latest-release) may have moved.
       - name: Sync skills to storybookjs/skills
         env:
           VERSION: ${{ steps.version.outputs.current-version }}
-          STORYBOOK_REF: ${{ github.ref_name }}
           SKILLS_REPO_URL: https://x-access-token:${{ secrets.SKILLS_SYNC_TOKEN }}@github.com/storybookjs/skills.git
-        run: ./release/sync-skills.sh
+        run: |
+          git fetch --quiet origin tag "v$VERSION"
+          STORYBOOK_REF="v$VERSION" ./release/sync-skills.sh
 
       - name: Report job failure to Discord
         if: failure()

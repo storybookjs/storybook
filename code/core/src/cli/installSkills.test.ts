@@ -7,7 +7,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { executeCommand, getProjectRoot, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { ExecaCommandFailedError } from 'storybook/internal/server-errors';
+import {
+  ExecaCommandFailedError,
+  PackageInstallFailedError,
+} from 'storybook/internal/server-errors';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
 import { vol } from 'memfs';
@@ -223,19 +226,25 @@ describe('installSkills', () => {
   });
 
   describe('failure', () => {
-    it('warns, keeps the settings untouched and reports the exit code', async () => {
-      vi.mocked(packageManager.runPackageCommand).mockRejectedValue(
-        new ExecaCommandFailedError({ command: 'npx', args: [], exitCode: 1, logs: '' })
-      );
+    it.each([
+      ['npx', ExecaCommandFailedError],
+      ['pnpm', PackageInstallFailedError],
+    ])(
+      'warns, keeps the settings untouched and reports the exit code (%s)',
+      async (command, Err) => {
+        vi.mocked(packageManager.runPackageCommand).mockRejectedValue(
+          new Err({ command, args: [], exitCode: 1, logs: '' })
+        );
 
-      const result = await installSkills({ packageManager, yes: true });
+        const result = await installSkills({ packageManager, yes: true });
 
-      expect(result).toEqual({ result: 'failed', source: 'yes', refType: 'tag', exitCode: 1 });
-      expect(logger.warn).toHaveBeenCalledWith(
-        'Could not install the Storybook skills, continuing without them.'
-      );
-      expect(settingsFile().agentSkills).toBeUndefined();
-    });
+        expect(result).toEqual({ result: 'failed', source: 'yes', refType: 'tag', exitCode: 1 });
+        expect(logger.warn).toHaveBeenCalledWith(
+          'Could not install the Storybook skills, continuing without them.'
+        );
+        expect(settingsFile().agentSkills).toBeUndefined();
+      }
+    );
   });
 
   describe('the settings', () => {
@@ -317,11 +326,14 @@ describe('installSkills', () => {
     it('installs on Yes', async () => {
       const result = await installSkills({ packageManager });
 
-      expect(prompt.confirm).toHaveBeenCalledWith({
-        message:
-          'Install the official Storybook skills for AI agents (Claude Code, Codex, Cursor) into this project?',
-        initialValue: true,
-      });
+      expect(prompt.confirm).toHaveBeenCalledWith(
+        {
+          message:
+            'Install the official Storybook skills for AI agents (Claude Code, Codex, Cursor) into this project?',
+          initialValue: true,
+        },
+        expect.anything()
+      );
       expect(result).toEqual({ result: 'installed', source: 'prompt', refType: 'tag' });
     });
 
@@ -333,6 +345,19 @@ describe('installSkills', () => {
       expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
       expect(result).toEqual({ result: 'declined', source: 'prompt' });
       expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: false });
+    });
+
+    it('skips without remembering when the prompt is canceled', async () => {
+      vi.mocked(prompt.confirm).mockImplementation(async (_, promptOptions) => {
+        await promptOptions?.onCancel?.();
+        return true;
+      });
+
+      const result = await installSkills({ packageManager });
+
+      expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
+      expect(result).toEqual({ result: 'declined', source: 'prompt' });
+      expect(settingsFile().agentSkills).toBeUndefined();
     });
 
     it('takes the default without asking when stdout is not a terminal', async () => {

@@ -1,7 +1,6 @@
 import type { JsPackageManager } from 'storybook/internal/common';
 import { executeCommand, getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
-import { ExecaCommandFailedError } from 'storybook/internal/server-errors';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
 import { prerelease } from 'semver';
@@ -68,6 +67,8 @@ async function resolveSkillsRef(
       command: 'git',
       args: ['ls-remote', '--tags', `https://github.com/${SKILLS_REPO}`, `refs/tags/${tag}`],
       stdio: 'pipe',
+      env: { GIT_TERMINAL_PROMPT: '0' },
+      timeout: 10_000,
     });
     if (typeof stdout === 'string' && stdout.trim()) {
       return { ref: tag, refType: 'tag' };
@@ -113,11 +114,22 @@ export async function installSkills({
   });
 
   if (decision.action === 'ask') {
-    const accepted = await prompt.confirm({
-      message:
-        'Install the official Storybook skills for AI agents (Claude Code, Codex, Cursor) into this project?',
-      initialValue: true,
-    });
+    let canceled = false;
+    const accepted = await prompt.confirm(
+      {
+        message:
+          'Install the official Storybook skills for AI agents (Claude Code, Codex, Cursor) into this project?',
+        initialValue: true,
+      },
+      {
+        onCancel: () => {
+          canceled = true;
+        },
+      }
+    );
+    if (canceled) {
+      return { result: 'declined', source: decision.source };
+    }
     if (!accepted) {
       await remember(false);
       return { result: 'declined', source: decision.source };
@@ -159,14 +171,13 @@ export async function installSkills({
   } catch (error) {
     logger.warn('Could not install the Storybook skills, continuing without them.');
     logger.debug(error);
+    // pnpm and Yarn Berry failures arrive as PackageInstallFailedError because the args contain `add`
+    const exitCode = (error as { data?: { exitCode?: unknown } } | undefined)?.data?.exitCode;
     return {
       result: 'failed',
       source: decision.source,
       refType,
-      exitCode:
-        error instanceof ExecaCommandFailedError && typeof error.data.exitCode === 'number'
-          ? error.data.exitCode
-          : undefined,
+      exitCode: typeof exitCode === 'number' ? exitCode : undefined,
     };
   }
 

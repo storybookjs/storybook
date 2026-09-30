@@ -5,11 +5,10 @@ import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 vi.mock('node:fs', { spy: true });
 
 import {
-  expectPreviewBrowserStarted,
-  expectValidStorybookLaunchConfig,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
+  expectReviewOpenedInBrowser,
   findDevServerKillCommands,
-  isLocalDevServerUrl,
-  isLocalStorybookPreviewUrl,
   parseCodexBrowserNavigations,
   parseWorkflowToolResults,
   selectFinalRunStoryTestsReport,
@@ -364,6 +363,25 @@ describe('parseCodexBrowserNavigations', () => {
     ]);
   });
 
+  test('counts the URL literals of a call that passes a variable to goto', () => {
+    const transcript = jsToolCallLine(
+      "for (const url of ['http://localhost:6006/?path=/story/a--b','http://localhost:6006/?path=/story/a--c']) { const tab = await browser.tabs.new(); await tab.goto(url); }"
+    );
+
+    expect(parseCodexBrowserNavigations(transcript)).toEqual([
+      'http://localhost:6006/?path=/story/a--b',
+      'http://localhost:6006/?path=/story/a--c',
+    ]);
+  });
+
+  test('yields only the literal base of a composed goto URL', () => {
+    const transcript = jsToolCallLine(
+      "const base = 'http://localhost:6006'; await tab.goto(base + '/?path=/story/a--b');"
+    );
+
+    expect(parseCodexBrowserNavigations(transcript)).toEqual(['http://localhost:6006']);
+  });
+
   test('ignores failed js calls, other servers, and code without a goto', () => {
     const transcript = [
       jsToolCallLine("await tab.goto('http://localhost:6006/');", { status: 'failed' }),
@@ -380,73 +398,28 @@ describe('parseCodexBrowserNavigations', () => {
   });
 });
 
-describe('isLocalDevServerUrl', () => {
-  test('accepts http URLs on local hosts', () => {
-    expect(isLocalDevServerUrl('http://localhost:6006/?path=/story/button--primary')).toBe(true);
-    expect(isLocalDevServerUrl('http://127.0.0.1:4123/iframe.html?id=button--primary')).toBe(true);
-    expect(isLocalDevServerUrl('http://[::1]:6006/')).toBe(true);
-  });
-
-  test('rejects remote URLs, other protocols, and non-URLs', () => {
-    expect(isLocalDevServerUrl('https://storybook.js.org')).toBe(false);
-    expect(isLocalDevServerUrl('file:///tmp/index.html')).toBe(false);
-    expect(isLocalDevServerUrl('about:blank')).toBe(false);
-    expect(isLocalDevServerUrl('not a url')).toBe(false);
-  });
-});
-
 describe('findDevServerKillCommands', () => {
-  const navigated = ['http://localhost:6006/?path=/review/'];
-
-  test('flags kill commands targeting the dev server', () => {
-    expect(findDevServerKillCommands(['pkill -f storybook'], navigated)).toEqual([
-      'pkill -f storybook',
-    ]);
-    expect(findDevServerKillCommands(['kill $(cat /tmp/storybook.pid)'], navigated)).toHaveLength(
-      1
-    );
-    expect(findDevServerKillCommands(['fuser -k 6006/tcp'], navigated)).toHaveLength(1);
-    expect(findDevServerKillCommands(['fuser -n tcp -k 6006'], navigated)).toHaveLength(1);
-  });
-
-  // Documents the heuristic's accepted blind spot: a kill routed through an
-  // unrelated variable in a later command carries no self-describing token,
-  // so it is NOT flagged (see the comment on findDevServerKillCommands).
-  test('does not flag a variable-indirected kill in a later command', () => {
-    expect(findDevServerKillCommands(['PID=$(lsof -ti:6006)', 'kill $PID'], navigated)).toEqual([]);
+  test('flags kill commands naming storybook, a pidfile, or the default port', () => {
+    expect(findDevServerKillCommands(['pkill -f storybook'])).toEqual(['pkill -f storybook']);
+    expect(findDevServerKillCommands(['kill $(cat /tmp/storybook.pid)'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['kill $(cat /tmp/dev-server.pid)'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['fuser -k 6006/tcp'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['fuser -n tcp -k 6006'])).toHaveLength(1);
+    expect(findDevServerKillCommands(['kill -9 $(lsof -ti:6006)'])).toHaveLength(1);
   });
 
   test('ignores unrelated kill commands and non-kill dev-server commands', () => {
-    expect(findDevServerKillCommands(['pkill -f chromium'], navigated)).toEqual([]);
+    expect(findDevServerKillCommands(['pkill -f chromium', 'kill 1234'])).toEqual([]);
     expect(
-      findDevServerKillCommands(
-        ['nohup npm run storybook >/tmp/storybook.log 2>&1 &', 'curl http://localhost:6006'],
-        navigated
-      )
+      findDevServerKillCommands([
+        'nohup npm run storybook >/tmp/storybook.log 2>&1 &',
+        'curl http://localhost:6006',
+      ])
     ).toEqual([]);
   });
 });
 
-describe('isLocalStorybookPreviewUrl', () => {
-  test('accepts local Storybook review, story, and iframe preview URLs', () => {
-    expect(isLocalStorybookPreviewUrl('http://localhost:6006/?path=/review/change')).toBe(true);
-    expect(isLocalStorybookPreviewUrl('http://localhost:6006/?path=/story/button--primary')).toBe(
-      true
-    );
-    expect(isLocalStorybookPreviewUrl('http://127.0.0.1:4123/iframe.html?id=button--primary')).toBe(
-      true
-    );
-  });
-
-  test('rejects non-Storybook local URLs and remote Storybook URLs', () => {
-    // The app's own dev server or a bare Storybook root is not the result link.
-    expect(isLocalStorybookPreviewUrl('http://localhost:5173/')).toBe(false);
-    expect(isLocalStorybookPreviewUrl('http://localhost:6006/')).toBe(false);
-    expect(isLocalStorybookPreviewUrl('https://storybook.js.org/?path=/story/button')).toBe(false);
-  });
-});
-
-describe('launch/preview helpers fail loud out of context', () => {
+describe('expectDevServerLeftRunning', () => {
   const agentContextPath = '__agent_eval__/agent.json';
 
   beforeEach(() => {
@@ -457,34 +430,388 @@ describe('launch/preview helpers fail loud out of context', () => {
     vi.mocked(readFileSync).mockRestore();
   });
 
-  function stubAgentContext(agent: string, integration: 'mcp' | 'plugin') {
+  test('fails loud when integration is mcp', () => {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === agentContextPath) {
-        return JSON.stringify({ agent, integration, review: false });
+        return JSON.stringify({ agent: 'claude-code', integration: 'mcp', review: false });
       }
       throw new Error(`Unexpected readFileSync path in fail-loud helper test: ${String(path)}`);
     }) as typeof readFileSync);
+
+    expect(() => expectDevServerLeftRunning()).toThrow(/only for plugin.*integration=mcp/);
+  });
+});
+
+describe('expectPreviewOpenedInBrowser', () => {
+  function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === '__agent_eval__/agent.json') {
+        return JSON.stringify({ agent: options.agent, integration: 'mcp', review: false });
+      }
+      if (String(path) === '__agent_eval__/transcript.txt') {
+        return options.transcript.join('\n');
+      }
+      throw new Error(`Unexpected readFileSync path in browser assertion test: ${String(path)}`);
+    }) as typeof readFileSync);
   }
 
-  test('expectValidStorybookLaunchConfig fails when integration is mcp', () => {
-    stubAgentContext('claude-code', 'mcp');
+  function claudeToolUseLine(name: string, input: Record<string, unknown>): string {
+    return JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', id: 'toolu_1', name, input }] },
+    });
+  }
 
-    expect(() => expectValidStorybookLaunchConfig()).toThrow(
-      /only for claude-code \+ plugin.*integration=mcp/
-    );
+  function codexItemLine(item: Record<string, unknown>): string {
+    return JSON.stringify({ type: 'item.completed', item });
+  }
+
+  function codexGotoLine(url: string): string {
+    return codexItemLine({
+      type: 'mcp_tool_call',
+      server: 'node_repl',
+      tool: 'js',
+      status: 'completed',
+      error: null,
+      arguments: { code: `await tab.goto('${url}');` },
+    });
+  }
+
+  function codexStoriesPreviewLine(status: 'completed' | 'failed'): string {
+    return codexItemLine({
+      type: 'mcp_tool_call',
+      server: 'storybook',
+      tool: 'stories-preview',
+      arguments: {},
+      status,
+      error: status === 'failed' ? { message: 'No story found' } : null,
+    });
+  }
+
+  const claudeStoriesPreview = claudeToolUseLine('mcp__storybook-dev-mcp__stories-preview', {
+    stories: [{ storyId: 'button--primary' }],
+  });
+  const storyUrl = 'http://localhost:6006/?path=/story/button--primary';
+
+  beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
   });
 
-  test('expectValidStorybookLaunchConfig fails for codex plugin (not Claude preview tooling)', () => {
-    stubAgentContext('codex', 'plugin');
-
-    expect(() => expectValidStorybookLaunchConfig()).toThrow(
-      /only for claude-code \+ plugin.*agent=codex/
-    );
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
   });
 
-  test('expectPreviewBrowserStarted fails when integration is mcp', () => {
-    stubAgentContext('claude-code', 'mcp');
+  test('passes on a Claude navigation to a story after the first stories-preview', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeStoriesPreview,
+        claudeToolUseLine('mcp__Browser__navigate', { url: storyUrl }),
+        claudeStoriesPreview,
+      ],
+    });
 
-    expect(() => expectPreviewBrowserStarted()).toThrow(/only for plugin.*integration=mcp/);
+    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch that navigates to a story', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeStoriesPreview,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [
+            { name: 'navigate', input: { url: storyUrl } },
+            { name: 'computer', input: { action: 'screenshot' } },
+          ],
+        }),
+      ],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude browser_batch whose navigate action carries the tool prefix', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeStoriesPreview,
+        claudeToolUseLine('mcp__Browser__browser_batch', {
+          actions: [{ name: 'mcp__Browser__navigate', input: { url: storyUrl } }],
+        }),
+      ],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('ignores a navigation before stories-preview', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeToolUseLine('mcp__Browser__navigate', { url: storyUrl }),
+        claudeStoriesPreview,
+      ],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('passes on a Codex goto of an iframe story preview', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: [
+        codexStoriesPreviewLine('completed'),
+        codexGotoLine('http://127.0.0.1:6006/iframe.html?id=button--primary'),
+      ],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('ignores a failed Codex stories-preview', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: [codexStoriesPreviewLine('failed'), codexGotoLine(storyUrl)],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).toThrow(/successful stories-preview/);
+  });
+
+  test.each([
+    ['the review page', 'http://localhost:6006/?path=/review/'],
+    ['the bare Storybook origin', 'http://localhost:6006/'],
+    ['the app dev server', 'http://localhost:3000/'],
+  ])('fails when the browser opened %s instead of a story', (_label, url) => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: [codexStoriesPreviewLine('completed'), codexGotoLine(url)],
+    });
+
+    expect(() => expectPreviewOpenedInBrowser()).toThrow(/a story preview on the local dev server/);
+  });
+});
+
+describe('expectReviewOpenedInBrowser', () => {
+  const agentContextPath = '__agent_eval__/agent.json';
+  const transcriptPath = '__agent_eval__/transcript.txt';
+
+  function mockSandbox(options: { agent: 'claude-code' | 'codex'; transcript: string[] }): void {
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === agentContextPath) {
+        return JSON.stringify({ agent: options.agent, integration: 'plugin', review: true });
+      }
+      if (String(path) === transcriptPath) {
+        return options.transcript.join('\n');
+      }
+      throw new Error(`Unexpected readFileSync path in browser assertion test: ${String(path)}`);
+    }) as typeof readFileSync);
+  }
+
+  function claudeToolUseLine(name: string, input: Record<string, unknown>): string {
+    return JSON.stringify({
+      type: 'assistant',
+      message: { content: [{ type: 'tool_use', id: 'toolu_1', name, input }] },
+    });
+  }
+
+  function codexJsLine(code: string): string {
+    return JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'mcp_tool_call',
+        server: 'node_repl',
+        tool: 'js',
+        status: 'completed',
+        error: null,
+        arguments: { code, title: 'Open review', timeout_ms: 30000 },
+      },
+    });
+  }
+
+  function codexMcpReviewCreateLine(status: 'completed' | 'failed'): string {
+    return JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'mcp_tool_call',
+        server: 'storybook',
+        tool: 'review-create',
+        arguments: {},
+        status,
+        error: status === 'failed' ? { message: 'Refusing to publish review' } : null,
+      },
+    });
+  }
+
+  function codexCliReviewCreateLine(exitCode: number): string {
+    return JSON.stringify({
+      type: 'item.completed',
+      item: {
+        type: 'command_execution',
+        command:
+          "/bin/bash -lc \"npx storybook tools review create --title 'Review' --description 'Check it'\"",
+        exit_code: exitCode,
+      },
+    });
+  }
+
+  const claudeReviewCreate = claudeToolUseLine('mcp__storybook-dev-mcp__review-create', {
+    title: 'Review',
+  });
+  const claudeOpenReview = claudeToolUseLine('mcp__Browser__navigate', {
+    url: 'http://localhost:6006/?path=/review/',
+  });
+  const codexOpenReview = codexJsLine("await tab.goto('http://localhost:6006/?path=/review/');");
+
+  beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
+  });
+
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
+  });
+
+  test('passes on a Claude navigate to the review page', () => {
+    mockSandbox({ agent: 'claude-code', transcript: [claudeReviewCreate, claudeOpenReview] });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Claude preview_start to the review page on 127.0.0.1 without a slash', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('Bash', { command: 'npm run storybook' }),
+        claudeToolUseLine('mcp__Browser__preview_start', {
+          url: 'http://127.0.0.1:6006/?path=/review',
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('passes on a Codex goto of the review page after an MCP review-create', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: [codexMcpReviewCreateLine('completed'), codexOpenReview],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+  });
+
+  test('fails when the browser opened a remote URL', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__navigate', {
+          url: 'https://storybook.js.org/?path=/review/',
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
+  });
+
+  test('fails when the browser opened a story instead of the review page', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: [
+        codexMcpReviewCreateLine('completed'),
+        codexJsLine("await tab.goto('http://localhost:6006/?path=/story/button--primary');"),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
+  });
+
+  test('fails on a page whose path only starts with review', () => {
+    mockSandbox({
+      agent: 'claude-code',
+      transcript: [
+        claudeReviewCreate,
+        claudeToolUseLine('mcp__Browser__navigate', {
+          url: 'http://localhost:6006/?path=/reviewer',
+        }),
+      ],
+    });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/review page on the local dev server/);
+  });
+
+  test('fails loud when the transcript holds no browser call', () => {
+    mockSandbox({ agent: 'claude-code', transcript: [claudeReviewCreate] });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('fails when no review was created', () => {
+    mockSandbox({ agent: 'claude-code', transcript: [claudeOpenReview] });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/successful review-create/);
+  });
+
+  test('ignores a Claude navigation to the review page before review-create', () => {
+    mockSandbox({ agent: 'claude-code', transcript: [claudeOpenReview, claudeReviewCreate] });
+
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('counts only navigations after a review published through the CLI', () => {
+    const cliReviewCreate = claudeToolUseLine('Bash', {
+      command: "npx storybook tools review create --title 'Review' --description 'Check it'",
+    });
+
+    mockSandbox({ agent: 'claude-code', transcript: [cliReviewCreate, claudeOpenReview] });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({ agent: 'claude-code', transcript: [claudeOpenReview, cliReviewCreate] });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('counts Codex navigations after its first successful review-create', () => {
+    mockSandbox({ agent: 'codex', transcript: [codexCliReviewCreateLine(0), codexOpenReview] });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({ agent: 'codex', transcript: [codexOpenReview, codexCliReviewCreateLine(0)] });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+
+    mockSandbox({
+      agent: 'codex',
+      transcript: [
+        codexMcpReviewCreateLine('completed'),
+        codexOpenReview,
+        codexMcpReviewCreateLine('completed'),
+      ],
+    });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({
+      agent: 'codex',
+      transcript: [
+        codexMcpReviewCreateLine('failed'),
+        codexOpenReview,
+        codexMcpReviewCreateLine('completed'),
+      ],
+    });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/holds no such browser navigation/);
+  });
+
+  test('ignores a failed Codex review-create', () => {
+    mockSandbox({
+      agent: 'codex',
+      transcript: [
+        codexMcpReviewCreateLine('completed'),
+        codexOpenReview,
+        codexMcpReviewCreateLine('failed'),
+        codexCliReviewCreateLine(1),
+      ],
+    });
+    expect(() => expectReviewOpenedInBrowser()).not.toThrow();
+
+    mockSandbox({ agent: 'codex', transcript: [codexCliReviewCreateLine(1), codexOpenReview] });
+    expect(() => expectReviewOpenedInBrowser()).toThrow(/successful review-create/);
   });
 });

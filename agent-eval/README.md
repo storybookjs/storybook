@@ -57,7 +57,7 @@ their changes locally instead: only the specific evals affected by the change
 (or the eval being fixed), one experiment at a time, via `EVAL_ONLY` — never a
 full line, never multiple experiments in parallel.
 
-By default only the first core eval (`801-create-component-no-launch-config`)
+By default only the first core eval (`801-create-accessible-component`)
 runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals
 (`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —

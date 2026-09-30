@@ -703,7 +703,7 @@ describe('angular source decorator', () => {
         someDataObject,
       };
 
-      const source = computesTemplateSourceFromComponent(component, props, null);
+      const source = computesTemplateSourceFromComponent(component, props);
       // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
       // This will have to do for now
       expect(source).toEqual(
@@ -740,7 +740,7 @@ describe('angular source decorator', () => {
         someDataObject,
       };
 
-      const source = computesTemplateSourceFromComponent(component, props, null);
+      const source = computesTemplateSourceFromComponent(component, props);
       // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
       // This will have to do for now
       expect(source).toEqual(

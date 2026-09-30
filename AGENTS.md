@@ -157,6 +157,10 @@ When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.ag
 
 These usually start long-running development servers and are the wrong default for agents.
 
+## Automigrations
+
+- Read `code/lib/cli-storybook/src/automigrate/README.md` before adding or changing an automigration.
+
 ## Repository skills
 
 - Canonical contributor skills live in `.agents/skills/`; `.claude/skills/` contains references to them.

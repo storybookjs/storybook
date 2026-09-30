@@ -23,4 +23,3 @@ Some commands require a running Storybook dev server:
 
 1. Reuse a dev server that already serves this project's Storybook (probe the URL, usually `http://localhost:6006`) instead of starting a second one. Otherwise start one in the background, using the project's preferred package manager and existing `package.json` Storybook script (e.g. `npm run storybook`) instead of inventing a new command whenever possible. Wait until the URL responds before running commands that need it.
 2. The dev server is part of the deliverable, not a temporary verification tool: leave it running when your work is done so the user can keep browsing stories. Never kill it after verification.
-3. When the `control-in-app-browser` skill is available, finish by opening the Storybook review or story preview URL you will include in your final response in the in-app browser through that skill, so the user sees the result side by side inside Codex.

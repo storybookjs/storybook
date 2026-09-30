@@ -1,9 +1,8 @@
-import type { ProjectType } from 'storybook/internal/cli';
+import type { ProjectType, SkillsInstallResult } from 'storybook/internal/cli';
 import {
   getProcessAncestry,
   getStorybookVersionSpecifierFromAncestry,
 } from 'storybook/internal/common';
-import type { SkillsInstallResult } from 'storybook/internal/cli';
 import { telemetry } from 'storybook/internal/telemetry';
 import { Feature } from 'storybook/internal/types';
 

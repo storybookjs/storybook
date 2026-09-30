@@ -165,14 +165,16 @@ export async function doInitiate(options: CommandOptions): Promise<
   });
 
   // Step 8: Install the official Storybook skills for AI agents
-  await telemetryService.trackSkills(
-    await installSkills({
-      packageManager,
-      skillsFlag: options.skills,
-      yes: options.yes,
-      agent: options.agent,
-    })
-  );
+  if (!options.skipSkills) {
+    await telemetryService.trackSkills(
+      await installSkills({
+        packageManager,
+        skillsFlag: options.skills,
+        yes: options.yes,
+        agent: options.agent,
+      })
+    );
+  }
 
   // Step 9: Print final summary
   const hasAiFeature = selectedFeatures.has(Feature.AI);

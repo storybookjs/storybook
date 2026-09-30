@@ -171,7 +171,7 @@ export async function installSkills({
   } catch (error) {
     logger.warn('Could not install the Storybook skills, continuing without them.');
     logger.debug(error);
-    // pnpm and Yarn Berry failures arrive as PackageInstallFailedError because the args contain `add`
+    // pnpm and Yarn Berry failures arrive as package-install errors because the args contain `add`
     const exitCode = (error as { data?: { exitCode?: unknown } } | undefined)?.data?.exitCode;
     return {
       result: 'failed',

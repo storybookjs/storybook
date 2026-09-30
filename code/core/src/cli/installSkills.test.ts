@@ -185,6 +185,14 @@ describe('installSkills', () => {
       );
     });
 
+    it('never asks for git credentials and gives up on the tag lookup after 10 seconds', async () => {
+      await installSkills({ packageManager, yes: true });
+
+      expect(executeCommand).toHaveBeenCalledWith(
+        expect.objectContaining({ env: { GIT_TERMINAL_PROMPT: '0' }, timeout: 10_000 })
+      );
+    });
+
     it('treats a failing tag lookup as a missing tag', async () => {
       vi.mocked(executeCommand).mockRejectedValue(new Error('no network'));
 
@@ -347,7 +355,7 @@ describe('installSkills', () => {
       expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: false });
     });
 
-    it('skips without remembering when the prompt is canceled', async () => {
+    it('declines without remembering when the prompt is canceled', async () => {
       vi.mocked(prompt.confirm).mockImplementation(async (_, promptOptions) => {
         await promptOptions?.onCancel?.();
         return true;

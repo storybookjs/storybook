@@ -7,6 +7,8 @@ import type { ArgsStoryFn, RenderContext } from 'storybook/internal/types';
 ! when compiling the rest of the Svelte files.
 */
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore Typed through JSDoc and `allowJs`. Packages that type-check this file without `allowJs` see an untyped module.
 import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import { addons } from 'storybook/preview-api';

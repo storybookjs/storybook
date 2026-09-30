@@ -10,6 +10,8 @@ import type {
 } from 'storybook/internal/types';
 
 import PreviewRender from '@storybook/svelte/internal/PreviewRender.svelte';
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+// @ts-ignore Typed through JSDoc and `allowJs`. Packages that type-check this file without `allowJs` see an untyped module.
 import { createReactiveProps } from '@storybook/svelte/internal/createReactiveProps';
 
 import {

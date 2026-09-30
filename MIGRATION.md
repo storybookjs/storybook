@@ -662,7 +662,7 @@ export default {
 
 `table.defaultValue` and `globalTypes.defaultValue` are unchanged.
 
-The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When the configuration is not a static object, including a spread, a computed name, or an MDX or Svelte story, the file is left unchanged and listed in `automigrations-summary.md` with instructions to delete the property yourself.
+The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When that property cannot be removed, the file is left unchanged and listed in `automigrations-summary.md`.
 
 ### Docs Code panel enabled by default
 

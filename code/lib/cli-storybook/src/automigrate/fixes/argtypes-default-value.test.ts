@@ -99,7 +99,7 @@ describe('argtypes-default-value', () => {
     expect(story).toContain("control: 'number'");
   });
 
-  it('reports a factory call instead of editing it', async () => {
+  it('leaves a factory call unchanged when the editor cannot remove it', async () => {
     const story = [
       'const makeArgType = (argType) => argType;',
       "export default { argTypes: { label: makeArgType({ defaultValue: 'Hi' }) } };",
@@ -107,23 +107,35 @@ describe('argtypes-default-value', () => {
     const result = await migrate({ story });
 
     expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('args.<name>') },
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Cannot mutate') },
     ]);
     expect(result.story).toBe(story);
   });
 
-  it('leaves a spread in place and reports the manual replacement', async () => {
+  it('deletes an explicit defaultValue that sits beside a spread', async () => {
+    const result = await migrate({
+      story:
+        "import { shared } from './shared';\nexport default { argTypes: { ...shared, label: { defaultValue: 'A', control: 'text' } } };",
+    });
+
+    expect(result.failures).toEqual([]);
+    expect(result.story).toContain('...shared');
+    expect(result.story).toContain("control: 'text'");
+    expect(result.story).not.toContain("defaultValue: 'A'");
+  });
+
+  it('leaves a spread inside the arg unchanged when the editor cannot remove it', async () => {
     const story =
-      "import { shared } from './shared';\nexport default { argTypes: { ...shared, label: { defaultValue: 'A' } } };";
+      "import { shared } from './shared';\nexport default { argTypes: { label: { ...shared, defaultValue: 'A' } } };";
     const result = await migrate({ story });
 
     expect(result.failures).toEqual([
-      { file: storyPath, kind: 'story', message: expect.stringContaining('args.<name>') },
+      { file: storyPath, kind: 'story', message: expect.stringContaining('Cannot mutate') },
     ]);
     expect(result.story).toBe(story);
   });
 
-  it('reports an MDX story instead of editing it', async () => {
+  it('does not edit an MDX story', async () => {
     const docsPath = resolve('src/Intro.mdx');
     const source = '<Meta argTypes={{ value: { defaultValue: 0 } }} />';
     vol.fromJSON({
@@ -137,9 +149,7 @@ describe('argtypes-default-value', () => {
       result: {},
     });
 
-    expect(failures).toEqual([
-      { file: docsPath, kind: 'story', message: expect.stringContaining('table.defaultValue') },
-    ]);
+    expect(failures).toEqual([]);
     expect(fs.readFileSync(docsPath, 'utf8')).toBe(source);
   });
 });

@@ -108,7 +108,7 @@ export async function installSkills({
   const decision = decideSkillsInstall({
     skillsFlag,
     isCI: !!isCI(),
-    isInteractive: !!process.stdout.isTTY,
+    isInteractive: !!process.stdout.isTTY && !!process.stdin.isTTY,
     yes,
     agent,
     remembered: settings.value.agentSkills?.[projectRoot],

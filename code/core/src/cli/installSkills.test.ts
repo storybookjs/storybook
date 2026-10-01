@@ -49,9 +49,12 @@ const INSTALL_ARGS = (ref: string) => [
   '--copy',
 ];
 
-const originalIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
-const setStdoutIsTTY = (value: boolean) =>
-  Object.defineProperty(process.stdout, 'isTTY', { value, configurable: true });
+const terminalStreams = [process.stdin, process.stdout];
+const originalIsTTY = terminalStreams.map((stream) =>
+  Object.getOwnPropertyDescriptor(stream, 'isTTY')
+);
+const setIsTTY = (stream: NodeJS.ReadStream | NodeJS.WriteStream, value: boolean) =>
+  Object.defineProperty(stream, 'isTTY', { value, configurable: true });
 
 const settingsFile = () => JSON.parse(vol.readFileSync(SETTINGS_PATH, 'utf8') as string);
 const seedSettings = (agentSkills?: Record<string, boolean>) =>
@@ -136,16 +139,20 @@ describe('installSkills', () => {
     vi.mocked(logger.log).mockImplementation(() => {});
     vi.mocked(logger.warn).mockImplementation(() => {});
     vi.mocked(logger.debug).mockImplementation(() => {});
-    setStdoutIsTTY(true);
+    setIsTTY(process.stdin, true);
+    setIsTTY(process.stdout, true);
     tagFound();
   });
 
   afterEach(() => {
-    if (originalIsTTY) {
-      Object.defineProperty(process.stdout, 'isTTY', originalIsTTY);
-    } else {
-      delete (process.stdout as { isTTY?: boolean }).isTTY;
-    }
+    terminalStreams.forEach((stream, index) => {
+      const original = originalIsTTY[index];
+      if (original) {
+        Object.defineProperty(stream, 'isTTY', original);
+      } else {
+        delete (stream as { isTTY?: boolean }).isTTY;
+      }
+    });
     vol.reset();
   });
 
@@ -373,8 +380,11 @@ describe('installSkills', () => {
       expect(settingsFile().agentSkills).toBeUndefined();
     });
 
-    it('takes the default without asking when stdout is not a terminal', async () => {
-      setStdoutIsTTY(false);
+    it.each([
+      ['stdout', process.stdout],
+      ['stdin', process.stdin],
+    ])('takes the default without asking when %s is not a terminal', async (_, stream) => {
+      setIsTTY(stream, false);
 
       const result = await installSkills({ packageManager });
 

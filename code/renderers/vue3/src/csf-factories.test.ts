@@ -249,6 +249,11 @@ it('Literal props of an SFC need no `as const` in meta args, issue #36125', () =
   const meta = preview.meta({ component: Badge, args: { variant: 'primary' } });
   const Default = meta.story({ args: { label: 'Hi' } });
   expectTypeOf(meta.input.args.variant).toEqualTypeOf<'primary' | 'secondary'>();
+
+  const typedMeta = preview
+    .type<{ args: { extra?: boolean } }>()
+    .meta({ component: Badge, args: { variant: 'primary', label: 'Hi' } });
+  const NoArgs = typedMeta.story();
 });
 
 describe('Meta args are typed by the keys you provide', () => {

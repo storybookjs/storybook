@@ -119,6 +119,9 @@ export function wrapArgsMocks(ast: t.File) {
     if (!isMember(path.node) || !mockMembers.includes(keyName(path.node.property) ?? '')) {
       return;
     }
+    if (t.isTSAsExpression(path.node.object)) {
+      return;
+    }
     const object = withoutTypeCast(path.node.object);
     if (
       isBoundIn(argValues, path, object) ||
@@ -154,7 +157,7 @@ export function wrapArgsMocks(ast: t.File) {
   });
 
   if (targets.length === 0) {
-    return false;
+    return;
   }
   const programScope = targets[0].scope.getProgramParent();
 
@@ -205,5 +208,4 @@ export function wrapArgsMocks(ast: t.File) {
   for (const target of targets) {
     target.replaceWith(t.callExpression(t.cloneNode(callee), [target.node]));
   }
-  return true;
 }

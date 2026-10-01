@@ -270,9 +270,9 @@ describe('wrapArgsMocks', () => {
     `);
   });
 
-  it('leaves calls that are already wrapped and mocks that are not args untouched', () => {
+  it('leaves calls that are already wrapped or cast, and mocks that are not args, untouched', () => {
     const source = dedent`
-      import { fn, mocked } from 'storybook/test';
+      import { fn, mocked, type Mock } from 'storybook/test';
       import preview from '#.storybook/preview';
 
       const getUsers = fn();
@@ -282,6 +282,7 @@ describe('wrapArgsMocks', () => {
       export const A = meta.story({
         play: async ({ args }) => {
           mocked(args.onClick).mockClear();
+          (args.onClick as Mock).mockReset();
           getUsers.mockClear();
           const other = { getUsers };
           other.getUsers.mockClear();
@@ -372,20 +373,5 @@ describe('wrapArgsMocks', () => {
       expect(result).toContain(`import { fn, mocked as _mocked } from 'storybook/test';`);
       expect(result).toContain('_mocked(args.onClick).mockClear();');
     });
-  });
-
-  it('reports whether it changed anything', () => {
-    const csf = (source: string) => loadCsf(source, { makeTitle: () => 'FIXME' }).parse()._ast;
-
-    expect(
-      wrapArgsMocks(
-        csf(`export default {}; export const A = { play: ({ args }) => args.onClick.mockClear() };`)
-      )
-    ).toBe(true);
-    expect(
-      wrapArgsMocks(
-        csf(`export default {}; export const A = { play: ({ args }) => args.onClick() };`)
-      )
-    ).toBe(false);
   });
 });

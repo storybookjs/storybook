@@ -49,7 +49,7 @@ export function mapArgTypes(
   typeProperty: string
 ): StrictArgTypes {
   const events = namedItems(declaration.events);
-  const members = collectMembers(namedItems(declaration.members));
+  const members = namedItems(declaration.members);
   const slots = namedItems(declaration.slots);
   const cssParts = namedItems(declaration.cssParts);
   const cssStates = namedItems(declaration.cssStates);
@@ -230,17 +230,6 @@ function docFields(sources: DocSource[]): { description?: string; deprecated?: s
     ),
     deprecated: firstValue(sources, (source) => deprecationMessage(source.deprecated)),
   };
-}
-
-function collectMembers(members: ManifestClassMember[]): ManifestClassMember[] {
-  const items = new Map<string, ManifestClassMember>();
-  for (const member of members) {
-    const existing = items.get(member.name);
-    if (!existing || (existing.inheritedFrom && !member.inheritedFrom)) {
-      items.set(member.name, member);
-    }
-  }
-  return [...items.values()];
 }
 
 function sourcesForField(

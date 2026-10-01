@@ -91,6 +91,29 @@ const optionsWith = (
     },
   }) as unknown as Parameters<typeof viteFinal>[1];
 
+describe('Angular hash initialization', () => {
+  afterEach(() => {
+    vi.mocked(createRequire).mockRestore();
+  });
+
+  it.each(['21.2.22', '22.1.0', '22.2.0'])(
+    'initializes hashing when required by Angular %s',
+    async (version) => {
+      const initializeHash = vi.fn().mockResolvedValue(undefined);
+      const angularBuildPath = resolve('/angular/build/package.json');
+      const angularRequire = vi.fn((path: string) =>
+        path === angularBuildPath ? { version } : { initializeHash }
+      );
+      Object.assign(angularRequire, { resolve: () => angularBuildPath });
+      vi.mocked(createRequire).mockReturnValue(angularRequire as unknown as NodeJS.Require);
+
+      await viteFinal({}, optionsWith({}, { experimentalDocgenServer: true }));
+
+      expect(initializeHash).toHaveBeenCalledTimes(version === '22.2.0' ? 1 : 0);
+    }
+  );
+});
+
 function runConfig(stylePreprocessorOptions: Record<string, unknown> | undefined) {
   const options = {
     configDir: resolve(WORKSPACE_ROOT, '.storybook'),

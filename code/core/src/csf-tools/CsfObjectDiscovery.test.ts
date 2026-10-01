@@ -72,6 +72,21 @@ describe('CsfObject discovery', () => {
     expect(csf.mutationDiagnostics).toEqual([]);
   });
 
+  it('discovers CSF4 factory stories typed with meta.type<>()', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' });
+      export const Basic = meta.type<{ args: { icon: string } }>().story({
+        parameters: { a11y: true },
+      });
+    `);
+    const [story] = csf.objects({ meta: false, stories: true });
+
+    expect(story.remove(['parameters', 'a11y'])).toEqual({ ok: true, changed: true });
+    expect(csf.mutationDiagnostics).toEqual([]);
+    expect(printCsf(csf).code).not.toContain('a11y');
+  });
+
   it('does not diagnose excluded direct exports or re-exports', () => {
     const direct = parse(`
       export default { title: 'Example', includeStories: ['Basic'] };

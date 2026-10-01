@@ -211,6 +211,25 @@ export interface ReactMeta<
   story(
     ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): ReactStory<T, {}>;
+
+  /**
+   * Adds type information to the stories created from the returned meta. This is useful when a
+   * single story needs an arg that the other stories of the file don't have.
+   *
+   * @example
+   *
+   * ```ts
+   * export const WithIcon = meta.type<{ args: { icon: string } }>().story({
+   *   args: { label: 'Click me', icon: 'star' },
+   *   render: ({ icon, ...args }) => (
+   *     <Button {...args}>
+   *       <Icon name={icon} />
+   *     </Button>
+   *   ),
+   * });
+   * ```
+   */
+  type<S>(): ReactMeta<T & S, TMetaArgKeys>;
 }
 
 /**

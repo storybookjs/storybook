@@ -53,3 +53,25 @@ describe('Meta args are typed by the keys you provide', () => {
     const Default = meta.story({ args: { label: 'Hi', onDismiss: () => {} } });
   });
 });
+
+it('meta.type<>() adds an arg to a story of a meta with a route', () => {
+  const RootRoute = createRootRoute({});
+  const LeafRoute = createRoute({ getParentRoute: () => RootRoute, path: '/' });
+
+  const meta = preview.meta({
+    component: Badge,
+    args: { variant: 'secondary', onDismiss: () => {} },
+    parameters: { tanstack: { router: { route: LeafRoute } } },
+  });
+  const typed = meta.type<{ args: { icon: string } }>();
+
+  typed.story({
+    args: { label: 'Hi', icon: 'star' },
+    render: ({ icon, ...args }) => {
+      expectTypeOf(icon).toEqualTypeOf<string>();
+      return <Badge {...args} />;
+    },
+  });
+  // @ts-expect-error icon is required
+  typed.story({ args: { label: 'Hi' } });
+});

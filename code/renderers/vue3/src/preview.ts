@@ -214,6 +214,25 @@ export interface VueMeta<T extends VueTypes, TMetaArgKeys extends PropertyKey = 
   story(
     ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): VueStory<T, {}>;
+
+  /**
+   * Adds type information to the stories created from the returned meta. This is useful when a
+   * single story needs an arg that the other stories of the file don't have.
+   *
+   * @example
+   *
+   * ```ts
+   * export const WithIcon = meta.type<{ args: { icon: string } }>().story({
+   *   args: { label: 'Click me', icon: 'star' },
+   *   render: (args) => ({
+   *     components: { Button, Icon },
+   *     setup: () => ({ args }),
+   *     template: '<Button :label="args.label"><Icon :name="args.icon" /></Button>',
+   *   }),
+   * });
+   * ```
+   */
+  type<S>(): VueMeta<T & S, TMetaArgKeys>;
 }
 
 /**

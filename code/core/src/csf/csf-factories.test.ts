@@ -81,6 +81,35 @@ test('globals overrides may be partial, mirroring args', () => {
   });
 });
 
+describe('meta.type<>()', () => {
+  test('returns the meta itself', () => {
+    expect(meta.type<{ args: { count: number } }>()).toBe(meta);
+  });
+
+  test('adds types to the stories created from it', () => {
+    const typed = meta.type<{
+      args: { count: number };
+      parameters: { baz?: { value: string } };
+    }>();
+
+    const MyStory = typed.story({
+      args: { count: 1 },
+      parameters: { foo: { value: '1' }, baz: { value: '1' } },
+      render: ({ label, count }) => {
+        expectTypeOf(label).toEqualTypeOf<string>();
+        expectTypeOf(count).toEqualTypeOf<number>();
+        return label + count;
+      },
+    });
+    expect(MyStory.composed.args).toEqual({ label: 'foo', count: 1 });
+
+    // @ts-expect-error count is required
+    typed.story({ args: { label: 'bar' } });
+    // @ts-expect-error can not assign numbers to strings
+    typed.story({ args: { count: 1 }, parameters: { baz: { value: 1 } } });
+  });
+});
+
 describe('test function', () => {
   test('without overrides', async () => {
     const MyStory = meta.story({ args: { label: 'foo' } });

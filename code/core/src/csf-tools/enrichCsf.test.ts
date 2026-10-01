@@ -191,6 +191,39 @@ describe('enrichCsf', () => {
         };
       `);
     });
+    it('csf factories typed with meta.type<>()', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({});
+          export const Story = meta.type().story({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({});
+          export const Story = meta.type<{ args: { icon: string } }>().story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({});
+        export const Story = meta.type().story({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.type<{\\n  args: {\\n    icon: string;\\n  };\\n}>().story({})",
+              ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
     it('multiple stories', async () => {
       expect(
         await enrich(

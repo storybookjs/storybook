@@ -9,6 +9,7 @@ import {
   createCsfObject,
 } from './CsfObject.ts';
 import {
+  csfFactoryReceiver,
   isCsfFactoryCall,
   metaObjectPath,
   pathForNode,
@@ -191,7 +192,7 @@ const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): b
   if (!isCsfFactoryCall(node)) {
     return false;
   }
-  const receiver = node.callee.object.name;
+  const receiver = csfFactoryReceiver(node).name;
   if (node.callee.property.name === 'story') {
     if (receiver !== csf._metaVariableName || !csf._metaFactoryCall) {
       return false;

@@ -53,7 +53,7 @@ const originalIsTTY = Object.getOwnPropertyDescriptor(process.stdout, 'isTTY');
 const setStdoutIsTTY = (value: boolean) =>
   Object.defineProperty(process.stdout, 'isTTY', { value, configurable: true });
 
-const settingsFile = () => JSON.parse(vol.toJSON()[SETTINGS_PATH] as string);
+const settingsFile = () => JSON.parse(vol.readFileSync(SETTINGS_PATH, 'utf8') as string);
 const seedSettings = (agentSkills?: Record<string, boolean>) =>
   vol.fromNestedJSON({
     [SETTINGS_PATH]: JSON.stringify({ version: 1, userSince: 1, agentSkills }),
@@ -159,6 +159,7 @@ describe('installSkills', () => {
         cwd: PROJECT_ROOT,
         stdio: 'inherit',
         env: { npm_config_yes: 'true' },
+        timeout: 120_000,
       });
       expect(result).toEqual({ result: 'installed', source: 'yes', refType: 'tag' });
     });
@@ -185,7 +186,7 @@ describe('installSkills', () => {
       );
     });
 
-    it('never asks for git credentials and gives up on the tag lookup after 10 seconds', async () => {
+    it('looks up the tag without a credential prompt and with a 10 second timeout', async () => {
       await installSkills({ packageManager, yes: true });
 
       expect(executeCommand).toHaveBeenCalledWith(
@@ -275,12 +276,16 @@ describe('installSkills', () => {
       expect(result).toEqual({ result: 'skipped', source: 'settings' });
     });
 
-    it('asks when another project is remembered but this one is not', async () => {
-      seedSettings({ '/other/project': true });
+    it('asks when another project is remembered but this one is not, and keeps both answers', async () => {
+      seedSettings({ '/other/project': false });
 
       await installSkills({ packageManager });
 
       expect(prompt.confirm).toHaveBeenCalled();
+      expect(settingsFile().agentSkills).toEqual({
+        '/other/project': false,
+        [PROJECT_ROOT]: true,
+      });
     });
 
     it('treats an unreadable settings file as no answer', async () => {

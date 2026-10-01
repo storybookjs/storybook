@@ -80,8 +80,9 @@ async function resolveSkillsRef(
 }
 
 /**
- * Install the official Storybook skills into the project's git root through Vercel's `skills`
- * CLI, remembering the answer per project in the global settings file. Never throws.
+ * Install the official Storybook skills into the project root through Vercel's `skills` CLI,
+ * remembering the answer per project in the global settings file. A failed install is reported in
+ * the result instead of thrown.
  */
 export async function installSkills({
   packageManager,
@@ -167,6 +168,7 @@ export async function installSkills({
       cwd: projectRoot,
       stdio: 'inherit',
       env,
+      timeout: 120_000,
     });
   } catch (error) {
     logger.warn('Could not install the Storybook skills, continuing without them.');

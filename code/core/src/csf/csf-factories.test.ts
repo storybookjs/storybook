@@ -116,13 +116,6 @@ describe('meta.type<>()', () => {
     // @ts-expect-error tags must be 'a' | 'b'
     typed.story({ args: { count: 1 }, tags: ['c'] });
   });
-
-  test('rejects a type that has none of the renderer type keys', () => {
-    // @ts-expect-error the arg belongs under `args`
-    meta.type<{ count: number }>();
-    // @ts-expect-error not an object of renderer types
-    meta.type<string>();
-  });
 });
 
 describe('test function', () => {

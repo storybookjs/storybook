@@ -225,7 +225,7 @@ export interface AngularMeta<
    * Add types to the stories created from the returned meta, such as an arg that only one story
    * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S extends AddonTypes>(): AngularMeta<T & S, TMetaArgKeys>;
+  type<S>(): AngularMeta<T & S, TMetaArgKeys>;
 }
 
 /**

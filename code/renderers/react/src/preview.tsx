@@ -216,7 +216,7 @@ export interface ReactMeta<
    * Add types to the stories created from the returned meta, such as an arg that only one story
    * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S extends AddonTypes>(): ReactMeta<T & S, TMetaArgKeys>;
+  type<S>(): ReactMeta<T & S, TMetaArgKeys>;
 }
 
 /**

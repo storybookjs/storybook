@@ -623,8 +623,6 @@ describe('meta.type<>() types the stories created from it', () => {
     });
     // @ts-expect-error icon must be 'star' | 'heart'
     meta.type<{ args: { icon: 'star' | 'heart' } }>().story({ args: { icon: 'x' } });
-    // @ts-expect-error the arg belongs under `args`
-    meta.type<{ icon: string }>();
   });
 
   it('a required key is required in that story only, next to the optional component args', () => {

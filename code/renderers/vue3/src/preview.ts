@@ -219,7 +219,7 @@ export interface VueMeta<T extends VueTypes, TMetaArgKeys extends PropertyKey = 
    * Add types to the stories created from the returned meta, such as an arg that only one story
    * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S extends AddonTypes>(): VueMeta<T & S, TMetaArgKeys>;
+  type<S>(): VueMeta<T & S, TMetaArgKeys>;
 }
 
 /**

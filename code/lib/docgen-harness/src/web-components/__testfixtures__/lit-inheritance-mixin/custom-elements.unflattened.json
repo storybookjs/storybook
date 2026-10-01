@@ -97,26 +97,7 @@
                 "text": "string"
               },
               "default": "'Final'",
-              "description": "Label inherited from the base class.",
-              "attribute": "base-label",
-              "inheritedFrom": {
-                "name": "BaseElement",
-                "module": "lit-inheritance-mixin.ts"
-              }
-            },
-            {
-              "kind": "field",
-              "name": "mixedActive",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "description": "Whether the mixed-in state is active.",
-              "attribute": "mixed-active",
-              "inheritedFrom": {
-                "name": "SelectableMixin",
-                "module": "lit-inheritance-mixin.ts"
-              }
+              "attribute": "base-label"
             }
           ],
           "attributes": [
@@ -135,34 +116,18 @@
                 "text": "string"
               },
               "default": "'Final'",
-              "description": "Label inherited from the base class.",
-              "fieldName": "baseLabel",
-              "inheritedFrom": {
-                "name": "BaseElement",
-                "module": "lit-inheritance-mixin.ts"
-              }
-            },
-            {
-              "name": "mixed-active",
-              "type": {
-                "text": "boolean"
-              },
-              "default": "false",
-              "description": "Whether the mixed-in state is active.",
-              "fieldName": "mixedActive",
-              "inheritedFrom": {
-                "name": "SelectableMixin",
-                "module": "lit-inheritance-mixin.ts"
-              }
+              "fieldName": "baseLabel"
             }
           ],
           "mixins": [
             {
+              "package": "lit-inheritance-mixin",
               "name": "SelectableMixin",
               "module": "lit-inheritance-mixin.ts"
             }
           ],
           "superclass": {
+            "package": "lit-inheritance-mixin",
             "name": "BaseElement",
             "module": "lit-inheritance-mixin.ts"
           },

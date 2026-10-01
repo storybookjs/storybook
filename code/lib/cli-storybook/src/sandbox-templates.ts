@@ -834,23 +834,11 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-  },
-  'preact-vite/prerelease-ts': {
-    name: 'Preact Prerelease (Vite | TypeScript)',
-    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts`,
-    preferNoLink: true,
-    expected: {
-      framework: '@storybook/preact-vite',
-      renderer: '@storybook/preact',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      extraDependencies: ['preact-render-to-string', 'preact@beta'],
+      // create-vite still scaffolds Preact 10, which default-js keeps covering.
+      // 11.0.0 is newer than the sandbox npmMinimalAgeGate (7 days) allows until 2026-10-07.
+      extraDependencies: ['preact-render-to-string', 'preact@11.0.0-rc.2'],
       resolutions: {
-        preact: 'npm:preact@beta',
+        preact: 'npm:preact@11.0.0-rc.2',
       },
     },
     skipTasks: ['e2e-tests', 'bench'],
@@ -1133,9 +1121,6 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
-  // Disabled for cost-saving reasons, enable when we see signs that Preact 11 is about to release.
-  // After release, replace the default-js config with this one and delete this one.
-  // 'preact-vite/prerelease-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',

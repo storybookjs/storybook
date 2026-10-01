@@ -1592,7 +1592,7 @@ The underlying implementation was switched from Popper.js to react-aria. Due to 
 
 #### WithTooltipPure and WithTooltipState are deprecated
 
-Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+Instead, use `WithTooltip` in Storybook 10, or `TooltipProvider` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
 
 #### Link isButton is deprecated
 

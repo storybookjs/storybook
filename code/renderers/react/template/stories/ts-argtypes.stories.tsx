@@ -6,7 +6,6 @@ import type { StoryObj } from '@storybook/react';
 
 import { PureArgsTable as ArgsTable } from '@storybook/addon-docs/blocks';
 
-import { mapValues } from 'es-toolkit/object';
 import { inferControls } from 'storybook/preview-api';
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
@@ -38,8 +37,7 @@ export default {
 const ArgsStory = ({ parameters }: { parameters: Parameters }) => {
   const argTypes = parameters.docs.extractArgTypes(parameters.component);
   const rows = inferControls({ argTypes, parameters: { __isArgsStory: true } } as any);
-  const initialArgs = mapValues(rows, (argType) => argType.defaultValue);
-  const [args, setArgs] = useState(initialArgs);
+  const [args, setArgs] = useState<Args>({});
 
   return (
     <ThemeProvider theme={convert(themes.light)}>

@@ -157,6 +157,45 @@ describe('Story args can be inferred', () => {
   });
 });
 
+describe('Custom args types written by the csf-factories codemod', () => {
+  type Icon = { name: string };
+  type StoryArgs = { pageIcon: Icon };
+
+  it('✅ A custom arg can be set in meta and used in a story', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      component: Button,
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story({
+      args: { label: 'good', disabled: false },
+      render: ({ pageIcon, ...args }) => h('div', [pageIcon.name, h(Button, args)]),
+    });
+    const Overridden = meta.story({
+      args: { label: 'good', disabled: false, pageIcon: { name: 'user' } },
+    });
+  });
+
+  it('✅ A custom args type can extend the props of the component', () => {
+    const meta = preview.type<{ args: ButtonProps & { theme: string } }>().meta({
+      component: Button,
+      args: { theme: 'dark' },
+    });
+
+    const Default = meta.story({ args: { label: 'good', disabled: false } });
+  });
+
+  it('✅ A custom arg can be used when meta has no component', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      render: (args) => h('div', args.pageIcon.name),
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story();
+    const Overridden = meta.story({ args: { pageIcon: { name: 'user' } } });
+  });
+});
+
 it('Infer type of slots', () => {
   const meta = preview.meta({
     component: BaseLayout,

@@ -1,7 +1,7 @@
-import type { ComponentProps, FC, MouseEvent, ReactElement, SyntheticEvent } from 'react';
+import type { FC, ReactElement, SyntheticEvent } from 'react';
 import React, { useMemo, useState } from 'react';
 
-import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
+import { PopoverProvider } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
@@ -16,7 +16,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import { SidebarMenuList, type SidebarMenuItem } from './Menu.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { Shortcut } from '../Shortcut.tsx';
 import { StatusButton } from './StatusButton.tsx';
@@ -40,7 +40,7 @@ const FloatingStatusButton = styled(StatusButton)({
 
 export const useContextMenu = (
   context: API_HashEntry,
-  links: Link[],
+  links: SidebarMenuItem[],
   api: API,
   visibleStatus?: { icon: ReactElement | null; status: StatusValue } | null
 ) => {
@@ -56,7 +56,7 @@ export const useContextMenu = (
   const shortcutKeys = api.getShortcutKeys();
   const openInEditorShortcut = shortcutKeys?.openInEditor;
 
-  const topLinks = useMemo<Link[]>(() => {
+  const topLinks = useMemo<SidebarMenuItem[]>(() => {
     const defaultLinks = [];
 
     if (context && 'importPath' in context && context.importPath) {
@@ -143,7 +143,9 @@ export const useContextMenu = (
           defaultVisible={false}
           visible={isOpen}
           onVisibleChange={setIsOpen}
-          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          popover={({ onHide }) => (
+            <LiveContextMenu context={context} links={[...topLinks, ...links]} onHide={onHide} />
+          )}
           hasChrome={true}
           padding={0}
         >
@@ -163,38 +165,23 @@ export const useContextMenu = (
   }, [context, handlers, isOpen, shouldRender, links, topLinks, buttonStatus, menuIcon]);
 };
 
-/**
- * This component re-subscribes to storybook's core state, hence the Live prefix. It is used to
- * render the context menu for the sidebar. it self is a tooltip link list that renders the links
- * provided to it. In addition to the links, it also renders the test providers.
- */
-const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof TooltipLinkList>> = ({
-  context,
-  links,
-  ...rest
-}) => {
+const LiveContextMenu: FC<{
+  context: API_HashEntry;
+  links: SidebarMenuItem[];
+  onHide: () => void;
+}> = ({ context, links, onHide }) => {
   const registeredTestProviders = useStorybookApi().getElements(
     Addon_TypesEnum.experimental_TEST_PROVIDER
   );
-  const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+  const providerLinks = generateTestProviderLinks(registeredTestProviders, context);
 
-  /**
-   * The context menu can take a list of lists of links, so that the links are grouped and separated
-   * by a line separator, so we need to make sure that links are contained within arrays (but not
-   * more than one level deep)
-   */
-  const groups: Link[][] =
-    Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
-
-  const all = groups.concat([providerLinks]);
-
-  return <TooltipLinkList {...rest} links={all} />;
+  return <SidebarMenuList menu={[links, providerLinks]} onHide={onHide} />;
 };
 
 export function generateTestProviderLinks(
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry
-): Link[] {
+): SidebarMenuItem[] {
   return Object.entries(registeredTestProviders)
     .map(([testProviderId, state]) => {
       if (!state) {

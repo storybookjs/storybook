@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { TooltipNote, WithTooltip } from 'storybook/internal/components';
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
 
 import { type Color, styled, typography } from 'storybook/theming';
 
@@ -56,15 +56,10 @@ export const StatusBadge: React.FC<StatusBadgeProps> = ({ status }) => {
   const badgeText = StatusTextMapping[status];
   const badgeNote = StatusNoteMapping[status];
   return (
-    <WithTooltip
-      hasChrome={false}
-      placement="top"
-      trigger="hover"
-      tooltip={<TooltipNote note={badgeNote} />}
-    >
-      <StyledBadge aria-label={`Story status: ${badgeText}`} status={status}>
+    <TooltipProvider placement="top" tooltip={<TooltipNote note={badgeNote} />}>
+      <StyledBadge tabIndex={0} aria-label={`Story status: ${badgeText}`} status={status}>
         {badgeText}
       </StyledBadge>
-    </WithTooltip>
+    </TooltipProvider>
   );
 };

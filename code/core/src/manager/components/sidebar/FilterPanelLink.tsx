@@ -6,7 +6,6 @@ import { DeleteIcon } from '@storybook/icons';
 
 import { styled } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import type { FilterItem } from './FilterPanel.utils.ts';
 
 const MutedText = styled.span(({ theme }) => ({
@@ -32,7 +31,7 @@ export const createFilterLink = ({
   isExcluded,
   onCheckboxChange,
   onInvert,
-}: FilterItem): Link => {
+}: FilterItem) => {
   const isChecked = isIncluded || isExcluded;
   const toggleLabel = `${type} filter: ${isExcluded ? `exclude ${title}` : title}`;
   const toggleTooltip = tooltip ?? `${isChecked ? 'Remove' : 'Add'} ${type} filter: ${title}`;

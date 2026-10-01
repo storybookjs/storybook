@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo } from 'react';
+import React, { type ReactNode, type SyntheticEvent, useCallback, useMemo } from 'react';
 
 import { ActionList, ProgressSpinner } from 'storybook/internal/components';
 import { STORIES_COLLAPSE_ALL } from 'storybook/internal/core-events';
@@ -16,14 +16,27 @@ import {
 import type { API } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import type { NormalLink } from '../../components/components/tooltip/TooltipLinkList.tsx';
 import { Shortcut } from '../components/Shortcut.tsx';
 import { useChecklist } from '../components/sidebar/useChecklist.ts';
 
-export type MenuItem = NormalLink & {
+export interface MenuItem {
+  id: string;
+  title?: ReactNode;
+  ariaLabel?: string;
+  center?: ReactNode;
+  right?: ReactNode;
+  icon?: ReactNode;
+  input?: ReactNode;
+  active?: boolean;
+  disabled?: boolean;
+  href?: string;
+  onClick?: (
+    event: SyntheticEvent,
+    item: Pick<MenuItem, 'id' | 'active' | 'disabled' | 'title' | 'href'>
+  ) => void;
   closeOnClick?: boolean;
   internal?: boolean;
-};
+}
 
 const ProgressCircle = styled(ProgressSpinner)(({ theme }) => ({
   color: theme.color.secondary,
@@ -227,7 +240,7 @@ export const useMenu = ({
         [sidebarToggle, toolbarToogle, addonsToggle, up, down, prev, next, collapse],
         getAddonsShortcuts(),
         [documentation],
-      ] satisfies NormalLink[][],
+      ] satisfies MenuItem[][],
     [
       about,
       guide,

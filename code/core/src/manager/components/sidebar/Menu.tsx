@@ -1,4 +1,4 @@
-import type { ComponentProps, FC } from 'react';
+import type { ComponentProps, FC, ReactNode } from 'react';
 import React, { useState } from 'react';
 
 import { ActionList, Button, PopoverProvider, ToggleButton } from 'storybook/internal/components';
@@ -9,7 +9,7 @@ import { transparentize } from 'polished';
 import { useStorybookApi } from 'storybook/manager-api';
 import { type Theme, css, styled } from 'storybook/theming';
 
-import type { useMenu } from '../../container/Menu.tsx';
+import type { MenuItem, useMenu } from '../../container/Menu.tsx';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 
 export type MenuList = ReturnType<typeof useMenu>;
@@ -83,8 +83,10 @@ const MenuButtonGroup = styled.div({
   gap: 6,
 });
 
-const SidebarMenuList: FC<{
-  menu: MenuList;
+export type SidebarMenuItem = MenuItem | { id: string; content: ReactNode };
+
+export const SidebarMenuList: FC<{
+  menu: SidebarMenuItem[][];
   onHide: () => void;
 }> = ({ menu, onHide }) => (
   <Container>
@@ -93,6 +95,10 @@ const SidebarMenuList: FC<{
       .flatMap((links) => (
         <ActionList key={links.map((link) => link.id).join('_')}>
           {links.map((link) => {
+            if ('content' in link) {
+              return <React.Fragment key={link.id}>{link.content}</React.Fragment>;
+            }
+
             const linkContent = (
               <>
                 {(link.icon || link.input) && (
@@ -109,7 +115,7 @@ const SidebarMenuList: FC<{
               <ActionList.Item key={link.id} active={link.active}>
                 <ActionList.Action
                   asChild={!!link.href}
-                  ariaLabel={false}
+                  ariaLabel={link.ariaLabel ?? false}
                   id={`list-item-${link.id}`}
                   disabled={link.disabled}
                   onClick={(e) => {

@@ -319,7 +319,7 @@ export const SearchResults: FC<{
           const { key, ...rest } = props;
           return (
             <MoreWrapper key="search-result-expand">
-              <Button key={key} {...rest} size="small">
+              <Button ariaLabel={false} key={key} {...rest} size="small">
                 Show {result.moreCount} more results
               </Button>
             </MoreWrapper>

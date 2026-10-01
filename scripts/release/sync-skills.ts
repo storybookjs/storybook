@@ -33,6 +33,9 @@ export async function syncSkills({
   repoUrl: string;
   ref?: string;
 }) {
+  if (!/^\d+\.\d+\.\d+(-[\w.-]+)?$/.test(version)) {
+    throw new Error(`Not a version: ${version}`);
+  }
   const tag = `v${version}`;
   const branch = version.includes('-') ? 'next' : 'main';
   const cloneDir = await mkdtemp(join(tmpdir(), 'skills-'));
@@ -43,6 +46,7 @@ export async function syncSkills({
       STORYBOOK_DIR
     );
 
+    // gpgSign off: a maintainer's signing setup would prompt or fail in this temporary clone.
     for (const [key, value] of [
       ['user.name', 'storybook-bot'],
       ['user.email', '32066757+storybook-bot@users.noreply.github.com'],
@@ -53,7 +57,7 @@ export async function syncSkills({
     }
 
     const skillsDir = join(cloneDir, 'skills');
-    const archive = join(cloneDir, '.git', 'skills.tar');
+    const archive = join(cloneDir, 'skills.tar');
     await rm(skillsDir, { recursive: true, force: true });
     await git(
       ['archive', '--prefix=skills/', `--output=${archive}`, `${ref}:${SKILLS_PATH}`],

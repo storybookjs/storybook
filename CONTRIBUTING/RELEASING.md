@@ -234,7 +234,7 @@ The publish workflow runs in the "release" GitHub environment, which has the npm
 
 #### Syncing the skills
 
-The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) makes them installable without the plugins, with Vercel's `skills` CLI, and [skills.sh](https://skills.sh) counts those installs. `storybook init` and `storybook upgrade` are planned to install them from there, at the tag of the project's Storybook version. That repository is release output: only the publish workflow writes to it, nobody edits it by hand, and a skill change ships with the next Storybook release.
+The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) makes them installable without the Claude Code plugin, with Vercel's `skills` CLI, and [skills.sh](https://skills.sh) counts those installs. `storybook init` and `storybook upgrade` are planned to install them from there, at the tag of the project's Storybook version. That repository is release output: nobody edits its files directly, and a skill change ships with the next Storybook release. The publish workflow writes to it, and after a failed sync a maintainer runs the same script by hand (see below).
 
 Step 8 runs [`scripts/release/sync-skills.ts`](../scripts/release/sync-skills.ts), which:
 
@@ -245,7 +245,7 @@ Step 8 runs [`scripts/release/sync-skills.ts`](../scripts/release/sync-skills.ts
 
 The tag is the version; there is no version file. A release without a skill change adds a tag and no commit.
 
-The token step and the sync step are the last two release steps, so a failure turns the publish workflow red without skipping any other release task. It has no condition, so the "skip publish" dispatch syncs too. Syncing a version twice is harmless: an unchanged tree adds no commit, a tag that already points at the same commit is accepted, and a tag that points elsewhere makes the atomic push reject branch and tag together, so nothing moves.
+The token step and the sync step are the last two release steps, so a failure turns the publish workflow red without skipping any other release task. Neither step has a condition, so they also run when you start the publish workflow by hand with `skip_publish` ticked (Actions → Publish → Run workflow, on `next-release` or `latest-release`), called the "skip publish" dispatch below. Syncing a version twice is harmless: an unchanged tree adds no commit, a tag that already points at the same commit is accepted, and a tag that points elsewhere makes the atomic push reject branch and tag together, so nothing moves.
 
 The clone and push use a token of the Storybook bot GitHub App, created per run by the step before, limited to `storybookjs/skills` and revoked when the job ends. The app ID and private key are the org-level `STORYBOOK_BOT_APP_ID` variable and `STORYBOOK_BOT_APP_PRIVATE_KEY` secret. The app needs access to `storybookjs/skills` with **Contents: Read and write**; an org admin grants that in the [app's installation settings](https://github.com/organizations/storybookjs/settings/installations/52633720).
 
@@ -253,7 +253,7 @@ The clone and push use a token of the Storybook bot GitHub App, created per run 
 
 The Discord message says that publishing failed, whichever step is red. Open the run and check which step failed:
 
-- **Only "Create a storybookjs/skills token" or "Sync skills to storybookjs/skills".** npm publish, the GitHub Release and the merges are done. Fix the cause (for a token failure, usually the app's access to `storybookjs/skills`) and sync by hand, as below. Don't use the "skip publish" dispatch for this: it also repeats the merge, the `CHANGELOG.md` commit and, for a stable minor or major, the force-push of `next` to `main` and `latest-release`.
+- **Only "Create a storybookjs/skills token" or "Sync skills to storybookjs/skills".** npm publish, the GitHub Release and the merges are done. Fix the cause (for a token failure, usually the app's access to `storybookjs/skills`) and sync by hand, as below. Don't use the "skip publish" dispatch for this: it also repeats the merge, the `CHANGELOG.md` commit for a patch release and, for a stable minor or major, the force-push of `next` to `main` and `latest-release`.
 - **An earlier step after npm publish, for example the merge.** Fix it and finish the release with the "skip publish" dispatch. That run syncs the skills too; check that its last step is green. If you finish the release by hand instead, sync by hand as well.
 
 Don't re-run a failed run that a push started: it starts again from the commit before the version bump and stops at the bump step.

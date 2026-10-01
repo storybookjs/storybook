@@ -25,6 +25,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     info: vi.fn(),
     debug: vi.fn(),
     step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
   },
   prompt: {
     confirm: vi.fn(),
@@ -92,7 +93,6 @@ const packageManager = new PackageManager() as unknown as JsPackageManager;
 
 const dryRun = false;
 const yes = true;
-const rendererPackage = 'storybook';
 const skipInstall = false;
 const configDir = '/path/to/config';
 const mainConfigPath = '/path/to/mainConfig';
@@ -104,14 +104,12 @@ const common = {
   dryRun,
   yes,
   mainConfig: { stories: [] },
-  rendererPackage,
   skipInstall,
   configDir,
   packageManager: packageManager,
   mainConfigPath,
   isUpgrade,
   storiesPaths: [],
-  hasCsfFactoryPreview: false,
 };
 
 const runFixWrapper = async ({ storybookVersion }: { storybookVersion: string }) => {
@@ -160,7 +158,7 @@ describe('runFixes', () => {
     });
     expect(run1).toHaveBeenCalledWith(
       expect.objectContaining({
-        dryRun,
+        files: expect.objectContaining({ edit: expect.any(Function) }),
         mainConfigPath,
         packageManager,
         result: {

@@ -1,5 +1,3 @@
-import { getAddonNames } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 import { detectAgent } from 'storybook/internal/telemetry';
 
 import picocolors from 'picocolors';
@@ -10,33 +8,13 @@ import type { Fix } from '../types.ts';
 
 const ADDON_MCP = '@storybook/addon-mcp';
 
-export interface AddonMcpOptions {
-  /** Name of the detected AI coding agent (e.g. `claude`, `cursor`), surfaced in the prompt. */
-  agentName: string;
-  /** Whether `@storybook/addon-mcp` is already configured, so we update rather than install. */
-  isInstalled: boolean;
-}
-
-/**
- * When `storybook upgrade` is driven by an AI coding agent, install `@storybook/addon-mcp` — or, if
- * it is already configured, pull it up to its latest version. The addon exposes the running
- * Storybook to the agent over MCP, so an agent that just ran an upgrade is exactly the audience that
- * benefits from it. Humans never see this migration — `check` returns null unless std-env detects an
- * agent.
- */
-export const addonMcp: Fix<AddonMcpOptions> = {
+// Only an agent running the upgrade benefits from the addon, so humans never see this fix.
+export const addonMcp: Fix = {
   id: 'addon-mcp',
   link: 'https://github.com/storybookjs/storybook/tree/next/code/addons/mcp',
 
-  async check({ mainConfig }) {
-    const agent = detectAgent();
-    if (!agent) {
-      return null;
-    }
-
-    const isInstalled = getAddonNames(mainConfig).some((addon) => addon.includes(ADDON_MCP));
-
-    return { agentName: agent.name, isInstalled };
+  async check() {
+    return detectAgent() ? {} : null;
   },
 
   prompt() {
@@ -46,18 +24,8 @@ export const addonMcp: Fix<AddonMcpOptions> = {
     `;
   },
 
-  async run({ result, packageManager, configDir, dryRun }) {
-    if (dryRun) {
-      return;
-    }
-
-    logger.log(
-      `${result.isInstalled ? 'Updating' : 'Installing'} ${picocolors.magenta(ADDON_MCP)} to the latest version...`
-    );
-    // `add` pins core packages (including @storybook/addon-mcp) to the matching Storybook
-    // version from the versions map and, when the addon is already present, refreshes the
-    // dependency without duplicating it in the main config.
-    // skipInstall: the upgrade command runs a single dependency install after all automigrations.
+  async run({ packageManager, configDir }) {
+    // `add` also refreshes an already-configured addon without duplicating it in main config.
     await add(ADDON_MCP, {
       configDir,
       packageManager: packageManager.type,

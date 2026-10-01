@@ -39,6 +39,9 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -56,6 +59,9 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -70,6 +76,9 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -86,6 +95,9 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -100,6 +112,9 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -114,6 +129,9 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```
 
@@ -130,5 +148,8 @@ export default definePreview({
       description: 'Overwritten description',
     },
   },
+  addons: [
+    /* ... */
+  ],
 });
 ```

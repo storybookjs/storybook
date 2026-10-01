@@ -45,6 +45,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },
@@ -65,6 +68,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },
@@ -82,6 +88,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },
@@ -101,6 +110,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },
@@ -118,6 +130,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },
@@ -135,6 +150,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },
@@ -154,6 +172,9 @@ export default definePreview({
       options: INITIAL_VIEWPORTS,
     },
   },
+  addons: [
+    /* ... */
+  ],
   initialGlobals: {
     viewport: { value: 'ipad', isRotated: false },
   },

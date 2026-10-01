@@ -14,6 +14,7 @@ export default preview;
 + import { definePreview } from '@storybook/tanstack-react';
 
 export default definePreview({
+  addons: [ /* ... */ ],
   //...
 });
 ```

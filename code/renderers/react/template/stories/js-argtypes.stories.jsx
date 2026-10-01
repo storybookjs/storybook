@@ -16,6 +16,8 @@ import { component as JsFunctionComponentInlineDefaultsComponent } from './docge
 const isVite = typeof require === 'undefined';
 
 export default {
+  // Portable stories in Vitest have no docgen server to load argTypes from.
+  tags: ['!vitest'],
   // The docgen server only extracts subcomponents once `component` resolves to a real component.
   component: JsFunctionComponentInlineDefaultsComponent,
   // Listed so the docgen server extracts every component; each story shows its own entry.

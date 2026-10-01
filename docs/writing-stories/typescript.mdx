@@ -63,7 +63,7 @@ Finally, use of `satisfies` allows you to pass `typeof meta` to the `StoryObj` g
 
 ## Typing custom args
 
-Sometimes stories need to define args that aren’t included in the component's props. For this case, you can use an [intersection type](https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types) to combine a component's props type and your custom args' type. For example, here's how you could use a `footer` arg to populate a child component:
+Sometimes stories need to define args that aren’t included in the component's props. For this case, you can use an [intersection type](https://www.typescriptlang.org/docs/handbook/2/objects.html#intersection-types) to combine a component's props type and your custom args' type. With [CSF Next](../api/csf/csf-next.mdx), the component's props are already inferred, so you only pass the type of your custom args to `preview.type`. For example, here's how you could use a `footer` arg to populate a child component:
 
 <CodeSnippets path="page-story-slots.md" />
 

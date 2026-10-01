@@ -15,10 +15,6 @@
           "default": "'Final'",
           "description": "Label inherited from the base class.",
           "fieldName": "baseLabel",
-          "inheritedFrom": {
-            "module": "lit-inheritance-mixin.ts",
-            "name": "BaseElement",
-          },
           "name": "base-label",
           "type": {
             "text": "string",
@@ -56,10 +52,6 @@
           "attribute": "base-label",
           "default": "'Final'",
           "description": "Label inherited from the base class.",
-          "inheritedFrom": {
-            "module": "lit-inheritance-mixin.ts",
-            "name": "BaseElement",
-          },
           "kind": "field",
           "name": "baseLabel",
           "type": {
@@ -85,16 +77,18 @@
         {
           "module": "lit-inheritance-mixin.ts",
           "name": "SelectableMixin",
+          "package": "lit-inheritance-mixin",
         },
       ],
       "name": "LitInheritanceMixin",
       "superclass": {
         "module": "lit-inheritance-mixin.ts",
         "name": "BaseElement",
+        "package": "lit-inheritance-mixin",
       },
       "tagName": "lit-inheritance-mixin",
     },
-    "manifestPath": "custom-elements.json",
+    "manifestPath": "custom-elements.unflattened.json",
   },
   "description": "Element composed from a base class and a mixin.",
   "id": "lit-inheritance-mixin",

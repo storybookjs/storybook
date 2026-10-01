@@ -30,7 +30,7 @@ if (BASELINE_PATH !== 'legacy') {
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
 // The unprefixed custom-elements.json is the analyzer's 1.0.0 capture; these are hand-written shapes recorded under a prefix.
-const MANIFEST_VARIANTS = ['v2', 'wca'] as const;
+const MANIFEST_VARIANTS = ['v2', 'wca', 'unflattened'] as const;
 
 const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())

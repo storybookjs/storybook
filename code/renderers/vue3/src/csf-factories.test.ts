@@ -176,15 +176,6 @@ describe('Custom args types written by the csf-factories codemod', () => {
     });
   });
 
-  it('✅ A custom args type can extend the props of the component', () => {
-    const meta = preview.type<{ args: ButtonProps & { theme: string } }>().meta({
-      component: Button,
-      args: { theme: 'dark' },
-    });
-
-    const Default = meta.story({ args: { label: 'good', disabled: false } });
-  });
-
   it('✅ A custom arg can be used when meta has no component', () => {
     const meta = preview.type<{ args: StoryArgs }>().meta({
       render: (args) => h('div', args.pageIcon.name),

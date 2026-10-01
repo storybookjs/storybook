@@ -779,6 +779,7 @@ describe('stories codemod', () => {
         ['Meta without a type argument', 'Meta'],
         ['Meta of the component', 'Meta<typeof Button>'],
         ['Meta of the component class', 'Meta<Button>'],
+        ['Meta of a generic component class', 'Meta<Button<string>>'],
         ['ComponentMeta, which only takes a component', 'ComponentMeta<ButtonType>'],
         ['a type that is not a Storybook type', 'CustomMeta<StoryArgs>'],
       ])('infers the args from the component for %s', async (_, type) => {
@@ -873,6 +874,9 @@ describe('stories codemod', () => {
             export const CustomFooter: Story = {
               args: { footer: 'Built with Storybook' },
             };
+            export const CustomHeader: StoryObj<PagePropsAndCustomArgs & { header?: string }> = {
+              args: { header: 'Storybook' },
+            };
           `)
         ).resolves.toMatchInlineSnapshot(`
           import preview from "#.storybook/preview";
@@ -881,7 +885,9 @@ describe('stories codemod', () => {
           type PagePropsAndCustomArgs = Page & { footer?: string };
 
           const meta = preview
-            .type<{ args: Omit<PagePropsAndCustomArgs, keyof Page> }>()
+            .type<{
+              args: Omit<PagePropsAndCustomArgs, keyof Page> & { header?: string };
+            }>()
             .meta({
               component: Page,
             });
@@ -889,7 +895,28 @@ describe('stories codemod', () => {
           export const CustomFooter = meta.story({
             args: { footer: "Built with Storybook" },
           });
+          export const CustomHeader = meta.story({
+            args: { header: "Storybook" },
+          });
         `);
+      });
+
+      it('omits the keys of the component class from an interface that extends it', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            interface PageArgs extends Page {
+              footer?: string;
+            }
+
+            const meta: Meta<PageArgs> = { component: Page };
+            export default meta;
+
+            export const CustomFooter: StoryObj<PageArgs> = {};
+          `)
+        ).resolves.toContain('.type<{ args: Omit<PageArgs, keyof Page> }>()');
       });
 
       it('carries the custom args type over when the meta has no component', async () => {

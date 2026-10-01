@@ -3,8 +3,7 @@ import { babelParse, generate, types as t } from 'storybook/internal/babel';
 // `ComponentMeta` and `ComponentStory` are left out: their type argument is always a component.
 const argsTypeNames = new Set(['Meta', 'MetaObj', 'Story', 'StoryFn', 'StoryObj']);
 
-// Reads the custom args types of a meta or story type annotation, such as `StoryArgs` in
-// `Meta<StoryArgs>`. The component is not one of them: `preview.meta()` infers its args.
+// The component is never a custom args type: `preview.meta()` infers its args from `component`.
 export function customArgsTypesReader(program: t.Program, component: t.Node | undefined) {
   const importedNames = new Map<string, string>();
   const typeAliases = new Map<string, t.TSType>();
@@ -22,14 +21,23 @@ export function customArgsTypesReader(program: t.Program, component: t.Node | un
     if (t.isTSTypeAliasDeclaration(declaration) && !declaration.typeParameters) {
       typeAliases.set(declaration.id.name, declaration.typeAnnotation);
     }
+    // An interface includes the types that it extends, as an intersection does.
+    if (t.isTSInterfaceDeclaration(declaration) && !declaration.typeParameters) {
+      typeAliases.set(
+        declaration.id.name,
+        t.tsIntersectionType(
+          (declaration.extends ?? []).map((parent) =>
+            t.tsTypeReference(parent.expression, parent.typeParameters)
+          )
+        )
+      );
+    }
   }
 
   const componentCode = component && generate(component).code;
 
   const isComponentClass = (type: t.TSType) =>
-    t.isTSTypeReference(type) &&
-    !type.typeParameters &&
-    generate(type.typeName).code === componentCode;
+    t.isTSTypeReference(type) && generate(type.typeName).code === componentCode;
 
   const isComponent = (type: t.TSType) => t.isTSTypeQuery(type) || isComponentClass(type);
 
@@ -45,31 +53,25 @@ export function customArgsTypesReader(program: t.Program, component: t.Node | un
       ? type.typeParameters?.params[0]
       : undefined;
 
-  const customArgsTypes = (type: t.TSType): t.TSType[] => {
-    if (isComponent(type)) {
-      return [];
-    }
-    if (t.isTSIntersectionType(type)) {
-      return type.types.filter((member) => !isComponent(member));
-    }
+  const customArgsTypes = (type: t.TSType): t.TSType[] =>
+    (t.isTSIntersectionType(type) ? type.types : [type]).flatMap((member) => {
+      const alias = aliasedType(member);
+      if (isComponent(member) || (alias && isComponent(alias))) {
+        return [];
+      }
 
-    const alias = aliasedType(type);
-    if (alias && isComponent(alias)) {
-      return [];
-    }
-    const componentClass = t.isTSIntersectionType(alias) && alias.types.find(isComponentClass);
-    if (componentClass) {
+      const componentClass = t.isTSIntersectionType(alias) && alias.types.find(isComponentClass);
+      if (!componentClass) {
+        return [member];
+      }
       // An args type that includes the component class makes every member of that class a required arg.
       return [
         t.tsTypeReference(
           t.identifier('Omit'),
-          t.tsTypeParameterInstantiation([type, t.tsTypeOperator(componentClass, 'keyof')])
+          t.tsTypeParameterInstantiation([member, t.tsTypeOperator(componentClass, 'keyof')])
         ),
       ];
-    }
-
-    return [type];
-  };
+    });
 
   return (annotation: t.Node | null | undefined): t.TSType[] => {
     const type = t.isTSTypeAnnotation(annotation) ? annotation.typeAnnotation : annotation;
@@ -84,10 +86,11 @@ const needsParentheses = (type: t.TSType) =>
   t.isTSConstructorType(type) ||
   t.isTSConditionalType(type);
 
-// Builds `preview.type<{ args: A & B }>()`, or `preview` when there are no custom args types.
 export function typedPreview(previewName: string, customArgsTypes: t.TSType[]): t.Expression {
   const distinctTypes = [
-    ...new Map(customArgsTypes.map((type) => [generate(type).code, type])).values(),
+    ...new Map(
+      customArgsTypes.map((type) => [generate(type, { comments: false }).code, type])
+    ).values(),
   ];
   if (distinctTypes.length === 0) {
     return t.identifier(previewName);

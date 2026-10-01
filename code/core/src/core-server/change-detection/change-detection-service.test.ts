@@ -56,12 +56,10 @@ vi.mock(
 );
 
 class MockGitDiffProvider extends GitDiffProvider {
-  readonly getChangedFilesMock = vi.fn(
-    async (): Promise<GitDiffResult> => ({
-      changed: new Set(),
-      new: new Set(),
-    })
-  );
+  readonly getChangedFilesMock = vi.fn(async (): Promise<GitDiffResult> => ({
+    changed: new Set(),
+    new: new Set(),
+  }));
 
   readonly getRepoRootMock = vi.fn(async (): Promise<string> => '/repo');
 

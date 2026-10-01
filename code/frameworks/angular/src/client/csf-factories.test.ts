@@ -12,9 +12,7 @@ import type { Decorator } from './public-types.ts';
 @Component({
   selector: 'storybook-button',
   standalone: true,
-  template: `
-    <button [disabled]="disabled">{{ label }}</button>
-  `,
+  template: ` <button [disabled]="disabled">{{ label }}</button> `,
 })
 class ButtonComponent {
   @Input()
@@ -301,9 +299,7 @@ it('Components without Props can be used', () => {
   @Component({
     selector: 'storybook-simple',
     standalone: true,
-    template: `
-      <div>Simple</div>
-    `,
+    template: ` <div>Simple</div> `,
   })
   class SimpleComponent {}
 

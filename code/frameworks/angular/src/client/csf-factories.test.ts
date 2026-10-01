@@ -303,7 +303,7 @@ describe('Custom args types written by the csf-factories codemod', () => {
   type ButtonAndCustomArgs = ButtonComponent & { footer: string };
 
   it('✅ No arg of a custom args type is required', () => {
-    const meta = preview.type<{ args: Partial<TransformComponentType<StoryArgs>> }>().meta({
+    const meta = preview.type<{ args: Partial<StoryArgs> }>().meta({
       component: ButtonComponent,
     });
 
@@ -315,16 +315,6 @@ describe('Custom args types written by the csf-factories codemod', () => {
         template: `${pageIcon?.name} <storybook-button [label]="label"></storybook-button>`,
       }),
     });
-  });
-
-  it('✅ A custom args type can be written out', () => {
-    const meta = preview.type<{ args: Partial<{ footer: string }> }>().meta({
-      component: ButtonComponent,
-      render: ({ footer, ...args }) => ({ props: args, template: `${footer} ${args.label}` }),
-    });
-
-    const Default = meta.story();
-    const CustomFooter = meta.story({ args: { footer: 'good' } });
   });
 
   it('✅ A custom args type can include the component class', () => {

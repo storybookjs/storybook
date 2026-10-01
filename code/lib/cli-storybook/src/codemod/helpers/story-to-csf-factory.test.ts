@@ -701,7 +701,6 @@ describe('stories codemod', () => {
           `)
         ).resolves.toMatchInlineSnapshot(`
           import preview from "#.storybook/preview";
-          import type { TransformComponentType } from "@storybook/angular";
           import { MyComponent } from "./my.component";
           import { type Icon, DeactivatedOrg } from "./icons";
 
@@ -709,14 +708,12 @@ describe('stories codemod', () => {
             pageIcon: Icon;
           };
 
-          const meta = preview
-            .type<{ args: Partial<TransformComponentType<StoryArgs>> }>()
-            .meta({
-              component: MyComponent,
-              args: {
-                pageIcon: DeactivatedOrg,
-              },
-            });
+          const meta = preview.type<{ args: Partial<StoryArgs> }>().meta({
+            component: MyComponent,
+            args: {
+              pageIcon: DeactivatedOrg,
+            },
+          });
 
           export const Default = meta.story();
         `);

@@ -5,20 +5,10 @@ import { logger } from 'storybook/internal/node-logger';
 import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
-import { addImportToTop, cleanupTypeImports } from './csf-factories-utils.ts';
+import { addImportToTop } from './csf-factories-utils.ts';
 import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
 import { wrapArgsMocks } from './wrap-args-mocks.ts';
-
-const typesDisallowList = [
-  'Story',
-  'StoryFn',
-  'StoryObj',
-  'Meta',
-  'MetaObj',
-  'ComponentStory',
-  'ComponentMeta',
-];
 
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];

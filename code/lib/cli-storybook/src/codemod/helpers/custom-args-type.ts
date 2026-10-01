@@ -26,9 +26,12 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
           importedNames.set(specifier.local.name, specifier.imported.name);
         }
       }
-      if (/^@storybook\/angular(-|$)/.test(node.source.value)) {
-        // A namespace import cannot take the named import that `typedPreview` adds.
-        angularImport = node.specifiers.some(t.isImportSpecifier) ? node : angularImport;
+      // A namespace import cannot take the named import that `typedPreview` adds.
+      if (
+        /^@storybook\/angular(-|$)/.test(node.source.value) &&
+        node.specifiers.some((specifier) => t.isImportSpecifier(specifier))
+      ) {
+        angularImport = node;
       }
       isWebComponents ||= /^@storybook\/web-components(-|$)/.test(node.source.value);
     }
@@ -88,11 +91,12 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
             )
           : distinctTypes[0];
 
-      // CSF 3 never required an arg in Angular and Web Components, and CSF Next infers the args of
-      // their components as optional. The type that is carried over must not be stricter than that.
-      if (angularImport && !distinctTypes.every((type) => t.isTSTypeLiteral(type))) {
-        // What `Meta<T>` of Angular applies to `T`: an output becomes a callback, a signal its value.
-        // A type that is not written out here may include a component class, which has those.
+      const isTypeLiteral = (type: t.TSType) =>
+        t.isTSTypeLiteral(type) || t.isTSTypeLiteral(aliasedType(type));
+
+      // `Meta<T>` of Angular turns an output of `T` into a callback and a signal into its value,
+      // which matters for any type that may include a component class.
+      if (angularImport && !distinctTypes.every(isTypeLiteral)) {
         const transform = 'TransformComponentType';
         if (!angularImport.specifiers.some((specifier) => specifier.local.name === transform)) {
           const specifier = t.importSpecifier(t.identifier(transform), t.identifier(transform));
@@ -101,6 +105,8 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
         }
         argsType = typeReference(transform, argsType);
       }
+      // CSF 3 never required an arg in Angular and Web Components, and CSF Next infers the args of
+      // their components as optional.
       if (angularImport || (isWebComponents && component)) {
         argsType = typeReference('Partial', argsType);
       }

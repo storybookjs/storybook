@@ -32,26 +32,27 @@ export const isCanonicalCsf2BindCall = (node: t.Node): node is StaticIdentifierM
       t.isObjectExpression(node.arguments[0]) &&
       node.arguments[0].properties.length === 0));
 
-// `meta.type<T>()` returns the meta itself, so a call on it is a call on `meta`.
-const factoryReceiver = (object: t.Node): t.Node =>
+/** Receiver of a `.type<T>()` chain, which returns its receiver: `meta` for `meta.type<T>()`. */
+export const withoutTypeCalls = (object: t.Node): t.Node =>
   t.isCallExpression(object) &&
+  object.arguments.length === 0 &&
   t.isMemberExpression(object.callee) &&
   !object.callee.computed &&
   t.isIdentifier(object.callee.property, { name: 'type' })
-    ? factoryReceiver(object.callee.object)
+    ? withoutTypeCalls(object.callee.object)
     : object;
 
 export const isCsfFactoryCall = (node: t.Node): node is CsfFactoryCall =>
   t.isCallExpression(node) &&
   t.isMemberExpression(node.callee) &&
   !node.callee.computed &&
-  t.isIdentifier(factoryReceiver(node.callee.object)) &&
+  t.isIdentifier(withoutTypeCalls(node.callee.object)) &&
   t.isIdentifier(node.callee.property) &&
   (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
 
 /** Identifier a CSF factory call is made on: `meta` in `meta.type<T>().story()`. */
 export const csfFactoryReceiver = (node: CsfFactoryCall): t.Identifier =>
-  factoryReceiver(node.callee.object) as t.Identifier;
+  withoutTypeCalls(node.callee.object) as t.Identifier;
 
 /**
  * Static key of an object member, or `null` when it is computed from something else.

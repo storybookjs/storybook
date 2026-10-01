@@ -222,22 +222,10 @@ export interface AngularMeta<
   ): AngularStory<T, {}>;
 
   /**
-   * Adds type information to the stories created from the returned meta. This is useful when a
-   * single story needs an arg that the other stories of the file don't have.
-   *
-   * @example
-   *
-   * ```ts
-   * export const WithIcon = meta.type<{ args: { icon: string } }>().story({
-   *   args: { label: 'Click me', icon: 'star' },
-   *   render: (args) => ({
-   *     props: args,
-   *     template: '<app-button [label]="label"><app-icon [name]="icon" /></app-button>',
-   *   }),
-   * });
-   * ```
+   * Add types to the stories created from the returned meta, such as an arg that only one story
+   * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S>(): AngularMeta<T & S, TMetaArgKeys>;
+  type<S extends AddonTypes>(): AngularMeta<T & S, TMetaArgKeys>;
 }
 
 /**

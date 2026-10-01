@@ -213,23 +213,10 @@ export interface ReactMeta<
   ): ReactStory<T, {}>;
 
   /**
-   * Adds type information to the stories created from the returned meta. This is useful when a
-   * single story needs an arg that the other stories of the file don't have.
-   *
-   * @example
-   *
-   * ```ts
-   * export const WithIcon = meta.type<{ args: { icon: string } }>().story({
-   *   args: { label: 'Click me', icon: 'star' },
-   *   render: ({ icon, ...args }) => (
-   *     <Button {...args}>
-   *       <Icon name={icon} />
-   *     </Button>
-   *   ),
-   * });
-   * ```
+   * Add types to the stories created from the returned meta, such as an arg that only one story
+   * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S>(): ReactMeta<T & S, TMetaArgKeys>;
+  type<S extends AddonTypes>(): ReactMeta<T & S, TMetaArgKeys>;
 }
 
 /**

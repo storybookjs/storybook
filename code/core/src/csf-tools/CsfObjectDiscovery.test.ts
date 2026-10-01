@@ -87,6 +87,19 @@ describe('CsfObject discovery', () => {
     expect(printCsf(csf).code).not.toContain('a11y');
   });
 
+  it('discovers CSF4 factory stories of a typed meta held in a constant', () => {
+    const csf = parse(`
+      import preview from './preview';
+      const meta = preview.meta({ title: 'Example' }).type<{ args: { size: number } }>();
+      const withIcon = meta.type<{ args: { icon: string } }>();
+      export const Basic = meta.story({ parameters: { a11y: true } });
+      export const WithIcon = withIcon.story({ parameters: { a11y: true } });
+    `);
+
+    expect(csf.objects({ meta: false, stories: true })).toHaveLength(2);
+    expect(csf.mutationDiagnostics).toEqual([]);
+  });
+
   it('does not diagnose excluded direct exports or re-exports', () => {
     const direct = parse(`
       export default { title: 'Example', includeStories: ['Basic'] };

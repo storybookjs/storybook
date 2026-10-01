@@ -51,4 +51,5 @@ export {
   returnedExpression,
   returnedExpressionPath,
   unwrapExpression,
+  withoutTypeCalls,
 } from './utils.ts';

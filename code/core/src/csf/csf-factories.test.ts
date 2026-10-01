@@ -90,11 +90,15 @@ describe('meta.type<>()', () => {
     const typed = meta.type<{
       args: { count: number };
       parameters: { baz?: { value: string } };
+      globals: { tone: 'warm' | 'cool' };
+      tags: Array<'a' | 'b'>;
     }>();
 
     const MyStory = typed.story({
       args: { count: 1 },
       parameters: { foo: { value: '1' }, baz: { value: '1' } },
+      globals: { tone: 'warm' },
+      tags: ['a'],
       render: ({ label, count }) => {
         expectTypeOf(label).toEqualTypeOf<string>();
         expectTypeOf(count).toEqualTypeOf<number>();
@@ -107,6 +111,17 @@ describe('meta.type<>()', () => {
     typed.story({ args: { label: 'bar' } });
     // @ts-expect-error can not assign numbers to strings
     typed.story({ args: { count: 1 }, parameters: { baz: { value: 1 } } });
+    // @ts-expect-error tone must be 'warm' | 'cool'
+    typed.story({ args: { count: 1 }, globals: { tone: 'hot' } });
+    // @ts-expect-error tags must be 'a' | 'b'
+    typed.story({ args: { count: 1 }, tags: ['c'] });
+  });
+
+  test('rejects a type that has none of the renderer type keys', () => {
+    // @ts-expect-error the arg belongs under `args`
+    meta.type<{ count: number }>();
+    // @ts-expect-error not an object of renderer types
+    meta.type<string>();
   });
 });
 

@@ -498,6 +498,8 @@ describe('meta.type<>() types the stories created from it', () => {
     });
     // @ts-expect-error icon must be 'star' | 'heart'
     meta.type<{ args: { icon: 'star' | 'heart' } }>().story({ args: { icon: 'x' } });
+    // @ts-expect-error the arg belongs under `args`
+    meta.type<{ icon: string }>();
   });
 
   it('a required key is required in that story only, next to the optional component args', () => {
@@ -548,18 +550,6 @@ describe('meta.type<>() types the stories created from it', () => {
     });
     // @ts-expect-error size is required
     typed.story({ args: { theme: 'dark', icon: 'star' } });
-  });
-
-  it('accepts the other type keys of the renderer', () => {
-    const typed = meta.type<{
-      parameters: { density: 'compact' | 'wide' };
-      globals: { tone: 'warm' | 'cool' };
-    }>();
-    typed.story({ parameters: { density: 'compact' }, globals: { tone: 'warm' } });
-    // @ts-expect-error density must be 'compact' | 'wide'
-    typed.story({ parameters: { density: 'narrow' } });
-    // @ts-expect-error tone must be 'warm' | 'cool'
-    typed.story({ globals: { tone: 'hot' } });
   });
 
   it('the story can be extended and composed', () => {

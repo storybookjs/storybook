@@ -183,7 +183,7 @@ export interface Meta<TRenderer extends Renderer, TMetaArgKeys extends PropertyK
     input?: TInput
   ): Story<TRenderer, TInput>;
 
-  type<T>(): Meta<TRenderer & T, TMetaArgKeys>;
+  type<T extends AddonTypes>(): Meta<TRenderer & T, TMetaArgKeys>;
 }
 
 export function isMeta(input: unknown): input is Meta<Renderer> {
@@ -201,7 +201,7 @@ function defineMeta<TRenderer extends Renderer>(
       parameters: { ...input.parameters, csfFactory: true },
     } as Meta<TRenderer>['input'],
     preview,
-    type<T>() {
+    type<T extends AddonTypes>() {
       // `T` only adds types, the meta stays the same object.
       return this as unknown as Meta<TRenderer & T>;
     },

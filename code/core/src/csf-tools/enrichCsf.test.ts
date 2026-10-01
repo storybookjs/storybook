@@ -191,27 +191,36 @@ describe('enrichCsf', () => {
         };
       `);
     });
-    it('csf factories typed with meta.type<>()', async () => {
+    it('csf factories typed with meta.type<>(), reused and extended', async () => {
       expect(
         await enrich(
           dedent`
           // compiled code
           import {config} from "/.storybook/preview.ts";
           const meta = config.meta({});
+          const withIcon = meta.type();
           export const Story = meta.type().story({});
+          export const Reused = withIcon.story({});
+          export const Extended = Reused.extend({});
         `,
           dedent`
           // original code
           import {config} from "#.storybook/preview.ts";
           const meta = config.meta({});
+          const withIcon = meta.type<{ args: { icon: string } }>();
           export const Story = meta.type<{ args: { icon: string } }>().story({});
+          export const Reused = withIcon.story({});
+          export const Extended = Reused.extend({});
         `
         )
       ).toMatchInlineSnapshot(`
         // compiled code
         import { config } from "/.storybook/preview.ts";
         const meta = config.meta({});
+        const withIcon = meta.type();
         export const Story = meta.type().story({});
+        export const Reused = withIcon.story({});
+        export const Extended = Reused.extend({});
         Story.input.parameters = {
           ...Story.input.parameters,
           docs: {
@@ -219,6 +228,26 @@ describe('enrichCsf', () => {
             source: {
               originalSource: "meta.type<{\\n  args: {\\n    icon: string;\\n  };\\n}>().story({})",
               ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+        Reused.input.parameters = {
+          ...Reused.input.parameters,
+          docs: {
+            ...Reused.input.parameters?.docs,
+            source: {
+              originalSource: "withIcon.story({})",
+              ...Reused.input.parameters?.docs?.source
+            }
+          }
+        };
+        Extended.input.parameters = {
+          ...Extended.input.parameters,
+          docs: {
+            ...Extended.input.parameters?.docs,
+            source: {
+              originalSource: "Reused.extend({})",
+              ...Extended.input.parameters?.docs?.source
             }
           }
         };

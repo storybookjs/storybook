@@ -156,6 +156,7 @@ describe('isCsfFactoryCall', () => {
         'getMeta().story({})',
         'getMeta().type<A>().story({})',
         "meta['type']<A>().story({})",
+        "schema.type('string').story({})",
         'makeStory({})',
         'Template.bind({})',
       ].map((initializer) => [initializer, isCsfFactoryCall(storyInitializer(initializer))])
@@ -195,6 +196,10 @@ describe('isCsfFactoryCall', () => {
         ],
         [
           "meta['type']<A>().story({})",
+          false,
+        ],
+        [
+          "schema.type('string').story({})",
           false,
         ],
         [

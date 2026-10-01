@@ -2,7 +2,6 @@ import { generate, types as t } from 'storybook/internal/babel';
 import { type CsfEnricher } from 'storybook/internal/types';
 
 import type { CsfFile } from './CsfFile.ts';
-import { csfFactoryReceiver, isCsfFactoryCall } from './story-shape/utils.ts';
 
 export interface EnrichCsfOptions {
   disableSource?: boolean;
@@ -17,8 +16,7 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
-  const isCsfFactory =
-    isCsfFactoryCall(storyExport) && csfFactoryReceiver(storyExport).name === 'meta';
+  const isCsfFactory = csfSource._metaIsFactory;
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);

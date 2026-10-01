@@ -164,6 +164,24 @@ describe('NPM Proxy', () => {
         );
       });
     });
+
+    describe('useRemotePkg (npx)', () => {
+      beforeEach(() => {
+        mockedExecuteCommand.mockResolvedValue({ stdout: '' } as never);
+      });
+
+      it('confirms the npx download prompt and keeps the caller env', () => {
+        const args = ['some-package@1.2.3', 'run', '--flag'];
+
+        npmProxy.runPackageCommand({ args, useRemotePkg: true, env: { SOME_VAR: '1' } });
+
+        expect(mockedExecuteCommand).toHaveBeenLastCalledWith({
+          command: 'npx',
+          args,
+          env: { npm_config_yes: 'true', SOME_VAR: '1' },
+        });
+      });
+    });
   });
 
   describe('addDependencies', () => {

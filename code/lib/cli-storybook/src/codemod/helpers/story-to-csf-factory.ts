@@ -22,7 +22,9 @@ const typesDisallowList = [
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
-type Options = { previewConfigPath: string; useSubPathImports: boolean };
+type Options =
+  | { useSubPathImports: true; previewConfigPath?: string }
+  | { useSubPathImports: false; previewConfigPath: string };
 
 export async function storyToCsfFactory(
   info: FileInfo,

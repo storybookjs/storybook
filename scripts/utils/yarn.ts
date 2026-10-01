@@ -92,7 +92,10 @@ export const addWorkaroundResolutions = async ({
   let additionalResolutions = {};
 
   // add additional resolutions for React 19
-  if (['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)) {
+  if (
+    key !== undefined &&
+    ['nextjs/default-ts', 'nextjs/prerelease', 'react-native-web-vite/expo-ts'].includes(key)
+  ) {
     additionalResolutions = {
       react: '^19.0.0',
       'react-dom': '^19.0.0',

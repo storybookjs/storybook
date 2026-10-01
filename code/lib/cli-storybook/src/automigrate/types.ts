@@ -1,6 +1,9 @@
 import type { JsPackageManager, PackageManagerName } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
+import type { FixFiles } from './fix-files.ts';
+import type { FixTransform } from './pipeline.ts';
+
 export interface CheckOptions {
   packageManager: JsPackageManager;
   configDir?: string;
@@ -16,12 +19,14 @@ export interface CheckOptions {
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];
+  files: Pick<FixFiles, 'read'>;
 }
 
 export interface RunOptions<ResultType> {
   packageManager: JsPackageManager;
   result: ResultType;
-  dryRun?: boolean;
+  /** File edits the runner writes once `run` resolves, and discards when it throws. */
+  files: FixFiles;
   mainConfigPath: string;
   previewConfigPath?: string;
   mainConfig: StorybookConfigRaw;
@@ -31,8 +36,6 @@ export interface RunOptions<ResultType> {
   storiesPaths: string[];
   /** Skip prompts and use defaults (from --yes flag) */
   yes?: boolean;
-  /** Glob pattern for story files (for csf-factories codemod) */
-  glob?: string;
   /**
    * Collector for core addons whose postinstall configuration must run AFTER dependencies are
    * installed. A fix that adds a core addon via `add(..., { skipPostinstall: true })` pushes the
@@ -54,9 +57,10 @@ export interface RunOptions<ResultType> {
  */
 export type Prompt = 'auto' | 'manual' | 'notification' | 'command';
 
+type Check<ResultType> = (options: CheckOptions) => Promise<ResultType | null>;
+
 type BaseFix<ResultType = any> = {
   id: string;
-  check: (options: CheckOptions) => Promise<ResultType | null>;
   /** Keep the prompt message short and concise. */
   prompt: () => string;
   /** Whether the automigration is selected by default when the user is prompted. */
@@ -68,20 +72,57 @@ type PromptType<ResultType = any, T = Prompt> =
   | T
   | ((result: ResultType) => Promise<Prompt> | Prompt);
 
+export type TransformOptions<ResultType> = Omit<CheckOptions, 'files' | 'requested'> & {
+  result: ResultType;
+};
+
+/**
+ * Resolve `false` to decline, for example when the user cancels a prompt: the runner then discards
+ * the fix's `files` edits, skips its hooks, and reports it as skipped.
+ */
+type Run<ResultType> = (options: RunOptions<ResultType>) => Promise<void | false>;
+
+/**
+ * Create the fix's per-file hooks for one project. The runner calls it once per project and pass
+ * (detection, then apply), so the hooks may keep state across the files of that pass.
+ */
+type Transform<ResultType> = (options: TransformOptions<ResultType>) => FixTransform[];
+
 export type Fix<ResultType = any> =
   | ({
       promptType?: PromptType<ResultType, 'auto'>;
-      run: (options: RunOptions<ResultType>) => Promise<void>;
-    } & BaseFix<ResultType>)
+    } & (
+      | {
+          /**
+           * File edits, applied in one read-transform-write pass shared by all selected fixes. A
+           * fix with only `transform` applies when its hooks would change a file.
+           */
+          transform: Transform<ResultType>;
+          /** Gate the fix before its hooks run; defaults to applying whenever the hooks change a file. */
+          check?: Check<ResultType>;
+          /** Work after the file pass that is not a file edit, such as dependency changes. */
+          run?: Run<ResultType>;
+        }
+      | { transform?: undefined; check: Check<ResultType>; run: Run<ResultType> }
+    ) &
+      BaseFix<ResultType>)
   | ({
       promptType: PromptType<ResultType, 'manual' | 'notification'>;
+      check: Check<ResultType>;
+      transform?: never;
       run?: never;
     } & BaseFix<ResultType>);
 
-export type CommandFix<ResultType = any> = {
-  promptType: PromptType<ResultType, 'command'>;
-  run: (options: RunOptions<ResultType>) => Promise<void>;
-} & Omit<BaseFix<ResultType>, 'check' | 'prompt'>;
+export type CommandFixRunOptions = Omit<RunOptions<null>, 'files' | 'addonsToPostinstall'> & {
+  dryRun?: boolean;
+  /** Glob pattern for story files (for csf-factories codemod) */
+  glob?: string;
+};
+
+export type CommandFix = {
+  promptType: 'command';
+  run: (options: CommandFixRunOptions) => Promise<void>;
+} & Omit<BaseFix, 'prompt'>;
 
 export type FixId = string;
 

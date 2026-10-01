@@ -25,6 +25,7 @@ vi.mock('storybook/internal/node-logger', () => ({
     info: vi.fn(),
     debug: vi.fn(),
     step: vi.fn(),
+    SYMBOLS: { success: '✔', error: '✕' },
   },
   prompt: {
     confirm: vi.fn(),
@@ -157,7 +158,7 @@ describe('runFixes', () => {
     });
     expect(run1).toHaveBeenCalledWith(
       expect.objectContaining({
-        dryRun,
+        files: expect.objectContaining({ edit: expect.any(Function) }),
         mainConfigPath,
         packageManager,
         result: {

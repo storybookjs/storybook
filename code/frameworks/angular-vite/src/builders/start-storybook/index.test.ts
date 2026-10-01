@@ -168,7 +168,7 @@ describe('start-storybook builder', () => {
       context
     );
 
-    expect(standaloneOptions.angularBuilderOptions.styles).toEqual(['src/own.scss']);
+    expect(standaloneOptions.angularBuilderOptions?.styles).toEqual(['src/own.scss']);
   });
 
   it('does not let schema-defaulted empty own options override browser target values', async () => {

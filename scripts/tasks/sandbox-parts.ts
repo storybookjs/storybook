@@ -473,7 +473,7 @@ function addStoriesEntry(
   mainConfig: ConfigFile,
   path: string,
   disableDocs: boolean,
-  skipMocking: boolean
+  skipMocking: boolean | undefined
 ) {
   const stories = mainConfig.getValue(['stories']) as string[];
 
@@ -513,7 +513,7 @@ async function linkPackageStories(
     cwd: string;
     linkInDir?: string;
     disableDocs: boolean;
-    skipMocking: boolean;
+    skipMocking?: boolean;
   },
   variant?: string
 ) {

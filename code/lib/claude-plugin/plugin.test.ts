@@ -48,6 +48,11 @@ function normalizeMarketplace(marketplace: ClaudeMarketplaceJson) {
 // minimal sandbox, so stay well below it to survive plugin-heavy environments.
 const MAX_SKILL_DESCRIPTION_BYTES = 350;
 
+const storiesSkillPaths = [
+  resolve(packageRoot, 'skills/stories/SKILL.md'),
+  resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
+];
+
 function readSkillDescription(skillPath: string) {
   const skill = readFileSync(skillPath, 'utf8');
   const description = skill.match(/^description: (.*)$/m)?.[1];
@@ -58,10 +63,7 @@ function readSkillDescription(skillPath: string) {
 }
 
 describe('stories skill description', () => {
-  it.each([
-    resolve(packageRoot, 'skills/stories/SKILL.md'),
-    resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
-  ])('stays under the silent-drop listing budget: %s', (skillPath) => {
+  it.each(storiesSkillPaths)('stays under the silent-drop listing budget: %s', (skillPath) => {
     const description = readSkillDescription(skillPath);
     expect(Buffer.byteLength(description, 'utf8')).toBeLessThanOrEqual(MAX_SKILL_DESCRIPTION_BYTES);
   });
@@ -76,30 +78,49 @@ describe('stories skill description', () => {
 });
 
 describe('stories skill prerequisites', () => {
-  it.each([
-    resolve(packageRoot, 'skills/stories/SKILL.md'),
-    resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
-  ])('uses Storybook documentation and treats setup as upgrade approval: %s', (skillPath) => {
-    const skill = readFileSync(skillPath, 'utf8');
+  it.each(storiesSkillPaths)(
+    'uses Storybook documentation and treats setup as upgrade approval: %s',
+    (skillPath) => {
+      const skill = readFileSync(skillPath, 'utf8');
 
-    expect(skill).toContain('docs list');
-    expect(skill).toContain('docs show');
-    expect(skill.indexOf('docs list')).toBeLessThan(skill.indexOf('docs show'));
-    expect(skill).toContain('set up or install Storybook');
-  });
+      expect(skill).toContain('docs list');
+      expect(skill).toContain('docs show');
+      expect(skill.indexOf('docs list')).toBeLessThan(skill.indexOf('docs show'));
+      expect(skill).toContain('set up or install Storybook');
+    }
+  );
 });
 
-describe('Claude story skill launch guidance', () => {
-  it('keeps Claude launch guidance scoped to preview tooling without shell interpolation', () => {
-    const launchSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');
+const HARNESS_BROWSER_TOOLS = [
+  'preview_start',
+  'preview_eval',
+  '.claude/launch.json',
+  'Claude_Browser',
+  'control-in-app-browser',
+  'node_repl',
+  'preview_open',
+  'browser_navigate',
+];
 
-    expect(launchSkill).toContain('autoPort: true');
-    expect(launchSkill).toContain('preferred package manager');
-    expect(launchSkill).toContain('existing `package.json` Storybook script');
-    expect(launchSkill).toContain('preview_start');
-    expect(launchSkill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
-    expect(launchSkill).not.toMatch(/runtimeArgs[\s\S]+storybook[\s\S]+dev/i);
-    expect(launchSkill).not.toContain('--ci');
+describe('stories skill dev server guidance', () => {
+  it.each(storiesSkillPaths)(
+    'starts the dev server from the package.json script without shell interpolation: %s',
+    (skillPath) => {
+      const skill = readFileSync(skillPath, 'utf8');
+
+      expect(skill).toContain('preferred package manager');
+      expect(skill).toContain('existing `package.json` Storybook script');
+      expect(skill).not.toMatch(/(?:^|[^\w])--port\b|\$\{?PORT\}?|\$env:PORT|%PORT%/i);
+      expect(skill).not.toContain('--ci');
+    }
+  );
+
+  it.each(storiesSkillPaths)('names no harness-specific browser tool or file: %s', (skillPath) => {
+    const skill = readFileSync(skillPath, 'utf8');
+
+    for (const harnessTool of HARNESS_BROWSER_TOOLS) {
+      expect(skill).not.toContain(harnessTool);
+    }
   });
 });
 

@@ -5,7 +5,8 @@ import { basename, dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parseArgs } from 'node:util';
 
-import { filterToPackageDiagnostics, getTSFilesAndConfig } from './utils/typescript.ts';
+import { filterToPackageDiagnostics } from './utils/diagnostics.ts';
+import { getTSFilesAndConfig } from './utils/typescript.ts';
 
 const ROOT_DIRECTORY = join(fileURLToPath(import.meta.url), '..', '..', '..');
 

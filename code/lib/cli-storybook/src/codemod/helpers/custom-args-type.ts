@@ -13,7 +13,10 @@ const typeReference = (name: string, ...typeArguments: t.TSType[]) =>
   t.tsTypeReference(t.identifier(name), t.tsTypeParameterInstantiation(typeArguments));
 
 // The component is never a custom args type: `preview.meta()` infers its args from `component`.
-export function customArgsTypes(program: t.Program, component: t.Node | undefined) {
+export function customArgsTypes(
+  program: t.Program,
+  { component, render }: { component?: t.Node; render?: t.Node }
+) {
   const argsTypeLocalNames = new Set<string>();
   const typeAliases = new Map<string, t.TSType>();
   let isAngular = false;
@@ -58,14 +61,14 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
     t.isIdentifier(type.typeName) &&
     argsTypeLocalNames.has(type.typeName.name);
 
-  const typeArgument = (type: t.Node | null | undefined) =>
-    isArgsType(type) ? type.typeParameters?.params[0] : undefined;
+  const argsType = (type: t.Node | null | undefined) => [type, aliasedType(type)].find(isArgsType);
 
   const customArgs = (type: t.TSType | undefined): t.TSType[] =>
     (t.isTSIntersectionType(type) ? type.types : type ? [type] : []).flatMap((member) => {
       // `StoryObj<Meta<T>>` has the args of `Meta<T>`.
-      if (isArgsType(member)) {
-        return customArgs(typeArgument(member));
+      const nested = argsType(member);
+      if (nested) {
+        return customArgs(nested.typeParameters?.params[0]);
       }
       const alias = aliasedType(member);
       if (isComponent(member) || isComponent(alias)) {
@@ -81,7 +84,7 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
   return {
     read(annotation: t.Node | null | undefined): t.TSType[] {
       const type = t.isTSTypeAnnotation(annotation) ? annotation.typeAnnotation : annotation;
-      return customArgs(typeArgument(type) ?? typeArgument(aliasedType(type)));
+      return customArgs(argsType(type)?.typeParameters?.params[0]);
     },
 
     typedPreview(
@@ -96,7 +99,7 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
         [metaArgsTypes, isWebComponents && !!component],
         // The type of a story only applied to that story. Without a `component`, the `render` of a
         // React or Vue meta needs its args as they are written.
-        [storyArgsTypes, isAngular || isWebComponents || !!component],
+        [storyArgsTypes, isAngular || isWebComponents || !!component || !render],
       ] as const) {
         for (const type of types) {
           const code = generate(type, { comments: false }).code;

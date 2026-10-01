@@ -144,7 +144,7 @@ export async function storyToCsfFactory(
 
   const hasMeta = !!csf._meta;
 
-  const customArgs = customArgsTypes(programNode, csf._metaAnnotations.component);
+  const customArgs = customArgsTypes(programNode, csf._metaAnnotations);
   const metaArgsTypes: t.TSType[] = [];
   const storyArgsTypes: t.TSType[] = [];
 

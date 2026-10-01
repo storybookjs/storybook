@@ -949,9 +949,7 @@ describe('stories codemod', () => {
             const meta = { component: Button } satisfies Meta<typeof Button>;
             export default meta;
 
-            type Story = StoryObj<StoryArgs>;
-
-            export const Annotated: Story = {};
+            export const Annotated: StoryObj<StoryArgs> = {};
             export const Satisfies = {} satisfies StoryObj<StoryArgs>;
             export const As = {} as StoryObj<StoryArgs>;
             export const Nested: StoryObj<Meta<StoryArgs>> = {};
@@ -976,7 +974,61 @@ describe('stories codemod', () => {
         `);
       });
 
-      it('keeps the custom args type of a story as it is when the meta has no component', async () => {
+      it('reads the custom args type through a type alias of Meta and of StoryObj', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { StoryArgs } from './types';
+
+            type ButtonMeta = Meta<StoryArgs>;
+            type Story = StoryObj<ButtonMeta>;
+
+            const meta: ButtonMeta = { component: Button };
+            export default meta;
+
+            export const A: Story = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import type { Meta } from "@storybook/react";
+          import { Button } from "./Button";
+          import type { StoryArgs } from "./types";
+
+          type ButtonMeta = Meta<StoryArgs>;
+
+          const meta = preview.type<{ args: StoryArgs }>().meta({ component: Button });
+
+          export const A = meta.story();
+        `);
+      });
+
+      it.each([
+        ['React', '@storybook/react', 'title: "Hooks"', 'args: Partial<{ count: number }> }'],
+        [
+          'Angular, also when the meta has a render',
+          '@storybook/angular',
+          'render: (args) => ({ props: args })',
+          'args: Partial<{ count: number }> }',
+        ],
+      ])(
+        'makes the custom args type of a story optional when the meta has no component in %s',
+        async (_, framework, annotation, expected) => {
+          await expect(
+            transform(dedent`
+              import type { Meta, StoryObj } from '${framework}';
+
+              const meta = { ${annotation} } satisfies Meta;
+              export default meta;
+
+              export const Default: StoryObj = {};
+              export const Counter: StoryObj<{ count: number }> = {};
+            `)
+          ).resolves.toContain(expected);
+        }
+      );
+
+      it('keeps the custom args type of a story as it is when the meta has a render and no component', async () => {
         await expect(
           transform(dedent`
             import type { Meta, StoryObj } from '@storybook/react';
@@ -986,7 +1038,7 @@ describe('stories codemod', () => {
             export default meta;
 
             export const Primary: StoryObj<ButtonProps> = {};
-            export const Sized: StoryObj<ButtonProps & ({ size: number } | { width: number })> = {};
+            export const Sized: StoryObj<{ size: number } | { width: number }> = {};
           `)
         ).resolves.toMatchInlineSnapshot(`
           import preview from "#.storybook/preview";

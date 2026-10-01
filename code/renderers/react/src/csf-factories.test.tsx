@@ -292,6 +292,21 @@ describe('Custom args types written by the csf-factories codemod', () => {
     });
   });
 
+  it('✅ A custom args type that comes from one story is optional for the other stories', () => {
+    const meta = preview.type<{ args: Partial<StoryArgs> }>().meta({ component: Button });
+
+    const Default = meta.story({ args: { label: 'good', disabled: false } });
+    const WithIcon = meta.story({
+      args: { label: 'good', disabled: false, pageIcon: { name: 'user' } },
+      render: ({ pageIcon, ...args }) => (
+        <>
+          {pageIcon?.name}
+          <Button {...args} />
+        </>
+      ),
+    });
+  });
+
   it('✅ A custom arg can be used when meta has no component', () => {
     const meta = preview.type<{ args: StoryArgs }>().meta({
       render: (args) => <>{args.pageIcon.name}</>,

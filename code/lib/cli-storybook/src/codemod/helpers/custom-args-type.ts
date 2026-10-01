@@ -53,34 +53,35 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
       ? typeAliases.get(type.typeName.name)
       : undefined;
 
-  const typeArgument = (type: t.Node | null | undefined) =>
+  const isArgsType = (type: t.Node | null | undefined): type is t.TSTypeReference =>
     t.isTSTypeReference(type) &&
     t.isIdentifier(type.typeName) &&
-    argsTypeLocalNames.has(type.typeName.name)
-      ? type.typeParameters?.params[0]
-      : undefined;
+    argsTypeLocalNames.has(type.typeName.name);
+
+  const typeArgument = (type: t.Node | null | undefined) =>
+    isArgsType(type) ? type.typeParameters?.params[0] : undefined;
+
+  const customArgs = (type: t.TSType | undefined): t.TSType[] =>
+    (t.isTSIntersectionType(type) ? type.types : type ? [type] : []).flatMap((member) => {
+      // `StoryObj<Meta<T>>` has the args of `Meta<T>`.
+      if (isArgsType(member)) {
+        return customArgs(typeArgument(member));
+      }
+      const alias = aliasedType(member);
+      if (isComponent(member) || isComponent(alias)) {
+        return [];
+      }
+      // A component class in the args type makes every member of that class a required arg.
+      const componentClass = t.isTSIntersectionType(alias) && alias.types.find(isComponentClass);
+      return componentClass
+        ? [typeReference('Omit', member, t.tsTypeOperator(t.cloneNode(componentClass), 'keyof'))]
+        : [member];
+    });
 
   return {
     read(annotation: t.Node | null | undefined): t.TSType[] {
       const type = t.isTSTypeAnnotation(annotation) ? annotation.typeAnnotation : annotation;
-      const argsType = typeArgument(type) ?? typeArgument(aliasedType(type));
-      if (!argsType) {
-        return [];
-      }
-      return (t.isTSIntersectionType(argsType) ? argsType.types : [argsType]).flatMap<t.TSType>(
-        (member) => {
-          const alias = aliasedType(member);
-          if (isComponent(member) || isComponent(alias)) {
-            return [];
-          }
-          // A component class in the args type makes every member of that class a required arg.
-          const componentClass =
-            t.isTSIntersectionType(alias) && alias.types.find(isComponentClass);
-          return componentClass
-            ? [typeReference('Omit', member, t.tsTypeOperator(componentClass, 'keyof'))]
-            : [member];
-        }
-      );
+      return customArgs(typeArgument(type) ?? typeArgument(aliasedType(type)));
     },
 
     typedPreview(
@@ -93,8 +94,9 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
         // The `component` of Web Components is a tag name, so a type next to it describes that
         // component, whose args are inferred as optional.
         [metaArgsTypes, isWebComponents && !!component],
-        // Angular and Web Components never required an arg of a story in CSF 3.
-        [storyArgsTypes, isAngular || isWebComponents],
+        // The type of a story only applied to that story. Without a `component`, the `render` of a
+        // React or Vue meta needs its args as they are written.
+        [storyArgsTypes, isAngular || isWebComponents || !!component],
       ] as const) {
         for (const type of types) {
           const code = generate(type, { comments: false }).code;

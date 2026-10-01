@@ -761,6 +761,7 @@ describe('stories codemod', () => {
             export const B: StoryObj<typeof Button> = {};
             export const C: StoryObj<Button> = {};
             export const D: StoryObj = {};
+            export const E: StoryObj<Meta<typeof Button>> = {};
           `)
         ).resolves.toContain('const meta = preview.meta({ component: Button });');
       });
@@ -891,12 +892,12 @@ describe('stories codemod', () => {
         [
           'makes the custom args optional next to a component',
           "component: 'demo-page'",
-          '.type<{ args: Partial<PageProps> }>()',
+          'args: Partial<PageProps> & Partial<{ footer: string }> }',
         ],
         [
-          'keeps the custom args as they are without a component',
+          'keeps the custom args of the meta as they are without a component',
           'render: (args) => Page(args)',
-          '.type<{ args: PageProps }>()',
+          'args: PageProps & Partial<{ footer: string }> }',
         ],
       ])('%s in Web Components', async (_, annotation, expected) => {
         await expect(
@@ -908,6 +909,7 @@ describe('stories codemod', () => {
             export default meta;
 
             export const Default: StoryObj<PageProps> = {};
+            export const CustomFooter: StoryObj<PageProps & { footer: string }> = {};
           `)
         ).resolves.toContain(expected);
       });
@@ -937,7 +939,7 @@ describe('stories codemod', () => {
         `);
       });
 
-      it('carries the custom args type of a story over to the meta', async () => {
+      it('carries the custom args type of a story over to the meta, as optional', async () => {
         await expect(
           transform(dedent`
             import type { Meta, StoryFn, StoryObj } from '@storybook/react';
@@ -952,6 +954,7 @@ describe('stories codemod', () => {
             export const Annotated: Story = {};
             export const Satisfies = {} satisfies StoryObj<StoryArgs>;
             export const As = {} as StoryObj<StoryArgs>;
+            export const Nested: StoryObj<Meta<StoryArgs>> = {};
             export const Fn: StoryFn<StoryArgs> = () => <Button />;
             export const Inferred: StoryObj<typeof meta> = {};
           `)
@@ -960,13 +963,41 @@ describe('stories codemod', () => {
           import { Button } from "./Button";
           import type { StoryArgs } from "./types";
 
-          const meta = preview.type<{ args: StoryArgs }>().meta({ component: Button });
+          const meta = preview
+            .type<{ args: Partial<StoryArgs> }>()
+            .meta({ component: Button });
 
           export const Annotated = meta.story();
           export const Satisfies = meta.story();
           export const As = meta.story();
+          export const Nested = meta.story();
           export const Fn = meta.story(() => <Button />);
           export const Inferred = meta.story();
+        `);
+      });
+
+      it('keeps the custom args type of a story as it is when the meta has no component', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button, type ButtonProps } from './Button';
+
+            const meta = { render: (args) => <Button {...args} /> } satisfies Meta;
+            export default meta;
+
+            export const Primary: StoryObj<ButtonProps> = {};
+            export const Sized: StoryObj<ButtonProps & ({ size: number } | { width: number })> = {};
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button, type ButtonProps } from "./Button";
+
+          const meta = preview
+            .type<{ args: ButtonProps & ({ size: number } | { width: number }) }>()
+            .meta({ render: (args) => <Button {...args} /> });
+
+          export const Primary = meta.story();
+          export const Sized = meta.story();
         `);
       });
 
@@ -989,10 +1020,9 @@ describe('stories codemod', () => {
 
           const meta = preview
             .type<{
-              args: ButtonProps & { theme: string } & (
-                  | { size: number }
-                  | { width: number }
-                );
+              args: ButtonProps &
+                Partial<{ theme: string }> &
+                Partial<{ size: number } | { width: number }>;
             }>()
             .meta({ component: Button });
 

@@ -165,7 +165,7 @@ describe('installSkills', () => {
         useRemotePkg: true,
         cwd: PROJECT_ROOT,
         stdio: 'inherit',
-        env: { npm_config_yes: 'true' },
+        env: {},
         timeout: 120_000,
       });
       expect(result).toEqual({ result: 'installed', source: 'yes', refType: 'tag' });
@@ -222,7 +222,6 @@ describe('installSkills', () => {
       await installSkills({ packageManager, yes: true });
 
       expect(vi.mocked(packageManager.runPackageCommand).mock.calls[0][0].env).toEqual({
-        npm_config_yes: 'true',
         DISABLE_TELEMETRY: '1',
       });
     });

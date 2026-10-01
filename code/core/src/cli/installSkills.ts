@@ -155,10 +155,7 @@ export async function installSkills({
     'universal',
     '--copy',
   ];
-  const env: Record<string, string> = { npm_config_yes: 'true' };
-  if (prerelease(versions.storybook) || !isTelemetryModuleEnabled()) {
-    env.DISABLE_TELEMETRY = '1';
-  }
+  const disableVercelTelemetry = prerelease(versions.storybook) || !isTelemetryModuleEnabled();
 
   logger.log(CLI_COLORS.cta(packageManager.getRemoteRunCommand(args)));
   try {
@@ -167,7 +164,7 @@ export async function installSkills({
       useRemotePkg: true,
       cwd: projectRoot,
       stdio: 'inherit',
-      env,
+      env: disableVercelTelemetry ? { DISABLE_TELEMETRY: '1' } : {},
       timeout: 120_000,
     });
   } catch (error) {

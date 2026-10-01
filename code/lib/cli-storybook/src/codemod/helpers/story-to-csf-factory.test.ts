@@ -1301,4 +1301,90 @@ describe('stories codemod', () => {
       expect(logger.log).not.toHaveBeenCalled();
     });
   });
+
+  describe('mock API on args', () => {
+    it('wraps mock calls on args in play, beforeEach, afterEach and loaders in mocked()', async () => {
+      await expect(
+        transform(dedent`
+          import { expect, fn } from 'storybook/test';
+
+          export default {
+            component: Component,
+            args: { getUsers: fn(), onClick: fn() },
+            beforeEach: ({ args }) => {
+              args.getUsers.mockResolvedValue([]);
+            },
+            loaders: [async ({ args }) => { args.getUsers.mockClear(); }],
+          };
+
+          export const A = {
+            async play({ args, canvas }) {
+              args.getUsers.mockReturnValue([{ id: 1 }]);
+              args.onClick.mockImplementation(() => {});
+              await expect(args.onClick).toHaveBeenCalled();
+              expect(args.onClick.mock.calls).toHaveLength(1);
+            },
+            afterEach: async (context) => {
+              context.args.onClick.mockReset();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { expect, fn, mocked } from "storybook/test";
+
+        const meta = preview.meta({
+          component: Component,
+          args: { getUsers: fn(), onClick: fn() },
+
+          beforeEach: ({ args }) => {
+            mocked(args.getUsers).mockResolvedValue([]);
+          },
+
+          loaders: [
+            async ({ args }) => {
+              mocked(args.getUsers).mockClear();
+            },
+          ],
+        });
+
+        export const A = meta.story({
+          async play({ args, canvas }) {
+            mocked(args.getUsers).mockReturnValue([{ id: 1 }]);
+            mocked(args.onClick).mockImplementation(() => {});
+            await expect(args.onClick).toHaveBeenCalled();
+            expect(mocked(args.onClick).mock.calls).toHaveLength(1);
+          },
+          afterEach: async (context) => {
+            mocked(context.args.onClick).mockReset();
+          },
+        });
+      `);
+    });
+
+    it('wraps mock calls on meta.args after rewriting them to meta.input.args', async () => {
+      await expect(
+        transform(dedent`
+          const meta = { component: Component, args: { onClick: fn() } };
+          export default meta;
+
+          export const A = {
+            play: async () => {
+              meta.args.onClick.mockRestore();
+            },
+          };
+        `)
+      ).resolves.toMatchInlineSnapshot(`
+        import preview from "#.storybook/preview";
+        import { mocked } from "storybook/test";
+        const meta = preview.meta({ component: Component, args: { onClick: fn() } });
+
+        export const A = meta.story({
+          play: async () => {
+            mocked(meta.input.args.onClick).mockRestore();
+          },
+        });
+      `);
+    });
+  });
 });

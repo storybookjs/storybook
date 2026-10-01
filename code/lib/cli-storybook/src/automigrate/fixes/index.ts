@@ -2,6 +2,7 @@ import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
+import { csfNextMockedArgs } from './csf-next-mocked-args.ts';
 import { addonMcp } from './addon-mcp.ts';
 import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
@@ -34,6 +35,7 @@ export const allFixes: Fix[] = [
   wrapGetAbsolutePath,
   storybookPackageNameConflict,
   setConfigLayout,
+  csfNextMockedArgs,
   enableExperimentalReview,
   enableExperimentalDocgenServer,
 ];

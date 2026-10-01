@@ -5,7 +5,8 @@ const DIAGNOSTIC_HEAD = /^(.+?)\(\d+,\d+\): (?:error|warning) TS\d+:/;
 
 // `tsc -p` reports the whole program, including files from other workspace packages; only
 // diagnostics inside the checked package count. Indented lines elaborate the preceding diagnostic.
-export function filterToPackageDiagnostics(output: string, packageDir: string) {
+// With `files`, only diagnostics in those files count.
+export function filterToPackageDiagnostics(output: string, packageDir: string, files?: string[]) {
   const kept: string[] = [];
   let sawDiagnostic = false;
   let keepBlock = false;
@@ -14,8 +15,9 @@ export function filterToPackageDiagnostics(output: string, packageDir: string) {
     const head = DIAGNOSTIC_HEAD.exec(line);
     if (head) {
       sawDiagnostic = true;
-      const rel = relative(packageDir, resolve(packageDir, head[1]));
-      keepBlock = !rel.startsWith('..') && !isAbsolute(rel);
+      const file = resolve(packageDir, head[1]);
+      const rel = relative(packageDir, file);
+      keepBlock = !rel.startsWith('..') && !isAbsolute(rel) && (!files || files.includes(file));
       if (keepBlock) {
         kept.push(line);
       }

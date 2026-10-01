@@ -117,7 +117,12 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
   }
 
   private checkIfAborted(signal: AbortSignal): boolean {
-    if (signal.aborted && !['finished', 'aborted', 'errored'].includes(this.phase as RenderPhase)) {
+    if (
+      signal.aborted &&
+      // A remount replaces the controller; the superseded cycle must not report into the new one.
+      signal === this.abortController.signal &&
+      !['finished', 'aborted', 'errored'].includes(this.phase as RenderPhase)
+    ) {
       this.phase = 'aborted';
       this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
         newPhase: this.phase,
@@ -387,6 +392,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
           await waitForAnimations(abortSignal);
         }
       });
+
+      if (abortSignal.aborted) {
+        return;
+      }
 
       await this.runPhase(abortSignal, 'completed', async () => {
         this.channel.emit(STORY_RENDERED, id);

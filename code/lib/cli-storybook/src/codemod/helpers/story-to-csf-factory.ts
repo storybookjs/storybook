@@ -454,7 +454,7 @@ export async function storyToCsfFactory(
     const previewMeta = (input: t.ObjectExpression) =>
       t.callExpression(
         t.memberExpression(
-          customArgs.typedPreview(sbConfigImportName, [...metaArgsTypes, ...storyArgsTypes]),
+          customArgs.typedPreview(sbConfigImportName, metaArgsTypes, storyArgsTypes),
           t.identifier('meta')
         ),
         [input]

@@ -708,7 +708,7 @@ describe('stories codemod', () => {
             pageIcon: Icon;
           };
 
-          const meta = preview.type<{ args: Partial<StoryArgs> }>().meta({
+          const meta = preview.type<{ args: StoryArgs }>().meta({
             component: MyComponent,
             args: {
               pageIcon: DeactivatedOrg,
@@ -792,7 +792,7 @@ describe('stories codemod', () => {
         `);
       });
 
-      it('makes the custom args optional in Angular, as they were in CSF 3', async () => {
+      it('leaves the component class out of an intersection, as its args are inferred', async () => {
         await expect(
           transform(dedent`
             import type { Meta, StoryObj } from '@storybook/angular';
@@ -811,7 +811,7 @@ describe('stories codemod', () => {
           import preview from "#.storybook/preview";
           import { Page } from "./page.component";
 
-          const meta = preview.type<{ args: Partial<{ footer?: string }> }>().meta({
+          const meta = preview.type<{ args: { footer?: string } }>().meta({
             component: Page,
           });
 
@@ -821,45 +821,35 @@ describe('stories codemod', () => {
         `);
       });
 
-      it('transforms an Angular custom args type that may include a component class', async () => {
+      it('omits the keys of the component class from a type alias that includes it', async () => {
         await expect(
           transform(dedent`
-            import { type Meta, type StoryObj, argsToTemplate } from '@storybook/angular';
+            import type { Meta, StoryObj } from '@storybook/angular';
             import { Page } from './page.component';
 
             type PagePropsAndCustomArgs = Page & { footer?: string };
 
             const meta: Meta<PagePropsAndCustomArgs> = {
               component: Page,
-              render: ({ footer, ...args }) => ({
-                props: args,
-                template: \`<storybook-page \${argsToTemplate(args)}>\${footer}</storybook-page>\`,
-              }),
             };
             export default meta;
 
-            export const CustomFooter: StoryObj<PagePropsAndCustomArgs> = {
+            type Story = StoryObj<PagePropsAndCustomArgs>;
+
+            export const CustomFooter: Story = {
               args: { footer: 'Built with Storybook' },
             };
           `)
         ).resolves.toMatchInlineSnapshot(`
           import preview from "#.storybook/preview";
-          import {
-            argsToTemplate,
-            type TransformComponentType,
-          } from "@storybook/angular";
           import { Page } from "./page.component";
 
           type PagePropsAndCustomArgs = Page & { footer?: string };
 
           const meta = preview
-            .type<{ args: Partial<TransformComponentType<PagePropsAndCustomArgs>> }>()
+            .type<{ args: Omit<PagePropsAndCustomArgs, keyof Page> }>()
             .meta({
               component: Page,
-              render: ({ footer, ...args }) => ({
-                props: args,
-                template: \`<storybook-page \${argsToTemplate(args)}>\${footer}</storybook-page>\`,
-              }),
             });
 
           export const CustomFooter = meta.story({
@@ -868,31 +858,32 @@ describe('stories codemod', () => {
         `);
       });
 
-      it('carries the component class over when an Angular meta has no component', async () => {
+      it('makes the custom args of a story optional in Angular, as they were in CSF 3', async () => {
         await expect(
           transform(dedent`
-            import type { Meta, StoryObj, TransformComponentType } from '@storybook/angular';
+            import type { Meta, StoryObj } from '@storybook/angular';
             import { Page } from './page.component';
 
-            const meta: Meta<Page> = {
-              render: (args) => ({ props: args, template: '<storybook-page />' }),
-            };
+            const meta: Meta<Page> = { component: Page };
             export default meta;
 
             export const Default: StoryObj<Page> = {};
+            export const CustomFooter: StoryObj<Page & { footer: string }> = {
+              args: { footer: 'Built with Storybook' },
+            };
           `)
         ).resolves.toMatchInlineSnapshot(`
           import preview from "#.storybook/preview";
-          import type { TransformComponentType } from "@storybook/angular";
           import { Page } from "./page.component";
 
           const meta = preview
-            .type<{ args: Partial<TransformComponentType<Page>> }>()
-            .meta({
-              render: (args) => ({ props: args, template: "<storybook-page />" }),
-            });
+            .type<{ args: Partial<{ footer: string }> }>()
+            .meta({ component: Page });
 
           export const Default = meta.story();
+          export const CustomFooter = meta.story({
+            args: { footer: "Built with Storybook" },
+          });
         `);
       });
 

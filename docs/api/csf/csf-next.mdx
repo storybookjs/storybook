@@ -451,7 +451,7 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 
 A type that also holds the props of the component, like the one above, keeps working in React and Vue.
 
-In Angular and Web Components, the args that are inferred from the component are all optional, as every arg was in CSF 3. A type that you pass to `preview.type` is used as it is, so wrap it in `Partial` to keep its args optional: `preview.type<{ args: Partial<CustomProps> }>()`. If an Angular type includes the component class, also wrap it in `TransformComponentType` from `@storybook/angular`, as `Meta` did: `Partial<TransformComponentType<CustomProps>>`. The codemod does both for you.
+In Angular and Web Components, leave the component class out of the type and only pass your custom args, such as `preview.type<{ args: { customProp: string } }>()`. The args of the component are already inferred, all of them optional. A type that you pass to `preview.type` is used as it is, so a component class would make every one of its members a required arg.
 
 </details>
 

@@ -7,7 +7,7 @@ import type { Args } from 'storybook/internal/types';
 import { fn, mocked } from 'storybook/test';
 
 import { __definePreview } from './preview.ts';
-import type { Decorator, TransformComponentType } from './public-types.ts';
+import type { Decorator } from './public-types.ts';
 
 @Component({
   selector: 'storybook-button',
@@ -300,47 +300,51 @@ describe('Story args can be inferred', () => {
 describe('Custom args types written by the csf-factories codemod', () => {
   type Icon = { name: string };
   type StoryArgs = { pageIcon: Icon };
-  type ButtonAndCustomArgs = ButtonComponent & { footer: string };
+  type ButtonAndCustomArgs = ButtonComponent & { footer?: string };
 
-  it('✅ No arg of a custom args type is required', () => {
-    const meta = preview.type<{ args: Partial<StoryArgs> }>().meta({
-      component: ButtonComponent,
+  it('✅ A custom arg can be used when meta has no component', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      render: (args) => ({ props: args, template: `${args.pageIcon.name}` }),
+      args: { pageIcon: { name: 'organization' } },
     });
 
     const Default = meta.story();
-    const WithIcon = meta.story({
-      args: { label: 'good', pageIcon: { name: 'user' } },
-      render: ({ pageIcon, ...args }) => ({
-        props: args,
-        template: `${pageIcon?.name} <storybook-button [label]="label"></storybook-button>`,
-      }),
-    });
+    const Overridden = meta.story({ args: { pageIcon: { name: 'user' } } });
   });
 
-  it('✅ A custom args type can include the component class', () => {
-    const meta = preview
-      .type<{ args: Partial<TransformComponentType<ButtonAndCustomArgs>> }>()
-      .meta({ component: ButtonComponent });
-
-    const Default = meta.story();
-    const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
-  });
-
-  it('✅ The component class can be the args type of a meta without component', () => {
-    const meta = preview.type<{ args: Partial<TransformComponentType<ButtonComponent>> }>().meta({
-      render: (args) => ({ props: args, template: `<storybook-button [label]="label" />` }),
-    });
-
-    const Default = meta.story();
-    const Labelled = meta.story({ args: { label: 'good', disabledChange: fn() } });
-  });
-
-  it('❌ A component class that is carried over as it is requires every member of that class', () => {
+  it('❌ A custom args type that includes the component class requires every member of that class', () => {
     const meta = preview.type<{ args: ButtonAndCustomArgs }>().meta({
       component: ButtonComponent,
     });
 
     // @ts-expect-error label, disabled and disabledChange not provided ❌
+    const CustomFooter = meta.story({ args: { footer: 'good' } });
+  });
+
+  it('✅ The component class can be left out of a custom args type', () => {
+    const meta = preview.type<{ args: { footer?: string } }>().meta({
+      component: ButtonComponent,
+      render: ({ footer, ...args }) => ({ props: args, template: `${footer} ${args.label}` }),
+    });
+
+    const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
+  });
+
+  it('✅ The keys of the component class can be omitted from a custom args type', () => {
+    const meta = preview.type<{ args: Omit<ButtonAndCustomArgs, keyof ButtonComponent> }>().meta({
+      component: ButtonComponent,
+      render: ({ footer, ...args }) => ({ props: args, template: `${footer} ${args.label}` }),
+    });
+
+    const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
+  });
+
+  it('✅ A custom args type that comes from one story is optional for the other stories', () => {
+    const meta = preview.type<{ args: Partial<{ footer: string }> }>().meta({
+      component: ButtonComponent,
+    });
+
+    const Default = meta.story();
     const CustomFooter = meta.story({ args: { footer: 'good' } });
   });
 });

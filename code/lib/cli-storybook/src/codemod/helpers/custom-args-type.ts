@@ -9,14 +9,14 @@ const needsParentheses = (type: t.TSType) =>
   t.isTSConstructorType(type) ||
   t.isTSConditionalType(type);
 
-const typeReference = (name: string, typeArgument: t.TSType) =>
-  t.tsTypeReference(t.identifier(name), t.tsTypeParameterInstantiation([typeArgument]));
+const typeReference = (name: string, ...typeArguments: t.TSType[]) =>
+  t.tsTypeReference(t.identifier(name), t.tsTypeParameterInstantiation(typeArguments));
 
 // The component is never a custom args type: `preview.meta()` infers its args from `component`.
 export function customArgsTypes(program: t.Program, component: t.Node | undefined) {
   const importedNames = new Map<string, string>();
   const typeAliases = new Map<string, t.TSType>();
-  let angularImport: t.ImportDeclaration | undefined;
+  let isAngular = false;
   let isWebComponents = false;
 
   for (const node of program.body) {
@@ -26,13 +26,7 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
           importedNames.set(specifier.local.name, specifier.imported.name);
         }
       }
-      // A namespace import cannot take the named import that `typedPreview` adds.
-      if (
-        /^@storybook\/angular(-|$)/.test(node.source.value) &&
-        node.specifiers.some((specifier) => t.isImportSpecifier(specifier))
-      ) {
-        angularImport = node;
-      }
+      isAngular ||= /^@storybook\/angular(-|$)/.test(node.source.value);
       isWebComponents ||= /^@storybook\/web-components(-|$)/.test(node.source.value);
     }
 
@@ -44,9 +38,11 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
 
   const componentCode = component && generate(component).code;
 
+  const isComponentClass = (type: t.Node | null | undefined): type is t.TSTypeReference =>
+    t.isTSTypeReference(type) && generate(type.typeName).code === componentCode;
+
   const isComponent = (type: t.Node | null | undefined) =>
-    t.isTSTypeQuery(type) ||
-    (t.isTSTypeReference(type) && generate(type.typeName).code === componentCode);
+    t.isTSTypeQuery(type) || isComponentClass(type);
 
   const aliasedType = (type: t.Node | null | undefined) =>
     t.isTSTypeReference(type) && !type.typeParameters && t.isIdentifier(type.typeName)
@@ -67,48 +63,46 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
       if (!argsType) {
         return [];
       }
-      return (t.isTSIntersectionType(argsType) ? argsType.types : [argsType]).filter(
-        (member) => !isComponent(member) && !isComponent(aliasedType(member))
+      return (t.isTSIntersectionType(argsType) ? argsType.types : [argsType]).flatMap<t.TSType>(
+        (member) => {
+          const alias = aliasedType(member);
+          if (isComponent(member) || isComponent(alias)) {
+            return [];
+          }
+          // A component class in the args type makes every member of that class a required arg.
+          const componentClass =
+            t.isTSIntersectionType(alias) && alias.types.find(isComponentClass);
+          return componentClass
+            ? [typeReference('Omit', member, t.tsTypeOperator(componentClass, 'keyof'))]
+            : [member];
+        }
       );
     },
 
-    typedPreview(previewName: string, argsTypes: t.TSType[]): t.Expression {
-      const distinctTypes = [
-        ...new Map(
-          argsTypes.map((type) => [generate(type, { comments: false }).code, type])
-        ).values(),
-      ];
-      if (distinctTypes.length === 0) {
-        return t.identifier(previewName);
-      }
+    typedPreview(
+      previewName: string,
+      metaArgsTypes: t.TSType[],
+      storyArgsTypes: t.TSType[]
+    ): t.Expression {
+      const isOptional = new Map([
+        // The `component` of Web Components is a tag name, so a type next to it describes that
+        // component, whose args are inferred as optional.
+        [metaArgsTypes, isWebComponents && !!component],
+        // Angular and Web Components never required an arg of a story in CSF 3.
+        [storyArgsTypes, isAngular || isWebComponents],
+      ]);
 
-      let argsType =
-        distinctTypes.length > 1
-          ? t.tsIntersectionType(
-              distinctTypes.map((type) =>
-                needsParentheses(type) ? t.tsParenthesizedType(type) : type
-              )
-            )
-          : distinctTypes[0];
-
-      const isTypeLiteral = (type: t.TSType) =>
-        t.isTSTypeLiteral(type) || t.isTSTypeLiteral(aliasedType(type));
-
-      // `Meta<T>` of Angular turns an output of `T` into a callback and a signal into its value,
-      // which matters for any type that may include a component class.
-      if (angularImport && !distinctTypes.every(isTypeLiteral)) {
-        const transform = 'TransformComponentType';
-        if (!angularImport.specifiers.some((specifier) => specifier.local.name === transform)) {
-          const specifier = t.importSpecifier(t.identifier(transform), t.identifier(transform));
-          specifier.importKind = angularImport.importKind === 'type' ? null : 'type';
-          angularImport.specifiers.push(specifier);
+      const distinctTypes = new Map<string, t.TSType>();
+      for (const [types, optional] of isOptional) {
+        for (const type of types) {
+          const code = generate(type, { comments: false }).code;
+          if (!distinctTypes.has(code)) {
+            distinctTypes.set(code, optional ? typeReference('Partial', type) : type);
+          }
         }
-        argsType = typeReference(transform, argsType);
       }
-      // CSF 3 never required an arg in Angular and Web Components, and CSF Next infers the args of
-      // their components as optional.
-      if (angularImport || (isWebComponents && component)) {
-        argsType = typeReference('Partial', argsType);
+      if (distinctTypes.size === 0) {
+        return t.identifier(previewName);
       }
 
       // Parsed rather than built, as recast prints a type literal it did not parse over multiple lines.
@@ -120,7 +114,15 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
       t.assertTSTypeLiteral(typeLiteral);
       const [args] = typeLiteral.members;
       t.assertTSPropertySignature(args);
-      args.typeAnnotation = t.tsTypeAnnotation(argsType);
+
+      const types = [...distinctTypes.values()];
+      args.typeAnnotation = t.tsTypeAnnotation(
+        types.length > 1
+          ? t.tsIntersectionType(
+              types.map((type) => (needsParentheses(type) ? t.tsParenthesizedType(type) : type))
+            )
+          : types[0]
+      );
 
       return typed;
     },

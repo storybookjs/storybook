@@ -118,7 +118,9 @@ export type Template = {
    *
    * The gate is enforced transitively, so this has to name the whole family of
    * packages published in lockstep with the prerelease, not just the direct
-   * dependency. Stable templates should leave this unset.
+   * dependency. Stable templates should leave this unset, unless a dependency
+   * must adopt a compatibility release as soon as a peer it tracks clears the
+   * gate.
    */
   minAgeGateExemptions?: string[];
   /** Additional options to pass to the initiate command when initializing Storybook. */
@@ -809,6 +811,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -846,6 +849,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',
@@ -886,6 +890,7 @@ export const baseTemplates = {
     extraCiSteps: {
       ensureMinNodeVersion: true,
     },
+    minAgeGateExemptions: ['@analogjs/vite-plugin-angular'],
     expected: {
       framework: '@storybook/angular-vite',
       renderer: '@storybook/angular-vite',

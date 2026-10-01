@@ -1,9 +1,4 @@
-import type {
-  CoreConfig,
-  Options,
-  PresetProperty,
-  TestBuildFlags,
-} from 'storybook/internal/types';
+import type { CoreConfig, Options, PresetProperty, TestBuildFlags } from 'storybook/internal/types';
 
 import { removeMDXEntries } from '../utils/remove-mdx-entries.ts';
 import { getWsToken } from './wsToken.ts';

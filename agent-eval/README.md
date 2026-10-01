@@ -55,17 +55,17 @@ full line, and never several experiments in parallel. For runs on a pull
 request, see [Running evals in CI](#running-evals-in-ci).
 
 By default only the first core eval (`801-create-component-no-launch-config`)
-runs. Set `EVAL_FULL_SUITE=1` to run the full hand-crafted line — the 8xx
+runs. Set `EVAL_ALL=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals
 (`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_FULL_SUITE=1 yarn eval
+EVAL_ALL=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
 
-A full `EVAL_FULL_SUITE=1` run (12 workflow evals × 4 experiments + 4
+A full `EVAL_ALL=1` run (12 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per
 lifecycle eval). The budget guardrail is **$75 per full run** — check the
@@ -149,7 +149,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 The Agent eval workflow (`.github/workflows/agent-eval.yml`) runs the evals in
 CI in two cases:
 
-- Every Monday at 08:00 UTC it runs the full suite on `next`, deploys the
+- Every Monday at 08:00 UTC it runs all evals on `next`, deploys the
   results playground to Vercel production, and posts a summary to
   `#sb-monitoring` in Slack. Manual `workflow_dispatch` runs on `next` do the
   same.
@@ -157,7 +157,7 @@ CI in two cases:
   label.
 
 Every run costs money in agent tokens. The default smoke eval is cheap, a
-full-suite run costs roughly $30–45.
+run of all evals costs roughly $30–45.
 
 ### When to use
 
@@ -213,7 +213,7 @@ input for each.
 
 | Label / input                                      | Effect                                                                                                                                                                                                                    | When to use                                                                                                                                                                                            |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `agent-eval:full-suite` / `full_suite`             | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-component-no-launch-config` | The smoke eval shows that the setup works and that the agent finds Storybook. Use the full suite when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
+| `agent-eval:all-evals` / `all_evals`               | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-component-no-launch-config` | The smoke eval shows that the setup works and that the agent finds Storybook. Use all evals when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
 | `agent-eval:storybook-latest` / `storybook_latest` | Installs the published `latest` Storybook packages instead of the packages built from the PR, and runs the 9xx line                                                                                                       | Check whether a problem also exists in the last stable release. This is not related to the target branch of the PR: without this label, evals always use the code of the PR.                           |
 | `agent-eval:review` / `review`                     | Turns on the `experimentalReview` feature flag, and asserts the review workflow in the MCP experiments too                                                                                                                | Changes to the review workflow, such as `review-create` or the review UI.                                                                                                                              |
 

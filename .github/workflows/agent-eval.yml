@@ -18,10 +18,10 @@ on:
         type: string
         default: ''
       evals:
-        description: 'Comma-separated eval names to run (overrides full_suite), e.g. 803-edit-component'
+        description: 'Comma-separated eval names to run (overrides all_evals), e.g. 803-edit-component'
         type: string
         default: ''
-      full_suite:
+      all_evals:
         description: 'Run the full 8xx eval line instead of only the default eval'
         type: boolean
         default: false
@@ -172,7 +172,7 @@ jobs:
         run: yarn workspace agent-eval run eval
         env:
           EVAL_ONLY: ${{ inputs.evals || '' }}
-          EVAL_FULL_SUITE: ${{ steps.conditions.outputs.full_suite }}
+          EVAL_ALL: ${{ steps.conditions.outputs.all_evals }}
           EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
           EVAL_REVIEW: ${{ steps.conditions.outputs.review }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}

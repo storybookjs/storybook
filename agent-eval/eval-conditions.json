@@ -3,10 +3,10 @@
   "optInLabel": "agent-eval:eval",
   "conditions": [
     {
-      "id": "full_suite",
-      "label": "agent-eval:full-suite",
-      "input": "full_suite",
-      "description": "Agent evals, full suite: for changes to one agent workflow (all 8xx/82x evals)",
+      "id": "all_evals",
+      "label": "agent-eval:all-evals",
+      "input": "all_evals",
+      "description": "All agent evals: for changes to one agent workflow (full 8xx/82x line)",
       "schedule": true
     },
     {

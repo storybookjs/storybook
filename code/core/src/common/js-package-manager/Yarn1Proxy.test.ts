@@ -86,18 +86,27 @@ describe('Yarn 1 Proxy', () => {
     });
 
     it('forwards the caller options to `npx` when running a remote package', () => {
-      const args = ['skills@latest', 'add', 'storybookjs/skills#next'];
+      const args = ['some-package@1.2.3', 'run', '--flag'];
       const options = {
-        env: { DISABLE_TELEMETRY: '1' },
         cwd: '/repo',
         stdio: 'inherit' as const,
         signal: new AbortController().signal,
         ignoreError: true,
       };
 
-      yarn1Proxy.runPackageCommand({ args, useRemotePkg: true, ...options });
+      yarn1Proxy.runPackageCommand({
+        args,
+        useRemotePkg: true,
+        env: { SOME_VAR: '1' },
+        ...options,
+      });
 
-      expect(mockedExecuteCommand).toHaveBeenLastCalledWith({ command: 'npx', args, ...options });
+      expect(mockedExecuteCommand).toHaveBeenLastCalledWith({
+        command: 'npx',
+        args,
+        env: { npm_config_yes: 'true', SOME_VAR: '1' },
+        ...options,
+      });
     });
   });
 

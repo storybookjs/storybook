@@ -73,9 +73,10 @@ export class Yarn1Proxy extends JsPackageManager {
   }): ResultPromise {
     const [command, ...rest] = args;
     return executeCommand({
-      command: useRemotePkg ? 'npx' : 'yarn',
-      args: useRemotePkg ? args : ['exec', command, '--', ...rest],
       ...options,
+      ...(useRemotePkg
+        ? { command: 'npx', args, env: { npm_config_yes: 'true', ...options.env } }
+        : { command: 'yarn', args: ['exec', command, '--', ...rest] }),
     });
   }
 

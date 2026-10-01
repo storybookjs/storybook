@@ -2,21 +2,24 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaInput,
+  MetaTypes,
+  StoryArgs,
+  WithRenderArgs,
   Preview,
   PreviewAddon,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
+  Args,
   ArgsStoryFn,
-  ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as angularAnnotations from './config.ts';
 import * as angularDocsAnnotations from './docs/config.ts';
@@ -48,21 +51,14 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   const preview = definePreviewBase({
     ...input,
     addons: [angularAnnotations, angularDocsAnnotations, ...(input.addons ?? [])],
-  }) as unknown as AngularPreview<AngularRenderer & InferTypes<Addons>>;
+  }) as AngularPreview<AngularRenderer & InferTypes<Addons>>;
 
   return preview;
 }
 
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
->;
-
 type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<
   TransformComponentType<InstanceType<C>>
 >;
-
-type InferAngularTypes<T, TArgs, Decorators> = AngularRenderer &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
 /**
  * Angular-specific Preview interface that provides type-safe CSF factory methods.
@@ -96,49 +92,41 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     C extends abstract new (...args: any) => any,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<InferComponentArgs<C> & T['args']>,
+    TRenderArgs = unknown,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      component?: C;
-      args?: TMetaArgs;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<AngularRenderer & T, InferComponentArgs<C> & T['args']>,
-      'decorators' | 'component' | 'args'
+      component: C;
+      render?: ArgsStoryFn<AngularRenderer & T, InferComponentArgs<C> & TRenderArgs & T['args']>;
+    } & MetaInput<
+      AngularRenderer & T,
+      WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
     >
   ): AngularMeta<
-    InferAngularTypes<T, InferComponentArgs<C>, Decorators>,
-    Omit<ComponentAnnotations<InferAngularTypes<T, InferComponentArgs<C>, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
+    MetaTypes<
+      AngularRenderer & T,
+      WithRenderArgs<InferComponentArgs<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
+    >,
+    TMetaArgKeys
   >;
 
   meta<
-    TArgs,
-    Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    TArgs = Args,
+    Decorators extends DecoratorFunction<AngularRenderer & T, any> = DecoratorFunction<
+      AngularRenderer & T,
+      any
+    >,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<AngularRenderer & T, TArgs & T['args']>;
-      args?: TMetaArgs;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<AngularRenderer & T, TArgs & T['args']>,
-      'decorators' | 'args' | 'render' | 'component'
-    >
-  ): AngularMeta<
-    InferAngularTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferAngularTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+    } & MetaInput<AngularRenderer & T, TArgs, Decorators, TMetaArgKeys>
+  ): AngularMeta<MetaTypes<AngularRenderer & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
 
 /**
  * Angular-specific Meta interface returned by `preview.meta()`.
@@ -149,8 +137,8 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  */
 export interface AngularMeta<
   T extends AngularRenderer,
-  MetaInput extends ComponentAnnotations<T>,
-> extends Meta<T, MetaInput> {
+  TMetaArgKeys extends PropertyKey = never,
+> extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -207,13 +195,7 @@ export interface AngularMeta<
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        T['args'],
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): AngularStory<T, TInput>;
@@ -222,7 +204,7 @@ export interface AngularMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -236,12 +218,7 @@ export interface AngularMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): AngularStory<T, {}>;
 }
 

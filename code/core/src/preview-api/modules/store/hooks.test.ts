@@ -361,7 +361,7 @@ describe('Preview hooks', () => {
       let counter = 0;
       const storyFn = () => {
         counter += 1;
-        const callback = useCallback(() => {}, []);
+        const callback = useCallback(() => {}, [counter]);
         callbacks.push(callback);
       };
       run(storyFn);

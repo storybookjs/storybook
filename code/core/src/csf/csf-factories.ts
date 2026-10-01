@@ -10,7 +10,7 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
-import type { SetOptional } from 'type-fest';
+import type { SetOptional, UnionToIntersection } from 'type-fest';
 
 import {
   combineParameters,
@@ -25,7 +25,7 @@ import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-an
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
-  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
+  input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddonEntry[] };
   composed: NormalizedProjectAnnotations<TRenderer>;
 
   meta<
@@ -38,11 +38,20 @@ export interface Preview<TRenderer extends Renderer = Renderer> {
   type<T>(): Preview<TRenderer & T>;
 }
 
-export type InferTypes<T extends PreviewAddon<never>[]> = T extends PreviewAddon<infer C>[]
-  ? C & { csf4: true }
-  : never;
+/**
+ * An addon entry can be a typed CSF factory addon or a legacy preview annotations namespace.
+ * Legacy namespaces are composed at runtime but do not contribute additional inferred types.
+ */
+export type PreviewAddonEntry = object;
 
-export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddon<never>[]>(
+type InferAddonTypes<T> = T extends PreviewAddon<infer C> ? C : never;
+
+export type InferTypes<T extends PreviewAddonEntry[]> = AddonTypes &
+  ([T[number]] extends [never] ? unknown : UnionToIntersection<InferAddonTypes<T[number]>>) & {
+    csf4: true;
+  };
+
+export function definePreview<TRenderer extends Renderer, Addons extends PreviewAddonEntry[] = []>(
   input: ProjectAnnotations<TRenderer> & { addons?: Addons }
 ): Preview<TRenderer & InferTypes<Addons>> {
   let composed: NormalizedProjectAnnotations<TRenderer & InferTypes<Addons>>;
@@ -75,9 +84,13 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
   return preview;
 }
 
+declare const previewAddonTypes: unique symbol;
+
 export interface PreviewAddon<
   in TExtraContext extends AddonTypes = AddonTypes,
-> extends ProjectAnnotations<Renderer> {}
+> extends ProjectAnnotations<Renderer> {
+  readonly [previewAddonTypes]?: (types: TExtraContext) => void;
+}
 
 export function definePreviewAddon<TExtraContext extends AddonTypes = AddonTypes>(
   preview: ProjectAnnotations<Renderer>

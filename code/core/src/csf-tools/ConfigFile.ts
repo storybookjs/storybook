@@ -23,6 +23,7 @@ import {
   createCsfObject,
 } from './CsfObject.ts';
 import { unwrapExpression } from './story-shape/utils.ts';
+import { unwrapCsfFactoryConfig } from './unwrapCsfFactoryConfig.ts';
 
 export interface CallArgumentsOptions {
   importedName: string;
@@ -401,20 +402,7 @@ export class ConfigFile implements CsfObject {
           self.hasDefaultExport = true;
           let decl = self._resolveDeclaration(node.declaration as t.Node, parent);
 
-          // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
-          while (t.isCallExpression(decl)) {
-            if (t.isObjectExpression(decl.arguments[0])) {
-              decl = decl.arguments[0];
-              break;
-            } else if (
-              t.isMemberExpression(decl.callee) &&
-              t.isCallExpression(decl.callee.object)
-            ) {
-              decl = decl.callee.object;
-            } else {
-              break;
-            }
-          }
+          decl = unwrapCsfFactoryConfig(decl);
 
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);

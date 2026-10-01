@@ -172,6 +172,34 @@ describe('Story args can be inferred', () => {
   });
 });
 
+describe('Custom args types written by the csf-factories codemod', () => {
+  type Icon = { name: string };
+  type StoryArgs = { pageIcon: Icon };
+
+  it('✅ A custom args type can include the props of the component', () => {
+    const meta = preview
+      .type<{ args: ButtonProps & { footer?: string } }>()
+      .meta({ component: Button });
+
+    const Default = meta.story({ args: { label: 'good', disabled: false, footer: 'footer' } });
+    // @ts-expect-error disabled not provided ❌
+    const Missing = meta.story({ args: { label: 'good' } });
+  });
+
+  it('✅ A custom arg can be used when meta has no component', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      render: (args) => {
+        expectTypeOf(args.pageIcon).toEqualTypeOf<Icon>();
+        return h('div', args.pageIcon.name);
+      },
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story();
+    const Overridden = meta.story({ args: { pageIcon: { name: 'user' } } });
+  });
+});
+
 it('Infer type of slots', () => {
   const meta = preview.meta({
     component: BaseLayout,

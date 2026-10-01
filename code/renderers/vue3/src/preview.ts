@@ -120,7 +120,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
     TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      render?: ArgsStoryFn<VueTypes & T, TArgs>;
+      render?: ArgsStoryFn<VueTypes & T, TArgs & T['args']>;
     } & MetaInput<VueTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): VueMeta<MetaTypes<VueTypes & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }

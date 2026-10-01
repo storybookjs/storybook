@@ -7,6 +7,7 @@ import {
   STORY_RENDERED,
   STORY_RENDER_PHASE_CHANGED,
 } from 'storybook/internal/core-events';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type {
   PreparedStory,
   Renderer,
@@ -172,6 +173,53 @@ describe('StoryRender', () => {
 
     await render.renderToElement({} as any);
     expect(mountSpy).toHaveBeenCalledOnce();
+  });
+
+  it('hides argTypes from lifecycle hooks but passes them to the renderer', async () => {
+    const argTypes = { label: { name: 'label' } };
+    const hookContexts: StoryContext[] = [];
+    const story = buildStory({
+      applyLoaders: vi.fn(async (context) => {
+        hookContexts.push(context);
+        return {};
+      }),
+      applyBeforeEach: vi.fn(async (context) => {
+        hookContexts.push(context);
+        return [];
+      }),
+      playFunction: vi.fn(async (context) => {
+        hookContexts.push(context);
+        await context.step('step', async (stepContext: StoryContext) => {
+          hookContexts.push(stepContext);
+        });
+      }),
+      applyAfterEach: vi.fn(async (context) => {
+        hookContexts.push(context);
+      }),
+      runStep: vi.fn((label, play, context) => play(context)),
+    });
+    const renderToScreen = vi.fn();
+    const render = new StoryRender(
+      new Channel({}),
+      buildStore({
+        getStoryContext: () => ({ argTypes, reporting: new ReporterAPI() }) as any,
+      }),
+      renderToScreen,
+      {} as any,
+      entry.id,
+      'story',
+      { autoplay: true },
+      story
+    );
+
+    await render.renderToElement({} as any);
+
+    expect(hookContexts).toHaveLength(5);
+    for (const context of hookContexts) {
+      expect(() => context.argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+      expect('argTypes' in context).toBe(false);
+    }
+    expect(renderToScreen.mock.calls[0][0].storyContext.argTypes).toBe(argTypes);
   });
 
   it('does not call mount twice if mount called in play function', async () => {

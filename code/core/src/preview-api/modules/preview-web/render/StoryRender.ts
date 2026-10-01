@@ -19,6 +19,7 @@ import type {
   RenderToCanvas,
   Renderer,
   StoryContext,
+  StoryContextForRender,
   StoryId,
   StoryRenderOptions,
   TeardownRenderToCanvas,
@@ -26,7 +27,7 @@ import type {
 
 import type { UserEventObject } from 'storybook/test';
 
-import type { StoryStore } from '../../store/index.ts';
+import { type StoryStore, hideArgTypes } from '../../store/index.ts';
 import type { Render, RenderType } from './Render.ts';
 import { PREPARE_ABORTED } from './Render.ts';
 import { isTestEnvironment, pauseAnimations, waitForAnimations } from './animation-utils.ts';
@@ -230,13 +231,13 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     const isMountDestructured = story.usesMount;
 
     try {
-      const context: StoryContext<TRenderer> = {
+      const context: StoryContextForRender<TRenderer> = {
         ...this.storyContext(),
         viewMode: this.viewMode,
         abortSignal,
         canvasElement,
         loaded: {},
-        step: (label, play) => runStep(label, play, context),
+        step: (label, play) => runStep(label, play, hookContext),
         context: null!,
         canvas: {} as Canvas,
         userEvent: {} as UserEventObject,
@@ -266,6 +267,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
       };
 
       context.context = context;
+      const hookContext = hideArgTypes(context);
 
       const renderContext: RenderContext<TRenderer> = {
         componentId,
@@ -290,14 +292,14 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
         unboundStoryFn,
       };
       await this.runPhase(abortSignal, 'loading', async () => {
-        context.loaded = await applyLoaders(context);
+        context.loaded = await applyLoaders(hookContext);
       });
 
       if (abortSignal.aborted) {
         return;
       }
 
-      const cleanupCallbacks = await applyBeforeEach(context);
+      const cleanupCallbacks = await applyBeforeEach(hookContext);
       this.store.addCleanupCallbacks(story, ...cleanupCallbacks);
 
       if (this.checkIfAborted(abortSignal)) {
@@ -339,10 +341,10 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
             context.mount = async () => {
               throw new MountMustBeDestructuredError({ playFunction: playFunction.toString() });
             };
-            await this.runPhase(abortSignal, 'playing', async () => playFunction(context));
+            await this.runPhase(abortSignal, 'playing', async () => playFunction(hookContext));
           } else {
             // when mount is used the playing phase will start later, right after mount is called in the play function
-            await playFunction(context);
+            await playFunction(hookContext);
           }
 
           if (!mounted) {
@@ -401,7 +403,7 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
 
       if (this.phase !== 'errored') {
         await this.runPhase(abortSignal, 'afterEach', async () => {
-          await applyAfterEach(context);
+          await applyAfterEach(hookContext);
         });
       }
 

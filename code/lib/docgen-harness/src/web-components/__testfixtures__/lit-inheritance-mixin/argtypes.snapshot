@@ -6,7 +6,7 @@
     "table": {
       "category": "attributes",
       "defaultValue": {
-        "summary": "'Base'",
+        "summary": "'Final'",
       },
       "type": {
         "summary": "string",
@@ -23,7 +23,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "'Base'",
+        "summary": "'Final'",
       },
       "type": {
         "summary": "string",

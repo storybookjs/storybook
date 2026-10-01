@@ -76,32 +76,26 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
       return customArgs(argsType(type)?.typeParameters?.params[0]);
     },
 
-    typedPreview(
-      previewName: string,
-      metaArgsTypes: t.TSType[],
-      storyArgsTypes: t.TSType[]
-    ): t.Expression {
+    // `preview.type<{ args: T }>()` for the types of the meta, or `meta.type<{ args: T }>()` for the
+    // types of a story that the meta does not already have.
+    typed(receiver: string, argsTypes: t.TSType[], metaArgsTypes: t.TSType[] = []): t.Expression {
+      const code = (type: t.TSType) => generate(type, { comments: false }).code;
+      const metaCodes = new Set(metaArgsTypes.map(code));
       const distinctTypes = new Map<string, t.TSType>();
-      for (const [types, optional] of [
-        // The `component` of Web Components is a tag name, so a type next to it describes that
-        // component, whose args are inferred as optional.
-        [metaArgsTypes, isWebComponents && !!component],
-        // On the meta, the type of a story would apply to every story.
-        [storyArgsTypes, true],
-      ] as const) {
-        for (const type of types) {
-          const code = generate(type, { comments: false }).code;
-          if (!distinctTypes.has(code)) {
-            distinctTypes.set(code, optional ? typeReference('Partial', type) : type);
-          }
+      for (const type of argsTypes) {
+        if (!metaCodes.has(code(type)) && !distinctTypes.has(code(type))) {
+          // The `component` of Web Components is a tag name, so a type next to it describes that
+          // component, whose args are inferred as optional.
+          const optional = isWebComponents && !!component;
+          distinctTypes.set(code(type), optional ? typeReference('Partial', type) : type);
         }
       }
       if (distinctTypes.size === 0) {
-        return t.identifier(previewName);
+        return t.identifier(receiver);
       }
 
       // Parsed rather than built, as recast prints a type literal it did not parse over multiple lines.
-      const [statement] = babelParse(`${previewName}.type<{ args: Args }>()`).program.body;
+      const [statement] = babelParse(`${receiver}.type<{ args: Args }>()`).program.body;
       t.assertExpressionStatement(statement);
       const typed = statement.expression;
       t.assertCallExpression(typed);
@@ -112,11 +106,7 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
 
       const types = [...distinctTypes.values()];
       args.typeAnnotation = t.tsTypeAnnotation(
-        types.length > 1
-          ? t.tsIntersectionType(
-              types.map((type) => (t.isTSUnionType(type) ? t.tsParenthesizedType(type) : type))
-            )
-          : types[0]
+        types.length > 1 ? t.tsIntersectionType(types) : types[0]
       );
 
       return typed;

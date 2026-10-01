@@ -338,15 +338,6 @@ describe('Custom args types written by the csf-factories codemod', () => {
 
     const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
   });
-
-  it('✅ A custom args type that comes from one story is optional for the other stories', () => {
-    const meta = preview.type<{ args: Partial<{ footer: string }> }>().meta({
-      component: ButtonComponent,
-    });
-
-    const Default = meta.story();
-    const CustomFooter = meta.story({ args: { footer: 'good' } });
-  });
 });
 
 it('Components without Props can be used', () => {

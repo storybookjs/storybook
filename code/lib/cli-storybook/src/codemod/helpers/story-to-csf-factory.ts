@@ -146,7 +146,7 @@ export async function storyToCsfFactory(
 
   const customArgs = customArgsTypes(programNode, csf._metaAnnotations.component);
   const metaArgsTypes: t.TSType[] = [];
-  const storyArgsTypes: t.TSType[] = [];
+  const storyCallees: { callee: t.MemberExpression; argsTypes: t.TSType[] }[] = [];
 
   // Combined set for quick lookup
   const storyFileImports = new Set([...namespaceStoryImports, ...namedStoryImports]);
@@ -160,37 +160,29 @@ export async function storyToCsfFactory(
     let init = t.isVariableDeclarator(declarator) ? declarator.init : undefined;
 
     if (t.isIdentifier(id) && init) {
+      const argsTypes: t.TSType[] = [];
+
       // Remove type annotations e.g. A<B> in `const Story: A<B> = {};`
       if (id.typeAnnotation) {
-        storyArgsTypes.push(...customArgs.read(id.typeAnnotation));
+        argsTypes.push(...customArgs.read(id.typeAnnotation));
         id.typeAnnotation = null;
       }
 
       // Remove type annotations e.g. A<B> in `const Story = {} satisfies A<B>;`
       if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
-        storyArgsTypes.push(...customArgs.read(init.typeAnnotation));
+        argsTypes.push(...customArgs.read(init.typeAnnotation));
         init = init.expression;
       }
 
-      if (t.isObjectExpression(init)) {
-        // Wrap the object in `meta.story()`
-
+      if (t.isObjectExpression(init) || t.isArrowFunctionExpression(init)) {
+        // Wrap the object in `meta.story()`, or transform CSF1 to `meta.story(<originalFn>)`
+        const callee = t.memberExpression(t.identifier(metaVariableName), t.identifier('story'));
         declarator.init = t.callExpression(
-          t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-          init.properties.length === 0 ? [] : [init]
+          callee,
+          t.isObjectExpression(init) && init.properties.length === 0 ? [] : [init]
         );
-        if (t.isIdentifier(id)) {
-          transformedStoryExports.add(exportName);
-        }
-      } else if (t.isArrowFunctionExpression(init)) {
-        // Transform CSF1 to meta.story({ render: <originalFn> })
-        declarator.init = t.callExpression(
-          t.memberExpression(t.identifier(metaVariableName), t.identifier('story')),
-          [init]
-        );
-        if (t.isIdentifier(id)) {
-          transformedStoryExports.add(exportName);
-        }
+        storyCallees.push({ callee, argsTypes });
+        transformedStoryExports.add(exportName);
       }
     }
   });
@@ -454,7 +446,7 @@ export async function storyToCsfFactory(
     const previewMeta = (input: t.ObjectExpression) =>
       t.callExpression(
         t.memberExpression(
-          customArgs.typedPreview(sbConfigImportName, metaArgsTypes, storyArgsTypes),
+          customArgs.typed(sbConfigImportName, metaArgsTypes),
           t.identifier('meta')
         ),
         [input]
@@ -508,6 +500,10 @@ export async function storyToCsfFactory(
       // Remove the default export, it's not needed anymore
       csf._metaPath.remove();
     }
+  }
+
+  for (const { callee, argsTypes } of storyCallees) {
+    callee.object = customArgs.typed(metaVariableName, argsTypes, metaArgsTypes);
   }
 
   if (previewImport) {

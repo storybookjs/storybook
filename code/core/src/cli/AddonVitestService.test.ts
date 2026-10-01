@@ -529,6 +529,7 @@ describe('AddonVitestService', () => {
           args: ['playwright', 'install', 'chromium'],
           signal: undefined,
           stdio: ['inherit', 'pipe', 'pipe'],
+          env: { npm_config_yes: 'true' },
         });
       } finally {
         if (originalCI !== undefined) {
@@ -588,6 +589,7 @@ describe('AddonVitestService', () => {
           args: ['playwright', 'install', 'chromium', '--with-deps'],
           signal: undefined,
           stdio: ['inherit', 'pipe', 'pipe'],
+          env: { npm_config_yes: 'true' },
         });
       } finally {
         if (originalCI === undefined) {
@@ -621,6 +623,7 @@ describe('AddonVitestService', () => {
             args: ['playwright', 'install', 'chromium', '--with-deps'],
             signal: undefined,
             stdio: ['inherit', 'pipe', 'pipe'],
+            env: { npm_config_yes: 'true' },
           });
         } finally {
           if (originalCI !== undefined) {

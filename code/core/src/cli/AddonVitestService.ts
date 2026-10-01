@@ -191,6 +191,7 @@ export class AddonVitestService {
               args: playwrightCommand,
               useRemotePkg: options.useRemotePkg,
               stdio: ['inherit', 'pipe', 'pipe'],
+              env: { npm_config_yes: 'true' },
               signal,
             }),
           {

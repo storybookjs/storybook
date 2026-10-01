@@ -3,23 +3,13 @@ import { babelParse, generate, types as t } from 'storybook/internal/babel';
 // `ComponentMeta` and `ComponentStory` are left out: their type argument is always a component.
 const argsTypeNames = new Set(['Meta', 'MetaObj', 'Story', 'StoryFn', 'StoryObj']);
 
-const needsParentheses = (type: t.TSType) =>
-  t.isTSUnionType(type) ||
-  t.isTSFunctionType(type) ||
-  t.isTSConstructorType(type) ||
-  t.isTSConditionalType(type);
-
 const typeReference = (name: string, ...typeArguments: t.TSType[]) =>
   t.tsTypeReference(t.identifier(name), t.tsTypeParameterInstantiation(typeArguments));
 
 // The component is never a custom args type: `preview.meta()` infers its args from `component`.
-export function customArgsTypes(
-  program: t.Program,
-  { component, render }: { component?: t.Node; render?: t.Node }
-) {
+export function customArgsTypes(program: t.Program, component: t.Node | undefined) {
   const argsTypeLocalNames = new Set<string>();
   const typeAliases = new Map<string, t.TSType>();
-  let isAngular = false;
   let isWebComponents = false;
 
   for (const node of program.body) {
@@ -33,7 +23,6 @@ export function customArgsTypes(
           argsTypeLocalNames.add(specifier.local.name);
         }
       }
-      isAngular ||= /^@storybook\/angular(-|$)/.test(node.source.value);
       isWebComponents ||= /^@storybook\/web-components(-|$)/.test(node.source.value);
     }
 
@@ -97,9 +86,8 @@ export function customArgsTypes(
         // The `component` of Web Components is a tag name, so a type next to it describes that
         // component, whose args are inferred as optional.
         [metaArgsTypes, isWebComponents && !!component],
-        // The type of a story only applied to that story. Without a `component`, the `render` of a
-        // React or Vue meta needs its args as they are written.
-        [storyArgsTypes, isAngular || isWebComponents || !!component || !render],
+        // On the meta, the type of a story would apply to every story.
+        [storyArgsTypes, true],
       ] as const) {
         for (const type of types) {
           const code = generate(type, { comments: false }).code;
@@ -126,7 +114,7 @@ export function customArgsTypes(
       args.typeAnnotation = t.tsTypeAnnotation(
         types.length > 1
           ? t.tsIntersectionType(
-              types.map((type) => (needsParentheses(type) ? t.tsParenthesizedType(type) : type))
+              types.map((type) => (t.isTSUnionType(type) ? t.tsParenthesizedType(type) : type))
             )
           : types[0]
       );

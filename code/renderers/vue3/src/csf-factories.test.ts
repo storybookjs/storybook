@@ -176,6 +176,16 @@ describe('Custom args types written by the csf-factories codemod', () => {
   type Icon = { name: string };
   type StoryArgs = { pageIcon: Icon };
 
+  it('✅ A custom args type can include the props of the component', () => {
+    const meta = preview
+      .type<{ args: ButtonProps & { footer?: string } }>()
+      .meta({ component: Button });
+
+    const Default = meta.story({ args: { label: 'good', disabled: false, footer: 'footer' } });
+    // @ts-expect-error disabled not provided ❌
+    const Missing = meta.story({ args: { label: 'good' } });
+  });
+
   it('✅ A custom args type that comes from one story is optional for the other stories', () => {
     const meta = preview.type<{ args: Partial<StoryArgs> }>().meta({ component: Button });
 

@@ -1,5 +1,5 @@
 import { Component, Input, Output } from '@angular/core';
-import type { DecoratorFunction, StoryContext } from 'storybook/internal/types';
+import type { DecoratorFunction, StoryContextForRender } from 'storybook/internal/types';
 import { assert, describe, expect, it } from 'vitest';
 import { componentWrapperDecorator } from './decorators.ts';
 
@@ -214,7 +214,7 @@ describe('decorateStory', () => {
 
     it('passes every arg to the story, including ones carrying no control', () => {
       const decorated = decorateStory(
-        (context: StoryContext) => ({
+        (context: StoryContextForRender<AngularRenderer>) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
         }),
         []
@@ -285,7 +285,10 @@ describe('decorateStory', () => {
           return { ...story, props: { a: [...story.props.a, c.k] } };
         },
       ];
-      const decorated = decorateStory((c: StoryContext) => ({ props: { a: [c.k] } }), decorators);
+      const decorated = decorateStory(
+        (c: StoryContextForRender<AngularRenderer>) => ({ props: { a: [c.k] } }),
+        decorators
+      );
 
       expect(decorated(makeContext({ k: 0 }))).toEqual({ props: { a: [1, 2, 3, 0] } });
     });
@@ -318,7 +321,9 @@ describe('decorateStory', () => {
         },
       ];
       const decorated = decorateStory(
-        (c: StoryContext) => ({ props: { a: [c.k], p: [c.parameters.p] } }),
+        (c: StoryContextForRender<AngularRenderer>) => ({
+          props: { a: [c.k], p: [c.parameters.p] },
+        }),
         decorators
       );
 
@@ -329,7 +334,7 @@ describe('decorateStory', () => {
   });
 });
 
-function makeContext(input: Record<string, unknown>): StoryContext<AngularRenderer> {
+function makeContext(input: Record<string, unknown>): StoryContextForRender<AngularRenderer> {
   return {
     id: 'id',
     kind: 'kind',
@@ -337,7 +342,7 @@ function makeContext(input: Record<string, unknown>): StoryContext<AngularRender
     viewMode: 'story',
     parameters: {},
     ...input,
-  } as StoryContext<AngularRenderer>;
+  } as StoryContextForRender<AngularRenderer>;
 }
 
 @Component({

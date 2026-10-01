@@ -106,6 +106,15 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
   const { mergeConfig, normalizePath } = await import('vite');
   const { default: angular } = await import('@analogjs/vite-plugin-angular');
 
+  const angularRequire = createRequire(import.meta.resolve('@analogjs/vite-plugin-angular'));
+  const angularBuildPath = angularRequire.resolve('@angular/build/package.json');
+  const { version } = angularRequire(angularBuildPath) as { version: string };
+  const [major, minor = 0] = version.split('.').map(Number);
+  // Angular 22.2 requires hash initialization before Analog's JavaScript transformer runs.
+  if (major === 22 && minor >= 2) {
+    await angularRequire(join(dirname(angularBuildPath), 'src/utils/hash.js')).initializeHash();
+  }
+
   const framework = await options.presets.apply('framework');
   const frameworkOptions: FrameworkOptions | undefined =
     typeof framework === 'string' ? undefined : framework.options;

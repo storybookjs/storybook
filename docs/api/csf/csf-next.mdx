@@ -187,6 +187,39 @@ export const Primary = meta.story({
 });
 ```
 
+#### `meta.type.story`
+
+Stories take their types from the meta. When a single story needs something the other stories of the file don't have, such as an extra arg read by its `render` function, you can use the `meta.type` function to add it for that story only.
+
+This example is for React, but the same API applies to all supported renderers.
+
+```tsx title="Button.stories.ts|tsx"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+import { Icon } from './Icon';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Primary = meta.story({
+  args: { label: 'Button' },
+});
+
+export const WithIcon = meta.type<{ args: { icon: string } }>().story({
+  // 👇 `icon` is typed, and required, in this story only
+  args: { label: 'Button', icon: 'star' },
+  render: ({ icon, ...args }) => (
+    <>
+      <Icon name={icon} /> <Button {...args} />
+    </>
+  ),
+});
+```
+
+`meta.type` accepts the same type argument as [`preview.type`](#previewtypemeta), and its types are added to those of the meta, so the two can be combined. Args that the meta already provides stay optional in the story. An arg added with `meta.type` must be set in that story, unless you declare it as optional (`meta.type<{ args: { icon?: string } }>()`). If you redeclare an arg that the component already has, its type must be compatible with the component's.
+
 #### `<Story>.extend`
 
 You can use the `.extend` method to create a new story based on an existing one, with the option to override or add new properties.
@@ -453,6 +486,16 @@ A type that also holds the props of the component, like the one above, keeps wor
 
 In Angular and Web Components, leave the component class out of the type and only pass your custom args, such as `preview.type<{ args: { customProp: string } }>()`. The args of the component are already inferred, all of them optional. A type that you pass to `preview.type` is used as it is, so a component class would make every one of its members a required arg.
 
+Types passed to `preview.type` apply to every story of the file. If only one story needs the custom args, you can use the [`meta.type.story`](#metatypestory) pattern to keep them on that story. Unlike with `StoryObj`, a required arg of that type must then be set in the story.
+
+```diff title="Button.stories.js|ts"
++ export const WithCustomProp = meta.type<{ args: { customProp: string } }>().story({
+- export const WithCustomProp: StoryObj<CustomProps> = {
+    args: { customProp: 'Hello, world!' },
++ });
+- };
+```
+
 </details>
 
 <details>
@@ -582,7 +625,7 @@ While using CSF Next, you can still use the older formats, as long as they are n
 
 ### How do I use custom arg types with this format?
 
-The [`preview.type`](#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types.
+The [`preview.type`](#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types. To specify them for a single story, use the [`meta.type`](#metatypestory) function.
 
 ### Will this format work with MDX docs pages?
 

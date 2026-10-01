@@ -9,10 +9,12 @@ import {
   createCsfObject,
 } from './CsfObject.ts';
 import {
+  csfFactoryReceiver,
   isCsfFactoryCall,
   metaObjectPath,
   pathForNode,
   unwrapExpression,
+  withoutTypeCalls,
 } from './story-shape/index.ts';
 
 type ReportDiagnostic = (diagnostic: CsfMutationDiagnostic) => void;
@@ -187,22 +189,33 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
   return [...unique.values()];
 };
 
+// Whether `name` is the meta of this file, directly or as a constant holding `meta.type<T>()`.
+const isFactoryMeta = (csf: CsfFile, name: string, seen = new Set<string>()): boolean => {
+  const binding = csf._file.path.scope.getBinding(name);
+  if (
+    seen.has(name) ||
+    !csf._metaFactoryCall ||
+    !binding?.constant ||
+    !binding.path.isVariableDeclarator() ||
+    !t.isExpression(binding.path.node.init)
+  ) {
+    return false;
+  }
+  seen.add(name);
+  const initializer = withoutTypeCalls(unwrapExpression(binding.path.node.init));
+  return (
+    initializer === csf._metaFactoryCall ||
+    (t.isIdentifier(initializer) && isFactoryMeta(csf, initializer.name, seen))
+  );
+};
+
 const isFactoryStory = (csf: CsfFile, node: t.Node, seen = new Set<string>()): boolean => {
   if (!isCsfFactoryCall(node)) {
     return false;
   }
-  const receiver = node.callee.object.name;
+  const receiver = csfFactoryReceiver(node).name;
   if (node.callee.property.name === 'story') {
-    if (receiver !== csf._metaVariableName || !csf._metaFactoryCall) {
-      return false;
-    }
-    const binding = csf._file.path.scope.getBinding(receiver);
-    return (
-      binding?.constant === true &&
-      binding.path.isVariableDeclarator() &&
-      t.isExpression(binding.path.node.init) &&
-      unwrapExpression(binding.path.node.init) === csf._metaFactoryCall
-    );
+    return isFactoryMeta(csf, receiver);
   }
   if (seen.has(receiver)) {
     return false;

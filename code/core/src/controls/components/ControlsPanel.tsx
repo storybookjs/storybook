@@ -292,7 +292,10 @@ function ServiceControlsPanel({
 }
 
 export const ControlsPanel = ({ docgenService, ...props }: ControlsPanelProps) => {
-  if (docgenService) {
+  const storyData = useStorybookApi().getCurrentStoryData();
+  // The registered service belongs to the host Storybook. A composed ref may use
+  // another docgen pipeline, so use its preview's argTypes instead of querying the host.
+  if (docgenService && !storyData?.refId) {
     return <ServiceControlsPanel {...props} docgenService={docgenService} />;
   }
 

@@ -8,13 +8,12 @@ import { isTemplateResult } from 'lit/directive-helpers.js';
 import { simulateDOMContentLoaded, simulatePageLoad } from 'storybook/preview-api';
 import { dedent } from 'ts-dedent';
 
-import { bindArgs } from './docgen-render/bind-args.ts';
-import { getComponentDocgen } from './docgen-render/component-docgen.ts';
+import { bindArgs } from './bind-args.ts';
 import type { WebComponentsRenderer } from './types.ts';
 
 const { Node } = global;
 
-/** Returns a DocumentFragment when scoped CSS part or state styles must precede the element. */
+/** With `experimentalDocgenServer`, returns a DocumentFragment so scoped CSS part and state rules can precede the element. */
 export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   const { id, component } = context;
   if (!component) {
@@ -24,7 +23,11 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
   }
 
   const element = document.createElement(component);
-  return bindArgs(element, args, getComponentDocgen(context)?.argTypes ?? {}, context.parameters);
+  if (!global.FEATURES?.experimentalDocgenServer) {
+    return Object.assign(element, args);
+  }
+
+  return bindArgs(element, args);
 };
 
 export function renderToCanvas(

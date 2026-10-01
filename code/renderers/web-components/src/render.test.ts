@@ -1,98 +1,54 @@
 /** @vitest-environment happy-dom */
 import type { StoryContextForRender } from 'storybook/internal/types';
 
-import { action } from 'storybook/actions';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import { clearRegistry } from '../../../core/src/shared/open-service/service-registry.ts';
-import { ARG_TYPE_CATEGORIES } from './arg-type-categories.ts';
-import { loadComponentDocgen } from './docgen-render/component-docgen.ts';
-import { registerDocgenPayload } from './docgen-render/docgen-test-utils.ts';
 import { render } from './render.ts';
 import type { WebComponentsRenderer } from './types.ts';
 
-vi.mock('storybook/actions', () => ({ action: vi.fn(() => vi.fn()) }));
+const X_CARD_TAG = 'x-card';
+
+class XCard extends HTMLElement {
+  static observedAttributes = ['label'];
+}
+
+if (!customElements.get(X_CARD_TAG)) {
+  customElements.define(X_CARD_TAG, XCard);
+}
 
 const CONTEXT = {
   id: 'x-card--a',
-  componentId: 'x-card',
-  component: 'x-card',
-  parameters: {},
-  argTypes: {},
+  component: X_CARD_TAG,
 } as StoryContextForRender<WebComponentsRenderer>;
 
 describe('render', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
-    clearRegistry();
-    vi.clearAllMocks();
   });
 
-  it('assigns args as properties and calls no action when the flag is off', () => {
-    const element = render({ label: 'x' }, CONTEXT) as HTMLElement & { label?: string };
+  it('assigns every arg as a property when the flag is off', () => {
+    const element = render({ label: 'x', 'my-change-event': vi.fn() }, CONTEXT) as HTMLElement & {
+      label?: string;
+      'my-change-event'?: unknown;
+    };
 
-    expect(element.localName).toBe('x-card');
+    expect(element.localName).toBe(X_CARD_TAG);
     expect(element.label).toBe('x');
-    expect(action).not.toHaveBeenCalled();
+    expect(element['my-change-event']).toBeTypeOf('function');
+    expect(element.hasAttribute('label')).toBe(false);
   });
 
-  it('creates action args from server argTypes and binds attributes', async () => {
+  it('returns a fragment that binds observed attributes and event args when the flag is on', () => {
     const handler = vi.fn();
-    vi.mocked(action).mockReturnValue(handler);
     vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
-    registerDocgenPayload({
-      id: 'x-card',
-      name: 'x-card',
-      path: './x-card.ts',
-      jsDocTags: {},
-      argTypes: {
-        label: {
-          name: 'label',
-          table: { category: ARG_TYPE_CATEGORIES.attributes },
-        },
-        onMyChange: {
-          name: 'onMyChange',
-          action: { name: 'my-change' },
-          table: { disable: true },
-        },
-      },
-    });
 
-    await loadComponentDocgen(CONTEXT);
-    const element = render({ label: 'x' }, CONTEXT) as HTMLElement;
+    const result = render({ label: 'x', 'my-change-event': handler }, CONTEXT);
+    expect(result).toBeInstanceOf(DocumentFragment);
+    const element = (result as DocumentFragment).firstElementChild as HTMLElement;
     const event = new CustomEvent('my-change');
     element.dispatchEvent(event);
 
-    expect(action).toHaveBeenCalledWith('onMyChange');
-    expect(handler).toHaveBeenCalledOnce();
-    expect(handler).toHaveBeenCalledWith(event);
     expect(element.getAttribute('label')).toBe('x');
-  });
-
-  it('does not create action args when actions are disabled', async () => {
-    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
-    registerDocgenPayload({
-      id: 'x-card',
-      name: 'x-card',
-      path: './x-card.ts',
-      jsDocTags: {},
-      argTypes: {
-        onMyChange: {
-          name: 'onMyChange',
-          action: { name: 'my-change' },
-          table: { disable: true },
-        },
-      },
-    });
-
-    await loadComponentDocgen(CONTEXT);
-    const element = render({}, {
-      ...CONTEXT,
-      parameters: { actions: { disable: true } },
-    } as StoryContextForRender<WebComponentsRenderer>) as HTMLElement;
-    const event = new CustomEvent('my-change');
-    element.dispatchEvent(event);
-
-    expect(action).not.toHaveBeenCalled();
+    expect(handler).toHaveBeenCalledWith(event);
   });
 });

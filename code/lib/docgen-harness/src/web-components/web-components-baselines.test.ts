@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/types';
 
@@ -29,6 +29,10 @@ if (BASELINE_PATH !== 'legacy') {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
+// The default render puts scoped part and state rules in a `<style>` before the element; the gates compare the element.
+const withoutLeadingStyle = (snippet: string): string =>
+  snippet.replace(/^<style>[\s\S]*?<\/style>/, '');
+
 // The unprefixed custom-elements.json is the analyzer's 1.0.0 capture; these are hand-written shapes recorded under a prefix.
 const MANIFEST_VARIANTS = ['v2', 'wca', 'unflattened'] as const;
 
@@ -39,6 +43,7 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
 
 afterEach(() => {
   setCustomElementsManifest(undefined);
+  vi.unstubAllGlobals();
 });
 
 describe('web-components legacy baselines', () => {
@@ -96,7 +101,6 @@ describe('web-components legacy baselines', () => {
       const context = {
         id: `${fixtureCase}--${exportName}`,
         component: tagName,
-        parameters: {},
       } as StoryContext<WebComponentsRenderer>;
       const storyRender = story.render ?? meta.render;
       const storyResult = storyRender ? storyRender(args) : defaultRender(args, context);
@@ -123,5 +127,48 @@ describe('web-components legacy baselines', () => {
       .map((exportName) => `snippet-${exportName}.snapshot`)
       .sort();
     expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    const defaultRenderStories = Object.entries(stories).filter(
+      ([, story]) => !story.render && !meta.render
+    );
+
+    for (const [exportName, story] of defaultRenderStories) {
+      const context = {
+        id: `${fixtureCase}--${exportName}`,
+        component: tagName,
+      } as StoryContext<WebComponentsRenderer>;
+      const snippet = renderStorySource(
+        defaultRender(
+          { ...meta.args, ...story.args },
+          context
+        ) as WebComponentsRenderer['storyResult']
+      );
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'web-components',
+        baseline: readFileSync(join(testDir, `snippet-${exportName}.snapshot`), 'utf8'),
+        candidate: withoutLeadingStyle(snippet),
+      });
+
+      const osaSnippetPath = join(testDir, `osa-snippet-${exportName}.snapshot`);
+      if (existsSync(osaSnippetPath)) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'web-components',
+          baseline: withoutLeadingStyle(readFileSync(osaSnippetPath, 'utf8')),
+          candidate: withoutLeadingStyle(snippet),
+        });
+      }
+      await expect(snippet).toMatchFileSnapshot(osaSnippetPath);
+    }
+
+    const osaSnippetFilesOnDisk = readdirSync(testDir)
+      .filter((file) => file.startsWith('osa-snippet-') && file.endsWith('.snapshot'))
+      .sort();
+    const expectedOsaSnippetFiles = defaultRenderStories
+      .map(([exportName]) => `osa-snippet-${exportName}.snapshot`)
+      .sort();
+    expect(osaSnippetFilesOnDisk).toEqual(expectedOsaSnippetFiles);
   });
 });

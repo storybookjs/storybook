@@ -1,3 +1,7 @@
+import type { IndexEntry } from 'storybook/internal/types';
+import { toId } from 'storybook/internal/csf';
+import { loadCsf } from 'storybook/internal/csf-tools';
+
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -5,12 +9,15 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { WebComponentsDocgenPayload } from '../../../../renderers/web-components/src/docgen/index.ts';
+import {
+  createDocgenProvider,
+  DEFAULT_TYPE_PROPERTY,
+  type WebComponentsDocgenPayload,
+} from '../../../../renderers/web-components/src/docgen/index.ts';
 import { isPublicField } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/map-arg-types.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
-import { entryForFixture, runProvider } from './osa-provider-test-utils.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
@@ -52,6 +59,32 @@ beforeEach(() => {
 afterEach(() => {
   vi.restoreAllMocks();
 });
+
+const entryForFixture = (fixtureCase: string, testDir: string): IndexEntry => {
+  const source = readFileSync(join(testDir, 'input.stories.ts'), 'utf8');
+  const csf = loadCsf(source, { makeTitle: (title) => title }).parse();
+  const [firstExport] = Object.keys(csf._stories);
+  if (!csf._meta?.title || !firstExport) {
+    throw new Error(`${fixtureCase}: input.stories.ts must declare a title and at least one story`);
+  }
+  return {
+    id: toId(fixtureCase, firstExport),
+    name: firstExport,
+    title: csf._meta.title,
+    type: 'story',
+    subtype: 'story',
+    importPath: './input.stories.ts',
+  };
+};
+
+const runProvider = async (testDir: string, entry: IndexEntry, manifestPath: string) => {
+  vi.spyOn(process, 'cwd').mockReturnValue(testDir);
+  const provider = createDocgenProvider({
+    manifestPaths: [manifestPath],
+    typeProperty: DEFAULT_TYPE_PROPERTY,
+  })(async () => undefined);
+  return provider({ entry });
+};
 
 const withoutArgTypes = (payload: WebComponentsDocgenPayload | undefined) => {
   if (!payload) {

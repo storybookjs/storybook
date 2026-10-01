@@ -765,13 +765,9 @@ export const getProjects = async (
 export const findFilesUp = (matchers: string[], cwd: string) => {
   const matchingFiles: string[] = [];
   for (const directory of walk.up(cwd, { last: getProjectRoot() })) {
-    matchingFiles.push(
-      ...globbySync(matchers, {
-        gitignore: true,
-        absolute: true,
-        cwd: directory,
-      })
-    );
+    // The matchers only name files directly inside `directory`, so `gitignore: true` would only add
+    // a read of every .gitignore below it, which takes seconds per call in a large monorepo.
+    matchingFiles.push(...globbySync(matchers, { absolute: true, cwd: directory }));
   }
 
   return matchingFiles;

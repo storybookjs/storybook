@@ -231,9 +231,6 @@ is not declared there gives a warning and has no effect.
 - **Evals passed, but the gate thread is still open.** The PR head changed
   during the run, so the result is stale. Or resolving the thread failed; the
   job summary says so. Run evals again, or resolve the thread by hand.
-- **The gate thread does not block the merge.** The target branch needs the
-  **Require conversation resolution before merging** branch protection
-  setting.
 - **No Slack message after a weekly run.** The `SLACK_AGENT_EVAL_WEBHOOK_URL`
   secret is missing or stale. The Slack step warns and continues.
 - **Vercel Sandbox authentication fails.** CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`,

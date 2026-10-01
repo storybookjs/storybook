@@ -11,6 +11,8 @@ Prerequisites:
 
 Run the Storybook dev server and every Storybook CLI command from the same working directory: the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
+If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
+
 For docs, props, or usage questions, use `npx storybook tools docs list` followed by `npx storybook tools docs show` before inspecting source files. Fall back to source inspection only when the documentation commands are unavailable or return no relevant documentation.
 
 Run `npx storybook skills stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.

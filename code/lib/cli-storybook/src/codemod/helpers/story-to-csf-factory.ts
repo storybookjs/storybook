@@ -6,7 +6,7 @@ import path from 'path';
 
 import type { FileInfo } from '../../automigrate/codemod.ts';
 import { addImportToTop, cleanupTypeImports } from './csf-factories-utils.ts';
-import { customArgsTypesReader, typedPreview } from './custom-args-type.ts';
+import { customArgsTypes } from './custom-args-type.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
 import { wrapArgsMocks } from './wrap-args-mocks.ts';
 
@@ -154,7 +154,7 @@ export async function storyToCsfFactory(
 
   const hasMeta = !!csf._meta;
 
-  const readCustomArgsTypes = customArgsTypesReader(programNode, csf._metaAnnotations.component);
+  const customArgs = customArgsTypes(programNode, csf._metaAnnotations.component);
   const metaArgsTypes: t.TSType[] = [];
   const storyArgsTypes: t.TSType[] = [];
 
@@ -172,13 +172,13 @@ export async function storyToCsfFactory(
     if (t.isIdentifier(id) && init) {
       // Remove type annotations e.g. A<B> in `const Story: A<B> = {};`
       if (id.typeAnnotation) {
-        storyArgsTypes.push(...readCustomArgsTypes(id.typeAnnotation));
+        storyArgsTypes.push(...customArgs.read(id.typeAnnotation));
         id.typeAnnotation = null;
       }
 
       // Remove type annotations e.g. A<B> in `const Story = {} satisfies A<B>;`
       if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
-        storyArgsTypes.push(...readCustomArgsTypes(init.typeAnnotation));
+        storyArgsTypes.push(...customArgs.read(init.typeAnnotation));
         init = init.expression;
       }
 
@@ -464,7 +464,7 @@ export async function storyToCsfFactory(
     const previewMeta = (input: t.ObjectExpression) =>
       t.callExpression(
         t.memberExpression(
-          typedPreview(sbConfigImportName, [...metaArgsTypes, ...storyArgsTypes]),
+          customArgs.typedPreview(sbConfigImportName, [...metaArgsTypes, ...storyArgsTypes]),
           t.identifier('meta')
         ),
         [input]
@@ -472,7 +472,7 @@ export async function storyToCsfFactory(
 
     let declaration = csf._metaPath.node.declaration;
     if (t.isTSSatisfiesExpression(declaration) || t.isTSAsExpression(declaration)) {
-      metaArgsTypes.push(...readCustomArgsTypes(declaration.typeAnnotation));
+      metaArgsTypes.push(...customArgs.read(declaration.typeAnnotation));
       declaration = declaration.expression;
     }
 
@@ -496,7 +496,7 @@ export async function storyToCsfFactory(
         const originalName = declaration.name;
 
         if (t.isIdentifier(binding.path.node.id)) {
-          metaArgsTypes.push(...readCustomArgsTypes(binding.path.node.id.typeAnnotation));
+          metaArgsTypes.push(...customArgs.read(binding.path.node.id.typeAnnotation));
         }
 
         // Always rename the meta variable to 'meta'
@@ -504,7 +504,7 @@ export async function storyToCsfFactory(
 
         let init = binding.path.node.init;
         if (t.isTSSatisfiesExpression(init) || t.isTSAsExpression(init)) {
-          metaArgsTypes.push(...readCustomArgsTypes(init.typeAnnotation));
+          metaArgsTypes.push(...customArgs.read(init.typeAnnotation));
           init = init.expression;
         }
         if (t.isObjectExpression(init)) {

@@ -137,7 +137,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
+      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs & T['args']>;
     } & MetaInput<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): WebComponentsMeta<
     MetaTypes<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>,

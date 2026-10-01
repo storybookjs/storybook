@@ -441,12 +441,18 @@ export async function storyToCsfFactory(
     return info.source;
   }
 
+  // A custom args type that every story has is written once, on the meta.
+  const sharedArgsTypes =
+    storyCallees.length === transformedStoryExports.size
+      ? customArgs.shared(storyCallees.map(({ argsTypes }) => argsTypes))
+      : [];
+
   // modify meta
   if (csf._metaPath) {
     const previewMeta = (input: t.ObjectExpression) =>
       t.callExpression(
         t.memberExpression(
-          customArgs.typed(sbConfigImportName, metaArgsTypes),
+          customArgs.typed(sbConfigImportName, [...metaArgsTypes, ...sharedArgsTypes]),
           t.identifier('meta')
         ),
         [input]
@@ -503,7 +509,10 @@ export async function storyToCsfFactory(
   }
 
   for (const { callee, argsTypes } of storyCallees) {
-    callee.object = customArgs.typed(metaVariableName, argsTypes, metaArgsTypes);
+    callee.object = customArgs.typed(metaVariableName, argsTypes, [
+      ...metaArgsTypes,
+      ...sharedArgsTypes,
+    ]);
   }
 
   if (previewImport) {

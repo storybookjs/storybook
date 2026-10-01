@@ -912,6 +912,7 @@ describe('stories codemod', () => {
         `);
 
         expect(transformed).toContain(metaType);
+        expect(transformed).toContain('export const Default = meta.story();');
         expect(transformed).toContain(storyType);
       });
 
@@ -991,7 +992,49 @@ describe('stories codemod', () => {
 
             export const A: Story = {};
           `)
-        ).resolves.toContain('meta.type<{ args: StoryArgs }>().story()');
+        ).resolves.toContain('preview.type<{ args: StoryArgs }>().meta(');
+      });
+
+      it('writes a custom args type that every story has once, on the meta', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            const meta: Meta<Page> = { component: Page };
+            export default meta;
+
+            type Story = StoryObj<Page & { content: string }>;
+
+            export const A: Story = { args: { content: 'a' } };
+            export const B: Story = { args: { content: 'b' } };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Page } from "./page.component";
+
+          const meta = preview
+            .type<{ args: { content: string } }>()
+            .meta({ component: Page });
+
+          export const A = meta.story({ args: { content: "a" } });
+          export const B = meta.story({ args: { content: "b" } });
+        `);
+      });
+
+      it('puts a union in parentheses when it is intersected', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button } from './Button';
+            import type { Small, Themed, Wide } from './types';
+
+            export default { component: Button } satisfies Meta<typeof Button>;
+
+            export const Default: StoryObj<typeof Button> = {};
+            export const Sized: StoryObj<Small | Wide> = {} satisfies StoryObj<Themed>;
+          `)
+        ).resolves.toContain('meta.type<{ args: (Small | Wide) & Themed }>().story()');
       });
 
       it('leaves out of the custom args type of a story what the meta already has', async () => {

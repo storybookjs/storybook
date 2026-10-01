@@ -70,16 +70,23 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
         : [member];
     });
 
+  const code = (type: t.TSType) => generate(type, { comments: false }).code;
+
   return {
     read(annotation: t.Node | null | undefined): t.TSType[] {
       const type = t.isTSTypeAnnotation(annotation) ? annotation.typeAnnotation : annotation;
       return customArgs(argsType(type)?.typeParameters?.params[0]);
     },
 
+    shared([first = [], ...rest]: t.TSType[][]): t.TSType[] {
+      return first.filter((type) =>
+        rest.every((types) => types.some((other) => code(other) === code(type)))
+      );
+    },
+
     // `preview.type<{ args: T }>()` for the types of the meta, or `meta.type<{ args: T }>()` for the
     // types of a story that the meta does not already have.
     typed(receiver: string, argsTypes: t.TSType[], metaArgsTypes: t.TSType[] = []): t.Expression {
-      const code = (type: t.TSType) => generate(type, { comments: false }).code;
       const metaCodes = new Set(metaArgsTypes.map(code));
       const distinctTypes = new Map<string, t.TSType>();
       for (const type of argsTypes) {
@@ -106,7 +113,11 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
 
       const types = [...distinctTypes.values()];
       args.typeAnnotation = t.tsTypeAnnotation(
-        types.length > 1 ? t.tsIntersectionType(types) : types[0]
+        types.length > 1
+          ? t.tsIntersectionType(
+              types.map((type) => (t.isTSUnionType(type) ? t.tsParenthesizedType(type) : type))
+            )
+          : types[0]
       );
 
       return typed;

@@ -92,7 +92,7 @@
     "zone.js": "^0.16.2"
   },
   "peerDependencies": {
-    "@analogjs/vite-plugin-angular": ">=2.0.0",
+    "@analogjs/vite-plugin-angular": ">=2.7.3",
     "@angular-devkit/architect": ">=0.2100.0 < 0.2300.0",
     "@angular-devkit/core": ">=21.0.0 < 23.0.0",
     "@angular/build": ">=21.0.0 < 23.0.0",

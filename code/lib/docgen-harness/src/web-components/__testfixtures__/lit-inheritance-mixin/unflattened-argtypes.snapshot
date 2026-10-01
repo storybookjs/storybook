@@ -1,6 +1,6 @@
 {
   "base-label": {
-    "description": "Label inherited from the base class.",
+    "description": undefined,
     "name": "base-label",
     "required": false,
     "table": {
@@ -17,7 +17,7 @@
     },
   },
   "baseLabel": {
-    "description": "Label inherited from the base class.",
+    "description": undefined,
     "name": "baseLabel",
     "required": false,
     "table": {
@@ -48,40 +48,6 @@
     },
     "type": {
       "name": "number",
-    },
-  },
-  "mixed-active": {
-    "description": "Whether the mixed-in state is active.",
-    "name": "mixed-active",
-    "required": false,
-    "table": {
-      "category": "attributes",
-      "defaultValue": {
-        "summary": "false",
-      },
-      "type": {
-        "summary": "boolean",
-      },
-    },
-    "type": {
-      "name": "boolean",
-    },
-  },
-  "mixedActive": {
-    "description": "Whether the mixed-in state is active.",
-    "name": "mixedActive",
-    "required": false,
-    "table": {
-      "category": "properties",
-      "defaultValue": {
-        "summary": "false",
-      },
-      "type": {
-        "summary": "boolean",
-      },
-    },
-    "type": {
-      "name": "boolean",
     },
   },
 }

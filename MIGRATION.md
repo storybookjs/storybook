@@ -733,6 +733,8 @@ The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenS
 You can also run it with `storybook automigrate docgen-server`.
 
 Server-side docgen replaces React's `typescript.reactDocgen` and Vue's `framework.options.docgen`.
+For React it reads props from TypeScript types and inline destructuring defaults.
+It does not read `propTypes` or `defaultProps`, so a component that declares its props only through `propTypes` shows no props, and defaults set through `defaultProps` are not shown.
 RDT options such as `propFilter` and a Vue docgen `tsconfig` have no server equivalent.
 Set `features.docgenServer: false` to keep builder extraction.
 For Angular-Vite, `framework.options.compodoc: false` does not disable the docgen server; use the feature flag to opt out.

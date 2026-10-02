@@ -440,8 +440,12 @@ describe('getStoryHrefs', () => {
       queryParams: { args: 'label:' },
     });
 
-    expect(managerHref).toContain('&args=label:');
-    expect(previewHref).toContain('&args=label:');
+    expect(new URL(managerHref, global.window.location.origin).searchParams.get('args')).toBe(
+      'label:'
+    );
+    expect(new URL(previewHref, global.window.location.origin).searchParams.get('args')).toBe(
+      'label:'
+    );
   });
 
   it('supports additional query params, including nested objects', () => {

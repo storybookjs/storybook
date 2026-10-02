@@ -212,7 +212,6 @@ export class UserPreferencesCommand {
       }
     }
 
-    // If user has asked for AI setup, we ensure test is included
     if (useAiForSetup) {
       features.add(Feature.AI);
       if (isTestFeatureAvailable) {

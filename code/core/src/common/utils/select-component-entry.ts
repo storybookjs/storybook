@@ -24,7 +24,7 @@ function isAttachedDocsEntry(
   );
 }
 
-function isEligibleStoryEntry(entry: IndexEntry): boolean {
+export function isEligibleStoryEntry(entry: IndexEntry): boolean {
   return entry.type === 'story' && entry.subtype === 'story';
 }
 

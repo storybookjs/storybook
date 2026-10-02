@@ -1,6 +1,7 @@
 import { dedent } from 'ts-dedent';
 import type { ProjectInfo } from '../../project-info.ts';
 
+import { isReactProject } from '../setup-utils/is-react-project.ts';
 import { getProjectOverview } from '../setup-utils/project-overview.ts';
 
 /**
@@ -63,7 +64,11 @@ function resolvePromptName(): PromptName {
 export async function getSetupPrompt(
   projectInfo: ProjectInfo
 ): Promise<{ content: string; name: PromptName }> {
-  const name = resolvePromptName();
+  const requestedName = resolvePromptName();
+  const name =
+    !isReactProject(projectInfo) && ['setup', 'pattern-copy-play'].includes(requestedName)
+      ? DEFAULT_PROMPT_NAME
+      : requestedName;
   const builder = CURRENTLY_USED_PROMPT[name] ?? (await FORMERLY_USED_PROMPTS[name]());
 
   return { content: builder(projectInfo), name };

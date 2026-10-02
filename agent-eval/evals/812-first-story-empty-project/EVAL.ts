@@ -2,14 +2,15 @@ import { describe, test } from 'vitest';
 import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
   isReviewEnabled,
 } from '#test-utils';
@@ -25,6 +26,10 @@ describe('writing the first Button stories in an empty Storybook', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('the review covers the new Button stories', () => {
@@ -45,24 +50,24 @@ describe('writing the first Button stories in an empty Storybook', () => {
       expectWorkflowCalls(['get-storybook-story-instructions']);
       expectPreviewStoriesWithFinalLinks({ covering: ['button'] });
     });
+
+    test('opens a story preview in the in-app browser', () => {
+      expectPreviewOpenedInBrowser();
+    });
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
       expectSkillInvoked('stories');
     });
 
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
       () => {
-        expectValidStorybookLaunchConfig();
+        expectDevServerLeftRunning();
       }
     );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
-      expectPreviewBrowserStarted();
-    });
   });
 });

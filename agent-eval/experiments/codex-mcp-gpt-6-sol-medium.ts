@@ -1,6 +1,11 @@
 import type { ExperimentConfig } from '@vercel/agent-eval';
 import { DEFAULT_EXPERIMENT_CONFIG, WORKFLOW_STORYBOOK_EVALS } from '../lib/experiment.ts';
-import { setupSandbox, writeCodexMcpConfig } from '../lib/templates.ts';
+import {
+  setupSandbox,
+  writeCodexAgentsMd,
+  writeCodexInAppBrowserMock,
+  writeCodexMcpConfig,
+} from '../lib/templates.ts';
 
 export default {
   ...DEFAULT_EXPERIMENT_CONFIG,
@@ -13,5 +18,7 @@ export default {
   setup: async (sandbox) => {
     await setupSandbox(sandbox, { agent: 'codex', integration: 'mcp' });
     await writeCodexMcpConfig(sandbox);
+    await writeCodexAgentsMd(sandbox);
+    await writeCodexInAppBrowserMock(sandbox);
   },
 } satisfies ExperimentConfig;

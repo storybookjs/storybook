@@ -1,6 +1,8 @@
 import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
+
+import { pluralFiles } from './failure-report.ts';
 import { dedent } from 'ts-dedent';
 
 import type { FixSummary } from '../types.ts';
@@ -49,9 +51,12 @@ function getGlossaryMessages(fixSummary: FixSummary, fixResults: Record<string, 
 export function logMigrationSummary({
   fixResults,
   fixSummary,
+  skippedFiles = 0,
 }: {
   fixResults: Record<string, FixStatus>;
   fixSummary: FixSummary;
+  /** Files that fixes which otherwise succeeded could not migrate. */
+  skippedFiles?: number;
 }) {
   const messages = [];
   messages.push(getGlossaryMessages(fixSummary, fixResults).join(messageDivider));
@@ -75,6 +80,10 @@ export function logMigrationSummary({
     logger.warn('No migrations were applicable to your project');
   } else if (hasFailures) {
     logger.error('Migration check ran with failures');
+  } else if (skippedFiles > 0) {
+    logger.warn(
+      `Migrations ran, but ${pluralFiles(skippedFiles)} could not be migrated automatically`
+    );
   } else {
     logger.step(CLI_COLORS.success('Migration check ran successfully'));
   }

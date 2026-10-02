@@ -143,6 +143,46 @@
       }
     },
     {
+      "files": ["lib/cli-storybook/src/automigrate/fixes/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "paths": [
+              {
+                "name": "node:fs",
+                "allowImportNames": ["existsSync"],
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "fs",
+                "allowImportNames": ["existsSync"],
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "node:fs/promises",
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "fs/promises",
+                "message": "Read and write project files through `files` or a `transform` hook, so the automigration runner can stage, check, and report them. See lib/cli-storybook/src/automigrate/README.md."
+              },
+              {
+                "name": "p-limit",
+                "message": "The automigration runner already visits files in one pass. See lib/cli-storybook/src/automigrate/README.md."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["lib/cli-storybook/src/automigrate/fixes/**/*.test.ts"],
+      "rules": {
+        "no-restricted-imports": "off"
+      }
+    },
+    {
       "files": ["**/*.compat.ts", "**/*.compat.tsx"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off"

@@ -28,7 +28,6 @@
     },
   },
   "label": {
-    "defaultValue": undefined,
     "description": "",
     "name": "label",
     "table": {

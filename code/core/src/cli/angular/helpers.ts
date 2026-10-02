@@ -16,8 +16,7 @@ import semver from 'semver';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
 
-/** Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares. */
-export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.5.2';
+export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.7.5';
 
 export const toDevkitVersion = (ngRange?: string | null): string | undefined => {
   if (!ngRange) {

@@ -70,7 +70,7 @@
     "vite": ">=8.0.0"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^2.5.2",
+    "@analogjs/vite-plugin-angular": "^2.7.5",
     "@angular-devkit/architect": "^0.2102.12",
     "@angular-devkit/build-angular": "^21.2.12",
     "@angular-devkit/core": "^21.2.12",
@@ -92,7 +92,7 @@
     "zone.js": "^0.16.2"
   },
   "peerDependencies": {
-    "@analogjs/vite-plugin-angular": ">=2.0.0",
+    "@analogjs/vite-plugin-angular": ">=2.7.5",
     "@angular-devkit/architect": ">=0.2100.0 < 0.2300.0",
     "@angular-devkit/core": ">=21.0.0 < 23.0.0",
     "@angular/build": ">=21.0.0 < 23.0.0",

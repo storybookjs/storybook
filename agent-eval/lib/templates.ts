@@ -143,6 +143,8 @@ export function isReviewEnabledFor(integration: EvalIntegration): boolean {
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
 const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
+// Captures the entries of the `addons` list, without the trailing comma.
+const STORYBOOK_ADDONS_PATTERN = /addons: \[([^\]]*?),?\s*\]/;
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
@@ -193,8 +195,8 @@ export async function setupSandbox(
 
   files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
 
-  if (options.integration !== 'mcp') {
-    removeMcpAddon(files);
+  if (options.integration === 'mcp') {
+    addMcpAddon(files);
   }
 
   if (REVIEW_ENABLED) {
@@ -374,39 +376,32 @@ export function enableExperimentalReview(files: Record<string, string>): void {
   }
 }
 
-// The templates and fixtures list the addon for the MCP experiments; the plugin skills have to
-// work in a project without it.
-export function removeMcpAddon(files: Record<string, string>): void {
-  for (const filePath of workspacePackageJsonPaths(files)) {
-    const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
-    if (!isRecord(packageJson)) {
-      continue;
-    }
-
-    for (const field of ['dependencies', 'devDependencies'] as const) {
-      const dependencies = packageJson[field];
-      if (isRecord(dependencies) && STORYBOOK_MCP_ADDON in dependencies) {
-        delete dependencies[STORYBOOK_MCP_ADDON];
-        files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
-      }
-    }
-  }
-
+// Only the MCP experiments get the addon: the plugin skills have to work in a project without it.
+export function addMcpAddon(files: Record<string, string>): void {
   for (const [filePath, content] of Object.entries(files)) {
     if (!STORYBOOK_MAIN_PATTERN.test(filePath)) {
       continue;
     }
 
-    const withoutAddon = content
-      .split('\n')
-      .filter((line) => line.trim() !== `'${STORYBOOK_MCP_ADDON}',`)
-      .join('\n');
-    if (withoutAddon.includes(STORYBOOK_MCP_ADDON)) {
-      throw new Error(
-        `Cannot remove ${STORYBOOK_MCP_ADDON}: ${filePath} does not list it on a line of its own`
-      );
+    if (!STORYBOOK_ADDONS_PATTERN.test(content)) {
+      throw new Error(`Cannot add ${STORYBOOK_MCP_ADDON}: ${filePath} has no "addons: [...]" list`);
     }
-    files[filePath] = withoutAddon;
+    files[filePath] = content.replace(
+      STORYBOOK_ADDONS_PATTERN,
+      (_, addons: string) =>
+        `addons: [${[addons.trim(), `'${STORYBOOK_MCP_ADDON}'`].filter(Boolean).join(', ')}]`
+    );
+
+    const manifestPath = path.posix.join(path.posix.dirname(filePath), '..', 'package.json');
+    const packageJson = parseJsonFile(manifestPath, files[manifestPath] ?? '', 'fixture');
+    if (!isRecord(packageJson)) {
+      throw new Error(`Expected ${manifestPath} to contain a JSON object`);
+    }
+    packageJson.devDependencies = {
+      ...(isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {}),
+      [STORYBOOK_MCP_ADDON]: WORKSPACE_SPEC,
+    };
+    files[manifestPath] = JSON.stringify(packageJson, null, 2).concat('\n');
   }
 }
 
@@ -713,6 +708,11 @@ function readPackedTarballs(packages: WorkspacePackage[]): Record<string, string
 export async function readTemplateCheckoutPackages(): Promise<WorkspacePackage[]> {
   const workspace = await readStorybookWorkspace();
   const packages = new Map<string, WorkspacePackage>();
+  // No manifest lists the addon: setup adds it for the MCP experiments.
+  const mcpAddon = workspace.get(STORYBOOK_MCP_ADDON);
+  if (mcpAddon) {
+    packages.set(mcpAddon.name, mcpAddon);
+  }
   for (const sourceDir of [TEMPLATES_DIR, EVALS_DIR]) {
     for await (const manifestPath of fs.glob('**/package.json', {
       cwd: sourceDir,

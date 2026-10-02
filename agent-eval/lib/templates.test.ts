@@ -6,11 +6,11 @@ import type { Sandbox } from '@vercel/agent-eval';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  addMcpAddon,
   enableExperimentalReview,
   pointStorybookAtCheckout,
   isReviewEnabledFor,
   readStorybookWorkspace,
-  removeMcpAddon,
   readTemplateCheckoutPackages,
   type StorybookWorkspace,
   type WorkspacePackage,
@@ -78,51 +78,8 @@ describe('enableExperimentalReview', () => {
   });
 });
 
-describe('removeMcpAddon', () => {
-  it('drops the addon from the manifests and the Storybook config, and nothing else', () => {
-    const files = {
-      'package.json': JSON.stringify({ devDependencies: { playwright: '1.56.1' } }),
-      'packages/ui/package.json': JSON.stringify({
-        devDependencies: { '@storybook/addon-mcp': 'workspace:*', storybook: 'workspace:*' },
-      }),
-      'packages/ui/.storybook/main.ts': [
-        'const config: StorybookConfig = {',
-        '  addons: [',
-        "    '@storybook/addon-docs',",
-        "    '@storybook/addon-mcp',",
-        '  ],',
-        '};',
-        '',
-      ].join('\n'),
-    };
-
-    removeMcpAddon(files);
-
-    expect(files['package.json']).toBe('{"devDependencies":{"playwright":"1.56.1"}}');
-    expect(JSON.parse(files['packages/ui/package.json'])).toEqual({
-      devDependencies: { storybook: 'workspace:*' },
-    });
-    expect(files['packages/ui/.storybook/main.ts']).toBe(
-      [
-        'const config: StorybookConfig = {',
-        '  addons: [',
-        "    '@storybook/addon-docs',",
-        '  ],',
-        '};',
-        '',
-      ].join('\n')
-    );
-  });
-
-  it('fails loudly when a main.ts registers the addon in a shape it cannot remove', () => {
-    const files = {
-      '.storybook/main.ts': "export default { addons: ['@storybook/addon-mcp'] };",
-    };
-
-    expect(() => removeMcpAddon(files)).toThrowError(/Cannot remove @storybook\/addon-mcp/);
-  });
-
-  it('can strip every template and fixture Storybook main.ts', () => {
+describe('addMcpAddon', () => {
+  it('registers the addon in every template and fixture Storybook', () => {
     const mainFiles = [
       ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'templates')),
       ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'evals')),
@@ -130,8 +87,17 @@ describe('removeMcpAddon', () => {
     expect(mainFiles.length).toBeGreaterThan(0);
 
     for (const mainFile of mainFiles) {
-      const files = { '.storybook/main.ts': readFileSync(mainFile, 'utf8') };
-      expect(() => removeMcpAddon(files), mainFile).not.toThrow();
+      const files = {
+        '.storybook/main.ts': readFileSync(mainFile, 'utf8'),
+        'package.json': readFileSync(join(mainFile, '..', '..', 'package.json'), 'utf8'),
+      };
+
+      addMcpAddon(files);
+
+      expect(files['.storybook/main.ts'], mainFile).toContain("'@storybook/addon-mcp'],");
+      expect(JSON.parse(files['package.json']).devDependencies, mainFile).toMatchObject({
+        '@storybook/addon-mcp': 'workspace:*',
+      });
     }
   });
 });
@@ -197,7 +163,12 @@ describe('readTemplateCheckoutPackages', () => {
     const packages = (await readTemplateCheckoutPackages()).map((pkg) => pkg.name);
 
     expect(packages).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/react-vite', '@storybook/builder-vite'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/react-vite',
+        '@storybook/builder-vite',
+        '@storybook/addon-mcp',
+      ])
     );
   });
 });

@@ -627,6 +627,156 @@ describe('enrichCsf', () => {
       `);
     });
 
+    it('JSDoc above csf factory meta', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+            title: 'Button'
+          });
+          export const Basic = meta.story({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          /** The most basic button */
+          const meta = config.meta({
+            title: 'Button'
+          });
+          export const Basic = meta.story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          title: 'Button',
+          parameters: {
+            docs: {
+              description: {
+                component: "The most basic button"
+              }
+            }
+          }
+        });
+        export const Basic = meta.story({});
+        Basic.input.parameters = {
+          ...Basic.input.parameters,
+          docs: {
+            ...Basic.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Basic.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
+
+    it('respects user component description in factory meta', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+            title: 'Button',
+            parameters: {
+              docs: {
+                description: {
+                  component: 'hahaha'
+                }
+              }
+            }
+          });
+          export const Basic = meta.story({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          /** The most basic button */
+          const meta = config.meta({
+            title: 'Button',
+            parameters: {
+              docs: {
+                description: {
+                  component: 'hahaha'
+                }
+              }
+            }
+          });
+          export const Basic = meta.story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          title: 'Button',
+          parameters: {
+            docs: {
+              description: {
+                component: 'hahaha'
+              }
+            }
+          }
+        });
+        export const Basic = meta.story({});
+        Basic.input.parameters = {
+          ...Basic.input.parameters,
+          docs: {
+            ...Basic.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Basic.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
+
+    it('skips factory meta without jsdoc', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+            title: 'Button'
+          });
+          export const Basic = meta.story({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({
+            title: 'Button'
+          });
+          export const Basic = meta.story({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          title: 'Button'
+        });
+        export const Basic = meta.story({});
+        Basic.input.parameters = {
+          ...Basic.input.parameters,
+          docs: {
+            ...Basic.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Basic.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
+
     it('preserves indentation', async () => {
       expect(
         await enrich(

@@ -69,20 +69,19 @@ const reviewCreateOutputSchema = v.object({
       'URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.'
     )
   ),
+  collectionCount: v.number(),
+  storyCount: v.number(),
+  instructions: v.pipe(
+    v.string(),
+    v.description('What to do now that the review is published. Follow it.')
+  ),
 });
 
-export type ReviewCreateOutput = {
-  reviewUrl: string;
-  collectionCount: number;
-  storyCount: number;
-};
+export type ReviewCreateOutput = v.InferOutput<typeof reviewCreateOutputSchema>;
 
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
   return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
-
-## After success
-Before your final response, open reviewUrl in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none. Then share the link.
 
 ## When to call
 - Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
@@ -113,23 +112,28 @@ function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetCtx): stri
   return `${describeUnknownStoryIds(unknownIds)}\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`${ref('stories.findByComponent')}\` (for components you've edited or want covered) or \`${ref('docs.list')}\` (to browse the index), then retry \`${ref('review.create')}\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
-/** Pure renderer for a published review. */
-function formatReviewApplied(
-  { reviewUrl, collectionCount, storyCount }: ReviewCreateOutput,
-  ctx: ToolsetCtx
-): string {
-  const storyNoun = storyCount === 1 ? 'y' : 'ies';
-  const summary = `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyNoun}.`;
+function storyNoun(storyCount: number): string {
+  return storyCount === 1 ? 'story' : 'stories';
+}
 
+function reviewInstructions(reviewUrl: string, storyCount: number, origin: string): string {
   // Agents were observed ending visual work at the tool result, so the result itself has to
   // carry both follow-ups: open the page, and surface the link in the final response.
   // The running instance is named by the same UI root the review link is built from — for a
   // sub-path-hosted Storybook the bare origin is not an address the agent can reach.
-  return `${summary} Storybook is already running at ${ctx.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+  return `Storybook is already running at ${origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
-2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyNoun} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`;
+2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} ${storyNoun(storyCount)} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`;
+}
+
+function formatReviewApplied({
+  collectionCount,
+  storyCount,
+  instructions,
+}: ReviewCreateOutput): string {
+  return `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} ${storyNoun(storyCount)}. ${instructions}`;
 }
 
 export const reviewToolset = defineToolset({
@@ -171,16 +175,18 @@ export const reviewToolset = defineToolset({
           0
         );
 
+        const reviewUrl = `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
         const data: ReviewCreateOutput = {
-          reviewUrl: `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`,
+          reviewUrl,
           collectionCount,
           storyCount,
+          instructions: reviewInstructions(reviewUrl, storyCount, ctx.origin),
         };
 
         return {
           ok: true,
           data,
-          markdown: formatReviewApplied(data, ctx),
+          markdown: formatReviewApplied(data),
           telemetry: {
             payload: { collectionCount, storyCount, changedFileCount: review.changedFiles.length },
           },

@@ -45,3 +45,54 @@ describe('focus instrumentation', () => {
     expect(detachedDocument.activeElement).not.toBe(button);
   });
 });
+
+describe('lazy userEvent initialization', () => {
+  it('defines userEvent as a non-enumerable getter property on context', async () => {
+    const context = {
+      canvasElement: document.body,
+      parameters: {},
+    } as any;
+
+    await enhanceContext(context);
+
+    const descriptor = Object.getOwnPropertyDescriptor(context, 'userEvent');
+    expect(descriptor).toBeDefined();
+    expect(descriptor?.enumerable).toBe(false);
+    expect(typeof descriptor?.get).toBe('function');
+    expect(typeof descriptor?.set).toBe('function');
+
+    // Object spread (e.g. React renderer <Story {...storyContext} />) must not invoke the getter or include userEvent
+    const spread = { ...context };
+    expect(spread.userEvent).toBeUndefined();
+  });
+
+  it('instantiates userEvent and caches the instance upon first access', async () => {
+    const context = {
+      canvasElement: document.body,
+      parameters: {},
+    } as any;
+
+    await enhanceContext(context);
+
+    const userEvent = context.userEvent;
+    expect(userEvent).toBeDefined();
+    expect(typeof userEvent.click).toBe('function');
+
+    const userEventSecond = context.userEvent;
+    expect(userEventSecond).toBe(userEvent);
+  });
+
+  it('allows setting userEvent manually', async () => {
+    const context = {
+      canvasElement: document.body,
+      parameters: {},
+    } as any;
+
+    await enhanceContext(context);
+
+    const customUserEvent = { click: vi.fn() };
+    context.userEvent = customUserEvent;
+
+    expect(context.userEvent).toBe(customUserEvent);
+  });
+});

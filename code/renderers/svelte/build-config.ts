@@ -45,6 +45,10 @@ const config: BuildEntries = {
         exportEntries: ['./internal/svelte-csf/vite-plugins'],
         entryPoint: './src/svelte-csf/compiler/plugins.ts',
       },
+      {
+        exportEntries: ['./internal/svelte-csf/addon-check'],
+        entryPoint: './src/svelte-csf/addon-check.ts',
+      },
     ],
   },
   extraOutputs: {

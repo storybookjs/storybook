@@ -36,6 +36,11 @@
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
+    "./internal/svelte-csf/addon-check": {
+      "types": "./dist/svelte-csf/addon-check.d.ts",
+      "code": "./src/svelte-csf/addon-check.ts",
+      "default": "./dist/svelte-csf/addon-check.js"
+    },
     "./internal/svelte-csf/component-helpers": {
       "types": "./dist/svelte-csf/runtime/component-helpers.d.ts",
       "code": "./src/svelte-csf/runtime/component-helpers.ts",

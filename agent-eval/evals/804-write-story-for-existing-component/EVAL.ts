@@ -1,14 +1,15 @@
 import { describe, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
   isReviewEnabled,
 } from '#test-utils';
@@ -26,6 +27,10 @@ describe('writing stories for an existing AlertBanner', () => {
       expectDisplayReviewForVisualChange();
     });
 
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
+    });
+
     test('the review covers the new AlertBanner stories', () => {
       expectStoryIdsInDisplayReview(['alertbanner']);
     });
@@ -40,24 +45,24 @@ describe('writing stories for an existing AlertBanner', () => {
       expectWorkflowCalls(['get-storybook-story-instructions']);
       expectPreviewStoriesWithFinalLinks({ covering: ['alertbanner'] });
     });
+
+    test('opens a story preview in the in-app browser', () => {
+      expectPreviewOpenedInBrowser();
+    });
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
     test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
       expectSkillInvoked('stories');
     });
 
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
       () => {
-        expectValidStorybookLaunchConfig();
+        expectDevServerLeftRunning();
       }
     );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
-      expectPreviewBrowserStarted();
-    });
   });
 });

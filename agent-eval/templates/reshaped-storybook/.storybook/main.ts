@@ -10,6 +10,7 @@ const config: StorybookConfig = {
     '@storybook/addon-mcp',
   ],
   framework: '@storybook/react-vite',
+  storySorts: [{ order: ['Summary', 'Conversation', 'Build', 'Typecheck', 'Lint', 'Source'] }],
   refs: {
     reshaped: {
       title: 'Reshaped',

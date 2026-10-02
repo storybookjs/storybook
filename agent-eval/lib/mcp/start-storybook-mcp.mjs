@@ -10,6 +10,8 @@ const parsedTimeoutMs = Number(process.env.STORYBOOK_MCP_TIMEOUT_MS);
 const timeoutMs =
   Number.isFinite(parsedTimeoutMs) && parsedTimeoutMs > 0 ? parsedTimeoutMs : 60_000;
 
+await assertCheckoutPackagesInstalled();
+
 if (await isReady()) {
   await dumpMcpDebug();
   process.exit(0);
@@ -83,6 +85,41 @@ process.stderr.write(
     '\n'
 );
 process.exitCode = 1;
+
+// The checkout carries the same version as a published release, so a package the harness packed
+// that npm still resolved from the registry installs without any error. The harness writes
+// local-packages/packages.json only when it installs Storybook from the checkout.
+async function assertCheckoutPackagesInstalled() {
+  let checkoutPackages;
+  try {
+    checkoutPackages = new Set(JSON.parse(await readFile('local-packages/packages.json', 'utf8')));
+  } catch {
+    return;
+  }
+  const lockfile = JSON.parse(await readFile('package-lock.json', 'utf8'));
+
+  const fromRegistry = Object.entries(lockfile.packages)
+    .filter(([location, entry]) => {
+      const nameStart = location.lastIndexOf('node_modules/');
+      return (
+        nameStart !== -1 &&
+        checkoutPackages.has(location.slice(nameStart + 'node_modules/'.length)) &&
+        !entry.resolved?.startsWith('file:')
+      );
+    })
+    .map(([location, entry]) => location + ' (' + entry.resolved + ')');
+
+  if (fromRegistry.length > 0) {
+    // Wait for the write to flush: process.exit() can truncate a pending pipe write.
+    await new Promise((resolve) =>
+      process.stderr.write(
+        'Installed from the registry instead of the checkout:\n' + fromRegistry.join('\n') + '\n',
+        resolve
+      )
+    );
+    process.exit(1);
+  }
+}
 
 async function isReady() {
   try {

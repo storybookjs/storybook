@@ -77,5 +77,4 @@ jobs:
         run: cd code && yarn exec playwright install chromium --with-deps
 
       - name: test
-        # Reserve CPU for browser tests and TypeScript subprocesses.
-        run: yarn test --maxWorkers=2
+        run: yarn test --project '!agent-eval'

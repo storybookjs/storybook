@@ -25,6 +25,7 @@
     "src/web-components/web-components-baselines.test.ts",
     "src/web-components/web-components-render.test.ts",
     "src/web-components/web-components-legacy-gaps.test.ts",
+    "src/web-components/__testfixtures__/stencil-props/stencil-props.tsx",
     "src/svelte/__testfixtures__/runes-basic-props/input.stories.ts",
     "src/svelte/__testfixtures__/runes-callbacks/input.stories.ts",
     "src/svelte/__testfixtures__/runes-component-props-indexed/input.stories.ts"

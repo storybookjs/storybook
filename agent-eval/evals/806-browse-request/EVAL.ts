@@ -1,9 +1,10 @@
 import {
   expectDisplayReviewForBrowseRequest,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectStoryIdsInDisplayReview,
-  expectValidStorybookLaunchConfig,
   getEvalContext,
   isReviewEnabled,
 } from '#test-utils';
@@ -15,6 +16,10 @@ describe('browsing existing ReviewCard Storybook states', () => {
   describe.runIf(review)('when review is enabled', () => {
     test('publishes a display review for a browse request without changed files', () => {
       expectDisplayReviewForBrowseRequest();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     // The prompt asks for ALL ReviewCard states; the fixture is untouched by a
@@ -32,18 +37,18 @@ describe('browsing existing ReviewCard Storybook states', () => {
     test('previews the existing ReviewCard stories for a browse request', () => {
       expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
     });
+
+    test('opens a story preview in the in-app browser', () => {
+      expectPreviewOpenedInBrowser();
+    });
   });
 
   describe('depending on the current agent and integration', () => {
-    const { agent, integration } = getEvalContext();
+    const { integration } = getEvalContext();
 
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
-      () => expectValidStorybookLaunchConfig()
-    );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
-      expectPreviewBrowserStarted()
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
     );
   });
 });

@@ -1,23 +1,10 @@
-import { readFileSync } from 'node:fs';
+import { loadCsf } from 'storybook/internal/csf-tools';
 
-import { beforeEach, describe, expect, it, vi } from 'vitest';
-
-import { fs as memfs, vol } from 'memfs';
+import { describe, expect, it } from 'vitest';
 
 import { resolveStoryComponent } from './resolve-component.ts';
 
-vi.mock('node:fs', { spy: true });
-
-beforeEach(() => {
-  vol.reset();
-  vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as typeof readFileSync);
-});
-
-const STORY_PATH = '/workspace/input.stories.ts';
-
-const givenStory = (source: string) => {
-  vol.fromNestedJSON({ [STORY_PATH]: source });
-};
+const csf = (source: string) => loadCsf(source, { makeTitle: () => 'Fixture' }).parse();
 
 describe('resolveStoryComponent', () => {
   it.each([
@@ -57,9 +44,7 @@ describe('resolveStoryComponent', () => {
       { tag: 'x-csf4' },
     ],
   ])('%s', (_name, source, expected) => {
-    givenStory(source);
-
-    expect(resolveStoryComponent(STORY_PATH)).toEqual(expected);
+    expect(resolveStoryComponent(csf(source))).toEqual(expected);
   });
 
   it.each([
@@ -84,14 +69,12 @@ describe('resolveStoryComponent', () => {
       { reason: 'component-not-a-tag', expression: 'Button as any' },
     ],
   ])('%s', (_name, source, expected) => {
-    givenStory(source);
-
-    expect(resolveStoryComponent(STORY_PATH)).toEqual(expected);
+    expect(resolveStoryComponent(csf(source))).toEqual(expected);
   });
 
   it('reports no component for missing meta.component', () => {
-    givenStory(`export default { title: 'Fixture' };`);
-
-    expect(resolveStoryComponent(STORY_PATH)).toEqual({ reason: 'no-meta-component' });
+    expect(resolveStoryComponent(csf(`export default { title: 'Fixture' };`))).toEqual({
+      reason: 'no-meta-component',
+    });
   });
 });

@@ -70,8 +70,13 @@ export async function transformIframeHtml(html: string, options: Options) {
   return transformedHtml;
 }
 
-// Hashes the injected values instead of the final HTML, which also holds the hashed chunk file names
+// Hashes the injected values instead of the final HTML, which also holds the hashed chunk file names.
+// Nothing in the preview reads the story specifiers, and the module graph already holds the story files.
 export async function getPreviewConfigHash(options: Options) {
-  const replacements = JSON.stringify(await getIframeHtmlReplacements(options));
-  return createHash('sha256').update(createProjectRootRemover()(replacements)).digest('hex');
+  const replacements = (await getIframeHtmlReplacements(options)).filter(
+    ([placeholder]) => placeholder !== `'[STORIES HERE]'`
+  );
+  return createHash('sha256')
+    .update(createProjectRootRemover()(JSON.stringify(replacements)))
+    .digest('hex');
 }

@@ -45,10 +45,6 @@ const config: BuildEntries = {
         exportEntries: ['./internal/svelte-csf/transform'],
         entryPoint: './src/svelte-csf/compiler/transform.ts',
       },
-      {
-        exportEntries: ['./internal/svelte-csf/addon-check'],
-        entryPoint: './src/svelte-csf/addon-check.ts',
-      },
     ],
   },
   extraOutputs: {

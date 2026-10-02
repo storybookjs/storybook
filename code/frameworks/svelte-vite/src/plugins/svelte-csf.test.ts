@@ -9,19 +9,23 @@ import { svelteCsf } from './svelte-csf.ts';
 
 describe(svelteCsf.name, () => {
   it('resolves the runtime stories import to its file, and leaves other imports alone', async () => {
-    const plugin = await svelteCsf();
-    const resolveId = plugin.resolveId as (source: string) => string | undefined;
+    const { resolveId } = await svelteCsf();
+    const { filter, handler } = resolveId as { filter: { id: RegExp }; handler: () => string };
 
-    expect(resolveId(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE)).toBe(svelteCsfRuntimeStoriesPath);
-    expect(resolveId('./Button.svelte')).toBeUndefined();
+    expect(filter.id.test(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE)).toBe(true);
+    expect(filter.id.test(`${SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE}.js`)).toBe(false);
+    expect(filter.id.test('./Button.svelte')).toBe(false);
+    expect(handler()).toBe(svelteCsfRuntimeStoriesPath);
   });
 
   it('only transforms stories files', async () => {
-    const plugin = await svelteCsf();
-    const transform = plugin.transform as (code: string, id: string) => Promise<unknown>;
+    const { transform } = await svelteCsf();
+    const { filter } = transform as { filter: { id: RegExp } };
 
-    await expect(
-      transform('export default {}', '/project/src/Button.svelte')
-    ).resolves.toBeUndefined();
+    expect(filter.id.test('/project/src/Button.stories.svelte')).toBe(true);
+    expect(filter.id.test('/project/src/Button.svelte')).toBe(false);
+    expect(filter.id.test('/project/src/Button.stories.svelte?svelte&type=style&lang.css')).toBe(
+      false
+    );
   });
 });

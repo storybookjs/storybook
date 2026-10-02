@@ -80,7 +80,7 @@ export function getEvalContext(): EvalContext {
   return { agent, integration, review: agentContext.review === true };
 }
 
-// Review mode of this run. Plugin runs are always review-on — the addon
+// Review mode of this run. Plugin runs are always review-on — Storybook
 // enables review by default for the `storybook tools` CLI channel — while MCP
 // runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
 // the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts

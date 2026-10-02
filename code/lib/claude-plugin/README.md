@@ -4,7 +4,7 @@ You can use Storybook's plugin in Claude Code or Claude Desktop to connect agent
 
 ## Requirements
 
-- Storybook 10.6 or later (until 10.6 ships, the `next` prerelease or any canary build qualifies)
+- Storybook 10.6 or later
 - [Claude Code](https://claude.ai/code) or [Claude Desktop](https://claude.ai/desktop)
 
 ## Installation
@@ -106,7 +106,7 @@ These skills are available to agents that have the Storybook plugin installed. T
 
 ### `init`
 
-Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), installs [`@storybook/addon-mcp`](../../addons/mcp), then runs the [setup](#setup) skill.
+Initializes Storybook in your project (i.e. runs [`npm create storybook@latest`](https://storybook.js.org/docs/get-started/install)), then runs the [setup](#setup) skill.
 
 ### `setup`
 

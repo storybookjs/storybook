@@ -6,6 +6,7 @@ import type { Sandbox } from '@vercel/agent-eval';
 import { beforeAll, describe, expect, it } from 'vitest';
 
 import {
+  addMcpAddon,
   enableExperimentalReview,
   pointStorybookAtCheckout,
   isReviewEnabledFor,
@@ -19,7 +20,7 @@ import {
 const AGENT_EVAL_ROOT = join(fileURLToPath(import.meta.url), '..', '..');
 
 // EVAL_REVIEW is unset in unit-test runs, so this asserts the default gate:
-// plugin sandboxes are always review-on (the addon enables review for the
+// plugin sandboxes are always review-on (Storybook enables review for the
 // `storybook tools` CLI channel by default), MCP sandboxes review-off.
 describe('isReviewEnabledFor', () => {
   it('is always on for the plugin integration', () => {
@@ -73,6 +74,30 @@ describe('enableExperimentalReview', () => {
       const files = { '.storybook/main.ts': readFileSync(mainFile, 'utf8') };
       expect(() => enableExperimentalReview(files), mainFile).not.toThrow();
       expect(files['.storybook/main.ts'], mainFile).toContain('experimentalReview: true');
+    }
+  });
+});
+
+describe('addMcpAddon', () => {
+  it('registers the addon in every template and fixture Storybook', () => {
+    const mainFiles = [
+      ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'templates')),
+      ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'evals')),
+    ];
+    expect(mainFiles.length).toBeGreaterThan(0);
+
+    for (const mainFile of mainFiles) {
+      const files = {
+        '.storybook/main.ts': readFileSync(mainFile, 'utf8'),
+        'package.json': readFileSync(join(mainFile, '..', '..', 'package.json'), 'utf8'),
+      };
+
+      addMcpAddon(files);
+
+      expect(files['.storybook/main.ts'], mainFile).toContain("'@storybook/addon-mcp'],");
+      expect(JSON.parse(files['package.json']).devDependencies, mainFile).toMatchObject({
+        '@storybook/addon-mcp': 'workspace:*',
+      });
     }
   });
 });
@@ -138,7 +163,12 @@ describe('readTemplateCheckoutPackages', () => {
     const packages = (await readTemplateCheckoutPackages()).map((pkg) => pkg.name);
 
     expect(packages).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/react-vite', '@storybook/builder-vite'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/react-vite',
+        '@storybook/builder-vite',
+        '@storybook/addon-mcp',
+      ])
     );
   });
 });

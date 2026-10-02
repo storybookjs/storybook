@@ -628,7 +628,6 @@ describe('angular source decorator', () => {
             options: ['Normal', 'High'],
             type: 'radio',
           },
-          defaultValue: undefined,
           table: {
             category: 'inputs',
           },
@@ -658,7 +657,6 @@ describe('angular source decorator', () => {
             options: ['Normal', 'High'],
             type: 'radio',
           },
-          defaultValue: undefined,
           table: {
             category: 'inputs',
           },

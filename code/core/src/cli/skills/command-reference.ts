@@ -3,8 +3,6 @@ import { escapeRegExp } from 'es-toolkit/string';
 import { getToolName } from '../../shared/open-service/toolset-names.ts';
 import { renderMethodHelpFromCatalog } from '../tools/help.ts';
 import type { ToolsetCatalogEntry, ToolsetCatalogMethod } from '../tools/sdk/types.ts';
-import { getSkillRef } from './content/skill-refs.ts';
-import type { SkillId } from './content/skills.ts';
 
 const toCommand = getToolName({ transport: 'cli' });
 
@@ -29,35 +27,16 @@ function findReferredTools(
   );
 }
 
-// A tool that `describedIn` also names is left to that skill's reference and replaced by a pointer
-// to it, so a session that reads both skills gets each tool once.
-export function renderCommandReference(
-  skillText: string,
-  toolsets: ToolsetCatalogEntry[],
-  describedIn?: { id: SkillId; text: string }
-): string {
+export function renderCommandReference(skillText: string, toolsets: ToolsetCatalogEntry[]): string {
   const referred = findReferredTools(skillText, toolsets);
   if (referred.length === 0) {
     return '';
   }
-  const elsewhere = new Set(
-    describedIn ? findReferredTools(describedIn.text, toolsets).map((method) => method.ref) : []
-  );
-  const described = referred.filter((method) => !elsewhere.has(method.ref));
-
-  const sections = ['## Command reference'];
-  if (described.length > 0) {
-    sections.push(
-      INTRO,
-      ...described.map((method) =>
-        [`${FENCE}text`, renderMethodHelpFromCatalog(method), FENCE].join('\n')
-      )
-    );
-  }
-  if (describedIn && described.length < referred.length) {
-    sections.push(
-      `${described.length > 0 ? 'The other commands' : 'The commands'} named above are described in the command reference at the end of \`${getSkillRef('cli')(describedIn.id)}\`; \`<command> --help\` prints the same for one command.`
-    );
-  }
-  return sections.join('\n\n');
+  return [
+    '# Command reference',
+    INTRO,
+    ...referred.map((method) =>
+      [`${FENCE}text`, renderMethodHelpFromCatalog(method), FENCE].join('\n')
+    ),
+  ].join('\n\n');
 }

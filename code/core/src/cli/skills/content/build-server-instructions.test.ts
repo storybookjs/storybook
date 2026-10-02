@@ -297,6 +297,26 @@ describe('buildServerInstructions', () => {
       expect(instructions).not.toContain('get-storybook-story-instructions');
     });
 
+    it.each([true, false])(
+      'points at the story instructions in the same document when they are inline (review %s)',
+      (reviewEnabled) => {
+        const instructions = buildServerInstructions({
+          transport: 'cli',
+          devEnabled: true,
+          testSupported: false,
+          docsEnabled: false,
+          reviewEnabled,
+          storyInstructionsInline: true,
+        });
+
+        expect(instructions).toContain(
+          '- Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.'
+        );
+        expect(instructions).not.toContain('npx storybook skills write-story');
+        expect(instructions).not.toContain('{{');
+      }
+    );
+
     it('renders review, preview, and discovery references as CLI commands', () => {
       const instructions = buildServerInstructions({
         transport: 'cli',

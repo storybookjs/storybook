@@ -101,7 +101,9 @@ export async function runSkillsCommand(
     return { output: '', errorOutput: intent.message, exitCode: 1 };
   }
   try {
-    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
+    // `stories` carries the `write-story` text, so `--all` does not print it a second time.
+    const ids =
+      intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
     const docs = await serveSkills(ids, resolveStorybookConfigDir(input.target), deps);
     return {
       output: docs.join('\n\n---\n\n'),
@@ -193,12 +195,7 @@ function withCommandReference(
   toolsets: ToolsetCatalogEntry[]
 ): string {
   const text = assemble(id, inputs);
-  // `stories` sends the agent on to `write-story`, so `stories` describes a tool that both name.
-  const describedIn =
-    id === 'write-story'
-      ? { id: 'stories' as const, text: assemble('stories', inputs) }
-      : undefined;
-  const reference = renderCommandReference(text, toolsets, describedIn);
+  const reference = renderCommandReference(text, toolsets);
   return reference ? `${text.trimEnd()}\n\n${reference}` : text;
 }
 
@@ -207,7 +204,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   // metadata path serves the plugins today — not the direct-MCP `reviewEnabled` gate.
   const reviewEnabled = inputs.reviewEnabledForCli;
   if (id === 'stories') {
-    return buildServerInstructions({
+    const workflow = buildServerInstructions({
       transport: 'cli',
       devEnabled: true,
       testSupported: inputs.testSupported,
@@ -215,7 +212,9 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
       changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
       reviewEnabled,
+      storyInstructionsInline: true,
     });
+    return `${workflow}\n\n${assemble('write-story', inputs)}`;
   }
   return buildStoryInstructions({
     transport: 'cli',

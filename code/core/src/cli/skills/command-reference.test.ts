@@ -37,7 +37,7 @@ const docs = toCatalogEntry(
   }),
   { transport: 'cli', getService: () => ({}) as never }
 );
-const [list, show, showStory] = docs.methods;
+const [, show, showStory] = docs.methods;
 
 describe('renderCommandReference', () => {
   it('describes each tool the text names with its `--help` output', () => {
@@ -47,7 +47,7 @@ describe('renderCommandReference', () => {
     );
 
     expect(reference).toMatchInlineSnapshot(`
-      "## Command reference
+      "# Command reference
 
       The \`npx storybook tools\` commands named above, each exactly as its \`--help\` prints it, so there is no need to run \`--help\` first. Pass arguments as \`--key value\` flags, with array and object values as JSON (\`--key '[...]'\`), or all of them at once with \`--input '<json object>'\`. Add \`--json\` to print the data listed under Output instead of markdown.
 
@@ -87,32 +87,5 @@ describe('renderCommandReference', () => {
 
   it('is empty when the text names no tool', () => {
     expect(renderCommandReference('Run `npx storybook tools --help`.', [docs])).toBe('');
-  });
-
-  it('points at the other skill for the tools that skill names, and describes the rest', () => {
-    const reference = renderCommandReference(
-      '`npx storybook tools docs list` then `npx storybook tools docs show`',
-      [docs],
-      { id: 'stories', text: 'Call **npx storybook tools docs list** first.' }
-    );
-
-    expect(reference).not.toContain(renderMethodHelpFromCatalog(list));
-    expect(reference).toContain(renderMethodHelpFromCatalog(show));
-    expect(reference).toMatch(
-      /The other commands named above are described in the command reference at the end of `npx storybook skills stories`; `<command> --help` prints the same for one command\.$/
-    );
-  });
-
-  it('is only the pointer when the other skill names every tool', () => {
-    expect(
-      renderCommandReference('`npx storybook tools docs list`', [docs], {
-        id: 'stories',
-        text: 'Call **npx storybook tools docs list** first.',
-      })
-    ).toMatchInlineSnapshot(`
-      "## Command reference
-
-      The commands named above are described in the command reference at the end of \`npx storybook skills stories\`; \`<command> --help\` prints the same for one command."
-    `);
   });
 });

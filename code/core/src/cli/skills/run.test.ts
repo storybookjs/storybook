@@ -146,10 +146,22 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('npx storybook tools stories changed');
   });
 
+  it('stories carries the write-story text instead of sending the agent to it', async () => {
+    const d = deps();
+    const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+    const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+
+    const [storyInstructions] = writeStory.output.split('# Command reference');
+    expect(storyInstructions).toMatch(/^# Writing User Interfaces/);
+    expect(stories.output).toContain(storyInstructions);
+    expect(stories.output).toContain('read **Writing User Interfaces** below');
+    expect(stories.output).not.toContain('npx storybook skills write-story');
+  });
+
   it('stories ends with a command reference of exactly the tools it names', async () => {
     const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, deps());
 
-    expect(result.output.split('## Command reference')).toHaveLength(2);
+    expect(result.output.split('# Command reference')).toHaveLength(2);
     expect(describedTools(result.output)).toEqual([
       'stories preview',
       'stories changed',
@@ -163,6 +175,7 @@ describe('runSkillsCommand', () => {
     const d = deps();
     d.resolveSkillInputs.mockResolvedValue({
       ...(await d.resolveSkillInputs()),
+      changeDetectionEnabled: false,
       reviewEnabledForCli: false,
       testSupported: false,
     });
@@ -182,34 +195,22 @@ describe('runSkillsCommand', () => {
     expect(describedTools(result.output)).toEqual(['stories preview', 'stories changed']);
   });
 
-  it('write-story leaves the tools stories describes to the stories reference', async () => {
+  it('write-story ends with a command reference of the tools it names', async () => {
     const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, deps());
 
-    expect(describedTools(result.output)).toEqual([]);
-    expect(result.output).toMatch(
-      /## Command reference\n\nThe commands named above are described in the command reference at the end of `npx storybook skills stories`; `<command> --help` prints the same for one command\.$/
-    );
+    expect(describedTools(result.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
   });
 
-  it('write-story describes the tools only it names', async () => {
-    const d = deps();
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      reviewEnabledForCli: false,
-    });
-
-    const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
-
-    expect(describedTools(result.output)).toEqual(['stories changed']);
-    expect(result.output).toContain('The other commands named above are described');
-  });
-
-  it('--all describes each tool once, in the stories skill', async () => {
+  it('--all prints the write-story text and each tool once', async () => {
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
 
-    expect(result.output).toContain(
-      'The commands named above are described in the command reference at the end of `npx storybook skills stories`'
-    );
+    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
     expect(describedTools(result.output)).toEqual([
       'stories preview',
       'stories changed',

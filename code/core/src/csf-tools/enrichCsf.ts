@@ -16,11 +16,7 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
-  const isCsfFactory =
-    t.isCallExpression(storyExport) &&
-    t.isMemberExpression(storyExport.callee) &&
-    t.isIdentifier(storyExport.callee.object) &&
-    storyExport.callee.object.name === 'meta';
+  const isCsfFactory = csfSource._metaIsFactory;
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);

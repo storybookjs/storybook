@@ -112,6 +112,7 @@ Reproduce it locally against a real PR with `DANGER_GITHUB_API_TOKEN="$(gh auth 
 
 - Use `yarn storybook:vitest` to run Storybook story tests (the primary test path for components)
 - Use `yarn test` for unit tests of utilities, hooks, and non-React modules
+- Fork CI compiles with `--no-link` for declaration contract tests and limits unit tests to two workers.
 - Prefer focused unit-test runs during iteration — the full suite is large: `yarn test <pattern>` (e.g. `yarn test csf-tools`)
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage

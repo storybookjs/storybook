@@ -25,7 +25,8 @@ vi.mock('@storybook/global', async (importOriginal) => {
   return { ...mod, global };
 });
 
-afterEach(() => {
+afterEach(async () => {
+  await vi.dynamicImportSettled();
   cleanup();
 });
 

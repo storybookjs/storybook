@@ -173,6 +173,38 @@ const totals = evals
   );
 const playgroundUrl = process.env.PLAYGROUND_URL;
 const runUrl = process.env.RUN_URL;
+const format = process.env.FORMAT === 'slack' ? 'slack' : 'markdown';
+
+if (format === 'slack') {
+  const evalOutcome = process.env.EVAL_OUTCOME || 'unknown';
+  const allPassed = evals.length > 0 && passedEvals.length === evals.length;
+  const branch = process.env.GITHUB_REF_NAME || 'next';
+  const headline =
+    evalOutcome === 'success' && allPassed
+      ? `:white_check_mark: Agent eval on \`${branch}\` passed`
+      : evalOutcome === 'success'
+        ? `:warning: Agent eval on \`${branch}\` finished with failures`
+        : `:x: Agent eval on \`${branch}\` failed`;
+
+  const stats =
+    evals.length > 0
+      ? `*${passedEvals.length}/${evals.length} evals passed*${
+          totals.total > 0 ? ` · ${formatTokens(totals.total)} tokens · ${formatCost(totals)}` : ''
+        }`
+      : '_No eval result files._';
+
+  const links = [
+    runUrl ? `<${runUrl}|Workflow run>` : null,
+    playgroundUrl ? `<${playgroundUrl}|Playground>` : null,
+  ].filter(Boolean);
+
+  process.stdout.write(
+    [headline, stats, links.length > 0 ? links.map((link) => `• ${link}`).join('\n') : null]
+      .filter(Boolean)
+      .join('\n') + '\n'
+  );
+  process.exit(0);
+}
 
 const sections = [
   [

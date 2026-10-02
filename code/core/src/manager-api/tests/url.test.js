@@ -73,26 +73,18 @@ describe('initial state', () => {
       expect(layout).toMatchObject({ navSize: 0 });
     });
 
-    it('handles toolbar parameter, hidden', () => {
+    it.each([
+      ['0', false],
+      ['1', true],
+    ])('handles toolbar parameter %s', (value, expected) => {
       const navigate = vi.fn();
-      const location = { search: '?' + new URLSearchParams({ toolbar: '0' }).toString() };
+      const location = { search: '?' + new URLSearchParams({ toolbar: value }).toString() };
 
       const {
         state: { layout },
       } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
 
-      expect(layout).toMatchObject({ showToolbar: false });
-    });
-
-    it('handles toolbar parameter, shown', () => {
-      const navigate = vi.fn();
-      const location = { search: '?' + new URLSearchParams({ toolbar: '1' }).toString() };
-
-      const {
-        state: { layout },
-      } = initURL({ navigate, state: { location }, provider: { channel: new EventEmitter() } });
-
-      expect(layout).toMatchObject({ showToolbar: true });
+      expect(layout).toMatchObject({ showToolbar: expected });
     });
 
     it('handles shortcuts parameter', () => {
@@ -468,6 +460,24 @@ describe('getStoryHrefs', () => {
 
     expect(managerHref).toContain('viewMode=not-allowed-in-preview');
     expect(previewHref).not.toContain('viewMode=not-allowed-in-preview');
+  });
+
+  it('retains layout params like toolbar in managerHref but strips them from previewHref', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', {
+      queryParams: { toolbar: 'false' },
+    });
+
+    expect(managerHref).toContain('toolbar=false');
+    expect(previewHref).not.toContain('toolbar=false');
   });
 
   it('correctly preserves args and globals encoding', () => {

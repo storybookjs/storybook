@@ -292,7 +292,13 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
         ? mergeSerializedParams(customQueryParams?.globals ?? '', globals)
         : globals;
       const managerQueryParams = omit(otherParams, ['embed', 'freeze']);
-      const previewQueryParams = omit(otherParams, ['id', 'viewMode', 'embed', 'freeze']);
+      const previewQueryParams = omit(otherParams, [
+        ...LAYOUT_QUERY_PARAM_KEYS,
+        'id',
+        'viewMode',
+        'embed',
+        'freeze',
+      ]);
 
       let customManagerParams = stringify(managerQueryParams, {
         nesting: true,

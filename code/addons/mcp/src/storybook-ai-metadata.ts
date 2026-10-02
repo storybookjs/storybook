@@ -45,22 +45,14 @@ export async function buildStorybookAiMetadata(
   });
   const toolsets = addonOptions.toolsets;
   const features = (await options.presets.apply('features', {})) as
-    | { changeDetection?: boolean; experimentalReview?: boolean }
+    | { changeDetection?: boolean }
     | undefined;
   const devEnabled = toolsets?.dev ?? true;
   const moduleGraphSupported = await isModuleGraphSupportedByBuilder(options);
-  const rawAvailability = await getToolAvailability(options, {
+  const availability = await getToolAvailability(options, {
     features,
     moduleGraphSupported,
   });
-  // This metadata is only ever consumed by the `storybook ai` CLI (the
-  // Claude/Codex plugins), where review is on by default — so the CLI gate
-  // drives everything derived from it: instructions, tool descriptions, and
-  // which tools are included.
-  const availability = {
-    ...rawAvailability,
-    reviewEnabled: rawAvailability.reviewEnabledForCli,
-  };
   const testSupported = (toolsets?.test ?? true) && availability.testSupported;
   const docsToolsetEnabled = toolsets?.docs ?? true;
   const multiSource = docsToolsetEnabled

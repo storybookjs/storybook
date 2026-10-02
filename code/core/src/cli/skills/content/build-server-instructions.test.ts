@@ -104,11 +104,6 @@ describe('buildServerInstructions', () => {
       changeDetectionEnabled: true,
     });
 
-    // The released 0.6.0 dev section plus the shared-code trigger fixes
-    // ("anything that changes how the UI looks", preview the consumers'
-    // stories) — with `experimentalReview` off (the default) users get the
-    // proven pre-review workflow, while the review-flavored text is
-    // iterated on behind the flag.
     expect(instructions).toMatchInlineSnapshot(`
       "Follow these workflows when working with UI and/or Storybook.
 
@@ -184,7 +179,7 @@ describe('buildServerInstructions', () => {
     expect(instructions).not.toContain('call **stories-preview** to retrieve preview URLs');
   });
 
-  it('keeps the default (review off) instructions under the 2,048-char client truncation limit', () => {
+  it('keeps the review-off instructions under the 2,048-char client truncation limit', () => {
     const instructions = buildServerInstructions({
       transport: 'mcp',
       devEnabled: true,
@@ -194,8 +189,6 @@ describe('buildServerInstructions', () => {
       reviewEnabled: false,
     });
 
-    // Some MCP clients truncate server instructions at 2,048 characters; the
-    // default instruction set must always fit so nothing gets cut off.
     expect(instructions.length).toBeLessThanOrEqual(2048);
   });
 

@@ -3,11 +3,17 @@ import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
-import type { ComponentsManifest, Manifests, Presets, StoryIndex } from 'storybook/internal/types';
+import type {
+  ComponentsManifest,
+  Manifests,
+  Middleware,
+  MiddlewareHost,
+  Presets,
+  StoryIndex,
+} from 'storybook/internal/types';
 
 import * as v from 'valibot';
 import { vol } from 'memfs';
-import type { Polka } from 'polka';
 
 import { defineService } from '../../../shared/open-service/index.ts';
 import { clearRegistry, registerService } from '../../../shared/open-service/server.ts';
@@ -27,7 +33,8 @@ describe('manifests', () => {
   let mockGenerator: { getIndex: () => Promise<StoryIndex> };
   let mockManifests: Manifests | null;
 
-  type RouteHandler = (req: { params?: { name?: string } }, res: MockResponse) => Promise<void>;
+  type RouteHandler = Middleware;
+  type MockRequest = Parameters<RouteHandler>[0];
   type MockResponse = {
     setHeader: ReturnType<typeof vi.fn>;
     end: ReturnType<typeof vi.fn>;
@@ -678,23 +685,22 @@ describe('manifests', () => {
   });
 
   describe('registerManifests', () => {
-    let mockApp: Polka;
-    let mockGet: ReturnType<typeof vi.fn>;
+    let mockApp: MiddlewareHost;
+    let mockUse: ReturnType<typeof vi.fn>;
     let mockPresets: Presets;
 
     beforeEach(() => {
-      mockGet = vi.fn();
-      mockApp = { get: mockGet } as unknown as Polka;
+      mockUse = vi.fn();
+      mockApp = { use: mockUse as unknown as MiddlewareHost['use'] };
       mockPresets = setupMockPresets();
     });
 
     describe('route registration', () => {
-      it('should register two routes', () => {
+      it('should register one route', () => {
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        expect(mockGet).toHaveBeenCalledTimes(2);
-        expect(mockGet).toHaveBeenCalledWith('/manifests/:name.json', expect.any(Function));
-        expect(mockGet).toHaveBeenCalledWith('/manifests/components.html', expect.any(Function));
+        expect(mockUse).toHaveBeenCalledTimes(1);
+        expect(mockUse).toHaveBeenCalledWith('/manifests', expect.any(Function));
       });
     });
 
@@ -706,15 +712,17 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'custom' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/custom.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'application/json');
         expect(res.end).toHaveBeenCalledWith(JSON.stringify({ data: 'value' }));
         expect(res.statusCode).toBeUndefined();
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should return 404 when manifest does not exist', async () => {
@@ -724,14 +732,16 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'nonexistent' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/nonexistent.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith('Manifest "nonexistent" not found');
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should return 404 when manifests object is empty', async () => {
@@ -739,14 +749,16 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'any' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/any.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith('Manifest "any" not found');
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('returns 404 for components.json when experimentalDocgenServer is enabled', async () => {
@@ -757,16 +769,18 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'components' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
           'Manifest "components" is not available in dev when experimentalDocgenServer is enabled'
         );
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('returns 404 for docs.json when experimentalDocgenServer is enabled', async () => {
@@ -777,16 +791,18 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'docs' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/docs.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
           'Manifest "docs" is not available in dev when experimentalDocgenServer is enabled'
         );
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should handle errors with 500 status and log the error', async () => {
@@ -795,15 +811,17 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'custom' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/custom.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(vi.mocked(logger).error).toHaveBeenCalledWith(error);
         expect(res.statusCode).toBe(500);
         expect(res.end).toHaveBeenCalledWith(error.toString());
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should handle non-Error objects in error handler', async () => {
@@ -812,15 +830,17 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'custom' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/custom.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(vi.mocked(logger).error).toHaveBeenCalledWith(errorString);
         expect(res.statusCode).toBe(500);
         expect(res.end).toHaveBeenCalledWith(errorString);
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should handle when presets.apply returns null/undefined', async () => {
@@ -828,14 +848,16 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[0][1] as RouteHandler;
-        const req = { params: { name: 'custom' } };
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/custom.json' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith('Manifest "custom" not found');
+        expect(next).not.toHaveBeenCalled();
       });
     });
 
@@ -859,11 +881,12 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1] as RouteHandler;
-        const req = {};
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.html' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/html; charset=utf-8');
         expect(res.end).toHaveBeenCalled();
@@ -871,6 +894,7 @@ describe('manifests', () => {
         expect(html).toContain('<!doctype html>');
         expect(html).toContain('Manifest Debugger');
         expect(res.statusCode).toBeUndefined();
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should return 404 message when no components or docs manifest exist', async () => {
@@ -880,17 +904,19 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1] as RouteHandler;
-        const req = {};
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.html' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/html; charset=utf-8');
         expect(res.end).toHaveBeenCalledWith(
           '<pre>No components or docs manifest configured.</pre>'
         );
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should return 404 when manifests is empty', async () => {
@@ -898,16 +924,18 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1] as RouteHandler;
-        const req = {};
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.html' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(404);
         expect(res.end).toHaveBeenCalledWith(
           '<pre>No components or docs manifest configured.</pre>'
         );
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should handle errors with 500 status and return error HTML', async () => {
@@ -917,17 +945,19 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1] as RouteHandler;
-        const req = {};
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.html' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(500);
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/html; charset=utf-8');
         expect(res.end).toHaveBeenCalledWith(
           '<pre>Error: Rendering failed\n  at test.ts:123</pre>'
         );
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('should handle non-Error objects in error handler', async () => {
@@ -936,15 +966,17 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1] as RouteHandler;
-        const req = {};
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.html' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler(req, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         expect(res.statusCode).toBe(500);
         expect(res.setHeader).toHaveBeenCalledWith('Content-Type', 'text/html; charset=utf-8');
         expect(res.end).toHaveBeenCalledWith(`<pre>${errorString}</pre>`);
+        expect(next).not.toHaveBeenCalled();
       });
 
       it('renders docgen-server HTML with MDX from the live service', async () => {
@@ -1051,14 +1083,47 @@ describe('manifests', () => {
 
         registerManifests({ app: mockApp, presets: mockPresets });
 
-        const handler = mockGet.mock.calls[1][1] as RouteHandler;
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/components.html' } as MockRequest;
         const res = createResponse();
+        const next = vi.fn();
 
-        await handler({}, res);
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
 
         const html = res.end.mock.calls[0]?.[0];
         expect(html).toContain('Live attached docs');
         expect(html).toContain('Live unattached docs');
+        expect(next).not.toHaveBeenCalled();
+      });
+
+      it('should pass unknown paths to next without writing a response', async () => {
+        registerManifests({ app: mockApp, presets: mockPresets });
+
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'GET', url: '/nope.txt' } as MockRequest;
+        const res = createResponse();
+        const next = vi.fn();
+
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(res.setHeader).not.toHaveBeenCalled();
+        expect(res.end).not.toHaveBeenCalled();
+      });
+
+      it('should pass non-GET or HEAD requests to next without writing a response', async () => {
+        registerManifests({ app: mockApp, presets: mockPresets });
+
+        const handler = mockUse.mock.calls[0][1] as RouteHandler;
+        const req = { method: 'POST', url: '/custom.json' } as MockRequest;
+        const res = createResponse();
+        const next = vi.fn();
+
+        await handler(req, res as unknown as Parameters<RouteHandler>[1], next);
+
+        expect(next).toHaveBeenCalledTimes(1);
+        expect(res.setHeader).not.toHaveBeenCalled();
+        expect(res.end).not.toHaveBeenCalled();
       });
     });
   });

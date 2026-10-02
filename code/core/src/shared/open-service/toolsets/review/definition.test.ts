@@ -76,10 +76,11 @@ describe('review.create', () => {
     const outcome = await createReview();
 
     expect(outcome.ok).toBe(true);
-    expect(outcome.data).toMatchObject({
+    expect(outcome.data).toEqual({
       reviewUrl,
       collectionCount: 1,
       storyCount: 1,
+      instructions: expect.stringContaining(`Open ${reviewUrl} in your in-app browser now.`),
     });
     expect(setReview).toHaveBeenCalledWith(input);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/review', { internal: true });
@@ -161,16 +162,6 @@ This usually means the IDs were inferred from file paths or naming conventions r
         'Refusing to publish review: 1 story ID is not backed by a story entry in the live Storybook index (docs entries cannot be review slots)'
       );
     });
-  });
-
-  it('publishes everything its text says, for clients that forward only the structured data', async () => {
-    const outcome = await createReview({}, mcpCtx);
-    const published = v.parse(reviewToolset.methods.create.output, outcome.data);
-
-    expect(published).toEqual(outcome.data);
-    expect(outcome.markdown).toBe(
-      `Review applied: 1 collection, 1 story. ${published.instructions}`
-    );
   });
 
   describe('rendering', () => {

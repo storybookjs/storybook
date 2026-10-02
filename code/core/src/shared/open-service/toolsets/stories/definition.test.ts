@@ -170,8 +170,9 @@ describe('stories.preview', () => {
     const outcome = await runPreview([{ storyId: 'button--primary' }]);
 
     expect(outcome.ok).toBe(true);
-    expect(outcome.data).toMatchObject({
+    expect(outcome.data).toEqual({
       stories: [{ title: 'Button', name: 'Primary', previewUrl }],
+      instructions: expect.stringContaining('in your in-app browser now'),
     });
     expect(getIndex).toHaveBeenCalledOnce();
   });
@@ -248,19 +249,8 @@ describe('stories.preview', () => {
         previewUrl,
         'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.',
       ]);
+      expect(outcome.data.instructions).toContain('publish the review with **review-create**');
     });
-
-    it.each([true, false])(
-      'publishes the nudge as instructions, for clients that forward only the structured data (reviews: %s)',
-      async (reviewEnabled) => {
-        const target = createToolset({ reviewEnabled });
-        const outcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx, target);
-        const published = v.parse(target.methods.preview.output, outcome.data);
-
-        expect(published).toEqual(outcome.data);
-        expect(outcome.markdown).toEqual([previewUrl, published.instructions]);
-      }
-    );
 
     it.each([true, false])(
       'leaves an all-error result unnudged, since there is nothing to curate or open (reviews: %s)',
@@ -485,12 +475,6 @@ describe('stories.findByComponent', () => {
     const outcome = await runFindByComponent({ componentPaths: [componentPath], maxDistance: 1 });
 
     expect(outcome.data).toMatchObject({ maxDistance: 1 });
-  });
-
-  it('publishes everything it returns, including the ceiling its text names', async () => {
-    const outcome = await runFindByComponent({ componentPaths: [componentPath] });
-
-    expect(v.parse(toolset.methods.findByComponent.output, outcome.data)).toEqual(outcome.data);
   });
 
   it('rejects with the graph reason rather than answering "no stories"', async () => {

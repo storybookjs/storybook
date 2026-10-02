@@ -24,6 +24,7 @@ const userSettingSchema = z.object({
   // (we can remove keys once they are deprecated)
   userSince: z.number().optional(),
   init: z.object({ skipOnboarding: z.boolean().optional() }).optional(),
+  agentSkills: z.record(z.string(), z.boolean()).optional(),
   checklist: z
     .object({
       items: z

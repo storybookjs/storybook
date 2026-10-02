@@ -125,6 +125,12 @@ the documentation tooling) regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
+The templates and fixtures list `@storybook/addon-mcp` for the MCP experiments.
+The plugin skills do not need it, so setup removes it from the manifests and the
+Storybook config of every other sandbox: the plugin experiments show that the
+skills work in a project without the addon. There the sandbox `postinstall`
+waits for the story index instead of the MCP endpoint.
+
 Review mode follows the integration. The plugin experiments always run — and
 assert — the review workflow (review-create published, review section in the
 final response), because review is on by default for the `storybook tools` CLI

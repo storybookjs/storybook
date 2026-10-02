@@ -135,13 +135,14 @@ const execFileAsync = promisify(execFile);
 const REVIEW_ENABLED = process.env.EVAL_REVIEW === '1';
 
 // The review mode a sandbox actually runs in: the plugin integration gets
-// review by default from the addon; the MCP integration only with the
+// review by default from Storybook; the MCP integration only with the
 // EVAL_REVIEW=1 feature-flag override.
 export function isReviewEnabledFor(integration: EvalIntegration): boolean {
   return REVIEW_ENABLED || integration === 'plugin';
 }
 const STORYBOOK_MAIN_PATTERN = /(^|\/)\.storybook\/main\.ts$/;
 const STORYBOOK_CONFIG_OBJECT_OPENER = 'const config: StorybookConfig = {';
+const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const STORYBOOK_MCP_SERVER_NAME = 'storybook-dev-mcp';
 const CLAUDE_BROWSER_MCP_SERVER_NAME = 'Browser';
 const STORYBOOK_MCP_URL = 'http://127.0.0.1:6006/mcp';
@@ -191,6 +192,10 @@ export async function setupSandbox(
   }
 
   files = mergeTemplateAndFixtureFiles(files, fixtureFiles);
+
+  if (options.integration !== 'mcp') {
+    removeMcpAddon(files);
+  }
 
   if (REVIEW_ENABLED) {
     enableExperimentalReview(files);
@@ -366,6 +371,40 @@ export function enableExperimentalReview(files: Record<string, string>): void {
       STORYBOOK_CONFIG_OBJECT_OPENER,
       `${STORYBOOK_CONFIG_OBJECT_OPENER}\n\tfeatures: {\n\t\t// @ts-expect-error -- not yet in core's features type; review is opt-in via this flag\n\t\texperimentalReview: true,\n\t},`
     );
+  }
+}
+
+// The templates and fixtures carry `@storybook/addon-mcp` for the MCP experiments. The plugin
+// skills do not need it, so every other integration runs on a project without it. A main.ts
+// that still names the addon afterwards fails loudly instead of silently keeping it.
+export function removeMcpAddon(files: Record<string, string>): void {
+  for (const filePath of workspacePackageJsonPaths(files)) {
+    const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
+    if (!isRecord(packageJson)) {
+      continue;
+    }
+
+    for (const field of ['dependencies', 'devDependencies'] as const) {
+      const dependencies = packageJson[field];
+      if (isRecord(dependencies) && STORYBOOK_MCP_ADDON in dependencies) {
+        delete dependencies[STORYBOOK_MCP_ADDON];
+        files[filePath] = JSON.stringify(packageJson, null, 2).concat('\n');
+      }
+    }
+  }
+
+  for (const [filePath, content] of Object.entries(files)) {
+    if (!STORYBOOK_MAIN_PATTERN.test(filePath)) {
+      continue;
+    }
+
+    const withoutAddon = content.replace(/^[ \t]*'@storybook\/addon-mcp',\n/m, '');
+    if (withoutAddon.includes(STORYBOOK_MCP_ADDON)) {
+      throw new Error(
+        `Cannot remove ${STORYBOOK_MCP_ADDON}: ${filePath} does not list it on a line of its own`
+      );
+    }
+    files[filePath] = withoutAddon;
   }
 }
 

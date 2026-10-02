@@ -93,24 +93,6 @@
       "name": "number",
     },
   },
-  "onRatingChange": {
-    "action": {
-      "name": "ratingChange",
-    },
-    "name": "onRatingChange",
-    "table": {
-      "disable": true,
-    },
-  },
-  "onStencilReset": {
-    "action": {
-      "name": "stencil-reset",
-    },
-    "name": "onStencilReset",
-    "table": {
-      "disable": true,
-    },
-  },
   "ratingChange-event": {
     "control": false,
     "description": "Emitted when the rating changes.",

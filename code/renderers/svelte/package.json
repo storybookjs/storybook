@@ -61,10 +61,10 @@
     "./internal/svelte-csf/StoriesExtractor.svelte": "./static/svelte-csf/StoriesExtractor.svelte",
     "./internal/svelte-csf/Story.svelte": "./static/svelte-csf/Story.svelte",
     "./internal/svelte-csf/StoryRenderer.svelte": "./static/svelte-csf/StoryRenderer.svelte",
-    "./internal/svelte-csf/vite-plugins": {
-      "types": "./dist/svelte-csf/compiler/plugins.d.ts",
-      "code": "./src/svelte-csf/compiler/plugins.ts",
-      "default": "./dist/svelte-csf/compiler/plugins.js"
+    "./internal/svelte-csf/transform": {
+      "types": "./dist/svelte-csf/compiler/transform.d.ts",
+      "code": "./src/svelte-csf/compiler/transform.ts",
+      "default": "./dist/svelte-csf/compiler/transform.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"

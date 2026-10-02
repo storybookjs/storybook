@@ -42,8 +42,8 @@ const config: BuildEntries = {
         entryPoint: './src/svelte-csf/indexer/index.ts',
       },
       {
-        exportEntries: ['./internal/svelte-csf/vite-plugins'],
-        entryPoint: './src/svelte-csf/compiler/plugins.ts',
+        exportEntries: ['./internal/svelte-csf/transform'],
+        entryPoint: './src/svelte-csf/compiler/transform.ts',
       },
       {
         exportEntries: ['./internal/svelte-csf/addon-check'],

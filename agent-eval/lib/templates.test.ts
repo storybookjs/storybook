@@ -122,8 +122,6 @@ describe('removeMcpAddon', () => {
     expect(() => removeMcpAddon(files)).toThrowError(/Cannot remove @storybook\/addon-mcp/);
   });
 
-  // The plugin experiments must run without the addon, so every template and fixture Storybook
-  // config has to register it in the shape the remover handles.
   it('can strip every template and fixture Storybook main.ts', () => {
     const mainFiles = [
       ...findStorybookMainFiles(join(AGENT_EVAL_ROOT, 'templates')),

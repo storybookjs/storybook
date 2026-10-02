@@ -374,9 +374,8 @@ export function enableExperimentalReview(files: Record<string, string>): void {
   }
 }
 
-// The templates and fixtures carry `@storybook/addon-mcp` for the MCP experiments. The plugin
-// skills do not need it, so every other integration runs on a project without it. A main.ts
-// that still names the addon afterwards fails loudly instead of silently keeping it.
+// The templates and fixtures list the addon for the MCP experiments; the plugin skills have to
+// work in a project without it.
 export function removeMcpAddon(files: Record<string, string>): void {
   for (const filePath of workspacePackageJsonPaths(files)) {
     const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
@@ -398,7 +397,10 @@ export function removeMcpAddon(files: Record<string, string>): void {
       continue;
     }
 
-    const withoutAddon = content.replace(/^[ \t]*'@storybook\/addon-mcp',\n/m, '');
+    const withoutAddon = content
+      .split('\n')
+      .filter((line) => line.trim() !== `'${STORYBOOK_MCP_ADDON}',`)
+      .join('\n');
     if (withoutAddon.includes(STORYBOOK_MCP_ADDON)) {
       throw new Error(
         `Cannot remove ${STORYBOOK_MCP_ADDON}: ${filePath} does not list it on a line of its own`

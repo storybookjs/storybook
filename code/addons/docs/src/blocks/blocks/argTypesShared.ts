@@ -34,7 +34,6 @@ export function extractSubcomponentArgTypes(
 }
 
 export type DocgenServiceRows = {
-  /** The component name reported by the service, used as a fallback table title. */
   serviceComponentName: string;
   mainRows: StrictArgTypes;
   subcomponentRows: Record<string, StrictArgTypes>;

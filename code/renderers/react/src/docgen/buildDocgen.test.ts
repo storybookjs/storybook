@@ -95,6 +95,36 @@ describe('buildDocgenPayload', () => {
     }
   );
 
+  it('keeps string defaults quoted once in argTypes', { timeout: 30_000 }, async () => {
+    tempDir = createTempDir('docgen-build');
+
+    const files = writeFiles(tempDir, {
+      'tsconfig.json': tsconfigJSON(),
+      'Button.tsx': dedent`
+        import React from 'react';
+        export const Button = ({ label = 'a', size = "small" }: { label?: string; size?: 'small' | 'large' }) => <button />;
+      `,
+      'Button.stories.tsx': dedent`
+        import { Button } from './Button';
+        export default { component: Button, title: 'Forms/Button' };
+        export const Primary = () => <Button />;
+      `,
+    });
+
+    componentMetaManager = new ComponentMetaManager(ts);
+
+    const payload = await buildDocgenPayload(
+      { entry: makeStoryIndexEntry(files['Button.stories.tsx'], 'Forms/Button') },
+      {
+        componentMetaManager,
+        resolvePath: (p) => (path.isAbsolute(p) ? p : path.join(tempDir!, p)),
+      }
+    );
+
+    expect(payload!.argTypes?.label.table?.defaultValue).toEqual({ summary: "'a'" });
+    expect(payload!.argTypes?.size.table?.defaultValue).toEqual({ summary: '"small"' });
+  });
+
   it('returns undefined when the story file is missing', { timeout: 15_000 }, async () => {
     tempDir = createTempDir('docgen-build');
     componentMetaManager = new ComponentMetaManager(ts);

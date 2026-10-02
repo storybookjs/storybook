@@ -45,6 +45,7 @@ The rest of this guide will help you upgrade successfully, either automatically 
   - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [`features.legacyDecoratorFileOrder` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#featureslegacydecoratorfileorder-removed)
 - Configuration changes
+  - [Move `storySort` to `storySorts` in main](#storysort-moved-to-storysorts-in-main)
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
@@ -127,6 +128,20 @@ export default {
 ```
 
 The upgrade command offers the `component-subtitle` automigration to do this for you. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed) for what it cannot migrate and how subtitle precedence changes.
+
+## `storySort` moved to `storySorts` in main
+
+Storybook 11 no longer reads `parameters.options.storySort` from `.storybook/preview.js|ts`. Configure sorting with the [`storySorts`](../api/main-config/main-config-story-sorts.mdx) array in `.storybook/main.js|ts` instead:
+
+```ts
+// .storybook/main.ts
+export default {
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  storySorts: [{ order: ['Introduction', 'Components'] }],
+};
+```
+
+The upgrade command offers the `story-sort-to-main` automigration for statically readable objects and arrays. Move comparator functions, imported values, and shared or reassigned variables yourself. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main).
 
 ## `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
 

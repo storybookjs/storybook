@@ -513,6 +513,7 @@ export const storyIndexGenerator: PresetPropertyFn<
       indexers,
       docs,
       features,
+      storySorts: await options.presets.apply('storySorts', []),
     });
     await generator.initialize();
     return generator;

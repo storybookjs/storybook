@@ -10686,7 +10686,7 @@ __metadata:
   resolution: "@storybook/preact@workspace:code/renderers/preact"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
-    preact: "npm:^10.8.0"
+    preact: "npm:^11.0.0"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
@@ -29962,15 +29962,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"preact@npm:^10.8.0":
-  version: 10.29.8
-  resolution: "preact@npm:10.29.8"
+"preact@npm:^11.0.0":
+  version: 11.0.0
+  resolution: "preact@npm:11.0.0"
   peerDependencies:
-    preact-render-to-string: ">=5"
+    preact-render-to-string: ">=6.7.0"
   peerDependenciesMeta:
     preact-render-to-string:
       optional: true
-  checksum: 10c0/505460352139e0ce5b9c971b69d8d9f3b73ea0f316e3ff1c0b3db9a1abe206c9dff6ba385eb796253c38fcc08b5ade70cd8da3d9d6c9e9aec1a2fd59348253ae
+  checksum: 10c0/3dfc797d46009e3ec8cf509662077a760301935cb9f5a4bdbdcb26fe69838cf621471742d87a125c6b1237ad78687d5d8fc0798a571038c35fe5e090c37ec502
   languageName: node
   linkType: hard
 

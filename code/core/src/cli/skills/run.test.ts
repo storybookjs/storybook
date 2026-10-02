@@ -172,12 +172,22 @@ describe('runSkillsCommand', () => {
     expect(describedTools(result.output)).toEqual(['stories preview']);
   });
 
+  it('leaves out a tool the skill names but the project does not register', async () => {
+    const d = deps();
+    d.describeToolsets.mockReturnValue([toolset('stories', ['preview', 'changed'])]);
+
+    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+
+    expect(result.output).toContain('npx storybook tools test run');
+    expect(describedTools(result.output)).toEqual(['stories preview', 'stories changed']);
+  });
+
   it('write-story leaves the tools stories describes to the stories reference', async () => {
     const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, deps());
 
     expect(describedTools(result.output)).toEqual([]);
     expect(result.output).toMatch(
-      /## Command reference\n\nThe commands named above are described in the command reference at the end of `npx storybook skills stories`\.$/
+      /## Command reference\n\nThe commands named above are described in the command reference at the end of `npx storybook skills stories`; `<command> --help` prints the same for one command\.$/
     );
   });
 
@@ -194,9 +204,12 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('The other commands named above are described');
   });
 
-  it('--all describes each tool once', async () => {
+  it('--all describes each tool once, in the stories skill', async () => {
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
 
+    expect(result.output).toContain(
+      'The commands named above are described in the command reference at the end of `npx storybook skills stories`'
+    );
     expect(describedTools(result.output)).toEqual([
       'stories preview',
       'stories changed',

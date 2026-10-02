@@ -17,6 +17,8 @@ For docs, props, or usage questions, use `npx storybook tools docs list` followe
 
 Run `npx storybook skills stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
+That output ends with a command reference: the arguments and usage rules of every `npx storybook tools` command it names. Never guess a command's arguments from its name. Only when the output has no command reference (Storybook 10.6), run a command with `--help` appended before its first use.
+
 Some commands require a running Storybook dev server:
 
 1. Reuse a dev server that already serves this project's Storybook (probe the URL, usually `http://localhost:6006`) instead of starting a second one. Otherwise start one in the background, using the project's preferred package manager and existing `package.json` Storybook script (e.g. `npm run storybook`) instead of inventing a new command whenever possible. Wait until the URL responds before running commands that need it.

@@ -75,8 +75,6 @@ describe('renderCommandReference', () => {
       - \`markdown\` (string, required): Rendered docs
       \`\`\`\`"
     `);
-    expect(reference).toContain(renderMethodHelpFromCatalog(list));
-    expect(reference).toContain(renderMethodHelpFromCatalog(show));
     expect(reference).not.toContain(renderMethodHelpFromCatalog(showStory));
   });
 
@@ -101,7 +99,7 @@ describe('renderCommandReference', () => {
     expect(reference).not.toContain(renderMethodHelpFromCatalog(list));
     expect(reference).toContain(renderMethodHelpFromCatalog(show));
     expect(reference).toMatch(
-      /The other commands named above are described in the command reference at the end of `npx storybook skills stories`\.$/
+      /The other commands named above are described in the command reference at the end of `npx storybook skills stories`; `<command> --help` prints the same for one command\.$/
     );
   });
 
@@ -114,7 +112,7 @@ describe('renderCommandReference', () => {
     ).toMatchInlineSnapshot(`
       "## Command reference
 
-      The commands named above are described in the command reference at the end of \`npx storybook skills stories\`."
+      The commands named above are described in the command reference at the end of \`npx storybook skills stories\`; \`<command> --help\` prints the same for one command."
     `);
   });
 });

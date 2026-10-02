@@ -12,7 +12,7 @@ const toolset = defineToolset({
     getHTTPFrame: {
       title: 'Inspect an HTTP frame',
       description: `HTTP frame utilities
-Use this detailed second line only in the full reference.`,
+This second line shows in the toolset and tool help, not in the overview.`,
       input: v.object({}),
       handler: async () => ({ ok: true, data: {}, markdown: '' }),
     },
@@ -78,7 +78,7 @@ describe('tools help rendering', () => {
         example get-http-frame  [local]
 
           HTTP frame utilities
-          Use this detailed second line only in the full reference.
+          This second line shows in the toolset and tool help, not in the overview.
 
           Arguments: none.
 

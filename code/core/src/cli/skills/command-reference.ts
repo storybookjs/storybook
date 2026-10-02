@@ -17,7 +17,7 @@ const INTRO = [
 // Four backticks, so a description that carries its own three-backtick fence stays inside the block.
 const FENCE = '````';
 
-export function findReferredTools(
+function findReferredTools(
   skillText: string,
   toolsets: ToolsetCatalogEntry[]
 ): ToolsetCatalogMethod[] {
@@ -40,8 +40,10 @@ export function renderCommandReference(
   if (referred.length === 0) {
     return '';
   }
-  const elsewhere = describedIn ? findReferredTools(describedIn.text, toolsets) : [];
-  const described = referred.filter((method) => !elsewhere.includes(method));
+  const elsewhere = new Set(
+    describedIn ? findReferredTools(describedIn.text, toolsets).map((method) => method.ref) : []
+  );
+  const described = referred.filter((method) => !elsewhere.has(method.ref));
 
   const sections = ['## Command reference'];
   if (described.length > 0) {
@@ -54,7 +56,7 @@ export function renderCommandReference(
   }
   if (describedIn && described.length < referred.length) {
     sections.push(
-      `${described.length > 0 ? 'The other commands' : 'The commands'} named above are described in the command reference at the end of \`${getSkillRef('cli')(describedIn.id)}\`.`
+      `${described.length > 0 ? 'The other commands' : 'The commands'} named above are described in the command reference at the end of \`${getSkillRef('cli')(describedIn.id)}\`; \`<command> --help\` prints the same for one command.`
     );
   }
   return sections.join('\n\n');

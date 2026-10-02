@@ -125,13 +125,15 @@ async function serveSkills(
   deps: SkillsRunDeps
 ): Promise<string[]> {
   let inputs: SkillInputs | undefined;
+  let toolsets: ToolsetCatalogEntry[] | undefined;
   const docs: string[] = [];
   for (const id of ids) {
     if (id === 'setup') {
       docs.push(await serveSetup(configDir, deps));
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(withCommandReference(id, inputs, deps.describeToolsets()));
+      toolsets ??= deps.describeToolsets();
+      docs.push(withCommandReference(id, inputs, toolsets));
     }
   }
   return docs;
@@ -191,7 +193,7 @@ function withCommandReference(
   toolsets: ToolsetCatalogEntry[]
 ): string {
   const text = assemble(id, inputs);
-  // `stories` sends the agent on to `write-story`, so a tool both name is described by `stories`.
+  // `stories` sends the agent on to `write-story`, so `stories` describes a tool that both name.
   const describedIn =
     id === 'write-story'
       ? { id: 'stories' as const, text: assemble('stories', inputs) }

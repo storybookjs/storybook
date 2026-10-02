@@ -577,9 +577,9 @@
 
 ### Tag filtering API
 
-Storybook 11 stabilizes sidebar tag filtering. The old names still work and will be removed in Storybook 12.
+Storybook 11 removes the experimental and undocumented tag filtering names. They no longer work at runtime.
 
-| Old | New |
+| Removed | Replacement |
 | --- | --- |
 | `experimental_setFilter` | `setFilter` |
 | `experimental_setFilters` | `setFilters` |
@@ -592,9 +592,9 @@ Storybook 11 stabilizes sidebar tag filtering. The old names still work and will
 
 `hideFromFilterPanel` hides a tag from the filter menu and leaves the stories visible. A hidden tag can still be an active filter when `defaultFilterSelection` or the URL selects it. The menu then shows an active-filter count and no checkbox for that tag. Do not combine `hideFromFilterPanel` with a default or URL selection for the same tag.
 
-`sidebar.filters` in `manager.ts` is deprecated and will be removed in Storybook 12. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. There is no automigration for `sidebar.filters`.
+`sidebar.filters` in `manager.ts` is removed and is not rewritten. Replace a tag exclusion with `hideFromSidebar`. Replace a custom filter function with `setFilter`. Automigration prints a notice when it finds `sidebar.filters`.
 
-`storybook automigrate` rewrites the tag option keys in `main.ts` and renames `experimental_setFilter` / `experimental_setFilters` in `.storybook` and story files. Rename those calls yourself in addon source outside those files.
+`storybook automigrate` rewrites the tag option keys in `main.ts`, including when the value is an expression, and renames `experimental_setFilter` / `experimental_setFilters` identifiers in `.storybook` and story files. A call written as `api['experimental_setFilters']` is left unchanged. Rename those calls yourself in addon source outside `.storybook` and story files.
 
 ### Addon `TAB` registration removed
 

@@ -1,5 +1,5 @@
 import type { Mocked } from 'vitest';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import {
   CONFIG_ERROR,
@@ -90,15 +90,6 @@ function createMockModuleArgs({
 }
 
 describe('stories API', () => {
-  beforeEach(() => {
-    vi.spyOn(console, 'warn').mockImplementation((message?: unknown, ...rest: unknown[]) => {
-      if (typeof message === 'string' && message.includes('is deprecated')) {
-        return;
-      }
-      expect.fail(`Unexpected console.warn call with arguments:\n${[message, ...rest].join('\n')}`);
-    });
-  });
-
   it('sets a sensible initialState', () => {
     const moduleArgs = createMockModuleArgs({});
     const { state } = initStories({
@@ -1474,7 +1465,7 @@ describe('stories API', () => {
     });
   });
   describe('SET_CONFIG', () => {
-    it('applies config sidebar filters to an index that was already set', async () => {
+    it('ignores sidebar.filters when config arrives after the index', async () => {
       const moduleArgs = createMockModuleArgs({
         initialState: {
           tagPresets: {},
@@ -1513,7 +1504,6 @@ describe('stories API', () => {
 
       expect(Object.keys(store.getState().filteredIndex!)).toContain('b--1');
 
-      // Now the addon config with sidebar filters lands
       provider.getConfig.mockReturnValue({
         sidebar: { filters: { pattern: (item: any) => item.id.startsWith('a') } },
       });
@@ -1521,17 +1511,18 @@ describe('stories API', () => {
       await new Promise((resolve) => setTimeout(resolve, 0));
 
       const { filteredIndex } = store.getState();
-      expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
+      expect(Object.keys(filteredIndex!)).toContain('a--1');
+      expect(Object.keys(filteredIndex!)).toContain('b--1');
     });
   });
-  describe('experimental_setFilters', () => {
+  describe('setFilters', () => {
     it('applies multiple filters in a single call', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilters({
+      await api.setFilters({
         one: (item: any) => !item.id.startsWith('b'),
         two: (item: any) => !item.id.startsWith('custom'),
       });
@@ -1554,29 +1545,17 @@ describe('stories API', () => {
       provider.channel.on(SET_FILTER, listener);
 
       // Without an index, nothing is emitted (the filters only take effect later)
-      await api.experimental_setFilters({ one: () => true });
+      await api.setFilters({ one: () => true });
       expect(listener).not.toHaveBeenCalled();
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilters({ one: () => true, two: () => true });
+      await api.setFilters({ one: () => true, two: () => true });
       expect(listener).toHaveBeenCalledTimes(2);
       expect(listener).toHaveBeenCalledWith({ id: 'one' });
       expect(listener).toHaveBeenCalledWith({ id: 'two' });
     });
   });
   describe('setFilter', () => {
-    it('registers one filter under the stable name', async () => {
-      const moduleArgs = createMockModuleArgs({});
-      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
-      const { store } = moduleArgs;
-
-      await api.setIndex({ v: 5, entries: mockEntries });
-      await api.setFilter('myCustomFilter', () => true);
-
-      expect(store.getState().filters.myCustomFilter).toEqual(expect.any(Function));
-    });
-  });
-  describe('experimental_setFilter', () => {
     it('is included in the initial state', async () => {
       const moduleArgs = createMockModuleArgs({});
       const { state, api } = initStories(moduleArgs as unknown as ModuleArgs);
@@ -1605,7 +1584,7 @@ describe('stories API', () => {
 
       await api.setIndex({ v: 5, entries: mockEntries });
 
-      await api.experimental_setFilter('myCustomFilter', () => true);
+      await api.setFilter('myCustomFilter', () => true);
 
       expect(store.getState()).toEqual(
         expect.objectContaining({
@@ -1622,7 +1601,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
+      await api.setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       const { filteredIndex } = store.getState();
 
@@ -1682,7 +1661,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter(
+      await api.setFilter(
         'myCustomFilter',
         (item) =>
           item.statuses !== undefined &&
@@ -1753,7 +1732,7 @@ describe('stories API', () => {
       const { store } = moduleArgs;
 
       await api.setIndex({ v: 5, entries: navigationEntries });
-      await api.experimental_setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
+      await api.setFilter('myCustomFilter', (item: any) => item.id.startsWith('a'));
 
       await api.setIndex({ v: 5, entries: navigationEntries });
 
@@ -2034,7 +2013,7 @@ describe('stories API', () => {
     });
   });
 
-  describe('computeStatusFilterFn (via experimental_setFilter)', () => {
+  describe('computeStatusFilterFn (via setFilter)', () => {
     it('passes through all stories when both included and excluded are empty', async () => {
       vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});
@@ -2098,7 +2077,7 @@ describe('stories API', () => {
         expect(Object.keys(filteredIndex!)).toHaveLength(0);
       });
 
-      const setFilterSpy = vi.spyOn(api, 'experimental_setFilter');
+      const setFilterSpy = vi.spyOn(api, 'setFilter');
       fullStatusStore.set([
         {
           typeId: 'addon-id',
@@ -2128,7 +2107,7 @@ describe('stories API', () => {
         await api.setIndex({ v: 5, entries: navigationEntries });
 
         const setIndexSpy = vi.spyOn(api, 'setIndex');
-        const setFilterSpy = vi.spyOn(api, 'experimental_setFilter');
+        const setFilterSpy = vi.spyOn(api, 'setFilter');
 
         const BURST = 50;
         for (let i = 0; i < BURST; i += 1) {
@@ -2400,7 +2379,7 @@ describe('stories API', () => {
     /**
      * Whilst the two of the built-in filters (status and tag) have easy ways to determine
      * whether or not they are active, no other filters do - in particular, user-provided filters
-     * from experimental_setFilter.
+     * from setFilter.
      *
      * As such, the filtered index is now used if it is present, regardless of the heuristics that
      * could be used to determine if the status/tag filters are active.

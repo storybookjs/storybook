@@ -424,15 +424,6 @@ export interface TagOptions {
    * then shows an active-filter count and no checkbox. Avoid that combination.
    */
   hideFromFilterPanel?: boolean;
-  /**
-   * @deprecated Use `hideFromSidebar` instead. `excludeFromSidebar` will be removed in Storybook 12.
-   */
-  excludeFromSidebar?: boolean;
-  /**
-   * @deprecated Use `hideFromAutodocs` instead. `excludeFromDocsStories` will be removed in Storybook
-   *   12.
-   */
-  excludeFromDocsStories?: boolean;
 }
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;

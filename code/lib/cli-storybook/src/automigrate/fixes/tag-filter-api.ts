@@ -1,5 +1,4 @@
-import { babelParse, babelPrint, traverse } from 'storybook/internal/babel';
-import type { CsfValue } from 'storybook/internal/csf-tools';
+import { babelParse, babelPrint, traverse, types as t } from 'storybook/internal/babel';
 
 import picocolors from 'picocolors';
 
@@ -10,13 +9,24 @@ const tagOptionRenames = {
   excludeFromDocsStories: 'hideFromAutodocs',
 } as const;
 
-const isRecord = (value: CsfValue): value is Record<string, CsfValue> =>
-  !!value && typeof value === 'object' && !Array.isArray(value);
+const objectKeys = (node: t.ObjectExpression) =>
+  node.properties.flatMap((property) => {
+    if (!t.isObjectProperty(property) || property.computed) {
+      return [];
+    }
+    if (t.isIdentifier(property.key)) {
+      return [property.key.name];
+    }
+    if (t.isStringLiteral(property.key)) {
+      return [property.key.value];
+    }
+    return [];
+  });
 
-const setFilterRenames: Record<string, string> = {
+const setFilterRenames: Record<string, string> = Object.assign(Object.create(null), {
   experimental_setFilters: 'setFilters',
   experimental_setFilter: 'setFilter',
-};
+});
 
 const renameSetFilterIdentifiers = (code: string) => {
   if (!code.includes('experimental_setFilter')) {
@@ -31,7 +41,9 @@ const renameSetFilterIdentifiers = (code: string) => {
   let changed = false;
   traverse(ast, {
     Identifier(path) {
-      const next = setFilterRenames[path.node.name];
+      const next = Object.hasOwn(setFilterRenames, path.node.name)
+        ? setFilterRenames[path.node.name]
+        : undefined;
       if (!next) {
         return;
       }
@@ -51,27 +63,33 @@ export const tagFilterApi: Fix = {
   link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#tag-filtering-api',
 
   prompt: () =>
-    `Rename deprecated tag filter options to ${picocolors.cyan('hideFromSidebar')}, ${picocolors.cyan('hideFromAutodocs')}, and ${picocolors.cyan('setFilter')}`,
+    `Rename the old tag filter options to ${picocolors.cyan('hideFromSidebar')}, ${picocolors.cyan('hideFromAutodocs')}, and ${picocolors.cyan('setFilter')}`,
 
   transform: () => [
     {
       filter: { kind: ['main'], code: /excludeFromSidebar|excludeFromDocsStories/ },
       editConfig: (main) => {
-        const tags = main.getValue(['tags']);
-        if (!isRecord(tags)) {
+        const tags = main.get(['tags']);
+        if (!tags || !t.isObjectExpression(tags)) {
           return;
         }
-        for (const tagName of Object.keys(tags)) {
-          const option = tags[tagName];
-          if (!isRecord(option)) {
+        for (const tagName of objectKeys(tags)) {
+          const option = main.get(['tags', tagName]);
+          if (!option || !t.isObjectExpression(option)) {
             continue;
           }
+          const keys = new Set(objectKeys(option));
           for (const [from, to] of Object.entries(tagOptionRenames)) {
-            if (!(from in option)) {
+            if (!keys.has(from)) {
               continue;
             }
-            if (to in option) {
-              if (option[from] === true && option[to] !== true) {
+            if (keys.has(to)) {
+              const fromNode = main.get(['tags', tagName, from]);
+              const toNode = main.get(['tags', tagName, to]);
+              const fromTrue =
+                !!fromNode && t.isBooleanLiteral(fromNode) && fromNode.value === true;
+              const toTrue = !!toNode && t.isBooleanLiteral(toNode) && toNode.value === true;
+              if (fromTrue && !toTrue) {
                 main.set(['tags', tagName, to], true);
               }
               main.remove(['tags', tagName, from]);

@@ -31,7 +31,12 @@ export const sidebarFilters: Fix = {
       return null;
     }
 
-    const manager = loadConfig(code, managerPath).parse();
+    let manager;
+    try {
+      manager = loadConfig(code, managerPath).parse();
+    } catch {
+      return null;
+    }
     const hasFilters = manager
       .callArguments({
         importedName: 'addons',
@@ -44,6 +49,6 @@ export const sidebarFilters: Fix = {
   },
 
   prompt() {
-    return `${picocolors.cyan('sidebar.filters')} is deprecated and will be removed in Storybook 12. Replace it with ${picocolors.cyan('tags.<name>.hideFromSidebar')} or ${picocolors.cyan('setFilter')}. This is not automigrated.`;
+    return `${picocolors.cyan('sidebar.filters')} was removed in Storybook 11. Replace it with ${picocolors.cyan('tags.<name>.hideFromSidebar')} or ${picocolors.cyan('setFilter')}. This is not automigrated.`;
   },
 };

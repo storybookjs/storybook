@@ -108,6 +108,31 @@ describe('tag-filter-api', () => {
     expect(main).not.toContain('excludeFromDocsStories');
   });
 
+  it('renames an expression-valued option and leaves unrelated identifiers', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: [
+        'export default {',
+        '  tags: {',
+        "    internal: { excludeFromSidebar: options.configType === 'PRODUCTION' },",
+        "    beta: { defaultFilterSelection: process.env.BETA ? 'include' : 'exclude' },",
+        '  },',
+        '};',
+      ].join('\n'),
+      [managerConfigPath]: 'export {};',
+      [storyPath]: 'value.toString();\napi.experimental_setFilter("x", () => true);',
+    });
+
+    const failures = await runFix(tagFilterApi, { ...options, result: {} });
+    expect(failures).toEqual([]);
+    const main = fs.readFileSync(mainConfigPath, 'utf8') as string;
+    expect(main).toContain("hideFromSidebar: options.configType === 'PRODUCTION'");
+    expect(main).toContain("defaultFilterSelection: process.env.BETA ? 'include' : 'exclude'");
+    expect(main).not.toContain('excludeFromSidebar');
+    const story = fs.readFileSync(storyPath, 'utf8') as string;
+    expect(story).toContain('value.toString();');
+    expect(story).toContain('api.setFilter("x", () => true);');
+  });
+
   it('drops a deprecated key when the new name is already set', async () => {
     vol.fromJSON({
       [mainConfigPath]:

@@ -68,6 +68,7 @@ export const Zoom = memo<{
 
   return (
     <PopoverProvider
+      ariaLabel="Zoom controls"
       padding="none"
       onVisibleChange={(isVisible) => {
         if (isVisible) {
@@ -83,7 +84,13 @@ export const Zoom = memo<{
                 ref={inputRef}
                 unit="%"
                 before={
-                  <ActionList.Button size="small" padding="small" readOnly aria-hidden>
+                  <ActionList.Button
+                    ariaLabel={false}
+                    size="small"
+                    padding="small"
+                    readOnly
+                    aria-hidden
+                  >
                     <ZoomIcon />
                   </ActionList.Button>
                 }

@@ -17,14 +17,14 @@ import {
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import type { NormalLink } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import type { MenuItem } from '../../container/Menu.tsx';
 import type { getStateType } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import type { RefType } from './types.ts';
 
 const { document, window: globalWindow } = global;
 
-export type ClickHandler = NormalLink['onClick'];
+export type ClickHandler = MenuItem['onClick'];
 export interface IndicatorIconProps {
   type: ReturnType<typeof getStateType>;
 }

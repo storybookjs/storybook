@@ -342,7 +342,7 @@ export const CollectionGrid: FC<CollectionGridProps> = ({
       <ReviewAllCell role="presentation" data-review-all>
         <ReviewAllShell>
           <ReviewAllFrame>
-            <Button size="medium" onClick={() => onShowAll?.()}>
+            <Button ariaLabel={false} size="medium" onClick={() => onShowAll?.()}>
               Review all {storyIds.length}
             </Button>
           </ReviewAllFrame>

@@ -1,8 +1,6 @@
 import type { DOMAttributes, ReactElement, ReactNode } from 'react';
 import React, { useCallback, useState } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
-
 import { Focusable } from 'react-aria-components/Focusable';
 import { TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components/Tooltip';
 
@@ -36,9 +34,6 @@ export interface TooltipProviderProps {
   /** Uncontrolled state: whether the tooltip is visible by default. */
   defaultVisible?: boolean;
 
-  /** Deprecated property - use defaultVisible instead. */
-  startOpen?: boolean;
-
   /** Controlled state: whether the tooltip is visible. */
   visible?: boolean;
 
@@ -53,7 +48,6 @@ const TooltipProvider = ({
   tooltip,
   children,
   defaultVisible,
-  startOpen,
   delayShow = 400,
   delayHide = 200,
   visible,
@@ -63,11 +57,7 @@ const TooltipProvider = ({
   const placement = convertToReactAriaPlacement(placementProp);
   const child = React.Children.only(children);
 
-  if (startOpen !== undefined) {
-    deprecate('The `startOpen` prop is deprecated. Please use `defaultVisible` instead.');
-  }
-
-  const [isOpen, setIsOpen] = useState(defaultVisible ?? startOpen ?? false);
+  const [isOpen, setIsOpen] = useState(defaultVisible ?? false);
   const onOpenChange = useCallback(
     (isOpen: boolean) => {
       setIsOpen(isOpen);

@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Deprecated addon UI APIs removed](#deprecated-addon-ui-apis-removed)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
   - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
@@ -571,6 +572,110 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Deprecated addon UI APIs removed
+
+Storybook 11 removes the deprecated UI APIs from `storybook/internal/components`. Update addons to the replacements below. `TooltipProvider`, `Tooltip`, `TooltipNote`, `PopoverProvider`, `Popover`, `ActionList`, `Select`, and the current tab components remain available.
+
+| Removed API | Replacement |
+| --- | --- |
+| `WithTooltip`, `WithTooltipPure`, and the legacy `WithToolTipState` implementation | `TooltipProvider` for noninteractive content shown on hover or focus |
+| `TooltipMessage` | `PopoverProvider` with `Popover` or custom content |
+| `TooltipLinkList`, `TooltipLinkListLink`, `ListItem` | `PopoverProvider` with `ActionList` for actions; `Select` for choosing a value |
+| `Tabs`, `TabsState`, `TabWrapper` | `TabsView`, or `TabList` and `TabPanel` with `useTabsState` |
+| `TabButton`, `TabBar` | Let `TabsView` or `TabList` render tab controls |
+| `IconButton` | `Button` with `variant="ghost"`, `padding="small"`, and `ariaLabel` |
+| Legacy `Icons` and `Symbols` implementations | Named components from `@storybook/icons` |
+| `Button.active` | `ToggleButton.pressed` for a toggle, or `Select` for selection |
+| `FlexBar` | `Bar` with `innerStyle={{ justifyContent: 'space-between' }}` |
+| `Modal.onEscapeKeyDown` | `dismissOnEscape` |
+| `Modal.onInteractOutside` | `dismissOnClickOutside` |
+| `Modal.Dialog.Close`, `Modal.CloseButton` | `Modal.Close` |
+| `Link.isButton` | Omit `href` to render a button; provide `href` to render a link |
+
+`Button.ariaLabel` is now required. Use an action label for icon-only buttons or buttons whose text depends on visual context. Use `ariaLabel={false}` only when the visible text already names the action. `Modal.ariaLabel` and `PopoverProvider.ariaLabel` are also required and must describe the dialog's purpose.
+
+```tsx
+import { Button, ToggleButton } from 'storybook/internal/components';
+import { RefreshIcon } from '@storybook/icons';
+
+<Button variant="ghost" padding="small" ariaLabel="Refresh results" onClick={refresh}>
+  <RefreshIcon />
+</Button>;
+
+<ToggleButton ariaLabel="Show outlines" pressed={showOutlines} onClick={toggleOutlines}>
+  Outlines
+</ToggleButton>;
+```
+
+For tooltips, use `TooltipProvider`, not the transitional `WithTooltipNew` name mentioned in older guidance. Replace `startOpen` with `defaultVisible`. Controlled tooltips use `visible` and `onVisibleChange`.
+
+The legacy props `trigger`, `svg`, `strategy`, `withArrows`, `mutationObserverOptions`, `hasChrome`, `closeOnTriggerHidden`, `followCursor`, `closeOnOutsideClick`, and `interactive` are not supported by `TooltipProvider`. Put tooltip styling on `Tooltip` or use `TooltipNote`. The trigger must be one focusable element that forwards refs. Use `triggerOnFocusOnly` only for keyboard navigation hints. For interactive content or click activation, use `PopoverProvider` instead.
+
+```tsx
+import { TooltipNote, TooltipProvider } from 'storybook/internal/components';
+
+<TooltipProvider tooltip={<TooltipNote note="Inspect the selected story" />} placement="top">
+  <button type="button" onClick={inspectStory}>Inspect story</button>
+</TooltipProvider>;
+```
+
+The current menu replacement is `ActionList`. There are no public `WithMenu` or `MenuItem` components. Convert each old link to an `ActionList.Item` containing an `ActionList.Action` or `ActionList.Link`. Use `ActionList.Icon` and `ActionList.Text` for content. For example, an addon action menu can close after running an action:
+
+```tsx
+import { ActionList, Button, PopoverProvider } from 'storybook/internal/components';
+
+<PopoverProvider
+  ariaLabel="Result actions"
+  padding={0}
+  popover={({ onHide }) => (
+    <ActionList>
+      <ActionList.Item>
+        <ActionList.Action ariaLabel={false} onClick={() => { refresh(); onHide(); }}>
+          <ActionList.Text>Refresh results</ActionList.Text>
+        </ActionList.Action>
+      </ActionList.Item>
+      <ActionList.Item>
+        <ActionList.Link ariaLabel={false} href="https://example.com/help">
+          <ActionList.Text>Help</ActionList.Text>
+        </ActionList.Link>
+      </ActionList.Item>
+    </ActionList>
+  )}
+>
+  <Button ariaLabel={false}>Result actions</Button>
+</PopoverProvider>;
+```
+
+Replace child-based legacy tabs with a `tabs` array. `defaultSelected` sets the initial tab. Use `selected` and `onSelectionChange` for controlled selection. Navigation links cannot be mixed with tabs; put them outside the tab list.
+
+```tsx
+import { TabsView } from 'storybook/internal/components';
+
+<TabsView
+  defaultSelected="results"
+  tabs={[
+    { id: 'results', title: 'Results', children: <Results /> },
+    { id: 'settings', title: 'Settings', children: <Settings /> },
+  ]}
+/>;
+```
+
+Modal dismissal callbacks are removed. Replace callback vetoes such as `event.preventDefault()` with `dismissOnEscape={false}` or `dismissOnClickOutside={false}`. Use `onOpenChange` to track visibility. `Modal.Close` closes automatically, including when `asChild` wraps a custom button.
+
+```tsx
+import { Button, Modal } from 'storybook/internal/components';
+
+<Modal ariaLabel="Addon settings" open={open} onOpenChange={setOpen} dismissOnClickOutside={false}>
+  <Modal.Content>
+    <Modal.Header><Modal.Title>Addon settings</Modal.Title></Modal.Header>
+    <Settings />
+    <Modal.Close asChild><Button ariaLabel={false}>Done</Button></Modal.Close>
+  </Modal.Content>
+</Modal>;
+```
+
+`Bar` now applies `backgroundColor` or the theme's bar background regardless of `border`. To keep a transparent bar, set `backgroundColor="transparent"`. Existing serializable toolbar icon names in `globalTypes` remain supported; they do not require importing React components into preview configuration.
 
 ### Addon `TAB` registration removed
 

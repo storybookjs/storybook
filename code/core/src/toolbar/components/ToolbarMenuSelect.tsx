@@ -6,14 +6,10 @@ import { Select } from 'storybook/internal/components';
 import { useGlobals, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { Icons } from '../../components/components/icon/icon.tsx';
+import { ToolbarIcon } from './ToolbarIcon.tsx';
 import type { ToolbarItem, ToolbarMenuProps } from '../types.ts';
 import { getSelectedItem } from '../utils/get-selected.ts';
 import { registerShortcuts } from '../utils/register-shortcuts.ts';
-
-// We can't remove the Icons component just yet because there's no way for now to import icons
-// in the preview directly. Before having a better solution, we are going to keep the Icons component
-// for now and remove the deprecated warning.
 
 const ToolbarMenuItemContainer = styled('div')({
   width: '100%',
@@ -67,9 +63,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
         .map((item) => {
           const itemTitle = item.title ?? item.value ?? 'Untitled';
           const iconComponent =
-            !item.hideIcon && item.icon ? (
-              <Icons icon={item.icon} __suppressDeprecationWarning={true} />
-            ) : undefined;
+            !item.hideIcon && item.icon ? <ToolbarIcon icon={item.icon} /> : undefined;
 
           if (item.right) {
             return {
@@ -138,7 +132,7 @@ export const ToolbarMenuSelect: FC<ToolbarMenuProps> = ({
       resetLabel={resetLabel}
       onReset={resetItem ? () => updateGlobals({ [id]: resetItem?.value }) : undefined}
       onSelect={(selected) => updateGlobals({ [id]: selected })}
-      icon={icon && <Icons icon={icon} __suppressDeprecationWarning={true} />}
+      icon={icon && <ToolbarIcon icon={icon} />}
       showSelectedOptionTitle={dynamicTitle}
     >
       {title}

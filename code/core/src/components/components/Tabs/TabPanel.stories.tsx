@@ -85,10 +85,10 @@ export const RenderOnlySelected = meta.story({
   args: {
     renderAllChildren: false,
   },
-  play: ({ canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const panel = canvas.getByRole('tabpanel');
+    const panel = await canvas.findByRole('tabpanel');
     const tab1 = canvas.getByTestId(1);
     expect(panel).toBeInTheDocument();
     expect(tab1?.parentNode?.parentNode?.parentNode?.parentNode).toBe(panel);
@@ -103,10 +103,10 @@ export const RenderAllChildren = meta.story({
   args: {
     renderAllChildren: true,
   },
-  play: ({ canvasElement }) => {
+  play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
 
-    const panel = canvas.getByRole('tabpanel');
+    const panel = await canvas.findByRole('tabpanel');
     const tab1 = canvas.getByTestId(1);
     const tab2 = canvas.getByTestId(2);
     const tab3 = canvas.getByTestId(3);
@@ -130,7 +130,7 @@ export const PreserveState = meta.story({
   },
   play: async ({ canvasElement, step }) => {
     const canvas = within(canvasElement);
-    const panel = canvas.getByRole('tabpanel');
+    const panel = await canvas.findByRole('tabpanel');
 
     await step('Setup', async () => {
       expect(panel).toBeInTheDocument();

@@ -7,7 +7,6 @@ import React, {
   useState,
 } from 'react';
 
-import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
 
 import { FocusScope } from 'react-aria/FocusScope';
@@ -46,18 +45,11 @@ interface ModalProps extends HTMLAttributes<HTMLDivElement> {
   /** Uncontrolled state: whether the Modal is initially open on the first. */
   defaultOpen?: boolean;
 
-  /** @deprecated Use `dismissOnEscape` instead. */
-  onEscapeKeyDown?: (event: KeyboardEvent) => void;
-
-  /** @deprecated Use `dismissOnInteractOutside` instead. */
-  onInteractOutside?: (event: FocusEvent | MouseEvent | TouchEvent) => void;
-
   /** Handler called when visibility of the Modal changes. */
   onOpenChange?: (isOpen: boolean) => void;
 
-  // TODO: Storybook 11, make this required
   /** The accessible name for the modal. */
-  ariaLabel?: string;
+  ariaLabel: string;
 
   /** Whether the modal can be dismissed by clicking outside. Defaults to `true`. */
   dismissOnClickOutside?: boolean;
@@ -86,38 +78,12 @@ function BaseModal({
   dismissOnEscape = true,
   className,
   open,
-  onEscapeKeyDown,
-  onInteractOutside,
   onOpenChange,
   defaultOpen,
   transitionDuration = 200,
   variant = 'dialog',
   ...props
 }: ModalProps) {
-  let deprecated = undefined;
-  if (ariaLabel === undefined || ariaLabel === '') {
-    deprecated = 'ariaLabel';
-    deprecate('The `ariaLabel` prop on `Modal` will become mandatory in Storybook 11.');
-    // TODO in Storybook 11
-    // throw new Error(
-    //   'Modal requires an ARIA label to be accessible. Please provide a valid ariaLabel prop.'
-    // );
-  }
-
-  if (onEscapeKeyDown !== undefined) {
-    deprecated = 'onEscapeKeyDown';
-    deprecate(
-      'The `onEscapeKeyDown` prop is deprecated and will be removed in Storybook 11. Use `dismissOnEscape` instead.'
-    );
-  }
-
-  if (onInteractOutside !== undefined) {
-    deprecated = 'onInteractOutside';
-    deprecate(
-      'The `onInteractOutside` prop is deprecated and will be removed in Storybook 11. Use `dismissOnInteractOutside` instead.'
-    );
-  }
-
   const overlayRef = useRef<HTMLDivElement>(null);
 
   const reducedMotion = useMediaQuery('(prefers-reduced-motion: reduce)');
@@ -145,17 +111,6 @@ function BaseModal({
     {
       isDismissable: dismissOnClickOutside,
       isKeyboardDismissDisabled: true,
-      shouldCloseOnInteractOutside: onInteractOutside
-        ? (element: Element) => {
-            const mockedEvent = new MouseEvent('click', {
-              bubbles: true,
-              cancelable: true,
-              relatedTarget: element,
-            });
-            onInteractOutside(mockedEvent);
-            return !mockedEvent.defaultPrevented;
-          }
-        : undefined,
     },
     state,
     overlayRef
@@ -201,11 +156,7 @@ function BaseModal({
         // portals bubble through) or a document-level shortcut handler underneath this modal.
         e.stopPropagation();
         if (dismissOnEscape) {
-          onEscapeKeyDown?.(e.nativeEvent);
-          // The deprecated handler can veto the close by preventing default (Radix contract).
-          if (!e.nativeEvent.defaultPrevented) {
-            close();
-          }
+          close();
         }
       }
     },
@@ -232,7 +183,6 @@ function BaseModal({
             <div tabIndex={-1}>
               {/* We need to set the FocusScope ourselves somehow, Overlay won't set it. */}
               <Components.Container
-                data-deprecated={deprecated}
                 $variant={variant}
                 $status={status}
                 $transitionDuration={transitionDuration}

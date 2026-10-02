@@ -1,7 +1,7 @@
 import type { MutableRefObject } from 'react';
 import React, { useCallback, useMemo, useRef } from 'react';
 
-import { Button, ListItem } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 import { PRELOAD_ENTRIES } from 'storybook/internal/core-events';
 
 import {
@@ -28,7 +28,7 @@ import type {
 } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
-import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
+import type { SidebarMenuItem } from './Menu.tsx';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import {
   getChangeDetectionStatus,
@@ -156,10 +156,6 @@ const StatusSlots = styled.div({
   alignItems: 'center',
 });
 
-export const ContextMenu = {
-  ListItem,
-};
-
 const getStatusLabel = (status: StatusValue) =>
   status.split(':')[1].replace(/^./, (char) => char.toUpperCase());
 
@@ -203,7 +199,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
   const theme = useTheme();
   const { isDesktop, isMobile } = useLayout();
 
-  const statusLinks = useMemo<Link[]>(() => {
+  const statusLinks = useMemo<SidebarMenuItem[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
       return Object.entries(statuses)
         .filter(([, status]) => status.sidebarContextMenu !== false)
@@ -213,7 +209,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           id: typeId,
           title: status.title,
           description: status.description,
-          'aria-label': `Test status for ${status.title}: ${status.value}`,
+          ariaLabel: `Test status for ${status.title}: ${status.value}`,
           icon: getStatus(theme, status.value).icon,
           onClick: () => {
             onSelectStoryId(item.id);

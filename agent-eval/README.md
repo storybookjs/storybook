@@ -57,7 +57,7 @@ their changes locally instead: only the specific evals affected by the change
 (or the eval being fixed), one experiment at a time, via `EVAL_ONLY` — never a
 full line, never multiple experiments in parallel.
 
-By default only the first core eval (`801-create-component-no-launch-config`)
+By default only the first core eval (`801-create-accessible-component`)
 runs. Set `EVAL_EXTRA_EVALS=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals
 (`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —
@@ -67,12 +67,6 @@ or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 EVAL_EXTRA_EVALS=1 yarn eval
 EVAL_ONLY=803-edit-component yarn eval
 ```
-
-Before a local run, rebuild the local `@storybook/addon-mcp`/`@storybook/mcp`
-builds the sandboxes inject (`yarn nx run-many -t compile --projects mcp,addon-mcp`
-from the repository root). A stale `dist` importing since-renamed core exports
-crashes the sandbox Storybook at preset load, which surfaces as the readiness
-timeout below rather than a build error.
 
 A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 4
 lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
@@ -90,14 +84,42 @@ they become the active line (default smoke: `908-run-story-tests`). See
 Experiments named `<agent>-<integration>-<model>-<effort>` pin their model and
 effort explicitly, so a CLI default change cannot silently change what runs.
 
-Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
-exact version it finds into the sandbox `package.json`, so each result snapshot
-records which version the run used. By default it pins the `next` tag and keeps
-the local `@storybook/addon-mcp`/`@storybook/mcp` builds from this checkout.
-Set `EVAL_STORYBOOK_LATEST=1` to pin the `latest` tag instead — including the
-published `@storybook/addon-mcp` and `@storybook/mcp` in place of the local
-builds — to check whether a behavior change (e.g. in the documentation tooling)
-regressed since the last stable release:
+Sandbox setup installs every Storybook package from the checkout under test,
+so an eval run measures the code of the branch it runs on. Template and fixture
+manifests list those packages as `workspace:*`. Setup compiles each of them
+with `yarn nx run-many -t compile -c production`, the build a publish uses
+(only it emits type declarations), together with the monorepo packages they
+depend on, packs them with `yarn pack`
+into `local-packages/`, and points the sandbox manifests and the root
+`overrides` at those tarballs. The sandbox `postinstall` then fails the install
+if `package-lock.json` resolves any of those packages from the registry,
+because the checkout usually carries the same version as a published release,
+so such a mix-up would otherwise go unnoticed. Each run's `result.json`
+records the commit the run used and whether the working tree was dirty, under
+`metadata.checkout`.
+
+Setup runs inside each eval's timeout, so warm the nx cache before a run,
+as CI does. A plain `yarn nx run-many -t compile` does not warm it, because the
+production build is cached separately:
+
+```bash
+yarn workspace agent-eval run compile:checkout
+```
+
+This covers what the sandbox installs up front. An agent that installs
+Storybook packages itself still gets them from npm: 820 (init) runs whatever
+CLI the agent downloads (for example `npm create storybook@latest`), and
+`storybook add` during any eval adds a published addon next to the checkout
+packages, with the same version number. Right after the version on `next` is
+bumped and before that version is published, `storybook add` therefore fails.
+
+The tarballs are left out of the saved result projects, so a saved
+`package.json` that points at `local-packages/` cannot be installed as-is;
+rerun the eval from the commit in `metadata.checkout` instead.
+
+Set `EVAL_STORYBOOK_LATEST=1` to install the published `latest` release of
+every Storybook package instead, to check whether a behavior change (e.g. in
+the documentation tooling) regressed since the last stable release:
 
 ```bash
 EVAL_STORYBOOK_LATEST=1 yarn eval
@@ -135,7 +157,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml`.
+- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (the review-on text with `EVAL_REVIEW=1`, none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Known Failures
@@ -223,29 +245,19 @@ saved result project snapshots so eval runs are easy to inspect.
 Three templates exist today:
 
 - `reshaped-storybook`: the design-system shape — Reshaped components, full
-  Storybook (`next`) with the local addon builds, MSW, and the vitest story
-  test setup.
+  Storybook from the checkout, MSW, and the vitest story test setup.
 - `vite-app`: a minimal React + Vite app with **no Storybook at all**. The
   lifecycle fixtures use it directly (820 init) or layer an old Storybook on
-  top (821/822 upgrades and 823 setup-on-outdated, which also set
-  `evals.pinStorybook: false` so the harness keeps their intentionally
-  outdated versions); 812 layers a full Storybook `next` setup with zero
-  stories on top.
+  top (821/822 upgrades and 823 setup-on-outdated, which list exact versions
+  instead of `workspace:*`, so the harness keeps them); 812 layers a full
+  Storybook setup with zero stories on top.
 - `monorepo`: an npm-workspaces repo where the runnable Storybook lives in the
   `packages/ui` leaf, so evals can cover agents working inside a workspace
-  package. Storybook pinning and the local `file:` build detection cover
-  workspace package.json files too.
+  package. `workspace:*` works in workspace package.json files too.
 
 This keeps prompt variants small: each variant keeps its own `PROMPT.md`,
 `EVAL.ts`, and metadata `package.json`, while shared app files stay in the
 template.
-
-Templates can use local built Storybook MCP packages with npm `file:`
-dependencies, for example `file:./local-packages/addon-mcp`. The setup step
-copies `code/addons/mcp/dist` and `code/lib/mcp/dist` from this checkout into
-the sandbox before the sandbox runs `npm install`. CI builds those packages
-before running evals; run `yarn nx run-many -t compile --projects mcp,addon-mcp`
-locally after changing those packages.
 
 The MCP experiments configure each agent through its project-local MCP file:
 Claude Code gets `.mcp.json`, and Codex gets `.codex/config.toml`. The plugin

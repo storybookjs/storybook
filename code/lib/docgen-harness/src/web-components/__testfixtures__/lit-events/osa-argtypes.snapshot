@@ -1,36 +1,58 @@
 {
-  "my-change": {
-    "description": "Fired when the value changes.",
-    "name": "my-change",
-    "required": false,
+  "close-method": {
+    "description": undefined,
+    "name": "close",
     "table": {
-      "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
+      "category": "methods",
       "type": {
-        "summary": "CustomEvent",
+        "summary": "()",
       },
     },
     "type": {
-      "name": "void",
+      "name": "function",
     },
   },
-  "my-close": {
-    "description": "Fired when the panel closes.",
-    "name": "my-close",
-    "required": false,
+  "emitChange-method": {
+    "description": undefined,
+    "name": "emitChange",
     "table": {
-      "category": "events",
-      "defaultValue": {
-        "summary": undefined,
-      },
+      "category": "methods",
       "type": {
-        "summary": "CustomEvent",
+        "summary": "()",
       },
     },
     "type": {
-      "name": "void",
+      "name": "function",
+    },
+  },
+  "my-change-event": {
+    "control": false,
+    "description": "Fired when the value changes.",
+    "name": "my-change",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "CustomEvent<{ value: string }>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "CustomEvent<{ value: string }>",
+    },
+  },
+  "my-close-event": {
+    "control": false,
+    "description": "Fired when the panel closes.",
+    "name": "my-close",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "CustomEvent<void>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "CustomEvent<void>",
     },
   },
   "onMyChange": {
@@ -54,7 +76,6 @@
   "value": {
     "description": "Current text value.",
     "name": "value",
-    "required": false,
     "table": {
       "category": "attributes",
       "defaultValue": {

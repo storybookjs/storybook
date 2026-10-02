@@ -16,7 +16,6 @@ import type { StorybookError } from 'storybook/internal/server-errors';
 import {
   AddonVitestPostinstallConfigUpdateError,
   AddonVitestPostinstallError,
-  AddonVitestPostinstallFailedAddonA11yError,
   AddonVitestPostinstallPrerequisiteCheckError,
 } from 'storybook/internal/server-errors';
 import { SupportedFramework } from 'storybook/internal/types';
@@ -37,8 +36,6 @@ import { loadTemplate, updateConfigFile } from './updateVitestFile.ts';
 const ADDON_NAME = '@storybook/addon-vitest' as const;
 const EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
 const STORYBOOK_TEST_PLUGIN_SOURCE = `${ADDON_NAME}/vitest-plugin`;
-
-const addonA11yName = '@storybook/addon-a11y';
 
 /**
  * The Vitest config templates resolve the Storybook config dir against the
@@ -316,59 +313,6 @@ export default async function postInstall(options: PostinstallOptions) {
 
     const formattedContent = await formatFileContent(newConfigFile, configContent);
     await writeFile(newConfigFile, formattedContent);
-  }
-
-  const a11yAddon = info.addons.find((addon) => addon.includes(addonA11yName));
-
-  if (a11yAddon) {
-    try {
-      const useRemotePkg = options.useRemotePkg ?? !!options.skipInstall;
-      const command = [
-        // A versioned spec only resolves through the ephemeral runner; the
-        // local binary is invoked by bare name.
-        useRemotePkg ? `storybook@${versions.storybook}` : `storybook`,
-        'automigrate',
-        'addon-a11y-addon-test',
-        '--loglevel',
-        'silent',
-        '--yes',
-        '--skip-doctor',
-      ];
-
-      if (options.packageManager) {
-        command.push('--package-manager', options.packageManager);
-      }
-
-      if (options.skipInstall) {
-        command.push('--skip-install');
-      }
-
-      if (options.configDir !== '.storybook') {
-        command.push('--config-dir', options.configDir);
-      }
-
-      await prompt.executeTask(
-        // TODO: Remove stdio: 'ignore' once we have a way to log the output of the command properly
-        () =>
-          packageManager.runPackageCommand({
-            args: command,
-            stdio: 'ignore',
-            useRemotePkg,
-          }),
-        {
-          intro: 'Setting up a11y addon for @storybook/addon-vitest',
-          error: 'Failed to setup a11y addon for @storybook/addon-vitest',
-          success: 'a11y addon setup successfully',
-        }
-      );
-    } catch (e: unknown) {
-      logger.error(dedent`
-        Could not automatically set up ${addonA11yName} for @storybook/addon-vitest.
-        Please refer to the documentation to complete the setup manually:
-        https://storybook.js.org/docs/writing-tests/accessibility-testing#integration-with-vitest-addon
-      `);
-      errors.push(new AddonVitestPostinstallFailedAddonA11yError({ error: e }));
-    }
   }
 
   const runCommand = rootConfig ? `npx vitest --project=storybook` : `npx vitest`;

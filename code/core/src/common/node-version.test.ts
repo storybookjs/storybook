@@ -29,48 +29,52 @@ describe('node-version', () => {
   });
 
   describe('isNodeVersionSupported', () => {
-    it('rejects 20.19.0 (below minimum major)', () => {
-      expect(isNodeVersionSupported(20, 19, 0)).toBe(false);
-    });
-
     it('accepts exact minimum version (22.12.0)', () => {
-      expect(isNodeVersionSupported(22, 12, 0)).toBe(true);
-    });
-
-    it('rejects version below minimum minor (20.18.0)', () => {
-      expect(isNodeVersionSupported(20, 18, 0)).toBe(false);
-    });
-
-    it('rejects version below minimum major (18.0.0)', () => {
-      expect(isNodeVersionSupported(18, 0, 0)).toBe(false);
-    });
-
-    it('rejects 20.20.0 (below minimum major)', () => {
-      expect(isNodeVersionSupported(20, 20, 0)).toBe(false);
-    });
-
-    it('rejects 21.0.0 (below minimum major)', () => {
-      expect(isNodeVersionSupported(21, 0, 0)).toBe(false);
-    });
-
-    it('accepts future major above highest defined (24.0.0)', () => {
-      expect(isNodeVersionSupported(24, 0, 0)).toBe(true);
-    });
-
-    it('rejects 22.11.0 (one minor below 22.12)', () => {
-      expect(isNodeVersionSupported(22, 11, 0)).toBe(false);
+      expect(isNodeVersionSupported('22.12.0')).toBe(true);
     });
 
     it('accepts 22.12.1 (patch above minimum)', () => {
-      expect(isNodeVersionSupported(22, 12, 1)).toBe(true);
+      expect(isNodeVersionSupported('22.12.1')).toBe(true);
     });
 
-    it('rejects 19.99.99', () => {
-      expect(isNodeVersionSupported(19, 99, 99)).toBe(false);
+    it('accepts future major above highest defined (24.0.0)', () => {
+      expect(isNodeVersionSupported('24.0.0')).toBe(true);
     });
 
-    it('rejects major-only "22" (treated as 22.0.0 which is below 22.12)', () => {
-      expect(isNodeVersionSupported(22, 0, 0)).toBe(false);
+    it('accepts prerelease of a supported version (26.1.0-rc.0)', () => {
+      expect(isNodeVersionSupported('26.1.0-rc.0')).toBe(true);
+    });
+
+    it('accepts prerelease of a future major (27.0.0-alpha.1)', () => {
+      expect(isNodeVersionSupported('27.0.0-alpha.1')).toBe(true);
+    });
+
+    it('accepts nightly builds (26.0.0-nightly20260915abc1234)', () => {
+      expect(isNodeVersionSupported('26.0.0-nightly20260915abc1234')).toBe(true);
+    });
+
+    it('rejects a prerelease below the minimum (22.12.0-rc.0)', () => {
+      expect(isNodeVersionSupported('22.12.0-rc.0')).toBe(false);
+    });
+
+    it('rejects 22.11.0 (one minor below 22.12)', () => {
+      expect(isNodeVersionSupported('22.11.0')).toBe(false);
+    });
+
+    it('rejects 20.19.0 (below minimum major)', () => {
+      expect(isNodeVersionSupported('20.19.0')).toBe(false);
+    });
+
+    it('rejects 21.0.0 (below minimum major)', () => {
+      expect(isNodeVersionSupported('21.0.0')).toBe(false);
+    });
+
+    it('rejects 18.0.0 (below minimum major)', () => {
+      expect(isNodeVersionSupported('18.0.0')).toBe(false);
+    });
+
+    it('fails closed for unparseable input (not-a-version)', () => {
+      expect(isNodeVersionSupported('not-a-version')).toBe(false);
     });
   });
 

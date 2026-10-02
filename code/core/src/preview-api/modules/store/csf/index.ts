@@ -2,6 +2,7 @@ export * from './normalizeInputTypes.ts';
 export * from './normalizeStory.ts';
 export * from './processCSFFile.ts';
 export * from './prepareStory.ts';
+export * from './hideArgTypes.ts';
 export * from './normalizeComponentAnnotations.ts';
 export * from './normalizeProjectAnnotations.ts';
 export * from './normalizeArrays.ts';

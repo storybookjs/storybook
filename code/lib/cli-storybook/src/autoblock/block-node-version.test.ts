@@ -14,13 +14,16 @@ describe('minimumNode22 blocker', () => {
     stubNodeVersion(originalNodeVersion);
   });
 
-  test.each(['20.19.0', '21.7.3', '22.11.0'])('blocks Node.js %s', async (version) => {
-    stubNodeVersion(version);
-    const options = {} as AutoblockOptions;
-    await expect(blocker.check(options)).resolves.toEqual({ nodeVersion: version });
-  });
+  test.each(['20.19.0', '21.7.3', '22.11.0', '20.0.0-rc.0', '22.12.0-rc.1'])(
+    'blocks Node.js %s',
+    async (version) => {
+      stubNodeVersion(version);
+      const options = {} as AutoblockOptions;
+      await expect(blocker.check(options)).resolves.toEqual({ nodeVersion: version });
+    }
+  );
 
-  test.each(['22.12.0', '24.1.0'])('does not block Node.js %s', async (version) => {
+  test.each(['22.12.0', '24.1.0', '22.13.0-rc.1'])('does not block Node.js %s', async (version) => {
     stubNodeVersion(version);
     const options = {} as AutoblockOptions;
     await expect(blocker.check(options)).resolves.toBe(false);

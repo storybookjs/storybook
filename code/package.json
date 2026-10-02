@@ -37,14 +37,13 @@
     "task": "yarn --cwd ../scripts task"
   },
   "browserslist": [
-    "chrome >= 131",
-    "android >= 131",
-    "and_chr >= 131",
-    "edge >= 134",
-    "firefox >= 136",
-    "safari >= 18.3",
-    "ios_saf >= 18.3",
-    "opera >= 117",
+    "chrome >= 147",
+    "android >= 147",
+    "and_chr >= 147",
+    "edge >= 150",
+    "firefox >= 152",
+    "safari >= 26.5",
+    "ios_saf >= 26.5",
     "node >= 20"
   ],
   "dependencies": {
@@ -106,7 +105,7 @@
     "esbuild-loader": "^4.3.0",
     "happy-dom": "^17.6.3",
     "http-server": "^14.1.1",
-    "knip": "^5.70.2",
+    "knip": "^6.38.0",
     "mock-require": "^3.0.3",
     "oxlint": "1.72.0",
     "prettier": "^3.7.1",
@@ -120,6 +119,7 @@
     "storybook-addon-pseudo-states": "workspace:*",
     "ts-dedent": "^2.0.0",
     "typescript": "^6.0.3",
+    "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^11.1.0",
     "vite": "^7.0.4",
     "vite-plugin-inspect": "^11.0.0",
@@ -194,5 +194,6 @@
         "Dependency Upgrades"
       ]
     ]
-  }
+  },
+  "deferredNextVersion": "11.0.0-alpha.2"
 }

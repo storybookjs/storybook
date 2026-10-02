@@ -10,7 +10,7 @@ describe(extractDefineMetaPropertiesNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
 
           const { Story } = defineMeta({
             title: "My Story",

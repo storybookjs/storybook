@@ -13,7 +13,7 @@ describe(getStringValueFromAttribute.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -49,7 +49,7 @@ describe(getStringValueFromAttribute.name, () => {
   ])("throws error when a `<Story />` 'name' attribute value is %s", async (_, value) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -81,7 +81,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -121,7 +121,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
   }) => {
     const code = `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf";
+          import { defineMeta } from "@storybook/svelte";
 
           import SampleComponent from "./SampleComponent.svelte";
 
@@ -160,7 +160,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story name="Default" tags={["autodocs", "!dev"]} />
@@ -185,7 +185,7 @@ describe(getArrayOfStringsValueFromAttribute.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
           const { Story } = defineMeta();
         </script>
         <Story name="Default" />

@@ -10,7 +10,7 @@
     Stories: Component;
     exportName: string;
     args: Record<string, any>;
-    storyContext: StoryContext<Cmp>;
+    storyContext: StoryContext<Record<string, any>>;
     metaRenderSnippet?: Snippet;
   };
 

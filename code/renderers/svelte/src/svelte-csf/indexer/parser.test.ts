@@ -5,6 +5,8 @@ import { fileURLToPath } from 'node:url';
 
 import { beforeEach, describe, it, vi } from 'vitest';
 
+import { SVELTE_CSF_IMPORT_SOURCES } from '../constants.ts';
+
 const loadSvelteConfig = vi.hoisted(() => vi.fn(async () => undefined));
 
 vi.mock('@sveltejs/vite-plugin-svelte', () => ({ loadSvelteConfig }));
@@ -68,4 +70,99 @@ describe('parseForIndexer', () => {
       expect(stories.map((story) => story.exportName)).toEqual(['Default']);
     }
   );
+
+  describe('imports', () => {
+    async function writeStoriesFile(moduleScript: string) {
+      const file = join(await mkdtemp(join(tmpdir(), 'svelte-csf-')), 'Example.stories.svelte');
+      await writeFile(
+        file,
+        `<script module lang="ts">
+          ${moduleScript}
+        </script>
+
+        <Story name="Default" />
+        `
+      );
+      return file;
+    }
+
+    it.for(SVELTE_CSF_IMPORT_SOURCES)(
+      'indexes a file that imports defineMeta from %s',
+      async (source, { expect }) => {
+        const { parseForIndexer } = await import('./parser.ts');
+        const file = await writeStoriesFile(`
+          import { defineMeta } from '${source}';
+          const { Story } = defineMeta({ title: 'Example' });
+        `);
+
+        const { stories } = await parseForIndexer(file, { legacyTemplate: false });
+
+        expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+      }
+    );
+
+    it('indexes a file with type-only, other named and namespace imports', async ({ expect }) => {
+      const { parseForIndexer } = await import('./parser.ts');
+      const file = await writeStoriesFile(`
+        import * as SB from '@storybook/svelte';
+        import type { Meta } from '@storybook/svelte';
+        import { composeStories, defineMeta } from '@storybook/svelte';
+        const { Story } = defineMeta({ title: 'Example' });
+      `);
+
+      const { meta, stories } = await parseForIndexer(file, { legacyTemplate: false });
+
+      expect(meta.title).toBe('Example');
+      expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+    });
+
+    it('does not throw 0002 when defineMeta is imported by name next to a namespace import', async ({
+      expect,
+    }) => {
+      const { parseForIndexer } = await import('./parser.ts');
+      const file = await writeStoriesFile(`
+        import * as SB from '@storybook/svelte';
+        import { defineMeta } from '@storybook/svelte';
+      `);
+
+      await expect(parseForIndexer(file, { legacyTemplate: false })).resolves.toBeDefined();
+    });
+
+    it.for([`import * as SB from '@storybook/svelte';`, `import SK from '@storybook/sveltekit';`])(
+      'indexes a legacy <Meta> file that also has "%s"',
+      async (otherImport, { expect }) => {
+        const { parseForIndexer } = await import('./parser.ts');
+        const file = join(await mkdtemp(join(tmpdir(), 'svelte-csf-')), 'Legacy.stories.svelte');
+        await writeFile(
+          file,
+          `<script>
+            import { Meta, Story } from '@storybook/svelte/csf';
+            ${otherImport}
+          </script>
+
+          <Meta title="Legacy" />
+
+          <Story name="Default" />
+          `
+        );
+
+        const { meta, stories } = await parseForIndexer(file, { legacyTemplate: true });
+
+        expect(meta.title).toBe('Legacy');
+        expect(stories.map((story) => story.exportName)).toEqual(['Default']);
+      }
+    );
+
+    it('fails with only a namespace import', async ({ expect }) => {
+      const { parseForIndexer } = await import('./parser.ts');
+      const file = await writeStoriesFile(`
+        import * as SB from '@storybook/svelte';
+        const { Story } = SB.defineMeta({ title: 'Example' });
+      `);
+
+      await expect(parseForIndexer(file, { legacyTemplate: false })).rejects.toThrow(
+        'SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002'
+      );
+    });
+  });
 });

@@ -52,7 +52,7 @@ function createStoryRendererContext() {
     currentStoryExportName: undefined,
     args: {},
     // The renderer sets the real story context before any story reads it
-    storyContext: /** @type {StoryContext<TCmp>} */ ({}),
+    storyContext: /** @type {StoryContext<Record<string, any>>} */ ({}),
   });
 
   setContext(CONTEXT_KEY, ctx);

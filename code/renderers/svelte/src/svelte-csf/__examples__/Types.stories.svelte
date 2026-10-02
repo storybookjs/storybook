@@ -1,5 +1,5 @@
 <script lang="ts" module>
-  import { defineMeta, type StoryContext } from '@storybook/svelte/csf';
+  import { defineMeta, type StoryContext } from '@storybook/svelte';
   import Layout from './components/Layout.svelte';
   import type { ComponentProps } from 'svelte';
   import type { Merge } from 'type-fest';

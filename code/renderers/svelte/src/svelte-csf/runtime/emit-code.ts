@@ -3,11 +3,11 @@ import { addons } from 'storybook/internal/preview-api';
 import type { StoryObj } from '@storybook/svelte';
 import { get } from 'es-toolkit/compat';
 
-import type { Cmp, StoryContext } from '../types.ts';
+import type { StoryContext } from '../types.ts';
 
 type Params = {
   args: Record<string, any>;
-  storyContext: StoryContext<Cmp>;
+  storyContext: StoryContext<Record<string, any>>;
 };
 
 const channel: ReturnType<(typeof addons)['getChannel']> | undefined = addons.getChannel();

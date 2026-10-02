@@ -42,12 +42,11 @@ export const createRuntimeStories = (Stories: Component, meta: ComponentAnnotati
     console.error(`Error in mounting stories ${e.toString()}`, e);
   }
 
-  const stories: Record<string, StoryObj<typeof StoryRenderer>> = {};
+  const stories: Record<string, StoryObj<Cmp>> = {};
 
   for (const [exportName, story] of repository.stories) {
-    const storyObj: StoryObj<typeof StoryRenderer> = {
+    const storyObj: StoryObj<Cmp> = {
       ...story,
-      // @ts-expect-error WARN: Here we are attempting to convert every `StoryCmp` into `StoryObj`, and the types are different
       render: (args, storyContext) => ({
         Component: StoryRenderer,
         props: {

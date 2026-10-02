@@ -1,3 +1,4 @@
+import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../../constants.ts';
 import type { ESTreeAST } from '../../../parser/ast.ts';
 import { DefaultOrNamespaceImportUsedError } from '../../../utils/error/parser/extract/svelte.ts';
 
@@ -8,7 +9,8 @@ interface Params {
 
 /**
  *
- * Codemod to transform AST node of {@link ImportDeclaration} specifiers.
+ * Codemod to transform AST node of {@link ImportDeclaration} specifiers,
+ * and to import from the module that has `defineMeta`.
  *
  * @example
  * ```diff
@@ -16,12 +18,13 @@ interface Params {
  * - Story,
  * - Template,
  * + defineMeta,
- * } from "@storybook/svelte/csf";
+ * - } from "@storybook/svelte/csf";
+ * + } from "@storybook/svelte";
  * ```
  */
 export function transformImportDeclaration(params: Params): ESTreeAST.ImportDeclaration {
   const { node, filename } = params;
-  const { specifiers, ...rest } = node;
+  const { specifiers } = node;
 
   const newSpecifiers: typeof specifiers = [];
   let hasDefineMeta = false;
@@ -51,7 +54,11 @@ export function transformImportDeclaration(params: Params): ESTreeAST.ImportDecl
   }
 
   return {
-    ...rest,
+    ...node,
     specifiers: newSpecifiers,
+    source: {
+      type: 'Literal',
+      value: SVELTE_CSF_RENDERER_IMPORT_SOURCE,
+    },
   };
 }

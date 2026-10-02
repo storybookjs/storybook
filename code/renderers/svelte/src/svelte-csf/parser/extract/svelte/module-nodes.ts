@@ -1,4 +1,4 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
+import { findDefineMetaImport } from '../../../utils/import-source.ts';
 import type { Visitors } from 'zimmerframe';
 
 import type { ESTreeAST, SvelteAST } from '../../ast.ts';
@@ -12,14 +12,13 @@ import {
 import type { Identifier } from 'estree';
 
 const AST_NODES_NAMES = {
-  defineMeta: 'defineMeta',
   Story: 'Story',
 } as const;
 
 interface Result {
   /**
-   * Import specifier for `defineMeta` imported from this addon package.
-   * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/svelte/csf"`
+   * Import specifier for `defineMeta`, imported from one of `SVELTE_CSF_IMPORT_SOURCES`.
+   * Could be renamed - e.g. `import { defineMeta as df } from "@storybook/svelte"`
    */
   defineMetaImport: ESTreeAST.ImportSpecifier;
   /**
@@ -28,7 +27,7 @@ interface Result {
    */
   defineMetaVariableDeclaration: ESTreeAST.VariableDeclaration;
   /**
-   * An identifier for the addon's component `<Story />`.
+   * An identifier for the `<Story />` component.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
   storyIdentifier: ESTreeAST.Identifier;
@@ -53,28 +52,9 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
 
   const { walk } = await import('zimmerframe');
 
-  const state: Partial<Result> = {};
+  const imports = findDefineMetaImport(module.content.body);
+  const state: Partial<Result> = { defineMetaImport: imports.defineMetaImport };
   const visitors: Visitors<SvelteAST.SvelteNode, typeof state> = {
-    ImportDeclaration(node, { state, visit }) {
-      const { source, specifiers } = node;
-
-      if (source.value === SVELTE_CSF_IMPORT_SOURCE) {
-        for (const specifier of specifiers) {
-          if (specifier.type !== 'ImportSpecifier') {
-            throw new DefaultOrNamespaceImportUsedError(filename);
-          }
-
-          visit(specifier, state);
-        }
-      }
-    },
-
-    ImportSpecifier(node) {
-      if ('name' in node.imported && node.imported.name === AST_NODES_NAMES.defineMeta) {
-        state.defineMetaImport = node;
-      }
-    },
-
     VariableDeclaration(node, { state }) {
       const { declarations } = node;
       const declaration = declarations[0];
@@ -107,6 +87,10 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
   const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } = state;
 
   if (!defineMetaImport) {
+    if (imports.hasDefaultOrNamespaceImport) {
+      throw new DefaultOrNamespaceImportUsedError(filename);
+    }
+
     throw new MissingDefineMetaImportError(filename);
   }
 

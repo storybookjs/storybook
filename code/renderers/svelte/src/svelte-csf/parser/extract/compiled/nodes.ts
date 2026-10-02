@@ -1,4 +1,4 @@
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../../constants.ts';
+import { findDefineMetaImport } from '../../../utils/import-source.ts';
 import type { ProgramNode } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
@@ -14,13 +14,13 @@ import { DefaultOrNamespaceImportUsedError } from '../../../utils/error/parser/e
 
 /**
  * Important AST nodes from the compiled output of a single `*.stories.svelte` file.
- * They are needed for further code transformation by this addon.
+ * They are needed for further code transformation.
  * Powered by `rollup`'s internal [`this.parse()`](https://rollupjs.org/plugin-development/#this-parse)
  */
 export interface CompiledASTNodes {
   /**
-   * Import specifier for `defineMeta` imported from this addon package.
-   * Could be renamed - e.g. `import { defineMeta } from "@storybook/svelte/csf"`
+   * Import specifier for `defineMeta`, imported from one of `SVELTE_CSF_IMPORT_SOURCES`.
+   * Could be renamed - e.g. `import { defineMeta } from "@storybook/svelte"`
    */
   defineMetaImport: ESTreeAST.ImportSpecifier;
   /**
@@ -34,7 +34,7 @@ export interface CompiledASTNodes {
    */
   exportDefault: ESTreeAST.ExportDefaultDeclaration;
   /**
-   * An identifier for the addon's component `<Story />`.
+   * An identifier for the `<Story />` component.
    * It could be destructured with rename - e.g. `const { Story: S } = defineMeta({ ... })`
    */
   storyIdentifier: ESTreeAST.Identifier;
@@ -45,7 +45,6 @@ export interface CompiledASTNodes {
 }
 
 const AST_NODES_NAMES = {
-  defineMeta: 'defineMeta',
   Story: 'Story',
 } as const;
 
@@ -66,27 +65,9 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   const state: Partial<CompiledASTNodes> & {
     potentialStoriesFunctionDeclaration: ESTreeAST.FunctionDeclaration[];
   } = { potentialStoriesFunctionDeclaration: [] };
+  const imports = findDefineMetaImport((ast as ESTreeAST.Program).body);
+  state.defineMetaImport = imports.defineMetaImport;
   const visitors: Visitors<ESTreeAST.Node | ESTreeAST.Comment, typeof state> = {
-    ImportDeclaration(node, { state, visit }) {
-      const { source, specifiers } = node;
-
-      if (source.value === SVELTE_CSF_IMPORT_SOURCE) {
-        for (const specifier of specifiers) {
-          if (specifier.type !== 'ImportSpecifier') {
-            throw new DefaultOrNamespaceImportUsedError(filename);
-          }
-
-          visit(specifier, state);
-        }
-      }
-    },
-
-    ImportSpecifier(node) {
-      if (node.imported.name === AST_NODES_NAMES.defineMeta) {
-        state.defineMetaImport = node;
-      }
-    },
-
     VariableDeclaration(node, { state }) {
       const { declarations } = node;
       const declaration = declarations[0];
@@ -150,6 +131,10 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   } = state;
 
   if (!defineMetaImport) {
+    if (imports.hasDefaultOrNamespaceImport) {
+      throw new DefaultOrNamespaceImportUsedError(filename);
+    }
+
     throw new MissingImportedDefineMetaError(filename);
   }
 

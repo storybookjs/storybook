@@ -1,5 +1,5 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/svelte/csf';
+  import { defineMeta } from '@storybook/svelte';
   import { expect, within } from 'storybook/test';
 
   /**
@@ -133,7 +133,7 @@
 
   ```svelte
   <script>
-    import { defineMeta } from '@storybook/svelte/csf';
+    import { defineMeta } from '@storybook/svelte';
 
     const { Story } = defineMeta({
       ...,

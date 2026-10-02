@@ -1,5 +1,5 @@
 <script module>
-  import { defineMeta as d } from '@storybook/svelte/csf';
+  import { defineMeta as d } from '@storybook/svelte';
   import { expect, within } from 'storybook/test';
 
   /**

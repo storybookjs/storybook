@@ -14,7 +14,7 @@ export class MissingImportedDefineMetaError extends StorybookSvelteCSFError {
 
   template() {
     return dedent`
-      Could not find the import statement of 'defineMeta' from the "${StorybookSvelteCSFError.importSource}" in the compiled output of: ${this.filepathURL}
+      Could not find the import statement of 'defineMeta' from ${StorybookSvelteCSFError.importSourcesText} in the compiled output of: ${this.filepathURL}
     `;
   }
 }

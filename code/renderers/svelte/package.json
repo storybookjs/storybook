@@ -30,9 +30,9 @@
       "default": "./dist/index.js"
     },
     "./csf": {
-      "types": "./dist/svelte-csf/index.d.ts",
-      "code": "./src/svelte-csf/index.ts",
-      "default": "./dist/svelte-csf/index.js"
+      "types": "./dist/svelte-csf/legacy.d.ts",
+      "code": "./src/svelte-csf/legacy.ts",
+      "default": "./dist/svelte-csf/legacy.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",

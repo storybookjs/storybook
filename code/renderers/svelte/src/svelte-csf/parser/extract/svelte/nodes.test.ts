@@ -9,7 +9,7 @@ describe(extractSvelteASTNodes.name, () => {
     const ast = getSvelteAST({
       code: `
         <script module>
-          import { defineMeta } from "@storybook/svelte/csf"
+          import { defineMeta } from "@storybook/svelte"
 
           import Button from "./Button.svelte";
 

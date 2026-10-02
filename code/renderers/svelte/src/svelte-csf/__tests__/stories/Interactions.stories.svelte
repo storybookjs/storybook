@@ -1,5 +1,5 @@
 <script module>
-  import { defineMeta } from '@storybook/svelte/csf';
+  import { defineMeta } from '@storybook/svelte';
   import { expect, userEvent, within } from 'storybook/test';
   import { tick } from 'svelte';
 

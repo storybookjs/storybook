@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 
-import { SVELTE_CSF_IMPORT_SOURCE } from '../constants.ts';
+import { SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../constants.ts';
+import { findDefineMetaImport } from '../utils/import-source.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
@@ -91,6 +92,9 @@ export async function parseForIndexer(
   };
 
   let foundMeta = false;
+  let hasDefaultOrNamespaceImport = false;
+  // TODO: Remove it in the next major version
+  let hasLegacyImport = false;
 
   walk(svelteAST as SvelteAST.SvelteNode | SvelteAST.Script, results, {
     _(_node, context) {
@@ -132,11 +136,17 @@ export async function parseForIndexer(
     Program(node, context) {
       const { body } = node;
       const { state, visit } = context;
+      const imports = findDefineMetaImport(body);
+
+      state.defineMetaImport = imports.defineMetaImport ?? state.defineMetaImport;
+      hasDefaultOrNamespaceImport ||= imports.hasDefaultOrNamespaceImport;
 
       for (const statement of body) {
+        // TODO: Remove it in the next major version
         if (
+          legacyTemplate &&
           statement.type === 'ImportDeclaration' &&
-          statement.source.value === SVELTE_CSF_IMPORT_SOURCE
+          statement.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE
         ) {
           visit(statement, state);
         }
@@ -156,30 +166,27 @@ export async function parseForIndexer(
       }
     },
 
+    // TODO: Remove it in the next major version
     ImportDeclaration(node, context) {
       const { specifiers } = node;
       const { state } = context;
+      // The legacy codemod adds a named `defineMeta` import
+      hasLegacyImport = true;
 
       for (const specifier of specifiers) {
         if (specifier.type !== 'ImportSpecifier') {
           throw new DefaultOrNamespaceImportUsedError(filename);
         }
         if (!('name' in specifier.imported)) {
-          return;
+          continue;
         }
 
-        if (specifier.imported.name === 'defineMeta') {
-          state.defineMetaImport = specifier;
-        }
-
-        // TODO: Remove it in the next major version
-        if (legacyTemplate && specifier.imported.name === 'Meta') {
+        if (specifier.imported.name === 'Meta') {
           state.legacyMetaImport = specifier;
           state.isLegacy = true;
         }
 
-        // TODO: Remove it in the next major version
-        if (legacyTemplate && specifier.imported.name === 'Story') {
+        if (specifier.imported.name === 'Story') {
           state.legacyStoryImport = specifier;
           state.isLegacy = true;
         }
@@ -377,6 +384,10 @@ export async function parseForIndexer(
       }
     },
   });
+
+  if (!results.defineMetaImport && !foundMeta && !hasLegacyImport && hasDefaultOrNamespaceImport) {
+    throw new DefaultOrNamespaceImportUsedError(filename);
+  }
 
   const { meta, stories, isLegacy } = results;
 

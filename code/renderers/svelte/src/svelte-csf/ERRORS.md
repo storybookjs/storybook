@@ -2,6 +2,8 @@
 
 This document is a list of known errors that Svelte CSF throws.
 
+The examples import `defineMeta` from `@storybook/svelte-vite`. In a SvelteKit project, import it from `@storybook/sveltekit`.
+
 ## `PARSER_EXTRACT_SVELTE`
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0001`
@@ -14,7 +16,7 @@ Ensure the stories file which caused this error has the following initial code:
 
 ```svelte
 <script module>
-  import { defineMeta } from '@storybook/svelte/csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   const { Story } = defineMeta({
     // define your stories meta here
@@ -26,24 +28,31 @@ Ensure the stories file which caused this error has the following initial code:
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0002`
 
-A **default or namespace import** of `@storybook/svelte/csf` was used, which is not supported. Only named imports are supported.
+A **default or namespace import** of `@storybook/svelte-vite` or `@storybook/sveltekit` was used, and `defineMeta` wasn't imported by name. Storybook only finds `defineMeta` through a named import.
 
-Change your import to a named import instead:
+Import `defineMeta` by name:
 
 ```diff
-- import svelteCsf from "@storybook/svelte/csf";
-+ import { defineMeta } from "@storybook/svelte/csf";
+- import * as SB from "@storybook/svelte-vite";
++ import { defineMeta } from "@storybook/svelte-vite";
+```
+
+A namespace import can stay next to it, for example for types:
+
+```js
+import * as SB from '@storybook/svelte-vite';
+import { defineMeta } from '@storybook/svelte-vite';
 ```
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0003`
 
-No import of `defineMeta` from `@storybook/svelte/csf` was found in the **[module context]**.
+No import of `defineMeta` from `@storybook/svelte-vite` or `@storybook/sveltekit` was found in the **[module context]**.
 
 You might have forgotten to import it:
 
 ```diff
 <script module>
-+ import { defineMeta } from "@storybook/svelte/csf";
++ import { defineMeta } from "@storybook/svelte-vite";
   ...
 </script>
 ```
@@ -54,7 +63,7 @@ No variable declaration from the `defineMeta()` call was found. While you might 
 
 ```diff
 <script module>
-  import { defineMeta } from "@storybook/svelte/csf";
+  import { defineMeta } from "@storybook/svelte-vite";
 
 - defineMeta(...);
 + const { Story } = defineMeta({
@@ -121,7 +130,7 @@ If you see this error, [please report it on the issue tracker on GitHub](https:/
 
 ### `SB_SVELTE_CSF_PARSER_EXTRACT_COMPILED_0001`
 
-The import of `defineMeta` from `@storybook/svelte/csf` could not be found while parsing the _compiled_ code.
+The import of `defineMeta` from `@storybook/svelte-vite` or `@storybook/sveltekit` could not be found while parsing the _compiled_ code.
 
 If you get this error, please open a bug report with detailed reproduction steps including the code that caused the error.
 
@@ -178,7 +187,7 @@ Ensure you're using the correct syntax, following the example below:
 
 ```svelte
 <script module>
-  import { defineMeta } from '@storybook/svelte/csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 
@@ -228,7 +237,7 @@ It expected an identifier but got something else, for example an inline function
 
 ```svelte
 <script module>
-  import { defineMeta } from '@storybook/svelte/csf';
+  import { defineMeta } from '@storybook/svelte-vite';
 
   import Button from './Button.svelte';
 

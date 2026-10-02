@@ -18,8 +18,9 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        // TODO: Remove with the legacy syntax.
         exportEntries: ['./csf'],
-        entryPoint: './src/svelte-csf/index.ts',
+        entryPoint: './src/svelte-csf/legacy.ts',
       },
       {
         exportEntries: ['./internal/svelte-csf/create-runtime-stories'],

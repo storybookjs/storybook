@@ -8,11 +8,11 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import type StoryComponent from '../../static/svelte-csf/Story.svelte';
 
-import { defineMeta, type Args, type StoryContext } from './index.ts';
+import { defineMeta } from './index.ts';
+import type { Args } from '../public-types.ts';
 import type {
   StoryAnnotations,
   StoryComponent as StoryComponentType,
-  StoryContext as BaseStoryContext,
   SvelteRenderer,
 } from './types.ts';
 

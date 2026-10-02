@@ -16,7 +16,7 @@ describe(transformImportDeclaration.name, () => {
     const node = await parseAndExtractSvelteNode<any>(code, 'ImportDeclaration');
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
-      `"import { defineMeta } from "@storybook/svelte/csf";"`
+      `"import { defineMeta } from "@storybook/svelte";"`
     );
   });
 
@@ -29,7 +29,7 @@ describe(transformImportDeclaration.name, () => {
     const node = await parseAndExtractSvelteNode<any>(code, 'ImportDeclaration');
 
     expect(print(transformImportDeclaration({ node }))).toMatchInlineSnapshot(
-      `"import { defineMeta } from "@storybook/svelte/csf";"`
+      `"import { defineMeta } from "@storybook/svelte";"`
     );
   });
 });

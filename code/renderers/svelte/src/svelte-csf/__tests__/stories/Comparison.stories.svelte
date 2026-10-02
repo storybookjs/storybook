@@ -1,5 +1,5 @@
 <script module>
-  import { defineMeta } from '@storybook/svelte/csf';
+  import { defineMeta } from '@storybook/svelte';
 
   import Comparison from './Comparison.svelte';
 
@@ -8,7 +8,7 @@
    *
    * ```svelte
    * <script module>
-   *   import { defineMeta } from "@storybook/svelte/csf";
+   *   import { defineMeta } from "@storybook/svelte";
    *
    *   import Comparison from "./Comparison.svelte";
    *

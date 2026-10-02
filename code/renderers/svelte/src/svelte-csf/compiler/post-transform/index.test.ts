@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import url from 'node:url';
 
-import { SVELTE_CSF_IMPORT_SOURCE } from '../../constants.ts';
+import { SVELTE_CSF_RENDERER_IMPORT_SOURCE } from '../../constants.ts';
 import { dedent } from 'ts-dedent';
 import MagicString from 'magic-string';
 import { parseAst } from 'rollup/parseAst';
@@ -55,7 +55,7 @@ describe(transformStoriesCode.name, () => {
 
       import * as $ from 'svelte/internal/client';
       import { fn } from 'storybook/test';
-      import { defineMeta } from '@storybook/svelte/csf';
+      import { defineMeta } from '@storybook/svelte';
       import Example from './Example.svelte';
 
       /**
@@ -295,7 +295,7 @@ describe(transformStoriesCode.name, () => {
     const filename = 'Empty.stories.svelte';
     const originalCode = dedent`
       <script module>
-        import { defineMeta } from "${SVELTE_CSF_IMPORT_SOURCE}";
+        import { defineMeta } from "${SVELTE_CSF_RENDERER_IMPORT_SOURCE}";
 
         /** Description of the component */
         const { Story } = defineMeta({});

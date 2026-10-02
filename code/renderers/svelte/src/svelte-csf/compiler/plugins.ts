@@ -31,7 +31,7 @@ export async function transformPlugin(): Promise<Plugin> {
   const filter = createFilter(include);
 
   return {
-    name: 'storybook:addon-svelte-csf',
+    name: 'storybook:svelte-csf',
     config() {
       return {
         optimizeDeps: {

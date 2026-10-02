@@ -37,6 +37,7 @@ import type {
 import invariant from 'tiny-invariant';
 
 import { Tag } from '../../../shared/constants/tags.ts';
+import { serializeArgFunctions } from '../../../shared/utils/function-args.ts';
 import { isMdxEntry } from '../../../shared/utils/story-index-filters.ts';
 import type { StorySpecifier } from '../store/StoryIndexStore.ts';
 import type { MaybePromise } from './Preview.tsx';
@@ -452,9 +453,9 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
       this.channel.emit(STORY_PREPARED, {
         id: storyId,
         parameters,
-        initialArgs,
+        initialArgs: serializeArgFunctions(initialArgs),
         argTypes,
-        args: unmappedArgs,
+        args: serializeArgFunctions(unmappedArgs),
       });
       // We need to update globals whenever we go in or out of an overridden story.
       // As an optimization we could check if that's the case, but it seems complex and error-prone

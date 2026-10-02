@@ -19,6 +19,7 @@ import type {
 import { global } from '@storybook/global';
 
 import { addons } from './main.ts';
+import { serializeArgFunctions } from '../../../shared/utils/function-args.ts';
 
 interface Hook {
   name: string;
@@ -620,7 +621,13 @@ export function useArgs<TArgs extends Args = Args>(): [
   const { id: storyId, args } = useStoryContext<Renderer, TArgs>();
 
   const updateArgs = useCallback(
-    (updatedArgs: Partial<TArgs>) => channel.emit(UPDATE_STORY_ARGS, { storyId, updatedArgs }),
+    (updatedArgs: Partial<TArgs>) =>
+      channel.emit(UPDATE_STORY_ARGS, {
+        storyId,
+        // Real functions do not survive the channel; the marker keeps the slot alive so the
+        // receiving side can restore the callback that is already stored there.
+        updatedArgs: serializeArgFunctions(updatedArgs),
+      }),
     [channel, storyId]
   );
 

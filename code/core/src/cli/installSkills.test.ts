@@ -18,8 +18,6 @@ import { vol } from 'memfs';
 import { _clearGlobalSettings } from './globalSettings.ts';
 import { decideSkillsInstall, installSkills } from './installSkills.ts';
 
-const versionHolder = vi.hoisted(() => ({ storybook: '10.6.0' }));
-
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
@@ -29,9 +27,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
     ...actual,
     getProjectRoot: vi.fn(),
     isCI: vi.fn(),
-    get versions() {
-      return { ...actual.versions, storybook: versionHolder.storybook };
-    },
+    versions: { ...actual.versions, storybook: '10.6.0' },
   };
 });
 
@@ -121,7 +117,6 @@ describe('installSkills', () => {
     );
     vol.reset();
     _clearGlobalSettings();
-    versionHolder.storybook = '10.6.0';
 
     packageManager = {
       runPackageCommand: vi.fn().mockResolvedValue(undefined),
@@ -166,12 +161,8 @@ describe('installSkills', () => {
       expect(result).toEqual({ result: 'installed', source: 'yes' });
     });
 
-    it.each([
-      ['a prerelease', '11.0.0-alpha.1', true],
-      ['disabled Storybook telemetry', '10.6.0', false],
-    ])('disables Vercel telemetry for %s', async (_, version, telemetryEnabled) => {
-      versionHolder.storybook = version;
-      vi.mocked(isTelemetryModuleEnabled).mockReturnValue(telemetryEnabled);
+    it('disables Vercel telemetry when Storybook telemetry is disabled', async () => {
+      vi.mocked(isTelemetryModuleEnabled).mockReturnValue(false);
 
       await installSkills({ packageManager, yes: true });
 

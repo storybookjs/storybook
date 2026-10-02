@@ -3,8 +3,6 @@ import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
-import { prerelease } from 'semver';
-
 import { globalSettings } from './globalSettings.ts';
 
 const SKILLS_REPO = 'storybookjs/skills';
@@ -131,7 +129,6 @@ export async function installSkills({
     'universal',
     '--copy',
   ];
-  const disableVercelTelemetry = prerelease(versions.storybook) || !isTelemetryModuleEnabled();
 
   logger.log(CLI_COLORS.cta(packageManager.getRemoteRunCommand(args)));
   try {
@@ -140,7 +137,7 @@ export async function installSkills({
       useRemotePkg: true,
       cwd: projectRoot,
       stdio: 'inherit',
-      env: disableVercelTelemetry ? { DISABLE_TELEMETRY: '1' } : {},
+      env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
       timeout: 120_000,
     });
   } catch (error) {

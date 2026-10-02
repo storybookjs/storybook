@@ -2,6 +2,7 @@
 import { describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import type { ProjectAnnotations } from 'storybook/internal/csf';
+import { ArgTypesRemovedFromStoryContextError } from 'storybook/internal/preview-errors';
 import type {
   ComponentAnnotations as Meta,
   Store_CSFExports,
@@ -179,6 +180,36 @@ describe('composeStory', () => {
         },
       })
     );
+  });
+
+  it('hides argTypes from the play function but passes them to the render function', async () => {
+    const hookContexts: any[] = [];
+    const renderContexts: any[] = [];
+    const Story: Story = {
+      argTypes: { label: { name: 'label' } },
+      render: (_args, context) => {
+        renderContexts.push(context);
+      },
+      play: async (context) => {
+        hookContexts.push(context);
+      },
+    };
+
+    const composedStory = composeStory(Story, meta, {
+      mount: (context) => async () => {
+        context.renderToCanvas();
+        return context.canvas;
+      },
+      renderToCanvas: ({ storyFn }) => {
+        storyFn();
+      },
+    });
+    await composedStory.run({ canvasElement: {} });
+
+    expect(hookContexts).toHaveLength(1);
+    expect(() => hookContexts[0].argTypes).toThrow(ArgTypesRemovedFromStoryContextError);
+    expect(renderContexts).toHaveLength(1);
+    expect(renderContexts[0].argTypes).toMatchObject({ label: { name: 'label' } });
   });
 
   it('should merge parameters with correct precedence in all combinations', async () => {

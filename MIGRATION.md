@@ -3,10 +3,16 @@
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Addon `TAB` registration removed](#addon-tab-registration-removed)
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
+  - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
+  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
+  - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
+  - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
@@ -32,6 +38,7 @@
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
+  - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -608,6 +615,60 @@ To keep opening Storybook automatically, add `--open` to your command or package
 }
 ```
 
+### `parameters.componentSubtitle` removed
+
+The deprecated `parameters.componentSubtitle` fallback was removed.
+Use `parameters.docs.subtitle` instead.
+
+The `component-subtitle` automigration moves it in your preview and story files when you upgrade, or when you run `npx storybook automigrate component-subtitle`:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+When the same object already sets `docs.subtitle`, the automigration keeps it and removes `componentSubtitle`, because `docs.subtitle` already took precedence.
+A `componentSubtitle` set on a single story never affected the Subtitle block, so the automigration leaves it in place for you to delete.
+Files it cannot edit safely, such as parameters built from a spread, are listed in `automigrations-summary.md` for you to change by hand.
+
+Before, any `docs.subtitle` took precedence over any `componentSubtitle`, even one set in the preview over one set in a component's meta.
+After the migration, the more specific value wins, like every other parameter.
+If your preview sets `docs.subtitle`, check the subtitles on your Docs pages.
+
+### `argTypes` `defaultValue` removed
+
+`argTypes.<name>.defaultValue` is removed. It has not set the value of an arg since Storybook 7.0. Delete the property.
+
+To choose the value a story starts with, set `args`:
+
+```js
+export default {
+  args: {
+    label: 'Hello',
+  },
+};
+```
+
+To choose the text shown in the docs table, set `table.defaultValue`:
+
+```js
+export default {
+  argTypes: {
+    label: {
+      table: { defaultValue: { summary: 'Hello' } },
+    },
+  },
+};
+```
+
+`table.defaultValue` and `globalTypes.defaultValue` are unchanged.
+
+The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When that property cannot be removed, the file is left unchanged and listed in `automigrations-summary.md`.
+
 ### Docs Code panel enabled by default
 
 When `@storybook/addon-docs` is installed, the Code panel is now available for stories without setting `parameters.docs.codePanel` to `true`.
@@ -628,6 +689,38 @@ You can also set this parameter at the component or story level. An explicit `tr
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
 
+### `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+
+The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
+
+With server-side docgen (`features.experimentalDocgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+
+```ts
+// Before
+export const Primary: Story = {
+  play: async ({ argTypes, args }) => {
+    for (const name of Object.keys(argTypes)) {
+      // ...
+    }
+  },
+};
+
+// After
+export const Primary: Story = {
+  play: async ({ args }) => {
+    for (const name of Object.keys(args)) {
+      // ...
+    }
+  },
+};
+```
+
+- Use `args` for the values passed to the story. Iterate `Object.keys(args)` instead of `Object.keys(argTypes)`.
+- To see the resolved arg types, including those inferred from your component, use the Controls panel or the `ArgTypes` doc block.
+- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
+
+Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
+
 ### Node.js 22.12 or higher
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
@@ -641,6 +734,70 @@ During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.
 Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
+### CSF Next: meta args no longer need `as const`
+
+`preview.meta()` now remembers which args you set, not the values you wrote, and checks each value against the component's props. Literal, enum and template-literal props in meta args are no longer widened, so the story no longer asks for them again and `as const` is not needed:
+
+```diff
+ // Button props: { variant: 'primary' | 'secondary'; label: string }
+ const meta = preview.meta({
+   component: Button,
+-  args: { variant: 'primary' as const },
++  args: { variant: 'primary' },
+ });
+
+ export const Default = meta.story({ args: { label: 'Hi' } });
+```
+
+`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present: in `meta.input.args`, in the meta's own `play`, `beforeEach`, `afterEach` and `loaders`, and in the args of its stories. Keys of a `Partial` object passed as meta args count as set too, so pass only objects whose keys are set. An `Args` record sets none.
+
+The second type argument of `ReactMeta`, `VueMeta`, `AngularMeta`, `WebComponentsMeta` and `Meta` from `storybook/internal/csf` is now the union of the arg names set in meta, instead of the meta input type.
+
+### CSF Next: use `mocked()` for the mock API on args
+
+An arg set to `fn()` in meta was typed as a `Mock` in `meta.input.args`, and in React also in `play`, `beforeEach`, `afterEach` and `loaders`. It is now typed as the component declares it. Wrap it in `mocked()` from `storybook/test` to use the mock API, as you would with Vitest's `vi.mocked()`:
+
+```diff
+-import { fn } from 'storybook/test';
++import { fn, mocked } from 'storybook/test';
+
+ const meta = preview.meta({ component: EventForm, args: { getUsers: fn() } });
+
+ export const Submits = meta.story({
+   beforeEach: async ({ args }) => {
+-    args.getUsers.mockResolvedValue(users);
++    mocked(args.getUsers).mockResolvedValue(users);
+   },
+ });
+```
+
+Assertions such as `expect(args.onSubmit).toHaveBeenCalled()` keep working without `mocked()`.
+
+The `csf-factories` automigration wraps mock API calls on args in `mocked()` when it converts CSF 3 stories. For stories already written in CSF Next, `storybook upgrade` runs the `csf-next-mocked-args` automigration, which does the same. Run it later with `npx storybook automigrate csf-next-mocked-args`. TypeScript points at anything it misses with an error such as `Property 'mockResolvedValue' does not exist`.
+
+### CSF Next: every key in meta args must be an arg
+
+Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component, an arg of the meta's typed `render` function, an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. This includes args passed as a variable or a spread. Previously, such keys were often accepted and silently ignored. A meta with neither `component` nor `render` still accepts any args.
+
+Declare args that are not props with `preview.type`:
+
+```diff
+-const meta = preview.meta({
++const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+   component: Button,
+   args: { label: 'Hi', theme: 'dark' },
+ });
+```
+
+For components whose props are a union, meta args can set the props that every member of the union has. Set props that only some members have in the story, where TypeScript checks them together with the rest of that member:
+
+```ts
+// Props: { label: string } & ({ kind: 'link'; href: string } | { kind: 'button'; onClick: () => void })
+const meta = preview.meta({ component: Action, args: { label: 'Go', kind: 'link' } });
+
+export const Link = meta.story({ args: { href: '/' } });
+```
 
 ### Yarn PnP support removed
 
@@ -989,6 +1146,33 @@ npx storybook@latest upgrade
 Upgrading straight to 11 leaves that configuration in place, and you have to apply every migration in the table above by hand.
 
 The `--renderer` flag of `storybook automigrate` is also removed. Only the removed fixes read it, so it now fails as an unknown option; drop it from any script that passes it.
+
+### Web Components: server-side docgen suffixes event, slot and part argType keys
+
+With `features.experimentalDocgenServer`, `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
+
+| Manifest item       | Runtime docgen key | Server docgen key |
+| ------------------- | ------------------ | ----------------- |
+| event `my-change`   | `my-change`        | `my-change-event` |
+| slot `actions`      | `actions`          | `actions-slot`    |
+| CSS part `label`    | `label`            | `label-part`      |
+
+Attributes, properties and CSS custom properties keep their names.
+Methods, CSS states and the default slot are new rows, keyed `<name>-method`, `<name>-state` and `default-slot`.
+
+`argTypes` you wrote against the runtime keys no longer reach those rows.
+`argTypes` are merged by key, so the old key adds a separate row without a category instead of changing the documented one.
+The Controls table still shows the raw name, so the suffix is not visible there.
+Add the suffix to the key:
+
+```ts
+// Before
+argTypes: { 'my-change': { table: { disable: true } } },
+
+// After
+argTypes: { 'my-change-event': { table: { disable: true } } },
+```
 
 ## From version 10.5.x to 10.6.0
 
@@ -1439,7 +1623,7 @@ The underlying implementation was switched from Popper.js to react-aria. Due to 
 
 #### WithTooltipPure and WithTooltipState are deprecated
 
-Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+Instead, use `WithTooltip` in Storybook 10, or `TooltipProvider` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
 
 #### Link isButton is deprecated
 

@@ -54,7 +54,7 @@ AI agents validate their changes locally: only the evals affected by the change
 full line, and never several experiments in parallel. For runs on a pull
 request, see [Running evals in CI](#running-evals-in-ci).
 
-By default only the first core eval (`801-create-component-no-launch-config`)
+By default only the first core eval (`801-create-accessible-component`)
 runs. Set `EVAL_ALL=1` to run the full hand-crafted line — the 8xx
 workflow evals on every experiment plus the lifecycle 82x evals
 (`storybook-init`/`storybook-upgrade` scenarios) on the plugin experiments —
@@ -213,7 +213,7 @@ input for each.
 
 | Label / input                                      | Effect                                                                                                                                                                                                                    | When to use                                                                                                                                                                                            |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `agent-eval:all-evals` / `all_evals`               | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-component-no-launch-config` | The smoke eval shows that the setup works and that the agent finds Storybook. Use all evals when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
+| `agent-eval:all-evals` / `all_evals`               | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-accessible-component` | The smoke eval shows that the setup works and that the agent finds Storybook. Use all evals when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
 | `agent-eval:storybook-latest` / `storybook_latest` | Installs the published `latest` Storybook packages instead of the packages built from the PR, and runs the 9xx line                                                                                                       | Check whether a problem also exists in the last stable release. This is not related to the target branch of the PR: without this label, evals always use the code of the PR.                           |
 | `agent-eval:review` / `review`                     | Turns on the `experimentalReview` feature flag, and asserts the review workflow in the MCP experiments too                                                                                                                | Changes to the review workflow, such as `review-create` or the review UI.                                                                                                                              |
 

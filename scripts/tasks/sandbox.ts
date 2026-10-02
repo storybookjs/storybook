@@ -137,12 +137,12 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const generateSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     await saveBench(
       'sandbox',

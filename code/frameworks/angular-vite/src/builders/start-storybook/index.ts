@@ -27,7 +27,10 @@ import type { JsonObject } from '@angular-devkit/core';
 import { Observable } from 'rxjs';
 import * as pkg from 'empathic/package';
 
-import { mergeBrowserTargetOptions } from '../utils/browser-target-options.ts';
+import {
+  mergeBrowserTargetOptions,
+  requireBuilderTarget,
+} from '../utils/browser-target-options.ts';
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import { normalizeStatsJson, type StandaloneOptions } from '../utils/standalone-options.ts';
 import { Channel } from 'storybook/internal/channels';
@@ -38,6 +41,7 @@ addToGlobalContext('cliVersion', versions.storybook);
 export type StorybookBuilderOptions = JsonObject & {
   browserTarget?: string | null;
   tsConfig?: string;
+  configDir: string;
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
@@ -65,7 +69,6 @@ export type StorybookBuilderOptions = JsonObject & {
     | 'logfile'
     | 'statsJson'
     | 'loglevel'
-    | 'previewUrl'
   >;
 
 export type StorybookBuilderOutput = JsonObject & BuilderOutput & {};
@@ -135,7 +138,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           open,
           loglevel,
           statsJson,
-          previewUrl,
           sourceMap = false,
           preserveSymlinks = false,
           zoneless = true,
@@ -151,7 +153,7 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
         // values, so container options are read from what the target actually declares. Targets
         // without a browserTarget keep the schema-validated options for unchanged behavior.
         const declaredOptions = (
-          resolvedTarget ? await context.getTargetOptions(context.target) : options
+          resolvedTarget ? await context.getTargetOptions(requireBuilderTarget(context)) : options
         ) as StorybookBuilderOptions;
 
         const angularBuilderOptions = mergeBrowserTargetOptions(
@@ -189,7 +191,6 @@ export const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = (
           open,
           statsJson: normalizeStatsJson(statsJson),
           loglevel,
-          previewUrl,
         };
 
         // Bridge angularBuilderOptions to the addon-vitest child process
@@ -251,7 +252,7 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
 }
 async function runInstance(options: StandaloneOptions) {
   try {
-    const { port } = await withTelemetry(
+    const result = await withTelemetry(
       'dev',
       {
         cliOptions: options,
@@ -267,7 +268,10 @@ async function runInstance(options: StandaloneOptions) {
         return buildDevStandalone(options);
       }
     );
-    return port;
+    if (!result) {
+      throw new Error('Storybook dev server did not start');
+    }
+    return result.port;
   } catch (error) {
     const summarized = errorSummary(error);
     throw new Error(String(summarized));

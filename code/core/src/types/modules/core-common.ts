@@ -16,6 +16,7 @@ import type { SupportedBuilder } from './builders.ts';
 import type { SupportedFramework } from './frameworks.ts';
 import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
+import type { Addon_StorySortParameterV7 } from './addons.ts';
 
 export type {
   DocgenError,
@@ -224,7 +225,6 @@ export interface LoadOptions {
   outputDir?: string;
   configDir?: string;
   cacheKey?: string;
-  ignorePreview?: boolean;
   extendServer?: (server: HttpServer) => void;
 }
 
@@ -239,9 +239,6 @@ export interface CLIBaseOptions {
 
 export interface CLIOptions extends CLIBaseOptions {
   port?: number;
-  ignorePreview?: boolean;
-  previewUrl?: string;
-  forceBuildPreview?: boolean;
   host?: string;
   initialPath?: string;
   exactPort?: boolean;
@@ -265,7 +262,6 @@ export interface CLIOptions extends CLIBaseOptions {
 
 export interface BuilderOptions {
   configType?: 'DEVELOPMENT' | 'PRODUCTION';
-  ignorePreview?: boolean;
   cache?: FileSystemCache;
   configDir: string;
   docsMode?: boolean;
@@ -697,6 +693,8 @@ export interface StorybookConfigRaw {
   logLevel?: string;
   features?: StorybookFeatures;
 
+  storySorts?: Addon_StorySortParameterV7[];
+
   build?: TestBuildConfig;
 
   stories: StoriesEntry[];
@@ -791,6 +789,13 @@ export interface StorybookConfig {
   staticDirs?: PresetValue<StorybookConfigRaw['staticDirs']>;
   logLevel?: PresetValue<StorybookConfigRaw['logLevel']>;
   features?: PresetValue<StorybookConfigRaw['features']>;
+
+  /**
+   * Sort the stories in the sidebar. Each sorter is a comparator function, a sort object such as `{
+   * order: ['Intro', '*'] }`, or an order array, and breaks the ties of the sorters before it.
+   * Presets add their sorters with `(sorters) => [...sorters, sorter]`.
+   */
+  storySorts?: PresetValue<StorybookConfigRaw['storySorts']>;
 
   build?: PresetValue<StorybookConfigRaw['build']>;
 

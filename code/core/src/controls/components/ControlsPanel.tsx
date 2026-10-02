@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { STORY_FINISHED, STORY_PREPARED } from 'storybook/internal/core-events';
-import type { ArgTypes, StoryId } from 'storybook/internal/types';
+import type { ArgTypes, DocgenPayload, StoryId } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -157,55 +157,22 @@ function LegacyControlsPanel(props: ControlsPanelProps) {
   return <ControlsPanelTable {...props} rows={rows} isLoading={isLoading} />;
 }
 
-function LoadedServiceControlsPanel({
-  customArgTypes,
+// Mounted only once the docgen gate opens, because subscribing starts the load. It reports upward so the
+// table below keeps its position, and its control state, when the gate opens.
+function DocgenQuery({
   docgenService,
   id,
-  initialArgs,
-  isStoryPrepared,
-  storyData,
-  ...props
-}: ControlsPanelProps & {
-  customArgTypes: ArgTypes;
+  onChange,
+}: {
   docgenService: DocgenService;
   id: string;
-  initialArgs: ReturnType<typeof useArgs>[3];
-  isStoryPrepared: boolean;
-  storyData: ReturnType<ReturnType<typeof useStorybookApi>['getCurrentStoryData']>;
+  onChange: (state: { payload?: DocgenPayload; isInitialLoading: boolean }) => void;
 }) {
-  const { data: docgenPayload, isInitialLoading } = useServiceQuery(docgenService.queries.docgen, {
-    id,
-  });
-
-  // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a
-  // docs-blocks-only feature, so this intentionally ignores `payload.subcomponents` to match the
-  // legacy panel's behavior.
-  const rows = useMemo(
-    () =>
-      docgenPayload
-        ? mergeServiceArgTypes({
-            payload: docgenPayload,
-            storyId: storyData.id,
-            parameters: storyData.parameters,
-            initialArgs,
-            customArgTypes,
-          })
-        : customArgTypes,
-    [docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
-  );
-
-  // Keep the skeleton up only while there is genuinely nothing to show: the story isn't prepared, or
-  // docgen is still doing its first load and there are no annotation controls to fall back on. Once
-  // docgen resolves (even to nothing) the table or its "No controls" empty state is the real answer —
-  // never a flash. While docgen loads over already-available annotation controls, show those controls
-  // rather than skeletoning over them.
-  return (
-    <ControlsPanelTable
-      {...props}
-      rows={rows}
-      isLoading={!isStoryPrepared || (isInitialLoading && !hasAnyControl(rows))}
-    />
-  );
+  const { data, isInitialLoading } = useServiceQuery(docgenService.queries.docgen, { id });
+  useEffect(() => {
+    onChange({ payload: data, isInitialLoading });
+  }, [data, isInitialLoading, onChange]);
+  return null;
 }
 
 // Tracks whether it is safe to query docgen for the selected story, gating the CPU-bound worker
@@ -253,7 +220,7 @@ function ServiceControlsPanel({
   const storyData = api.getCurrentStoryData();
   const [, , , initialArgs] = useArgs();
   // Custom argTypes (project + meta + story annotations) for the selected story arrive over the
-  // channel via STORY_PREPARED. With experimentalDocgenServer, prepareStory skips second-pass
+  // channel via STORY_PREPARED. With docgenServer, prepareStory skips second-pass
   // enhancers so these stay annotation-only; mergeServiceArgTypes layers them on server docgen.
   const customArgTypes = useArgTypes();
   const id = storyData.id.split('--')[0];
@@ -263,31 +230,55 @@ function ServiceControlsPanel({
   const isDevelopment = global.CONFIG_TYPE === 'DEVELOPMENT';
   const isStoryPrepared = !isDevelopment || (isStory ? storyData.prepared : true);
   // Docs entries don't emit the story lifecycle events the gate listens for, so it only applies to
-  // actual stories; everything else falls through and queries docgen right away.
+  // actual stories; everything else queries docgen right away.
   const gateReady = useStoryDocgenGateReady(storyData.id);
-  if (isStory && !gateReady) {
-    // Docgen hasn't been queried yet (the query is gated until the story reaches a safe lifecycle
-    // point). Show the story's own annotation argTypes when it has controls; otherwise keep the
-    // loading skeleton rather than flashing the "No controls" empty state before docgen resolves.
-    return (
-      <ControlsPanelTable
-        {...props}
-        rows={customArgTypes}
-        isLoading={!isStoryPrepared || !hasAnyControl(customArgTypes)}
-      />
-    );
-  }
+  const queryReady = !isStory || gateReady;
+
+  const [docgen, setDocgen] = useState<{
+    id: string;
+    payload?: DocgenPayload;
+    isInitialLoading: boolean;
+  }>();
+  const onDocgenChange = useCallback(
+    (state: { payload?: DocgenPayload; isInitialLoading: boolean }) => setDocgen({ id, ...state }),
+    [id]
+  );
+  const current = queryReady && docgen?.id === id ? docgen : undefined;
+  const docgenPayload = current?.payload;
+
+  // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a
+  // docs-blocks-only feature, so this intentionally ignores `payload.subcomponents` to match the
+  // legacy panel's behavior.
+  const rows = useMemo(
+    () =>
+      docgenPayload
+        ? mergeServiceArgTypes({
+            payload: docgenPayload,
+            storyId: storyData.id,
+            parameters: storyData.parameters,
+            initialArgs,
+            customArgTypes,
+          })
+        : customArgTypes,
+    [docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
+  );
+
+  // Keep the skeleton up only while there is genuinely nothing to show: the story isn't prepared, or
+  // docgen hasn't resolved yet and there are no annotation controls to fall back on. Once docgen
+  // resolves (even to nothing) the table or its "No controls" empty state is the real answer.
+  const isDocgenLoading = !current || current.isInitialLoading;
 
   return (
-    <LoadedServiceControlsPanel
-      {...props}
-      customArgTypes={customArgTypes}
-      docgenService={docgenService}
-      id={id}
-      initialArgs={initialArgs}
-      isStoryPrepared={isStoryPrepared}
-      storyData={storyData}
-    />
+    <>
+      {queryReady && (
+        <DocgenQuery docgenService={docgenService} id={id} onChange={onDocgenChange} />
+      )}
+      <ControlsPanelTable
+        {...props}
+        rows={rows}
+        isLoading={!isStoryPrepared || (isDocgenLoading && !hasAnyControl(rows))}
+      />
+    </>
   );
 }
 

@@ -98,6 +98,9 @@ export const Categories: Story = {
   },
 };
 
+// Service docgen loads argTypes asynchronously, which can outlast the default one-second wait.
+const DOCGEN_TIMEOUT = { timeout: 5000 };
+
 const findSubcomponentTabs = async (
   canvas: ReturnType<typeof within>,
   step: PlayFunctionContext['step']
@@ -105,8 +108,8 @@ const findSubcomponentTabs = async (
   let subcomponentATab: HTMLElement | null = null;
   let subcomponentBTab: HTMLElement | null = null;
   await step('should have tabs for the subcomponents', async () => {
-    subcomponentATab = await canvas.findByText('SubcomponentA');
-    subcomponentBTab = await canvas.findByText('SubcomponentB');
+    subcomponentATab = await canvas.findByText('SubcomponentA', {}, DOCGEN_TIMEOUT);
+    subcomponentBTab = await canvas.findByText('SubcomponentB', {}, DOCGEN_TIMEOUT);
   });
   return { subcomponentATab, subcomponentBTab };
 };
@@ -143,7 +146,7 @@ export const SubcomponentsRetainControlFocus: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    const input = await canvas.findByDisplayValue('b');
+    const input = await canvas.findByDisplayValue('b', {}, DOCGEN_TIMEOUT);
     await userEvent.click(input);
     await userEvent.type(input, 'x');
     await waitFor(() => {
@@ -205,6 +208,10 @@ export const MultipleControlsOnSamePage: Story = {
     </>
   ),
   play: async ({ canvasElement }) => {
+    await waitFor(
+      () => expect(canvasElement.querySelector('[id^="control-"]')).not.toBeNull(),
+      DOCGEN_TIMEOUT
+    );
     const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
       (el) => el.id
     );
@@ -227,6 +234,10 @@ export const MultipleControlsForSameStoryOnSamePage: Story = {
     </>
   ),
   play: async ({ canvasElement }) => {
+    await waitFor(
+      () => expect(canvasElement.querySelector('[id^="control-"]')).not.toBeNull(),
+      DOCGEN_TIMEOUT
+    );
     const allIds = Array.from(canvasElement.querySelectorAll('[id^="control-"]')).map(
       (el) => el.id
     );

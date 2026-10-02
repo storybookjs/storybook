@@ -56,7 +56,7 @@ describe('viteFinal', () => {
   it.each(['vue-component-meta' as const, 'vue-docgen-api' as const, undefined, false as const])(
     'omits the legacy docgen plugin for docgen: %s when the server is on',
     async (docgen) => {
-      expect(await pluginNames(docgen, { experimentalDocgenServer: true })).toEqual(['template']);
+      expect(await pluginNames(docgen, { docgenServer: true })).toEqual(['template']);
     }
   );
 
@@ -65,23 +65,22 @@ describe('viteFinal', () => {
   });
 });
 
-describe('vue-docgen-api deprecation', () => {
-  it.each([undefined, true as const, 'vue-docgen-api' as const])(
+describe('builder docgen deprecation', () => {
+  it.each([undefined, true as const, 'vue-docgen-api' as const, 'vue-component-meta' as const])(
     'warns for docgen: %s',
     async (docgen) => {
       await pluginNames(docgen);
       expect(vi.mocked(deprecate).mock.calls.map(([message]) => message)).toMatchInlineSnapshot(`
         [
-          "\`vue-docgen-api\` is deprecated and will be removed in the next major release of Storybook. It is still the default docgen engine, so this also applies when you have not set the \`docgen\` framework option. Enable server-side docgen with \`features: { experimentalDocgenServer: true }\` in your \`.storybook/main.ts\`, which becomes the default in Storybook 11, or set \`framework: { name: '@storybook/vue3-vite', options: { docgen: 'vue-component-meta' } }\` to keep docgen in the builder.",
+          "Builder docgen (the \`docgen\` option of \`@storybook/vue3-vite\`, with \`vue-docgen-api\` or \`vue-component-meta\`) is deprecated and will be removed in Storybook 12. It runs because \`features.docgenServer\` is off. Remove \`docgenServer: false\` from your \`.storybook/main.ts\` to use server-side docgen.",
         ]
       `);
     }
   );
 
   it.each([
-    ['vue-component-meta' as const, {}],
     [false as const, {}],
-    [undefined, { experimentalDocgenServer: true }],
+    [undefined, { docgenServer: true }],
   ])('stays quiet for docgen: %s with features %o', async (docgen, features) => {
     await pluginNames(docgen, features);
     expect(vi.mocked(deprecate)).not.toHaveBeenCalled();

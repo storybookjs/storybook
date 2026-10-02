@@ -1,3 +1,4 @@
+import { deprecate } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import type { StorybookConfig } from './types.ts';
@@ -10,7 +11,7 @@ export const core: PresetProperty<'core'> = {
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, { presets }) => {
   const features = await presets.apply('features', {});
 
-  if (features?.experimentalDocgenServer) {
+  if (features?.docgenServer) {
     // The docgen service extracts React metadata on the server. Keep the preview bundle free of
     // build-time `__docgenInfo` injection so custom argTypes remain docgen-free.
     return config;
@@ -30,6 +31,13 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
     typescriptPresent = true;
   } catch (e) {
     typescriptPresent = false;
+  }
+
+  if (typeof reactDocgenOption === 'string') {
+    deprecate(
+      `Builder docgen (\`typescript.reactDocgen: '${reactDocgenOption}'\`) is deprecated and will be removed in Storybook 12. ` +
+        `It runs because \`features.docgenServer\` is off. Remove \`docgenServer: false\` from your \`.storybook/main.ts\` to use server-side docgen.`
+    );
   }
 
   if (reactDocgenOption === 'react-docgen-typescript' && typescriptPresent) {

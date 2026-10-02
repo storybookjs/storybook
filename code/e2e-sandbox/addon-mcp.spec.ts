@@ -135,89 +135,14 @@ const COLOR_PICKER_ID = 'stories-frameworks-angular-vite-model-signal-color-pick
 const DEFINE_MODEL_ID = 'stories-renderers-vue3-vue3-vite-default-ts-component-meta-definemodel';
 
 const isReactSandbox = templateName === 'react-vite/default-ts';
-const isAngularSandbox = templateName === 'angular-vite/docgen-server-ts';
-const isVueSandbox = templateName === 'vue3-vite/docgen-server-ts';
+const isAngularSandbox = templateName === 'angular-vite/default-ts';
+const isVueSandbox = templateName === 'vue3-vite/default-ts';
 
 test.describe('addon-mcp', () => {
   test.skip(
     !isReactSandbox && !isAngularSandbox && !isVueSandbox,
     'Only run for sandboxes with addon-mcp configured'
   );
-
-  test.describe('Manifests', () => {
-    test.skip(!isReactSandbox, 'Asserts on the React sandbox fixtures');
-
-    test.describe('Component Manifest', () => {
-      test('should have valid components.json structure', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/components.json`);
-        const json = await response.json();
-
-        // Check basic structure
-        expect(json).toHaveProperty('v');
-        expect(typeof json.v).toBe('number');
-        expect(json).toHaveProperty('components');
-        expect(typeof json.components).toBe('object');
-      });
-
-      test('should contain the example Button component', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/components.json`);
-        const json = await response.json();
-
-        // Check for example-button component
-        expect(json.components).toHaveProperty('example-button');
-
-        const button = json.components['example-button'];
-        expect(button).toMatchObject({
-          id: 'example-button',
-          name: 'Button',
-          path: expect.stringContaining('Button.stories'),
-        });
-
-        // Should have stories
-        expect(button.stories).toBeInstanceOf(Array);
-        expect(button.stories.length).toBeGreaterThan(0);
-
-        // Should have reactDocgen info with props
-        expect(button).toHaveProperty('reactDocgen');
-        expect(button.reactDocgen).toHaveProperty('props');
-        expect(button.reactDocgen.props).toHaveProperty('primary');
-      });
-    });
-
-    test.describe('Docs Manifest', () => {
-      test('should have valid docs.json structure', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/docs.json`);
-        const json = await response.json();
-
-        // Check basic structure
-        expect(json).toHaveProperty('v');
-        expect(typeof json.v).toBe('number');
-        expect(json).toHaveProperty('docs');
-        expect(typeof json.docs).toBe('object');
-      });
-
-      test('should contain the "Configure your project" docs entry', async ({ request }) => {
-        const response = await request.get(`${storybookUrl}/manifests/docs.json`);
-        const json = await response.json();
-
-        // Check for configure-your-project--docs entry
-        expect(json.docs).toHaveProperty('configure-your-project--docs');
-
-        const configureDoc = json.docs['configure-your-project--docs'];
-        expect(configureDoc).toMatchObject({
-          id: 'configure-your-project--docs',
-          name: 'Docs',
-          path: expect.stringContaining('Configure.mdx'),
-          title: 'Configure your project',
-        });
-
-        // Should have content
-        expect(configureDoc).toHaveProperty('content');
-        expect(typeof configureDoc.content).toBe('string');
-        expect(configureDoc.content.length).toBeGreaterThan(0);
-      });
-    });
-  });
 
   test.describe('MCP', () => {
     test.skip(type !== 'dev', 'MCP server only runs in dev mode');

@@ -54,7 +54,11 @@ const givenManifestPackage = (): void => {
 
 describe('renderer preset exports', () => {
   it('re-exports every docgen preset hook from the renderer preset', () => {
-    const docgenPresetHooks = Object.keys(docgenPreset).sort();
+    // Exporting the provider turns docgenServer on by default, so it stays unexported until it ships.
+    const unreleasedHooks = ['experimental_docgenProvider'];
+    const docgenPresetHooks = Object.keys(docgenPreset)
+      .filter((key) => !unreleasedHooks.includes(key))
+      .sort();
     const rootPresetDocgenHooks = Object.keys(rootPreset)
       .filter((key) => key in docgenPreset)
       .sort();
@@ -64,16 +68,10 @@ describe('renderer preset exports', () => {
 });
 
 describe('experimental_docgenProvider', () => {
-  it('contributes no descriptor when the docgen server flag is off', async () => {
-    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
-  });
-
   it('contributes the docgen worker descriptor', async () => {
     givenManifestPackage();
 
-    expect(
-      await experimental_docgenProvider([], optionsWith({ experimentalDocgenServer: true }))
-    ).toEqual([
+    expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([
       {
         moduleSpecifier: expect.stringMatching(/docgen-worker\.js$/),
         options: {
@@ -93,7 +91,7 @@ describe('experimental_docgenProvider', () => {
       await experimental_docgenProvider(
         [],
         optionsWith(
-          { experimentalDocgenServer: true },
+          { docgenServer: true },
           {
             customElementsManifest: 'custom-elements.json',
             docgen: { typeProperty: 'resolvedType' },
@@ -115,10 +113,10 @@ describe('experimental_docgenProvider', () => {
 describe('experimental_manifests', () => {
   it.each([
     ['docgen server flag off', { componentsManifest: true }, {}],
-    ['components manifest flag off', { experimentalDocgenServer: true }, {}],
+    ['components manifest flag off', { docgenServer: true }, {}],
     [
       'both flags on',
-      { experimentalDocgenServer: true, componentsManifest: true },
+      { docgenServer: true, componentsManifest: true },
       {
         components: {
           v: 0,

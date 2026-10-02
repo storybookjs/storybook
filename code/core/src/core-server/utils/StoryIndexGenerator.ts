@@ -493,7 +493,17 @@ export class StoryIndexGenerator {
       const { metaId } = indexInputs[0];
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
-      const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
+      // Use tags shared by every story in the file, not just the first one. A tag that only
+      // some stories carry is not a property of the component, and leaking it onto the docs
+      // entry means tag filters that hide those stories also hide the docs page. See #35968.
+      const sharedStoryTags = storyEntries
+        .filter((storyEntry) => storyEntry.type === 'story' && storyEntry.subtype !== 'test')
+        .reduce<Tag[] | null>(
+          (acc, storyEntry) =>
+            acc === null ? storyEntry.tags : acc.filter((tag) => storyEntry.tags.includes(tag)),
+          null
+        );
+      const tags = combineTags(...projectTags, ...(sharedStoryTags ?? []));
 
       const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
         id,
@@ -558,6 +568,7 @@ export class StoryIndexGenerator {
       // Also, if `result.of` is set, it means that we're using the `<Meta of={XStories} />` syntax,
       // so find the `title` defined the file that `meta` points to.
       let csfEntry: StoryIndexEntryWithExtra | undefined;
+      let sharedCsfTags: Tag[] | null = null;
       if (result.of) {
         const absoluteOf = makeAbsolute(result.of, normalizedPath, this.options.workingDir);
         let metaDependency: StoriesCacheEntry | undefined;
@@ -582,6 +593,19 @@ export class StoryIndexGenerator {
             metaDependency,
             ...dependencies.filter((d) => d !== metaDependency),
           ];
+
+          // Use tags shared by every story in the referenced CSF file, not just the first one
+          // found. A tag that only some stories carry is not a property of the component, and
+          // leaking it onto the docs entry means tag filters that hide those stories also hide
+          // the docs page. See #35968.
+          sharedCsfTags = metaDependency.entries
+            .filter(
+              (e): e is StoryIndexEntryWithExtra => e.type === 'story' && e.subtype !== 'test'
+            )
+            .reduce<Tag[] | null>((acc, e) => {
+              const entryTags = e.tags ?? [];
+              return acc === null ? entryTags : acc.filter((tag) => entryTags.includes(tag));
+            }, null);
         }
 
         invariant(
@@ -618,7 +642,7 @@ export class StoryIndexGenerator {
 
       const tags = combineTags(
         ...projectTags,
-        ...(csfEntry?.tags ?? []),
+        ...(sharedCsfTags ?? csfEntry?.tags ?? []),
         ...(result.metaTags ?? []),
         csfEntry ? Tag.ATTACHED_MDX : Tag.UNATTACHED_MDX
       );

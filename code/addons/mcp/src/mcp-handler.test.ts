@@ -555,7 +555,7 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('stories-changed');
   });
 
-  it('registers review-create for direct MCP clients when the changeDetection feature flag is on', async () => {
+  it('registers review-create when the changeDetection feature flag is on', async () => {
     const mockOptions = createMockOptions({
       port: 6010,
       presets: {
@@ -568,7 +568,6 @@ describe('mcpServerHandler', () => {
     });
 
     const toolNames = await getRegisteredToolNames(mockOptions, 6010);
-    expect(toolNames).toContain('stories-changed');
     expect(toolNames).toContain('review-create');
   });
 

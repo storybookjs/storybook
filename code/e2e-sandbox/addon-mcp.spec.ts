@@ -288,6 +288,9 @@ test.describe('addon-mcp', () => {
         expect(response.result).toHaveProperty('tools');
         // At least dev and docs tools should be present (4 total)
         expect(response.result.tools.length).toBeGreaterThanOrEqual(4);
+        expect(response.result.tools.map((tool: { name: string }) => tool.name)).toContain(
+          'review-create'
+        );
       });
     });
 

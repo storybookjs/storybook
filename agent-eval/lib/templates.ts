@@ -120,11 +120,8 @@ const CHECKOUT_PACKAGES_DIR = 'local-packages';
 const CHECKOUT_PACKAGE_NAMES_SANDBOX_PATH = path.posix.join(CHECKOUT_PACKAGES_DIR, 'packages.json');
 const WORKSPACE_SPEC = 'workspace:*';
 const execFileAsync = promisify(execFile);
-// The review mode a sandbox runs in, which EVAL.ts assertions read from the
-// agent context (see isReviewEnabled in test-utils). The checkout offers
-// review on every surface. The stable release that EVAL_STORYBOOK_LATEST=1
-// installs offers it to the plugins only, so MCP sandboxes are review-off
-// there until Storybook 11 is `latest`.
+// The stable release that EVAL_STORYBOOK_LATEST=1 installs offers review to
+// the plugins only, until Storybook 11 is `latest`.
 export function isReviewEnabledFor(integration: EvalIntegration): boolean {
   return (
     integration === 'plugin' || (integration === 'mcp' && process.env.EVAL_STORYBOOK_LATEST !== '1')

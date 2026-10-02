@@ -3,9 +3,6 @@ export default {
   // Replace your-framework with the framework you are using (e.g., react-vite, vue3-vite, angular, etc.)
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  features: {
-    docgenServer: false,
-  },
   core: {
     builder: '@storybook/builder-vite',
   },
@@ -24,9 +21,6 @@ import type { StorybookConfig } from '@storybook/your-framework';
 const config: StorybookConfig = {
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  features: {
-    docgenServer: false,
-  },
   core: {
     builder: '@storybook/builder-vite',
   },
@@ -47,9 +41,6 @@ import { defineMain } from '@storybook/your-framework/node';
 export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  features: {
-    docgenServer: false,
-  },
   core: {
     builder: '@storybook/builder-vite',
   },
@@ -70,9 +61,6 @@ import { defineMain } from '@storybook/your-framework/node';
 export default defineMain({
   framework: '@storybook/your-framework',
   stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
-  features: {
-    docgenServer: false,
-  },
   core: {
     builder: '@storybook/builder-vite',
   },

@@ -1,4 +1,10 @@
-import { babelParse, babelPrint, traverse, types as t } from 'storybook/internal/babel';
+import {
+  babelParse,
+  babelPrint,
+  traverse,
+  types as t,
+  type NodePath,
+} from 'storybook/internal/babel';
 
 import picocolors from 'picocolors';
 
@@ -28,6 +34,20 @@ const setFilterRenames: Record<string, string> = Object.assign(Object.create(nul
   experimental_setFilter: 'setFilter',
 });
 
+const isSetFilterApiReference = (path: NodePath<t.Identifier>) => {
+  const { parent, parentPath } = path;
+  const isMemberProperty =
+    (t.isMemberExpression(parent) || t.isOptionalMemberExpression(parent)) &&
+    !parent.computed &&
+    parent.property === path.node;
+  const isDestructuredApiKey =
+    t.isObjectProperty(parent) &&
+    !parent.computed &&
+    parent.key === path.node &&
+    parentPath.parentPath?.isObjectPattern() === true;
+  return isMemberProperty || isDestructuredApiKey;
+};
+
 const renameSetFilterIdentifiers = (code: string) => {
   if (!code.includes('experimental_setFilter')) {
     return undefined;
@@ -41,6 +61,9 @@ const renameSetFilterIdentifiers = (code: string) => {
   let changed = false;
   traverse(ast, {
     Identifier(path) {
+      if (!isSetFilterApiReference(path)) {
+        return;
+      }
       const next = Object.hasOwn(setFilterRenames, path.node.name)
         ? setFilterRenames[path.node.name]
         : undefined;

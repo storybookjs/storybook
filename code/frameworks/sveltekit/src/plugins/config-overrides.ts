@@ -6,7 +6,11 @@ export function configOverrides() {
     name: 'storybook:sveltekit-overrides',
     apply: 'build',
     config: () => {
-      return { build: { ssr: false } };
+      return {
+        build: { ssr: false },
+        // SvelteKit defaults the app version to the build time, which would change every build
+        define: { __SVELTEKIT_APP_VERSION__: JSON.stringify('storybook') },
+      };
     },
   } satisfies Plugin;
 }

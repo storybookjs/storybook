@@ -45,7 +45,9 @@ export const filters: Record<string, { label: string; filter: string; percentage
   },
 } as const;
 
-export const filterDefs = `<svg id="storybook-a11y-vision-filters" style="display: none !important;">
+// Firefox ignores CSS `filter: url(#id)` when the SVG defining `#id` is `display: none`.
+// The color matrices above were fit against gamma-encoded sRGB, not the linearRGB filter default.
+export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="sRGB" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
     <filter id="storybook-a11y-vision-protanopia">
       <feColorMatrix

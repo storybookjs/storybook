@@ -1,6 +1,6 @@
 import type { Channel } from 'storybook/internal/channels';
 import { createFileSystemCache, resolvePathInStorybookCache } from 'storybook/internal/common';
-import { experimental_UniversalStore } from 'storybook/internal/core-server';
+import { internal_UniversalStore } from 'storybook/internal/core-server';
 import {
   AI_SETUP_ANALYTICS_REQUEST,
   GHOST_STORIES_REQUEST,
@@ -31,7 +31,7 @@ export async function initializeChecklist(
   configDir?: string
 ) {
   try {
-    const store = experimental_UniversalStore.create<StoreState, StoreEvent>({
+    const store = internal_UniversalStore.create<StoreState, StoreEvent>({
       ...UNIVERSAL_CHECKLIST_STORE_OPTIONS,
       leader: true,
     });

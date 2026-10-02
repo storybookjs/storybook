@@ -22,10 +22,6 @@ interface InternalGetArgTypesDataOptions extends GetArgTypesDataOptions {
   presets?: Options['presets'];
 }
 
-export const addons: PresetProperty<'addons'> = [
-  import.meta.resolve('@storybook/react-dom-shim/preset'),
-];
-
 export { manifests as experimental_manifests } from './componentManifest/generator.ts';
 
 export { enrichCsf as experimental_enrichCsf } from './enrichCsf.ts';
@@ -132,4 +128,4 @@ export async function internal_getArgTypesData(
   return argTypesData;
 }
 
-export const optimizeViteDeps: string[] = ['react-dom/test-utils'];
+export const optimizeViteDeps: string[] = ['react-dom/client', 'react-dom/test-utils'];

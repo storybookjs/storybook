@@ -5,7 +5,7 @@ import React from 'react';
 import { imported } from '../imported';
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore no types for this
-import * as styles from '../imported.module.css';
+import styles from '../imported.module.css';
 
 const local = 'local-value';
 

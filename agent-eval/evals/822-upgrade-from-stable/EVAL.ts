@@ -8,8 +8,8 @@ import {
 
 describe('upgrading Storybook from an outdated stable release', () => {
   // Only the lifecycle outcome is asserted; the story/review workflow is owned
-  // by the 80x evals. The fixture opts out of the harness version pinning
-  // (evals.pinStorybook: false) to keep the seeded 10.4.0.
+  // by the 80x evals. The fixture lists exact versions, not
+  // `workspace:*`, so the harness keeps the seeded 10.4.0.
 
   test('invokes the storybook-upgrade skill', () => {
     expectSkillInvoked('storybook-upgrade');

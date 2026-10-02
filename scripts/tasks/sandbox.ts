@@ -64,8 +64,6 @@ export const sandbox: Task = {
     // This avoids issues where you want to overwrite a sandbox and it will stop because it already exists
     const tasksAfterSandbox: TaskKey[] = [
       'vitest-integration',
-      'test-runner',
-      'test-runner-dev',
       'e2e-tests',
       'e2e-tests-dev',
       'smoke-test',
@@ -92,6 +90,7 @@ export const sandbox: Task = {
       install,
       addGlobalMocks,
       addStories,
+      addStaticDirs,
       extendMain,
       extendPreview,
       init,
@@ -110,12 +109,6 @@ export const sandbox: Task = {
       '@types/lodash-es',
       '@types/aria-query',
       'uuid',
-    ];
-
-    const extraDevDeps = [
-      ...(details.template.modifications?.extraDevDependencies ?? []),
-      // Always installed regardless of the template.
-      '@storybook/test-runner@latest',
     ];
 
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
@@ -144,12 +137,12 @@ export const sandbox: Task = {
     startTime = now();
     await install(details, options);
     const generateTime = now() - startTime;
-    const generateSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const generateSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     startTime = now();
     await init(details, options);
     const initTime = now() - startTime;
-    const initSize = await promisify(dirSize)(join(details.sandboxDir, 'node_modules'));
+    const initSize = (await promisify(dirSize)(join(details.sandboxDir, 'node_modules'))) ?? 0;
 
     await saveBench(
       'sandbox',
@@ -183,13 +176,14 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
-      extraDevDeps,
+      extraDevDeps: details.template.modifications?.extraDevDependencies,
       removeDeps: details.template.modifications?.removeDependencies,
       removeDevDeps: details.template.modifications?.removeDevDependencies,
       resolutions: details.template.modifications?.resolutions,
     });
 
     await extendMain(details, options);
+    await addStaticDirs(details, options);
 
     await setImportMap(details.sandboxDir);
 

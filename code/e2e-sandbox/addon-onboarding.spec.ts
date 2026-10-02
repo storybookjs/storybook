@@ -76,7 +76,7 @@ test.describe('addon-onboarding', () => {
     await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
     await expect(page.getByText('You just added your first')).toBeVisible();
-    await page.getByLabel('Last').click();
+    await page.getByRole('button', { name: 'Last', exact: true }).click();
 
     await page.getByRole('checkbox', { name: 'Application UI' }).check();
     await page.getByRole('checkbox', { name: 'Functional testing' }).check();

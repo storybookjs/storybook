@@ -15,9 +15,16 @@ const workingDir = resolve('/project');
 
 type File = { code: string; compiledCss?: string };
 
-async function getModuleHashes(files: Record<string, File>, assets: Record<string, string> = {}) {
+async function getModuleHashes(
+  files: Record<string, File>,
+  {
+    assets = {},
+    define = {},
+  }: { assets?: Record<string, string>; define?: Record<string, string> } = {}
+) {
   vi.mocked(getPreviewConfigHash).mockResolvedValue('preview-config-hash');
   const plugin = pluginWebpackStats({ workingDir, options: {} as Options });
+  (plugin.configResolved as (config: object) => void)({ env: {}, define });
   const transform = plugin.transform as (code: string, id: string) => void;
   const moduleParsed = plugin.moduleParsed as (mod: object) => void;
   const generateBundle = plugin.generateBundle as (...args: unknown[]) => Promise<void>;
@@ -68,12 +75,31 @@ describe('pluginWebpackStats', () => {
     expect(second['./a.css']).not.toBe(first['./a.css']);
   });
 
-  it('hashes the content of assets that the module code references by placeholder', async () => {
-    const files = { 'logo.png': { code: 'export default "__VITE_ASSET__logo__"' } };
-    const first = await getModuleHashes(files, { logo: 'old bytes' });
-    const second = await getModuleHashes(files, { logo: 'new bytes' });
+  it.each([
+    ['Vite', 'export default "__VITE_ASSET__logo__"'],
+    ['Rolldown', 'export default import.meta.ROLLDOWN_FILE_URL_logo'],
+  ])('hashes the content of assets behind a %s placeholder', async (_, code) => {
+    const files = { 'logo.png': { code } };
+    const first = await getModuleHashes(files, { assets: { logo: 'old bytes' } });
+    const second = await getModuleHashes(files, { assets: { logo: 'new bytes' } });
 
     expect(second['./logo.png']).not.toBe(first['./logo.png']);
+  });
+
+  it('hashes the values of the defines that the module code still uses', async () => {
+    const files = {
+      'a.js': { code: 'export const a = import.meta.env.STORYBOOK_FLAG;' },
+      'b.js': { code: 'export const b = 1;' },
+    };
+    const first = await getModuleHashes(files, {
+      define: { 'import.meta.env.STORYBOOK_FLAG': '"a"' },
+    });
+    const second = await getModuleHashes(files, {
+      define: { 'import.meta.env.STORYBOOK_FLAG': '"b"' },
+    });
+
+    expect(second['./a.js']).not.toBe(first['./a.js']);
+    expect(second['./b.js']).toBe(first['./b.js']);
   });
 
   it('ignores the absolute project root in module code', async () => {
@@ -83,6 +109,17 @@ describe('pluginWebpackStats', () => {
     const second = await getModuleHashes({
       'a.js': { code: 'import "/second/node_modules/b.js";' },
     });
+
+    expect(second['./a.js']).toBe(first['./a.js']);
+  });
+
+  it('ignores a Windows project root in every spelling', async () => {
+    const code = (root: string) =>
+      `import "${root.replaceAll('\\', '/')}/a.js"; const b = ${JSON.stringify(`${root}\\b.js`)};`;
+    vi.mocked(getProjectRoot).mockReturnValue('C:\\first');
+    const first = await getModuleHashes({ 'a.js': { code: code('C:\\first') } });
+    vi.mocked(getProjectRoot).mockReturnValue('C:\\second');
+    const second = await getModuleHashes({ 'a.js': { code: code('C:\\second') } });
 
     expect(second['./a.js']).toBe(first['./a.js']);
   });

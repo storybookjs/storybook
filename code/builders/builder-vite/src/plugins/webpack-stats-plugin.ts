@@ -38,10 +38,16 @@ type WebpackStatsPluginOptions = {
 };
 
 const CSS_LANGS_RE = /\.(?:css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
-const VITE_ASSET_RE = /__VITE_ASSET__([\w$]+)__/g;
+// Vite and Rolldown name an emitted asset by a reference id that does not depend on its content
+const ASSET_REFERENCE_RE =
+  /__VITE_ASSET__([\w$]+)__|import\.meta\.ROLL(?:UP|DOWN)_FILE_URL_([\w$]+)/g;
 
 function sha256(content: string | Uint8Array) {
   return createHash('sha256').update(content).digest('hex');
+}
+
+function escapeRegExp(text: string) {
+  return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**
@@ -121,13 +127,31 @@ export function pluginWebpackStats({
   }
 
   const statsMap = new Map<string, Module>();
-  const projectRoot = slash(getProjectRoot());
+  const projectRoot = getProjectRoot();
+  const projectRootSpellings = [
+    ...new Set([slash(projectRoot), projectRoot, JSON.stringify(projectRoot).slice(1, -1)]),
+  ];
   const compiledCssById = new Map<string, string>();
   // Query variants of one file (`a.css`, `a.css?inline`) share a stats module, so it gets one hash per id
   const outputHashesByModule = new Map<string, Map<string, string>>();
-  // Asset placeholders name a reference id that does not depend on the asset's content
   const codeWithAssetsById = new Map<string, string>();
+  const defineValues = new Map<string, string>();
+  let defineKeysRe: RegExp | undefined;
   let previewConfigHash: string | undefined;
+
+  // Module code still holds absolute import ids, which the bundler makes relative later
+  function withoutProjectRoot(code: string) {
+    return projectRootSpellings.reduce(
+      (result, root) => result.replaceAll(root, '<projectRoot>'),
+      code
+    );
+  }
+
+  // Rolldown replaces `define` keys after `moduleParsed`, so the code alone misses their values
+  function getUsedDefines(code: string) {
+    const keys = [...new Set(defineKeysRe ? code.match(defineKeysRe) : [])].sort();
+    return keys.map((key) => `\n${key}=${defineValues.get(key)}`).join('');
+  }
 
   function setOutputHash(id: string, code: string) {
     const moduleName = normalize(id);
@@ -143,6 +167,19 @@ export function pluginWebpackStats({
 
   return {
     name: 'storybook:rollup-plugin-webpack-stats',
+    configResolved(config) {
+      const envDefines = Object.entries(config.env).map(([key, value]) => [
+        `import.meta.env.${key}`,
+        value,
+      ]);
+      for (const [key, value] of [...envDefines, ...Object.entries(config.define ?? {})]) {
+        defineValues.set(key, typeof value === 'string' ? value : JSON.stringify(value));
+      }
+      const keys = [...defineValues.keys()].sort((a, b) => b.length - a.length).map(escapeRegExp);
+      defineKeysRe = keys.length
+        ? new RegExp(`(?<![\\w$.])(?:${keys.join('|')})(?![\\w$])`, 'g')
+        : undefined;
+    },
     // Without `enforce`, this runs after `vite:css` compiles a stylesheet and before `vite:css-post`
     // empties its module code in builds
     transform(code, id) {
@@ -154,13 +191,10 @@ export function pluginWebpackStats({
       if (!isUserCode(mod.id)) {
         return;
       }
-      // Module code still holds absolute import ids, which the bundler makes relative later
-      const code = ((compiledCssById.get(mod.id) ?? '') + (mod.code ?? '')).replaceAll(
-        projectRoot,
-        '<projectRoot>'
-      );
+      const moduleCode = (compiledCssById.get(mod.id) ?? '') + (mod.code ?? '');
+      const code = withoutProjectRoot(moduleCode) + getUsedDefines(moduleCode);
       compiledCssById.delete(mod.id);
-      if (code.includes('__VITE_ASSET__')) {
+      if (code.search(ASSET_REFERENCE_RE) !== -1) {
         codeWithAssetsById.set(mod.id, code);
       } else {
         setOutputHash(mod.id, code);
@@ -188,10 +222,13 @@ export function pluginWebpackStats({
 
     async generateBundle(_, bundle) {
       for (const [id, code] of codeWithAssetsById) {
-        const codeWithAssetHashes = code.replace(VITE_ASSET_RE, (placeholder, referenceId) => {
-          const asset = bundle[this.getFileName(referenceId)];
-          return asset?.type === 'asset' ? sha256(asset.source) : placeholder;
-        });
+        const codeWithAssetHashes = code.replace(
+          ASSET_REFERENCE_RE,
+          (placeholder, viteReferenceId?: string, rollupReferenceId?: string) => {
+            const asset = bundle[this.getFileName(viteReferenceId ?? rollupReferenceId ?? '')];
+            return asset?.type === 'asset' ? sha256(asset.source) : placeholder;
+          }
+        );
         setOutputHash(id, codeWithAssetHashes);
       }
       previewConfigHash = await getPreviewConfigHash(options);

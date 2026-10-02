@@ -60,6 +60,8 @@ jobs:
           out="$(cygpath -u "$RUNNER_TEMP")/phash"
           workspace="$(cygpath -u "$GITHUB_WORKSPACE")"
           cd "$(dirname "$workspace")/a-much-longer-moved-checkout/code"
+          # Yarn links workspaces with absolute junctions on Windows, so they break when the folder moves
+          yarn install
           NODE_OPTIONS=--max_old_space_size=6144 node core/dist/bin/dispatcher.js build \
             --config-dir ./.storybook --preview-only \
             --webpack-stats-json "$out/moved" -o "$out/moved/static"

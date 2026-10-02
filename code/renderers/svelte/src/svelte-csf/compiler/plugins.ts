@@ -9,6 +9,7 @@
  */
 
 import fs from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 import MagicString from 'magic-string';
 import { preprocess } from 'svelte/compiler';
@@ -29,15 +30,25 @@ export async function transformPlugin(): Promise<Plugin> {
   const svelteConfig = await loadSvelteConfig();
   const include = /\.stories\.svelte$/;
   const filter = createFilter(include);
+  // Users don't depend on @storybook/svelte directly, so a strict package manager like pnpm can't
+  // resolve this import from their stories files. It resolves from here.
+  const runtimeStoriesPath = fileURLToPath(
+    import.meta.resolve(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE)
+  );
 
   return {
     name: 'storybook:svelte-csf',
     config() {
       return {
         optimizeDeps: {
-          include: [SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE],
+          include: [runtimeStoriesPath],
         },
       };
+    },
+    resolveId(source) {
+      if (source === SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE) {
+        return runtimeStoriesPath;
+      }
     },
     async transform(compiledCode, id) {
       if (!filter(id)) return undefined;

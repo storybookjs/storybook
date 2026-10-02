@@ -1,10 +1,7 @@
-import { supportsAiFeatures } from 'storybook/internal/cli';
 import type { PackageJsonWithDepsAndDevDeps } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManager,
-  builderPackages,
-  frameworkPackages,
   getPkgPrNewPackageSpecifier,
   getProjectRoot,
   isPkgPrNewVersionSpecifier,
@@ -62,7 +59,6 @@ export interface CollectProjectsSuccessResult extends UpgradeConfig {
   readonly latestCLIVersionOnNPM: string | null;
   readonly autoblockerCheckResults: AutoblockerResult<unknown>[] | null;
   readonly storiesPaths: string[];
-  readonly supportsAiFeatures: boolean;
 }
 
 /** Result when project collection fails */
@@ -315,9 +311,6 @@ const processProject = async ({
       storiesPaths,
       versionSpecifier,
       versionInstalled,
-      renderer,
-      frameworkPackage,
-      builderPackage,
     } = await getStorybookData({ configDir });
 
     // Validate version and upgrade compatibility
@@ -386,11 +379,6 @@ const processProject = async ({
       autoblockerCheckResults,
       previewConfigPath,
       storiesPaths,
-      supportsAiFeatures: supportsAiFeatures(
-        renderer,
-        builderPackage ? builderPackages[builderPackage] : undefined,
-        frameworkPackage ? frameworkPackages[frameworkPackage] : undefined
-      ),
     } satisfies CollectProjectsSuccessResult;
   } catch (error) {
     logger.debug(String(error));

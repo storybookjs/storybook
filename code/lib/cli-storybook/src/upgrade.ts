@@ -1,10 +1,17 @@
 import type { SkillsInstallResult } from 'storybook/internal/cli';
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import {
+  getStorybookData,
+  hasStorybookSkills,
+  installSkills,
+  supportsAiFeatures,
+} from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
+  builderPackages,
+  frameworkPackages,
   isCI,
   isCorePackage,
   resolveStorybookVersionSpecifier,
@@ -156,23 +163,47 @@ export type UpgradeOptions = {
   logfile?: string | boolean;
 };
 
-const FIRST_MAJOR_WITH_SKILLS = 11;
+const FIRST_VERSION_OFFERING_SKILLS = '11.0.0-alpha.2';
+
+// Reads the main config again because an automigration may have switched the framework.
+async function hasAiFeatureSupport({ configDir }: CollectProjectsSuccessResult): Promise<boolean> {
+  try {
+    const { renderer, builderPackage, frameworkPackage } = await getStorybookData({
+      configDir,
+      skipCache: true,
+    });
+    return supportsAiFeatures(
+      renderer,
+      builderPackage ? builderPackages[builderPackage] : undefined,
+      frameworkPackage ? frameworkPackages[frameworkPackage] : undefined
+    );
+  } catch {
+    return false;
+  }
+}
 
 async function upgradeSkills(
   projects: CollectProjectsSuccessResult[],
   packageManager: JsPackageManager,
   yes: boolean
 ): Promise<SkillsInstallResult | undefined> {
+  // Canary versions have no tag in the skills repository, and their 0.0.0 version would pass as
+  // an upgrade from before the skills on every run.
+  const releasedProjects = projects.filter((project) => !project.isCanary);
+  if (releasedProjects.length === 0) {
+    return undefined;
+  }
+
   if (await hasStorybookSkills()) {
     return installSkills({ packageManager, source: 'installed' });
   }
 
-  // Offered once, on the upgrade into the first major that ships the skills, so a project that
+  // Offered once, on the upgrade into the first version that offers the skills, so a project that
   // declined is not asked again on later upgrades.
-  const isOffered = projects.some(
-    (project) =>
-      project.supportsAiFeatures && semver.major(project.beforeVersion) < FIRST_MAJOR_WITH_SKILLS
+  const upgradedIntoSkills = releasedProjects.filter((project) =>
+    lt(project.beforeVersion, FIRST_VERSION_OFFERING_SKILLS)
   );
+  const isOffered = (await Promise.all(upgradedIntoSkills.map(hasAiFeatureSupport))).some(Boolean);
   if (!isOffered) {
     return undefined;
   }

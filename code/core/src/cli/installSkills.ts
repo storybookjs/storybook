@@ -35,7 +35,9 @@ export async function hasStorybookSkills(): Promise<boolean> {
     const lock: { skills?: Record<string, { source?: string }> } = JSON.parse(
       await readFile(join(getProjectRoot(), 'skills-lock.json'), 'utf8')
     );
-    return Object.values(lock.skills ?? {}).some((skill) => skill.source === SKILLS_REPO);
+    return Object.values(lock.skills ?? {}).some((skill) =>
+      skill.source?.toLowerCase().includes(SKILLS_REPO)
+    );
   } catch {
     return false;
   }
@@ -79,7 +81,9 @@ export async function installSkills({
       timeout: 120_000,
     });
   } catch (error) {
-    logger.warn('Could not install the Storybook skills, continuing without them.');
+    logger.warn(
+      `Could not install the Storybook skills, continuing without them. Install them later with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', SKILLS_REPO])}`
+    );
     logger.debug(error);
     // pnpm and Yarn Berry failures arrive as package-install errors because the args contain `add`
     const exitCode = (error as { data?: { exitCode?: unknown } } | undefined)?.data?.exitCode;

@@ -1,10 +1,11 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import { getStorybookData, hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { detectAgent, telemetry } from 'storybook/internal/telemetry';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 import { runAutomigrations } from './automigrate/multi-project.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
@@ -44,7 +45,6 @@ const project = (
     currentCLIVersion: '11.0.0',
     isCanary: false,
     autoblockerCheckResults: null,
-    supportsAiFeatures: true,
     packageManager: {
       type: 'npm',
       packageJsonPaths: [],
@@ -73,6 +73,23 @@ const setIsTTY = (stream: NodeJS.ReadStream | NodeJS.WriteStream, value: boolean
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
   vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
 
+const VUE_CONFIG_DIR = '/repo/vue/.storybook';
+const useFrameworks = () =>
+  vi.mocked(getStorybookData).mockImplementation(
+    async ({ configDir }) =>
+      (configDir === VUE_CONFIG_DIR
+        ? {
+            renderer: SupportedRenderer.VUE3,
+            frameworkPackage: '@storybook/vue3-vite',
+            builderPackage: '@storybook/builder-vite',
+          }
+        : {
+            renderer: SupportedRenderer.REACT,
+            frameworkPackage: '@storybook/react-vite',
+            builderPackage: '@storybook/builder-vite',
+          }) as Awaited<ReturnType<typeof getStorybookData>>
+  );
+
 describe('upgrade: the skills step', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -95,6 +112,7 @@ describe('upgrade: the skills step', () => {
     } as unknown as ReturnType<typeof prompt.taskLog>);
     vi.mocked(prompt.confirm).mockResolvedValue(true);
     vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+    useFrameworks();
     vi.mocked(installSkills).mockImplementation(async ({ source }) => ({
       result: 'installed',
       source,
@@ -137,9 +155,7 @@ describe('upgrade: the skills step', () => {
     });
 
     it('refreshes them on an upgrade within the same major and on an unsupported framework', async () => {
-      useProjects(
-        project('/repo/a/.storybook', { beforeVersion: '11.0.0', supportsAiFeatures: false })
-      );
+      useProjects(project(VUE_CONFIG_DIR, { beforeVersion: '11.0.0' }));
 
       await upgrade(baseOptions);
 
@@ -148,7 +164,18 @@ describe('upgrade: the skills step', () => {
   });
 
   describe('when the project does not have the skills', () => {
-    it('asks on an upgrade from before 11 and installs on Yes', async () => {
+    it.each(['10.3.0', '11.0.0-alpha.1'])(
+      'asks on an upgrade from %s, a version that did not offer the skills',
+      async (beforeVersion) => {
+        useProjects(project('/repo/a/.storybook', { beforeVersion }));
+
+        await upgrade(baseOptions);
+
+        expect(prompt.confirm).toHaveBeenCalledTimes(1);
+      }
+    );
+
+    it('asks with Yes preselected and installs on Yes', async () => {
       await upgrade(baseOptions);
 
       expect(prompt.confirm).toHaveBeenCalledWith(
@@ -185,11 +212,18 @@ describe('upgrade: the skills step', () => {
     });
 
     it.each([
-      ['from 11', { beforeVersion: '11.0.0' }],
-      ['from an 11 prerelease', { beforeVersion: '11.0.0-alpha.1' }],
-      ['on an unsupported framework', { supportsAiFeatures: false }],
-    ])('does nothing on an upgrade %s', async (_, overrides) => {
-      useProjects(project('/repo/a/.storybook', overrides));
+      ['from 11', project('/repo/a/.storybook', { beforeVersion: '11.0.0' })],
+      [
+        'from the first prerelease that offers the skills',
+        project('/repo/a/.storybook', { beforeVersion: '11.0.0-alpha.2' }),
+      ],
+      [
+        'from a canary',
+        project('/repo/a/.storybook', { beforeVersion: '0.0.0-pr-1-sha-abc', isCanary: true }),
+      ],
+      ['on an unsupported framework', project(VUE_CONFIG_DIR)],
+    ])('does nothing on an upgrade %s', async (_, upgraded) => {
+      useProjects(upgraded);
 
       await upgrade(baseOptions);
 
@@ -198,10 +232,10 @@ describe('upgrade: the skills step', () => {
       expect(skillsInUpgradeEvents()).toEqual([undefined]);
     });
 
-    it('asks when only one of the projects is supported and comes from before 11', async () => {
+    it('asks when only one of the projects is supported and comes from before the skills', async () => {
       useProjects(
         project('/repo/a/.storybook', { beforeVersion: '11.0.0' }),
-        project('/repo/b/.storybook', { supportsAiFeatures: false }),
+        project(VUE_CONFIG_DIR),
         project('/repo/c/.storybook')
       );
 
@@ -214,7 +248,6 @@ describe('upgrade: the skills step', () => {
       ['an agent', () => vi.mocked(detectAgent).mockReturnValue({ name: 'claude' }), {}, 'agent'],
       ['--yes', () => {}, { yes: true }, 'yes'],
       ['a run without a terminal', () => setIsTTY(process.stdin, false), {}, 'default'],
-      ['CI', () => vi.mocked(isCI).mockReturnValue(true), {}, 'default'],
     ])('installs without asking for %s', async (_, arrange, options, source) => {
       arrange();
 
@@ -225,6 +258,14 @@ describe('upgrade: the skills step', () => {
     });
   });
 
+  it('never asks in CI', async () => {
+    vi.mocked(isCI).mockReturnValue(true);
+
+    await upgrade(baseOptions);
+
+    expect(prompt.confirm).not.toHaveBeenCalled();
+  });
+
   it("attaches the result to every project's upgrade event", async () => {
     await upgrade(baseOptions);
 
@@ -232,6 +273,15 @@ describe('upgrade: the skills step', () => {
       { result: 'installed', source: 'prompt' },
       { result: 'installed', source: 'prompt' },
     ]);
+  });
+
+  it('leaves installed skills alone on a canary, which has no skills tag', async () => {
+    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+    useProjects(project('/repo/a/.storybook', { isCanary: true }));
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).not.toHaveBeenCalled();
   });
 
   it('never runs during a dry run', async () => {

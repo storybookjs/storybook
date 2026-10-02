@@ -73,6 +73,12 @@ describe('hasStorybookSkills', () => {
     expect(await hasStorybookSkills()).toBe(true);
   });
 
+  it('is true when the skills were installed through a git URL', async () => {
+    lock({ stories: { source: 'git@github.com:StorybookJS/skills.git' } });
+
+    expect(await hasStorybookSkills()).toBe(true);
+  });
+
   it('is false when the lock file only has skills from other repositories', async () => {
     lock({ 'find-skills': { source: 'vercel-labs/skills' } });
 
@@ -178,7 +184,7 @@ describe('installSkills', () => {
 
     expect(result).toEqual({ result: 'failed', source: 'prompt', exitCode: 1 });
     expect(logger.warn).toHaveBeenCalledWith(
-      'Could not install the Storybook skills, continuing without them.'
+      'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills'
     );
   });
 });

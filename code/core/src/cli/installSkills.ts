@@ -1,122 +1,60 @@
+import { readFile } from 'node:fs/promises';
+import { join } from 'node:path';
+
 import type { JsPackageManager } from 'storybook/internal/common';
 import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
-import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
+import { CLI_COLORS, logger } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
-
-import { globalSettings } from './globalSettings.ts';
+import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
 const SKILLS_REPO = 'storybookjs/skills';
 
-export type SkillsSource = 'flag' | 'ci' | 'settings' | 'agent' | 'yes' | 'prompt' | 'default';
-
-export type SkillsDecision = {
-  action: 'install' | 'skip' | 'ask';
-  source: SkillsSource;
-};
+export type SkillsSource = 'ai-feature' | 'installed' | 'agent' | 'yes' | 'prompt' | 'default';
 
 export type SkillsInstallResult = {
   result: 'installed' | 'declined' | 'skipped' | 'failed';
-  source: SkillsSource;
+  source: SkillsSource | 'ci';
   exitCode?: number;
 };
 
-/** Decide whether init or upgrade should install the official Storybook skills. */
-export function decideSkillsInstall(input: {
-  skillsFlag?: boolean;
-  isCI: boolean;
-  isInteractive: boolean;
-  yes: boolean;
-  agent: boolean;
-  remembered?: boolean;
-}): SkillsDecision {
-  if (input.skillsFlag === true) {
-    return { action: 'install', source: 'flag' };
+/** Whether init and upgrade offer the AI features (skills and the setup prompt) for this project. */
+export function supportsAiFeatures(
+  renderer: SupportedRenderer | undefined,
+  builder: SupportedBuilder | undefined,
+  framework: SupportedFramework | null | undefined
+): boolean {
+  if (framework === SupportedFramework.REACT_NATIVE_WEB_VITE) {
+    return false;
   }
-  if (input.skillsFlag === false) {
-    return { action: 'skip', source: 'flag' };
+  return renderer === SupportedRenderer.REACT && builder === SupportedBuilder.VITE;
+}
+
+/** Whether the project has skills from the official Storybook skills repository installed. */
+export async function hasStorybookSkills(): Promise<boolean> {
+  try {
+    const lock: { skills?: Record<string, { source?: string }> } = JSON.parse(
+      await readFile(join(getProjectRoot(), 'skills-lock.json'), 'utf8')
+    );
+    return Object.values(lock.skills ?? {}).some((skill) => skill.source === SKILLS_REPO);
+  } catch {
+    return false;
   }
-  if (input.isCI) {
-    return { action: 'skip', source: 'ci' };
-  }
-  if (input.remembered === true) {
-    return { action: 'install', source: 'settings' };
-  }
-  if (input.remembered === false) {
-    return { action: 'skip', source: 'settings' };
-  }
-  if (input.agent) {
-    return { action: 'install', source: 'agent' };
-  }
-  if (input.yes) {
-    return { action: 'install', source: 'yes' };
-  }
-  return input.isInteractive
-    ? { action: 'ask', source: 'prompt' }
-    : { action: 'install', source: 'default' };
 }
 
 /**
- * Install the official Storybook skills into the project root through Vercel's `skills` CLI,
- * remembering the answer per project in the global settings file. A failed install is reported in
- * the result instead of thrown.
+ * Install the official Storybook skills into the project root through Vercel's `skills` CLI.
+ *
+ * Never runs in CI, and a failed install is reported in the result instead of thrown.
  */
 export async function installSkills({
   packageManager,
-  skillsFlag,
-  yes = false,
-  agent = false,
+  source,
 }: {
   packageManager: JsPackageManager;
-  skillsFlag?: boolean;
-  yes?: boolean;
-  agent?: boolean;
+  source: SkillsSource;
 }): Promise<SkillsInstallResult> {
-  const projectRoot = getProjectRoot();
-  const settings = await globalSettings();
-  const remember = async (answer: boolean) => {
-    if (settings.value.agentSkills?.[projectRoot] === answer) {
-      return;
-    }
-    settings.value.agentSkills = { ...settings.value.agentSkills, [projectRoot]: answer };
-    await settings.save();
-  };
-
-  const decision = decideSkillsInstall({
-    skillsFlag,
-    isCI: !!isCI(),
-    isInteractive: !!process.stdout.isTTY && !!process.stdin.isTTY,
-    yes,
-    agent,
-    remembered: settings.value.agentSkills?.[projectRoot],
-  });
-
-  if (decision.action === 'ask') {
-    let canceled = false;
-    const accepted = await prompt.confirm(
-      {
-        message: 'Install the official Storybook skills for AI agents into this project?',
-        initialValue: true,
-      },
-      {
-        onCancel: () => {
-          canceled = true;
-        },
-      }
-    );
-    if (canceled) {
-      return { result: 'declined', source: decision.source };
-    }
-    if (!accepted) {
-      await remember(false);
-      return { result: 'declined', source: decision.source };
-    }
-  }
-
-  if (decision.action === 'skip') {
-    if (decision.source === 'flag') {
-      await remember(false);
-    }
-    return { result: 'skipped', source: decision.source };
+  if (isCI()) {
+    return { result: 'skipped', source: 'ci' };
   }
 
   const args = [
@@ -135,7 +73,7 @@ export async function installSkills({
     await packageManager.runPackageCommand({
       args,
       useRemotePkg: true,
-      cwd: projectRoot,
+      cwd: getProjectRoot(),
       stdio: 'inherit',
       env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
       timeout: 120_000,
@@ -147,14 +85,13 @@ export async function installSkills({
     const exitCode = (error as { data?: { exitCode?: unknown } } | undefined)?.data?.exitCode;
     return {
       result: 'failed',
-      source: decision.source,
+      source,
       exitCode: typeof exitCode === 'number' ? exitCode : undefined,
     };
   }
 
-  await remember(true);
   logger.log(
-    `Skip this next time with --no-skills. Remove them with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
+    `Remove the Storybook skills with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
   );
-  return { result: 'installed', source: decision.source };
+  return { result: 'installed', source };
 }

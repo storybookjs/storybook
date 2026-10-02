@@ -1,4 +1,6 @@
-import { installSkills } from 'storybook/internal/cli';
+import type { SkillsInstallResult } from 'storybook/internal/cli';
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import type { JsPackageManager } from 'storybook/internal/common';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
@@ -144,7 +146,6 @@ export type UpgradeOptions = {
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
-  skills?: boolean;
   features?: string;
   force: boolean;
   disableTelemetry: boolean;
@@ -154,6 +155,55 @@ export type UpgradeOptions = {
   loglevel?: LogLevel;
   logfile?: string | boolean;
 };
+
+const FIRST_MAJOR_WITH_SKILLS = 11;
+
+async function upgradeSkills(
+  projects: CollectProjectsSuccessResult[],
+  packageManager: JsPackageManager,
+  yes: boolean
+): Promise<SkillsInstallResult | undefined> {
+  if (await hasStorybookSkills()) {
+    return installSkills({ packageManager, source: 'installed' });
+  }
+
+  // Offered once, on the upgrade into the first major that ships the skills, so a project that
+  // declined is not asked again on later upgrades.
+  const isOffered = projects.some(
+    (project) =>
+      project.supportsAiFeatures && semver.major(project.beforeVersion) < FIRST_MAJOR_WITH_SKILLS
+  );
+  if (!isOffered) {
+    return undefined;
+  }
+
+  if (detectAgent()) {
+    return installSkills({ packageManager, source: 'agent' });
+  }
+  if (yes) {
+    return installSkills({ packageManager, source: 'yes' });
+  }
+  if (isCI() || !process.stdout.isTTY || !process.stdin.isTTY) {
+    return installSkills({ packageManager, source: 'default' });
+  }
+
+  let canceled = false;
+  const accepted = await prompt.confirm(
+    {
+      message: 'Install the official Storybook skills for AI agents into this project?',
+      initialValue: true,
+    },
+    {
+      onCancel: () => {
+        canceled = true;
+      },
+    }
+  );
+  if (canceled || !accepted) {
+    return { result: 'declined', source: 'prompt' };
+  }
+  return installSkills({ packageManager, source: 'prompt' });
+}
 
 function getUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
@@ -552,12 +602,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     const skills = options.dryRun
       ? undefined
-      : await installSkills({
-          packageManager: rootPackageManager,
-          skillsFlag: options.skills,
-          yes: options.yes,
-          agent: !!detectAgent(),
-        });
+      : await upgradeSkills(storybookProjects, rootPackageManager, options.yes);
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({

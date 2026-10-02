@@ -107,26 +107,23 @@ export const myCustomDecorator =
   };
 ```
 
-### `useThemeParameters`
+### Theme parameters
 
-(⛔️ **Deprecated**)
-_Do not use this hook anymore. Access the theme directly via the context instead e.g. `context.parameters.themes`_
+Read addon parameters from `context.parameters.themes ?? {}` inside a decorator that receives the story context. The empty object handles stories without theme parameters.
 
-Returns the theme parameters for this addon.
+`useThemeParameters()` and `useThemeParameters(context)` were removed in Storybook 11. Replace either call with direct access to the decorator's context:
 
 ```js
-import { DecoratorHelpers } from '@storybook/addon-themes';
-
-const { useThemeParameters } = DecoratorHelpers;
-
 export const myCustomDecorator =
-  ({ themes, defaultState, ...rest }) =>
+  ({ themes, defaultTheme, ...rest }) =>
   (storyFn, context) => {
-    const { themeOverride } = useThemeParameters();
+    const { themeOverride } = context.parameters.themes ?? {};
 
     // Snipped
   };
 ```
+
+`themeOverride` is a story parameter. The theme selected in the toolbar is a global, which you can read with `pluckThemeFromContext(context)`. Use the override first, then the selected global, then your default theme, as shown below.
 
 ### `initializeThemeState`
 

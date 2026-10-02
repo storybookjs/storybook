@@ -1,0 +1,101 @@
+# Temporary workflow for the preview config hash prototype. Delete before merging anything.
+name: Prototype preview hash on Windows
+
+on:
+  push:
+    branches:
+      - jeppe/preview-config-hash-prototype
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  NX_DAEMON: 'false'
+  NX_NO_CLOUD: 'true'
+  STORYBOOK_DISABLE_TELEMETRY: 'true'
+
+jobs:
+  hashes:
+    runs-on: windows-latest
+    timeout-minutes: 120
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js and Install Dependencies
+        uses: ./.github/actions/setup-node-and-install
+        with:
+          install-code-deps: true
+
+      - name: Compile
+        run: yarn task --task compile --start-from=compile
+
+      - name: Unit tests
+        run: yarn vitest run --project @storybook/builder-vite webpack-stats-plugin
+
+      - name: Build twice in place
+        run: |
+          out="$(cygpath -u "$RUNNER_TEMP")/phash"
+          cd code
+          for label in first second; do
+            NODE_OPTIONS=--max_old_space_size=6144 node core/dist/bin/dispatcher.js build \
+              --config-dir ./.storybook --preview-only \
+              --webpack-stats-json "$out/$label" -o "$out/$label/static"
+          done
+
+      - name: Move the checkout to another path
+        working-directory: ${{ runner.temp }}
+        run: |
+          workspace="$(cygpath -u "$GITHUB_WORKSPACE")"
+          mv "$workspace" "$(dirname "$workspace")/a-much-longer-moved-checkout"
+
+      - name: Build from the moved checkout
+        working-directory: ${{ runner.temp }}
+        run: |
+          out="$(cygpath -u "$RUNNER_TEMP")/phash"
+          workspace="$(cygpath -u "$GITHUB_WORKSPACE")"
+          cd "$(dirname "$workspace")/a-much-longer-moved-checkout/code"
+          NODE_OPTIONS=--max_old_space_size=6144 node core/dist/bin/dispatcher.js build \
+            --config-dir ./.storybook --preview-only \
+            --webpack-stats-json "$out/moved" -o "$out/moved/static"
+
+      - name: Move the checkout back
+        if: always()
+        working-directory: ${{ runner.temp }}
+        run: |
+          workspace="$(cygpath -u "$GITHUB_WORKSPACE")"
+          moved="$(dirname "$workspace")/a-much-longer-moved-checkout"
+          if [ -d "$moved" ]; then mv "$moved" "$workspace"; fi
+
+      - name: Compare hashes
+        working-directory: ${{ runner.temp }}
+        run: |
+          node -e '
+            const { readFileSync } = require("node:fs");
+            const load = (label) => JSON.parse(readFileSync(`phash/${label}/preview-stats.json`, "utf8"));
+            const first = load("first");
+            const firstHashes = new Map(first.modules.map((m) => [m.name, m.hash]));
+            let failed = false;
+            for (const label of ["second", "moved"]) {
+              const stats = load(label);
+              const changed = stats.modules.filter((m) => firstHashes.get(m.name) !== m.hash).map((m) => m.name);
+              const sameConfig = stats.previewConfigHash === first.previewConfigHash;
+              console.log(`${label}: previewConfigHash ${sameConfig ? "same" : "CHANGED"}, ${changed.length} of ${stats.modules.length} module hashes changed`);
+              changed.slice(0, 40).forEach((name) => console.log(`  ${name}`));
+              failed ||= !sameConfig || changed.length > 0;
+            }
+            console.log(`Sample module names: ${first.modules.slice(0, 3).map((m) => m.name).join(", ")}`);
+            process.exitCode = failed ? 1 : 0;
+          '
+
+      - name: Upload stats
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: preview-stats
+          path: ${{ runner.temp }}/phash/*/preview-stats.json

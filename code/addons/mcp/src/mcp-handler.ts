@@ -4,7 +4,7 @@ import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
 import type { Source } from 'storybook/internal/toolsets-docs';
 import type { Options } from 'storybook/internal/types';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage } from 'node:http';
 import { buffer } from 'node:stream/consumers';
 import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
@@ -88,12 +88,25 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
 };
 
 /**
+ * The pieces of a Node response the bridging below touches. A real `ServerResponse` satisfies it,
+ * so a caller (including a test) can supply its own response without claiming to be the class.
+ */
+type ClientAwareResponse = {
+  statusCode: number;
+  setHeader(name: string, value: string): void;
+  write(chunk: Uint8Array): boolean;
+  end(): void;
+  once(event: 'close' | 'drain', listener: () => void): void;
+  off(event: 'close' | 'drain', listener: () => void): void;
+};
+
+/**
  * Vite middleware handler that wraps the MCP handler.
  * This converts Node.js IncomingMessage/ServerResponse to Web API Request/Response.
  */
 type McpServerHandlerParams = {
   req: IncomingMessage;
-  res: ServerResponse;
+  res: ClientAwareResponse;
   options: Options;
   addonOptions: AddonOptionsOutput;
   /**
@@ -132,35 +145,55 @@ export const mcpServerHandler = async ({
   localAccess,
   compositionAuth,
 }: McpServerHandlerParams) => {
-  // Initialize MCP server and transport on first request, with concurrency safety
-  if (!initialize) {
-    initialize = initializeMCPServer(
+  // The client can leave while the server is still booting, so this listener goes on before the
+  // first awaited setup step. A close that arrives during that setup would otherwise be missed,
+  // and the GET channel the transport then hands back would be abandoned with its session still
+  // registered.
+  const clientGone = abortWhenClientLeaves(res);
+  try {
+    // Initialize MCP server and transport on first request, with concurrency safety
+    if (!initialize) {
+      initialize = initializeMCPServer(
+        options,
+        sources?.some((s) => s.url)
+      );
+    }
+    await initialize;
+
+    if (clientGone.signal.aborted) {
+      return;
+    }
+
+    // Convert Node.js request to Web API Request
+    const webRequest = await incomingMessageToWebRequest(req);
+
+    const addonContext: AddonContext = {
       options,
-      sources?.some((s) => s.url)
-    );
-  }
-  await initialize;
+      endpoint,
+      toolsets: getToolsets(webRequest, addonOptions),
+      reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
+      cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
+      origin: origin!,
+      disableTelemetry: disableTelemetry!,
+      a11yEnabled,
+      request: webRequest,
+      sources,
+      manifestProvider,
+      localAccess,
+    };
 
-  // Convert Node.js request to Web API Request
-  const webRequest = await incomingMessageToWebRequest(req);
+    const response = await transport!.respond(webRequest, addonContext);
+    if (!response) {
+      return;
+    }
 
-  const addonContext: AddonContext = {
-    options,
-    endpoint,
-    toolsets: getToolsets(webRequest, addonOptions),
-    reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
-    cliClient: webRequest.headers.get(STORYBOOK_MCP_PROXY_HEADER) === 'true',
-    origin: origin!,
-    disableTelemetry: disableTelemetry!,
-    a11yEnabled,
-    request: webRequest,
-    sources,
-    manifestProvider,
-    localAccess,
-  };
+    // The GET response is the session's notification channel, which ends only when the client
+    // leaves, so the buffering below would never answer it.
+    if (webRequest.method !== 'POST') {
+      await webResponseToServerResponse(response, res, clientGone.signal);
+      return;
+    }
 
-  const response = await transport!.respond(webRequest, addonContext);
-  if (response) {
     // Buffer body first — tool execution happens lazily during stream consumption
     // (tmcp's transport fires handle() without awaiting it). Only after the body
     // is fully consumed can we check whether a tool hit an auth error.
@@ -176,7 +209,9 @@ export const mcpServerHandler = async ({
         })
       : new Response(body, { status: response.status, headers: response.headers });
 
-    await webResponseToServerResponse(finalResponse, res);
+    await webResponseToServerResponse(finalResponse, res, clientGone.signal);
+  } finally {
+    clientGone.dispose();
   }
 };
 
@@ -199,11 +234,51 @@ export async function incomingMessageToWebRequest(req: IncomingMessage): Promise
 }
 
 /**
+ * Bridges the Node response's lifecycle to an {@link AbortSignal}, so a client that leaves can be
+ * noticed from wherever it matters without every layer attaching its own listener.
+ */
+export function abortWhenClientLeaves(nodeResponse: ClientAwareResponse) {
+  const controller = new AbortController();
+  const leave = () => controller.abort();
+  nodeResponse.once('close', leave);
+  return {
+    signal: controller.signal,
+    dispose: () => {
+      nodeResponse.off('close', leave);
+    },
+  };
+}
+
+/**
+ * Resolves once Node accepts another chunk. A client that left never emits `drain`, so the signal
+ * ends the wait instead of parking the stream forever.
+ */
+function waitForDrain(nodeResponse: ClientAwareResponse, clientGone: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    if (clientGone.aborted) {
+      resolve();
+      return;
+    }
+    const drained = () => {
+      clientGone.removeEventListener('abort', left);
+      resolve();
+    };
+    const left = () => {
+      nodeResponse.off('drain', drained);
+      resolve();
+    };
+    nodeResponse.once('drain', drained);
+    clientGone.addEventListener('abort', left, { once: true });
+  });
+}
+
+/**
  * Converts a Web Response to a Node.js ServerResponse.
  */
 export async function webResponseToServerResponse(
   webResponse: Response,
-  nodeResponse: ServerResponse
+  nodeResponse: ClientAwareResponse,
+  clientGone: AbortSignal
 ): Promise<void> {
   nodeResponse.statusCode = webResponse.status;
 
@@ -215,15 +290,39 @@ export async function webResponseToServerResponse(
   // Stream response body
   if (webResponse.body) {
     const reader = webResponse.body.getReader();
+    // Cancelling is what runs the transport's stream `cancel()` hook, which unregisters the
+    // session; an abandoned channel that stays registered makes the client's next GET for the same
+    // session id fail with "Conflict: Only one SSE stream is allowed per session".
+    let released: Promise<void> | undefined;
+    const release = () => {
+      released ??= reader.cancel().catch(() => {
+        // the stream was already closed or errored, so there is nothing left to release
+      });
+    };
+    // An already-aborted signal never fires its listener, so release here rather than park in read().
+    if (clientGone.aborted) {
+      release();
+    }
+    clientGone.addEventListener('abort', release, { once: true });
     try {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        nodeResponse.write(value);
+        if (!nodeResponse.write(value)) {
+          await waitForDrain(nodeResponse, clientGone);
+        }
       }
+    } catch (error) {
+      // Nothing above this bridge catches, so a rejected read would become an unhandled rejection
+      // and kill the dev server; the client instead gets an ended channel and a logged cause.
+      logger.error(`MCP notification channel failed: ${String(error)}`);
     } finally {
+      clientGone.removeEventListener('abort', release);
       reader.releaseLock();
     }
+    // The transport unregisters the session inside the cancel hook, so a client that reconnects
+    // under the same session id has to be answered after that hook settles.
+    await released;
   }
 
   nodeResponse.end();

@@ -3,9 +3,13 @@ import { registerCoreToolsetsForTest } from './test-support/register-core-toolse
 import {
   incomingMessageToWebRequest,
   webResponseToServerResponse,
+  abortWhenClientLeaves,
   getToolsets,
 } from './mcp-handler.ts';
-import type { IncomingMessage, ServerResponse } from 'node:http';
+import type { IncomingMessage } from 'node:http';
+import type { Options } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
+import { EventEmitter } from 'node:events';
 import { PassThrough } from 'node:stream';
 import { CompositionAuth } from './auth/index.ts';
 
@@ -39,37 +43,56 @@ function createMockIncomingMessage(options: {
   }) as unknown as IncomingMessage;
 }
 
-function createMockServerResponse(): {
-  response: ServerResponse;
-  getResponseData: () => {
-    status: number;
-    headers: Map<string, string>;
-    body: string;
-  };
-} {
-  const headers = new Map<string, string>();
-  const chunks: Uint8Array[] = [];
+/** A response that records what was written and can report backpressure, like Node does. */
+class MockClientResponse extends EventEmitter {
+  statusCode = 0;
+  /** Whether `write` accepts the next chunk; false stands for a full send queue. */
+  private acceptsChunks = true;
+  private readonly headers = new Map<string, string>();
+  private readonly chunks: Uint8Array[] = [];
+  end = vi.fn();
 
-  const mockResponse = {
-    statusCode: 0,
-    setHeader: vi.fn((key: string, value: string) => {
-      headers.set(key, value);
-    }),
-    write: vi.fn((chunk: Uint8Array) => {
-      chunks.push(chunk);
-    }),
-    end: vi.fn(),
-  } as unknown as ServerResponse;
+  setHeader(name: string, value: string) {
+    this.headers.set(name, value);
+  }
 
+  write(chunk: Uint8Array) {
+    this.chunks.push(chunk);
+    // Node takes the chunk and returns false once its queue passes the high-water mark: the
+    // writer has to wait for `drain` before sending more.
+    return this.acceptsChunks;
+  }
+
+  stall() {
+    this.acceptsChunks = false;
+  }
+
+  resume() {
+    this.acceptsChunks = true;
+    this.emit('drain');
+  }
+
+  getResponseData() {
+    return {
+      status: this.statusCode,
+      headers: this.headers,
+      body: Buffer.concat(this.chunks).toString(),
+    };
+  }
+}
+
+function createMockServerResponse() {
+  const response = new MockClientResponse();
   return {
-    response: mockResponse,
-    getResponseData: () => ({
-      status: mockResponse.statusCode,
-      headers,
-      body: Buffer.concat(chunks).toString(),
-    }),
+    response,
+    stall: () => response.stall(),
+    resume: () => response.resume(),
+    getResponseData: () => response.getResponseData(),
   };
 }
+
+// For the cases that only exercise the happy path: a client that never goes away.
+const stayingClient = new AbortController().signal;
 
 describe('mcp-handler conversion utilities', () => {
   describe('incomingMessageToWebRequest', () => {
@@ -147,7 +170,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { status, headers, body } = getResponseData();
       expect(status).toBe(200);
@@ -165,7 +188,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { body } = getResponseData();
       expect(JSON.parse(body)).toEqual(responseBody);
@@ -179,7 +202,7 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { status } = getResponseData();
       expect(status).toBe(404);
@@ -192,10 +215,124 @@ describe('mcp-handler conversion utilities', () => {
 
       const { response, getResponseData } = createMockServerResponse();
 
-      await webResponseToServerResponse(webResponse, response);
+      await webResponseToServerResponse(webResponse, response, stayingClient);
 
       const { status } = getResponseData();
       expect(status).toBe(500);
+    });
+
+    it('releases a stream that is still open when the client disconnects', async () => {
+      const onCancel = vi.fn();
+      // Like the GET notification channel: it produces nothing until the client leaves.
+      const body = new ReadableStream({
+        pull: () => new Promise(() => undefined),
+        cancel: onCancel,
+      });
+
+      const { response } = createMockServerResponse();
+      const clientGone = abortWhenClientLeaves(response);
+      const written = webResponseToServerResponse(new Response(body), response, clientGone.signal);
+
+      response.emit('close');
+
+      // Cancelling resolves the parked read, so the handler settles instead of hanging.
+      await written;
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(response.end).toHaveBeenCalled();
+    });
+
+    it('releases the stream when the client had already left before the response was written', async () => {
+      const onCancel = vi.fn();
+      const body = new ReadableStream({
+        pull: () => new Promise(() => undefined),
+        cancel: onCancel,
+      });
+
+      const { response } = createMockServerResponse();
+      const clientGone = new AbortController();
+      clientGone.abort();
+
+      await webResponseToServerResponse(new Response(body), response, clientGone.signal);
+
+      // An aborted signal never fires its listener, so this is the branch that releases the session.
+      expect(onCancel).toHaveBeenCalledTimes(1);
+      expect(response.end).toHaveBeenCalled();
+    });
+
+    it('waits for drain before writing the next chunk to a client that cannot keep up', async () => {
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('first'));
+          controller.enqueue(encoder.encode('second'));
+          controller.close();
+        },
+      });
+
+      const { response, stall, resume, getResponseData } = createMockServerResponse();
+      stall();
+
+      const written = webResponseToServerResponse(new Response(body), response, stayingClient);
+
+      await vi.waitFor(() => expect(getResponseData().body).toBe('first'));
+      expect(getResponseData().body).not.toContain('second');
+
+      resume();
+      await written;
+      expect(getResponseData().body).toBe('firstsecond');
+    });
+
+    it('settles when the client leaves while a write is backed up', async () => {
+      const encoder = new TextEncoder();
+      const body = new ReadableStream({
+        start(controller) {
+          controller.enqueue(encoder.encode('first'));
+          controller.enqueue(encoder.encode('second'));
+        },
+      });
+
+      const { response, stall, getResponseData } = createMockServerResponse();
+      const clientGone = new AbortController();
+      stall();
+
+      const written = webResponseToServerResponse(new Response(body), response, clientGone.signal);
+
+      await vi.waitFor(() => expect(getResponseData().body).toBe('first'));
+
+      // A destroyed response never emits `drain`, so only the disconnect can end the wait.
+      clientGone.abort();
+
+      await written;
+      expect(getResponseData().body).not.toContain('second');
+      expect(response.end).toHaveBeenCalled();
+    });
+
+    it('ends the response and logs when the transport stream errors mid-channel', async () => {
+      const errorSpy = vi.spyOn(logger, 'error').mockImplementation(() => {});
+      let frames = 0;
+      // Like a notification channel that dies after a first frame: `error()` on a stream drops
+      // anything still queued, so the delivered chunk has to come from an earlier pull.
+      const body = new ReadableStream({
+        pull(controller) {
+          if (frames++ === 0) {
+            controller.enqueue(new TextEncoder().encode('first'));
+            return;
+          }
+          controller.error(new Error('transport died mid-stream'));
+        },
+      });
+
+      const { response, getResponseData } = createMockServerResponse();
+
+      // The middleware chain has no rejection handler, so a rejection here would reach Node's
+      // default `--unhandled-rejections=throw` and take the dev server down with it.
+      await expect(
+        webResponseToServerResponse(new Response(body), response, stayingClient)
+      ).resolves.toBeUndefined();
+
+      expect(getResponseData().body).toBe('first');
+      expect(response.end).toHaveBeenCalled();
+      expect(errorSpy).toHaveBeenCalledWith(expect.stringContaining('transport died mid-stream'));
     });
   });
 });
@@ -213,13 +350,14 @@ describe('mcpServerHandler', () => {
   });
 
   function createMockOptions(overrides = {}) {
+    const apply: Options['presets']['apply'] = vi.fn().mockResolvedValue({
+      disableTelemetry: false,
+    });
     return {
       port: 6006,
-      presets: {
-        apply: vi.fn().mockResolvedValue({ disableTelemetry: false }),
-      },
+      presets: { apply },
       ...overrides,
-    };
+    } as Options;
   }
 
   function createMCPInitializeRequest() {
@@ -293,7 +431,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: {
           dev: true,
@@ -369,7 +507,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: {
           dev: true,
@@ -425,7 +563,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: mockReq,
       res: response,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: {
           dev: true,
@@ -472,7 +610,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: initReq,
       res: initResponse,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: { dev: true, docs: true },
       },
@@ -495,7 +633,7 @@ describe('mcpServerHandler', () => {
     await mcpServerHandler({
       req: listToolsReq,
       res: listResponse,
-      options: mockOptions as any,
+      options: mockOptions,
       addonOptions: {
         toolsets: { dev: true, docs: true },
       },
@@ -622,6 +760,88 @@ describe('mcpServerHandler', () => {
       headers: { 'x-storybook-mcp-proxy': 'true' },
     });
     expect(toolNames).not.toContain('review-create');
+  });
+
+  // Opens the GET notification channel and hands back the request, so a test can decide when the
+  // client leaves. A GET only settles then, which is why the returned promise is not awaited here.
+  function openNotificationChannel(port: number, extraHeaders: Record<string, string> = {}) {
+    const { response, getResponseData } = createMockServerResponse();
+    const handler = mcpServerHandler({
+      req: createMockIncomingMessage({
+        method: 'GET',
+        headers: { accept: 'text/event-stream', host: `localhost:${port}`, ...extraHeaders },
+      }),
+      res: response,
+      options: createMockOptions({ port }),
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth: new CompositionAuth(),
+    });
+    return { response, getResponseData, handler };
+  }
+
+  it('streams the GET notification channel instead of waiting for its body to end', async () => {
+    const { response, getResponseData, handler } = openNotificationChannel(6016);
+
+    await vi.waitFor(() => expect(getResponseData().body).toContain(': connected'));
+    expect(getResponseData().status).toBe(200);
+    expect(getResponseData().headers.get('content-type')).toBe('text/event-stream');
+
+    response.emit('close');
+    await handler;
+    expect(response.listenerCount('close')).toBe(0);
+  });
+
+  it('frees the session id for a client that reconnects to the notification channel', async () => {
+    const session = { 'mcp-session-id': 'session-1' };
+    const first = openNotificationChannel(6018, session);
+    await vi.waitFor(() => expect(first.getResponseData().body).toContain(': connected'));
+
+    first.response.emit('close');
+    await first.handler;
+
+    const second = openNotificationChannel(6018, session);
+    // While the abandoned channel stayed registered, the transport answered this second GET with
+    // 409 and "Conflict: Only one SSE stream is allowed per session".
+    await vi.waitFor(() => expect(second.getResponseData().body).toContain(': connected'));
+    expect(second.getResponseData().status).toBe(200);
+
+    second.response.emit('close');
+    await second.handler;
+  });
+
+  it('settles when the client leaves while the server is still starting', async () => {
+    const { response, getResponseData, handler } = openNotificationChannel(6019);
+
+    // The listener has to be on the response before the awaited setup step, or this close goes
+    // unheard and the channel gets built for a client that is already gone.
+    response.emit('close');
+
+    await handler;
+    expect(getResponseData().body).toBe('');
+  });
+
+  it('replaces a POST response with 401 when a tool hit an auth error', async () => {
+    const { response, getResponseData } = createMockServerResponse();
+    const compositionAuth = new CompositionAuth();
+    vi.spyOn(compositionAuth, 'hadAuthError').mockReturnValue(true);
+    vi.spyOn(compositionAuth, 'buildWwwAuthenticate').mockReturnValue(
+      'Bearer error="unauthorized"'
+    );
+
+    await mcpServerHandler({
+      req: createMockIncomingMessage({
+        method: 'POST',
+        headers: { 'content-type': 'application/json', host: 'localhost:6017' },
+        body: createMCPInitializeRequest(),
+      }),
+      res: response,
+      options: createMockOptions({ port: 6017 }),
+      addonOptions: { toolsets: { dev: true, docs: true } },
+      compositionAuth,
+    });
+
+    expect(getResponseData().status).toBe(401);
+    expect(getResponseData().body).toBe('401 - Unauthorized');
   });
 });
 

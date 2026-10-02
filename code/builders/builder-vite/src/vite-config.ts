@@ -119,7 +119,7 @@ export async function pluginConfig(options: Options) {
     // Entry plugin: virtual modules for stories, addon setup, and main app entry
     ...(await storybookEntryPlugin(options)),
     // Builder-specific: webpack-compatible stats for turbosnap/chromatic
-    pluginWebpackStats({ workingDir: process.cwd() }),
+    pluginWebpackStats({ workingDir: process.cwd(), options }),
   ] as PluginOption[];
 
   return plugins;

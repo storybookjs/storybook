@@ -1,11 +1,13 @@
-import { normalizeStories } from 'storybook/internal/common';
+import { createHash } from 'node:crypto';
+
+import { getProjectRoot, normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
 import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
 
-export async function transformIframeHtml(html: string, options: Options) {
+async function getIframeHtmlReplacements(options: Options): Promise<Array<[string, string]>> {
   const { configType, features, presets } = options;
   const build = await presets.apply('build');
   const frameworkOptions = await presets.apply<Record<string, any> | null>('frameworkOptions');
@@ -28,28 +30,36 @@ export async function transformIframeHtml(html: string, options: Options) {
     ...(build?.test?.disableBlocks ? { __STORYBOOK_BLOCKS_EMPTY_MODULE__: {} } : {}),
   };
 
-  const transformedHtml = html
-    .replace('[CONFIG_TYPE HERE]', configType || '')
-    .replace('[LOGLEVEL HERE]', logLevel || '')
-    .replace(`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions))
-    .replace(
+  return [
+    ['[CONFIG_TYPE HERE]', configType || ''],
+    ['[LOGLEVEL HERE]', logLevel || ''],
+    [`'[FRAMEWORK_OPTIONS HERE]'`, JSON.stringify(frameworkOptions)],
+    [
       `('OTHER_GLOBALS HERE');`,
       Object.entries(otherGlobals)
         .map(([k, v]) => `window["${k}"] = ${JSON.stringify(v)};`)
-        .join('')
-    )
-    .replace(
+        .join(''),
+    ],
+    [
       `'[CHANNEL_OPTIONS HERE]'`,
-      JSON.stringify(coreOptions && coreOptions.channelOptions ? coreOptions.channelOptions : {})
-    )
-    .replace(`'[FEATURES HERE]'`, JSON.stringify(features || {}))
-    .replace(`'[STORIES HERE]'`, JSON.stringify(stories || {}))
-    .replace(`'[DOCS_OPTIONS HERE]'`, JSON.stringify(docsOptions || {}))
-    .replace(`'[TAGS_OPTIONS HERE]'`, JSON.stringify(tagsOptions || {}))
-    .replace('<!-- [HEAD HTML SNIPPET HERE] -->', headHtmlSnippet || '')
-    .replace('<!-- [BODY HTML SNIPPET HERE] -->', bodyHtmlSnippet || '');
+      JSON.stringify(coreOptions && coreOptions.channelOptions ? coreOptions.channelOptions : {}),
+    ],
+    [`'[FEATURES HERE]'`, JSON.stringify(features || {})],
+    [`'[STORIES HERE]'`, JSON.stringify(stories || {})],
+    [`'[DOCS_OPTIONS HERE]'`, JSON.stringify(docsOptions || {})],
+    [`'[TAGS_OPTIONS HERE]'`, JSON.stringify(tagsOptions || {})],
+    ['<!-- [HEAD HTML SNIPPET HERE] -->', headHtmlSnippet || ''],
+    ['<!-- [BODY HTML SNIPPET HERE] -->', bodyHtmlSnippet || ''],
+  ];
+}
 
-  if (configType === 'DEVELOPMENT') {
+export async function transformIframeHtml(html: string, options: Options) {
+  const transformedHtml = (await getIframeHtmlReplacements(options)).reduce(
+    (result, [placeholder, value]) => result.replace(placeholder, value),
+    html
+  );
+
+  if (options.configType === 'DEVELOPMENT') {
     return transformedHtml.replace(
       'virtual:/@storybook/builder-vite/vite-app.js',
       `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
@@ -57,4 +67,12 @@ export async function transformIframeHtml(html: string, options: Options) {
   }
 
   return transformedHtml;
+}
+
+// Hashes the injected values instead of the final HTML, which also holds the hashed chunk file names
+export async function getPreviewConfigHash(options: Options) {
+  const replacements = JSON.stringify(await getIframeHtmlReplacements(options));
+  return createHash('sha256')
+    .update(replacements.replaceAll(getProjectRoot(), '<projectRoot>'))
+    .digest('hex');
 }

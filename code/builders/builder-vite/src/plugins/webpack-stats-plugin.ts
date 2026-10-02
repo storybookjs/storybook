@@ -1,12 +1,15 @@
 // This plugin is a direct port of https://github.com/IanVS/vite-plugin-turbosnap
+import { createHash } from 'node:crypto';
 import { relative } from 'node:path';
 
-import type { BuilderStats } from 'storybook/internal/types';
+import { getProjectRoot } from 'storybook/internal/common';
+import type { BuilderStats, Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
 import type { Plugin } from 'vite';
 
+import { getPreviewConfigHash } from '../transform-iframe-html.ts';
 import {
   SB_VIRTUAL_FILES,
   getOriginalVirtualModuleId,
@@ -25,11 +28,21 @@ interface Module {
   name: string;
   modules?: Array<Pick<Module, 'name'>>;
   reasons?: Reason[];
+  // Hash of the transformed output, so changes in the build config that change the output are visible
+  hash?: string;
 }
 
 type WebpackStatsPluginOptions = {
   workingDir: string;
+  options: Options;
 };
+
+const CSS_LANGS_RE = /\.(?:css|less|sass|scss|styl|stylus|pcss|postcss|sss)(?:$|\?)/;
+const VITE_ASSET_RE = /__VITE_ASSET__([\w$]+)__/g;
+
+function sha256(content: string | Uint8Array) {
+  return createHash('sha256').update(content).digest('hex');
+}
 
 /**
  * Strips off query params added by rollup/vite to ids, to make paths compatible for comparison with
@@ -59,7 +72,10 @@ function isUserCode(moduleName: string) {
 
 export type WebpackStatsPlugin = Plugin & { storybookGetStats: () => BuilderStats };
 
-export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): WebpackStatsPlugin {
+export function pluginWebpackStats({
+  workingDir,
+  options,
+}: WebpackStatsPluginOptions): WebpackStatsPlugin {
   /** Convert an absolute path name to a path relative to the vite root, with a starting `./` */
   function normalize(filename: string) {
     // Do not try to resolve virtual files
@@ -105,15 +121,51 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
   }
 
   const statsMap = new Map<string, Module>();
+  const projectRoot = slash(getProjectRoot());
+  const compiledCssById = new Map<string, string>();
+  // Query variants of one file (`a.css`, `a.css?inline`) share a stats module, so it gets one hash per id
+  const outputHashesByModule = new Map<string, Map<string, string>>();
+  // Asset placeholders name a reference id that does not depend on the asset's content
+  const codeWithAssetsById = new Map<string, string>();
+  let previewConfigHash: string | undefined;
+
+  function setOutputHash(id: string, code: string) {
+    const moduleName = normalize(id);
+    const hashesById = outputHashesByModule.get(moduleName) ?? new Map<string, string>();
+    hashesById.set(id, sha256(code));
+    outputHashesByModule.set(moduleName, hashesById);
+  }
+
+  function getModuleHash(name: string) {
+    const hashes = [...(outputHashesByModule.get(name)?.values() ?? [])].sort();
+    return hashes.length > 1 ? sha256(hashes.join('')) : hashes[0];
+  }
 
   return {
     name: 'storybook:rollup-plugin-webpack-stats',
-    // We want this to run after the vite build plugins (https://vitejs.dev/guide/api-plugin.html#plugin-ordering)
-    enforce: 'post',
+    // Without `enforce`, this runs after `vite:css` compiles a stylesheet and before `vite:css-post`
+    // empties its module code in builds
+    transform(code, id) {
+      if (CSS_LANGS_RE.test(id) && isUserCode(id)) {
+        compiledCssById.set(id, code);
+      }
+    },
     moduleParsed: function (mod) {
       if (!isUserCode(mod.id)) {
         return;
       }
+      // Module code still holds absolute import ids, which the bundler makes relative later
+      const code = ((compiledCssById.get(mod.id) ?? '') + (mod.code ?? '')).replaceAll(
+        projectRoot,
+        '<projectRoot>'
+      );
+      compiledCssById.delete(mod.id);
+      if (code.includes('__VITE_ASSET__')) {
+        codeWithAssetsById.set(mod.id, code);
+      } else {
+        setOutputHash(mod.id, code);
+      }
+
       mod.importedIds
         .concat(mod.dynamicallyImportedIds)
         .filter((name) => isUserCode(name))
@@ -134,8 +186,20 @@ export function pluginWebpackStats({ workingDir }: WebpackStatsPluginOptions): W
         });
     },
 
+    async generateBundle(_, bundle) {
+      for (const [id, code] of codeWithAssetsById) {
+        const codeWithAssetHashes = code.replace(VITE_ASSET_RE, (placeholder, referenceId) => {
+          const asset = bundle[this.getFileName(referenceId)];
+          return asset?.type === 'asset' ? sha256(asset.source) : placeholder;
+        });
+        setOutputHash(id, codeWithAssetHashes);
+      }
+      previewConfigHash = await getPreviewConfigHash(options);
+    },
+
     storybookGetStats() {
-      const stats = { modules: Array.from(statsMap.values()) };
+      const modules = Array.from(statsMap.values(), (m) => ({ ...m, hash: getModuleHash(m.name) }));
+      const stats = { previewConfigHash, modules };
       return { ...stats, toJson: () => stats };
     },
   };

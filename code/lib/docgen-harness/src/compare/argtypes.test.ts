@@ -729,7 +729,10 @@ describe('compareArgTypes', () => {
     const tableOnly = argTypes({
       count: { name: 'count', table: { defaultValue: { summary: '5' } } },
     });
-    const topLevelOnly = argTypes({ count: { name: 'count', defaultValue: 5 } });
+    // Recorded baselines can still carry this field. New code cannot write it.
+    const topLevelOnly = argTypes({
+      count: { name: 'count', defaultValue: 5 } as unknown as StrictArgTypes[string],
+    });
     expect(compareArgTypes(tableOnly, topLevelOnly)).toEqual([]);
     expect(compareArgTypes(topLevelOnly, tableOnly)).toEqual([]);
   });

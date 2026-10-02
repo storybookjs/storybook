@@ -16,10 +16,12 @@ const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
 const COMPONENT_TAGS_MARKER =
   'component-level jsDocTags carry the CEM deprecated and summary fields';
 const STORY_META_MARKER = 'the story meta docblock reaches the payload description and jsDocTags';
+const INHERITANCE_MARKER = 'superclass and mixin members are resolved from unflattened manifests';
 const OSA_CLOSED = new Set<string>([
   'literal unions and JSDoc tags reach argTypes structurally',
   'events carry structured type information and descriptions',
   'CEM 2.1.0 CSS states are recorded',
+  INHERITANCE_MARKER,
   COMPONENT_TAGS_MARKER,
   STORY_META_MARKER,
 ]);
@@ -35,6 +37,7 @@ const BASELINES = (prefix: '' | 'osa-') =>
     unionArgTypes: `lit-union-jsdoc/${prefix}argtypes.snapshot`,
     unionDescription: `lit-union-jsdoc/${prefix}description.snapshot`,
     eventsArgTypes: `lit-events/${prefix}argtypes.snapshot`,
+    inheritanceArgTypes: `lit-inheritance-mixin/${prefix}argtypes.snapshot`,
   }) as const;
 
 const FIXED = {
@@ -44,6 +47,8 @@ const FIXED = {
   backSideSnippet: 'demo-wc-card/snippet-Back.snapshot',
   basicPayload: 'lit-basic-attributes/osa-payload.snapshot',
   unionPayload: 'lit-union-jsdoc/osa-payload.snapshot',
+  inheritanceArgTypes: 'lit-inheritance-mixin/osa-argtypes.snapshot',
+  unflattenedArgTypes: 'lit-inheritance-mixin/unflattened-argtypes.snapshot',
 } as const;
 
 type ComparedBaseline = keyof ReturnType<typeof BASELINES>;
@@ -113,6 +118,16 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
         table: expect.objectContaining({ category: 'css states' }),
       })
     );
+  });
+
+  gapTest(`${INHERITANCE_MARKER} (legacy)`, () => {
+    const argTypes = parseArgTypesSnapshot(fixedBaseline('unflattenedArgTypes'));
+    expect(Object.keys(argTypes)).toEqual(expect.arrayContaining(['base-label', 'mixed-active']));
+  });
+
+  osaGapTest(INHERITANCE_MARKER)(`${INHERITANCE_MARKER} (osa)`, () => {
+    const argTypes = parseArgTypesSnapshot(fixedBaseline('inheritanceArgTypes'));
+    expect(Object.keys(argTypes)).toEqual(expect.arrayContaining(['base-label', 'mixed-active']));
   });
 
   gapTest('the WCA experimental shape triggers a deprecation warning', async () => {

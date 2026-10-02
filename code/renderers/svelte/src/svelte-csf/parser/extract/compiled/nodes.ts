@@ -1,4 +1,4 @@
-import { isSvelteCsfImportSource } from '../../../utils/import-source.ts';
+import { findDefineMetaImport } from '../../../utils/import-source.ts';
 import type { ProgramNode } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
@@ -45,7 +45,6 @@ export interface CompiledASTNodes {
 }
 
 const AST_NODES_NAMES = {
-  defineMeta: 'defineMeta',
   Story: 'Story',
 } as const;
 
@@ -66,30 +65,9 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   const state: Partial<CompiledASTNodes> & {
     potentialStoriesFunctionDeclaration: ESTreeAST.FunctionDeclaration[];
   } = { potentialStoriesFunctionDeclaration: [] };
-  let hasDefaultOrNamespaceImport = false;
+  const imports = findDefineMetaImport((ast as ESTreeAST.Program).body);
+  state.defineMetaImport = imports.defineMetaImport;
   const visitors: Visitors<ESTreeAST.Node | ESTreeAST.Comment, typeof state> = {
-    ImportDeclaration(node, { state, visit }) {
-      const { source, specifiers } = node;
-
-      if (isSvelteCsfImportSource(source.value)) {
-        for (const specifier of specifiers) {
-          if (specifier.type !== 'ImportSpecifier') {
-            // The main entry has other exports, so this is only an error without a named `defineMeta` import
-            hasDefaultOrNamespaceImport = true;
-            continue;
-          }
-
-          visit(specifier, state);
-        }
-      }
-    },
-
-    ImportSpecifier(node) {
-      if (node.imported.name === AST_NODES_NAMES.defineMeta) {
-        state.defineMetaImport = node;
-      }
-    },
-
     VariableDeclaration(node, { state }) {
       const { declarations } = node;
       const declaration = declarations[0];
@@ -153,7 +131,7 @@ export async function extractCompiledASTNodes(params: Params): Promise<CompiledA
   } = state;
 
   if (!defineMetaImport) {
-    if (hasDefaultOrNamespaceImport) {
+    if (imports.hasDefaultOrNamespaceImport) {
       throw new DefaultOrNamespaceImportUsedError(filename);
     }
 

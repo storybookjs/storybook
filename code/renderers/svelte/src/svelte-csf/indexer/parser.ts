@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 
 import { SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../constants.ts';
-import { isSvelteCsfImportSource } from '../utils/import-source.ts';
+import { findDefineMetaImport } from '../utils/import-source.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
@@ -136,13 +136,17 @@ export async function parseForIndexer(
     Program(node, context) {
       const { body } = node;
       const { state, visit } = context;
+      const imports = findDefineMetaImport(body);
+
+      state.defineMetaImport = imports.defineMetaImport ?? state.defineMetaImport;
+      hasDefaultOrNamespaceImport ||= imports.hasDefaultOrNamespaceImport;
 
       for (const statement of body) {
+        // TODO: Remove it in the next major version
         if (
+          legacyTemplate &&
           statement.type === 'ImportDeclaration' &&
-          (isSvelteCsfImportSource(statement.source.value) ||
-            // TODO: Remove it in the next major version
-            (legacyTemplate && statement.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE))
+          statement.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE
         ) {
           visit(statement, state);
         }
@@ -162,39 +166,27 @@ export async function parseForIndexer(
       }
     },
 
+    // TODO: Remove it in the next major version
     ImportDeclaration(node, context) {
-      const { source, specifiers } = node;
+      const { specifiers } = node;
       const { state } = context;
-      // TODO: Remove it in the next major version
-      const isLegacySource = source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE;
       // The legacy codemod adds a named `defineMeta` import
-      hasLegacyImport ||= isLegacySource;
+      hasLegacyImport = true;
 
       for (const specifier of specifiers) {
         if (specifier.type !== 'ImportSpecifier') {
-          if (isLegacySource) {
-            throw new DefaultOrNamespaceImportUsedError(filename);
-          }
-          // The main entry has other exports, so this is only an error without a named `defineMeta` import
-          hasDefaultOrNamespaceImport = true;
-          continue;
+          throw new DefaultOrNamespaceImportUsedError(filename);
         }
         if (!('name' in specifier.imported)) {
-          return;
+          continue;
         }
 
-        if (!isLegacySource && specifier.imported.name === 'defineMeta') {
-          state.defineMetaImport = specifier;
-        }
-
-        // TODO: Remove it in the next major version
-        if (isLegacySource && specifier.imported.name === 'Meta') {
+        if (specifier.imported.name === 'Meta') {
           state.legacyMetaImport = specifier;
           state.isLegacy = true;
         }
 
-        // TODO: Remove it in the next major version
-        if (isLegacySource && specifier.imported.name === 'Story') {
+        if (specifier.imported.name === 'Story') {
           state.legacyStoryImport = specifier;
           state.isLegacy = true;
         }

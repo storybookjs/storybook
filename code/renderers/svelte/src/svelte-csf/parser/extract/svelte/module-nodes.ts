@@ -1,4 +1,4 @@
-import { isSvelteCsfImportSource } from '../../../utils/import-source.ts';
+import { findDefineMetaImport } from '../../../utils/import-source.ts';
 import type { Visitors } from 'zimmerframe';
 
 import type { ESTreeAST, SvelteAST } from '../../ast.ts';
@@ -12,7 +12,6 @@ import {
 import type { Identifier } from 'estree';
 
 const AST_NODES_NAMES = {
-  defineMeta: 'defineMeta',
   Story: 'Story',
 } as const;
 
@@ -53,31 +52,9 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
 
   const { walk } = await import('zimmerframe');
 
-  const state: Partial<Result> = {};
-  let hasDefaultOrNamespaceImport = false;
+  const imports = findDefineMetaImport(module.content.body);
+  const state: Partial<Result> = { defineMetaImport: imports.defineMetaImport };
   const visitors: Visitors<SvelteAST.SvelteNode, typeof state> = {
-    ImportDeclaration(node, { state, visit }) {
-      const { source, specifiers } = node;
-
-      if (isSvelteCsfImportSource(source.value)) {
-        for (const specifier of specifiers) {
-          if (specifier.type !== 'ImportSpecifier') {
-            // The main entry has other exports, so this is only an error without a named `defineMeta` import
-            hasDefaultOrNamespaceImport = true;
-            continue;
-          }
-
-          visit(specifier, state);
-        }
-      }
-    },
-
-    ImportSpecifier(node) {
-      if ('name' in node.imported && node.imported.name === AST_NODES_NAMES.defineMeta) {
-        state.defineMetaImport = node;
-      }
-    },
-
     VariableDeclaration(node, { state }) {
       const { declarations } = node;
       const declaration = declarations[0];
@@ -110,7 +87,7 @@ export async function extractModuleNodes(options: Params): Promise<Result> {
   const { defineMetaImport, defineMetaVariableDeclaration, storyIdentifier } = state;
 
   if (!defineMetaImport) {
-    if (hasDefaultOrNamespaceImport) {
+    if (imports.hasDefaultOrNamespaceImport) {
       throw new DefaultOrNamespaceImportUsedError(filename);
     }
 

@@ -360,7 +360,10 @@ export async function runFixes({
       if (dryRun) {
         runAnswer = { fix: false };
       } else if (yes) {
-        runAnswer = { fix: true };
+        // Like `upgrade --yes`, run an opt-in fix only when the user named it.
+        runAnswer = {
+          fix: f.defaultSelected !== false || f.promptType === 'auto' || fixId === f.id,
+        };
         if (promptType === 'manual') {
           fixResults[f.id] = FixStatus.MANUAL_SUCCEEDED;
           fixSummary.manual.push(f.id);

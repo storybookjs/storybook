@@ -38,11 +38,25 @@ jobs:
       - name: Unit tests
         run: yarn vitest run --project @storybook/builder-vite webpack-stats-plugin
 
+      - name: Dump the hashed module code, to diff it when hashes differ
+        run: |
+          node -e '
+            const fs = require("node:fs");
+            const dir = "code/builders/builder-vite/dist/_node-chunks";
+            const anchor = "code = withoutProjectRoot(moduleCode) + getUsedDefines(moduleCode);";
+            const file = fs.readdirSync(dir).map((f) => `${dir}/${f}`).find((f) => fs.readFileSync(f, "utf8").includes(anchor));
+            const dump = " process.env.PHASH_DUMP && process.getBuiltinModule(\"node:fs\").appendFileSync(process.env.PHASH_DUMP, JSON.stringify({ id: mod.id.split(\"?\")[0].slice(-120), code }) + \"\\n\");";
+            fs.writeFileSync(file, fs.readFileSync(file, "utf8").replace(anchor, anchor + dump));
+            console.log(`patched ${file}`);
+          '
+
       - name: Build twice in place
         run: |
           out="$(cygpath -u "$RUNNER_TEMP")/phash"
           cd code
           for label in first second; do
+            mkdir -p "$out/$label"
+            PHASH_DUMP="$(cygpath -w "$out/$label/code.jsonl")" \
             NODE_OPTIONS=--max_old_space_size=6144 node core/dist/bin/dispatcher.js build \
               --config-dir ./.storybook --preview-only \
               --webpack-stats-json "$out/$label" -o "$out/$label/static"
@@ -59,9 +73,13 @@ jobs:
         run: |
           out="$(cygpath -u "$RUNNER_TEMP")/phash"
           workspace="$(cygpath -u "$GITHUB_WORKSPACE")"
-          cd "$(dirname "$workspace")/a-much-longer-moved-checkout/code"
+          cd "$(dirname "$workspace")/a-much-longer-moved-checkout"
           # Yarn links workspaces with absolute junctions on Windows, so they break when the folder moves
+          rm -f node_modules/.yarn-state.yml .yarn/root-install-state.gz
           yarn install
+          cd code
+          mkdir -p "$out/moved"
+          PHASH_DUMP="$(cygpath -w "$out/moved/code.jsonl")" \
           NODE_OPTIONS=--max_old_space_size=6144 node core/dist/bin/dispatcher.js build \
             --config-dir ./.storybook --preview-only \
             --webpack-stats-json "$out/moved" -o "$out/moved/static"
@@ -100,4 +118,6 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: preview-stats
-          path: ${{ runner.temp }}/phash/*/preview-stats.json
+          path: |
+            ${{ runner.temp }}/phash/*/preview-stats.json
+            ${{ runner.temp }}/phash/*/code.jsonl

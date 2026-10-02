@@ -1,0 +1,32 @@
+## Attributes
+
+```
+export type LitEventsAttributes = {
+  /**
+   * Current text value.
+   *
+   * @default 'ready'
+   */
+  value?: string;
+}
+```
+
+## Events
+
+```
+export type LitEventsEvents = {
+  /** Fired when the value changes. */
+  'my-change': CustomEvent<{ value: string }>;
+  /** Fired when the panel closes. */
+  'my-close': CustomEvent<void>;
+}
+```
+
+## Methods
+
+```
+export type LitEventsMethods = {
+  emitChange(): void;
+  close(): void;
+}
+```

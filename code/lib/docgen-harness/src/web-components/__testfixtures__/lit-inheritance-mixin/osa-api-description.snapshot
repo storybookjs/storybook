@@ -1,0 +1,24 @@
+## Attributes
+
+```
+export type LitInheritanceMixinAttributes = {
+  /**
+   * Count declared by the final class.
+   *
+   * @default 1
+   */
+  count?: number;
+  /**
+   * Label inherited from the base class.
+   *
+   * @default 'Final'
+   */
+  'base-label'?: string; // property: baseLabel
+  /**
+   * Whether the mixed-in state is active.
+   *
+   * @default false
+   */
+  'mixed-active'?: boolean; // property: mixedActive
+}
+```

@@ -136,4 +136,16 @@ describe('pluginWebpackStats', () => {
 
     expect(second['./a.js']).toBe(first['./a.js']);
   });
+
+  it('ignores Windows separators after the project root and CRLF line endings', async () => {
+    vi.mocked(getProjectRoot).mockReturnValue('C:\\project');
+    const windows = await getModuleHashes({
+      'a.js': { code: 'import "C:\\\\project\\\\code\\\\shim.js";\r\n/**\r\n * Docs\r\n */' },
+    });
+    const posix = await getModuleHashes({
+      'a.js': { code: 'import "C:/project/code/shim.js";\n/**\n * Docs\n */' },
+    });
+
+    expect(windows['./a.js']).toBe(posix['./a.js']);
+  });
 });

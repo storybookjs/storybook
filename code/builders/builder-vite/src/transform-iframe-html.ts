@@ -3,7 +3,7 @@ import { createHash } from 'node:crypto';
 import { normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
-import { createProjectRootRemover } from './utils/without-project-root.ts';
+import { createHashNormalizer } from './utils/normalize-for-hash.ts';
 import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
@@ -73,10 +73,9 @@ export async function transformIframeHtml(html: string, options: Options) {
 // Hashes the injected values instead of the final HTML, which also holds the hashed chunk file names.
 // Nothing in the preview reads the story specifiers, and the module graph already holds the story files.
 export async function getPreviewConfigHash(options: Options) {
-  const replacements = (await getIframeHtmlReplacements(options)).filter(
-    ([placeholder]) => placeholder !== `'[STORIES HERE]'`
-  );
-  return createHash('sha256')
-    .update(createProjectRootRemover()(JSON.stringify(replacements)))
-    .digest('hex');
+  const normalizeForHash = createHashNormalizer();
+  const values = (await getIframeHtmlReplacements(options))
+    .filter(([placeholder]) => placeholder !== `'[STORIES HERE]'`)
+    .map(([placeholder, value]) => [placeholder, normalizeForHash(value)]);
+  return createHash('sha256').update(JSON.stringify(values)).digest('hex');
 }

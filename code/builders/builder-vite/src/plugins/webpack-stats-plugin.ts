@@ -9,7 +9,7 @@ import slash from 'slash';
 import type { Plugin } from 'vite';
 
 import { getPreviewConfigHash } from '../transform-iframe-html.ts';
-import { createProjectRootRemover } from '../utils/without-project-root.ts';
+import { createHashNormalizer } from '../utils/normalize-for-hash.ts';
 import {
   SB_VIRTUAL_FILES,
   getOriginalVirtualModuleId,
@@ -139,7 +139,7 @@ export function pluginWebpackStats({
 
   const statsMap = new Map<string, Module>();
   // Module code still holds absolute import ids, which the bundler makes relative later
-  const withoutProjectRoot = createProjectRootRemover();
+  const normalizeForHash = createHashNormalizer();
   const compiledCssById = new Map<string, string>();
   // Query variants of one file (`a.css`, `a.css?inline`) share a stats module, so it gets one hash per id
   const outputHashesByModule = new Map<string, Map<string, string>>();
@@ -209,7 +209,7 @@ export function pluginWebpackStats({
         return;
       }
       const moduleCode = (compiledCssById.get(mod.id) ?? '') + (mod.code ?? '');
-      const code = withoutProjectRoot(moduleCode) + getUsedDefines(moduleCode);
+      const code = normalizeForHash(moduleCode) + getUsedDefines(moduleCode);
       compiledCssById.delete(mod.id);
       if (code.search(ASSET_REFERENCE_RE) !== -1) {
         codeWithAssetsById.set(mod.id, code);

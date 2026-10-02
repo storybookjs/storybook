@@ -13,7 +13,6 @@ permissions:
 env:
   NX_DAEMON: 'false'
   NX_NO_CLOUD: 'true'
-  STORYBOOK_DISABLE_TELEMETRY: 'true'
 
 jobs:
   hashes:
@@ -43,7 +42,7 @@ jobs:
           node -e '
             const fs = require("node:fs");
             const dir = "code/builders/builder-vite/dist/_node-chunks";
-            const anchor = "code = withoutProjectRoot(moduleCode) + getUsedDefines(moduleCode);";
+            const anchor = "code = normalizeForHash(moduleCode) + getUsedDefines(moduleCode);";
             const file = fs.readdirSync(dir).map((f) => `${dir}/${f}`).find((f) => fs.readFileSync(f, "utf8").includes(anchor));
             const dump = " process.env.PHASH_DUMP && process.getBuiltinModule(\"node:fs\").appendFileSync(process.env.PHASH_DUMP, JSON.stringify({ id: mod.id.split(\"?\")[0].slice(-120), code }) + \"\\n\");";
             fs.writeFileSync(file, fs.readFileSync(file, "utf8").replace(anchor, anchor + dump));

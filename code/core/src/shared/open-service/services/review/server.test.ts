@@ -52,6 +52,13 @@ const review = {
   changedFiles: ['src/Button.tsx'],
 };
 
+const graphRevisionEntry = {
+  serviceId: moduleGraphServiceDef.id,
+  stamp: { seq: 1, runtimeId: 'dev-server', counter: 1 },
+  command: '_applyGraphUpdate',
+  patch: [{ op: 'replace', path: '/graphRevision', value: 1 }],
+};
+
 const getIndex = vi.fn<() => Promise<StoryIndex>>();
 
 describe('registerReviewService', () => {
@@ -322,6 +329,27 @@ describe('registerReviewService', () => {
     });
   });
 
+  it('marks the current review stale when the module-graph service advances its revision', async () => {
+    const ambientChannel = getChannel();
+    onTestFinished(() => setChannel(ambientChannel));
+    const channel = createTestChannel();
+    setChannel(channel);
+    registerService(moduleGraphServiceDef);
+    const service = registerReviewService({ getIndex });
+    await service.commands.setReview(review);
+
+    now = 12_000;
+    channel.emitExternal(SERVICE_ENTRY, graphRevisionEntry);
+
+    await vi.waitFor(() => {
+      expect(service.queries.current.get(undefined)).toEqual({
+        ...review,
+        createdAt: 1_000,
+        stale: true,
+      });
+    });
+  });
+
   it('sends no markStale from a delegated runtime when it syncs a graph revision above 0', async () => {
     const ambientChannel = getChannel();
     onTestFinished(() => setChannel(ambientChannel));
@@ -331,12 +359,7 @@ describe('registerReviewService', () => {
     const moduleGraph = registerService(moduleGraphServiceDef);
     registerReviewService({ getIndex });
 
-    channel.emitExternal(SERVICE_ENTRY, {
-      serviceId: moduleGraphServiceDef.id,
-      stamp: { seq: 1, runtimeId: 'dev-server', counter: 1 },
-      command: '_applyGraphUpdate',
-      patch: [{ op: 'replace', path: '/graphRevision', value: 1 }],
-    });
+    channel.emitExternal(SERVICE_ENTRY, graphRevisionEntry);
 
     await vi.waitFor(() => {
       expect(moduleGraph.queries.graphRevision.get(undefined)).toBe(1);

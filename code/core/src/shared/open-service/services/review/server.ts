@@ -24,9 +24,8 @@ type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
 const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
   try {
     const service = getService<ModuleGraphService>('core/module-graph', { internal: true });
-    // Omit the input to watch the entire graph. The initial emission carries revision 0 (or the
-    // current revision at subscribe time); only subsequent advances represent a change after the
-    // review was cached.
+    // Omit the input to watch the entire graph. The dev server's initial emission carries revision
+    // 0; every later one is a change in the graph.
     return service.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
       if (revision !== undefined && revision > 0) {
         onChange();
@@ -96,7 +95,6 @@ export function registerReviewService({
 
   // A delegated runtime (the attached tools CLI) also registers this service, but its first synced
   // graph revision is the dev server's current one, not a change, so only the dev server forwards.
-  // There the subscription is process-lifetime, and the grace window is enforced in `markStale`.
   if (!isDelegatedMode()) {
     subscribeToModuleGraphChanges(() => {
       void service.commands.markStale(undefined);

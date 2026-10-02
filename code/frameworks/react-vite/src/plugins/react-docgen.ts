@@ -1,35 +1,16 @@
-import { existsSync } from 'node:fs';
-import { dirname, relative, sep } from 'node:path';
+import { dirname, relative } from 'node:path';
 
 import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
-import MagicString from 'magic-string';
-import type { Documentation } from 'react-docgen';
-import {
-  ERROR_CODES,
-  builtinHandlers as docgenHandlers,
-  builtinResolvers as docgenResolver,
-  makeFsImporter,
-  parse,
-} from 'react-docgen';
 import * as TsconfigPaths from 'tsconfig-paths';
 import type { PluginOption } from 'vite';
 
-import actualNameHandler from './docgen-handlers/actualNameHandler.ts';
-import {
-  RESOLVE_EXTENSIONS,
-  ReactDocgenResolveError,
-  defaultLookupModule,
-} from './docgen-resolver.ts';
+import { ReactDocgenPool } from './react-docgen-pool.ts';
+import { type TsconfigPathsConfig, transformWithReactDocgen } from './react-docgen-transform.ts';
 
-type DocObj = Documentation & { actualName: string; definedInFile: string };
-
-// TODO: None of these are able to be overridden, so `default` is aspirational here.
-const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
-const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
-const handlers = [...defaultHandlers, actualNameHandler];
+export { getReactDocgenImporter } from './react-docgen-transform.ts';
 
 type Options = {
   include?: string | RegExp | (string | RegExp)[];
@@ -42,89 +23,71 @@ export async function reactDocgen({
 }: Options = {}): Promise<PluginOption> {
   const cwd = process.cwd();
   const filter = createFilter(include, exclude);
+  let usePool = false;
+  let pool: ReactDocgenPool | undefined;
+
+  const stopUsingPool = (failedPool: ReactDocgenPool | undefined, reason: unknown) => {
+    // Several in-flight transforms can report the same failure; only the first one acts on it.
+    if (pool !== failedPool) {
+      return;
+    }
+    usePool = false;
+    pool = undefined;
+    void failedPool?.close();
+    logger.debug(`react-docgen workers unavailable, parsing on the main thread: ${reason}`);
+  };
 
   return {
     name: 'storybook:react-docgen-plugin',
     enforce: 'pre',
+    configResolved(config) {
+      usePool = config.command === 'build';
+    },
     async transform(src: string, id: string) {
       if (!filter(relative(cwd, id))) {
         return;
       }
 
-      try {
-        const matchPath = createTsconfigMatchPath(id);
-        const docgenResults = parse(src, {
-          resolver: defaultResolver,
-          handlers,
-          importer: getReactDocgenImporter(matchPath),
-          filename: id,
-        }) as DocObj[];
-        const s = new MagicString(src);
-
-        docgenResults.forEach((info) => {
-          const { actualName, definedInFile, ...docgenInfo } = info;
-          if (actualName && definedInFile == id) {
-            const docNode = JSON.stringify(docgenInfo);
-            s.append(`;${actualName}.__docgenInfo=${docNode}`);
-          }
-        });
-
-        return {
-          code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }).toString(),
-        };
-      } catch (e: any) {
-        // Ignore the error when react-docgen cannot find a react component
-        if (e.code === ERROR_CODES.MISSING_DEFINITION) {
-          return;
+      const tsconfigPaths = getTsconfigPaths(id);
+      // The dev server keeps parsing on the main thread; a build hands its (many, concurrent)
+      // transforms to worker threads.
+      if (usePool && !pool) {
+        try {
+          pool = new ReactDocgenPool();
+        } catch (error) {
+          stopUsingPool(undefined, error);
         }
-        throw e;
       }
+      const activePool = pool;
+      if (activePool) {
+        try {
+          return await activePool.transform(src, id, tsconfigPaths);
+        } catch (error) {
+          // A react-docgen error from a working pool is this file's real error.
+          if (!activePool.failed) {
+            throw error;
+          }
+          stopUsingPool(activePool, error);
+        }
+      }
+      return transformWithReactDocgen(src, id, tsconfigPaths);
+    },
+    async buildEnd() {
+      await pool?.close();
+      pool = undefined;
     },
   };
 }
 
-export function getReactDocgenImporter(matchPath: TsconfigPaths.MatchPath | undefined) {
-  return makeFsImporter((filename, basedir) => {
-    const mappedFilenameByPaths = (() => {
-      if (matchPath) {
-        const match = matchPath(filename);
-        return match || filename;
-      } else {
-        return filename;
-      }
-    })();
+const tsconfigPathsByTsconfigPath = new Map<string, TsconfigPathsConfig>();
 
-    const result = defaultLookupModule(mappedFilenameByPaths, basedir);
-
-    if (result.includes(`${sep}react-native${sep}index.js`)) {
-      const replaced = result.replace(
-        `${sep}react-native${sep}index.js`,
-        `${sep}react-native-web${sep}dist${sep}index.js`
-      );
-      if (existsSync(replaced)) {
-        if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
-          return replaced;
-        }
-      }
-    }
-    if (RESOLVE_EXTENSIONS.find((ext) => result.endsWith(ext))) {
-      return result;
-    }
-
-    throw new ReactDocgenResolveError(filename);
-  });
-}
-
-const matchPathByTsconfigPath = new Map<string, TsconfigPaths.MatchPath>();
-
-function createTsconfigMatchPath(filePath: string) {
+function getTsconfigPaths(filePath: string): TsconfigPathsConfig | undefined {
   const tsconfigPath = findTsconfigPathForFile(dirname(filePath), filePath);
   if (!tsconfigPath) {
     return undefined;
   }
 
-  const cached = matchPathByTsconfigPath.get(tsconfigPath);
+  const cached = tsconfigPathsByTsconfigPath.get(tsconfigPath);
   if (cached) {
     return cached;
   }
@@ -136,11 +99,11 @@ function createTsconfigMatchPath(filePath: string) {
   }
 
   logger.debug('Using tsconfig paths for react-docgen');
-  const matchPath = TsconfigPaths.createMatchPath(
-    getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
-    tsconfig.paths,
-    ['browser', 'module', 'main']
-  );
-  matchPathByTsconfigPath.set(tsconfigPath, matchPath);
-  return matchPath;
+  const tsconfigPaths = {
+    configPath: tsconfigPath,
+    baseDir: getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+    paths: tsconfig.paths,
+  };
+  tsconfigPathsByTsconfigPath.set(tsconfigPath, tsconfigPaths);
+  return tsconfigPaths;
 }

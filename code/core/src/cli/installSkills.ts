@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { executeCommand, getProjectRoot, isCI, versions } from 'storybook/internal/common';
+import { getProjectRoot, isCI, versions } from 'storybook/internal/common';
 import { CLI_COLORS, logger, prompt } from 'storybook/internal/node-logger';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
 
@@ -19,7 +19,6 @@ export type SkillsDecision = {
 export type SkillsInstallResult = {
   result: 'installed' | 'declined' | 'skipped' | 'failed';
   source: SkillsSource;
-  refType?: 'tag' | 'branch';
   exitCode?: number;
 };
 
@@ -56,27 +55,6 @@ export function decideSkillsInstall(input: {
   return input.isInteractive
     ? { action: 'ask', source: 'prompt' }
     : { action: 'install', source: 'default' };
-}
-
-async function resolveSkillsRef(
-  storybookVersion: string
-): Promise<{ ref: string; refType: 'tag' | 'branch' }> {
-  const tag = `v${storybookVersion}`;
-  try {
-    const { stdout } = await executeCommand({
-      command: 'git',
-      args: ['ls-remote', '--tags', `https://github.com/${SKILLS_REPO}`, `refs/tags/${tag}`],
-      stdio: 'pipe',
-      env: { GIT_TERMINAL_PROMPT: '0' },
-      timeout: 10_000,
-    });
-    if (typeof stdout === 'string' && stdout.trim()) {
-      return { ref: tag, refType: 'tag' };
-    }
-  } catch (error) {
-    logger.debug(error);
-  }
-  return { ref: prerelease(storybookVersion) ? 'next' : 'main', refType: 'branch' };
 }
 
 /**
@@ -118,8 +96,7 @@ export async function installSkills({
     let canceled = false;
     const accepted = await prompt.confirm(
       {
-        message:
-          'Install the official Storybook skills for AI agents (Claude Code, Codex, Cursor) into this project?',
+        message: 'Install the official Storybook skills for AI agents into this project?',
         initialValue: true,
       },
       {
@@ -144,13 +121,12 @@ export async function installSkills({
     return { result: 'skipped', source: decision.source };
   }
 
-  const { ref, refType } = await resolveSkillsRef(versions.storybook);
   const args = [
     'skills@latest',
     'add',
-    `${SKILLS_REPO}#${ref}`,
-    '-y',
-    '-a',
+    `${SKILLS_REPO}#v${versions.storybook}`,
+    '--yes',
+    '--agent',
     'claude-code',
     'universal',
     '--copy',
@@ -175,7 +151,6 @@ export async function installSkills({
     return {
       result: 'failed',
       source: decision.source,
-      refType,
       exitCode: typeof exitCode === 'number' ? exitCode : undefined,
     };
   }
@@ -184,5 +159,5 @@ export async function installSkills({
   logger.log(
     `Skip this next time with --no-skills. Remove them with: ${packageManager.getRemoteRunCommand(['skills@latest', 'remove'])}`
   );
-  return { result: 'installed', source: decision.source, refType };
+  return { result: 'installed', source: decision.source };
 }

@@ -48,7 +48,6 @@ describe('TelemetryService', () => {
       await telemetryService.trackSkills({
         result: 'failed',
         source: 'yes',
-        refType: 'branch',
         exitCode: 1,
       });
 
@@ -56,7 +55,6 @@ describe('TelemetryService', () => {
         step: 'skills',
         result: 'failed',
         source: 'yes',
-        refType: 'branch',
         exitCode: 1,
       });
     });

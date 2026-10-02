@@ -5,7 +5,7 @@ import { join } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { executeCommand, getProjectRoot, isCI } from 'storybook/internal/common';
+import { getProjectRoot, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import {
   ExecaCommandFailedError,
@@ -29,7 +29,6 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => {
     ...actual,
     getProjectRoot: vi.fn(),
     isCI: vi.fn(),
-    executeCommand: vi.fn(),
     get versions() {
       return { ...actual.versions, storybook: versionHolder.storybook };
     },
@@ -42,8 +41,8 @@ const INSTALL_ARGS = (ref: string) => [
   'skills@latest',
   'add',
   `storybookjs/skills#${ref}`,
-  '-y',
-  '-a',
+  '--yes',
+  '--agent',
   'claude-code',
   'universal',
   '--copy',
@@ -61,9 +60,6 @@ const seedSettings = (agentSkills?: Record<string, boolean>) =>
   vol.fromNestedJSON({
     [SETTINGS_PATH]: JSON.stringify({ version: 1, userSince: 1, agentSkills }),
   });
-const tagFound = () =>
-  vi.mocked(executeCommand).mockResolvedValue({ stdout: 'abc\trefs/tags/v10.6.0\n' } as never);
-const tagMissing = () => vi.mocked(executeCommand).mockResolvedValue({ stdout: '' } as never);
 
 describe('decideSkillsInstall', () => {
   const base = { isCI: false, isInteractive: true, yes: false, agent: false };
@@ -141,7 +137,6 @@ describe('installSkills', () => {
     vi.mocked(logger.debug).mockImplementation(() => {});
     setIsTTY(process.stdin, true);
     setIsTTY(process.stdout, true);
-    tagFound();
   });
 
   afterEach(() => {
@@ -157,7 +152,7 @@ describe('installSkills', () => {
   });
 
   describe('the command', () => {
-    it('installs from the version tag when it exists', async () => {
+    it('installs from the tag of the running Storybook version', async () => {
       const result = await installSkills({ packageManager, yes: true });
 
       expect(packageManager.runPackageCommand).toHaveBeenCalledWith({
@@ -168,48 +163,7 @@ describe('installSkills', () => {
         env: {},
         timeout: 120_000,
       });
-      expect(result).toEqual({ result: 'installed', source: 'yes', refType: 'tag' });
-    });
-
-    it('falls back to main for a release without a tag', async () => {
-      tagMissing();
-
-      const result = await installSkills({ packageManager, yes: true });
-
-      expect(vi.mocked(packageManager.runPackageCommand).mock.calls[0][0].args).toEqual(
-        INSTALL_ARGS('main')
-      );
-      expect(result.refType).toBe('branch');
-    });
-
-    it('falls back to next for a prerelease without a tag', async () => {
-      versionHolder.storybook = '11.0.0-alpha.1';
-      tagMissing();
-
-      await installSkills({ packageManager, yes: true });
-
-      expect(vi.mocked(packageManager.runPackageCommand).mock.calls[0][0].args).toEqual(
-        INSTALL_ARGS('next')
-      );
-    });
-
-    it('looks up the tag without a credential prompt and with a 10 second timeout', async () => {
-      await installSkills({ packageManager, yes: true });
-
-      expect(executeCommand).toHaveBeenCalledWith(
-        expect.objectContaining({ env: { GIT_TERMINAL_PROMPT: '0' }, timeout: 10_000 })
-      );
-    });
-
-    it('treats a failing tag lookup as a missing tag', async () => {
-      vi.mocked(executeCommand).mockRejectedValue(new Error('no network'));
-
-      const result = await installSkills({ packageManager, yes: true });
-
-      expect(vi.mocked(packageManager.runPackageCommand).mock.calls[0][0].args).toEqual(
-        INSTALL_ARGS('main')
-      );
-      expect(result).toEqual({ result: 'installed', source: 'yes', refType: 'branch' });
+      expect(result).toEqual({ result: 'installed', source: 'yes' });
     });
 
     it.each([
@@ -231,7 +185,7 @@ describe('installSkills', () => {
 
       expect(logger.log).toHaveBeenCalledWith(
         expect.stringContaining(
-          'npx skills@latest add storybookjs/skills#v10.6.0 -y -a claude-code universal --copy'
+          'npx skills@latest add storybookjs/skills#v10.6.0 --yes --agent claude-code universal --copy'
         )
       );
       expect(logger.log).toHaveBeenCalledWith(
@@ -253,7 +207,7 @@ describe('installSkills', () => {
 
         const result = await installSkills({ packageManager, yes: true });
 
-        expect(result).toEqual({ result: 'failed', source: 'yes', refType: 'tag', exitCode: 1 });
+        expect(result).toEqual({ result: 'failed', source: 'yes', exitCode: 1 });
         expect(logger.warn).toHaveBeenCalledWith(
           'Could not install the Storybook skills, continuing without them.'
         );
@@ -269,7 +223,7 @@ describe('installSkills', () => {
       const result = await installSkills({ packageManager });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'installed', source: 'settings', refType: 'tag' });
+      expect(result).toEqual({ result: 'installed', source: 'settings' });
     });
 
     it('skips silently when the project remembered false', async () => {
@@ -318,7 +272,7 @@ describe('installSkills', () => {
 
       const result = await installSkills({ packageManager, skillsFlag: true });
 
-      expect(result).toEqual({ result: 'installed', source: 'flag', refType: 'tag' });
+      expect(result).toEqual({ result: 'installed', source: 'flag' });
       expect(settingsFile().agentSkills).toEqual({ [PROJECT_ROOT]: true });
     });
 
@@ -347,13 +301,12 @@ describe('installSkills', () => {
 
       expect(prompt.confirm).toHaveBeenCalledWith(
         {
-          message:
-            'Install the official Storybook skills for AI agents (Claude Code, Codex, Cursor) into this project?',
+          message: 'Install the official Storybook skills for AI agents into this project?',
           initialValue: true,
         },
         expect.anything()
       );
-      expect(result).toEqual({ result: 'installed', source: 'prompt', refType: 'tag' });
+      expect(result).toEqual({ result: 'installed', source: 'prompt' });
     });
 
     it('declines on No, remembers false and spawns nothing', async () => {
@@ -388,7 +341,7 @@ describe('installSkills', () => {
       const result = await installSkills({ packageManager });
 
       expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(result).toEqual({ result: 'installed', source: 'default', refType: 'tag' });
+      expect(result).toEqual({ result: 'installed', source: 'default' });
     });
   });
 });

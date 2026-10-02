@@ -78,7 +78,6 @@ describe('upgrade: the skills step', () => {
     vi.mocked(installSkills).mockResolvedValue({
       result: 'installed',
       source: 'prompt',
-      refType: 'tag',
     });
   });
 
@@ -104,7 +103,7 @@ describe('upgrade: the skills step', () => {
     expect(upgradeEvents).toHaveLength(2);
     for (const event of upgradeEvents) {
       expect(event).toMatchObject({
-        skills: { result: 'installed', source: 'prompt', refType: 'tag' },
+        skills: { result: 'installed', source: 'prompt' },
       });
     }
   });

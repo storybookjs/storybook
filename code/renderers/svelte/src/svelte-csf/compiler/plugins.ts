@@ -38,13 +38,6 @@ export async function transformPlugin(): Promise<Plugin> {
 
   return {
     name: 'storybook:svelte-csf',
-    config() {
-      return {
-        optimizeDeps: {
-          include: [runtimeStoriesPath],
-        },
-      };
-    },
     resolveId(source) {
       if (source === SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE) {
         return runtimeStoriesPath;

@@ -259,6 +259,7 @@ describe('StoryIndexGenerator', () => {
         await generator.initialize();
 
         const { storyIndex } = await generator.getIndexAndStats();
+        expect(logger.warn).not.toHaveBeenCalled();
         expect(storyIndex).toMatchInlineSnapshot(`
           {
             "entries": {},
@@ -2140,6 +2141,18 @@ describe('StoryIndexGenerator', () => {
         expect(once.warn).toHaveBeenCalledTimes(1);
         const logMessage = vi.mocked(once.warn).mock.calls[0][0];
         expect(logMessage).toContain(`No story files found for the specified pattern`);
+      });
+
+      it('warns when a CSF file has no stories', async () => {
+        const generator = new StoryIndexGenerator(
+          [normalizeStoriesEntry('./errors/MetaOnly.stories.ts', options)],
+          options
+        );
+        await generator.initialize();
+
+        await generator.getIndex();
+
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('MetaOnly.stories.ts'));
       });
     });
 

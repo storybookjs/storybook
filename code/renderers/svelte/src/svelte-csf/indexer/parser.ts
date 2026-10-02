@@ -1,6 +1,6 @@
 import fs from 'node:fs/promises';
 
-import { isSvelteCsfImportSource } from '../utils/import-source.ts';
+import { findDefineMetaImport } from '../utils/import-source.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
 import type { IndexInput } from 'storybook/internal/types';
@@ -109,37 +109,14 @@ export async function parseForIndexer(filename: string): Promise<Results> {
     Program(node, context) {
       const { body } = node;
       const { state, visit } = context;
+      const imports = findDefineMetaImport(body);
+
+      state.defineMetaImport = imports.defineMetaImport;
+      hasDefaultOrNamespaceImport = imports.hasDefaultOrNamespaceImport;
 
       for (const statement of body) {
-        if (
-          statement.type === 'ImportDeclaration' &&
-          isSvelteCsfImportSource(statement.source.value)
-        ) {
-          visit(statement, state);
-        }
-
         if (statement.type === 'VariableDeclaration') {
           visit(statement, state);
-        }
-      }
-    },
-
-    ImportDeclaration(node, context) {
-      const { specifiers } = node;
-      const { state } = context;
-
-      for (const specifier of specifiers) {
-        if (specifier.type !== 'ImportSpecifier') {
-          // The main entry has other exports, so this is only an error without a named `defineMeta` import
-          hasDefaultOrNamespaceImport = true;
-          continue;
-        }
-        if (!('name' in specifier.imported)) {
-          return;
-        }
-
-        if (specifier.imported.name === 'defineMeta') {
-          state.defineMetaImport = specifier;
         }
       }
     },

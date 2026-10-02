@@ -26,6 +26,14 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Check line endings after checkout
+        run: |
+          git config --show-origin --get-all core.autocrlf || true
+          git check-attr -a code/core/template/stories/rendering.stories.ts
+          for f in code/core/template/stories/rendering.stories.ts code/core/src/manager/components/Optional/Optional.stories.tsx; do
+            echo "$f: $(grep -c $'\r' "$f") lines with CR"
+          done
+
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
         with:

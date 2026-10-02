@@ -1,0 +1,56 @@
+## Attributes
+
+```
+export type DemoWcCardAttributes = {
+  /**
+   * Indicates that the back of the card is shown
+   *
+   * @default false
+   */
+  'back-side'?: boolean; // property: backSide
+  /**
+   * Header message
+   *
+   * @default 'Your Message'
+   */
+  header?: string;
+  /**
+   * Data rows
+   *
+   * @default []
+   */
+  rows?: array;
+}
+```
+
+## Events
+
+```
+export type DemoWcCardEvents = {
+  /** Fires whenever it switches between front/back */
+  'side-changed': CustomEvent;
+}
+```
+
+## Methods
+
+```
+export type DemoWcCardMethods = {
+  toggle(): void;
+}
+```
+
+## Slots
+
+- `default`: This is an unnamed slot (the default slot)
+
+## CSS Custom Properties
+
+- `--demo-wc-card-header-font-size`: Header font size
+- `--demo-wc-card-front-color`: Font color for front
+- `--demo-wc-card-back-color`: Font color for back
+
+## CSS Parts
+
+- `front`: Front of the card
+- `back`: Back of the card

@@ -1,0 +1,31 @@
+## Attributes
+
+```
+export type LitPropertyOnlyAttributes = {
+  /**
+   * Visible label for the list.
+   *
+   * @default 'Items'
+   */
+  label?: string;
+}
+```
+
+## Properties
+
+```
+export type LitPropertyOnlyProperties = {
+  /**
+   * Items rendered by the list.
+   *
+   * @default []
+   */
+  items?: Item[];
+  /**
+   * Rendering options for the list.
+   *
+   * @default { dense: false, theme: 'light' }
+   */
+  config?: PanelConfig;
+}
+```

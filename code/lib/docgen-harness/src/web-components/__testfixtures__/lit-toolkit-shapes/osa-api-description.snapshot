@@ -1,0 +1,112 @@
+## Attributes
+
+```
+export type LitToolkitShapesAttributes = {
+  /**
+   * Named alias union.
+   *
+   * @default 'medium'
+   */
+  size?: 'small' | 'medium' | 'large';
+  /**
+   * Inline literal union with a numeric member.
+   *
+   * @default 1
+   */
+  level?: 1 | 2 | 3;
+  /**
+   * Array of literals.
+   *
+   * @default ['a']
+   */
+  tags?: Array<'a' | 'b'>;
+  /**
+   * Mixed literal/object union.
+   *
+   * @default 'self'
+   */
+  target?: 'self' | { id: string };
+  /**
+   * Plain label; collides with the `label` slot.
+   *
+   * @default 'Label'
+   */
+  label?: string;
+  /**
+   * Date value.
+   *
+   * @default new Date(0)
+   */
+  when?: Date;
+  /**
+   * Old size field.
+   *
+   * @deprecated Use `size` instead.
+   * @default ''
+   */
+  'old-size'?: string; // property: oldSize
+}
+```
+
+## Properties
+
+```
+export type LitToolkitShapesProperties = {
+  /** Read-only computed value. */
+  readonly computed: string;
+  /**
+   * Readonly field.
+   *
+   * @default '1.0.0'
+   */
+  readonly version: string;
+  /**
+   * Internal reactive state.
+   *
+   * @default false
+   */
+  pressed?: boolean;
+  /** Callback property. */
+  onSelect?: ((size: Size) => void) | undefined;
+}
+```
+
+## Events
+
+```
+export type LitToolkitShapesEvents = {
+  /** Fired when the size changes. */
+  'toolkit-resize': CustomEvent<{ size: 'small' | 'medium' | 'large' }>;
+  /** Native click passthrough. */
+  click: Event;
+}
+```
+
+## Methods
+
+```
+export type LitToolkitShapesMethods = {
+  /** Public method with params. */
+  focusItem(index: number, options?: { smooth: boolean }): boolean;
+}
+```
+
+## Slots
+
+- `default`: Default content.
+- `label`: Rich label content; collides with the `label` attribute.
+
+## CSS Custom Properties
+
+- `--toolkit-color` (`<color>`): Text color.
+- `--toolkit-scale` (`<number>`): Scale factor.
+- `--toolkit-font`: Font shorthand.
+- `--toolkit-gap`: Gap with a default. Default: `4px`.
+
+## CSS Parts
+
+- `base`: The wrapper.
+
+## CSS States
+
+- `active`: Set while active.

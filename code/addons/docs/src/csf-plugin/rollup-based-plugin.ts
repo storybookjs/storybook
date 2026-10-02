@@ -8,16 +8,7 @@ import type { RollupPlugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants.ts';
 
-type TransformPluginContext = {
-  getCombinedSourcemap: () => any;
-};
-
-export async function transformCsf(
-  this: TransformPluginContext,
-  code: string,
-  id: string,
-  options: EnrichCsfOptions
-) {
+export async function transformCsf(code: string, id: string, options: EnrichCsfOptions) {
   if (!STORIES_REGEX.test(id)) {
     return;
   }
@@ -28,8 +19,7 @@ export async function transformCsf(
     const csf = loadCsf(code, { makeTitle }).parse();
     const csfSource = loadCsf(sourceCode, { makeTitle }).parse();
     await enrichCsf(csf, csfSource, options);
-    const inputSourceMap = this.getCombinedSourcemap();
-    return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);
+    return formatCsf(csf, { sourceMaps: true, sourceFileName: id }, code);
   } catch (err: unknown) {
     // This can be called on legacy storiesOf files, so ignore CSF parse errors.
     const message = err instanceof Error ? err.message : String(err);
@@ -44,7 +34,7 @@ export function rollupBasedPlugin(options: EnrichCsfOptions): Partial<RollupPlug
   return {
     name: 'plugin-csf',
     async transform(code, id) {
-      return transformCsf.call(this, code, id, options);
+      return transformCsf(code, id, options);
     },
   };
 }

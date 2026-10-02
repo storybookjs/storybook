@@ -74,6 +74,11 @@ describe('AddonService', () => {
       expect(addons).toContain('@storybook/addon-a11y');
     });
 
+    it('should not add an addon for the AI feature', () => {
+      const addons = manager.getAddonsForFeatures(new Set([Feature.AI]));
+      expect(addons).toEqual([]);
+    });
+
     it('should add all addons for all features', () => {
       const addons = manager.getAddonsForFeatures(
         new Set([Feature.DOCS, Feature.TEST, Feature.ONBOARDING, Feature.A11Y])

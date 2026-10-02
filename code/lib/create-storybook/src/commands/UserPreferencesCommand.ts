@@ -212,7 +212,7 @@ export class UserPreferencesCommand {
       }
     }
 
-    // If user has asked for AI setup, we provide the MCP addon and ensure test is included
+    // If user has asked for AI setup, we ensure test is included
     if (useAiForSetup) {
       features.add(Feature.AI);
       if (isTestFeatureAvailable) {
@@ -234,7 +234,7 @@ export class UserPreferencesCommand {
       ? true
       : await prompt.confirm(
           {
-            message: 'Would you like to install AI features (MCP addon and prompt suggestions)?',
+            message: 'Would you like to install AI features (prompt suggestions)?',
           },
           createPromptCancelOptions(this.telemetryService, 'ai-setup')
         );

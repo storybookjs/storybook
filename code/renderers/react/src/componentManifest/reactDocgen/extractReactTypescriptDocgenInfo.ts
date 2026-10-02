@@ -40,11 +40,12 @@ export const extractArgTypesFromDocgenTypescript = async ({
       savePropValueAsString: true,
     };
 
-    const tsConfig = await getTsConfig(componentFilePath);
+    const { tsconfigPath, ...parserUserOptions } = reactDocgenTypescriptOptions ?? {};
+    const tsConfig = await getTsConfig(componentFilePath, tsconfigPath);
 
     const mergedOptions = {
       ...defaultOptions,
-      ...reactDocgenTypescriptOptions,
+      ...parserUserOptions,
       // Always ensure savePropValueAsString is true for consistency
       savePropValueAsString: true,
     };

@@ -87,8 +87,8 @@ function isAgentFacingError(error: unknown): error is Error {
 /**
  * Narrows outcome data to the published output contract.
  *
- * Outcomes may carry more data than the contract declares (the rendered Markdown needs it); only
- * the declared shape reaches `structuredContent`.
+ * Outcomes may carry more data than the contract declares; only the declared shape reaches
+ * `structuredContent`.
  */
 async function toStructuredContent(
   outputSchema: StandardSchemaV1 | undefined,

@@ -212,6 +212,10 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
+				        "instructions": {
+				          "description": "What to do with these preview URLs next. Follow it.",
+				          "type": "string",
+				        },
 				        "stories": {
 				          "items": {
 				            "anyOf": [
@@ -423,6 +427,10 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
+				        "maxDistance": {
+				          "description": "The \`maxDistance\` ceiling this lookup applied, whether passed or defaulted.",
+				          "type": "number",
+				        },
 				        "results": {
 				          "items": {
 				            "properties": {
@@ -495,6 +503,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      },
 				      "required": [
 				        "results",
+				        "maxDistance",
 				      ],
 				      "type": "object",
 				    },
@@ -502,9 +511,6 @@ describe('MCP Endpoint E2E Tests', () => {
 				  },
 				  {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
-
-				## After success
-				Before your final response, open reviewUrl in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none. Then share the link.
 
 				## When to call
 				- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from stories-changed; fall back to stories-find-by-component if that is unavailable. Include changedFiles.
@@ -581,13 +587,26 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
+				        "collectionCount": {
+				          "type": "number",
+				        },
+				        "instructions": {
+				          "description": "What to do now that the review is published. Follow it.",
+				          "type": "string",
+				        },
 				        "reviewUrl": {
 				          "description": "URL of the Storybook review page. Always include this URL in your final user-facing response so the user can open it directly.",
 				          "type": "string",
 				        },
+				        "storyCount": {
+				          "type": "number",
+				        },
 				      },
 				      "required": [
 				        "reviewUrl",
+				        "collectionCount",
+				        "storyCount",
+				        "instructions",
 				      ],
 				      "type": "object",
 				    },
@@ -805,6 +824,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				    },
 				  ],
 				  "structuredContent": {
+				    "instructions": "These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.",
 				    "stories": [
 				      {
 				        "name": "Primary",

@@ -41,9 +41,15 @@ const getQueryString = ({
 }) => {
   const search = document?.location.search.slice(1);
   const { path, selectedKind, selectedStory, ...rest } = parse(search);
+  // The manager signals a cleared param with an explicit `null`, so it is removed instead of being
+  // merged into the current URL as a stale value.
+  const params = Object.fromEntries(
+    Object.entries({ ...rest, ...extraParams }).filter(
+      ([, value]) => value !== null && value !== undefined
+    )
+  );
   const queryStr = stringify({
-    ...rest,
-    ...extraParams,
+    ...params,
     ...(selection && { id: selection.storyId, viewMode: selection.viewMode }),
   });
   return `?${queryStr}`;

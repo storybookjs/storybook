@@ -1,8 +1,4 @@
-import {
-  STORYBOOK_INTERNAL_PREFIX,
-  SVELTE_CSF_TAG_PREFIX,
-  SVELTE_CSF_V5_TAG,
-} from '../../../constants.ts';
+import { STORYBOOK_INTERNAL_PREFIX, SVELTE_CSF_V5_TAG } from '../../../constants.ts';
 import {
   createASTArrayExpression,
   createASTIdentifier,
@@ -25,21 +21,10 @@ interface RuntimeStoryVariableDeclarationParams {
 export function createRuntimeStoryVariableDeclaration(
   params: RuntimeStoryVariableDeclarationParams
 ): ESTreeAST.VariableDeclaration {
-  const tags = createASTArrayExpression([...(params.nodes.tags?.elements ?? [])]);
-
-  // In legacy stories, the pre-transform will add a SVELTE_CSF_V4_TAG tag.
-  // if it is not present, we add the SVELTE_CSF_V5_TAG tag.
-  const hasSvelteCsfTag = tags.elements.some(
-    (element) =>
-      element?.type === 'Literal' && element.value?.toString().startsWith(SVELTE_CSF_TAG_PREFIX)
-  );
-
-  if (!hasSvelteCsfTag) {
-    tags.elements.push({
-      type: 'Literal',
-      value: SVELTE_CSF_V5_TAG,
-    });
-  }
+  const tags = createASTArrayExpression([
+    ...(params.nodes.tags?.elements ?? []),
+    { type: 'Literal', value: SVELTE_CSF_V5_TAG },
+  ]);
 
   return {
     type: 'VariableDeclaration',

@@ -21,12 +21,9 @@ describe(transformDefineMeta.name, () => {
   it("transformed 'defineMeta' matches inlined snapshot", async ({ expect }) => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
-    const compiledPreTransformCode = fs
+    const compiledCode = fs
       .readFileSync(
-        path.resolve(
-          __dirname,
-          '../../../__tests__/__compiled__/pre-transform/Example.stories.dev.js'
-        )
+        path.resolve(__dirname, '../../../__tests__/__compiled__/Example.stories.dev.js')
       )
       .toString();
     const svelteAST = getSvelteAST({ code: originalCode, filename });
@@ -35,10 +32,10 @@ describe(transformDefineMeta.name, () => {
       filename,
     });
     const compiledASTNodes = await extractCompiledASTNodes({
-      ast: parseAst(compiledPreTransformCode),
+      ast: parseAst(compiledCode),
       filename,
     });
-    const code = new MagicString(compiledPreTransformCode);
+    const code = new MagicString(compiledCode);
 
     transformDefineMeta({
       code,
@@ -63,12 +60,9 @@ describe(createMetaVariableDeclaration.name, () => {
   it('parameters are transformed correctly', async ({ expect }) => {
     const filename = path.resolve(__dirname, '../../../__tests__/stories/Example.stories.svelte');
     const originalCode = fs.readFileSync(filename).toString();
-    const compiledPreTransformCode = fs
+    const compiledCode = fs
       .readFileSync(
-        path.resolve(
-          __dirname,
-          '../../../__tests__/__compiled__/pre-transform/Example.stories.dev.js'
-        )
+        path.resolve(__dirname, '../../../__tests__/__compiled__/Example.stories.dev.js')
       )
       .toString();
     const svelteAST = getSvelteAST({ code: originalCode, filename });
@@ -77,7 +71,7 @@ describe(createMetaVariableDeclaration.name, () => {
       filename,
     });
     const compiledASTNodes = await extractCompiledASTNodes({
-      ast: parseAst(compiledPreTransformCode),
+      ast: parseAst(compiledCode),
       filename,
     });
     insertDefineMetaParameters({

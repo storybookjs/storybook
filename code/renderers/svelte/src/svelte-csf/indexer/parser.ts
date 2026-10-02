@@ -1,6 +1,5 @@
 import fs from 'node:fs/promises';
 
-import { SVELTE_CSF_LEGACY_IMPORT_SOURCE } from '../constants.ts';
 import { findDefineMetaImport } from '../utils/import-source.ts';
 import { preprocess } from 'svelte/compiler';
 import type { SvelteConfig } from '@sveltejs/vite-plugin-svelte';
@@ -9,18 +8,15 @@ import type { IndexInput } from 'storybook/internal/types';
 import { getSvelteAST, type ESTreeAST, type SvelteAST } from '../parser/ast.ts';
 import { extractStoryAttributesNodes } from '../parser/extract/svelte/story/attributes.ts';
 import { getStoryIdentifiers } from '../parser/analyse/story/attributes/identifiers.ts';
-import {
-  getArrayOfStringsValueFromAttribute,
-  getOptionalStringValueFromAttribute,
-} from '../parser/analyse/story/attributes.ts';
+import { getArrayOfStringsValueFromAttribute } from '../parser/analyse/story/attributes.ts';
 import {
   getPropertyArrayOfStringsValue,
   getPropertyStringValue,
 } from '../parser/analyse/define-meta/properties.ts';
-import type { StorybookAddonSvelteCsFOptions } from '../preset.ts';
 import {
   DefaultOrNamespaceImportUsedError,
   GetDefineMetaFirstArgumentError,
+  MissingDefineMetaImportError,
   MissingModuleTagError,
   NoStoryComponentDestructuredError,
 } from '../utils/error/parser/extract/svelte.ts';
@@ -35,7 +31,6 @@ import { extractStoryTemplateSnippetBlock } from '../parser/extract/svelte/story
 interface Results {
   meta: Pick<IndexInput, 'title' | 'tags'>;
   stories: Array<Pick<IndexInput, 'exportName' | 'name' | 'tags'>>;
-  isLegacy: boolean;
 }
 
 /**
@@ -58,17 +53,13 @@ async function loadCachedSvelteConfig(): Promise<Partial<SvelteConfig> | undefin
   return svelteConfigPromise;
 }
 
-export async function parseForIndexer(
-  filename: string,
-  options: Partial<StorybookAddonSvelteCsFOptions>
-): Promise<Results> {
+export async function parseForIndexer(filename: string): Promise<Results> {
   const [rawCode, { walk }, svelteConfig] = await Promise.all([
     fs.readFile(filename, { encoding: 'utf8' }),
     import('zimmerframe'),
     loadCachedSvelteConfig(),
   ]);
 
-  const { legacyTemplate } = options;
   let code = rawCode;
 
   if (svelteConfig?.preprocess) {
@@ -82,19 +73,13 @@ export async function parseForIndexer(
   const svelteAST = getSvelteAST({ code, filename });
   const results: Results & {
     defineMetaImport?: ESTreeAST.ImportSpecifier;
-    legacyMetaImport?: ESTreeAST.ImportSpecifier;
-    legacyStoryImport?: ESTreeAST.ImportSpecifier;
     defineMetaStory?: ESTreeAST.Identifier;
   } = {
     meta: {},
     stories: [],
-    isLegacy: false,
   };
 
-  let foundMeta = false;
   let hasDefaultOrNamespaceImport = false;
-  // TODO: Remove it in the next major version
-  let hasLegacyImport = false;
 
   walk(svelteAST as SvelteAST.SvelteNode | SvelteAST.Script, results, {
     _(_node, context) {
@@ -103,29 +88,17 @@ export async function parseForIndexer(
     },
 
     Root(node, context) {
-      const {
-        fragment,
-        // TODO: Remove it in the next major version
-        instance,
-        module,
-      } = node;
+      const { fragment, module } = node;
       const { state, visit } = context;
 
-      // TODO: Remove it in the next major version
-      if (legacyTemplate && instance) {
-        visit(instance, state);
-      }
-
-      if (module) {
-        visit(module, state);
-      } else if (!legacyTemplate) {
+      if (!module) {
         throw new MissingModuleTagError(filename);
       }
 
+      visit(module, state);
       visit(fragment, state);
     },
 
-    // NOTE: We walk on instance (if flag was enabled - `Root` handles it) or module
     Script(node, context) {
       const { content } = node;
       const { state, visit } = context;
@@ -138,57 +111,12 @@ export async function parseForIndexer(
       const { state, visit } = context;
       const imports = findDefineMetaImport(body);
 
-      state.defineMetaImport = imports.defineMetaImport ?? state.defineMetaImport;
-      hasDefaultOrNamespaceImport ||= imports.hasDefaultOrNamespaceImport;
+      state.defineMetaImport = imports.defineMetaImport;
+      hasDefaultOrNamespaceImport = imports.hasDefaultOrNamespaceImport;
 
       for (const statement of body) {
-        // TODO: Remove it in the next major version
-        if (
-          legacyTemplate &&
-          statement.type === 'ImportDeclaration' &&
-          statement.source.value === SVELTE_CSF_LEGACY_IMPORT_SOURCE
-        ) {
-          visit(statement, state);
-        }
-
         if (statement.type === 'VariableDeclaration') {
           visit(statement, state);
-        }
-
-        // TODO: Remove it in the next major version
-        if (legacyTemplate && statement.type === 'ExportNamedDeclaration') {
-          const { declaration } = statement;
-
-          if (declaration?.type === 'VariableDeclaration') {
-            visit(declaration, state);
-          }
-        }
-      }
-    },
-
-    // TODO: Remove it in the next major version
-    ImportDeclaration(node, context) {
-      const { specifiers } = node;
-      const { state } = context;
-      // The legacy codemod adds a named `defineMeta` import
-      hasLegacyImport = true;
-
-      for (const specifier of specifiers) {
-        if (specifier.type !== 'ImportSpecifier') {
-          throw new DefaultOrNamespaceImportUsedError(filename);
-        }
-        if (!('name' in specifier.imported)) {
-          continue;
-        }
-
-        if (specifier.imported.name === 'Meta') {
-          state.legacyMetaImport = specifier;
-          state.isLegacy = true;
-        }
-
-        if (specifier.imported.name === 'Story') {
-          state.legacyStoryImport = specifier;
-          state.isLegacy = true;
         }
       }
     },
@@ -202,8 +130,6 @@ export async function parseForIndexer(
         const { arguments: arguments_, callee } = init;
 
         if (callee.type === 'Identifier' && callee.name === state.defineMetaImport?.local.name) {
-          foundMeta = true;
-
           if (id?.type !== 'ObjectPattern') {
             throw new NoDestructuredDefineMetaCallError({
               defineMetaVariableDeclarator: declarations[0],
@@ -238,20 +164,9 @@ export async function parseForIndexer(
           visit(arguments_[0], state);
         }
       }
-
-      // TODO: Remove in the next major version
-      if (legacyTemplate && !foundMeta && id.type === 'Identifier') {
-        const { name } = id;
-
-        if (name === 'meta' && init?.type === 'ObjectExpression') {
-          foundMeta = true;
-          visit(init, state);
-        }
-      }
     },
 
-    // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` call,
-    // or assigned value to legacy `export const meta = {}`
+    // NOTE: We assume this one is value of first argument passed to `defineMeta({ ... })` call
     ObjectExpression(node, context) {
       const { properties } = node;
       const { state, visit } = context;
@@ -263,7 +178,7 @@ export async function parseForIndexer(
       }
     },
 
-    // NOTE: We assume these properties are from 'meta' _(from `defineMeta` or `export const meta`)_ object expression
+    // NOTE: We assume these properties are from the `defineMeta` object expression
     Property(node: ESTreeAST.Property, context) {
       const { key } = node as ESTreeAST.Property;
       const { state } = context;
@@ -301,42 +216,7 @@ export async function parseForIndexer(
       const { name } = node;
       const { state } = context;
 
-      // TODO: Remove in the next major version
-      if (!foundMeta && legacyTemplate && name === state.legacyMetaImport?.local.name) {
-        const { attributes } = node;
-        for (const attribute of attributes) {
-          if (attribute.type === 'Attribute') {
-            const { name } = attribute;
-
-            if (name === 'title') {
-              state.meta.title = getOptionalStringValueFromAttribute({
-                component: node,
-                node: attribute,
-                filename,
-              });
-            }
-
-            if (name === 'tags') {
-              state.meta.tags = getArrayOfStringsValueFromAttribute({
-                component: node,
-                node: attribute,
-                filename,
-              });
-            }
-
-            if (name === 'play') {
-              state.meta.tags ??= [];
-              state.meta.tags.push('play-fn');
-            }
-          }
-        }
-      }
-
-      if (
-        state.defineMetaStory?.name === name ||
-        // TODO: Remove in the next major version
-        (legacyTemplate && name === state.legacyStoryImport?.local.name)
-      ) {
+      if (state.defineMetaStory?.name === name) {
         const storyAttributes = extractStoryAttributesNodes({
           component: node,
           attributes: ['exportName', 'name', 'tags', 'template', 'asChild', 'children', 'play'],
@@ -385,15 +265,18 @@ export async function parseForIndexer(
     },
   });
 
-  if (!results.defineMetaImport && !foundMeta && !hasLegacyImport && hasDefaultOrNamespaceImport) {
-    throw new DefaultOrNamespaceImportUsedError(filename);
+  if (!results.defineMetaImport) {
+    if (hasDefaultOrNamespaceImport) {
+      throw new DefaultOrNamespaceImportUsedError(filename);
+    }
+
+    throw new MissingDefineMetaImportError(filename);
   }
 
-  const { meta, stories, isLegacy } = results;
+  const { meta, stories } = results;
 
   return {
     meta,
     stories,
-    isLegacy,
   };
 }

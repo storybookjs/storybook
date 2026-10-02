@@ -14,16 +14,14 @@ import { StorybookSvelteCSFError } from '../../utils/error.ts';
 const __dirname = path.dirname(url.fileURLToPath(import.meta.url));
 
 describe(removeExportDefault.name, () => {
-  it('removes pre-transformed export default correctly', async ({ expect }) => {
-    const compiledPreTransformCode = fs
-      .readFileSync(
-        path.resolve(__dirname, '../../__tests__/__compiled__/pre-transform/Example.stories.dev.js')
-      )
+  it('removes the compiled export default correctly', async ({ expect }) => {
+    const compiledCode = fs
+      .readFileSync(path.resolve(__dirname, '../../__tests__/__compiled__/Example.stories.dev.js'))
       .toString();
     const compiledASTNodes = await extractCompiledASTNodes({
-      ast: parseAst(compiledPreTransformCode),
+      ast: parseAst(compiledCode),
     });
-    const code = new MagicString(compiledPreTransformCode);
+    const code = new MagicString(compiledCode);
     removeExportDefault({
       code,
       nodes: compiledASTNodes,

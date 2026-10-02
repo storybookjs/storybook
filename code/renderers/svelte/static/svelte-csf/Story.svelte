@@ -7,10 +7,7 @@
   import { useStoriesExtractor } from '@storybook/svelte/internal/svelte-csf/contexts/extractor';
   import { useStoryRenderer } from '@storybook/svelte/internal/svelte-csf/contexts/renderer';
 
-  import {
-    storyNameToExportName,
-    SVELTE_CSF_V4_TAG,
-  } from '@storybook/svelte/internal/svelte-csf/component-helpers';
+  import { storyNameToExportName } from '@storybook/svelte/internal/svelte-csf/component-helpers';
   import type { Cmp, StoryProps } from '@storybook/svelte/internal/svelte-csf/component-helpers';
 
   type Props = StoryProps<TArgs, TCmp, TChildren>;
@@ -58,17 +55,13 @@
       injectIntoPlayFunction(renderer.storyContext, play);
     }
   });
-
-  const isLegacyStory = $derived(
-    renderer.storyContext.tags?.some((tag) => tag === SVELTE_CSF_V4_TAG) ?? false
-  );
 </script>
 
 {#if isCurrentlyViewed}
   {#if isSnippet(template)}
     {@render template(renderer.args as TArgs, renderer.storyContext as any)}
   {:else if isSnippet(children)}
-    {#if asChild || isLegacyStory}
+    {#if asChild}
       {@render children()}
     {:else if renderer.storyContext.component}
       {/* @ts-ignore */ null}

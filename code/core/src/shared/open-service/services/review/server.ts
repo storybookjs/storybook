@@ -2,6 +2,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
 import { getService, registerService } from '../../server.ts';
+import { isDelegatedMode } from '../../service-registry.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { reviewServiceDef, type ReviewService } from './definition.ts';
 import {
@@ -23,9 +24,8 @@ type SubscribeToModuleGraphChanges = (onChange: () => void) => () => void;
 const defaultSubscribeToModuleGraphChanges: SubscribeToModuleGraphChanges = (onChange) => {
   try {
     const service = getService<ModuleGraphService>('core/module-graph', { internal: true });
-    // Omit the input to watch the entire graph. The initial emission carries revision 0 (or the
-    // current revision at subscribe time); only subsequent advances represent a change after the
-    // review was cached.
+    // Omit the input to watch the entire graph. The dev server's initial emission carries revision
+    // 0; every later one is a change in the graph.
     return service.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
       if (revision !== undefined && revision > 0) {
         onChange();
@@ -93,12 +93,13 @@ export function registerReviewService({
     },
   });
 
-  // The subscription is process-lifetime by design: the service registers once per dev-server
-  // process and there is no teardown phase to return it to. The grace window is enforced inside
-  // `markStale`, so graph changes are always forwarded.
-  subscribeToModuleGraphChanges(() => {
-    void service.commands.markStale(undefined);
-  });
+  // A delegated runtime (the attached tools CLI) also registers this service, but its first synced
+  // graph revision is the dev server's current one, not a change, so only the dev server forwards.
+  if (!isDelegatedMode()) {
+    subscribeToModuleGraphChanges(() => {
+      void service.commands.markStale(undefined);
+    });
+  }
 
   return service;
 }

@@ -54,8 +54,10 @@ afterEach(() => {
 
 describe('baselinePath', () => {
   it('keys on the pin alone, escaping separators in both halves', () => {
+    // join() renders the platform separator; the assertion is about the slug
+    // escaping both halves into single segments, not about `/` vs `\`.
     expect(baselinePath('/b', { repo: 'owner/name', ref: 'heads/main' })).toBe(
-      '/b/owner__name@heads__main.json'
+      join('/b', 'owner__name@heads__main.json')
     );
   });
 });

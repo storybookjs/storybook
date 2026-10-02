@@ -48,16 +48,6 @@ function orderInvariantCases(): MapArgTypesCase[] {
     { kind: 'field', name: 'a', type: { text: 'boolean' } },
     { kind: 'field', name: 'b', type: { text: 'number' } },
   ];
-  const inheritedAndOwnFields: ManifestClassField[] = [
-    {
-      kind: 'field',
-      name: 'x',
-      inheritedFrom: { name: 'BaseCard' },
-      type: { text: 'string' },
-    } as ManifestClassField,
-    { kind: 'field', name: 'x', type: { text: 'number' } },
-  ];
-
   return [
     ...permutations(attributesForOneField).map(
       (attributes, index): MapArgTypesCase => ({
@@ -115,24 +105,6 @@ function orderInvariantCases(): MapArgTypesCase[] {
             table: {
               category: 'attributes',
               type: { summary: 'boolean' },
-              defaultValue: { summary: undefined },
-            },
-          },
-        },
-      })
-    ),
-    ...permutations(inheritedAndOwnFields).map(
-      (members, index): MapArgTypesCase => ({
-        name: `own field beats inherited field ${index + 1}`,
-        declaration: declaration({ members }),
-        expected: {
-          x: {
-            name: 'x',
-            description: undefined,
-            type: { name: 'number' },
-            table: {
-              category: 'properties',
-              type: { summary: 'number' },
               defaultValue: { summary: undefined },
             },
           },
@@ -771,56 +743,6 @@ describe('mapArgTypes', () => {
               summary:
                 '(index: number, options?: { smooth: boolean } = { smooth: true }) => boolean',
             },
-          },
-        },
-      },
-    },
-    {
-      name: 'own method beats an inherited duplicate',
-      declaration: declaration({
-        members: [
-          { kind: 'method', name: 'focusIt', description: 'own override' },
-          {
-            kind: 'method',
-            name: 'focusIt',
-            description: 'inherited base',
-            inheritedFrom: { name: 'Base' },
-          },
-        ],
-      }),
-      expected: {
-        'focusIt-method': {
-          name: 'focusIt',
-          description: 'own override',
-          type: { name: 'function' },
-          table: {
-            category: 'methods',
-            type: { summary: '()' },
-          },
-        },
-      },
-    },
-    {
-      name: 'own method beats an inherited duplicate when inherited is listed first',
-      declaration: declaration({
-        members: [
-          {
-            kind: 'method',
-            name: 'focusIt',
-            description: 'inherited base',
-            inheritedFrom: { name: 'Base' },
-          },
-          { kind: 'method', name: 'focusIt', description: 'own override' },
-        ],
-      }),
-      expected: {
-        'focusIt-method': {
-          name: 'focusIt',
-          description: 'own override',
-          type: { name: 'function' },
-          table: {
-            category: 'methods',
-            type: { summary: '()' },
           },
         },
       },

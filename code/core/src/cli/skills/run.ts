@@ -7,6 +7,7 @@ import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
 import type { getProjectInfo } from './project-info.ts';
+import { getSetupSupportError } from './setup-support.ts';
 
 export const SKILLS_OPTION_SPECS = [
   { flags: '--cwd <path>', description: 'Project directory of the target Storybook' },
@@ -136,6 +137,10 @@ async function serveSetup(configDir: string, deps: SkillsRunDeps): Promise<strin
   const probed = await deps.getProjectInfo({ configDir });
   if (!probed.ok) {
     throw new SkillsError(probed.message);
+  }
+  const supportError = getSetupSupportError(probed.projectInfo);
+  if (supportError) {
+    throw new SkillsError(supportError);
   }
   return (await deps.getSetupMarkdown(probed.projectInfo)).markdown;
 }

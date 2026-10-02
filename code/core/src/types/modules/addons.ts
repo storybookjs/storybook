@@ -14,7 +14,7 @@ import type {
   Parameters,
   PartialStoryFn as PartialStoryFnForFramework,
   Renderer,
-  StoryContext as StoryContextForFramework,
+  StoryContextForRender as StoryContextForFramework,
   StoryFn as StoryFnForFramework,
   StoryId,
   StoryKind,
@@ -28,7 +28,7 @@ export type Addon_Types = Exclude<
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
-  defaultValue?: TArg;
+  defaultValue?: TArg & never;
 }
 
 export type Addons_ArgTypes<TArgs = Args> = {
@@ -179,8 +179,8 @@ export interface Addon_BaseAnnotations<
   args?: Partial<TArgs>;
 
   /**
-   * ArgTypes encode basic metadata for args, such as `name`, `description`, `defaultValue` for an
-   * arg. These get automatically filled in by Storybook Docs.
+   * ArgTypes encode basic metadata for args, such as `name` and `description`. These get
+   * automatically filled in by Storybook Docs.
    *
    * @see [Arg types](https://storybook.js.org/docs/api/arg-types)
    */

@@ -2,7 +2,7 @@ import { resolve } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
-import { filterToPackageDiagnostics } from './typescript.ts';
+import { filterToPackageDiagnostics } from './diagnostics.ts';
 
 const packageDir = resolve('/repo/code/renderers/react');
 
@@ -75,6 +75,25 @@ describe('filterToPackageDiagnostics', () => {
     const { kept } = filterToPackageDiagnostics(output, packageDir);
 
     expect(kept).toEqual([`${inside}(2,2): error TS2: inside.`]);
+  });
+
+  it('keeps only diagnostics in the given files', () => {
+    const output = [
+      'src/strict.test.ts(1,1): error TS2: in a listed file.',
+      'src/renderer.ts(2,2): error TS18047: imported by a listed file.',
+      'tsconfig.strict.json(3,3): error TS5023: Unknown compiler option.',
+      '',
+    ].join('\n');
+
+    const { kept } = filterToPackageDiagnostics(output, packageDir, [
+      resolve(packageDir, 'src/strict.test.ts'),
+      resolve(packageDir, 'tsconfig.strict.json'),
+    ]);
+
+    expect(kept).toEqual([
+      'src/strict.test.ts(1,1): error TS2: in a listed file.',
+      'tsconfig.strict.json(3,3): error TS5023: Unknown compiler option.',
+    ]);
   });
 
   it('handles CRLF line endings', () => {

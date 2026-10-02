@@ -6,6 +6,7 @@ import { relative } from 'node:path';
 
 import { errorMessage } from '../utils.ts';
 import { buildTagIndex, type TagIndex } from './build-tag-index.ts';
+import { flattenInheritance } from './flatten-inheritance.ts';
 import { isFailedManifest, loadManifest, type FailedManifest } from './load-manifest.ts';
 import type { ManifestDeclaration } from './types.ts';
 
@@ -111,7 +112,7 @@ export class CemManager {
 
     const entry: CemEntry = {
       path: loaded.path,
-      tags: buildTagIndex(loaded.manifest),
+      tags: buildTagIndex(flattenInheritance(loaded.manifest)),
     };
     const nextState: CemState = {
       ...state,

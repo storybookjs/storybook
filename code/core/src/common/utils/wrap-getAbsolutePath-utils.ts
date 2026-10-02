@@ -139,7 +139,8 @@ export function getFieldsForGetAbsolutePathWrapper(config: ConfigFile): t.Node[]
  * ```
  */
 export function getAbsolutePathWrapperAsCallExpression(
-  isConfigTypescript: boolean
+  isConfigTypescript: boolean,
+  names = { dirname: 'dirname', fileURLToPath: 'fileURLToPath' }
 ): t.FunctionDeclaration {
   const functionDeclaration = {
     ...t.functionDeclaration(
@@ -154,8 +155,8 @@ export function getAbsolutePathWrapperAsCallExpression(
       ],
       t.blockStatement([
         t.returnStatement(
-          t.callExpression(t.identifier('dirname'), [
-            t.callExpression(t.identifier('fileURLToPath'), [
+          t.callExpression(t.identifier(names.dirname), [
+            t.callExpression(t.identifier(names.fileURLToPath), [
               t.callExpression(
                 t.memberExpression(
                   t.metaProperty(t.identifier('import'), t.identifier('meta')),
@@ -212,4 +213,61 @@ export function wrapValueWithGetAbsolutePathWrapper(config: ConfigFile, node: t.
       });
     }
   });
+}
+
+const topLevelNames = (node: t.Node): string[] => {
+  if (t.isImportDeclaration(node)) {
+    return node.specifiers.map((specifier) => specifier.local.name);
+  }
+  if (t.isExportNamedDeclaration(node) && node.declaration) {
+    return topLevelNames(node.declaration);
+  }
+  if (t.isVariableDeclaration(node)) {
+    return node.declarations.flatMap(({ id }) => (t.isIdentifier(id) ? [id.name] : []));
+  }
+  if ((t.isFunctionDeclaration(node) || t.isClassDeclaration(node)) && node.id) {
+    return [node.id.name];
+  }
+  return [];
+};
+
+/**
+ * Import the named export `imported` from `source` into a main config, and return the local name to
+ * call it by. Reuses an existing import, and renames the import when the config already declares a
+ * binding with that name, such as its own `const dirname`.
+ */
+export function ensureNamedImport(config: ConfigFile, imported: string, source: string) {
+  const { body } = config._ast.program;
+  for (const node of body) {
+    if (t.isImportDeclaration(node) && node.source.value === source) {
+      const existing = node.specifiers.find(
+        (specifier) =>
+          t.isImportSpecifier(specifier) &&
+          (t.isIdentifier(specifier.imported)
+            ? specifier.imported.name
+            : specifier.imported.value) === imported
+      );
+      if (existing) {
+        return existing.local.name;
+      }
+    }
+  }
+
+  const taken = new Set(body.flatMap(topLevelNames));
+  if (!taken.has(imported)) {
+    config.setImport([imported], source);
+    return imported;
+  }
+
+  let local = `${source.replace(/^node:/, '')}${imported[0].toUpperCase()}${imported.slice(1)}`;
+  while (taken.has(local)) {
+    local = `_${local}`;
+  }
+  body.unshift(
+    t.importDeclaration(
+      [t.importSpecifier(t.identifier(local), t.identifier(imported))],
+      t.stringLiteral(source)
+    )
+  );
+  return local;
 }

@@ -357,11 +357,12 @@ describe('Preview hooks', () => {
       expect(callbacks[0]).toBe(callbacks[1]);
     });
     it('creates new callback reference if deps are changed', () => {
-      const callbacks: (() => void)[] = [];
+      const callbacks: (() => number)[] = [];
       let counter = 0;
       const storyFn = () => {
         counter += 1;
-        const callback = useCallback(() => {}, [counter]);
+        const deps = [counter];
+        const callback = useCallback(() => counter, deps);
         callbacks.push(callback);
       };
       run(storyFn);

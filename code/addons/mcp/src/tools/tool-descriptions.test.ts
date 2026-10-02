@@ -105,8 +105,11 @@ describe('MCP tool output schemas', () => {
 
     const withoutInstructions = tools
       .filter((tool) => {
-        const entries = (tool.outputSchema as { entries?: Record<string, unknown> })?.entries;
-        return entries && !('instructions' in entries);
+        if (!tool.outputSchema) {
+          return false;
+        }
+        const { entries = {} } = tool.outputSchema as { entries?: Record<string, unknown> };
+        return !('instructions' in entries);
       })
       .map((tool) => tool.name);
 

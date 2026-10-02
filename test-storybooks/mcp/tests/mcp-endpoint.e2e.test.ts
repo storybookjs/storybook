@@ -225,7 +225,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "type": "string",
 				                  },
 				                  "previewUrl": {
-				                    "description": "Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.",
+				                    "description": "Direct URL to open the story preview.",
 				                    "type": "string",
 				                  },
 				                  "title": {

@@ -31,12 +31,7 @@ import { detectUnreachableFiles } from './unreachable-files.ts';
 const previewSuccessSchema = v.object({
   title: v.string(),
   name: v.string(),
-  previewUrl: v.pipe(
-    v.string(),
-    v.description(
-      'Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.'
-    )
-  ),
+  previewUrl: v.pipe(v.string(), v.description('Direct URL to open the story preview.')),
 });
 
 const previewFailureSchema = v.object({

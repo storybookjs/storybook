@@ -148,8 +148,8 @@ export type AnyToolsetDefinition = ToolsetDefinition;
 /**
  * What a handler may return when its method publishes an `output`: outcomes whose `data` —
  * on both branches, since adapters validate failure data into `structuredContent` too — carries at
- * least the schema's declared shape. The open record lets `data` carry fields the public contract
- * does not ship, and keeps handler `data` an object.
+ * least the schema's declared shape. Intersecting with `Record<string, unknown>` keeps handler
+ * `data` an object.
  */
 type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema> &
   Record<string, unknown>;

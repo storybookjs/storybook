@@ -27,7 +27,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   }
 
   await handleSvelteKit(plugins, options);
-  plugins.push(await svelteCsf());
+  plugins.push(svelteCsf());
 
   return {
     ...config,

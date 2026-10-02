@@ -1,4 +1,4 @@
-import { loadSvelteConfig } from '@sveltejs/vite-plugin-svelte';
+import type { Options as SvelteOptions } from '@sveltejs/vite-plugin-svelte';
 import {
   SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE,
   svelteCsfRuntimeStoriesPath,
@@ -8,11 +8,19 @@ import type { Plugin } from 'vite';
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 
-export async function svelteCsf(): Promise<Plugin> {
-  const svelteConfig = await loadSvelteConfig();
+export function svelteCsf(): Plugin {
+  let sveltePlugin: { api?: { options?: SvelteOptions } } | undefined;
 
   return {
     name: 'storybook:svelte-csf',
+    configResolved({ plugins }) {
+      // vite-plugin-svelte resolves its options, including every preprocessor it applies, in its own
+      // configResolved hook, so read them when transforming
+      sveltePlugin = plugins.find(
+        (plugin) =>
+          plugin.name === 'vite-plugin-svelte:config' || plugin.name === 'vite-plugin-svelte'
+      );
+    },
     resolveId: {
       filter: { id: new RegExp(`^${escapeRegExp(SVELTE_CSF_RUNTIME_STORIES_IMPORT_SOURCE)}$`) },
       handler() {
@@ -26,7 +34,7 @@ export async function svelteCsf(): Promise<Plugin> {
           filename: id,
           compiledCode,
           compiledAST: this.parse(compiledCode),
-          preprocess: svelteConfig?.preprocess,
+          preprocess: sveltePlugin?.api?.options?.preprocess,
         });
       },
     },

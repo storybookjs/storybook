@@ -1,4 +1,4 @@
-import { deprecate, logger } from 'storybook/internal/client-logger';
+import { logger } from 'storybook/internal/client-logger';
 import {
   CONFIG_ERROR,
   CURRENT_STORY_WAS_SET,
@@ -322,18 +322,9 @@ export interface SubAPI {
    */
   setFilter: (id: string, filterFunction: API_FilterFunction) => Promise<void>;
   /**
-   * Registers several sidebar filters at once, then re-applies the story index. Prefer this when
-   * registering more than one filter.
+   * Registers several sidebar filters at once, then re-applies the story index.
    */
   setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
-  /**
-   * @deprecated Use `setFilter` instead. `experimental_setFilter` will be removed in Storybook 12.
-   */
-  experimental_setFilter: (addonId: string, filterFunction: API_FilterFunction) => Promise<void>;
-  /**
-   * @deprecated Use `setFilters` instead. `experimental_setFilters` will be removed in Storybook 12.
-   */
-  experimental_setFilters: (filters: Record<string, API_FilterFunction>) => Promise<void>;
 
   /** Resets tag filters in the sidebar to the default filters. */
   resetTagFilters(): Promise<void>;
@@ -931,20 +922,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       }
     },
 
-    experimental_setFilter: async (id, filterFunction) => {
-      deprecate(
-        '`experimental_setFilter` is deprecated. Use `setFilter` instead. It will be removed in Storybook 12.'
-      );
-      await api.setFilter(id, filterFunction);
-    },
-
-    experimental_setFilters: async (filters) => {
-      deprecate(
-        '`experimental_setFilters` is deprecated. Use `setFilters` instead. It will be removed in Storybook 12.'
-      );
-      await api.setFilters(filters);
-    },
-
     resetTagFilters: async () => {
       await persistFilters((s) => ({
         includedTagFilters: s.defaultIncludedTagFilters,
@@ -1334,18 +1311,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     api.setPreviewInitialized(ref);
   });
 
-  const warnDeprecatedSidebarFilters = (filters: Record<string, API_FilterFunction>) => {
-    if (Object.keys(filters).length > 0) {
-      deprecate(
-        '`sidebar.filters` is deprecated. Use `setFilter` or `tags.<name>.hideFromSidebar` instead. It will be removed in Storybook 12.'
-      );
-    }
-  };
-
   provider.channel?.on(SET_CONFIG, async () => {
-    const config = provider.getConfig();
-    const configFilters = config?.sidebar?.filters || {};
-    warnDeprecatedSidebarFilters(configFilters);
     const {
       includedTagFilters,
       excludedTagFilters,
@@ -1354,9 +1320,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       tagPresets,
     } = store.getState();
 
-    // Config sidebar filters first, then our managed filters override any conflicts
     await api.setFilters({
-      ...configFilters,
       [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
       [TAGS_FILTER]: computeTagsFilterFn(includedTagFilters, excludedTagFilters),
       [STATUS_FILTER]: computeStatusFilterFn(includedStatusFilters, excludedStatusFilters),
@@ -1368,10 +1332,6 @@ export const init: ModuleFn<SubAPI, SubState> = ({
       edges: ['leading', 'trailing'],
     })
   );
-
-  const config = provider.getConfig();
-  const configFilters = config?.sidebar?.filters || {};
-  warnDeprecatedSidebarFilters(configFilters);
 
   // Compute default tag filter values from presets
   const tagPresets: TagsOptions = global.TAGS_OPTIONS || {};
@@ -1387,9 +1347,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   const initialIncludedStatuses: StatusValue[] = parsedStatuses.included;
   const initialExcludedStatuses: StatusValue[] = parsedStatuses.excluded;
 
-  // Build initial filters: config sidebar filters first, then our managed filters take priority
   const initialFilters: Record<string, API_FilterFunction> = {
-    ...configFilters,
     [STATIC_FILTER]: computeStaticFilterFn(tagPresets),
     [TAGS_FILTER]: computeTagsFilterFn(initialIncluded, initialExcluded),
     [STATUS_FILTER]: computeStatusFilterFn(initialIncludedStatuses, initialExcludedStatuses),

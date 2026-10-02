@@ -1,14 +1,8 @@
-import { deprecate } from 'storybook/internal/client-logger';
 import type { PreparedStory, TagOptions } from 'storybook/internal/types';
 
 const excludeTags = Object.entries<Partial<TagOptions>>(globalThis.TAGS_OPTIONS ?? {}).reduce(
   (acc, [tag, option]) => {
-    if (option.excludeFromDocsStories) {
-      deprecate(
-        '`excludeFromDocsStories` is deprecated. Use `hideFromAutodocs` instead. It will be removed in Storybook 12.'
-      );
-    }
-    if (option.hideFromAutodocs || option.excludeFromDocsStories) {
+    if (option.hideFromAutodocs) {
       acc[tag] = true;
     }
     return acc;

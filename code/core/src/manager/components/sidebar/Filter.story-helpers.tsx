@@ -57,8 +57,6 @@ export class MockAPIWrapper<SubAPI, SubState> extends React.Component<{
     const fullAPI = {
       setFilter: fn().mockName('API::setFilter'),
       setFilters: fn().mockName('API::setFilters'),
-      experimental_setFilter: fn().mockName('API::experimental_setFilter'),
-      experimental_setFilters: fn().mockName('API::experimental_setFilters'),
       getRefs: fn().mockName('API::getRefs').mockReturnValue({}),
       setRef: fn().mockName('API::setRef'),
       updateRef: fn().mockName('API::updateRef'),

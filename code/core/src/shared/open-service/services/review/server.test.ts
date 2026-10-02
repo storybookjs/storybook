@@ -1,9 +1,14 @@
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
+import { getChannel, setChannel } from '../../../../channels/channel-slot.ts';
+import { createTestChannel } from '../../../../channels/test-channel.ts';
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
-import { clearRegistry } from '../../server.ts';
+import { clearRegistry, registerService } from '../../server.ts';
+import { SERVICE_COMMAND_INVOKE, SERVICE_ENTRY } from '../../service-channel.ts';
+import { setDelegatedMode } from '../../service-registry.ts';
+import { moduleGraphServiceDef } from '../module-graph/definition.ts';
 import { reviewServiceDef } from './definition.ts';
 import { registerReviewService } from './server.ts';
 
@@ -315,5 +320,27 @@ describe('registerReviewService', () => {
         stale: true,
       });
     });
+  });
+
+  it('sends no markStale from a delegated runtime when it syncs a graph revision above 0', async () => {
+    const ambientChannel = getChannel();
+    onTestFinished(() => setChannel(ambientChannel));
+    const channel = createTestChannel();
+    setChannel(channel);
+    setDelegatedMode(true);
+    const moduleGraph = registerService(moduleGraphServiceDef);
+    registerReviewService({ getIndex });
+
+    channel.emitExternal(SERVICE_ENTRY, {
+      serviceId: moduleGraphServiceDef.id,
+      stamp: { seq: 1, runtimeId: 'dev-server', counter: 1 },
+      command: '_applyGraphUpdate',
+      patch: [{ op: 'replace', path: '/graphRevision', value: 1 }],
+    });
+
+    await vi.waitFor(() => {
+      expect(moduleGraph.queries.graphRevision.get(undefined)).toBe(1);
+    });
+    expect(channel.emit.mock.calls.filter(([name]) => name === SERVICE_COMMAND_INVOKE)).toEqual([]);
   });
 });

@@ -1,7 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { resolveSkillsIntent, runSkillsCommand } from './run.ts';
+
+const toolset = (id: string, methodNames: string[]): ToolsetCatalogEntry => ({
+  id,
+  description: `${id} tools.`,
+  methods: methodNames.map((methodName) => ({
+    ref: `${id}.${methodName}` as ToolsetMethodId,
+    title: methodName,
+    description: `Describes ${id}.${methodName}.`,
+    requiresDevServer: false,
+    input: { type: 'object', properties: {} },
+  })),
+});
+
+const describedTools = (output: string) =>
+  [...output.matchAll(/^Usage: npx storybook tools (.+) \[--key value \.\.\.\]$/gm)].map(
+    ([, command]) => command
+  );
 
 const deps = () => ({
   loadStorybook: vi.fn().mockResolvedValue({ presets: { apply: vi.fn() } }),
@@ -27,6 +46,12 @@ const deps = () => ({
   getSetupMarkdown: vi
     .fn()
     .mockResolvedValue({ markdown: '# Storybook Setup', prompt: 'optimized-tests' }),
+  describeToolsets: vi.fn(() => [
+    toolset('stories', ['preview', 'changed', 'findByComponent']),
+    toolset('review', ['create']),
+    toolset('docs', ['list', 'show', 'showStory']),
+    toolset('test', ['run']),
+  ]),
 });
 
 describe('resolveSkillsIntent', () => {
@@ -119,6 +144,80 @@ describe('runSkillsCommand', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('@storybook/react');
     expect(result.output).toContain('npx storybook tools stories changed');
+  });
+
+  it('stories carries the write-story text instead of sending the agent to it', async () => {
+    const d = deps();
+    const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+    const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+
+    const [storyInstructions] = writeStory.output.split('# Command reference');
+    expect(storyInstructions).toMatch(/^# Writing User Interfaces/);
+    expect(stories.output).toContain(storyInstructions);
+    expect(stories.output).toContain('read **Writing User Interfaces** below');
+    expect(stories.output).not.toContain('npx storybook skills write-story');
+  });
+
+  it('stories ends with a command reference of exactly the tools it names', async () => {
+    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, deps());
+
+    expect(result.output.split('# Command reference')).toHaveLength(2);
+    expect(describedTools(result.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
+  });
+
+  it('leaves a registered tool out of the reference when the project gates its workflow off', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      changeDetectionEnabled: false,
+      reviewEnabledForCli: false,
+      testSupported: false,
+    });
+
+    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+
+    expect(describedTools(result.output)).toEqual(['stories preview']);
+  });
+
+  it('leaves out a tool the skill names but the project does not register', async () => {
+    const d = deps();
+    d.describeToolsets.mockReturnValue([toolset('stories', ['preview', 'changed'])]);
+
+    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+
+    expect(result.output).toContain('npx storybook tools test run');
+    expect(describedTools(result.output)).toEqual(['stories preview', 'stories changed']);
+  });
+
+  it('write-story ends with a command reference of the tools it names', async () => {
+    const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, deps());
+
+    expect(describedTools(result.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
+  });
+
+  it('--all prints the write-story text and each tool once', async () => {
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
+    expect(describedTools(result.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

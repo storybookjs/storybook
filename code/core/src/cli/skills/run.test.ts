@@ -1,7 +1,26 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import type { ToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
 import { resolveSkillsIntent, runSkillsCommand } from './run.ts';
+
+const toolset = (id: string, methodNames: string[]): ToolsetCatalogEntry => ({
+  id,
+  description: `${id} tools.`,
+  methods: methodNames.map((methodName) => ({
+    ref: `${id}.${methodName}` as ToolsetMethodId,
+    title: methodName,
+    description: `Describes ${id}.${methodName}.`,
+    requiresDevServer: false,
+    input: { type: 'object', properties: {} },
+  })),
+});
+
+const describedTools = (output: string) =>
+  [...output.matchAll(/^Usage: npx storybook tools (.+) \[--key value \.\.\.\]$/gm)].map(
+    ([, command]) => command
+  );
 
 const deps = () => ({
   loadStorybook: vi.fn().mockResolvedValue({ presets: { apply: vi.fn() } }),
@@ -27,6 +46,12 @@ const deps = () => ({
   getSetupMarkdown: vi
     .fn()
     .mockResolvedValue({ markdown: '# Storybook Setup', prompt: 'optimized-tests' }),
+  describeToolsets: vi.fn(() => [
+    toolset('stories', ['preview', 'changed', 'findByComponent']),
+    toolset('review', ['create']),
+    toolset('docs', ['list', 'show', 'showStory']),
+    toolset('test', ['run']),
+  ]),
 });
 
 describe('resolveSkillsIntent', () => {
@@ -119,6 +144,66 @@ describe('runSkillsCommand', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('@storybook/react');
     expect(result.output).toContain('npx storybook tools stories changed');
+  });
+
+  it('stories ends with a command reference of exactly the tools it names', async () => {
+    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, deps());
+
+    expect(result.output.split('## Command reference')).toHaveLength(2);
+    expect(describedTools(result.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
+  });
+
+  it('leaves a registered tool out of the reference when the project gates its workflow off', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      reviewEnabledForCli: false,
+      testSupported: false,
+    });
+
+    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
+
+    expect(describedTools(result.output)).toEqual(['stories preview']);
+  });
+
+  it('write-story leaves the tools stories describes to the stories reference', async () => {
+    const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, deps());
+
+    expect(describedTools(result.output)).toEqual([]);
+    expect(result.output).toMatch(
+      /## Command reference\n\nThe commands named above are described in the command reference at the end of `npx storybook skills stories`\.$/
+    );
+  });
+
+  it('write-story describes the tools only it names', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      reviewEnabledForCli: false,
+    });
+
+    const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
+
+    expect(describedTools(result.output)).toEqual(['stories changed']);
+    expect(result.output).toContain('The other commands named above are described');
+  });
+
+  it('--all describes each tool once', async () => {
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
+
+    expect(describedTools(result.output)).toEqual([
+      'stories preview',
+      'stories changed',
+      'stories find-by-component',
+      'review create',
+      'test run',
+    ]);
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

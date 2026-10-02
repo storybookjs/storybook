@@ -41,7 +41,7 @@ const ctx: ToolsetCtx = {
 };
 
 describe('tools help rendering', () => {
-  it('renders the complete root help from toolset contracts', () => {
+  it('renders the root help as an overview, without the arguments of any tool', () => {
     expect(renderToolsHelp('/repo/.storybook', [toolset], ctx)).toMatchInlineSnapshot(`
       "Usage: npx storybook tools [options] [toolset] [tool] [args...]
 
@@ -56,7 +56,7 @@ describe('tools help rendering', () => {
         --input <object>             Raw JSON object with the tool arguments (escape hatch for complex values)
         --json                       Print the tool's structured result data as JSON instead of markdown
         -o, --output <path>          Write the result to a file instead of stdout
-        -h, --help                   Show every tool of the target Storybook, or one tool with its arguments
+        -h, --help                   List the tools of the target Storybook, or show one tool with its arguments
 
       Commands:
         example get-http-frame  Inspect an HTTP frame  [local]
@@ -64,29 +64,8 @@ describe('tools help rendering', () => {
 
       [local] tools run without a running Storybook.
       [requires running Storybook] tools need a running Storybook dev server; start it first.
-      Tool results print as markdown; the Output blocks below describe the \`--json\` data.
       Individual \`--key value\` flags override entries of \`--input\`.
-
-      Tool reference — every command in full (\`npx storybook tools <toolset> <tool> --help\` shows one alone):
-
-      example — Example tools.
-
-        example get-http-frame  [local]
-
-          HTTP frame utilities
-          Use this detailed second line only in the full reference.
-
-          Arguments: none.
-
-        example preview  [requires running Storybook]
-
-          Preview one example.
-
-          Arguments:
-          - \`--id\` (string, required): Example identifier
-
-          Output (\`--json\`):
-          - \`url\` (string, required): Preview URL"
+      Run \`npx storybook tools <toolset> <tool> --help\` for the description, arguments and \`--json\` output of one tool."
     `);
   });
 

@@ -318,7 +318,7 @@ async function dispatchTools(
   if (parsed.help) {
     return result({
       exitCode: 0,
-      output: renderMethodHelpFromCatalog(entry, method),
+      output: renderMethodHelpFromCatalog(method),
       outcome: { kind: 'help' },
     });
   }

@@ -1,6 +1,8 @@
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
+import { renderCommandReference } from './command-reference.ts';
 import { buildServerInstructions } from './content/build-server-instructions.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
@@ -44,6 +46,8 @@ export type SkillsRunDeps = {
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
   getSetupMarkdown: typeof getSetupMarkdownOutput;
+  // Reads the toolsets `loadStorybook` registered, so call it after the configuration loaded.
+  describeToolsets: () => ToolsetCatalogEntry[];
 };
 
 export type SkillsIntent =
@@ -127,7 +131,7 @@ async function serveSkills(
       docs.push(await serveSetup(configDir, deps));
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(assemble(id, inputs));
+      docs.push(withCommandReference(id, inputs, deps.describeToolsets()));
     }
   }
   return docs;
@@ -179,6 +183,21 @@ function renderCatalogHelp(): string {
     '',
     'Print a skill with `npx storybook skills <id>`, or every skill with `npx storybook skills --all`.',
   ].join('\n');
+}
+
+function withCommandReference(
+  id: Exclude<SkillId, 'setup'>,
+  inputs: SkillInputs,
+  toolsets: ToolsetCatalogEntry[]
+): string {
+  const text = assemble(id, inputs);
+  // `stories` sends the agent on to `write-story`, so a tool both name is described by `stories`.
+  const describedIn =
+    id === 'write-story'
+      ? { id: 'stories' as const, text: assemble('stories', inputs) }
+      : undefined;
+  const reference = renderCommandReference(text, toolsets, describedIn);
+  return reference ? `${text.trimEnd()}\n\n${reference}` : text;
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {

@@ -2,8 +2,6 @@ import { html } from 'lit';
 
 import type { Meta, Story } from '../../csf-types.ts';
 
-import './stencil-props.tsx';
-
 const meta = {
   title: 'WebComponentsFixtures/StencilProps',
   component: 'stencil-props',

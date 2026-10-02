@@ -193,11 +193,6 @@ Drop `--litelement` for vanilla cases.
 Use `--fast` when capturing `fast-attributes` and `--stencil` when capturing `stencil-props`; copy `.tsx` component sources into the staging directory too.
 Move the emitted `custom-elements.json` back into the fixture directory and make sure `modules[].path` records relative file names only.
 
-### Running the Stencil fixture (web-components)
-
-Stencil decorators only run through the Stencil compiler, so `vitest.config.ts` transpiles fixture `.tsx` files that import `@stencil/core` with its `transpileSync` API.
-The output defines the element on import, so `stencil-props` stories import `./stencil-props.tsx` like the other fixtures import their element.
-
 ### Manifest shape variants (web-components)
 
 The default capture stays at CEM 1.0.0 because the analyzer still writes that version.

@@ -3,7 +3,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/types';
 
@@ -29,10 +29,6 @@ if (BASELINE_PATH !== 'legacy') {
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
-// The default render puts scoped part and state rules in a `<style>` before the element; the gates compare the element.
-const withoutLeadingStyle = (snippet: string): string =>
-  snippet.replace(/^<style>[\s\S]*?<\/style>/, '');
-
 // The unprefixed custom-elements.json is the analyzer's 1.0.0 capture; these are hand-written shapes recorded under a prefix.
 const MANIFEST_VARIANTS = ['v2', 'wca', 'unflattened'] as const;
 
@@ -45,6 +41,69 @@ afterEach(() => {
   setCustomElementsManifest(undefined);
   vi.unstubAllGlobals();
 });
+
+const readCommitted = (path: string): string | undefined =>
+  existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+
+function serializeLastRootElement(snippet: string): string {
+  const template = document.createElement('template');
+  template.innerHTML = snippet;
+  return template.content.lastElementChild?.outerHTML ?? snippet;
+}
+
+function serializeGateCandidate(storyResult: WebComponentsRenderer['storyResult']): string {
+  if (storyResult instanceof DocumentFragment) {
+    const element = storyResult.lastElementChild;
+    return element ? renderStorySource(element) : '';
+  }
+
+  return renderStorySource(storyResult);
+}
+
+async function recordSnippet(
+  prefix: '' | 'osa-',
+  testDir: string,
+  exportName: string,
+  storyResult: WebComponentsRenderer['storyResult']
+): Promise<void> {
+  const snippetPath = join(testDir, `${prefix}snippet-${exportName}.snapshot`);
+  const snippet = renderStorySource(storyResult);
+
+  if (prefix === 'osa-') {
+    const candidate = serializeGateCandidate(storyResult);
+    expectCurrentOrBetter({
+      kind: 'snippet',
+      framework: 'web-components',
+      baseline: serializeLastRootElement(
+        readFileSync(join(testDir, `snippet-${exportName}.snapshot`), 'utf8')
+      ),
+      candidate,
+    });
+
+    const committedSnippet = readCommitted(snippetPath);
+    if (committedSnippet !== undefined) {
+      // Under `-u` the file snapshot rewrites itself, so this gate is what stops a regression from being recorded.
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'web-components',
+        baseline: serializeLastRootElement(committedSnippet),
+        candidate,
+      });
+    }
+  } else {
+    const committedSnippet = readCommitted(snippetPath);
+    if (committedSnippet !== undefined) {
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'web-components',
+        baseline: committedSnippet,
+        candidate: snippet,
+      });
+    }
+  }
+
+  await expect(snippet).toMatchFileSnapshot(snippetPath);
+}
 
 describe('web-components legacy baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
@@ -104,20 +163,12 @@ describe('web-components legacy baselines', () => {
       } as StoryContext<WebComponentsRenderer>;
       const storyRender = story.render ?? meta.render;
       const storyResult = storyRender ? storyRender(args) : defaultRender(args, context);
-      const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
-      const committedSnippet = existsSync(snippetPath)
-        ? readFileSync(snippetPath, 'utf8')
-        : undefined;
-      const snippet = renderStorySource(storyResult as WebComponentsRenderer['storyResult']);
-      if (committedSnippet !== undefined) {
-        expectCurrentOrBetter({
-          kind: 'snippet',
-          framework: 'web-components',
-          baseline: committedSnippet,
-          candidate: snippet,
-        });
-      }
-      await expect(snippet).toMatchFileSnapshot(snippetPath);
+      await recordSnippet(
+        '',
+        testDir,
+        exportName,
+        storyResult as WebComponentsRenderer['storyResult']
+      );
     }
 
     const snippetFilesOnDisk = readdirSync(testDir)
@@ -127,8 +178,22 @@ describe('web-components legacy baselines', () => {
       .map((exportName) => `snippet-${exportName}.snapshot`)
       .sort();
     expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+  });
+});
 
+describe('web-components default render with experimentalDocgenServer', () => {
+  beforeEach(() => {
     vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+  });
+
+  it.each(fixtureCases)('%s', async (fixtureCase) => {
+    const testDir = join(fixturesDir, fixtureCase);
+    const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
+    const { default: meta, ...stories } = storiesModule as { default: Meta } & Record<
+      string,
+      Story
+    >;
+    const tagName = meta.component;
     const defaultRenderStories = Object.entries(stories).filter(
       ([, story]) => !story.render && !meta.render
     );
@@ -138,29 +203,15 @@ describe('web-components legacy baselines', () => {
         id: `${fixtureCase}--${exportName}`,
         component: tagName,
       } as StoryContext<WebComponentsRenderer>;
-      const snippet = renderStorySource(
+      await recordSnippet(
+        'osa-',
+        testDir,
+        exportName,
         defaultRender(
           { ...meta.args, ...story.args },
           context
         ) as WebComponentsRenderer['storyResult']
       );
-      expectCurrentOrBetter({
-        kind: 'snippet',
-        framework: 'web-components',
-        baseline: readFileSync(join(testDir, `snippet-${exportName}.snapshot`), 'utf8'),
-        candidate: withoutLeadingStyle(snippet),
-      });
-
-      const osaSnippetPath = join(testDir, `osa-snippet-${exportName}.snapshot`);
-      if (existsSync(osaSnippetPath)) {
-        expectCurrentOrBetter({
-          kind: 'snippet',
-          framework: 'web-components',
-          baseline: withoutLeadingStyle(readFileSync(osaSnippetPath, 'utf8')),
-          candidate: withoutLeadingStyle(snippet),
-        });
-      }
-      await expect(snippet).toMatchFileSnapshot(osaSnippetPath);
     }
 
     const osaSnippetFilesOnDisk = readdirSync(testDir)

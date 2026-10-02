@@ -1,6 +1,5 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import { eventActionName } from './event-action-name.ts';
 import { deprecationMessage, namedItems, trimmedOrUndefined } from '../utils.ts';
 import type {
   ManifestAttribute,
@@ -16,7 +15,7 @@ import type {
   ManifestSlot,
 } from '../manifest/types.ts';
 import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
-import { ARG_KEY_SUFFIXES, type ArgKeySuffix } from '../../../arg-key-suffixes.ts';
+import { DEFAULT_SLOT_NAME, toArgKey } from '../../../arg-keys.ts';
 import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
 
 type ArgTypeCategory = 'attributes' | 'properties';
@@ -39,6 +38,12 @@ type ArgTypeFields = Omit<StrictInputType, 'name' | 'description' | 'table' | 'c
   table?: Omit<NonNullable<StrictInputType['table']>, 'category' | 'jsDocTags'>;
 };
 
+const NAMED_ENTRY_CATEGORIES: Record<'slots' | 'cssParts' | 'cssStates', TableCategory> = {
+  slots: 'slots',
+  cssParts: 'css shadow parts',
+  cssStates: 'css states',
+};
+
 interface ToArgTypeOptions {
   key: string;
   category: ArgTypeCategory;
@@ -48,9 +53,8 @@ interface ToArgTypeOptions {
 
 /**
  * Suffixed keys keep categories clear of attributes (the `@wc-toolkit/storybook-helpers`
- * convention); the attributes/properties spread last wins the clashes left, `on<Name>`
- * twins and bare `--x` names. The legacy runtime lets the twin win; here the declared API
- * wins on purpose. Within attributes and properties, property rows are written first and
+ * convention); the attributes/properties spread last wins the clashes left and bare `--x`
+ * names. Within attributes and properties, property rows are written first and
  * attribute rows last, so the same precedence holds in every input order.
  */
 export function mapArgTypes(
@@ -68,9 +72,9 @@ export function mapArgTypes(
     ...Object.fromEntries([
       ...events.flatMap((event) => eventEntries(event, typeProperty)),
       ...members.filter(isMethod).filter(isPublicMember).map(methodEntry),
-      ...slots.map((slot) => namedEntry(slot, ARG_KEY_SUFFIXES.slots, 'slots')),
-      ...cssParts.map((part) => namedEntry(part, ARG_KEY_SUFFIXES.cssParts, 'css shadow parts')),
-      ...cssStates.map((state) => namedEntry(state, ARG_KEY_SUFFIXES.cssStates, 'css states')),
+      ...slots.map((slot) => namedEntry(slot, 'slots')),
+      ...cssParts.map((part) => namedEntry(part, 'cssParts')),
+      ...cssStates.map((state) => namedEntry(state, 'cssStates')),
       ...cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
     ]),
     ...mapAttributesAndProperties(declaration, members, typeProperty),
@@ -152,31 +156,22 @@ function eventEntries(
   typeProperty: string
 ): Array<[string, StrictInputType]> {
   const text = readTypeText(event, typeProperty) ?? 'CustomEvent';
-  const actionName = eventActionName(event.name);
 
   return [
     [
-      `${event.name}${ARG_KEY_SUFFIXES.events}`,
+      toArgKey('events', event.name),
       memberArgType(event.name, [event], 'events', {
         type: { name: 'other', value: text },
         control: false,
         table: { type: { summary: text } },
       }),
     ],
-    [
-      actionName,
-      {
-        name: actionName,
-        action: { name: event.name },
-        table: { disable: true },
-      },
-    ],
   ];
 }
 
 function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
   return [
-    `${method.name}${ARG_KEY_SUFFIXES.methods}`,
+    toArgKey('methods', method.name),
     memberArgType(method.name, [method], 'methods', {
       type: { name: 'function' },
       table: { type: { summary: methodSignature(method) } },
@@ -186,11 +181,13 @@ function methodEntry(method: ManifestClassMethod): [string, StrictInputType] {
 
 function namedEntry(
   item: ManifestSlot | ManifestCssPart | ManifestCssCustomState,
-  suffix: ArgKeySuffix,
-  category: TableCategory
+  category: 'slots' | 'cssParts' | 'cssStates'
 ): [string, StrictInputType] {
-  const name = item.name || 'default';
-  return [`${name}${suffix}`, memberArgType(name, [item], category, { type: { name: 'string' } })];
+  const name = item.name || DEFAULT_SLOT_NAME;
+  return [
+    toArgKey(category, name),
+    memberArgType(name, [item], NAMED_ENTRY_CATEGORIES[category], { type: { name: 'string' } }),
+  ];
 }
 
 function cssPropertyEntry(
@@ -200,7 +197,7 @@ function cssPropertyEntry(
   const syntax = readCssPropertySyntax(property, typeProperty);
 
   return [
-    property.name,
+    toArgKey('cssProperties', property.name),
     memberArgType(property.name, [property], 'css custom properties', {
       ...cssCustomPropertyControl(syntax),
       table: {

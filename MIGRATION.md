@@ -1224,15 +1224,15 @@ render: (args) => html`<my-card>${unsafeHTML(args['actions-slot'])}</my-card>`,
 With `features.experimentalDocgenServer`, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
 It never reads argTypes or waits for docgen, so a story renders the same with or without the manifest, and in Vitest.
 
-| Arg key                                                | Binding                                                      |
-| ------------------------------------------------------ | ------------------------------------------------------------ |
-| `--name`                                               | CSS custom property, set inline                              |
-| in the element's `observedAttributes`, primitive value | attribute; `true` sets it empty, `false` leaves it out       |
-| a property of the element                              | property                                                     |
-| `<name>-event`, function value                         | event listener for `<name>`                                  |
-| `<name>-slot`, `default-slot`                          | HTML appended with `slot="<name>"`, or into the default slot |
-| `<name>-part`, `<name>-state`                          | `::part(<name>)` / `:state(<name>)` rule scoped to the story |
-| anything else                                          | property                                                     |
+| Arg key                                                     | Binding                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `--name`                                                    | CSS custom property, set inline                              |
+| a property of the element                                   | property                                                     |
+| observed by the element but not a property, primitive value | attribute; `true` sets it empty, `false` leaves it out       |
+| `<name>-event`, function value                              | event listener for `<name>`                                  |
+| `<name>-slot`, `default-slot`                               | HTML appended with `slot="<name>"`, or into the default slot |
+| `<name>-part`, `<name>-state`                               | `::part(<name>)` / `:state(<name>)` rule scoped to the story |
+| anything else                                               | property                                                     |
 
 Except for properties, `undefined`, `null` and `''` leave an arg unbound.
 
@@ -1253,7 +1253,7 @@ export const Default = {
 };
 ```
 
-Attributes declared on the element are now set with `setAttribute`, so the element receives the attribute's string form and converts it as it would from HTML.
+Keys the element only observes as attributes are set with `setAttribute`, so the element receives the string form and converts it as it would from HTML.
 
 The default render now returns a `DocumentFragment` with the element as its last child, so scoped part and state rules can come first.
 A decorator that calls element methods on the story result must read the element from the fragment:

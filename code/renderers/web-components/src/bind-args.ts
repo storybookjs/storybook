@@ -1,43 +1,31 @@
 import type { Args } from 'storybook/internal/types';
 
-import { ARG_KEY_SUFFIXES, type ArgKeySuffix } from './arg-key-suffixes.ts';
+import { DEFAULT_SLOT_NAME, parseArgKey, type ArgKeyCategory } from './arg-keys.ts';
 
-type SuffixBinder = (
-  element: HTMLElement,
-  name: string,
-  value: unknown,
-  styleRules: string[]
-) => void;
+type Binder = (element: HTMLElement, name: string, value: unknown) => string | undefined;
 
-const DEFAULT_SLOT_NAME = 'default';
-
-const SUFFIX_BINDERS: Record<ArgKeySuffix, SuffixBinder> = {
-  [ARG_KEY_SUFFIXES.events]: (element, name, value) => {
+const BINDERS: Record<Exclude<ArgKeyCategory, 'cssProperties'>, Binder> = {
+  events: (element, name, value) => {
     if (typeof value === 'function') {
       element.addEventListener(name, value as EventListener);
     }
   },
-  [ARG_KEY_SUFFIXES.methods]: () => {},
-  [ARG_KEY_SUFFIXES.slots]: bindSlot,
-  [ARG_KEY_SUFFIXES.cssParts]: (element, name, value, styleRules) =>
-    pushStyleRule(styleRules, `${element.localName}::part(${name})`, value),
-  [ARG_KEY_SUFFIXES.cssStates]: (element, name, value, styleRules) =>
-    pushStyleRule(styleRules, `${element.localName}:state(${name})`, value),
+  methods: () => undefined,
+  slots: bindSlot,
+  cssParts: (element, name, value) => styleRule(`${element.localName}::part(${name})`, value),
+  cssStates: (element, name, value) => styleRule(`${element.localName}:state(${name})`, value),
 };
 
-// Runtime attribute/property checks run before suffixes, so a declared attribute such as `has-slot` wins, as in the mapper.
-export function bindArgs(element: HTMLElement, args: Args): DocumentFragment {
+// Element properties win over attributes so booleans that default to `true` and empty strings reach the element; runtime checks run before suffixes so a declared attribute such as `has-slot` wins, as in the mapper.
+export function bindArgs(element: HTMLElement, args: Args): string[] {
   const observedAttributes = observedAttributesOf(element);
   const styleRules: string[] = [];
 
   for (const [key, value] of Object.entries(args)) {
-    if (key.startsWith('--')) {
-      bindCssCustomProperty(element, key, value);
-      continue;
-    }
+    const parsedKey = parseArgKey(key);
 
-    if (observedAttributes.has(key) && isPrimitive(value)) {
-      bindAttribute(element, key, value);
+    if (parsedKey?.category === 'cssProperties') {
+      bindCssCustomProperty(element, key, value);
       continue;
     }
 
@@ -46,26 +34,23 @@ export function bindArgs(element: HTMLElement, args: Args): DocumentFragment {
       continue;
     }
 
-    const suffixBinding = Object.entries(SUFFIX_BINDERS).find(([suffix]) => key.endsWith(suffix));
-    if (suffixBinding) {
-      const [suffix, bind] = suffixBinding;
-      bind(element, key.slice(0, -suffix.length), value, styleRules);
+    if (observedAttributes.has(key) && isPrimitive(value)) {
+      bindAttribute(element, key, value);
+      continue;
+    }
+
+    if (parsedKey) {
+      const rule = BINDERS[parsedKey.category](element, parsedKey.name, value);
+      if (rule) {
+        styleRules.push(rule);
+      }
       continue;
     }
 
     assignProperty(element, key, value);
   }
 
-  const fragment = document.createDocumentFragment();
-  if (styleRules.length > 0) {
-    // A prelude-less `@scope` limits rules to the `<style>`'s parent, and `:scope > style +` to the element right after it, so sibling instances and other stories stay unstyled.
-    const style = document.createElement('style');
-    style.textContent = `@scope {\n  ${styleRules.join('\n  ')}\n}`;
-    fragment.append(style);
-  }
-  fragment.append(element);
-
-  return fragment;
+  return styleRules;
 }
 
 function observedAttributesOf(element: HTMLElement): Set<string> {
@@ -102,9 +87,9 @@ function bindCssCustomProperty(element: HTMLElement, name: string, value: unknow
   }
 }
 
-function bindSlot(element: HTMLElement, name: string, value: unknown): void {
+function bindSlot(element: HTMLElement, name: string, value: unknown): undefined {
   if (isUnset(value)) {
-    return;
+    return undefined;
   }
 
   const template = document.createElement('template');
@@ -113,7 +98,7 @@ function bindSlot(element: HTMLElement, name: string, value: unknown): void {
 
   if (name === DEFAULT_SLOT_NAME) {
     element.append(...nodes);
-    return;
+    return undefined;
   }
 
   for (const node of nodes) {
@@ -123,6 +108,8 @@ function bindSlot(element: HTMLElement, name: string, value: unknown): void {
       element.append(slottedNode);
     }
   }
+
+  return undefined;
 }
 
 function toNamedSlotNode(node: ChildNode, name: string): ChildNode | undefined {
@@ -141,8 +128,10 @@ function toNamedSlotNode(node: ChildNode, name: string): ChildNode | undefined {
   return undefined;
 }
 
-function pushStyleRule(styleRules: string[], selector: string, value: unknown): void {
-  if (!isUnset(value)) {
-    styleRules.push(`:scope > style + ${selector} { ${String(value)} }`);
+function styleRule(selector: string, value: unknown): string | undefined {
+  if (isUnset(value)) {
+    return undefined;
   }
+
+  return `${selector} { ${String(value)} }`;
 }

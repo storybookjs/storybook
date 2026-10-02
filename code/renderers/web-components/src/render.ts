@@ -27,7 +27,17 @@ export const render: ArgsStoryFn<WebComponentsRenderer> = (args, context) => {
     return Object.assign(element, args);
   }
 
-  return bindArgs(element, args);
+  const styleRules = bindArgs(element, args);
+  const fragment = document.createDocumentFragment();
+  if (styleRules.length > 0) {
+    // A prelude-less `@scope` limits rules to the `<style>`'s parent, and `:scope > style +` to the element right after it, so sibling instances and other stories stay unstyled.
+    const style = document.createElement('style');
+    style.textContent = `@scope {\n  ${styleRules.map((rule) => `:scope > style + ${rule}`).join('\n  ')}\n}`;
+    fragment.append(style);
+  }
+  fragment.append(element);
+
+  return fragment;
 };
 
 export function renderToCanvas(

@@ -44,11 +44,24 @@ describe('render', () => {
 
     const result = render({ label: 'x', 'my-change-event': handler }, CONTEXT);
     expect(result).toBeInstanceOf(DocumentFragment);
-    const element = (result as DocumentFragment).firstElementChild as HTMLElement;
+    const element = (result as DocumentFragment).lastElementChild as HTMLElement;
     const event = new CustomEvent('my-change');
     element.dispatchEvent(event);
 
     expect(element.getAttribute('label')).toBe('x');
     expect(handler).toHaveBeenCalledWith(event);
+  });
+
+  it('returns a fragment with scoped style rules before the element when the flag is on', () => {
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+
+    const result = render({ 'panel-part': 'color: red;' }, CONTEXT) as DocumentFragment;
+    const host = document.createElement('div');
+    host.append(result);
+
+    expect(host.innerHTML).toBe(
+      '<style>@scope {\n  :scope > style + x-card::part(panel) { color: red; }\n}</style><x-card></x-card>'
+    );
+    expect(host.lastElementChild?.localName).toBe(X_CARD_TAG);
   });
 });

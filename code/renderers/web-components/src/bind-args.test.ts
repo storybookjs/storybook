@@ -8,9 +8,13 @@ import { bindArgs } from './bind-args.ts';
 const X_DEMO_TAG = 'x-demo';
 
 class XDemo extends HTMLElement {
-  static observedAttributes = ['label', 'count', 'is-open', 'disabled', 'has-slot'];
+  static observedAttributes = ['label', 'count', 'is-open', 'disabled', 'has-slot', 'open'];
 
   items: string[] = [];
+
+  open = true;
+
+  text = 'initial';
 }
 
 if (!customElements.get(X_DEMO_TAG)) {
@@ -21,8 +25,8 @@ type BindArgsCase = {
   name: string;
   args: Args;
   expected: string;
+  expectedRules?: string[];
   expectedProperties?: Record<string, unknown>;
-  dispatch?: (element: HTMLElement, args: Args) => void;
 };
 
 describe('bindArgs', () => {
@@ -55,6 +59,18 @@ describe('bindArgs', () => {
       expectedProperties: { items: ['a', 'b'] },
     },
     {
+      name: 'assigns false to a boolean property that is also observed',
+      args: { open: false },
+      expected: '<x-demo></x-demo>',
+      expectedProperties: { open: false },
+    },
+    {
+      name: 'assigns an empty string to a string property',
+      args: { text: '' },
+      expected: '<x-demo></x-demo>',
+      expectedProperties: { text: '' },
+    },
+    {
       name: 'assigns unknown arg keys as properties',
       args: { customValue: 42 },
       expected: '<x-demo></x-demo>',
@@ -80,8 +96,8 @@ describe('bindArgs', () => {
         'panel-part': 'color: red;',
         'active-state': 'border: 0;',
       },
-      expected:
-        '<style>@scope {\n  :scope > style + x-demo::part(panel) { color: red; }\n  :scope > style + x-demo:state(active) { border: 0; }\n}</style><x-demo></x-demo>',
+      expected: '<x-demo></x-demo>',
+      expectedRules: ['x-demo::part(panel) { color: red; }', 'x-demo:state(active) { border: 0; }'],
     },
     {
       name: 'skips null and empty slot, CSS custom property, part and state args',
@@ -95,23 +111,6 @@ describe('bindArgs', () => {
       expected: '<x-demo></x-demo>',
     },
     {
-      name: 'binds function-valued event args',
-      args: { 'my-change-event': vi.fn() },
-      expected: '<x-demo></x-demo>',
-      dispatch: (element, args) => {
-        const event = new CustomEvent('my-change');
-        element.dispatchEvent(event);
-
-        expect(args['my-change-event']).toHaveBeenCalledWith(event);
-      },
-    },
-    {
-      name: 'does not bind or assign non-function event args',
-      args: { 'my-change-event': 'handler-name' },
-      expected: '<x-demo></x-demo>',
-      expectedProperties: { 'my-change-event': undefined },
-    },
-    {
       name: 'does not assign method args',
       args: { 'reset-method': vi.fn() },
       expected: '<x-demo></x-demo>',
@@ -122,33 +121,46 @@ describe('bindArgs', () => {
       args: { 'has-slot': 'yes' },
       expected: '<x-demo has-slot="yes"></x-demo>',
     },
-    {
-      name: 'assigns action twin keys as properties without binding listeners',
-      args: { onMyChange: vi.fn() },
-      expected: '<x-demo></x-demo>',
-      dispatch: (element, args) => {
-        element.dispatchEvent(new CustomEvent('my-change'));
-
-        expect((element as HTMLElement & { onMyChange?: unknown }).onMyChange).toBe(
-          args.onMyChange
-        );
-        expect(args.onMyChange).not.toHaveBeenCalled();
-      },
-    },
-  ])('$name', ({ args, expected, expectedProperties = {}, dispatch }) => {
+  ])('$name', ({ args, expected, expectedRules = [], expectedProperties = {} }) => {
     const element = document.createElement(X_DEMO_TAG);
     const result = bindArgs(element, args);
-    const host = document.createElement('div');
-    host.append(result);
 
-    expect(host.innerHTML).toBe(expected);
+    expect(element.outerHTML).toBe(expected);
+    expect(result).toEqual(expectedRules);
     for (const [key, value] of Object.entries(expectedProperties)) {
       expect((element as HTMLElement & Record<string, unknown>)[key]).toEqual(value);
     }
-    dispatch?.(element, args);
   });
 
-  it('returns a fragment even without style rules', () => {
-    expect(bindArgs(document.createElement(X_DEMO_TAG), {})).toBeInstanceOf(DocumentFragment);
+  it('binds function-valued event args', () => {
+    const handler = vi.fn();
+    const element = document.createElement(X_DEMO_TAG);
+    bindArgs(element, { 'my-change-event': handler });
+    const event = new CustomEvent('my-change');
+    element.dispatchEvent(event);
+
+    expect(handler).toHaveBeenCalledWith(event);
+  });
+
+  it('does not bind or assign non-function event args', () => {
+    const element = document.createElement(X_DEMO_TAG);
+    bindArgs(element, { 'my-change-event': 'handler-name' });
+    element.dispatchEvent(new CustomEvent('my-change'));
+
+    expect((element as HTMLElement & Record<string, unknown>)['my-change-event']).toBeUndefined();
+  });
+
+  it('assigns action twin keys as properties without binding listeners', () => {
+    const handler = vi.fn();
+    const element = document.createElement(X_DEMO_TAG);
+    bindArgs(element, { onMyChange: handler });
+    element.dispatchEvent(new CustomEvent('my-change'));
+
+    expect((element as HTMLElement & { onMyChange?: unknown }).onMyChange).toBe(handler);
+    expect(handler).not.toHaveBeenCalled();
+  });
+
+  it('returns an empty rules list without style rules', () => {
+    expect(bindArgs(document.createElement(X_DEMO_TAG), {})).toEqual([]);
   });
 });

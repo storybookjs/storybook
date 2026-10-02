@@ -91,6 +91,27 @@ describe('tag-filter-api', () => {
     expect(story).toContain("api['experimental_setFilters'](() => true);");
   });
 
+  it('renames member calls and destructuring, not object keys', async () => {
+    vol.fromJSON({
+      [mainConfigPath]: 'export default { stories: [] };',
+      [managerConfigPath]: 'export {};',
+      [storyPath]: [
+        'const config = { experimental_setFilter: 1, setFilter: 2 };',
+        'api.experimental_setFilter("x", () => true);',
+        'api?.experimental_setFilters({});',
+        'const { experimental_setFilter } = api;',
+      ].join('\n'),
+    });
+
+    const failures = await runFix(tagFilterApi, { ...options, result: {} });
+    expect(failures).toEqual([]);
+    const story = fs.readFileSync(storyPath, 'utf8') as string;
+    expect(story).toContain('const config = { experimental_setFilter: 1, setFilter: 2 };');
+    expect(story).toContain('api.setFilter("x", () => true);');
+    expect(story).toContain('api?.setFilters({});');
+    expect(story).toContain('const { setFilter } = api;');
+  });
+
   it('keeps a story hidden when only the deprecated alias is true', async () => {
     vol.fromJSON({
       [mainConfigPath]:

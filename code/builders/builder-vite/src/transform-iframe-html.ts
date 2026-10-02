@@ -1,8 +1,9 @@
 import { createHash } from 'node:crypto';
 
-import { getProjectRoot, normalizeStories } from 'storybook/internal/common';
+import { normalizeStories } from 'storybook/internal/common';
 import type { DocsOptions, Options, TagsOptions } from 'storybook/internal/types';
 
+import { createProjectRootRemover } from './utils/without-project-root.ts';
 import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
@@ -72,7 +73,5 @@ export async function transformIframeHtml(html: string, options: Options) {
 // Hashes the injected values instead of the final HTML, which also holds the hashed chunk file names
 export async function getPreviewConfigHash(options: Options) {
   const replacements = JSON.stringify(await getIframeHtmlReplacements(options));
-  return createHash('sha256')
-    .update(replacements.replaceAll(getProjectRoot(), '<projectRoot>'))
-    .digest('hex');
+  return createHash('sha256').update(createProjectRootRemover()(replacements)).digest('hex');
 }

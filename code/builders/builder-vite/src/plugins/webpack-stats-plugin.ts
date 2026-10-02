@@ -2,7 +2,6 @@
 import { createHash } from 'node:crypto';
 import { relative } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
 import type { BuilderStats, Options } from 'storybook/internal/types';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -10,6 +9,7 @@ import slash from 'slash';
 import type { Plugin } from 'vite';
 
 import { getPreviewConfigHash } from '../transform-iframe-html.ts';
+import { createProjectRootRemover } from '../utils/without-project-root.ts';
 import {
   SB_VIRTUAL_FILES,
   getOriginalVirtualModuleId,
@@ -127,10 +127,8 @@ export function pluginWebpackStats({
   }
 
   const statsMap = new Map<string, Module>();
-  const projectRoot = getProjectRoot();
-  const projectRootSpellings = [
-    ...new Set([slash(projectRoot), projectRoot, JSON.stringify(projectRoot).slice(1, -1)]),
-  ];
+  // Module code still holds absolute import ids, which the bundler makes relative later
+  const withoutProjectRoot = createProjectRootRemover();
   const compiledCssById = new Map<string, string>();
   // Query variants of one file (`a.css`, `a.css?inline`) share a stats module, so it gets one hash per id
   const outputHashesByModule = new Map<string, Map<string, string>>();
@@ -138,14 +136,6 @@ export function pluginWebpackStats({
   const defineValues = new Map<string, string>();
   let defineKeysRe: RegExp | undefined;
   let previewConfigHash: string | undefined;
-
-  // Module code still holds absolute import ids, which the bundler makes relative later
-  function withoutProjectRoot(code: string) {
-    return projectRootSpellings.reduce(
-      (result, root) => result.replaceAll(root, '<projectRoot>'),
-      code
-    );
-  }
 
   // Rolldown replaces `define` keys after `moduleParsed`, so the code alone misses their values
   function getUsedDefines(code: string) {

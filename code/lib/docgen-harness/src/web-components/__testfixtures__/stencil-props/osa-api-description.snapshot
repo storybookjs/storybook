@@ -1,0 +1,66 @@
+## Attributes
+
+```
+export type StencilPropsAttributes = {
+  /**
+   * Current rating.
+   *
+   * @default 0
+   */
+  value?: number;
+  /**
+   * Maximum number of stars.
+   *
+   * @default 5
+   */
+  max?: number;
+  /**
+   * Visual variant.
+   *
+   * @default 'full'
+   */
+  variant?: 'compact' | 'full';
+  /** Attribute name differs from the field. */
+  'aria-label-text'?: string | undefined; // property: labelText
+  /**
+   * Complex prop, kept as an object.
+   *
+   * @default {}
+   */
+  labels?: Record<number, string>;
+}
+```
+
+## Properties
+
+```
+export type StencilPropsProperties = {
+  /**
+   * Internal hover state.
+   *
+   * @default -1
+   */
+  hovered?: number;
+}
+```
+
+## Events
+
+```
+export type StencilPropsEvents = {
+  /** Emitted when the rating changes. */
+  ratingChange: EventEmitter<number>;
+  /** Emitted under a custom event name. */
+  'stencil-reset': EventEmitter<void>;
+}
+```
+
+## Methods
+
+```
+export type StencilPropsMethods = {
+  /** Resets the rating to zero. */
+  clear(): Promise<void>;
+  render(): void;
+}
+```

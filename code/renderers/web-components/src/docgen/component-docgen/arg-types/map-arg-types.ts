@@ -1,19 +1,19 @@
 import type { StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
-import { deprecationMessage, namedItems, trimmedOrUndefined } from '../utils.ts';
+import { deprecationMessage, firstValue, trimmedOrUndefined } from '../utils.ts';
+import { classifyDeclaration, type DeclarationApi } from '../manifest/declaration-api.ts';
 import type {
   ManifestAttribute,
   ManifestClassField,
   ManifestClassMethod,
-  ManifestClassMember,
   ManifestCssCustomProperty,
   ManifestCssCustomState,
   ManifestCssPart,
   ManifestDeclaration,
   ManifestEvent,
-  ManifestParameter,
   ManifestSlot,
 } from '../manifest/types.ts';
+import { formatParameters } from '../manifest/members.ts';
 import { readCssPropertySyntax, readTypeText } from './alt-type.ts';
 import { DEFAULT_SLOT_NAME, toArgKey } from '../../../arg-keys.ts';
 import { parseTypeText, type ServiceControl } from './parse-type-text.ts';
@@ -61,59 +61,38 @@ export function mapArgTypes(
   declaration: ManifestDeclaration,
   typeProperty: string
 ): StrictArgTypes {
-  const events = namedItems(declaration.events);
-  const members = namedItems(declaration.members);
-  const slots = namedItems(declaration.slots);
-  const cssParts = namedItems(declaration.cssParts);
-  const cssStates = namedItems(declaration.cssStates);
-  const cssProperties = namedItems(declaration.cssProperties);
+  const api = classifyDeclaration(declaration);
 
   return {
     ...Object.fromEntries([
-      ...events.flatMap((event) => eventEntries(event, typeProperty)),
-      ...members.filter(isMethod).filter(isPublicMember).map(methodEntry),
-      ...slots.map((slot) => namedEntry(slot, 'slots')),
-      ...cssParts.map((part) => namedEntry(part, 'cssParts')),
-      ...cssStates.map((state) => namedEntry(state, 'cssStates')),
-      ...cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
+      ...api.events.flatMap((event) => eventEntries(event, typeProperty)),
+      ...api.methods.map(methodEntry),
+      ...api.slots.map((slot) => namedEntry(slot, 'slots')),
+      ...api.cssParts.map((part) => namedEntry(part, 'cssParts')),
+      ...api.cssStates.map((state) => namedEntry(state, 'cssStates')),
+      ...api.cssProperties.map((property) => cssPropertyEntry(property, typeProperty)),
     ]),
-    ...mapAttributesAndProperties(declaration, members, typeProperty),
+    ...mapAttributesAndProperties(api, typeProperty),
   };
 }
 
-function mapAttributesAndProperties(
-  declaration: ManifestDeclaration,
-  members: ManifestClassMember[],
-  typeProperty: string
-): StrictArgTypes {
+function mapAttributesAndProperties(api: DeclarationApi, typeProperty: string): StrictArgTypes {
   const argTypes: StrictArgTypes = {};
-  const fields = members.filter(isField);
-  const publicFields = fields.filter(isPublicField);
-  const attributes = namedItems(declaration.attributes);
+  const properties = api.fields.filter(
+    (field) => !api.attributes.some(({ attribute }) => attribute.name === field.name)
+  );
 
-  for (const field of publicFields) {
-    if (attributes.some((attribute) => attribute.name === field.name)) {
-      continue;
-    }
-
+  for (const field of properties) {
+    const attribute = api.attributes.find(({ field: backingField }) => backingField === field);
     argTypes[field.name] = toArgType({
       key: field.name,
       category: 'properties',
-      sources: sourcesForField(field, attributes),
+      sources: attribute ? [field, attribute.attribute] : [field],
       typeProperty,
     });
   }
 
-  for (const attribute of attributes) {
-    // Attributes backed by non-public fields are dropped with their field.
-    const field =
-      attribute.fieldName === undefined
-        ? undefined
-        : fields.find((item) => item.name === attribute.fieldName);
-    if (field && !isPublicField(field)) {
-      continue;
-    }
-
+  for (const { attribute, field } of api.attributes) {
     argTypes[attribute.name] = toArgType({
       key: attribute.name,
       category: 'attributes',
@@ -238,40 +217,10 @@ function docFields(sources: DocSource[]): { description?: string; deprecated?: s
   };
 }
 
-function sourcesForField(
-  field: ManifestClassField,
-  attributes: ManifestAttribute[]
-): ArgTypeSource[] {
-  const attribute = attributes.find((item) => item.fieldName === field.name);
-  return attribute ? [field, attribute] : [field];
-}
-
-function firstValue<TSource, TValue>(
-  sources: TSource[],
-  read: (source: TSource) => TValue | undefined
-): TValue | undefined {
-  for (const source of sources) {
-    const value = read(source);
-    if (value !== undefined) {
-      return value;
-    }
-  }
-  return undefined;
-}
-
 function methodSignature(method: ManifestClassMethod): string {
-  const params = (method.parameters ?? []).map(formatParameter).join(', ');
+  const params = formatParameters(method);
   const returnType = method.return?.type?.text;
   return returnType ? `(${params}) => ${returnType}` : `(${params})`;
-}
-
-function formatParameter(parameter: ManifestParameter): string {
-  const restPrefix = parameter.rest ? '...' : '';
-  const optionalSuffix = parameter.optional ? '?' : '';
-  const typeText = parameter.type?.text ? `: ${parameter.type.text}` : '';
-  const defaultText = parameter.default !== undefined ? ` = ${parameter.default}` : '';
-
-  return `${restPrefix}${parameter.name}${optionalSuffix}${typeText}${defaultText}`;
 }
 
 function cssCustomPropertyControl(
@@ -286,26 +235,4 @@ function cssCustomPropertyControl(
     return { type: { name: 'number' } };
   }
   return { type: { name: 'string' } };
-}
-
-/** Public, non-static, non-private field. */
-export function isPublicField(member: ManifestClassMember): member is ManifestClassField {
-  return isField(member) && isPublicMember(member);
-}
-
-function isPublicMember(member: ManifestClassMember): boolean {
-  return (
-    member.privacy !== 'private' &&
-    member.privacy !== 'protected' &&
-    member.static !== true &&
-    !member.name.startsWith('#')
-  );
-}
-
-function isField(member: ManifestClassMember): member is ManifestClassField {
-  return member.kind === 'field';
-}
-
-function isMethod(member: ManifestClassMember): member is ManifestClassMethod {
-  return member.kind === 'method';
 }

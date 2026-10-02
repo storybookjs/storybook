@@ -1,5 +1,7 @@
 import type { PresetProperty } from 'storybook/internal/types';
 
+import { assertSvelteCsfAddonNotInstalled } from './addon-check.ts';
+import { svelteCsf } from './plugins/svelte-csf.ts';
 import { svelteDocgen } from './plugins/svelte-docgen.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
 import { handleSvelteKit } from './utils.ts';
@@ -11,9 +13,11 @@ export const core: PresetProperty<'core'> = {
 
 export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (config, options) => {
   const { plugins = [] } = config;
+  const framework = await options.presets.apply('framework');
+
+  assertSvelteCsfAddonNotInstalled({ presetsList: options.presetsList, framework });
 
   // Get framework options to check if docgen is disabled
-  const framework = await options.presets.apply('framework');
   const frameworkOptions: FrameworkOptions =
     typeof framework === 'string' ? {} : (framework.options ?? {});
 
@@ -23,6 +27,7 @@ export const viteFinal: NonNullable<StorybookConfig['viteFinal']> = async (confi
   }
 
   await handleSvelteKit(plugins, options);
+  plugins.push(svelteCsf());
 
   return {
     ...config,

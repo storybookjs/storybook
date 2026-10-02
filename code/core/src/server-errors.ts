@@ -53,6 +53,7 @@ export enum Category {
   FRAMEWORK_VUE3_WEBPACK5 = 'FRAMEWORK_VUE3-WEBPACK5',
   FRAMEWORK_WEB_COMPONENTS_VITE = 'FRAMEWORK_WEB-COMPONENTS-VITE',
   FRAMEWORK_WEB_COMPONENTS_WEBPACK5 = 'FRAMEWORK_WEB-COMPONENTS-WEBPACK5',
+  RENDERER_SVELTE = 'RENDERER_SVELTE',
   RENDERER_WEB_COMPONENTS = 'RENDERER_WEB-COMPONENTS',
 }
 
@@ -738,6 +739,32 @@ export class SvelteViteWithSvelteKitError extends StorybookError {
       message: dedent`
         We've detected a SvelteKit project using the @storybook/svelte-vite framework, which is not supported.
         Please use the @storybook/sveltekit framework instead.`,
+    });
+  }
+}
+
+export class SvelteCsfAddonInstalledError extends StorybookError {
+  constructor(public data: { frameworkPackage: string | undefined; legacyTemplate: boolean }) {
+    super({
+      name: 'SvelteCsfAddonInstalledError',
+      category: Category.RENDERER_SVELTE,
+      code: 1,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#svelte-csf-is-built-into-the-svelte-frameworks',
+      message: [
+        dedent`
+          Svelte CSF is built into Storybook's Svelte frameworks, so the @storybook/addon-svelte-csf addon is no longer needed.
+          Remove it from "addons" in your main config and from your dependencies, and import defineMeta from ${
+            data.frameworkPackage ? `"${data.frameworkPackage}"` : 'your framework package'
+          }.
+          Run "npx storybook automigrate" to do this for you.`,
+        data.legacyTemplate
+          ? dedent`
+              Your addon config sets "legacyTemplate: true". Storybook 11 removed the legacy Svelte CSF syntax (<Meta>, export const meta and <Template>), so migrate those stories to defineMeta first.`
+          : undefined,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     });
   }
 }

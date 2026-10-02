@@ -1,5 +1,5 @@
 import { findDefineMetaImport } from '../../../utils/import-source.ts';
-import type { ProgramNode } from 'rollup';
+import type { ParseAst } from 'rollup';
 import type { Visitors } from 'zimmerframe';
 
 import type { ESTreeAST } from '../../ast.ts';
@@ -49,7 +49,8 @@ const AST_NODES_NAMES = {
 } as const;
 
 interface Params {
-  ast: ESTreeAST.Program | ProgramNode;
+  // Rollup's AST has its own copy of the ESTree types
+  ast: ESTreeAST.Program | ReturnType<ParseAst>;
   filename?: string;
 }
 

@@ -156,12 +156,12 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 
 The Svelte harness records two snippet paths because Storybook currently has two production sources:
 
-- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by the published `@storybook/addon-svelte-csf` package pinned in devDependencies (5.1.2).
-  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the addon's runtime.
+- `snippet-<Story>.snapshot` is produced from `input.stories.svelte` by Svelte CSF in `@storybook/svelte`.
+  The recorder mounts the composed story and captures the `SNIPPET_RENDERED` channel event emitted by the Svelte CSF runtime.
 - `plain-csf-snippet-<Story>.snapshot` is produced from optional `input.stories.ts` files by the Svelte renderer's legacy `generateSvelteSource(component, args, argTypes, null)` path.
-`story-descriptions.snapshot` records the docs description parameters that addon-svelte-csf creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
+`story-descriptions.snapshot` records the docs description parameters that Svelte CSF creates from JSDoc above `defineMeta` and HTML comments above `<Story>`.
 
-`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the addon's own indexer from `input.stories.svelte`.
+`svelte-osa-baselines.test.ts` drives the `@storybook/svelte` docgen provider directly in Node, with index entries built by the Svelte CSF indexer from `input.stories.svelte`.
 It records `osa-argtypes.snapshot`, `osa-payload.snapshot`, and `osa-description.snapshot` even while the provider returns nothing, so each provider PR shows its progress as a snapshot diff; `osa-argtypes.snapshot` is ratcheted against its own previous recording.
 Parity with the legacy `argtypes.snapshot` is a per-fixture `it.fails` red marker in the same file: when one turns red, add the fixture to `LEGACY_PARITY`, which makes the legacy comparison a hard requirement for it.
 

@@ -46,6 +46,17 @@ function sha256(content: string | Uint8Array) {
   return createHash('sha256').update(content).digest('hex');
 }
 
+const PROPERTY_ACCESS_RE = /^\s*\??\.\s*([\w$]+)/;
+
+function parseJsonObject(text: string | undefined): Record<string, unknown> | undefined {
+  try {
+    const value = text === undefined ? undefined : JSON.parse(text);
+    return value && typeof value === 'object' && !Array.isArray(value) ? value : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function escapeRegExp(text: string) {
   return text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -139,8 +150,24 @@ export function pluginWebpackStats({
 
   // Rolldown replaces `define` keys after `moduleParsed`, so the code alone misses their values
   function getUsedDefines(code: string) {
-    const keys = [...new Set(defineKeysRe ? code.match(defineKeysRe) : [])].sort();
-    return keys.map((key) => `\n${key}=${defineValues.get(key)}`).join('');
+    const used = new Map<string, string | undefined>();
+    for (const match of defineKeysRe ? code.matchAll(defineKeysRe) : []) {
+      const key = match[0];
+      const value = defineValues.get(key);
+      const end = match.index + key.length;
+      const property = PROPERTY_ACCESS_RE.exec(code.slice(end, end + 200))?.[1];
+      // Reading one property of an object define, like `import.meta.env.UNSET`, uses only that value
+      const object = property ? parseJsonObject(value) : undefined;
+      if (property && object) {
+        used.set(`${key}.${property}`, JSON.stringify(object[property]));
+      } else {
+        used.set(key, value);
+      }
+    }
+    return [...used]
+      .sort()
+      .map(([key, value]) => `\n${key}=${value}`)
+      .join('');
   }
 
   function setOutputHash(id: string, code: string) {

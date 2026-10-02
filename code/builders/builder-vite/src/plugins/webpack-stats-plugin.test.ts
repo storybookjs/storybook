@@ -102,6 +102,19 @@ describe('pluginWebpackStats', () => {
     expect(second['./b.js']).toBe(first['./b.js']);
   });
 
+  it('hashes only the property a module reads from an object define', async () => {
+    const files = {
+      'reads-unset.js': { code: 'export const a = import.meta.env.VITEST_STORYBOOK;' },
+      'reads-object.js': { code: 'export const { STORYBOOK_FLAG } = import.meta.env;' },
+    };
+    const env = (flag: string) => ({ 'import.meta.env': JSON.stringify({ STORYBOOK_FLAG: flag }) });
+    const first = await getModuleHashes(files, { define: env('a') });
+    const second = await getModuleHashes(files, { define: env('b') });
+
+    expect(second['./reads-unset.js']).toBe(first['./reads-unset.js']);
+    expect(second['./reads-object.js']).not.toBe(first['./reads-object.js']);
+  });
+
   it('ignores the absolute project root in module code', async () => {
     vi.mocked(getProjectRoot).mockReturnValue('/first');
     const first = await getModuleHashes({ 'a.js': { code: 'import "/first/node_modules/b.js";' } });

@@ -106,8 +106,17 @@ describe('combineTags', () => {
       ['a', 'b', 'b'],
       ['a', 'b'],
     ],
-    [['a', 'b', '!b'], ['a']],
+    [
+      ['a', 'b', '!b'],
+      ['a', '!b'],
+    ],
     [['b', '!b', 'b'], ['b']],
+    [['!b', 'b'], ['b']],
+    [
+      ['!a', '!b', 'c'],
+      ['!a', '!b', 'c'],
+    ],
+    [['a', '!a', '!a'], ['!a']],
   ])('combineTags(%o) -> %o', (tags, expected) => {
     expect(combineTags(...tags)).toEqual(expected);
   });

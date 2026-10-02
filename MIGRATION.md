@@ -1236,7 +1236,7 @@ It never reads argTypes or waits for docgen, so a story renders the same with or
 
 Except for properties, `undefined`, `null` and `''` leave an arg unbound.
 
-The element must be defined before the story renders; otherwise its attributes and properties cannot be read, and args fall back to properties.
+An element registered after the story renders, for example by an autoloader or a lazy import, cannot be inspected, so its plain keys fall back to properties; suffixed keys still bind.
 
 The default render does not log events on its own.
 Pass a function for each event you want in the Actions panel, which also lets a `play` function assert it:

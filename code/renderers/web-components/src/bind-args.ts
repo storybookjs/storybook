@@ -58,7 +58,7 @@ export function bindArgs(element: HTMLElement, args: Args): DocumentFragment {
 
   const fragment = document.createDocumentFragment();
   if (styleRules.length > 0) {
-    // A prelude-less `@scope` limits rules to the `<style>`'s parent, so stories sharing a page do not style each other.
+    // A prelude-less `@scope` limits rules to the `<style>`'s parent, and `:scope > style +` to the element right after it, so sibling instances and other stories stay unstyled.
     const style = document.createElement('style');
     style.textContent = `@scope {\n  ${styleRules.join('\n  ')}\n}`;
     fragment.append(style);
@@ -143,6 +143,6 @@ function toNamedSlotNode(node: ChildNode, name: string): ChildNode | undefined {
 
 function pushStyleRule(styleRules: string[], selector: string, value: unknown): void {
   if (!isUnset(value)) {
-    styleRules.push(`${selector} { ${String(value)} }`);
+    styleRules.push(`:scope > style + ${selector} { ${String(value)} }`);
   }
 }

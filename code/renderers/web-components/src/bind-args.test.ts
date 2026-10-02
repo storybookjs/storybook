@@ -81,7 +81,7 @@ describe('bindArgs', () => {
         'active-state': 'border: 0;',
       },
       expected:
-        '<style>@scope {\n  x-demo::part(panel) { color: red; }\n  x-demo:state(active) { border: 0; }\n}</style><x-demo></x-demo>',
+        '<style>@scope {\n  :scope > style + x-demo::part(panel) { color: red; }\n  :scope > style + x-demo:state(active) { border: 0; }\n}</style><x-demo></x-demo>',
     },
     {
       name: 'skips null and empty slot, CSS custom property, part and state args',

@@ -260,9 +260,8 @@ describe('UserPreferencesCommand', () => {
 
       expect(prompt.confirm).toHaveBeenCalledWith(
         expect.objectContaining({
-          message: expect.stringContaining(
-            'Would you like to install AI features (MCP addon and prompt suggestions)?'
-          ),
+          message: 'Do you want AI features, like skills and prompts, in your Storybook?',
+          initialValue: true,
         }),
         expect.objectContaining({ onCancel: expect.any(Function) })
       );

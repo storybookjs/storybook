@@ -1,6 +1,6 @@
 import { resolve } from 'node:path';
 
-import { ProjectType, installSkills } from 'storybook/internal/cli';
+import { ProjectType, installSkills, supportsAiFeatures } from 'storybook/internal/cli';
 import {
   HandledError,
   PackageManagerName,
@@ -52,11 +52,9 @@ async function checkFeatureSupport(
     process.cwd()
   );
 
-  const aiSetup = FeatureCompatibilityService.supportsAISetupFeature(renderer, builder, framework);
-
   return {
     isTestFeatureAvailable: result.compatible,
-    isAiSetupAvailable: aiSetup,
+    isAiSetupAvailable: supportsAiFeatures(renderer, builder, framework),
   };
 }
 
@@ -165,19 +163,14 @@ export async function doInitiate(options: CommandOptions): Promise<
   });
 
   // Step 8: Install the official Storybook skills for AI agents
-  if (!options.skipSkills) {
+  const hasAiFeature = selectedFeatures.has(Feature.AI);
+  if (hasAiFeature) {
     await telemetryService.trackSkills(
-      await installSkills({
-        packageManager,
-        skillsFlag: options.skills,
-        yes: options.yes,
-        agent: options.agent,
-      })
+      await installSkills({ packageManager, source: 'ai-feature' })
     );
   }
 
   // Step 9: Print final summary
-  const hasAiFeature = selectedFeatures.has(Feature.AI);
   if (configDir && isAiSetupAvailable) {
     // Persist init-time AI opt-in/opt-out so the dev server can gate AI-related UI
     // (checklist item, copy-prompt button) on the user's actual choice — not on

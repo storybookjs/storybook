@@ -86,6 +86,7 @@
     "lint-staged": "^16.4.0",
     "nx": "^22.6.1",
     "oxfmt": "^0.41.0",
+    "oxlint-tsgolint": "^7.0.2001",
     "std-env": "^4.0.0",
     "vite": "^7.0.4",
     "vitest": "^4.1.6"

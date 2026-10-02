@@ -9,6 +9,9 @@
   "categories": {
     "correctness": "off"
   },
+  "options": {
+    "typeAware": true
+  },
   "settings": {
     "react": {
       "version": "18.2.0"
@@ -171,6 +174,7 @@
     "typescript/no-empty-object-type": "warn",
     "typescript/no-explicit-any": "warn",
     "typescript/no-extra-non-null-assertion": "error",
+    "typescript/no-floating-promises": "error",
     "typescript/no-misused-new": "error",
     "typescript/no-namespace": "error",
     "typescript/no-non-null-asserted-optional-chain": "error",

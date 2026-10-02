@@ -66,10 +66,7 @@ export function buildServerInstructions({
   const reviewEnabled = options.reviewEnabled ?? false;
 
   if (options.devEnabled && !reviewEnabled) {
-    // Review is off (the default): use the pre-review instruction text verbatim,
-    // as shipped in the latest release — the workflow we know works. The
-    // review-flavored text below is only exercised behind the `experimentalReview`
-    // feature flag while it is being iterated on.
+    // Review is off (`changeDetection: false`), so the workflow ends in preview links.
     sections.push(
       legacyDevInstructions
         .replaceAll('{{GET_STORYBOOK_STORY_INSTRUCTIONS}}', skillRef('write-story'))
@@ -109,12 +106,9 @@ export function buildServerInstructions({
     );
   }
 
-  // The test and docs sections follow the same split as the dev section: with review off (the
-  // default) they are the shipping texts — the legacy Validation Workflow from the latest release
-  // (plus the test-run-only rule, added after agents substituted `npm run test:stories`),
-  // and the shared docs-toolset Documentation Workflow. With review on, the whole instruction set
-  // must fit under the 2,048-char client truncation limit alongside the review workflow, so
-  // slimmed variants (same rules, terser wording) are used instead.
+  // The test and docs sections follow the same split as the dev section. With review on, the whole
+  // instruction set must fit under the 2,048-char client truncation limit alongside the review
+  // workflow, so slimmed variants (same rules, terser wording) replace the full texts.
   if (options.testSupported) {
     sections.push(
       (reviewEnabled ? testInstructions : legacyTestInstructions)

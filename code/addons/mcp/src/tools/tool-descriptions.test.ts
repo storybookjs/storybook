@@ -20,7 +20,6 @@ function availabilityWith(testSupported: boolean, a11yEnabled: boolean): ToolAva
     moduleGraphSupported: true,
     changeDetectionEnabled: true,
     reviewEnabled: true,
-    reviewEnabledForCli: true,
     docsEnabled: true,
     docsEnabledForCli: true,
     docsHasManifests: true,

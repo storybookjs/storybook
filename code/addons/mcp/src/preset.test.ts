@@ -362,7 +362,6 @@ describe('experimental_devServer', () => {
       moduleGraphSupported: true,
       changeDetectionEnabled: false,
       reviewEnabled: false,
-      reviewEnabledForCli: false,
       docsEnabled: false,
       docsEnabledForCli: false,
       docsHasManifests: false,

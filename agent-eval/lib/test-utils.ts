@@ -38,7 +38,7 @@ type EvalContext = {
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
-  /** Whether the sandbox runs review-on: always for the plugin integration, via EVAL_REVIEW=1 for MCP. */
+  /** Whether the sandbox runs review-on; see isReviewEnabledFor in lib/templates.ts. */
   review: boolean;
 };
 
@@ -80,13 +80,10 @@ export function getEvalContext(): EvalContext {
   return { agent, integration, review: agentContext.review === true };
 }
 
-// Review mode of this run. Plugin runs are always review-on — the addon
-// enables review by default for the `storybook tools` CLI channel — while MCP
-// runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
-// the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
-// files branch on this — with review on, visual work must end in a published
-// review-create; with review off, review-create is not even exposed and
-// the workflow ends in stories-preview links.
+// Review mode of this run (see isReviewEnabledFor in lib/templates.ts).
+// EVAL.ts files branch on this — with review on, visual work must end in a
+// published review-create; with review off, review-create is not even exposed
+// and the workflow ends in stories-preview links.
 export function isReviewEnabled(): boolean {
   return getEvalContext().review;
 }
@@ -159,8 +156,7 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Review-off counterpart of expectDisplayReviewForVisualChange (review is
-// opt-in via the `experimentalReview` flag, so this is the default path):
+// Review-off counterpart of expectDisplayReviewForVisualChange:
 // review-create is not registered, so visual work must end in
 // stories-preview calls and the final response must share the preview URLs.
 // `covering` requires each substring to appear in some stories-preview story

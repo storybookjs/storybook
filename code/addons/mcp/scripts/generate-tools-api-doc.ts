@@ -1,7 +1,7 @@
 /**
  * Generates a markdown reference of everything an agent sees from the Storybook
- * AI surface: MCP server instructions and tool definitions (with review off and
- * on), the plugin skills, and the `storybook ai` CLI help output.
+ * AI surface: MCP server instructions and tool definitions (with change detection,
+ * and so review, on and off), the plugin skills, and the `storybook ai` CLI help output.
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
  *
@@ -28,12 +28,12 @@ const internalStorybookDir = path.join(repoRoot, 'test-storybooks/mcp');
 
 const adapter = new ValibotJsonSchemaAdapter();
 
-// Everything enabled except review, which is the variable under comparison.
-const availability = (reviewEnabled: boolean): ToolAvailability => ({
+// Everything enabled except change detection, which is the variable under comparison. Review
+// builds on it, so the two switch together.
+const availability = (changeDetectionEnabled: boolean): ToolAvailability => ({
   moduleGraphSupported: true,
-  changeDetectionEnabled: true,
-  reviewEnabled,
-  reviewEnabledForCli: reviewEnabled,
+  changeDetectionEnabled,
+  reviewEnabled: changeDetectionEnabled,
   docsEnabled: true,
   docsEnabledForCli: true,
   docsHasManifests: true,
@@ -47,20 +47,20 @@ const availability = (reviewEnabled: boolean): ToolAvailability => ({
  * Metadata is resolved from the live toolset registry, so each rendered mode registers the real
  * toolsets first — review-off and review-on descriptions genuinely differ per registration.
  */
-function toolMetadataFor(reviewEnabled: boolean): ToolMetadata[] {
-  registerCoreToolsetsForTest({ reviewEnabled });
-  return getAddonToolMetadata({ availability: availability(reviewEnabled) });
+function toolMetadataFor(changeDetectionEnabled: boolean): ToolMetadata[] {
+  registerCoreToolsetsForTest({ reviewEnabled: changeDetectionEnabled });
+  return getAddonToolMetadata({ availability: availability(changeDetectionEnabled) });
 }
 
-const instructions = (reviewEnabled: boolean) =>
+const instructions = (changeDetectionEnabled: boolean) =>
   buildServerInstructions({
     transport: 'mcp',
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,
-    changeDetectionEnabled: true,
+    changeDetectionEnabled,
     moduleGraphSupported: true,
-    reviewEnabled,
+    reviewEnabled: changeDetectionEnabled,
   });
 
 async function toJsonSchema(schema: unknown): Promise<Record<string, unknown>> {
@@ -229,15 +229,18 @@ async function renderTool(tool: ToolMetadata): Promise<string> {
   return lines.join('\n');
 }
 
-async function renderServerSection(title: string, reviewEnabled: boolean): Promise<string> {
-  const tools = toolMetadataFor(reviewEnabled);
+async function renderServerSection(
+  title: string,
+  changeDetectionEnabled: boolean
+): Promise<string> {
+  const tools = toolMetadataFor(changeDetectionEnabled);
   const toolSections = await Promise.all(tools.map(renderTool));
   return [
     `## ${title}`,
     '',
     '### Server instructions',
     '',
-    fence(instructions(reviewEnabled), 'md'),
+    fence(instructions(changeDetectionEnabled), 'md'),
     '',
     `### Tools (${tools.length})`,
     '',
@@ -255,12 +258,12 @@ function diffSummary(): string {
   const changed = [...on.keys()].filter(
     (name) => off.has(name) && off.get(name)!.description !== on.get(name)!.description
   );
-  const lines = ['## Review off vs on — summary', ''];
+  const lines = ['## Change detection off vs on — summary', ''];
   lines.push(
-    `- Tools added with review on: ${added.map((n) => `\`${n}\``).join(', ') || '(none)'}`
+    `- Tools added with change detection on: ${added.map((n) => `\`${n}\``).join(', ') || '(none)'}`
   );
   lines.push(
-    `- Tools removed with review on: ${removed.map((n) => `\`${n}\``).join(', ') || '(none)'}`
+    `- Tools removed with change detection on: ${removed.map((n) => `\`${n}\``).join(', ') || '(none)'}`
   );
   lines.push(
     `- Tools with a different description: ${changed.map((n) => `\`${n}\``).join(', ') || '(none)'}`
@@ -348,13 +351,13 @@ const document = [
   `> Generated ${generatedAt} by \`code/addons/mcp/scripts/generate-tools-api-doc.ts\` — do not edit by hand.`,
   '> Regenerate from the repo root with `bun code/addons/mcp/scripts/generate-tools-api-doc.ts`.',
   '',
-  'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, change detection on, module graph supported, single source. The only variable is the `experimentalReview` feature flag.',
+  'Assumed configuration: all toolsets enabled (`dev`, `test`, `docs`), component manifests available, `@storybook/addon-vitest` installed, `@storybook/addon-a11y` enabled, module graph supported, single source. The only variable is the `changeDetection` feature flag, which review builds on.',
   '',
   'Tool inputs and outputs are rendered as TypeScript types derived from the JSON Schemas the server actually serves; field docs, defaults, and constraints are preserved as doc comments.',
   '',
   diffSummary(),
-  await renderServerSection('MCP server — review OFF (default)', false),
-  await renderServerSection('MCP server — review ON (`features.experimentalReview`)', true),
+  await renderServerSection('MCP server — review ON (default)', true),
+  await renderServerSection('MCP server — review OFF (`features.changeDetection: false`)', false),
   await renderSkills(),
   await renderCliSection(),
 ].join('\n');

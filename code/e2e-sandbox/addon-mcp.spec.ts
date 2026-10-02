@@ -317,7 +317,7 @@ test.describe('addon-mcp', () => {
             },
             {
               type: 'text',
-              text: expect.stringContaining('in-app browser'),
+              text: expect.stringContaining('review-create'),
             },
           ],
           structuredContent: {

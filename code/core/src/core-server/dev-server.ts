@@ -213,7 +213,7 @@ export async function storybookDevServer(
           });
         }
       } catch {}
-      await telemetry('canceled', payload, { immediate: true });
+      await telemetry('canceled', payload);
     } finally {
       await disposeChangeDetectionRuntime();
       // Always terminate on signal, even when telemetry is disabled.

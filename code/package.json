@@ -127,6 +127,7 @@
     "wait-on": "^8.0.3"
   },
   "devDependencies": {
+    "@stylexjs/stylex": "^0.19.1",
     "oxfmt": "^0.41.0"
   },
   "dependenciesMeta": {

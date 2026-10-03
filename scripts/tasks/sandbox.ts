@@ -91,6 +91,7 @@ export const sandbox: Task = {
       addGlobalMocks,
       addStories,
       addStaticDirs,
+      addStylexSetup,
       extendMain,
       extendPreview,
       init,
@@ -184,6 +185,8 @@ export const sandbox: Task = {
 
     await extendMain(details, options);
     await addStaticDirs(details, options);
+    // Before the install below, which installs the StyleX tokens package from `file:`
+    await addStylexSetup(details, options);
 
     await setImportMap(details.sandboxDir);
 

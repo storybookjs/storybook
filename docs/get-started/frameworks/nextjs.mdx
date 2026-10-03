@@ -21,7 +21,7 @@ Storybook for Next.js (Webpack) is a [framework](../../contribute/framework.mdx)
 Use this Webpack-based framework (`@storybook/nextjs`) only if:
 
 - Your project has custom Webpack configurations that are incompatible with Vite
-- Your project has custom Babel configurations that require Webpack
+- Your project has custom Babel configurations that require Webpack. Storybook switches from SWC to Babel when your project has one of the Babel config files that Next.js detects: `.babelrc`, `.babelrc.json`, `.babelrc.js`, `.babelrc.mjs`, `.babelrc.cjs`, `babel.config.js`, `babel.config.json`, `babel.config.mjs`, or `babel.config.cjs`
 - You need specific Webpack features not available in Vite
 
 </Callout>
@@ -403,6 +403,10 @@ Tailwind in Next.js [is supported via PostCSS](https://nextjs.org/docs/app/getti
 ### PostCSS
 
 Next.js lets you [customize PostCSS config](https://nextjs.org/docs/pages/building-your-application/configuring/post-css). Thus this framework will automatically handle your PostCSS config for you.
+
+### StyleX
+
+StyleX's Babel and PostCSS setup for Next.js works in Storybook. See [Styling with StyleX](../../configure/styling-with-stylex.mdx#nextjs-webpack).
 
 ### Imports
 

@@ -153,14 +153,14 @@ Here's a highlight of notable directories and files:
 
 ### Fork the repository 
 
-If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the main repository when you're ready to contribute your changes.
+If you plan to contribute to Storybook's codebase, you should fork the repository to your GitHub account. This will allow you to make changes to the codebase and submit a pull request to the next branch when you're ready to contribute your changes.
 
-Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the main repository. To do this, run the following commands:
+Additionally, adding our codebase as upstream ensures you can rebase against the latest changes in the next branch. To do this, run the following commands:
 
 ```shell
 git remote add upstream https://github.com/storybookjs/storybook.git
 git fetch upstream
-git branch --set-upstream-to upstream/main main
+git branch --set-upstream-to upstream/next next
 ```
 
 ### Running the local development environment 

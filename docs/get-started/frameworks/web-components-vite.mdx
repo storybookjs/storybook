@@ -52,6 +52,16 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 
 <CodeSnippets path="web-components-vite-add-framework.md" />
 
+### Why don't my components load after building for production?
+
+Some web component libraries, such as [Stencil](https://stenciljs.com/), lazy-load component definitions from a separate `loader` output directory using dynamically computed import paths. Vite's dev server can serve these files directly from disk, so everything works with `storybook dev`. A production build only includes files Vite can statically discover, so those dynamically loaded chunks are missing once you run `build-storybook` and your components fail to render.
+
+To fix this, add the loader's output directory to [`staticDirs`](../../api/main-config/main-config-static-dirs.mdx) so Storybook copies it into the build:
+
+<CodeSnippets path="main-config-static-dirs.md" />
+
+Replace `../public` and `../static` with the path to your loader output (for example, Stencil's default is `../loader`). See [Images, fonts, and assets](../../configure/integration/images-and-assets.mdx) for more on serving static files.
+
 ## API
 
 ### Options

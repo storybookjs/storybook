@@ -12,6 +12,12 @@ export interface DocgenType {
   description?: string;
   required?: boolean;
   value?: any; // Seems like this can be many things
+  /**
+   * Bounded display text for `table.type.detail` (e.g. one-hop member lines of a named
+   * interface/object-alias/enum). Only producers that resolve named types set it; the key stays
+   * absent otherwise.
+   */
+  detail?: string;
 }
 
 export interface DocgenPropType extends DocgenType {

@@ -107,6 +107,11 @@ export type Template = {
      * from this template's key, so a derived template can share its base template's stories.
      */
     storiesVariant?: string;
+    /**
+     * Adds the StyleX fixture setup and stories; see `addStylexSetup` in
+     * scripts/tasks/sandbox-parts.ts
+     */
+    stylex?: boolean;
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
@@ -972,6 +977,21 @@ export const baseTemplates = {
  * contain an id that starts with 'internal/' and contain "isInternal: true". They will be hidden by
  * default in the Storybook status page.
  */
+// The StyleX sandboxes only hold the StyleX stories (and the `sb init` examples), which run in
+// Chromatic from the static build. Dev-mode StyleX CSS can lag lazily loaded stories
+// (facebook/stylex#1919), so the dev-mode test runners are skipped.
+const stylexModifications = {
+  skipTemplateStories: true,
+  skipMocking: true,
+  stylex: true,
+} satisfies Template['modifications'];
+
+const stylexTemplate = {
+  isInternal: true,
+  inDevelopment: true,
+  skipTasks: ['e2e-tests', 'e2e-tests-dev', 'bench', 'vitest-integration'],
+} satisfies Partial<Template> & { isInternal: true };
+
 const internalTemplates = {
   'internal/react18-webpack-babel': {
     name: 'React with Babel Latest (Webpack | TypeScript)',
@@ -1018,6 +1038,88 @@ const internalTemplates = {
     initOptions: {
       type: ProjectType.SERVER,
     },
+  },
+  // TODO: Remove `inDevelopment` from the StyleX templates once their repros are published.
+  'internal/react-vite-stylex': {
+    name: 'React with StyleX Latest (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
+    expected: {
+      framework: '@storybook/react-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      ...stylexModifications,
+      extraDevDependencies: [
+        '@stylexjs/stylex@^0.19.1',
+        '@stylexjs/unplugin@^0.19.1',
+        'unplugin@^2.3.11',
+      ],
+    },
+    ...stylexTemplate,
+  },
+  'internal/svelte-kit-stylex': {
+    name: 'SvelteKit with StyleX Latest (Vite | TypeScript)',
+    script:
+      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    expected: {
+      framework: '@storybook/sveltekit',
+      renderer: '@storybook/svelte',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      ...stylexModifications,
+      extraDevDependencies: [
+        '@stylexjs/stylex@^0.19.1',
+        '@stylexjs/unplugin@^0.19.1',
+        'unplugin@^2.3.11',
+      ],
+    },
+    ...stylexTemplate,
+  },
+  'internal/nextjs-stylex': {
+    name: 'Next.js with StyleX Latest (Webpack | TypeScript)',
+    script:
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-webpack5',
+    },
+    modifications: {
+      ...stylexModifications,
+      extraDevDependencies: [
+        '@stylexjs/stylex@^0.19.1',
+        '@stylexjs/babel-plugin@^0.19.1',
+        '@stylexjs/postcss-plugin@^0.19.1',
+      ],
+    },
+    initOptions: {
+      builder: SupportedBuilder.WEBPACK5,
+    },
+    ...stylexTemplate,
+  },
+  'internal/nextjs-vite-stylex': {
+    name: 'Next.js with StyleX Latest (Vite | TypeScript)',
+    script:
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
+    expected: {
+      framework: '@storybook/nextjs-vite',
+      renderer: '@storybook/react',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      ...stylexModifications,
+      extraDevDependencies: [
+        '@stylexjs/stylex@^0.19.1',
+        '@stylexjs/babel-plugin@^0.19.1',
+        '@stylexjs/postcss-plugin@^0.19.1',
+        '@stylexjs/unplugin@^0.19.1',
+        'unplugin@^2.3.11',
+        'vite',
+      ],
+    },
+    ...stylexTemplate,
   },
 } satisfies Record<`internal/${string}`, Template & { isInternal: true }>;
 
@@ -1144,6 +1246,10 @@ export const daily: TemplateKey[] = [
   // 'preact-vite/prerelease-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
+  'internal/react-vite-stylex',
+  'internal/svelte-kit-stylex',
+  'internal/nextjs-stylex',
+  'internal/nextjs-vite-stylex',
   'react-native-web-vite/expo-ts',
   'lit-rsbuild/default-ts',
   'html-rsbuild/default-ts',

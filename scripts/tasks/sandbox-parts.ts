@@ -1327,3 +1327,227 @@ async function prepareAngularSandbox(cwd: string, templateName: string) {
 
   await writeFile(tsConfigPath, JSON.stringify(tsConfigJson, null, 2));
 }
+
+const STYLEX_FIXTURES_DIRECTORY = join(ROOT_DIRECTORY, 'scripts', 'sandbox', 'fixtures', 'stylex');
+const STYLEX_TOKENS_PACKAGE = 'stylex-tokens-fixture';
+
+/**
+ * The StyleX options every StyleX sandbox uses, as source code because `cssInjectionTarget` is a
+ * function. They match what the StyleX docs page recommends.
+ */
+const STYLEX_VITE_OPTIONS = `{
+  useCSSLayers: { before: ['reset'] },
+  externalPackages: ['${STYLEX_TOKENS_PACKAGE}'],
+  unstable_moduleResolution: { type: 'commonJS' },
+  cssInjectionTarget: (fileName) => /(^|\\/)iframe-[\\w-]+\\.css$/.test(fileName),
+}`;
+
+const parseExpression = (code: string) =>
+  (babelParse(`(${code})`).program.body[0] as t.ExpressionStatement).expression;
+
+/** `import stylex from '@stylexjs/unplugin'` after the existing imports, keeping directives first. */
+function importStylexUnplugin(config: ConfigFile) {
+  const { body } = config._ast.program;
+  body.splice(
+    body.findLastIndex((node) => t.isImportDeclaration(node)) + 1,
+    0,
+    t.importDeclaration(
+      [t.importDefaultSpecifier(t.identifier('stylex'))],
+      t.stringLiteral('@stylexjs/unplugin')
+    )
+  );
+}
+
+/**
+ * Adds `@stylexjs/unplugin` to the `plugins` array that holds the framework plugin: before
+ * `react()` (StyleX must see the source before React's transform), after `sveltekit()` with
+ * `enforce: undefined` (StyleX must see Svelte's compiled output), as the StyleX docs describe.
+ */
+export function addStylexToViteConfig(config: ConfigFile, frameworkPlugin: 'react' | 'sveltekit') {
+  const call = findPluginCall(frameworkPlugin, config._ast);
+  let plugins: t.ArrayExpression | undefined;
+  traverse(config._ast, {
+    ArrayExpression(path) {
+      if (call && path.node.elements.includes(call)) {
+        plugins = path.node;
+        path.stop();
+      }
+    },
+  });
+  if (!plugins || !call) {
+    throw new Error(`Could not find a plugins array with a "${frameworkPlugin}()" call.`);
+  }
+
+  importStylexUnplugin(config);
+  const stylexPlugin = `stylex.vite(${STYLEX_VITE_OPTIONS})`;
+  if (frameworkPlugin === 'react') {
+    plugins.elements.splice(plugins.elements.indexOf(call), 0, parseExpression(stylexPlugin));
+  } else {
+    plugins.elements.push(parseExpression(`{ ...${stylexPlugin}, enforce: undefined }`));
+  }
+}
+
+/**
+ * Wraps the sandbox's `viteFinal` so `@stylexjs/unplugin` runs first in `@storybook/nextjs-vite`,
+ * which compiles with SWC and ignores the app's Babel config.
+ */
+export function addStylexToViteFinal(mainConfig: ConfigFile) {
+  const existing = mainConfig.getFieldNode(['viteFinal']) as t.Expression | undefined;
+  importStylexUnplugin(mainConfig);
+  mainConfig.set(
+    ['viteFinal'],
+    parseExpression(`async (config, options) => {
+      const finalConfig = ${existing ? `await (__EXISTING__)(config, options)` : 'config'};
+      return {
+        ...finalConfig,
+        plugins: [stylex.vite(${STYLEX_VITE_OPTIONS}), ...(finalConfig.plugins ?? [])],
+      };
+    }`)
+  );
+  if (existing) {
+    traverse(mainConfig._ast, {
+      Identifier(path) {
+        if (path.node.name === '__EXISTING__') {
+          path.replaceWith(existing);
+          path.stop();
+        }
+      },
+    });
+  }
+}
+
+const STYLEX_BABEL_OPTIONS = `{
+  dev: process.env.NODE_ENV === 'development',
+  runtimeInjection: false,
+  treeshakeCompensation: true,
+  unstable_moduleResolution: { type: 'commonJS' },
+}`;
+
+/** The Babel + PostCSS setup from the StyleX Next.js guide, as CommonJS files. */
+export const stylexNextjsFiles = {
+  'babel.config.cjs': `module.exports = {
+  presets: ['next/babel'],
+  plugins: [['@stylexjs/babel-plugin', ${STYLEX_BABEL_OPTIONS}]],
+};
+`,
+  'postcss.config.cjs': `module.exports = {
+  plugins: {
+    '@stylexjs/postcss-plugin': {
+      include: ['src/**/*.{js,jsx,ts,tsx}', 'node_modules/${STYLEX_TOKENS_PACKAGE}/*.js'],
+      // The same StyleX options as babel.config.cjs, so class names and variables match
+      babelConfig: {
+        babelrc: false,
+        parserOpts: { plugins: ['typescript', 'jsx'] },
+        plugins: [['@stylexjs/babel-plugin', ${STYLEX_BABEL_OPTIONS}]],
+      },
+      useCSSLayers: { before: ['reset'] },
+    },
+  },
+};
+`,
+};
+
+/** `transpilePackages` makes Next.js (and Storybook's babel-loader) compile the tokens package. */
+export function addStylexTranspilePackages(nextConfigSource: string) {
+  const nextConfigObject = /(nextConfig\s*(?::\s*NextConfig\s*)?=\s*\{)/;
+  if (!nextConfigObject.test(nextConfigSource)) {
+    throw new Error('Could not find the nextConfig object in the Next.js config.');
+  }
+  return nextConfigSource.replace(
+    nextConfigObject,
+    `$1\n  transpilePackages: ['${STYLEX_TOKENS_PACKAGE}'],`
+  );
+}
+
+/** Installs the tokens fixture with `file:`, so it lands in node_modules like a published package. */
+export function addStylexTokensDependency(packageJson: {
+  dependencies?: Record<string, string>;
+  [field: string]: unknown;
+}) {
+  return {
+    ...packageJson,
+    dependencies: {
+      ...packageJson.dependencies,
+      [STYLEX_TOKENS_PACKAGE]: `file:./${STYLEX_TOKENS_PACKAGE}`,
+    },
+  };
+}
+
+/**
+ * Sets up StyleX in a sandbox whose template has `modifications.stylex`: copies the StyleX stories
+ * and a tokens package, imports a preview CSS file with a reset layer, and configures the StyleX
+ * compiler the way the StyleX docs describe for the framework.
+ */
+export const addStylexSetup: Task['run'] = async ({ sandboxDir, template }) => {
+  if (!template.modifications?.stylex) {
+    return;
+  }
+  logger.log('🎨 Adding StyleX setup');
+
+  const { framework, renderer } = template.expected;
+  const isNextjs = framework === '@storybook/nextjs' || framework === '@storybook/nextjs-vite';
+
+  // Copied, not linked: StyleX hashes depend on the file path, and copies resolve
+  // `@stylexjs/stylex` from the sandbox in both link and no-link modes.
+  const rendererName = renderer.replace('@storybook/', '');
+  await cp(
+    join(CODE_DIRECTORY, 'renderers', rendererName, 'template', 'stylex'),
+    join(sandboxDir, 'src', 'stories', 'stylex'),
+    { recursive: true }
+  );
+  await cp(
+    join(STYLEX_FIXTURES_DIRECTORY, STYLEX_TOKENS_PACKAGE),
+    join(sandboxDir, STYLEX_TOKENS_PACKAGE),
+    { recursive: true }
+  );
+
+  const packageJsonPath = join(sandboxDir, 'package.json');
+  const packageJson = addStylexTokensDependency(await readJson(packageJsonPath));
+  await writeFile(packageJsonPath, `${JSON.stringify(packageJson, null, 2)}\n`);
+
+  const previewCss = await readFile(join(STYLEX_FIXTURES_DIRECTORY, 'stylex-preview.css'), 'utf8');
+  await writeFile(
+    join(sandboxDir, '.storybook', 'stylex-preview.css'),
+    // The `@stylex;` directive is where `@stylexjs/postcss-plugin` writes the StyleX CSS.
+    framework === '@storybook/nextjs' ? `${previewCss}\n@stylex;\n` : previewCss
+  );
+  const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
+  previewConfig.setImport(null, './stylex-preview.css');
+  previewConfig.set(['globalTypes', 'stylexTheme'], {
+    description: 'StyleX theme',
+    toolbar: { title: 'StyleX theme', icon: 'paintbrush', items: ['light', 'dark'] },
+  });
+  previewConfig.set(['initialGlobals', 'stylexTheme'], 'light');
+  await writeConfig(previewConfig);
+
+  if (isNextjs) {
+    for (const [fileName, source] of Object.entries(stylexNextjsFiles)) {
+      await writeFile(join(sandboxDir, fileName), source);
+    }
+    const nextConfigPath = await getConfigFile(
+      ['next.config.ts', 'next.config.mjs', 'next.config.js'],
+      sandboxDir
+    );
+    await writeFile(
+      nextConfigPath,
+      addStylexTranspilePackages(await readFile(nextConfigPath, 'utf8'))
+    );
+  }
+
+  if (framework === '@storybook/nextjs-vite') {
+    const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
+    addStylexToViteFinal(mainConfig);
+    await writeConfig(mainConfig);
+  } else if (framework === '@storybook/react-vite' || framework === '@storybook/sveltekit') {
+    const viteConfig = await csfReadConfig(
+      await getConfigFile(['vite.config.ts', 'vite.config.js'], sandboxDir)
+    );
+    addStylexToViteConfig(
+      viteConfig,
+      framework === '@storybook/react-vite' ? 'react' : 'sveltekit'
+    );
+    await writeConfig(viteConfig);
+  } else if (framework !== '@storybook/nextjs') {
+    throw new Error(`The StyleX sandbox setup does not support ${framework}.`);
+  }
+};

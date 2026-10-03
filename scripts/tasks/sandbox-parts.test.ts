@@ -2,11 +2,18 @@ import { existsSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { vol } from 'memfs';
-import { afterEach, beforeEach, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
 import type { PassedOptionValues, TemplateDetails } from '../task.ts';
-import { extendPreview } from './sandbox-parts.ts';
+import { formatConfig, loadConfig } from '../../code/core/src/csf-tools/index.ts';
+import {
+  addStylexToViteConfig,
+  addStylexToViteFinal,
+  addStylexTokensDependency,
+  addStylexTranspilePackages,
+  extendPreview,
+} from './sandbox-parts.ts';
 
 // Spy-only mocks: keep the real module shapes, then redirect the reads and writes that
 // `extendPreview` performs on the sandbox's preview config to `memfs`.
@@ -109,4 +116,102 @@ export default preview;
     { module: 'lodash-es/sum', spy: false },
     { module: 'uuid', spy: false },
   ]);
+});
+
+describe('StyleX sandbox setup', () => {
+  const pluginCallees = (source: string) => {
+    const callees: string[] = [];
+    traverse(babelParse(source), {
+      ArrayExpression({ node }) {
+        node.elements.forEach((element) => {
+          const call = t.isSpreadElement(element)
+            ? element.argument
+            : t.isObjectExpression(element)
+              ? (element.properties.find((p) => t.isSpreadElement(p)) as t.SpreadElement)?.argument
+              : element;
+          if (t.isCallExpression(call)) {
+            const { callee } = call;
+            callees.push(
+              t.isMemberExpression(callee) && t.isIdentifier(callee.object)
+                ? `${callee.object.name}.${(callee.property as t.Identifier).name}`
+                : (callee as t.Identifier).name
+            );
+          }
+        });
+      },
+    });
+    return callees;
+  };
+
+  it('adds the StyleX Vite plugin before react()', () => {
+    const config = loadConfig(
+      `import react from '@vitejs/plugin-react';
+import { defineConfig } from 'vite';
+
+export default defineConfig({ plugins: [react()] });`
+    ).parse();
+
+    addStylexToViteConfig(config, 'react');
+    const source = formatConfig(config);
+
+    expect(source).toContain("import stylex from '@stylexjs/unplugin';");
+    expect(pluginCallees(source)).toEqual(['stylex.vite', 'react']);
+    expect(source).toContain("useCSSLayers: { before: ['reset'] }");
+    expect(source).toContain("externalPackages: ['stylex-tokens-fixture']");
+    expect(source).toContain('cssInjectionTarget:');
+  });
+
+  it('adds the StyleX Vite plugin after sveltekit() without enforce', () => {
+    const config = loadConfig(
+      `import { sveltekit } from '@sveltejs/kit/vite';
+import { defineConfig } from 'vite';
+
+export default defineConfig({ plugins: [sveltekit()] });`
+    ).parse();
+
+    addStylexToViteConfig(config, 'sveltekit');
+    const source = formatConfig(config);
+
+    expect(pluginCallees(source)).toEqual(['sveltekit', 'stylex.vite']);
+    expect(source).toContain('enforce: undefined');
+  });
+
+  it('wraps an existing viteFinal and puts the StyleX plugin first', async () => {
+    const config = loadConfig(
+      `export default {
+  framework: '@storybook/nextjs-vite',
+  viteFinal: (config) => ({ ...config, plugins: [...config.plugins, 'sandbox'] }),
+};`
+    ).parse();
+
+    addStylexToViteFinal(config);
+    const source = formatConfig(config);
+
+    expect(source).toContain("import stylex from '@stylexjs/unplugin';");
+    expect(source).toContain("plugins: [...config.plugins, 'sandbox']");
+    expect(source).toMatch(/plugins: \[stylex\.vite\(/);
+  });
+
+  it('adds the tokens package as a file: dependency', () => {
+    expect(addStylexTokensDependency({ name: 'sandbox', dependencies: { react: '^19' } })).toEqual({
+      name: 'sandbox',
+      dependencies: { react: '^19', 'stylex-tokens-fixture': 'file:./stylex-tokens-fixture' },
+    });
+  });
+
+  it('adds the tokens package to the Next.js transpilePackages', () => {
+    const source = addStylexTranspilePackages(
+      `import type { NextConfig } from 'next';
+
+const nextConfig: NextConfig = {
+  /* config options here */
+};
+
+export default nextConfig;`
+    );
+
+    expect(source).toContain(
+      "const nextConfig: NextConfig = {\n  transpilePackages: ['stylex-tokens-fixture'],"
+    );
+  });
 });

@@ -156,21 +156,20 @@ export const LoggedIn: Story = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```js filename="Page.stories.js" renderer="svelte" language="js" tabTitle="CSF 3"
-import Page from './Page.svelte';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="js" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-//👇 Imports all Header stories
-import * as HeaderStories from './Header.stories';
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
 
-export default {
-  component: Page,
-};
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
 
-export const LoggedIn = {
-  args: {
-    ...HeaderStories.LoggedIn.args,
-  },
-};
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
 ```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF"
@@ -189,27 +188,20 @@ export const LoggedIn = {
 <Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
-```ts filename="Page.stories.ts" renderer="svelte" language="ts" tabTitle="CSF 3"
-// Replace your-framework with svelte-vite or sveltekit
-import type { Meta, StoryObj } from '@storybook/your-framework';
+```svelte filename="Page.stories.svelte" renderer="svelte" language="ts" tabTitle="Svelte CSF Next 🧪"
+<script module>
+  import preview from '../.storybook/preview';
 
-import Page from './Page.svelte';
+  import Page from './Page.svelte';
+  //👇 Imports all Header stories
+  import * as HeaderStories from './Header.stories.svelte';
 
-//👇 Imports all Header stories
-import * as HeaderStories from './Header.stories';
+  const { Story } = preview.meta({
+    component: Page,
+  });
+</script>
 
-const meta = {
-  component: Page,
-} satisfies Meta<typeof Page>;
-
-export default meta;
-type Story = StoryObj<typeof meta>;
-
-export const LoggedIn: Story = {
-  args: {
-    ...HeaderStories.LoggedIn.args,
-  },
-};
+<Story name="LoggedIn" args={{ ...HeaderStories.LoggedIn.args }} />
 ```
 
 ```js filename="Page.stories.js" renderer="vue" language="js" tabTitle="CSF 3"

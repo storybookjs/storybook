@@ -1,0 +1,70 @@
+{
+  "children": {
+    "control": {
+      "type": "text",
+    },
+    "description": "",
+    "name": "children",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "ReactReactNode",
+      },
+    },
+    "type": {
+      "name": "node",
+      "renderer": "react",
+      "required": true,
+    },
+  },
+  "icon": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "icon",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "ReactReactElement",
+      },
+    },
+    "type": {
+      "name": "other",
+      "raw": "React.ReactElement",
+      "required": true,
+      "value": "ReactReactElement",
+    },
+  },
+  "nodes": {
+    "control": {
+      "type": "object",
+    },
+    "description": "",
+    "name": "nodes",
+    "table": {
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "detail": undefined,
+        "summary": "React.ReactNode[]",
+      },
+    },
+    "type": {
+      "name": "array",
+      "raw": "React.ReactNode[]",
+      "required": true,
+      "value": [
+        {
+          "name": "other",
+          "raw": "React.ReactNode",
+          "value": "ReactReactNode",
+        },
+      ],
+    },
+  },
+}

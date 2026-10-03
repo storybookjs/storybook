@@ -54,14 +54,15 @@ const map = (arg: unknown, argType: InputType): any => {
         const mapped = map(val, { type: type.value[key] });
         return mapped === INCOMPATIBLE ? acc : Object.assign(acc, { [key]: mapped });
       }, {} as Args);
+    // `node` and `other` share the same serialization policy. Keep primitive args: strings typed
+    // into node props (e.g. children: React.ReactNode) and primitives extracted as `other`
+    // (e.g. TS/Vue string-union selects) would otherwise be dropped from the URL and lost on
+    // reload / "open in new tab" (#29076). Non-primitive values stay incompatible; option
+    // validity is enforced by validateOptions.
+    case 'node':
     case 'other': {
       const isPrimitiveArg =
         typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean';
-
-      // Keep primitive args for any `other` SBType. ReactNode primitives need this, and so do
-      // primitives whose type is extracted as `other` (e.g. TS/Vue string-union selects), which
-      // would otherwise be dropped from the URL and lost on reload / "open in new tab" (#29076).
-      // Non-primitive `other` values stay incompatible; option validity is enforced by validateOptions.
       if (isPrimitiveArg) {
         return arg;
       }

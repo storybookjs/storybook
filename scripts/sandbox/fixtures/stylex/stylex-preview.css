@@ -1,0 +1,9 @@
+/* A reset in its own layer. StyleX is configured with `useCSSLayers: { before: ['reset'] }`. */
+@layer reset {
+  div,
+  p {
+    color: blue;
+    padding: 0;
+    margin: 0;
+  }
+}

@@ -93,6 +93,8 @@ If you're using Webpack and want to use Sass or Less, you'll need some extra con
 
 CSS-in-JS libraries are designed to use basic JavaScript, and they often work in Storybook without any extra configuration. Some libraries expect components to render in a specific rendering “context” (for example, to provide themes), which can be accomplished with `@storybook/addon-themes`'s [`withThemeFromJSXProvider` decorator](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider).
 
+Libraries that compile styles at build time need the same build setup as your app. For StyleX, see [Styling with StyleX](./styling-with-stylex.mdx).
+
 ## Adding webfonts
 
 ### `.storybook/preview-head.html`

@@ -12,7 +12,13 @@ import { z } from 'zod';
 import { createInterface } from 'node:readline/promises';
 
 import { esMain } from '../utils/esmain.ts';
-import { AGENTS, CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/config.ts';
+import {
+  AGENTS,
+  CLAUDE_EFFORTS,
+  CODEX_EFFORTS,
+  CODEX_MODELS,
+  type AgentVariant,
+} from './lib/agents/config.ts';
 import { PROJECTS } from './lib/projects.ts';
 import {
   EVAL_ROOT,
@@ -30,14 +36,16 @@ export const BATCH_PROJECT_NAMES = PROJECTS.filter((project) => project.name !==
 export const BATCH_AGENT_IDS = ['claude', 'codex'] as const;
 export const BATCH_DEFAULT_AGENT_IDS = ['claude', 'codex'] as const;
 export const BATCH_DEFAULT_CLAUDE_EFFORTS = ['high'] as const;
+export const BATCH_DEFAULT_CODEX_EFFORTS = ['high'] as const;
 export const BATCH_DEFAULT_EFFORTS = {
-  codex: 'high',
+  codex: BATCH_DEFAULT_CODEX_EFFORTS[0],
 } as const;
 /** Default models for the batch matrix — single place to change (codex follows AGENTS). */
 export const BATCH_MATRIX_MODELS = {
   claude: 'opus-4.6',
   codex: AGENTS.codex.defaultModel,
 } as const satisfies Record<'claude' | 'codex', string>;
+export const BATCH_DEFAULT_CODEX_MODELS = [BATCH_MATRIX_MODELS.codex] as const;
 
 export const BATCH_VARIANTS = buildBatchVariants();
 export const BATCH_REPETITIONS = 10;
@@ -95,7 +103,10 @@ export interface RunBatchOptions {
   agents?: (typeof BATCH_AGENT_IDS)[number][];
   claudeEfforts?: (typeof CLAUDE_EFFORTS)[number][];
   claudeEffort?: (typeof CLAUDE_EFFORTS)[number];
+  codexEfforts?: (typeof CODEX_EFFORTS)[number][];
   codexEffort?: (typeof CODEX_EFFORTS)[number];
+  codexModels?: (typeof CODEX_MODELS)[number][];
+  codexModel?: (typeof CODEX_MODELS)[number];
   /** Restrict the batch to a subset of projects. Defaults to BATCH_PROJECT_NAMES. */
   projects?: (typeof BATCH_PROJECT_NAMES)[number][];
   /** Repetitions per (project × variant). Defaults to BATCH_REPETITIONS. */
@@ -159,7 +170,10 @@ export async function runBatch(
       agents: options.agents,
       claudeEfforts: options.claudeEfforts,
       claudeEffort: options.claudeEffort,
+      codexEfforts: options.codexEfforts,
       codexEffort: options.codexEffort,
+      codexModels: options.codexModels,
+      codexModel: options.codexModel,
       projects: options.projects,
       repetitions: options.repetitions,
     });
@@ -293,11 +307,16 @@ export function buildBatchVariants(
     agents?: RunBatchOptions['agents'];
     claudeEfforts?: RunBatchOptions['claudeEfforts'];
     claudeEffort?: RunBatchOptions['claudeEffort'];
+    codexEfforts?: RunBatchOptions['codexEfforts'];
     codexEffort?: RunBatchOptions['codexEffort'];
+    codexModels?: RunBatchOptions['codexModels'];
+    codexModel?: RunBatchOptions['codexModel'];
   } = {}
 ): AgentVariant[] {
   const agents = resolveBatchAgents(options.agents);
   const claudeEfforts = resolveClaudeEfforts(options);
+  const codexEfforts = resolveCodexEfforts(options);
+  const codexModels = resolveCodexModels(options);
   const variants: AgentVariant[] = [];
 
   for (const agent of agents) {
@@ -312,11 +331,15 @@ export function buildBatchVariants(
       continue;
     }
 
-    variants.push({
-      agent: 'codex',
-      model: BATCH_MATRIX_MODELS.codex,
-      effort: options.codexEffort ?? BATCH_DEFAULT_EFFORTS.codex,
-    });
+    for (const model of codexModels) {
+      for (const effort of codexEfforts) {
+        variants.push({
+          agent: 'codex',
+          model,
+          effort,
+        });
+      }
+    }
   }
 
   return variants;
@@ -328,7 +351,10 @@ export function buildBatchRunDescriptors(options: {
   agents?: RunBatchOptions['agents'];
   claudeEfforts?: RunBatchOptions['claudeEfforts'];
   claudeEffort?: RunBatchOptions['claudeEffort'];
+  codexEfforts?: RunBatchOptions['codexEfforts'];
   codexEffort?: RunBatchOptions['codexEffort'];
+  codexModels?: RunBatchOptions['codexModels'];
+  codexModel?: RunBatchOptions['codexModel'];
   projects?: RunBatchOptions['projects'];
   repetitions?: number;
 }): BatchRunDescriptor[] {
@@ -348,7 +374,10 @@ export function buildBatchRunDescriptors(options: {
     options.agents == null &&
     options.claudeEfforts == null &&
     options.claudeEffort == null &&
-    options.codexEffort == null
+    options.codexEfforts == null &&
+    options.codexEffort == null &&
+    options.codexModels == null &&
+    options.codexModel == null
       ? BATCH_VARIANTS
       : buildBatchVariants(options);
 
@@ -546,7 +575,10 @@ const runBatchArgsSchema = z
     agents: z.array(z.enum(BATCH_AGENT_IDS)).nonempty().optional(),
     claudeEfforts: z.array(z.enum(CLAUDE_EFFORTS)).nonempty().optional(),
     claudeEffort: z.enum(CLAUDE_EFFORTS).optional(),
+    codexEfforts: z.array(z.enum(CODEX_EFFORTS)).nonempty().optional(),
     codexEffort: z.enum(CODEX_EFFORTS).optional(),
+    codexModels: z.array(z.enum(CODEX_MODELS)).nonempty().optional(),
+    codexModel: z.enum(CODEX_MODELS).optional(),
     projects: z.array(z.string().min(1)).nonempty().optional(),
     repetitions: z.coerce.number().int().positive().optional(),
   })
@@ -575,7 +607,16 @@ const runBatchOptions = {
     description: 'Comma-separated Claude effort levels',
   },
   'claude-effort': { type: 'string' as const, description: 'Single Claude effort level' },
+  'codex-efforts': {
+    type: 'string' as const,
+    description: 'Comma-separated Codex effort levels',
+  },
   'codex-effort': { type: 'string' as const, description: 'Single Codex effort level' },
+  'codex-models': {
+    type: 'string' as const,
+    description: 'Comma-separated Codex models',
+  },
+  'codex-model': { type: 'string' as const, description: 'Single Codex model' },
   projects: {
     type: 'string' as const,
     description: 'Comma-separated project names to run (default: all batch projects)',
@@ -600,7 +641,10 @@ export function parseRunBatchArgs(
       | 'agents'
       | 'claudeEfforts'
       | 'claudeEffort'
+      | 'codexEfforts'
       | 'codexEffort'
+      | 'codexModels'
+      | 'codexModel'
       | 'concurrency'
       | 'prompt'
       | 'prompts'
@@ -627,7 +671,10 @@ export function parseRunBatchArgs(
     agents: parseAgentArgs(values.agents),
     claudeEfforts: parseClaudeEfforts(values['claude-efforts']),
     claudeEffort: values['claude-effort'],
+    codexEfforts: parseCodexEfforts(values['codex-efforts']),
     codexEffort: values['codex-effort'],
+    codexModels: parseCodexModels(values['codex-models']),
+    codexModel: values['codex-model'],
     projects: parseProjects(values.projects),
     repetitions: values.repetitions,
   });
@@ -654,14 +701,15 @@ function parseAgentArgs(value?: string) {
 }
 
 function parseClaudeEfforts(value?: string) {
-  if (value == null) {
-    return undefined;
-  }
+  return parseList(value);
+}
 
-  return value
-    .split(',')
-    .map((effort) => effort.trim())
-    .filter(Boolean);
+function parseCodexEfforts(value?: string) {
+  return parseList(value);
+}
+
+function parseCodexModels(value?: string) {
+  return parseList(value);
 }
 
 function parseProjects(value?: string) {
@@ -672,6 +720,7 @@ function parseList(value?: string) {
   if (value == null) {
     return undefined;
   }
+
   const items = value
     .split(',')
     .map((item) => item.trim())
@@ -700,6 +749,36 @@ function resolveClaudeEfforts(options: {
   }
 
   return [...BATCH_DEFAULT_CLAUDE_EFFORTS];
+}
+
+function resolveCodexEfforts(options: {
+  codexEfforts?: RunBatchOptions['codexEfforts'];
+  codexEffort?: RunBatchOptions['codexEffort'];
+}) {
+  if (options.codexEfforts != null && options.codexEfforts.length > 0) {
+    return [...new Set(options.codexEfforts)];
+  }
+
+  if (options.codexEffort != null) {
+    return [options.codexEffort];
+  }
+
+  return [...BATCH_DEFAULT_CODEX_EFFORTS];
+}
+
+function resolveCodexModels(options: {
+  codexModels?: RunBatchOptions['codexModels'];
+  codexModel?: RunBatchOptions['codexModel'];
+}) {
+  if (options.codexModels != null && options.codexModels.length > 0) {
+    return [...new Set(options.codexModels)];
+  }
+
+  if (options.codexModel != null) {
+    return [options.codexModel];
+  }
+
+  return [...BATCH_DEFAULT_CODEX_MODELS];
 }
 
 function formatBatchTimestamp(date: Date) {

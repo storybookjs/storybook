@@ -420,13 +420,21 @@ function parseTsconfig(typescript: TypeScriptRuntime, configPath: string) {
   return readTsconfig(typescript, configPath).parsed;
 }
 
-function readTsconfig(typescript: TypeScriptRuntime, configPath: string) {
-  const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-  return {
-    config,
-    parsed: typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath)),
-  };
-}
+export const readTsconfig = cached(
+  (typescript: TypeScriptRuntime, configPath: string) => {
+    const { config, error } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+    return {
+      config,
+      error,
+      parsed: typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath)),
+    };
+  },
+  {
+    key: (typescript, configPath) => normalizeFileName(typescript, configPath),
+    shouldCache: ({ error, parsed }) => !error && parsed.errors.length === 0,
+    name: 'readTsconfig',
+  }
+);
 
 function isSameFileName(typescript: TypeScriptRuntime, left: string, right: string) {
   return normalizeFileName(typescript, left) === normalizeFileName(typescript, right);

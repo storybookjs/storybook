@@ -1,17 +1,16 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
-import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { logger } from 'storybook/internal/node-logger';
 import {
   getEffectiveToolAvailability,
   getToolAvailability,
   isModuleGraphSupportedByBuilder,
   type ToolAvailability,
 } from 'storybook/internal/core-server';
-import { buildStorybookAiMetadata } from './storybook-ai-metadata.ts';
-import type { AddonContext } from './types.ts';
+import { logger } from 'storybook/internal/node-logger';
 import { toMcpToolName } from 'storybook/internal/toolsets-docs';
+import { McpServer } from 'tmcp';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildStorybookAiMetadata } from './storybook-ai-metadata.ts';
+import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import {
   DISPLAY_REVIEW_TOOL_NAME,
   GET_STORIES_BY_COMPONENT_TOOL_NAME,
@@ -20,6 +19,7 @@ import {
   RUN_STORY_TESTS_TOOL_NAME,
 } from './tools/tool-names.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
+import type { AddonContext } from './types.ts';
 
 // `getToolAvailability` and `isModuleGraphSupportedByBuilder` now live in core
 // (`storybook/internal/core-server`) and compose their own sub-probes internally, so this file
@@ -343,7 +343,7 @@ describe('buildStorybookAiMetadata', () => {
       ...first,
       tools: [
         {
-          name: PREVIEW_STORIES_TOOL_NAME,
+          name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
           description: 'stale descriptor',
           inputSchema: { type: 'object' },
         },
@@ -353,9 +353,11 @@ describe('buildStorybookAiMetadata', () => {
 
     expect(merged.instructions).toBe(first.instructions);
     expect(merged.tools.map((tool) => tool.name)).toEqual(first.tools.map((tool) => tool.name));
-    expect(merged.tools.filter((tool) => tool.name === PREVIEW_STORIES_TOOL_NAME)).toHaveLength(1);
     expect(
-      merged.tools.find((tool) => tool.name === PREVIEW_STORIES_TOOL_NAME)?.description
+      merged.tools.filter((tool) => tool.name === GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME)
+    ).toHaveLength(1);
+    expect(
+      merged.tools.find((tool) => tool.name === GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME)?.description
     ).not.toBe('stale descriptor');
   });
 
@@ -398,6 +400,7 @@ describe('buildStorybookAiMetadata', () => {
     const metadata = await buildStorybookAiMetadata(createOptions());
 
     expect(metadata.tools.map((tool) => tool.name)).toContain(DISPLAY_REVIEW_TOOL_NAME);
+    expect(metadata.tools.map((tool) => tool.name)).not.toContain(PREVIEW_STORIES_TOOL_NAME);
     expect(metadata.instructions).toContain(DISPLAY_REVIEW_TOOL_NAME);
   });
 
@@ -520,6 +523,14 @@ describe('tool availability variants', () => {
 
     expect(withReview).toContain(DISPLAY_REVIEW_TOOL_NAME);
     expect(withoutReview).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
+  });
+
+  it('offers no preview tool while a review is available', async () => {
+    const withReview = await names({});
+    const withoutReview = await names({ reviewEnabled: false });
+
+    expect(withReview).not.toContain(PREVIEW_STORIES_TOOL_NAME);
+    expect(withoutReview).toContain(PREVIEW_STORIES_TOOL_NAME);
   });
 
   it('offers no test tool when addon-vitest is absent', async () => {

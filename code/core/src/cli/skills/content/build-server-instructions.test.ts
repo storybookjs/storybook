@@ -52,7 +52,7 @@ describe('buildServerInstructions', () => {
 
       - Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
       - After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-changed** to discover the affected stories.
-      - End your final response with the review section from **review-create**'s result — never substitute preview URLs. **stories-preview** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
+      - End your final response with the review section from **review-create**'s result — never substitute preview URLs. If nothing visually changed, say so.
       - After a visually observable UI change, or when the user asks to see or browse stories/components, call **review-create** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
       - Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.
 
@@ -89,7 +89,7 @@ describe('buildServerInstructions', () => {
 
       - Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
       - After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-changed** to discover the affected stories.
-      - End your final response with the review section from **review-create**'s result — never substitute preview URLs. **stories-preview** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
+      - End your final response with the review section from **review-create**'s result — never substitute preview URLs. If nothing visually changed, say so.
       - After a visually observable UI change, or when the user asks to see or browse stories/components, call **review-create** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
       - Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so."
     `);
@@ -163,8 +163,7 @@ describe('buildServerInstructions', () => {
     expect(instructions).toContain(
       '- After editing anything that changes how the UI looks, call **stories-find-by-component** with the files you touched.'
     );
-    expect(instructions).not.toContain('then **stories-preview** for their preview URLs');
-    expect(instructions).toContain('**stories-preview** is only for mid-loop iteration');
+    expect(instructions).not.toContain('stories-preview');
   });
 
   it('keeps the after-change step discovery-first when review is on without discovery tools', () => {
@@ -181,7 +180,7 @@ describe('buildServerInstructions', () => {
     expect(instructions).toContain(
       '- After editing anything that changes how the UI looks, identify the affected stories.'
     );
-    expect(instructions).not.toContain('call **stories-preview** to retrieve preview URLs');
+    expect(instructions).not.toContain('stories-preview');
   });
 
   it('keeps the default (review off) instructions under the 2,048-char client truncation limit', () => {
@@ -297,7 +296,7 @@ describe('buildServerInstructions', () => {
       expect(instructions).not.toContain('get-storybook-story-instructions');
     });
 
-    it('renders review, preview, and discovery references as CLI commands', () => {
+    it('renders review and discovery references as CLI commands', () => {
       const instructions = buildServerInstructions({
         transport: 'cli',
         devEnabled: true,
@@ -310,7 +309,7 @@ describe('buildServerInstructions', () => {
 
       expect(instructions).toContain('**npx storybook tools stories find-by-component**');
       expect(instructions).toContain('**npx storybook tools review create**');
-      expect(instructions).toContain('**npx storybook tools stories preview**');
+      expect(instructions).not.toContain('npx storybook tools stories preview');
       expect(instructions).not.toContain('review-create');
       expect(instructions).not.toContain('stories-preview');
       expect(instructions).not.toContain('stories-find-by-component');

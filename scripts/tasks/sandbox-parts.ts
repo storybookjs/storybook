@@ -2,7 +2,7 @@
 // the repo to work properly. So we load it async in the task runner *after* those steps.
 import assert from 'node:assert/strict';
 import { existsSync } from 'node:fs';
-import { access, cp, lstat, mkdir, readFile, symlink, writeFile } from 'node:fs/promises';
+import { access, cp, lstat, mkdir, readFile, rm, symlink, writeFile } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
 import { isFunction } from 'es-toolkit/predicate';
@@ -1423,8 +1423,11 @@ const STYLEX_BABEL_OPTIONS = `{
   unstable_moduleResolution: { type: 'commonJS' },
 }`;
 
-/** The Babel + PostCSS setup from the StyleX Next.js guide, as CommonJS files. */
-export const stylexNextjsFiles = {
+/**
+ * The Babel + PostCSS setup from the StyleX Next.js guide, as CommonJS files. With `tailwind`, the
+ * PostCSS config keeps the Tailwind plugin that `create-next-app --tailwind` sets up.
+ */
+export const stylexNextjsFiles = ({ tailwind }: { tailwind: boolean }) => ({
   'babel.config.cjs': `module.exports = {
   presets: ['next/babel'],
   plugins: [['@stylexjs/babel-plugin', ${STYLEX_BABEL_OPTIONS}]],
@@ -1441,11 +1444,13 @@ export const stylexNextjsFiles = {
         plugins: [['@stylexjs/babel-plugin', ${STYLEX_BABEL_OPTIONS}]],
       },
       useCSSLayers: { before: ['reset'] },
-    },
+    },${tailwind ? "\n    '@tailwindcss/postcss': {}," : ''}
   },
 };
 `,
-};
+});
+
+const POSTCSS_CONFIG_FILES = ['postcss.config.mjs', 'postcss.config.js', 'postcss.config.cjs'];
 
 /** `transpilePackages` makes Next.js (and Storybook's babel-loader) compile the tokens package. */
 export function addStylexTranspilePackages(nextConfigSource: string) {
@@ -1460,10 +1465,13 @@ export function addStylexTranspilePackages(nextConfigSource: string) {
 }
 
 /** Installs the tokens fixture with `file:`, so it lands in node_modules like a published package. */
-export function addStylexTokensDependency(packageJson: {
+type PackageJson = {
   dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
   [field: string]: unknown;
-}) {
+};
+
+export function addStylexTokensDependency(packageJson: PackageJson) {
   return {
     ...packageJson,
     dependencies: {
@@ -1521,7 +1529,13 @@ export const addStylexSetup: Task['run'] = async ({ sandboxDir, template }) => {
   await writeConfig(previewConfig);
 
   if (isNextjs) {
-    for (const [fileName, source] of Object.entries(stylexNextjsFiles)) {
+    // Replaced by the generated config, which keeps Tailwind if the app uses it
+    for (const fileName of POSTCSS_CONFIG_FILES) {
+      await rm(join(sandboxDir, fileName), { force: true });
+    }
+    const tailwind =
+      '@tailwindcss/postcss' in { ...packageJson.devDependencies, ...packageJson.dependencies };
+    for (const [fileName, source] of Object.entries(stylexNextjsFiles({ tailwind }))) {
       await writeFile(join(sandboxDir, fileName), source);
     }
     const nextConfigPath = await getConfigFile(

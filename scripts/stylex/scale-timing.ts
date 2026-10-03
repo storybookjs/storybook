@@ -202,7 +202,7 @@ const seconds = (ms: number) => `${(ms / 1000).toFixed(1)} s`;
 async function main() {
   const { values } = parseArgs({
     options: {
-      sandbox: { type: 'string', default: join(SANDBOX_DIRECTORY, 'internal-react-vite-stylex') },
+      sandbox: { type: 'string', default: join(SANDBOX_DIRECTORY, 'react-vite-default-ts') },
       count: { type: 'string', default: '250' },
       runs: { type: 'string', default: '3' },
       'hold-until-crawl-end': { type: 'string' },

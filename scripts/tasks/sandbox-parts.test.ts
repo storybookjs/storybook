@@ -13,6 +13,7 @@ import {
   addStylexTokensDependency,
   addStylexTranspilePackages,
   extendPreview,
+  stylexNextjsFiles,
 } from './sandbox-parts.ts';
 
 // Spy-only mocks: keep the real module shapes, then redirect the reads and writes that
@@ -213,5 +214,19 @@ export default nextConfig;`
     expect(source).toContain(
       "const nextConfig: NextConfig = {\n  transpilePackages: ['stylex-tokens-fixture'],"
     );
+  });
+
+  it('keeps the Tailwind PostCSS plugin next to StyleX in a Tailwind app', () => {
+    const plugins = (tailwind: boolean) => {
+      const module = { exports: {} as { plugins: Record<string, unknown> } };
+      new Function('module', 'process', stylexNextjsFiles({ tailwind })['postcss.config.cjs'])(
+        module,
+        { env: {} }
+      );
+      return Object.keys(module.exports.plugins);
+    };
+
+    expect(plugins(true)).toEqual(['@stylexjs/postcss-plugin', '@tailwindcss/postcss']);
+    expect(plugins(false)).toEqual(['@stylexjs/postcss-plugin']);
   });
 });

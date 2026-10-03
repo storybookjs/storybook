@@ -1,6 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
 
 import BoxWithText from './BoxWithText.svelte';
+import ResetScope from './ResetScope.svelte';
 import UnlayeredReset from './UnlayeredReset.svelte';
 import { expectStyle } from './expectStyle';
 
@@ -8,13 +9,14 @@ const meta = {
   title: 'StyleX/Layers',
   component: BoxWithText,
   args: { text: 'StyleX wins over the reset layer' },
+  decorators: [() => ({ Component: ResetScope })],
 } satisfies Meta<typeof BoxWithText>;
 
 export default meta;
 type Story = StoryObj<typeof meta>;
 
 /**
- * The preview CSS declares `@layer reset { div { color: blue; padding: 0 } }`. StyleX is configured
+ * The preview CSS declares `@layer reset { .stylex-reset div { color: blue; padding: 0 } }`. StyleX is configured
  * with `useCSSLayers: { before: ['reset'] }`, so its priority layers come after the reset.
  */
 export const WithReset: Story = {

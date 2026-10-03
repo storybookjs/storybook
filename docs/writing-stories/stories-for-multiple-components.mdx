@@ -43,6 +43,8 @@ One way we improve that situation is by pulling the rendered subcomponent out in
 
 <CodeSnippets path="list-story-with-unchecked-children.md" />
 
+In CSF 3, an imported story (for example `Unchecked` from `ListItem.stories`) is a story object, not a component. To reuse its output, call its `render` function with that story's args (for example `Unchecked.render({ ...Unchecked.args })`) inside your story's own `render` function, as shown above. Using JSX like `<Unchecked {...Unchecked.args} />` will not work without that explicit render.
+
 Now that `children` is an arg, we can potentially reuse it in another story.
 
 However, there are some caveats when using this approach that you should be aware of.

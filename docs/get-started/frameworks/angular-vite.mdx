@@ -198,6 +198,12 @@ If your component relies on application-wide providers (such as those returned b
 
 <CodeSnippets path="angular-vite-application-providers-in-meta-and-story.md" />
 
+<Callout variant="info">
+
+Use `applicationConfig` for providers that belong to the application bootstrap environment, such as providers passed to Angular's `bootstrapApplication`. Use `moduleMetadata` for declarations, imports, and providers needed by the story's Angular template. The decorators configure different scopes and can be used together when a story needs both.
+
+</Callout>
+
 ### Angular dependencies
 
 If your component has dependencies on other Angular directives and modules, supply them using the `moduleMetadata` [decorator](../../writing-stories/decorators.mdx) either for all stories of a component or for individual stories.

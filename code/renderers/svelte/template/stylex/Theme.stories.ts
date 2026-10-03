@@ -1,8 +1,8 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { expect } from 'storybook/test';
 
 import ThemeSurface from './components/ThemeSurface.svelte';
 import { withStylexTheme } from './withStylexTheme';
+import { expectStyle } from './expectStyle';
 
 const meta = {
   title: 'StyleX/Theme',
@@ -13,13 +13,8 @@ const meta = {
 export default meta;
 type Story = StoryObj<typeof meta>;
 
-const expectTheme = (surface: HTMLElement, backgroundColor: string, color: string) => {
-  const style = getComputedStyle(surface);
-  return Promise.all([
-    expect(style.backgroundColor).toBe(backgroundColor),
-    expect(style.color).toBe(color),
-  ]);
-};
+const expectTheme = (surface: HTMLElement, backgroundColor: string, color: string) =>
+  expectStyle(surface, { backgroundColor, color });
 
 export const Light: Story = {
   parameters: { stylexTheme: 'light' },

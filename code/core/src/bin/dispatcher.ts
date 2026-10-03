@@ -67,20 +67,10 @@ async function run() {
           args,
         } as const);
 
-  let storybookVersionSpecifier: string | undefined;
-  try {
-    storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
-  } catch {
-    storybookVersionSpecifier = resolveStorybookVersionSpecifier([]);
-  }
-  if (storybookVersionSpecifier) {
-    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
-  }
-
-  const dispatchedVersion =
-    getPkgPrNewPackageSpecifier(targetCli.pkg, storybookVersionSpecifier) ??
-    versions[targetCli.pkg];
-
+  // Dispatch locally when the installed package matches the released version. The local path must
+  // not depend on version-specifier resolution, which walks the process ancestry — on Windows, a
+  // wmic call per ancestor PID that leaks "No Instance(s) Available." into stderr. Ancestry is
+  // only needed by the remote fallback below, to build a pkg.pr.new specifier.
   try {
     const { default: targetCliPackageJson } = await import(`${targetCli.pkg}/package.json`, {
       with: { type: 'json' },
@@ -101,6 +91,22 @@ async function run() {
   } catch {
     // the package couldn't be imported, download and run it with the detected package manager
   }
+
+  // The package is missing or mismatched (canary, pkg.pr.new): resolve the specifier — which
+  // requires the process ancestry — then run the released package remotely.
+  let storybookVersionSpecifier: string | undefined;
+  try {
+    storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
+  } catch {
+    storybookVersionSpecifier = resolveStorybookVersionSpecifier([]);
+  }
+  if (storybookVersionSpecifier) {
+    process.env.STORYBOOK_VERSION_SPECIFIER = storybookVersionSpecifier;
+  }
+
+  const dispatchedVersion =
+    getPkgPrNewPackageSpecifier(targetCli.pkg, storybookVersionSpecifier) ??
+    versions[targetCli.pkg];
 
   const packageManager = JsPackageManagerFactory.getPackageManager();
   const child = packageManager.runPackageCommand({

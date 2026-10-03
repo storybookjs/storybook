@@ -1,9 +1,9 @@
 import React from 'react';
 
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect } from 'storybook/test';
 
 import { Box } from './components/Box';
+import { expectStyle } from './expectStyle';
 
 const meta = {
   title: 'StyleX/Layers',
@@ -20,9 +20,7 @@ type Story = StoryObj<typeof meta>;
  */
 export const WithReset: Story = {
   play: async ({ canvas }) => {
-    const box = getComputedStyle(canvas.getByTestId('box'));
-    await expect(box.color).toBe('rgb(29, 78, 216)');
-    await expect(box.padding).toBe('16px');
+    await expectStyle(canvas.getByTestId('box'), { color: 'rgb(29, 78, 216)', padding: '16px' });
   },
 };
 

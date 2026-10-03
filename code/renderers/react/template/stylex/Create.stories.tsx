@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/react';
-import { expect } from 'storybook/test';
 
 import { Box } from './components/Box';
+import { expectStyle } from './expectStyle';
 
 const meta = {
   title: 'StyleX/Create',
@@ -14,16 +14,17 @@ type Story = StoryObj<typeof meta>;
 
 export const Basic: Story = {
   play: async ({ canvas }) => {
-    const box = getComputedStyle(canvas.getByTestId('box'));
-    await expect(box.padding).toBe('16px');
-    await expect(box.color).toBe('rgb(29, 78, 216)');
-    await expect(box.borderRadius).toBe('8px');
+    await expectStyle(canvas.getByTestId('box'), {
+      padding: '16px',
+      color: 'rgb(29, 78, 216)',
+      borderRadius: '8px',
+    });
   },
 };
 
 export const Dynamic: Story = {
   args: { width: 240, children: 'Width from an arg' },
   play: async ({ canvas, args }) => {
-    await expect(getComputedStyle(canvas.getByTestId('box')).width).toBe(`${args.width}px`);
+    await expectStyle(canvas.getByTestId('box'), { width: `${args.width}px` });
   },
 };

@@ -1,7 +1,7 @@
 import type { Meta, StoryObj } from '@storybook/svelte';
-import { expect } from 'storybook/test';
 
 import Swatch from './components/Swatch.svelte';
+import { expectStyle } from './expectStyle';
 
 const meta = {
   title: 'StyleX/Vars',
@@ -15,7 +15,7 @@ type Story = StoryObj<typeof meta>;
 export const LocalTokens: Story = {
   args: { source: 'local' },
   play: async ({ canvas }) => {
-    await expect(getComputedStyle(canvas.getByTestId('swatch')).color).toBe('rgb(190, 18, 60)');
+    await expectStyle(canvas.getByTestId('swatch'), { color: 'rgb(190, 18, 60)' });
   },
 };
 
@@ -23,6 +23,6 @@ export const LocalTokens: Story = {
 export const PackageTokens: Story = {
   args: { source: 'package' },
   play: async ({ canvas }) => {
-    await expect(getComputedStyle(canvas.getByTestId('swatch')).color).toBe('rgb(124, 58, 237)');
+    await expectStyle(canvas.getByTestId('swatch'), { color: 'rgb(124, 58, 237)' });
   },
 };

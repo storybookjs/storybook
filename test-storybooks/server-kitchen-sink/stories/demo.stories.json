@@ -17,6 +17,11 @@
       "parameters": {
         "server": { "id": "demo/button" }
       }
+    },
+    {
+      "name": "あ in story name",
+      "parameters": {
+        "server": { "id": "demo/story-name" } }
     }
   ]
 }

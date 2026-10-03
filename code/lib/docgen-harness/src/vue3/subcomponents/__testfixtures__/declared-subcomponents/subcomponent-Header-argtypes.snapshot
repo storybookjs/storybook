@@ -1,0 +1,63 @@
+{
+  "dismiss": {
+    "control": {
+      "disable": true,
+    },
+    "description": "Fired when the header is dismissed.",
+    "name": "dismiss",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[]",
+    },
+  },
+  "heading": {
+    "defaultValue": undefined,
+    "description": "Heading text rendered above the card body.",
+    "name": "heading",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "level": {
+    "defaultValue": undefined,
+    "description": "@default: 2<br><br>Heading level applied to the rendered element.",
+    "name": "level",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "2 | 3",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "other",
+          "required": false,
+          "value": "2",
+        },
+        {
+          "name": "other",
+          "required": false,
+          "value": "3",
+        },
+      ],
+    },
+  },
+}

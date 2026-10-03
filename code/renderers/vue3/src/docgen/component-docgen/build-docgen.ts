@@ -1,15 +1,27 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import {
   extractComponentDescription,
   extractDescription,
   loadCsf,
 } from 'storybook/internal/csf-tools';
-import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
+import type { CsfFile } from 'storybook/internal/csf-tools';
+import type {
+  DocgenError,
+  DocgenPayload,
+  DocgenProviderInput,
+  DocgenSubcomponent,
+} from 'storybook/internal/types';
 
 import type ts from 'typescript';
+
+import {
+  type DeclaredSubcomponent,
+  extractDeclaredSubcomponents,
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+} from 'storybook/internal/common';
 
 import { extractArgTypes } from './arg-types/extractArgTypes.ts';
 
@@ -64,6 +76,35 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
 };
 
 /**
+ * The subcomponent variant of {@link UNRESOLVED_COMPONENT_ERRORS}: same error names, but the
+ * messages point at the `meta.subcomponents.<Key>` entry that failed instead of the primary
+ * `meta.component` declaration the user never broke.
+ */
+function unresolvedSubcomponentError(
+  reason: UnresolvedComponentReason,
+  entryName: string
+): DocgenError {
+  const entry = `meta.subcomponents.${entryName}`;
+  switch (reason) {
+    case 'no-meta-component':
+      return {
+        name: 'No component found',
+        message: `We could not detect the component for the ${entry} entry in your story file.`,
+      };
+    case 'no-component-import':
+      return {
+        name: 'No component import found',
+        message: `No component file found for the component declared in ${entry}. Import it into the story file.`,
+      };
+    case 'unreadable-component-expression':
+      return {
+        name: 'No component found',
+        message: `We could not follow ${entry} to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.`,
+      };
+  }
+}
+
+/**
  * Get last segment of a story title
  */
 function componentNameFromTitle(title: string): string {
@@ -76,6 +117,91 @@ function getUsableComponentName(component: string | undefined): string | undefin
     return undefined;
   }
   return name;
+}
+
+/**
+ * Builds one declared subcomponent's docgen entry through the same extraction chain as the primary
+ * component: resolve to a file, follow re-exports, then run the shared metadata extraction.
+ *
+ * Every failure — resolution, extraction, anything thrown — is isolated to the entry's `error`, so
+ * one broken child cannot fail the payload that documents the primary component.
+ */
+async function buildSubcomponentDocgen(
+  csf: CsfFile,
+  storyPath: string,
+  storyFilePath: string,
+  declared: DeclaredSubcomponent,
+  context: BuildDocgenContext
+): Promise<DocgenSubcomponent> {
+  const failure = (error: DocgenError): DocgenSubcomponent => ({
+    name: declared.componentName,
+    path: storyFilePath,
+    jsDocTags: {},
+    error,
+  });
+
+  try {
+    const resolved = resolveMetaComponent(csf, storyPath, declared.node);
+    if ('reason' in resolved) {
+      return failure(unresolvedSubcomponentError(resolved.reason, declared.name));
+    }
+
+    const checker = context.getChecker(resolved.component.path);
+    // A design system declares subcomponents through its barrel as often as not, so the re-export
+    // is followed exactly like the primary component's.
+    const declaredExport = followReExport(
+      checker,
+      resolved.component.path,
+      resolved.component.exportName
+    ) ?? {
+      path: resolved.component.path,
+      exportName: resolved.component.exportName,
+    };
+    const metaSources = await collectComponentMetaSources(
+      checker,
+      declaredExport.path,
+      context.typescript
+    );
+    const componentMeta = metaSources.find((meta) => meta.exportName === declaredExport.exportName);
+    if (!componentMeta) {
+      return failure({
+        name: 'No docgen found',
+        message: `vue-component-meta extracted no component metadata for the "${declaredExport.exportName}" export of ${declaredExport.path} (subcomponent "${declared.name}").`,
+      });
+    }
+
+    const { description, summary, jsDocTags } = extractComponentDescription(
+      undefined,
+      componentMeta.description,
+      componentMeta.jsDocTags
+    );
+
+    // Named-type detail resolves in the declaring module's scope, so each child builds its own.
+    const resolveNamedTypeDetail = createNamedTypeDetailResolver({
+      checker,
+      typescript: context.typescript,
+      componentPath: declaredExport.path,
+    });
+
+    return {
+      name: declared.componentName,
+      path: declaredExport.path,
+      description,
+      summary,
+      jsDocTags,
+      argTypes:
+        extractArgTypes({ __docgenInfo: componentMeta }, resolveNamedTypeDetail) ?? undefined,
+      apiDescription: buildApiDescription(componentMeta),
+      renderer: 'vue3',
+    };
+  } catch (error) {
+    return failure({
+      name: 'Subcomponent extraction failed',
+      message: `Extracting docgen for the declared subcomponent "${declared.name}" failed: ${
+        error instanceof Error ? error.message : String(error)
+      }`,
+    });
+  }
 }
 
 /**
@@ -185,6 +311,20 @@ export async function buildDocgenPayload(
     componentPath: declared.path,
   });
 
+  // Composite components declare the auxiliary parts they are documented with in CSF meta; each
+  // gets the same extraction chain as the primary component. The key is omitted entirely when
+  // nothing is declared, so payloads for story files without subcomponents stay byte-identical.
+  const subcomponentEntries: Record<string, DocgenSubcomponent> = {};
+  for (const declaredSubcomponent of extractDeclaredSubcomponents(csf)) {
+    subcomponentEntries[declaredSubcomponent.name] = await buildSubcomponentDocgen(
+      csf,
+      storyPath,
+      storyFilePath,
+      declaredSubcomponent,
+      context
+    );
+  }
+
   return {
     ...baseFor((authoredComponentName ?? componentMeta.displayName) || fallbackName),
     description,
@@ -194,5 +334,6 @@ export async function buildDocgenPayload(
     argTypes: extractArgTypes({ __docgenInfo: componentMeta }, resolveNamedTypeDetail) ?? undefined,
     apiDescription: buildApiDescription(componentMeta),
     renderer: 'vue3',
+    ...(Object.keys(subcomponentEntries).length > 0 ? { subcomponents: subcomponentEntries } : {}),
   };
 }

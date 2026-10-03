@@ -1,19 +1,19 @@
 //* @vitest-environment happy-dom */
-import { describe, expect, expectTypeOf, test, vi } from 'vitest';
 import { testType } from 'type-plus';
+import { describe, expect, test, vi } from 'vitest';
 
 import { getCoreAnnotations, hasCoreAnnotations } from './core-annotations.ts';
 import { definePreview, definePreviewAddon, getStoryChildren } from './csf-factories.ts';
 import type { Tag } from './story.ts';
 
 interface Addon1Types {
-  parameters: { foo?: { value: string } };
+  parameters: { foo?: { value: string | number } };
 }
 
 const addon = definePreviewAddon<Addon1Types>({});
 
 interface Addon2Types {
-  parameters: { bar?: { value: string } };
+  parameters: { bar?: { value: string | number } };
 }
 
 const addon2 = definePreviewAddon<Addon2Types>({});
@@ -39,11 +39,9 @@ test('addon parameters are inferred', () => {
   const MyStory2 = meta.story({
     parameters: {
       foo: {
-        // @ts-expect-error can not assign numbers to strings
         value: 1,
       },
       bar: {
-        // @ts-expect-error can not assign numbers to strings
         value: 1,
       },
     },

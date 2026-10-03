@@ -144,17 +144,14 @@ async function runOnce(sandboxDir: string, probes: Probe[]) {
   await rm(join(sandboxDir, 'node_modules', '.cache'), { recursive: true, force: true });
   const port = await getFreePort();
   const start = Date.now();
-  // Run the binary directly, in its own process group, so stopping it stops every child process
-  const storybook = execa(
-    join(sandboxDir, 'node_modules', '.bin', 'storybook'),
-    ['dev', '--ci', '--port', String(port)],
-    {
-      cwd: sandboxDir,
-      env: { NODE_ENV: 'development', STORYBOOK_DISABLE_TELEMETRY: '1' },
-      detached: true,
-      reject: false,
-    }
-  );
+  // The sandbox's own script sets the Node options linked sandboxes need. It runs in its own
+  // process group, so stopping it stops every child process.
+  const storybook = execa('yarn', ['storybook', '--ci', '--port', String(port)], {
+    cwd: sandboxDir,
+    env: { NODE_ENV: 'development', STORYBOOK_DISABLE_TELEMETRY: '1' },
+    detached: true,
+    reject: false,
+  });
   const browser = await chromium.launch();
   try {
     await waitForServer(`http://localhost:${port}/index.json`, 120_000);

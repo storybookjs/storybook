@@ -144,11 +144,17 @@ async function runOnce(sandboxDir: string, probes: Probe[]) {
   await rm(join(sandboxDir, 'node_modules', '.cache'), { recursive: true, force: true });
   const port = await getFreePort();
   const start = Date.now();
-  const storybook = execa('yarn', ['exec', 'storybook', 'dev', '--ci', '--port', String(port)], {
-    cwd: sandboxDir,
-    env: { NODE_ENV: 'development', STORYBOOK_DISABLE_TELEMETRY: '1' },
-    reject: false,
-  });
+  // Run the binary directly, in its own process group, so stopping it stops every child process
+  const storybook = execa(
+    join(sandboxDir, 'node_modules', '.bin', 'storybook'),
+    ['dev', '--ci', '--port', String(port)],
+    {
+      cwd: sandboxDir,
+      env: { NODE_ENV: 'development', STORYBOOK_DISABLE_TELEMETRY: '1' },
+      detached: true,
+      reject: false,
+    }
+  );
   const browser = await chromium.launch();
   try {
     await waitForServer(`http://localhost:${port}/index.json`, 120_000);
@@ -158,42 +164,35 @@ async function runOnce(sandboxDir: string, probes: Probe[]) {
     for (const probe of probes) {
       const probeStart = Date.now();
       await page.goto(`http://localhost:${port}/iframe.html?id=${probe.storyId}&viewMode=story`);
-      const element = page.getByTestId('scale');
       // Wait until the story is not only rendered but styled; unplugin's dev CSS can arrive late
-      const actual = await element
-        .evaluate(
-          (el, expected) =>
-            new Promise<{ color: string; padding: string }>((resolve) => {
-              const check = () => {
-                const style = getComputedStyle(el);
-                if (style.color === expected.color && style.padding === expected.padding) {
-                  resolve({ color: style.color, padding: style.padding });
-                } else {
-                  requestAnimationFrame(check);
-                }
-              };
-              check();
-            }),
+      const styled = await page
+        .waitForFunction(
+          (expected) => {
+            const element = document.querySelector('[data-testid="scale"]');
+            if (!element) {
+              return false;
+            }
+            const style = getComputedStyle(element);
+            return style.color === expected.color && style.padding === expected.padding;
+          },
           { color: probe.color, padding: probe.padding },
           { timeout: RENDER_TIMEOUT }
         )
-        .catch(async () =>
-          element.evaluate((el) => ({
-            color: getComputedStyle(el).color,
-            padding: getComputedStyle(el).padding,
-          }))
-        );
-      results.push({
-        ...probe,
-        ms: Date.now() - probeStart,
-        actual,
-        styled: actual.color === probe.color && actual.padding === probe.padding,
+        .then(() => true)
+        .catch(() => false);
+      const ms = Date.now() - probeStart;
+      const actual = await page.evaluate(() => {
+        const element = document.querySelector('[data-testid="scale"]');
+        return element
+          ? { color: getComputedStyle(element).color, padding: getComputedStyle(element).padding }
+          : { color: 'not rendered', padding: 'not rendered' };
       });
+      results.push({ ...probe, ms, actual, styled });
     }
     return { startupMs, results };
   } finally {
     await browser.close();
-    storybook.kill('SIGTERM');
+    process.kill(-storybook.pid!, 'SIGTERM');
     await storybook;
   }
 }
@@ -231,6 +230,13 @@ async function main() {
 
   const fixtureDir = join(sandboxDir, FIXTURE_DIRECTORY);
   let restoreMain: (() => Promise<void>) | undefined;
+  const cleanUp = async () => {
+    await rm(fixtureDir, { recursive: true, force: true });
+    await restoreMain?.();
+  };
+  for (const signal of ['SIGINT', 'SIGTERM'] as const) {
+    process.once(signal, () => cleanUp().finally(() => process.exit(1)));
+  }
   const allRuns: Awaited<ReturnType<typeof runOnce>>[] = [];
   try {
     await mkdir(fixtureDir, { recursive: true });
@@ -248,8 +254,7 @@ async function main() {
       allRuns.push(await runOnce(sandboxDir, probes));
     }
   } finally {
-    await rm(fixtureDir, { recursive: true, force: true });
-    await restoreMain?.();
+    await cleanUp();
   }
 
   const { stdout: viteVersion } = await execa(

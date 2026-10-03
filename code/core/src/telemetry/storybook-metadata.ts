@@ -120,7 +120,21 @@ export const computeStorybookMetadata = async ({
   mainConfig?: StorybookConfig & Record<string, any>;
   configDir: string;
 }): Promise<StorybookMetadata> => {
-  const settings = isCI() && !detectAgent() ? undefined : await globalSettings();
+  const allDependencies = {
+    ...packageJson?.dependencies,
+    ...packageJson?.devDependencies,
+    ...packageJson?.peerDependencies,
+  };
+
+  const metaFramework = Object.keys(allDependencies).find((dep) => !!metaFrameworks[dep]);
+
+  const [settings, metaFrameworkVersion, knownPackages, packageManager] = await Promise.all([
+    isCI() && !detectAgent() ? undefined : globalSettings(),
+    metaFramework ? getActualPackageVersion(metaFramework) : undefined,
+    analyzeEcosystemPackages(packageJson),
+    getPackageManagerInfo(),
+  ]);
+
   const metadata: Partial<StorybookMetadata> = {
     generatedAt: new Date().getTime(),
     userSince: settings?.value.userSince,
@@ -132,23 +146,15 @@ export const computeStorybookMetadata = async ({
     refCount: 0,
   };
 
-  const allDependencies = {
-    ...packageJson?.dependencies,
-    ...packageJson?.devDependencies,
-    ...packageJson?.peerDependencies,
-  };
-
-  const metaFramework = Object.keys(allDependencies).find((dep) => !!metaFrameworks[dep]);
   if (metaFramework) {
-    const { version } = await getActualPackageVersion(metaFramework);
     metadata.metaFramework = {
       name: metaFrameworks[metaFramework],
       packageName: metaFramework,
-      version: version || 'unknown',
+      version: metaFrameworkVersion?.version || 'unknown',
     };
   }
 
-  metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
+  metadata.knownPackages = knownPackages;
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
   metadata.hasTurbopack = getHasTurbopack(packageJson);
   metadata.hasModuleFederation = getHasModuleFederation(packageJson);
@@ -158,7 +164,7 @@ export const computeStorybookMetadata = async ({
     metadata.monorepo = monorepoType;
   }
 
-  metadata.packageManager = await getPackageManagerInfo();
+  metadata.packageManager = packageManager;
 
   const language = allDependencies.typescript ? 'typescript' : 'javascript';
 
@@ -180,68 +186,7 @@ export const computeStorybookMetadata = async ({
     metadata.typescriptOptions = mainConfig.typescript;
   }
 
-  const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
-
-  const rendererPackages = Object.fromEntries(
-    await Promise.all(
-      getRendererPackages(frameworkInfo.renderer).map(async (packageName) => {
-        const { version } = await getActualPackageVersion(packageName);
-        return [packageName, version || 'unknown'];
-      })
-    )
-  );
-  if (Object.keys(rendererPackages).length > 0) {
-    metadata.knownPackages = { ...metadata.knownPackages, rendererPackages };
-  }
-
-  if (typeof mainConfig.refs === 'object') {
-    metadata.refCount = Object.keys(mainConfig.refs).length;
-  }
-
-  if (typeof mainConfig.features === 'object') {
-    metadata.features = mainConfig.features;
-  }
-
-  const addons: Record<string, StorybookAddon> = {};
-  if (mainConfig.addons) {
-    mainConfig.addons.forEach((addon) => {
-      let addonName;
-      let options;
-
-      if (typeof addon === 'string') {
-        addonName = sanitizeAddonName(addon);
-      } else {
-        if (addon.name.includes('addon-essentials')) {
-          options = addon.options;
-        }
-        addonName = sanitizeAddonName(addon.name);
-      }
-
-      addons[addonName] = {
-        options,
-        version: undefined,
-      };
-    });
-  }
-
-  const chromaticVersionSpecifier = getChromaticVersionSpecifier(packageJson);
-  if (chromaticVersionSpecifier) {
-    addons.chromatic = {
-      version: undefined,
-      versionSpecifier: chromaticVersionSpecifier,
-      options: undefined,
-    };
-  }
-
-  const addonVersions = await getActualPackageVersions(addons);
-  addonVersions.forEach(({ name, version }) => {
-    addons[name] = addons[name] || {
-      name,
-      version,
-    };
-    addons[name].version = version || undefined;
-  });
-
+  const addons = collectAddons(mainConfig, packageJson);
   const addonNames = Object.keys(addons);
 
   // all Storybook deps minus the addons
@@ -254,7 +199,48 @@ export const computeStorybookMetadata = async ({
       };
     }, {}) as Record<string, Dependency>;
 
-  const storybookPackageVersions = await getActualPackageVersions(storybookPackages);
+  const [
+    { frameworkInfo, rendererPackages },
+    addonVersions,
+    storybookPackageVersions,
+    { storybookInfo, usesGlobals },
+    portableStoriesFileCount,
+    applicationFileCount,
+  ] = await Promise.all([
+    getFrameworkInfo(mainConfig, configDir).then(async (info) => ({
+      frameworkInfo: info,
+      rendererPackages: await resolveRendererPackages(info.renderer),
+    })),
+    getActualPackageVersions(addons),
+    getActualPackageVersions(storybookPackages),
+    getStorybookInfo(configDir).then(async (info) => ({
+      storybookInfo: info,
+      usesGlobals: await previewUsesGlobals(info.previewConfigPath),
+    })),
+    getPortableStoriesFileCount(),
+    getApplicationFileCount(dirname(packageJsonPath)),
+  ]);
+
+  if (Object.keys(rendererPackages).length > 0) {
+    metadata.knownPackages = { ...metadata.knownPackages, rendererPackages };
+  }
+
+  if (typeof mainConfig.refs === 'object') {
+    metadata.refCount = Object.keys(mainConfig.refs).length;
+  }
+
+  if (typeof mainConfig.features === 'object') {
+    metadata.features = mainConfig.features;
+  }
+
+  addonVersions.forEach(({ name, version }) => {
+    addons[name] = addons[name] || {
+      name,
+      version,
+    };
+    addons[name].version = version || undefined;
+  });
+
   storybookPackageVersions.forEach(({ name, version }) => {
     storybookPackages[name] = storybookPackages[name] || {
       name,
@@ -266,23 +252,9 @@ export const computeStorybookMetadata = async ({
 
   const hasStorybookEslint = !!allDependencies['eslint-plugin-storybook'];
 
-  const storybookInfo = await getStorybookInfo(configDir);
-
-  try {
-    const { previewConfigPath: previewConfig } = storybookInfo;
-    if (previewConfig) {
-      const config = await readConfig(previewConfig);
-      const usesGlobals = !!(
-        config.getFieldNode(['globals']) || config.getFieldNode(['globalTypes'])
-      );
-      metadata.preview = { ...metadata.preview, usesGlobals };
-    }
-  } catch (e) {
-    // gracefully handle error, as it's not critical information and AST parsing can cause trouble
+  if (usesGlobals !== undefined) {
+    metadata.preview = { ...metadata.preview, usesGlobals };
   }
-
-  const portableStoriesFileCount = await getPortableStoriesFileCount();
-  const applicationFileCount = await getApplicationFileCount(dirname(packageJsonPath));
 
   return {
     ...metadata,
@@ -298,6 +270,57 @@ export const computeStorybookMetadata = async ({
     packageJsonType: packageJson.type ?? 'unknown',
   };
 };
+
+function collectAddons(
+  mainConfig: StorybookConfig,
+  packageJson: PackageJson
+): Record<string, StorybookAddon> {
+  const addons: Record<string, StorybookAddon> = {};
+  for (const addon of mainConfig.addons ?? []) {
+    if (typeof addon === 'string') {
+      addons[sanitizeAddonName(addon)] = { options: undefined, version: undefined };
+    } else {
+      addons[sanitizeAddonName(addon.name)] = {
+        options: addon.name.includes('addon-essentials') ? addon.options : undefined,
+        version: undefined,
+      };
+    }
+  }
+
+  const chromaticVersionSpecifier = getChromaticVersionSpecifier(packageJson);
+  if (chromaticVersionSpecifier) {
+    addons.chromatic = {
+      version: undefined,
+      versionSpecifier: chromaticVersionSpecifier,
+      options: undefined,
+    };
+  }
+  return addons;
+}
+
+async function resolveRendererPackages(renderer: string | undefined) {
+  return Object.fromEntries(
+    await Promise.all(
+      getRendererPackages(renderer).map(async (packageName) => {
+        const { version } = await getActualPackageVersion(packageName);
+        return [packageName, version || 'unknown'];
+      })
+    )
+  );
+}
+
+// Not critical information, and AST parsing of user code can fail, so a parse error yields nothing.
+async function previewUsesGlobals(previewConfigPath: string | undefined) {
+  if (!previewConfigPath) {
+    return undefined;
+  }
+  try {
+    const config = await readConfig(previewConfigPath);
+    return !!(config.getFieldNode(['globals']) || config.getFieldNode(['globalTypes']));
+  } catch {
+    return undefined;
+  }
+}
 
 async function getPackageJsonDetails() {
   const packageJsonPath = pkg.up();

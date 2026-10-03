@@ -16,6 +16,7 @@ const DEFAULT_ELEMENT_SELECTOR = 'html';
 const DEFAULT_DATA_ATTRIBUTE = 'data-theme';
 
 // TODO check with @kasperpeulen: change the types so they can be correctly inferred from context e.g. <Story extends (...args: any[]) => any>
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const withThemeByDataAttribute = <TRenderer extends Renderer = any>({
   themes,
   defaultTheme,
@@ -30,11 +31,15 @@ export const withThemeByDataAttribute = <TRenderer extends Renderer = any>({
     useEffect(() => {
       const parentElement = document.querySelector(parentSelector);
       const themeKey = themeOverride || selected || defaultTheme;
+      const docsElement =
+        context.viewMode === 'docs' ? document.querySelector('#storybook-docs') : null;
 
-      if (parentElement) {
-        parentElement.setAttribute(attributeName, themes[themeKey]);
-      }
-    }, [themeOverride, selected]);
+      [parentElement, docsElement].forEach((element) => {
+        if (element) {
+          element.setAttribute(attributeName, themes[themeKey]);
+        }
+      });
+    }, [themeOverride, selected, context.viewMode]);
 
     return storyFn();
   };

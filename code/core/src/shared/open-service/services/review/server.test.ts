@@ -350,7 +350,7 @@ describe('registerReviewService', () => {
     });
   });
 
-  it('sends no markStale from a delegated runtime when it syncs a graph revision above 0', async () => {
+  it('sends no markStale from a delegated runtime when a peer raises the graph revision above 0', async () => {
     const ambientChannel = getChannel();
     onTestFinished(() => setChannel(ambientChannel));
     const channel = createTestChannel();

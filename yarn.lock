@@ -9964,27 +9964,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/addon-svelte-csf@npm:^5.1.4":
-  version: 5.1.4
-  resolution: "@storybook/addon-svelte-csf@npm:5.1.4"
-  dependencies:
-    "@storybook/csf": "npm:^0.1.13"
-    dedent: "npm:^1.5.3"
-    es-toolkit: "npm:^1.26.1"
-    esrap: "npm:^1.2.2"
-    magic-string: "npm:^0.30.12"
-    svelte-ast-print: "npm:^0.4.0"
-    zimmerframe: "npm:^1.1.2"
-  peerDependencies:
-    "@storybook/svelte": ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
-    "@sveltejs/vite-plugin-svelte": ^4.0.0 || ^5.0.0 || ^6.0.0 || ^7.0.0
-    storybook: ^0.0.0-0 || ^8.2.0 || ^9.0.0 || ^9.1.0-0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0 || ^11.0.0-0
-    svelte: ^5.0.0
-    vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/3196b18d1e7fbf9f4f3bed905ac13f511c4576fe9f66ff3582b6cacafd573b7a4abf15da283267848c96d7c163e1423996ca478f00fd744d396b8901a3c495a2
-  languageName: node
-  linkType: hard
-
 "@storybook/addon-themes@workspace:*, @storybook/addon-themes@workspace:code/addons/themes":
   version: 0.0.0-use.local
   resolution: "@storybook/addon-themes@workspace:code/addons/themes"
@@ -10424,15 +10403,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/csf@npm:^0.1.13":
-  version: 0.1.13
-  resolution: "@storybook/csf@npm:0.1.13"
-  dependencies:
-    type-fest: "npm:^2.19.0"
-  checksum: 10c0/7c57b531ac95ca45239f498d419483d675e58cd8d549e0bac623519cc1ef4f3c9c6b75ec3873aa51cc2872728012db5dd5e1f2c2d8085014241eb4b896480996
-  languageName: node
-  linkType: hard
-
 "@storybook/docgen-harness@workspace:code/lib/docgen-harness":
   version: 0.0.0-use.local
   resolution: "@storybook/docgen-harness@workspace:code/lib/docgen-harness"
@@ -10444,7 +10414,6 @@ __metadata:
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@compodoc/compodoc": "npm:2.0.0"
     "@microsoft/fast-element": "npm:3.0.2"
-    "@storybook/addon-svelte-csf": "npm:^5.1.4"
     "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/angular-vite": "workspace:*"
@@ -18586,18 +18555,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"dedent@npm:^1.5.3":
-  version: 1.7.2
-  resolution: "dedent@npm:1.7.2"
-  peerDependencies:
-    babel-plugin-macros: ^3.1.0
-  peerDependenciesMeta:
-    babel-plugin-macros:
-      optional: true
-  checksum: 10c0/acaff07cac355b93f17b1b17ebbb84d3cc55af6ab4b7814c3f505e061903e168bc6bf9ddce331552d64dee1525f0b4c549c9ade46aebfac6f69caaed74e90751
-  languageName: node
-  linkType: hard
-
 "deep-diff@npm:^1.0.2":
   version: 1.0.2
   resolution: "deep-diff@npm:1.0.2"
@@ -19920,7 +19877,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"es-toolkit@npm:^1.26.1, es-toolkit@npm:^1.43.0":
+"es-toolkit@npm:^1.43.0":
   version: 1.52.0
   resolution: "es-toolkit@npm:1.52.0"
   dependenciesMeta:
@@ -20519,15 +20476,6 @@ __metadata:
     "@jridgewell/sourcemap-codec": "npm:^1.4.15"
     "@types/estree": "npm:^1.0.1"
   checksum: 10c0/a3a0b665c034f604a162b910346309c64c42635c5d2e8704a27afcdf4e6d4c529e05475d1875d6b3e0d550f8470986116414097230ab3a7c565b85091ca5e177
-  languageName: node
-  linkType: hard
-
-"esrap@npm:^1.2.2":
-  version: 1.4.9
-  resolution: "esrap@npm:1.4.9"
-  dependencies:
-    "@jridgewell/sourcemap-codec": "npm:^1.4.15"
-  checksum: 10c0/21b4c58f358360ada596ea46b8dbf47771c6d7734277add55e7cd1d5655126dea25591788712452ed8575a99acd388eae756bf941bab31d7b9fb424620c10c40
   languageName: node
   linkType: hard
 
@@ -34280,18 +34228,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"svelte-ast-print@npm:^0.4.0":
-  version: 0.4.2
-  resolution: "svelte-ast-print@npm:0.4.2"
-  dependencies:
-    esrap: "npm:1.2.2"
-    zimmerframe: "npm:1.1.2"
-  peerDependencies:
-    svelte: ^5.0.0
-  checksum: 10c0/93e38b4a29895860f9ea6084e247c5049e658ec32ef55a2a0b42a5264e712ecf2a57653b6834cf12479b803eb104cbdf81451316c22205cea33b9a934fbaff47
-  languageName: node
-  linkType: hard
-
 "svelte-check@npm:^4.4.8":
   version: 4.4.8
   resolution: "svelte-check@npm:4.4.8"
@@ -35277,19 +35213,19 @@ __metadata:
   languageName: node
   linkType: hard
 
-"type-fest@npm:^2.19.0, type-fest@npm:~2.19":
-  version: 2.19.0
-  resolution: "type-fest@npm:2.19.0"
-  checksum: 10c0/a5a7ecf2e654251613218c215c7493574594951c08e52ab9881c9df6a6da0aeca7528c213c622bc374b4e0cb5c443aa3ab758da4e3c959783ce884c3194e12cb
-  languageName: node
-  linkType: hard
-
 "type-fest@npm:^5.6.0":
   version: 5.6.0
   resolution: "type-fest@npm:5.6.0"
   dependencies:
     tagged-tag: "npm:^1.0.0"
   checksum: 10c0/5468a8ffda7f3904e6f7bbd8069eb8b6dd4bd9156e206df7a01d09a73e28cd1afedf74ead9d0fc12841c8c90074194859feca240511c50800962fde1bd9ddcbc
+  languageName: node
+  linkType: hard
+
+"type-fest@npm:~2.19":
+  version: 2.19.0
+  resolution: "type-fest@npm:2.19.0"
+  checksum: 10c0/a5a7ecf2e654251613218c215c7493574594951c08e52ab9881c9df6a6da0aeca7528c213c622bc374b4e0cb5c443aa3ab758da4e3c959783ce884c3194e12cb
   languageName: node
   linkType: hard
 
@@ -37771,13 +37707,6 @@ __metadata:
   version: 2.1.2
   resolution: "yoctocolors@npm:2.1.2"
   checksum: 10c0/b220f30f53ebc2167330c3adc86a3c7f158bcba0236f6c67e25644c3188e2571a6014ffc1321943bb619460259d3d27eb4c9cc58c2d884c1b195805883ec7066
-  languageName: node
-  linkType: hard
-
-"zimmerframe@npm:1.1.2":
-  version: 1.1.2
-  resolution: "zimmerframe@npm:1.1.2"
-  checksum: 10c0/8f693609c31cbb4449db223acd61661bc93b73e615f9db6fb8c86d4ceea84ca54cbbeebcf53cf74c22a1f923b92abd18e97988a5e175c76b6ab17238e5593a9d
   languageName: node
   linkType: hard
 

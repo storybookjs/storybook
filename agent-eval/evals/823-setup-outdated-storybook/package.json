@@ -11,7 +11,6 @@
     "storybook": "10.4.0"
   },
   "evals": {
-    "template": "vite-app",
-    "pinStorybook": false
+    "template": "vite-app"
   }
 }

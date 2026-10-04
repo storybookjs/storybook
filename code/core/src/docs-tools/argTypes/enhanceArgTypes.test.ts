@@ -186,14 +186,13 @@ describe('enhanceArgTypes', () => {
       it('user-specified controls take precedence over inferred controls', () => {
         expect(
           enhance({
-            argType: { name: 'input', defaultValue: 5, control: { type: 'range', step: 50 } },
+            argType: { name: 'input', control: { type: 'range', step: 50 } },
             arg: 3,
             extractedArgTypes: { input: { name: 'input' } },
           }).input
         ).toMatchInlineSnapshot(`
           {
             "name": "input",
-            "defaultValue": 5,
             "control": {
               "type": "range",
               "step": 50

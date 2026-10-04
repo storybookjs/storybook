@@ -1,9 +1,6 @@
 {
   "argTypes": {
     "backgroundColor": {
-      "defaultValue": {
-        "summary": "'red'"
-      },
       "description": "@defaultValue: false<br>@control: color<br>@group: Style<br><br>This is a description of the prop",
       "name": "backgroundColor",
       "table": {
@@ -21,9 +18,6 @@
       }
     },
     "size": {
-      "defaultValue": {
-        "summary": "'medium'"
-      },
       "description": "@defaultValue: 'medium'<br>@values: 'small', 'medium', 'large'<br>@control: select<br>@group: Size<br><br>This is a description of the prop",
       "name": "size",
       "table": {

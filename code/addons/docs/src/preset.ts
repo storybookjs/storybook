@@ -222,11 +222,7 @@ export const resolvedReact = async (existing: any) => ({
 export const services = async (_value: void, options: Options): Promise<void> => {
   const features = await options.presets.apply('features');
 
-  if (
-    features?.experimentalDocgenServer &&
-    features?.componentsManifest &&
-    !options.ignorePreview
-  ) {
+  if (features?.experimentalDocgenServer && features?.componentsManifest) {
     registerMdxService({
       getIndex: () =>
         options.presets

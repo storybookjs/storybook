@@ -521,6 +521,7 @@ describe('Instrumenter', () => {
     vi.runAllTimers();
     expect(mocks.syncSpy).toHaveBeenCalledWith(
       expect.objectContaining({
+        storyId: 'kind--story',
         logItems: [
           { callId: 'kind--story [2] fn2', status: 'done', ancestors: [] },
           { callId: 'kind--story [3] fn', status: 'done', ancestors: [] },

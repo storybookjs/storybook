@@ -7,6 +7,7 @@ import path from 'path';
 import type { FileInfo } from '../../automigrate/codemod.ts';
 import { addImportToTop, cleanupTypeImports } from './csf-factories-utils.ts';
 import { removeUnusedTypes } from './remove-unused-types.ts';
+import { wrapArgsMocks } from './wrap-args-mocks.ts';
 
 const typesDisallowList = [
   'Story',
@@ -21,7 +22,9 @@ const typesDisallowList = [
 // Name of properties that should not be renamed to `Story.input.xyz`
 const reuseDisallowList = ['play', 'run', 'extends', 'story'];
 
-type Options = { previewConfigPath: string; useSubPathImports: boolean };
+type Options =
+  | { useSubPathImports: true; previewConfigPath?: string }
+  | { useSubPathImports: false; previewConfigPath: string };
 
 export async function storyToCsfFactory(
   info: FileInfo,
@@ -519,6 +522,7 @@ export async function storyToCsfFactory(
     addImportToTop(programNode, configImport);
   }
 
+  wrapArgsMocks(csf._ast);
   removeUnusedTypes(programNode, csf._ast);
 
   return printCsf(csf).code;

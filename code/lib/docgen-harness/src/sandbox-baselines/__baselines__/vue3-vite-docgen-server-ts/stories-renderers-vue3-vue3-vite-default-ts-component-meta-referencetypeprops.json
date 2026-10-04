@@ -31,9 +31,6 @@
       }
     },
     "bar": {
-      "defaultValue": {
-        "summary": "1"
-      },
       "description": "description bar is optional number",
       "name": "bar",
       "table": {
@@ -206,9 +203,6 @@
       }
     },
     "stringArray": {
-      "defaultValue": {
-        "summary": "[\"foo\", \"bar\"]"
-      },
       "description": "description stringArray is string array",
       "name": "stringArray",
       "table": {

@@ -76,9 +76,12 @@ export async function hasStorybookSkills(): Promise<boolean> {
 export async function installSkills({
   packageManager,
   source,
+  stdio = 'inherit',
 }: {
   packageManager: JsPackageManager;
   source: SkillsSource;
+  /** `pipe` keeps the `skills` CLI output out of a running task log. */
+  stdio?: 'inherit' | 'pipe';
 }): Promise<SkillsInstallResult> {
   if (isCI()) {
     return { result: 'skipped', source: 'ci' };
@@ -101,6 +104,7 @@ export async function installSkills({
       args,
       useRemotePkg: true,
       cwd: getProjectRoot(),
+      stdio,
       env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
       timeout: 120_000,
     });

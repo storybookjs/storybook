@@ -417,6 +417,8 @@ describe('UserPreferencesCommand', () => {
 
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
       expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
+      const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;
+      expect(telemetryService.trackAiSetupNudge).not.toHaveBeenCalled();
     });
 
     it('should not add the test feature to minimal installs where AI setup is not available', async () => {

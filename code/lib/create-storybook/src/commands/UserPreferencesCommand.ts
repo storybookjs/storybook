@@ -81,7 +81,9 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
         : 'recommended';
 
-    const useAi = options.isAiAvailable ? await this.promptAiSetup(skipPrompt) : false;
+    const useAi = options.isAiAvailable
+      ? await this.promptAiSetup(skipPrompt, options.isAiSetupAvailable)
+      : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
@@ -233,7 +235,7 @@ export class UserPreferencesCommand {
   }
 
   /** Prompt user about AI-assisted Storybook setup */
-  private async promptAiSetup(skipPrompt: boolean): Promise<boolean> {
+  private async promptAiSetup(skipPrompt: boolean, isAiSetupAvailable: boolean): Promise<boolean> {
     const useAi = skipPrompt
       ? true
       : await prompt.confirm(
@@ -244,7 +246,7 @@ export class UserPreferencesCommand {
           createPromptCancelOptions(this.telemetryService, 'ai-setup')
         );
 
-    if (useAi) {
+    if (useAi && isAiSetupAvailable) {
       await this.telemetryService.trackAiSetupNudge({ skipPrompt });
     }
 

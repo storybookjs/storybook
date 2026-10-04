@@ -156,6 +156,7 @@ describe('installSkills', () => {
       ],
       useRemotePkg: true,
       cwd: PROJECT_ROOT,
+      stdio: 'inherit',
       env: {},
       timeout: 120_000,
     });

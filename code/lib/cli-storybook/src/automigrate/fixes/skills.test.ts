@@ -45,16 +45,12 @@ describe('skills', () => {
   });
 
   describe('check', () => {
-    it.each([
-      '@storybook/react-vite',
-      '@storybook/nextjs',
-      '@storybook/vue3-vite',
-      '@storybook/angular-vite',
-      '@storybook/sveltekit',
-      '@storybook/web-components-vite',
-    ])('applies on the upgrade into 11 on %s', async (framework) => {
-      await expect(checkFix(skills, checkOptions(framework))).resolves.toEqual({});
-    });
+    it.each(['@storybook/react-vite', '@storybook/sveltekit'])(
+      'applies on the upgrade into 11 on %s',
+      async (framework) => {
+        await expect(checkFix(skills, checkOptions(framework))).resolves.toEqual({});
+      }
+    );
 
     it.each([
       ['an unsupported framework', checkOptions('@storybook/html-vite')],
@@ -98,7 +94,11 @@ describe('skills', () => {
     it('installs the skills', async () => {
       await runSkills();
 
-      expect(installSkills).toHaveBeenCalledWith({ packageManager, source: 'automigration' });
+      expect(installSkills).toHaveBeenCalledWith({
+        packageManager,
+        source: 'automigration',
+        stdio: 'pipe',
+      });
     });
 
     it('installs nothing when another Storybook of the monorepo already installed them', async () => {

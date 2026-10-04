@@ -19,7 +19,7 @@ export const skills: Fix = {
   prompt: () => 'Install the official Storybook skills for AI agents into this project',
 
   async check({ mainConfig, beforeVersion, storybookVersion, requested }) {
-    // The skills are never installed in CI.
+    // `installSkills` skips CI anyway; returning here keeps the no-op out of the list and the report.
     if (isCI()) {
       return null;
     }
@@ -43,11 +43,13 @@ export const skills: Fix = {
     if (await hasStorybookSkills()) {
       return;
     }
-    const { result } = await installSkills({ packageManager, source: 'automigration' });
+    const { result } = await installSkills({
+      packageManager,
+      source: 'automigration',
+      stdio: 'pipe',
+    });
     if (result === 'failed') {
-      throw new HandledError(
-        'Could not install the Storybook skills. Try again with `npx storybook automigrate skills`.'
-      );
+      throw new HandledError('Could not install the Storybook skills');
     }
   },
 };

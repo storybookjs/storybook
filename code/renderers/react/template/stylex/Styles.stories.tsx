@@ -4,7 +4,7 @@ import { Box } from './components/Box';
 import { expectStyle } from './expectStyle';
 
 const meta = {
-  title: 'StyleX/Create',
+  title: 'StyleX/Styles',
   component: Box,
   args: { children: 'Styled with stylex.create' },
 } satisfies Meta<typeof Box>;

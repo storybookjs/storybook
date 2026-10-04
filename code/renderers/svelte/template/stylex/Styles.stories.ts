@@ -4,7 +4,7 @@ import BoxWithText from './BoxWithText.svelte';
 import { expectStyle } from './expectStyle';
 
 const meta = {
-  title: 'StyleX/Create',
+  title: 'StyleX/Styles',
   component: BoxWithText,
   args: { text: 'Styled with stylex.create' },
 } satisfies Meta<typeof BoxWithText>;

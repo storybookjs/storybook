@@ -4,7 +4,7 @@ You can use Storybook's plugin in Claude Code or Claude Desktop to connect agent
 
 ## Requirements
 
-- Storybook 11.0 or later (until 11.0 ships, the latest `next` prerelease or any canary build qualifies)
+- Storybook 11.0 or later (until 11.0 ships, the latest 11.0 alpha release, `storybook@next`, or any canary build qualifies)
 - [Claude Code](https://claude.ai/code) or [Claude Desktop](https://claude.ai/desktop)
 
 ## Installation

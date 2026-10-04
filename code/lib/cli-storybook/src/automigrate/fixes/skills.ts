@@ -1,5 +1,10 @@
 import { hasStorybookSkills, installSkills, supportsAiFeatures } from 'storybook/internal/cli';
-import { HandledError, frameworkPackages, frameworkToRenderer } from 'storybook/internal/common';
+import {
+  HandledError,
+  frameworkPackages,
+  frameworkToRenderer,
+  isCI,
+} from 'storybook/internal/common';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import { crossesVersionBoundary } from '../helpers/versionBoundary.ts';
@@ -14,6 +19,10 @@ export const skills: Fix = {
   prompt: () => 'Install the official Storybook skills for AI agents into this project',
 
   async check({ mainConfig, beforeVersion, storybookVersion, requested }) {
+    // The skills are never installed in CI.
+    if (isCI()) {
+      return null;
+    }
     if (!requested) {
       if (
         !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
@@ -36,7 +45,9 @@ export const skills: Fix = {
     }
     const { result } = await installSkills({ packageManager, source: 'automigration' });
     if (result === 'failed') {
-      throw new HandledError('Could not install the Storybook skills');
+      throw new HandledError(
+        'Could not install the Storybook skills. Try again with `npx storybook automigrate skills`.'
+      );
     }
   },
 };

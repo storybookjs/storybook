@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
 import { skills } from './skills.ts';
 
 vi.mock('storybook/internal/cli', { spy: true });
+vi.mock('storybook/internal/common', { spy: true });
 
 const packageManager = { type: 'npm' } as JsPackageManager;
 
@@ -38,6 +39,7 @@ const runSkills = () =>
 describe('skills', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.mocked(isCI).mockReturnValue(false);
     vi.mocked(hasStorybookSkills).mockResolvedValue(false);
     vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'automigration' });
   });
@@ -54,6 +56,7 @@ describe('skills', () => {
 
     it.each([
       ['a framework without the docgen server', checkOptions('@storybook/svelte-vite')],
+      ['Nuxt', checkOptions('@storybook-vue/nuxt')],
       ['an upgrade within 11', checkOptions('@storybook/react-vite', { beforeVersion: '11.0.0' })],
       [
         'a prerelease of 11',
@@ -65,6 +68,12 @@ describe('skills', () => {
       ],
     ])('does not apply on %s', async (_, options) => {
       await expect(checkFix(skills, options)).resolves.toBeNull();
+    });
+
+    it('does not apply in CI, where the skills are never installed', async () => {
+      vi.mocked(isCI).mockReturnValue(true);
+
+      await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
     });
 
     it('does not apply when the project has the skills', async () => {

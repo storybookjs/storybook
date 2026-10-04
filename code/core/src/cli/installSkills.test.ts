@@ -53,6 +53,7 @@ describe('supportsAiFeatures', () => {
     [SupportedRenderer.REACT, null, false],
     [SupportedRenderer.VUE3, SupportedFramework.VUE3_VITE, true],
     [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR_VITE, true],
+    [SupportedRenderer.VUE3, SupportedFramework.NUXT, false],
     [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR, false],
     [SupportedRenderer.SVELTE, SupportedFramework.SVELTE_VITE, false],
     [SupportedRenderer.WEB_COMPONENTS, SupportedFramework.WEB_COMPONENTS_VITE, false],
@@ -153,7 +154,6 @@ describe('installSkills', () => {
       ],
       useRemotePkg: true,
       cwd: PROJECT_ROOT,
-      stdio: 'inherit',
       env: {},
       timeout: 120_000,
     });

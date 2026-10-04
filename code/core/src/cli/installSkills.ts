@@ -18,8 +18,9 @@ export type SkillsInstallResult = {
 };
 
 /**
- * Whether init and upgrade offer the AI features for this project: the frameworks whose presets
- * export an `experimental_docgenProvider`, which the docs workflow of the skills relies on.
+ * Whether init and upgrade offer the AI features for this project: the frameworks whose docgen
+ * server the docs workflow of the skills supports, the same list as the
+ * `enable-experimental-docgen-server` automigration.
  */
 export function supportsAiFeatures(
   renderer: SupportedRenderer | undefined,
@@ -31,7 +32,7 @@ export function supportsAiFeatures(
   }
   return (
     renderer === SupportedRenderer.REACT ||
-    renderer === SupportedRenderer.VUE3 ||
+    framework === SupportedFramework.VUE3_VITE ||
     framework === SupportedFramework.ANGULAR_VITE
   );
 }
@@ -99,7 +100,6 @@ export async function installSkills({
       args,
       useRemotePkg: true,
       cwd: getProjectRoot(),
-      stdio: 'inherit',
       env: isTelemetryModuleEnabled() ? {} : { DISABLE_TELEMETRY: '1' },
       timeout: 120_000,
     });

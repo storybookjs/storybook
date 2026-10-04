@@ -1,8 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { isCI } from 'storybook/internal/common';
+import { type JsPackageManager, isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -129,13 +128,8 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it.each([
-    ['a dry run', [project('/repo/a/.storybook')], { dryRun: true }],
-    ['an upgrade to a canary', [project('/repo/a/.storybook', { isCanary: true })], {}],
-  ])('does not refresh on %s', async (_, projects, options) => {
-    useProjects(...projects);
-
-    await upgrade({ ...baseOptions, ...options });
+  it('does not refresh on a dry run', async () => {
+    await upgrade({ ...baseOptions, dryRun: true });
 
     expect(installSkills).not.toHaveBeenCalled();
   });

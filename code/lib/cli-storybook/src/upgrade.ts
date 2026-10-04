@@ -553,9 +553,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Canary versions have no tag in the skills repository.
     const skills =
-      !options.dryRun && hadSkills && storybookProjects.some((project) => !project.isCanary)
+      !options.dryRun && hadSkills
         ? await installSkills({ packageManager: rootPackageManager, source: 'installed' })
         : undefined;
 

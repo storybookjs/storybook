@@ -18,9 +18,8 @@ export type SkillsInstallResult = {
 };
 
 /**
- * Whether init and upgrade offer the AI features for this project: the frameworks whose docgen
- * server the docs workflow of the skills supports, the same list as the
- * `enable-experimental-docgen-server` automigration.
+ * Whether init and upgrade offer the AI features for this project: the frameworks that have, or are
+ * getting, a docgen server for the docs workflow of the skills.
  */
 export function supportsAiFeatures(
   renderer: SupportedRenderer | undefined,
@@ -32,6 +31,8 @@ export function supportsAiFeatures(
   }
   return (
     renderer === SupportedRenderer.REACT ||
+    renderer === SupportedRenderer.SVELTE ||
+    renderer === SupportedRenderer.WEB_COMPONENTS ||
     framework === SupportedFramework.VUE3_VITE ||
     framework === SupportedFramework.ANGULAR_VITE
   );

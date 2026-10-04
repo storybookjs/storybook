@@ -50,12 +50,14 @@ describe('skills', () => {
       '@storybook/nextjs',
       '@storybook/vue3-vite',
       '@storybook/angular-vite',
+      '@storybook/sveltekit',
+      '@storybook/web-components-vite',
     ])('applies on the upgrade into 11 on %s', async (framework) => {
       await expect(checkFix(skills, checkOptions(framework))).resolves.toEqual({});
     });
 
     it.each([
-      ['a framework without the docgen server', checkOptions('@storybook/svelte-vite')],
+      ['an unsupported framework', checkOptions('@storybook/html-vite')],
       ['Nuxt', checkOptions('@storybook-vue/nuxt')],
       ['an upgrade within 11', checkOptions('@storybook/react-vite', { beforeVersion: '11.0.0' })],
       [
@@ -86,7 +88,7 @@ describe('skills', () => {
       await expect(
         checkFix(
           skills,
-          checkOptions('@storybook/svelte-vite', { beforeVersion: undefined, requested: true })
+          checkOptions('@storybook/html-vite', { beforeVersion: undefined, requested: true })
         )
       ).resolves.toEqual({});
     });

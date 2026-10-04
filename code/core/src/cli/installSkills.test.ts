@@ -55,8 +55,10 @@ describe('supportsAiFeatures', () => {
     [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR_VITE, true],
     [SupportedRenderer.VUE3, SupportedFramework.NUXT, false],
     [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR, false],
-    [SupportedRenderer.SVELTE, SupportedFramework.SVELTE_VITE, false],
-    [SupportedRenderer.WEB_COMPONENTS, SupportedFramework.WEB_COMPONENTS_VITE, false],
+    [SupportedRenderer.SVELTE, SupportedFramework.SVELTE_VITE, true],
+    [SupportedRenderer.SVELTE, SupportedFramework.SVELTEKIT, true],
+    [SupportedRenderer.WEB_COMPONENTS, SupportedFramework.WEB_COMPONENTS_VITE, true],
+    [SupportedRenderer.HTML, SupportedFramework.HTML_VITE, false],
     [undefined, undefined, false],
   ])('%s (%s) is %s', (renderer, framework, expected) => {
     expect(supportsAiFeatures(renderer, framework)).toBe(expected);

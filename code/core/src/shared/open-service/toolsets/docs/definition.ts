@@ -166,13 +166,13 @@ export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
 }
 
 function describeList(ctx: ToolsetCtx): string {
-  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.`;
+  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their storybookId input. Pass withStoryIds: true when you need story IDs for other tools.`;
 }
 
 function describeShow(ctx: ToolsetCtx): string {
   return `Get documentation for a UI component or docs entry.
 
-Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as \`storyId\`.
+Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as storyId.
 
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
@@ -241,17 +241,22 @@ function renderShowStory(
 }
 
 const storybookIdField = {
-  storybookId: v.pipe(
-    v.string(),
-    v.description('The ID of the Storybook source to query (e.g., "local", "design-system")')
+  storybookId: v.optional(
+    v.pipe(
+      v.string(),
+      v.description(
+        'The ID of the Storybook source to query (e.g., "local", "design-system"). Defaults to "local", this Storybook.'
+      )
+    ),
+    'local'
   ),
 };
 
 /**
  * Picks the access for a lookup, or explains which source the caller should have named.
  *
- * In a composition the id alone is ambiguous, so a missing or unknown `storybookId` is a result the
- * agent can act on — the available ids and where to find them — rather than a thrown error.
+ * In a composition the id alone is ambiguous, so an unknown `storybookId` is a result the agent can
+ * act on — the available ids and where to find them — rather than a thrown error.
  */
 function selectSource(
   sources: DocsSource[] | undefined,
@@ -264,10 +269,6 @@ function selectSource(
 
   const available = sources.map(({ source }) => source.id).join(', ');
   const listRef = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`;
-
-  if (!storybookId) {
-    return { sourceError: `storybookId is required. Available sources: ${available}. ${listRef}` };
-  }
 
   const match = sources.find(({ source }) => source.id === storybookId);
   if (!match) {
@@ -296,7 +297,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     throw new Error('createDocsToolset requires a docsAccess or at least one source.');
   }
 
-  // A composition needs the caller to say which Storybook they mean; a single one must not ask.
+  // A composition lets the caller name the Storybook, defaulting to this one; a single one must
+  // not ask.
   const showSchema = multiSource
     ? v.object({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),

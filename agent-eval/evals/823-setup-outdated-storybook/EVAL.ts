@@ -8,7 +8,7 @@ import {
 
 describe('setting up Storybook when an outdated install is already present', () => {
   // Regression fixture for a setup request against an already-installed but
-  // outdated Storybook (seeded 10.4.0, evals.pinStorybook: false): the agent
+  // outdated Storybook (seeded 10.4.0, kept by the harness): the agent
   // must notice the version is below the plugin requirement and route through
   // the upgrade skill instead of setting up on the old version. Same prompt as
   // 820-init-no-storybook — only the seeded state differs. Which entry skill

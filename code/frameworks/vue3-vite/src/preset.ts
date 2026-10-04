@@ -13,8 +13,6 @@ import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
 import type { StorybookConfig } from './types.ts';
 
-export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
-
 export const core: PresetProperty<'core'> = {
   builder: import.meta.resolve('@storybook/builder-vite'),
   renderer: import.meta.resolve('@storybook/vue3/preset'),

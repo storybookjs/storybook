@@ -12,6 +12,7 @@ import { dedent } from 'ts-dedent';
 import { vol } from 'memfs';
 
 import type { AngularDocgenPayload } from './build-docgen.ts';
+import type { BuildStoryDocsContext } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 import { extractHostComponentTemplate } from './story-docs-snippet.ts';
 
@@ -207,7 +208,10 @@ const warningsOf = async (storyFile: string, extraFiles: Record<string, string> 
     [...(await storiesOf(storyFile, extraFiles))].map(([name, story]) => [name, story.warning])
   );
 
-const soleStory = async (source: string, getDocgenPayload = buttonDocgen()) => {
+const soleStory = async (
+  source: string,
+  getDocgenPayload: BuildStoryDocsContext['getDocgenPayload'] = buttonDocgen()
+) => {
   givenStoryFile(source);
   const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
   const stories = Object.values(payload?.stories ?? {});

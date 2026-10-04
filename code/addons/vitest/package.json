@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-vitest",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.1",
   "description": "Storybook Vitest addon: Blazing fast component testing using stories",
   "keywords": [
     "storybook",
@@ -107,11 +107,11 @@
     "vitest": "^4.1.6"
   },
   "peerDependencies": {
-    "@vitest/browser": "^3.0.0 || ^4.0.0",
-    "@vitest/browser-playwright": "^4.0.0",
-    "@vitest/runner": "^3.0.0 || ^4.0.0",
+    "@vitest/browser": "^3.0.0 || ^4.0.0 || ^5.0.0",
+    "@vitest/browser-playwright": "^4.0.0 || ^5.0.0",
+    "@vitest/runner": "^3.0.0 || ^4.0.0 || ^5.0.0",
     "storybook": "workspace:^",
-    "vitest": "^3.0.0 || ^4.0.0"
+    "vitest": "^3.0.0 || ^4.0.0 || ^5.0.0"
   },
   "peerDependenciesMeta": {
     "@vitest/browser": {

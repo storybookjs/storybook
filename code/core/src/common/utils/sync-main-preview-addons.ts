@@ -41,7 +41,7 @@ export async function syncPreviewAddonsWithMainConfig(
   const existingAddons = previewConfig.getFieldNode(['addons']);
 
   if (!existingAddons) {
-    previewConfig.setFieldNode(['addons'], t.arrayExpression([]));
+    previewConfig.set(['addons'], []);
   }
 
   const addons = getAddonNames(mainConfig);

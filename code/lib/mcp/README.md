@@ -13,7 +13,7 @@ instead — `storybook dev` serves one at `/mcp` through `@storybook/addon-mcp`.
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 22.12+
 - A [manifests](https://storybook.js.org/docs/next/ai/manifests) source containing:
   - `components.json` (required)
   - `docs.json` (optional)
@@ -355,7 +355,7 @@ Type:
 
 Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
 
-When `options.multiSource` is `true`, the tool schema requires `storybookId` input.
+When `options.multiSource` is `true`, the tool schema takes an optional `storybookId` input, defaulting to `local`.
 
 #### `addGetStoryDocumentationTool`
 

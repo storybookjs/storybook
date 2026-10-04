@@ -354,6 +354,43 @@ npx storybook tools stories changed`,
     expect(calls.map((call) => call.name)).toEqual(['test-run', 'stories-changed']);
   });
 
+  test('reads storybook calls inside a command substitution', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'OUT=$(npx storybook tools test run --json 2>&1); echo "$OUT" | tail -40',
+      'npx storybook tools review create --title "$(npx storybook tools stories changed | head -1)"',
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual([
+      'test-run',
+      'stories-changed',
+      'review-create',
+    ]);
+  });
+
+  test('reads the heredoc delimiter forms bash accepts', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      "cat > a.txt <<\\EOF\nit's\nEOF\nnpx storybook tools test run",
+      'cat > a.txt <<E"OF"\nit\'s\nEOF\nnpx storybook tools test run',
+      `npx storybook tools review create --input "$(cat <<'EOF'\n{"title":"T"}\nEOF)"\nnpx storybook tools test run`,
+    ]);
+
+    expect(calls.map((call) => [call.name, call.input])).toEqual([
+      ['test-run', {}],
+      ['test-run', {}],
+      ['review-create', { title: 'T' }],
+      ['test-run', {}],
+    ]);
+  });
+
+  test('does not mistake a here-string or a comment for the start of a heredoc or quote', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'jq . <<< "$x"\nnpx storybook tools test run',
+      "# Let's run the tests\nnpx storybook tools test run",
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual(['test-run', 'test-run']);
+  });
+
   test('keeps an --input the shell expanded out of view as a plain argument', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook tools test run --input "$(cat /tmp/input.json)"',

@@ -1,5 +1,5 @@
 import { execFile } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
@@ -323,8 +323,11 @@ describe('expectStoryTestsRanAndPassed', () => {
     return `${JSON.stringify({ status: 'completed', a11y: true, result }, null, 2)}\n`;
   }
 
-  function givenRun(options: { commands: string[]; stdout: string }) {
+  function givenRun(options: { commands: string[]; stdout: string; transcript?: string }) {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === '__agent_eval__/transcript.txt') {
+        return options.transcript ?? '';
+      }
       if (String(path) === '__agent_eval__/agent.json') {
         return JSON.stringify({ agent: 'claude-code', integration: 'plugin', review: true });
       }
@@ -353,6 +356,8 @@ describe('expectStoryTestsRanAndPassed', () => {
 
   afterEach(() => {
     vi.mocked(readFileSync).mockRestore();
+    vi.mocked(existsSync).mockRestore();
+    vi.mocked(writeFileSync).mockRestore();
     vi.mocked(execFile).mockRestore();
   });
 
@@ -370,10 +375,98 @@ describe('expectStoryTestsRanAndPassed', () => {
 
     expect(execFile).toHaveBeenCalledWith(
       'npx',
-      ['storybook', 'tools', 'test', 'run', '--json'],
+      ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
       expect.objectContaining({ cwd: '.' }),
       expect.any(Function)
     );
+  });
+
+  test('points vitest.config.ts back at the Storybook config for the run, then restores it', async () => {
+    const evalConfig = "export default defineConfig({ test: { include: ['EVAL.ts'] } });";
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const readRun = vi.mocked(readFileSync).getMockImplementation()!;
+    vi.mocked(readFileSync).mockImplementation(((path: unknown, ...rest: unknown[]) =>
+      String(path) === 'vitest.config.ts'
+        ? evalConfig
+        : (readRun as (...args: unknown[]) => unknown)(path, ...rest)) as typeof readFileSync);
+    vi.mocked(existsSync).mockImplementation(
+      (path) => path === 'vitest.storybook.config.ts' || path === 'vitest.config.ts'
+    );
+    const writes: string[] = [];
+    vi.mocked(writeFileSync).mockImplementation((_path, content) => {
+      writes.push(`${String(_path)}: ${String(content)}`);
+    });
+    const { runStoryTestsInSandbox } = await loadTestUtils();
+
+    await runStoryTestsInSandbox();
+
+    expect(writes).toEqual([
+      "vitest.config.ts: export { default } from './vitest.storybook.config.ts';\n",
+      `vitest.config.ts: ${evalConfig}`,
+    ]);
+    expect(vi.mocked(writeFileSync).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(execFile).mock.invocationCallOrder[0]!
+    );
+  });
+
+  test('runs the sandbox tests once per project directory', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({ 'example-callout--default': 'status-value:success' }),
+    });
+    const { runStoryTestsInSandbox } = await loadTestUtils();
+
+    await runStoryTestsInSandbox('packages/ui');
+    await runStoryTestsInSandbox('packages/ui');
+
+    expect(execFile).toHaveBeenCalledTimes(1);
+    expect(execFile).toHaveBeenCalledWith(
+      'npx',
+      expect.any(Array),
+      expect.objectContaining({ cwd: 'packages/ui' }),
+      expect.any(Function)
+    );
+  });
+
+  test("fails when the agent's own last run was red, even if the sandbox run passes", async () => {
+    const lastRun = [
+      {
+        type: 'assistant',
+        message: {
+          content: [
+            {
+              type: 'tool_use',
+              id: 'toolu_1',
+              name: 'Bash',
+              input: { command: 'npx storybook tools test run' },
+            },
+          ],
+        },
+      },
+      {
+        type: 'user',
+        message: {
+          content: [
+            {
+              type: 'tool_result',
+              tool_use_id: 'toolu_1',
+              content: '## Failing Stories\n\n### example-button--primary',
+            },
+          ],
+        },
+      },
+    ];
+    givenRun({
+      commands: ['npx storybook tools test run'],
+      stdout: testRunDocument({ 'example-button--primary': 'status-value:success' }),
+      transcript: lastRun.map((event) => JSON.stringify(event)).join('\n'),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/agent's last test run/);
   });
 
   test('fails when the sandbox run reports a failing story', async () => {

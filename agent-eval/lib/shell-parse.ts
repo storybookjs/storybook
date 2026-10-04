@@ -99,6 +99,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
   const calls: StorybookWorkflowCall[] = [];
 
   for (let index = 0; index < tokens.length - 1; index += 1) {
+    calls.push(...parseSubstitutedCalls(words.slice(index, index + 1)));
     if (tokens[index] !== 'storybook') {
       continue;
     }
@@ -133,12 +134,18 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
 
     const invocation = parseStorybookToolsInvocation(words.slice(index + 2), heredocs);
     if (invocation !== undefined) {
-      calls.push(invocation.call);
+      const consumed = words.slice(index + 2, index + 2 + invocation.consumed);
+      calls.push(...parseSubstitutedCalls(consumed), invocation.call);
       index += invocation.consumed + 1;
     }
   }
 
   return calls;
+}
+
+// A `$(…)` runs before the command that uses its output.
+function parseSubstitutedCalls(words: ShellWord[]): StorybookWorkflowCall[] {
+  return words.flatMap((word) => word.substitutions ?? []).flatMap(parsePluginWorkflowCalls);
 }
 
 function segmentUntilSeparator(tokens: string[], start: number): string[] {
@@ -396,9 +403,8 @@ function extractCatHeredocs(command: string): Map<string, string> {
   return files;
 }
 
-// Known limitation: a `storybook tools` invocation nested inside `$(...)` is not
-// recognized. `$(cat path)` is resolved when that path was written by a
-// `cat > path <<TAG` heredoc in the same command.
+// `$(cat path)` is resolved when that path was written by a `cat > path <<TAG`
+// heredoc in the same command.
 export function tokenizeShellCommand(command: string): string[] {
   return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
 }
@@ -409,6 +415,8 @@ type ShellWord = {
   quotedStart: boolean;
   // A `$` outside single quotes: the shell substitutes something here.
   expands: boolean;
+  // The commands inside this word's `$(…)` substitutions.
+  substitutions?: string[];
 };
 
 type Heredoc = {
@@ -419,8 +427,8 @@ type Heredoc = {
   body: string;
 };
 
-// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, but not the `<<<` here-string.
-const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*(?:'([^'\n]*)'|"([^"\n]*)"|([^\s;&|<>()'"]+))/;
+// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, `<<\\TAG`; the caller rules out `<<<`.
+const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()'"\\])+)/;
 
 function tokenizeShellWords(command: string): ShellWord[] {
   return scanShellWords(command, 0, false).words;
@@ -493,13 +501,23 @@ function scanShellWords(
       continue;
     }
 
-    const heredoc = char === '<' ? HEREDOC_OPERATOR_PATTERN.exec(command.slice(index)) : null;
+    if (char === '#' && word === undefined) {
+      const lineEnd = command.indexOf('\n', index);
+      index = (lineEnd === -1 ? command.length : lineEnd) - 1;
+      continue;
+    }
+
+    const heredoc =
+      char === '<' && command[index - 1] !== '<' && command[index + 2] !== '<'
+        ? HEREDOC_OPERATOR_PATTERN.exec(command.slice(index))
+        : null;
     if (heredoc !== null) {
-      const delimiter = heredoc[2] ?? heredoc[3] ?? heredoc[4] ?? '';
+      const rawDelimiter = heredoc[2] ?? '';
+      const delimiter = rawDelimiter.replace(/\\(.)/g, '$1').replace(/['"]/g, '');
       heredocs.push({
         delimiter,
         stripTabs: heredoc[1] === '-',
-        quoted: heredoc[4] === undefined,
+        quoted: delimiter !== rawDelimiter,
         body: '',
       });
       pushWord();
@@ -550,10 +568,11 @@ function scanShellWords(
   pushWord();
   return { words, heredocs, end: command.length };
 
-  function append(text: string, quoted: boolean, expands = false): void {
+  function append(text: string, quoted: boolean, expands = false): ShellWord {
     word ??= { value: '', quotedStart: quoted, expands: false };
     word.value += text;
     word.expands ||= expands;
+    return word;
   }
 
   function pushWord(): void {
@@ -568,7 +587,8 @@ function scanShellWords(
     words.push({ value: operator, quotedStart: false, expands: false });
   }
 
-  // Returns the index of the last character consumed.
+  // Returns the index of the last character consumed. Inside `$(…)`, bash also
+  // ends a body at `TAG)`, leaving the `)` to close the substitution.
   function readHeredocBodies(newline: number): number {
     let position = newline + 1;
     for (const heredoc of heredocs.slice(unreadHeredocs)) {
@@ -576,9 +596,15 @@ function scanShellWords(
       while (position < command.length) {
         const lineEnd = command.indexOf('\n', position);
         const end = lineEnd === -1 ? command.length : lineEnd;
-        const line = command.slice(position, end);
+        const rawLine = command.slice(position, end);
+        const line = heredoc.stripTabs ? rawLine.replace(/^\t+/, '') : rawLine;
+        if (inSubstitution && line.startsWith(`${heredoc.delimiter})`)) {
+          heredoc.body = lines.join('\n');
+          unreadHeredocs = heredocs.length;
+          return end - line.length + heredoc.delimiter.length - 1;
+        }
         position = end + 1;
-        if ((heredoc.stripTabs ? line.replace(/^\t+/, '') : line) === heredoc.delimiter) {
+        if (line === heredoc.delimiter) {
           break;
         }
         lines.push(line);
@@ -604,7 +630,8 @@ function scanShellWords(
       // The shell strips trailing newlines from a substitution's output.
       append(heredoc.body.replace(/\n+$/, ''), true, !heredoc.quoted && heredoc.body.includes('$'));
     } else {
-      append(command.slice(dollar, inner.end + 1), quote === '"', true);
+      const substituted = append(command.slice(dollar, inner.end + 1), quote === '"', true);
+      (substituted.substitutions ??= []).push(command.slice(dollar + 2, inner.end));
     }
     return inner.end;
   }

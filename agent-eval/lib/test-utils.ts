@@ -1,5 +1,5 @@
 import { execFile, spawn } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -452,12 +452,14 @@ export type WorkflowToolResult = {
 
 // The validation workflow the instructions demand: run test-run after
 // each component or story change, and fix failing tests before reporting
-// success. The transcript only shows that the agent ran the tests; whether they
-// pass is judged by a run of its own (see runStoryTestsInSandbox), because the
-// agent's output is often cut by `| tail` or `| grep`.
+// success. Whether the tests pass is judged by a run of the harness's own (see
+// runStoryTestsInSandbox), because the agent's output is often cut by `| tail`
+// or `| grep`. The transcript must show that the agent ran the tests, and that
+// its last run did not end red: an agent that fixed the code without running the
+// tests again did not verify its fix.
 //
-// `covering` pins the green run to the change under test: at least one
-// of the given substrings must appear in its story ids. A stricter
+// `covering` requires at least one of the given substrings in the story ids of
+// the harness's run, so the change under test has passing stories. A stricter
 // after-the-edit ordering check is deliberately not encoded, because real
 // passing flows legitimately run tests before the discovery step. `cwd` is the
 // directory of the Storybook project, for fixtures where that is not the root.
@@ -466,6 +468,10 @@ export async function expectStoryTestsRanAndPassed(options?: {
   cwd?: string;
 }): Promise<void> {
   expectWorkflowCalls(['test-run']);
+  expect(
+    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
+    "The agent's last test run must not report failing stories or unhandled errors"
+  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
 
   const result = await runStoryTestsInSandbox(options?.cwd);
   expect(
@@ -496,31 +502,60 @@ const sandboxStoryTestRuns = new Map<string, Promise<WorkflowToolResult>>();
 
 // Runs every story test in the sandbox once the agent is done, through the same
 // CLI the plugin path uses, and renders the `--json` document like a transcript
-// result. `isError` means the run did not produce a completed document.
+// result. `isError` means stdout held no test-run document.
 export function runStoryTestsInSandbox(cwd = '.'): Promise<WorkflowToolResult> {
   let run = sandboxStoryTestRuns.get(cwd);
   if (run === undefined) {
-    run = new Promise((resolve) => {
-      execFile(
-        'npx',
-        ['storybook', 'tools', 'test', 'run', '--json'],
-        { cwd, maxBuffer: 256 * 1024 * 1024, timeout: 600_000 },
-        (error, stdout, stderr) => {
-          const report = renderTestRunJsonOutput(stdout);
-          resolve(
-            report === undefined
-              ? {
-                  output: [error?.message, stdout, stderr].filter(Boolean).join('\n'),
-                  isError: true,
-                }
-              : { output: report, isError: false }
-          );
-        }
-      );
-    });
+    run = withProjectVitestConfig(cwd, () => runStorybookTestRun(cwd));
     sandboxStoryTestRuns.set(cwd, run);
   }
   return run;
+}
+
+// The eval runner replaces vitest.config.ts with its own before EVAL.ts runs,
+// so fixtures keep their Storybook test project in vitest.storybook.config.ts.
+const STORYBOOK_VITEST_CONFIG = 'vitest.storybook.config.ts';
+
+async function withProjectVitestConfig<T>(cwd: string, run: () => Promise<T>): Promise<T> {
+  if (!existsSync(join(cwd, STORYBOOK_VITEST_CONFIG))) {
+    return run();
+  }
+  const configPath = join(cwd, 'vitest.config.ts');
+  const evalConfig = existsSync(configPath) ? readFileSync(configPath, 'utf8') : undefined;
+  if (evalConfig?.includes(STORYBOOK_VITEST_CONFIG)) {
+    return run();
+  }
+
+  writeFileSync(configPath, `export { default } from './${STORYBOOK_VITEST_CONFIG}';\n`);
+  try {
+    return await run();
+  } finally {
+    if (evalConfig === undefined) {
+      rmSync(configPath);
+    } else {
+      writeFileSync(configPath, evalConfig);
+    }
+  }
+}
+
+// `--no-attach`: the dev server's Vitest restarts whenever vitest.config.ts
+// changes, so a fresh local host is the only one that reads a settled config.
+function runStorybookTestRun(cwd: string): Promise<WorkflowToolResult> {
+  return new Promise((resolve) => {
+    execFile(
+      'npx',
+      ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
+      { cwd, maxBuffer: 256 * 1024 * 1024, timeout: 600_000 },
+      (error, stdout, stderr) => {
+        const report = renderTestRunJsonOutput(stdout);
+        resolve(
+          report === undefined
+            ? { output: [error?.message, stdout, stderr].filter(Boolean).join('\n'), isError: true }
+            : { output: report, isError: false }
+        );
+      }
+    );
+  });
 }
 
 // `storybook tools test run --json` prints the run's structured outcome

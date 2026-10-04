@@ -91,6 +91,21 @@ describe('init: the skills step', () => {
     expect(installSkills).not.toHaveBeenCalled();
   });
 
+  it('installs nothing on a framework without the AI features, even when AI is selected', async () => {
+    vi.mocked(executeFrameworkDetection).mockResolvedValue({
+      framework: SupportedFramework.NUXT,
+      builder: SupportedBuilder.VITE,
+      renderer: SupportedRenderer.VUE3,
+    });
+
+    await initiateWith(Feature.AI);
+
+    expect(installSkills).not.toHaveBeenCalled();
+    expect(executeFinalization).toHaveBeenCalledWith(
+      expect.objectContaining({ showAiInstructions: false })
+    );
+  });
+
   it('prints the setup prompt where AI setup is supported', async () => {
     await initiateWith(Feature.AI);
 

@@ -80,13 +80,19 @@ describe('skills', () => {
       await expect(checkFix(skills, checkOptions('@storybook/react-vite'))).resolves.toBeNull();
     });
 
-    it('applies on any framework and version when requested by id', async () => {
+    it('applies on any version when requested by id', async () => {
       await expect(
         checkFix(
           skills,
-          checkOptions('@storybook/html-vite', { beforeVersion: undefined, requested: true })
+          checkOptions('@storybook/react-vite', { beforeVersion: undefined, requested: true })
         )
       ).resolves.toEqual({});
+    });
+
+    it('does not apply on an unsupported framework, even when requested by id', async () => {
+      await expect(
+        checkFix(skills, checkOptions('@storybook/html-vite', { requested: true }))
+      ).resolves.toBeNull();
     });
   });
 

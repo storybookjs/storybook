@@ -127,6 +127,13 @@ export async function doInitiate(options: CommandOptions): Promise<
     isAiSetupAvailable,
   });
 
+  if (selectedFeatures.has(Feature.AI) && !isAiAvailable) {
+    logger.warn(
+      'The AI features are not available for this framework yet, so the Storybook skills are not installed.'
+    );
+    selectedFeatures.delete(Feature.AI);
+  }
+
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
 
   const { configDir, storybookCommand, shouldRunDev, extraAddons, postInstall } =

@@ -23,17 +23,16 @@ export const skills: Fix = {
     if (isCI()) {
       return null;
     }
-    if (!requested) {
-      if (
-        !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
-      ) {
-        return null;
-      }
-      const frameworkPackage = getFrameworkPackageName(mainConfig);
-      const framework = frameworkPackage ? frameworkPackages[frameworkPackage] : undefined;
-      if (!framework || !supportsAiFeatures(frameworkToRenderer[framework], framework)) {
-        return null;
-      }
+    if (
+      !requested &&
+      !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
+    ) {
+      return null;
+    }
+    const frameworkPackage = getFrameworkPackageName(mainConfig);
+    const framework = frameworkPackage ? frameworkPackages[frameworkPackage] : undefined;
+    if (!framework || !supportsAiFeatures(frameworkToRenderer[framework], framework)) {
+      return null;
     }
     return (await hasStorybookSkills()) ? null : {};
   },

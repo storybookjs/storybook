@@ -49,7 +49,7 @@ describe('renderCommandReference', () => {
     expect(reference).toMatchInlineSnapshot(`
       "# Command reference
 
-      The \`npx storybook tools\` commands named above, each exactly as its \`--help\` prints it, so there is no need to run \`--help\` first. Pass arguments as \`--key value\` flags, with array and object values as JSON (\`--key '[...]'\`), or all of them at once with \`--input '<json object>'\`. Add \`--json\` to print the data listed under Output instead of markdown.
+      The \`npx storybook tools\` commands named in this output, each exactly as its \`--help\` prints it, so there is no need to run \`--help\` first. Pass arguments as \`--key value\` flags, with array and object values as JSON (\`--key '[...]'\`), or all of them at once with \`--input '<json object>'\`. Add \`--json\` to print the data listed under Output instead of markdown.
 
       \`\`\`\`text
       Usage: npx storybook tools docs list [--key value ...]
@@ -82,6 +82,34 @@ describe('renderCommandReference', () => {
 
     expect(reference).toContain(renderMethodHelpFromCatalog(showStory));
     expect(reference).not.toContain(renderMethodHelpFromCatalog(show));
+  });
+
+  it('also describes a tool that only an entry names', () => {
+    const pointing = toCatalogEntry(
+      defineToolset({
+        id: 'docs',
+        description: 'Documentation tools.',
+        methods: {
+          show: {
+            title: 'Show docs',
+            description:
+              'Show the docs of one component. For one story, use `npx storybook tools docs show-story`.',
+            input: v.object({}),
+            handler,
+          },
+          showStory: {
+            title: 'Show story docs',
+            description: 'Show the docs of one story.',
+            input: v.object({}),
+            handler,
+          },
+        },
+      }),
+      { transport: 'cli', getService: () => ({}) as never }
+    );
+    const reference = renderCommandReference('Call `npx storybook tools docs show`.', [pointing]);
+
+    expect(reference).toContain(renderMethodHelpFromCatalog(pointing.methods[1]));
   });
 
   it('is empty when the text names no tool', () => {

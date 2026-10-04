@@ -7,7 +7,7 @@ import type { ToolsetCatalogEntry, ToolsetCatalogMethod } from '../tools/sdk/typ
 const toCommand = getToolName({ transport: 'cli' });
 
 const INTRO = [
-  'The `npx storybook tools` commands named above, each exactly as its `--help` prints it, so there is no need to run `--help` first.',
+  'The `npx storybook tools` commands named in this output, each exactly as its `--help` prints it, so there is no need to run `--help` first.',
   "Pass arguments as `--key value` flags, with array and object values as JSON (`--key '[...]'`), or all of them at once with `--input '<json object>'`.",
   'Add `--json` to print the data listed under Output instead of markdown.',
 ].join(' ');
@@ -28,7 +28,18 @@ function findReferredTools(
 }
 
 export function renderCommandReference(skillText: string, toolsets: ToolsetCatalogEntry[]): string {
-  const referred = findReferredTools(skillText, toolsets);
+  // An entry can name another command (`docs show` points at `docs show-story`), so the reference
+  // grows until it describes every command that appears anywhere in the output.
+  let referred: ToolsetCatalogMethod[] = [];
+  let text = skillText;
+  for (;;) {
+    const found = findReferredTools(text, toolsets);
+    if (found.length === referred.length) {
+      break;
+    }
+    referred = found;
+    text = [skillText, ...referred.map(renderMethodHelpFromCatalog)].join('\n');
+  }
   if (referred.length === 0) {
     return '';
   }

@@ -11045,6 +11045,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/svelte-vite@workspace:code/frameworks/svelte-vite"
   dependencies:
+    "@rolldown/pluginutils": "npm:^1.0.1"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/svelte": "workspace:*"
     "@sveltejs/vite-plugin-svelte": "npm:^6.2.0"

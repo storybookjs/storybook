@@ -41,6 +41,7 @@ export function renderCommandReference(skillText: string, toolsets: ToolsetCatal
   }
   return [
     '# Command reference',
+    "`--json` only changes the output format; to pass all arguments as one JSON object, use `--input '<json>'`.",
     ...referred.map((method) =>
       [`${FENCE}text`, renderMethodHelpFromCatalog(method), FENCE].join('\n')
     ),

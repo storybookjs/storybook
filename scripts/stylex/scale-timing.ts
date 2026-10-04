@@ -10,7 +10,7 @@
  */
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { createServer } from 'node:net';
-import { join } from 'node:path';
+import { join, posix } from 'node:path';
 import { parseArgs } from 'node:util';
 
 // eslint-disable-next-line depend/ban-dependencies
@@ -23,12 +23,12 @@ import { writeConfig } from '../../code/core/src/csf-tools/index.ts';
 import { SANDBOX_DIRECTORY } from '../utils/constants.ts';
 import { readConfig } from '../utils/main-js.ts';
 
-const FIXTURE_DIRECTORY = join('src', 'stylex-scale');
+const FIXTURE_DIRECTORY = 'src/stylex-scale';
 const PRIMARY = { hex: '#0f766e', rgb: 'rgb(15, 118, 110)' };
 const THEMED_PRIMARY = { hex: '#b45309', rgb: 'rgb(180, 83, 9)' };
 const RENDER_TIMEOUT = 30_000;
 
-/** The generated files, by path relative to the sandbox. */
+/** The generated files, by POSIX path relative to the sandbox, on every platform. */
 export function generateScaleFixture(count: number): Record<string, string> {
   const files: Record<string, string> = {
     'tokens.stylex.ts': `import * as stylex from '@stylexjs/stylex';
@@ -84,7 +84,7 @@ export const Default = {};
   }
 
   return Object.fromEntries(
-    Object.entries(files).map(([name, source]) => [join(FIXTURE_DIRECTORY, name), source])
+    Object.entries(files).map(([name, source]) => [posix.join(FIXTURE_DIRECTORY, name), source])
   );
 }
 

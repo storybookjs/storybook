@@ -102,10 +102,6 @@ the fields to change and provide migration-specific error guidance.
 ## Agent-facing skills
 
 - `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
-- On the CLI, `stories` carries the `write-story` text, so one command gives an agent everything
-  for story work. `stories` and `write-story` each end with a command reference: the `--help` text
-  of each tool the document names, including tools named only by another entry, rendered by
-  `cli/tools/help.ts`. `storybook tools --help` is the overview only.
 - Pure content lives in `code/core/src/cli/skills/content/` and is exported through
   `storybook/internal/skills`; addon-mcp consumes the same builders.
 - Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of

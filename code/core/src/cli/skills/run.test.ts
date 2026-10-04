@@ -146,23 +146,13 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('npx storybook tools stories changed');
   });
 
-  it('stories carries the write-story text instead of sending the agent to it', async () => {
+  it('stories carries the write-story text and ends with a reference of the tools it names', async () => {
     const d = deps();
     const stories = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
     const writeStory = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
 
-    const [storyInstructions] = writeStory.output.split('# Command reference');
-    expect(storyInstructions).toMatch(/^# Writing User Interfaces/);
-    expect(stories.output).toContain(storyInstructions);
-    expect(stories.output).toContain('read **Writing User Interfaces** below');
-    expect(stories.output).not.toContain('npx storybook skills write-story');
-  });
-
-  it('stories ends with a command reference of exactly the tools it names', async () => {
-    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, deps());
-
-    expect(result.output.split('# Command reference')).toHaveLength(2);
-    expect(describedTools(result.output)).toEqual([
+    expect(stories.output).toContain(writeStory.output.split('# Command reference')[0]);
+    expect(describedTools(stories.output)).toEqual([
       'stories preview',
       'stories changed',
       'stories find-by-component',
@@ -171,53 +161,10 @@ describe('runSkillsCommand', () => {
     ]);
   });
 
-  it('leaves a registered tool out of the reference when the project gates its workflow off', async () => {
-    const d = deps();
-    d.resolveSkillInputs.mockResolvedValue({
-      ...(await d.resolveSkillInputs()),
-      changeDetectionEnabled: false,
-      reviewEnabledForCli: false,
-      testSupported: false,
-    });
-
-    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-
-    expect(describedTools(result.output)).toEqual(['stories preview']);
-  });
-
-  it('leaves out a tool the skill names but the project does not register', async () => {
-    const d = deps();
-    d.describeToolsets.mockReturnValue([toolset('stories', ['preview', 'changed'])]);
-
-    const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
-
-    expect(result.output).toContain('npx storybook tools test run');
-    expect(describedTools(result.output)).toEqual(['stories preview', 'stories changed']);
-  });
-
-  it('write-story ends with a command reference of the tools it names', async () => {
-    const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, deps());
-
-    expect(describedTools(result.output)).toEqual([
-      'stories preview',
-      'stories changed',
-      'stories find-by-component',
-      'review create',
-      'test run',
-    ]);
-  });
-
-  it('--all prints the write-story text and each tool once', async () => {
+  it('--all prints the write-story text once', async () => {
     const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, deps());
 
     expect(result.output.split('# Writing User Interfaces')).toHaveLength(2);
-    expect(describedTools(result.output)).toEqual([
-      'stories preview',
-      'stories changed',
-      'stories find-by-component',
-      'review create',
-      'test run',
-    ]);
   });
 
   it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {

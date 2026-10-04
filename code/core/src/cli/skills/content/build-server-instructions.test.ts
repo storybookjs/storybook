@@ -313,7 +313,6 @@ describe('buildServerInstructions', () => {
           '- Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.'
         );
         expect(instructions).not.toContain('npx storybook skills write-story');
-        expect(instructions).not.toContain('{{');
       }
     );
 

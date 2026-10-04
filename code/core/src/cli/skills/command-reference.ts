@@ -6,12 +6,6 @@ import type { ToolsetCatalogEntry, ToolsetCatalogMethod } from '../tools/sdk/typ
 
 const toCommand = getToolName({ transport: 'cli' });
 
-const INTRO = [
-  'The `npx storybook tools` commands named in this output, each exactly as its `--help` prints it, so there is no need to run `--help` first.',
-  "Pass arguments as `--key value` flags, with array and object values as JSON (`--key '[...]'`), or all of them at once with `--input '<json object>'`.",
-  'Add `--json` to print the data listed under Output instead of markdown.',
-].join(' ');
-
 // Four backticks, so a description that carries its own three-backtick fence stays inside the block.
 const FENCE = '````';
 
@@ -28,9 +22,8 @@ function findReferredTools(
 }
 
 export function renderCommandReference(skillText: string, toolsets: ToolsetCatalogEntry[]): string {
-  // An entry can name another command (`docs show` points at `docs show-story`), so the reference
-  // grows until it describes every command named in the output. It grows only within toolsets the
-  // skill text names: `review create` points at `docs list` even when the project has no docs.
+  // Entries name further commands (`docs show` names `docs show-story`). Follow them only within
+  // toolsets the text names: `review create` names `docs list` even when docs are off.
   let referred = findReferredTools(skillText, toolsets);
   const namedToolsets = toolsets.filter((toolset) =>
     toolset.methods.some((method) => referred.includes(method))
@@ -48,7 +41,6 @@ export function renderCommandReference(skillText: string, toolsets: ToolsetCatal
   }
   return [
     '# Command reference',
-    INTRO,
     ...referred.map((method) =>
       [`${FENCE}text`, renderMethodHelpFromCatalog(method), FENCE].join('\n')
     ),

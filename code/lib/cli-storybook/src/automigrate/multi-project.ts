@@ -512,7 +512,7 @@ export async function runAutomigrations(
       logger.warn(
         checkFailed
           ? `Skipping --features ${name}: the '${fixId}' migration check failed. Run with --debug for details.`
-          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config or unsupported by your Storybook version.`
+          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config or unsupported by your framework or Storybook version.`
       );
     });
 

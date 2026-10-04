@@ -656,7 +656,7 @@ export interface StorybookFeatures {
   experimentalDocgenServer?: boolean;
 
   /**
-   * Enable change detection
+   * Enable change detection. Agentic review depends on it, so `false` also turns review off.
    * @default true
    */
   changeDetection?: boolean;

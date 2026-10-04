@@ -198,9 +198,7 @@ export const experimental_devServer: PresetPropertyFn<
           !moduleGraphSupported &&
             `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (Vite or Webpack 5).`,
           !changeDetectionEnabled &&
-            `<code>stories-changed</code> requires enabling the <code>changeDetection</code> feature flag.`,
-          !reviewEnabled &&
-            `<code>review-create</code> requires enabling the <code>changeDetection</code> feature flag.`,
+            `<code>stories-changed</code> and <code>review-create</code> require enabling the <code>changeDetection</code> feature flag.`,
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`

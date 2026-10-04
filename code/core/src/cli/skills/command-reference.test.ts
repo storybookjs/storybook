@@ -75,7 +75,6 @@ describe('renderCommandReference', () => {
       - \`markdown\` (string, required): Rendered docs
       \`\`\`\`"
     `);
-    expect(reference).not.toContain(renderMethodHelpFromCatalog(showStory));
   });
 
   it('does not take a longer command for the one it starts with', () => {

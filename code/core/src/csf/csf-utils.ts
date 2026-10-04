@@ -69,3 +69,10 @@ export const combineTags = (...tags: string[]): string[] => {
   }, new Set<string>());
   return Array.from(result);
 };
+
+/**
+ * Combine the tags of a final entry (a prepared story, an index entry), where every level has been
+ * applied and the negations that `combineTags` keeps are no longer needed.
+ */
+export const combineFinalTags = (...tags: string[]): string[] =>
+  combineTags(...tags).filter((tag) => !tag.startsWith('!'));

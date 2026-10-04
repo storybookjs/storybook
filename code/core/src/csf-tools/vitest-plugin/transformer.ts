@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { types as t } from 'storybook/internal/babel';
 import { getStoryTitle } from 'storybook/internal/common';
-import { combineTags } from 'storybook/internal/csf/csf-utils';
+import { combineFinalTags } from 'storybook/internal/csf/csf-utils';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoriesEntry, Tag } from 'storybook/internal/types';
 
@@ -171,7 +171,7 @@ export async function vitestTransform({
   // Filter out stories based on the passed tags filter
   const validStories: (typeof parsed)['_storyStatements'] = {};
   Object.keys(parsed._stories).forEach((key) => {
-    const finalTags = combineTags(
+    const finalTags = combineFinalTags(
       'test',
       'dev',
       ...previewLevelTags,

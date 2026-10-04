@@ -8,7 +8,7 @@ import {
   getTsconfigPathsBaseDir,
   normalizeStoryPath,
 } from 'storybook/internal/common';
-import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
+import { combineFinalTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
@@ -452,7 +452,7 @@ export class StoryIndexGenerator {
         const title = input.title ?? defaultMakeTitle();
 
         const id = input.__id ?? toId(input.metaId ?? title, storyNameFromExport(input.exportName));
-        const tags = combineTags(...projectTags, ...(input.tags ?? []));
+        const tags = combineFinalTags(...projectTags, ...(input.tags ?? []));
         const subtype = input.subtype ?? 'story';
 
         const entry: StoryIndexEntryWithExtra & { tags: Tag[] } = {
@@ -493,7 +493,7 @@ export class StoryIndexGenerator {
       const { metaId } = indexInputs[0];
       const entry = storyEntries[0];
       const id = toId(metaId ?? entry.title, name);
-      const tags = combineTags(...projectTags, ...(indexInputs[0].tags ?? []));
+      const tags = combineFinalTags(...projectTags, ...(indexInputs[0].tags ?? []));
 
       const docsEntry: DocsCacheEntry & { tags: Tag[] } = {
         id,
@@ -616,7 +616,7 @@ export class StoryIndexGenerator {
 
       const id = toId(csfEntry?.extra.metaId || result.id || title, name);
 
-      const tags = combineTags(
+      const tags = combineFinalTags(
         ...projectTags,
         ...(csfEntry?.tags ?? []),
         ...(result.metaTags ?? []),

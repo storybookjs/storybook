@@ -38,6 +38,10 @@ const config: BuildEntries = {
         dts: false,
       },
       {
+        exportEntries: ['./internal/svelte-csf/addon-check'],
+        entryPoint: './src/svelte-csf/addon-check.ts',
+      },
+      {
         exportEntries: ['./internal/svelte-csf/indexer'],
         entryPoint: './src/svelte-csf/indexer/index.ts',
       },

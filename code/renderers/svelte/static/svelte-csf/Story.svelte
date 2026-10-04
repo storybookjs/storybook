@@ -77,7 +77,7 @@
   {:else}
     <p>
       No story rendered. See
-      <a href="https://github.com/storybookjs/addon-svelte-csf#defining-stories" target="_blank"
+      <a href="https://storybook.js.org/docs/writing-stories?renderer=svelte" target="_blank"
         >the docs</a
       > on how to define stories.
     </p>

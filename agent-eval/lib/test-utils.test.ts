@@ -323,7 +323,12 @@ describe('expectStoryTestsRanAndPassed', () => {
     return `${JSON.stringify({ status: 'completed', a11y: true, result }, null, 2)}\n`;
   }
 
-  function givenRun(options: { commands: string[]; stdout: string; transcript?: string }) {
+  function givenRun(options: {
+    commands: string[];
+    stdout: string;
+    transcript?: string;
+    exitCode?: number;
+  }) {
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === '__agent_eval__/transcript.txt') {
         return options.transcript ?? '';
@@ -344,7 +349,10 @@ describe('expectStoryTestsRanAndPassed', () => {
       _options: unknown,
       callback: (error: Error | null, stdout: string, stderr: string) => void
     ) => {
-      callback(null, options.stdout, 'npm warn exec storybook');
+      const error = options.exitCode
+        ? Object.assign(new Error('Command failed'), { code: options.exitCode })
+        : null;
+      callback(error, options.stdout, 'npm warn exec storybook');
     }) as unknown as typeof execFile);
   }
 
@@ -476,6 +484,7 @@ describe('expectStoryTestsRanAndPassed', () => {
         'example-badge--accent': 'status-value:success',
         'example-statuspill--active': 'status-value:error',
       }),
+      exitCode: 1,
     });
     const { expectStoryTestsRanAndPassed } = await loadTestUtils();
 

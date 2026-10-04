@@ -540,12 +540,19 @@ async function withProjectVitestConfig<T>(cwd: string, run: () => Promise<T>): P
 
 // `--no-attach`: the dev server's Vitest restarts whenever vitest.config.ts
 // changes, so a fresh local host is the only one that reads a settled config.
+// The timeout leaves room in the experiment timeout, which the whole run shares,
+// so a hanging run fails this assertion rather than the sandbox.
 function runStorybookTestRun(cwd: string): Promise<WorkflowToolResult> {
   return new Promise((resolve) => {
     execFile(
       'npx',
       ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
-      { cwd, maxBuffer: 256 * 1024 * 1024, timeout: 600_000 },
+      {
+        cwd,
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' },
+        maxBuffer: 256 * 1024 * 1024,
+        timeout: 240_000,
+      },
       (error, stdout, stderr) => {
         const report = renderTestRunJsonOutput(stdout);
         resolve(

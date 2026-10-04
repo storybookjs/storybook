@@ -54,10 +54,9 @@ function redirectTargetOf(target: string | undefined): string | null {
 }
 
 /**
- * A newline separates commands just as `;` does, but the tokenizer collapses it
- * into ordinary whitespace. Lines are therefore split before tokenising, so
- * that everything after a heredoc — or after any line break — starts a fresh
- * segment instead of being absorbed into the previous command.
+ * A newline separates commands just as `;` does. Lines are split before
+ * tokenising, so that everything after a heredoc — or after any line break —
+ * starts a fresh segment with `piped` reset.
  *
  * Backslash continuations are rejoined first: they are one command written
  * across several lines, not several commands.

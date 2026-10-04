@@ -14,12 +14,19 @@ interface PagesContainerProps {
 const PagesInnerContainer = styled.main(({ theme }) => ({
   display: 'flex',
   flexDirection: 'column',
-  gridRowStart: 'sidebar-start',
-  gridRowEnd: '-1',
-  gridColumnStart: 'sidebar-end',
-  gridColumnEnd: '-1',
+  // On mobile the layout root is a column flexbox; fill it and let pages scroll internally
+  // instead of growing past the viewport, which is not scrollable.
+  flex: 1,
+  minHeight: 0,
   backgroundColor: theme.appContentBg,
   zIndex: 1,
+
+  [MEDIA_DESKTOP_BREAKPOINT]: {
+    gridRowStart: 'sidebar-start',
+    gridRowEnd: '-1',
+    gridColumnStart: 'sidebar-end',
+    gridColumnEnd: '-1',
+  },
 }));
 
 /**

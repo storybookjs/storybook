@@ -41,7 +41,6 @@ export default async (
     packageJson,
     configType,
     presets,
-    previewUrl,
     typescriptOptions,
     features,
   } = options;
@@ -161,7 +160,6 @@ export default async (
             FRAMEWORK_OPTIONS: frameworkOptions,
             CHANNEL_OPTIONS: coreOptions.channelOptions,
             FEATURES: features,
-            PREVIEW_URL: previewUrl,
             STORIES: stories.map((specifier) => ({
               ...specifier,
               importPathMatcher: specifier.importPathMatcher.source,

@@ -3,6 +3,7 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 import preview from '../../../../../../.storybook/preview.tsx';
+import { POPPER_PLACEMENTS } from '../../shared/overlayHelpers.tsx';
 import { InteractiveTooltipWrapper } from './InteractiveTooltipWrapper.tsx';
 
 const meta = preview.meta({
@@ -10,6 +11,12 @@ const meta = preview.meta({
   title: 'InteractiveTooltipWrapper',
   component: InteractiveTooltipWrapper,
   args: { children: <button>Hover me</button> },
+  argTypes: {
+    tooltipPlacement: {
+      control: 'select',
+      options: POPPER_PLACEMENTS,
+    },
+  },
 });
 
 const Stack = styled.div({ display: 'flex', flexDirection: 'column', gap: '1rem' });
@@ -50,6 +57,13 @@ export const Empty = meta.story({
 export const Tooltip = meta.story({
   args: {
     tooltip: 'Save',
+  },
+});
+
+export const CustomTooltipPlacement = meta.story({
+  args: {
+    tooltip: 'Save',
+    tooltipPlacement: 'bottom-end',
   },
 });
 

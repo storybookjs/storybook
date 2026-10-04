@@ -1,37 +1,32 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { AddonTypes, InferTypes, Meta, Preview, Story } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferTypes,
+  Meta,
+  MetaInput,
+  MetaTypes,
+  StoryArgs,
+  Preview,
+  Story,
+} from 'storybook/internal/csf';
 import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
   ArgsStoryFn,
-  ComponentAnnotations,
+  ComposedStoryFn,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as reactAnnotations from './entry-preview.tsx';
 import * as reactArgTypesAnnotations from './entry-preview-argtypes.ts';
 import * as reactDocsAnnotations from './entry-preview-docs.ts';
-import type { AddMocks } from './public-types.ts';
 import type { ReactTypes } from './types.ts';
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
-
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<ReactTypes & T, Decorators>>>
->;
-
-type InferReactTypes<T, TArgs, Decorators> = ReactTypes &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
 /**
  * Creates a React-specific preview configuration with CSF factories support.
@@ -63,20 +58,21 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
       reactDocsAnnotations,
       ...(input.addons ?? []),
     ],
-  }) as unknown as ReactPreview<ReactTypes & InferTypes<Addons>>;
+  }) as ReactPreview<ReactTypes & InferTypes<Addons>>;
 
   const defineMeta = preview.meta.bind(preview);
   preview.meta = (_input) => {
     const meta = defineMeta(_input);
     const defineStory = meta.story.bind(meta);
-    // @ts-expect-error internal code that is hard to type
-    meta.story = (__input: any) => {
+    meta.story = (__input?: any) => {
       const story = defineStory(__input);
       // TODO: [test-syntax] Are we sure we want this? the Component construct was for
       // compatibility with raw portable stories. We don't actually use this in vitest.
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore this is a private property used only here
-      story.Component = story.__compose();
+      story.Component = (
+        story as typeof story & {
+          __compose: () => ComposedStoryFn<ReactTypes & InferTypes<Addons>>;
+        }
+      ).__compose();
       return story;
     };
     return meta;
@@ -98,8 +94,10 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
  * export const Primary = meta.story({ args: { label: 'Click me' } });
  * ```
  */
-/** @ts-expect-error We cannot implement the meta faithfully here, but that is okay. */
-export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes & T> {
+export interface ReactPreview<T extends AddonTypes> extends Omit<
+  Preview<ReactTypes & T>,
+  'meta' | 'type'
+> {
   /**
    * Narrows the type of the preview to include additional type information. This is useful when you
    * need to add args that aren't inferred from the component.
@@ -117,24 +115,13 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;
       component?: ComponentType<TArgs>;
-      decorators?: Decorators | Decorators[];
-      args?: TMetaArgs;
-    } & Omit<
-      ComponentAnnotations<ReactTypes & T, TArgs>,
-      'decorators' | 'component' | 'args' | 'render'
-    >
-  ): ReactMeta<
-    InferReactTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferReactTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: Partial<TArgs> extends TMetaArgs ? {} : TMetaArgs;
-    }
-  >;
+    } & MetaInput<ReactTypes & T, TArgs, Decorators, TMetaArgKeys>
+  ): ReactMeta<MetaTypes<ReactTypes & T, TArgs, Decorators, TMetaArgKeys>, TMetaArgKeys>;
 }
 
 /**
@@ -144,9 +131,10 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
  * provided in meta become optional in stories, while missing required args must be provided at the
  * story level.
  */
-export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnnotations<T>>
-  /** @ts-expect-error ReactMeta requires two type parameters, but Meta's constraints differ */
-  extends Meta<T, MetaInput> {
+export interface ReactMeta<
+  T extends ReactTypes,
+  TMetaArgKeys extends PropertyKey = never,
+> extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -198,24 +186,16 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        // TODO: infer mocks from story itself as well
-        AddMocks<T['args'], MetaInput['args']>,
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
-    /** @ts-expect-error hard */
   ): ReactStory<T, TInput>;
 
   /**
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -229,12 +209,7 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): ReactStory<T, {}>;
 }
 
@@ -248,7 +223,10 @@ export interface ReactMeta<T extends ReactTypes, MetaInput extends ComponentAnno
  */
 export interface ReactStory<
   T extends ReactTypes,
-  TInput extends StoryAnnotations<T, T['args']>,
+  TInput extends {
+    play?: (...args: never[]) => void;
+    render?: (...args: never[]) => T['storyResult'];
+  },
 > extends Story<T, TInput> {
   Component: ComponentType<Partial<T['args']>>;
 }

@@ -1,6 +1,6 @@
 {
   "name": "@storybook/preact-vite",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.1",
   "description": "Storybook for Preact and Vite: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -58,7 +58,7 @@
     "vite": "^7.0.4"
   },
   "peerDependencies": {
-    "preact": ">=10 || >= 11.0.0-0",
+    "preact": "^10.8.0 || >= 11.0.0-0",
     "storybook": "workspace:^",
     "vite": "^6.3.0 || ^7.0.0 || ^8.0.0"
   },

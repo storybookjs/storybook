@@ -1,0 +1,5 @@
+<Card title="Explicit card">
+  {#snippet footer()}
+    <small>Explicit footer</small>
+  {/snippet}
+</Card>

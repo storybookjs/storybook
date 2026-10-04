@@ -1,0 +1,92 @@
+{
+  "close-method": {
+    "description": undefined,
+    "name": "close",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "()",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
+  "emitChange-method": {
+    "description": undefined,
+    "name": "emitChange",
+    "table": {
+      "category": "methods",
+      "type": {
+        "summary": "()",
+      },
+    },
+    "type": {
+      "name": "function",
+    },
+  },
+  "my-change-event": {
+    "control": false,
+    "description": "Fired when the value changes.",
+    "name": "my-change",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "CustomEvent<{ value: string }>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "CustomEvent<{ value: string }>",
+    },
+  },
+  "my-close-event": {
+    "control": false,
+    "description": "Fired when the panel closes.",
+    "name": "my-close",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "CustomEvent<void>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "CustomEvent<void>",
+    },
+  },
+  "onMyChange": {
+    "action": {
+      "name": "my-change",
+    },
+    "name": "onMyChange",
+    "table": {
+      "disable": true,
+    },
+  },
+  "onMyClose": {
+    "action": {
+      "name": "my-close",
+    },
+    "name": "onMyClose",
+    "table": {
+      "disable": true,
+    },
+  },
+  "value": {
+    "description": "Current text value.",
+    "name": "value",
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "'ready'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

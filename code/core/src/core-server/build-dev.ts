@@ -26,7 +26,6 @@ import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
 
 import Channel from '../channels/index.ts';
-import { detectPnp } from '../cli/detect.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import { storybookDevServer } from './dev-server.ts';
 import { getWsToken } from './presets/wsToken.ts';
@@ -146,26 +145,13 @@ export async function buildDevStandalone(
   options.localAddress = localAddress;
   options.networkAddress = networkAddress;
 
-  // TODO: Remove in SB11
-  options.pnp = await detectPnp();
-  if (options.pnp) {
-    deprecate(dedent`
-      As of Storybook 10.0, PnP is deprecated.
-      If you are using PnP, you can continue to use Storybook 10.0, but we recommend migrating to a different package manager or linker-mode.
-
-      In future versions, PnP compatibility will be removed.
-    `);
-  }
-
   const config = await loadMainConfig(options);
   const { core, framework } = config;
 
   const corePresets = [];
 
   let frameworkName = typeof framework === 'string' ? framework : framework?.name;
-  if (!options.ignorePreview) {
-    validateFrameworkName(frameworkName);
-  }
+  validateFrameworkName(frameworkName);
   if (frameworkName) {
     corePresets.push(join(frameworkName, 'preset'));
   }

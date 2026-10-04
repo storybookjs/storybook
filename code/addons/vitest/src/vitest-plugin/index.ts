@@ -7,6 +7,7 @@ import type {} from '@vitest/browser-playwright';
 
 import {
   DEFAULT_FILES_PATTERN,
+  HandledError,
   getInterpretedFile,
   normalizeStories,
   optionalEnvToBoolean,
@@ -44,10 +45,10 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_FEATURES_PROVIDE_KEY,
   STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
-import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 import { isStorybookInternalFrame } from './stack-frames.ts';
 
@@ -68,7 +69,15 @@ const extractTagsFromPreview = async (configDir: string) => {
     return [];
   }
   const previewConfig = await readConfig(previewConfigPath);
-  return previewConfig.getFieldValue(['tags']) ?? [];
+  const tags = previewConfig.getValue(['tags']) ?? [];
+  if (
+    previewConfig.mutationDiagnostics.some(({ code }) => code === 'unsupported-value') ||
+    !Array.isArray(tags) ||
+    !tags.every((tag) => typeof tag === 'string')
+  ) {
+    throw new HandledError('Preview tags must be a static array of strings');
+  }
+  return tags;
 };
 
 const getStoryGlobsAndFiles = async (
@@ -331,17 +340,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
 
       const projectId = oneWayHash(finalOptions.configDir);
 
-      const areProjectAnnotationRequired = await requiresProjectAnnotations(
-        nonMutableInputConfig.test,
-        finalOptions
-      );
-
-      const internalSetupFiles = [
-        '@storybook/addon-vitest/internal/setup-file',
-        areProjectAnnotationRequired &&
-          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-      ].filter(Boolean) as string[];
-
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
@@ -355,7 +353,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           setupFiles: [
-            ...internalSetupFiles,
+            '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
             typeof nonMutableInputConfig.test?.setupFiles === 'string' &&
               nonMutableInputConfig.test?.setupFiles,
@@ -391,6 +391,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           },
 
           provide: {
+            [STORYBOOK_TEST_FEATURES_PROVIDE_KEY]: features,
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
             [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
               !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
@@ -402,18 +403,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             ...(nonMutableInputConfig.test?.exclude ?? []),
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
           ],
-
-          // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          // TODO: Remove the check once we don't support Vitest 3 anymore
-          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
-            ? {
-                server: {
-                  deps: {
-                    inline: ['@storybook/addon-vitest'],
-                  },
-                },
-              }
-            : {}),
 
           browser: {
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
@@ -442,7 +431,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         optimizeDeps: {
           include: [
             '@storybook/addon-vitest/internal/setup-file',
-            '@storybook/addon-vitest/internal/setup-file.browser.3',
             '@storybook/addon-vitest/internal/setup-file.browser.4',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
@@ -476,7 +464,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             Warning: Starting in Storybook 8.5.0-alpha.18, the "test.include" option in Vitest is discouraged in favor of just using the "stories" field in your Storybook configuration.
 
             The values you passed to "test.include" will be ignored, please remove them from your Vitest configuration where the Storybook plugin is applied.
-            
+
             More info: https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-test-indexing-behavior-of-storybookaddon-test-is-changed
           `)
         );
@@ -488,19 +476,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
 
-      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
+      const isBrowserModeEnabled = context.project.config.browser?.enabled === true;
 
       if (isBrowserModeEnabled) {
-        const setupFilePath = context.vitest.version.startsWith('3')
-          ? '@storybook/addon-vitest/internal/setup-file.browser.3'
-          : '@storybook/addon-vitest/internal/setup-file.browser.4';
+        const browserSetupFile = fileURLToPath(
+          import.meta.resolve('@storybook/addon-vitest/internal/setup-file.browser.4')
+        );
 
-        context.vitest.config.setupFiles = [
-          setupFilePath,
-          ...(context.vitest.config.setupFiles ?? []).filter(
-            (configuredSetupFile) => configuredSetupFile !== setupFilePath
-          ),
-        ];
+        if (!context.project.config.setupFiles.includes(browserSetupFile)) {
+          context.project.config.setupFiles.push(browserSetupFile);
+        }
       }
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete

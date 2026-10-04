@@ -1,21 +1,32 @@
-import type { JSONEditPath } from 'storybook/internal/cli';
+import { existsSync } from 'node:fs';
+
+import { type JSONEditPath, parseJsonText } from 'storybook/internal/cli';
 import { getProjectRoot } from 'storybook/internal/common';
+
+import type { FixFiles } from '../fix-files.ts';
 
 type JsonObject = Record<string, unknown>;
 
-export interface AngularTargetGroup {
-  pathPrefix: JSONEditPath;
-  targets: JsonObject;
-}
+/** `null` when the file cannot be read or is not valid JSON with comments. */
+export const readJsonFile = async (
+  files: Pick<FixFiles, 'read'>,
+  path: string
+): Promise<any | null> => {
+  try {
+    return parseJsonText(await files.read(path));
+  } catch {
+    return null;
+  }
+};
 
 const asObject = (value: unknown): JsonObject | undefined =>
   typeof value === 'object' && value !== null && !Array.isArray(value)
     ? (value as JsonObject)
     : undefined;
 
-export const getTargetGroups = (json: unknown): AngularTargetGroup[] => {
+export const getTargetGroups = (json: unknown) => {
   const root = asObject(json);
-  const groups: AngularTargetGroup[] = [];
+  const groups: { pathPrefix: JSONEditPath; targets: JsonObject }[] = [];
 
   for (const [projectName, projectValue] of Object.entries(asObject(root?.projects) ?? {})) {
     const project = asObject(projectValue);
@@ -46,3 +57,11 @@ export const findWorkspaceFiles = async (
     absolute: true,
   });
 };
+
+/** The existing `siblings` of each package.json, plus every Nx `project.json`. */
+export const findWorkspaceJsonFiles = async (packageJsonPaths: string[], siblings: string[]) => [
+  ...packageJsonPaths
+    .flatMap((path) => siblings.map((name) => path.replace(/[/\\]package\.json$/, `/${name}`)))
+    .filter((path) => existsSync(path)),
+  ...(await findWorkspaceFiles('project.json')),
+];

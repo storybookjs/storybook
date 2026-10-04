@@ -152,10 +152,10 @@ describe('createNodeChannel', () => {
     channel.on(CHANNEL_WS_DISCONNECT, (payload) => disconnects.push(payload));
     const connection = await firstConnection();
 
-    connection.close(3008, 'timeout');
+    connection.close(1000);
 
     await expect(disconnected).rejects.toThrow('Storybook dev server disconnected');
-    expect(disconnects).toEqual([{ code: 3008, reason: 'timeout' }]);
+    expect(disconnects).toEqual([{ code: 1000, reason: '' }]);
   });
 
   it('rejects with a dev server disconnected error when the server was never reachable', async () => {

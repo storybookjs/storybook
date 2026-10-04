@@ -5,12 +5,7 @@ import {
   describeUnknownStoryIds,
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { ReviewService } from '../../services/review/definition.ts';
 
@@ -60,7 +55,7 @@ const reviewCreateInputSchema = v.object({
   changedFiles: v.pipe(
     v.array(v.string()),
     v.description(
-      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (browse requests, Trigger 2).'
+      'Paths of the files you changed, most central first. Pass an empty array `[]` only when no code changed (e.g. browse requests).'
     )
   ),
 });
@@ -84,26 +79,26 @@ export type ReviewCreateOutput = {
 
 function describeCreate(ctx: ToolsetCtx): string {
   const ref = getToolName(ctx);
-  return `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
+  return `Publish a curated review to Storybook's review page for spot-checking visual impact. Each call replaces the active review; call again when the user iterates.
+
+## After success
+Before your final response, open reviewUrl in this app's own browser pane or preview tab (not a headless or external browser): find a tool or skill for it, even one you still have to load, and call it. Skip only if none. Then share the link.
 
 ## When to call
-- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`${ref('stories.changed')}\`; fall back to \`${ref('stories.findByComponent')}\` if change detection is unavailable. Include \`changedFiles\`.
-- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`${ref('stories.findByComponent')}\` / \`${ref('docs.list')}\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
+- Visual change (anything that changes how the UI looks: components, CSS, themes, tokens, i18n): the user should spot-check rendering. A shared file (token, style, util) has no stories; review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from ${ref('stories.changed')}; fall back to ${ref('stories.findByComponent')} if that is unavailable. Include changedFiles.
+- Browse request ("show me the Badge component"): resolve via ${ref('stories.findByComponent')} / ${ref('docs.list')}. Show exactly what was asked. Pass changedFiles: [].
 
 ## Hard rules
-1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`${ref('stories.findByComponent')}\` or \`${ref('docs.list')}\`, then retry.
-2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
+1. Every storyId MUST come from those tools, never from file paths, story names or memory.
+2. Every story you CREATED MUST appear, including play-function stories; modified ones are welcome too. Curate by grouping, never by omission.
 3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
-4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
-5. Apply the field formatting rules from each schema property. Do not use em-dashes in review payload field values (title, rationale, description, etc.).
-6. Do not instruct or tell the user what to do unless they explicitly ask for guidance.
-7. "Collection" and "trigger" are internal terms for this tool's mechanics and mean nothing to users. Never use them in user-facing text unless the user used them first; say "group of stories" or just describe the contents in plain language.
+4. In follow-up reviews, keep collection and story order stable.
+5. Follow each field's formatting rules; no em-dashes in field values.
+6. Don't tell the user what to do unless they ask for guidance.
+7. Never say "collection" to the user unless they did; say "group of stories".
 
-## Curating (Trigger 1)
-Trace the **visual cascade** up the **import graph** to **page-level UI surfaces** — one collection per layer (\`distance 0\` → direct importers → page context). Include **control stories** where the change is **not supposed to be visible**. **Theme tokens**, **shared styles**, and **layout primitives** need page-level coverage even from a single-file edit. **Localized changes:** affected component → **usage locations** → outer surfaces. **Larger features:** central page/module → lower-level pieces → outer **usage locations**.
-
-## Curating (Trigger 2)
-Exactly what the user asked for — **no more, no less**. Group logically or follow **story index hierarchy**.`;
+## Curating a visual change
+Trace the visual cascade up the import graph to page-level surfaces, one collection per layer (changed component → direct importers → page context). Include control stories where the change should not be visible. Theme tokens, shared styles and layout primitives need page-level coverage even for a one-file edit. Larger features: central page → lower-level pieces → usage locations.`;
 }
 
 /**
@@ -133,7 +128,7 @@ function formatReviewApplied(
   return `${summary} Storybook is already running at ${ctx.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
-1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
+1. **Open ${reviewUrl} in your in-app browser now.** Look through your tools and skills, including ones you still have to load, for one that opens a URL in this app's own browser pane or preview tab (a navigate, open-URL or preview tool or skill), not a headless or external browser. Call it with this URL before you write your final response, so the user sees the review without leaving the tool. Skip this only when you have no such tool.
 2. **Show the link to the user too.** End your final response with a dedicated review section as the very last thing: its own heading on a line by itself (e.g. \`## 👀 Review your changes\`), then a one-line explanation of what the review is, then on the next line the review page as a markdown link prefixed with a 👉 so it's easy to spot: \`👉 [Open the Storybook review page](${reviewUrl})\`. For the explanation, use something like: "The review shows the ${storyCount} stor${storyNoun} most relevant for you to review right now. Because this is AI-curated, results may be inaccurate or incomplete." Put nothing after the link — not a trailing sentence the user has to hunt for. The user needs to see this link even after you've opened it yourself.`;
 }
 
@@ -176,20 +171,20 @@ export const reviewToolset = defineToolset({
           0
         );
 
-        await reportToolsetTelemetry(ctx, 'tool:displayReview', {
-          toolset: 'dev',
-          collectionCount,
-          storyCount,
-          changedFileCount: review.changedFiles.length,
-        });
-
         const data: ReviewCreateOutput = {
           reviewUrl: `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`,
           collectionCount,
           storyCount,
         };
 
-        return { ok: true, data, markdown: formatReviewApplied(data, ctx) };
+        return {
+          ok: true,
+          data,
+          markdown: formatReviewApplied(data, ctx),
+          telemetry: {
+            payload: { collectionCount, storyCount, changedFileCount: review.changedFiles.length },
+          },
+        };
       },
     },
   },

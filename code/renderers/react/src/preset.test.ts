@@ -3,6 +3,10 @@ import { describe, expect, it } from 'vitest';
 import { optimizeViteDeps } from './preset.ts';
 
 describe('optimizeViteDeps', () => {
+  it('includes react-dom/client', () => {
+    expect(optimizeViteDeps).toContain('react-dom/client');
+  });
+
   it('includes react-dom/test-utils', () => {
     // react-dom/test-utils is dynamically imported via `await import('react-dom/test-utils')`
     // in act-compat.ts. Vite's static analyzer does not pre-bundle dynamic imports,

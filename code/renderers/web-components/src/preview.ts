@@ -2,21 +2,24 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaInput,
+  MetaTypes,
+  StoryArgs,
+  WithRenderArgs,
   Preview,
   PreviewAddon,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
+  Args,
   ArgsStoryFn,
-  ComponentAnnotations,
   DecoratorFunction,
   ProjectAnnotations,
-  Renderer,
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { Simplify } from 'type-fest';
 
 import * as webComponentsAnnotations from './entry-preview.ts';
 import * as webComponentsDocsAnnotations from './entry-preview-docs.ts';
@@ -47,17 +50,10 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
   const preview = definePreviewBase({
     ...input,
     addons: [webComponentsAnnotations, webComponentsDocsAnnotations, ...(input.addons ?? [])],
-  }) as unknown as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
+  }) as WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>>;
 
   return preview;
 }
-
-type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<WebComponentsTypes & T, Decorators>>>
->;
-
-type InferWebComponentsTypes<T, TArgs, Decorators> = WebComponentsTypes &
-  T & { args: Simplify<InferArgs<TArgs, T, Decorators>> };
 
 /**
  * Infers args from a web component's HTMLElement type, allowing both camelCase properties and
@@ -100,55 +96,54 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   type<S>(): WebComponentsPreview<T & S>;
 
   meta<
-    C extends keyof HTMLElementTagNameMap,
-    Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends InferArgsFromComponent<C> & Partial<T['args']>,
+    // Without this default, a meta without `component` expands every tag name while checking this
+    // overload and fails with "union type too complex" instead of trying the next one.
+    C extends keyof HTMLElementTagNameMap = never,
+    Decorators extends DecoratorFunction<WebComponentsTypes & T, any> = DecoratorFunction<
+      WebComponentsTypes & T,
+      any
+    >,
+    TRenderArgs = unknown,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      component?: C;
-      args?: TMetaArgs;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<WebComponentsTypes & T, InferArgsFromComponent<C> & T['args']>,
-      'decorators' | 'component' | 'args'
+      component: C;
+      render?: ArgsStoryFn<
+        WebComponentsTypes & T,
+        InferArgsFromComponent<C> & TRenderArgs & T['args']
+      >;
+    } & MetaInput<
+      WebComponentsTypes & T,
+      WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
     >
   ): WebComponentsMeta<
-    InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>,
-    Omit<
-      ComponentAnnotations<InferWebComponentsTypes<T, InferArgsFromComponent<C>, Decorators>>,
-      'args'
-    > & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
+    MetaTypes<
+      WebComponentsTypes & T,
+      WithRenderArgs<InferArgsFromComponent<C>, TRenderArgs>,
+      Decorators,
+      TMetaArgKeys
+    >,
+    TMetaArgKeys
   >;
 
   meta<
-    TArgs,
-    Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    TArgs = Args,
+    Decorators extends DecoratorFunction<WebComponentsTypes & T, any> = DecoratorFunction<
+      WebComponentsTypes & T,
+      any
+    >,
+    TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
-      args?: TMetaArgs;
-      decorators?: Decorators | Decorators[];
-    } & Omit<
-      ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,
-      'decorators' | 'component' | 'args' | 'render'
-    >
+    } & MetaInput<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): WebComponentsMeta<
-    InferWebComponentsTypes<T, TArgs, Decorators>,
-    Omit<ComponentAnnotations<InferWebComponentsTypes<T, TArgs, Decorators>>, 'args'> & {
-      args: {} extends TMetaArgs ? {} : TMetaArgs;
-    }
+    MetaTypes<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>,
+    TMetaArgKeys
   >;
 }
-
-/** Extracts and unions all args types from an array of decorators. */
-type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersection<
-  Decorators extends DecoratorFunction<TRenderer, infer TArgs> ? TArgs : unknown
->;
 
 /**
  * Web Components-specific Meta interface returned by `preview.meta()`.
@@ -159,10 +154,8 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  */
 export interface WebComponentsMeta<
   T extends WebComponentsTypes,
-  MetaInput extends ComponentAnnotations<T>,
->
-  /** @ts-expect-error WebComponentsMeta requires two type parameters, but Meta's constraints differ */
-  extends Meta<T, MetaInput> {
+  TMetaArgKeys extends PropertyKey = never,
+> extends Meta<T, TMetaArgKeys> {
   /**
    * Creates a story with a custom render function that takes no args.
    *
@@ -217,13 +210,7 @@ export interface WebComponentsMeta<
    * ```
    */
   story<
-    TInput extends Simplify<
-      StoryAnnotations<
-        T,
-        T['args'],
-        SetOptional<T['args'], keyof T['args'] & keyof MetaInput['args']>
-      >
-    >,
+    TInput extends Simplify<StoryAnnotations<T, T['args'], StoryArgs<T['args'], TMetaArgKeys>>>,
   >(
     story: TInput
   ): WebComponentsStory<T, TInput>;
@@ -232,7 +219,7 @@ export interface WebComponentsMeta<
    * Creates a story with no additional configuration.
    *
    * This overload is only available when all required args have been provided in meta. The
-   * conditional type `Partial<T['args']> extends SetOptional<...>` checks if the remaining required
+   * conditional type `Partial<T['args']> extends StoryArgs<...>` checks if the remaining required
    * args (after accounting for args provided in meta) are all optional. If so, the function accepts
    * zero arguments `[]`. Otherwise, it requires `[never]` which makes this overload unmatchable,
    * forcing the user to provide args.
@@ -246,12 +233,7 @@ export interface WebComponentsMeta<
    * ```
    */
   story(
-    ..._args: Partial<T['args']> extends SetOptional<
-      T['args'],
-      keyof T['args'] & keyof MetaInput['args']
-    >
-      ? []
-      : [never]
+    ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): WebComponentsStory<T, {}>;
 }
 

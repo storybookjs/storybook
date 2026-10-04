@@ -1,4 +1,3 @@
-export * from './detect.ts';
 export * from './helpers.ts';
 export * from './angular/helpers.ts';
 export * from './dirs.ts';
@@ -7,5 +6,6 @@ export * from './NpmOptions.ts';
 export * from './eslintPlugin.ts';
 export * from './globalSettings.ts';
 export * from './AddonVitestService.ts';
+export * from './installSkills.ts';
 export * from './detectLanguage.ts';
 export * from './getStorybookData.ts';

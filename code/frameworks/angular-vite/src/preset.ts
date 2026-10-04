@@ -11,7 +11,7 @@ import {
   AngularMissingStylePreprocessorError,
   AngularUnresolvedStyleError,
 } from 'storybook/internal/server-errors';
-import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
@@ -22,6 +22,7 @@ import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts'
 import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
+import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
@@ -78,15 +79,11 @@ export function resolveZoneless(angularBuilderOptions: StandaloneOptions['angula
   return angularBuilderOptions?.zoneless ?? true;
 }
 
-export const viteFinal = async (config: UserConfig, options?: StandaloneOptions) => {
+export const viteFinal = async (config: UserConfig, options: Options & StandaloneOptions) => {
   // Hydrate angularBuilderOptions from the env var set by the parent
   // storybook dev/build process when this preset runs in the addon-vitest
   // child (where no BuilderContext is available).
-  if (
-    options &&
-    !options.angularBuilderOptions &&
-    process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON
-  ) {
+  if (!options.angularBuilderOptions && process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON) {
     try {
       options.angularBuilderOptions = JSON.parse(
         process.env.STORYBOOK_ANGULAR_BUILDER_OPTIONS_JSON
@@ -109,10 +106,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const { mergeConfig, normalizePath } = await import('vite');
   const { default: angular } = await import('@analogjs/vite-plugin-angular');
 
-  // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
+  const frameworkOptions: FrameworkOptions | undefined =
+    typeof framework === 'string' ? undefined : framework.options;
 
-  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
   const resolvedFeatures: StorybookConfigRaw['features'] = await options.presets.apply(
     'features',
     {}
@@ -131,8 +128,8 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
-  const propsTable = resolvePropsTable(framework.options, resolvedFeatures);
-  warnAboutPropsTable(framework.options, resolvedFeatures);
+  const propsTable = resolvePropsTable(frameworkOptions, resolvedFeatures);
+  warnAboutPropsTable(frameworkOptions, resolvedFeatures);
 
   if (resolvedFeatures?.componentsManifest && !docgenServer) {
     logger.warn(
@@ -142,18 +139,18 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     );
   }
 
-  const zoneless = resolveZoneless(options?.angularBuilderOptions);
+  const zoneless = resolveZoneless(options.angularBuilderOptions);
   const angularPlugins = angular({
-    jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
+    jit: typeof frameworkOptions?.jit !== 'undefined' ? frameworkOptions?.jit : true,
     liveReload:
-      typeof framework.options?.liveReload !== 'undefined' ? framework.options?.liveReload : false,
+      typeof frameworkOptions?.liveReload !== 'undefined' ? frameworkOptions?.liveReload : false,
     tsconfig:
-      typeof framework.options?.tsconfig !== 'undefined'
-        ? framework.options?.tsconfig
-        : (options?.tsConfig ?? './.storybook/tsconfig.json'),
+      typeof frameworkOptions?.tsconfig !== 'undefined'
+        ? frameworkOptions?.tsconfig
+        : (options.tsConfig ?? './.storybook/tsconfig.json'),
     inlineStylesExtension:
-      typeof framework.options?.inlineStylesExtension !== 'undefined'
-        ? framework.options?.inlineStylesExtension
+      typeof frameworkOptions?.inlineStylesExtension !== 'undefined'
+        ? frameworkOptions?.inlineStylesExtension
         : 'css',
   });
 
@@ -191,7 +188,6 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
         '@storybook/angular-vite',
         '@angular/compiler',
         '@angular/platform-browser',
-        '@angular/platform-browser/animations',
         '@angular/common/http',
         'tslib',
         ...(zoneless ? [] : ['zone.js']),
@@ -233,7 +229,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
-      ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
+      ...(docgenServer && options.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -350,9 +346,10 @@ const SPECIAL_QUERY_ID = /[?&](?:worker|sharedworker|raw|url)\b/;
 
 // Asks whether the package is present, not whether its entry point resolves: this check aborts the
 // build, and Vite loads preprocessors with its own conditions, so an `exports` map without a
-// `require` condition resolves for Vite and throws here. The `createRequire` arm is only for Yarn
-// PnP, which has no `node_modules` to walk; `import.meta.resolve` cannot replace it, because its
-// `parent` argument is silently ignored without `--experimental-import-meta-resolve`.
+// `require` condition resolves for Vite and throws here. When the manual `node_modules` walk
+// finds nothing, fall back to Node's own resolver via `createRequire`; `import.meta.resolve`
+// cannot replace it, because its `parent` argument is silently ignored without
+// `--experimental-import-meta-resolve`.
 const isPackagePresentFrom = (pkg: string, fromDir: string) => {
   let dir = resolve(fromDir);
   while (true) {

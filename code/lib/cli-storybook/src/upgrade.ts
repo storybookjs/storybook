@@ -1,9 +1,12 @@
+import { installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
   isCI,
   isCorePackage,
+  resolveStorybookVersionSpecifier,
+  getProcessAncestry,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -18,7 +21,7 @@ import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
-import { telemetry } from 'storybook/internal/telemetry';
+import { detectAgent, telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
@@ -75,9 +78,23 @@ const deprecatedPackages = [
       '@storybook/addon-centered',
     ],
   },
+  {
+    minVersion: '11.0.0',
+    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
+    deprecations: ['@storybook/nextjs'],
+  },
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
+
+const getStorybookVersionSpecifierFromCli = (): string | undefined => {
+  try {
+    return resolveStorybookVersionSpecifier(getProcessAncestry());
+  } catch {
+    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
+    return resolveStorybookVersionSpecifier([]);
+  }
+};
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');
 
@@ -127,6 +144,7 @@ export type UpgradeOptions = {
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
+  skills?: boolean;
   features?: string;
   force: boolean;
   disableTelemetry: boolean;
@@ -335,6 +353,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
     throw new HandledError('--features cannot be combined with --skip-automigrations');
   }
 
+  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -439,6 +458,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
             isCLIPrerelease: project.isCLIPrerelease,
             isCLIExactLatest: project.isCLIExactLatest,
             isCLIExactPrerelease: project.isCLIExactPrerelease,
+            storybookVersionSpecifier:
+              storybookVersionSpecifier ?? project.storybookVersionSpecifier,
           });
         }
         task.success(`Updated package versions in package.json files`);
@@ -501,8 +522,8 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    // Configure addons that automigrations added but deferred (e.g. addon-vitest / addon-a11y from
-    // the angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
+    // Configure addons that automigrations added but deferred (e.g. addon-vitest from the
+    // angular-to-angular-vite migration). Their postinstall hooks can only be resolved now that
     // dependencies have been installed above, mirroring CLI init's install-then-configure ordering.
     if (!options.dryRun && !options.skipInstall) {
       for (const project of storybookProjects) {
@@ -528,6 +549,15 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         }
       }
     }
+
+    const skills = options.dryRun
+      ? undefined
+      : await installSkills({
+          packageManager: rootPackageManager,
+          skillsFlag: options.skills,
+          yes: options.yes,
+          agent: !!detectAgent(),
+        });
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({
@@ -586,6 +616,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         doctorResults: doctorResults[project.configDir]?.diagnostics || {},
         doctorFailureCount,
         doctorErrorCount,
+        skills,
       });
     }
 

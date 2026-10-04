@@ -98,8 +98,6 @@ command('init')
       Object.values(PackageManagerName)
     )
   )
-  // TODO: Remove in SB11
-  .option('--use-pnp', 'Enable PnP mode for Yarn 2+')
   .option('-p --parser <babel | babylon | flow | ts | tsx>', 'jscodeshift parser')
   .option('-t --type <type>', 'Add Storybook for a specific project type')
   .option('-y --yes', 'Answer yes to all prompts')
@@ -168,6 +166,8 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .option('--skills', 'Install the official Storybook skills for AI agents without asking')
+  .option('--no-skills', 'Skip installing the official Storybook skills for AI agents')
   .addOption(
     new Option(
       '--features <list>',
@@ -282,10 +282,6 @@ command('automigrate [fixId]')
   .option('-l --list', 'List available migrations')
   .option('-c, --config-dir <dir-name>', 'Directory of Storybook configurations to migrate')
   .option('-s --skip-install', 'Skip installing deps')
-  .option(
-    '--renderer <renderer-pkg-name>',
-    'The renderer package for the framework Storybook is using.'
-  )
   .option('--skip-doctor', 'Skip doctor check')
   .option('--glob <pattern>', 'Glob pattern for story files (for csf-factories codemod)')
   .action(async (fixId, options) => {

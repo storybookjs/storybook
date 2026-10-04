@@ -16,11 +16,11 @@ The Code panel renders a story’s source code when viewing that story in the ca
 
 ## Usage
 
-To enable the Code panel, set `parameters.docs.codePanel` to `true`. For most projects, this is best done in the `.storybook/preview.*` file, to apply to all stories.
+The Code panel is enabled by default when `@storybook/addon-docs` is installed. To disable it for all stories, set `parameters.docs.codePanel` to `false` in `.storybook/preview.*`.
 
-<CodeSnippets path="code-panel-enable-in-preview.md" />
+<CodeSnippets path="code-panel-disable-in-preview.md" />
 
-You can also enable it at the component or story level:
+You can override this setting at the component or story level. Set it to `true` to enable the panel or `false` to disable it:
 
 <CodeSnippets path="code-panel-in-meta-and-story.md" />
 

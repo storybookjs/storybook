@@ -1,69 +1,24 @@
-import { readFileSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import type { PackageJson } from 'storybook/internal/common';
-import type { JsPackageManager } from 'storybook/internal/common';
-import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
+import { JsPackageManager, isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { gt } from 'semver';
-import { dedent } from 'ts-dedent';
 
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages.ts';
 import type { Fix } from '../types.ts';
 
 type PackageMetadata = {
   packageName: string;
-  beforeVersion: string | null;
-  afterVersion: string | null;
+  beforeVersion: string;
+  afterVersion: string;
 };
 
-interface Options {
-  upgradable: PackageMetadata[];
-}
+// Yarn patches, local paths, git and URL specifiers, and workspaces have no registry version to bump.
+const NON_REGISTRY_SPECIFIER = /^(patch|file|link|portal|git|http|https|workspace):|^git\+/;
 
-async function getLatestVersions(
-  packageManager: JsPackageManager,
-  packages: [string, string][]
-): Promise<PackageMetadata[]> {
-  return Promise.all(
-    packages.map(async ([packageName]) => ({
-      packageName,
-      beforeVersion: await packageManager.getInstalledVersion(packageName),
-      afterVersion: await packageManager.latestVersion(packageName),
-    }))
-  );
-}
-
-/** Filter out dependencies that are not valid e.g. yarn patches, git urls and other protocols */
-function isValidVersionType(packageName: string, specifier: string) {
-  if (
-    specifier.startsWith('patch:') ||
-    specifier.startsWith('file:') ||
-    specifier.startsWith('link:') ||
-    specifier.startsWith('portal:') ||
-    specifier.startsWith('git:') ||
-    specifier.startsWith('git+') ||
-    specifier.startsWith('http:') ||
-    specifier.startsWith('https:') ||
-    specifier.startsWith('workspace:')
-  ) {
-    logger.debug(`Skipping ${packageName} as it does not have a valid version type: ${specifier}`);
-    return false;
-  }
-
-  return true;
-}
-
-/**
- * Is the user upgrading to the `latest` version of Storybook? Let's try to pull along some of the
- * storybook related dependencies to `latest` as well!
- *
- * We communicate clearly that this migration is a helping hand, but not a complete solution. The
- * user should still manually check for other dependencies that might be incompatible.
- *
- * See: https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
- */
+// A helping hand when upgrading to `latest`, not a complete solution: the user still has to check
+// other dependencies. See https://github.com/storybookjs/storybook/issues/25731#issuecomment-1977346398
 export const upgradeStorybookRelatedDependencies = {
   id: 'upgrade-storybook-related-dependencies',
   promptType: 'auto',
@@ -79,82 +34,57 @@ export const upgradeStorybookRelatedDependencies = {
 
     const allDependencies = packageManager.getAllDependencies();
 
-    const storybookDependencies = Object.keys(allDependencies)
-      .filter((dep) => dep.includes('storybook'))
-      .filter((dep) => !isCorePackage(dep) && !isSatelliteAddon(dep));
+    const storybookDependencies = Object.keys(allDependencies).filter(
+      (dep) => dep.includes('storybook') && !isCorePackage(dep) && !isSatelliteAddon(dep)
+    );
 
     const incompatibleDependencies = analyzedPackages
       .filter((pkg) => pkg.hasIncompatibleDependencies)
       .map((pkg) => pkg.packageName);
 
-    const uniquePackages = Array.from(
-      new Set(
-        [...storybookDependencies, ...incompatibleDependencies].filter((dep) =>
-          isValidVersionType(dep, allDependencies[dep])
-        )
-      )
-    ).map((packageName) => [packageName, allDependencies[packageName]]) as [string, string][];
-
-    const packageVersions = await getLatestVersions(packageManager, uniquePackages);
-    const upgradablePackages = packageVersions.filter(
-      ({ afterVersion, beforeVersion, packageName }) => {
-        if (
-          beforeVersion === null ||
-          afterVersion === null ||
-          allDependencies[packageName] === null
-        ) {
-          return false;
+    const packageNames = new Set(
+      [...storybookDependencies, ...incompatibleDependencies].filter((dep) => {
+        const specifier = allDependencies[dep];
+        if (specifier !== undefined && !NON_REGISTRY_SPECIFIER.test(specifier)) {
+          return true;
         }
-
-        return gt(afterVersion, beforeVersion);
-      }
+        logger.debug(`Skipping ${dep}: it is not declared with a registry version (${specifier})`);
+        return false;
+      })
     );
 
-    return upgradablePackages.length > 0 ? { upgradable: upgradablePackages } : null;
+    const packageVersions = await Promise.all(
+      [...packageNames].map(async (packageName) => ({
+        packageName,
+        beforeVersion: await packageManager.getInstalledVersion(packageName),
+        afterVersion: await packageManager.latestVersion(packageName),
+      }))
+    );
+    const upgradable = packageVersions.filter(
+      (pkg): pkg is PackageMetadata =>
+        pkg.beforeVersion !== null &&
+        pkg.afterVersion !== null &&
+        gt(pkg.afterVersion, pkg.beforeVersion)
+    );
+
+    return upgradable.length > 0 ? { upgradable } : null;
   },
 
   prompt() {
     return "We'll upgrade the community packages that are compatible.";
   },
 
-  async run({ result: { upgradable }, packageManager, dryRun }) {
-    if (dryRun) {
-      logger.log(dedent`
-        The following would have been upgraded:
-        ${upgradable
-          .map(
-            ({ packageName, afterVersion, beforeVersion }) =>
-              `${packageName}: ${beforeVersion} => ${afterVersion}`
-          )
-          .join('\n')}
-      `);
-      return;
-    }
-
-    if (upgradable.length > 0) {
-      packageManager.packageJsonPaths.forEach((packageJsonPath) => {
-        const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as PackageJson;
-        upgradable.forEach((item) => {
-          if (!item) {
-            return;
+  async run({ result: { upgradable }, packageManager }) {
+    for (const packageJsonPath of packageManager.packageJsonPaths) {
+      const packageJson = JsPackageManager.getPackageJson(packageJsonPath);
+      for (const { packageName, afterVersion } of upgradable) {
+        for (const field of ['dependencies', 'devDependencies', 'peerDependencies'] as const) {
+          if (packageJson[field]?.[packageName]) {
+            packageJson[field][packageName] = `^${afterVersion}`;
           }
-
-          const { packageName, afterVersion: version } = item;
-          const prefixed = `^${version}`;
-
-          if (packageJson.dependencies?.[packageName]) {
-            packageJson.dependencies[packageName] = prefixed;
-          }
-          if (packageJson.devDependencies?.[packageName]) {
-            packageJson.devDependencies[packageName] = prefixed;
-          }
-          if (packageJson.peerDependencies?.[packageName]) {
-            packageJson.peerDependencies[packageName] = prefixed;
-          }
-        });
-
-        packageManager.writePackageJson(packageJson, dirname(packageJsonPath));
-      });
+        }
+      }
+      packageManager.writePackageJson(packageJson, dirname(packageJsonPath));
     }
   },
-} satisfies Fix<Options>;
+} satisfies Fix<{ upgradable: PackageMetadata[] }>;

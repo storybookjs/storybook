@@ -31,7 +31,6 @@ describe('FeatureCompatibilityService', () => {
   describe('supportsOnboarding', () => {
     it('should return true for supported project types', () => {
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.REACT)).toBe(true);
-      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.REACT_SCRIPTS)).toBe(true);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.NEXTJS)).toBe(true);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.VUE3)).toBe(true);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.ANGULAR)).toBe(true);

@@ -19,9 +19,8 @@ export type GeneratorOptions = {
   builder: SupportedBuilder;
   framework: SupportedFramework;
   renderer: SupportedRenderer;
+  storybookVersionSpecifier?: string;
   linkable: boolean;
-  // TODO: Remove in SB11
-  pnp: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;
@@ -101,6 +100,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
+  storybookVersionSpecifier?: string;
   telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
@@ -139,12 +139,16 @@ export interface GeneratorModule {
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
-  usePnp?: boolean;
+  storybookVersionSpecifier?: string;
   features?: Array<Feature>;
   type?: ProjectType;
   force?: any;
   /** Whether this is being run via an ai agent */
   agent?: boolean;
+  /** `--skills` / `--no-skills`: install the official Storybook skills without asking, or never */
+  skills?: boolean;
+  /** Skip the skills step without remembering an answer, for throwaway projects like `storybook sandbox` */
+  skipSkills?: boolean;
   html?: boolean;
   skipInstall?: boolean;
   language?: SupportedLanguage;

@@ -576,8 +576,8 @@ describe('help', () => {
     expect(result.output).toContain('-c, --config-dir <dir-name>');
     expect(result.output).toContain('-o, --output <path>');
     expect(result.output).toContain('Commands:');
-    expect(result.output).toContain('stories preview            Get story preview URLs');
-    expect(result.output).toContain('docs list                  List All Documentation  [local]');
+    expect(result.output).toMatch(/stories preview +Get story preview URLs/);
+    expect(result.output).toMatch(/docs list +List All Documentation {2}\[local\]/);
     // `test` is owned by addon-vitest; the core harness does not register it.
     expect(result.output).not.toContain('test run');
     expect(result.output).not.toContain('`--componentPaths`');

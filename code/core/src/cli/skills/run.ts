@@ -46,7 +46,7 @@ export type SkillsRunDeps = {
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
   getSetupMarkdown: typeof getSetupMarkdownOutput;
-  // Reads the toolsets `loadStorybook` registered, so call it after the configuration loaded.
+  // Reads the toolsets `loadStorybook` registered, so call it after the configuration has loaded.
   describeToolsets: () => ToolsetCatalogEntry[];
 };
 

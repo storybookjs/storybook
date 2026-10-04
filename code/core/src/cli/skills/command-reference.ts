@@ -6,9 +6,6 @@ import type { ToolsetCatalogEntry, ToolsetCatalogMethod } from '../tools/sdk/typ
 
 const toCommand = getToolName({ transport: 'cli' });
 
-// Four backticks, so a description that carries its own three-backtick fence stays inside the block.
-const FENCE = '````';
-
 function findReferredTools(
   skillText: string,
   toolsets: ToolsetCatalogEntry[]
@@ -42,8 +39,6 @@ export function renderCommandReference(skillText: string, toolsets: ToolsetCatal
   return [
     '# Command reference',
     "`--json` only changes the output format; to pass all arguments as one JSON object, use `--input '<json>'`.",
-    ...referred.map((method) =>
-      [`${FENCE}text`, renderMethodHelpFromCatalog(method), FENCE].join('\n')
-    ),
+    ...referred.map((method) => ['```text', renderMethodHelpFromCatalog(method), '```'].join('\n')),
   ].join('\n\n');
 }

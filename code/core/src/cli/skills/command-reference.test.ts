@@ -47,7 +47,7 @@ describe('renderCommandReference', () => {
 
     expect(described(reference)).toEqual(['docs list', 'docs show', 'docs show-story']);
     expect(reference).toContain(
-      `\`\`\`\`text\n${renderMethodHelpFromCatalog(docs.methods[1])}\n\`\`\`\``
+      `\`\`\`text\n${renderMethodHelpFromCatalog(docs.methods[1])}\n\`\`\``
     );
   });
 

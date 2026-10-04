@@ -10,12 +10,10 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// `storybook skills write-story` serves the same document the MCP channel
-// exposes as the get-storybook-story-instructions tool, and `storybook skills
-// stories` carries that document too. Assertions ask by that historic name;
-// this matcher owns the cross-channel equivalence. Remove the alias once the
-// MCP tool and the skill share one name (or the tool is retired) — until then
-// it keeps the assertions channel-agnostic.
+// `storybook skills write-story` and `stories` serve the document the MCP
+// channel exposes as the get-storybook-story-instructions tool, which
+// assertions ask for by name. Remove the alias once the MCP tool and the skill
+// share one name (or the tool is retired).
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;

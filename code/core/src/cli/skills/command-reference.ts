@@ -29,16 +29,19 @@ function findReferredTools(
 
 export function renderCommandReference(skillText: string, toolsets: ToolsetCatalogEntry[]): string {
   // An entry can name another command (`docs show` points at `docs show-story`), so the reference
-  // grows until it describes every command that appears anywhere in the output.
-  let referred: ToolsetCatalogMethod[] = [];
-  let text = skillText;
+  // grows until it describes every command named in the output. It grows only within toolsets the
+  // skill text names: `review create` points at `docs list` even when the project has no docs.
+  let referred = findReferredTools(skillText, toolsets);
+  const namedToolsets = toolsets.filter((toolset) =>
+    toolset.methods.some((method) => referred.includes(method))
+  );
   for (;;) {
-    const found = findReferredTools(text, toolsets);
+    const text = [skillText, ...referred.map(renderMethodHelpFromCatalog)].join('\n');
+    const found = findReferredTools(text, namedToolsets);
     if (found.length === referred.length) {
       break;
     }
     referred = found;
-    text = [skillText, ...referred.map(renderMethodHelpFromCatalog)].join('\n');
   }
   if (referred.length === 0) {
     return '';

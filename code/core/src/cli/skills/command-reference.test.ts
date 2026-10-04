@@ -84,32 +84,45 @@ describe('renderCommandReference', () => {
     expect(reference).not.toContain(renderMethodHelpFromCatalog(show));
   });
 
-  it('also describes a tool that only an entry names', () => {
-    const pointing = toCatalogEntry(
-      defineToolset({
-        id: 'docs',
-        description: 'Documentation tools.',
-        methods: {
-          show: {
-            title: 'Show docs',
-            description:
-              'Show the docs of one component. For one story, use `npx storybook tools docs show-story`.',
-            input: v.object({}),
-            handler,
-          },
-          showStory: {
-            title: 'Show story docs',
-            description: 'Show the docs of one story.',
-            input: v.object({}),
-            handler,
-          },
-        },
-      }),
-      { transport: 'cli', getService: () => ({}) as never }
-    );
-    const reference = renderCommandReference('Call `npx storybook tools docs show`.', [pointing]);
+  it('also describes the tools its entries name, within the toolsets the text names', () => {
+    const toolset = (
+      id: string,
+      methods: Record<string, string>
+    ): ReturnType<typeof toCatalogEntry> =>
+      toCatalogEntry(
+        defineToolset({
+          id,
+          description: `${id} tools.`,
+          methods: Object.fromEntries(
+            Object.entries(methods).map(([name, description]) => [
+              name,
+              { title: name, description, input: v.object({}), handler },
+            ])
+          ),
+        }),
+        { transport: 'cli', getService: () => ({}) as never }
+      );
+    const chained = toolset('docs', {
+      list: 'List components. Then call `npx storybook tools docs show`.',
+      show: 'Show one component. For one story, use `npx storybook tools docs show-story`.',
+      showStory: 'Show one story.',
+    });
+    const review = toolset('review', {
+      create: 'Create a review. Find ids with `npx storybook tools docs list`.',
+    });
+    const described = (text: string) =>
+      [
+        ...renderCommandReference(text, [chained, review]).matchAll(
+          /^Usage: npx storybook tools (.+) \[--key value \.\.\.\]$/gm
+        ),
+      ].map(([, command]) => command);
 
-    expect(reference).toContain(renderMethodHelpFromCatalog(pointing.methods[1]));
+    expect(described('Call `npx storybook tools docs list`.')).toEqual([
+      'docs list',
+      'docs show',
+      'docs show-story',
+    ]);
+    expect(described('Call `npx storybook tools review create`.')).toEqual(['review create']);
   });
 
   it('is empty when the text names no tool', () => {

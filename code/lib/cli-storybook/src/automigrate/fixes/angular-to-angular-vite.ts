@@ -17,6 +17,7 @@ import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
 import type { FixFiles } from '../fix-files.ts';
+import { automigrationLogger } from '../helpers/automigration-logger.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { FixTransform } from '../pipeline.ts';
 import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
@@ -404,13 +405,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
 
       // The addon is not installed until the end of the run, so its postinstall is deferred.
-      await add('@storybook/addon-vitest', {
-        packageManager: packageManager.type,
-        configDir,
-        skipInstall: true,
-        skipPostinstall: true,
-        yes: !!yes,
-      });
+      await add(
+        '@storybook/addon-vitest',
+        {
+          packageManager: packageManager.type,
+          configDir,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: !!yes,
+        },
+        automigrationLogger
+      );
       addonsToPostinstall?.push('@storybook/addon-vitest');
     }
 
@@ -422,13 +427,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }));
 
     if (wantsA11y) {
-      await add('@storybook/addon-a11y', {
-        packageManager: packageManager.type,
-        configDir,
-        skipInstall: true,
-        skipPostinstall: true,
-        yes: !!yes,
-      });
+      await add(
+        '@storybook/addon-a11y',
+        {
+          packageManager: packageManager.type,
+          configDir,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: !!yes,
+        },
+        automigrationLogger
+      );
     }
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as a peer, so an Analog project

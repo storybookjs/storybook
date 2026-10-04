@@ -182,7 +182,8 @@ export const internalStorybookE2e = defineJob(
   (workflowName) => ({
     executor: {
       name: 'sb_playwright',
-      class: 'medium+',
+      // The tools-attach.spec.ts CLIs build every manifest next to the dev server; OOMs on medium+.
+      class: 'large',
     },
     steps: [
       ...workflow.restoreLinux(),
@@ -415,7 +416,7 @@ export const testUnit_windows = defineJob(
       {
         run: {
           command:
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
+            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',
         },
       },

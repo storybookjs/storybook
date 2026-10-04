@@ -119,31 +119,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@analogjs/vite-plugin-angular@npm:^2.5.2":
-  version: 2.6.1
-  resolution: "@analogjs/vite-plugin-angular@npm:2.6.1"
-  dependencies:
-    magic-string: "npm:^0.30.21"
-    obug: "npm:^2.1.1"
-    oxc-parser: "npm:^0.121.0"
-    tinyglobby: "npm:^0.2.14"
-    ts-morph: "npm:^21.0.0"
-  peerDependencies:
-    "@angular-devkit/build-angular": ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0 || ^22.0.0
-    "@angular/build": ^18.0.0 || ^19.0.0 || ^20.0.0 || ^21.0.0 || ^22.0.0
-    vite: ^6.0.0 || ^7.0.0 || ^8.0.0
-  peerDependenciesMeta:
-    "@angular-devkit/build-angular":
-      optional: true
-    "@angular/build":
-      optional: true
-    vite:
-      optional: true
-  checksum: 10c0/cc4f509feb48fa68a52eff4313cade2e091662705146807feca4a2b114d6452f0f59854eb18d0c4cd6ae398df7aaad3f05cf90e98678be00fa6cb7a4e40b21d3
-  languageName: node
-  linkType: hard
-
-"@analogjs/vite-plugin-angular@npm:^2.7.5":
+"@analogjs/vite-plugin-angular@npm:^2.5.2, @analogjs/vite-plugin-angular@npm:^2.7.5":
   version: 2.7.5
   resolution: "@analogjs/vite-plugin-angular@npm:2.7.5"
   dependencies:
@@ -12236,18 +12212,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@ts-morph/common@npm:~0.22.0":
-  version: 0.22.0
-  resolution: "@ts-morph/common@npm:0.22.0"
-  dependencies:
-    fast-glob: "npm:^3.3.2"
-    minimatch: "npm:^9.0.3"
-    mkdirp: "npm:^3.0.1"
-    path-browserify: "npm:^1.0.1"
-  checksum: 10c0/1f1ff7fee54414e09803b1ba559ff51881b821c19bc97cb19d06fc46c58957dea4a58e6a83e9f2e30e08c8179d6d142e45be329d9242f410323795b5c1e04806
-  languageName: node
-  linkType: hard
-
 "@ts-morph/common@npm:~0.29.0":
   version: 0.29.0
   resolution: "@ts-morph/common@npm:0.29.0"
@@ -17742,13 +17706,6 @@ __metadata:
   version: 10.1.1
   resolution: "code-block-writer@npm:10.1.1"
   checksum: 10c0/8573816797ac20256b22d0c9c72743f6dcbcef2cb7e08e7761b3f7a3f2cdd3abe1c66ed9dda123f7c1e5e3746a5528fe3c09473758f1d1555fe4c69add334b28
-  languageName: node
-  linkType: hard
-
-"code-block-writer@npm:^12.0.0":
-  version: 12.0.0
-  resolution: "code-block-writer@npm:12.0.0"
-  checksum: 10c0/ced73cdc466bff968bba9e8e32340d88420d25a229b9269f7425a10a7c2c9a12ca702dcb601b2462b96472d354f021cf66e552179fcbe30c8f7ecd0173c5fa07
   languageName: node
   linkType: hard
 
@@ -26970,7 +26927,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"minimatch@npm:^9.0.3, minimatch@npm:^9.0.4":
+"minimatch@npm:^9.0.4":
   version: 9.0.5
   resolution: "minimatch@npm:9.0.5"
   dependencies:
@@ -27127,15 +27084,6 @@ __metadata:
   bin:
     mkdirp: bin/cmd.js
   checksum: 10c0/e2e2be789218807b58abced04e7b49851d9e46e88a2f9539242cc8a92c9b5c3a0b9bab360bd3014e02a140fc4fbc58e31176c408b493f8a2a6f4986bd7527b01
-  languageName: node
-  linkType: hard
-
-"mkdirp@npm:^3.0.1":
-  version: 3.0.1
-  resolution: "mkdirp@npm:3.0.1"
-  bin:
-    mkdirp: dist/cjs/src/bin.js
-  checksum: 10c0/9f2b975e9246351f5e3a40dcfac99fcd0baa31fbfab615fe059fb11e51f10e4803c63de1f384c54d656e4db31d000e4767e9ef076a22e12a641357602e31d57d
   languageName: node
   linkType: hard
 
@@ -35297,16 +35245,6 @@ __metadata:
     "@ts-morph/common": "npm:~0.11.0"
     code-block-writer: "npm:^10.1.1"
   checksum: 10c0/43d4e83c897c37d24b5f938117c67a7feb3af60375a8131ba29a7c4539c6fc553179a9a4373ce6d39ecf5cb4bec68b9fad296c17030b7bf592d8137daf280760
-  languageName: node
-  linkType: hard
-
-"ts-morph@npm:^21.0.0":
-  version: 21.0.1
-  resolution: "ts-morph@npm:21.0.1"
-  dependencies:
-    "@ts-morph/common": "npm:~0.22.0"
-    code-block-writer: "npm:^12.0.0"
-  checksum: 10c0/ed1d4ccdeba2300cfa236f2aaf64bb462aa386141e659a08d8a2eb96d3b4b274abc9d97b8dd06a0c13af79187b197f38f6a8baca709f99d11094a82c8abccf27
   languageName: node
   linkType: hard
 

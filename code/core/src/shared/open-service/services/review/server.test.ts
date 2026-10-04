@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
 import { clearRegistry } from '../../server.ts';
+import { setDelegatedMode } from '../../service-registry.ts';
 import { reviewServiceDef } from './definition.ts';
 import { registerReviewService } from './server.ts';
 
@@ -286,6 +287,15 @@ describe('registerReviewService', () => {
     // The promoted review is fresh, so accepting supersedes the stale warning.
     await service.commands.acceptPending(undefined);
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
+  });
+
+  it('leaves module-graph staleness to the attached Storybook in delegated mode', () => {
+    setDelegatedMode(true);
+    const subscribeToModuleGraphChanges = vi.fn(() => () => {});
+
+    registerReviewService({ getIndex, subscribeToModuleGraphChanges });
+
+    expect(subscribeToModuleGraphChanges).not.toHaveBeenCalled();
   });
 
   it('marks the current review stale on module-graph changes after the grace window', async () => {

@@ -2,6 +2,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
 import { getService, registerService } from '../../server.ts';
+import { isDelegatedMode } from '../../service-registry.ts';
 import type { ModuleGraphService } from '../module-graph/definition.ts';
 import { reviewServiceDef, type ReviewService } from './definition.ts';
 import {
@@ -95,10 +96,13 @@ export function registerReviewService({
 
   // The subscription is process-lifetime by design: the service registers once per dev-server
   // process and there is no teardown phase to return it to. The grace window is enforced inside
-  // `markStale`, so graph changes are always forwarded.
-  subscribeToModuleGraphChanges(() => {
-    void service.commands.markStale(undefined);
-  });
+  // `markStale`, so graph changes are always forwarded. An attached runtime skips it: the
+  // Storybook it attached to already watches its own graph.
+  if (!isDelegatedMode()) {
+    subscribeToModuleGraphChanges(() => {
+      void service.commands.markStale(undefined);
+    });
+  }
 
   return service;
 }

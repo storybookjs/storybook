@@ -17,6 +17,42 @@
       "name": "string",
     },
   },
+  "buildId": {
+    "description": "",
+    "name": "buildId",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "noise-1",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "clampPage": {
+    "description": "
+",
+    "name": "clampPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
   "currentPage": {
     "description": "
 ",
@@ -33,6 +69,61 @@
     },
     "type": {
       "name": "number",
+    },
+  },
+  "density": {
+    "description": "
+",
+    "name": "density",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "compact",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "densityChange": {
+    "action": "densityChange",
+    "description": undefined,
+    "name": "densityChange",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "helperLabel": {
+    "description": "
+",
+    "name": "helperLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "Next page",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
     },
   },
   "isActive": {
@@ -73,6 +164,25 @@
       "value": "empty-enum",
     },
   },
+  "markDirty": {
+    "description": "
+",
+    "name": "markDirty",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
   "nextPage": {
     "description": "
 ",
@@ -92,6 +202,24 @@
       "value": "void",
     },
   },
+  "pageCount": {
+    "description": "
+",
+    "name": "pageCount",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": 10,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
   "panel": {
     "description": "
 ",
@@ -104,6 +232,24 @@
       "type": {
         "required": false,
         "summary": "ElementRef<HTMLDivElement>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "resetPage": {
+    "description": "",
+    "name": "resetPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
       },
     },
     "type": {

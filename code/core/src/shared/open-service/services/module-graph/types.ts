@@ -27,7 +27,12 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
-  storiesByFile: StoriesByFileRecord;
+  /**
+   * Monotonic counter advanced on every processed file-change event, including out-of-graph
+   * paths that do not advance {@link graphRevision}. Change detection watches this to rescan
+   * git; review staleness keeps watching {@link graphRevision} (in-graph only).
+   */
+  fileActivityRevision: number;
   /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
@@ -35,7 +40,18 @@ export type ModuleGraphServiceState = {
    */
   storyChangeRevisions: Record<string, number>;
   latestChangedStoryFiles: string[];
+  /**
+   * Change-detection scan readiness. Distinct from {@link status}: the graph can be ready while
+   * scanning is disabled or has failed. `pending` is the value before the first scan settles.
+   */
+  changeDetectionReadiness: ChangeDetectionReadinessState;
 };
+
+export type ChangeDetectionReadinessState =
+  | { status: 'pending' }
+  | { status: 'ready' }
+  | { status: 'unavailable'; reason: string; error?: { message: string } }
+  | { status: 'error'; error: { message: string } };
 
 export function errorToErrorLike(error: unknown): ErrorLike {
   if (!(error instanceof Error)) {
@@ -107,8 +123,3 @@ export function reverseIndexToStoriesByFile(
   }
   return result;
 }
-
-export type GraphUpdatePayload = {
-  storiesByFile: StoriesByFileRecord;
-  bumpedStoryFiles: string[];
-};

@@ -1,10 +1,13 @@
-import { isAbsolute, resolve } from 'node:path';
-
 import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
 
 import * as v from 'valibot';
 
-import { McpToolDescriptorSchema, type McpToolDescriptor, type ToolCallResult } from './types.ts';
+import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
+import {
+  McpToolDescriptorSchema,
+  type McpToolDescriptor,
+  type ToolCallResult,
+} from '../../tools/mcp-client.ts';
 
 const STORYBOOK_AI_METADATA_PRESET = 'experimental_storybookAi';
 
@@ -28,14 +31,6 @@ export type StorybookAiMetadataOptions = {
   cwd?: string;
   configDir?: string;
 };
-
-export function resolveStorybookConfigDir({ cwd, configDir }: StorybookAiMetadataOptions = {}) {
-  const projectCwd = resolve(cwd ?? process.cwd());
-  if (configDir) {
-    return isAbsolute(configDir) ? configDir : resolve(projectCwd, configDir);
-  }
-  return resolve(projectCwd, '.storybook');
-}
 
 export async function loadStorybookAiMetadata(
   options: StorybookAiMetadataOptions = {}

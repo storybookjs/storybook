@@ -14,6 +14,7 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     label: 'Formatted',
+    quotationLabel: 'She said "hi" and it\'s fine',
     emptyLabel: '',
     enabled: true,
     disabled: false,
@@ -21,5 +22,12 @@ export const Primary: Story = {
     options: { tone: 'neutral', compact: true },
     items: ['one', 'two'],
     onSubmit: () => undefined,
+  },
+};
+
+export const UnsetArg: Story = {
+  args: {
+    label: undefined,
+    count: 3,
   },
 };

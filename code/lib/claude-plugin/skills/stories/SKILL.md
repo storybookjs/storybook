@@ -6,17 +6,20 @@ description: Invoke FIRST, before creating, editing, or deleting components, sto
 Prerequisites:
 
 1. Storybook must be installed in the project. Invoke the `/storybook-init` skill to set up Storybook, but only if the user explicitly invoked this skill and approves a Storybook installation.
-2. Storybook must be at least 10.5 (or `next` while 10.5 is not yet released). Invoke the `/storybook-upgrade` skill to upgrade it, but only if the user
-   explicitly approved a Storybook upgrade.
+2. Storybook must be at least 10.6. (While 10.6 is unreleased, `next` satisfies this — 10.6.0-alpha.x. Any canary build, `0.0.0-pr-*`, also qualifies.) Treat a request to set up or install Storybook as approval to perform any required Storybook upgrade. For other requests, invoke the `/storybook-upgrade` skill only after the user explicitly approves an upgrade.
 3. Ensure `@storybook/addon-mcp` is installed. If it is missing, install it with `npx storybook add @storybook/addon-mcp`.
 
-Run the Storybook dev server and every `storybook ai` command from the same working directory: the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
+Run the Storybook dev server and every Storybook CLI command from the same working directory: the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
+If the sandbox blocks network access or ports, request escalated permissions for Storybook CLI commands; otherwise the dev server can fail in confusing ways (for example, it finds no free port to bind to).
 
-Before invoking any `storybook ai` command for the first time in a session, run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <command> --help` and read it fully. The top-level help only lists the commands; each command's payload shape and usage rules (which fields to include when) live in its own help output. Never guess a `--json` payload from the command name — a validation error only reports missing required fields, not the optional fields the workflow expects you to provide.
+For docs, props, or usage questions, use `npx storybook tools docs list` followed by `npx storybook tools docs show` before inspecting source files. Fall back to source inspection only when the documentation commands are unavailable or return no relevant documentation.
 
-Some commands require a running Storybook dev server. When Claude preview tooling is available, start the dev server through that tooling:
+Run `npx storybook skills stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
-1. Ensure there is a Storybook launch entry in `.claude/launch.json` (the `preview_start` tool description documents the file format) with `autoPort: true` and `port: 6006`. Use the project's preferred package manager and existing `package.json` Storybook script instead of inventing a new command whenever possible.
-2. Start the Storybook launch entry with the `preview_start` tool.
+Before invoking any `npx storybook tools` command for the first time in a session, run it with `--help` appended and read the output fully. The workflow only names the commands; each command's argument shape and usage rules (which fields to include when) live in its own help output. Never guess a command's arguments from its name — a validation error only reports missing required fields, not the optional fields the workflow expects you to provide.
+
+Some commands require a running Storybook dev server:
+
+1. Reuse a dev server that already serves this project's Storybook (probe the URL, usually `http://localhost:6006`) instead of starting a second one. Otherwise start one in the background, using the project's preferred package manager and existing `package.json` Storybook script (e.g. `npm run storybook`) instead of inventing a new command whenever possible. Wait until the URL responds before running commands that need it.
+2. The dev server is part of the deliverable, not a temporary verification tool: leave it running when your work is done so the user can keep browsing stories. Never kill it after verification.

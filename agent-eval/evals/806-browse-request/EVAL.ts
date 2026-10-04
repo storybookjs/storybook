@@ -1,37 +1,54 @@
-import { test } from 'vitest';
 import {
   expectDisplayReviewForBrowseRequest,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectStoryIdsInDisplayReview,
-  expectValidStorybookLaunchConfig,
+  getEvalContext,
   isReviewEnabled,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
-const review = isReviewEnabled();
+describe('browsing existing ReviewCard Storybook states', () => {
+  const review = isReviewEnabled();
 
-test.runIf(review)('publishes a display review for a browse request without changed files', () => {
-  expectDisplayReviewForBrowseRequest();
-});
+  describe.runIf(review)('when review is enabled', () => {
+    test('publishes a display review for a browse request without changed files', () => {
+      expectDisplayReviewForBrowseRequest();
+    });
 
-// The prompt asks for ALL ReviewCard states; the fixture is untouched by a
-// browse request, so the three story ids are stable and must all be shown.
-test.runIf(review)('the review shows every existing ReviewCard story', () => {
-  expectStoryIdsInDisplayReview([
-    'reviewcard--default',
-    'reviewcard--with-long-comment',
-    'reviewcard--low-rating',
-  ]);
-});
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
+    });
 
-test.runIf(!review)('previews the existing ReviewCard stories for a browse request', () => {
-  expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
-});
+    // The prompt asks for ALL ReviewCard states; the fixture is untouched by a
+    // browse request, so the three story ids are stable and must all be shown.
+    test('the review shows every existing ReviewCard story', () => {
+      expectStoryIdsInDisplayReview([
+        'reviewcard--default',
+        'reviewcard--with-long-comment',
+        'reviewcard--low-rating',
+      ]);
+    });
+  });
 
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
+  describe.runIf(!review)('when review is disabled', () => {
+    test('previews the existing ReviewCard stories for a browse request', () => {
+      expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
+    });
 
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test('opens a story preview in the in-app browser', () => {
+      expectPreviewOpenedInBrowser();
+    });
+  });
+
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
+
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
+    );
+  });
 });

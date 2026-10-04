@@ -41,6 +41,10 @@ test.describe('addon-onboarding', () => {
     !hasOnboardingFeature(templateName),
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
+  test.skip(
+    templateName === 'vue3-vite/docgen-server-ts',
+    `Skipping ${templateName}, whose onboarding coverage is carried by vue3-vite/default-ts.`
+  );
   test('the onboarding flow', async ({ page }) => {
     // eslint-disable-next-line playwright/no-conditional-in-test
     if (process.env.CI) {
@@ -72,7 +76,7 @@ test.describe('addon-onboarding', () => {
     await page.getByRole('button', { exact: true, name: 'Create' }).click();
 
     await expect(page.getByText('You just added your first')).toBeVisible();
-    await page.getByLabel('Last').click();
+    await page.getByRole('button', { name: 'Last', exact: true }).click();
 
     await page.getByRole('checkbox', { name: 'Application UI' }).check();
     await page.getByRole('checkbox', { name: 'Functional testing' }).check();

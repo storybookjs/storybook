@@ -7,7 +7,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "TypeAlias"
         }
       },
@@ -23,7 +22,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
+          "detail": "EnumAlias {\n  FIRST\n  SECOND\n  THIRD\n}",
           "summary": "EnumAlias"
         }
       },
@@ -39,7 +38,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
+          "detail": "EnumNumeric {\n  FIRST\n  SECOND\n  THIRD\n}",
           "summary": "EnumNumeric"
         }
       },
@@ -55,7 +54,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
+          "detail": "EnumNumericInitial {\n  UNO = 1\n  DOS\n  TRES\n}",
           "summary": "EnumNumericInitial"
         }
       },
@@ -71,7 +70,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
+          "detail": "EnumStringValues {\n  PRIMARY = 'PRIMARY'\n  SECONDARY = 'SECONDARY'\n  TERTIARY = 'TERTIARY'\n}",
           "summary": "EnumStringValues"
         }
       },
@@ -87,7 +86,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "\"Union A\" | \"Union B\" | \"Union C\""
         }
       },

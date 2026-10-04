@@ -1,0 +1,181 @@
+{
+  "--demo-wc-card-back-color": {
+    "description": "Font color for back",
+    "name": "--demo-wc-card-back-color",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--demo-wc-card-front-color": {
+    "description": "Font color for front",
+    "name": "--demo-wc-card-front-color",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "--demo-wc-card-header-font-size": {
+    "description": "Header font size",
+    "name": "--demo-wc-card-header-font-size",
+    "required": false,
+    "table": {
+      "category": "css custom properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "back": {
+    "description": "Back of the card",
+    "name": "back",
+    "required": false,
+    "table": {
+      "category": "css shadow parts",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "back-side": {
+    "description": "Indicates that the back of the card is shown",
+    "name": "back-side",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "backSide": {
+    "description": "Indicates that the back of the card is shown",
+    "name": "backSide",
+    "required": false,
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "false",
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "front": {
+    "description": "Front of the card",
+    "name": "front",
+    "required": false,
+    "table": {
+      "category": "css shadow parts",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+  "header": {
+    "description": "Header message",
+    "name": "header",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": ""Your Message"",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "onSideChanged": {
+    "action": {
+      "name": "side-changed",
+    },
+    "name": "onSideChanged",
+    "table": {
+      "disable": true,
+    },
+  },
+  "rows": {
+    "description": "Data rows",
+    "name": "rows",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "summary": "object",
+      },
+    },
+    "type": {
+      "name": "object",
+    },
+  },
+  "side-changed": {
+    "description": "Fires whenever it switches between front/back",
+    "name": "side-changed",
+    "required": false,
+    "table": {
+      "category": "events",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": "void",
+    },
+  },
+}

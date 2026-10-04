@@ -1,6 +1,5 @@
 {
   "id": "basic",
-  "import": "import BasicButton from './BasicButton.vue';",
   "name": "BasicButton",
   "path": "__PATH__",
   "stories": {
@@ -8,6 +7,13 @@
       "description": "Primary button description.",
       "id": "forms-basic--primary",
       "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import BasicButton from './BasicButton.vue';
+</script>
+
+<template>
+  <BasicButton label="Submit" />
+</template>",
       "summary": "Primary button summary.",
     },
   },

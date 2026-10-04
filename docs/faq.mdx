@@ -25,20 +25,6 @@ In case you postinstall ngcc, you can disable it:
 
 Please report any issues related to Ivy in our [GitHub Issue Tracker](https://github.com/storybookjs/storybook/labels/app%3A%20angular) as the support for View Engine will be dropped in a future release of Angular.
 
-## How can I run coverage tests with Create React App and leave out stories?
-
-Create React App does not allow providing options to Jest in your `package.json`, however you can run `jest` with commandline arguments:
-
-```sh
-npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stories/*"]'
-```
-
-<Callout variant="info" icon="💡">
-
-If you're using [`Yarn`](https://yarnpkg.com/) as a package manager, you'll need to adjust the command accordingly.
-
-</Callout>
-
 ## How do I setup Storybook to share Webpack configuration with Next.js?
 
 Storybook's [Next.js framework](./get-started/frameworks/nextjs.mdx) will read from your `next.config.js` file by default. If your configuration file is named or located differently, you can specify the path in your Storybook main configuration file:
@@ -47,7 +33,7 @@ Storybook's [Next.js framework](./get-started/frameworks/nextjs.mdx) will read f
 
 ## How do I fix module resolution in special environments?
 
-In case you are using [Yarn Plug-n-Play](https://yarnpkg.com/features/pnp) or your project is set up within a mono repository environment, you might run into issues with module resolution similar to this when running Storybook:
+If your project is set up within a monorepo, or uses a package manager with a non-standard `node_modules` layout (such as pnpm), you might run into issues with module resolution similar to this when running Storybook:
 
 ```shell
 WARN   Failed to load preset: "@storybook/react-webpack5/preset"
@@ -93,14 +79,6 @@ You will also need to configure TypeScript so these imports type-check without e
 It is advisable to add a `.storybook/tsconfig.json` file so that you apply changes only to Storybook config files, and not your entire project.
 
 </Callout>
-
-## How do I setup the new React Context Root API with Storybook?
-
-If your installed React Version equals or is higher than 18.0.0, the new React Root API is automatically used and the newest React [concurrent features](https://reactjs.org/docs/concurrent-mode-intro.html) can be used.
-
-You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
-
-<CodeSnippets path="react-framework-options-legacy-root-api.md" />
 
 ## Why is there no addons channel?
 
@@ -377,10 +355,6 @@ Storybook allows you to use most characters while naming your stories. Still, sp
 ## Why is Storybook's source loader returning undefined with curried functions?
 
 This is a known issue with Storybook. If you're interested in getting it fixed, open an issue with a [working reproduction](./contribute/how-to-reproduce.mdx) so that it can be triaged and fixed in future releases.
-
-## Why isn't Storybook's test runner working?
-
-There's an issue with Storybook's test runner and the latest version of Jest (i.e., version 28), which prevents it from running effectively. As a workaround, you can downgrade Jest to the previous stable version (i.e., version 27), and you'll be able to run it. See the following [issue](https://github.com/storybookjs/test-runner/issues/99) for more information.
 
 ## How does Storybook handle environment variables?
 

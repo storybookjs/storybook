@@ -1,6 +1,5 @@
 {
   "id": "cross-file-props-spread",
-  "import": "import CrossFilePropsSpread from './CrossFilePropsSpread.vue';",
   "name": "CrossFilePropsSpread",
   "path": "__PATH__",
   "stories": {
@@ -8,6 +7,13 @@
       "description": undefined,
       "id": "forms-cross-file-props-spread--props-as-written",
       "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import CrossFilePropsSpread from './CrossFilePropsSpread.vue';
+</script>
+
+<template>
+  <CrossFilePropsSpread label="Text label" :optional="false" value="hello" />
+</template>",
       "summary": undefined,
     },
   },

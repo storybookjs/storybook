@@ -1,0 +1,20 @@
+{
+  "id": "import-override",
+  "name": "OverrideComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-import-override--primary": {
+      "id": "storydocs-import-override--primary",
+      "name": "Primary",
+      "snippet": "import { Component } from '@angular/core';
+import { OverrideComponent } from '@design-system/components';
+
+@Component({
+  selector: 'app-demo',
+  imports: [OverrideComponent],
+  template: `<sb-import-override [heading]="'Overridden'" />`,
+})
+export class DemoComponent {}",
+    },
+  },
+}

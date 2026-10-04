@@ -47,7 +47,7 @@ describe('installYarn2', () => {
   it('keeps the published lockfile instead of resolving from scratch', async () => {
     publishedSandbox();
 
-    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false });
+    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false, key: 'react-vite/default-ts' });
 
     // Emptying this made every CI run re-resolve the whole tree against live npm.
     expect(vol.readFileSync(`${SANDBOX}/yarn.lock`, 'utf-8')).toContain('version: 4.1.2');
@@ -56,7 +56,7 @@ describe('installYarn2', () => {
   it('leaves the age gate in force', async () => {
     publishedSandbox();
 
-    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false });
+    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false, key: 'react-vite/default-ts' });
 
     expect(readConfig().npmMinimalAgeGate).toBe(10080);
     expect(yarnCommands()).not.toContain('npmMinimalAgeGate 0');
@@ -65,28 +65,48 @@ describe('installYarn2', () => {
   it('preapproves the locally published Storybook packages instead', async () => {
     publishedSandbox();
 
-    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false });
+    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false, key: 'react-vite/default-ts' });
 
     // They are published to Verdaccio seconds before this install, so they can never
     // satisfy the gate on their own.
     expect(readConfig().npmPreapprovedPackages).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/*', 'create-storybook', 'sb'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/*',
+        'create-storybook',
+        'sb',
+        'vite-plugin-storybook-nextjs',
+      ])
     );
   });
 
   it('keeps a template allowlist rather than replacing it', async () => {
     publishedSandbox({ npmPreapprovedPackages: ['next', '@next/*'] });
 
-    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false });
+    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false, key: 'react-vite/default-ts' });
 
     const approved: string[] = readConfig().npmPreapprovedPackages;
     expect(approved).toEqual(expect.arrayContaining(['next', '@next/*', 'storybook']));
   });
 
+  it('preapproves the template exemptions for dependencies that init adds', async () => {
+    publishedSandbox();
+
+    await installYarn2({
+      cwd: SANDBOX,
+      dryRun: false,
+      debug: false,
+      key: 'angular-vite/default-ts',
+    });
+
+    // The published sandbox predates Storybook, so its `.yarnrc.yml` cannot name them.
+    expect(readConfig().npmPreapprovedPackages).toContain('@analogjs/vite-plugin-angular');
+  });
+
   it('does not write a yarnPath next to the pinned packageManager', async () => {
     publishedSandbox();
 
-    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false });
+    await installYarn2({ cwd: SANDBOX, dryRun: false, debug: false, key: 'react-vite/default-ts' });
 
     // corepack aborts when `yarnPath` and `packageManager` disagree.
     expect(yarnCommands()).not.toContain('yarn set version');

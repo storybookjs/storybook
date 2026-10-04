@@ -1,15 +1,23 @@
 /**
  * @see https://vercel.com/docs/ai-gateway/pricing
  */
-const MODEL_PRICING: Record<string, { input: number; output: number }> = {
+const MODEL_PRICING: Record<string, { input: number; output: number; cacheRead?: number }> = {
+  /** @see https://platform.claude.com/docs/en/about-claude/pricing */
+  'claude-opus-5': { input: 5, output: 25 },
+  /** @see https://platform.claude.com/docs/en/pricing */
+  'claude-opus-5-5': { input: 4, output: 20, cacheRead: 0.2 },
   /** @see https://platform.claude.com/docs/en/pricing */
   'claude-opus-4-8': { input: 5, output: 25 },
-  /** @see https://platform.claude.com/docs/en/pricing */
+  /** @see https://platform.claude.com/docs/en/about-claude/pricing */
   'claude-opus-4-7': { input: 5, output: 25 },
-  /** @see https://platform.claude.com/docs/en/pricing */
+  /** @see https://platform.claude.com/docs/en/about-claude/pricing */
   'claude-sonnet-5': { input: 3, output: 15 },
-  /** @see https://platform.claude.com/docs/en/pricing */
+  /** @see https://platform.claude.com/docs/en/about-claude/pricing */
   'claude-haiku-4-5': { input: 1, output: 5 },
+  /**
+   * @see https://developers.openai.com/api/docs/pricing
+   */
+  'gpt-6-sol': { input: 2, output: 10 },
   /**
    * @see https://developers.openai.com/api/docs/pricing
    */
@@ -30,7 +38,7 @@ export interface TranscriptUsage {
   estimatedCostUsd?: number;
 }
 
-import { isRecord } from './shell-parse.ts';
+import { isRecord } from './utils/type.ts';
 
 function parseJsonLines(raw: string): Record<string, unknown>[] {
   return raw.split('\n').flatMap((line) => {
@@ -100,7 +108,7 @@ export function collectTranscriptUsage(
   const estimatedCostUsd = pricing
     ? (usage.inputTokens * pricing.input +
         usage.cacheWriteTokens * pricing.input * 1.25 +
-        usage.cacheReadTokens * pricing.input * 0.1 +
+        usage.cacheReadTokens * (pricing.cacheRead ?? pricing.input * 0.1) +
         usage.outputTokens * pricing.output) /
       1_000_000
     : undefined;

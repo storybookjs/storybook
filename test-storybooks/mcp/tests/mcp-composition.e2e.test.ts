@@ -44,7 +44,7 @@ describe('MCP Composition E2E Tests', () => {
 	describe('Multi-Source Documentation', () => {
 		it('should list documentation from both local and remote sources', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -67,7 +67,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should fetch documentation for a local component', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'local',
@@ -92,6 +92,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				\`\`\`
 				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Primary = () => <Button onClick={fn()} primary label="Button" />;
 				\`\`\`
@@ -102,6 +103,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				\`\`\`
 				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Secondary = () => <Button onClick={fn()} label="Button" />;
 				\`\`\`
@@ -112,6 +114,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				\`\`\`
 				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`
@@ -172,7 +175,7 @@ describe('MCP Composition E2E Tests', () => {
 		it('should fetch documentation for a component from remote source', async () => {
 			// Get documentation for a component that exists in the remote Storybook UI
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'storybook-ui',
@@ -190,7 +193,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should silently exclude refs that have no manifest', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -201,25 +204,19 @@ describe('MCP Composition E2E Tests', () => {
 			expect(text).not.toContain('no-manifest');
 		});
 
-		it('should require storybookId in multi-source mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 				},
 			});
 
-			expect(response.result).toMatchInlineSnapshot(`
-				{
-				  "content": [
-				    {
-				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
-				      "type": "text",
-				    },
-				  ],
-				  "isError": true,
-				}
-			`);
+			expect(response.result.isError).toBeFalsy();
+			const text = response.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			// Only the local Button carries this attached doc; the storybook-ui ref has its own Button.
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 
@@ -235,10 +232,10 @@ describe('MCP Composition E2E Tests', () => {
 	});
 
 	describe('Tools Schema', () => {
-		it('should include storybookId parameter in get-documentation schema', async () => {
+		it('should include storybookId parameter in docs-show schema', async () => {
 			const response = await mcpRequest('tools/list');
 
-			const getDocTool = response.result.tools.find((t: any) => t.name === 'get-documentation');
+			const getDocTool = response.result.tools.find((t: any) => t.name === 'docs-show');
 
 			expect(getDocTool).toBeDefined();
 			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');

@@ -6,7 +6,7 @@
 const LATEST_PROTOCOL_VERSION = '2025-11-21';
 
 import { MCP_APP_SIZE_CHANGED_EVENT, MCP_APP_PARAM } from '../../constants.ts';
-import type { PreviewStoriesOutput } from '../preview-stories.ts';
+import type { PreviewStoriesOutput } from 'storybook/internal/core-server';
 import pkg from '../../../package.json' with { type: 'json' };
 
 interface McpUiHostStyles {

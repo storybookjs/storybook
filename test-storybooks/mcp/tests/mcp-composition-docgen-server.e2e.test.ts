@@ -44,7 +44,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 	describe('Multi-Source Documentation', () => {
 		it('should list documentation from both local (docgen server) and remote (v0) sources', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -60,7 +60,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 
 		it('should fetch documentation for a local component via in-process docgen server', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'local',
@@ -82,7 +82,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 
 		it('should fetch documentation for a component from remote v0 source', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'storybook-ui',
@@ -99,7 +99,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 
 		it('should silently exclude refs that have no manifest', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -109,16 +109,19 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 			expect(text).not.toContain('no-manifest');
 		});
 
-		it('should require storybookId in multi-source mode', async () => {
+		it('should default docs-show to the local source when storybookId is omitted', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 				},
 			});
 
-			expect(response.result.isError).toBe(true);
-			expect(response.result.content[0].text).toContain('storybookId');
+			expect(response.result.isError).toBeFalsy();
+			const text = response.result.content[0].text;
+			expect(text).toContain('ID: example-button');
+			// Only the local Button carries this attached doc; the storybook-ui ref has its own Button.
+			expect(text).toContain('🍌-emoji');
 		});
 	});
 
@@ -130,7 +133,7 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 
 		it('should still resolve local docs through MCP despite HTTP 404', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'getting-started--docs',
 					storybookId: 'local',
@@ -153,10 +156,10 @@ describe('MCP Composition + Docgen Server E2E Tests', () => {
 	});
 
 	describe('Tools Schema', () => {
-		it('should include storybookId parameter in get-documentation schema', async () => {
+		it('should include storybookId parameter in docs-show schema', async () => {
 			const response = await mcpRequest('tools/list');
 
-			const getDocTool = response.result.tools.find((t: any) => t.name === 'get-documentation');
+			const getDocTool = response.result.tools.find((t: any) => t.name === 'docs-show');
 
 			expect(getDocTool).toBeDefined();
 			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');

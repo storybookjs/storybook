@@ -8,12 +8,12 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "number",
       },
     },
     "type": {
       "name": "number",
+      "required": true,
     },
   },
 }

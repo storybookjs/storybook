@@ -4,19 +4,29 @@ import type * as tsModule from 'typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
-import type { AnalyzerContext } from './context.ts';
+import { resolvedSymbol, type AnalyzerContext } from './context.ts';
+import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
-export function analyzeSourceFile(
+/** A context over one source file; shared between the file's analysis and its argTypes extraction. */
+export function analyzerContext(
   ts: typeof tsModule,
   sourceFile: tsModule.SourceFile,
   checker: tsModule.TypeChecker
+): AnalyzerContext {
+  return { ts, checker, types: new TypeIndex(ts, checker), sourceFile };
+}
+
+export function analyzeSourceFile(
+  ts: typeof tsModule,
+  sourceFile: tsModule.SourceFile,
+  checker: tsModule.TypeChecker,
+  context: AnalyzerContext = analyzerContext(ts, sourceFile, checker)
 ): AngularFileMeta {
-  const types = new TypeIndex(ts, checker);
-  const ctx: AnalyzerContext = { ts, checker, types };
+  const ctx = context;
   const meta: AngularFileMeta = {
     components: [],
     directives: [],
@@ -28,7 +38,7 @@ export function analyzeSourceFile(
 
   for (const statement of sourceFile.statements) {
     if (ts.isEnumDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) {
-      types.addDeclaration(statement);
+      ctx.types.addDeclaration(statement);
       continue;
     }
     if (!ts.isClassDeclaration(statement) || !statement.name) {
@@ -45,7 +55,7 @@ export function analyzeSourceFile(
     }
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = collectClassMembers(ctx, statement);
+    const members = collectClassMembers(ctx, statement, kind);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
@@ -53,11 +63,18 @@ export function analyzeSourceFile(
     };
 
     if (kind === 'component' || kind === 'directive') {
-      const selector = decoratorSelector(ctx, statement, kind);
-      const record: Directive & typeof common & { selector?: string } = {
+      const metadata = decoratorObjectArg(
+        ctx,
+        statement,
+        kind === 'component' ? 'Component' : 'Directive'
+      );
+      const selector = metadata && decoratorSelector(ctx, metadata);
+      const standalone = metadata && decoratorStandalone(ctx, metadata);
+      const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
         ...(selector === undefined ? {} : { selector }),
+        ...(standalone === undefined ? {} : { standalone }),
         inputsClass: members.inputs,
         outputsClass: members.outputs,
         propertiesClass: members.properties,
@@ -100,11 +117,11 @@ export function analyzeSourceFile(
     }
   }
 
-  meta.miscellaneous = types.toMiscellaneous();
+  meta.miscellaneous = ctx.types.toMiscellaneous();
   return meta;
 }
 
-type ClassKind = 'component' | 'directive' | 'pipe' | 'injectable' | 'ngmodule' | 'class';
+type ClassKind = DocumentedClassKind | 'ngmodule';
 
 const KNOWN_DECORATORS: Record<string, ClassKind> = {
   Component: 'component',
@@ -126,38 +143,41 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
 
 const decoratorSelector = (
   ctx: AnalyzerContext,
-  node: tsModule.ClassDeclaration,
-  kind: 'component' | 'directive'
+  metadata: tsModule.ObjectLiteralExpression
 ): string | undefined => {
-  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
-  const selector = metadata && objectProperty(ctx, metadata, 'selector');
-  return selector && selectorText(ctx, selector);
+  const selector = objectProperty(ctx, metadata, 'selector');
+  const value = selector && resolveInitializer(ctx, selector);
+  return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
-const selectorText = (
+const decoratorStandalone = (
   ctx: AnalyzerContext,
-  expression: tsModule.Expression
-): string | undefined => {
-  const { ts, checker } = ctx;
-  if (ts.isStringLiteralLike(expression)) {
-    return expression.text;
+  metadata: tsModule.ObjectLiteralExpression
+): boolean | undefined => {
+  const standalone = objectProperty(ctx, metadata, 'standalone');
+  const value = standalone && resolveInitializer(ctx, standalone);
+  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
+    return true;
   }
-  if (!ts.isIdentifier(expression)) {
-    return undefined;
-  }
-  const symbol = checker.getSymbolAtLocation(expression);
-  const target =
-    symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const declaration = target?.valueDeclaration;
-  if (
-    declaration &&
-    ts.isVariableDeclaration(declaration) &&
-    declaration.initializer &&
-    ts.isStringLiteralLike(declaration.initializer)
-  ) {
-    return declaration.initializer.text;
+  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
+    return false;
   }
   return undefined;
+};
+
+// A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial
+// evaluator accepts in decorator metadata.
+const resolveInitializer = (
+  ctx: AnalyzerContext,
+  expression: tsModule.Expression
+): tsModule.Expression | undefined => {
+  const { ts } = ctx;
+  if (!ts.isIdentifier(expression)) {
+    return expression;
+  }
+  const target = resolvedSymbol(ctx, expression);
+  const declaration = target?.valueDeclaration;
+  return declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
 };
 
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {

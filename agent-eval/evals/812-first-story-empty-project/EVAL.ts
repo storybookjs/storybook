@@ -1,58 +1,73 @@
-import { test } from 'vitest';
+import { describe, test } from 'vitest';
 import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
   isReviewEnabled,
 } from '#test-utils';
 
-const review = isReviewEnabled();
+describe('writing the first Button stories in an empty Storybook', () => {
+  const review = isReviewEnabled();
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
-  expectDisplayReviewForVisualChange();
-});
+  test('runs story tests after the change and finishes with them passing', () => {
+    expectStoryTestsRanAndPassed({ covering: ['button'] });
+  });
 
-test.runIf(review)('the review covers the new Button stories', () => {
-  expectStoryIdsInDisplayReview(['button']);
-});
+  describe.runIf(review)('when review is enabled', () => {
+    test('uses Storybook story instructions and publishes a display review', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+      expectDisplayReviewForVisualChange();
+    });
 
-test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['button'] });
-});
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
+    });
 
-test.runIf(review)('every new story appears in the display review', () => {
-  expectAllStoryExportsInDisplayReview();
-});
+    test('the review covers the new Button stories', () => {
+      expectStoryIdsInDisplayReview(['button']);
+    });
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+    test('every new story appears in the display review', () => {
+      expectAllStoryExportsInDisplayReview();
+    });
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['button'] });
-});
+    test('discovers stories through the workflow tools before publishing the review', () => {
+      expectStoryDiscoveryBeforeReview();
+    });
+  });
 
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
+  describe.runIf(!review)('when review is disabled', () => {
+    test('uses Storybook story instructions and previews the new stories', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions']);
+      expectPreviewStoriesWithFinalLinks({ covering: ['button'] });
+    });
 
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
+    test('opens a story preview in the in-app browser', () => {
+      expectPreviewOpenedInBrowser();
+    });
+  });
 
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+  describe('depending on the current agent and integration', () => {
+    const { integration } = getEvalContext();
+
+    test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
+      expectSkillInvoked('stories');
+    });
+
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => {
+        expectDevServerLeftRunning();
+      }
+    );
+  });
 });

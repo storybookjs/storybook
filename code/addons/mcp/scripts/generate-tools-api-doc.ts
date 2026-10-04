@@ -15,9 +15,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { buildServerInstructions } from '../src/instructions/build-server-instructions.ts';
+import { buildServerInstructions } from 'storybook/internal/skills';
+import type { ToolAvailability } from 'storybook/internal/core-server';
+import { registerCoreToolsetsForTest } from '../src/test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata, type ToolMetadata } from '../src/tools/tool-registry.ts';
-import type { ToolAvailability } from '../src/utils/get-tool-availability.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -34,6 +35,7 @@ const availability = (reviewEnabled: boolean): ToolAvailability => ({
   reviewEnabled,
   reviewEnabledForCli: reviewEnabled,
   docsEnabled: true,
+  docsEnabledForCli: true,
   docsHasManifests: true,
   docsFeatureEnabled: true,
   testSupported: true,
@@ -41,10 +43,20 @@ const availability = (reviewEnabled: boolean): ToolAvailability => ({
   docgenServer: false,
 });
 
+/**
+ * Metadata is resolved from the live toolset registry, so each rendered mode registers the real
+ * toolsets first — review-off and review-on descriptions genuinely differ per registration.
+ */
+function toolMetadataFor(reviewEnabled: boolean): ToolMetadata[] {
+  registerCoreToolsetsForTest({ reviewEnabled });
+  return getAddonToolMetadata({ availability: availability(reviewEnabled) });
+}
+
 const instructions = (reviewEnabled: boolean) =>
   buildServerInstructions({
+    transport: 'mcp',
     devEnabled: true,
-    testEnabled: true,
+    testSupported: true,
     docsEnabled: true,
     changeDetectionEnabled: true,
     moduleGraphSupported: true,
@@ -218,7 +230,7 @@ async function renderTool(tool: ToolMetadata): Promise<string> {
 }
 
 async function renderServerSection(title: string, reviewEnabled: boolean): Promise<string> {
-  const tools = getAddonToolMetadata({ availability: availability(reviewEnabled) });
+  const tools = toolMetadataFor(reviewEnabled);
   const toolSections = await Promise.all(tools.map(renderTool));
   return [
     `## ${title}`,
@@ -236,12 +248,8 @@ async function renderServerSection(title: string, reviewEnabled: boolean): Promi
 }
 
 function diffSummary(): string {
-  const off = new Map(
-    getAddonToolMetadata({ availability: availability(false) }).map((t) => [t.name, t])
-  );
-  const on = new Map(
-    getAddonToolMetadata({ availability: availability(true) }).map((t) => [t.name, t])
-  );
+  const off = new Map(toolMetadataFor(false).map((t) => [t.name, t]));
+  const on = new Map(toolMetadataFor(true).map((t) => [t.name, t]));
   const added = [...on.keys()].filter((name) => !off.has(name));
   const removed = [...off.keys()].filter((name) => !on.has(name));
   const changed = [...on.keys()].filter(
@@ -306,7 +314,7 @@ async function runCliHelp(args: string[]): Promise<string> {
 }
 
 async function renderCliSection(): Promise<string> {
-  const toolNames = getAddonToolMetadata({ availability: availability(true) }).map((t) => t.name);
+  const toolNames = toolMetadataFor(true).map((t) => t.name);
   const commands = ['setup', ...toolNames];
   const [topLevel, ...commandHelps] = await Promise.all([
     runCliHelp([]),

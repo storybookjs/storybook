@@ -1,14 +1,13 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
 import { types as t } from 'storybook/internal/babel';
 import {
-  AngularJSON,
+  ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   editJsonText,
   isStorybookTarget,
-  type JSONEditPath,
+  parseJsonText,
+  type StorybookBuilderTarget,
+  toDevkitVersion,
 } from 'storybook/internal/cli';
-import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
-import { type ConfigFile, formatConfig, readConfig } from 'storybook/internal/csf-tools';
+import { formatFileContent, getProjectRoot, transformImports } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -17,74 +16,66 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import type { FixFiles } from '../fix-files.ts';
+import { automigrationLogger } from '../helpers/automigration-logger.ts';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
+import type { FixTransform } from '../pipeline.ts';
+import { assertMainConfigNamesFramework } from '../helpers/main-config-framework.ts';
 import type { Fix } from '../types.ts';
+import { findWorkspaceJsonFiles, getTargetGroups, readJsonFile } from './angular-workspace.ts';
+import {
+  compodocTransforms,
+  findCompodocSetup,
+  removeCompodocSetup,
+} from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
+export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
+const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
+
+const ANGULAR_BUILD_PACKAGE = '@angular/build';
+const ANGULAR_ANIMATIONS_PACKAGE = '@angular/animations';
+const ANGULAR_DEVKIT_ARCHITECT_PACKAGE = '@angular-devkit/architect';
+
+const MIGRATABLE_FRAMEWORKS = [ANGULAR_PACKAGE, ANALOG_PACKAGE] as const;
+type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
 const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
 
+const ANGULAR_MIN_MAJOR = 21;
+
 interface AngularToAngularViteOptions {
-  /** True when @angular/core is not found or is outside the 21.x range. */
-  angularUnsupportedVersion: boolean;
-  /** The detected @angular/core version string, or null if not found. */
+  framework: MigratableFramework;
   angularVersion: string | null;
-  /** True when the main config contains a webpackFinal hook. */
   hasWebpackFinal: boolean;
-  /** package.json paths that reference @storybook/angular. */
-  packageJsonFiles: string[];
+  /**
+   * `import`: a Storybook target exists and `zone.js` is installed, so the preview imports it.
+   * `missing`: a target is zone-based but `zone.js` is not installed.
+   */
+  zoneJs: 'unneeded' | 'import' | 'missing';
 }
 
-/**
- * Replace @storybook/angular builder references in a JSON file. Handles both
- * `angular.json` architect entries and `package.json` scripts.
- */
+const IMPORT_RENAMES = Object.fromEntries(
+  MIGRATABLE_FRAMEWORKS.map((pkg) => [pkg, ANGULAR_VITE_PACKAGE])
+);
+
 const rewriteBuilderRefs = (content: string): string =>
-  content
-    .replace(/@storybook\/angular:start-storybook/g, `${ANGULAR_VITE_PACKAGE}:start-storybook`)
-    .replace(/@storybook\/angular:build-storybook/g, `${ANGULAR_VITE_PACKAGE}:build-storybook`);
-
-/**
- * Repoint an existing `test-storybook` package.json script at standalone Vitest. The
- * @storybook/test-runner flow does not carry over to @storybook/angular-vite, so the script should
- * run `vitest run` directly. No-ops when the script is absent, and is idempotent (rewriting an
- * already-`vitest run` value yields the same string).
- */
-const rewriteTestStorybookScript = (content: string): string =>
-  content.replace(/("test-storybook"\s*:\s*)"(?:[^"\\]|\\.)*"/, '$1"vitest run"');
-
-// Config file basenames whose presence means a Vite/Vitest setup already exists, so the migration
-// must not write a fresh `vitest.config.ts` over it — the deferred addon-vitest postinstall updates
-// the existing file (and the workspace path) instead.
-const VITE_CONFIG_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'];
-
-/**
- * Find an existing Vite/Vitest/workspace config by searching from the Storybook config dir up to the
- * project root, mirroring the addon-vitest postinstall's lookup. Returns the first match, or
- * `undefined` when none exists.
- */
-const findExistingViteConfig = (configDir: string): string | undefined => {
-  const search = (basename: string, extensions: string[]) =>
-    find.any(
-      extensions.map((ext) => basename + ext),
-      { last: getProjectRoot(), cwd: configDir }
-    );
-
-  return (
-    search('vitest.workspace', ['.ts', '.js', '.json']) ||
-    search('vite.config', VITE_CONFIG_EXTENSIONS) ||
-    search('vitest.config', VITE_CONFIG_EXTENSIONS)
+  MIGRATABLE_FRAMEWORKS.reduce(
+    (acc, framework) =>
+      acc
+        .replaceAll(`${framework}:start-storybook`, `${ANGULAR_VITE_PACKAGE}:start-storybook`)
+        .replaceAll(`${framework}:build-storybook`, `${ANGULAR_VITE_PACKAGE}:build-storybook`),
+    content
   );
-};
 
-/**
- * A standalone `vitest.config.ts` for Angular projects. The nested `plugins` array carries
- * `storybookAngularVitest()` ahead of `storybookTest()` so standalone `vitest` runs receive the
- * Angular build options (styles, assets, zoneless, …) — both must live in the same array.
- * `configDirRelative` is the path from this file's directory to the Storybook config dir.
- */
+const VITE_CONFIG_FILES = ['vite.config', 'vitest.config'].flatMap((basename) =>
+  ['.ts', '.tsx', '.js', '.jsx', '.cts', '.mts', '.cjs', '.mjs'].map((ext) => basename + ext)
+);
+
+// `storybookAngularVitest()` must share the `plugins` array with `storybookTest()` so standalone
+// vitest runs receive the Angular build options.
 const buildAngularVitestConfig = (
   configDirRelative: string
 ): string => `import path from 'node:path';
@@ -128,266 +119,113 @@ export default defineConfig({
 });
 `;
 
-const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
-  try {
-    const content = await readFile(mainConfigPath, 'utf-8');
-
-    if (!content.includes(ANGULAR_PACKAGE)) {
-      return false;
-    }
-
-    // Replace @storybook/angular with @storybook/angular-vite using a negative
-    // lookahead so references that are already @storybook/angular-vite are left alone.
-    const transformed = content.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE);
-
-    if (transformed !== content && !dryRun) {
-      await writeFile(mainConfigPath, transformed);
-    }
-
-    return transformed !== content;
-  } catch (error) {
-    logger.error(`Failed to update main config at ${mainConfigPath}: ${error}`);
-    return false;
-  }
-};
-
-interface JsonTargetTransformResult {
-  changed: boolean;
-  disablesCompodoc: boolean;
-  hasStorybookTarget: boolean;
-  allStorybookTargetsZonelessTrue: boolean;
-}
-
-/** Map the old @storybook/angular builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
-const rewriteStorybookBuilderRef = (ref: string): string | null => {
-  if (ref === `${ANGULAR_PACKAGE}:start-storybook`) {
-    return `${ANGULAR_VITE_PACKAGE}:start-storybook`;
-  }
-  if (ref === `${ANGULAR_PACKAGE}:build-storybook`) {
-    return `${ANGULAR_VITE_PACKAGE}:build-storybook`;
-  }
-  return null;
-};
-
-/** Applies a single format-preserving edit; shared by `AngularJSON` and `TextJsonEditor` below. */
-interface TargetEditor {
-  edit(path: JSONEditPath, value: unknown): void;
-}
-
-/** A `targets`-shaped object (angular.json's `architect`, or project.json's `targets`) and the JSON path to it. */
-interface TargetGroup {
-  pathPrefix: JSONEditPath;
-  targets: Record<string, unknown>;
-}
-
-/** Accumulates sequential `editJsonText` edits against an in-memory string (project.json's editor). */
-class TextJsonEditor implements TargetEditor {
-  content: string;
-
-  constructor(content: string) {
-    this.content = content;
-  }
-
-  edit(path: JSONEditPath, value: unknown): void {
-    this.content = editJsonText(this.content, path, value);
-  }
-}
+const isMigratableStorybookTarget = (target: unknown): target is StorybookBuilderTarget =>
+  MIGRATABLE_FRAMEWORKS.some((framework) => isStorybookTarget(target, framework));
 
 /**
- * Rewrite builder/executor references, detect Compodoc/zone.js signals, and rename any leftover
- * `experimentalZoneless` key to `zoneless`, across every storybook target in `targetGroups`.
+ * `getFrameworkPackageName` maps a resolved path back to a package name only for frameworks
+ * Storybook ships, so `@analogjs/storybook-angular` can arrive as an installed package directory or
+ * a pnpm virtual-store dir that spells the scope slash as `+`.
  */
-const processStorybookTargets = (
-  editor: TargetEditor,
-  targetGroups: TargetGroup[]
-): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
-  allZonelessTrue: boolean;
-} => {
-  let changed = false;
-  let disablesCompodoc = false;
+const matchMigratableFramework = (frameworkPackageName: string | null) => {
+  const normalized = frameworkPackageName?.replace(/\\/g, '/');
+  return MIGRATABLE_FRAMEWORKS.find(
+    (framework) =>
+      normalized === framework ||
+      // The leading slash keeps `@storybook/angular` from matching `@storybook/angular-vite`.
+      normalized?.endsWith(`/${framework}`) ||
+      normalized?.includes(`/.pnpm/${framework.replace('/', '+')}@`)
+  );
+};
+
+/**
+ * Detection is wider than the rewrite: a multi-project upgrade runs each project against the tree
+ * the first project already rewrote, and a narrower gate would skip the zone.js import.
+ */
+const resolveZoneJs = (
+  workspaceJson: unknown[],
+  hasZoneJsDependency: boolean
+): AngularToAngularViteOptions['zoneJs'] => {
   let hasStorybookTarget = false;
-  let allZonelessTrue = true;
-
-  for (const { pathPrefix, targets } of targetGroups) {
-    for (const [targetName, target] of Object.entries(targets)) {
-      if (!isStorybookTarget(target)) {
-        continue;
-      }
-      hasStorybookTarget = true;
-
-      // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
-      const currentRef = target.builder ?? target.executor ?? null;
-      const compodocDisabled = target.options?.compodoc === false;
-      const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-      const zonelessValue = target.options?.experimentalZoneless;
-
-      if (compodocDisabled) {
-        disablesCompodoc = true;
-      }
-      if (zonelessValue !== true) {
-        allZonelessTrue = false;
-      }
-
-      const newRef = currentRef ? rewriteStorybookBuilderRef(currentRef) : null;
-      if (newRef) {
-        const refKey = 'builder' in target ? 'builder' : 'executor';
-        editor.edit([...pathPrefix, targetName, refKey], newRef);
-        changed = true;
-      }
-
-      if (hasOldZonelessKey) {
-        editor.edit([...pathPrefix, targetName, 'options', 'zoneless'], zonelessValue);
-        editor.edit([...pathPrefix, targetName, 'options', 'experimentalZoneless'], undefined);
-        changed = true;
+  let anyZoneBasedTarget = false;
+  for (const json of workspaceJson) {
+    for (const { targets } of getTargetGroups(json)) {
+      for (const target of Object.values(targets)) {
+        if (
+          !isMigratableStorybookTarget(target) &&
+          !isStorybookTarget(target, ANGULAR_VITE_PACKAGE)
+        ) {
+          continue;
+        }
+        hasStorybookTarget = true;
+        // An earlier run may already have renamed the key, so both spellings count.
+        anyZoneBasedTarget ||=
+          (target.options?.zoneless ?? target.options?.experimentalZoneless) === false;
       }
     }
   }
-
-  return { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue };
-};
-
-const transformAngularJson = (
-  angularJsonPath: string,
-  dryRun: boolean
-): JsonTargetTransformResult => {
-  let angularJSON: AngularJSON;
-  try {
-    angularJSON = new AngularJSON(angularJsonPath);
-  } catch {
-    return {
-      changed: false,
-      disablesCompodoc: false,
-      hasStorybookTarget: false,
-      allStorybookTargetsZonelessTrue: true,
-    };
+  if (hasStorybookTarget && hasZoneJsDependency) {
+    return 'import';
   }
-
-  const targetGroups: TargetGroup[] = Object.entries(angularJSON.projects)
-    .filter(([, project]) => project?.architect && typeof project.architect === 'object')
-    .map(([projectName, project]) => ({
-      pathPrefix: ['projects', projectName, 'architect'],
-      targets: project.architect,
-    }));
-
-  const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
-    processStorybookTargets(angularJSON, targetGroups);
-
-  if (changed && !dryRun) {
-    angularJSON.write();
-  }
-
-  return {
-    changed,
-    disablesCompodoc,
-    hasStorybookTarget,
-    allStorybookTargetsZonelessTrue: allZonelessTrue,
-  };
+  return anyZoneBasedTarget ? 'missing' : 'unneeded';
 };
 
 /**
- * Same as `transformAngularJson`, for Nx `project.json` files: a flat `targets` object with no
- * `projects.<name>` nesting, so it doesn't fit `AngularJSON`'s model.
+ * Rewrite the builder refs and rename `experimentalZoneless` to `zoneless` in every Storybook target
+ * of the given `angular.json` or Nx `project.json` files.
  */
-const transformProjectJson = async (
-  projectJsonPath: string,
-  dryRun: boolean
-): Promise<JsonTargetTransformResult> => {
-  try {
-    const original = await readFile(projectJsonPath, 'utf-8');
-    const json = JSON.parse(original);
-    const targets = json?.targets;
-
-    const editor = new TextJsonEditor(original);
-    const targetGroups: TargetGroup[] =
-      targets && typeof targets === 'object' ? [{ pathPrefix: ['targets'], targets }] : [];
-
-    const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
-      processStorybookTargets(editor, targetGroups);
-
-    if (changed && !dryRun) {
-      await writeFile(projectJsonPath, editor.content);
+const rewriteWorkspaceJson = (files: FixFiles, paths: string[]) =>
+  files.edit(paths, (source) => {
+    let content = source;
+    for (const { pathPrefix, targets } of getTargetGroups(parseJsonText(source))) {
+      for (const [targetName, target] of Object.entries(targets)) {
+        if (!isMigratableStorybookTarget(target)) {
+          continue;
+        }
+        const targetPath = [...pathPrefix, targetName];
+        const refKey = 'builder' in target ? 'builder' : 'executor';
+        content = editJsonText(
+          content,
+          [...targetPath, refKey],
+          rewriteBuilderRefs((target.builder ?? target.executor)!)
+        );
+        if (target.options && 'experimentalZoneless' in target.options) {
+          content = editJsonText(
+            content,
+            [...targetPath, 'options', 'zoneless'],
+            target.options.zoneless ?? target.options.experimentalZoneless
+          );
+          content = editJsonText(
+            content,
+            [...targetPath, 'options', 'experimentalZoneless'],
+            undefined
+          );
+        }
+      }
     }
+    return content;
+  });
 
-    return {
-      changed,
-      disablesCompodoc,
-      hasStorybookTarget,
-      allStorybookTargetsZonelessTrue: allZonelessTrue,
-    };
-  } catch {
-    return {
-      changed: false,
-      disablesCompodoc: false,
-      hasStorybookTarget: false,
-      allStorybookTargetsZonelessTrue: true,
-    };
-  }
-};
-
-const addZoneJsPreviewImport = async (
-  previewConfigPath: string,
-  dryRun: boolean
-): Promise<void> => {
-  try {
-    const preview = await readConfig(previewConfigPath);
-
-    // Leave an existing zone.js import (incl. subpaths like zone.js/testing) alone.
+const addZoneJsImport: FixTransform = {
+  filter: { kind: ['preview'] },
+  editConfig: (preview, { id }) => {
     const hasZoneJsImport = preview._ast.program.body.some(
       (node) =>
         t.isImportDeclaration(node) &&
-        typeof node.source.value === 'string' &&
         (node.source.value === 'zone.js' || node.source.value.startsWith('zone.js/'))
     );
-    if (hasZoneJsImport || dryRun) {
+    if (hasZoneJsImport) {
       return;
     }
-
     preview.setImport(null, 'zone.js');
-    const formatted = await formatFileContent(previewConfigPath, formatConfig(preview));
-    await writeFile(previewConfigPath, formatted);
-    logger.step(`Added a \`zone.js\` import to ${previewConfigPath}`);
-  } catch (error) {
-    logger.warn(
-      `Could not add a \`zone.js\` import to ${previewConfigPath} automatically: ${error}. ` +
-        "If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview."
-    );
-  }
+    logger.debug(`Added a \`zone.js\` import to ${id}`);
+  },
 };
 
-/**
- * Set `framework.options.compodoc` to `false` in main config, preserving the framework name.
- *
- * `framework` can take three shapes, and each needs different handling so the name survives:
- *
- * - Bare string: `framework: '@storybook/angular-vite'`
- * - Wrapped call: `framework: getAbsolutePath('@storybook/angular-vite')`
- * - Object form: `framework: { name: ..., options: {...} }`
- *
- * For the string and call-expression shapes, a nested `setFieldValue(['framework', 'options',
- * 'compodoc'], false)` would replace the whole `framework` value, dropping the name (e.g. producing
- * `framework: { options: { compodoc: false } }`). So we operate on the AST node directly and wrap
- * the original node as `name`, which preserves a `getAbsolutePath(...)` call verbatim. The object
- * shape (inline or referenced via a variable) is already nestable, so the nested set is correct.
- */
-export const setFrameworkCompodocFalse = (main: ConfigFile): void => {
-  const frameworkNode = main.getFieldNode(['framework']);
-
-  if (frameworkNode && (t.isStringLiteral(frameworkNode) || t.isCallExpression(frameworkNode))) {
-    main.setFieldNode(
-      ['framework'],
-      t.objectExpression([
-        t.objectProperty(t.identifier('name'), frameworkNode),
-        t.objectProperty(
-          t.identifier('options'),
-          t.objectExpression([t.objectProperty(t.identifier('compodoc'), t.booleanLiteral(false))])
-        ),
-      ])
-    );
-    return;
-  }
-
-  // Object form (inline or via a variable reference): keep the existing name and options.
-  main.setFieldValue(['framework', 'options', 'compodoc'], false);
+const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
+  const range = specifier ? semver.validRange(specifier) : null;
+  const major = range ? (semver.minVersion(range)?.major ?? null) : null;
+  return major === 0 ? null : major;
 };
 
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
@@ -395,104 +233,103 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   link: FRAMEWORK_DOC_URL,
   defaultSelected: false,
 
-  async check({ packageManager }): Promise<AngularToAngularViteOptions | null> {
+  async check({
+    files,
+    packageManager,
+    mainConfig,
+    mainConfigPath,
+  }): Promise<AngularToAngularViteOptions | null> {
     const allDeps = packageManager.getAllDependencies();
 
-    // Only apply when @storybook/angular is present and @storybook/angular-vite is not.
-    if (!allDeps[ANGULAR_PACKAGE] || allDeps[ANGULAR_VITE_PACKAGE]) {
+    if (allDeps[ANGULAR_VITE_PACKAGE] || MIGRATABLE_FRAMEWORKS.every((pkg) => !allDeps[pkg])) {
       return null;
     }
 
-    // Detect @angular/core version for the Angular 21 prerequisite check.
-    const angularVersionRaw = packageManager.getDependencyVersion('@angular/core');
-    const angularVersion = angularVersionRaw
-      ? (semver.coerce(angularVersionRaw)?.version ?? null)
-      : null;
-    const angularUnsupportedVersion =
-      !angularVersion || !semver.satisfies(angularVersion, '>=21.0.0');
+    const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
 
-    // Detect webpackFinal in main config by scanning package.json paths for the
-    // config dir, then reading main config content.
-    let hasWebpackFinal = false;
-    for (const pkgJsonPath of packageManager.packageJsonPaths) {
-      // Look for main config files adjacent to the package.json
-      const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
-      for (const mainName of [
-        `${dir}/.storybook/main.ts`,
-        `${dir}/.storybook/main.js`,
-        `${dir}/.storybook/main.mts`,
-        `${dir}/.storybook/main.mjs`,
-      ]) {
-        try {
-          const content = await readFile(mainName, 'utf-8');
-          if (content.includes('webpackFinal')) {
-            hasWebpackFinal = true;
-          }
-          break;
-        } catch {
-          continue;
-        }
+    // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency
+    // alone does not say which framework the project renders with, and a framework this migration
+    // cannot rewrite would come out a half-migrated hybrid. Only the `framework` field decides.
+    const frameworkPackageName = getFrameworkPackageName(mainConfig);
+    const framework = matchMigratableFramework(frameworkPackageName);
+    if (!framework) {
+      if (angularSpecifier) {
+        logger.warn(
+          `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +
+            `\`${frameworkPackageName ?? 'not set'}\`, and only ` +
+            `${MIGRATABLE_FRAMEWORKS.map((pkg) => `\`${pkg}\``).join(' and ')} projects can be ` +
+            `migrated automatically. See ${FRAMEWORK_DOC_URL} to switch frameworks by hand.`
+        );
       }
-      if (hasWebpackFinal) {
-        break;
-      }
+      return null;
     }
 
-    // Collect package.json files that reference @storybook/angular.
-    const packageJsonFiles: string[] = [];
-    for (const pkgJsonPath of packageManager.packageJsonPaths) {
-      try {
-        const raw = await readFile(pkgJsonPath, 'utf-8');
-        const pkg = JSON.parse(raw);
-        const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
-        if (Object.keys(deps).includes(ANGULAR_PACKAGE)) {
-          packageJsonFiles.push(pkgJsonPath);
-        }
-      } catch {
-        continue;
-      }
+    const angularMajor = getGuaranteedAngularMajor(angularSpecifier);
+    if (angularMajor !== null && angularMajor < ANGULAR_MIN_MAJOR) {
+      logger.warn(
+        `Skipped ${ANGULAR_VITE_PACKAGE} migration: it needs Angular ${ANGULAR_MIN_MAJOR}, and ` +
+          `this project is on Angular ${angularMajor}. Run \`ng update @angular/core @angular/cli\` ` +
+          `to upgrade, then run this migration again.`
+      );
+      return null;
     }
+    if (angularMajor === null) {
+      logger.warn(
+        `Could not determine the \`@angular/core\` version, so the ${ANGULAR_VITE_PACKAGE} ` +
+          `migration cannot confirm this project is on Angular ${ANGULAR_MIN_MAJOR} or newer. ` +
+          `Continuing anyway. If the migrated project fails to build, upgrade Angular first.`
+      );
+    }
+
+    const workspaceJson = await Promise.all(
+      (await findWorkspaceJsonFiles(packageManager.packageJsonPaths, ['angular.json'])).map(
+        (path) => readJsonFile(files, path)
+      )
+    );
 
     return {
-      angularUnsupportedVersion,
-      angularVersion,
-      hasWebpackFinal,
-      packageJsonFiles,
+      framework,
+      hasWebpackFinal:
+        !!mainConfigPath && (await files.read(mainConfigPath)).includes('webpackFinal'),
+      angularVersion: angularMajor === null ? null : angularSpecifier,
+      zoneJs: resolveZoneJs(workspaceJson, packageManager.isDependencyInstalled('zone.js')),
     };
   },
 
   prompt() {
-    return 'Migrate from @storybook/angular (Webpack) to @storybook/angular-vite (in preview).';
+    return 'Migrate from @storybook/angular (Webpack) or @analogjs/storybook-angular to @storybook/angular-vite (in preview).';
   },
+
+  transform: ({ result }) => [
+    {
+      filter: { kind: ['main'] },
+      // Only `@storybook/angular` is a prefix of `@storybook/angular-vite`, so only it needs the
+      // negative lookahead that leaves already-migrated references alone.
+      handler: (code) =>
+        result.framework === ANGULAR_PACKAGE
+          ? code.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE)
+          : code.replaceAll(result.framework, ANGULAR_VITE_PACKAGE),
+    },
+    ...compodocTransforms(),
+    ...(result.zoneJs === 'import' ? [addZoneJsImport] : []),
+    {
+      filter: { kind: ['main', 'preview', 'manager', 'config', 'story'] },
+      handler: (code) => transformImports(code, IMPORT_RENAMES),
+    },
+  ],
 
   async run({
     result,
-    dryRun = false,
+    files,
+    mainConfig,
     mainConfigPath,
     previewConfigPath,
-    storiesPaths,
     configDir,
     packageManager,
     storybookVersion,
     yes,
     addonsToPostinstall,
   }) {
-    if (!result) {
-      return;
-    }
-
-    // Hard bail if Angular version is unsupported — the prompt already told the user what to do.
-    if (result.angularUnsupportedVersion) {
-      logger.log(
-        dedent`
-          Migration skipped: Angular 21 is required.
-          Run \`ng update @angular/core @angular/cli\` to upgrade, then try again.
-        `
-      );
-      return;
-    }
-
-    // When webpackFinal is present, warn prominently and ask whether to continue.
     if (result.hasWebpackFinal) {
       logger.logBox(
         dedent`
@@ -504,226 +341,174 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
         `
       );
 
-      const shouldContinue = yes
-        ? false
-        : await prompt.confirm({
-            message: 'I detected a webpackFinal hook. It will not carry over. Continue anyway?',
-            initialValue: false,
-          });
+      const shouldContinue =
+        !yes &&
+        (await prompt.confirm({
+          message: 'I detected a webpackFinal hook. It will not carry over. Continue anyway?',
+          initialValue: false,
+        }));
 
       if (!shouldContinue) {
         logger.log(
           'Migration cancelled. Port your webpackFinal hook to viteFinal first, then run the automigration again.'
         );
-        return;
+        return false;
       }
     }
 
-    logger.step(`Migrating from ${ANGULAR_PACKAGE} to ${ANGULAR_VITE_PACKAGE}...`);
+    logger.debug(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);
 
-    // 1. Update dependencies.
-    if (dryRun) {
-      logger.debug('Dry run: Skipping dependency updates.');
-    } else {
-      logger.debug('Updating dependencies...');
-      await packageManager.removeDependencies([ANGULAR_PACKAGE]);
-
-      const allDeps = packageManager.getAllDependencies();
-      await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
-        `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
-        ...(allDeps['@analogjs/vite-plugin-angular'] ? [] : ['@analogjs/vite-plugin-angular']),
-      ]);
-    }
-
-    // 2. Patch .storybook/main.ts(.js).
-    if (mainConfigPath) {
-      logger.debug('Updating main config...');
-      await transformMainConfig(mainConfigPath, dryRun);
-    }
-
-    // Track whether any migrated builder config disabled Compodoc, so the
-    // intent can be carried into framework.options (step 4b).
-    let disableCompodoc = false;
-    // Injection fires unless EVERY storybook target sets `experimentalZoneless: true`.
-    let anyStorybookTarget = false;
-    let allZonelessTrue = true;
-
-    // 3. Rewrite Angular CLI builder references in angular.json.
-    // Search for angular.json beside every package.json we know about.
-    for (const pkgJsonPath of packageManager.packageJsonPaths) {
-      const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
-      const angularJsonPath = `${dir}/angular.json`;
-      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
-        transformAngularJson(angularJsonPath, dryRun);
-      disableCompodoc ||= disablesCompodoc;
-      if (hasStorybookTarget) {
-        anyStorybookTarget = true;
-        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
-      }
-      if (changed) {
-        logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
-      }
-    }
-
-    // 3b. Rewrite Angular builder references in Nx `project.json` files.
-    // Nx workspaces scatter `project.json` files (e.g. `libs/*/project.json`)
-    // away from `package.json` and use `executor` rather than angular.json's
-    // `builder`; the `@storybook/angular:<target>` string is identical, so the
-    // same rewrite applies. Glob the workspace since they are not co-located
-    // with package.json the way angular.json is.
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    const projectJsonFiles = await globby(['**/project.json'], {
-      ignore: ['**/node_modules/**', '**/dist/**'],
-      absolute: true,
+    await assertMainConfigNamesFramework(files, mainConfigPath, result.framework, {
+      from: result.framework,
+      to: ANGULAR_VITE_PACKAGE,
     });
-    for (const projectJsonPath of projectJsonFiles) {
-      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
-        await transformProjectJson(projectJsonPath, dryRun);
-      disableCompodoc ||= disablesCompodoc;
-      if (hasStorybookTarget) {
-        anyStorybookTarget = true;
-        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
-      }
-      if (changed) {
-        logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
-      }
-    }
 
-    // 4. Rewrite Angular CLI builder references and the `test-storybook` script in package.json.
-    for (const pkgJsonPath of packageManager.packageJsonPaths) {
-      try {
-        const content = await readFile(pkgJsonPath, 'utf-8');
-        const transformed = rewriteTestStorybookScript(rewriteBuilderRefs(content));
-        if (transformed !== content && !dryRun) {
-          await writeFile(pkgJsonPath, transformed);
-          logger.debug(`Updated builder references and scripts in ${pkgJsonPath}`);
-        }
-      } catch {
-        continue;
-      }
-    }
+    // Everything that can fail runs before the first dependency change or `add()`.
+    const changedPaths = await rewriteWorkspaceJson(
+      files,
+      await findWorkspaceJsonFiles(packageManager.packageJsonPaths, ['angular.json'])
+    );
+    changedPaths.forEach((path) => logger.debug(`Updated Storybook builder references in ${path}`));
 
-    // 4b. Carry a disabled Compodoc setting into framework.options. Compodoc is
-    // now generated only by the framework Vite plugin (default on), so a builder
-    // `compodoc: false` must move to main.ts — otherwise the cold-start default
-    // would silently re-enable it.
-    if (disableCompodoc && mainConfigPath) {
-      try {
-        await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-          if (dryRun) {
-            return;
-          }
+    // `angular-vite-remove-compodoc` cannot do this: every fix is checked against the main config
+    // as it stood before this run switched the framework.
+    const compodocSetup = await findCompodocSetup({
+      files,
+      mainConfig,
+      previewConfigPath,
+      packageManager,
+      builderPackages: [ANGULAR_VITE_PACKAGE, ...MIGRATABLE_FRAMEWORKS],
+    });
 
-          setFrameworkCompodocFalse(main);
-        });
-        logger.debug('Carried `compodoc: false` into framework.options.');
-      } catch (error) {
-        logger.warn(
-          `Could not set \`framework.options.compodoc\` automatically: ${error}. ` +
-            "Set `compodoc: false` in your main config's framework.options manually."
+    const wantsVitest =
+      yes ||
+      (await prompt.confirm({
+        message:
+          'Set up @storybook/addon-vitest? (Recommended — enables in-browser component tests with Vitest)',
+        initialValue: true,
+      }));
+
+    if (wantsVitest) {
+      // The deferred addon-vitest postinstall updates an existing Vite or Vitest config, and skips
+      // this one because it is already wired.
+      const hasViteConfig = find.any(VITE_CONFIG_FILES, { last: getProjectRoot(), cwd: configDir });
+      if (!hasViteConfig) {
+        const newConfigFile = resolve(dirname(configDir), 'vitest.config.ts');
+        files.write(
+          newConfigFile,
+          await formatFileContent(
+            newConfigFile,
+            buildAngularVitestConfig(relative(dirname(newConfigFile), configDir))
+          )
         );
+        logger.debug(`Creating a Vitest config file: ${newConfigFile}`);
+      }
+
+      // The addon is not installed until the end of the run, so its postinstall is deferred.
+      await add(
+        '@storybook/addon-vitest',
+        {
+          packageManager: packageManager.type,
+          configDir,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: !!yes,
+        },
+        automigrationLogger
+      );
+      addonsToPostinstall?.push('@storybook/addon-vitest');
+    }
+
+    const wantsA11y =
+      yes ||
+      (await prompt.confirm({
+        message: 'Set up @storybook/addon-a11y? (Adds accessibility checks to your stories)',
+        initialValue: true,
+      }));
+
+    if (wantsA11y) {
+      await add(
+        '@storybook/addon-a11y',
+        {
+          packageManager: packageManager.type,
+          configDir,
+          skipInstall: true,
+          skipPostinstall: true,
+          yes: !!yes,
+        },
+        automigrationLogger
+      );
+    }
+
+    // `@analogjs/storybook-angular` declares `@storybook/angular` as a peer, so an Analog project
+    // carries both and neither renders anything once the framework points at angular-vite.
+    await packageManager.removeDependencies(
+      result.framework === ANALOG_PACKAGE ? [ANALOG_PACKAGE, ANGULAR_PACKAGE] : [ANGULAR_PACKAGE]
+    );
+
+    const allDeps = packageManager.getAllDependencies();
+    const { angularVersion } = result;
+    const angularPeers = [
+      ANGULAR_BUILD_PACKAGE,
+      ANGULAR_ANIMATIONS_PACKAGE,
+      ANGULAR_DEVKIT_ARCHITECT_PACKAGE,
+    ].filter((pkg) => !allDeps[pkg]);
+
+    if (!angularVersion && angularPeers.length > 0) {
+      logger.warn(
+        `Could not determine the \`@angular/core\` version, so ` +
+          `${angularPeers.map((pkg) => `\`${pkg}\``).join(', ')} were not added. ` +
+          `${ANGULAR_VITE_PACKAGE} needs them at your Angular version, and adding them ` +
+          `unpinned would install the next Angular major. Add them by hand before starting ` +
+          `Storybook.`
+      );
+    }
+
+    await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
+      `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
+      ...(allDeps[ANALOG_VITE_PLUGIN_PACKAGE]
+        ? []
+        : [`${ANALOG_VITE_PLUGIN_PACKAGE}@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`]),
+      ...(angularVersion
+        ? angularPeers.map(
+            (pkg) =>
+              // `@angular-devkit/architect` numbers itself `0.<major * 100 + minor>.<patch>`.
+              `${pkg}@${pkg === ANGULAR_DEVKIT_ARCHITECT_PACKAGE ? toDevkitVersion(angularVersion) : angularVersion}`
+          )
+        : []),
+    ]);
+
+    // `JsPackageManager` caches package.json process-wide, so a raw write would be undone by the
+    // next `addDependencies`.
+    for (const pkgJsonPath of packageManager.packageJsonPaths) {
+      const content = await files.read(pkgJsonPath);
+      // The @storybook/test-runner flow does not carry over to angular-vite.
+      const transformed = rewriteBuilderRefs(content).replace(
+        /("test-storybook"\s*:\s*)"(?:[^"\\]|\\.)*"/,
+        '$1"vitest run"'
+      );
+      if (transformed !== content) {
+        packageManager.writePackageJson(JSON.parse(transformed), dirname(pkgJsonPath));
+        logger.debug(`Updated builder references and scripts in ${pkgJsonPath}`);
       }
     }
 
-    const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
-    if (needsZoneJs && previewConfigPath) {
-      await addZoneJsPreviewImport(previewConfigPath, dryRun);
-    } else if (needsZoneJs && !previewConfigPath) {
+    if (compodocSetup) {
+      await removeCompodocSetup({ result: compodocSetup, files, packageManager });
+    }
+
+    if (result.zoneJs === 'missing') {
+      logger.warn(
+        'A Storybook builder target sets `zoneless: false`, but this project does not depend on ' +
+          "`zone.js`, so no `import 'zone.js';` was added to your preview - it could not resolve, " +
+          'and every story would fail to load. Install `zone.js`, or set `zoneless: true` on that ' +
+          'target if your app uses zoneless change detection.'
+      );
+    }
+    if (result.zoneJs === 'import' && !previewConfigPath) {
       logger.warn(
         "Could not find a Storybook preview file to add the zone.js import to. If your app uses zone-based change detection, add `import 'zone.js';` at the top of your preview file manually."
       );
     }
-
-    // 5. Update import statements across config and story files.
-    logger.debug('Scanning and updating import statements...');
-    const configFiles = configDir ? await globby([`${configDir}/**/*`]) : [];
-    const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
-
-    const transformErrors = await transformImportFiles(
-      allFiles,
-      { [ANGULAR_PACKAGE]: ANGULAR_VITE_PACKAGE },
-      !!dryRun
-    );
-
-    if (transformErrors.length > 0) {
-      logger.warn(`Encountered ${transformErrors.length} error(s) during file transformation:`);
-      transformErrors.forEach(({ file, error }) => {
-        logger.warn(`  - ${file}: ${error.message}`);
-      });
-    }
-
-    // 6. Offer optional addons.
-    if (!dryRun) {
-      const wantsVitest = yes
-        ? true
-        : await prompt.confirm({
-            message:
-              'Set up @storybook/addon-vitest? (Recommended — enables in-browser component tests with Vitest)',
-            initialValue: true,
-          });
-
-      if (wantsVitest) {
-        // Create a standalone vitest.config.ts (already wired with storybookAngularVitest) when the
-        // project has no Vite/Vitest config yet. The deferred addon-vitest postinstall is
-        // idempotent: it detects this fully-wired config and skips, and updates an existing config
-        // when one is found — so we only create the file here, never overwrite.
-        if (configDir && !findExistingViteConfig(configDir)) {
-          const newConfigFile = resolve(dirname(configDir), 'vitest.config.ts');
-          const configDirRelative = relative(dirname(newConfigFile), configDir);
-          const formatted = await formatFileContent(
-            newConfigFile,
-            buildAngularVitestConfig(configDirRelative)
-          );
-          await writeFile(newConfigFile, formatted);
-          logger.step(`Creating a Vitest config file: ${newConfigFile}`);
-        }
-
-        try {
-          // Add to package.json + main.ts now, but defer the postinstall: dependencies are
-          // installed in a single batch at the end of automigrate, so the addon isn't on disk
-          // yet and its postinstall hook can't be resolved here. The runner configures it after
-          // install (see `addonsToPostinstall`), mirroring CLI init's install-then-configure order.
-          await add('@storybook/addon-vitest', {
-            packageManager: packageManager.type,
-            configDir,
-            skipInstall: true,
-            skipPostinstall: true,
-            yes: !!yes,
-          });
-          addonsToPostinstall?.push('@storybook/addon-vitest');
-        } catch (err) {
-          logger.warn(`Could not set up @storybook/addon-vitest automatically: ${err}`);
-          logger.warn('Run `npx storybook add @storybook/addon-vitest` manually to set it up.');
-        }
-      }
-
-      const wantsA11y = yes
-        ? true
-        : await prompt.confirm({
-            message: 'Set up @storybook/addon-a11y? (Adds accessibility checks to your stories)',
-            initialValue: true,
-          });
-
-      if (wantsA11y) {
-        try {
-          // Deferred postinstall, same as addon-vitest above.
-          await add('@storybook/addon-a11y', {
-            packageManager: packageManager.type,
-            configDir,
-            skipInstall: true,
-            skipPostinstall: true,
-            yes: !!yes,
-          });
-          addonsToPostinstall?.push('@storybook/addon-a11y');
-        } catch (err) {
-          logger.warn(`Could not set up @storybook/addon-a11y automatically: ${err}`);
-          logger.warn('Run `npx storybook add @storybook/addon-a11y` manually to set it up.');
-        }
-      }
-    }
-
-    logger.step('Migration completed successfully!');
-    logger.log(`For more information, see: ${FRAMEWORK_DOC_URL}`);
   },
 };

@@ -14,6 +14,7 @@ import {
 } from 'storybook/theming';
 
 import { EmptyBlock } from './EmptyBlock';
+import { SnippetWarning } from './SnippetWarning';
 
 const StyledSyntaxHighlighter: React.FunctionComponent<SyntaxHighlighterProps> = styled(
   SyntaxHighlighter
@@ -52,7 +53,24 @@ export interface SourceCodeProps {
 export interface SourceProps extends SourceCodeProps {
   isLoading?: boolean;
   error?: SourceError;
+  /** Why the snippet is an incomplete example, when it is one; see `StoryDoc.warning`. */
+  warning?: string;
 }
+
+/**
+ * Top-right rather than bottom-right: the copy action bar already owns the bottom-right corner of a
+ * copyable block.
+ */
+const PositionedSnippetWarning = styled(SnippetWarning)({
+  position: 'absolute',
+  top: 4,
+  right: 4,
+  zIndex: 1,
+});
+
+const SourceWrapper = styled.div({
+  position: 'relative',
+});
 
 const SourceSkeletonWrapper = styled.div(({ theme }) => ({
   background: theme.background.content,
@@ -94,6 +112,7 @@ const Source: FunctionComponent<SourceProps> = ({
   dark,
   format = true,
   copyable = true,
+  warning,
   ...rest
 }) => {
   const { typography } = useTheme();
@@ -104,7 +123,7 @@ const Source: FunctionComponent<SourceProps> = ({
     return <EmptyBlock>{error}</EmptyBlock>;
   }
 
-  const syntaxHighlighter = (
+  const highlighter = (
     <StyledSyntaxHighlighter
       bordered
       copyable={copyable}
@@ -115,6 +134,15 @@ const Source: FunctionComponent<SourceProps> = ({
     >
       {code}
     </StyledSyntaxHighlighter>
+  );
+
+  const syntaxHighlighter = warning ? (
+    <SourceWrapper>
+      {highlighter}
+      <PositionedSnippetWarning warning={warning} />
+    </SourceWrapper>
+  ) : (
+    highlighter
   );
   if (typeof dark === 'undefined') {
     return syntaxHighlighter;

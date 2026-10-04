@@ -79,7 +79,6 @@ describe('story-docs open service', () => {
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 
@@ -95,7 +94,6 @@ describe('story-docs open service', () => {
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 

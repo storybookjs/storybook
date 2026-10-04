@@ -1,25 +1,56 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import {
+  createStoryArgsResolver,
   type CsfFile,
-  argsRecordFromObjectPath,
-  keyOf,
+  type ImportRef,
   metaObjectPath,
-  mergeArgsRecords,
-  metaArgsRecord,
   normalizeStoryDeclaration,
+  type ReferenceContext,
+  type RenderResolution,
   resolveRenderFunction,
-  storyAssignedArgsPath,
+  type StoryArgsResolver,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
 
+function renderFunctionOf(resolution: RenderResolution) {
+  if (resolution.kind === 'resolved') {
+    return resolution.path;
+  }
+  return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
+}
+
+/** A story's snippet, and what showing it as a complete example still depends on. */
+export interface CodeSnippet {
+  node: t.VariableDeclaration | t.FunctionDeclaration;
+  /** Imports the snippet needs beyond the component, from arg values that kept a name. */
+  imports: ImportRef[];
+  /** What a static pass could not read, in the source text it was written as. */
+  unresolved: string[];
+}
+
 export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
-  componentName?: string
+  componentName?: string,
+  resolver: StoryArgsResolver = createStoryArgsResolver(csf)
+): CodeSnippet {
+  const { args, imports, unresolved } = resolver.resolve(storyName);
+  return {
+    node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
+    imports,
+    unresolved,
+  };
+}
+
+function buildSnippetNode(
+  csf: CsfFile,
+  storyName: string,
+  componentName: string | undefined,
+  merged: Record<string, t.Node>,
+  ctx: ReferenceContext
 ): t.VariableDeclaration | t.FunctionDeclaration {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
-  const metaObj = csf._metaNode;
 
   if (!storyDeclaration) {
     const message = 'Expected story to be a function or variable declaration';
@@ -30,48 +61,29 @@ export function getCodeSnippet(
 
   // Find a function (explicit story fn or render())
   let storyFn:
-    | NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>
+    | NodePath<
+        t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
+      >
     | undefined;
 
   if (normalizedStory.type === 'fn') {
     storyFn = normalizedStory.path;
   }
 
-  const storyProps =
-    normalizedStory.type === 'config'
-      ? normalizedStory.path.get('properties').filter((p) => p.isObjectProperty())
-      : [];
+  const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
 
-  const metaPath = metaObjectPath(csf);
-  const metaProps = metaPath?.get('properties').filter((p) => p.isObjectProperty()) ?? [];
-
-  const metaRender = resolveRenderFunction(metaProps, storyDeclaration);
-  const storyRender = resolveRenderFunction(storyProps, storyDeclaration);
+  const metaRender = resolveRenderFunction(metaObjectPath(csf), storyDeclaration, ctx);
+  const storyRender = resolveRenderFunction(storyConfigPath, storyDeclaration, ctx);
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
+  // A render shadowed by a later spread is still the best static guess for this manifest,
+  // which degrades to synthesis rather than suppressing snippets.
   if (!storyFn) {
     storyFn =
-      storyRender.kind === 'resolved'
-        ? storyRender.path
-        : storyRender.kind === 'missing' && metaRender.kind === 'resolved'
-          ? metaRender.path
-          : undefined;
+      renderFunctionOf(storyRender) ??
+      (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
-
-  // Collect args
-  const metaArgs = metaArgsRecord(metaObj ?? null);
-  const storyArgsPath = storyProps
-    .filter((p) => keyOf(p.node) === 'args')
-    .map((p) => p.get('value'))
-    .find((v) => v.isObjectExpression());
-  const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const assignedArgsPath = storyAssignedArgsPath(csf._file.path, storyName);
-  const storyAssignedArgs = argsRecordFromObjectPath(assignedArgsPath);
-  const merged: Record<string, t.Node> = {
-    ...mergeArgsRecords(metaArgs, storyArgs),
-    ...storyAssignedArgs,
-  };
 
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');
@@ -87,20 +99,25 @@ export function getCodeSnippet(
       const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
       const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
       if (spreadRes.changed || inlineRes.changed) {
-        const newFn = t.arrowFunctionExpression([], inlineRes.node, fn.async);
+        const newFn = t.arrowFunctionExpression(
+          remainingParams(fn, inlineRes.node),
+          inlineRes.node,
+          fn.async
+        );
         return t.variableDeclaration('const', [
           t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
       }
     }
 
-    const stmts = t.isFunctionDeclaration(fn)
-      ? fn.body.body
-      : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
+    const stmts =
+      t.isFunctionDeclaration(fn) || t.isObjectMethod(fn)
         ? fn.body.body
-        : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+        : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
           ? fn.body.body
-          : undefined;
+          : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+            ? fn.body.body
+            : undefined;
 
     if (stmts) {
       let changed = false;
@@ -121,18 +138,14 @@ export function getCodeSnippet(
       });
 
       if (changed) {
+        const body = t.blockStatement(newBody);
+        const params = remainingParams(fn, body);
         return t.isFunctionDeclaration(fn)
-          ? t.functionDeclaration(
-              t.identifier(storyName),
-              [],
-              t.blockStatement(newBody),
-              fn.generator,
-              fn.async
-            )
+          ? t.functionDeclaration(t.identifier(storyName), params, body, fn.generator, fn.async)
           : t.variableDeclaration('const', [
               t.variableDeclarator(
                 t.identifier(storyName),
-                t.arrowFunctionExpression([], t.blockStatement(newBody), fn.async)
+                t.arrowFunctionExpression(params, body, fn.async)
               ),
             ]);
       }
@@ -140,7 +153,12 @@ export function getCodeSnippet(
 
     return t.isFunctionDeclaration(fn)
       ? t.functionDeclaration(t.identifier(storyName), fn.params, fn.body, fn.generator, fn.async)
-      : t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
+      : t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier(storyName),
+            t.isObjectMethod(fn) ? t.arrowFunctionExpression(fn.params, fn.body, fn.async) : fn
+          ),
+        ]);
   }
 
   // No function: synthesize `<Component {...attrs}/>`
@@ -162,6 +180,43 @@ export function getCodeSnippet(
   );
 
   return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
+}
+
+type StoryFunction =
+  | t.ArrowFunctionExpression
+  | t.FunctionExpression
+  | t.FunctionDeclaration
+  | t.ObjectMethod;
+
+/**
+ * Parameters the rewritten story function still needs.
+ *
+ * Inlining the args removes the reason the story took an `args` parameter, so the snippet drops it
+ * - unless something the rewrite could not inline still reads from it, which would leave the
+ * snippet naming a binding it no longer declares.
+ */
+function remainingParams(fn: StoryFunction, body: t.Node): StoryFunction['params'] {
+  return readsArgs(body) ? fn.params : [];
+}
+
+function readsArgs(node: t.Node): boolean {
+  // A key or a member name spelled `args` names a property, not the parameter.
+  const named = new Set<t.Node>();
+  let reads = false;
+
+  t.traverseFast(node, (current) => {
+    if (t.isMemberExpression(current) && !current.computed) {
+      named.add(current.property);
+    }
+    if ((t.isObjectProperty(current) || t.isObjectMethod(current)) && !current.computed) {
+      named.add(current.key);
+    }
+    if (t.isIdentifier(current) && current.name === 'args' && !named.has(current)) {
+      reads = true;
+    }
+  });
+
+  return reads;
 }
 
 /** Build a spread `{...{k: v}}` for props that aren't valid JSX attributes. */

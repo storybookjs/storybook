@@ -1,6 +1,5 @@
 {
   "id": "define-props-runtime-array",
-  "import": "import RuntimeArrayProps from './RuntimeArrayProps.vue';",
   "name": "RuntimeArrayProps",
   "path": "__PATH__",
   "stories": {
@@ -8,6 +7,13 @@
       "description": undefined,
       "id": "forms-define-props-runtime-array--props-as-written",
       "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import RuntimeArrayProps from './RuntimeArrayProps.vue';
+</script>
+
+<template>
+  <RuntimeArrayProps appearance="primary" label="Go" />
+</template>",
       "summary": undefined,
     },
   },

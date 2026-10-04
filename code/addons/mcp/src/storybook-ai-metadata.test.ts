@@ -1,15 +1,17 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { GET_TOOL_NAME } from '@storybook/mcp';
 import { logger } from 'storybook/internal/node-logger';
+import {
+  getEffectiveToolAvailability,
+  getToolAvailability,
+  isModuleGraphSupportedByBuilder,
+  type ToolAvailability,
+} from 'storybook/internal/core-server';
 import { buildStorybookAiMetadata } from './storybook-ai-metadata.ts';
-import { getAddonVitestConstants } from './tools/run-story-tests.ts';
 import type { AddonContext } from './types.ts';
-import { getManifestStatus } from './tools/is-manifest-available.ts';
-import { isAddonA11yEnabled } from './utils/is-addon-a11y-enabled.ts';
-import { getReviewStatus } from './utils/is-review-available.ts';
-import { isModuleGraphSupported, isModuleGraphSupportedByBuilder } from './utils/module-graph.ts';
+import { toMcpToolName } from 'storybook/internal/toolsets-docs';
 import {
   DISPLAY_REVIEW_TOOL_NAME,
   GET_STORIES_BY_COMPONENT_TOOL_NAME,
@@ -18,55 +20,21 @@ import {
   RUN_STORY_TESTS_TOOL_NAME,
 } from './tools/tool-names.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
-import {
-  getEffectiveToolAvailability,
-  type ToolAvailability,
-} from './utils/get-tool-availability.ts';
 
-vi.mock('./utils/module-graph.ts', () => ({
-  isModuleGraphSupported: vi.fn(),
-  isModuleGraphSupportedByBuilder: vi.fn(),
-}));
-
-vi.mock('./utils/is-review-available.ts', () => ({
-  getReviewStatus: vi.fn(),
-}));
-
-vi.mock('./tools/is-manifest-available.ts', () => ({
-  getManifestStatus: vi.fn(),
-}));
-
-vi.mock('./utils/is-addon-a11y-enabled.ts', () => ({
-  isAddonA11yEnabled: vi.fn(),
-}));
-
-vi.mock('./tools/run-story-tests.ts', async (importActual) => ({
-  ...(await importActual<typeof import('./tools/run-story-tests.ts')>()),
-  getAddonVitestConstants: vi.fn(),
-}));
+// `getToolAvailability` and `isModuleGraphSupportedByBuilder` now live in core
+// (`storybook/internal/core-server`) and compose their own sub-probes internally, so this file
+// controls availability at that single seam rather than mocking each sub-probe individually. Core's
+// own `availability.test.ts` covers the composition and the module-graph probing behavior.
+vi.mock('storybook/internal/core-server', { spy: true });
 
 describe('buildStorybookAiMetadata', () => {
   beforeEach(() => {
+    // The `services` preset hook does this in a real Storybook before metadata is built.
+    registerCoreToolsetsForTest();
     vi.clearAllMocks();
     vi.stubGlobal('fetch', vi.fn(mockManifestFetch(true)));
-    vi.mocked(isModuleGraphSupported).mockResolvedValue(true);
+    vi.mocked(getToolAvailability).mockResolvedValue(createAvailability());
     vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(true);
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: true,
-      availableForCli: true,
-      hasFeatureFlag: true,
-    });
-    vi.mocked(getManifestStatus).mockResolvedValue({
-      available: true,
-      hasManifests: true,
-      hasFeatureFlag: true,
-      docgenServer: false,
-    });
-    vi.mocked(getAddonVitestConstants).mockResolvedValue({
-      TRIGGER_TEST_RUN_REQUEST: 'TRIGGER_TEST_RUN_REQUEST',
-      TRIGGER_TEST_RUN_RESPONSE: 'TRIGGER_TEST_RUN_RESPONSE',
-    });
-    vi.mocked(isAddonA11yEnabled).mockResolvedValue(true);
   });
 
   afterEach(() => {
@@ -105,7 +73,33 @@ describe('buildStorybookAiMetadata', () => {
       multiSource: true,
     });
     expect(result).toEqual(liveResult);
-    expect(isModuleGraphSupported).not.toHaveBeenCalled();
+  });
+
+  // Regression guard: the metadata-local-tool call sources `reviewEnabled` from the mocked
+  // `getToolAvailability` seam (via the `availability.reviewEnabled` override threaded through
+  // `tool-registry.ts`'s `getLocalTool`), while `buildStorybookStoryInstructions`'s adapter falls
+  // back to the real (unmocked) `resolveSkillInputs` whenever that override is absent. Tune the
+  // fixture so the two would DISAGREE if the override were ever dropped — real presets say review
+  // is off (`experimentalReview: false`), but the mocked availability says it's on — so this only
+  // passes when the override is genuinely driving the result, not merely coinciding with a fallback
+  // that happens to compute the same value.
+  it('drives the local tool instructions from the resolved availability override, not a coincidental real-probe fallback', async () => {
+    vi.mocked(getToolAvailability).mockResolvedValue(
+      createAvailability({ reviewEnabled: true, reviewEnabledForCli: true })
+    );
+    const options = createOptions({
+      features: { changeDetection: true, componentsManifest: true, experimentalReview: false },
+    });
+
+    const metadata = await buildStorybookAiMetadata(options);
+    const result = await metadata.localTools[GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME]?.call();
+    const text = result?.content[0]?.text as string;
+
+    // If the override were dropped, this would fall through to the real `resolveSkillInputs`
+    // fallback, which — given `experimentalReview: false` above — resolves review OFF and would
+    // render the preview-URL variant instead.
+    expect(text).toContain('## 👀 Review your changes');
+    expect(text).not.toContain('include every returned preview URL');
   });
 
   it('respects disabled addon toolsets', async () => {
@@ -155,7 +149,7 @@ describe('buildStorybookAiMetadata', () => {
   });
 
   it('keeps addon-vitest availability aligned between metadata and live tools/list', async () => {
-    vi.mocked(getAddonVitestConstants).mockResolvedValue(undefined);
+    vi.mocked(getToolAvailability).mockResolvedValue(createAvailability({ testSupported: false }));
     const options = createOptions();
 
     const metadata = await buildStorybookAiMetadata(options);
@@ -291,12 +285,9 @@ describe('buildStorybookAiMetadata', () => {
   });
 
   it('enables docs metadata for serverless refs even when local docs are unavailable', async () => {
-    vi.mocked(getManifestStatus).mockResolvedValue({
-      available: false,
-      hasManifests: false,
-      hasFeatureFlag: true,
-      docgenServer: false,
-    });
+    vi.mocked(getToolAvailability).mockResolvedValue(
+      createAvailability({ docsEnabled: false, docsHasManifests: false })
+    );
     const options = createOptions({
       refs: {
         remote: { title: 'Remote', url: 'https://example.com/storybook' },
@@ -370,6 +361,9 @@ describe('buildStorybookAiMetadata', () => {
 
   it('matches live tools/list when the module graph service is unavailable', async () => {
     vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(false);
+    vi.mocked(getToolAvailability).mockResolvedValue(
+      createAvailability({ moduleGraphSupported: false, changeDetectionEnabled: false })
+    );
     const options = createOptions({
       builder: '@storybook/builder-vite',
       features: { changeDetection: false, componentsManifest: true },
@@ -395,26 +389,22 @@ describe('buildStorybookAiMetadata', () => {
   });
 
   it('defaults review on for the CLI channel when experimentalReview is unset', async () => {
-    // What getReviewStatus returns when changeDetection is on and
-    // experimentalReview is neither true nor false.
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: true,
-      hasFeatureFlag: false,
-    });
+    // What getReviewStatus (inside core's getToolAvailability) returns when changeDetection is on
+    // and experimentalReview is neither true nor false.
+    vi.mocked(getToolAvailability).mockResolvedValue(
+      createAvailability({ reviewEnabled: false, reviewEnabledForCli: true })
+    );
 
     const metadata = await buildStorybookAiMetadata(createOptions());
 
     expect(metadata.tools.map((tool) => tool.name)).toContain(DISPLAY_REVIEW_TOOL_NAME);
-    expect(metadata.instructions).toContain('display-review');
+    expect(metadata.instructions).toContain(DISPLAY_REVIEW_TOOL_NAME);
   });
 
   it('keeps review off everywhere when experimentalReview is explicitly false', async () => {
-    vi.mocked(getReviewStatus).mockResolvedValue({
-      available: false,
-      availableForCli: false,
-      hasFeatureFlag: false,
-    });
+    vi.mocked(getToolAvailability).mockResolvedValue(
+      createAvailability({ reviewEnabled: false, reviewEnabledForCli: false })
+    );
 
     const metadata = await buildStorybookAiMetadata(createOptions());
 
@@ -422,8 +412,10 @@ describe('buildStorybookAiMetadata', () => {
   });
 
   it('uses builder support instead of the live module-graph service for metadata', async () => {
-    vi.mocked(isModuleGraphSupported).mockResolvedValue(false);
     vi.mocked(isModuleGraphSupportedByBuilder).mockResolvedValue(true);
+    vi.mocked(getToolAvailability).mockImplementation(async (_options, opts) =>
+      createAvailability({ moduleGraphSupported: opts?.moduleGraphSupported ?? false })
+    );
     const options = createOptions({
       toolsets: { dev: true, docs: false, test: false },
     });
@@ -432,7 +424,12 @@ describe('buildStorybookAiMetadata', () => {
 
     expect(metadata.tools.map((tool) => tool.name)).toContain(GET_STORIES_BY_COMPONENT_TOOL_NAME);
     expect(isModuleGraphSupportedByBuilder).toHaveBeenCalled();
-    expect(isModuleGraphSupported).not.toHaveBeenCalled();
+    // The builder-support result must be the value fed into `getToolAvailability`'s override —
+    // proving the serverless path never falls through to the live-service probe.
+    expect(getToolAvailability).toHaveBeenCalledWith(
+      options,
+      expect.objectContaining({ moduleGraphSupported: true })
+    );
   });
 });
 
@@ -455,7 +452,12 @@ function getFetchUrl(input: RequestInfo | URL): string {
 
 function createOptions({
   builder = '@storybook/builder-vite',
-  features = { changeDetection: true, componentsManifest: true },
+  // `experimentalReview: true` so that the real (core-internal) `resolveSkillInputs` fallback used
+  // by `buildStorybookStoryInstructions` when no per-request `reviewEnabled` context is set agrees
+  // with the default mocked `getToolAvailability` result (`createAvailability()`, reviewEnabled:
+  // true) — both computation paths must resolve review the same way for the metadata/live parity
+  // tests below to hold.
+  features = { changeDetection: true, componentsManifest: true, experimentalReview: true },
   framework = '@storybook/react-vite',
   refs = {},
   toolsets = { dev: true, docs: true, test: true },
@@ -490,6 +492,56 @@ function createOptions({
   } as any;
 }
 
+/**
+ * The published tool surface for each availability combination.
+ *
+ * Availability decides which tools an agent is offered at all, so it is part of the wire contract
+ * and not just internal wiring. These pin the surface per combination; the descriptions and schemas
+ * behind each name are snapshotted by the e2e suite against a live server.
+ */
+const LIST_TOOL_NAME = toMcpToolName('docs.list');
+const GET_TOOL_NAME = toMcpToolName('docs.show');
+
+describe('tool availability variants', () => {
+  // This block runs outside the describe above, so it stands up the toolsets itself instead of
+  // leaning on registrations leaking through the module-global registry.
+  beforeEach(() => {
+    registerCoreToolsetsForTest();
+  });
+
+  const names = async (overrides: Partial<ToolAvailability>) =>
+    (await listRegisteredTools(createOptions(), { availability: createAvailability(overrides) }))
+      .map((tool: { name: string }) => tool.name)
+      .sort();
+
+  it('offers no review tool when review is off', async () => {
+    const withReview = await names({});
+    const withoutReview = await names({ reviewEnabled: false, changeDetectionEnabled: false });
+
+    expect(withReview).toContain(DISPLAY_REVIEW_TOOL_NAME);
+    expect(withoutReview).not.toContain(DISPLAY_REVIEW_TOOL_NAME);
+  });
+
+  it('offers no test tool when addon-vitest is absent', async () => {
+    expect(await names({ testSupported: false })).not.toContain(RUN_STORY_TESTS_TOOL_NAME);
+  });
+
+  it('keeps the docs tools when a11y is off, which only varies their prose', async () => {
+    expect(await names({ a11yEnabled: false })).toEqual(await names({ a11yEnabled: true }));
+  });
+
+  it('offers no docs tools when docs are unavailable', async () => {
+    const withoutDocs = await names({
+      docsEnabled: false,
+      docsHasManifests: false,
+      docsFeatureEnabled: false,
+    });
+
+    expect(withoutDocs).not.toContain(LIST_TOOL_NAME);
+    expect(withoutDocs).not.toContain(GET_TOOL_NAME);
+  });
+});
+
 function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvailability {
   return {
     moduleGraphSupported: true,
@@ -497,6 +549,7 @@ function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvai
     reviewEnabled: true,
     reviewEnabledForCli: true,
     docsEnabled: true,
+    docsEnabledForCli: true,
     docsHasManifests: true,
     docsFeatureEnabled: true,
     testSupported: true,

@@ -3,11 +3,8 @@ import React, { useCallback, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
-import { Focusable } from '@react-aria/interactions';
-import {
-  TooltipTrigger,
-  Tooltip as TooltipUpstream,
-} from 'react-aria-components/patched-dist/Tooltip';
+import { Focusable } from 'react-aria-components/Focusable';
+import { TooltipTrigger, Tooltip as TooltipUpstream } from 'react-aria-components/Tooltip';
 
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
 

@@ -312,6 +312,26 @@ export class StatusTypeIdMismatchError extends StorybookError {
   }
 }
 
+export class ArgTypesRemovedFromStoryContextError extends StorybookError {
+  constructor(public data: { storyId: string }) {
+    super({
+      name: 'ArgTypesRemovedFromStoryContextError',
+      category: Category.PREVIEW_API,
+      code: 17,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach',
+      message: dedent`
+        \`argTypes\` is no longer part of the story context passed to loaders, beforeEach, play and afterEach.
+
+        Story: ${data.storyId}
+
+        With server-side docgen the preview only holds the arg types you declared yourself, so this object was incomplete while looking complete.
+        - Read \`args\` for the values passed to the story.
+        - Inspect the resolved arg types in the Controls panel or the ArgTypes doc block.`,
+    });
+  }
+}
+
 export class NextJsSharpError extends StorybookError {
   constructor() {
     super({
@@ -388,6 +408,28 @@ export class UnsupportedViewportDimensionError extends StorybookError {
         - px, vh, vw, em, rem and %.
         
         You can either change the viewport for this story to use one of the supported units or skip the test by adding '!test' to the story's tags per https://storybook.js.org/docs/writing-stories/tags
+      `,
+    });
+  }
+}
+
+export class ProjectAnnotationsAlreadyAppliedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'ProjectAnnotationsAlreadyAppliedError',
+      category: Category.ADDON_VITEST,
+      code: 2,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files',
+      message: dedent`
+        setProjectAnnotations() was called from a Vitest setup file, but @storybook/addon-vitest applies your project annotations itself: your .storybook/preview file and the previews of the addons registered in .storybook/main. Calling it again replaces those annotations, so the call has to go:
+
+        - If it only passes your .storybook/preview annotations, delete the call.
+        - If it passes an addon's annotations, register that addon in the "addons" field of .storybook/main instead.
+        - If it passes custom annotations, move them into .storybook/preview.
+        - If the setup file is shared with a Vitest project that uses portable stories directly, list it only in that project's "setupFiles".
+
+        Run "npx storybook automigrate vitest-setup-file" to remove calls that only pass your .storybook/preview annotations, or @storybook/addon-a11y/preview when that addon is already registered.
       `,
     });
   }

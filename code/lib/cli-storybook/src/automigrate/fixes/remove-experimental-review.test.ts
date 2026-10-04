@@ -120,4 +120,10 @@ describe('remove-experimental-review', () => {
       export default config;"
     `);
   });
+
+  it('fails on a features object with a spread, which it cannot edit', async () => {
+    await expect(
+      migrate(mainWith('features: { ...sharedFeatures, experimentalReview: true },'))
+    ).rejects.toThrow(/spread/);
+  });
 });

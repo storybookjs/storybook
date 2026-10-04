@@ -1,7 +1,7 @@
 /**
  * Generates a markdown reference of everything an agent sees from the Storybook
- * AI surface: MCP server instructions and tool definitions (with change detection,
- * and so review, on and off), the plugin skills, and the `storybook ai` CLI help output.
+ * AI surface: MCP server instructions and tool definitions (with review on and off),
+ * the plugin skills, and the `storybook ai` CLI help output.
  *
  * Run from the repo root (bunfig.toml there maps .md/.html imports to text):
  *
@@ -28,8 +28,7 @@ const internalStorybookDir = path.join(repoRoot, 'test-storybooks/mcp');
 
 const adapter = new ValibotJsonSchemaAdapter();
 
-// Everything enabled except change detection, which is the variable under comparison. Review
-// builds on it, so the two switch together.
+// Review builds on change detection, so the two switch together.
 const availability = (changeDetectionEnabled: boolean): ToolAvailability => ({
   moduleGraphSupported: true,
   changeDetectionEnabled,

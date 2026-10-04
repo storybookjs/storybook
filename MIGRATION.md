@@ -1146,13 +1146,14 @@ This has been the default since Storybook 7. If you still had the flag set to `t
 ### `experimentalReview` feature flag removed
 
 The `features.experimentalReview` flag is removed, and Storybook no longer reads it.
-Agentic review is now always available: in the Storybook UI, through `storybook tools`, in the Claude Code and Codex plugins, and for every client of the `@storybook/addon-mcp` server, which now offers the `review-create` tool to all of them.
-In Storybook 10, MCP clients other than the plugins only got that tool with `experimentalReview: true`.
+Agentic review is now always available: in the Storybook UI, through `storybook tools`, in the Claude Code and Codex plugins, and in every MCP client connected to `@storybook/addon-mcp`.
+In Storybook 10, MCP clients other than the plugins only got the `review-create` tool with `experimentalReview: true`.
 If you had `experimentalReview: false`, review is now on for your project.
 
 The `remove-experimental-review` automigration deletes the flag from your main config, whether it is `true` or `false`.
 You can also run it with `storybook automigrate remove-experimental-review`.
 If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+A typed main config that still sets the flag fails type-checking until it is removed.
 `storybook upgrade --features` no longer accepts `experimentalReview`.
 
 ### `--preview-url` and `--force-build-preview` removed

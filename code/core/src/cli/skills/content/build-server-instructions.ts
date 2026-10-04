@@ -66,7 +66,6 @@ export function buildServerInstructions({
   const reviewEnabled = options.reviewEnabled ?? false;
 
   if (options.devEnabled && !reviewEnabled) {
-    // Without review, the workflow ends in preview links.
     sections.push(
       legacyDevInstructions
         .replaceAll('{{GET_STORYBOOK_STORY_INSTRUCTIONS}}', skillRef('write-story'))

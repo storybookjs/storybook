@@ -411,13 +411,38 @@ type ShellWord = {
   expands: boolean;
 };
 
+type Heredoc = {
+  delimiter: string;
+  stripTabs: boolean;
+  // A quoted delimiter (`<<'EOF'`) keeps `$` in the body literal.
+  quoted: boolean;
+  body: string;
+};
+
+// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, but not the `<<<` here-string.
+const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*(?:'([^'\n]*)'|"([^"\n]*)"|([^\s;&|<>()'"]+))/;
+
 function tokenizeShellWords(command: string): ShellWord[] {
+  return scanShellWords(command, 0, false).words;
+}
+
+// Scans to the end of the command, or, inside a `$(…)`, to its closing
+// parenthesis. Heredoc bodies are data: they are read at the end of their line
+// and never tokenized.
+function scanShellWords(
+  command: string,
+  start: number,
+  inSubstitution: boolean
+): { words: ShellWord[]; heredocs: Heredoc[]; end: number } {
   const words: ShellWord[] = [];
+  const heredocs: Heredoc[] = [];
+  let unreadHeredocs = 0;
   let word: ShellWord | undefined;
   let quote: '"' | "'" | undefined;
   let escaping = false;
+  let parenDepth = 0;
 
-  for (let index = 0; index < command.length; index += 1) {
+  for (let index = start; index < command.length; index += 1) {
     const char = command[index];
     if (char === undefined) {
       continue;
@@ -448,6 +473,11 @@ function tokenizeShellWords(command: string): ShellWord[] {
       continue;
     }
 
+    if (char === '$' && command[index + 1] === '(') {
+      index = appendCommandSubstitution(index);
+      continue;
+    }
+
     if (quote === '"') {
       if (char === '"') {
         quote = undefined;
@@ -460,6 +490,21 @@ function tokenizeShellWords(command: string): ShellWord[] {
     if (char === '"' || char === "'") {
       quote = char;
       word ??= { value: '', quotedStart: true, expands: false };
+      continue;
+    }
+
+    const heredoc = char === '<' ? HEREDOC_OPERATOR_PATTERN.exec(command.slice(index)) : null;
+    if (heredoc !== null) {
+      const delimiter = heredoc[2] ?? heredoc[3] ?? heredoc[4] ?? '';
+      heredocs.push({
+        delimiter,
+        stripTabs: heredoc[1] === '-',
+        quoted: heredoc[4] === undefined,
+        body: '',
+      });
+      pushWord();
+      words.push({ value: `<<${delimiter}`, quotedStart: false, expands: false });
+      index += heredoc[0].length - 1;
       continue;
     }
 
@@ -480,6 +525,20 @@ function tokenizeShellWords(command: string): ShellWord[] {
       continue;
     }
 
+    if (char === '\n') {
+      pushOperator(';');
+      index = readHeredocBodies(index);
+      continue;
+    }
+
+    if (inSubstitution && char === ')' && parenDepth === 0) {
+      pushWord();
+      return { words, heredocs, end: index };
+    }
+    if (inSubstitution && (char === '(' || char === ')')) {
+      parenDepth += char === '(' ? 1 : -1;
+    }
+
     if (/\s/.test(char)) {
       pushWord();
       continue;
@@ -489,11 +548,11 @@ function tokenizeShellWords(command: string): ShellWord[] {
   }
 
   pushWord();
-  return words;
+  return { words, heredocs, end: command.length };
 
-  function append(char: string, quoted: boolean, expands = false): void {
+  function append(text: string, quoted: boolean, expands = false): void {
     word ??= { value: '', quotedStart: quoted, expands: false };
-    word.value += char;
+    word.value += text;
     word.expands ||= expands;
   }
 
@@ -507,6 +566,47 @@ function tokenizeShellWords(command: string): ShellWord[] {
   function pushOperator(operator: string): void {
     pushWord();
     words.push({ value: operator, quotedStart: false, expands: false });
+  }
+
+  // Returns the index of the last character consumed.
+  function readHeredocBodies(newline: number): number {
+    let position = newline + 1;
+    for (const heredoc of heredocs.slice(unreadHeredocs)) {
+      const lines: string[] = [];
+      while (position < command.length) {
+        const lineEnd = command.indexOf('\n', position);
+        const end = lineEnd === -1 ? command.length : lineEnd;
+        const line = command.slice(position, end);
+        position = end + 1;
+        if ((heredoc.stripTabs ? line.replace(/^\t+/, '') : line) === heredoc.delimiter) {
+          break;
+        }
+        lines.push(line);
+      }
+      heredoc.body = lines.join('\n');
+    }
+    unreadHeredocs = heredocs.length;
+    return Math.min(position, command.length) - 1;
+  }
+
+  // `"$(cat <<'EOF' … EOF)"` is the heredoc body; any other substitution stays
+  // as written for expandShellWords. Returns the index of the closing `)`.
+  function appendCommandSubstitution(dollar: number): number {
+    const inner = scanShellWords(command, dollar + 2, true);
+    const innerCommand = inner.words.map(({ value }) => value).filter((value) => value !== ';');
+    const [heredoc] = inner.heredocs;
+    if (
+      heredoc !== undefined &&
+      inner.heredocs.length === 1 &&
+      innerCommand.length === 2 &&
+      innerCommand[0] === 'cat'
+    ) {
+      // The shell strips trailing newlines from a substitution's output.
+      append(heredoc.body.replace(/\n+$/, ''), true, !heredoc.quoted && heredoc.body.includes('$'));
+    } else {
+      append(command.slice(dollar, inner.end + 1), quote === '"', true);
+    }
+    return inner.end;
   }
 }
 

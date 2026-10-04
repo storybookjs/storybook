@@ -1,5 +1,6 @@
 import { describe, expect, test } from 'vitest';
 
+import heredocCommands from './__fixtures__/claude-plugin-801-heredoc-commands.json' with { type: 'json' };
 import { parseStorybookWorkflowShellCommands, workflowCallMatchesName } from './shell-parse.ts';
 
 // Not a static import: tsc would then check the core source against this
@@ -286,6 +287,71 @@ npx storybook tools review create --input="$(cat /tmp/review.json)" --title Over
       { title: 'New ProfileCard component', collections },
       { title: 'Override', collections },
     ]);
+  });
+
+  test('reads the calls after heredoc bodies', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      heredocCommands.writeFilesThenTestRun,
+      heredocCommands.reviewCreateWithHeredocInput,
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual([
+      'test-run',
+      'stories-find-by-component',
+      'review-create',
+    ]);
+    expect(calls[1]?.input).toEqual({
+      componentPaths: ['/workspace/src/components/ToggleSwitch.tsx'],
+    });
+    expect(calls[2]?.input).toMatchObject({
+      title: 'New accessible ToggleSwitch component',
+      changedFiles: ['src/components/ToggleSwitch.tsx', 'src/components/ToggleSwitch.stories.tsx'],
+    });
+  });
+
+  test('reads a `$(cat <<TAG … TAG)` substitution as its heredoc body', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      `npx storybook tools review create --input "$(cat <<'EOF'
+{"title":"Don't (re)name it","collections":[]}
+EOF
+)" --json`,
+      `npx storybook tools test run --stories "$(cat <<-JSON
+	[{"storyId":"a--b"}]
+	JSON
+)"`,
+    ]);
+
+    expect(calls.map((call) => call.input)).toEqual([
+      { title: "Don't (re)name it", collections: [] },
+      { stories: [{ storyId: 'a--b' }] },
+    ]);
+  });
+
+  test('does not record a substituted payload the CLI rejects', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      heredocCommands.reviewCreateWithHeredocAfterJsonFlag,
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual(['stories-changed']);
+  });
+
+  test('does not read heredoc bodies as commands', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      `cat > NOTES.md <<EOF
+Don't forget: npx storybook tools test run
+EOF
+npx storybook tools stories changed`,
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual(['stories-changed']);
+  });
+
+  test('treats a line break as the end of a command', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run\nnpx storybook tools stories changed',
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual(['test-run', 'stories-changed']);
   });
 
   test('keeps an --input the shell expanded out of view as a plain argument', () => {

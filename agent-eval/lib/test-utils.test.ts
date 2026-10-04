@@ -1,7 +1,9 @@
+import { execFile } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+vi.mock('node:child_process', { spy: true });
 vi.mock('node:fs', { spy: true });
 
 import {
@@ -11,7 +13,6 @@ import {
   findDevServerKillCommands,
   parseCodexBrowserNavigations,
   parseWorkflowToolResults,
-  selectFinalRunStoryTestsReport,
 } from './test-utils.ts';
 
 describe('parseWorkflowToolResults', () => {
@@ -304,32 +305,105 @@ describe('parseWorkflowToolResults', () => {
   });
 });
 
-describe('selectFinalRunStoryTestsReport', () => {
-  const passingReport = {
-    output: '## Passing Stories\n\n- example-button--primary',
-    isError: false,
-  };
+describe('expectStoryTestsRanAndPassed', () => {
+  // Verbatim from cc-plugin-opus-5.5-medium 808 (2026-10-04): the agent's own
+  // output of this run is grep lines plus the last 40 lines of the JSON.
+  const tailCutTestRun =
+    'grep -n "olor" src/components/StatusPill.tsx src/components/Badge.tsx; npx storybook tools test run --json 2>&1 | tail -40';
 
-  test('skips trailing shell-filtered fragments and picks the last real report', () => {
-    const filteredFragment = { output: 'exit-check-done', isError: false };
-    const failedGrep = { output: '', isError: true };
+  function testRunDocument(statuses: Record<string, string>): string {
+    const componentTestStatuses = Object.entries(statuses).map(([storyId, value]) => ({
+      storyId,
+      value,
+      typeId: 'storybook/component-test',
+      title: '',
+      description: '',
+    }));
+    const result = { componentTestStatuses, a11yReports: {}, unhandledErrors: [] };
+    return `${JSON.stringify({ status: 'completed', a11y: true, result }, null, 2)}\n`;
+  }
 
-    expect(selectFinalRunStoryTestsReport([passingReport, filteredFragment, failedGrep])).toBe(
-      passingReport
+  function givenRun(options: { commands: string[]; stdout: string }) {
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === '__agent_eval__/agent.json') {
+        return JSON.stringify({ agent: 'claude-code', integration: 'plugin', review: true });
+      }
+      if (String(path) === '__agent_eval__/results.json') {
+        return JSON.stringify({
+          o11y: { shellCommands: options.commands.map((command) => ({ command })) },
+        });
+      }
+      throw new Error(`Unexpected readFileSync path: ${String(path)}`);
+    }) as typeof readFileSync);
+    vi.mocked(execFile).mockImplementation(((
+      _file: string,
+      _args: string[],
+      _options: unknown,
+      callback: (error: Error | null, stdout: string, stderr: string) => void
+    ) => {
+      callback(null, options.stdout, 'npm warn exec storybook');
+    }) as unknown as typeof execFile);
+  }
+
+  // test-utils caches the parsed transcript and the sandbox run per module.
+  async function loadTestUtils() {
+    vi.resetModules();
+    return import('./test-utils.ts');
+  }
+
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
+    vi.mocked(execFile).mockRestore();
+  });
+
+  test('judges the tests by a run in the sandbox, not by the tail-cut transcript output', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({
+        'example-badge--accent': 'status-value:success',
+        'example-statuspill--active': 'status-value:success',
+      }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+
+    expect(execFile).toHaveBeenCalledWith(
+      'npx',
+      ['storybook', 'tools', 'test', 'run', '--json'],
+      expect.objectContaining({ cwd: '.' }),
+      expect.any(Function)
     );
   });
 
-  test('prefers a later real report over an earlier one', () => {
-    const failingReport = { output: '## Failing Stories\n\n### a--c', isError: false };
+  test('fails when the sandbox run reports a failing story', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument({
+        'example-badge--accent': 'status-value:success',
+        'example-statuspill--active': 'status-value:error',
+      }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
 
-    expect(selectFinalRunStoryTestsReport([passingReport, failingReport])).toBe(failingReport);
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/must not report failing stories/);
   });
 
-  test('falls back to the raw last result when no output is recognizable', () => {
-    const errorResult = { output: 'Error: dev server unreachable', isError: true };
+  test('fails when the sandbox run prints no test-run document', async () => {
+    givenRun({ commands: [tailCutTestRun], stdout: 'Error: no Storybook found' });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
 
-    expect(selectFinalRunStoryTestsReport([errorResult])).toBe(errorResult);
-    expect(selectFinalRunStoryTestsReport([])).toBeUndefined();
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/must complete/);
+  });
+
+  test('fails when the agent never ran the tests, even if they pass', async () => {
+    givenRun({
+      commands: ['npm run typecheck'],
+      stdout: testRunDocument({ 'example-badge--accent': 'status-value:success' }),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/Expected test-run to be called/);
   });
 });
 

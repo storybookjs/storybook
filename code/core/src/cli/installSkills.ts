@@ -9,10 +9,10 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 const SKILLS_REPO = 'storybookjs/skills';
 
-export type SkillsSource = 'ai-feature' | 'installed' | 'agent' | 'yes' | 'prompt' | 'default';
+export type SkillsSource = 'ai-feature' | 'installed' | 'automigration';
 
 export type SkillsInstallResult = {
-  result: 'installed' | 'declined' | 'skipped' | 'failed';
+  result: 'installed' | 'skipped' | 'failed';
   source: SkillsSource | 'ci';
   exitCode?: number;
 };

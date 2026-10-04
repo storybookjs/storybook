@@ -1,11 +1,10 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getStorybookData, hasStorybookSkills, installSkills } from 'storybook/internal/cli';
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { isCI } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
-import { detectAgent, telemetry } from 'storybook/internal/telemetry';
-import { SupportedRenderer } from 'storybook/internal/types';
+import { telemetry } from 'storybook/internal/telemetry';
 
 import { runAutomigrations } from './automigrate/multi-project.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
@@ -63,34 +62,10 @@ const baseOptions: UpgradeOptions = {
   disableTelemetry: false,
 };
 
-const terminalStreams = [process.stdin, process.stdout];
-const originalIsTTY = terminalStreams.map((stream) =>
-  Object.getOwnPropertyDescriptor(stream, 'isTTY')
-);
-const setIsTTY = (stream: NodeJS.ReadStream | NodeJS.WriteStream, value: boolean) =>
-  Object.defineProperty(stream, 'isTTY', { value, configurable: true });
-
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
   vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
 
-const SVELTE_CONFIG_DIR = '/repo/svelte/.storybook';
-const useFrameworks = () =>
-  vi.mocked(getStorybookData).mockImplementation(
-    async ({ configDir }) =>
-      (configDir === SVELTE_CONFIG_DIR
-        ? {
-            renderer: SupportedRenderer.SVELTE,
-            frameworkPackage: '@storybook/svelte-vite',
-            builderPackage: '@storybook/builder-vite',
-          }
-        : {
-            renderer: SupportedRenderer.REACT,
-            frameworkPackage: '@storybook/react-vite',
-            builderPackage: '@storybook/builder-vite',
-          }) as Awaited<ReturnType<typeof getStorybookData>>
-  );
-
-describe('upgrade: the skills step', () => {
+describe('upgrade: refreshing the skills', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     useProjects(project('/repo/a/.storybook'), project('/repo/b/.storybook'));
@@ -100,7 +75,6 @@ describe('upgrade: the skills step', () => {
     });
     vi.mocked(runMultiProjectDoctor).mockResolvedValue({});
     vi.mocked(displayDoctorResults).mockReturnValue(false);
-    vi.mocked(detectAgent).mockReturnValue(undefined);
     vi.mocked(isCI).mockReturnValue(false);
     for (const method of ['info', 'step', 'log', 'warn', 'debug'] as const) {
       vi.mocked(logger[method]).mockImplementation(() => {});
@@ -110,26 +84,8 @@ describe('upgrade: the skills step', () => {
       success: vi.fn(),
       error: vi.fn(),
     } as unknown as ReturnType<typeof prompt.taskLog>);
-    vi.mocked(prompt.confirm).mockResolvedValue(true);
-    vi.mocked(hasStorybookSkills).mockResolvedValue(false);
-    useFrameworks();
-    vi.mocked(installSkills).mockImplementation(async ({ source }) => ({
-      result: 'installed',
-      source,
-    }));
-    setIsTTY(process.stdin, true);
-    setIsTTY(process.stdout, true);
-  });
-
-  afterEach(() => {
-    terminalStreams.forEach((stream, index) => {
-      const original = originalIsTTY[index];
-      if (original) {
-        Object.defineProperty(stream, 'isTTY', original);
-      } else {
-        delete (stream as { isTTY?: boolean }).isTTY;
-      }
-    });
+    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'installed' });
   });
 
   const skillsInUpgradeEvents = () =>
@@ -138,156 +94,48 @@ describe('upgrade: the skills step', () => {
       .mock.calls.filter(([eventType]) => eventType === 'upgrade')
       .map(([, payload]) => (payload as { skills?: unknown }).skills);
 
-  describe('when the project has the skills', () => {
-    beforeEach(() => {
-      vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    });
-
-    it('refreshes them once for the whole upgrade, without asking', async () => {
-      await upgrade(baseOptions);
-
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(installSkills).toHaveBeenCalledTimes(1);
-      expect(installSkills).toHaveBeenCalledWith({
-        packageManager: expect.objectContaining({ type: 'npm' }),
-        source: 'installed',
-      });
-    });
-
-    it('refreshes them on an upgrade within the same major and on an unsupported framework', async () => {
-      useProjects(project(SVELTE_CONFIG_DIR, { beforeVersion: '11.0.0' }));
-
-      await upgrade(baseOptions);
-
-      expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ source: 'installed' }));
-    });
-  });
-
-  describe('when the project does not have the skills', () => {
-    it.each(['10.3.0', '11.0.0-alpha.1'])(
-      'asks on an upgrade from %s, a version that did not offer the skills',
-      async (beforeVersion) => {
-        useProjects(project('/repo/a/.storybook', { beforeVersion }));
-
-        await upgrade(baseOptions);
-
-        expect(prompt.confirm).toHaveBeenCalledTimes(1);
-      }
-    );
-
-    it('asks with Yes preselected and installs on Yes', async () => {
-      await upgrade(baseOptions);
-
-      expect(prompt.confirm).toHaveBeenCalledWith(
-        {
-          message: 'Install the official Storybook skills for AI agents into this project?',
-          initialValue: true,
-        },
-        expect.anything()
-      );
-      expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ source: 'prompt' }));
-    });
-
-    it('installs nothing on No', async () => {
-      vi.mocked(prompt.confirm).mockResolvedValue(false);
-
-      await upgrade(baseOptions);
-
-      expect(installSkills).not.toHaveBeenCalled();
-      expect(skillsInUpgradeEvents()).toEqual([
-        { result: 'declined', source: 'prompt' },
-        { result: 'declined', source: 'prompt' },
-      ]);
-    });
-
-    it('installs nothing when the prompt is canceled', async () => {
-      vi.mocked(prompt.confirm).mockImplementation(async (_, promptOptions) => {
-        await promptOptions?.onCancel?.();
-        return true;
-      });
-
-      await upgrade(baseOptions);
-
-      expect(installSkills).not.toHaveBeenCalled();
-    });
-
-    it.each([
-      ['from 11', project('/repo/a/.storybook', { beforeVersion: '11.0.0' })],
-      [
-        'from the first prerelease that offers the skills',
-        project('/repo/a/.storybook', { beforeVersion: '11.0.0-alpha.2' }),
-      ],
-      [
-        'from a canary',
-        project('/repo/a/.storybook', { beforeVersion: '0.0.0-pr-1-sha-abc', isCanary: true }),
-      ],
-      ['on an unsupported framework', project(SVELTE_CONFIG_DIR)],
-    ])('does nothing on an upgrade %s', async (_, upgraded) => {
-      useProjects(upgraded);
-
-      await upgrade(baseOptions);
-
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(installSkills).not.toHaveBeenCalled();
-      expect(skillsInUpgradeEvents()).toEqual([undefined]);
-    });
-
-    it('asks when only one of the projects is supported and comes from before the skills', async () => {
-      useProjects(
-        project('/repo/a/.storybook', { beforeVersion: '11.0.0' }),
-        project(SVELTE_CONFIG_DIR),
-        project('/repo/c/.storybook')
-      );
-
-      await upgrade(baseOptions);
-
-      expect(prompt.confirm).toHaveBeenCalledTimes(1);
-    });
-
-    it.each([
-      ['an agent', () => vi.mocked(detectAgent).mockReturnValue({ name: 'claude' }), {}, 'agent'],
-      ['--yes', () => {}, { yes: true }, 'yes'],
-      ['a run without a terminal', () => setIsTTY(process.stdin, false), {}, 'default'],
-    ])('installs without asking for %s', async (_, arrange, options, source) => {
-      arrange();
-
-      await upgrade({ ...baseOptions, ...options });
-
-      expect(prompt.confirm).not.toHaveBeenCalled();
-      expect(installSkills).toHaveBeenCalledWith(expect.objectContaining({ source }));
-    });
-  });
-
-  it('never asks in CI', async () => {
-    vi.mocked(isCI).mockReturnValue(true);
-
+  it('refreshes installed skills once for the whole upgrade, and reports the result', async () => {
     await upgrade(baseOptions);
 
-    expect(prompt.confirm).not.toHaveBeenCalled();
-  });
-
-  it("attaches the result to every project's upgrade event", async () => {
-    await upgrade(baseOptions);
-
+    expect(installSkills).toHaveBeenCalledTimes(1);
+    expect(installSkills).toHaveBeenCalledWith({
+      packageManager: expect.objectContaining({ type: 'npm' }),
+      source: 'installed',
+    });
     expect(skillsInUpgradeEvents()).toEqual([
-      { result: 'installed', source: 'prompt' },
-      { result: 'installed', source: 'prompt' },
+      { result: 'installed', source: 'installed' },
+      { result: 'installed', source: 'installed' },
     ]);
   });
 
-  it('leaves installed skills alone on a canary, which has no skills tag', async () => {
-    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    useProjects(project('/repo/a/.storybook', { isCanary: true }));
+  it('installs nothing when the project has no skills', async () => {
+    vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+
+    await upgrade(baseOptions);
+
+    expect(installSkills).not.toHaveBeenCalled();
+    expect(skillsInUpgradeEvents()).toEqual([undefined, undefined]);
+  });
+
+  it('does not refresh skills that the skills automigration installed in the same upgrade', async () => {
+    vi.mocked(hasStorybookSkills).mockResolvedValue(false);
+    vi.mocked(runAutomigrations).mockImplementation(async () => {
+      vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+      return { automigrationResults: {}, detectedAutomigrations: [] };
+    });
 
     await upgrade(baseOptions);
 
     expect(installSkills).not.toHaveBeenCalled();
   });
 
-  it('never runs during a dry run', async () => {
-    vi.mocked(hasStorybookSkills).mockResolvedValue(true);
+  it.each([
+    ['a dry run', [project('/repo/a/.storybook')], { dryRun: true }],
+    ['an upgrade to a canary', [project('/repo/a/.storybook', { isCanary: true })], {}],
+  ])('does not refresh on %s', async (_, projects, options) => {
+    useProjects(...projects);
 
-    await upgrade({ ...baseOptions, dryRun: true });
+    await upgrade({ ...baseOptions, ...options });
 
     expect(installSkills).not.toHaveBeenCalled();
   });

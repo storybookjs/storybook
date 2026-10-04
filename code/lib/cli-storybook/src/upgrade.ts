@@ -1,16 +1,8 @@
-import type { SkillsInstallResult } from 'storybook/internal/cli';
-import {
-  getStorybookData,
-  hasStorybookSkills,
-  installSkills,
-  supportsAiFeatures,
-} from 'storybook/internal/cli';
-import type { JsPackageManager } from 'storybook/internal/common';
+import { hasStorybookSkills, installSkills } from 'storybook/internal/cli';
 import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
-  frameworkPackages,
   isCI,
   isCorePackage,
   resolveStorybookVersionSpecifier,
@@ -29,7 +21,7 @@ import {
   UpgradeStorybookToLowerVersionError,
   UpgradeStorybookUnknownCurrentVersionError,
 } from 'storybook/internal/server-errors';
-import { detectAgent, telemetry } from 'storybook/internal/telemetry';
+import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
@@ -161,78 +153,6 @@ export type UpgradeOptions = {
   loglevel?: LogLevel;
   logfile?: string | boolean;
 };
-
-const FIRST_VERSION_OFFERING_SKILLS = '11.0.0-alpha.2';
-
-// Reads the main config again because an automigration may have switched the framework.
-async function hasAiFeatureSupport({ configDir }: CollectProjectsSuccessResult): Promise<boolean> {
-  try {
-    const { renderer, frameworkPackage } = await getStorybookData({
-      configDir,
-      skipCache: true,
-    });
-    return supportsAiFeatures(
-      renderer,
-      frameworkPackage ? frameworkPackages[frameworkPackage] : undefined
-    );
-  } catch {
-    return false;
-  }
-}
-
-async function upgradeSkills(
-  projects: CollectProjectsSuccessResult[],
-  packageManager: JsPackageManager,
-  yes: boolean
-): Promise<SkillsInstallResult | undefined> {
-  // Canary versions have no tag in the skills repository, and their 0.0.0 version would pass as
-  // an upgrade from before the skills on every run.
-  const releasedProjects = projects.filter((project) => !project.isCanary);
-  if (releasedProjects.length === 0) {
-    return undefined;
-  }
-
-  if (await hasStorybookSkills()) {
-    return installSkills({ packageManager, source: 'installed' });
-  }
-
-  // Offered once, on the upgrade into the first version that offers the skills, so a project that
-  // declined is not asked again on later upgrades.
-  const upgradedIntoSkills = releasedProjects.filter((project) =>
-    lt(project.beforeVersion, FIRST_VERSION_OFFERING_SKILLS)
-  );
-  const isOffered = (await Promise.all(upgradedIntoSkills.map(hasAiFeatureSupport))).some(Boolean);
-  if (!isOffered) {
-    return undefined;
-  }
-
-  if (detectAgent()) {
-    return installSkills({ packageManager, source: 'agent' });
-  }
-  if (yes) {
-    return installSkills({ packageManager, source: 'yes' });
-  }
-  if (isCI() || !process.stdout.isTTY || !process.stdin.isTTY) {
-    return installSkills({ packageManager, source: 'default' });
-  }
-
-  let canceled = false;
-  const accepted = await prompt.confirm(
-    {
-      message: 'Install the official Storybook skills for AI agents into this project?',
-      initialValue: true,
-    },
-    {
-      onCancel: () => {
-        canceled = true;
-      },
-    }
-  );
-  if (canceled || !accepted) {
-    return { result: 'declined', source: 'prompt' };
-  }
-  return installSkills({ packageManager, source: 'prompt' });
-}
 
 function getUpgradeResults(
   projectResults: Record<string, AutomigrationResult>,
@@ -547,6 +467,10 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
+    // Read before the automigrations, so skills that the skills automigration installs are not
+    // installed a second time below.
+    const hadSkills = await hasStorybookSkills();
+
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};
     let detectedAutomigrations: AutomigrationCheckResult[] = [];
@@ -629,9 +553,11 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       }
     }
 
-    const skills = options.dryRun
-      ? undefined
-      : await upgradeSkills(storybookProjects, rootPackageManager, options.yes);
+    // Canary versions have no tag in the skills repository.
+    const skills =
+      !options.dryRun && hadSkills && storybookProjects.some((project) => !project.isCanary)
+        ? await installSkills({ packageManager: rootPackageManager, source: 'installed' })
+        : undefined;
 
     // Run doctor for each project
     const doctorProjects: ProjectDoctorData[] = storybookProjects.map((project) => ({

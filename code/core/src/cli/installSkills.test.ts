@@ -200,9 +200,9 @@ describe('installSkills', () => {
       new Err({ command, args: [], exitCode: 1, logs: '' })
     );
 
-    const result = await installSkills({ packageManager, source: 'prompt' });
+    const result = await installSkills({ packageManager, source: 'automigration' });
 
-    expect(result).toEqual({ result: 'failed', source: 'prompt', exitCode: 1 });
+    expect(result).toEqual({ result: 'failed', source: 'automigration', exitCode: 1 });
     expect(logger.warn).toHaveBeenCalledWith(
       'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills'
     );

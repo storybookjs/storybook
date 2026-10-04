@@ -17,16 +17,35 @@ export type SkillsInstallResult = {
   exitCode?: number;
 };
 
-/** Whether init and upgrade offer the AI features (skills and the setup prompt) for this project. */
+/**
+ * Whether init and upgrade offer the AI features for this project: the frameworks whose presets
+ * export an `experimental_docgenProvider`, which the docs workflow of the skills relies on.
+ */
 export function supportsAiFeatures(
+  renderer: SupportedRenderer | undefined,
+  framework: SupportedFramework | null | undefined
+): boolean {
+  return (
+    renderer === SupportedRenderer.REACT ||
+    renderer === SupportedRenderer.VUE3 ||
+    framework === SupportedFramework.ANGULAR_VITE
+  );
+}
+
+/** Whether `storybook skills setup` supports this project, so init can print its prompt. */
+export function supportsAiSetup(
   renderer: SupportedRenderer | undefined,
   builder: SupportedBuilder | undefined,
   framework: SupportedFramework | null | undefined
 ): boolean {
-  if (framework === SupportedFramework.REACT_NATIVE_WEB_VITE) {
+  if (framework === SupportedFramework.REACT_NATIVE_WEB_VITE || builder !== SupportedBuilder.VITE) {
     return false;
   }
-  return renderer === SupportedRenderer.REACT && builder === SupportedBuilder.VITE;
+  return (
+    renderer === SupportedRenderer.REACT ||
+    renderer === SupportedRenderer.VUE3 ||
+    renderer === SupportedRenderer.ANGULAR
+  );
 }
 
 /** Whether the project has skills from the official Storybook skills repository installed. */

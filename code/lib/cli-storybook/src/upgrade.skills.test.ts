@@ -73,14 +73,14 @@ const setIsTTY = (stream: NodeJS.ReadStream | NodeJS.WriteStream, value: boolean
 const useProjects = (...projects: CollectProjectsSuccessResult[]) =>
   vi.mocked(getProjects).mockResolvedValue({ allProjects: projects, selectedProjects: projects });
 
-const VUE_CONFIG_DIR = '/repo/vue/.storybook';
+const SVELTE_CONFIG_DIR = '/repo/svelte/.storybook';
 const useFrameworks = () =>
   vi.mocked(getStorybookData).mockImplementation(
     async ({ configDir }) =>
-      (configDir === VUE_CONFIG_DIR
+      (configDir === SVELTE_CONFIG_DIR
         ? {
-            renderer: SupportedRenderer.VUE3,
-            frameworkPackage: '@storybook/vue3-vite',
+            renderer: SupportedRenderer.SVELTE,
+            frameworkPackage: '@storybook/svelte-vite',
             builderPackage: '@storybook/builder-vite',
           }
         : {
@@ -155,7 +155,7 @@ describe('upgrade: the skills step', () => {
     });
 
     it('refreshes them on an upgrade within the same major and on an unsupported framework', async () => {
-      useProjects(project(VUE_CONFIG_DIR, { beforeVersion: '11.0.0' }));
+      useProjects(project(SVELTE_CONFIG_DIR, { beforeVersion: '11.0.0' }));
 
       await upgrade(baseOptions);
 
@@ -221,7 +221,7 @@ describe('upgrade: the skills step', () => {
         'from a canary',
         project('/repo/a/.storybook', { beforeVersion: '0.0.0-pr-1-sha-abc', isCanary: true }),
       ],
-      ['on an unsupported framework', project(VUE_CONFIG_DIR)],
+      ['on an unsupported framework', project(SVELTE_CONFIG_DIR)],
     ])('does nothing on an upgrade %s', async (_, upgraded) => {
       useProjects(upgraded);
 
@@ -235,7 +235,7 @@ describe('upgrade: the skills step', () => {
     it('asks when only one of the projects is supported and comes from before the skills', async () => {
       useProjects(
         project('/repo/a/.storybook', { beforeVersion: '11.0.0' }),
-        project(VUE_CONFIG_DIR),
+        project(SVELTE_CONFIG_DIR),
         project('/repo/c/.storybook')
       );
 

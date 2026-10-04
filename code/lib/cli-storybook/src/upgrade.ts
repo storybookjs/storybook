@@ -10,7 +10,6 @@ import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
-  builderPackages,
   frameworkPackages,
   isCI,
   isCorePackage,
@@ -168,13 +167,12 @@ const FIRST_VERSION_OFFERING_SKILLS = '11.0.0-alpha.2';
 // Reads the main config again because an automigration may have switched the framework.
 async function hasAiFeatureSupport({ configDir }: CollectProjectsSuccessResult): Promise<boolean> {
   try {
-    const { renderer, builderPackage, frameworkPackage } = await getStorybookData({
+    const { renderer, frameworkPackage } = await getStorybookData({
       configDir,
       skipCache: true,
     });
     return supportsAiFeatures(
       renderer,
-      builderPackage ? builderPackages[builderPackage] : undefined,
       frameworkPackage ? frameworkPackages[frameworkPackage] : undefined
     );
   } catch {

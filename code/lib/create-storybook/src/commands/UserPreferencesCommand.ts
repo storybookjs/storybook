@@ -36,6 +36,7 @@ export interface UserPreferencesOptions {
   renderer: SupportedRenderer;
   projectType: ProjectType;
   isTestFeatureAvailable: boolean;
+  isAiAvailable: boolean;
   isAiSetupAvailable: boolean;
 }
 
@@ -80,15 +81,15 @@ export class UserPreferencesCommand {
         ? await this.promptInstallType(skipPrompt, options.isTestFeatureAvailable)
         : 'recommended';
 
-    // Ask about AI setup (only available for compatible projects, e.g. React + Vite)
-    const useAiForSetup = options.isAiSetupAvailable ? await this.promptAiSetup(skipPrompt) : false;
+    const useAi = options.isAiAvailable ? await this.promptAiSetup(skipPrompt) : false;
 
     const selectedFeatures = this.determineFeatures(
       installType,
       newUser,
       options.isTestFeatureAvailable,
       options.projectType,
-      useAiForSetup
+      useAi,
+      options.isAiSetupAvailable
     );
 
     return { newUser, selectedFeatures };
@@ -196,7 +197,8 @@ export class UserPreferencesCommand {
     newUser: boolean,
     isTestFeatureAvailable: boolean,
     projectType: ProjectType,
-    useAiForSetup: boolean
+    useAi: boolean,
+    isAiSetupAvailable: boolean
   ): Set<Feature> {
     const features = new Set<Feature>();
 
@@ -212,8 +214,11 @@ export class UserPreferencesCommand {
       }
     }
 
-    if (useAiForSetup) {
+    if (useAi) {
       features.add(Feature.AI);
+    }
+
+    if (useAi && isAiSetupAvailable) {
       if (isTestFeatureAvailable) {
         features.add(Feature.TEST);
       }

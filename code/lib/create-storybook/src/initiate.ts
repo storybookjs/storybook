@@ -1,6 +1,11 @@
 import { resolve } from 'node:path';
 
-import { ProjectType, installSkills, supportsAiFeatures } from 'storybook/internal/cli';
+import {
+  ProjectType,
+  installSkills,
+  supportsAiFeatures,
+  supportsAiSetup,
+} from 'storybook/internal/cli';
 import {
   HandledError,
   PackageManagerName,
@@ -42,6 +47,7 @@ async function checkFeatureSupport(
   renderer: SupportedRenderer
 ): Promise<{
   isTestFeatureAvailable: boolean;
+  isAiAvailable: boolean;
   isAiSetupAvailable: boolean;
 }> {
   const featureService = new FeatureCompatibilityService(packageManager);
@@ -54,7 +60,8 @@ async function checkFeatureSupport(
 
   return {
     isTestFeatureAvailable: result.compatible,
-    isAiSetupAvailable: supportsAiFeatures(renderer, builder, framework),
+    isAiAvailable: supportsAiFeatures(renderer, framework),
+    isAiSetupAvailable: supportsAiSetup(renderer, builder, framework),
   };
 }
 
@@ -100,7 +107,7 @@ export async function doInitiate(options: CommandOptions): Promise<
   );
 
   // Step 4: Get user preferences and feature selections (with framework/builder for validation)
-  const { isTestFeatureAvailable, isAiSetupAvailable } = await checkFeatureSupport(
+  const { isTestFeatureAvailable, isAiAvailable, isAiSetupAvailable } = await checkFeatureSupport(
     packageManager,
     framework,
     builder,
@@ -116,7 +123,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     isTestFeatureAvailable,
     // Skip AI feature recommendation when scaffolding into an empty directory,
     // since the user hasn't yet committed to a project setup where AI tooling adds value.
-    isAiSetupAvailable: isAiSetupAvailable && !isEmptyProject,
+    isAiAvailable: isAiAvailable && !isEmptyProject,
+    isAiSetupAvailable,
   });
 
   // Step 5: Execute generator with dependency collector (now with frameworkInfo)
@@ -191,8 +199,8 @@ export async function doInitiate(options: CommandOptions): Promise<
     }).catch(() => {});
   }
   await executeFinalization({
-    showAgentFollowUp: !!options.agent && hasAiFeature,
-    showAiInstructions: hasAiFeature,
+    showAgentFollowUp: !!options.agent && hasAiFeature && isAiSetupAvailable,
+    showAiInstructions: hasAiFeature && isAiSetupAvailable,
     logfile: options.logfile,
     storybookCommand,
     setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'setup']),

@@ -90,4 +90,27 @@ describe('init: the skills step', () => {
 
     expect(installSkills).not.toHaveBeenCalled();
   });
+
+  it('prints the setup prompt where AI setup is supported', async () => {
+    await initiateWith(Feature.AI);
+
+    expect(executeFinalization).toHaveBeenCalledWith(
+      expect.objectContaining({ showAiInstructions: true })
+    );
+  });
+
+  it('installs the skills without the setup prompt where AI setup is not supported', async () => {
+    vi.mocked(executeFrameworkDetection).mockResolvedValue({
+      framework: SupportedFramework.NEXTJS,
+      builder: SupportedBuilder.WEBPACK5,
+      renderer: SupportedRenderer.REACT,
+    });
+
+    await initiateWith(Feature.AI);
+
+    expect(installSkills).toHaveBeenCalledWith({ packageManager, source: 'ai-feature' });
+    expect(executeFinalization).toHaveBeenCalledWith(
+      expect.objectContaining({ showAiInstructions: false, showAgentFollowUp: false })
+    );
+  });
 });

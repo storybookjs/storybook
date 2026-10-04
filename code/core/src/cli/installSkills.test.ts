@@ -15,7 +15,12 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 import { vol } from 'memfs';
 
-import { hasStorybookSkills, installSkills, supportsAiFeatures } from './installSkills.ts';
+import {
+  hasStorybookSkills,
+  installSkills,
+  supportsAiFeatures,
+  supportsAiSetup,
+} from './installSkills.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
@@ -43,20 +48,35 @@ beforeEach(async () => {
 
 describe('supportsAiFeatures', () => {
   it.each([
+    [SupportedRenderer.REACT, SupportedFramework.REACT_VITE, true],
+    [SupportedRenderer.REACT, SupportedFramework.NEXTJS, true],
+    [SupportedRenderer.REACT, null, true],
+    [SupportedRenderer.VUE3, SupportedFramework.VUE3_VITE, true],
+    [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR_VITE, true],
+    [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR, false],
+    [SupportedRenderer.SVELTE, SupportedFramework.SVELTE_VITE, false],
+    [SupportedRenderer.WEB_COMPONENTS, SupportedFramework.WEB_COMPONENTS_VITE, false],
+    [undefined, undefined, false],
+  ])('%s (%s) is %s', (renderer, framework, expected) => {
+    expect(supportsAiFeatures(renderer, framework)).toBe(expected);
+  });
+});
+
+describe('supportsAiSetup', () => {
+  it.each([
     [SupportedRenderer.REACT, SupportedBuilder.VITE, SupportedFramework.REACT_VITE, true],
-    [SupportedRenderer.REACT, SupportedBuilder.VITE, null, true],
-    [SupportedRenderer.VUE3, SupportedBuilder.VITE, SupportedFramework.VUE3_VITE, false],
-    [SupportedRenderer.REACT, SupportedBuilder.WEBPACK5, SupportedFramework.REACT_WEBPACK5, false],
-    [SupportedRenderer.ANGULAR, SupportedBuilder.WEBPACK5, SupportedFramework.ANGULAR, false],
+    [SupportedRenderer.VUE3, SupportedBuilder.VITE, SupportedFramework.VUE3_VITE, true],
+    [SupportedRenderer.ANGULAR, SupportedBuilder.VITE, SupportedFramework.ANGULAR_VITE, true],
+    [SupportedRenderer.REACT, SupportedBuilder.WEBPACK5, SupportedFramework.NEXTJS, false],
     [
       SupportedRenderer.REACT,
       SupportedBuilder.VITE,
       SupportedFramework.REACT_NATIVE_WEB_VITE,
       false,
     ],
-    [undefined, undefined, undefined, false],
+    [SupportedRenderer.SVELTE, SupportedBuilder.VITE, SupportedFramework.SVELTE_VITE, false],
   ])('%s on %s (%s) is %s', (renderer, builder, framework, expected) => {
-    expect(supportsAiFeatures(renderer, builder, framework)).toBe(expected);
+    expect(supportsAiSetup(renderer, builder, framework)).toBe(expected);
   });
 });
 

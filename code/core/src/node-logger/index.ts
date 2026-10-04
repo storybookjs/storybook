@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import npmLog from 'npmlog';
 import prettyTime from 'pretty-hrtime';
 
@@ -90,7 +89,16 @@ export const logger = {
   },
 };
 
-export { npmLog as instance };
+/**
+ * The legacy logger instance is kept for internal consumers, but its public
+ * type must not expose npmlog's Node-specific declarations to browser projects.
+ */
+export const instance = npmLog as {
+  [key: string]: any;
+  heading: string;
+  level: string;
+  stream: unknown;
+};
 
 const logged = new Set();
 export const once = (type: 'verbose' | 'info' | 'warn' | 'error') => (message: string) => {

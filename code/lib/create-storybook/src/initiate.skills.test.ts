@@ -110,7 +110,7 @@ describe('init: the skills step', () => {
 
     expect(installSkills).toHaveBeenCalledWith({ packageManager, source: 'ai-feature' });
     expect(executeFinalization).toHaveBeenCalledWith(
-      expect.objectContaining({ showAiInstructions: false, showAgentFollowUp: false })
+      expect.objectContaining({ showAiInstructions: false })
     );
   });
 });

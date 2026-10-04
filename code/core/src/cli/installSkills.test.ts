@@ -50,7 +50,7 @@ describe('supportsAiFeatures', () => {
   it.each([
     [SupportedRenderer.REACT, SupportedFramework.REACT_VITE, true],
     [SupportedRenderer.REACT, SupportedFramework.NEXTJS, true],
-    [SupportedRenderer.REACT, null, true],
+    [SupportedRenderer.REACT, null, false],
     [SupportedRenderer.VUE3, SupportedFramework.VUE3_VITE, true],
     [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR_VITE, true],
     [SupportedRenderer.ANGULAR, SupportedFramework.ANGULAR, false],

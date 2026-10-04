@@ -25,6 +25,10 @@ export function supportsAiFeatures(
   renderer: SupportedRenderer | undefined,
   framework: SupportedFramework | null | undefined
 ): boolean {
+  // React Native reports the React renderer without a framework, and has no docgen provider.
+  if (!framework) {
+    return false;
+  }
   return (
     renderer === SupportedRenderer.REACT ||
     renderer === SupportedRenderer.VUE3 ||

@@ -93,7 +93,10 @@ function attributesSection(typePrefix: string, attributes: AttributeDoc[]): stri
     `${typePrefix}Attributes`,
     attributes.flatMap(({ attribute, field, type, doc }) => {
       const suffix = field && field.name !== attribute.name ? ` // property: ${field.name}` : '';
-      return [...docComment(doc), `  ${memberName(attribute.name)}?: ${type};${suffix}`];
+      return [
+        ...docComment(doc),
+        `  ${memberName(attribute.name)}?: ${type}${memberDefault(doc)};${suffix}`,
+      ];
     })
   );
 }
@@ -110,12 +113,16 @@ function propertiesSection(
   return typeSection(
     'Properties',
     `${typePrefix}Properties`,
-    properties.flatMap((property) => [
-      ...docComment(memberDoc(property)),
-      property.readonly === true
-        ? `  readonly ${memberName(property.name)}: ${fieldType(property, typeProperty)};`
-        : `  ${memberName(property.name)}?: ${fieldType(property, typeProperty)};`,
-    ])
+    properties.flatMap((property) => {
+      const doc = memberDoc(property);
+      const type = fieldType(property, typeProperty);
+      return [
+        ...docComment(doc),
+        property.readonly === true
+          ? `  readonly ${memberName(property.name)}: ${type}${memberDefault(doc)};`
+          : `  ${memberName(property.name)}?: ${type}${memberDefault(doc)};`,
+      ];
+    })
   );
 }
 
@@ -175,18 +182,18 @@ function listSection(heading: string, items: string[]): string | undefined {
 
 function cssPropertyListItem(property: ManifestCssCustomProperty, typeProperty: string): string {
   const syntax = readCssPropertySyntax(property, typeProperty);
-  const name = inlineCode(property.name);
-  const syntaxText = syntax ? ` (${inlineCode(syntax)})` : '';
+  const name = property.name;
+  const syntaxText = syntax ? ` \`${syntax}\`` : '';
   return listItemPrefix(`${name}${syntaxText}`, memberDoc(property));
 }
 
 function listItem(name: string, doc: MemberDoc): string {
-  return listItemPrefix(inlineCode(name), doc);
+  return listItemPrefix(name, doc);
 }
 
 function listItemPrefix(prefix: string, doc: MemberDoc): string {
   const text = doc.text ? `: ${doc.text}` : '';
-  const defaultText = doc.defaultValue ? ` Default: ${inlineCode(doc.defaultValue)}.` : '';
+  const defaultText = doc.defaultValue === undefined ? '' : ` Default: ${doc.defaultValue}.`;
   const deprecatedText =
     doc.deprecated === undefined
       ? ''
@@ -235,7 +242,13 @@ function memberDoc(...sources: Array<DocItem | undefined>): MemberDoc {
 }
 
 function defaultValue(value: string | undefined): string | undefined {
-  return value === undefined || value === 'undefined' ? undefined : value;
+  return value === undefined || value === 'undefined'
+    ? undefined
+    : value.replace(/\s+/g, ' ').trim();
+}
+
+function memberDefault(doc: MemberDoc): string {
+  return doc.defaultValue === undefined ? '' : ` = ${doc.defaultValue}`;
 }
 
 function docComment(doc: MemberDoc): string[] {
@@ -247,9 +260,6 @@ function docComment(doc: MemberDoc): string[] {
         doc.deprecated === 'deprecated' ? '@deprecated' : `@deprecated ${doc.deprecated}`
       )
     );
-  }
-  if (doc.defaultValue !== undefined) {
-    tags.push(...commentLines(`@default ${doc.defaultValue}`));
   }
   if (tags.length > 0) {
     if (body.length > 0) {
@@ -276,8 +286,4 @@ function commentLines(text: string): string[] {
 
 function memberName(name: string): string {
   return IDENTIFIER.test(name) ? name : `'${name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
-}
-
-function inlineCode(text: string): string {
-  return `\`${text}\``;
 }

@@ -2,30 +2,14 @@
 
 ```
 export type FastAttributesAttributes = {
-  /**
-   * Visible label.
-   *
-   * @default 'Go'
-   */
-  label?: string;
-  /**
-   * Button size.
-   *
-   * @default 'small'
-   */
-  size?: 'small' | 'large';
-  /**
-   * Disables the button (boolean attribute).
-   *
-   * @default false
-   */
-  disabled?: boolean;
-  /**
-   * Upper bound for the counter; attribute name differs from the field.
-   *
-   * @default 3
-   */
-  'max-count'?: number; // property: maxCount
+  /** Visible label. */
+  label?: string = 'Go';
+  /** Button size. */
+  size?: 'small' | 'large' = 'small';
+  /** Disables the button (boolean attribute). */
+  disabled?: boolean = false;
+  /** Upper bound for the counter; attribute name differs from the field. */
+  'max-count'?: number = 3; // property: maxCount
 }
 ```
 
@@ -33,18 +17,10 @@ export type FastAttributesAttributes = {
 
 ```
 export type FastAttributesProperties = {
-  /**
-   * Property only, never reflected.
-   *
-   * @default []
-   */
-  items?: string[];
-  /**
-   * Current click count.
-   *
-   * @default 0
-   */
-  count?: number;
+  /** Property only, never reflected. */
+  items?: string[] = [];
+  /** Current click count. */
+  count?: number = 0;
 }
 ```
 

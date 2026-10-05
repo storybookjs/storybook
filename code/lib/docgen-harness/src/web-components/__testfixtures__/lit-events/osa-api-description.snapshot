@@ -2,12 +2,8 @@
 
 ```
 export type LitEventsAttributes = {
-  /**
-   * Current text value.
-   *
-   * @default 'ready'
-   */
-  value?: string;
+  /** Current text value. */
+  value?: string = 'ready';
 }
 ```
 

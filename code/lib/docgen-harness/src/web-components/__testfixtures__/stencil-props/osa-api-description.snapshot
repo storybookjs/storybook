@@ -2,32 +2,16 @@
 
 ```
 export type StencilPropsAttributes = {
-  /**
-   * Current rating.
-   *
-   * @default 0
-   */
-  value?: number;
-  /**
-   * Maximum number of stars.
-   *
-   * @default 5
-   */
-  max?: number;
-  /**
-   * Visual variant.
-   *
-   * @default 'full'
-   */
-  variant?: 'compact' | 'full';
+  /** Current rating. */
+  value?: number = 0;
+  /** Maximum number of stars. */
+  max?: number = 5;
+  /** Visual variant. */
+  variant?: 'compact' | 'full' = 'full';
   /** Attribute name differs from the field. */
   'aria-label-text'?: string | undefined; // property: labelText
-  /**
-   * Complex prop, kept as an object.
-   *
-   * @default {}
-   */
-  labels?: Record<number, string>;
+  /** Complex prop, kept as an object. */
+  labels?: Record<number, string> = {};
 }
 ```
 
@@ -35,12 +19,8 @@ export type StencilPropsAttributes = {
 
 ```
 export type StencilPropsProperties = {
-  /**
-   * Internal hover state.
-   *
-   * @default -1
-   */
-  hovered?: number;
+  /** Internal hover state. */
+  hovered?: number = -1;
 }
 ```
 

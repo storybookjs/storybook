@@ -98,21 +98,15 @@ describe('buildApiDescription', () => {
 
       \`\`\`
       export type ToolkitShapeAttributes = {
-        /**
-         * The current size.
-         *
-         * @default 'medium'
-         */
-        size?: 'small' | 'medium' | 'large';
+        /** The current size. */
+        size?: 'small' | 'medium' | 'large' = 'medium';
         /**
          * The legacy size.
          *
          * @deprecated Use \`size\` instead.
-         * @default ''
          */
-        'old-size'?: string; // property: oldSize
-        /** @default false */
-        open?: boolean;
+        'old-size'?: string = ''; // property: oldSize
+        open?: boolean = false;
       }
       \`\`\`
 
@@ -120,18 +114,10 @@ describe('buildApiDescription', () => {
 
       \`\`\`
       export type ToolkitShapeProperties = {
-        /**
-         * The current version.
-         *
-         * @default '1.0.0'
-         */
-        readonly version: string;
-        /**
-         * Whether the control is pressed.
-         *
-         * @default false
-         */
-        pressed?: boolean;
+        /** The current version. */
+        readonly version: string = '1.0.0';
+        /** Whether the control is pressed. */
+        pressed?: boolean = false;
       }
       \`\`\`
 
@@ -157,21 +143,48 @@ describe('buildApiDescription', () => {
 
       ## Slots
 
-      - \`default\`
-      - \`label\`
+      - default
+      - label
 
       ## CSS Custom Properties
 
-      - \`--toolkit-color\` (\`<color>\`)
-      - \`--toolkit-gap\` Default: \`4px\`.
+      - --toolkit-color \`<color>\`
+      - --toolkit-gap Default: 4px.
 
       ## CSS Parts
 
-      - \`base\`
+      - base
 
       ## CSS States
 
-      - \`active\`"
+      - active"
+    `);
+  });
+
+  it('collapses default whitespace before rendering member lines', () => {
+    expect(
+      buildApiDescription(
+        declaration({
+          name: 'XOptions',
+          members: [
+            {
+              kind: 'field',
+              name: 'options',
+              type: { text: 'Options' },
+              default: '{\n  a: 1,\n}',
+            },
+          ],
+        }),
+        TYPE_PROPERTY
+      )
+    ).toMatchInlineSnapshot(`
+      "## Properties
+
+      \`\`\`
+      export type XOptionsProperties = {
+        options?: Options = { a: 1, };
+      }
+      \`\`\`"
     `);
   });
 

@@ -2,9 +2,7 @@
 
 ```
 export type LitSchemaWarningAttributes = {
-  /** @default 'Label' */
-  label?: string;
-  /** @default 0 */
-  count?: number;
+  label?: string = 'Label';
+  count?: number = 0;
 }
 ```

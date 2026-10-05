@@ -2,49 +2,24 @@
 
 ```
 export type LitToolkitShapesAttributes = {
-  /**
-   * Named alias union.
-   *
-   * @default 'medium'
-   */
-  size?: 'small' | 'medium' | 'large';
-  /**
-   * Inline literal union with a numeric member.
-   *
-   * @default 1
-   */
-  level?: 1 | 2 | 3;
-  /**
-   * Array of literals.
-   *
-   * @default ['a']
-   */
-  tags?: Array<'a' | 'b'>;
-  /**
-   * Mixed literal/object union.
-   *
-   * @default 'self'
-   */
-  target?: 'self' | { id: string };
-  /**
-   * Plain label; collides with the `label` slot.
-   *
-   * @default 'Label'
-   */
-  label?: string;
-  /**
-   * Date value.
-   *
-   * @default new Date(0)
-   */
-  when?: Date;
+  /** Named alias union. */
+  size?: 'small' | 'medium' | 'large' = 'medium';
+  /** Inline literal union with a numeric member. */
+  level?: 1 | 2 | 3 = 1;
+  /** Array of literals. */
+  tags?: Array<'a' | 'b'> = ['a'];
+  /** Mixed literal/object union. */
+  target?: 'self' | { id: string } = 'self';
+  /** Plain label; collides with the `label` slot. */
+  label?: string = 'Label';
+  /** Date value. */
+  when?: Date = new Date(0);
   /**
    * Old size field.
    *
    * @deprecated Use `size` instead.
-   * @default ''
    */
-  'old-size'?: string; // property: oldSize
+  'old-size'?: string = ''; // property: oldSize
 }
 ```
 
@@ -54,18 +29,10 @@ export type LitToolkitShapesAttributes = {
 export type LitToolkitShapesProperties = {
   /** Read-only computed value. */
   readonly computed: string;
-  /**
-   * Readonly field.
-   *
-   * @default '1.0.0'
-   */
-  readonly version: string;
-  /**
-   * Internal reactive state.
-   *
-   * @default false
-   */
-  pressed?: boolean;
+  /** Readonly field. */
+  readonly version: string = '1.0.0';
+  /** Internal reactive state. */
+  pressed?: boolean = false;
   /** Callback property. */
   onSelect?: ((size: Size) => void) | undefined;
 }
@@ -93,20 +60,20 @@ export type LitToolkitShapesMethods = {
 
 ## Slots
 
-- `default`: Default content.
-- `label`: Rich label content; collides with the `label` attribute.
+- default: Default content.
+- label: Rich label content; collides with the `label` attribute.
 
 ## CSS Custom Properties
 
-- `--toolkit-color` (`<color>`): Text color.
-- `--toolkit-scale` (`<number>`): Scale factor.
-- `--toolkit-font`: Font shorthand.
-- `--toolkit-gap`: Gap with a default. Default: `4px`.
+- --toolkit-color `<color>`: Text color.
+- --toolkit-scale `<number>`: Scale factor.
+- --toolkit-font: Font shorthand.
+- --toolkit-gap: Gap with a default. Default: 4px.
 
 ## CSS Parts
 
-- `base`: The wrapper.
+- base: The wrapper.
 
 ## CSS States
 
-- `active`: Set while active.
+- active: Set while active.

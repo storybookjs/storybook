@@ -2,12 +2,8 @@
 
 ```
 export type LitPropertyOnlyAttributes = {
-  /**
-   * Visible label for the list.
-   *
-   * @default 'Items'
-   */
-  label?: string;
+  /** Visible label for the list. */
+  label?: string = 'Items';
 }
 ```
 
@@ -15,17 +11,9 @@ export type LitPropertyOnlyAttributes = {
 
 ```
 export type LitPropertyOnlyProperties = {
-  /**
-   * Items rendered by the list.
-   *
-   * @default []
-   */
-  items?: Item[];
-  /**
-   * Rendering options for the list.
-   *
-   * @default { dense: false, theme: 'light' }
-   */
-  config?: PanelConfig;
+  /** Items rendered by the list. */
+  items?: Item[] = [];
+  /** Rendering options for the list. */
+  config?: PanelConfig = { dense: false, theme: 'light' };
 }
 ```

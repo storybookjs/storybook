@@ -2,24 +2,20 @@
 
 ```
 export type LitSlotsAndCssAttributes = {
-  /**
-   * Heading above the projected content.
-   *
-   * @default 'Details'
-   */
-  heading?: string;
+  /** Heading above the projected content. */
+  heading?: string = 'Details';
 }
 ```
 
 ## Slots
 
-- `default`: Default body content.
-- `actions`: Action controls.
+- default: Default body content.
+- actions: Action controls.
 
 ## CSS Custom Properties
 
-- `--slot-panel-color`: Panel text color.
+- --slot-panel-color: Panel text color.
 
 ## CSS Parts
 
-- `panel`: Outer panel.
+- panel: Outer panel.

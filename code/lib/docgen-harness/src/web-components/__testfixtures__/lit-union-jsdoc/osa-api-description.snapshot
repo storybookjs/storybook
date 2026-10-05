@@ -2,24 +2,15 @@
 
 ```
 export type LitUnionJsdocAttributes = {
-  /**
-   * Visual variant.
-   *
-   * @default 'primary'
-   */
-  variant?: 'primary' | 'secondary' | 'ghost';
+  /** Visual variant. */
+  variant?: 'primary' | 'secondary' | 'ghost' = 'primary';
   /**
    * Old label field.
    *
    * @deprecated Use label instead.
-   * @default ''
    */
-  'old-label'?: string; // property: oldLabel
-  /**
-   * Current label.
-   *
-   * @default 'Union label'
-   */
-  label?: string;
+  'old-label'?: string = ''; // property: oldLabel
+  /** Current label. */
+  label?: string = 'Union label';
 }
 ```

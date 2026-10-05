@@ -14,7 +14,9 @@ import { rnOndeviceAddonsToDeviceAddons } from './rn-ondevice-addons-to-device-a
 import { storybookPackageNameConflict } from './storybook-package-name-conflict.ts';
 import { storySortToMain } from './story-sort-to-main.ts';
 import { setConfigLayout } from './set-config-layout.ts';
+import { sidebarFilters } from './sidebar-filters.ts';
 import { skills } from './skills.ts';
+import { tagFilterApi } from './tag-filter-api.ts';
 import { upgradeStorybookRelatedDependencies } from './upgrade-storybook-related-dependencies.ts';
 import { vitestSetupFile } from './vitest-setup-file.ts';
 import { wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
@@ -36,6 +38,8 @@ export const allFixes: Fix[] = [
   storybookPackageNameConflict,
   storySortToMain,
   setConfigLayout,
+  tagFilterApi,
+  sidebarFilters,
   csfNextMockedArgs,
   removeExperimentalReview,
   enableExperimentalDocgenServer,

@@ -73,12 +73,12 @@ async function setButtonReview() {
     collections: [{ title: 'Button', rationale: 'Changed.', storyIds: ['button--primary'] }],
     changedFiles: [],
   });
-  // Past the review's grace window, so a module-graph change marks it stale.
+  // Dates the next module-graph change after the review was published.
   now = 12_000;
   return { review, moduleGraph };
 }
 
-it('marks the review stale on module-graph changes only once experimental_devServer ran', async () => {
+it('marks the review stale for changes since publishing only once experimental_devServer ran', async () => {
   await applyServicesPresetOnce(options.presets);
   const { review, moduleGraph } = await setButtonReview();
 
@@ -86,7 +86,6 @@ it('marks the review stale on module-graph changes only once experimental_devSer
   expect(review.queries.current.get(undefined)?.stale).toBeUndefined();
 
   await experimental_devServer(undefined as never, options);
-  await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: ['./src/Button.stories.tsx'] });
   await vi.waitFor(() => expect(review.queries.current.get(undefined)?.stale).toBe(true));
 });
 

@@ -32,9 +32,11 @@ export const addons: PresetProperty<'addons'> = [];
 
 // `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
 // extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
-// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
+// Component manifests need that server path, so they default on with it. A user's `main.ts` merges
+// over these, so `features: { experimentalDocgenServer: false }` or `componentsManifest: false` opts out.
 export const features: PresetProperty<'features'> = async (existing) => ({
   ...existing,
+  componentsManifest: true,
   experimentalDocgenServer: true,
 });
 

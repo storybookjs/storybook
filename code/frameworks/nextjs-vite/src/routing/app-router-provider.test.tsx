@@ -3,7 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 
-import { createNavigation } from '@storybook/nextjs-vite/navigation.mock';
+import { createNavigation } from '../export-mocks/navigation/index.ts';
 import { LayoutRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime.js';
 
 import { AppRouterProvider } from './app-router-provider.tsx';

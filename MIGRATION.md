@@ -37,6 +37,7 @@
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
+  - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
@@ -1142,6 +1143,21 @@ The official Preact framework is `@storybook/preact-vite`. Custom frameworks and
 The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applies addon and framework decorators outside of decorators defined in `.storybook/preview.js` / `preview.ts`.
 
 This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
+
+### `experimentalReview` feature flag removed
+
+The `features.experimentalReview` flag is removed, and Storybook no longer reads it.
+Agentic review is now on by default: in the Storybook UI, through `storybook tools`, in the Claude Code and Codex plugins, and in every MCP client connected to `@storybook/addon-mcp`.
+In Storybook 10, MCP clients other than the plugins only got the `review-create` tool with `experimentalReview: true`.
+If you had `experimentalReview: false`, review is now on for your project.
+The only way to turn it off is `features.changeDetection: false`, which also turns off `stories-changed` and the change-detection statuses in the sidebar.
+The Claude Code and Codex plugins and `storybook tools` now tell agents to end visual work with a review instead of preview links.
+
+The `remove-experimental-review` automigration deletes the flag from your main config, whether it is `true` or `false`.
+You can also run it with `storybook automigrate remove-experimental-review`.
+If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+A typed main config that still sets the flag fails type-checking until it is removed.
+`storybook upgrade --features` no longer accepts `experimentalReview`.
 
 ### `--preview-url` and `--force-build-preview` removed
 

@@ -656,20 +656,10 @@ export interface StorybookFeatures {
   experimentalDocgenServer?: boolean;
 
   /**
-   * Enable change detection
+   * Enable change detection. Agentic review depends on it, so `false` also turns review off.
    * @default true
    */
   changeDetection?: boolean;
-
-  /**
-   * Enable the agentic review workflow: the review UI in the manager and the server-side review
-   * channel that MCP tooling (e.g. `@storybook/addon-mcp`) uses to push curated reviews of code
-   * changes. Builds on change detection, so `changeDetection` must also be enabled.
-   *
-   * @default false
-   * @experimental This feature is in early development and may change significantly in future releases.
-   */
-  experimentalReview?: boolean;
 }
 
 export interface StorybookConfigRaw {

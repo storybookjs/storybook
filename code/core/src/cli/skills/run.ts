@@ -200,9 +200,7 @@ function withCommandReference(
 }
 
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
-  // The CLI channel uses the CLI review gate (on by default), matching what the `storybook ai`
-  // metadata path serves the plugins today — not the direct-MCP `reviewEnabled` gate.
-  const reviewEnabled = inputs.reviewEnabledForCli;
+  const { reviewEnabled } = inputs;
   if (id === 'stories') {
     const workflow = buildServerInstructions({
       transport: 'cli',

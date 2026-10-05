@@ -21,10 +21,6 @@ on:
         description: 'Install every Storybook package from the npm latest tag instead of this checkout'
         type: boolean
         default: false
-      review:
-        description: 'Enable the experimentalReview feature flag in eval sandboxes and assert the review workflow'
-        type: boolean
-        default: false
 
 concurrency:
   group: agent-eval-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -109,7 +105,6 @@ jobs:
           # in; unlabeled ci:eval runs stay minimal.
           EVAL_ONLY: ${{ inputs.eval_only || '' }}
           EVAL_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
-          EVAL_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && '1' || '' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

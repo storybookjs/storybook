@@ -415,6 +415,12 @@ describe('UserPreferencesCommand', () => {
         isAiSetupAvailable: false,
       });
 
+      expect(prompt.confirm).toHaveBeenCalledWith(
+        expect.objectContaining({
+          message: 'Do you want AI features, like skills, in your Storybook?',
+        }),
+        expect.anything()
+      );
       expect(result.selectedFeatures.has(Feature.AI)).toBe(true);
       expect(result.selectedFeatures.has(Feature.ONBOARDING)).toBe(true);
       const telemetryService = (command as unknown as CommandWithPrivates).telemetryService;

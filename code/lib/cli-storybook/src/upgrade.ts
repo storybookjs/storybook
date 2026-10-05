@@ -555,7 +555,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     const skills =
       !options.dryRun && hadSkills
-        ? await installSkills({ packageManager: rootPackageManager, source: 'installed' })
+        ? await installSkills({ packageManager: rootPackageManager, source: 'refresh' })
         : undefined;
 
     // Run doctor for each project

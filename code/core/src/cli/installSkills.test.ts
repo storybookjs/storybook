@@ -18,7 +18,7 @@ import { vol } from 'memfs';
 import {
   hasStorybookSkills,
   installSkills,
-  supportsAiFeatures,
+  supportsSkills,
   supportsAiSetup,
 } from './installSkills.ts';
 
@@ -46,7 +46,7 @@ beforeEach(async () => {
   vi.mocked(isCI).mockReturnValue(false);
 });
 
-describe('supportsAiFeatures', () => {
+describe('supportsSkills', () => {
   it.each([
     [SupportedRenderer.REACT, SupportedFramework.REACT_VITE, true],
     [SupportedRenderer.REACT, SupportedFramework.NEXTJS, true],
@@ -61,7 +61,7 @@ describe('supportsAiFeatures', () => {
     [SupportedRenderer.HTML, SupportedFramework.HTML_VITE, false],
     [undefined, undefined, false],
   ])('%s (%s) is %s', (renderer, framework, expected) => {
-    expect(supportsAiFeatures(renderer, framework)).toBe(expected);
+    expect(supportsSkills(renderer, framework)).toBe(expected);
   });
 });
 
@@ -189,7 +189,7 @@ describe('installSkills', () => {
   it('spawns nothing under CI', async () => {
     vi.mocked(isCI).mockReturnValue(true);
 
-    const result = await installSkills({ packageManager, source: 'installed' });
+    const result = await installSkills({ packageManager, source: 'refresh' });
 
     expect(packageManager.runPackageCommand).not.toHaveBeenCalled();
     expect(result).toEqual({ result: 'skipped', source: 'ci' });
@@ -207,7 +207,7 @@ describe('installSkills', () => {
 
     expect(result).toEqual({ result: 'failed', source: 'automigration', exitCode: 1 });
     expect(logger.warn).toHaveBeenCalledWith(
-      'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills'
+      'Could not install the Storybook skills, continuing without them. Install them later with: npx skills@latest add storybookjs/skills#v10.6.0'
     );
   });
 });

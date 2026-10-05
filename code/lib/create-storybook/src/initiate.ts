@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import {
   ProjectType,
   installSkills,
-  supportsAiFeatures,
+  supportsSkills,
   supportsAiSetup,
 } from 'storybook/internal/cli';
 import {
@@ -60,7 +60,7 @@ async function checkFeatureSupport(
 
   return {
     isTestFeatureAvailable: result.compatible,
-    isAiAvailable: supportsAiFeatures(renderer, framework),
+    isAiAvailable: supportsSkills(renderer, framework),
     isAiSetupAvailable: supportsAiSetup(renderer, builder, framework),
   };
 }

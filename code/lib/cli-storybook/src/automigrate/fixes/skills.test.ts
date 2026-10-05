@@ -6,6 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { checkFix, runFix } from '../helpers/fix-test-utils.ts';
+import { applyFixes } from '../pipeline.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
 import { allFixes } from './index.ts';
 import { skills } from './skills.ts';
@@ -42,16 +43,17 @@ const checkOptions = (
   ...overrides,
 });
 
+const runOptions = {
+  packageManager,
+  mainConfig: { stories: [] },
+  mainConfigPath: '.storybook/main.ts',
+  configDir: '.storybook',
+  storybookVersion: '11.0.0',
+  storiesPaths: [],
+};
+
 const runSkills = (result: { afterAngularViteMigration?: boolean } = {}) =>
-  runFix(skills, {
-    packageManager,
-    result,
-    mainConfig: { stories: [] },
-    mainConfigPath: '.storybook/main.ts',
-    configDir: '.storybook',
-    storybookVersion: '11.0.0',
-    storiesPaths: [],
-  });
+  runFix(skills, { ...runOptions, result });
 
 describe('skills', () => {
   beforeEach(() => {
@@ -189,10 +191,12 @@ describe('skills', () => {
       expect(allFixes.indexOf(angularToAngularVite)).toBeLessThan(allFixes.indexOf(skills));
     });
 
-    it('fails when the install fails', async () => {
+    it('is skipped, not failed, when the install fails', async () => {
       vi.mocked(installSkills).mockResolvedValue({ result: 'failed', source: 'automigration' });
 
-      await expect(runSkills()).rejects.toThrow('Could not install the Storybook skills');
+      const outcomes = await applyFixes(runOptions, [{ fix: skills, result: {} }]);
+
+      expect(outcomes.get('skills')).toEqual({ status: 'skipped' });
     });
   });
 });

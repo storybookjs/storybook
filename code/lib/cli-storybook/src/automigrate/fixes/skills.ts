@@ -1,10 +1,5 @@
-import { hasStorybookSkills, installSkills, supportsAiFeatures } from 'storybook/internal/cli';
-import {
-  HandledError,
-  frameworkPackages,
-  frameworkToRenderer,
-  isCI,
-} from 'storybook/internal/common';
+import { hasStorybookSkills, installSkills, supportsSkills } from 'storybook/internal/cli';
+import { frameworkPackages, frameworkToRenderer, isCI } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
@@ -36,7 +31,7 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
     }
     const frameworkPackage = getFrameworkPackageName(mainConfig);
     const framework = frameworkPackage ? frameworkPackages[frameworkPackage] : undefined;
-    if (framework && supportsAiFeatures(frameworkToRenderer[framework], framework)) {
+    if (framework && supportsSkills(frameworkToRenderer[framework], framework)) {
       return {};
     }
     // Checks see the main config from before the upgrade, so an Angular project that can move to
@@ -67,8 +62,9 @@ export const skills: Fix<{ afterAngularViteMigration?: boolean }> = {
       source: 'automigration',
       stdio: 'pipe',
     });
+    // `installSkills` already warned how to install them later; the upgrade itself succeeded.
     if (install.result === 'failed') {
-      throw new HandledError('Could not install the Storybook skills');
+      return false;
     }
   },
 };

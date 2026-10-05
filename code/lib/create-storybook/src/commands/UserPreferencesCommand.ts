@@ -240,7 +240,9 @@ export class UserPreferencesCommand {
       ? true
       : await prompt.confirm(
           {
-            message: 'Do you want AI features, like skills and prompts, in your Storybook?',
+            message: isAiSetupAvailable
+              ? 'Do you want AI features, like skills and prompts, in your Storybook?'
+              : 'Do you want AI features, like skills, in your Storybook?',
             initialValue: true,
           },
           createPromptCancelOptions(this.telemetryService, 'ai-setup')

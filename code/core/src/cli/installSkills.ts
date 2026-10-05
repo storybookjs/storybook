@@ -9,7 +9,7 @@ import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybo
 
 const SKILLS_REPO = 'storybookjs/skills';
 
-export type SkillsSource = 'ai-feature' | 'installed' | 'automigration';
+export type SkillsSource = 'ai-feature' | 'refresh' | 'automigration';
 
 export type SkillsInstallResult = {
   result: 'installed' | 'skipped' | 'failed';
@@ -18,10 +18,10 @@ export type SkillsInstallResult = {
 };
 
 /**
- * Whether init and upgrade offer the AI features for this project: the frameworks that have, or are
+ * Whether init and upgrade offer the skills for this project: the frameworks that have, or are
  * getting, a docgen server for the docs workflow of the skills.
  */
-export function supportsAiFeatures(
+export function supportsSkills(
   renderer: SupportedRenderer | undefined,
   framework: SupportedFramework | null | undefined
 ): boolean {
@@ -87,10 +87,11 @@ export async function installSkills({
     return { result: 'skipped', source: 'ci' };
   }
 
+  const skillsRef = `${SKILLS_REPO}#v${versions.storybook}`;
   const args = [
     'skills@latest',
     'add',
-    `${SKILLS_REPO}#v${versions.storybook}`,
+    skillsRef,
     '--yes',
     '--agent',
     'claude-code',
@@ -110,7 +111,7 @@ export async function installSkills({
     });
   } catch (error) {
     logger.warn(
-      `Could not install the Storybook skills, continuing without them. Install them later with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', SKILLS_REPO])}`
+      `Could not install the Storybook skills, continuing without them. Install them later with: ${packageManager.getRemoteRunCommand(['skills@latest', 'add', skillsRef])}`
     );
     logger.debug(error);
     // pnpm and Yarn Berry failures arrive as package-install errors because the args contain `add`

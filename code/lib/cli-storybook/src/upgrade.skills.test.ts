@@ -84,7 +84,7 @@ describe('upgrade: refreshing the skills', () => {
       error: vi.fn(),
     } as unknown as ReturnType<typeof prompt.taskLog>);
     vi.mocked(hasStorybookSkills).mockResolvedValue(true);
-    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'installed' });
+    vi.mocked(installSkills).mockResolvedValue({ result: 'installed', source: 'refresh' });
   });
 
   const skillsInUpgradeEvents = () =>
@@ -99,11 +99,11 @@ describe('upgrade: refreshing the skills', () => {
     expect(installSkills).toHaveBeenCalledTimes(1);
     expect(installSkills).toHaveBeenCalledWith({
       packageManager: expect.objectContaining({ type: 'npm' }),
-      source: 'installed',
+      source: 'refresh',
     });
     expect(skillsInUpgradeEvents()).toEqual([
-      { result: 'installed', source: 'installed' },
-      { result: 'installed', source: 'installed' },
+      { result: 'installed', source: 'refresh' },
+      { result: 'installed', source: 'refresh' },
     ]);
   });
 

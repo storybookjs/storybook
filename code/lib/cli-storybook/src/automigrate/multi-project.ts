@@ -237,7 +237,19 @@ export async function promptForAutomigrations(
       ({ fix }) =>
         preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
     );
-    logSelection('Running all detected automigrations:', selected);
+    const optIn = automigrations.filter((am) => !selected.includes(am));
+    logSelection(
+      optIn.length > 0
+        ? 'Running these detected automigrations:'
+        : 'Running all detected automigrations:',
+      selected
+    );
+    if (optIn.length > 0) {
+      logSelection(
+        'Not run with --yes because they are opt-in (run `storybook automigrate <id>` to apply one):',
+        optIn
+      );
+    }
     return selected;
   }
 

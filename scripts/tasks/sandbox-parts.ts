@@ -1426,18 +1426,24 @@ const STYLEX_BABEL_OPTIONS = `{
 /**
  * The Babel + PostCSS setup from the StyleX Next.js guide, as CommonJS files. With `tailwind`, the
  * PostCSS config keeps the Tailwind plugin that `create-next-app --tailwind` sets up.
+ *
+ * Without `babel`, there is no Babel config: `@storybook/nextjs-vite` doesn't use it, but
+ * `@stylexjs/unplugin` would apply it to StyleX files. `next/babel` then adds `@babel/runtime`
+ * imports that Vite discovers late, and Vite reloads the page to re-optimize dependencies.
  */
-export const stylexNextjsFiles = ({ tailwind }: { tailwind: boolean }) => ({
-  'babel.config.cjs': `module.exports = {
+export const stylexNextjsFiles = ({ tailwind, babel }: { tailwind: boolean; babel: boolean }) => ({
+  ...(babel && {
+    'babel.config.cjs': `module.exports = {
   presets: ['next/babel'],
   plugins: [['@stylexjs/babel-plugin', ${STYLEX_BABEL_OPTIONS}]],
 };
 `,
+  }),
   'postcss.config.cjs': `module.exports = {
   plugins: {
     '@stylexjs/postcss-plugin': {
       include: ['src/**/*.{js,jsx,ts,tsx}', 'node_modules/${STYLEX_TOKENS_PACKAGE}/*.js'],
-      // The same StyleX options as babel.config.cjs, so class names and variables match
+      // The same StyleX options as the Babel plugin, so class names and variables match
       babelConfig: {
         babelrc: false,
         parserOpts: { plugins: ['typescript', 'jsx'] },
@@ -1535,7 +1541,8 @@ export const addStylexSetup: Task['run'] = async ({ sandboxDir, template }) => {
     }
     const tailwind =
       '@tailwindcss/postcss' in { ...packageJson.devDependencies, ...packageJson.dependencies };
-    for (const [fileName, source] of Object.entries(stylexNextjsFiles({ tailwind }))) {
+    const babel = framework === '@storybook/nextjs';
+    for (const [fileName, source] of Object.entries(stylexNextjsFiles({ tailwind, babel }))) {
       await writeFile(join(sandboxDir, fileName), source);
     }
     const nextConfigPath = await getConfigFile(

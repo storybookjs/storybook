@@ -44,13 +44,15 @@ The PostCSS plugin writes the StyleX CSS where a CSS file has the `@stylex;` dir
 
 ### Next.js (Vite)
 
-`@storybook/nextjs-vite` compiles with SWC and doesn't read your Babel config. Add `@stylexjs/unplugin` in `viteFinal`, with the same options as the StyleX Babel plugin in your app:
+`@storybook/nextjs-vite` compiles with SWC and doesn't use your Babel config for compiling. Add `@stylexjs/unplugin` in `viteFinal`, with the same options as the StyleX Babel plugin in your app:
 
 <CodeSnippets path="stylex-nextjs-vite-main.md" />
 
 Storybook doesn't add the plugin for you. Translating your Babel options to plugin options automatically could produce different hashes from your app without any warning, so the configuration stays in your `main.ts`, where you can see it.
 
 The CSS file that your preview imports doesn't need the `@stylex;` directive: the Vite plugin adds the StyleX CSS.
+
+`@stylexjs/unplugin` itself loads your project's `babel.config.*` when it compiles StyleX files. With `next/babel` in that config, the compiled files import helpers from `@babel/runtime`, which Vite finds only when a story loads. Vite then re-optimizes its dependencies and reloads the page, which can interrupt tests that are running. If you see `optimized dependencies changed. reloading`, add the helpers from that message to `optimizeDeps.include` in `viteFinal`, for example `'@babel/runtime/helpers/esm/extends'`.
 
 ## Import a CSS file in your preview
 

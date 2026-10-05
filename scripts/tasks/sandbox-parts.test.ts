@@ -219,14 +219,25 @@ export default nextConfig;`
   it('keeps the Tailwind PostCSS plugin next to StyleX in a Tailwind app', () => {
     const plugins = (tailwind: boolean) => {
       const module = { exports: {} as { plugins: Record<string, unknown> } };
-      new Function('module', 'process', stylexNextjsFiles({ tailwind })['postcss.config.cjs'])(
-        module,
-        { env: {} }
-      );
+      new Function(
+        'module',
+        'process',
+        stylexNextjsFiles({ tailwind, babel: true })['postcss.config.cjs']
+      )(module, { env: {} });
       return Object.keys(module.exports.plugins);
     };
 
     expect(plugins(true)).toEqual(['@stylexjs/postcss-plugin', '@tailwindcss/postcss']);
     expect(plugins(false)).toEqual(['@stylexjs/postcss-plugin']);
+  });
+
+  it('writes a Babel config only when the framework compiles with Babel', () => {
+    expect(Object.keys(stylexNextjsFiles({ tailwind: false, babel: true }))).toEqual([
+      'babel.config.cjs',
+      'postcss.config.cjs',
+    ]);
+    expect(Object.keys(stylexNextjsFiles({ tailwind: false, babel: false }))).toEqual([
+      'postcss.config.cjs',
+    ]);
   });
 });

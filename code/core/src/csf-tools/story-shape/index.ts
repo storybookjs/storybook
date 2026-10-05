@@ -4,6 +4,7 @@ export {
   type ComponentImportRef,
   type ImportRef,
 } from './import-statements.ts';
+export { authoredSource, type AuthoredSource } from './authored-source.ts';
 export {
   collectImportBindings,
   importedName,
@@ -50,6 +51,8 @@ export {
   resolveReturnedObjectExpression,
   returnedExpression,
   returnedExpressionPath,
+  templateParts,
   unwrapExpression,
   withoutTypeCalls,
+  type TemplateParts,
 } from './utils.ts';

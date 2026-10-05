@@ -291,6 +291,17 @@ npx storybook tools review create --input="$(cat /tmp/review.json)" --title Over
     ]);
   });
 
+  test.each([
+    ['an escaped delimiter', 'cat > /tmp/r.json <<\\EOF\n{"title":"T"}\nEOF'],
+    ['a tab-stripped body', 'cat > /tmp/r.json <<-EOF\n\t{"title":"T"}\n\tEOF'],
+  ])('resolves $(cat path) from a cat heredoc with %s', (_, heredoc) => {
+    const command = `${heredoc}\nnpx storybook tools review create --input "$(cat /tmp/r.json)"`;
+
+    const calls = parseStorybookWorkflowShellCommands([command]);
+
+    expect(calls.map((call) => call.input)).toEqual([{ title: 'T' }]);
+  });
+
   test('reads the calls after heredoc bodies', () => {
     const calls = parseStorybookWorkflowShellCommands([
       heredocCommands.writeFilesThenTestRun,

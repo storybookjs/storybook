@@ -94,7 +94,7 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
   const words = tokenizeShellWords(command);
   const tokens = words.map((word) => word.value);
-  const heredocs = extractCatHeredocs(command);
+  const heredocs = catHeredocFiles(words);
   const calls: StorybookWorkflowCall[] = [];
 
   for (let index = 0; index < tokens.length; index += 1) {
@@ -389,16 +389,15 @@ function coerceValue(value: string): unknown {
   }
 }
 
-function extractCatHeredocs(command: string): Map<string, string> {
+// `cat > path <<TAG`: the file a later `$(cat path)` reads back.
+function catHeredocFiles(words: ShellWord[]): Map<string, string> {
   const files = new Map<string, string>();
-  const pattern = /cat\s+>\s+(\S+)\s+<<(['"]?)(\w+)\2\n([\s\S]*?)\n\3\b/g;
-  for (const match of command.matchAll(pattern)) {
-    const path = match[1];
-    const body = match[4];
-    if (path !== undefined && body !== undefined) {
-      files.set(path, body);
+  words.forEach((word, index) => {
+    const [redirect, path, heredoc] = words.slice(index + 1, index + 4);
+    if (word.value === 'cat' && redirect?.value === '>' && path && heredoc?.heredoc) {
+      files.set(path.value, heredoc.heredoc.body);
     }
-  }
+  });
   return files;
 }
 
@@ -406,7 +405,7 @@ export function tokenizeShellCommand(command: string): string[] {
   return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
 }
 
-type ShellWord = {
+export type ShellWord = {
   value: string;
   // The first character was quoted or escaped, so a leading `<` or `>` is text.
   quotedStart: boolean;
@@ -414,9 +413,11 @@ type ShellWord = {
   expands: boolean;
   // The commands inside this word's `$(…)` substitutions.
   substitutions?: string[];
+  // Set on the `<<TAG` operator word.
+  heredoc?: Heredoc;
 };
 
-type Heredoc = {
+export type Heredoc = {
   delimiter: string;
   stripTabs: boolean;
   // A quoted delimiter (`<<'EOF'`) keeps `$` in the body literal.
@@ -427,7 +428,7 @@ type Heredoc = {
 // `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, `<<\TAG`; the caller rules out `<<<`.
 const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()'"\\])+)/;
 
-function tokenizeShellWords(command: string): ShellWord[] {
+export function tokenizeShellWords(command: string): ShellWord[] {
   return scanShellWords(command, 0, false).words;
 }
 
@@ -504,22 +505,23 @@ function scanShellWords(
       continue;
     }
 
-    const heredoc =
+    const operator =
       char === '<' && command[index - 1] !== '<' && command[index + 2] !== '<'
         ? HEREDOC_OPERATOR_PATTERN.exec(command.slice(index))
         : null;
-    if (heredoc !== null) {
-      const rawDelimiter = heredoc[2] ?? '';
+    if (operator !== null) {
+      const rawDelimiter = operator[2] ?? '';
       const delimiter = rawDelimiter.replace(/\\(.)/g, '$1').replace(/['"]/g, '');
-      heredocs.push({
+      const heredoc: Heredoc = {
         delimiter,
-        stripTabs: heredoc[1] === '-',
+        stripTabs: operator[1] === '-',
         quoted: delimiter !== rawDelimiter,
         body: '',
-      });
+      };
+      heredocs.push(heredoc);
       pushWord();
-      words.push({ value: `<<${delimiter}`, quotedStart: false, expands: false });
-      index += heredoc[0].length - 1;
+      words.push({ value: `<<${delimiter}`, quotedStart: false, expands: false, heredoc });
+      index += operator[0].length - 1;
       continue;
     }
 

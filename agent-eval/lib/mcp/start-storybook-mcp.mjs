@@ -4,7 +4,12 @@ import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const port = process.env.STORYBOOK_MCP_PORT || '6006';
-const mcpUrl = 'http://127.0.0.1:' + port + '/mcp';
+const storybookUrl = 'http://127.0.0.1:' + port;
+const mcpUrl = storybookUrl + '/mcp';
+// Only the MCP experiments keep @storybook/addon-mcp, so only they have an MCP endpoint to wait for.
+const usesMcp =
+  JSON.parse(await readFile('__agent_eval__/agent.json', 'utf8')).integration === 'mcp';
+const readyUrl = usesMcp ? mcpUrl : storybookUrl + '/index.json';
 const logPath = process.env.STORYBOOK_MCP_LOG_PATH || '/tmp/storybook-mcp.log';
 const parsedTimeoutMs = Number(process.env.STORYBOOK_MCP_TIMEOUT_MS);
 const timeoutMs =
@@ -76,8 +81,8 @@ const logTail = await readFile(logPath, 'utf8')
   .then((tail) => tail || '(no Storybook log was written)');
 
 process.stderr.write(
-  'Storybook MCP server did not become ready at ' +
-    mcpUrl +
+  'Storybook did not become ready at ' +
+    readyUrl +
     ' within ' +
     timeoutMs +
     'ms. Storybook log tail:\n' +
@@ -123,7 +128,7 @@ async function assertCheckoutPackagesInstalled() {
 
 async function isReady() {
   try {
-    return await initializeMcp();
+    return usesMcp ? await initializeMcp() : await servesStoryIndex();
   } catch {
     return false;
   }
@@ -140,6 +145,10 @@ async function dumpMcpDebug() {
 
     // The startup log first, so it is captured even when the fetches below throw.
     await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
+
+    if (!usesMcp) {
+      return;
+    }
 
     const landing = await fetch(mcpUrl, {
       headers: { Accept: 'text/html' },
@@ -192,6 +201,13 @@ async function initializeMcp() {
   });
 
   // Drain the body so the polling loop does not accumulate open sockets.
+  await response.body?.cancel();
+  return response.ok;
+}
+
+async function servesStoryIndex() {
+  const response = await fetch(readyUrl, { signal: AbortSignal.timeout(5_000) });
+
   await response.body?.cancel();
   return response.ok;
 }

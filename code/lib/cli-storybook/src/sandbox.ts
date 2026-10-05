@@ -230,7 +230,6 @@ export const sandbox = async ({
           ...options,
           ...(selectedConfig.initOptions || {}),
           features: ['docs', 'test'],
-          skipSkills: true,
         });
         process.chdir(before);
       }

@@ -31,6 +31,7 @@
       "code": "./src/index.ts",
       "default": "./dist/index.js"
     },
+    "./internal/react-docgen-worker": "./dist/plugins/react-docgen-worker.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",

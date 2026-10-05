@@ -11,7 +11,9 @@ describe('isReviewFeatureEnabled', () => {
         existing: StorybookFeatures | undefined,
         options: Options
       ) => Promise<StorybookFeatures>
-    )(undefined, {} as Options))!;
+    )(undefined, {
+      presets: { apply: async (_key: string, fallback?: unknown) => fallback },
+    } as unknown as Options))!;
 
     expect(isReviewFeatureEnabled(defaults)).toBe(true);
   });

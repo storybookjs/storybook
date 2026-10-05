@@ -3,7 +3,8 @@ import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
-import { UPDATE_STORY_ARGS } from 'storybook/internal/core-events';
+import { STORY_PREPARED, UPDATE_STORY_ARGS } from 'storybook/internal/core-events';
+import type { Channel } from 'storybook/internal/channels';
 import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
 import { isEqual } from 'es-toolkit/predicate';
@@ -104,13 +105,12 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
     if (!iframe || !args) {
       return () => {};
     }
+    const channelOf = () =>
+      (iframe.contentWindow as IFrameWindow | null)?.__STORYBOOK_ADDONS_CHANNEL__;
     const sendArgs = () => {
       const known = iframeArgs.current ?? story.initialArgs;
-      if (isEqual(args, known)) {
-        return;
-      }
-      const channel = (iframe.contentWindow as IFrameWindow | null)?.__STORYBOOK_ADDONS_CHANNEL__;
-      if (!channel) {
+      const channel = channelOf();
+      if (!channel || isEqual(args, known)) {
         return;
       }
       // A key the docs page dropped has to be unset in the iframe, so it is sent as `undefined`.
@@ -121,13 +121,30 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
       });
       iframeArgs.current = args;
     };
+    // A freshly loaded iframe accepts args updates only once its preview has prepared the story.
+    let unsubscribe = () => {};
     const onLoad = () => {
       iframeArgs.current = undefined;
-      sendArgs();
+      const channel = channelOf();
+      if (!channel) {
+        return;
+      }
+      const onPrepared = ({ id }: { id: string }) => {
+        if (id !== story.id) {
+          return;
+        }
+        unsubscribe();
+        sendArgs();
+      };
+      channel.on(STORY_PREPARED, onPrepared);
+      unsubscribe = () => channel.off(STORY_PREPARED, onPrepared);
     };
     sendArgs();
     iframe.addEventListener('load', onLoad);
-    return () => iframe.removeEventListener('load', onLoad);
+    return () => {
+      unsubscribe();
+      iframe.removeEventListener('load', onLoad);
+    };
   }, [args, story]);
 
   return (
@@ -156,7 +173,7 @@ const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500
 };
 
 interface IFrameWindow extends Window {
-  __STORYBOOK_ADDONS_CHANNEL__?: { emit: (type: string, payload: unknown) => void };
+  __STORYBOOK_ADDONS_CHANNEL__?: Pick<Channel, 'emit' | 'on' | 'off'>;
 }
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */

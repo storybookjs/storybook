@@ -165,6 +165,61 @@ export const IFrameFollowsArgs: Story = {
   },
 };
 
+export const IFrameUnsetsDroppedArgs: Story = {
+  ...IFrameFollowsArgs,
+  name: 'IFrame Unsets Dropped Args',
+  play: async ({ canvasElement, loaded }) => {
+    const docsContext = loaded.docsContext as DocsContextProps;
+    const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
+    const backgroundColor = () => {
+      const button = iframeButton(canvasElement)!;
+      return button.ownerDocument.defaultView!.getComputedStyle(button).backgroundColor;
+    };
+    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
+      timeout: 10000,
+    });
+
+    await channel.emit(UPDATE_STORY_ARGS, {
+      storyId: story.id,
+      updatedArgs: { backgroundColor: 'rgb(255, 0, 0)' },
+    });
+    await waitFor(() => expect(backgroundColor()).toBe('rgb(255, 0, 0)'), { timeout: 10000 });
+
+    await channel.emit(RESET_STORY_ARGS, { storyId: story.id });
+    await waitFor(() => expect(backgroundColor()).not.toBe('rgb(255, 0, 0)'), { timeout: 10000 });
+  },
+};
+
+export const IFrameKeepsArgsAcrossReload: Story = {
+  ...IFrameFollowsArgs,
+  name: 'IFrame Keeps Args Across Reload',
+  play: async ({ canvasElement, loaded }) => {
+    const docsContext = loaded.docsContext as DocsContextProps;
+    const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
+    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Button'), {
+      timeout: 10000,
+    });
+
+    await channel.emit(UPDATE_STORY_ARGS, { storyId: story.id, updatedArgs: { label: 'Updated' } });
+    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Updated'), {
+      timeout: 10000,
+    });
+
+    const iframe = canvasElement.querySelector('iframe')!;
+    const documentBeforeReload = iframe.contentDocument;
+    iframe.contentWindow!.location.reload();
+    await waitFor(() => expect(iframe.contentDocument).not.toBe(documentBeforeReload), {
+      timeout: 10000,
+    });
+    await waitFor(() => expect(iframeButton(canvasElement)).toHaveTextContent('Updated'), {
+      timeout: 10000,
+    });
+
+    await channel.emit(RESET_STORY_ARGS, { storyId: story.id });
+    await new Promise<void>((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
+  },
+};
+
 export const IFrameForceInitialArgs: Story = {
   ...IFrameFollowsArgs,
   name: 'IFrame Force Initial Args',

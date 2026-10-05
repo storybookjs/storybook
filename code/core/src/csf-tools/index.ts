@@ -9,7 +9,6 @@ export type {
   CsfValue,
 } from './CsfObject.ts';
 export * from './ConfigFile.ts';
-export * from './getStorySortParameter.ts';
 export * from './jsdoc.ts';
 export * from './enrichCsf.ts';
 export * from './story-shape/index.ts';

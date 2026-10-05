@@ -315,6 +315,10 @@ test.describe('addon-mcp', () => {
               type: 'text',
               text: expectedPreviewUrl,
             },
+            {
+              type: 'text',
+              text: expect.stringContaining('in-app browser'),
+            },
           ],
           structuredContent: {
             stories: [
@@ -324,6 +328,7 @@ test.describe('addon-mcp', () => {
                 title: 'Example/Button',
               },
             ],
+            instructions: expect.stringContaining('in-app browser'),
           },
         });
       });

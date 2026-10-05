@@ -53,15 +53,9 @@ function redirectTargetOf(target: string | undefined): string | null {
   return DISCARD_TARGETS.has(path) ? null : path;
 }
 
-/**
- * A newline separates commands just as `;` does, but the tokenizer collapses it
- * into ordinary whitespace. Lines are therefore split before tokenising, so
- * that everything after a heredoc — or after any line break — starts a fresh
- * segment instead of being absorbed into the previous command.
- *
- * Backslash continuations are rejoined first: they are one command written
- * across several lines, not several commands.
- */
+// Split per line: stripHeredocBodies leaves a bodiless `<<HEREDOC` marker, and
+// the tokenizer would read the following lines as its body. Backslash
+// continuations are rejoined first: they are one command, not several.
 function commandLines(command: string): string[] {
   return command
     .replace(/\\\n/g, ' ')

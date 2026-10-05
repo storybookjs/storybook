@@ -8,6 +8,7 @@ import type {
   PartialStoryFn,
   PlayFunctionContext,
   StoryContext,
+  StoryContextForRender,
 } from 'storybook/internal/types';
 
 import { global as globalThis } from '@storybook/global';
@@ -48,7 +49,7 @@ export const Hooks = {
       return storyFn({ args: { ...context.args, text: `story ${context.args.text}` } });
     },
     // conditional decorator, runs before the above
-    (storyFn: PartialStoryFn, context: StoryContext) =>
+    (storyFn: PartialStoryFn, context: StoryContextForRender) =>
       context.args.condition
         ? storyFn()
         : (context.originalStoryFn as ArgsStoryFn)(context.args, context),

@@ -1,12 +1,13 @@
 import {
   expectAllStoryExportsInDisplayReview,
   expectDisplayReviewForVisualChange,
-  expectPreviewBrowserStarted,
+  expectDevServerLeftRunning,
+  expectPreviewOpenedInBrowser,
   expectPreviewStoriesWithFinalLinks,
+  expectReviewOpenedInBrowser,
   expectSkillInvoked,
   expectStoryDiscoveryBeforeReview,
   expectStoryTestsRanAndPassed,
-  expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
   getEvalContext,
   isReviewEnabled,
@@ -16,14 +17,18 @@ import { describe, test } from 'vitest';
 describe('creating a ProfileCard component', () => {
   const review = isReviewEnabled();
 
-  test('runs story tests after the change and finishes with them passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['profilecard'] });
   });
 
   describe.runIf(review)('when review is enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
       expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
+    });
+
+    test('opens the review in the in-app browser', () => {
+      expectReviewOpenedInBrowser();
     });
 
     test('every new story appears in the display review', () => {
@@ -39,6 +44,10 @@ describe('creating a ProfileCard component', () => {
     test('uses Storybook story instructions and previews the new stories', () => {
       expectWorkflowCalls(['get-storybook-story-instructions']);
       expectPreviewStoriesWithFinalLinks({ covering: ['profilecard'] });
+    });
+
+    test('opens a story preview in the in-app browser', () => {
+      expectPreviewOpenedInBrowser();
     });
   });
 
@@ -57,15 +66,9 @@ describe('creating a ProfileCard component', () => {
       expectSkillInvoked('stories')
     );
 
-    // Unlike 801, the template's valid .claude/launch.json is left intact, so the
-    // plugin must reuse the existing config instead of writing a fresh one.
-    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
-      'keeps the pre-existing Storybook launch config valid',
-      () => expectValidStorybookLaunchConfig()
-    );
-
-    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
-      expectPreviewBrowserStarted()
+    test.skipIf(integration !== 'plugin')(
+      'leaves the dev server running when using the plugin',
+      () => expectDevServerLeftRunning()
     );
   });
 });

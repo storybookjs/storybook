@@ -1,12 +1,15 @@
 import type { Options } from '../../types/index.ts';
 
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
+import type { ToolsetCatalogEntry } from '../tools/sdk/types.ts';
+import { renderCommandReference } from './command-reference.ts';
 import { buildServerInstructions } from './content/build-server-instructions.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
 import type { getProjectInfo } from './project-info.ts';
+import { getSetupSupportError } from './setup-support.ts';
 
 export const SKILLS_OPTION_SPECS = [
   { flags: '--cwd <path>', description: 'Project directory of the target Storybook' },
@@ -43,6 +46,8 @@ export type SkillsRunDeps = {
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
   getSetupMarkdown: typeof getSetupMarkdownOutput;
+  // Reads the toolsets `loadStorybook` registered, so call it after the configuration has loaded.
+  describeToolsets: () => ToolsetCatalogEntry[];
 };
 
 export type SkillsIntent =
@@ -96,7 +101,9 @@ export async function runSkillsCommand(
     return { output: '', errorOutput: intent.message, exitCode: 1 };
   }
   try {
-    const ids = intent.kind === 'all' ? SKILL_IDS : [intent.id];
+    // `stories` carries the `write-story` text, so `--all` does not print it a second time.
+    const ids =
+      intent.kind === 'all' ? SKILL_IDS.filter((id) => id !== 'write-story') : [intent.id];
     const docs = await serveSkills(ids, resolveStorybookConfigDir(input.target), deps);
     return {
       output: docs.join('\n\n---\n\n'),
@@ -120,13 +127,15 @@ async function serveSkills(
   deps: SkillsRunDeps
 ): Promise<string[]> {
   let inputs: SkillInputs | undefined;
+  let toolsets: ToolsetCatalogEntry[] | undefined;
   const docs: string[] = [];
   for (const id of ids) {
     if (id === 'setup') {
       docs.push(await serveSetup(configDir, deps));
     } else {
       inputs ??= await loadInputs(configDir, deps);
-      docs.push(assemble(id, inputs));
+      toolsets ??= deps.describeToolsets();
+      docs.push(withCommandReference(id, inputs, toolsets));
     }
   }
   return docs;
@@ -136,6 +145,10 @@ async function serveSetup(configDir: string, deps: SkillsRunDeps): Promise<strin
   const probed = await deps.getProjectInfo({ configDir });
   if (!probed.ok) {
     throw new SkillsError(probed.message);
+  }
+  const supportError = getSetupSupportError(probed.projectInfo);
+  if (supportError) {
+    throw new SkillsError(supportError);
   }
   return (await deps.getSetupMarkdown(probed.projectInfo)).markdown;
 }
@@ -176,12 +189,22 @@ function renderCatalogHelp(): string {
   ].join('\n');
 }
 
+function withCommandReference(
+  id: Exclude<SkillId, 'setup'>,
+  inputs: SkillInputs,
+  toolsets: ToolsetCatalogEntry[]
+): string {
+  const text = assemble(id, inputs);
+  const reference = renderCommandReference(text, toolsets);
+  return reference ? `${text.trimEnd()}\n\n${reference}` : text;
+}
+
 function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   // The CLI channel uses the CLI review gate (on by default), matching what the `storybook ai`
   // metadata path serves the plugins today — not the direct-MCP `reviewEnabled` gate.
   const reviewEnabled = inputs.reviewEnabledForCli;
   if (id === 'stories') {
-    return buildServerInstructions({
+    const workflow = buildServerInstructions({
       transport: 'cli',
       devEnabled: true,
       testSupported: inputs.testSupported,
@@ -189,7 +212,9 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
       changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
       reviewEnabled,
+      storyInstructionsInline: true,
     });
+    return `${workflow}\n\n${assemble('write-story', inputs)}`;
   }
   return buildStoryInstructions({
     transport: 'cli',

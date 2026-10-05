@@ -24,7 +24,7 @@
           "summary": "ButtonAccent.Normal"
         },
         "type": {
-          "detail": "ButtonAccent {\n  'Normal' = 'Normal'\n  'High' = 'High'\n}",
+          "detail": "ButtonAccent {\n  Normal = 'Normal'\n  High = 'High'\n}",
           "summary": "ButtonAccent"
         }
       },

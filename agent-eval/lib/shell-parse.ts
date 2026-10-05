@@ -10,11 +10,10 @@ export type StorybookWorkflowCall = {
   source: 'mcp' | 'cli';
 };
 
-// `storybook skills write-story` serves the same document the MCP channel
-// exposes as the get-storybook-story-instructions tool. Assertions ask by that
-// historic name; this matcher owns the cross-channel equivalence. Remove the
-// alias once the MCP tool and the skill share one name (or the tool is
-// retired) — until then it keeps the assertions channel-agnostic.
+// `storybook skills write-story` and `stories` serve the document the MCP
+// channel exposes as the get-storybook-story-instructions tool, which
+// assertions ask for by name. Remove the alias once the MCP tool and the skill
+// share one name (or the tool is retired).
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
@@ -22,7 +21,7 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
   return (
     name === 'get-storybook-story-instructions' &&
     call.name === 'skills-get' &&
-    (call.input.id === 'write-story' || call.input.all === true)
+    (call.input.id === 'write-story' || call.input.id === 'stories' || call.input.all === true)
   );
 }
 
@@ -98,7 +97,8 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
   const heredocs = extractCatHeredocs(command);
   const calls: StorybookWorkflowCall[] = [];
 
-  for (let index = 0; index < tokens.length - 1; index += 1) {
+  for (let index = 0; index < tokens.length; index += 1) {
+    calls.push(...parseSubstitutedCalls([words[index]!]));
     if (tokens[index] !== 'storybook') {
       continue;
     }
@@ -133,12 +133,18 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
 
     const invocation = parseStorybookToolsInvocation(words.slice(index + 2), heredocs);
     if (invocation !== undefined) {
-      calls.push(invocation.call);
+      const consumed = words.slice(index + 2, index + 2 + invocation.consumed);
+      calls.push(...parseSubstitutedCalls(consumed), invocation.call);
       index += invocation.consumed + 1;
     }
   }
 
   return calls;
+}
+
+// A `$(…)` runs before the command that uses its output.
+function parseSubstitutedCalls(words: ShellWord[]): StorybookWorkflowCall[] {
+  return words.flatMap((word) => word.substitutions ?? []).flatMap(parsePluginWorkflowCalls);
 }
 
 function segmentUntilSeparator(tokens: string[], start: number): string[] {
@@ -396,9 +402,6 @@ function extractCatHeredocs(command: string): Map<string, string> {
   return files;
 }
 
-// Known limitation: a `storybook tools` invocation nested inside `$(...)` is not
-// recognized. `$(cat path)` is resolved when that path was written by a
-// `cat > path <<TAG` heredoc in the same command.
 export function tokenizeShellCommand(command: string): string[] {
   return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
 }
@@ -409,15 +412,42 @@ type ShellWord = {
   quotedStart: boolean;
   // A `$` outside single quotes: the shell substitutes something here.
   expands: boolean;
+  // The commands inside this word's `$(…)` substitutions.
+  substitutions?: string[];
 };
 
+type Heredoc = {
+  delimiter: string;
+  stripTabs: boolean;
+  // A quoted delimiter (`<<'EOF'`) keeps `$` in the body literal.
+  quoted: boolean;
+  body: string;
+};
+
+// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, `<<\TAG`; the caller rules out `<<<`.
+const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()'"\\])+)/;
+
 function tokenizeShellWords(command: string): ShellWord[] {
+  return scanShellWords(command, 0, false).words;
+}
+
+// Scans to the end of the command, or, inside a `$(…)`, to its closing
+// parenthesis. Heredoc bodies are data: they are read at the end of their line
+// and never tokenized.
+function scanShellWords(
+  command: string,
+  start: number,
+  inSubstitution: boolean
+): { words: ShellWord[]; heredocs: Heredoc[]; end: number } {
   const words: ShellWord[] = [];
+  const heredocs: Heredoc[] = [];
+  let unreadHeredocs = 0;
   let word: ShellWord | undefined;
   let quote: '"' | "'" | undefined;
   let escaping = false;
+  let parenDepth = 0;
 
-  for (let index = 0; index < command.length; index += 1) {
+  for (let index = start; index < command.length; index += 1) {
     const char = command[index];
     if (char === undefined) {
       continue;
@@ -448,6 +478,11 @@ function tokenizeShellWords(command: string): ShellWord[] {
       continue;
     }
 
+    if (char === '$' && command[index + 1] === '(') {
+      index = appendCommandSubstitution(index);
+      continue;
+    }
+
     if (quote === '"') {
       if (char === '"') {
         quote = undefined;
@@ -460,6 +495,31 @@ function tokenizeShellWords(command: string): ShellWord[] {
     if (char === '"' || char === "'") {
       quote = char;
       word ??= { value: '', quotedStart: true, expands: false };
+      continue;
+    }
+
+    if (char === '#' && word === undefined) {
+      const lineEnd = command.indexOf('\n', index);
+      index = (lineEnd === -1 ? command.length : lineEnd) - 1;
+      continue;
+    }
+
+    const heredoc =
+      char === '<' && command[index - 1] !== '<' && command[index + 2] !== '<'
+        ? HEREDOC_OPERATOR_PATTERN.exec(command.slice(index))
+        : null;
+    if (heredoc !== null) {
+      const rawDelimiter = heredoc[2] ?? '';
+      const delimiter = rawDelimiter.replace(/\\(.)/g, '$1').replace(/['"]/g, '');
+      heredocs.push({
+        delimiter,
+        stripTabs: heredoc[1] === '-',
+        quoted: delimiter !== rawDelimiter,
+        body: '',
+      });
+      pushWord();
+      words.push({ value: `<<${delimiter}`, quotedStart: false, expands: false });
+      index += heredoc[0].length - 1;
       continue;
     }
 
@@ -480,6 +540,20 @@ function tokenizeShellWords(command: string): ShellWord[] {
       continue;
     }
 
+    if (char === '\n') {
+      pushOperator(';');
+      index = readHeredocBodies(index);
+      continue;
+    }
+
+    if (inSubstitution && char === ')' && parenDepth === 0) {
+      pushWord();
+      return { words, heredocs, end: index };
+    }
+    if (inSubstitution && (char === '(' || char === ')')) {
+      parenDepth += char === '(' ? 1 : -1;
+    }
+
     if (/\s/.test(char)) {
       pushWord();
       continue;
@@ -489,12 +563,13 @@ function tokenizeShellWords(command: string): ShellWord[] {
   }
 
   pushWord();
-  return words;
+  return { words, heredocs, end: command.length };
 
-  function append(char: string, quoted: boolean, expands = false): void {
+  function append(text: string, quoted: boolean, expands = false): ShellWord {
     word ??= { value: '', quotedStart: quoted, expands: false };
-    word.value += char;
+    word.value += text;
     word.expands ||= expands;
+    return word;
   }
 
   function pushWord(): void {
@@ -507,6 +582,55 @@ function tokenizeShellWords(command: string): ShellWord[] {
   function pushOperator(operator: string): void {
     pushWord();
     words.push({ value: operator, quotedStart: false, expands: false });
+  }
+
+  // Returns the index of the last character consumed. Inside `$(…)`, bash also
+  // ends a body at `TAG)`, leaving the `)` to close the substitution.
+  function readHeredocBodies(newline: number): number {
+    let position = newline + 1;
+    for (const heredoc of heredocs.slice(unreadHeredocs)) {
+      const lines: string[] = [];
+      while (position < command.length) {
+        const lineEnd = command.indexOf('\n', position);
+        const end = lineEnd === -1 ? command.length : lineEnd;
+        const rawLine = command.slice(position, end);
+        const line = heredoc.stripTabs ? rawLine.replace(/^\t+/, '') : rawLine;
+        if (inSubstitution && line.startsWith(`${heredoc.delimiter})`)) {
+          heredoc.body = lines.join('\n');
+          unreadHeredocs = heredocs.length;
+          return end - line.length + heredoc.delimiter.length - 1;
+        }
+        position = end + 1;
+        if (line === heredoc.delimiter) {
+          break;
+        }
+        lines.push(line);
+      }
+      heredoc.body = lines.join('\n');
+    }
+    unreadHeredocs = heredocs.length;
+    return Math.min(position, command.length) - 1;
+  }
+
+  // `"$(cat <<'EOF' … EOF)"` is the heredoc body; any other substitution stays
+  // as written for expandShellWords. Returns the index of the closing `)`.
+  function appendCommandSubstitution(dollar: number): number {
+    const inner = scanShellWords(command, dollar + 2, true);
+    const innerCommand = inner.words.map(({ value }) => value).filter((value) => value !== ';');
+    const [heredoc] = inner.heredocs;
+    if (
+      heredoc !== undefined &&
+      inner.heredocs.length === 1 &&
+      innerCommand.length === 2 &&
+      innerCommand[0] === 'cat'
+    ) {
+      // The shell strips trailing newlines from a substitution's output.
+      append(heredoc.body.replace(/\n+$/, ''), true, !heredoc.quoted && heredoc.body.includes('$'));
+    } else {
+      const substituted = append(command.slice(dollar, inner.end + 1), quote === '"', true);
+      (substituted.substitutions ??= []).push(command.slice(dollar + 2, inner.end));
+    }
+    return inner.end;
   }
 }
 

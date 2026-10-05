@@ -17,6 +17,9 @@ type PackageMetadata = {
 // Yarn patches, local paths, git and URL specifiers, and workspaces have no registry version to bump.
 const NON_REGISTRY_SPECIFIER = /^(patch|file|link|portal|git|http|https|workspace):|^git\+/;
 
+// Scopes whose packages are released in lockstep and must share a major version.
+const LOCKSTEP_SCOPES = new Set(['@nx']);
+
 const scopeOf = (packageName: string) =>
   packageName.startsWith('@') ? packageName.slice(0, packageName.indexOf('/')) : null;
 
@@ -56,13 +59,13 @@ export const upgradeStorybookRelatedDependencies = {
       })
     );
 
-    // A package whose scope has siblings that stay behind, like `@nx/storybook` next to `@nx/web`,
-    // keeps its major version: a new major would fall out of step with them.
+    // A package from a lockstep scope whose siblings stay behind, like `@nx/storybook` next to
+    // `@nx/web`, keeps its major version: a new major would fall out of step with them.
     const scopesStayingBehind = new Set(
       Object.keys(allDependencies)
         .filter((dependency) => !packageNames.has(dependency))
         .map(scopeOf)
-        .filter((scope) => scope !== null && scope !== '@storybook')
+        .filter((scope) => scope !== null && LOCKSTEP_SCOPES.has(scope))
     );
     const packageVersions = await Promise.all(
       [...packageNames].map(async (packageName) => {

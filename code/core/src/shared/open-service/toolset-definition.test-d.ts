@@ -279,6 +279,13 @@ describe('method inputs', () => {
           input: v.pipe(v.looseObject({}), v.readonly()),
           handler,
         },
+        either: {
+          title: 'Either',
+          description: 'One loose branch is enough to reject the input.',
+          // @ts-expect-error — valibot inputs must be v.strictObject
+          input: Math.random() > 0.5 ? v.strictObject({}) : v.object({}),
+          handler,
+        },
       },
     });
   });

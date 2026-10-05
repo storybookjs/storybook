@@ -160,9 +160,9 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 
-// A valibot input must be a `v.strictObject` (piped or not); other vendors are not constrained.
-type StrictInputContract<TInput> = TInput extends { '~standard': { vendor: 'valibot' } }
-  ? TInput extends { type: 'strict_object' }
+// Brackets make a ternary input fail when either branch is not strict.
+type StrictInputContract<TInput> = [TInput] extends [{ '~standard': { vendor: 'valibot' } }]
+  ? [TInput] extends [{ type: 'strict_object' }]
     ? unknown
     : 'Declare toolset inputs with v.strictObject so undeclared arguments are rejected'
   : unknown;
@@ -187,9 +187,7 @@ type MethodContracts<TMethods extends ToolsetMethods> = {
 /**
  * Types each method's handler from its own `input` and `output` schemas.
  *
- * @throws When a valibot method `input` is not a `v.strictObject`: any other object schema drops
- *   or passes through undeclared arguments, so a mistyped CLI flag or MCP argument would be
- *   silently ignored instead of rejected.
+ * @throws When a valibot method `input` is not a `v.strictObject`.
  */
 export function defineToolset<
   const TId extends string,
@@ -197,7 +195,7 @@ export function defineToolset<
 >(definition: {
   id: TId;
   description: string;
-  methods: TMethods & MethodContracts<TMethods>;
+  methods: MethodContracts<TMethods> & TMethods;
 }): ToolsetDefinition<TId, TMethods> {
   for (const [methodName, method] of Object.entries(definition.methods)) {
     const input: AnySchema & { type?: unknown } = method.input;

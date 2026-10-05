@@ -31,10 +31,7 @@ import {
   type StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import {
-  OpenServiceDevServerSubscriptionsMissingError,
-  OpenServiceServicesAppliedTwiceError,
-} from '../../server-errors.ts';
+import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
 import {
   registerDocgenService,
   subscribeDocgenToModuleGraphChanges,
@@ -376,8 +373,7 @@ async function getHeadlessChangeDetectionAdapter(options: Options) {
 }
 
 // Started from `experimental_devServer`: the attached tools CLI also applies `services`.
-// Set only when `services` completes; `experimental_devServer` awaits that and fails loudly if unset.
-let devServerSubscriptions: Array<() => void> | undefined;
+const devServerSubscriptions: Array<() => void> = [];
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
@@ -387,7 +383,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  const subscriptions: Array<() => void> = [];
   const getIndex = () =>
     options.presets
       .apply<StoryIndexGenerator>('storyIndexGenerator')
@@ -428,7 +423,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerReviewService({
       getIndex,
     });
-    subscriptions.push(subscribeReviewToModuleGraphChanges);
+    devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
     registerToolset(reviewToolset);
   }
 
@@ -454,7 +449,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
       });
-      subscriptions.push(() =>
+      devServerSubscriptions.push(() =>
         subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
       );
     }
@@ -467,7 +462,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       getIndex,
       storyDocsProvider,
     });
-    subscriptions.push(() =>
+    devServerSubscriptions.push(() =>
       subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
     );
   }
@@ -494,8 +489,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         : { docsAccess: localDocsAccess }
     )
   );
-
-  devServerSubscriptions = subscriptions;
 };
 
 export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
@@ -503,9 +496,6 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
   options
 ) => {
   await applyServicesPresetOnce(options.presets);
-  if (!devServerSubscriptions) {
-    throw new OpenServiceDevServerSubscriptionsMissingError();
-  }
   for (const subscribe of devServerSubscriptions.splice(0)) {
     subscribe();
   }

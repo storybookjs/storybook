@@ -402,18 +402,6 @@ export class OpenServiceServicesAppliedTwiceError extends StorybookError {
   }
 }
 
-export class OpenServiceDevServerSubscriptionsMissingError extends StorybookError {
-  constructor() {
-    super({
-      name: 'OpenServiceDevServerSubscriptionsMissingError',
-      category: Category.CORE_COMMON,
-      code: 33,
-      message: dedent`The "services" preset property completed without queuing the dev server subscriptions, for example because Storybook core is loaded twice.
-        The review, docgen and story-docs services would not follow file changes.`,
-    });
-  }
-}
-
 export class OpenServiceMissingToolsetError extends StorybookError {
   constructor(public data: { toolsetId: string }) {
     super({

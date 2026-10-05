@@ -23,27 +23,23 @@ const index = {
 
 let now: number;
 let options: Options;
-let servicesHook: () => Promise<void>;
 let services: typeof import('./common-preset.ts').services;
 let experimental_devServer: typeof import('./common-preset.ts').experimental_devServer;
 let applyServicesPresetOnce: typeof import('../utils/apply-services-preset-once.ts').applyServicesPresetOnce;
-let OpenServiceDevServerSubscriptionsMissingError: typeof import('../../server-errors.ts').OpenServiceDevServerSubscriptionsMissingError;
 
 beforeEach(async () => {
   // The subscription queue is module state, so each test needs a fresh `common-preset` instance.
   vi.resetModules();
   ({ services, experimental_devServer } = await import('./common-preset.ts'));
   ({ applyServicesPresetOnce } = await import('../utils/apply-services-preset-once.ts'));
-  ({ OpenServiceDevServerSubscriptionsMissingError } = await import('../../server-errors.ts'));
 
-  servicesHook = () => services(undefined, options);
   options = {
     channel: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
     presets: {
       apply: async (extension: string, config?: unknown) => {
         switch (extension) {
           case 'services':
-            return servicesHook();
+            return services(undefined, options);
           case 'features':
             return { changeDetection: true };
           case 'storyIndexGenerator':
@@ -57,7 +53,6 @@ beforeEach(async () => {
   clearRegistry();
   clearToolsetRegistry();
   vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
-  vi.stubGlobal('STORYBOOK_SERVICES_PRESET_PROMISE', undefined);
   now = 1_000;
   vi.spyOn(Date, 'now').mockImplementation(() => now);
 });
@@ -111,12 +106,4 @@ it('waits for services that are still being applied', async () => {
 
   await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: ['./src/Button.stories.tsx'] });
   await vi.waitFor(() => expect(review.queries.current.get(undefined)?.stale).toBe(true));
-});
-
-it('throws when services completed without queuing the dev-server subscriptions', async () => {
-  servicesHook = async () => {};
-
-  await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
-    OpenServiceDevServerSubscriptionsMissingError
-  );
 });

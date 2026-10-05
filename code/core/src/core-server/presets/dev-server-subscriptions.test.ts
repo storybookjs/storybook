@@ -52,7 +52,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-it('marks the review stale on module-graph changes only once experimental_devServer ran', async () => {
+it('marks the review stale for changes since publishing only once experimental_devServer ran', async () => {
   await services(undefined, options);
   const review = getService<ReviewService>('core/review', { internal: true });
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
@@ -68,6 +68,5 @@ it('marks the review stale on module-graph changes only once experimental_devSer
   expect(review.queries.current.get(undefined)?.stale).toBeUndefined();
 
   await experimental_devServer(undefined as never, options);
-  await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: ['./src/Button.stories.tsx'] });
   await vi.waitFor(() => expect(review.queries.current.get(undefined)?.stale).toBe(true));
 });

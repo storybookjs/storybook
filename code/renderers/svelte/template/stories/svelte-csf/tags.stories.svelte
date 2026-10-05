@@ -2,13 +2,13 @@
   import { defineMeta } from '@storybook/svelte';
 
   /**
-   * Testing tags parsing in the addon's indexer.
-   * - In the sidebar, only the _"With Dev"_ story should be visible.
-   * - In docs, only the _"With Autodocs"_ story should be visible.
+   * The indexer reads meta and story tags:
+   * - The sidebar hides "Without Dev".
+   * - Docs show only the stories with the `autodocs` tag.
    */
   const { Story } = defineMeta({
-    title: 'Tags',
     parameters: {
+      chromatic: { disableSnapshot: true },
       controls: { disable: true },
     },
     tags: ['custom-tag'],
@@ -21,12 +21,9 @@
 
 <Story
   name="Without Test"
-  tags={['!test']}
+  tags={['!test', '!vitest']}
   play={() => {
     throw new Error('This error is on purpose');
-  }}
-  parameters={{
-    chromatic: { disableSnapshot: true },
   }}
 >
   This story fails interaction testing, but should not run in Vitest because it has the

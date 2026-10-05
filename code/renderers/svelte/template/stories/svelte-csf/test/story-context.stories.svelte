@@ -1,34 +1,28 @@
 <script module>
   import { defineMeta } from '@storybook/svelte';
+  import { expect } from 'storybook/test';
 
   /**
-   * this is a meta comment
+   * A `template` snippet gets the story context as its second argument.
    */
   const { Story } = defineMeta({
-    title: 'StoryContext',
     parameters: {
+      chromatic: { disableSnapshot: true },
       actions: { disable: true },
       controls: { disable: true },
-      interactions: { disable: true },
     },
   });
-
-  // removes circular references
-  function replacer(key, value) {
-    if (['context', 'currentContext'].includes(key)) {
-      return null;
-    }
-    return value;
-  }
 </script>
 
-<!-- This is a story comment -->
-<Story name="Default">
+<Story
+  name="Default"
+  play={async ({ canvas, id, name }) => {
+    await expect(canvas.getByTestId('name')).toHaveTextContent(name);
+    await expect(canvas.getByTestId('id')).toHaveTextContent(id);
+  }}
+>
   {#snippet template(_args, context)}
-    <pre>
-      <code>
-{JSON.stringify(context, replacer, 2)}
-      </code>
-    </pre>
+    <p data-testid="name">{context.name}</p>
+    <p data-testid="id">{context.id}</p>
   {/snippet}
 </Story>

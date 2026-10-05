@@ -16,7 +16,7 @@ import type {
   SvelteRenderer,
 } from './types.ts';
 
-import Button from './__examples__/components/Button.svelte';
+import Button from '../../template/stories/svelte-csf/button.svelte';
 
 describe(defineMeta.name, () => {
   it('works with provided meta entry "component" entry', () => {

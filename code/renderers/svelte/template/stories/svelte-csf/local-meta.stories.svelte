@@ -1,12 +1,13 @@
 <script module>
   import { defineMeta } from '@storybook/svelte';
-  import { expect, within } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
   /**
    * Testing if there's no compile error when there's a user defined `meta` identifier.
    */
   const { Story } = defineMeta({
     parameters: {
+      chromatic: { disableSnapshot: true },
       controls: { disable: true },
     },
   });
@@ -22,8 +23,7 @@
 <Story
   name="LocalMeta"
   play={async (context) => {
-    const { canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { canvas } = context;
     const pre = canvas.getByTestId('output');
 
     expect(pre.textContent).toEqual(output);

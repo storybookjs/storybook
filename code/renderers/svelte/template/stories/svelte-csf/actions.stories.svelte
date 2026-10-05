@@ -1,13 +1,13 @@
 <script module>
-  import { fn, expect, userEvent, within } from 'storybook/test';
+  import { fn, expect, userEvent } from 'storybook/test';
   import { defineMeta } from '@storybook/svelte';
 
   const { Story } = defineMeta({
-    title: 'Addons/Actions',
     args: {
       onclick: fn().mockName('onclick'),
     },
     parameters: {
+      chromatic: { disableSnapshot: true },
       controls: { disable: true },
     },
   });
@@ -16,8 +16,7 @@
 <Story
   name="Default"
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const button = await canvas.findByRole('button');
 
     expect(button).toBeInTheDocument();

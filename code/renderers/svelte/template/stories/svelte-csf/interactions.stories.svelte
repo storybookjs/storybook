@@ -1,21 +1,20 @@
 <script module>
   import { defineMeta } from '@storybook/svelte';
-  import { expect, userEvent, within } from 'storybook/test';
+  import { expect, userEvent } from 'storybook/test';
   import { tick } from 'svelte';
 
-  import Interactions from './Interactions.svelte';
+  import Interactions from './interactions.svelte';
 
   const { Story } = defineMeta({
-    title: 'Addons/Interactions',
     component: Interactions,
     parameters: {
+      chromatic: { disableSnapshot: true },
       actions: { disable: true },
       controls: { disable: true },
     },
   });
 
-  async function play({ canvasElement }) {
-    const canvas = within(canvasElement);
+  async function play({ canvas }) {
     const count = await canvas.findByTestId('count');
 
     await userEvent.click(await canvas.findByText('Increment'));
@@ -37,8 +36,7 @@
 <Story
   name="Capturing scope"
   play={async (context) => {
-    const { canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { canvas } = context;
     const p = canvas.getByTestId('count');
 
     expect(p.textContent).toEqual('0');

@@ -1,31 +1,37 @@
 <script module lang="ts">
-  import { defineMeta } from '@storybook/svelte';
+  import { defineMeta, type StoryContext } from '@storybook/svelte';
+  import { expect } from 'storybook/test';
 
-  import RequiredSnippet from './RequiredSnippet.svelte';
+  import RequiredSnippet from './required-snippet.svelte';
 
+  /**
+   * The component requires a `children` snippet. Each story passes it in a different way.
+   */
   const { Story } = defineMeta({
-    title: 'RequiredSnippet',
     component: RequiredSnippet,
     tags: ['autodocs'],
+    parameters: {
+      chromatic: { disableSnapshot: true },
+    },
   });
-</script>
 
-<!-- FIXME: Should it throw at runtime, because we don't provide any snippet - attribute (prop) 'children'? -->
-<Story name="Case 1" tags={['!test']} />
+  async function play({ canvas }: Pick<StoryContext, 'canvas'>) {
+    await expect(canvas.getByText('This works')).toBeInTheDocument();
+  }
+</script>
 
 {#snippet children()}
   <p>This works</p>
 {/snippet}
 
-<!-- Works, as expected -->
-<Story name="Case 2" args={{ children }} />
+<Story name="Snippet in args" args={{ children }} {play} />
 
-<Story name="Case 3">
+<Story name="Snippet in the story" {play}>
   {#snippet children()}
     <p>This works</p>
   {/snippet}
 </Story>
 
-<Story name="Case 4">
+<Story name="Story children" {play}>
   <p>This works</p>
 </Story>

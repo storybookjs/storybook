@@ -84,16 +84,14 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
       );
     },
 
-    // `preview.type<{ args: T }>()` for the types of the meta, or `meta.type<{ args: T }>()` for the
-    // types of a story that the meta does not already have.
     typed(receiver: string, argsTypes: t.TSType[], metaArgsTypes: t.TSType[] = []): t.Expression {
+      // In Web Components the component is a tag name, so the type next to it is often the element
+      // class. `Partial` keeps its members optional, like the args inferred from the component.
+      const optional = isWebComponents && !!component;
       const metaCodes = new Set(metaArgsTypes.map(code));
       const distinctTypes = new Map<string, t.TSType>();
       for (const type of argsTypes) {
         if (!metaCodes.has(code(type)) && !distinctTypes.has(code(type))) {
-          // The `component` of Web Components is a tag name, so a type next to it describes that
-          // component, whose args are inferred as optional.
-          const optional = isWebComponents && !!component;
           distinctTypes.set(code(type), optional ? typeReference('Partial', type) : type);
         }
       }

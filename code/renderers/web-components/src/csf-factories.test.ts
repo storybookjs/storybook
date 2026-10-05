@@ -324,8 +324,8 @@ describe('Custom args types written by the csf-factories codemod', () => {
     const Default = meta.story();
   });
 
-  it('❌ An element class that is carried over as it is requires every member of that class', () => {
-    const meta = preview.type<{ args: MyButton }>().meta({ component: 'my-button' });
+  it('❌ An element class as the custom args type of a meta without component requires every member of that class', () => {
+    const meta = preview.type<{ args: MyButton }>().meta({});
 
     // @ts-expect-error disabled and every member of LitElement not provided ❌
     const Labelled = meta.story({ args: { label: 'good' } });

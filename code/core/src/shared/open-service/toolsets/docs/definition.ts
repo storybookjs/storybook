@@ -330,11 +330,11 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
   // A composition lets the caller name the Storybook, defaulting to this one; a single one must
   // not ask.
   const showSchema = multiSource
-    ? v.object({
+    ? v.strictObject({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
         ...storybookIdField,
       })
-    : v.object({
+    : v.strictObject({
         id: v.pipe(v.string(), v.description('The component or docs entry ID (e.g., "button")')),
       });
 
@@ -363,8 +363,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     ),
   };
   const showStorySchema = multiSource
-    ? v.object({ ...showStoryFields, ...storybookIdField })
-    : v.object(showStoryFields);
+    ? v.strictObject({ ...showStoryFields, ...storybookIdField })
+    : v.strictObject(showStoryFields);
 
   /** The access for a lookup, plus the id it was scoped to. */
   const access = (storybookId: string | undefined, ctx: ToolsetCtx) =>
@@ -375,7 +375,7 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     description: 'Storybook component and docs documentation.',
     methods: {
       [DOCS_METHOD_NAMES.list]: {
-        input: v.object({
+        input: v.strictObject({
           withStoryIds: v.optional(
             v.pipe(
               v.boolean(),

@@ -467,9 +467,7 @@ describe('meta.type<>() types the stories created from it', () => {
       render: (args) => {
         expectTypeOf(args.icon).toEqualTypeOf<'star' | 'heart'>();
         expectTypeOf(args.label).toEqualTypeOf<string | undefined>();
-        return html`
-          <my-button></my-button>
-        `;
+        return html` <my-button></my-button> `;
       },
       play: async ({ args }) => {
         expectTypeOf(args.icon).toEqualTypeOf<'star' | 'heart'>();
@@ -478,10 +476,7 @@ describe('meta.type<>() types the stories created from it', () => {
 
     meta.story({
       // @ts-expect-error icon is not an arg of the other stories
-      render: ({ icon }) =>
-        html`
-          <my-button></my-button>
-        `,
+      render: ({ icon }) => html` <my-button></my-button> `,
     });
     // @ts-expect-error icon must be 'star' | 'heart'
     meta.type<{ args: { icon: 'star' | 'heart' } }>().story({ args: { icon: 'x' } });
@@ -507,17 +502,9 @@ describe('meta.type<>() types the stories created from it', () => {
 
   it('a story with a render that takes no args needs no args', () => {
     const typed = meta.type<{ args: { icon: string } }>();
-    typed.story(
-      () =>
-        html`
-          <my-button></my-button>
-        `
-    );
+    typed.story(() => html` <my-button></my-button> `);
     typed.story({
-      render: () =>
-        html`
-          <my-button></my-button>
-        `,
+      render: () => html` <my-button></my-button> `,
     });
   });
 

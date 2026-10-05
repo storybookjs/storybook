@@ -11,8 +11,8 @@ import {
 /**
  * Story-only local handlers for exercising review-service projection without a dev-server peer.
  * Runs the same shared state transitions as the server registration (so the double cannot drift),
- * minus story-id validation and `createdAt` stamping — stories control both. Production manager
- * registration intentionally supplies no command handlers.
+ * minus story-id validation and `createdAt` / `revision` stamping — stories control them.
+ * Production manager registration intentionally supplies no command handlers.
  */
 export const reviewServiceForStories = registerService(reviewServiceDef, {
   commands: {
@@ -31,9 +31,9 @@ export const reviewServiceForStories = registerService(reviewServiceDef, {
       },
     },
     markStale: {
-      handler: async (_input, ctx) => {
+      handler: async ({ revision }, ctx) => {
         ctx.self.setState((state) => {
-          applyMarkStale(state, Date.now());
+          applyMarkStale(state, revision);
         });
       },
     },

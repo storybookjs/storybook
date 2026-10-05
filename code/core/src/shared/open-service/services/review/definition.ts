@@ -31,6 +31,7 @@ export const reviewStateSchema = v.object({
     )
   ),
   createdAt: v.optional(v.number()),
+  revision: v.optional(v.number()),
   stale: v.optional(v.boolean()),
 });
 
@@ -47,8 +48,6 @@ export type ReviewServiceState = {
   /** An updated review held back until a reviewer accepts it, so in-progress reviews aren't yanked. */
   pending: ReviewState | null;
 };
-
-export const REVIEW_STALE_GRACE_MS = 10_000;
 
 /**
  * Stateful review coordination shared by the server and manager realms.
@@ -97,7 +96,7 @@ export const reviewServiceDef = defineService({
   commands: {
     setReview: {
       description:
-        'Publishes a review and assigns its server creation time. Defers to pending while any review is current. Implemented by the server.',
+        'Publishes a review and assigns its server creation time and the settled module-graph revision. Defers to pending while any review is current. Implemented by the server.',
       input: reviewStateSchema,
       output: v.void(),
     },
@@ -107,8 +106,11 @@ export const reviewServiceDef = defineService({
       output: v.void(),
     },
     markStale: {
-      description: 'Marks the current review stale. Implemented by the server.',
-      input: v.undefined(),
+      description:
+        'Marks the current and pending reviews stale when `revision` is newer than the module-graph revision they were published at. Implemented by the server.',
+      input: v.object({
+        revision: v.pipe(v.number(), v.description('Module-graph revision that changed.')),
+      }),
       output: v.void(),
     },
     dismissReview: {

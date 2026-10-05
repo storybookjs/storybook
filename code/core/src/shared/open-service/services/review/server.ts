@@ -21,7 +21,7 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
     commands: {
       setReview: {
         handler: async (input, ctx) => {
-          const { stale: _stale, createdAt: _createdAt, ...review } = input;
+          const { stale: _stale, createdAt: _createdAt, revision: _revision, ...review } = input;
           const storyIds = [
             ...new Set(review.collections.flatMap((collection) => collection.storyIds)),
           ];
@@ -33,8 +33,16 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
             throw new OpenServiceUnknownStoryIdsError({ unknownIds });
           }
 
+          // The agent's own edits land before it publishes, so settling folds them into the
+          // review's revision instead of letting them mark it stale.
+          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
+            internal: true,
+          });
+          await moduleGraph.commands._waitForSettledEngine(undefined);
+          const revision = moduleGraph.queries.graphRevision.get(undefined);
+
           ctx.self.setState((state) => {
-            applyPublishedReview(state, { ...review, createdAt: Date.now() });
+            applyPublishedReview(state, { ...review, createdAt: Date.now(), revision });
           });
         },
       },
@@ -46,9 +54,9 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
         },
       },
       markStale: {
-        handler: async (_input, ctx) => {
+        handler: async ({ revision }, ctx) => {
           ctx.self.setState((state) => {
-            applyMarkStale(state, Date.now());
+            applyMarkStale(state, revision);
           });
         },
       },
@@ -67,8 +75,8 @@ export function subscribeReviewToModuleGraphChanges(): void {
   const review = getService<ReviewService>('core/review', { internal: true });
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
   moduleGraph.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
-    if (revision !== undefined && revision > 0) {
-      void review.commands.markStale(undefined);
+    if (revision !== undefined) {
+      void review.commands.markStale({ revision });
     }
   });
 }

@@ -21,7 +21,6 @@ const index = {
   },
 } as StoryIndex;
 
-let now: number;
 let options: Options;
 
 beforeEach(() => {
@@ -42,8 +41,6 @@ beforeEach(() => {
   } as unknown as Options;
   clearRegistry();
   vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
-  now = 1_000;
-  vi.spyOn(Date, 'now').mockImplementation(() => now);
 });
 
 afterEach(() => {
@@ -63,7 +60,6 @@ it('marks the review stale on module-graph changes only once experimental_devSer
     changedFiles: [],
   });
 
-  now = 12_000;
   await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: ['./src/Button.stories.tsx'] });
   expect(review.queries.current.get(undefined)?.stale).toBeUndefined();
 

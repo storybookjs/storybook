@@ -9,9 +9,6 @@ import {
 } from '#test-utils';
 
 describe('initializing Storybook in a project without it', () => {
-  // Only the lifecycle outcome is asserted; the story/review workflow is owned
-  // by the 80x evals.
-
   test('invokes the storybook-init skill', () => {
     expectSkillInvoked('storybook-init');
   });

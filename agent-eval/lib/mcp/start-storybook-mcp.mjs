@@ -206,7 +206,9 @@ async function initializeMcp() {
 }
 
 async function servesStoryIndex() {
-  const response = await fetch(readyUrl, { signal: AbortSignal.timeout(5_000) });
+  const response = await fetch(storybookUrl + '/index.json', {
+    signal: AbortSignal.timeout(5_000),
+  });
 
   await response.body?.cancel();
   return response.ok;

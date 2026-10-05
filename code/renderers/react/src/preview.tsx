@@ -8,6 +8,7 @@ import type {
   MetaInput,
   MetaTypes,
   StoryArgs,
+  TypedMetaArgKeys,
   Preview,
   Story,
 } from 'storybook/internal/csf';
@@ -216,7 +217,7 @@ export interface ReactMeta<
    * Add types to the stories created from the returned meta, such as an arg that only one story
    * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S>(): ReactMeta<T & S, TMetaArgKeys>;
+  type<S>(): ReactMeta<T & S, TypedMetaArgKeys<TMetaArgKeys, S>>;
 }
 
 /**

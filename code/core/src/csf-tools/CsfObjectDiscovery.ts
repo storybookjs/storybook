@@ -189,7 +189,6 @@ const storyBindings = (csf: CsfFile, report: ReportDiagnostic): StoryBinding[] =
   return [...unique.values()];
 };
 
-// Whether `name` is the meta of this file, directly or as a constant holding `meta.type<T>()`.
 const isFactoryMeta = (csf: CsfFile, name: string, seen = new Set<string>()): boolean => {
   const binding = csf._file.path.scope.getBinding(name);
   if (

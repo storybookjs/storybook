@@ -12,9 +12,7 @@ import type { Decorator } from './public-types.ts';
 @Component({
   selector: 'storybook-button',
   standalone: true,
-  template: `
-    <button [disabled]="disabled">{{ label }}</button>
-  `,
+  template: ` <button [disabled]="disabled">{{ label }}</button> `,
 })
 class ButtonComponent {
   @Input()
@@ -344,9 +342,7 @@ it('Components without Props can be used', () => {
   @Component({
     selector: 'storybook-simple',
     standalone: true,
-    template: `
-      <div>Simple</div>
-    `,
+    template: ` <div>Simple</div> `,
   })
   class SimpleComponent {}
 
@@ -678,6 +674,12 @@ describe('meta.type<>() types the stories created from it', () => {
     typed.story();
     meta.type<{ args: { icon?: string } }>().story();
     meta.story();
+  });
+
+  it('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error disabled is required, the meta sets it to false
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi' } });
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi', disabled: true } });
   });
 
   it('a story with a render that takes no args needs no args', () => {

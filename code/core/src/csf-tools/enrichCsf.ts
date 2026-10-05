@@ -16,13 +16,12 @@ export const enrichCsfStory = (
   options?: EnrichCsfOptions
 ) => {
   const storyExport = csfSource.getStoryExport(key);
-  const isCsfFactory = csfSource._metaIsFactory;
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);
   const parameters = [];
   // in csf 1/2/3 use Story.parameters; CSF factories use Story.input.parameters
-  const baseStoryObject = isCsfFactory
+  const baseStoryObject = csfSource._metaIsFactory
     ? t.memberExpression(t.identifier(key), t.identifier('input'))
     : t.identifier(key);
   const originalParameters = t.memberExpression(baseStoryObject, t.identifier('parameters'));

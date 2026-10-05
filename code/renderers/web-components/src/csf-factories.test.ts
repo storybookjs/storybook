@@ -23,9 +23,7 @@ class MyButton extends LitElement {
 
 class MyComponent extends LitElement {
   render() {
-    return html`
-      <button></button>
-    `;
+    return html` <button></button> `;
   }
 }
 
@@ -145,18 +143,10 @@ describe('Args can be provided in multiple ways', () => {
       args: { label: 'good' },
     });
     const Basic = meta.story({
-      render: () =>
-        html`
-          <div>Hello world</div>
-        `,
+      render: () => html` <div>Hello world</div> `,
     });
 
-    const CSF1 = meta.story(
-      () =>
-        html`
-          <div>Hello world</div>
-        `
-    );
+    const CSF1 = meta.story(() => html` <div>Hello world</div> `);
   });
 
   it('❌ Required args need to be provided when the user uses a non-empty render', () => {
@@ -169,10 +159,7 @@ describe('Args can be provided in multiple ways', () => {
       args: {
         label: 'good',
       },
-      render: (args) =>
-        html`
-          <div>Hello world</div>
-        `,
+      render: (args) => html` <div>Hello world</div> `,
     });
   });
 });
@@ -521,9 +508,7 @@ describe('meta.type<>() types the stories created from it', () => {
       render: (args) => {
         expectTypeOf(args.icon).toEqualTypeOf<'star' | 'heart'>();
         expectTypeOf(args.label).toEqualTypeOf<string | undefined>();
-        return html`
-          <my-button></my-button>
-        `;
+        return html` <my-button></my-button> `;
       },
       play: async ({ args }) => {
         expectTypeOf(args.icon).toEqualTypeOf<'star' | 'heart'>();
@@ -532,10 +517,7 @@ describe('meta.type<>() types the stories created from it', () => {
 
     meta.story({
       // @ts-expect-error icon is not an arg of the other stories
-      render: ({ icon }) =>
-        html`
-          <my-button></my-button>
-        `,
+      render: ({ icon }) => html` <my-button></my-button> `,
     });
     // @ts-expect-error icon must be 'star' | 'heart'
     meta.type<{ args: { icon: 'star' | 'heart' } }>().story({ args: { icon: 'x' } });
@@ -553,19 +535,17 @@ describe('meta.type<>() types the stories created from it', () => {
     meta.story();
   });
 
+  it('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error disabled is required, the meta sets it to false
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi' } });
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi', disabled: true } });
+  });
+
   it('a story with a render that takes no args needs no args', () => {
     const typed = meta.type<{ args: { icon: string } }>();
-    typed.story(
-      () =>
-        html`
-          <my-button></my-button>
-        `
-    );
+    typed.story(() => html` <my-button></my-button> `);
     typed.story({
-      render: () =>
-        html`
-          <my-button></my-button>
-        `,
+      render: () => html` <my-button></my-button> `,
     });
   });
 

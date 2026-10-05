@@ -5,6 +5,7 @@ import type {
   MetaInput,
   MetaTypes,
   StoryArgs,
+  TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
   PreviewAddon,
@@ -219,7 +220,7 @@ export interface VueMeta<T extends VueTypes, TMetaArgKeys extends PropertyKey = 
    * Add types to the stories created from the returned meta, such as an arg that only one story
    * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
    */
-  type<S>(): VueMeta<T & S, TMetaArgKeys>;
+  type<S>(): VueMeta<T & S, TypedMetaArgKeys<TMetaArgKeys, S>>;
 }
 
 /**

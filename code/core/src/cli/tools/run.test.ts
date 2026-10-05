@@ -610,7 +610,10 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
   });
 
   it('declares every core tool input closed, so an undeclared key never reaches a handler', async () => {
-    for (const toolset of getRegisteredToolsets()) {
+    const composedDocs = createDocsToolset({
+      sources: [{ source: { id: 'local', title: 'Local' }, access: DOCS_ACCESS }],
+    });
+    for (const toolset of [...getRegisteredToolsets(), composedDocs]) {
       for (const method of Object.values(toolset.methods)) {
         const validation = await method.input['~standard'].validate({ undeclared: true });
         const keys = validation.issues?.map((issue: StandardSchemaV1.Issue) => {

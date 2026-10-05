@@ -66,8 +66,8 @@ run caller-side (`stories.preview` reads `origin` from the instance record).
 
 Tool arguments are `--key value` flags spelled exactly like the input schema keys (camelCase, e.g.
 `--storybookId`); there are no kebab-case aliases. Toolset inputs are `v.strictObject`, so a flag
-or `--input` key the tool does not declare is an invalid-input error on every transport; the CLI
-names the flag and lists the valid ones.
+or `--input` key the tool does not declare is an invalid-input error, and the CLI names the flag
+and lists the valid ones.
 
 `docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
 source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote

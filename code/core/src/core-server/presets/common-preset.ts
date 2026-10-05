@@ -375,7 +375,7 @@ async function getHeadlessChangeDetectionAdapter(options: Options) {
 }
 
 // Started from `experimental_devServer`: the attached tools CLI also applies `services`.
-// Undefined until `services` completes, so a dev server that skipped or raced it fails loudly.
+// Set only when `services` completes, so `experimental_devServer` fails if it runs first or mid-flight.
 let devServerSubscriptions: Array<() => void> | undefined;
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
@@ -501,10 +501,9 @@ export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> 
   if (!devServerSubscriptions) {
     throw new OpenServiceDevServerBeforeServicesError();
   }
-  for (const subscribe of devServerSubscriptions) {
+  for (const subscribe of devServerSubscriptions.splice(0)) {
     subscribe();
   }
-  devServerSubscriptions = undefined;
 
   return app;
 };

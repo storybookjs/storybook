@@ -282,8 +282,7 @@ export async function buildDevStandalone(
   const features = await presets.apply('features');
   global.FEATURES = features;
 
-  // Must complete before `storybookDevServer` applies `experimental_devServer`, which starts the
-  // module-graph subscriptions `services` queued; the reverse order throws.
+  // `storybookDevServer` applies `experimental_devServer`, which starts the subscriptions queued here.
   await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 

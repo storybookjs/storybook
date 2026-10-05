@@ -408,8 +408,8 @@ export class OpenServiceDevServerBeforeServicesError extends StorybookError {
       name: 'OpenServiceDevServerBeforeServicesError',
       category: Category.CORE_COMMON,
       code: 33,
-      message: dedent`The "experimental_devServer" preset property was applied before the "services" preset property completed, or more than once.
-        The dev server must apply "services" once before "experimental_devServer", or services such as the review stop following file changes.`,
+      message: dedent`The "experimental_devServer" preset property was applied before the "services" preset property completed.
+        Apply "services" and await it before starting the dev server; otherwise the review, docgen and story-docs services never follow file changes.`,
     });
   }
 }

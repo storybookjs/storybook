@@ -91,17 +91,11 @@ it('throws when experimental_devServer runs before services', async () => {
 it('throws when experimental_devServer runs while services is still in flight', async () => {
   const applyingServices = services(undefined, options);
 
-  await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
-    OpenServiceDevServerBeforeServicesError
-  );
-  await applyingServices;
-});
-
-it('throws when experimental_devServer is applied twice', async () => {
-  await services(undefined, options);
-  await experimental_devServer(undefined as never, options);
-
-  await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
-    OpenServiceDevServerBeforeServicesError
-  );
+  try {
+    await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
+      OpenServiceDevServerBeforeServicesError
+    );
+  } finally {
+    await applyingServices;
+  }
 });

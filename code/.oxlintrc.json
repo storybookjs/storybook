@@ -1,6 +1,11 @@
 {
   "$schema": "../node_modules/oxlint/configuration_schema.json",
   "extends": ["../.oxlintrc.json"],
+  "settings": {
+    "react": {
+      "version": "18.2.0"
+    }
+  },
   "jsPlugins": [
     { "name": "local-rules", "specifier": "../scripts/eslint-plugin-local-rules/index.js" },
     "eslint-plugin-storybook",

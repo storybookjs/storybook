@@ -18,8 +18,8 @@ import {
 describe('writing the first Button stories in an empty Storybook', () => {
   const review = isReviewEnabled();
 
-  test('runs story tests after the change and finishes with them passing', () => {
-    expectStoryTestsRanAndPassed({ covering: ['button'] });
+  test('runs story tests after the change and finishes with them passing', async () => {
+    await expectStoryTestsRanAndPassed({ covering: ['button'] });
   });
 
   describe.runIf(review)('when review is enabled', () => {

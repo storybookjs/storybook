@@ -110,7 +110,8 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
 - `title` — required short display label used by client UIs and the tools CLI command list
 - `description` — `string`, or a function of `ctx` when the prose differs per transport
 - `input` — the input schema; a `v.strictObject`, so a mistyped argument is an invalid-input
-  error instead of being dropped and the method running on its defaults
+  error instead of being dropped and the method running on its defaults. `defineToolset` throws
+  on any other valibot schema (`v.object`, `v.looseObject`, …), wrapped in `v.pipe` or not
 - `output` — optional; published as the MCP `outputSchema`, and `structuredContent` is
   narrowed to it. Some clients (Claude Code) hand the model only `structuredContent` when a tool
   publishes it and drop the text, so the declared shape must carry everything the Markdown says,

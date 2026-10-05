@@ -13,13 +13,13 @@ const toolset = defineToolset({
       title: 'Inspect an HTTP frame',
       description: `HTTP frame utilities
 This second line shows in the toolset and tool help, not in the overview.`,
-      input: v.object({}),
+      input: v.strictObject({}),
       handler: async () => ({ ok: true, data: {}, markdown: '' }),
     },
     preview: {
       title: 'Preview an example',
       description: 'Preview one example.',
-      input: v.object({
+      input: v.strictObject({
         id: v.pipe(v.string(), v.description('Example identifier')),
       }),
       output: v.object({

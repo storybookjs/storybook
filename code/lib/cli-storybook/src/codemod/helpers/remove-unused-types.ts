@@ -24,13 +24,13 @@ const disallowedTypesSet = new Set(typesDisallowList);
  * - It is not referenced anywhere in the file,
  * - AND it (the declaration) references at least one Storybook type from typesDisallowList.
  *
- * This implementation performs a single traversal of `ast`. During traversal we:
+ * Each pass performs one traversal of `ast`. During a pass we:
  *
  * - Collect declared type names,
  * - Record references to declared types (including handling references that appear before
  *   declarations),
- * - Detect per-declaration whether it references any disallowed Storybook type, and then perform a
- *   filter pass on program.body, repeated while it removes a type.
+ * - Detect per-declaration whether it references any disallowed Storybook type, and then filter
+ *   program.body. The pass repeats while it removes a type.
  */
 export function removeUnusedTypes(programNode: t.Program, ast: t.File): void {
   // Declared type/interface names seen in this file

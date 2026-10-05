@@ -61,7 +61,7 @@ export function customArgsTypes(program: t.Program, component: t.Node | undefine
       // An alias that includes the component class is dropped: carried over, it would make every
       // member of that class a required arg.
       const includesComponent =
-        isComponent(alias) || (t.isTSIntersectionType(alias) && alias.types.some(isComponentClass));
+        isComponent(alias) || (t.isTSIntersectionType(alias) && alias.types.some(isComponent));
       return isComponent(member) || includesComponent ? [] : [member];
     });
 

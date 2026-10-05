@@ -822,7 +822,7 @@ describe('stories codemod', () => {
         `);
       });
 
-      it('drops a type alias that includes the component class, as before', async () => {
+      it('drops a type alias that includes the component class', async () => {
         await expect(
           transform(dedent`
             import type { Meta, StoryObj } from '@storybook/angular';

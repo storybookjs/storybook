@@ -196,13 +196,15 @@ describe('file failures', () => {
     `);
   });
 
-  it.each([
+  describe.each([
     { platform: 'POSIX', relativePath: posix.relative },
     { platform: 'Windows', relativePath: win32.relative },
-  ])(
-    'shows paths inside the project relative to its root, in the reason too ($platform)',
-    async ({ relativePath }) => {
+  ])('with $platform path semantics', ({ relativePath }) => {
+    beforeEach(() => {
       vi.mocked(relative).mockImplementation(relativePath);
+    });
+
+    it('shows paths inside the project relative to its root, in the reason too', async () => {
       await reportFileFailures(
         [
           {
@@ -218,8 +220,8 @@ describe('file failures', () => {
       expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
         "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
       );
-    }
-  );
+    });
+  });
 
   it('makes paths with backslash separators relative in the reason', async () => {
     await reportFileFailures(

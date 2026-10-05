@@ -137,20 +137,18 @@ Alternatively, you can [configure an alias in your builder](../../writing-storie
 
 #### `preview.type.meta`
 
-By default, `preview.meta` will infer the type of your component's props automatically. However, if you need to extend or modify the inferred types, you can use the `preview.type` function to specify custom types.
+By default, `preview.meta` will infer the type of your component's props automatically. However, if you need to extend or modify the inferred types, you can use the `preview.type` function to specify custom types. The props of the component are still inferred, so the type only has to hold the args that you add.
 
 This example is for React, but the same API applies to all supported renderers.
 
 ```tsx title="Button.stories.ts|tsx"
-import * as React from 'react';
-
 import preview from '../.storybook/preview';
 
 import { Button } from './Button';
 
-type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
+type CustomArgs = { customProp: string };
 
-const meta = preview.type<{ args: CustomProps }>().meta({
+const meta = preview.type<{ args: CustomArgs }>().meta({
   component: Button,
   // 👇 Correct types
   render: ({ customProp, ...args }) => (
@@ -485,6 +483,10 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 + });
 - };
 ```
+
+A type that also holds the props of the component, like the one above, keeps working in React and Vue.
+
+In Angular and Web Components, leave the component class out of the type and only pass your custom args, such as `preview.type<{ args: { customProp: string } }>()`. The args of the component are already inferred, all of them optional. A type that you pass to `preview.type` is used as it is, so a component class would make every one of its members a required arg.
 
 Types passed to `preview.type` apply to every story of the file. If only one story needs the custom args, keep the meta as it is and type that story with the [`meta.type.story`](#metatypestory) pattern instead. Unlike with `StoryObj`, a required arg of that type must then be set in the story.
 

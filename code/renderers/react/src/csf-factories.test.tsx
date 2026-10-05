@@ -268,6 +268,50 @@ describe('Story args can be inferred', () => {
   });
 });
 
+describe('Custom args types written by the csf-factories codemod', () => {
+  type Icon = { name: string };
+  type StoryArgs = { pageIcon: Icon };
+
+  it('✅ A custom arg can be set in meta and used in a story', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      component: Button,
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story({
+      args: { label: 'good', disabled: false },
+      render: ({ pageIcon, ...args }) => (
+        <>
+          {pageIcon.name}
+          <Button {...args} />
+        </>
+      ),
+    });
+    const Overridden = meta.story({
+      args: { label: 'good', disabled: false, pageIcon: { name: 'user' } },
+    });
+  });
+
+  it('✅ A custom args type can include the props of the component', () => {
+    type ButtonPropsAndCustomArgs = React.ComponentProps<typeof Button> & { footer?: string };
+    const meta = preview.type<{ args: ButtonPropsAndCustomArgs }>().meta({ component: Button });
+
+    const Default = meta.story({ args: { label: 'good', disabled: false, footer: 'footer' } });
+    // @ts-expect-error disabled not provided ❌
+    const Missing = meta.story({ args: { label: 'good' } });
+  });
+
+  it('✅ A custom arg can be used when meta has no component', () => {
+    const meta = preview.type<{ args: StoryArgs }>().meta({
+      render: (args) => <>{args.pageIcon.name}</>,
+      args: { pageIcon: { name: 'organization' } },
+    });
+
+    const Default = meta.story();
+    const Overridden = meta.story({ args: { pageIcon: { name: 'user' } } });
+  });
+});
+
 it('Components without Props can be used, issue #21768', () => {
   const Component = () => <>Foo</>;
   const withDecorator: Decorator = (Story) => (

@@ -1,5 +1,5 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
-import { posix, relative, win32 } from 'node:path';
+import { relative, win32 } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -196,34 +196,26 @@ describe('file failures', () => {
     `);
   });
 
-  describe.each([
-    { platform: 'POSIX', relativePath: posix.relative },
-    { platform: 'Windows', relativePath: win32.relative },
-  ])('with $platform path semantics', ({ relativePath }) => {
-    beforeEach(() => {
-      vi.mocked(relative).mockImplementation(relativePath);
-    });
+  it('shows paths inside the project relative to its root, in the reason too', async () => {
+    await reportFileFailures(
+      [
+        {
+          fixId: 'rename-legacy',
+          file: stories[1],
+          kind: 'story',
+          message: `EACCES: permission denied, open '${stories[1]}'`,
+        },
+      ],
+      ['rename-legacy']
+    );
 
-    it('shows paths inside the project relative to its root, in the reason too', async () => {
-      await reportFileFailures(
-        [
-          {
-            fixId: 'rename-legacy',
-            file: stories[1],
-            kind: 'story',
-            message: `EACCES: permission denied, open '${stories[1]}'`,
-          },
-        ],
-        ['rename-legacy']
-      );
-
-      expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
-        "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
-      );
-    });
+    expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
+      "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
+    );
   });
 
-  it('makes paths with backslash separators relative in the reason', async () => {
+  it('shows paths relative to the project root on Windows', async () => {
+    vi.mocked(relative).mockImplementation(win32.relative);
     await reportFileFailures(
       [
         {

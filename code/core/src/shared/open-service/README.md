@@ -1037,7 +1037,7 @@ type ExampleState = {
   values: Record<string, string | undefined>;
 };
 
-const entryIdSchema = v.object({ entryId: v.string() });
+const entryIdSchema = v.strictObject({ entryId: v.string() });
 const valueSchema = v.nullable(v.string());
 
 export const exampleServiceDef = defineService({

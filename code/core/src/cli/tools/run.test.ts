@@ -614,13 +614,13 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
       sources: [{ source: { id: 'local', title: 'Local' }, access: DOCS_ACCESS }],
     });
     for (const toolset of [...getRegisteredToolsets(), composedDocs]) {
-      for (const method of Object.values(toolset.methods)) {
+      for (const [methodName, method] of Object.entries(toolset.methods)) {
         const validation = await method.input['~standard'].validate({ undeclared: true });
         const keys = validation.issues?.map((issue: StandardSchemaV1.Issue) => {
           const [segment] = issue.path ?? [];
           return typeof segment === 'object' ? segment.key : segment;
         });
-        expect(keys ?? [], `${toolset.id}.${method.title}`).toContain('undeclared');
+        expect(keys ?? [], `${toolset.id}.${methodName}`).toContain('undeclared');
       }
     }
   });

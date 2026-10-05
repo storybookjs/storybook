@@ -17,7 +17,6 @@
     "@storybook/addon-a11y": "workspace:*",
     "@storybook/addon-docs": "workspace:*",
     "@storybook/addon-vitest": "workspace:*",
-    "@storybook/mcp": "workspace:*",
     "@storybook/react": "workspace:*",
     "@storybook/react-vite": "workspace:*",
     "@types/react": "19.2.6",

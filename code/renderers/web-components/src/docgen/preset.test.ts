@@ -54,11 +54,7 @@ const givenManifestPackage = (): void => {
 
 describe('renderer preset exports', () => {
   it('re-exports every docgen preset hook from the renderer preset', () => {
-    // Exporting the provider turns docgenServer on by default, so it stays unexported until it ships.
-    const unreleasedHooks = ['experimental_docgenProvider'];
-    const docgenPresetHooks = Object.keys(docgenPreset)
-      .filter((key) => !unreleasedHooks.includes(key))
-      .sort();
+    const docgenPresetHooks = Object.keys(docgenPreset).sort();
     const rootPresetDocgenHooks = Object.keys(rootPreset)
       .filter((key) => key in docgenPreset)
       .sort();

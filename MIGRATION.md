@@ -729,7 +729,7 @@ Decorators and `render` functions keep receiving `argTypes`, because renderers r
 ### `docgenServer` is stable and enabled by default
 
 The `experimentalDocgenServer` feature is now `docgenServer`, and Storybook no longer reads the old name.
-Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, and for `@storybook/angular-vite`.
+Server-side component metadata extraction is enabled by default for every React and Vue 3 framework, including Webpack-based ones, for `@storybook/angular-vite`, and for `@storybook/web-components-vite`.
 Other frameworks keep builder docgen.
 
 The `docgen-server` automigration renames `experimentalDocgenServer` to `docgenServer` and keeps its value.
@@ -1224,7 +1224,7 @@ The `--renderer` flag of `storybook automigrate` is also removed. Only the remov
 
 ### Web Components: server-side docgen suffixes event, slot and part argType keys
 
-With `features.experimentalDocgenServer`, `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+With server-side docgen, which is on by default (see [`docgenServer` is stable and enabled by default](#docgenserver-is-stable-and-enabled-by-default)), `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
 Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
 
 | Manifest item       | Runtime docgen key | Server docgen key |
@@ -1262,7 +1262,7 @@ render: (args) => html`<my-card>${unsafeHTML(args['actions-slot'])}</my-card>`,
 
 ### Web Components: the default render binds args by key
 
-With `features.experimentalDocgenServer`, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
+With server-side docgen, which is on by default, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
 It never reads argTypes or waits for docgen, so a story renders the same with or without the manifest, and in Vitest.
 
 | Arg key                                                     | Binding                                                      |

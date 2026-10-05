@@ -416,7 +416,7 @@ export const testUnit_windows = defineJob(
       {
         run: {
           command:
-            'yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml',
+            "yarn test --project '!agent-eval' --reporter=junit --reporter=default --outputFile=./test-results/junit.xml",
           name: 'Run unit tests',
         },
       },

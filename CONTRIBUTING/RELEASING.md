@@ -234,7 +234,7 @@ The publish workflow runs in the "release" GitHub environment, which has the npm
 
 #### Syncing the skills
 
-The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) makes them installable without the Claude Code plugin, with Vercel's `skills` CLI, and [skills.sh](https://skills.sh) counts those installs. `storybook init` and `storybook upgrade` are planned to install them from there, at the tag of the project's Storybook version. That repository is release output: nobody edits its files directly, and a skill change ships with the next Storybook release. The publish workflow writes to it, and after a failed sync a maintainer runs the same script by hand (see below).
+The canonical skills live in [`code/lib/claude-plugin/skills/`](../code/lib/claude-plugin/skills/). [`storybookjs/skills`](https://github.com/storybookjs/skills) makes them installable without the Claude Code plugin, with Vercel's `skills` CLI, and [skills.sh](https://skills.sh) counts those installs. `storybook init` and `storybook upgrade` install them from there, at the tag of the project's Storybook version. That repository is release output: nobody edits its files directly, and a skill change ships with the next Storybook release. The publish workflow writes to it, and after a failed sync a maintainer runs the same script by hand (see below).
 
 Step 8 runs [`scripts/release/sync-skills.ts`](../scripts/release/sync-skills.ts), which:
 

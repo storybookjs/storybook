@@ -74,6 +74,8 @@ const createStorybookProgram = program
   )
   .option('--agent', 'Force agent mode (non-interactive, logs AI setup instructions)')
   .option('--no-agent', 'Force disable agent mode even when an AI agent is detected')
+  .option('--skills', 'Install the official Storybook skills for AI agents without asking')
+  .option('--no-skills', 'Skip installing the official Storybook skills for AI agents')
   .option(
     '--logfile [path]',
     'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'

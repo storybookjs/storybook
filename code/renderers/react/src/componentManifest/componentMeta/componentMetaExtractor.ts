@@ -1511,7 +1511,10 @@ export function serializeComponentDoc(
 
   const props: Record<string, PropItem> = {};
   for (const prop of allProperties) {
-    if (excluded.has(prop.getName())) {
+    if (
+      excluded.has(prop.getName()) ||
+      prop.getJsDocTags(checker).some((tag) => tag.name === 'ignore')
+    ) {
       continue;
     }
     const unionProp = isUnionType(propsType)

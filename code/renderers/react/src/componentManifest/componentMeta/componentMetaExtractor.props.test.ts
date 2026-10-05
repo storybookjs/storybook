@@ -5,6 +5,28 @@ import { dedent } from 'ts-dedent';
 import { extract, extractFromStory } from './componentMetaExtractor.test-helpers.ts';
 
 describe('prop extraction', () => {
+  it('leaves out a prop marked @ignore, like builder docgen did', async () => {
+    const entry = await extract(
+      'Button',
+      dedent`
+        import React from 'react';
+        interface ButtonProps {
+          /** Shown. */
+          label: string;
+          /**
+           * Should not be visible since it's ignored.
+           *
+           * @ignore
+           */
+          internal: string;
+        }
+        export const Button = (props: ButtonProps) => <button />;
+      `
+    );
+
+    expect(Object.keys(entry.component?.reactComponentMeta?.props ?? {})).toEqual(['label']);
+  });
+
   describe('basic types', () => {
     it('extracts string, number, and boolean props', async () => {
       const entry = await extract(

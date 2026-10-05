@@ -115,7 +115,7 @@
     "node-gyp": "^12.1.0",
     "npm-registry-client": "^8.6.0",
     "ora": "^5.4.1",
-    "oxlint": "1.72.0",
+    "oxlint": "1.85.0",
     "p-limit": "^7.2.0",
     "p-retry": "^7.1.0",
     "pathe": "^1.1.2",
@@ -156,9 +156,6 @@
     "window-size": "^1.1.1",
     "yaml": "^2.8.1",
     "zod": "^3.25.76"
-  },
-  "devDependencies": {
-    "oxfmt": "^0.41.0"
   },
   "optionalDependencies": {
     "@verdaccio/types": "^10.8.0",

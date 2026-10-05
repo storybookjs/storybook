@@ -9,12 +9,7 @@ export async function webpack(baseConfig, options) {
     ...baseConfig,
     module: {
       ...module,
-      rules: [
-        ...(module.rules || []),
-        {
-          /* some new loader */
-        },
-      ],
+      rules: [...(module.rules || []), {/* some new loader */}],
     },
   };
 }

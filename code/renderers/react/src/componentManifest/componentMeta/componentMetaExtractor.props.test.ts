@@ -625,6 +625,39 @@ describe('prop extraction', () => {
       expect(entry.component?.reactComponentMeta?.props).not.toHaveProperty('className');
     });
 
+    it('filters a prop another declaration file adds to React HTML attributes', async () => {
+      // Next.js ships `@vercel/og` types that augment HTMLAttributes with a Tailwind `tw` prop.
+      const entry = await extractFromStory(
+        {
+          'augmented/og.d.ts': dedent`
+            import 'react';
+            declare module 'react' {
+              interface HTMLAttributes<T> {
+                /** Specify styles using Tailwind CSS classes. */
+                tw?: string;
+              }
+            }
+          `,
+          'augmented/Button.tsx': dedent`
+            /// <reference path="./og.d.ts" />
+            import React from 'react';
+            interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+              label: string;
+            }
+            export const Button = (props: ButtonProps) => <button />;
+          `,
+          'augmented/Button.stories.tsx': dedent`
+            import { Button } from './Button';
+            export default { component: Button };
+            export const Primary = {};
+          `,
+        },
+        'augmented/Button.stories.tsx'
+      );
+
+      expect(Object.keys(entry.component?.reactComponentMeta?.props ?? {})).toEqual(['label']);
+    });
+
     it('keeps HTML attributes when Pick narrows below threshold', async () => {
       const entry = await extract(
         'Button',

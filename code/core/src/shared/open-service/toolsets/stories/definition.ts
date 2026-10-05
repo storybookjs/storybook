@@ -262,7 +262,7 @@ export function createStoriesToolset({
     description: 'Story discovery, change detection, and preview URL generation.',
     methods: {
       preview: {
-        input: v.object({
+        input: v.strictObject({
           stories: v.pipe(
             storyInputArraySchema,
             v.description(
@@ -309,7 +309,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       changed: {
-        input: v.object({}),
+        input: v.strictObject({}),
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
@@ -378,7 +378,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       findByComponent: {
-        input: v.object({
+        input: v.strictObject({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),

@@ -19,14 +19,7 @@ export function toToolsetJsonSchema(schema: StandardSchemaV1): ToolsetJsonSchema
     return undefined;
   }
   try {
-    return toJsonSchema(schema as never, {
-      errorMode: 'ignore',
-      // `looseObject` otherwise converts exactly like `object`, which the tools CLI treats as closed.
-      overrideSchema: ({ valibotSchema, jsonSchema }) =>
-        valibotSchema.type === 'loose_object'
-          ? { ...jsonSchema, additionalProperties: true }
-          : undefined,
-    }) as ToolsetJsonSchema;
+    return toJsonSchema(schema as never, { errorMode: 'ignore' }) as ToolsetJsonSchema;
   } catch {
     return undefined;
   }

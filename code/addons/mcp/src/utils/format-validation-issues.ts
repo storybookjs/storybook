@@ -72,6 +72,12 @@ function summarizeIssue(issue: StandardSchemaIssue): FriendlyIssue {
     return { path, message: `Missing required field \`${field}\`${where}.` };
   }
 
+  // `strictObject` reports an undeclared key as expecting `never` at that key's path.
+  if (issue.type === 'strict_object' && issue.expected === 'never') {
+    const field = formatPath((issue.path ?? []).slice(-1));
+    return { path, message: `Unknown field \`${field}\`.` };
+  }
+
   return { path, message: issue.message };
 }
 

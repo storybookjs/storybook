@@ -6,6 +6,7 @@
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
@@ -583,8 +584,8 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
 
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
-    expect(result.output).toContain('- Unknown key `storybook-id` in `--input`.');
-    expect(result.output).toContain('Valid keys: `id`.');
+    expect(result.output).toContain('- Unknown flag `--storybook-id`.');
+    expect(result.output).toContain('Valid flags: `--id`.');
   });
 
   it('points a target option given after the tool name back before the toolset name', async () => {
@@ -598,13 +599,27 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
     );
   });
 
-  it('rejects a `--__proto__` flag instead of dropping it', async () => {
+  it('rejects any flag for a tool that takes no arguments', async () => {
     const { deps } = makeDeps();
 
-    const result = await run(['docs', 'show', '--id', 'button', '--__proto__', '{"a":1}'], deps);
+    const result = await run(['stories', 'changed', '--verbose'], deps);
 
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
-    expect(result.output).toContain('- Unknown flag `--__proto__`.');
+    expect(result.output).toContain('- Unknown flag `--verbose`.');
+    expect(result.output).toContain('This tool takes no arguments.');
+  });
+
+  it('declares every core tool input closed, so an undeclared key never reaches a handler', async () => {
+    for (const toolset of getRegisteredToolsets()) {
+      for (const method of Object.values(toolset.methods)) {
+        const validation = await method.input['~standard'].validate({ undeclared: true });
+        const keys = validation.issues?.map((issue: StandardSchemaV1.Issue) => {
+          const [segment] = issue.path ?? [];
+          return typeof segment === 'object' ? segment.key : segment;
+        });
+        expect(keys ?? [], `${toolset.id}.${method.title}`).toContain('undeclared');
+      }
+    }
   });
 
   it('leaves the test toolset out when the project does not register it', async () => {
@@ -759,16 +774,6 @@ describe('outcome mapping', () => {
               throw error;
             },
           },
-          loose: {
-            title: 'loose',
-            input: v.looseObject({ a: v.optional(v.number()) }),
-            description: 'loose echo',
-            handler: async (input: Record<string, unknown>) => ({
-              ok: true,
-              data: input,
-              markdown: JSON.stringify(input),
-            }),
-          },
           input: {
             title: 'input',
             input: v.object({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -824,26 +829,6 @@ describe('outcome mapping', () => {
       output: 'Start the dev server, then retry.',
       outcome: { kind: 'failure' },
     });
-  });
-
-  it('rejects any flag for a tool that takes no arguments', async () => {
-    const { deps } = makeDeps();
-
-    const result = await run(['echo', 'ok', '--a', '1'], deps);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
-    expect(result.output).toContain('- Unknown flag `--a`.');
-    expect(result.output).toContain('This tool takes no arguments.');
-  });
-
-  it('forwards undeclared keys to a tool whose schema admits them', async () => {
-    const { deps } = makeDeps();
-
-    const result = await run(['echo', 'loose', '--a', '1', '--extra', 'x', '--json'], deps);
-
-    expect(result.outcome).toEqual({ kind: 'success' });
-    expect(JSON.parse(result.output)).toEqual({ a: 1, extra: 'x' });
   });
 
   it('merges --input with individual flags, flags winning', async () => {

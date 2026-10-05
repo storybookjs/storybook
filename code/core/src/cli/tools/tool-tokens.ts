@@ -23,8 +23,6 @@ export type ParsedToolsTokens =
       /** `true` from `--attach`, `false` from `--no-attach`. */
       attach?: boolean;
       args: Record<string, unknown>;
-      /** The keys of `args` given as `--key` flags; the rest came from `--input`. */
-      flagKeys: string[];
     }
   | { ok: false; error: string };
 
@@ -53,8 +51,7 @@ export function parseToolsTokens(
   let json = defaults.json ?? false;
   let output = defaults.output;
   let attach = defaults.attach;
-  // Null prototype so `--__proto__` lands as an own key instead of replacing the prototype.
-  const flagArgs: Record<string, unknown> = Object.create(null);
+  const flagArgs: Record<string, unknown> = {};
 
   let i = 0;
   while (i < tokens.length) {
@@ -164,15 +161,7 @@ export function parseToolsTokens(
     inputArgs = parsed as Record<string, unknown>;
   }
 
-  return {
-    ok: true,
-    help,
-    json,
-    output,
-    attach,
-    args: { ...inputArgs, ...flagArgs },
-    flagKeys: Object.keys(flagArgs),
-  };
+  return { ok: true, help, json, output, attach, args: { ...inputArgs, ...flagArgs } };
 }
 
 /**

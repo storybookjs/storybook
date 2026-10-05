@@ -13,7 +13,6 @@ describe('parseToolsTokens', () => {
       output: undefined,
       attach: undefined,
       args: { maxDistance: 2, name: 'button' },
-      flagKeys: ['maxDistance', 'name'],
     });
   });
 

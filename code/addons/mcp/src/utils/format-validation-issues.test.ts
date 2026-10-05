@@ -48,6 +48,18 @@ describe('withFriendlyErrors', () => {
     expect(missing!.path).toMatch(/\[0\]/);
   });
 
+  it('rewrites undeclared keys of a strict object to a short message', () => {
+    const strict = withFriendlyErrors(v.strictObject({ id: v.string() }));
+
+    const result = runValidate(strict, { id: 'button', 'storybook-id': 'x' }) as {
+      issues: Array<{ path: string; message: string }>;
+    };
+
+    expect(result.issues).toEqual([
+      { path: 'storybook-id', message: 'Unknown field `storybook-id`.' },
+    ]);
+  });
+
   it('points the "at" suffix at the parent container, not the missing field itself', () => {
     const result = runValidate(friendly, {
       title: 'x',

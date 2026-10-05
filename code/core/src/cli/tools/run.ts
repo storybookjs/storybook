@@ -16,6 +16,7 @@ import {
   type ToolsClientInfo,
   type ToolsHostKind,
   type ToolsMode,
+  type ToolsetJsonSchema,
 } from './sdk/index.ts';
 import {
   discoverRunningInstance,
@@ -326,6 +327,18 @@ async function dispatchTools(
   const { methodName } = parseToolsetMethodId(method.ref);
   const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
 
+  const acceptedKeys = acceptedArgumentKeys(method.input);
+  const unknownKeys = acceptedKeys
+    ? Object.keys(parsed.args).filter((key) => !acceptedKeys.includes(key))
+    : [];
+  if (acceptedKeys && unknownKeys.length > 0) {
+    return result({
+      exitCode: 1,
+      output: formatUnknownArguments(commandPath, unknownKeys, parsed.flagKeys, acceptedKeys),
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+    });
+  }
+
   if (tools.mode === 'local' && method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
@@ -423,6 +436,40 @@ function formatRequiresDevServer(
     );
   }
   return lines.join('\n');
+}
+
+// `undefined` means any key may be valid: the schema has no JSON Schema form, or it admits extra
+// keys. An absent `additionalProperties` counts as closed because valibot's `object` converts that
+// way and drops the keys it does not declare.
+function acceptedArgumentKeys(schema: ToolsetJsonSchema | undefined): string[] | undefined {
+  if (schema?.type !== 'object' || (schema.additionalProperties ?? false) !== false) {
+    return undefined;
+  }
+  return Object.keys((schema.properties as Record<string, unknown> | undefined) ?? {});
+}
+
+function formatUnknownArguments(
+  commandPath: string,
+  unknownKeys: string[],
+  flagKeys: string[],
+  acceptedKeys: string[]
+): string {
+  const lines = unknownKeys.map((key) =>
+    flagKeys.includes(key)
+      ? `- Unknown flag \`--${key}\`.`
+      : `- Unknown key \`${key}\` in \`--input\`.`
+  );
+  const accepted =
+    acceptedKeys.length === 0
+      ? 'This tool takes no arguments.'
+      : `Valid flags: ${acceptedKeys.map((key) => `\`--${key}\``).join(', ')}.`;
+  return `Invalid arguments for \`${commandPath}\`:
+
+${lines.join('\n')}
+
+${accepted}
+
+Run \`${commandPath} --help\` for the expected arguments.`;
 }
 
 type ValidationIssues = ReadonlyArray<{

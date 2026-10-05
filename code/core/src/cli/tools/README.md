@@ -64,6 +64,10 @@ set). `--json` keeps only the tool result.
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
+Tool arguments are `--key value` flags spelled exactly like the input schema keys (camelCase, e.g.
+`--storybookId`); there are no kebab-case aliases. A flag or `--input` key the schema does not
+declare fails the run with the valid flags listed, before the tool is called.
+
 `docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
 source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote
 manifests are fetched without credentials and with a 3 second timeout in every mode; a ref that

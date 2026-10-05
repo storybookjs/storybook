@@ -23,6 +23,8 @@ export type ParsedToolsTokens =
       /** `true` from `--attach`, `false` from `--no-attach`. */
       attach?: boolean;
       args: Record<string, unknown>;
+      /** The keys of `args` given as `--key` flags; the rest came from `--input`. */
+      flagKeys: string[];
     }
   | { ok: false; error: string };
 
@@ -161,7 +163,15 @@ export function parseToolsTokens(
     inputArgs = parsed as Record<string, unknown>;
   }
 
-  return { ok: true, help, json, output, attach, args: { ...inputArgs, ...flagArgs } };
+  return {
+    ok: true,
+    help,
+    json,
+    output,
+    attach,
+    args: { ...inputArgs, ...flagArgs },
+    flagKeys: Object.keys(flagArgs),
+  };
 }
 
 /**

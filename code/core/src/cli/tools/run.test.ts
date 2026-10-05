@@ -19,6 +19,7 @@ import {
   registerToolset,
 } from '../../shared/open-service/toolset-registry.ts';
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
+import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
 import { invokeToolsetMethod } from '../../shared/open-service/toolset-definition.ts';
@@ -545,6 +546,47 @@ describe('dispatch', () => {
     expect(result.output).toContain('--help');
   });
 
+  it('rejects an unknown flag without calling the tool, naming it and listing the valid flags', async () => {
+    const resolve = vi.fn(DOCS_ACCESS.resolve);
+    clearToolsetRegistry();
+    registerToolset(
+      createDocsToolset({
+        sources: [
+          { source: { id: 'local', title: 'Local' }, access: { ...DOCS_ACCESS, resolve } },
+          { source: { id: 'tetra', title: 'Tetra' }, access: { ...DOCS_ACCESS, resolve } },
+        ],
+      })
+    );
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--storybook-id', 'tetra'], deps);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toBe(`Invalid arguments for \`npx storybook tools docs show\`:
+
+- Unknown flag \`--storybook-id\`.
+
+Valid flags: \`--id\`, \`--storybookId\`.
+
+Run \`npx storybook tools docs show --help\` for the expected arguments.`);
+    expect(resolve).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown --input key the same way', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(
+      ['docs', 'show', '--input', '{"id":"button","storybook-id":"x"}'],
+      deps
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown key `storybook-id` in `--input`.');
+    expect(result.output).toContain('Valid flags: `--id`.');
+  });
+
   it('leaves the test toolset out when the project does not register it', async () => {
     // Core harness never registers addon-vitest's `test` toolset.
     registerCoreToolsetsForTest();
@@ -697,6 +739,16 @@ describe('outcome mapping', () => {
               throw error;
             },
           },
+          loose: {
+            title: 'loose',
+            input: v.looseObject({ a: v.optional(v.number()) }),
+            description: 'loose echo',
+            handler: async (input: Record<string, unknown>) => ({
+              ok: true,
+              data: input,
+              markdown: JSON.stringify(input),
+            }),
+          },
           input: {
             title: 'input',
             input: v.object({ a: v.optional(v.number()), b: v.optional(v.number()) }),
@@ -752,6 +804,26 @@ describe('outcome mapping', () => {
       output: 'Start the dev server, then retry.',
       outcome: { kind: 'failure' },
     });
+  });
+
+  it('rejects any flag for a tool that takes no arguments', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['echo', 'ok', '--a', '1'], deps);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown flag `--a`.');
+    expect(result.output).toContain('This tool takes no arguments.');
+  });
+
+  it('forwards undeclared keys to a tool whose schema admits them', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['echo', 'loose', '--a', '1', '--extra', 'x', '--json'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'success' });
+    expect(JSON.parse(result.output)).toEqual({ a: 1, extra: 'x' });
   });
 
   it('merges --input with individual flags, flags winning', async () => {

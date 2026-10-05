@@ -32,7 +32,7 @@ export type ModuleGraphServiceState = {
   /**
    * Monotonic counter advanced on every processed file-change event, including out-of-graph
    * paths that do not advance {@link graphRevision}. Change detection watches this to rescan
-   * git; review staleness keeps watching {@link graphRevision} (in-graph only).
+   * git; review staleness watches {@link graphChangedAt} (in-graph only).
    */
   fileActivityRevision: number;
   /**

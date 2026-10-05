@@ -90,11 +90,13 @@ function executesHeredocAsScript(segmentTokens: string[]): boolean {
   const tokens = segmentTokens.filter((token) => !ENV_ASSIGNMENT.test(token));
   const head = tokens[0];
   if (head === undefined || !INTERPRETERS.has(basename(head))) return false;
-  // Only flags and the lone stdin marker may follow: any positional argument
-  // names a script file.
-  return tokens
-    .slice(1)
-    .every((token) => token === '-' || (token.startsWith('-') && token.length > 1));
+  // A positional argument names a script file, unless `-` came first: then
+  // stdin is the script and the rest are its arguments.
+  for (const token of tokens.slice(1)) {
+    if (token === '-') return true;
+    if (!token.startsWith('-')) return false;
+  }
+  return true;
 }
 
 /**

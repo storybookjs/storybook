@@ -294,8 +294,9 @@ npx storybook tools review create --input="$(cat /tmp/review.json)" --title Over
   test.each([
     ['an escaped delimiter', 'cat > /tmp/r.json <<\\EOF\n{"title":"T"}\nEOF'],
     ['a tab-stripped body', 'cat > /tmp/r.json <<-EOF\n\t{"title":"T"}\n\tEOF'],
-  ])('resolves $(cat path) from a cat heredoc with %s', (_, heredoc) => {
-    const command = `${heredoc}\nnpx storybook tools review create --input "$(cat /tmp/r.json)"`;
+    ['a quoted path', `cat > '/tmp/r.json' <<EOF\n{"title":"T"}\nEOF`, `'/tmp/r.json'`],
+  ])('resolves $(cat path) from a cat heredoc with %s', (_, heredoc, path = '/tmp/r.json') => {
+    const command = `${heredoc}\nnpx storybook tools review create --input "$(cat ${path})"`;
 
     const calls = parseStorybookWorkflowShellCommands([command]);
 

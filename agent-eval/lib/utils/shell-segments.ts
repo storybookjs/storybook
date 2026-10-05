@@ -62,14 +62,16 @@ export function splitCommandSegments(command: string): ShellSegment[] {
     awaiting = null;
   };
 
-  // A line break reaches us as `;`, so it ends any pipeline.
-  for (const { value: token, heredoc } of tokenizeShellWords(command)) {
+  for (const { value: token, quotedStart, heredoc } of tokenizeShellWords(command)) {
     if (heredoc !== undefined) {
       heredocs.push(heredoc.body);
       continue;
     }
     if (token === '') continue;
-    if (SEPARATORS.has(token)) {
+    if (!quotedStart && SEPARATORS.has(token)) {
+      // A line break reaches us as `;`. Right after `|` or `&&` it continues
+      // the command instead of ending it.
+      if (token === ';' && current.length === 0) continue;
       flush();
       piped = token === '|';
       continue;
@@ -77,6 +79,10 @@ export function splitCommandSegments(command: string): ShellSegment[] {
     if (awaiting !== null) {
       if (awaiting === 'stdout') redirectTarget = redirectTargetOf(token);
       awaiting = null;
+      continue;
+    }
+    if (quotedStart) {
+      current.push(token);
       continue;
     }
     if (STDOUT_REDIRECT.test(token)) {

@@ -272,7 +272,7 @@ function expandShellWords(
     }
     const value = word.value.replace(
       CAT_SUBSTITUTION,
-      (match, path: string) => heredocs.get(path) ?? match
+      (match, path: string) => heredocs.get(path.replace(/^(['"])(.*)\1$/, '$2')) ?? match
     );
     if (value.includes('$')) {
       unresolved.add(value).add(value.slice(value.indexOf('=') + 1));
@@ -394,7 +394,7 @@ function catHeredocFiles(words: ShellWord[]): Map<string, string> {
   const files = new Map<string, string>();
   words.forEach((word, index) => {
     const [redirect, path, heredoc] = words.slice(index + 1, index + 4);
-    if (word.value === 'cat' && redirect?.value === '>' && path && heredoc?.heredoc) {
+    if (word.value === 'cat' && redirect?.value === '>' && path !== undefined && heredoc?.heredoc) {
       files.set(path.value, heredoc.heredoc.body);
     }
   });

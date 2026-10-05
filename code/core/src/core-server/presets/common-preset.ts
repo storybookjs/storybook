@@ -32,7 +32,7 @@ import {
 } from 'storybook/internal/types';
 
 import {
-  OpenServiceDevServerBeforeServicesError,
+  OpenServiceDevServerSubscriptionsMissingError,
   OpenServiceServicesAppliedTwiceError,
 } from '../../server-errors.ts';
 import {
@@ -59,6 +59,7 @@ import { createStoriesToolset } from '../../shared/open-service/toolsets/stories
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
 import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
@@ -375,7 +376,7 @@ async function getHeadlessChangeDetectionAdapter(options: Options) {
 }
 
 // Started from `experimental_devServer`: the attached tools CLI also applies `services`.
-// Set only when `services` completes, so `experimental_devServer` fails if it runs first or mid-flight.
+// Set only when `services` completes; `experimental_devServer` awaits that and fails loudly if unset.
 let devServerSubscriptions: Array<() => void> | undefined;
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
@@ -497,9 +498,13 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   devServerSubscriptions = subscriptions;
 };
 
-export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
+  app,
+  options
+) => {
+  await applyServicesPresetOnce(options.presets);
   if (!devServerSubscriptions) {
-    throw new OpenServiceDevServerBeforeServicesError();
+    throw new OpenServiceDevServerSubscriptionsMissingError();
   }
   for (const subscribe of devServerSubscriptions.splice(0)) {
     subscribe();

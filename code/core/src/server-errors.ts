@@ -402,14 +402,14 @@ export class OpenServiceServicesAppliedTwiceError extends StorybookError {
   }
 }
 
-export class OpenServiceDevServerBeforeServicesError extends StorybookError {
+export class OpenServiceDevServerSubscriptionsMissingError extends StorybookError {
   constructor() {
     super({
-      name: 'OpenServiceDevServerBeforeServicesError',
+      name: 'OpenServiceDevServerSubscriptionsMissingError',
       category: Category.CORE_COMMON,
       code: 33,
-      message: dedent`The "experimental_devServer" preset property was applied before the "services" preset property completed.
-        Apply "services" and await it before starting the dev server; otherwise the review, docgen and story-docs services never follow file changes.`,
+      message: dedent`The "services" preset property completed without queuing the dev server subscriptions, for example because Storybook core is loaded twice.
+        The review, docgen and story-docs services would not follow file changes.`,
     });
   }
 }

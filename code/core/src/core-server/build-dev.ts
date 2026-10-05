@@ -282,7 +282,6 @@ export async function buildDevStandalone(
   const features = await presets.apply('features');
   global.FEATURES = features;
 
-  // `storybookDevServer` applies `experimental_devServer`, which starts the subscriptions queued here.
   await applyServicesPresetOnce(presets);
   await presets.apply('experimental_serverChannel', channel);
 

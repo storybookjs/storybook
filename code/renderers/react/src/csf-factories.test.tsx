@@ -301,26 +301,6 @@ describe('Custom args types written by the csf-factories codemod', () => {
     const Missing = meta.story({ args: { label: 'good' } });
   });
 
-  it('✅ A story type without the args of the meta keeps those args optional', () => {
-    type ButtonProps = React.ComponentProps<typeof Button>;
-    const meta = preview.meta({ component: Button, args: { label: 'good', disabled: false } });
-
-    const WithIcon = meta
-      .type<{ args: Omit<ButtonProps, 'label' | 'disabled'> & StoryArgs }>()
-      .story({
-        args: { pageIcon: { name: 'user' } },
-        render: ({ pageIcon, ...args }) => (
-          <>
-            {pageIcon.name} <Button {...args} />
-          </>
-        ),
-      });
-    // @ts-expect-error label and disabled are redeclared, so they must be set again ❌
-    const Redeclared = meta.type<{ args: ButtonProps & StoryArgs }>().story({
-      args: { pageIcon: { name: 'user' } },
-    });
-  });
-
   it('✅ A custom arg can be used when meta has no component', () => {
     const meta = preview.type<{ args: StoryArgs }>().meta({
       render: (args) => <>{args.pageIcon.name}</>,

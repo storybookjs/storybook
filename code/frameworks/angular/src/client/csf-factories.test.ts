@@ -327,15 +327,6 @@ describe('Custom args types written by the csf-factories codemod', () => {
 
     const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
   });
-
-  it('✅ The keys of the component class can be omitted from a custom args type', () => {
-    const meta = preview.type<{ args: Omit<ButtonAndCustomArgs, keyof ButtonComponent> }>().meta({
-      component: ButtonComponent,
-      render: ({ footer, ...args }) => ({ props: args, template: `${footer} ${args.label}` }),
-    });
-
-    const CustomFooter = meta.story({ args: { footer: 'good', disabledChange: fn() } });
-  });
 });
 
 it('Components without Props can be used', () => {

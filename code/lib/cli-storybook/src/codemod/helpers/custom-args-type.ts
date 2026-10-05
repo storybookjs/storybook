@@ -3,28 +3,10 @@ import { babelParse, generate, types as t } from 'storybook/internal/babel';
 // `ComponentMeta` and `ComponentStory` are left out: their type argument is always a component.
 const argsTypeNames = new Set(['Meta', 'MetaObj', 'Story', 'StoryFn', 'StoryObj']);
 
-const typeReference = (name: string, ...typeArguments: t.TSType[]) =>
-  t.tsTypeReference(t.identifier(name), t.tsTypeParameterInstantiation(typeArguments));
-
-const keyName = ({ key, computed }: { key: t.Node; computed?: boolean | null }) =>
-  t.isStringLiteral(key) ? key.value : !computed && t.isIdentifier(key) ? key.name : undefined;
-
 // The component is never a custom args type: `preview.meta()` infers its args from `component`.
-export function customArgsTypes(
-  program: t.Program,
-  component: t.Node | undefined,
-  metaArgs: t.Node | undefined
-) {
-  const metaArgKeys = t.isObjectExpression(metaArgs)
-    ? metaArgs.properties.flatMap((property) => {
-        const name = t.isObjectMember(property) && keyName(property);
-        return name ? [name] : [];
-      })
-    : [];
-
+export function customArgsTypes(program: t.Program, component: t.Node | undefined) {
   const argsTypeLocalNames = new Set<string>();
   const typeAliases = new Map<string, t.TSType>();
-  let isWebComponents = false;
 
   for (const node of program.body) {
     if (t.isImportDeclaration(node)) {
@@ -37,7 +19,6 @@ export function customArgsTypes(
           argsTypeLocalNames.add(specifier.local.name);
         }
       }
-      isWebComponents ||= /^@storybook\/web-components(-|$)/.test(node.source.value);
     }
 
     const declaration = t.isExportNamedDeclaration(node) ? node.declaration : node;
@@ -77,39 +58,14 @@ export function customArgsTypes(
         return customArgs(nested.typeParameters?.params[0]);
       }
       const alias = aliasedType(member);
-      if (isComponent(member) || isComponent(alias)) {
-        return [];
-      }
-      // A component class in the args type makes every member of that class a required arg.
-      const componentClass = t.isTSIntersectionType(alias) && alias.types.find(isComponentClass);
-      return componentClass
-        ? [typeReference('Omit', member, t.tsTypeOperator(t.cloneNode(componentClass), 'keyof'))]
-        : [member];
+      // An alias that includes the component class is dropped: carried over, it would make every
+      // member of that class a required arg.
+      const includesComponent =
+        isComponent(alias) || (t.isTSIntersectionType(alias) && alias.types.some(isComponentClass));
+      return isComponent(member) || includesComponent ? [] : [member];
     });
 
   const code = (type: t.TSType) => generate(type, { comments: false }).code;
-
-  const literalOf = (type: t.TSType) =>
-    [type, aliasedType(type)].find((candidate) => t.isTSTypeLiteral(candidate));
-
-  // `meta.type<T>()` makes an arg of the meta that `T` redeclares required again in the story.
-  const withoutMetaArgs = (type: t.TSType) => {
-    const literal = literalOf(type);
-    // `Omit` does not distribute over a union and would leave only its common keys.
-    const redeclares =
-      !t.isTSUnionType(type) &&
-      (!literal ||
-        literal.members.some(
-          (member) => t.isTSPropertySignature(member) && metaArgKeys.includes(keyName(member) ?? '')
-        ));
-    return metaArgKeys.length > 0 && redeclares
-      ? typeReference(
-          'Omit',
-          type,
-          t.tsUnionType(metaArgKeys.map((key) => t.tsLiteralType(t.stringLiteral(key))))
-        )
-      : type;
-  };
 
   return {
     read(annotation: t.Node | null | undefined): t.TSType[] {
@@ -123,22 +79,13 @@ export function customArgsTypes(
       );
     },
 
-    // Without `metaArgsTypes` the types are for `preview.type()`, with them for `meta.type()`.
-    typed(receiver: string, argsTypes: t.TSType[], metaArgsTypes?: t.TSType[]): t.Expression {
-      const metaCodes = new Set(metaArgsTypes?.map(code));
+    typed(receiver: string, argsTypes: t.TSType[], metaArgsTypes: t.TSType[] = []): t.Expression {
+      const metaCodes = new Set(metaArgsTypes.map(code));
       const distinctTypes = new Map<string, t.TSType>();
-      for (const argsType of argsTypes) {
-        if (metaCodes.has(code(argsType)) || distinctTypes.has(code(argsType))) {
-          continue;
+      for (const type of argsTypes) {
+        if (!metaCodes.has(code(type))) {
+          distinctTypes.set(code(type), type);
         }
-        let type = metaArgsTypes ? withoutMetaArgs(argsType) : argsType;
-        // In Web Components the component is a tag name, so a type next to it that is not a type
-        // literal is often the element class. `Partial` keeps its members optional, like the args
-        // inferred from the component.
-        if (isWebComponents && component && !literalOf(argsType)) {
-          type = typeReference('Partial', type);
-        }
-        distinctTypes.set(code(argsType), type);
       }
       if (distinctTypes.size === 0) {
         return t.identifier(receiver);

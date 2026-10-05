@@ -279,19 +279,7 @@ it('✅ Kebab-case HTML attribute names are allowed in args', () => {
 });
 
 describe('Custom args types written by the csf-factories codemod', () => {
-  it('✅ No arg of a custom args type is required next to a component', () => {
-    const meta = preview
-      .type<{ args: Partial<ButtonProps & { footer: string }> }>()
-      .meta({ component: 'my-button' });
-
-    const Default = meta.story();
-    const CustomFooter = meta.story({
-      args: { label: 'good', footer: 'good' },
-      render: ({ footer }) => html`<my-button></my-button>${footer}`,
-    });
-  });
-
-  it('✅ A custom arg in a type literal stays required next to a component', () => {
+  it('✅ A custom arg can be set in meta and used in render', () => {
     const meta = preview.type<{ args: { footer: string } }>().meta({
       component: 'my-button',
       args: { footer: 'good' },
@@ -299,13 +287,6 @@ describe('Custom args types written by the csf-factories codemod', () => {
     });
 
     const Default = meta.story();
-  });
-
-  it('✅ The element class can be the custom args type', () => {
-    const meta = preview.type<{ args: Partial<MyButton> }>().meta({ component: 'my-button' });
-
-    const Default = meta.story();
-    const Labelled = meta.story({ args: { label: 'good' } });
   });
 
   it('✅ A custom args type is used by the render of a meta without component', () => {
@@ -321,8 +302,8 @@ describe('Custom args types written by the csf-factories codemod', () => {
     const Default = meta.story();
   });
 
-  it('❌ An element class as the custom args type of a meta without component requires every member of that class', () => {
-    const meta = preview.type<{ args: MyButton }>().meta({});
+  it('❌ An element class as the custom args type requires every member of that class', () => {
+    const meta = preview.type<{ args: MyButton }>().meta({ component: 'my-button' });
 
     // @ts-expect-error disabled and every member of LitElement not provided ❌
     const Labelled = meta.story({ args: { label: 'good' } });

@@ -588,11 +588,6 @@ describe('mapArgTypes', () => {
             type: { summary: 'CustomEvent<{ value: string }>' },
           },
         },
-        onMyChange: {
-          name: 'onMyChange',
-          action: { name: 'my-change' },
-          table: { disable: true },
-        },
       },
     },
     {
@@ -640,11 +635,6 @@ describe('mapArgTypes', () => {
             type: { summary: 'CustomEvent' },
           },
         },
-        onReady: {
-          name: 'onReady',
-          action: { name: 'ready' },
-          table: { disable: true },
-        },
       },
     },
     {
@@ -670,11 +660,6 @@ describe('mapArgTypes', () => {
             jsDocTags: { deprecated: 'Use my-dismiss instead.' },
           },
         },
-        onMyClose: {
-          name: 'onMyClose',
-          action: { name: 'my-close' },
-          table: { disable: true },
-        },
       },
     },
     {
@@ -699,11 +684,6 @@ describe('mapArgTypes', () => {
             category: 'events',
             type: { summary: 'CustomEvent<{ value: number }>' },
           },
-        },
-        onValueChange: {
-          name: 'onValueChange',
-          action: { name: 'value-change' },
-          table: { disable: true },
         },
       },
     },
@@ -783,11 +763,6 @@ describe('mapArgTypes', () => {
             category: 'events',
             type: { summary: 'CustomEvent' },
           },
-        },
-        onReady: {
-          name: 'onReady',
-          action: { name: 'ready' },
-          table: { disable: true },
         },
         'actions-slot': {
           name: 'actions',

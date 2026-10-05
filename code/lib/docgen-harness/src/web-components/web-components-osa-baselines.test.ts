@@ -14,6 +14,7 @@ import {
   DEFAULT_TYPE_PROPERTY,
   type WebComponentsDocgenPayload,
 } from '../../../../renderers/web-components/src/docgen/index.ts';
+import { eventActionName } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/event-action-name.ts';
 import { isPublicField } from '../../../../renderers/web-components/src/docgen/component-docgen/arg-types/map-arg-types.ts';
 import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
@@ -125,6 +126,15 @@ const hiddenMemberNames = (payload: WebComponentsDocgenPayload): ReadonlySet<str
   return hiddenFieldNames;
 };
 
+const legacyWaivedArgs = (payload: WebComponentsDocgenPayload): ReadonlySet<string> => {
+  const waivedArgs = new Set(hiddenMemberNames(payload));
+  // The server path has no `on<Name>` twin because server argTypes never reach the preview's action enhancer; events bind from `<name>-event` args.
+  for (const event of payload.customElementsManifest?.declaration?.events ?? []) {
+    waivedArgs.add(eventActionName(event.name));
+  }
+  return waivedArgs;
+};
+
 describe('hiddenMemberNames', () => {
   const payloadFor = (declaration: {
     members?: unknown[];
@@ -216,7 +226,7 @@ describe('web-components server-side docgen baselines', () => {
               label: `${fixtureCase}/${variant.legacyArgTypes}`,
               legacyBaseline: true,
               legacyManifestRuntime: true,
-              waivedArgs: hiddenMemberNames(payload!),
+              waivedArgs: legacyWaivedArgs(payload!),
             },
           ],
         });

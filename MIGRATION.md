@@ -40,6 +40,7 @@
   - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
+  - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -1205,6 +1206,73 @@ argTypes: { 'my-change': { table: { disable: true } } },
 
 // After
 argTypes: { 'my-change-event': { table: { disable: true } } },
+```
+
+Controls writes args under the same keys.
+A custom `render` that reads a slot, part or state arg by its raw name no longer follows its Control; read the suffixed key instead:
+
+```ts
+// Before
+render: (args) => html`<my-card>${unsafeHTML(args.actions)}</my-card>`,
+
+// After
+render: (args) => html`<my-card>${unsafeHTML(args['actions-slot'])}</my-card>`,
+```
+
+### Web Components: the default render binds args by key
+
+With `features.experimentalDocgenServer`, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
+It never reads argTypes or waits for docgen, so a story renders the same with or without the manifest, and in Vitest.
+
+| Arg key                                                     | Binding                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `--name`                                                    | CSS custom property, set inline                              |
+| a property of the element                                   | property                                                     |
+| observed by the element but not a property, primitive value | attribute; `true` sets it empty, `false` leaves it out       |
+| `<name>-event`, function value                              | event listener for `<name>`                                  |
+| `<name>-slot`, `default-slot`                               | HTML appended with `slot="<name>"`, or into the default slot |
+| `<name>-part`, `<name>-state`                               | `::part(<name>)` / `:state(<name>)` rule scoped to the story |
+| anything else                                               | property                                                     |
+
+Except for properties, `undefined`, `null` and `''` leave an arg unbound.
+
+An element registered after the story renders, for example by an autoloader or a lazy import, cannot be inspected, so its plain keys fall back to properties; suffixed keys still bind.
+
+The default render does not log events on its own.
+Pass a function for each event you want in the Actions panel, which also lets a `play` function assert it:
+
+```ts
+import { fn } from 'storybook/test';
+
+export const Default = {
+  args: {
+    heading: 'Hello',
+    'footer-slot': '<button>Ok</button>',
+    'demo-select-event': fn(),
+  },
+};
+```
+
+Keys the element only observes as attributes are set with `setAttribute`, so the element receives the string form and converts it as it would from HTML.
+
+The default render now returns a `DocumentFragment` with the element as its last child, so scoped part and state rules can come first.
+A decorator that calls element methods on the story result must read the element from the fragment:
+
+```ts
+// Before
+(storyFn) => {
+  const element = storyFn();
+  element.setAttribute('theme', 'dark');
+  return element;
+},
+
+// After
+(storyFn) => {
+  const result = storyFn();
+  const element = result instanceof DocumentFragment ? result.lastElementChild : result;
+  element?.setAttribute('theme', 'dark');
+  return result;
+},
 ```
 
 ## From version 10.5.x to 10.6.0

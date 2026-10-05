@@ -4,7 +4,7 @@ import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { clearRegistry, getService } from '../../shared/open-service/server.ts';
 import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import type { ReviewService } from '../../shared/open-service/services/review/definition.ts';
-import { experimental_devServer, services } from './common-preset.ts';
+import { clearToolsetRegistry } from '../../shared/open-service/toolset-registry.ts';
 
 const index = {
   v: 5,
@@ -23,8 +23,16 @@ const index = {
 
 let now: number;
 let options: Options;
+let services: typeof import('./common-preset.ts').services;
+let experimental_devServer: typeof import('./common-preset.ts').experimental_devServer;
+let OpenServiceDevServerBeforeServicesError: typeof import('../../server-errors.ts').OpenServiceDevServerBeforeServicesError;
 
-beforeEach(() => {
+beforeEach(async () => {
+  // The subscription queue is module state, so each test needs a fresh `common-preset` instance.
+  vi.resetModules();
+  ({ services, experimental_devServer } = await import('./common-preset.ts'));
+  ({ OpenServiceDevServerBeforeServicesError } = await import('../../server-errors.ts'));
+
   options = {
     channel: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
     presets: {
@@ -41,6 +49,7 @@ beforeEach(() => {
     },
   } as unknown as Options;
   clearRegistry();
+  clearToolsetRegistry();
   vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
   now = 1_000;
   vi.spyOn(Date, 'now').mockImplementation(() => now);
@@ -48,6 +57,7 @@ beforeEach(() => {
 
 afterEach(() => {
   clearRegistry();
+  clearToolsetRegistry();
   vi.unstubAllGlobals();
   vi.restoreAllMocks();
 });
@@ -70,4 +80,28 @@ it('marks the review stale on module-graph changes only once experimental_devSer
   await experimental_devServer(undefined as never, options);
   await moduleGraph.commands._applyGraphUpdate({ bumpedStoryFiles: ['./src/Button.stories.tsx'] });
   await vi.waitFor(() => expect(review.queries.current.get(undefined)?.stale).toBe(true));
+});
+
+it('throws when experimental_devServer runs before services', async () => {
+  await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
+    OpenServiceDevServerBeforeServicesError
+  );
+});
+
+it('throws when experimental_devServer runs while services is still in flight', async () => {
+  const applyingServices = services(undefined, options);
+
+  await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
+    OpenServiceDevServerBeforeServicesError
+  );
+  await applyingServices;
+});
+
+it('throws when experimental_devServer is applied twice', async () => {
+  await services(undefined, options);
+  await experimental_devServer(undefined as never, options);
+
+  await expect(experimental_devServer(undefined as never, options)).rejects.toThrow(
+    OpenServiceDevServerBeforeServicesError
+  );
 });

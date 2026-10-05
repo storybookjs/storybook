@@ -402,6 +402,18 @@ export class OpenServiceServicesAppliedTwiceError extends StorybookError {
   }
 }
 
+export class OpenServiceDevServerBeforeServicesError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceDevServerBeforeServicesError',
+      category: Category.CORE_COMMON,
+      code: 33,
+      message: dedent`The "experimental_devServer" preset property was applied before the "services" preset property completed, or more than once.
+        The dev server must apply "services" once before "experimental_devServer", or services such as the review stop following file changes.`,
+    });
+  }
+}
+
 export class OpenServiceMissingToolsetError extends StorybookError {
   constructor(public data: { toolsetId: string }) {
     super({

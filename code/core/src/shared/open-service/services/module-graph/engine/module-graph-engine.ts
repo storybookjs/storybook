@@ -301,6 +301,7 @@ export class ModuleGraphEngine {
    * patches to be enqueued.
    */
   private async refreshStoryFiles(): Promise<void> {
+    const receivedAt = Date.now();
     const storyIndex = await this.options.getIndex();
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const next = new Set(storyIdsByFile.keys());
@@ -325,7 +326,6 @@ export class ModuleGraphEngine {
 
     this.storyFiles = next;
 
-    const receivedAt = Date.now();
     for (const path of added) {
       this.patchQueue = this.patchQueue
         .then(() => this.handleFileChange({ kind: 'add', path }, receivedAt))

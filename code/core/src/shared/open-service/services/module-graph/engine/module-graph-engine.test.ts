@@ -264,7 +264,7 @@ describe('ModuleGraphEngine', () => {
     expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
   });
 
-  it('dates a bump by the file mtime, capped at when the event arrived, which also dates a deleted file', async () => {
+  it('dates a bump by its file mtime capped at arrival, and a deleted file by arrival', async () => {
     const story = '/repo/src/B.stories.tsx';
     const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
     const { service, adapter, emitFileChange, callbacks } = setup({

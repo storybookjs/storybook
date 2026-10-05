@@ -7,11 +7,11 @@ import { describe, expect, it } from 'vitest';
 import ts from 'typescript';
 import { createCheckerByJson } from 'vue-component-meta';
 
-import { buildApiDescription } from '../../../../renderers/vue3/src/docgen/api-description.ts';
 import {
   CHECKER_OPTIONS,
+  buildApiDescription,
   collectComponentMetaSources,
-} from '../../../../renderers/vue3/src/docgen/component-meta.ts';
+} from '@storybook/vue3/internal/docgen';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, CHECKER_OPTIONS);

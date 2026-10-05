@@ -30,8 +30,14 @@ import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
+import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
+import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
-import { isCanonicalCsf2BindCall, isCsfFactoryCall } from './story-shape/utils.ts';
+import {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
+  unwrapExpression,
+} from './story-shape/utils.ts';
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -44,6 +50,13 @@ interface BabelFile {
   inputMap: object | null;
   code: string;
 }
+
+type CsfMutationState = {
+  diagnostics: CsfMutationDiagnostic[];
+  changed: boolean;
+};
+
+const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
 
 const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
 export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
@@ -306,6 +319,14 @@ export class CsfFile {
 
   _metaIsFactory: boolean | undefined;
 
+  _metaFactoryCall: t.CallExpression | undefined;
+
+  /**
+   * True when the CSF factory configuration could not be resolved to an object literal in this
+   * file, so `_metaNode` is a stand-in that is not part of the AST. Writes to it are discarded.
+   */
+  _metaNodeIsSynthetic: boolean | undefined;
+
   _storyStatements: Record<string, t.ExportNamedDeclaration | t.Expression> = {};
 
   _storyAnnotations: Record<string, Record<string, t.Node>> = {};
@@ -323,6 +344,66 @@ export class CsfFile {
     this._file = file;
     this._options = options;
     this.imports = [];
+    mutationStates.set(this, { diagnostics: [], changed: false });
+  }
+
+  /**
+   * Read diagnostics from object discovery, reads, and mutations. Check them before writing
+   * because a file can contain both successful edits and unsupported targets.
+   *
+   * @example
+   * ```ts
+   * const [story] = csf.objects({ meta: false });
+   * story.set(['args', 'old'], 1);
+   * story.set(['args', 'current'], 2);
+   * story.rename(['args', 'old'], 'current');
+   * csf.mutationDiagnostics.map(({ code }) => code); // ['occupied-destination']
+   * ```
+   */
+  get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
+    return [...mutationStates.get(this)!.diagnostics];
+  }
+
+  /**
+   * Report whether any object editor has changed this story file.
+   *
+   * @example
+   * ```ts
+   * csf.changed; // false, before any edits
+   * const [story] = csf.objects({ meta: false });
+   * story.set(['args', 'disabled'], true);
+   * csf.changed; // true
+   * ```
+   */
+  get changed() {
+    return mutationStates.get(this)!.changed;
+  }
+
+  /**
+   * Discover editors for the meta and stories, including CSF2 parameter assignments. Unsupported
+   * targets are skipped and reported in `mutationDiagnostics`.
+   *
+   * @example
+   * ```ts
+   * const csf = loadCsf('export default {}; export const Primary = {};', {
+   *   makeTitle: () => 'Example',
+   * }).parse();
+   * const [story] = csf.objects({ meta: false });
+   * story.set(['args', 'disabled'], true);
+   * story.getValue(['args']); // { disabled: true }
+   * csf.changed; // true
+   * ```
+   */
+  objects(options: CsfObjectOptions = {}): readonly CsfObject[] {
+    const state = mutationStates.get(this)!;
+    return discoverCsfObjects(
+      this,
+      options,
+      (diagnostic) => state.diagnostics.push(diagnostic),
+      () => {
+        state.changed = true;
+      }
+    );
   }
 
   _parseTitle(value: t.Node) {
@@ -669,6 +750,7 @@ export class CsfFile {
                   : specifier.local;
 
                 if (exportName === 'default') {
+                  self._metaVariableName = localName;
                   let metaNode: t.ObjectExpression | undefined;
 
                   if (t.isObjectExpression(decl)) {
@@ -809,7 +891,7 @@ export class CsfFile {
             t.isMemberExpression(callee) &&
             t.isIdentifier(callee.property) &&
             callee.property.name === 'meta' &&
-            node.arguments.length > 0
+            !callee.computed
           ) {
             // Find the root object for factory pattern:
             // - preview.meta() => preview
@@ -825,18 +907,32 @@ export class CsfFile {
               if (t.isImportDeclaration(configParent)) {
                 if (isValidPreviewPath(configParent.source.value)) {
                   self._metaIsFactory = true;
-                  const metaDeclarator = path.findParent((p) =>
-                    p.isVariableDeclarator()
-                  ) as NodePath<t.VariableDeclarator>;
+                  self._metaFactoryCall = node;
+                  const metaDeclarator = path.findParent((p) => p.isVariableDeclarator());
 
                   // find the name of the meta variable declaration
                   // e.g. const foo = preview.meta({ ... });
                   // otherwise fallback to meta
-                  self._metaVariableName = t.isIdentifier(metaDeclarator.node.id)
-                    ? metaDeclarator.node.id.name
-                    : callee.property.name;
-                  const metaNode = node.arguments[0] as t.ObjectExpression;
-                  self._parseMeta(metaNode, self._ast.program);
+                  self._metaVariableName =
+                    metaDeclarator?.isVariableDeclarator() && t.isIdentifier(metaDeclarator.node.id)
+                      ? metaDeclarator.node.id.name
+                      : callee.property.name;
+                  const [argument] = node.arguments;
+                  const argumentBinding =
+                    argument && t.isIdentifier(argument)
+                      ? path.scope.getBinding(argument.name)
+                      : undefined;
+                  const argumentNode =
+                    argumentBinding?.constant && argumentBinding.path.isVariableDeclarator()
+                      ? argumentBinding.path.node.init
+                      : argument;
+                  const unwrappedArgument = argumentNode && unwrapExpression(argumentNode);
+                  if (t.isObjectExpression(unwrappedArgument)) {
+                    self._parseMeta(unwrappedArgument, self._ast.program);
+                  } else {
+                    self._metaNodeIsSynthetic = true;
+                    self._parseMeta(t.objectExpression([]), self._ast.program);
+                  }
                 } else if (rootObject.name === 'preview') {
                   // Only throw if the variable is named "preview" - this indicates
                   // the user is trying to use CSF Factories but with a wrong import path.

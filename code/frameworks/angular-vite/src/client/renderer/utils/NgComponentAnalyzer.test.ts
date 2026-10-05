@@ -55,7 +55,7 @@ describe('getComponentInputsOutputs', () => {
     })
     class FooComponent {
       @Input()
-      public input: string;
+      public input?: string;
 
       public signalInput = input<string>();
 
@@ -64,7 +64,7 @@ describe('getComponentInputsOutputs', () => {
       });
 
       @Input('inputPropertyName')
-      public inputWithBindingPropertyName: string;
+      public inputWithBindingPropertyName?: string;
 
       @Output()
       public output = new EventEmitter<Event>();
@@ -98,6 +98,24 @@ describe('getComponentInputsOutputs', () => {
     expect(sortByPropName(outputs)).toEqual(sortByPropName(fooComponentFactory.outputs));
   });
 
+  it('binds an object-form metadata input without an alias under its own name', () => {
+    @Component({
+      template: '',
+      inputs: [{ name: 'plain' }, { name: 'aliased', alias: 'aliasedName' }],
+      standalone: false,
+    })
+    class FooComponent {
+      public plain?: string;
+
+      public aliased?: string;
+    }
+
+    expect(getComponentInputsOutputs(FooComponent).inputs).toEqual([
+      { propName: 'plain', templateName: 'plain' },
+      { propName: 'aliased', templateName: 'aliasedName' },
+    ]);
+  });
+
   it("should return I/O when some of component metadata has the same name as one of component's properties", () => {
     @Component({
       template: '',
@@ -107,10 +125,10 @@ describe('getComponentInputsOutputs', () => {
     })
     class FooComponent {
       @Input()
-      public input: string;
+      public input?: string;
 
       @Input('inputPropertyName')
-      public inputWithBindingPropertyName: string;
+      public inputWithBindingPropertyName?: string;
 
       @Output()
       public output = new EventEmitter<Event>();
@@ -137,11 +155,11 @@ describe('getComponentInputsOutputs', () => {
     class FooComponent {
       @Input()
       @HostBinding('class.preceeding-first')
-      public inputPreceedingHostBinding: string;
+      public inputPreceedingHostBinding?: string;
 
       @HostBinding('class.following-binding')
       @Input()
-      public inputFollowingHostBinding: string;
+      public inputFollowingHostBinding?: string;
     }
 
     const fooComponentFactory = resolveComponentFactory(FooComponent);
@@ -169,10 +187,10 @@ describe('getComponentInputsOutputs', () => {
     })
     class BarComponent {
       @Input()
-      public a: string;
+      public a?: string;
 
       @Input()
-      public b: string;
+      public b?: string;
     }
 
     @Component({
@@ -184,7 +202,7 @@ describe('getComponentInputsOutputs', () => {
       declare public b: string;
 
       @Input()
-      public c: string;
+      public c?: string;
     }
 
     const fooComponentFactory = resolveComponentFactory(FooComponent);
@@ -222,9 +240,9 @@ describe('getComponentInputsOutputs (signal-based I/O)', () => {
   it('detects @Input / @Output (decorator path, unchanged)', () => {
     @Component({ template: '', standalone: false })
     class FooComponent {
-      @Input() public input: string;
+      @Input() public input?: string;
 
-      @Input('inputPropertyName') public inputWithBindingPropertyName: string;
+      @Input('inputPropertyName') public inputWithBindingPropertyName?: string;
 
       @Output() public output = new EventEmitter<Event>();
 

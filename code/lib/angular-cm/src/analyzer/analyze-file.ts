@@ -11,13 +11,22 @@ import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from 
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
-export function analyzeSourceFile(
+/** A context over one source file; shared between the file's analysis and its argTypes extraction. */
+export function analyzerContext(
   ts: typeof tsModule,
   sourceFile: tsModule.SourceFile,
   checker: tsModule.TypeChecker
+): AnalyzerContext {
+  return { ts, checker, types: new TypeIndex(ts, checker), sourceFile };
+}
+
+export function analyzeSourceFile(
+  ts: typeof tsModule,
+  sourceFile: tsModule.SourceFile,
+  checker: tsModule.TypeChecker,
+  context: AnalyzerContext = analyzerContext(ts, sourceFile, checker)
 ): AngularFileMeta {
-  const types = new TypeIndex(ts, checker);
-  const ctx: AnalyzerContext = { ts, checker, types };
+  const ctx = context;
   const meta: AngularFileMeta = {
     components: [],
     directives: [],
@@ -29,7 +38,7 @@ export function analyzeSourceFile(
 
   for (const statement of sourceFile.statements) {
     if (ts.isEnumDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) {
-      types.addDeclaration(statement);
+      ctx.types.addDeclaration(statement);
       continue;
     }
     if (!ts.isClassDeclaration(statement) || !statement.name) {
@@ -108,7 +117,7 @@ export function analyzeSourceFile(
     }
   }
 
-  meta.miscellaneous = types.toMiscellaneous();
+  meta.miscellaneous = ctx.types.toMiscellaneous();
   return meta;
 }
 

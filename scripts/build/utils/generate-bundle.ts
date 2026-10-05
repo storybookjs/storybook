@@ -1,6 +1,7 @@
 import { existsSync, watch } from 'node:fs';
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 
+import { globalExternals } from '@fal-works/esbuild-plugin-global-externals';
 import * as esbuild from 'esbuild';
 import { raw as rawPlugin } from 'esbuild-raw-plugin';
 import { basename, dirname, join, relative } from 'pathe';
@@ -314,8 +315,8 @@ export async function generateBundle({
     );
   }
 
-  const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime);
-  const replacingChunkedEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime);
+  const regularRuntimeEntries = entries.runtime?.filter((entry) => !entry.chunkedRuntime) ?? [];
+  const chunkedRuntimeEntries = entries.runtime?.filter((entry) => entry.chunkedRuntime) ?? [];
 
   const chunkedRuntimeOutput = (entryPoint: string, useGlobals: boolean) => {
     const outDir = basename(dirname(entryPoint));
@@ -327,11 +328,16 @@ export async function generateBundle({
     };
   };
 
-  if (regularRuntimeEntries?.length) {
+  // Rolldown writes these once. Watch mode uses the esbuild bundle, which rebuilds on edit.
+  const esbuildRuntimeEntries = isWatch
+    ? [...regularRuntimeEntries, ...chunkedRuntimeEntries]
+    : regularRuntimeEntries;
+
+  if (esbuildRuntimeEntries.length) {
     contexts.push(
       esbuild.context({
         ...runtimeOptions,
-        entryPoints: regularRuntimeEntries.map(({ entryPoint }) => entryPoint),
+        entryPoints: esbuildRuntimeEntries.map(({ entryPoint }) => entryPoint),
         plugins: [
           ...runtimeOptions.plugins,
           metafileWriterPlugin('runtime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
@@ -340,15 +346,31 @@ export async function generateBundle({
     );
   }
 
+  if (isWatch && entries.globalizedRuntime?.length) {
+    contexts.push(
+      esbuild.context({
+        ...runtimeOptions,
+        entryPoints: entries.globalizedRuntime.map(({ entryPoint }) => entryPoint),
+        plugins: [
+          ...runtimeOptions.plugins,
+          globalExternals(globalsModuleInfoMap),
+          metafileWriterPlugin('globalizedRuntime', join(DIR_METAFILE_BASE, PACKAGE_DIR_NAME)),
+        ],
+      })
+    );
+  }
+
   const compile = await Promise.all(contexts);
-  await Promise.all([
-    ...(replacingChunkedEntries ?? []).map(({ entryPoint }) =>
-      buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
-    ),
-    ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
-      buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))
-    ),
-  ]);
+  if (!isWatch) {
+    await Promise.all([
+      ...chunkedRuntimeEntries.map(({ entryPoint }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, false))
+      ),
+      ...(entries.globalizedRuntime ?? []).map(({ entryPoint }) =>
+        buildChunkedRuntimeEntry(chunkedRuntimeOutput(entryPoint, true))
+      ),
+    ]);
+  }
 
   await Promise.all(
     compile.map(async (context) => {

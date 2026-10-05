@@ -584,7 +584,27 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
     expect(result.output).toContain('- Unknown key `storybook-id` in `--input`.');
-    expect(result.output).toContain('Valid flags: `--id`.');
+    expect(result.output).toContain('Valid keys: `id`.');
+  });
+
+  it('points a target option given after the tool name back before the toolset name', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--port', '6006'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain(
+      'goes before the toolset name: `npx storybook tools --port <value> docs show`'
+    );
+  });
+
+  it('rejects a `--__proto__` flag instead of dropping it', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--__proto__', '{"a":1}'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown flag `--__proto__`.');
   });
 
   it('leaves the test toolset out when the project does not register it', async () => {

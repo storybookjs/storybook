@@ -328,15 +328,20 @@ async function dispatchTools(
   const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
 
   const acceptedKeys = acceptedArgumentKeys(method.input);
-  const unknownKeys = acceptedKeys
-    ? Object.keys(parsed.args).filter((key) => !acceptedKeys.includes(key))
-    : [];
-  if (acceptedKeys && unknownKeys.length > 0) {
-    return result({
-      exitCode: 1,
-      output: formatUnknownArguments(commandPath, unknownKeys, parsed.flagKeys, acceptedKeys),
-      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
-    });
+  if (acceptedKeys) {
+    const unknownKeys = Object.keys(parsed.args).filter((key) => !acceptedKeys.includes(key));
+    if (unknownKeys.length > 0) {
+      return result({
+        exitCode: 1,
+        output: formatUnknownArguments(
+          `${entry.id} ${toCliMethodName(methodName)}`,
+          unknownKeys,
+          parsed.flagKeys,
+          acceptedKeys
+        ),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
   }
 
   if (tools.mode === 'local' && method.requiresDevServer) {
@@ -438,9 +443,8 @@ function formatRequiresDevServer(
   return lines.join('\n');
 }
 
-// `undefined` means any key may be valid: the schema has no JSON Schema form, or it admits extra
-// keys. An absent `additionalProperties` counts as closed because valibot's `object` converts that
-// way and drops the keys it does not declare.
+// Absent `additionalProperties` counts as closed: valibot's `object` converts that way and drops
+// undeclared keys.
 function acceptedArgumentKeys(schema: ToolsetJsonSchema | undefined): string[] | undefined {
   if (schema?.type !== 'object' || (schema.additionalProperties ?? false) !== false) {
     return undefined;
@@ -448,21 +452,31 @@ function acceptedArgumentKeys(schema: ToolsetJsonSchema | undefined): string[] |
   return Object.keys((schema.properties as Record<string, unknown> | undefined) ?? {});
 }
 
+const TARGET_OPTIONS = ['cwd', 'config-dir', 'port'];
+
 function formatUnknownArguments(
-  commandPath: string,
+  toolPath: string,
   unknownKeys: string[],
   flagKeys: string[],
   acceptedKeys: string[]
 ): string {
-  const lines = unknownKeys.map((key) =>
-    flagKeys.includes(key)
-      ? `- Unknown flag \`--${key}\`.`
-      : `- Unknown key \`${key}\` in \`--input\`.`
-  );
+  const commandPath = `npx storybook tools ${toolPath}`;
+  const lines = unknownKeys.map((key) => {
+    if (!flagKeys.includes(key)) {
+      return `- Unknown key \`${key}\` in \`--input\`.`;
+    }
+    if (TARGET_OPTIONS.includes(key)) {
+      return `- Unknown flag \`--${key}\`. It selects the target Storybook, so it goes before the toolset name: \`npx storybook tools --${key} <value> ${toolPath}\`.`;
+    }
+    return `- Unknown flag \`--${key}\`.`;
+  });
+  const onlyInputKeys = unknownKeys.every((key) => !flagKeys.includes(key));
   const accepted =
     acceptedKeys.length === 0
       ? 'This tool takes no arguments.'
-      : `Valid flags: ${acceptedKeys.map((key) => `\`--${key}\``).join(', ')}.`;
+      : onlyInputKeys
+        ? `Valid keys: ${acceptedKeys.map((key) => `\`${key}\``).join(', ')}.`
+        : `Valid flags: ${acceptedKeys.map((key) => `\`--${key}\``).join(', ')}.`;
   return `Invalid arguments for \`${commandPath}\`:
 
 ${lines.join('\n')}

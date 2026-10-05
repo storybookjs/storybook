@@ -21,8 +21,7 @@ export function toToolsetJsonSchema(schema: StandardSchemaV1): ToolsetJsonSchema
   try {
     return toJsonSchema(schema as never, {
       errorMode: 'ignore',
-      // `looseObject` converts exactly like `object`, which drops undeclared keys; mark it open so
-      // the tools CLI forwards its extra keys instead of rejecting them.
+      // `looseObject` otherwise converts exactly like `object`, which the tools CLI treats as closed.
       overrideSchema: ({ valibotSchema, jsonSchema }) =>
         valibotSchema.type === 'loose_object'
           ? { ...jsonSchema, additionalProperties: true }

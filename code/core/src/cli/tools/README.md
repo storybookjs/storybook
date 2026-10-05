@@ -65,8 +65,10 @@ be combined. `requiresDevServer` is a **local-mode intercept** only: when attach
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
 Tool arguments are `--key value` flags spelled exactly like the input schema keys (camelCase, e.g.
-`--storybookId`); there are no kebab-case aliases. A flag or `--input` key the schema does not
-declare fails the run with the valid flags listed, before the tool is called.
+`--storybookId`); there are no kebab-case aliases. A flag or `--input` key that an object input
+schema does not declare fails the run with the valid flags listed, before the tool is called.
+Schemas that admit extra keys (`looseObject`, `objectWithRest`) or have no object root are not
+checked.
 
 `docs` honours the project's `refs`: with composed Storybooks, `docs list` prints one section per
 source and `docs show` / `docs show-story` take `--storybookId`, which defaults to `local`. Remote

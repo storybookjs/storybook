@@ -53,7 +53,8 @@ export function parseToolsTokens(
   let json = defaults.json ?? false;
   let output = defaults.output;
   let attach = defaults.attach;
-  const flagArgs: Record<string, unknown> = {};
+  // Null prototype so `--__proto__` lands as an own key instead of replacing the prototype.
+  const flagArgs: Record<string, unknown> = Object.create(null);
 
   let i = 0;
   while (i < tokens.length) {

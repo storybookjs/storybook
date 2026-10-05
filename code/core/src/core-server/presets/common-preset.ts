@@ -32,11 +32,20 @@ import {
 } from 'storybook/internal/types';
 
 import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
-import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import {
+  registerDocgenService,
+  subscribeDocgenToModuleGraphChanges,
+} from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
-import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
-import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import {
+  registerReviewService,
+  subscribeReviewToModuleGraphChanges,
+} from '../../shared/open-service/services/review/server.ts';
+import {
+  registerStoryDocsService,
+  subscribeStoryDocsToModuleGraphChanges,
+} from '../../shared/open-service/services/story-docs/server.ts';
 import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
 import { sourceUrlManifestProvider } from '../../shared/open-service/toolsets/docs/access-provider.ts';
 import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
@@ -366,6 +375,9 @@ async function getHeadlessChangeDetectionAdapter(options: Options) {
   }
 }
 
+// Started from `experimental_devServer`: the attached tools CLI also applies `services`.
+const devServerSubscriptions: Array<() => void> = [];
+
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
 export const services = async (_value: void, options: Options): Promise<void> => {
@@ -417,6 +429,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerReviewService({
       getIndex,
     });
+    devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
     registerToolset(reviewToolset);
   }
 
@@ -441,8 +454,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       registerDocgenService({
         getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
-        workingDir: process.cwd(),
       });
+      devServerSubscriptions.push(() =>
+        subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+      );
     }
 
     // Story-docs registers whenever this block runs, docgen only when a worker is available, so
@@ -452,8 +467,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerStoryDocsService({
       getIndex,
       storyDocsProvider,
-      workingDir: process.cwd(),
     });
+    devServerSubscriptions.push(() =>
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+    );
   }
 
   // Registration-based selection between the docgen services and the inline manifests, shared
@@ -478,6 +495,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         : { docsAccess: localDocsAccess }
     )
   );
+};
+
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
+  for (const subscribe of devServerSubscriptions.splice(0)) {
+    subscribe();
+  }
+
+  return app;
 };
 
 // Store the promise (not the result) to prevent race conditions.

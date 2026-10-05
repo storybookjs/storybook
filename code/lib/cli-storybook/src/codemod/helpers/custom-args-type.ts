@@ -6,8 +6,8 @@ const argsTypeNames = new Set(['Meta', 'MetaObj', 'Story', 'StoryFn', 'StoryObj'
 const typeReference = (name: string, ...typeArguments: t.TSType[]) =>
   t.tsTypeReference(t.identifier(name), t.tsTypeParameterInstantiation(typeArguments));
 
-const keyName = (key: t.Node) =>
-  t.isIdentifier(key) ? key.name : t.isStringLiteral(key) ? key.value : undefined;
+const keyName = ({ key, computed }: { key: t.Node; computed?: boolean | null }) =>
+  t.isStringLiteral(key) ? key.value : !computed && t.isIdentifier(key) ? key.name : undefined;
 
 // The component is never a custom args type: `preview.meta()` infers its args from `component`.
 export function customArgsTypes(
@@ -17,7 +17,7 @@ export function customArgsTypes(
 ) {
   const metaArgKeys = t.isObjectExpression(metaArgs)
     ? metaArgs.properties.flatMap((property) => {
-        const name = t.isObjectProperty(property) && !property.computed && keyName(property.key);
+        const name = t.isObjectMember(property) && keyName(property);
         return name ? [name] : [];
       })
     : [];
@@ -95,12 +95,13 @@ export function customArgsTypes(
   // `meta.type<T>()` makes an arg of the meta that `T` redeclares required again in the story.
   const withoutMetaArgs = (type: t.TSType) => {
     const literal = literalOf(type);
+    // `Omit` does not distribute over a union and would leave only its common keys.
     const redeclares =
-      !literal ||
-      literal.members.some(
-        (member) =>
-          t.isTSPropertySignature(member) && metaArgKeys.includes(keyName(member.key) ?? '')
-      );
+      !t.isTSUnionType(type) &&
+      (!literal ||
+        literal.members.some(
+          (member) => t.isTSPropertySignature(member) && metaArgKeys.includes(keyName(member) ?? '')
+        ));
     return metaArgKeys.length > 0 && redeclares
       ? typeReference(
           'Omit',

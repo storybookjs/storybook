@@ -1,0 +1,3 @@
+<csf-shapes label="Meta"></csf-shapes>
+
+warning: Incomplete snippet: `nope` could not be bound, since `csf-shapes` declares no such attribute or property.

@@ -1,0 +1,3 @@
+<lit-property-only label="Default render"></lit-property-only>
+
+warning: Incomplete snippet: `items`, `config` are properties without an attribute, which the HTML snippet cannot express.

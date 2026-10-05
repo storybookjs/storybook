@@ -1,0 +1,3 @@
+<lit-events value="default event"></lit-events>
+
+warning: Incomplete snippet: `my-change-event`, `my-close-event` are listeners, which the HTML snippet cannot express.

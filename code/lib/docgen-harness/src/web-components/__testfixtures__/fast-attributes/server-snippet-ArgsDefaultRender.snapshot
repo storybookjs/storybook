@@ -1,0 +1,3 @@
+<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>
+
+warning: Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.

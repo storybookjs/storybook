@@ -1,0 +1,27 @@
+{
+  "id": "webcomponentsfixtures-vanilla-multi-definition",
+  "name": "multi-beta",
+  "path": "__PATH__",
+  "stories": {
+    "webcomponentsfixtures-vanilla-multi-definition--args-default-render": {
+      "id": "webcomponentsfixtures-vanilla-multi-definition--args-default-render",
+      "name": "Args Default Render",
+      "snippet": "<multi-beta></multi-beta>",
+      "warning": "Incomplete snippet: `betaLabel` are properties without an attribute, which the HTML snippet cannot express.",
+    },
+    "webcomponentsfixtures-vanilla-multi-definition--dom-node": {
+      "id": "webcomponentsfixtures-vanilla-multi-definition--dom-node",
+      "name": "Dom Node",
+      "snippet": "<multi-beta></multi-beta>",
+      "warning": "Incomplete snippet: `args => { const el = document.createElement('multi-beta'); el.setAttribute('beta-label', String(args.betaLabel)); return el; }` could not be resolved statically.
+Incomplete snippet: `betaLabel` are properties without an attribute, which the HTML snippet cannot express.",
+    },
+    "webcomponentsfixtures-vanilla-multi-definition--lit-template": {
+      "id": "webcomponentsfixtures-vanilla-multi-definition--lit-template",
+      "name": "Lit Template",
+      "snippet": "<multi-beta></multi-beta>",
+      "warning": "Incomplete snippet: `args => html`<multi-beta beta-label=${args.betaLabel}></multi-beta>`` could not be resolved statically.
+Incomplete snippet: `betaLabel` are properties without an attribute, which the HTML snippet cannot express.",
+    },
+  },
+}

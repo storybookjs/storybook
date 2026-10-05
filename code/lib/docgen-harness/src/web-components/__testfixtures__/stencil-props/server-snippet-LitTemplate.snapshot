@@ -1,0 +1,8 @@
+<stencil-props value="3" max="5" variant="compact" aria-label-text="Rating"></stencil-props>
+
+warning: Incomplete snippet: `args => html`<stencil-props
+      value=${args.value}
+      max=${args.max}
+      variant=${args.variant}
+      aria-label-text=${args.labelText}
+    ></stencil-props>`` could not be resolved statically.

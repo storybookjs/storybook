@@ -1,0 +1,3 @@
+(no snippet: the runtime source fallback stays authoritative)
+
+warning: No static snippet: `importedLabel` could not be resolved statically.

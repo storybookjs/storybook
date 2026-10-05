@@ -1,0 +1,3 @@
+<lit-toolkit-shapes size="small" level="3" tags="[&quot;b&quot;]" label="Default render"></lit-toolkit-shapes>
+
+warning: Incomplete snippet: `onToolkitResize` are listeners, which the HTML snippet cannot express.

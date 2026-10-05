@@ -1,0 +1,7 @@
+<vanilla-basic label="Vanilla" count="4" disabled></vanilla-basic>
+
+warning: Incomplete snippet: `args => html`<vanilla-basic
+      label=${args.label}
+      count=${args.count}
+      ?disabled=${args.disabled}
+    ></vanilla-basic>`` could not be resolved statically.

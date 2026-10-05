@@ -49,8 +49,15 @@ const mainConfigFile = (addon: string) => dedent`
   export default config;
 `;
 
-// `vol.fromJSON` creates the parent directories, which `vol.writeFileSync` does not.
-const write = (path: string, content: string) => vol.fromJSON({ [path]: content });
+// On Windows, `vol.toJSON()` keys don't match `path.resolve` paths, so the tests track the paths
+// they write and read them back through memfs. `vol.fromJSON` also creates the parent directories.
+const written = new Set<string>();
+const write = (path: string, content: string) => {
+  written.add(path);
+  vol.fromJSON({ [path]: content });
+};
+const readWritten = () =>
+  Object.fromEntries([...written].map((path) => [path, fs.readFileSync(path, 'utf8')]));
 
 const STORY_FILE = dedent`
   <script module>
@@ -72,7 +79,7 @@ describe('addon-svelte-csf-to-core', () => {
   } as unknown as JsPackageManager;
 
   const storyFiles = () =>
-    Object.keys(vol.toJSON()).filter((path) => path.includes('.stories.') || path.endsWith('.mdx'));
+    [...written].filter((path) => path.includes('.stories.') || path.endsWith('.mdx'));
 
   const mainConfig = { framework: '@storybook/sveltekit', addons: ['@storybook/addon-svelte-csf'] };
 
@@ -97,12 +104,13 @@ describe('addon-svelte-csf-to-core', () => {
       storiesPaths: storyFiles(),
       storybookVersion: '11.0.0',
     } as unknown as Omit<RunOptions<AddonSvelteCsfToCoreResult>, 'files'>);
-    return vol.toJSON();
+    return readWritten();
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     vol.reset();
+    written.clear();
     vi.mocked(readFile).mockImplementation(fs.promises.readFile as typeof readFile);
     vi.mocked(writeFile).mockImplementation(fs.promises.writeFile as typeof writeFile);
     vi.mocked(logger.warn).mockImplementation(() => {});
@@ -110,10 +118,8 @@ describe('addon-svelte-csf-to-core', () => {
     vi.mocked(packageManager.getAllDependencies).mockReturnValue({
       '@storybook/addon-svelte-csf': '^5.1.5',
     });
-    vol.fromJSON({
-      [MAIN]: mainConfigFile("'@storybook/addon-svelte-csf'"),
-      [STORY]: STORY_FILE,
-    });
+    write(MAIN, mainConfigFile("'@storybook/addon-svelte-csf'"));
+    write(STORY, STORY_FILE);
   });
 
   describe('check', () => {

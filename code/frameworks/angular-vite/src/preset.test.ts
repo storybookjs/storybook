@@ -629,12 +629,16 @@ describe('viteFinal tsconfig path resolution', () => {
 describe('features', () => {
   const applyFeatures = features as (existing: unknown, options: unknown) => Promise<any>;
 
-  it('turns the docgen server on by default', async () => {
-    expect(await applyFeatures({}, {})).toMatchObject({ experimentalDocgenServer: true });
+  it('turns the docgen server and component manifests on by default', async () => {
+    expect(await applyFeatures({}, {})).toMatchObject({
+      componentsManifest: true,
+      experimentalDocgenServer: true,
+    });
   });
 
   it('keeps other framework and core feature defaults', async () => {
-    expect(await applyFeatures({ componentsManifest: true }, {})).toMatchObject({
+    expect(await applyFeatures({ changeDetection: true }, {})).toMatchObject({
+      changeDetection: true,
       componentsManifest: true,
       experimentalDocgenServer: true,
     });

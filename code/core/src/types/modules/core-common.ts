@@ -613,7 +613,10 @@ export interface StorybookFeatures {
   /**
    * Enable component manifest generation for MCP and other tooling integrations.
    *
-   * @default false
+   * `@storybook/react`, `@storybook/vue3`, and `@storybook/angular-vite` default this to `true`.
+   * Set it to `false` to opt out.
+   *
+   * @default false // `true` for React, Vue 3, and `@storybook/angular-vite`
    */
   componentsManifest?: boolean;
 

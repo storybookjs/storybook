@@ -1076,6 +1076,7 @@ export async function setImportMap(cwd: string) {
   const packageJson = await readJson(join(cwd, 'package.json'));
 
   packageJson.imports = {
+    ...packageJson.imports,
     '#utils': {
       storybook: './template-stories/core/utils.mock.ts',
       default: './template-stories/core/utils.ts',

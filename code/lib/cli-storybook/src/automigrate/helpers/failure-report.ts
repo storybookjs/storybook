@@ -5,6 +5,8 @@ import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
+// eslint-disable-next-line depend/ban-dependencies
+import slash from 'slash';
 
 import type { FileFailure } from '../pipeline.ts';
 
@@ -34,7 +36,7 @@ const renderSections = (failures: FixFileFailure[], root: string) =>
       '| ---- | ------ |',
       ...fixFailures.map(
         ({ file, message }) =>
-          `| \`${cell(relative(root, file).replaceAll('\\', '/'))}\` | ${cell(message.replaceAll(`${root}\\`, '').replaceAll(`${root.replaceAll('\\', '/')}/`, ''))} |`
+          `| \`${cell(slash(relative(root, file)))}\` | ${cell(slash(message).replaceAll(`${slash(root)}/`, ''))} |`
       ),
     ].join('\n')
   );

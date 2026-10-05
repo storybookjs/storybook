@@ -235,7 +235,7 @@ describe('file failures', () => {
     );
 
     expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
-      "| `src/B.stories.ts` | EACCES: permission denied, open 'src\\B.stories.ts' |"
+      "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
     );
   });
 });

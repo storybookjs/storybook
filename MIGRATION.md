@@ -43,6 +43,8 @@
   - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
   - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
   - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
+  - [Svelte CSF is built into the Svelte frameworks](#svelte-csf-is-built-into-the-svelte-frameworks)
+  - [Svelte CSF: legacy story syntax removed](#svelte-csf-legacy-story-syntax-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -1312,6 +1314,216 @@ A decorator that calls element methods on the story result must read the element
   return result;
 },
 ```
+
+### Svelte CSF is built into the Svelte frameworks
+
+`@storybook/svelte-vite` and `@storybook/sveltekit` now include Svelte CSF, so you no longer need `@storybook/addon-svelte-csf`. Storybook doesn't start while the addon is still in `addons`.
+
+Run the automigration:
+
+```sh
+npx storybook automigrate addon-svelte-csf-to-core
+```
+
+The automigration changes your stories and the files in your Storybook config directory. Change other files that import from `@storybook/addon-svelte-csf` by hand.
+
+Or migrate by hand:
+
+1. Remove `@storybook/addon-svelte-csf` from `addons` in `.storybook/main.js|ts`, and from your `package.json`.
+2. Import Svelte CSF from your framework package. The exports keep their names.
+
+```diff
+- import { defineMeta, type Args } from '@storybook/addon-svelte-csf';
++ import { defineMeta, type Args } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+```
+
+The error codes stay the same. Their docs are in [`code/renderers/svelte/src/svelte-csf/ERRORS.md`](https://github.com/storybookjs/storybook/blob/next/code/renderers/svelte/src/svelte-csf/ERRORS.md).
+
+### Svelte CSF: legacy story syntax removed
+
+Svelte CSF supports only stories defined with `defineMeta`. Storybook 11 removes these parts of the legacy syntax:
+
+- The `<Meta>` component and `export const meta`
+- The `<Template>` component, and the `legacyTemplate` option that turned it on
+- The `let:args` and `let:context` directives on `<Story>`
+- The `id`, `autodocs` and `source` props on `<Story>`
+
+The automigration lists the story files that don't use `defineMeta`, and doesn't change them. Migrate them by hand.
+
+<details>
+<summary>Migrate legacy stories to <code>defineMeta</code></summary>
+
+#### `<Meta>` component
+
+Before:
+
+```svelte
+<script>
+  import { Meta } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+</script>
+
+<Meta title="Atoms/Button" component={Button} args={{ size: 'medium' }} />
+```
+
+After:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  });
+</script>
+```
+
+#### `export const meta`
+
+Before:
+
+```svelte
+<script module>
+  import { Story } from '@storybook/addon-svelte-csf';
+
+  import Button from './Button.svelte';
+
+  export const meta = {
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  };
+</script>
+
+<Story name="Default" />
+```
+
+After:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    title: 'Atoms/Button',
+    component: Button,
+    args: {
+      size: 'medium',
+    },
+  });
+</script>
+
+<Story name="Default" />
+```
+
+#### `let:args` and `let:context`
+
+Use a `template` snippet. Its first argument is the args, and its optional second argument is the story context.
+
+Before:
+
+```svelte
+<Story name="Default" let:args let:context>
+  <Button {...args} />
+  <div>Story name: {context.name}</div>
+</Story>
+```
+
+After:
+
+```svelte
+<Story name="Default">
+  {#snippet template(args, context)}
+    <Button {...args} />
+    <div>Story name: {context.name}</div>
+  {/snippet}
+</Story>
+```
+
+#### `<Template>` component
+
+A story without a template renders the component from `defineMeta`, with the args as props. So you can remove a `<Template>` that only renders the component.
+
+To share a template between stories, define a snippet at the top level of the file, and pass it to each story:
+
+```svelte
+{#snippet template(args)}
+  <Button {...args}>Click me</Button>
+{/snippet}
+
+<Story name="Primary" args={{ primary: true }} {template} />
+<Story name="Secondary" args={{ primary: false }} {template} />
+```
+
+To use the same template for all stories in the file, set it as `render` in `defineMeta`:
+
+```svelte
+<script module>
+  import { defineMeta } from '@storybook/sveltekit'; // or '@storybook/svelte-vite'
+
+  import Button from './Button.svelte';
+
+  const { Story } = defineMeta({
+    component: Button,
+    render: template,
+  });
+</script>
+
+{#snippet template(args)}
+  <Button {...args}>Click me</Button>
+{/snippet}
+
+<Story name="Primary" args={{ primary: true }} />
+```
+
+A snippet that `render` references can't use declarations from a non-module `<script>`. See [Exporting snippets](https://svelte.dev/docs/svelte/snippet#Exporting-snippets) in the Svelte docs.
+
+For a static story that ignores args, set `asChild` on the story. The story then renders its children instead of the component:
+
+```svelte
+<Story name="Composed" asChild>
+  <ButtonGroup>
+    <Button>One</Button>
+    <Button>Two</Button>
+  </ButtonGroup>
+</Story>
+```
+
+#### `id`, `autodocs` and `source` props on `<Story>`
+
+Before:
+
+```svelte
+<Story id="Primary" name="Primary button" autodocs source="<Button primary />" />
+```
+
+After:
+
+```svelte
+<Story
+  exportName="Primary"
+  name="Primary button"
+  tags={['autodocs']}
+  parameters={{ docs: { source: { code: '<Button primary />' } } }}
+/>
+```
+
+- `id` → `exportName`
+- `autodocs` → add `'autodocs'` to `tags`
+- `source="…"` → `parameters.docs.source.code`. Remove a `source` prop without a value: Storybook generates the source from the story.
+
+</details>
 
 ## From version 10.5.x to 10.6.0
 

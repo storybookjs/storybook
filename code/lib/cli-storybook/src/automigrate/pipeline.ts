@@ -75,7 +75,7 @@ export interface TransformOutcome {
   errors: FileFailure[];
 }
 
-interface ProjectPaths {
+export interface ProjectPaths {
   configDir: string;
   /** Undefined when core cannot locate the main config. */
   mainConfigPath?: string;
@@ -116,9 +116,10 @@ const edit = async (hook: FixTransform, context: TransformContext, parsed: Parse
 
 /**
  * Classify every project file once, independent of which hooks are active, so a file keeps its kind
- * whichever fixes run. Stories claim their paths before the config directory glob does.
+ * whichever fixes run. Stories claim their paths before the config directory glob does. A fix's
+ * `check` can call this to find the files its hooks visit.
  */
-const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
+export const collectFiles = async (project: ProjectPaths, kinds: Set<FileKind>) => {
   if (kinds.size === 0) {
     return [];
   }

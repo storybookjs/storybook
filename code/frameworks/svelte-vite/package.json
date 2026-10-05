@@ -59,6 +59,7 @@
     "typescript": "^5.9.0 || ^6.0.0"
   },
   "devDependencies": {
+    "@rolldown/pluginutils": "^1.0.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.0",
     "@types/node": "^22.19.1",
     "svelte": "^5.39.5",

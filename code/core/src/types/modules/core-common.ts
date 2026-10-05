@@ -412,8 +412,18 @@ type Tag = string;
 export interface TagOptions {
   /** Visually include or exclude stories with this tag in the sidebar by default */
   defaultFilterSelection?: 'include' | 'exclude' | undefined;
-  excludeFromSidebar: boolean;
-  excludeFromDocsStories: boolean;
+  /** Hide stories with this tag from the sidebar. The filter menu cannot bring them back. */
+  hideFromSidebar?: boolean;
+  /** Hide stories with this tag from autodocs pages. */
+  hideFromAutodocs?: boolean;
+  /**
+   * Hide this tag from the sidebar filter menu. Stories stay visible unless another option hides
+   * them.
+   *
+   * A hidden tag can still be an active filter through `defaultFilterSelection` or the URL. The menu
+   * then shows an active-filter count and no checkbox. Avoid that combination.
+   */
+  hideFromFilterPanel?: boolean;
 }
 
 export type TagsOptions = Record<Tag, Partial<TagOptions>>;

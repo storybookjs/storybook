@@ -435,7 +435,7 @@ export const PendingUpdateSupersedesStale = meta.story({
     const canvas = within(canvasElement);
 
     await applyReviewState();
-    await reviewService.commands.markStale({ revision: 1 });
+    await reviewService.commands.markStale({ revision: 1, changedAt: Date.now() });
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
 
     await reviewService.commands.setReview(updatedReviewState);

@@ -31,9 +31,9 @@ export const reviewServiceForStories = registerService(reviewServiceDef, {
       },
     },
     markStale: {
-      handler: async ({ revision }, ctx) => {
+      handler: async (change, ctx) => {
         ctx.self.setState((state) => {
-          applyMarkStale(state, revision);
+          applyMarkStale(state, change);
         });
       },
     },

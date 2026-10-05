@@ -1,4 +1,4 @@
-import { writeFile } from 'node:fs/promises';
+import { stat, writeFile } from 'node:fs/promises';
 
 import { join, normalize } from 'pathe';
 
@@ -37,8 +37,9 @@ export interface ModuleGraphEngineOptions {
   /**
    * Fired after every settled file-change patch. Empty `bumpedStoryFiles` means the path was
    * out of graph: `fileActivityRevision` still advances so change detection can rescan git.
+   * `changedAt` is the changed file's modification time, or when the event arrived for a removal.
    */
-  onBump?: (bumpedStoryFiles: string[]) => void | Promise<void>;
+  onBump?: (bumpedStoryFiles: string[], changedAt: number) => void | Promise<void>;
 }
 
 /**
@@ -119,7 +120,8 @@ export class ModuleGraphEngine {
   private async mirrorUpdate(
     changedFile: string,
     prePatchBumped: Set<string>,
-    indexChanged: boolean
+    indexChanged: boolean,
+    changedAt: number
   ): Promise<void> {
     if (!this.reverseIndex) {
       return;
@@ -137,7 +139,8 @@ export class ModuleGraphEngine {
       );
     }
     await this.options.onBump?.(
-      Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir))
+      Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir)),
+      changedAt
     );
   }
 
@@ -230,9 +233,9 @@ export class ModuleGraphEngine {
     });
 
     // Subscribe BEFORE build — buffer events until patcher is ready
-    const eventBuffer: FileChangeEvent[] = [];
+    const eventBuffer: Array<{ event: FileChangeEvent; receivedAt: number }> = [];
     const unsubscribeBuffer = adapter.onFileChange((event) => {
-      eventBuffer.push(event);
+      eventBuffer.push({ event, receivedAt: Date.now() });
     });
 
     const { reverseIndex, graph } = await this.dependencyGraphBuilder.build(this.storyFiles);
@@ -252,15 +255,16 @@ export class ModuleGraphEngine {
 
     // Drain buffered events into patchQueue, then switch to live handler
     unsubscribeBuffer();
-    for (const event of eventBuffer) {
+    for (const { event, receivedAt } of eventBuffer) {
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange(event))
+        .then(() => this.handleFileChange(event, receivedAt))
         .catch(() => undefined);
     }
 
     adapter.onFileChange((event) => {
+      const receivedAt = Date.now();
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange(event))
+        .then(() => this.handleFileChange(event, receivedAt))
         .catch(() => undefined);
     });
 
@@ -320,14 +324,15 @@ export class ModuleGraphEngine {
 
     this.storyFiles = next;
 
+    const receivedAt = Date.now();
     for (const path of added) {
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange({ kind: 'add', path }))
+        .then(() => this.handleFileChange({ kind: 'add', path }, receivedAt))
         .catch(() => undefined);
     }
     for (const path of removed) {
       this.patchQueue = this.patchQueue
-        .then(() => this.handleFileChange({ kind: 'unlink', path }))
+        .then(() => this.handleFileChange({ kind: 'unlink', path }, receivedAt))
         .catch(() => undefined);
     }
   }
@@ -390,10 +395,19 @@ export class ModuleGraphEngine {
     }
   }
 
-  private async handleFileChange(event: FileChangeEvent): Promise<void> {
+  private async handleFileChange(event: FileChangeEvent, receivedAt: number): Promise<void> {
     if (!this.incrementalPatcher || !this.reverseIndex) {
       return;
     }
+    // Builders can report an edit long after it happened (webpack holds edits made during a
+    // compile until it finishes), so the file's own mtime dates the change.
+    const changedAt =
+      event.kind === 'unlink'
+        ? receivedAt
+        : await stat(event.path).then(
+            (stats) => stats.mtimeMs,
+            () => receivedAt
+          );
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
     const revisionBefore = this.reverseIndex.revision;
     try {
@@ -408,7 +422,8 @@ export class ModuleGraphEngine {
     await this.mirrorUpdate(
       event.path,
       prePatchBumped,
-      this.reverseIndex.revision !== revisionBefore
+      this.reverseIndex.revision !== revisionBefore,
+      changedAt
     );
   }
 }

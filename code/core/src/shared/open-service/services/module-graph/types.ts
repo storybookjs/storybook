@@ -27,6 +27,8 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
+  /** Newest modification time (unix ms) among the file changes that advanced {@link graphRevision}. */
+  graphChangedAt: number;
   /**
    * Monotonic counter advanced on every processed file-change event, including out-of-graph
    * paths that do not advance {@link graphRevision}. Change detection watches this to rescan

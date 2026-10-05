@@ -143,7 +143,7 @@ describe('registerReviewService', () => {
     });
     expect(getIndex).toHaveBeenCalledOnce();
 
-    await service.commands.markStale({ revision: 1 });
+    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
@@ -256,8 +256,8 @@ describe('registerReviewService', () => {
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    await service.commands.markStale({ revision: 0 });
-    await service.commands.markStale({ revision: 1 });
+    await service.commands.markStale({ revision: 0, changedAt: 2_000 });
+    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
 
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
@@ -266,30 +266,20 @@ describe('registerReviewService', () => {
     });
   });
 
-  it('records the revision once graph updates still in flight at publish time have settled', async () => {
-    let settleInFlightEdit!: () => void;
-    const settledEngine = new Promise<void>((resolve) => {
-      settleInFlightEdit = resolve;
-    });
-    vi.spyOn(moduleGraph.commands, '_waitForSettledEngine').mockImplementation(async () => {
-      await settledEngine;
-      await moduleGraph.commands._applyGraphUpdate({
-        bumpedStoryFiles: ['./src/Button.stories.tsx'],
-      });
-    });
+  it('ignores changes made before publishing that the module graph reports after it', async () => {
     const service = registerReviewService({ getIndex });
+    await service.commands.setReview(review);
 
-    const publish = service.commands.setReview(review);
-    settleInFlightEdit();
-    await publish;
+    await service.commands.markStale({ revision: 1, changedAt: 900 });
+    await service.commands.markStale({ revision: 1, changedAt: 1_000 });
 
-    expect(service.queries.current.get(undefined)?.revision).toBe(1);
+    expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
   });
 
   it('ignores markStale when no review is active', async () => {
     const service = registerReviewService({ getIndex });
 
-    await service.commands.markStale({ revision: 1 });
+    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
 
     expect(service.queries.current.get(undefined)).toBeNull();
   });
@@ -326,13 +316,9 @@ describe('registerReviewService', () => {
     await service.commands.setReview(review);
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
 
-    await moduleGraph.commands._applyGraphUpdate({
-      bumpedStoryFiles: ['./src/Button.stories.tsx'],
-    });
-    await service.commands.markStale({ revision: 1 });
+    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
     expect(service.queries.bannerKind.get(undefined)).toBe('stale');
 
-    now = 2_000;
     await service.commands.setReview({ ...review, title: 'Updated review' });
     expect(service.queries.bannerKind.get(undefined)).toBe('pending-update');
 
@@ -350,10 +336,10 @@ describe('registerReviewService', () => {
     now = 2_000;
     await service.commands.setReview({ ...review, title: 'Updated review' });
 
-    await service.commands.markStale({ revision: 1 });
+    await service.commands.markStale({ revision: 1, changedAt: 3_000 });
     expect(service.queries.pending.get(undefined)?.stale).toBeUndefined();
 
-    await service.commands.markStale({ revision: 2 });
+    await service.commands.markStale({ revision: 2, changedAt: 3_000 });
     expect(service.queries.pending.get(undefined)?.stale).toBe(true);
 
     await service.commands.acceptPending(undefined);
@@ -366,6 +352,7 @@ describe('registerReviewService', () => {
 
     await moduleGraph.commands._applyGraphUpdate({
       bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      changedAt: 2_000,
     });
 
     expect(service.queries.current.get(undefined)).toEqual({
@@ -382,6 +369,7 @@ describe('registerReviewService', () => {
 
     await moduleGraph.commands._applyGraphUpdate({
       bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      changedAt: 2_000,
     });
 
     await vi.waitFor(() =>
@@ -392,20 +380,5 @@ describe('registerReviewService', () => {
         stale: true,
       })
     );
-  });
-
-  it('does not mark a review stale for the revision it was published at once subscribed', async () => {
-    await moduleGraph.commands._applyGraphUpdate({
-      bumpedStoryFiles: ['./src/Button.stories.tsx'],
-    });
-    const service = registerReviewService({ getIndex });
-    const markStale = vi.spyOn(service.commands, 'markStale');
-    await service.commands.setReview(review);
-
-    subscribeReviewToModuleGraphChanges();
-
-    await vi.waitFor(() => expect(markStale).toHaveBeenCalledWith({ revision: 1 }));
-    await markStale.mock.results[0].value;
-    expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
   });
 });

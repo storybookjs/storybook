@@ -1,3 +1,5 @@
+import { stat } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -36,6 +38,7 @@ import {
   resetChangeDetectionReadiness as internal_resetChangeDetectionReadiness,
 } from './readiness.ts';
 
+vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../../shared/open-service/server.ts', () => ({
   getService: vi.fn(),
@@ -132,6 +135,8 @@ describe('ChangeDetectionService', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
+    // Fixture paths do not exist; real fs I/O would also not settle under fake timers.
+    vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
     internal_resetChangeDetectionReadiness();
     vi.mocked(logger.info).mockImplementation(() => undefined);
     vi.mocked(logger.warn).mockImplementation(() => undefined);

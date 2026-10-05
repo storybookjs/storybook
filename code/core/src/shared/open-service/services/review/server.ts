@@ -33,13 +33,9 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
             throw new OpenServiceUnknownStoryIdsError({ unknownIds });
           }
 
-          // The agent's own edits land before it publishes, so settling folds them into the
-          // review's revision instead of letting them mark it stale.
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
-            internal: true,
-          });
-          await moduleGraph.commands._waitForSettledEngine(undefined);
-          const revision = moduleGraph.queries.graphRevision.get(undefined);
+          const revision = ctx
+            .getService<ModuleGraphService>('core/module-graph', { internal: true })
+            .queries.graphRevision.get(undefined);
 
           ctx.self.setState((state) => {
             applyPublishedReview(state, { ...review, createdAt: Date.now(), revision });
@@ -54,9 +50,9 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
         },
       },
       markStale: {
-        handler: async ({ revision }, ctx) => {
+        handler: async (change, ctx) => {
           ctx.self.setState((state) => {
-            applyMarkStale(state, revision);
+            applyMarkStale(state, change);
           });
         },
       },
@@ -76,7 +72,8 @@ export function subscribeReviewToModuleGraphChanges(): void {
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
   moduleGraph.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
     if (revision !== undefined) {
-      void review.commands.markStale({ revision });
+      const changedAt = moduleGraph.queries.graphChangedAt.get(undefined);
+      void review.commands.markStale({ revision, changedAt });
     }
   });
 }

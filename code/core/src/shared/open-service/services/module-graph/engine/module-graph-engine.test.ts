@@ -1,3 +1,5 @@
+import { stat } from 'node:fs/promises';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -13,6 +15,7 @@ import {
 import { ModuleGraphFailureError } from '../errors.ts';
 import { ModuleGraphEngine } from './module-graph-engine.ts';
 
+vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./dependency-graph/dependency-graph-builder.ts', { spy: true });
@@ -50,6 +53,8 @@ function setup(options?: {
 describe('ModuleGraphEngine', () => {
   beforeEach(() => {
     vi.useFakeTimers();
+    // Fixture paths do not exist; real fs I/O would also not settle under fake timers.
+    vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
     vi.mocked(logger.info).mockImplementation(() => undefined);
     vi.mocked(logger.warn).mockImplementation(() => undefined);
     vi.mocked(logger.error).mockImplementation(() => undefined);
@@ -232,7 +237,7 @@ describe('ModuleGraphEngine', () => {
     expect(patchSpy).toHaveBeenCalledTimes(1);
     expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).toHaveBeenCalledTimes(1);
-    expect(callbacks.onBump).toHaveBeenCalledWith([]);
+    expect(callbacks.onBump).toHaveBeenCalledWith([], expect.any(Number));
   });
 
   it('bumps stories without calling onIndex when a patch leaves the reverse index untouched', async () => {
@@ -256,7 +261,31 @@ describe('ModuleGraphEngine', () => {
 
     expect(callbacks.onIndex).not.toHaveBeenCalled();
     expect(callbacks.onBump).toHaveBeenCalledTimes(1);
-    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx']);
+    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
+  });
+
+  it('dates a bump by the file mtime, or by when the event arrived for a removal', async () => {
+    const story = '/repo/src/B.stories.tsx';
+    const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
+    const { service, adapter, emitFileChange, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+      ]),
+    });
+    patchSpy.mockImplementation(async () => undefined);
+    vi.setSystemTime(50_000);
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    vi.mocked(stat).mockResolvedValueOnce({ mtimeMs: 40_000 } as Awaited<ReturnType<typeof stat>>);
+    emitFileChange({ kind: 'change', path: story });
+    await vi.runAllTimersAsync();
+    emitFileChange({ kind: 'unlink', path: story });
+    await vi.runAllTimersAsync();
+
+    expect(callbacks.onBump).toHaveBeenNthCalledWith(1, ['./src/B.stories.tsx'], 40_000);
+    expect(callbacks.onBump).toHaveBeenNthCalledWith(2, ['./src/B.stories.tsx'], 50_000);
   });
 
   it('buffers file events emitted during the build and applies them in order after build resolves', async () => {
@@ -316,7 +345,7 @@ describe('ModuleGraphEngine', () => {
     expect(patchSpy).toHaveBeenCalledWith({ kind: 'add', path: '/repo/src/B.stories.tsx' });
     // The replayed add flows through the normal patch path, so the new story is reported as a
     // targeted bump — no separate untargeted index-invalidation bump is needed.
-    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx']);
+    expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
   });
 
   it('does not emit an update when an invalidation leaves the story set unchanged', async () => {

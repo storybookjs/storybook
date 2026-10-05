@@ -25,7 +25,7 @@ const PREVIEW_BROWSER_NUDGE =
 export function previewInstructions(
   stories: PreviewStoriesOutput['stories'],
   ctx: ToolsetCtx,
-  { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
+  reviewEnabled: boolean
 ): string | undefined {
   // An all-error result has nothing to curate or open, so the nudges only apply once a URL resolved.
   if (!stories.some((story) => 'previewUrl' in story)) {

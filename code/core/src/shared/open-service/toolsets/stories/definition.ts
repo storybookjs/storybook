@@ -292,7 +292,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           });
           const data = {
             stories,
-            instructions: previewInstructions(stories, ctx, { reviewEnabled }),
+            instructions: previewInstructions(stories, ctx, reviewEnabled),
           };
 
           return {

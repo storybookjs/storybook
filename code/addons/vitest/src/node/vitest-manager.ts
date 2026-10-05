@@ -221,7 +221,7 @@ export class VitestManager {
   }
 
   private getStories(requestStoryIds?: string[]): StoryIndexEntry[] {
-    const index = this.testManager.store.getState().index;
+    const index = this.testManager.storyIndex;
     if (requestStoryIds) {
       const stories: StoryIndexEntry[] = [];
       for (const id of requestStoryIds) {
@@ -462,15 +462,15 @@ export class VitestManager {
 
     const storybookProject = this.vitest!.projects.find((p) => this.isStorybookProject(p));
     // we create synthetic TestSpecifications for the preview annotations and setup files, so that we can analyze their dependencies
-    const previewAnnotationSpecifications = this.testManager.store
-      .getState()
-      .previewAnnotations.map((previewAnnotation) => {
+    const previewAnnotationSpecifications = this.testManager.previewAnnotations.map(
+      (previewAnnotation) => {
         return {
           project: storybookProject ?? this.vitest!.projects[0],
           moduleId:
             typeof previewAnnotation === 'string' ? previewAnnotation : previewAnnotation.absolute,
         };
-      }) as TestSpecification[];
+      }
+    ) as TestSpecification[];
     const setupFilesSpecifications = this.vitest!.projects.flatMap((project) =>
       project.config.setupFiles.map((setupFile) => ({
         project,

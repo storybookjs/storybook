@@ -114,6 +114,11 @@ const config = defineMain({
       titlePrefix: 'addons/vitest',
       files: 'stories.tsx',
     },
+    {
+      directory: '../renderers/react/src/__test__',
+      titlePrefix: 'renderer/react',
+      files: '@(ReactDomClient|RenderToCanvas).stories.tsx',
+    },
   ],
   addons: [
     '@storybook/addon-onboarding',
@@ -163,7 +168,6 @@ const config = defineMain({
     experimentalReactComponentMeta: true,
     changeDetection: true,
     experimentalSearchDocsHeadings: true,
-    experimentalReview: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],
   viteFinal: async (viteConfig: InlineConfig, { configType }: Options) => {

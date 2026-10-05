@@ -81,6 +81,49 @@ test('globals overrides may be partial, mirroring args', () => {
   });
 });
 
+describe('meta.type<>()', () => {
+  test('returns the meta itself', () => {
+    expect(meta.type<{ args: { count: number } }>()).toBe(meta);
+  });
+
+  test('adds types to the stories created from it', () => {
+    const typed = meta.type<{
+      args: { count: number };
+      parameters: { baz?: { value: string } };
+      globals: { tone: 'warm' | 'cool' };
+      tags: Array<'a' | 'b'>;
+    }>();
+
+    const MyStory = typed.story({
+      args: { count: 1 },
+      parameters: { foo: { value: '1' }, baz: { value: '1' } },
+      globals: { tone: 'warm' },
+      tags: ['a'],
+      render: ({ label, count }) => {
+        expectTypeOf(label).toEqualTypeOf<string>();
+        expectTypeOf(count).toEqualTypeOf<number>();
+        return label + count;
+      },
+    });
+    expect(MyStory.composed.args).toEqual({ label: 'foo', count: 1 });
+
+    // @ts-expect-error count is required
+    typed.story({ args: { label: 'bar' } });
+    // @ts-expect-error can not assign numbers to strings
+    typed.story({ args: { count: 1 }, parameters: { baz: { value: 1 } } });
+    // @ts-expect-error tone must be 'warm' | 'cool'
+    typed.story({ args: { count: 1 }, globals: { tone: 'hot' } });
+    // @ts-expect-error tags must be 'a' | 'b'
+    typed.story({ args: { count: 1 }, tags: ['c'] });
+  });
+
+  test('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error label is required, the meta sets it to 'foo'
+    meta.type<{ args: { label: 'bar' } }>().story({ args: {} });
+    meta.type<{ args: { label: 'bar' } }>().story({ args: { label: 'bar' } });
+  });
+});
+
 describe('test function', () => {
   test('without overrides', async () => {
     const MyStory = meta.story({ args: { label: 'foo' } });

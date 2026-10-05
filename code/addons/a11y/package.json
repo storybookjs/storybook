@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-a11y",
-  "version": "11.0.0-alpha.0",
+  "version": "11.0.0-alpha.2",
   "description": "Storybook Addon A11y: Test UI component compliance with WCAG web accessibility standards",
   "keywords": [
     "a11y",
@@ -42,7 +42,6 @@
     },
     "./manager": "./dist/manager.js",
     "./package.json": "./package.json",
-    "./postinstall": "./dist/postinstall.js",
     "./preset": "./dist/preset.js",
     "./preview": {
       "types": "./dist/preview.d.ts",

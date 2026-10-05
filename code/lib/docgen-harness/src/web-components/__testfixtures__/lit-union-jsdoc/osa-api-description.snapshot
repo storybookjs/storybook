@@ -1,0 +1,16 @@
+## Attributes
+
+```
+export type LitUnionJsdocAttributes = {
+  /** Visual variant. */
+  variant?: 'primary' | 'secondary' | 'ghost' = 'primary';
+  /**
+   * Old label field.
+   *
+   * @deprecated Use label instead.
+   */
+  'old-label'?: string = ''; // property: oldLabel
+  /** Current label. */
+  label?: string = 'Union label';
+}
+```

@@ -6,6 +6,7 @@
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
+import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
@@ -19,6 +20,7 @@ import {
   registerToolset,
 } from '../../shared/open-service/toolset-registry.ts';
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
+import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
 import { invokeToolsetMethod } from '../../shared/open-service/toolset-definition.ts';
@@ -545,6 +547,84 @@ describe('dispatch', () => {
     expect(result.output).toContain('--help');
   });
 
+  it('rejects an unknown flag without calling the tool, naming it and listing the valid flags', async () => {
+    const resolve = vi.fn(DOCS_ACCESS.resolve);
+    clearToolsetRegistry();
+    registerToolset(
+      createDocsToolset({
+        sources: [
+          { source: { id: 'local', title: 'Local' }, access: { ...DOCS_ACCESS, resolve } },
+          { source: { id: 'tetra', title: 'Tetra' }, access: { ...DOCS_ACCESS, resolve } },
+        ],
+      })
+    );
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--storybook-id', 'tetra'], deps);
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toBe(`Invalid arguments for \`npx storybook tools docs show\`:
+
+- Unknown flag \`--storybook-id\`.
+
+Valid flags: \`--id\`, \`--storybookId\`.
+
+Run \`npx storybook tools docs show --help\` for the expected arguments.`);
+    expect(resolve).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unknown --input key the same way', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(
+      ['docs', 'show', '--input', '{"id":"button","storybook-id":"x"}'],
+      deps
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown flag `--storybook-id`.');
+    expect(result.output).toContain('Valid flags: `--id`.');
+  });
+
+  it('points a target option given after the tool name back before the toolset name', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show', '--id', 'button', '--port', '6006'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain(
+      'goes before the toolset name: `npx storybook tools --port <value> docs show`'
+    );
+  });
+
+  it('rejects any flag for a tool that takes no arguments', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['stories', 'changed', '--verbose'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('- Unknown flag `--verbose`.');
+    expect(result.output).toContain('This tool takes no arguments.');
+  });
+
+  it('declares every core tool input closed, so an undeclared key never reaches a handler', async () => {
+    const composedDocs = createDocsToolset({
+      sources: [{ source: { id: 'local', title: 'Local' }, access: DOCS_ACCESS }],
+    });
+    for (const toolset of [...getRegisteredToolsets(), composedDocs]) {
+      for (const [methodName, method] of Object.entries(toolset.methods)) {
+        const validation = await method.input['~standard'].validate({ undeclared: true });
+        const keys = validation.issues?.map((issue: StandardSchemaV1.Issue) => {
+          const [segment] = issue.path ?? [];
+          return typeof segment === 'object' ? segment.key : segment;
+        });
+        expect(keys ?? [], `${toolset.id}.${methodName}`).toContain('undeclared');
+      }
+    }
+  });
+
   it('leaves the test toolset out when the project does not register it', async () => {
     // Core harness never registers addon-vitest's `test` toolset.
     registerCoreToolsetsForTest();
@@ -557,7 +637,7 @@ describe('dispatch', () => {
 });
 
 describe('help', () => {
-  it('renders the full discovery dump with badges, schemas and CLI spellings', async () => {
+  it('renders the overview with badges and CLI spellings, without the arguments of any tool', async () => {
     const { deps } = makeDeps();
 
     const result = await runToolsCommand({ tokens: [], target: {} }, deps);
@@ -575,17 +655,13 @@ describe('help', () => {
     expect(result.output).toContain('--cwd <path>');
     expect(result.output).toContain('-c, --config-dir <dir-name>');
     expect(result.output).toContain('-o, --output <path>');
-    // The Commands listing summarizes every subcommand commander-style before the full reference.
     expect(result.output).toContain('Commands:');
-    expect(result.output).toContain('stories preview  [requires running Storybook]');
-    expect(result.output).toContain('docs list  [local]');
+    expect(result.output).toMatch(/stories preview +Get story preview URLs/);
+    expect(result.output).toMatch(/docs list +List All Documentation {2}\[local\]/);
     // `test` is owned by addon-vitest; the core harness does not register it.
     expect(result.output).not.toContain('test run');
-    expect(result.output).toContain('stories find-by-component');
-    // Input schemas come from the valibot definitions.
-    expect(result.output).toContain('`--componentPaths`');
-    // Declared output schemas are part of the dump.
-    expect(result.output).toContain('Output (`--json`):');
+    expect(result.output).not.toContain('`--componentPaths`');
+    expect(result.output).not.toContain('Output (`--json`):');
   });
 
   it('renders one toolset’s section with a usage line on a bare toolset name', async () => {
@@ -656,7 +732,7 @@ describe('help', () => {
   it('describes tools in CLI vocabulary, never MCP tool names', async () => {
     const { deps } = makeDeps();
 
-    const result = await runToolsCommand({ tokens: [], target: {} }, deps);
+    const result = await run(['stories', 'find-by-component', '--help'], deps);
 
     expect(result.output).toContain('npx storybook tools stories changed');
     expect(result.output).not.toContain('stories-changed');

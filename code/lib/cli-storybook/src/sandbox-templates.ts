@@ -637,8 +637,13 @@ export const baseTemplates = {
   },
   'svelte-kit/skeleton-ts': {
     name: 'SvelteKit Latest (Vite | TypeScript)',
+    // TODO: Remove `--min-release-age=0`, `minAgeGateExemptions` and `inDevelopment` once the
+    // published sandbox has SvelteKit 3. SvelteKit 3 and the `sv` release that scaffolds it are
+    // younger than the sandbox age gate, and npx ignores `minAgeGateExemptions`.
     script:
-      'npx sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+      'npx --min-release-age=0 sv@latest create --template minimal --types ts --no-add-ons --no-install {{beforeDir}}',
+    minAgeGateExemptions: ['@sveltejs/kit', '@sveltejs/adapter-auto'],
+    inDevelopment: true,
     expected: {
       framework: '@storybook/sveltekit',
       renderer: '@storybook/svelte',

@@ -11072,12 +11072,14 @@ __metadata:
     "@storybook/svelte": "workspace:*"
     "@storybook/svelte-vite": "workspace:*"
     "@types/node": "npm:^22.19.1"
+    memfs: "npm:^4.11.1"
     typescript: "npm:^6.0.3"
     vite: "npm:^7.0.4"
   peerDependencies:
+    "@sveltejs/kit": ^3.0.0
     storybook: "workspace:^"
     svelte: ^5.0.0
-    vite: ^6.3.0 || ^7.0.0 || ^8.0.0
+    vite: ^8.0.0
   languageName: unknown
   linkType: soft
 

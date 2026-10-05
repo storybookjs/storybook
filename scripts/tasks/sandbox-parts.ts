@@ -11,6 +11,7 @@ import { createRequire } from 'module';
 import { join, relative, resolve, sep } from 'path';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { dedent } from 'ts-dedent';
 
 import { SupportedLanguage } from 'storybook/internal/types';
 import { babelParse, types as t, traverse } from '../../code/core/src/babel/index.ts';
@@ -971,7 +972,9 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   }
 
   logger.log('📝 Adding static dirs');
-  const publicDir = join(sandboxDir, 'public');
+  // SvelteKit sets Vite's public directory to its `static` directory
+  const publicDirName = key.startsWith('svelte-kit/') ? 'static' : 'public';
+  const publicDir = join(sandboxDir, publicDirName);
   const storybookStaticDir = join(sandboxDir, '.storybook', 'static');
   await mkdir(publicDir, { recursive: true });
   await mkdir(storybookStaticDir, { recursive: true });
@@ -985,7 +988,7 @@ export const addStaticDirs: Task['run'] = async ({ key, sandboxDir }) => {
   await writeFile(join(storybookStaticDir, 'override.txt'), 'from storybook');
 
   const mainConfig = await readConfig({ fileName: 'main', cwd: sandboxDir });
-  mainConfig.set(['staticDirs'], [{ from: '../public', to: '/foo' }, './static']);
+  mainConfig.set(['staticDirs'], [{ from: `../${publicDirName}`, to: '/foo' }, './static']);
   await writeConfig(mainConfig);
 };
 
@@ -1198,6 +1201,22 @@ async function prepareSvelteKitSandbox(cwd: string) {
   });
 
   await writeConfig(viteConfig);
+
+  // Env fixture for the SvelteKit `$app/env/public` stories
+  await writeFile(
+    join(cwd, 'src', 'env.ts'),
+    dedent`
+      import { defineEnvVars } from '@sveltejs/kit/env';
+
+      export const variables = defineEnvVars({
+        STORYBOOK_STATIC_PUBLIC: {
+          public: true,
+          static: true,
+          schema: (value) => value ?? 'static public value',
+        },
+      });
+    `
+  );
 }
 
 /**

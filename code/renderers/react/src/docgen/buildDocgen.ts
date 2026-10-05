@@ -35,9 +35,21 @@ type ReactDocgenPayload = DocgenPayload & {
 function extractArgTypesFromComponentMeta(
   componentMeta: ComponentDoc | undefined
 ): StrictArgTypes | undefined {
-  return componentMeta
-    ? (extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined)
-    : undefined;
+  if (!componentMeta) {
+    return undefined;
+  }
+  // RCM defaults are source text, so a string default already carries its quotes. Without
+  // `computed`, the shared conversion mistakes them for react-docgen-typescript output and quotes
+  // any unquoted value (such as an unresolved identifier) a second time.
+  const props = Object.fromEntries(
+    Object.entries(componentMeta.props).map(([name, prop]) => [
+      name,
+      prop.defaultValue
+        ? { ...prop, defaultValue: { ...prop.defaultValue, computed: false } }
+        : prop,
+    ])
+  );
+  return extractArgTypes({ __docgenInfo: { ...componentMeta, props } }) ?? undefined;
 }
 
 /**

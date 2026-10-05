@@ -1,6 +1,8 @@
-import { readFile, writeFile } from 'node:fs/promises';
-
-function transformImports(source: string, renamedImports: Record<string, string>) {
+/**
+ * Rename imported and required packages, including their sub-paths. Returns `null` when no package
+ * matched.
+ */
+export function transformImports(source: string, renamedImports: Record<string, string>) {
   let hasChanges = false;
   let transformed = source;
 
@@ -15,31 +17,3 @@ function transformImports(source: string, renamedImports: Record<string, string>
 
   return hasChanges ? transformed : null;
 }
-
-export const transformImportFiles = async (
-  files: string[],
-  renamedImports: Record<string, string>,
-  dryRun?: boolean
-) => {
-  const errors: Array<{ file: string; error: Error }> = [];
-  const { default: pLimit } = await import('p-limit');
-  const limit = pLimit(10);
-
-  await Promise.all(
-    files.map((file) =>
-      limit(async () => {
-        try {
-          const contents = await readFile(file, 'utf-8');
-          const transformed = transformImports(contents, renamedImports);
-          if (!dryRun && transformed) {
-            await writeFile(file, transformed);
-          }
-        } catch (error) {
-          errors.push({ file, error: error as Error });
-        }
-      })
-    )
-  );
-
-  return errors;
-};

@@ -86,7 +86,7 @@ function storyDocsServiceStoryBeforeEach(of: ModuleExport, data: StoryDocsMockDa
 
 const SERVICE_STORY_DESCRIPTION = 'Description from the story-docs service';
 
-const meta: Meta<typeof Description> = {
+const meta = {
   component: Description,
   parameters: {
     layout: 'fullscreen',
@@ -98,7 +98,7 @@ const meta: Meta<typeof Description> = {
     attached: false,
     docsStyles: true,
   },
-};
+} satisfies Meta<typeof Description>;
 export default meta;
 
 type Story = StoryObj<typeof meta>;

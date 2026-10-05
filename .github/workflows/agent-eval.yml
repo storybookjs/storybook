@@ -17,16 +17,8 @@ on:
         description: 'Run the full 8xx eval line instead of only the default eval'
         type: boolean
         default: false
-      extra_models:
-        description: 'Also run evals for non-default model experiments (e.g. cc-plugin-sonnet-medium)'
-        type: boolean
-        default: false
       storybook_latest:
-        description: 'Install Storybook and @storybook/addon-mcp from the npm latest tag instead of the next tag and local build'
-        type: boolean
-        default: false
-      review:
-        description: 'Enable the experimentalReview feature flag in eval sandboxes and assert the review workflow'
+        description: 'Install every Storybook package from the npm latest tag instead of this checkout'
         type: boolean
         default: false
 
@@ -54,10 +46,15 @@ jobs:
       contents: read
       deployments: write
       pull-requests: write
+    env:
+      EVAL_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && '1' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
+          # The PR head rather than GitHub's temporary merge commit, so the commit each result
+          # records can still be looked up later.
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Node.js
@@ -69,10 +66,12 @@ jobs:
       - name: Install dependencies
         run: yarn install --immutable
 
-      - name: Build local MCP packages
+      # Sandbox setup compiles these again, but inside each eval's timeout, so warm the nx cache here.
+      - name: Compile the Storybook packages the sandboxes install
+        if: ${{ env.EVAL_STORYBOOK_LATEST != '1' }}
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+        run: yarn workspace agent-eval run compile:checkout
 
       - name: Type check agent eval config
         run: yarn workspace agent-eval run typecheck
@@ -102,13 +101,10 @@ jobs:
         id: run_evals
         run: yarn workspace agent-eval run eval
         env:
-          # PR labels (ci:extra-evals, ci:extra-models) and workflow_dispatch
-          # inputs both opt in; unlabeled ci:eval runs stay minimal.
+          # PR labels (ci:extra-evals) and workflow_dispatch inputs both opt
+          # in; unlabeled ci:eval runs stay minimal.
           EVAL_ONLY: ${{ inputs.eval_only || '' }}
           EVAL_EXTRA_EVALS: ${{ (inputs.extra_evals || contains(github.event.pull_request.labels.*.name, 'ci:extra-evals')) && '1' || '' }}
-          EVAL_EXTRA_MODELS: ${{ (inputs.extra_models || contains(github.event.pull_request.labels.*.name, 'ci:extra-models')) && '1' || '' }}
-          EVAL_STORYBOOK_LATEST: ${{ (inputs.storybook_latest || contains(github.event.pull_request.labels.*.name, 'ci:storybook-latest')) && '1' || '' }}
-          EVAL_REVIEW: ${{ (inputs.review || contains(github.event.pull_request.labels.*.name, 'ci:review')) && '1' || '' }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
@@ -131,6 +127,13 @@ jobs:
           fi
 
           echo "has_result_files=true" >> "$GITHUB_OUTPUT"
+
+      - name: Compute offline metrics
+        if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
+        # Write analysis.json next to each run's result.json so the metrics ride
+        # along in the uploaded artifact.
+        continue-on-error: true
+        run: yarn workspace agent-eval run results:analyze
 
       - name: Archive eval results
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}
@@ -159,8 +162,8 @@ jobs:
           fi
 
       # Vercel CLI commands run from the repository root: the storybook-evals
-      # project's Root Directory setting is agent-eval, and in a monorepo the
-      # CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
+      # project's Root Directory setting is agent-eval, and in a monorepo
+      # the CLI must not be invoked from the subdirectory (vercel.com/docs/monorepos)
       # or `deploy --prebuilt` resolves trace paths against the wrong base.
       - name: Link Vercel project
         if: ${{ always() && steps.check_results.outputs.has_result_files == 'true' }}

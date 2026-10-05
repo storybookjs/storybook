@@ -1,8 +1,5 @@
 {
   "step": {
-    "defaultValue": {
-      "summary": "1",
-    },
     "description": "",
     "name": "step",
     "table": {

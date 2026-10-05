@@ -84,7 +84,6 @@ export interface API_Layout {
   panelPosition: API_PanelPositions;
   showNav: boolean;
   showPanel: boolean;
-  showTabs: boolean;
   showToolbar: boolean;
   /**
    * Whether the mobile navigation drawer is open. Below the mobile breakpoint the sidebar is a

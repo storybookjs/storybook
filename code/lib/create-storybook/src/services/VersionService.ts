@@ -1,5 +1,6 @@
 import type { JsPackageManager, getProcessAncestry } from 'storybook/internal/common';
 import { versions } from 'storybook/internal/common';
+
 import { lt, prerelease } from 'semver';
 
 /** Service for handling version-related operations during Storybook initialization */

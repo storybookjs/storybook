@@ -333,14 +333,6 @@ export const experimental_serverChannel = async (
   return channel;
 };
 
-export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
-  for (const subscribe of devServerSubscriptions.splice(0)) {
-    subscribe();
-  }
-
-  return app;
-};
-
 /**
  * Try to resolve react and react-dom from the root node_modules of the project addon-docs uses this
  * to alias react and react-dom to the project's version when possible If the user doesn't have an
@@ -383,8 +375,7 @@ async function getHeadlessChangeDetectionAdapter(options: Options) {
   }
 }
 
-// The attached tools CLI applies `services` too, so subscriptions that execute commands are queued
-// next to their registration and started from `experimental_devServer`, which only the dev server applies.
+// Started from `experimental_devServer`: the attached tools CLI also applies `services`.
 const devServerSubscriptions: Array<() => void> = [];
 
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
@@ -504,6 +495,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         : { docsAccess: localDocsAccess }
     )
   );
+};
+
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
+  for (const subscribe of devServerSubscriptions.splice(0)) {
+    subscribe();
+  }
+
+  return app;
 };
 
 // Store the promise (not the result) to prevent race conditions.

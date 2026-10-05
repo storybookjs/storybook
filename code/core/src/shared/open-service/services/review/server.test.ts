@@ -313,10 +313,12 @@ describe('registerReviewService', () => {
       bumpedStoryFiles: ['./src/Button.stories.tsx'],
     });
 
-    expect(service.queries.current.get(undefined)).toEqual({
-      ...review,
-      createdAt: 1_000,
-      stale: true,
-    });
+    await vi.waitFor(() =>
+      expect(service.queries.current.get(undefined)).toEqual({
+        ...review,
+        createdAt: 1_000,
+        stale: true,
+      })
+    );
   });
 });

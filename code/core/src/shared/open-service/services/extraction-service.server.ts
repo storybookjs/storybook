@@ -75,7 +75,6 @@ export function subscribeExtractionServiceToModuleGraphChanges<
     getIndex: () => Promise<StoryIndex>;
     /** Query whose `.get({ id })` tells whether a component is already extracted. */
     queryName: keyof TQueries & string;
-    /** Command that re-extracts one component. */
     extractCommand: keyof TCommands & string;
   }
 ) {

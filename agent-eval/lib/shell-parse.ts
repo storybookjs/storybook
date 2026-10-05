@@ -98,8 +98,8 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
   const heredocs = extractCatHeredocs(command);
   const calls: StorybookWorkflowCall[] = [];
 
-  for (let index = 0; index < tokens.length - 1; index += 1) {
-    calls.push(...parseSubstitutedCalls(words.slice(index, index + 1)));
+  for (let index = 0; index < tokens.length; index += 1) {
+    calls.push(...parseSubstitutedCalls([words[index]!]));
     if (tokens[index] !== 'storybook') {
       continue;
     }
@@ -403,8 +403,6 @@ function extractCatHeredocs(command: string): Map<string, string> {
   return files;
 }
 
-// `$(cat path)` is resolved when that path was written by a `cat > path <<TAG`
-// heredoc in the same command.
 export function tokenizeShellCommand(command: string): string[] {
   return tokenizeShellWords(command).flatMap((word) => (word.value === '' ? [] : [word.value]));
 }
@@ -427,7 +425,7 @@ type Heredoc = {
   body: string;
 };
 
-// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, `<<\\TAG`; the caller rules out `<<<`.
+// `<<TAG`, `<<-TAG`, `<< 'TAG'`, `<<"TAG"`, `<<\TAG`; the caller rules out `<<<`.
 const HEREDOC_OPERATOR_PATTERN = /^<<(-?)[ \t]*((?:'[^'\n]*'|"[^"\n]*"|\\.|[^\s;&|<>()'"\\])+)/;
 
 function tokenizeShellWords(command: string): ShellWord[] {

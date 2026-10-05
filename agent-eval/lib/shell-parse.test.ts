@@ -356,11 +356,13 @@ npx storybook tools stories changed`,
 
   test('reads storybook calls inside a command substitution', () => {
     const calls = parseStorybookWorkflowShellCommands([
+      'OUT=$(npx storybook tools test run --json 2>&1)',
       'OUT=$(npx storybook tools test run --json 2>&1); echo "$OUT" | tail -40',
       'npx storybook tools review create --title "$(npx storybook tools stories changed | head -1)"',
     ]);
 
     expect(calls.map((call) => call.name)).toEqual([
+      'test-run',
       'test-run',
       'stories-changed',
       'review-create',

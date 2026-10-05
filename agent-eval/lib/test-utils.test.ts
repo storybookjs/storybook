@@ -329,6 +329,7 @@ describe('expectStoryTestsRanAndPassed', () => {
     transcript?: string;
     exitCode?: number;
   }) {
+    vi.mocked(existsSync).mockReturnValue(false);
     vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
       if (String(path) === '__agent_eval__/transcript.txt') {
         return options.transcript ?? '';

@@ -450,19 +450,14 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The validation workflow the instructions demand: run test-run after
-// each component or story change, and fix failing tests before reporting
-// success. Whether the tests pass is judged by a run of the harness's own (see
-// runStoryTestsInSandbox), because the agent's output is often cut by `| tail`
-// or `| grep`. The transcript must show that the agent ran the tests, and that
-// its last run did not end red: an agent that fixed the code without running the
-// tests again did not verify its fix.
+// The agent's own test output is often cut by `| tail` or `| grep`, so the
+// verdict is a run of the harness's own. The transcript only has to show that
+// the agent ran the tests and that its last run did not end red: a fix that was
+// never re-run is unverified. There is no after-the-edit ordering check, because
+// real passing flows run tests before the discovery step.
 //
-// `covering` requires at least one of the given substrings in the story ids of
-// the harness's run, so the change under test has passing stories. A stricter
-// after-the-edit ordering check is deliberately not encoded, because real
-// passing flows legitimately run tests before the discovery step. `cwd` is the
-// directory of the Storybook project, for fixtures where that is not the root.
+// `covering` requires one of the given substrings in the passing story ids.
+// `cwd` is the Storybook project, for fixtures where that is not the root.
 export async function expectStoryTestsRanAndPassed(options?: {
   covering?: string[];
   cwd?: string;
@@ -500,9 +495,7 @@ export async function expectStoryTestsRanAndPassed(options?: {
 
 const sandboxStoryTestRuns = new Map<string, Promise<WorkflowToolResult>>();
 
-// Runs every story test in the sandbox once the agent is done, through the same
-// CLI the plugin path uses, and renders the `--json` document like a transcript
-// result. `isError` means stdout held no test-run document.
+// `isError` means stdout held no test-run document.
 export function runStoryTestsInSandbox(cwd = '.'): Promise<WorkflowToolResult> {
   let run = sandboxStoryTestRuns.get(cwd);
   if (run === undefined) {

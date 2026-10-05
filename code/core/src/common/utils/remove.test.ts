@@ -48,7 +48,7 @@ describe('removeAddon', () => {
     await remove();
 
     expect(packageManager.removeDependencies).toHaveBeenCalledWith([ADDON]);
-    expect(vol.toJSON()[MAIN]).toContain("addons: ['@storybook/addon-docs']");
+    expect(fs.readFileSync(MAIN, 'utf8')).toContain("addons: ['@storybook/addon-docs']");
   });
 
   it.each([
@@ -61,7 +61,7 @@ describe('removeAddon', () => {
 
     await remove();
 
-    expect(vol.toJSON()[MAIN]).toContain("addons: ['@storybook/addon-docs']");
+    expect(fs.readFileSync(MAIN, 'utf8')).toContain("addons: ['@storybook/addon-docs']");
   });
 
   it('leaves the main config unchanged when it does not list the addon', async () => {
@@ -70,7 +70,7 @@ describe('removeAddon', () => {
 
     await remove();
 
-    expect(vol.toJSON()[MAIN]).toBe(main);
+    expect(fs.readFileSync(MAIN, 'utf8')).toBe(main);
   });
 
   it('warns when it cannot read the addons entries', async () => {
@@ -85,6 +85,6 @@ describe('removeAddon', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining(`Failed to remove '${ADDON}'`)
     );
-    expect(vol.toJSON()[MAIN]).toBe(main);
+    expect(fs.readFileSync(MAIN, 'utf8')).toBe(main);
   });
 });

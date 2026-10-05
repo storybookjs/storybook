@@ -10,7 +10,7 @@ const type = process.env.STORYBOOK_TYPE || 'dev';
 const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 /** Only this template runs the docgen open service (docgenServer) for Angular. */
-const SUPPORTED_TEMPLATES = ['angular-vite/default-ts'];
+const SUPPORTED_TEMPLATES = ['angular-vite/docgen-server-ts'];
 
 const PREVIEW_STORY_TIMEOUT = 30_000;
 

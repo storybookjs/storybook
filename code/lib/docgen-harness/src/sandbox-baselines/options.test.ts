@@ -7,13 +7,13 @@ describe('parseBaselineRunOptions', () => {
     expect(
       parseBaselineRunOptions([
         '--template',
-        'angular-vite/default-ts',
+        'angular-vite/docgen-server-ts',
         '--sandbox',
         '/tmp/sb',
         '-u',
       ])
     ).toEqual({
-      template: 'angular-vite/default-ts',
+      template: 'angular-vite/docgen-server-ts',
       sandboxDir: '/tmp/sb',
       update: true,
     });

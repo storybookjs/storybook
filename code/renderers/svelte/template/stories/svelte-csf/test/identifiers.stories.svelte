@@ -2,8 +2,8 @@
   import { defineMeta } from '@storybook/svelte';
 
   const { Story } = defineMeta({
-    title: 'Identifiers',
     parameters: {
+      chromatic: { disableSnapshot: true },
       actions: { disable: true },
       controls: { disable: true },
       interactions: { disable: true },

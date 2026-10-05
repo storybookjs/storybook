@@ -1,13 +1,13 @@
 <script module>
   import { defineMeta as d } from '@storybook/svelte';
-  import { expect, within } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
   /**
-   * Testing if **overriding identifier names** of the addon important AST nodes does work.
+   * Svelte CSF still works when its identifiers are renamed.
    */
   const { Story: S } = d({
-    title: 'Overrides',
     parameters: {
+      chromatic: { disableSnapshot: true },
       actions: { disable: true },
       controls: { disable: true },
     },
@@ -17,8 +17,7 @@
 <S
   name="Default"
   play={async (context) => {
-    const { canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { canvas } = context;
     const p = canvas.getByTestId('test');
 
     expect(p).toBeInTheDocument();
@@ -26,7 +25,7 @@
 >
   <p data-testid="test">
     You can override
-    <strong>the following identifiers name</strong> that belongs to this Storybook addon:
+    <strong>the following identifiers name</strong> that Svelte CSF uses:
   </p>
 
   <ul>

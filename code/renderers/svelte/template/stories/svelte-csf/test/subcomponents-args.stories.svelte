@@ -2,17 +2,19 @@
   import { defineMeta } from '@storybook/svelte';
   import type { ComponentProps } from 'svelte';
 
-  import Button from '../../../__examples__/components/Button.svelte';
-  import Layout from '../../../__examples__/components/Layout.svelte';
+  import Button from '../button.svelte';
+  import Layout from '../layout.svelte';
 
   const { Story } = defineMeta({
-    title: 'Test/Issue 357',
     component: Layout,
     subcomponents: {
       Layout,
       Button,
     },
     tags: ['!dev'],
+    parameters: {
+      chromatic: { disableSnapshot: true },
+    },
   });
 
   type Args = ComponentProps<typeof Layout>;

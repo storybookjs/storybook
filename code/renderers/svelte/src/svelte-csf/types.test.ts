@@ -4,7 +4,7 @@ import { describe, expectTypeOf, it } from 'vitest';
 
 import type { SvelteRenderer, ComponentAnnotations } from './types.ts';
 
-import Button from './__examples__/components/Button.svelte';
+import Button from '../../template/stories/svelte-csf/button.svelte';
 
 describe('Meta', () => {
   it(`works correctly when no 'meta.component' entry provided`, () => {

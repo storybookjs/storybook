@@ -12,7 +12,10 @@ const loadSvelteConfig = vi.hoisted(() => vi.fn(async () => undefined));
 vi.mock('@sveltejs/vite-plugin-svelte', () => ({ loadSvelteConfig }));
 
 const currentDir = dirname(fileURLToPath(import.meta.url));
-const storyFile = resolve(currentDir, '../__examples__/Button.stories.svelte');
+const storyFile = resolve(
+  currentDir,
+  '../../../template/stories/svelte-csf/templating.stories.svelte'
+);
 
 describe('parseForIndexer', () => {
   beforeEach(() => {
@@ -23,7 +26,10 @@ describe('parseForIndexer', () => {
 
   it('loads the Svelte config once across multiple story files', async ({ expect }) => {
     const { parseForIndexer } = await import('./parser.ts');
-    const files = [storyFile, resolve(currentDir, '../__examples__/ExportName.stories.svelte')];
+    const files = [
+      storyFile,
+      resolve(currentDir, '../../../template/stories/svelte-csf/test/identifiers.stories.svelte'),
+    ];
 
     for (const file of files) {
       await parseForIndexer(file);

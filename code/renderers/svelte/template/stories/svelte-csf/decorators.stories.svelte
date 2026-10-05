@@ -1,9 +1,9 @@
 <script module>
   import { defineMeta } from '@storybook/svelte';
-  import { expect, within } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
-  import Text from './Text.svelte';
-  import BorderDecorator from './BorderDecorator.svelte';
+  import Text from './text.svelte';
+  import BorderDecorator from './border-decorator.svelte';
 
   /**
    * **Documentation resource**: https://storybook.js.org/docs/writing-stories/decorators#wrap-stories-with-extra-markup
@@ -22,6 +22,9 @@
         props: { color: 'pink' },
       }),
     ],
+    parameters: {
+      chromatic: { disableSnapshot: true },
+    },
   });
 </script>
 
@@ -48,8 +51,7 @@
     text: 'Text is inside `defineMeta({ decorators: [ /* ... */ ]})`',
   }}
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const element = canvas.getByText(args.text);
 
     expect(element).toBeInTheDocument();
@@ -84,8 +86,7 @@
     }),
   ]}
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const element = canvas.getByText(args.text);
 
     expect(element).toBeInTheDocument();
@@ -125,8 +126,7 @@
     () => ({ Component: BorderDecorator, props: { color: 'gold' } }),
   ]}
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const element = canvas.getByText(args.text);
 
     expect(element).toBeInTheDocument();

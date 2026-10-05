@@ -1,12 +1,11 @@
 <script module lang="ts">
   import { defineMeta } from '@storybook/svelte';
-  import { expect, within } from 'storybook/test';
+  import { expect } from 'storybook/test';
 
   /**
-   * Demonstration on the **different ways of setting a template** for `<Story />` components within one stories file.
+   * Each story sets its template in a different way.
    */
   const { Story } = defineMeta({
-    title: 'Templating',
     tags: ['autodocs'],
     argTypes: {
       text: { control: 'text' },
@@ -16,6 +15,9 @@
      * that is used in any story without explicit template.
      */
     render: defaultTemplate,
+    parameters: {
+      chromatic: { disableSnapshot: true },
+    },
   });
 </script>
 
@@ -39,8 +41,7 @@
 <Story
   name="Static template"
   play={async (context) => {
-    const { canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { canvas } = context;
     const h2 = await canvas.findByTestId('heading');
     expect(h2).toHaveTextContent('Static template');
   }}
@@ -72,8 +73,7 @@
   name="Template snippet"
   args={{ text: 'This story uses a template snippet' }}
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const h2 = await canvas.findByTestId('heading');
     const p = await canvas.findByText(args.text);
 
@@ -115,8 +115,7 @@
     text: 'This story uses a shared snippet, which is explicitly set as the `template` prop to the <Story> component',
   }}
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const h2 = await canvas.findByTestId('heading');
     const p = await canvas.findByText(args.text);
 
@@ -156,8 +155,7 @@
     text: 'This story is based on the snippet set as render in defineMeta',
   }}
   play={async (context) => {
-    const { args, canvasElement } = context;
-    const canvas = within(canvasElement);
+    const { args, canvas } = context;
     const h2 = await canvas.findByTestId('heading');
     const p = await canvas.findByText(args.text);
 

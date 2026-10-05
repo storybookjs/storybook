@@ -122,4 +122,4 @@ Upgrades your Storybook to the latest version. This is the same as running [`npx
 
 ## Tools
 
-All of [Storybook MCP server's tools](https://storybook.js.org/docs/ai/mcp/overview#toolsets) are available to agents that have the plugin installed.
+Agents with the plugin get the same tools as the [Storybook MCP server](https://storybook.js.org/docs/ai/mcp/overview#toolsets), through the `storybook tools` CLI.

@@ -26,6 +26,9 @@ import type { FrameworkOptions } from './types.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`.
+export const isDocgenProviderEnabled = true;
 export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];

@@ -7,6 +7,7 @@ import * as overridePreset from './common-override-preset.ts';
 import * as commonPreset from './common-preset.ts';
 
 const docgenProvider = {
+  isDocgenProviderEnabled: true,
   experimental_docgenProvider: async (existing: unknown[] = []) => [
     ...existing,
     { moduleSpecifier: '/provider/docgen-worker.js' },
@@ -30,11 +31,11 @@ async function resolveDocgenServer(
 }
 
 describe('features.docgenServer', () => {
-  it('is enabled when a preset contributes a docgen provider', async () => {
+  it('is enabled when a preset declares a docgen provider', async () => {
     expect(await resolveDocgenServer([docgenProvider])).toBe(true);
   });
 
-  it('is disabled when no preset contributes a docgen provider', async () => {
+  it('is disabled when no preset declares a docgen provider', async () => {
     expect(await resolveDocgenServer([])).toBe(false);
   });
 

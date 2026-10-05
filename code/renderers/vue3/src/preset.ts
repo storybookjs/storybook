@@ -4,6 +4,9 @@ import type { ImportParser } from 'storybook/internal/core-server';
 import type { PresetProperty } from 'storybook/internal/types';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+// Turns `features.docgenServer` on by default; read through `presets.apply('isDocgenProviderEnabled')`
+// so the default never has to call the provider, which itself reads `features`.
+export const isDocgenProviderEnabled = true;
 export { experimental_storyDocsProvider } from './docgen/story-docs-provider.ts';
 // Consumed by external framework packages like storybook-vue3-rsbuild.
 export { DOCGEN_WORKER_SPECIFIER } from './docgen/worker-specifier.ts';

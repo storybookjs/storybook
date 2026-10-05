@@ -255,7 +255,7 @@ export const features: PresetProperty<'features'> = async (existing, options) =>
   componentsManifest: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
-  docgenServer: !!options.presetsList?.some(({ preset }) => preset.experimental_docgenProvider),
+  docgenServer: await options.presets.apply('isDocgenProviderEnabled', false),
   highlight: true,
   interactions: true,
   measure: true,

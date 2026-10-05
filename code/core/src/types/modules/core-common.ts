@@ -649,7 +649,8 @@ export interface StorybookFeatures {
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * @default true when any preset contributes an `experimental_docgenProvider`
+   * @default true when a preset that ships an `experimental_docgenProvider` exports
+   *   `isDocgenProviderEnabled`
    */
   docgenServer?: boolean;
 

@@ -22,6 +22,7 @@ import {
   experimental_docgenProvider,
   experimental_manifests,
   experimental_storyDocsProvider,
+  features,
   stylePreprocessorCheckPlugin,
   viteFinal,
 } from './preset.ts';

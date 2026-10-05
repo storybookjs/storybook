@@ -1,9 +1,9 @@
 // https://storybook.js.org/docs/react/addons/writing-presets
+import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { getProjectRoot } from 'storybook/internal/common';
 import { deprecate, logger } from 'storybook/internal/node-logger';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { Options, PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfigAsync } from '@babel/core';
@@ -12,6 +12,7 @@ import { findBabelConfigFile } from './babel/babel-config-file.ts';
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
 import TransformFontImports from './font/babel/index.ts';
+import { resolveNextAppDir } from './next-app-dir.ts';
 import type { FrameworkOptions, StorybookConfig } from './types.ts';
 import { isNextVersionGte } from './utils.ts';
 
@@ -65,10 +66,19 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
   return annotations;
 };
 
-export const babel: PresetProperty<'babel'> = async (baseConfig: TransformOptions) => {
+export const babel: PresetProperty<'babel'> = async (
+  baseConfig: TransformOptions,
+  storybookOptions: Options
+) => {
+  const { nextConfigPath } =
+    await storybookOptions.presets.apply<FrameworkOptions>('frameworkOptions');
+  const appDir = resolveNextAppDir(nextConfigPath);
+  // `root` makes Babel look for `babel.config.*` in the app dir, the same place
+  // `findBabelConfigFile` checks in `webpackFinal`
   const configPartial = await loadPartialConfigAsync({
     ...baseConfig,
-    filename: `${getProjectRoot()}/__fake__.js`,
+    root: appDir,
+    filename: join(appDir, '__fake__.js'),
   });
 
   const options = configPartial?.options;
@@ -171,7 +181,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const { configureSWCLoader } = await import('./swc/loader.ts');
   const { configureBabelLoader } = await import('./babel/loader.ts');
 
-  const hasBabelConfig = !!findBabelConfigFile(getProjectRoot());
+  const hasBabelConfig = !!findBabelConfigFile(resolveNextAppDir(nextConfigPath));
   const isDevelopment = options.configType !== 'PRODUCTION';
 
   const useSWC = nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig;

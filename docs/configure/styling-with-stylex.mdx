@@ -16,6 +16,8 @@ Use the **same StyleX options** in Storybook as in your app. StyleX class names 
 
 These setups are tested with StyleX 0.19, and the Vite-based ones with Vite 8.
 
+<If renderer="react">
+
 ### Vite with React
 
 `@storybook/react-vite` uses your `vite.config`, so add [`@stylexjs/unplugin`](https://stylexjs.com/docs/learn/installation/) before `react()`:
@@ -23,14 +25,6 @@ These setups are tested with StyleX 0.19, and the Vite-based ones with Vite 8.
 <CodeSnippets path="stylex-vite-config.md" />
 
 Then [import a CSS file in your preview](#import-a-css-file-in-your-preview).
-
-### SvelteKit
-
-`@storybook/sveltekit` also uses your `vite.config`. Add the StyleX plugin after `sveltekit()` and without `enforce`, so it compiles Svelte's output:
-
-<CodeSnippets path="stylex-sveltekit-vite-config.md" />
-
-You don't need to import `virtual:stylex:runtime` for Storybook. Then [import a CSS file in your preview](#import-a-css-file-in-your-preview).
 
 ### Next.js (Webpack)
 
@@ -54,9 +48,29 @@ The CSS file that your preview imports doesn't need the `@stylex;` directive: th
 
 `@stylexjs/unplugin` itself loads your project's `babel.config.*` when it compiles StyleX files. With `next/babel` in that config, the compiled files import helpers from `@babel/runtime`, which Vite finds only when a story loads. Vite then re-optimizes its dependencies and reloads the page, which can interrupt tests that are running. If you see `optimized dependencies changed. reloading`, add the helpers from that message to `optimizeDeps.include` in `viteFinal`, for example `'@babel/runtime/helpers/esm/extends'`.
 
+</If>
+
+<If renderer="svelte">
+
+### SvelteKit
+
+`@storybook/sveltekit` also uses your `vite.config`. Add the StyleX plugin after `sveltekit()` and without `enforce`, so it compiles Svelte's output:
+
+<CodeSnippets path="stylex-sveltekit-vite-config.md" />
+
+You don't need to import `virtual:stylex:runtime` for Storybook. Then [import a CSS file in your preview](#import-a-css-file-in-your-preview).
+
+</If>
+
+<If notRenderer={['react', 'svelte']}>
+
+This page covers React (with `@storybook/react-vite`, `@storybook/nextjs`, and `@storybook/nextjs-vite`) and SvelteKit (with `@storybook/sveltekit`), the setups that Storybook tests with StyleX. With another Vite-based framework, add `@stylexjs/unplugin` to the Vite config that Storybook uses, as the [StyleX installation docs](https://stylexjs.com/docs/learn/installation/) describe, and set `cssInjectionTarget` as described in [Import a CSS file in your preview](#import-a-css-file-in-your-preview).
+
+</If>
+
 ## Import a CSS file in your preview
 
-In a static build, the StyleX Vite plugin appends its CSS to a CSS file that the build already outputs. If your preview imports no CSS, there is no such file, and `storybook build` produces stories without StyleX styles. Import a CSS file in `.storybook/preview.ts`, and set `cssInjectionTarget` (as in the examples above) so StyleX picks Storybook's preview CSS file:
+In a static build, the StyleX Vite plugin appends its CSS to a CSS file that the build already outputs. If your preview imports no CSS, there is no such file, and `storybook build` produces stories without StyleX styles. Import a CSS file in `.storybook/preview.ts`, and set `cssInjectionTarget` (as in the examples above) so StyleX picks Storybook's preview CSS file. When the StyleX plugin is in your app's `vite.config`, this option doesn't change your app's build: your app has no `iframe-*.css` file, so StyleX keeps its default choice there.
 
 <CodeSnippets path="stylex-preview-css.md" />
 
@@ -64,9 +78,14 @@ In a static build, the StyleX Vite plugin appends its CSS to a CSS file that the
 
 `defineVars` tokens that come from an installed package must be compiled by StyleX. If Vite pre-bundles the package instead, the story fails with `Unexpected 'stylex.defineVars' call at runtime`.
 
-- With `@stylexjs/unplugin`, list the package in `externalPackages`. The plugin finds most StyleX packages by itself, but not packages whose `exports` don't include `./package.json`.
+- With `@stylexjs/unplugin`, list the package in `externalPackages`, for example `externalPackages: ['your-tokens-package']`. The plugin finds most StyleX packages by itself, but not packages whose `exports` don't include `./package.json`.
 - With another Vite integration, add the package to `optimizeDeps.exclude`.
-- With Next.js, add the package to `transpilePackages` and to the PostCSS plugin's `include`.
+
+<If renderer="react">
+
+- With `@storybook/nextjs`, add the package to `transpilePackages` and to the PostCSS plugin's `include`.
+
+</If>
 
 ## Layer order and resets
 
@@ -81,11 +100,17 @@ With `useCSSLayers`, StyleX puts its rules in `@layer priority1`, `priority2`, a
 
 ## Themes
 
-Apply a `createTheme` theme with a decorator. This example switches between two themes from the toolbar:
+Apply a `createTheme` theme with a decorator that puts the theme's class names on an element around the story.
+
+<If renderer="react">
+
+This example switches between two themes from the toolbar:
 
 <CodeSnippets path="stylex-theme-decorator.md" />
 
 You can also use the `withThemeFromJSXProvider` decorator from [`@storybook/addon-themes`](https://github.com/storybookjs/storybook/blob/next/code/addons/themes/docs/api.md#withthemefromjsxprovider) with a provider component that applies the theme.
+
+</If>
 
 ## Troubleshooting
 

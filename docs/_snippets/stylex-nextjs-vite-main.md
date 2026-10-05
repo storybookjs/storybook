@@ -11,8 +11,8 @@ export default {
         // The same options as the StyleX plugin in your babel.config.js
         stylex.vite({
           useCSSLayers: { before: ['reset'] },
-          externalPackages: ['@acme/tokens'],
           unstable_moduleResolution: { type: 'commonJS' },
+          // Add the StyleX CSS to Storybook's preview CSS file in static builds
           cssInjectionTarget: (fileName) => /(^|\/)iframe-[\w-]+\.css$/.test(fileName),
         }),
         ...(config.plugins ?? []),
@@ -36,8 +36,8 @@ const config: StorybookConfig = {
         // The same options as the StyleX plugin in your babel.config.js
         stylex.vite({
           useCSSLayers: { before: ['reset'] },
-          externalPackages: ['@acme/tokens'],
           unstable_moduleResolution: { type: 'commonJS' },
+          // Add the StyleX CSS to Storybook's preview CSS file in static builds
           cssInjectionTarget: (fileName) => /(^|\/)iframe-[\w-]+\.css$/.test(fileName),
         }),
         ...(config.plugins ?? []),

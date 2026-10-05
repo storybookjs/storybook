@@ -9,9 +9,10 @@ export default defineConfig({
     // After sveltekit(), without `enforce`, so StyleX compiles Svelte's output
     {
       ...stylex.vite({
+        // Your app's StyleX options. Storybook uses this file too, so they always match.
         useCSSLayers: { before: ['reset'] },
-        externalPackages: ['@acme/tokens'],
-        unstable_moduleResolution: { type: 'commonJS' },
+        // Storybook's static build: add the StyleX CSS to the preview CSS file.
+        // Your app has no iframe-*.css file, so its build keeps StyleX's default choice.
         cssInjectionTarget: (fileName) => /(^|\/)iframe-[\w-]+\.css$/.test(fileName),
       }),
       enforce: undefined,

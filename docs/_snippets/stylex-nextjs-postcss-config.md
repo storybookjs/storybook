@@ -2,7 +2,11 @@
 module.exports = {
   plugins: {
     '@stylexjs/postcss-plugin': {
-      include: ['src/**/*.{js,jsx,ts,tsx}', 'node_modules/@acme/tokens/**/*.js'],
+      include: [
+        'src/**/*.{js,jsx,ts,tsx}',
+        // Only if you use tokens from a package (see "Tokens from a package")
+        'node_modules/your-tokens-package/**/*.js',
+      ],
       // The same StyleX options as babel.config.js
       babelConfig: {
         babelrc: false,

@@ -5,13 +5,11 @@ import { defineConfig } from 'vite';
 
 export default defineConfig({
   plugins: [
-    // Use the same StyleX options as your app, so class names and variables match
     stylex.vite({
+      // Your app's StyleX options. Storybook uses this file too, so they always match.
       useCSSLayers: { before: ['reset'] },
-      // Token packages installed in node_modules (see "Tokens from a package" below)
-      externalPackages: ['@acme/tokens'],
-      unstable_moduleResolution: { type: 'commonJS' },
-      // Put the StyleX CSS in Storybook's preview CSS file in static builds
+      // Storybook's static build: add the StyleX CSS to the preview CSS file.
+      // Your app has no iframe-*.css file, so its build keeps StyleX's default choice.
       cssInjectionTarget: (fileName) => /(^|\/)iframe-[\w-]+\.css$/.test(fileName),
     }),
     react(),

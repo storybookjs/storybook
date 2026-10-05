@@ -23,8 +23,8 @@ export const viteFinal: StorybookConfig['viteFinal'] = async (config, options) =
 
   const { docgen, docgenServerActive } = await resolveDocgenContext(options);
 
-  // add docgen plugin depending on framework option
-  if (docgen !== false && !docgenServerActive) {
+  // Test builds turn `docgenServer` off to skip docgen entirely, not to fall back to builder docgen.
+  if (docgen !== false && !docgenServerActive && !options.build?.test?.disableDocgen) {
     deprecate(VUE_BUILDER_DOCGEN_DEPRECATION);
     const engine: VueDocgenEngine = await options.presets.apply('experimental_vueDocgenEngine');
     if (docgen.plugin === VUE_COMPONENT_META) {

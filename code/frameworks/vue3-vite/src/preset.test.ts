@@ -63,6 +63,21 @@ describe('viteFinal', () => {
   it('keeps template compilation when docgen is disabled', async () => {
     expect(await pluginNames(false)).toEqual(['template']);
   });
+
+  it('runs no builder docgen and stays quiet in a test build, which turns the server off', async () => {
+    const { viteFinal } = await import('./preset.ts');
+    const options = {
+      ...optionsWith(undefined, { docgenServer: false }),
+      build: { test: { disableDocgen: true } },
+    } as Options;
+
+    const config = await viteFinal!({}, options);
+
+    expect((config.plugins ?? []).map((plugin) => (plugin as { name: string }).name)).toEqual([
+      'template',
+    ]);
+    expect(vi.mocked(deprecate)).not.toHaveBeenCalled();
+  });
 });
 
 describe('builder docgen deprecation', () => {

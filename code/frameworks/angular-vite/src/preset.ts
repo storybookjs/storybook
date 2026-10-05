@@ -115,11 +115,13 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
     {}
   );
   const docgenServer = !!resolvedFeatures?.docgenServer;
+  // Test builds turn `docgenServer` off to skip docgen entirely, not to fall back to Compodoc.
+  const skipDocgen = !!options.build?.test?.disableDocgen;
 
   // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
   // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled && !docgenServer) {
+  if (compodocConfig.enabled && !docgenServer && !skipDocgen) {
     await ensureCompodocDocumentation({
       compodocArgs: compodocConfig.compodocArgs,
       tsconfig: compodocConfig.tsconfig,
@@ -129,9 +131,11 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
   }
 
   const propsTable = resolvePropsTable(frameworkOptions, resolvedFeatures);
-  warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  if (!skipDocgen) {
+    warnAboutPropsTable(frameworkOptions, resolvedFeatures);
+  }
 
-  if (resolvedFeatures?.componentsManifest && !docgenServer) {
+  if (resolvedFeatures?.componentsManifest && !docgenServer && !skipDocgen) {
     logger.warn(
       `The \`componentsManifest\` feature needs the \`docgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
         `and MCP clients get no component API from it. ` +
@@ -229,7 +233,9 @@ export const viteFinal = async (config: UserConfig, options: Options & Standalon
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
-      ...(docgenServer && options.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
+      ...((docgenServer || skipDocgen) && options.configDir
+        ? [compodocJsonStubPlugin(options.configDir)]
+        : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({

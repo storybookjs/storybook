@@ -578,6 +578,23 @@ describe('viteFinal Compodoc generation', () => {
     expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
   });
 
+  it('generates nothing in a test build, which turns the docgen server off to skip docgen', async () => {
+    const result = (await viteFinal(
+      { root: WORKSPACE_ROOT },
+      {
+        ...optionsWith({ propsTable: 'api' }, { componentsManifest: true }),
+        build: { test: { disableDocgen: true } },
+      }
+    )) as any;
+
+    expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
+    expect(logger.warn).not.toHaveBeenCalled();
+    // A preview that still imports `documentation.json` must build without the generated file.
+    expect(result.plugins.map((plugin: any) => plugin?.name)).toContain(
+      'storybook-angular-vite-compodoc-json-stub'
+    );
+  });
+
   it('registers the documentation.json stub only when the docgen server is on', async () => {
     const withServer = await viteFinal(
       { root: WORKSPACE_ROOT },

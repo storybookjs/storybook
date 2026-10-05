@@ -71,9 +71,9 @@ src/
 │   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
 │                                 # optional custom-elements.v2.json/custom-elements.wca.json,
 │                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
-│                                 # osa-argtypes.snapshot, osa-payload.snapshot,
+│                                 # osa-argtypes.snapshot, osa-payload.snapshot, osa-api-description.snapshot,
 │                                 # optional osa-v2-argtypes.snapshot and osa-v2-payload.snapshot,
-│                                 # snippet-<story>.snapshot
+│                                 # snippet-<story>.snapshot, osa-snippet-<story>.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
     ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
@@ -203,11 +203,12 @@ The `stencil-props` capture shows that analyzer 0.11.0 emits attributes for Sten
 
 ### Server-side recorder (web-components)
 
-`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, and `osa-payload.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+`web-components-osa-baselines.test.ts` drives the `@storybook/web-components` docgen provider directly in Node. It parses each fixture story file through `loadCsf`, points the provider at the fixture's `custom-elements.json`, and records `osa-argtypes.snapshot`, `osa-description.snapshot`, `osa-payload.snapshot`, and `osa-api-description.snapshot`; the CEM 2.1.0 variant records `osa-v2-argtypes.snapshot` and `osa-v2-payload.snapshot`.
+`web-components-baselines.test.ts` also runs the renderer's default `render` with the docgen-server flag on for every story without a custom render, and records `osa-snippet-<story>.snapshot`, gated current-or-better against the legacy `snippet-<story>.snapshot`.
 The server recorder records CEM inputs only; the WCA shape is covered by the runtime recorder and rejected on the server path by the renderer's unit tests.
-The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes.
+The `osa-argtypes.snapshot` and `osa-v2-argtypes.snapshot` files are gated against the committed legacy `argtypes.snapshot` and `v2-argtypes.snapshot` files, while `osa-payload.snapshot` and `osa-v2-payload.snapshot` keep the raw declaration slice, summary, renderer, and any error reviewable without duplicating argTypes or the api description.
 The server mapper keys events, methods, slots, CSS parts and CSS states as `<name>-event`, `<name>-method`, `<name|default>-slot`, `<name>-part` and `<name>-state`, so they never collide with attributes.
-It keeps the legacy `on<Name>` action twins, and the legacy gate matches re-keyed rows by `name`.
+The server mapper has no `on<Name>` action twins because events bind from `<name>-event` args, and the legacy gate waives those preview-only action args.
 `OSA_CLOSED` in `web-components-legacy-gaps.test.ts` is the server-side progress ledger: move a marker there when an OSA mapper fix closes it.
 The OSA recordings self-ratchet against themselves. When the server mapper changes shape on purpose (dropping members, re-keying args), delete the affected `osa-*argtypes.snapshot` files and re-record; `-u` cannot pass the self-ratchet.
 The `legacyManifestRuntime` and `waivedArgs` waivers apply to the legacy gate only.

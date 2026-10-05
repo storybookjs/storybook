@@ -5,6 +5,7 @@ import type {
   MetaInput,
   MetaTypes,
   StoryArgs,
+  TypedMetaArgKeys,
   WithRenderArgs,
   Preview,
   PreviewAddon,
@@ -137,7 +138,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
     TMetaArgKeys extends PropertyKey = never,
   >(
     meta: {
-      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
+      render?: ArgsStoryFn<WebComponentsTypes & T, TArgs & T['args']>;
     } & MetaInput<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>
   ): WebComponentsMeta<
     MetaTypes<WebComponentsTypes & T, TArgs, Decorators, TMetaArgKeys>,
@@ -235,6 +236,12 @@ export interface WebComponentsMeta<
   story(
     ..._args: Partial<T['args']> extends StoryArgs<T['args'], TMetaArgKeys> ? [] : [never]
   ): WebComponentsStory<T, {}>;
+
+  /**
+   * Add types to the stories created from the returned meta, such as an arg that only one story
+   * has: `meta.type<{ args: { icon: string } }>().story({ args: { icon: 'star' } })`.
+   */
+  type<S>(): WebComponentsMeta<T & S, TypedMetaArgKeys<TMetaArgKeys, S>>;
 }
 
 /**

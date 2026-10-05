@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { readdirSync, readFileSync } from 'node:fs';
+import { execFile, spawn } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -38,7 +38,7 @@ type EvalContext = {
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
-  /** Whether the sandbox runs review-on: always for the plugin integration, via EVAL_REVIEW=1 for MCP. */
+  /** Whether the sandbox runs review-on; see isReviewEnabledFor in lib/templates.ts. */
   review: boolean;
 };
 
@@ -80,13 +80,10 @@ export function getEvalContext(): EvalContext {
   return { agent, integration, review: agentContext.review === true };
 }
 
-// Review mode of this run. Plugin runs are always review-on — the addon
-// enables review by default for the `storybook tools` CLI channel — while MCP
-// runs are review-on only when EVAL_REVIEW=1 (the agent-eval:review PR label) sets
-// the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
-// files branch on this — with review on, visual work must end in a published
-// review-create; with review off, review-create is not even exposed and
-// the workflow ends in stories-preview links.
+// Review mode of this run (see isReviewEnabledFor in lib/templates.ts).
+// EVAL.ts files branch on this — with review on, visual work must end in a
+// published review-create; with review off, review-create is not even exposed
+// and the workflow ends in stories-preview links.
 export function isReviewEnabled(): boolean {
   return getEvalContext().review;
 }
@@ -159,8 +156,7 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Review-off counterpart of expectDisplayReviewForVisualChange (review is
-// opt-in via the `experimentalReview` flag, so this is the default path):
+// Review-off counterpart of expectDisplayReviewForVisualChange:
 // review-create is not registered, so visual work must end in
 // stories-preview calls and the final response must share the preview URLs.
 // `covering` requires each substring to appear in some stories-preview story
@@ -450,55 +446,114 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The validation workflow the instructions demand: run test-run after
-// each component or story change, and fix failing tests before reporting
-// success. The section headers come from the shared test-run result formatter
-// (## Passing Stories / ## Failing Stories / ## Unhandled Errors) and appear
-// verbatim in the MCP tool result and — since storybookjs/storybook#36029 —
-// byte-identically in the `storybook tools test run` CLI output. A `--json`
-// CLI run is rendered to the same sections by renderTestRunJsonOutput.
+// The agent's own test output is often cut by `| tail` or `| grep`, so the
+// verdict is a run of the harness's own. The transcript only has to show that
+// the agent ran the tests and that its last run did not end red: a fix that was
+// never re-run is unverified. There is no after-the-edit ordering check, because
+// real passing flows run tests before the discovery step.
 //
-// `covering` pins the final green run to the change under test: at least one
-// of the given substrings must appear in its story ids. A stricter
-// after-the-edit ordering check is deliberately not encoded, because real
-// passing flows legitimately run tests before the discovery step.
-export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
+// `covering` requires one of the given substrings in the passing story ids.
+// `cwd` is the Storybook project, for fixtures where that is not the root.
+export async function expectStoryTestsRanAndPassed(options?: {
+  covering?: string[];
+  cwd?: string;
+}): Promise<void> {
   expectWorkflowCalls(['test-run']);
-
-  const results = getWorkflowToolResults('test-run');
-  expect(results.length, 'Expected at least one test-run result in the transcript').toBeGreaterThan(
-    0
-  );
-
-  const lastResult = selectFinalRunStoryTestsReport(results);
-  if (lastResult === undefined) {
-    expect.fail('Expected a final test-run result');
-  }
-
   expect(
-    lastResult.isError,
-    `Final test-run call must succeed. Output: ${truncateForMessage(lastResult.output)}`
+    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
+    "The agent's last test run must not report failing stories or unhandled errors"
+  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+
+  const result = await runStoryTestsInSandbox(options?.cwd);
+  expect(
+    result.isError,
+    `The final test run must complete. Output: ${truncateForMessage(result.output)}`
   ).toBe(false);
-  expect(lastResult.output, 'Final test-run result must not report failing stories').not.toMatch(
+  expect(result.output, 'The final test run must not report failing stories').not.toMatch(
     /## Failing Stories/
   );
-  expect(lastResult.output, 'Final test-run result must not report unhandled errors').not.toMatch(
+  expect(result.output, 'The final test run must not report unhandled errors').not.toMatch(
     /## Unhandled Errors/
   );
   expect(
-    lastResult.output,
-    `Final test-run result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`
+    result.output,
+    `The final test run must report passing stories. Output: ${truncateForMessage(result.output)}`
   ).toMatch(/## Passing Stories/);
 
   const covering = options?.covering ?? [];
   if (covering.length > 0) {
+    const passingStories =
+      /## Passing Stories\n\n([\s\S]*?)(?:\n\n## |$)/.exec(result.output)?.[1] ?? '';
     expect(
-      covering.some((substring) =>
-        lastResult.output.toLowerCase().includes(substring.toLowerCase())
-      ),
-      `Final test-run result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
+      covering.some((substring) => passingStories.toLowerCase().includes(substring.toLowerCase())),
+      `The final test run must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(result.output)}`
     ).toBe(true);
   }
+}
+
+const sandboxStoryTestRuns = new Map<string, Promise<WorkflowToolResult>>();
+
+// `isError` means stdout held no test-run document.
+export function runStoryTestsInSandbox(cwd = '.'): Promise<WorkflowToolResult> {
+  let run = sandboxStoryTestRuns.get(cwd);
+  if (run === undefined) {
+    run = withProjectVitestConfig(cwd, () => runStorybookTestRun(cwd));
+    sandboxStoryTestRuns.set(cwd, run);
+  }
+  return run;
+}
+
+// The eval runner replaces vitest.config.ts with its own before EVAL.ts runs,
+// so fixtures keep their Storybook test project in vitest.storybook.config.ts.
+const STORYBOOK_VITEST_CONFIG = 'vitest.storybook.config.ts';
+
+async function withProjectVitestConfig<T>(cwd: string, run: () => Promise<T>): Promise<T> {
+  if (!existsSync(join(cwd, STORYBOOK_VITEST_CONFIG))) {
+    return run();
+  }
+  const configPath = join(cwd, 'vitest.config.ts');
+  const evalConfig = existsSync(configPath) ? readFileSync(configPath, 'utf8') : undefined;
+  if (evalConfig?.includes(STORYBOOK_VITEST_CONFIG)) {
+    return run();
+  }
+
+  writeFileSync(configPath, `export { default } from './${STORYBOOK_VITEST_CONFIG}';\n`);
+  try {
+    return await run();
+  } finally {
+    if (evalConfig === undefined) {
+      rmSync(configPath);
+    } else {
+      writeFileSync(configPath, evalConfig);
+    }
+  }
+}
+
+// `--no-attach`: the dev server's Vitest restarts whenever vitest.config.ts
+// changes, so a fresh local host is the only one that reads a settled config.
+// The timeout leaves room in the experiment timeout, which the whole run shares,
+// so a hanging run fails this assertion rather than the sandbox.
+function runStorybookTestRun(cwd: string): Promise<WorkflowToolResult> {
+  return new Promise((resolve) => {
+    execFile(
+      'npx',
+      ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
+      {
+        cwd,
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' },
+        maxBuffer: 256 * 1024 * 1024,
+        timeout: 240_000,
+      },
+      (error, stdout, stderr) => {
+        const report = renderTestRunJsonOutput(stdout);
+        resolve(
+          report === undefined
+            ? { output: [error?.message, stdout, stderr].filter(Boolean).join('\n'), isError: true }
+            : { output: report, isError: false }
+        );
+      }
+    );
+  });
 }
 
 // `storybook tools test run --json` prints the run's structured outcome
@@ -552,36 +607,6 @@ function renderCompletedTestRun(result: Record<string, unknown>, a11y: boolean):
 
 function asRecords(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
-}
-
-// The test-run result formatter (code/addons/vitest/src/node/toolset/format.ts)
-// always emits at least one of these markers. A captured output with none of them is a
-// shell-filtered fragment of the real report, not the report itself. isError
-// deliberately does not count as recognizable: a piped `… | grep` exits
-// non-zero when the filter simply matches nothing, so an errored markerless
-// result is exactly the filtered-fragment case this selection skips.
-const RUN_STORY_TESTS_REPORT_MARKERS = [
-  '## Passing Stories',
-  '## Failing Stories',
-  '## Accessibility Violations',
-  '## Unhandled Errors',
-  'No stories found matching',
-];
-
-// On the plugin path agents pipe the `storybook tools test run` CLI
-// output through grep/sed/tail, so the chronologically last captured output
-// can be a filtered fragment of an otherwise correct run (observed in CI run
-// 28672627415, 2026-07-03). Judge the last output that still looks like a
-// test-run report; only when no output is recognizable does the raw
-// last result stand, so fully-filtered transcripts still fail loud.
-export function selectFinalRunStoryTestsReport(
-  results: WorkflowToolResult[]
-): WorkflowToolResult | undefined {
-  return (
-    results.findLast((result) =>
-      RUN_STORY_TESTS_REPORT_MARKERS.some((marker) => result.output.includes(marker))
-    ) ?? results.at(-1)
-  );
 }
 
 // Chronological outputs of a Storybook workflow tool, across every path an

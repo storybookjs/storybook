@@ -122,18 +122,12 @@ the documentation tooling) regressed since the last stable release:
 EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
-Review mode follows the integration. The plugin experiments always run — and
+Review mode follows the installed Storybook. On the checkout, review is
+available on every surface, so the plugin and MCP experiments both run — and
 assert — the review workflow (review-create published, review section in the
-final response), because review is on by default for the `storybook tools` CLI
-channel the plugins use. The MCP experiments run review-off by default
-(stories-preview links, no review-create), matching direct MCP clients where
-the `experimentalReview` feature flag is opt-in. Set `EVAL_REVIEW=1` to enable
-the flag in every sandbox Storybook and flip the MCP assertions to the review
-workflow too:
-
-```bash
-EVAL_REVIEW=1 yarn eval
-```
+final response). The stable release that `EVAL_STORYBOOK_LATEST=1` installs
+offers review to the plugins only, so MCP experiments run review-off there
+(stories-preview links, no review-create) until Storybook 11 is `latest`.
 
 Configured experiments (Claude Code experiments use the direct Anthropic API
 via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
@@ -141,7 +135,7 @@ via `ANTHROPIC_API_KEY`; Codex experiments use the direct Codex API via
 
 - `cc-mcp-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with project-local Storybook MCP config in `.mcp.json`.
 - `cc-plugin-opus-5.5-medium`: Claude Code (Opus 5.5 at medium effort) with Storybook plugin skills copied to `.claude/skills`.
-- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (the review-on text with `EVAL_REVIEW=1`, none with `EVAL_STORYBOOK_LATEST=1`).
+- `codex-mcp-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with project-local Storybook MCP config in `.codex/config.toml` and the Storybook MCP server instructions in `AGENTS.md` (none with `EVAL_STORYBOOK_LATEST=1`).
 - `codex-plugin-gpt-6-sol-medium`: Codex (gpt-6-sol at medium reasoning effort) with Storybook plugin skills copied to `.agents/skills`.
 
 ## Running evals in CI
@@ -215,7 +209,6 @@ input for each.
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `agent-eval:all-evals` / `all_evals`               | Runs every 8xx workflow eval on every experiment, and the 82x lifecycle evals (`storybook init`, `storybook upgrade`) on the plugin experiments, instead of the single smoke eval `801-create-accessible-component` | The smoke eval shows that the setup works and that the agent finds Storybook. Use all evals when the change affects a specific workflow, such as writing stories, docs, testing, init or upgrade. |
 | `agent-eval:storybook-latest` / `storybook_latest` | Installs the published `latest` Storybook packages instead of the packages built from the PR, and runs the 9xx line                                                                                                       | Check whether a problem also exists in the last stable release. This is not related to the target branch of the PR: without this label, evals always use the code of the PR.                           |
-| `agent-eval:review` / `review`                     | Turns on the `experimentalReview` feature flag, and asserts the review workflow in the MCP experiments too                                                                                                                | Changes to the review workflow, such as `review-create` or the review UI.                                                                                                                              |
 
 The `evals` input (dispatch only) runs specific evals by name, for example
 `803-edit-component`.

@@ -41,8 +41,8 @@ describe('changing a shared accent token and surfacing consumer stories', () => 
 
   test.skipIf(codexMcpReviewGap)(
     'runs story tests after the change and finishes with them passing',
-    () => {
-      expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
+    async () => {
+      await expectStoryTestsRanAndPassed({ covering: ['badge', 'statuspill'] });
     }
   );
 

@@ -2,27 +2,22 @@ Follow these workflows when working with UI and/or Storybook. Answer questions a
 
 ## UI Building and Story Writing Workflow
 
-- Before creating or editing components or stories, call **get-storybook-story-instructions**.
-- Treat its output as the source of truth for imports, story patterns, and testing conventions.
-- After editing anything that changes how the UI looks — components, stories, styles, themes, colors, design tokens — call **stories-preview**, no exceptions; a shared file has no stories of its own, so preview its consumers' stories.
-- Include every returned preview URL in your final response.
+- Before creating or editing components or stories, call **get-storybook-story-instructions**; its output is the source of truth for imports, story patterns, and testing conventions.
+- After editing anything that changes how the UI looks — components, stories, styles, themes, tokens — call **stories-changed** to discover the affected stories.
+- End your final response with the review section from **review-create**'s result — never substitute preview URLs. **stories-preview** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.
+- After a visually observable UI change, or when the user asks to see or browse stories/components, call **review-create** (again on each iteration) and follow its description and result. Visual work is not done until the review is published; any newly created story MUST be included.
+- Only use story IDs returned by tools — never derive them from file names or memory. **stories-find-by-component** maps any input to stories; its description covers the workflow. No matches means no stories exist yet — say so.
 
 ## Validation Workflow
 
 - After editing anything that changes how the UI looks, run **test-run** — never a package.json test script.
-- Use focused runs while iterating, then a broad pass before handoff when scope is unclear or wide.
-- Fix failing tests; never report completion while they are failing.
+- Never report completion while story tests are failing.
 
 ## Documentation Workflow
 
-**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like `shadow`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
+**CRITICAL: Never hallucinate component properties!** Undocumented props do not exist — never assume them from naming or other libraries; verify every prop via these tools, not source or types in node_modules.
 
-1. Call **docs-list** once at the start of the task to discover available component and docs IDs.
-2. Call **docs-show** with an `id` from that list to retrieve full component docs, props, usage examples, and stories.
-3. Call **docs-show-story** for extra docs on a story variant not covered by the component docs.
+1. Call **docs-list** once at task start for component and docs IDs.
+2. Call **docs-show** with an `id` from that list for props and usage examples.
 
-Only use properties explicitly documented or shown in example stories. Only reference IDs returned by these tools; never guess IDs.
-
-## Multi-Source Requests
-
-- With multiple sources configured, **docs-list** returns entries from every source; pass `storybookId` to **docs-show** to scope one.
+Only reference IDs returned by these tools — never guess; scope multi-source requests with `storybookId`.

@@ -29,10 +29,6 @@ on:
         description: 'Install every Storybook package from the npm latest tag instead of this checkout'
         type: boolean
         default: false
-      review:
-        description: 'Enable the experimentalReview feature flag in eval sandboxes and assert the review workflow'
-        type: boolean
-        default: false
 
 concurrency:
   # One run per PR at a time. A push or an `agent-eval:` label cancels the running eval, because its
@@ -174,7 +170,6 @@ jobs:
           EVAL_ONLY: ${{ inputs.evals || '' }}
           EVAL_ALL: ${{ steps.conditions.outputs.all_evals }}
           EVAL_STORYBOOK_LATEST: ${{ steps.conditions.outputs.storybook_latest }}
-          EVAL_REVIEW: ${{ steps.conditions.outputs.review }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}

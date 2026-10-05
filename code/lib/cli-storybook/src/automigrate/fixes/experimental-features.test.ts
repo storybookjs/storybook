@@ -12,7 +12,6 @@ import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   createExperimentalFeatureFix,
   enableExperimentalDocgenServer,
-  enableExperimentalReview,
   resolveRequestedFeatures,
 } from './experimental-features.ts';
 
@@ -73,7 +72,7 @@ describe('experimental feature flag automigrations', () => {
 
   describe('check', () => {
     // Each flag carries its own `introducedIn`, so a flag added in a later minor must stay hidden
-    // on an upgrade that does not reach it. Both shipped flags are 10.5, so this needs its own fix.
+    // on an upgrade that does not reach it. The shipped flag is 10.5, so this needs its own fix.
     describe('per-feature introducedIn', () => {
       const futureFlag = createExperimentalFeatureFix({
         id: 'enable-future-flag',
@@ -156,13 +155,6 @@ describe('experimental feature flag automigrations', () => {
       );
       expect(result).toBeNull();
     });
-
-    it('does not offer experimentalReview when changeDetection is explicitly disabled', async () => {
-      const result = await enableExperimentalReview.check!(
-        checkOptions({ mainConfig: withFeatures({ changeDetection: false }) })
-      );
-      expect(result).toBeNull();
-    });
   });
 
   describe('docgen provider requirement', () => {
@@ -182,21 +174,11 @@ describe('experimental feature flag automigrations', () => {
       );
       expect(result !== null).toBe(expected);
     });
-
-    it('offers enable-experimental-review regardless of the docgen provider', async () => {
-      const result = await enableExperimentalReview.check!(
-        checkOptions({
-          mainConfig: { framework: { name: '@storybook/svelte-vite' } } as StorybookConfigRaw,
-        })
-      );
-      expect(result).not.toBeNull();
-    });
   });
 
   describe('resolveRequestedFeatures', () => {
     it('maps supported flag names onto their fixes', () => {
-      expect(resolveRequestedFeatures('experimentalReview, experimentalDocgenServer')).toEqual([
-        { name: 'experimentalReview', fixId: enableExperimentalReview.id },
+      expect(resolveRequestedFeatures(' experimentalDocgenServer ,')).toEqual([
         { name: 'experimentalDocgenServer', fixId: enableExperimentalDocgenServer.id },
       ]);
     });
@@ -205,11 +187,11 @@ describe('experimental feature flag automigrations', () => {
       expect(resolveRequestedFeatures(undefined)).toEqual([]);
     });
 
-    it.each(['experimentalRevieww', 'constructor', 'toString', '__proto__'])(
+    it.each(['experimentalReview', 'constructor', 'toString', '__proto__'])(
       'rejects %s',
       (name) => {
         expect(() => resolveRequestedFeatures(name)).toThrow(
-          `Unknown feature flag(s): ${name}. Available: experimentalReview, experimentalDocgenServer.`
+          `Unknown feature flag(s): ${name}. Available: experimentalDocgenServer.`
         );
       }
     );
@@ -219,7 +201,7 @@ describe('experimental feature flag automigrations', () => {
     it('writes the flag while preserving the rest of the file', async () => {
       vol.fromJSON({ [MAIN_CONFIG_PATH]: FIXTURE_MAIN_TS });
 
-      await runFix(enableExperimentalReview, runOptions);
+      await runFix(enableExperimentalDocgenServer, runOptions);
 
       expect(memfs.fs.readFileSync(MAIN_CONFIG_PATH, 'utf-8')).toMatchInlineSnapshot(`
         "import type { StorybookConfig } from '@storybook/react-vite';
@@ -234,7 +216,7 @@ describe('experimental feature flag automigrations', () => {
           },
 
           features: {
-            experimentalReview: true
+            experimentalDocgenServer: true
           }
         };
         export default config;

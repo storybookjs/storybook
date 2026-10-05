@@ -557,7 +557,7 @@ describe('dispatch', () => {
 });
 
 describe('help', () => {
-  it('renders the full discovery dump with badges, schemas and CLI spellings', async () => {
+  it('renders the overview with badges and CLI spellings, without the arguments of any tool', async () => {
     const { deps } = makeDeps();
 
     const result = await runToolsCommand({ tokens: [], target: {} }, deps);
@@ -575,17 +575,13 @@ describe('help', () => {
     expect(result.output).toContain('--cwd <path>');
     expect(result.output).toContain('-c, --config-dir <dir-name>');
     expect(result.output).toContain('-o, --output <path>');
-    // The Commands listing summarizes every subcommand commander-style before the full reference.
     expect(result.output).toContain('Commands:');
-    expect(result.output).toContain('stories preview  [requires running Storybook]');
-    expect(result.output).toContain('docs list  [local]');
+    expect(result.output).toMatch(/stories preview +Get story preview URLs/);
+    expect(result.output).toMatch(/docs list +List All Documentation {2}\[local\]/);
     // `test` is owned by addon-vitest; the core harness does not register it.
     expect(result.output).not.toContain('test run');
-    expect(result.output).toContain('stories find-by-component');
-    // Input schemas come from the valibot definitions.
-    expect(result.output).toContain('`--componentPaths`');
-    // Declared output schemas are part of the dump.
-    expect(result.output).toContain('Output (`--json`):');
+    expect(result.output).not.toContain('`--componentPaths`');
+    expect(result.output).not.toContain('Output (`--json`):');
   });
 
   it('renders one toolset’s section with a usage line on a bare toolset name', async () => {
@@ -656,7 +652,7 @@ describe('help', () => {
   it('describes tools in CLI vocabulary, never MCP tool names', async () => {
     const { deps } = makeDeps();
 
-    const result = await runToolsCommand({ tokens: [], target: {} }, deps);
+    const result = await run(['stories', 'find-by-component', '--help'], deps);
 
     expect(result.output).toContain('npx storybook tools stories changed');
     expect(result.output).not.toContain('stories-changed');

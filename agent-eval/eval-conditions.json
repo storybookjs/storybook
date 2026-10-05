@@ -14,12 +14,6 @@
       "label": "agent-eval:storybook-latest",
       "input": "storybook_latest",
       "description": "Agent evals on Storybook latest: check if a problem exists in the stable release"
-    },
-    {
-      "id": "review",
-      "label": "agent-eval:review",
-      "input": "review",
-      "description": "Agent evals with review on: for changes to the review workflow"
     }
   ]
 }

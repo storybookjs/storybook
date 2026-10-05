@@ -3,8 +3,10 @@ import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
 import { ErrorFormatter, Loader } from 'storybook/internal/components';
-import type { DocsContextProps, PreparedStory } from 'storybook/internal/types';
+import { UPDATE_STORY_ARGS } from 'storybook/internal/core-events';
+import type { Args, DocsContextProps, PreparedStory } from 'storybook/internal/types';
 
+import { isEqual } from 'es-toolkit/predicate';
 import { styled } from 'storybook/theming';
 
 import { getStoryHref } from '../getStoryHref';
@@ -28,6 +30,7 @@ interface InlineStoryProps extends CommonProps {
 interface IFrameStoryProps extends CommonProps {
   inline: false;
   height: string;
+  args?: Args;
 }
 
 export type StoryProps = InlineStoryProps | IFrameStoryProps;
@@ -92,29 +95,69 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
   );
 };
 
-const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px' }) => (
-  <div style={{ width: '100%', height }}>
-    <ZoomContext.Consumer>
-      {({ scale }) => {
-        return (
-          <IFrame
-            key="iframe"
-            id={`iframe--${story.id}`}
-            title={story.name}
-            src={getStoryHref(story.id, { viewMode: 'story' })}
-            allowFullScreen
-            scale={scale}
-            style={{
-              width: '100%',
-              height: '100%',
-              border: '0 none',
-            }}
-          />
-        );
-      }}
-    </ZoomContext.Consumer>
-  </div>
-);
+const IFrameStory: FunctionComponent<IFrameStoryProps> = ({ story, height = '500px', args }) => {
+  const containerRef = useRef<HTMLDivElement>(null);
+  const iframeArgs = useRef<Args | undefined>(undefined);
+
+  useEffect(() => {
+    const iframe = containerRef.current?.querySelector('iframe');
+    if (!iframe || !args) {
+      return () => {};
+    }
+    const sendArgs = () => {
+      const known = iframeArgs.current ?? story.initialArgs;
+      if (isEqual(args, known)) {
+        return;
+      }
+      const channel = (iframe.contentWindow as IFrameWindow | null)?.__STORYBOOK_ADDONS_CHANNEL__;
+      if (!channel) {
+        return;
+      }
+      // A key the docs page dropped has to be unset in the iframe, so it is sent as `undefined`.
+      const unsetKnown = Object.fromEntries(Object.keys(known).map((key) => [key, undefined]));
+      channel.emit(UPDATE_STORY_ARGS, {
+        storyId: story.id,
+        updatedArgs: { ...unsetKnown, ...args },
+      });
+      iframeArgs.current = args;
+    };
+    const onLoad = () => {
+      iframeArgs.current = undefined;
+      sendArgs();
+    };
+    sendArgs();
+    iframe.addEventListener('load', onLoad);
+    return () => iframe.removeEventListener('load', onLoad);
+  }, [args, story]);
+
+  return (
+    <div ref={containerRef} style={{ width: '100%', height }}>
+      <ZoomContext.Consumer>
+        {({ scale }) => {
+          return (
+            <IFrame
+              key="iframe"
+              id={`iframe--${story.id}`}
+              title={story.name}
+              src={getStoryHref(story.id, { viewMode: 'story' })}
+              allowFullScreen
+              scale={scale}
+              style={{
+                width: '100%',
+                height: '100%',
+                border: '0 none',
+              }}
+            />
+          );
+        }}
+      </ZoomContext.Consumer>
+    </div>
+  );
+};
+
+interface IFrameWindow extends Window {
+  __STORYBOOK_ADDONS_CHANNEL__?: { emit: (type: string, payload: unknown) => void };
+}
 
 /** A story element, either rendered inline or in an iframe, with configurable height. */
 

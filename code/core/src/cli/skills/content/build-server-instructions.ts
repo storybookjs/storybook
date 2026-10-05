@@ -22,7 +22,12 @@ export type ServerInstructionsInputs = {
    */
   moduleGraphSupported?: boolean;
   reviewEnabled?: boolean;
+  /** The story instructions follow in the same document, so the workflow points at them there. */
+  storyInstructionsInline?: boolean;
 };
+
+const INLINE_STORY_INSTRUCTIONS_STEP =
+  'Before creating or editing components or stories, read **Writing User Interfaces** below; it is the source of truth for imports, story patterns, and testing conventions.';
 
 /**
  * The full rule for how the agent should present links in its final
@@ -72,7 +77,12 @@ export function buildServerInstructions({
     // feature flag while it is being iterated on.
     sections.push(
       legacyDevInstructions
-        .replaceAll('{{GET_STORYBOOK_STORY_INSTRUCTIONS}}', skillRef('write-story'))
+        .replace(
+          '{{STORY_INSTRUCTIONS_STEP}}',
+          options.storyInstructionsInline
+            ? INLINE_STORY_INSTRUCTIONS_STEP
+            : `Before creating or editing components or stories, call **${skillRef('write-story')}**.\n- Treat its output as the source of truth for imports, story patterns, and testing conventions.`
+        )
         .replaceAll('{{PREVIEW_STORIES}}', ref('stories.preview'))
         .trim()
     );
@@ -97,7 +107,12 @@ export function buildServerInstructions({
     const finalLinksStep = `End your final response with the review section from **${ref('review.create')}**'s result — never substitute preview URLs. **${ref('stories.preview')}** is only for mid-loop iteration or a requested direct link. If nothing visually changed, say so.`;
     sections.push(
       devInstructions
-        .replaceAll('{{GET_STORYBOOK_STORY_INSTRUCTIONS}}', skillRef('write-story'))
+        .replace(
+          '{{STORY_INSTRUCTIONS_STEP}}',
+          options.storyInstructionsInline
+            ? INLINE_STORY_INSTRUCTIONS_STEP
+            : `Before creating or editing components or stories, call **${skillRef('write-story')}**; its output is the source of truth for imports, story patterns, and testing conventions.`
+        )
         .replaceAll('{{GET_STORIES_BY_COMPONENT}}', ref('stories.findByComponent'))
         .replace('{{PREVIEW_STORIES_STEP}}', previewStoriesStep)
         .replace('{{FINAL_LINKS_STEP}}', finalLinksStep)

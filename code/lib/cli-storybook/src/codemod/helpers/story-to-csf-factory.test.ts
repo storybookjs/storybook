@@ -888,10 +888,10 @@ describe('stories codemod', () => {
 
       it.each([
         [
-          'makes the custom args optional next to a component',
+          'makes a type that is not a type literal optional next to a component',
           "component: 'demo-page'",
           '.type<{ args: Partial<PageProps> }>()',
-          '.type<{ args: Partial<{ footer: string }> }>()',
+          'meta.type<{ args: { footer: string } }>().story()',
         ],
         [
           'keeps the custom args as they are without a component',
@@ -1049,6 +1049,55 @@ describe('stories codemod', () => {
           export const A = meta.type<{ args: StoryArgs }>().story();
           export const B = meta.story(() => {});
         `);
+      });
+
+      it('leaves the args of the meta out of the custom args type of a story', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta, StoryObj } from '@storybook/react';
+            import { Button, type ButtonProps } from './Button';
+
+            type IconArgs = { icon: string };
+
+            const meta = { component: Button, args: { label: 'Hi', 'aria-label': 'Hi' } } satisfies Meta<typeof Button>;
+            export default meta;
+
+            export const Default: StoryObj<typeof meta> = {};
+            export const WithIcon: StoryObj<ButtonProps & IconArgs> = { args: { icon: 'star' } };
+            export const WithLabel: StoryObj<{ label: 'Bye' }> = { args: { label: 'Bye' } };
+          `)
+        ).resolves.toMatchInlineSnapshot(`
+          import preview from "#.storybook/preview";
+          import { Button, type ButtonProps } from "./Button";
+
+          type IconArgs = { icon: string };
+
+          const meta = preview.meta({
+            component: Button,
+            args: { label: "Hi", "aria-label": "Hi" },
+          });
+
+          export const Default = meta.story();
+          export const WithIcon = meta
+            .type<{ args: Omit<ButtonProps, "label" | "aria-label"> & IconArgs }>()
+            .story({ args: { icon: "star" } });
+          export const WithLabel = meta
+            .type<{ args: Omit<{ label: "Bye" }, "label" | "aria-label"> }>()
+            .story({ args: { label: "Bye" } });
+        `);
+      });
+
+      it('reads a parenthesized custom args type', async () => {
+        await expect(
+          transform(dedent`
+            import type { Meta } from '@storybook/angular';
+            import { Page } from './page.component';
+
+            export default { component: Page } satisfies Meta<(Page & { footer?: string })>;
+
+            export const A = {};
+          `)
+        ).resolves.toContain('.type<{ args: { footer?: string } }>()');
       });
 
       it('writes a custom args type that every story has once, on the meta', async () => {

@@ -291,6 +291,16 @@ describe('Custom args types written by the csf-factories codemod', () => {
     });
   });
 
+  it('✅ A custom arg in a type literal stays required next to a component', () => {
+    const meta = preview.type<{ args: { footer: string } }>().meta({
+      component: 'my-button',
+      args: { footer: 'good' },
+      render: ({ footer }) => html`<my-button></my-button>${footer.toUpperCase()}`,
+    });
+
+    const Default = meta.story();
+  });
+
   it('✅ The element class can be the custom args type', () => {
     const meta = preview.type<{ args: Partial<MyButton> }>().meta({ component: 'my-button' });
 

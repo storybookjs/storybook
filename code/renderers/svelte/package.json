@@ -36,6 +36,11 @@
     "./internal/DecoratorHandler.svelte": "./static/DecoratorHandler.svelte",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./internal/PreviewRender.svelte": "./static/PreviewRender.svelte",
+    "./internal/svelte-csf/addon-check": {
+      "types": "./dist/svelte-csf/addon-check.d.ts",
+      "code": "./src/svelte-csf/addon-check.ts",
+      "default": "./dist/svelte-csf/addon-check.js"
+    },
     "./internal/svelte-csf/component-helpers": {
       "types": "./dist/svelte-csf/runtime/component-helpers.d.ts",
       "code": "./src/svelte-csf/runtime/component-helpers.ts",
@@ -56,10 +61,10 @@
     "./internal/svelte-csf/StoriesExtractor.svelte": "./static/svelte-csf/StoriesExtractor.svelte",
     "./internal/svelte-csf/Story.svelte": "./static/svelte-csf/Story.svelte",
     "./internal/svelte-csf/StoryRenderer.svelte": "./static/svelte-csf/StoryRenderer.svelte",
-    "./internal/svelte-csf/vite-plugins": {
-      "types": "./dist/svelte-csf/compiler/plugins.d.ts",
-      "code": "./src/svelte-csf/compiler/plugins.ts",
-      "default": "./dist/svelte-csf/compiler/plugins.js"
+    "./internal/svelte-csf/transform": {
+      "types": "./dist/svelte-csf/compiler/transform.d.ts",
+      "code": "./src/svelte-csf/compiler/transform.ts",
+      "default": "./dist/svelte-csf/compiler/transform.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js"

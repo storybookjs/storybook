@@ -161,7 +161,7 @@ describe('buildApiDescription', () => {
     `);
   });
 
-  it('collapses default whitespace before rendering member lines', () => {
+  it('collapses line breaks in defaults and keeps inline spaces', () => {
     expect(
       buildApiDescription(
         declaration({
@@ -173,6 +173,12 @@ describe('buildApiDescription', () => {
               type: { text: 'Options' },
               default: '{\n  a: 1,\n}',
             },
+            {
+              kind: 'field',
+              name: 'label',
+              type: { text: 'string' },
+              default: "'A  B'",
+            },
           ],
         }),
         TYPE_PROPERTY
@@ -183,6 +189,7 @@ describe('buildApiDescription', () => {
       \`\`\`
       export type XOptionsProperties = {
         options?: Options = { a: 1, };
+        label?: string = 'A  B';
       }
       \`\`\`"
     `);

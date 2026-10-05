@@ -244,7 +244,7 @@ function memberDoc(...sources: Array<DocItem | undefined>): MemberDoc {
 function defaultValue(value: string | undefined): string | undefined {
   return value === undefined || value === 'undefined'
     ? undefined
-    : value.replace(/\s+/g, ' ').trim();
+    : value.replace(/\s*\n\s*/g, ' ').trim();
 }
 
 function memberDefault(doc: MemberDoc): string {

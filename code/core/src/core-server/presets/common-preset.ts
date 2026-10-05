@@ -35,7 +35,10 @@ import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
 import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
-import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
+import {
+  registerReviewService,
+  subscribeReviewToModuleGraphChanges,
+} from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
 import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
 import { sourceUrlManifestProvider } from '../../shared/open-service/toolsets/docs/access-provider.ts';
@@ -322,6 +325,17 @@ export const experimental_serverChannel = async (
   initTelemetryChannel(channel);
 
   return channel;
+};
+
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (
+  app,
+  options
+) => {
+  if (isReviewFeatureEnabled(await options.presets.apply('features'))) {
+    subscribeReviewToModuleGraphChanges();
+  }
+
+  return app;
 };
 
 /**

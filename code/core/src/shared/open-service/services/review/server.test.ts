@@ -3,9 +3,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { OpenServiceUnknownStoryIdsError } from '../../../../server-errors.ts';
-import { clearRegistry } from '../../server.ts';
+import { clearRegistry, registerService } from '../../server.ts';
+import { moduleGraphServiceDef } from '../module-graph/definition.ts';
 import { reviewServiceDef } from './definition.ts';
-import { registerReviewService } from './server.ts';
+import { registerReviewService, subscribeReviewToModuleGraphChanges } from './server.ts';
 
 const storyEntry = {
   type: 'story',
@@ -288,32 +289,34 @@ describe('registerReviewService', () => {
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
   });
 
-  it('marks the current review stale on module-graph changes after the grace window', async () => {
-    let onChange: (() => void) | undefined;
-    const unsubscribe = vi.fn();
-    const service = registerReviewService({
-      getIndex,
-      subscribeToModuleGraphChanges: (handler) => {
-        onChange = handler;
-        return unsubscribe;
-      },
-    });
+  it('does not subscribe to module-graph changes on registration', async () => {
+    const moduleGraph = registerService(moduleGraphServiceDef);
+    const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    now = 5_000;
-    onChange?.();
-    await vi.waitFor(() => {
-      expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
+    now = 12_000;
+    await moduleGraph.commands._applyGraphUpdate({
+      bumpedStoryFiles: ['./src/Button.stories.tsx'],
     });
 
+    expect(service.queries.current.get(undefined)).toEqual({ ...review, createdAt: 1_000 });
+  });
+
+  it('marks the review stale on module-graph changes once subscribed', async () => {
+    const moduleGraph = registerService(moduleGraphServiceDef);
+    const service = registerReviewService({ getIndex });
+    subscribeReviewToModuleGraphChanges();
+    await service.commands.setReview(review);
+
     now = 12_000;
-    onChange?.();
-    await vi.waitFor(() => {
-      expect(service.queries.current.get(undefined)).toEqual({
-        ...review,
-        createdAt: 1_000,
-        stale: true,
-      });
+    await moduleGraph.commands._applyGraphUpdate({
+      bumpedStoryFiles: ['./src/Button.stories.tsx'],
+    });
+
+    expect(service.queries.current.get(undefined)).toEqual({
+      ...review,
+      createdAt: 1_000,
+      stale: true,
     });
   });
 });

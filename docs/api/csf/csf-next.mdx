@@ -220,7 +220,9 @@ export const WithIcon = meta.type<{ args: { icon: string } }>().story({
 });
 ```
 
-`meta.type` accepts the same type argument as [`preview.type`](#previewtypemeta), and its types are added to those of the meta, so the two can be combined. Args that the meta already provides stay optional in the story. An arg added with `meta.type` must be set in that story, unless you declare it as optional (`meta.type<{ args: { icon?: string } }>()`). If you redeclare an arg that the component already has, its type must be compatible with the component's.
+`meta.type` accepts the same type argument as [`preview.type`](#previewtypemeta), and the two can be combined.
+
+An arg you add must be set in that story, unless you declare it as optional (`meta.type<{ args: { icon?: string } }>()`). Args that the meta already sets stay optional, except the ones you redeclare in `meta.type`: the story must set those again, because the meta's value was not checked against the new type.
 
 #### `<Story>.extend`
 
@@ -484,9 +486,16 @@ type CustomProps = React.ComponentProps<typeof Button> & { customProp: string };
 - };
 ```
 
-Types passed to `preview.type` apply to every story of the file. If only one story needs the custom args, you can use the [`meta.type.story`](#metatypestory) pattern to keep them on that story. Unlike with `StoryObj`, a required arg of that type must then be set in the story.
+Types passed to `preview.type` apply to every story of the file. If only one story needs the custom args, keep the meta as it is and type that story with the [`meta.type.story`](#metatypestory) pattern instead. Unlike with `StoryObj`, a required arg of that type must then be set in the story.
 
 ```diff title="Button.stories.js|ts"
++ const meta = preview.meta({
+- const meta = {
+    component: Button,
++ });
+- } satisfies Meta<typeof Button>;
+- export default meta;
+
 + export const WithCustomProp = meta.type<{ args: { customProp: string } }>().story({
 - export const WithCustomProp: StoryObj<CustomProps> = {
     args: { customProp: 'Hello, world!' },

@@ -116,6 +116,12 @@ describe('meta.type<>()', () => {
     // @ts-expect-error tags must be 'a' | 'b'
     typed.story({ args: { count: 1 }, tags: ['c'] });
   });
+
+  test('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error label is required, the meta sets it to 'foo'
+    meta.type<{ args: { label: 'bar' } }>().story({ args: {} });
+    meta.type<{ args: { label: 'bar' } }>().story({ args: { label: 'bar' } });
+  });
 });
 
 describe('test function', () => {

@@ -530,7 +530,13 @@ describe('meta.type<>() types the stories created from it', () => {
     typed.story({ args: { icon: 'star' } });
   });
 
-  it('meta.story() needs no arguments when the added args are optional', () => {
+  it('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error disabled is required, the meta sets it to false
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi' } });
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi', disabled: true } });
+  });
+
+  it('story() needs no args when no required arg is left or render takes none', () => {
     const complete = preview.meta({ component: Button, args: { label: 'Hi', disabled: false } });
     complete.type<{ args: { icon?: string } }>().story();
     complete.type<{ args: { icon?: string } }>().story({});

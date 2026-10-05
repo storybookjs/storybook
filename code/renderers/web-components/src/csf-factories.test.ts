@@ -512,6 +512,12 @@ describe('meta.type<>() types the stories created from it', () => {
     meta.story();
   });
 
+  it('an arg of the meta that is redeclared must be set again', () => {
+    // @ts-expect-error disabled is required, the meta sets it to false
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi' } });
+    meta.type<{ args: { disabled: true } }>().story({ args: { label: 'Hi', disabled: true } });
+  });
+
   it('a story with a render that takes no args needs no args', () => {
     const typed = meta.type<{ args: { icon: string } }>();
     typed.story(

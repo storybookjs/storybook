@@ -13,19 +13,15 @@ export async function getManagerBuilder(): Promise<Builder<unknown>> {
   return await import('../../builder-manager/index.ts');
 }
 
-// `getAbsolutePath` turns a builder into its package directory, which ES modules cannot import, so
-// resolve the package's own entry point from inside it.
-const resolvePackageEntry = (builder: string) => {
-  const packageJson = join(builder, 'package.json');
-  if (!isAbsolute(builder) || !existsSync(packageJson)) {
-    return builder;
+export async function getPreviewBuilder(resolvedPreviewBuilder: string): Promise<Builder<unknown>> {
+  // `getAbsolutePath` turns a builder into its package directory, which ES modules cannot import, so
+  // resolve the package's own entry point from inside it.
+  const packageJson = join(resolvedPreviewBuilder, 'package.json');
+  if (!isAbsolute(resolvedPreviewBuilder) || !existsSync(packageJson)) {
+    return await importModule(resolvedPreviewBuilder);
   }
   const { name } = JSON.parse(readFileSync(packageJson, 'utf8'));
-  return resolveModulePath(name, { from: pathToFileURL(packageJson) });
-};
-
-export async function getPreviewBuilder(resolvedPreviewBuilder: string): Promise<Builder<unknown>> {
-  return await importModule(resolvePackageEntry(resolvedPreviewBuilder));
+  return await importModule(resolveModulePath(name, { from: pathToFileURL(packageJson) }));
 }
 
 export async function getBuilders({ presets }: Options): Promise<Builder<unknown>[]> {

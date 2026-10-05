@@ -227,7 +227,7 @@ export const IFrameForceInitialArgs: Story = {
     of: ButtonStories.Primary,
     inline: false,
     __forceInitialArgs: true,
-  } as any,
+  },
   play: async ({ canvasElement, loaded }) => {
     const docsContext = loaded.docsContext as DocsContextProps;
     const { story } = docsContext.resolveOf(ButtonStories.Primary, ['story']);
@@ -238,6 +238,8 @@ export const IFrameForceInitialArgs: Story = {
     const updated = new Promise<void>((resolve) => channel.once(STORY_ARGS_UPDATED, resolve));
     await channel.emit(UPDATE_STORY_ARGS, { storyId: story.id, updatedArgs: { label: 'Updated' } });
     await updated;
+    // A wrongly relayed update would have re-rendered the iframe by now.
+    await new Promise((resolve) => setTimeout(resolve, 300));
     await expect(iframeButton(canvasElement)).toHaveTextContent('Button');
 
     await channel.emit(RESET_STORY_ARGS, { storyId: story.id });

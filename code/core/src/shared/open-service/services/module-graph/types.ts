@@ -27,7 +27,7 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
-  /** Newest modification time (unix ms) among the file changes that advanced {@link graphRevision}. */
+  /** Newest time (unix ms) a file change that advanced {@link graphRevision} was made. */
   graphChangedAt: number;
   /**
    * Monotonic counter advanced on every processed file-change event, including out-of-graph

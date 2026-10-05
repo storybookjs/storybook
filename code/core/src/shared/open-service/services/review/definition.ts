@@ -82,7 +82,7 @@ export const reviewServiceDef = defineService({
     },
     bannerKind: {
       description:
-        'Returns which attention banner review surfaces should show: pending-update outranks stale (accepting the update supersedes the warning); null when neither applies.',
+        'Returns which attention banner review surfaces should show: pending-update outranks stale, and once accepted the banner reflects the staleness of the accepted review; null when neither applies.',
       input: v.undefined(),
       output: v.nullable(v.picklist(['pending-update', 'stale'])),
       handler: (_input, ctx) =>

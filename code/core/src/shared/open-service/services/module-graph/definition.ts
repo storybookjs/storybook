@@ -155,7 +155,7 @@ export const moduleGraphServiceDef = defineService({
     },
     graphChangedAt: {
       description:
-        'Newest modification time (unix ms) among the file changes that advanced `graphRevision`, 0 before the first one. Dates a change by the file itself, so a builder that reports an edit late cannot make it look newer than it is.',
+        "Newest time (unix ms) a file change that advanced `graphRevision` was made, 0 before the first one. Dated by the file's modification time where possible, so a builder that reports an edit late cannot make it look newer than it is.",
       input: noInputSchema,
       output: v.number(),
       handler: (_input, ctx) => ctx.self.state.graphChangedAt,
@@ -269,9 +269,7 @@ export const moduleGraphServiceDef = defineService({
         changedAt: v.optional(
           v.pipe(
             v.number(),
-            v.description(
-              'Modification time (unix ms) of the changed file. Defaults to now when unknown.'
-            )
+            v.description('When (unix ms) the change was made. Defaults to now when unknown.')
           )
         ),
       }),

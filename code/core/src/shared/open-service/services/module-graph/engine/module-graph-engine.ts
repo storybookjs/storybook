@@ -37,7 +37,8 @@ export interface ModuleGraphEngineOptions {
   /**
    * Fired after every settled file-change patch. Empty `bumpedStoryFiles` means the path was
    * out of graph: `fileActivityRevision` still advances so change detection can rescan git.
-   * `changedAt` is the changed file's modification time, or when the event arrived for a removal.
+   * `changedAt` is the changed file's modification time, capped at when the event arrived, or the
+   * arrival time for a deleted file.
    */
   onBump?: (bumpedStoryFiles: string[], changedAt: number) => void | Promise<void>;
 }
@@ -400,14 +401,13 @@ export class ModuleGraphEngine {
       return;
     }
     // Builders can report an edit long after it happened (webpack holds edits made during a
-    // compile until it finishes), so the file's own mtime dates the change.
-    const changedAt =
-      event.kind === 'unlink'
-        ? receivedAt
-        : await stat(event.path).then(
-            (stats) => stats.mtimeMs,
-            () => receivedAt
-          );
+    // compile until it finishes), so the file's own mtime dates the change. A future mtime (clock
+    // skew, `touch -d`) is capped at arrival so it cannot date every later change after a review.
+    // A deleted file has no mtime, so its arrival dates it.
+    const changedAt = await stat(event.path).then(
+      (stats) => Math.min(stats.mtimeMs, receivedAt),
+      () => receivedAt
+    );
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
     const revisionBefore = this.reverseIndex.revision;
     try {

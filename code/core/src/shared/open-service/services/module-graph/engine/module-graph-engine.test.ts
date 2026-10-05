@@ -264,7 +264,7 @@ describe('ModuleGraphEngine', () => {
     expect(callbacks.onBump).toHaveBeenCalledWith(['./src/B.stories.tsx'], expect.any(Number));
   });
 
-  it('dates a bump by the file mtime, or by when the event arrived for a removal', async () => {
+  it('dates a bump by the file mtime, capped at when the event arrived, which also dates a deleted file', async () => {
     const story = '/repo/src/B.stories.tsx';
     const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
     const { service, adapter, emitFileChange, callbacks } = setup({
@@ -281,11 +281,15 @@ describe('ModuleGraphEngine', () => {
     vi.mocked(stat).mockResolvedValueOnce({ mtimeMs: 40_000 } as Awaited<ReturnType<typeof stat>>);
     emitFileChange({ kind: 'change', path: story });
     await vi.runAllTimersAsync();
+    vi.mocked(stat).mockResolvedValueOnce({ mtimeMs: 60_000 } as Awaited<ReturnType<typeof stat>>);
+    emitFileChange({ kind: 'change', path: story });
+    await vi.runAllTimersAsync();
     emitFileChange({ kind: 'unlink', path: story });
     await vi.runAllTimersAsync();
 
     expect(callbacks.onBump).toHaveBeenNthCalledWith(1, ['./src/B.stories.tsx'], 40_000);
     expect(callbacks.onBump).toHaveBeenNthCalledWith(2, ['./src/B.stories.tsx'], 50_000);
+    expect(callbacks.onBump).toHaveBeenNthCalledWith(3, ['./src/B.stories.tsx'], 50_000);
   });
 
   it('buffers file events emitted during the build and applies them in order after build resolves', async () => {

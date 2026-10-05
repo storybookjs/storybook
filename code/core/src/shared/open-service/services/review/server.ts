@@ -21,7 +21,7 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
     commands: {
       setReview: {
         handler: async (input, ctx) => {
-          const { stale: _stale, createdAt: _createdAt, revision: _revision, ...review } = input;
+          const { stale: _stale, createdAt: _createdAt, ...review } = input;
           const storyIds = [
             ...new Set(review.collections.flatMap((collection) => collection.storyIds)),
           ];
@@ -33,12 +33,8 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
             throw new OpenServiceUnknownStoryIdsError({ unknownIds });
           }
 
-          const revision = ctx
-            .getService<ModuleGraphService>('core/module-graph', { internal: true })
-            .queries.graphRevision.get(undefined);
-
           ctx.self.setState((state) => {
-            applyPublishedReview(state, { ...review, createdAt: Date.now(), revision });
+            applyPublishedReview(state, { ...review, createdAt: Date.now() });
           });
         },
       },
@@ -70,10 +66,9 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
 export function subscribeReviewToModuleGraphChanges(): void {
   const review = getService<ReviewService>('core/review', { internal: true });
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
-  moduleGraph.queries.graphRevision.subscribe(undefined, ({ data: revision }) => {
-    if (revision !== undefined) {
-      const changedAt = moduleGraph.queries.graphChangedAt.get(undefined);
-      void review.commands.markStale({ revision, changedAt });
+  moduleGraph.queries.graphChangedAt.subscribe(undefined, ({ data: changedAt }) => {
+    if (changedAt !== undefined) {
+      void review.commands.markStale({ changedAt });
     }
   });
 }

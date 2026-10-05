@@ -134,20 +134,18 @@ describe('registerReviewService', () => {
 
     expect(service.queries.current.get(undefined)).toBeNull();
 
-    await service.commands.setReview({ ...review, stale: true, createdAt: 100, revision: 7 });
+    await service.commands.setReview({ ...review, stale: true, createdAt: 100 });
 
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
-      revision: 0,
     });
     expect(getIndex).toHaveBeenCalledOnce();
 
-    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
+    await service.commands.markStale({ changedAt: 2_000 });
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
-      revision: 0,
       stale: true,
     });
 
@@ -166,12 +164,10 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
-      revision: 0,
     });
     expect(service.queries.pending.get(undefined)).toEqual({
       ...updated,
       createdAt: 2_000,
-      revision: 0,
     });
   });
 
@@ -188,7 +184,6 @@ describe('registerReviewService', () => {
       ...review,
       title: 'Second update',
       createdAt: 3_000,
-      revision: 0,
     });
   });
 
@@ -218,7 +213,6 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({
       ...updated,
       createdAt: 2_000,
-      revision: 0,
     });
     expect(service.queries.pending.get(undefined)).toBeNull();
   });
@@ -232,7 +226,6 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
-      revision: 0,
     });
     expect(service.queries.pending.get(undefined)).toBeNull();
   });
@@ -249,29 +242,12 @@ describe('registerReviewService', () => {
     expect(service.queries.pending.get(undefined)).toBeNull();
   });
 
-  it('ignores revisions the review was published at or before', async () => {
-    await moduleGraph.commands._applyGraphUpdate({
-      bumpedStoryFiles: ['./src/Button.stories.tsx'],
-    });
-    const service = registerReviewService({ getIndex });
-    await service.commands.setReview(review);
-
-    await service.commands.markStale({ revision: 0, changedAt: 2_000 });
-    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
-
-    expect(service.queries.current.get(undefined)).toEqual({
-      ...review,
-      createdAt: 1_000,
-      revision: 1,
-    });
-  });
-
   it('ignores changes made before publishing that the module graph reports after it', async () => {
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
 
-    await service.commands.markStale({ revision: 1, changedAt: 900 });
-    await service.commands.markStale({ revision: 1, changedAt: 1_000 });
+    await service.commands.markStale({ changedAt: 900 });
+    await service.commands.markStale({ changedAt: 1_000 });
 
     expect(service.queries.current.get(undefined)?.stale).toBeUndefined();
   });
@@ -279,7 +255,7 @@ describe('registerReviewService', () => {
   it('ignores markStale when no review is active', async () => {
     const service = registerReviewService({ getIndex });
 
-    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
+    await service.commands.markStale({ changedAt: 2_000 });
 
     expect(service.queries.current.get(undefined)).toBeNull();
   });
@@ -316,7 +292,7 @@ describe('registerReviewService', () => {
     await service.commands.setReview(review);
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
 
-    await service.commands.markStale({ revision: 1, changedAt: 2_000 });
+    await service.commands.markStale({ changedAt: 2_000 });
     expect(service.queries.bannerKind.get(undefined)).toBe('stale');
 
     await service.commands.setReview({ ...review, title: 'Updated review' });
@@ -327,19 +303,17 @@ describe('registerReviewService', () => {
     expect(service.queries.bannerKind.get(undefined)).toBeNull();
   });
 
-  it('marks a pending review stale only on revisions newer than its own', async () => {
+  it('marks a pending review stale only on changes made after it was published', async () => {
     const service = registerReviewService({ getIndex });
     await service.commands.setReview(review);
-    await moduleGraph.commands._applyGraphUpdate({
-      bumpedStoryFiles: ['./src/Button.stories.tsx'],
-    });
     now = 2_000;
     await service.commands.setReview({ ...review, title: 'Updated review' });
 
-    await service.commands.markStale({ revision: 1, changedAt: 3_000 });
+    await service.commands.markStale({ changedAt: 1_500 });
+    expect(service.queries.current.get(undefined)?.stale).toBe(true);
     expect(service.queries.pending.get(undefined)?.stale).toBeUndefined();
 
-    await service.commands.markStale({ revision: 2, changedAt: 3_000 });
+    await service.commands.markStale({ changedAt: 3_000 });
     expect(service.queries.pending.get(undefined)?.stale).toBe(true);
 
     await service.commands.acceptPending(undefined);
@@ -358,7 +332,6 @@ describe('registerReviewService', () => {
     expect(service.queries.current.get(undefined)).toEqual({
       ...review,
       createdAt: 1_000,
-      revision: 0,
     });
   });
 
@@ -376,7 +349,6 @@ describe('registerReviewService', () => {
       expect(service.queries.current.get(undefined)).toEqual({
         ...review,
         createdAt: 1_000,
-        revision: 0,
         stale: true,
       })
     );

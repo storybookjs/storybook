@@ -25,12 +25,9 @@ export interface ReviewState {
    * received; used for live "Created x minutes ago" UI in the summary.
    */
   createdAt?: number;
-  /** Server-side module-graph revision current when the review was published. */
-  revision?: number;
   /**
-   * Set server-side once a file change made after publishing advances the module graph past
-   * `revision`. Drives the "this review may be stale" banner and synchronizes through the review
-   * service.
+   * Set server-side once a watched source file changes after `createdAt`.
+   * Drives the "this review may be stale" banner and synchronizes through the review service.
    */
   stale?: boolean;
 }

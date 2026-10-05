@@ -31,7 +31,6 @@ export const reviewStateSchema = v.object({
     )
   ),
   createdAt: v.optional(v.number()),
-  revision: v.optional(v.number()),
   stale: v.optional(v.boolean()),
 });
 
@@ -96,7 +95,7 @@ export const reviewServiceDef = defineService({
   commands: {
     setReview: {
       description:
-        'Publishes a review and assigns its server creation time and the current module-graph revision. Defers to pending while any review is current. Implemented by the server.',
+        'Publishes a review and assigns its server creation time. Defers to pending while any review is current. Implemented by the server.',
       input: reviewStateSchema,
       output: v.void(),
     },
@@ -107,12 +106,11 @@ export const reviewServiceDef = defineService({
     },
     markStale: {
       description:
-        'Marks the current and pending reviews stale when the module graph moved past the revision they were published at, through a file change made after they were published. Implemented by the server.',
+        'Marks the current and pending reviews stale when the module graph changed after they were published. Implemented by the server.',
       input: v.object({
-        revision: v.pipe(v.number(), v.description('Current module-graph revision.')),
         changedAt: v.pipe(
           v.number(),
-          v.description('Newest modification time (unix ms) among the module-graph changes.')
+          v.description('When (unix ms) the newest module-graph change was made.')
         ),
       }),
       output: v.void(),

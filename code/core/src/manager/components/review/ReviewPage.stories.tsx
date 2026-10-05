@@ -121,7 +121,6 @@ const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
   createdAt: new Date().getTime() - 60_000,
-  revision: 0,
   collections: [
     {
       title: 'Settings',
@@ -435,7 +434,7 @@ export const PendingUpdateSupersedesStale = meta.story({
     const canvas = within(canvasElement);
 
     await applyReviewState();
-    await reviewService.commands.markStale({ revision: 1, changedAt: Date.now() });
+    await reviewService.commands.markStale({ changedAt: Date.now() });
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
 
     await reviewService.commands.setReview(updatedReviewState);

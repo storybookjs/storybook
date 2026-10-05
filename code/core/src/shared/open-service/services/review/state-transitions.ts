@@ -42,21 +42,17 @@ export function applyAcceptPending(state: ReviewServiceState): void {
 }
 
 /**
- * Marks the current and pending reviews stale when the module graph moved past the revision each
- * was published at, through a file change made after it was published. Replaces a marked review
- * with a plain deep copy: a fresh reference keeps same-realm query subscribers reactive, and the
- * deep copy avoids leaving proxied nested arrays behind (which `structuredClone` cannot snapshot).
+ * Marks the current and pending reviews stale when the module graph changed after each was
+ * published. Replaces a marked review with a plain deep copy: a fresh reference keeps same-realm
+ * query subscribers reactive, and the deep copy avoids leaving proxied nested arrays behind (which
+ * `structuredClone` cannot snapshot).
  */
 export function applyMarkStale(
   state: ReviewServiceState,
-  { revision, changedAt }: { revision: number; changedAt: number }
+  { changedAt }: { changedAt: number }
 ): void {
   const isOutdated = (review: ReviewState | null): review is ReviewState =>
-    review?.revision !== undefined &&
-    review.createdAt !== undefined &&
-    !review.stale &&
-    revision > review.revision &&
-    changedAt > review.createdAt;
+    review?.createdAt !== undefined && !review.stale && changedAt > review.createdAt;
 
   if (isOutdated(state.current)) {
     state.current = { ...toPlainReview(state.current), stale: true };

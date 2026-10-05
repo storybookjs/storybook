@@ -1,6 +1,6 @@
 import React from 'react';
 
-import type { Channel } from 'storybook/internal/channels';
+import { requireChannel } from 'storybook/internal/channels';
 import {
   RESET_STORY_ARGS,
   STORY_ARGS_UPDATED,
@@ -131,7 +131,7 @@ export const IFrameProps: Story = {
   },
 };
 
-const channel = (window as any).__STORYBOOK_ADDONS_CHANNEL__ as Channel;
+const channel = requireChannel();
 
 const iframeButton = (canvasElement: HTMLElement) =>
   canvasElement.querySelector('iframe')!.contentDocument!.querySelector('#storybook-root button');

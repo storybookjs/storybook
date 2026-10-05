@@ -249,9 +249,10 @@ function ServiceControlsPanel({
   // The manager Controls panel only ever shows the main component's rows; subcomponent tabs are a
   // docs-blocks-only feature, so this intentionally ignores `payload.subcomponents` to match the
   // legacy panel's behavior.
+  const docgenResolved = !!current && !current.isInitialLoading;
   const rows = useMemo(
     () =>
-      docgenPayload
+      docgenResolved
         ? mergeServiceArgTypes({
             payload: docgenPayload,
             storyId: storyData.id,
@@ -260,13 +261,13 @@ function ServiceControlsPanel({
             customArgTypes,
           })
         : customArgTypes,
-    [docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
+    [docgenResolved, docgenPayload, initialArgs, storyData.id, storyData.parameters, customArgTypes]
   );
 
   // Keep the skeleton up only while there is genuinely nothing to show: the story isn't prepared, or
   // docgen hasn't resolved yet and there are no annotation controls to fall back on. Once docgen
   // resolves (even to nothing) the table or its "No controls" empty state is the real answer.
-  const isDocgenLoading = !current || current.isInitialLoading;
+  const isDocgenLoading = !docgenResolved;
 
   return (
     <>

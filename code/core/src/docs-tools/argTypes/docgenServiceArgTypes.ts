@@ -30,14 +30,15 @@ export function mergeServiceArgTypes({
   initialArgs,
   customArgTypes,
 }: {
-  payload: DocgenPayload;
+  /** Undefined when docgen has nothing for the component, e.g. a story file without `component`. */
+  payload: DocgenPayload | undefined;
   storyId: StoryId;
   /** May be undefined when the manager renders before the preview reports `storyPrepared`. */
   parameters?: Parameters;
   initialArgs?: Args;
   customArgTypes?: ArgTypes;
 }): StrictArgTypes {
-  const merged = combineParameters(payload.argTypes ?? {}, customArgTypes ?? {}) as StrictArgTypes;
+  const merged = combineParameters(payload?.argTypes ?? {}, customArgTypes ?? {}) as StrictArgTypes;
 
   const withInferredTypes = inferArgTypes({
     id: storyId,

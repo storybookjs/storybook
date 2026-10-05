@@ -21,25 +21,25 @@ const index = {
   },
 } as StoryIndex;
 
-const options = {
-  channel: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
-  presets: {
-    apply: async (extension: string, config?: unknown) => {
-      switch (extension) {
-        case 'features':
-          return { changeDetection: true };
-        case 'storyIndexGenerator':
-          return { getIndex: async () => index };
-        default:
-          return config;
-      }
-    },
-  },
-} as unknown as Options;
-
 let now: number;
+let options: Options;
 
 beforeEach(() => {
+  options = {
+    channel: { on: vi.fn(), off: vi.fn(), emit: vi.fn() },
+    presets: {
+      apply: async (extension: string, config?: unknown) => {
+        switch (extension) {
+          case 'features':
+            return { changeDetection: true };
+          case 'storyIndexGenerator':
+            return { getIndex: async () => index };
+          default:
+            return config;
+        }
+      },
+    },
+  } as unknown as Options;
   clearRegistry();
   vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
   now = 1_000;

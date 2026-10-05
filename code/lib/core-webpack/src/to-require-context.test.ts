@@ -1,4 +1,4 @@
-import { relative } from 'node:path';
+import { posix } from 'node:path';
 
 import { describe, expect, it } from 'vitest';
 
@@ -273,7 +273,7 @@ describe('toRequireContext', () => {
       const regex = new RegExp(match);
 
       function isMatched(filePath: string) {
-        const relativePath = `./${relative(base, filePath)}`;
+        const relativePath = `./${posix.relative(base, filePath)}`;
 
         const baseIncluded = filePath.includes(base);
         const matched = regex.test(relativePath);

@@ -486,8 +486,10 @@ export async function expectStoryTestsRanAndPassed(options?: {
 
   const covering = options?.covering ?? [];
   if (covering.length > 0) {
+    const passingStories =
+      /## Passing Stories\n\n([\s\S]*?)(?:\n\n## |$)/.exec(result.output)?.[1] ?? '';
     expect(
-      covering.some((substring) => result.output.toLowerCase().includes(substring.toLowerCase())),
+      covering.some((substring) => passingStories.toLowerCase().includes(substring.toLowerCase())),
       `The final test run must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(result.output)}`
     ).toBe(true);
   }

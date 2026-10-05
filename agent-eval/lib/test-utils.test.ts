@@ -311,7 +311,10 @@ describe('expectStoryTestsRanAndPassed', () => {
   const tailCutTestRun =
     'grep -n "olor" src/components/StatusPill.tsx src/components/Badge.tsx; npx storybook tools test run --json 2>&1 | tail -40';
 
-  function testRunDocument(statuses: Record<string, string>): string {
+  function testRunDocument(
+    statuses: Record<string, string>,
+    a11yReports: Record<string, { violations: { id: string }[] }[]> = {}
+  ): string {
     const componentTestStatuses = Object.entries(statuses).map(([storyId, value]) => ({
       storyId,
       value,
@@ -319,7 +322,7 @@ describe('expectStoryTestsRanAndPassed', () => {
       title: '',
       description: '',
     }));
-    const result = { componentTestStatuses, a11yReports: {}, unhandledErrors: [] };
+    const result = { componentTestStatuses, a11yReports, unhandledErrors: [] };
     return `${JSON.stringify({ status: 'completed', a11y: true, result }, null, 2)}\n`;
   }
 
@@ -490,6 +493,21 @@ describe('expectStoryTestsRanAndPassed', () => {
     const { expectStoryTestsRanAndPassed } = await loadTestUtils();
 
     await expect(expectStoryTestsRanAndPassed()).rejects.toThrow(/must not report failing stories/);
+  });
+
+  test('matches covering only against the passing story ids', async () => {
+    givenRun({
+      commands: [tailCutTestRun],
+      stdout: testRunDocument(
+        { 'example-input--default': 'status-value:success' },
+        { 'example-input--default': [{ violations: [{ id: 'button-name' }] }] }
+      ),
+    });
+    const { expectStoryTestsRanAndPassed } = await loadTestUtils();
+
+    await expect(expectStoryTestsRanAndPassed({ covering: ['button'] })).rejects.toThrow(
+      /must cover the changed component/
+    );
   });
 
   test('fails when the sandbox run prints no test-run document', async () => {

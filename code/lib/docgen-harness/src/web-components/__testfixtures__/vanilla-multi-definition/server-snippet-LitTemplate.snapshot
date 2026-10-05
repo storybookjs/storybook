@@ -1,4 +1,4 @@
 <multi-beta></multi-beta>
 
 warning: Incomplete snippet: `args => html`<multi-beta beta-label=${args.betaLabel}></multi-beta>`` could not be resolved statically.
-Incomplete snippet: `betaLabel` are properties without an attribute, which the HTML snippet cannot express.
+Incomplete snippet: properties without an attribute: `betaLabel`.

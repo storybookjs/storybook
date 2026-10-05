@@ -7,14 +7,14 @@
       "id": "webcomponentsfixtures-fast-attributes--args-default-render",
       "name": "Args Default Render",
       "snippet": "<fast-attributes label="Default count" size="large" max-count="2"></fast-attributes>",
-      "warning": "Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsfixtures-fast-attributes--dom-node": {
       "id": "webcomponentsfixtures-fast-attributes--dom-node",
       "name": "Dom Node",
       "snippet": "<fast-attributes label="Count" size="large" max-count="5"></fast-attributes>",
       "warning": "Incomplete snippet: `args => { const el = document.createElement('fast-attributes'); el.setAttribute('label', String(args.label)); el.setAttribute('size', String(args.size)); if (args.disabled) { el.setAttribute('disabled', ''); } el.setAttribute('max-count', String(args.maxCount)); (el as HTMLElement & { items: string[]; }).items = args.items as string[]; return el; }` could not be resolved statically.
-Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.",
+Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsfixtures-fast-attributes--lit-template": {
       "id": "webcomponentsfixtures-fast-attributes--lit-template",
@@ -27,7 +27,7 @@ Incomplete snippet: `items` are properties without an attribute, which the HTML 
       max-count=${args.maxCount}
       .items=${args.items}
     ></fast-attributes>`` could not be resolved statically.
-Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.",
+Incomplete snippet: properties without an attribute: `items`.",
     },
   },
 }

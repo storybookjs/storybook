@@ -7,4 +7,4 @@ warning: Incomplete snippet: `args => html`<fast-attributes
       max-count=${args.maxCount}
       .items=${args.items}
     ></fast-attributes>`` could not be resolved statically.
-Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.
+Incomplete snippet: properties without an attribute: `items`.

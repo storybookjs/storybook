@@ -1,4 +1,4 @@
 <lit-property-only label="Configured"></lit-property-only>
 
 warning: Incomplete snippet: `args => { const el = document.createElement('lit-property-only') as HTMLElement & { config?: unknown; items?: unknown; }; el.setAttribute('label', String(args.label)); el.items = args.items; el.config = args.config; return el; }` could not be resolved statically.
-Incomplete snippet: `items`, `config` are properties without an attribute, which the HTML snippet cannot express.
+Incomplete snippet: properties without an attribute: `items`, `config`.

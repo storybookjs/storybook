@@ -16,7 +16,7 @@
       "id": "webcomponentsstorydocs-csf-shapes--imported-items",
       "name": "Imported Items",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "warning": "Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.",
+      "warning": "Incomplete snippet: properties without an attribute: `items`.",
     },
     "webcomponentsstorydocs-csf-shapes--imported-label": {
       "id": "webcomponentsstorydocs-csf-shapes--imported-label",
@@ -27,7 +27,7 @@
       "id": "webcomponentsstorydocs-csf-shapes--listener",
       "name": "Listener",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "warning": "Incomplete snippet: `shape-change-event`, `onShapeChange` are listeners, which the HTML snippet cannot express.",
+      "warning": "Incomplete snippet: listeners the HTML snippet cannot express: `shape-change-event`, `onShapeChange`.",
     },
     "webcomponentsstorydocs-csf-shapes--parts-and-css": {
       "id": "webcomponentsstorydocs-csf-shapes--parts-and-css",
@@ -61,7 +61,7 @@
       "id": "webcomponentsstorydocs-csf-shapes--unknown-arg",
       "name": "Unknown Arg",
       "snippet": "<csf-shapes label="Meta"></csf-shapes>",
-      "warning": "Incomplete snippet: `nope` could not be bound, since `csf-shapes` declares no such attribute or property.",
+      "warning": "Incomplete snippet: args not declared by `csf-shapes`: `nope`.",
     },
     "webcomponentsstorydocs-csf-shapes--unset": {
       "id": "webcomponentsstorydocs-csf-shapes--unset",

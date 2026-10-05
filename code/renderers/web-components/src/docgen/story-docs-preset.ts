@@ -54,7 +54,12 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
     let ours;
     try {
       ours = await buildStoryDocsPayload(input, { getDocgenPayload });
-    } catch {
+    } catch (error) {
+      logger.debug(
+        `Web Components story snippets are unavailable for ${storyImportPath}: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
       return nextStoryDocs(input);
     }
 

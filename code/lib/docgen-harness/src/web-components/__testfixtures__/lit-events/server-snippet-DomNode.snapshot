@@ -1,4 +1,4 @@
 <lit-events value="changed"></lit-events>
 
 warning: Incomplete snippet: `args => { const el = document.createElement('lit-events'); el.setAttribute('value', String(args.value)); el.addEventListener('my-change', args['my-change-event'] as EventListener); el.addEventListener('my-close', args['my-close-event'] as EventListener); return el; }` could not be resolved statically.
-Incomplete snippet: `my-change-event`, `my-close-event` are listeners, which the HTML snippet cannot express.
+Incomplete snippet: listeners the HTML snippet cannot express: `my-change-event`, `my-close-event`.

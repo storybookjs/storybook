@@ -5,6 +5,8 @@ import { expect } from 'vitest';
 
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
 
+const NO_SNIPPET_PREFIX = '(no snippet:';
+export const NO_SNIPPET_SENTINEL = `${NO_SNIPPET_PREFIX} the Code panel falls back to the story source)`;
 const STYLE_BLOCK_REGEXP = /^<style>[\s\S]*?<\/style>\n/;
 
 const readCommitted = (path: string): string | undefined =>
@@ -29,7 +31,11 @@ export async function recordServerSnippet({
   const snippetPath = join(testDir, `server-snippet-${exportName}.snapshot`);
   const committedSnippet = readCommitted(snippetPath);
 
-  if (committedSnippet !== undefined && snippet !== undefined) {
+  if (
+    committedSnippet !== undefined &&
+    snippet !== undefined &&
+    !committedSnippet.startsWith(NO_SNIPPET_PREFIX)
+  ) {
     expectCurrentOrBetter({
       kind: 'snippet',
       framework: 'web-components',
@@ -38,7 +44,11 @@ export async function recordServerSnippet({
     });
   }
 
-  if (legacyParity && snippet !== undefined) {
+  if (legacyParity) {
+    expect(snippet, `${exportName} lost its static snippet`).toBeDefined();
+    if (snippet === undefined) {
+      return;
+    }
     const legacyPath = join(testDir, `snippet-${exportName}.snapshot`);
     const committedLegacySnippet = readCommitted(legacyPath);
     expect(committedLegacySnippet, `missing legacy ${legacyPath}`).toBeDefined();

@@ -1,15 +1,21 @@
 export interface ElementSnippet {
   tag: string;
-  attributes: { name: string; value: unknown }[];
+  attributes: {
+    name: string;
+    value: unknown;
+    viaField?: boolean;
+    defaultValue?: string;
+    source?: string;
+  }[];
   cssProperties: { name: string; value: unknown }[];
-  slots: { name: string; html: string }[];
+  slots: { name: string; html: unknown }[];
   styleRules: { selector: string; declarations: string }[];
 }
 
 export function printElementSnippet(snippet: ElementSnippet): string {
   const style = printStyle(snippet.styleRules);
   const open = printOpeningTag(snippet);
-  const slots = snippet.slots.map(printSlot);
+  const slots = snippet.slots.filter(hasSlotContent).map(printSlot);
   const element =
     slots.length === 0
       ? `${open}></${snippet.tag}>`
@@ -31,11 +37,18 @@ const printOpeningTag = (snippet: ElementSnippet): string => {
   return [`<${snippet.tag}`, ...attributes, ...(style ? [style] : [])].join(' ');
 };
 
-const printAttribute = ({ name, value }: { name: string; value: unknown }): string[] => {
+const printAttribute = ({
+  name,
+  value,
+  viaField,
+}: ElementSnippet['attributes'][number]): string[] => {
   if (value === true) {
     return [name];
   }
-  if (value === false || value === null || value === undefined || value === '') {
+  if (value === '') {
+    return viaField ? [`${name}=""`] : [];
+  }
+  if (value === false || value === null || value === undefined) {
     return [];
   }
   const text = typeof value === 'object' ? JSON.stringify(value) : String(value);
@@ -44,25 +57,32 @@ const printAttribute = ({ name, value }: { name: string; value: unknown }): stri
 
 const printCssProperties = (properties: ElementSnippet['cssProperties']): string | undefined => {
   const declarations = properties
-    .filter(({ value }) => value !== null && value !== undefined)
+    .filter(({ value }) => value !== null && value !== undefined && value !== '')
     .map(({ name, value }) => `${name}: ${String(value)};`);
   return declarations.length === 0
     ? undefined
     : `style="${escapeAttribute(declarations.join(' '))}"`;
 };
 
+const hasSlotContent = ({ html }: ElementSnippet['slots'][number]): boolean =>
+  html !== null && html !== undefined && html !== '';
+
 const printSlot = ({ name, html }: ElementSnippet['slots'][number]): string => {
+  const content = String(html);
   if (name === 'default') {
-    return html;
+    return content;
   }
-  const injected = injectSlotAttribute(html, name);
-  return injected ?? `<span slot="${escapeAttribute(name)}">${html}</span>`;
+  const injected = injectSlotAttribute(content, name);
+  return injected ?? `<span slot="${escapeAttribute(name)}">${content}</span>`;
 };
 
 const injectSlotAttribute = (html: string, name: string): string | undefined => {
   const trimmed = html.trim();
   const opening = readOpeningTag(trimmed, 0);
   if (!opening || opening.selfClosing) {
+    return undefined;
+  }
+  if (hasSlotAttribute(trimmed.slice(0, opening.end))) {
     return undefined;
   }
 
@@ -96,6 +116,8 @@ const injectSlotAttribute = (html: string, name: string): string | undefined => 
 
   return undefined;
 };
+
+const hasSlotAttribute = (openingTag: string): boolean => /\sslot\s*=/.test(openingTag);
 
 const escapeAttribute = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');

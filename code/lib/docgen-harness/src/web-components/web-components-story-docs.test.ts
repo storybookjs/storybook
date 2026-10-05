@@ -9,14 +9,17 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../renderers/web-components/src/docgen/story-docs/build-story-docs.ts';
 import { createFixtureDocgen } from './story-docs/docgen-fixture.ts';
-import { expectNoStaleSnippets, recordServerSnippet } from './story-docs/snippet-recorder.ts';
+import {
+  expectNoStaleSnippets,
+  NO_SNIPPET_SENTINEL,
+  recordServerSnippet,
+} from './story-docs/snippet-recorder.ts';
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const storyDocsFixturesDir = join(
   dirname(fileURLToPath(import.meta.url)),
   'story-docs/__testfixtures__'
 );
-const NO_SNIPPET_SENTINEL = '(no snippet: the runtime source fallback stays authoritative)';
 // The manifest declares `beta-label` without a `fieldName`, so the static pass cannot pair the
 // `betaLabel` arg with it; the legacy recording got the attribute from runtime reflection.
 const DECLARED_OMISSIONS: Record<string, readonly string[]> = {

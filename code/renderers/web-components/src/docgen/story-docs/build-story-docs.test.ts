@@ -2,7 +2,7 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 
 import { afterEach, describe, expect, it } from 'vitest';
 
@@ -24,6 +24,9 @@ const declaration = {
     { name: 'label', fieldName: 'label' },
     { name: 'count', fieldName: 'count' },
     { name: 'disabled', fieldName: 'disabled' },
+    { name: 'active', fieldName: 'active' },
+    { name: 'is-open', fieldName: 'isOpen' },
+    { name: 'variant' },
   ],
   members: [
     { kind: 'field', name: 'label', attribute: 'label' } as ManifestClassField & {
@@ -33,6 +36,17 @@ const declaration = {
       attribute: string;
     },
     { kind: 'field', name: 'disabled', attribute: 'disabled' } as ManifestClassField & {
+      attribute: string;
+    },
+    {
+      kind: 'field',
+      name: 'active',
+      attribute: 'active',
+      default: 'true',
+    } as ManifestClassField & {
+      attribute: string;
+    },
+    { kind: 'field', name: 'isOpen', attribute: 'is-open' } as ManifestClassField & {
       attribute: string;
     },
     { kind: 'field', name: 'items' },
@@ -103,8 +117,6 @@ const firstStory = async (
     {
       getDocgenPayload: getDocgenPayload(options.docgen),
       resolvePath: (path) => path,
-      resolveImport: (fromFile, specifier) =>
-        join(dirname(fromFile), specifier.endsWith('.ts') ? specifier : `${specifier}.ts`),
     }
   );
   expect(result).toBeDefined();
@@ -234,8 +246,7 @@ describe('buildStoryDocsPayload', () => {
       id: 'example-testelement--primary',
       name: 'Primary',
       snippet: '<test-element label="Meta"></test-element>',
-      warning:
-        'Incomplete snippet: `items` are properties without an attribute, which the HTML snippet cannot express.',
+      warning: 'Incomplete snippet: properties without an attribute: `items`.',
     });
   });
 
@@ -276,4 +287,166 @@ describe('buildStoryDocsPayload', () => {
       warning: 'No static snippet: No declaration for "test-element".',
     });
   });
+
+  it.each([
+    {
+      name: 'no declaration',
+      source: `
+        export default { title: 'Example/TestElement', component: 'test-element' };
+        export const A = { parameters: { docs: { source: { code: '<p>authored</p>' } } } };
+        export const B = { parameters: { docs: { source: { code: null } } }, args: { label: 'x' } };
+      `,
+      docgen: payload({
+        customElementsManifest: undefined,
+        error: { name: 'tag-not-found', message: 'No declaration for "test-element".' },
+      }),
+    },
+    {
+      name: 'no meta component',
+      source: `
+        export default { title: 'Example/TestElement' };
+        export const A = { parameters: { docs: { source: { code: '<p>authored</p>' } } } };
+        export const B = { parameters: { docs: { source: { code: null } } }, args: { label: 'x' } };
+      `,
+      docgen: undefined,
+    },
+  ])('uses authored source before falling back for $name', async ({ source, docgen }) => {
+    const { storyPath } = writeFixture(source);
+    const result = await buildStoryDocsPayload(
+      { entry: { ...entry, importPath: storyPath } },
+      {
+        getDocgenPayload: getDocgenPayload(docgen),
+        resolvePath: (path) => path,
+      }
+    );
+
+    expect(Object.values(result!.stories).map(({ snippet, warning }) => ({ snippet, warning })))
+      .toMatchInlineSnapshot(`
+      [
+        {
+          "snippet": "<p>authored</p>",
+          "warning": undefined,
+        },
+        {
+          "snippet": undefined,
+          "warning": undefined,
+        },
+      ]
+    `);
+  });
+
+  it('warns when meta.component is missing', async () => {
+    await expect(
+      firstStory(
+        `
+          export default { title: 'Example/TestElement', render: (args) => \`<p>\${args.label}</p>\` };
+          export const Primary = { args: { label: 'Page' } };
+        `,
+        { docgen: undefined }
+      )
+    ).resolves.toEqual({
+      id: 'example-testelement--primary',
+      name: 'Primary',
+      warning: 'No static snippet: `meta.component` is not set.',
+    });
+  });
+
+  it('uses the title segment as the payload name when meta.component is missing', async () => {
+    const { storyPath } = writeFixture(`
+      export default { title: 'Example/TestElement', render: (args) => \`<p>\${args.label}</p>\` };
+      export const Primary = { args: { label: 'Page' } };
+    `);
+
+    await expect(
+      buildStoryDocsPayload(
+        { entry: { ...entry, importPath: storyPath } },
+        {
+          getDocgenPayload: getDocgenPayload(undefined),
+          resolvePath: (path) => path,
+        }
+      )
+    ).resolves.toMatchObject({ name: 'TestElement' });
+  });
+
+  it.each([
+    {
+      name: 'property true then attribute false',
+      args: `{ isOpen: true, 'is-open': false }`,
+      expected: '<test-element></test-element>',
+    },
+    {
+      name: 'attribute false then property true',
+      args: `{ 'is-open': false, isOpen: true }`,
+      expected: '<test-element is-open></test-element>',
+    },
+    {
+      name: 'property true then attribute string',
+      args: `{ isOpen: true, 'is-open': 'later' }`,
+      expected: '<test-element is-open="later"></test-element>',
+    },
+    {
+      name: 'attribute string then property false',
+      args: `{ 'is-open': 'earlier', isOpen: false }`,
+      expected: '<test-element></test-element>',
+    },
+  ])('uses the last write for duplicate attributes: $name', async ({ args, expected }) => {
+    const story = await firstStory(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: ${args} };
+    `);
+
+    expect(story.snippet).toBe(expected);
+  });
+
+  it.each([
+    {
+      name: 'field-backed empty string',
+      args: `{ label: '' }`,
+      expected: '<test-element label=""></test-element>',
+    },
+    {
+      name: 'attribute-only empty string',
+      args: `{ variant: '' }`,
+      expected: '<test-element></test-element>',
+    },
+  ])(
+    'prints empty strings according to their runtime binding: $name',
+    async ({ args, expected }) => {
+      const story = await firstStory(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: ${args} };
+    `);
+
+      expect(story.snippet).toBe(expected);
+    }
+  );
+
+  it.each([
+    {
+      name: 'default true',
+      args: `{ active: false }`,
+      expected: {
+        snippet: '<test-element></test-element>',
+        warning: 'Incomplete snippet: false values that HTML cannot express: `active`.',
+      },
+    },
+    {
+      name: 'no true default',
+      args: `{ disabled: false }`,
+      expected: {
+        snippet: '<test-element></test-element>',
+        warning: undefined,
+      },
+    },
+  ])(
+    'warns only for false boolean args whose default is true: $name',
+    async ({ args, expected }) => {
+      const story = await firstStory(`
+      export default { title: 'Example/TestElement', component: 'test-element' };
+      export const Primary = { args: ${args} };
+    `);
+
+      expect({ snippet: story.snippet, warning: story.warning }).toEqual(expected);
+    }
+  );
 });

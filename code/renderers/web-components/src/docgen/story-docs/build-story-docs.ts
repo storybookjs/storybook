@@ -9,7 +9,6 @@ import {
   extractStoryJSDocInfo,
   noSnippetWarning,
   normalizeStoryDeclaration,
-  parseReferenceModule,
   sourceOf,
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
@@ -19,7 +18,10 @@ import { resolve } from 'node:path';
 
 import type { WebComponentsDocgenPayload } from '../component-docgen/build-docgen.ts';
 import type { ManifestDeclaration } from '../component-docgen/manifest/types.ts';
-import { parseStoryFile } from '../component-docgen/resolve-component/resolve-component.ts';
+import {
+  parseStoryFile,
+  resolveStoryComponent,
+} from '../component-docgen/resolve-component/resolve-component.ts';
 import { evaluateArgValue } from './arg-values.ts';
 import { classifyArg, type ArgBinding } from './classify-args.ts';
 import type { ElementSnippet } from './print-element.ts';
@@ -28,7 +30,6 @@ import { printElementSnippet } from './print-element.ts';
 export interface BuildStoryDocsContext {
   getDocgenPayload: (componentId: string) => Promise<WebComponentsDocgenPayload | undefined>;
   resolvePath?: (importPath: string) => string;
-  resolveImport?: (fromFile: string, specifier: string) => string | undefined;
 }
 
 interface StoryDocDeps {
@@ -40,6 +41,10 @@ interface StoryDocDeps {
 }
 
 type SnippetResult = { snippet?: string; warning?: string };
+type ResolvedStoryArgs = ReturnType<StoryArgsResolver['resolve']>;
+type AuthoredFallback = (resolved: ResolvedStoryArgs) => SnippetResult;
+
+const NO_COMPONENT_WARNING = 'No static snippet: `meta.component` is not set.';
 
 const openStoryReferences = createStoryReferenceResolver();
 
@@ -59,20 +64,42 @@ export async function buildStoryDocsPayload(
     return undefined;
   }
 
+  const resolved = resolveStoryComponent(csf);
+  if ('reason' in resolved && resolved.reason === 'no-meta-component') {
+    const titleName = input.entry.title.slice(input.entry.title.lastIndexOf('/') + 1);
+    return buildPayload(
+      input,
+      storyImportPath,
+      csf,
+      authoredSnippetFactory(csf, storyFilePath, () => ({ warning: NO_COMPONENT_WARNING })),
+      titleName
+    );
+  }
+
   const docgenPayload = await context.getDocgenPayload(getComponentIdFromEntry(input.entry));
   if (!docgenPayload) {
     return undefined;
   }
   const declaration = docgenPayload?.customElementsManifest?.declaration;
   const snippetFor: (exportName: string) => SnippetResult = declaration
-    ? renderedSnippetFactory(csf, declaration, docgenPayload, storyFilePath, context)
-    : () => ({
+    ? renderedSnippetFactory(csf, declaration, docgenPayload, storyFilePath)
+    : authoredSnippetFactory(csf, storyFilePath, () => ({
         warning: `No static snippet: ${
           docgenPayload.error?.message ??
           'no Custom Elements Manifest declaration for this component.'
         }`,
-      });
+      }));
 
+  return buildPayload(input, storyImportPath, csf, snippetFor, docgenPayload.name);
+}
+
+const buildPayload = (
+  input: StoryDocsProviderInput,
+  storyImportPath: string,
+  csf: CsfFile,
+  snippetFor: (exportName: string) => SnippetResult,
+  name: string
+): StoryDocsPayload => {
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([exportName, story]) => [
       story.id,
@@ -82,20 +109,19 @@ export async function buildStoryDocsPayload(
 
   return {
     id: getComponentIdFromEntry(input.entry),
-    name: docgenPayload.name,
+    name,
     path: storyImportPath,
     stories,
   };
-}
+};
 
 const renderedSnippetFactory = (
   csf: CsfFile,
   declaration: ManifestDeclaration,
   docgenPayload: WebComponentsDocgenPayload,
-  storyFilePath: string,
-  context: BuildStoryDocsContext
+  storyFilePath: string
 ): ((exportName: string) => SnippetResult) => {
-  const references = storyReferences(storyFilePath, context);
+  const references = storyReferences(storyFilePath);
   const deps: StoryDocDeps = {
     csf,
     declaration,
@@ -106,17 +132,9 @@ const renderedSnippetFactory = (
   return (exportName) => renderedSnippet(exportName, deps);
 };
 
-const storyReferences = (
-  storyFilePath: string,
-  context: BuildStoryDocsContext
-): StoryReferences => ({
+const storyReferences = (storyFilePath: string): StoryReferences => ({
   filePath: storyFilePath,
-  resolveModule: context.resolveImport
-    ? (fromFile, specifier) => {
-        const target = context.resolveImport?.(fromFile, specifier);
-        return target === undefined ? undefined : parseReferenceModule(target);
-      }
-    : openStoryReferences().resolveModule,
+  resolveModule: openStoryReferences().resolveModule,
 });
 
 const baseStoryDoc = (
@@ -155,9 +173,28 @@ const buildStoryDoc = (
 };
 
 const renderedSnippet = (exportName: string, deps: StoryDocDeps): SnippetResult => {
-  const resolved = deps.resolveStoryArgs.resolve(exportName);
+  return authoredOrFallback(exportName, deps.resolveStoryArgs, (resolved) =>
+    renderedArgsSnippet(exportName, resolved, deps)
+  );
+};
+
+const authoredSnippetFactory = (
+  csf: CsfFile,
+  storyFilePath: string,
+  fallback: AuthoredFallback
+): ((exportName: string) => SnippetResult) => {
+  const resolveStoryArgs = createStoryArgsResolver(csf, storyReferences(storyFilePath));
+  return (exportName) => authoredOrFallback(exportName, resolveStoryArgs, fallback);
+};
+
+const authoredOrFallback = (
+  exportName: string,
+  resolveStoryArgs: StoryArgsResolver,
+  fallback: AuthoredFallback
+): SnippetResult => {
+  const resolved = resolveStoryArgs.resolve(exportName);
   const warnings: (string | undefined)[] = [];
-  const authored = authoredSource(resolved, deps.resolveStoryArgs.ctx);
+  const authored = authoredSource(resolved, resolveStoryArgs.ctx);
   if (authored.kind === 'code') {
     return { snippet: authored.code };
   }
@@ -167,7 +204,16 @@ const renderedSnippet = (exportName: string, deps: StoryDocDeps): SnippetResult 
   if (authored.kind === 'unresolvable') {
     warnings.push(unresolvedWarning([authored.source]));
   }
+  const result = fallback(resolved);
+  return { ...result, ...joinWarnings([...warnings, result.warning]) };
+};
 
+const renderedArgsSnippet = (
+  exportName: string,
+  resolved: ResolvedStoryArgs,
+  deps: StoryDocDeps
+): SnippetResult => {
+  const warnings: (string | undefined)[] = [];
   const renderSource = renderFallbackSource(exportName, resolved, deps);
   if (renderSource) {
     warnings.push(unresolvedWarning([renderSource]));
@@ -248,7 +294,7 @@ const argsSnippet = (
       case 'cssPart':
       case 'cssState':
         if (value.kind === 'value') {
-          addBoundValue(snippet, binding, value.value, tag);
+          addBoundValue(snippet, binding, key, value.value, tag);
         } else if (value.kind === 'unresolved') {
           unresolved.push(value.source);
         }
@@ -261,15 +307,10 @@ const argsSnippet = (
   }
 
   const warnings = [
-    incompleteList(listeners, 'are listeners, which the HTML snippet cannot express.'),
-    incompleteList(
-      properties,
-      'are properties without an attribute, which the HTML snippet cannot express.'
-    ),
-    incompleteList(
-      unknown,
-      `could not be bound, since \`${tag}\` declares no such attribute or property.`
-    ),
+    incompleteList(listeners, 'listeners the HTML snippet cannot express'),
+    incompleteList(properties, 'properties without an attribute'),
+    incompleteList(unknown, `args not declared by \`${tag}\``),
+    incompleteList(falseDefaultAttributes(snippet), 'false values that HTML cannot express'),
   ];
   const allUnresolved = [...unresolvedArgs, ...unresolved];
   const printed = hasSnippetContent(snippet) || allUnresolved.length === 0;
@@ -284,27 +325,34 @@ const argsSnippet = (
 const addBoundValue = (
   snippet: ElementSnippet,
   binding: Exclude<ArgBinding, { kind: 'listener' | 'property' | 'method' | 'unknown' }>,
+  source: string,
   value: unknown,
   tag: string
 ): void => {
   switch (binding.kind) {
     case 'attribute':
-      snippet.attributes.push({ name: binding.name, value });
+      upsertByName(snippet.attributes, {
+        name: binding.name,
+        value,
+        viaField: binding.viaField,
+        defaultValue: binding.defaultValue,
+        source,
+      });
       break;
     case 'cssProperty':
-      snippet.cssProperties.push({ name: binding.name, value });
+      upsertByName(snippet.cssProperties, { name: binding.name, value });
       break;
     case 'slot':
-      snippet.slots.push({ name: binding.name, html: String(value) });
+      upsertByName(snippet.slots, { name: binding.name, html: value });
       break;
     case 'cssPart':
-      snippet.styleRules.push({
+      upsertBySelector(snippet.styleRules, {
         selector: `${tag}::part(${binding.name})`,
         declarations: String(value),
       });
       break;
     case 'cssState':
-      snippet.styleRules.push({
+      upsertBySelector(snippet.styleRules, {
         selector: `${tag}:state(${binding.name})`,
         declarations: String(value),
       });
@@ -316,6 +364,29 @@ const addBoundValue = (
   }
 };
 
+const upsertByName = <T extends { name: string }>(items: T[], next: T): void => {
+  const index = items.findIndex((item) => item.name === next.name);
+  if (index === -1) {
+    items.push(next);
+    return;
+  }
+  items[index] = next;
+};
+
+const upsertBySelector = <T extends { selector: string }>(items: T[], next: T): void => {
+  const index = items.findIndex((item) => item.selector === next.selector);
+  if (index === -1) {
+    items.push(next);
+    return;
+  }
+  items[index] = next;
+};
+
+const falseDefaultAttributes = (snippet: ElementSnippet): string[] =>
+  snippet.attributes
+    .filter(({ value, defaultValue }) => value === false && defaultValue === 'true')
+    .map(({ source, name }) => source ?? name);
+
 const hasSnippetContent = (snippet: ElementSnippet): boolean =>
   snippet.attributes.length > 0 ||
   snippet.cssProperties.length > 0 ||
@@ -325,7 +396,7 @@ const hasSnippetContent = (snippet: ElementSnippet): boolean =>
 const incompleteList = (names: string[], suffix: string): string | undefined =>
   names.length === 0
     ? undefined
-    : `Incomplete snippet: ${names.map((name) => `\`${name}\``).join(', ')} ${suffix}`;
+    : `Incomplete snippet: ${suffix}: ${names.map((name) => `\`${name}\``).join(', ')}.`;
 
 const joinWarnings = (parts: (string | undefined)[]): { warning?: string } => {
   const warning = [...new Set(parts.filter((part) => part !== undefined))].join('\n');

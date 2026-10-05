@@ -3,8 +3,14 @@ import { describe, expect, it } from 'vitest';
 import type { ElementSnippet } from './print-element.ts';
 import { printElementSnippet } from './print-element.ts';
 
+interface PrintCase {
+  name: string;
+  snippet: ElementSnippet;
+  assert: (value: string) => void;
+}
+
 describe('printElementSnippet', () => {
-  it.each<{ name: string; snippet: ElementSnippet; expected: string }>([
+  it.each<PrintCase>([
     {
       name: 'attributes only',
       snippet: {
@@ -14,7 +20,8 @@ describe('printElementSnippet', () => {
         slots: [],
         styleRules: [],
       },
-      expected: '<demo-card label="Save &amp; &lt;go>"></demo-card>',
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`"<demo-card label="Save &amp; &lt;go>"></demo-card>"`),
     },
     {
       name: 'booleans',
@@ -24,12 +31,14 @@ describe('printElementSnippet', () => {
           { name: 'disabled', value: true },
           { name: 'hidden', value: false },
           { name: 'empty', value: '' },
+          { name: 'label', value: '', viaField: true },
         ],
         cssProperties: [],
         slots: [],
         styleRules: [],
       },
-      expected: '<demo-card disabled></demo-card>',
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`"<demo-card disabled label=""></demo-card>"`),
     },
     {
       name: 'JSON',
@@ -40,7 +49,10 @@ describe('printElementSnippet', () => {
         slots: [],
         styleRules: [],
       },
-      expected: '<demo-card items="[{&quot;label&quot;:&quot;A&quot;}]"></demo-card>',
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(
+          `"<demo-card items="[{&quot;label&quot;:&quot;A&quot;}]"></demo-card>"`
+        ),
     },
     {
       name: 'css properties',
@@ -49,12 +61,16 @@ describe('printElementSnippet', () => {
         attributes: [{ name: 'label', value: 'Save' }],
         cssProperties: [
           { name: '--accent', value: 'teal' },
+          { name: '--empty', value: '' },
           { name: '--gap', value: 2 },
         ],
         slots: [],
         styleRules: [],
       },
-      expected: '<demo-card label="Save" style="--accent: teal; --gap: 2;"></demo-card>',
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(
+          `"<demo-card label="Save" style="--accent: teal; --gap: 2;"></demo-card>"`
+        ),
     },
     {
       name: 'slots',
@@ -69,11 +85,45 @@ describe('printElementSnippet', () => {
         ],
         styleRules: [],
       },
-      expected: `<demo-card>
-  Body <b>text</b>
-  <button slot="actions">Go</button>
-  <span slot="footer"><b>One</b><i>Two</i></span>
-</demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            Body <b>text</b>
+            <button slot="actions">Go</button>
+            <span slot="footer"><b>One</b><i>Two</i></span>
+          </demo-card>"
+        `),
+    },
+    {
+      name: 'existing slot attribute',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        slots: [{ name: 'actions', html: '<button slot="menu">Go</button>' }],
+        styleRules: [],
+      },
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <span slot="actions"><button slot="menu">Go</button></span>
+          </demo-card>"
+        `),
+    },
+    {
+      name: 'empty slot',
+      snippet: {
+        tag: 'demo-card',
+        attributes: [],
+        cssProperties: [],
+        slots: [
+          { name: 'default', html: '' },
+          { name: 'actions', html: null },
+          { name: 'footer', html: undefined },
+        ],
+        styleRules: [],
+      },
+      assert: (value) => expect(value).toMatchInlineSnapshot(`"<demo-card></demo-card>"`),
     },
     {
       name: 'nested same tag slot',
@@ -84,9 +134,12 @@ describe('printElementSnippet', () => {
         slots: [{ name: 'actions', html: '<button><button>Inner</button></button>' }],
         styleRules: [],
       },
-      expected: `<demo-card>
-  <button slot="actions"><button>Inner</button></button>
-</demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <button slot="actions"><button>Inner</button></button>
+          </demo-card>"
+        `),
     },
     {
       name: 'two sibling element slot',
@@ -97,9 +150,12 @@ describe('printElementSnippet', () => {
         slots: [{ name: 'actions', html: '<b>a</b> and <b>c</b>' }],
         styleRules: [],
       },
-      expected: `<demo-card>
-  <span slot="actions"><b>a</b> and <b>c</b></span>
-</demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <span slot="actions"><b>a</b> and <b>c</b></span>
+          </demo-card>"
+        `),
     },
     {
       name: 'text then element slot',
@@ -110,9 +166,12 @@ describe('printElementSnippet', () => {
         slots: [{ name: 'actions', html: 'before <button>Go</button>' }],
         styleRules: [],
       },
-      expected: `<demo-card>
-  <span slot="actions">before <button>Go</button></span>
-</demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <span slot="actions">before <button>Go</button></span>
+          </demo-card>"
+        `),
     },
     {
       name: 'self-closing slot',
@@ -123,9 +182,12 @@ describe('printElementSnippet', () => {
         slots: [{ name: 'actions', html: '<button />' }],
         styleRules: [],
       },
-      expected: `<demo-card>
-  <span slot="actions"><button /></span>
-</demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<demo-card>
+            <span slot="actions"><button /></span>
+          </demo-card>"
+        `),
     },
     {
       name: 'parts and states',
@@ -139,11 +201,14 @@ describe('printElementSnippet', () => {
           { selector: 'demo-card:state(active)', declarations: 'outline: 1px solid;' },
         ],
       },
-      expected: `<style>
-  demo-card::part(panel) { color: red; }
-  demo-card:state(active) { outline: 1px solid; }
-</style>
-<demo-card></demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<style>
+            demo-card::part(panel) { color: red; }
+            demo-card:state(active) { outline: 1px solid; }
+          </style>
+          <demo-card></demo-card>"
+        `),
     },
     {
       name: 'everything together',
@@ -154,14 +219,17 @@ describe('printElementSnippet', () => {
         slots: [{ name: 'default', html: 'Body' }],
         styleRules: [{ selector: 'demo-card::part(panel)', declarations: 'color: red;' }],
       },
-      expected: `<style>
-  demo-card::part(panel) { color: red; }
-</style>
-<demo-card label="Save" style="--accent: teal;">
-  Body
-</demo-card>`,
+      assert: (value) =>
+        expect(value).toMatchInlineSnapshot(`
+          "<style>
+            demo-card::part(panel) { color: red; }
+          </style>
+          <demo-card label="Save" style="--accent: teal;">
+            Body
+          </demo-card>"
+        `),
     },
-  ])('$name', ({ snippet, expected }) => {
-    expect(printElementSnippet(snippet)).toBe(expected);
+  ])('$name', ({ snippet, assert }) => {
+    assert(printElementSnippet(snippet));
   });
 });

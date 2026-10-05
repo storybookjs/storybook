@@ -7,4 +7,4 @@ warning: Incomplete snippet: `args => html`<lit-toolkit-shapes
       label=${args.label}
       @toolkit-resize=${args.onToolkitResize}
     ></lit-toolkit-shapes>`` could not be resolved statically.
-Incomplete snippet: `onToolkitResize` are listeners, which the HTML snippet cannot express.
+Incomplete snippet: listeners the HTML snippet cannot express: `onToolkitResize`.

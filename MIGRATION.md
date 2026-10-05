@@ -1240,6 +1240,7 @@ Svelte CSF supports only stories defined with `defineMeta`. Storybook 11 removes
 - The `<Meta>` component and `export const meta`
 - The `<Template>` component, and the `legacyTemplate` option that turned it on
 - The `let:args` and `let:context` directives on `<Story>`
+- The `id`, `autodocs` and `source` props on `<Story>`
 
 The automigration lists the story files that don't use `defineMeta`, and doesn't change them. Migrate them by hand.
 
@@ -1392,6 +1393,29 @@ For a static story that ignores args, set `asChild` on the story. The story then
   </ButtonGroup>
 </Story>
 ```
+
+#### `id`, `autodocs` and `source` props on `<Story>`
+
+Before:
+
+```svelte
+<Story id="Primary" name="Primary button" autodocs source="<Button primary />" />
+```
+
+After:
+
+```svelte
+<Story
+  exportName="Primary"
+  name="Primary button"
+  tags={['autodocs']}
+  parameters={{ docs: { source: { code: '<Button primary />' } } }}
+/>
+```
+
+- `id` → `exportName`
+- `autodocs` → add `'autodocs'` to `tags`
+- `source="…"` → `parameters.docs.source.code`. Remove a `source` prop without a value: Storybook generates the source from the story.
 
 </details>
 

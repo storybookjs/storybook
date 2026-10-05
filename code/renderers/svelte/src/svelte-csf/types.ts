@@ -48,11 +48,6 @@ export type StoryProps<
   TChildren extends Snippet = Snippet,
 > = Partial<StoryAnnotations<TArgs, TCmp>> & {
   /**
-   * @deprecated
-   * Use `exportName` instead.
-   */
-  id?: never;
-  /**
    * Name of the story. Can be omitted if `exportName` is provided.
    */
   name?: string;
@@ -66,18 +61,6 @@ export type StoryProps<
    * It's also useful for explicitly defining the export that can be imported in MDX docs.
    */
   exportName?: string;
-  /**
-   * @deprecrated
-   * Use `tags={['autodocs']}` instead.
-   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/main/MIGRATION.md#story-prop-autodocs-has-been-removed}
-   */
-  autodocs?: never;
-  /**
-   * @deprecated
-   * Use `parameters={{ docs: { source: { code: "..." } } }}` instead.
-   * @see {@link https://github.com/storybookjs/addon-svelte-csf/blob/next/MIGRATION.md#story-prop-source-has-been-removed}
-   */
-  source?: never;
 } & (
     | {
         /**

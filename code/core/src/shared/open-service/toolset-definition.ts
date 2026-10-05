@@ -160,6 +160,13 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 
+// A valibot input must be a `v.strictObject` (piped or not); other vendors are not constrained.
+type StrictInputContract<TInput> = TInput extends { '~standard': { vendor: 'valibot' } }
+  ? TInput extends { type: 'strict_object' }
+    ? unknown
+    : 'Declare toolset inputs with v.strictObject so undeclared arguments are rejected'
+  : unknown;
+
 /**
  * Second contextual-typing pass for the methods literal: `handler` input comes from that method's
  * own `input`, and its outcome data from the method's `output` where one is declared — so
@@ -169,6 +176,7 @@ type MethodOutcomeContract<TMethod> = TMethod extends {
  */
 type MethodContracts<TMethods extends ToolsetMethods> = {
   [TKey in keyof TMethods]: {
+    input: StrictInputContract<TMethods[TKey]['input']>;
     handler: (
       input: StandardSchemaV1.InferOutput<TMethods[TKey]['input']>,
       context: ToolsetCtx
@@ -177,7 +185,7 @@ type MethodContracts<TMethods extends ToolsetMethods> = {
 };
 
 /**
- * Declares a toolset.
+ * Types each method's handler from its own `input` and `output` schemas.
  *
  * @throws When a valibot method `input` is not a `v.strictObject`: any other object schema drops
  *   or passes through undeclared arguments, so a mistyped CLI flag or MCP argument would be
@@ -196,7 +204,7 @@ export function defineToolset<
     if (input['~standard'].vendor === 'valibot' && input.type !== 'strict_object') {
       // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable toolsets-docs path
       throw new Error(
-        `Toolset method "${definition.id}.${methodName}" must declare its input with v.strictObject, got a valibot "${String(input.type)}" schema. Undeclared arguments would otherwise be silently dropped instead of rejected.`
+        `Toolset method "${definition.id}.${methodName}" must declare its input with v.strictObject, got a valibot "${String(input.type)}" schema. Undeclared arguments would otherwise be silently dropped or passed through instead of rejected.`
       );
     }
   }

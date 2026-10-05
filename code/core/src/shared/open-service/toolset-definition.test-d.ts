@@ -15,7 +15,7 @@ const exampleToolset = defineToolset({
     greet: {
       title: 'Greet',
       description: 'Greets a person.',
-      input: v.object({ name: v.string() }),
+      input: v.strictObject({ name: v.string() }),
       handler: async ({ name }): Promise<ToolsetOutcome<{ greeting: string }, never>> => ({
         ok: true,
         data: { greeting: `Hello ${name}` },
@@ -32,7 +32,7 @@ const reviewToolset = defineToolset({
     create: {
       title: 'Create review',
       description: (ctx) => `Create a review (${ctx.transport})`,
-      input: v.object({ title: v.string() }),
+      input: v.strictObject({ title: v.string() }),
       output: v.object({ title: v.string() }),
       handler: async (
         input,
@@ -110,7 +110,7 @@ describe('method titles', () => {
         // @ts-expect-error — every method must declare its display `title`
         create: {
           description: 'Has no title.',
-          input: v.object({}),
+          input: v.strictObject({}),
           handler: async (): Promise<ToolsetOutcome<{ done: boolean }, never>> => ({
             ok: true,
             data: { done: true },
@@ -134,7 +134,7 @@ describe('schema-bound outcomes', () => {
         create: {
           title: 'Create',
           description: 'Renames title to heading.',
-          input: v.object({}),
+          input: v.strictObject({}),
           output: v.object({ title: v.string() }),
           // @ts-expect-error — `data` lacks the schema-declared `title` field
           handler: async (): Promise<ToolsetOutcome<{ heading: string }, never>> => ({
@@ -155,7 +155,7 @@ describe('schema-bound outcomes', () => {
         create: {
           title: 'Create',
           description: 'Publishes title but returns nothing.',
-          input: v.object({}),
+          input: v.strictObject({}),
           output: v.object({ title: v.string() }),
           // @ts-expect-error — `data` is missing the schema-declared `title` field
           handler: async (): Promise<ToolsetOutcome<Record<string, never>, never>> => ({
@@ -176,7 +176,7 @@ describe('schema-bound outcomes', () => {
         create: {
           title: 'Create',
           description: 'Returns a number where the schema declares a string.',
-          input: v.object({}),
+          input: v.strictObject({}),
           output: v.object({ title: v.string() }),
           // @ts-expect-error — `title` is a number where the schema declares a string
           handler: async (): Promise<ToolsetOutcome<{ title: number }, never>> => ({
@@ -197,7 +197,7 @@ describe('schema-bound outcomes', () => {
         create: {
           title: 'Create',
           description: 'Failure data skips the published contract.',
-          input: v.object({}),
+          input: v.strictObject({}),
           output: v.object({ title: v.string() }),
           // @ts-expect-error — failure `data` lacks the schema-declared `title` field
           handler: async (): Promise<ToolsetOutcome<{ title: string }, { reason: string }>> => ({
@@ -218,7 +218,7 @@ describe('schema-bound outcomes', () => {
         create: {
           title: 'Create',
           description: 'Scalars are not MCP structuredContent.',
-          input: v.object({}),
+          input: v.strictObject({}),
           // @ts-expect-error — output must describe a JSON object
           output: v.string(),
           handler: async (): Promise<ToolsetOutcome<{ title: string }, never>> => ({
@@ -239,7 +239,7 @@ describe('schema-bound outcomes', () => {
         create: {
           title: 'Create',
           description: 'Arrays are not MCP structuredContent.',
-          input: v.object({}),
+          input: v.strictObject({}),
           // @ts-expect-error — output must describe a JSON object
           output: v.array(v.string()),
           handler: async (): Promise<ToolsetOutcome<{ title: string }, never>> => ({
@@ -247,6 +247,52 @@ describe('schema-bound outcomes', () => {
             data: { title: 'x' },
             markdown: 'x',
           }),
+        },
+      },
+    });
+  });
+});
+
+describe('method inputs', () => {
+  const handler = (): ToolsetOutcome<undefined, never> => ({
+    ok: true,
+    data: undefined,
+    markdown: '',
+  });
+
+  it('rejects a valibot input that is not a strictObject', () => {
+    defineToolset({
+      id: 'loose',
+      description: 'Rejected',
+      methods: {
+        plain: {
+          title: 'Plain',
+          description: 'v.object drops undeclared keys.',
+          // @ts-expect-error — valibot inputs must be v.strictObject
+          input: v.object({}),
+          handler,
+        },
+        loose: {
+          title: 'Loose',
+          description: 'v.looseObject passes undeclared keys through.',
+          // @ts-expect-error — valibot inputs must be v.strictObject
+          input: v.pipe(v.looseObject({}), v.readonly()),
+          handler,
+        },
+      },
+    });
+  });
+
+  it('accepts a piped strictObject input', () => {
+    defineToolset({
+      id: 'strict',
+      description: 'Accepted',
+      methods: {
+        piped: {
+          title: 'Piped',
+          description: 'Strict, with a pipe.',
+          input: v.pipe(v.strictObject({}), v.readonly()),
+          handler,
         },
       },
     });

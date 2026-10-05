@@ -1,5 +1,5 @@
-import { spawn } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync } from 'node:fs';
+import { execFile, spawn } from 'node:child_process';
+import { existsSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { setTimeout as delay } from 'node:timers/promises';
 
@@ -38,7 +38,7 @@ type EvalContext = {
   // 'none' is the agentic-reference bare control (no Storybook tooling flavor);
   // see lib/templates.ts. Plugin-only helpers below treat it as "not plugin".
   integration: 'mcp' | 'plugin' | 'none';
-  /** Whether the sandbox runs review-on: always for the plugin integration, via EVAL_REVIEW=1 for MCP. */
+  /** Whether the sandbox runs review-on; see isReviewEnabledFor in lib/templates.ts. */
   review: boolean;
 };
 
@@ -80,13 +80,10 @@ export function getEvalContext(): EvalContext {
   return { agent, integration, review: agentContext.review === true };
 }
 
-// Review mode of this run. Plugin runs are always review-on — the addon
-// enables review by default for the `storybook tools` CLI channel — while MCP
-// runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
-// the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
-// files branch on this — with review on, visual work must end in a published
-// review-create; with review off, review-create is not even exposed and
-// the workflow ends in stories-preview links.
+// Review mode of this run (see isReviewEnabledFor in lib/templates.ts).
+// EVAL.ts files branch on this — with review on, visual work must end in a
+// published review-create; with review off, review-create is not even exposed
+// and the workflow ends in stories-preview links.
 export function isReviewEnabled(): boolean {
   return getEvalContext().review;
 }
@@ -159,8 +156,7 @@ export function expectDisplayReviewForVisualChange(): void {
   expectFinalResponseSharesReviewLink();
 }
 
-// Review-off counterpart of expectDisplayReviewForVisualChange (review is
-// opt-in via the `experimentalReview` flag, so this is the default path):
+// Review-off counterpart of expectDisplayReviewForVisualChange:
 // review-create is not registered, so visual work must end in
 // stories-preview calls and the final response must share the preview URLs.
 // `covering` requires each substring to appear in some stories-preview story
@@ -197,7 +193,7 @@ export function expectPreviewStoriesWithFinalLinks(options?: {
 
   const finalMessage = getFinalAssistantMessage() ?? '';
   expect(finalMessage, 'Final response must include a story preview link').toMatch(
-    /(?:\?path=\/story\/|\/iframe\.html\?id=)/
+    STORY_PREVIEW_URL_PATTERN
   );
   expect(
     finalMessage,
@@ -327,181 +323,83 @@ function kebabCase(value: string): string {
 
 const DOCUMENTATION_WORKFLOW_NAMES = ['docs-show', 'docs-show-story', 'docs-list'] as const;
 
-const LAUNCH_CONFIG_PATH = '.claude/launch.json';
-
-function usesClaudePreviewTooling(): boolean {
-  const { agent, integration } = getEvalContext();
-  return agent === 'claude-code' && integration === 'plugin';
-}
-
-// Claude-code plugin only: writes/validates `.claude/launch.json`. Callers must
-// gate with `test.skipIf(agent !== 'claude-code' || integration !== 'plugin')`
-// so inapplicable cells show as skipped; calling out of context fails loud.
-export function expectValidStorybookLaunchConfig(): void {
-  if (!usesClaudePreviewTooling()) {
-    const { agent, integration } = getEvalContext();
-    expect.fail(
-      `expectValidStorybookLaunchConfig is only for claude-code + plugin (got agent=${agent}, integration=${integration}). Gate callers with test.skipIf(...)`
-    );
-  }
-
-  if (!existsSync(LAUNCH_CONFIG_PATH)) {
-    expect.fail(`Expected ${LAUNCH_CONFIG_PATH} to be written`);
-  }
-
-  const launchConfig = parseJson(readFileSync(LAUNCH_CONFIG_PATH, 'utf8'));
-  expectRecord(launchConfig, LAUNCH_CONFIG_PATH);
-  expectNonEmptyArray(launchConfig.configurations, `${LAUNCH_CONFIG_PATH} configurations`);
-
-  const storybookEntry = launchConfig.configurations.find(
-    (configuration) =>
-      isRecord(configuration) &&
-      Array.isArray(configuration.runtimeArgs) &&
-      configuration.runtimeArgs.includes('storybook')
-  );
-  expectRecord(storybookEntry, `${LAUNCH_CONFIG_PATH} configuration running the storybook script`);
-
-  expect(storybookEntry.port, 'Storybook launch entry must use port 6006').toBe(6006);
-  expect(storybookEntry.autoPort, 'Storybook launch entry must set autoPort: true').toBe(true);
-
-  const packageJson = parseJson(readFileSync('package.json', 'utf8'));
-  const scripts = isRecord(packageJson) && isRecord(packageJson.scripts) ? packageJson.scripts : {};
-  expect(
-    typeof scripts.storybook,
-    'Launch entry references the storybook script, so package.json must define it'
-  ).toBe('string');
-}
-
-// Preview-surface outcome check, per plugin surface. Both branches check tool
-// usage in the transcript:
-// - claude-code: the dev server must be started through the Claude preview
-//   tooling (the preview_start tool), which presents the app's preview browser.
-// - codex: the agent must open the Storybook URL in the in-app browser and
-//   leave the dev server running. Codex drives the browser through the
-//   node_repl `js` tool (the control-in-app-browser skill), so the tool-usage
-//   evidence is a successful `js` call whose code navigates a tab to the
-//   Storybook URL; "left running" is asserted as the absence of any
-//   self-describing dev-server kill command (see findDevServerKillCommands —
-//   a kill routed through an unrelated variable, e.g. `PID=$(lsof -ti:6006)`
-//   then `kill $PID` in a later command, is beyond this heuristic).
-//   A liveness probe at eval time is deliberately NOT used: the sandbox
-//   Storybook can crash on its own after test-run (the storybook/test
-//   vitest sub-runner dies on "Restarting Vitest due to config change" →
-//   "No projects matched the filter", taking the dev-server process with it;
-//   local runs 2026-07-08), so a probe would fail on that infra bug, not on
-//   agent behavior. The stories skill gates browser-opening on the
-//   control-in-app-browser skill being available; the assertion does not,
-//   because the codex plugin experiment always installs that skill and its
-//   browser mock (writeCodexInAppBrowserMock in lib/templates.ts).
-// MCP cells have no preview surface. Callers must gate with
-// `test.skipIf(integration !== 'plugin')`; calling out of context fails loud.
-export function expectPreviewBrowserStarted(): void {
-  const { agent, integration } = getEvalContext();
+// Not a liveness probe: the sandbox Storybook can crash on its own after
+// test-run, which would fail the eval on infra rather than on the agent.
+export function expectDevServerLeftRunning(): void {
+  const { integration } = getEvalContext();
   if (integration !== 'plugin') {
     expect.fail(
-      `expectPreviewBrowserStarted is only for plugin (got integration=${integration}). Gate callers with test.skipIf(getEvalContext().integration !== 'plugin')`
+      `expectDevServerLeftRunning is only for plugin (got integration=${integration}). Gate callers with test.skipIf(getEvalContext().integration !== 'plugin')`
     );
   }
 
-  if (usesClaudePreviewTooling()) {
-    const started = getTranscript().events.some(
-      (event) =>
-        event.type === 'tool_call' &&
-        typeof event.tool?.originalName === 'string' &&
-        event.tool.originalName.endsWith('__preview_start')
-    );
-    expect(
-      started,
-      'Expected the Claude preview browser to be opened via the preview_start tool'
-    ).toBe(true);
-    return;
-  }
-
-  if (agent !== 'codex') {
-    expect.fail(
-      `Unknown plugin agent "${agent}" — teach expectPreviewBrowserStarted its preview surface`
-    );
-  }
-
-  const navigatedUrls = parseCodexBrowserNavigations(readFileSync(TRANSCRIPT_PATH, 'utf8'));
-  const storybookUrls = [...new Set(navigatedUrls.filter(isLocalStorybookPreviewUrl))];
   expect(
-    storybookUrls.length,
-    `Expected an in-app browser navigation to the local Storybook review or story preview URL (a node_repl js tool call whose code calls goto). Navigations found: ${JSON.stringify(navigatedUrls)}`
-  ).toBeGreaterThan(0);
-
-  const killCommands = findDevServerKillCommands(getShellCommands(), storybookUrls);
-  expect(
-    killCommands,
-    'The dev server must be left running for the user — never kill it after verification'
+    findDevServerKillCommands(getShellCommands()),
+    'The dev server must be left running for the user, never killed after verification'
   ).toEqual([]);
 }
 
-// Shell commands that kill the dev server the in-app browser navigated to: a
-// kill-style command that also references Storybook, a recorded pidfile, or
-// one of the navigated dev-server ports in the same command string. Scoped
-// that way so killing an unrelated process (e.g. a stray test worker) does
-// not count; the flip side is that a kill routed through an unrelated
-// variable in a later command escapes this heuristic (accepted — the eval
-// fails loud on the missing navigation instead when the server dies early).
+// The target must appear in the kill command itself so killing an unrelated
+// process does not count; a kill of a PID captured in an earlier command escapes.
 const KILL_COMMAND_PATTERN = /\b(?:kill|pkill|killall)\b|\bfuser\b[^;&|]*\s-[a-z]*k/i;
+const DEV_SERVER_TARGET_PATTERN = /storybook|\.pid\b|\b6006\b/i;
 
-export function findDevServerKillCommands(commands: string[], navigatedUrls: string[]): string[] {
-  const ports = [
-    ...new Set(
-      navigatedUrls.flatMap((url) => {
-        try {
-          const { port } = new URL(url);
-          return port ? [port] : [];
-        } catch {
-          return [];
-        }
-      })
-    ),
-  ];
-  const target = new RegExp(
-    ['storybook', String.raw`\.pid\b`, ...ports.map((port) => String.raw`\b${port}\b`)].join('|'),
-    'i'
+export function findDevServerKillCommands(commands: string[]): string[] {
+  return commands.filter(
+    (command) => KILL_COMMAND_PATTERN.test(command) && DEV_SERVER_TARGET_PATTERN.test(command)
   );
-  return commands.filter((command) => KILL_COMMAND_PATTERN.test(command) && target.test(command));
 }
 
-// URLs the in-app browser navigated to, from the codex raw transcript: each
-// successful node_repl `js` tool call is scanned for `goto('<url>')` string
-// literals in its code argument. This mirrors how plugin workflow calls are
-// parsed out of `storybook tools` shell commands. A dynamically composed URL
-// (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
-// loud rather than as a false-pass.
+// URLs the Codex in-app browser navigated to: `goto('<url>')` literals in
+// successful node_repl `js` calls.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
+  return readCodexCompletedItems(rawTranscript).flatMap(getCodexItemNavigations);
+}
+
+function readCodexCompletedItems(rawTranscript: string): Record<string, unknown>[] {
   return rawTranscript.split('\n').flatMap((line) => {
     const event = parseJson(line);
-    if (!isRecord(event) || event.type !== 'item.completed' || !isRecord(event.item)) {
-      return [];
-    }
-
-    const item = event.item;
-    if (
-      item.type !== 'mcp_tool_call' ||
-      item.server !== 'node_repl' ||
-      item.tool !== 'js' ||
-      item.status !== 'completed' ||
-      (item.error !== null && item.error !== undefined)
-    ) {
-      return [];
-    }
-
-    const code = isRecord(item.arguments) ? item.arguments.code : undefined;
-    if (typeof code !== 'string') {
-      return [];
-    }
-
-    return [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
-      match[2] === undefined ? [] : [match[2]]
-    );
+    return isRecord(event) && event.type === 'item.completed' && isRecord(event.item)
+      ? [event.item]
+      : [];
   });
 }
 
-export function isLocalDevServerUrl(value: string): boolean {
+// A call that passes a variable to `goto` (a loop over URLs) counts the full
+// URL literals in its code instead; a composed URL yields only its literal base.
+function getCodexItemNavigations(item: Record<string, unknown>): string[] {
+  if (item.server !== 'node_repl' || item.tool !== 'js' || !codexItemSucceeded(item)) {
+    return [];
+  }
+
+  const code = isRecord(item.arguments) ? item.arguments.code : undefined;
+  if (typeof code !== 'string') {
+    return [];
+  }
+
+  const literalGotos = [...code.matchAll(/\.goto\(\s*(['"`])([^'"`]+)\1/g)].flatMap((match) =>
+    match[2] === undefined ? [] : [match[2]]
+  );
+  if (!/\.goto\(\s*[A-Za-z_$]/.test(code)) {
+    return literalGotos;
+  }
+  const urlLiterals = [...code.matchAll(/(['"`])(https?:\/\/[^'"`\s]+)\1/g)].flatMap((match) =>
+    match[2] === undefined ? [] : [match[2]]
+  );
+  return [...new Set([...literalGotos, ...urlLiterals])];
+}
+
+function codexItemSucceeded(item: Record<string, unknown>): boolean {
+  if (item.type === 'mcp_tool_call') {
+    return item.status === 'completed' && (item.error === null || item.error === undefined);
+  }
+  if (item.type === 'command_execution') {
+    return item.exit_code === 0;
+  }
+  return false;
+}
+
+function isLocalDevServerUrl(value: string): boolean {
   try {
     const { protocol, hostname } = new URL(value);
     return (
@@ -513,15 +411,10 @@ export function isLocalDevServerUrl(value: string): boolean {
   }
 }
 
-// The URL shapes the Storybook workflow hands out: manager page links
-// (?path=/review/…, ?path=/story/…) and iframe preview links
-// (/iframe.html?id=…). A bare local origin does not count — navigating to
-// the app's own dev server (or just Storybook's root) is not opening the
-// Storybook result the skill demands.
-const STORYBOOK_PREVIEW_URL_PATTERN = /[?&]path=\/|\/iframe\.html\?/;
+const STORY_PREVIEW_URL_PATTERN = /[?&]path=\/story\/|\/iframe\.html\?id=/;
 
-export function isLocalStorybookPreviewUrl(value: string): boolean {
-  return isLocalDevServerUrl(value) && STORYBOOK_PREVIEW_URL_PATTERN.test(value);
+function isLocalStoryPreviewUrl(value: string): boolean {
+  return isLocalDevServerUrl(value) && STORY_PREVIEW_URL_PATTERN.test(value);
 }
 
 // Story IDs must come from a discovery tool (stories-changed, or the
@@ -553,55 +446,114 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The validation workflow the instructions demand: run test-run after
-// each component or story change, and fix failing tests before reporting
-// success. The section headers come from the shared test-run result formatter
-// (## Passing Stories / ## Failing Stories / ## Unhandled Errors) and appear
-// verbatim in the MCP tool result and — since storybookjs/storybook#36029 —
-// byte-identically in the `storybook tools test run` CLI output. A `--json`
-// CLI run is rendered to the same sections by renderTestRunJsonOutput.
+// The agent's own test output is often cut by `| tail` or `| grep`, so the
+// verdict is a run of the harness's own. The transcript only has to show that
+// the agent ran the tests and that its last run did not end red: a fix that was
+// never re-run is unverified. There is no after-the-edit ordering check, because
+// real passing flows run tests before the discovery step.
 //
-// `covering` pins the final green run to the change under test: at least one
-// of the given substrings must appear in its story ids. A stricter
-// after-the-edit ordering check is deliberately not encoded, because real
-// passing flows legitimately run tests before the discovery step.
-export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
+// `covering` requires one of the given substrings in the passing story ids.
+// `cwd` is the Storybook project, for fixtures where that is not the root.
+export async function expectStoryTestsRanAndPassed(options?: {
+  covering?: string[];
+  cwd?: string;
+}): Promise<void> {
   expectWorkflowCalls(['test-run']);
-
-  const results = getWorkflowToolResults('test-run');
-  expect(results.length, 'Expected at least one test-run result in the transcript').toBeGreaterThan(
-    0
-  );
-
-  const lastResult = selectFinalRunStoryTestsReport(results);
-  if (lastResult === undefined) {
-    expect.fail('Expected a final test-run result');
-  }
-
   expect(
-    lastResult.isError,
-    `Final test-run call must succeed. Output: ${truncateForMessage(lastResult.output)}`
+    getWorkflowToolResults('test-run').at(-1)?.output ?? '',
+    "The agent's last test run must not report failing stories or unhandled errors"
+  ).not.toMatch(/## (Failing Stories|Unhandled Errors)/);
+
+  const result = await runStoryTestsInSandbox(options?.cwd);
+  expect(
+    result.isError,
+    `The final test run must complete. Output: ${truncateForMessage(result.output)}`
   ).toBe(false);
-  expect(lastResult.output, 'Final test-run result must not report failing stories').not.toMatch(
+  expect(result.output, 'The final test run must not report failing stories').not.toMatch(
     /## Failing Stories/
   );
-  expect(lastResult.output, 'Final test-run result must not report unhandled errors').not.toMatch(
+  expect(result.output, 'The final test run must not report unhandled errors').not.toMatch(
     /## Unhandled Errors/
   );
   expect(
-    lastResult.output,
-    `Final test-run result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`
+    result.output,
+    `The final test run must report passing stories. Output: ${truncateForMessage(result.output)}`
   ).toMatch(/## Passing Stories/);
 
   const covering = options?.covering ?? [];
   if (covering.length > 0) {
+    const passingStories =
+      /## Passing Stories\n\n([\s\S]*?)(?:\n\n## |$)/.exec(result.output)?.[1] ?? '';
     expect(
-      covering.some((substring) =>
-        lastResult.output.toLowerCase().includes(substring.toLowerCase())
-      ),
-      `Final test-run result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
+      covering.some((substring) => passingStories.toLowerCase().includes(substring.toLowerCase())),
+      `The final test run must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(result.output)}`
     ).toBe(true);
   }
+}
+
+const sandboxStoryTestRuns = new Map<string, Promise<WorkflowToolResult>>();
+
+// `isError` means stdout held no test-run document.
+export function runStoryTestsInSandbox(cwd = '.'): Promise<WorkflowToolResult> {
+  let run = sandboxStoryTestRuns.get(cwd);
+  if (run === undefined) {
+    run = withProjectVitestConfig(cwd, () => runStorybookTestRun(cwd));
+    sandboxStoryTestRuns.set(cwd, run);
+  }
+  return run;
+}
+
+// The eval runner replaces vitest.config.ts with its own before EVAL.ts runs,
+// so fixtures keep their Storybook test project in vitest.storybook.config.ts.
+const STORYBOOK_VITEST_CONFIG = 'vitest.storybook.config.ts';
+
+async function withProjectVitestConfig<T>(cwd: string, run: () => Promise<T>): Promise<T> {
+  if (!existsSync(join(cwd, STORYBOOK_VITEST_CONFIG))) {
+    return run();
+  }
+  const configPath = join(cwd, 'vitest.config.ts');
+  const evalConfig = existsSync(configPath) ? readFileSync(configPath, 'utf8') : undefined;
+  if (evalConfig?.includes(STORYBOOK_VITEST_CONFIG)) {
+    return run();
+  }
+
+  writeFileSync(configPath, `export { default } from './${STORYBOOK_VITEST_CONFIG}';\n`);
+  try {
+    return await run();
+  } finally {
+    if (evalConfig === undefined) {
+      rmSync(configPath);
+    } else {
+      writeFileSync(configPath, evalConfig);
+    }
+  }
+}
+
+// `--no-attach`: the dev server's Vitest restarts whenever vitest.config.ts
+// changes, so a fresh local host is the only one that reads a settled config.
+// The timeout leaves room in the experiment timeout, which the whole run shares,
+// so a hanging run fails this assertion rather than the sandbox.
+function runStorybookTestRun(cwd: string): Promise<WorkflowToolResult> {
+  return new Promise((resolve) => {
+    execFile(
+      'npx',
+      ['storybook', 'tools', '--no-attach', 'test', 'run', '--json'],
+      {
+        cwd,
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' },
+        maxBuffer: 256 * 1024 * 1024,
+        timeout: 240_000,
+      },
+      (error, stdout, stderr) => {
+        const report = renderTestRunJsonOutput(stdout);
+        resolve(
+          report === undefined
+            ? { output: [error?.message, stdout, stderr].filter(Boolean).join('\n'), isError: true }
+            : { output: report, isError: false }
+        );
+      }
+    );
+  });
 }
 
 // `storybook tools test run --json` prints the run's structured outcome
@@ -655,36 +607,6 @@ function renderCompletedTestRun(result: Record<string, unknown>, a11y: boolean):
 
 function asRecords(value: unknown): Record<string, unknown>[] {
   return Array.isArray(value) ? value.filter(isRecord) : [];
-}
-
-// The test-run result formatter (code/addons/vitest/src/node/toolset/format.ts)
-// always emits at least one of these markers. A captured output with none of them is a
-// shell-filtered fragment of the real report, not the report itself. isError
-// deliberately does not count as recognizable: a piped `… | grep` exits
-// non-zero when the filter simply matches nothing, so an errored markerless
-// result is exactly the filtered-fragment case this selection skips.
-const RUN_STORY_TESTS_REPORT_MARKERS = [
-  '## Passing Stories',
-  '## Failing Stories',
-  '## Accessibility Violations',
-  '## Unhandled Errors',
-  'No stories found matching',
-];
-
-// On the plugin path agents pipe the `storybook tools test run` CLI
-// output through grep/sed/tail, so the chronologically last captured output
-// can be a filtered fragment of an otherwise correct run (observed in CI run
-// 28672627415, 2026-07-03). Judge the last output that still looks like a
-// test-run report; only when no output is recognizable does the raw
-// last result stand, so fully-filtered transcripts still fail loud.
-export function selectFinalRunStoryTestsReport(
-  results: WorkflowToolResult[]
-): WorkflowToolResult | undefined {
-  return (
-    results.findLast((result) =>
-      RUN_STORY_TESTS_REPORT_MARKERS.some((marker) => result.output.includes(marker))
-    ) ?? results.at(-1)
-  );
 }
 
 // Chronological outputs of a Storybook workflow tool, across every path an
@@ -778,6 +700,10 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return false;
   }
 
+  return shellCommandRunsWorkflow(command, workflowName);
+}
+
+function shellCommandRunsWorkflow(command: string, workflowName: string): boolean {
   return parseStorybookWorkflowShellCommands([command]).some((call) =>
     workflowCallMatchesName(call, workflowName)
   );
@@ -811,9 +737,7 @@ function collectCodexWorkflowToolResult(
   if (
     item.type === 'command_execution' &&
     typeof item.command === 'string' &&
-    parseStorybookWorkflowShellCommands([item.command]).some((call) =>
-      workflowCallMatchesName(call, workflowName)
-    )
+    shellCommandRunsWorkflow(item.command, workflowName)
   ) {
     results.push({
       output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',
@@ -1133,6 +1057,115 @@ function expectRecord(value: unknown, label: string): asserts value is Record<st
   }
 }
 
+const REVIEW_PAGE_URL_PATTERN = /[?&]path=\/review(?![\w-])/;
+
+// Not tied to the link in the final response, so `localhost` versus
+// `127.0.0.1` or a slash difference cannot fail the cell. Only navigations
+// after the first successful review-create count: an earlier visit (for
+// example to check that Storybook runs) does not qualify, while a re-publish
+// updates the already open review page in place.
+export function expectReviewOpenedInBrowser(): void {
+  expectOpenedInBrowserAfter({
+    workflowName: 'review-create',
+    target: 'the review page',
+    isTargetUrl: (url) => isLocalDevServerUrl(url) && REVIEW_PAGE_URL_PATTERN.test(url),
+  });
+}
+
+// With review off the workflow ends in stories-preview links. The agent may
+// preview again while iterating, so any navigation after the first preview
+// call counts.
+export function expectPreviewOpenedInBrowser(): void {
+  expectOpenedInBrowserAfter({
+    workflowName: 'stories-preview',
+    target: 'a story preview',
+    isTargetUrl: isLocalStoryPreviewUrl,
+  });
+}
+
+function expectOpenedInBrowserAfter(options: {
+  workflowName: string;
+  target: string;
+  isTargetUrl: (url: string) => boolean;
+}): void {
+  const { workflowName, target, isTargetUrl } = options;
+  const steps = getBrowserStepsAroundWorkflowCalls(workflowName);
+  const workflowCall = steps.indexOf(WORKFLOW_CALLED);
+  if (workflowCall === -1) {
+    expect.fail(
+      `Expected a successful ${workflowName} call before the in-app browser check, but the transcript holds none.`
+    );
+  }
+  const navigations = steps
+    .slice(workflowCall + 1)
+    .filter((step): step is string => typeof step === 'string');
+
+  expect(
+    navigations.length,
+    `Expected the agent to open a URL in the in-app browser after ${workflowName} (a navigate / preview_start call, or a Codex goto), but the transcript holds no such browser navigation. Every experiment must install an in-app browser mock (writeClaudeInAppBrowserMock / writeCodexInAppBrowserMock).`
+  ).toBeGreaterThan(0);
+  expect(
+    navigations.some(isTargetUrl),
+    `Expected an in-app browser navigation to ${target} on the local dev server after ${workflowName}. Navigated to:\n${navigations.join('\n')}`
+  ).toBe(true);
+}
+
+const WORKFLOW_CALLED = Symbol('workflow-called');
+
+// In transcript order: each call of the workflow, and each URL the in-app
+// browser navigated to. Claude's parsed transcript does not pair tool calls
+// with their results, so there a failed call still counts.
+function getBrowserStepsAroundWorkflowCalls(
+  workflowName: string
+): (string | typeof WORKFLOW_CALLED)[] {
+  if (getEvalContext().agent === 'codex') {
+    return readCodexCompletedItems(readFileSync(TRANSCRIPT_PATH, 'utf8')).flatMap<
+      string | typeof WORKFLOW_CALLED
+    >((item) => {
+      const callsWorkflow =
+        (item.type === 'mcp_tool_call' &&
+          typeof item.tool === 'string' &&
+          normalizeStorybookWorkflowName(item.tool) === workflowName) ||
+        (item.type === 'command_execution' &&
+          typeof item.command === 'string' &&
+          shellCommandRunsWorkflow(item.command, workflowName));
+      if (callsWorkflow) {
+        return codexItemSucceeded(item) ? [WORKFLOW_CALLED] : [];
+      }
+      return getCodexItemNavigations(item);
+    });
+  }
+
+  return getTranscript().events.flatMap<string | typeof WORKFLOW_CALLED>((event) => {
+    const name = event.tool?.originalName;
+    const args = event.tool?.args;
+    if (event.type !== 'tool_call' || typeof name !== 'string' || !isRecord(args)) {
+      return [];
+    }
+    if (
+      normalizeStorybookWorkflowName(name) === workflowName ||
+      (typeof args.command === 'string' && shellCommandRunsWorkflow(args.command, workflowName))
+    ) {
+      return [WORKFLOW_CALLED];
+    }
+    if (/^mcp__.+__(?:navigate|preview_start)$/.test(name)) {
+      return typeof args.url === 'string' ? [args.url] : [];
+    }
+    if (/^mcp__.+__browser_batch$/.test(name) && Array.isArray(args.actions)) {
+      return args.actions.flatMap((action) =>
+        isRecord(action) &&
+        typeof action.name === 'string' &&
+        action.name.replace(/^mcp__.+?__/, '') === 'navigate' &&
+        isRecord(action.input) &&
+        typeof action.input.url === 'string'
+          ? [action.input.url]
+          : []
+      );
+    }
+    return [];
+  });
+}
+
 // Substance floor only (relaxed 2026-07-03 after run 28663662412, where
 // correct reviews failed on presentation details): the user must get the
 // review link in the final response, and not a second set of individual
@@ -1146,7 +1179,7 @@ function expectFinalResponseSharesReviewLink(): void {
   }
 
   expect(finalMessage, 'Final response must include the Storybook review page link').toMatch(
-    /[?&]path=\/review\/?/
+    REVIEW_PAGE_URL_PATTERN
   );
   expect(
     finalMessage,

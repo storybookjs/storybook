@@ -32,11 +32,20 @@ import {
 } from 'storybook/internal/types';
 
 import { OpenServiceServicesAppliedTwiceError } from '../../server-errors.ts';
-import { registerDocgenService } from '../../shared/open-service/services/docgen/server.ts';
+import {
+  registerDocgenService,
+  subscribeDocgenToModuleGraphChanges,
+} from '../../shared/open-service/services/docgen/server.ts';
 import { createDocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
-import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
-import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import {
+  registerReviewService,
+  subscribeReviewToModuleGraphChanges,
+} from '../../shared/open-service/services/review/server.ts';
+import {
+  registerStoryDocsService,
+  subscribeStoryDocsToModuleGraphChanges,
+} from '../../shared/open-service/services/story-docs/server.ts';
 import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
 import { sourceUrlManifestProvider } from '../../shared/open-service/toolsets/docs/access-provider.ts';
 import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
@@ -61,7 +70,7 @@ import { initCreateNewStoryChannel } from '../server-channel/create-new-story-ch
 import { initFileSearchChannel } from '../server-channel/file-search-channel.ts';
 import { initGhostStoriesChannel } from '../server-channel/ghost-stories-channel.ts';
 import { initOpenInEditorChannel } from '../server-channel/open-in-editor-channel.ts';
-import { isReviewExplicitlyEnabled, isReviewFeatureEnabled } from '../../shared/review/features.ts';
+import { isReviewFeatureEnabled } from '../../shared/review/features.ts';
 import { initTelemetryChannel } from '../server-channel/telemetry-channel.ts';
 import { initializeChecklist } from '../utils/checklist.ts';
 import { defaultFavicon, defaultStaticDirs } from '../utils/constants.ts';
@@ -247,10 +256,6 @@ export const features: PresetProperty<'features'> = async (existing) => ({
   experimentalChunkedPreviewRuntime: false,
   controls: true,
   disallowImplicitActionsInRenderV8: true,
-  // `experimentalReview` is deliberately NOT defaulted here. It is tri-state: MCP tooling
-  // (`@storybook/addon-mcp`) enables review for the `storybook ai` CLI channel unless the user
-  // explicitly sets `false`, so an explicit default would be indistinguishable from a user
-  // opt-out in the merged preset. See `isReviewFeatureEnabled` in `shared/review/features.ts`.
   highlight: true,
   interactions: true,
   measure: true,
@@ -367,6 +372,9 @@ async function getHeadlessChangeDetectionAdapter(options: Options) {
   }
 }
 
+// Started from `experimental_devServer`: the attached tools CLI also applies `services`.
+const devServerSubscriptions: Array<() => void> = [];
+
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
 export const services = async (_value: void, options: Options): Promise<void> => {
@@ -390,6 +398,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   });
 
   const features = await options.presets.apply('features');
+  const reviewEnabled = isReviewFeatureEnabled(features);
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
   // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
@@ -406,18 +415,15 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       changeStatuses: {
         getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
       },
-      // The explicit opt-in gate, not `isReviewFeatureEnabled`: with the flag unset the review
-      // infrastructure below still registers (the `storybook ai` CLI channel enables the tool per
-      // request), but direct MCP clients never see `review-create`, so the stories prose must
-      // not point at it.
-      reviewEnabled: isReviewExplicitlyEnabled(features),
+      reviewEnabled,
     })
   );
 
-  if (isReviewFeatureEnabled(features)) {
+  if (reviewEnabled) {
     registerReviewService({
       getIndex,
     });
+    devServerSubscriptions.push(subscribeReviewToModuleGraphChanges);
     registerToolset(reviewToolset);
   }
 
@@ -442,8 +448,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       registerDocgenService({
         getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
-        workingDir: process.cwd(),
       });
+      devServerSubscriptions.push(() =>
+        subscribeDocgenToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+      );
     }
 
     // Story-docs registers whenever this block runs, docgen only when a worker is available, so
@@ -453,8 +461,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     registerStoryDocsService({
       getIndex,
       storyDocsProvider,
-      workingDir: process.cwd(),
     });
+    devServerSubscriptions.push(() =>
+      subscribeStoryDocsToModuleGraphChanges({ getIndex, workingDir: process.cwd() })
+    );
   }
 
   // Registration-based selection between the docgen services and the inline manifests, shared
@@ -479,6 +489,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         : { docsAccess: localDocsAccess }
     )
   );
+};
+
+export const experimental_devServer: PresetPropertyFn<'experimental_devServer'> = async (app) => {
+  for (const subscribe of devServerSubscriptions.splice(0)) {
+    subscribe();
+  }
+
+  return app;
 };
 
 // Store the promise (not the result) to prevent race conditions.
@@ -514,6 +532,7 @@ export const storyIndexGenerator: PresetPropertyFn<
       indexers,
       docs,
       features,
+      storySorts: await options.presets.apply('storySorts', []),
     });
     await generator.initialize();
     return generator;

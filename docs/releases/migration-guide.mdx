@@ -17,6 +17,8 @@ This guide is meant to help you **upgrade from Storybook 10.x to 11** successful
 
 You'll first need to [upgrade to Storybook 10](./migration-guide-from-older-version.mdx). Then you can return to this guide.
 
+Storybook 11 [no longer ships the automigrations](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#automigrations-for-storybook-10-and-earlier-removed) that migrate a project into 8.1, 8.2, 9.0, or 10.0, so upgrading straight to 11 leaves that configuration in place and Storybook fails on it instead of fixing it.
+
 </Callout>
 
 ## Major breaking changes
@@ -25,10 +27,12 @@ The rest of this guide will help you upgrade successfully, either automatically 
 
 - Ecosystem updates
   - [Node.js 22.12 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nodejs-2212-or-higher)
+  - [TypeScript 5.9 or 6.x](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#typescript-59-or-6x)
   - [Vite 6.3 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-requires-vite-63-or-higher)
   - [Vitest 4 or higher for the Vitest addon](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher)
   - [Next.js 15 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up)
   - [Angular 21 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-requires-angular-21-or-higher)
+  - [React 18 or higher, and `framework.options.legacyRootApi` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up)
   - [Preact 10.8.0 or higher](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preact-require-v1080-and-up)
   - [Create React App preset removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
@@ -36,13 +40,24 @@ The rest of this guide will help you upgrade successfully, either automatically 
 - Changed defaults
   - [`storybook dev` no longer opens a browser by default](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybook-dev-no-longer-opens-a-browser-by-default)
   - [Docs Code panel enabled by default](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#docs-code-panel-enabled-by-default)
+- Removed APIs
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
+  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
+  - [`features.legacyDecoratorFileOrder` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#featureslegacydecoratorfileorder-removed)
 - Configuration changes
+  - [Move `storySort` to `storySorts` in main](#storysort-moved-to-storysorts-in-main)
   - [Move top-level `setConfig` layout and UI options](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#top-level-setconfig-layout-and-ui-options-removed)
   - [Vite static asset copying and conflict precedence](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Configure legacy Angular animations explicitly with Angular Vite](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
-  - [`--preview-url` and `--force-build-preview` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#preview-url-and-force-build-preview-removed)
+  - [`--preview-url` and `--force-build-preview` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#--preview-url-and---force-build-preview-removed)
+  - [Addon tabs no longer render, including `parameters.previewTabs` and `layout.showTabs`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#addon-tab-registration-removed)
+  - [Most Node.js built-in polyfills removed from `@storybook/nextjs`](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
 - Internal tooling changes
   - [Update custom CSF tooling to the unified mutation API](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#internal-csf-tools-use-the-unified-mutation-api)
+  - [`experimental_UniversalStore` is now internal](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#experimental-universalstore-api-is-now-internal)
+- Testing
+  - [Test runner support ended](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended)
+  - [Remove `setProjectAnnotations` calls from Vitest setup files](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
 - Package removals
   - [`@storybook/react-dom-shim` removed](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storybookreact-dom-shim-removed)
 - [Changes for addon authors](../addons/addon-migration-guide.mdx)
@@ -99,6 +114,55 @@ If you prefer to debug yourself, here are a few useful things you can do to help
 1. Try removing all addons that are not in the `@storybook` npm namespace (make sure you don't remove the `storybook` package). Community addons that work well with 10.x might not yet be compatible with 11.x, and this is the fastest way to isolate that possibility. If you find an addon that needs to be upgraded to work with Storybook 11, please post an issue on the addon’s repository, or better yet, a pull request to upgrade it!
 2. Another debugging technique is to bisect to older prerelease versions of Storybook to figure out which release broke your Storybook. For example, assuming that the current prerelease of Storybook is `11.0.0-beta.56`, you could set the version to `11.0.0-alpha.0` in your `package.json` and reinstall to verify that it still works (`alpha.0` should be nearly identical to `10.6.x`). If it works, you could then try `11.0.0-beta.0`, then `11.0.0-beta.28` and so forth. Once you’ve isolated the bad release, read through its [CHANGELOG](https://github.com/storybookjs/storybook/blob/next/CHANGELOG.prerelease.md) entry and perhaps there’s a change that jumps out as the culprit. If you find the problem, please submit an issue or pull request to the Storybook monorepo and we’ll do our best to take care of it quickly.
 
+## `parameters.componentSubtitle` removed
+
+Storybook 11 removes the deprecated `parameters.componentSubtitle` fallback. Move subtitles to `parameters.docs.subtitle` in your preview configuration and story files:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+The upgrade command offers the `component-subtitle` automigration to do this for you. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#parameterscomponentsubtitle-removed) for what it cannot migrate and how subtitle precedence changes.
+
+## `storySort` moved to `storySorts` in main
+
+Storybook 11 no longer reads `parameters.options.storySort` from `.storybook/preview.js|ts`. Configure sorting with the [`storySorts`](../api/main-config/main-config-story-sorts.mdx) array in `.storybook/main.js|ts` instead:
+
+```ts
+// .storybook/main.ts
+export default {
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  storySorts: [{ order: ['Introduction', 'Components'] }],
+};
+```
+
+The upgrade command offers the `story-sort-to-main` automigration for statically readable objects and arrays. Move comparator functions, imported values, and shared or reassigned variables yourself. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#storysort-in-the-preview-replaced-by-storysorts-in-main).
+
+## `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+
+The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` no longer carries `argTypes`.
+Reading it throws `SB_PREVIEW_API_0017`.
+With server-side docgen the preview only holds the arg types written in the story file, so that object looked complete while leaving out everything inferred from your component.
+
+```diff
+export const Primary: Story = {
+- play: async ({ argTypes, args }) => {
+-   for (const name of Object.keys(argTypes)) {
++ play: async ({ args }) => {
++   for (const name of Object.keys(args)) {
+      // ...
+    }
+  },
+};
+```
+
+There is no automigration. To read the resolved arg types, including the inferred ones, use the Controls panel or the `ArgTypes` doc block instead. Decorators and `render` functions still receive `argTypes`, under the new `StoryContextForRender` type. See the [full migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#argtypes-removed-from-loaders-beforeeach-play-and-aftereach) for what portable stories still expose and when to switch a helper's context type.
+
 ## Yarn PnP support removed
 
 Storybook 11 removes support for Yarn [Plug'n'Play](https://yarnpkg.com/features/pnp) (PnP), which was deprecated in Storybook 10:
@@ -119,4 +183,4 @@ The Webpack-based `@storybook/nextjs` framework is deprecated but remains suppor
 
 ### `test-runner` to `addon-vitest`
 
-`addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) is designed to supercede the `test-runner`. It's faster and provides a better experience for writing and running tests. If your project is built with Vite and uses React, Vue, Angular, Web Components, or Svelte, you should consider following the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx).
+Official support for the `test-runner` has ended. It still runs with Storybook 11, but it no longer receives fixes or compatibility updates. `addon-vitest` and the rest of the [Storybook Test experience](https://storybook.js.org/blog/storybook-test-sneak-peek/) replace it: follow the [instructions to migrate to `addon-vitest`](../writing-tests/integrations/vitest-addon/migration-guide.mdx). If your project uses a Webpack-based framework, the [test runner migration notes](https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#test-runner-support-ended) explain how to switch to Vite first.

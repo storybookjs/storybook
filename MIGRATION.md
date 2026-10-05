@@ -2,19 +2,28 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [`storybook dev` no longer opens a browser by default](#storybook-dev-no-longer-opens-a-browser-by-default)
+  - [Addon `TAB` registration removed](#addon-tab-registration-removed)
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
+  - [`argTypes` `defaultValue` removed](#argtypes-defaultvalue-removed)
   - [Raised browser support floors](#raised-browser-support-floors)
   - [Docs Code panel enabled by default](#docs-code-panel-enabled-by-default)
+  - [`argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`](#argtypes-removed-from-loaders-beforeeach-play-and-aftereach)
   - [Node.js 22.12 or higher](#nodejs-2212-or-higher)
   - [TypeScript 5.9 or 6.x](#typescript-59-or-6x)
+  - [CSF Next: meta args no longer need `as const`](#csf-next-meta-args-no-longer-need-as-const)
+  - [CSF Next: use `mocked()` for the mock API on args](#csf-next-use-mocked-for-the-mock-api-on-args)
+  - [CSF Next: every key in meta args must be an arg](#csf-next-every-key-in-meta-args-must-be-an-arg)
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Test runner support ended](#test-runner-support-ended)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vitest Addon: `setProjectAnnotations` must not be called in setup files](#vitest-addon-setprojectannotations-must-not-be-called-in-setup-files)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Next.js: most Node.js built-in polyfills removed from `@storybook/nextjs`](#nextjs-most-nodejs-built-in-polyfills-removed-from-storybooknextjs)
+  - [`storySort` in the preview replaced by `storySorts` in main](#storysort-in-the-preview-replaced-by-storysorts-in-main)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
   - [Create React App support removed](#create-react-app-support-removed)
@@ -28,7 +37,11 @@
   - [`@storybook/react-dom-shim` removed](#storybookreact-dom-shim-removed)
   - [Preact: Require v10.8.0 and up](#preact-require-v1080-and-up)
   - [`features.legacyDecoratorFileOrder` removed](#featureslegacydecoratorfileorder-removed)
-  - [`--preview-url` and `--force-build-preview` removed](#preview-url-and-force-build-preview-removed)
+  - [`experimentalReview` feature flag removed](#experimentalreview-feature-flag-removed)
+  - [`--preview-url` and `--force-build-preview` removed](#--preview-url-and---force-build-preview-removed)
+  - [Automigrations for Storybook 10 and earlier removed](#automigrations-for-storybook-10-and-earlier-removed)
+  - [Web Components: server-side docgen suffixes event, slot and part argType keys](#web-components-server-side-docgen-suffixes-event-slot-and-part-argtype-keys)
+  - [Web Components: the default render binds args by key](#web-components-the-default-render-binds-args-by-key)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -561,6 +574,35 @@
 
 ## From version 10.x to 11.0.0
 
+### Addon `TAB` registration removed
+
+`addons.add` no longer accepts `type: types.TAB`. Storybook does not render addon tabs beside the canvas. This is an addon-author change. There is no automigration.
+
+Move the UI into a panel:
+
+```diff
+import { addons, types } from 'storybook/manager-api';
+
+addons.register('my-addon', () => {
+  addons.add('my-addon/panel', {
+-   type: types.TAB,
+-   title: 'My Addon',
+-   render: () => <div>Hello World</div>,
++   type: types.PANEL,
++   title: 'My Addon',
++   render: ({ active }) => (active ? <div>Hello World</div> : null),
+  });
+});
+```
+
+A panel stays next to the story. A tab replaced the canvas. For a short-lived action, register a `TOOL` that opens a modal instead.
+
+`match` no longer receives `tabId`. Drop checks such as `!tabId` or `tabId === 'my-addon/tab'`. Use `viewMode` when a tool should appear only for stories or docs.
+
+`parameters.previewTabs`, `layout.showTabs`, and the `tabs` URL parameter no longer change the manager UI.
+
+See the [addon migration guide](docs/addons/addon-migration-guide.mdx#tab-ui-type-removed) for the same instructions in the addon-author guide.
+
 ### `storybook dev` no longer opens a browser by default
 
 Storybook now starts the development server without automatically opening it in a browser. The CLI
@@ -575,6 +617,60 @@ To keep opening Storybook automatically, add `--open` to your command or package
   }
 }
 ```
+
+### `parameters.componentSubtitle` removed
+
+The deprecated `parameters.componentSubtitle` fallback was removed.
+Use `parameters.docs.subtitle` instead.
+
+The `component-subtitle` automigration moves it in your preview and story files when you upgrade, or when you run `npx storybook automigrate component-subtitle`:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+When the same object already sets `docs.subtitle`, the automigration keeps it and removes `componentSubtitle`, because `docs.subtitle` already took precedence.
+A `componentSubtitle` set on a single story never affected the Subtitle block, so the automigration leaves it in place for you to delete.
+Files it cannot edit safely, such as parameters built from a spread, are listed in `automigrations-summary.md` for you to change by hand.
+
+Before, any `docs.subtitle` took precedence over any `componentSubtitle`, even one set in the preview over one set in a component's meta.
+After the migration, the more specific value wins, like every other parameter.
+If your preview sets `docs.subtitle`, check the subtitles on your Docs pages.
+
+### `argTypes` `defaultValue` removed
+
+`argTypes.<name>.defaultValue` is removed. It has not set the value of an arg since Storybook 7.0. Delete the property.
+
+To choose the value a story starts with, set `args`:
+
+```js
+export default {
+  args: {
+    label: 'Hello',
+  },
+};
+```
+
+To choose the text shown in the docs table, set `table.defaultValue`:
+
+```js
+export default {
+  argTypes: {
+    label: {
+      table: { defaultValue: { summary: 'Hello' } },
+    },
+  },
+};
+```
+
+`table.defaultValue` and `globalTypes.defaultValue` are unchanged.
+
+The `argtypes-default-value` automigration deletes a static `argTypes.<name>.defaultValue` when you upgrade, or when you run `npx storybook automigrate argtypes-default-value`. It does not copy the value anywhere. An explicit `args` value stays as it is. When that property cannot be removed, the file is left unchanged and listed in `automigrations-summary.md`.
 
 ### Docs Code panel enabled by default
 
@@ -596,6 +692,38 @@ You can also set this parameter at the component or story level. An explicit `tr
 
 No automigration is needed. Existing boolean settings retain their meaning, and projects with no setting receive the new default.
 
+### `argTypes` removed from loaders, `beforeEach`, `play` and `afterEach`
+
+The story context passed to loaders, `beforeEach`, `play`, `afterEach` and `step` callbacks no longer contains `argTypes`. Reading it throws an error that links here.
+
+With server-side docgen (`features.experimentalDocgenServer`), the preview no longer infers arg types from components or args. `context.argTypes` in these hooks only ever contained the arg types you declared by hand, so it looked complete but was not.
+
+```ts
+// Before
+export const Primary: Story = {
+  play: async ({ argTypes, args }) => {
+    for (const name of Object.keys(argTypes)) {
+      // ...
+    }
+  },
+};
+
+// After
+export const Primary: Story = {
+  play: async ({ args }) => {
+    for (const name of Object.keys(args)) {
+      // ...
+    }
+  },
+};
+```
+
+- Use `args` for the values passed to the story. Iterate `Object.keys(args)` instead of `Object.keys(argTypes)`.
+- To see the resolved arg types, including those inferred from your component, use the Controls panel or the `ArgTypes` doc block.
+- In portable stories, `composeStory(Story, meta).argTypes` still exposes the story's declared arg types outside of the lifecycle hooks.
+
+Decorators and `render` functions keep receiving `argTypes`, because renderers rely on them while rendering. Their context type is the new `StoryContextForRender`; the `StoryContext` type no longer declares `argTypes`. Custom decorator or render helpers that annotate their context parameter as `StoryContext` and read `argTypes` should switch to `StoryContextForRender`.
+
 ### Node.js 22.12 or higher
 
 Storybook 11 targets Node.js 22.12 or higher. Before upgrading, update Node.js in your local development environment, CI jobs, and deployment environments that build Storybook. Update any Node.js version pins, such as `.nvmrc`, `.node-version`, or your CI configuration.
@@ -609,6 +737,70 @@ During the Storybook 11 prerelease cycle, some releases still accept Node.js 20.
 Storybook 11 requires TypeScript 5.9 or 6.x. Upgrade your project's TypeScript dependency before upgrading Storybook, then run your project's type check.
 
 There is no automatic source migration. Updating the compiler can expose errors in application code or dependencies that require project-specific fixes. JavaScript-only projects do not need to install TypeScript.
+
+### CSF Next: meta args no longer need `as const`
+
+`preview.meta()` now remembers which args you set, not the values you wrote, and checks each value against the component's props. Literal, enum and template-literal props in meta args are no longer widened, so the story no longer asks for them again and `as const` is not needed:
+
+```diff
+ // Button props: { variant: 'primary' | 'secondary'; label: string }
+ const meta = preview.meta({
+   component: Button,
+-  args: { variant: 'primary' as const },
++  args: { variant: 'primary' },
+ });
+
+ export const Default = meta.story({ args: { label: 'Hi' } });
+```
+
+`meta.input.args` is now typed as the component declares those props, not as the values you wrote. For example, `meta.input.args.variant` is `'primary' | 'secondary'`. Optional props that meta sets are typed as present: in `meta.input.args`, in the meta's own `play`, `beforeEach`, `afterEach` and `loaders`, and in the args of its stories. Keys of a `Partial` object passed as meta args count as set too, so pass only objects whose keys are set. An `Args` record sets none.
+
+The second type argument of `ReactMeta`, `VueMeta`, `AngularMeta`, `WebComponentsMeta` and `Meta` from `storybook/internal/csf` is now the union of the arg names set in meta, instead of the meta input type.
+
+### CSF Next: use `mocked()` for the mock API on args
+
+An arg set to `fn()` in meta was typed as a `Mock` in `meta.input.args`, and in React also in `play`, `beforeEach`, `afterEach` and `loaders`. It is now typed as the component declares it. Wrap it in `mocked()` from `storybook/test` to use the mock API, as you would with Vitest's `vi.mocked()`:
+
+```diff
+-import { fn } from 'storybook/test';
++import { fn, mocked } from 'storybook/test';
+
+ const meta = preview.meta({ component: EventForm, args: { getUsers: fn() } });
+
+ export const Submits = meta.story({
+   beforeEach: async ({ args }) => {
+-    args.getUsers.mockResolvedValue(users);
++    mocked(args.getUsers).mockResolvedValue(users);
+   },
+ });
+```
+
+Assertions such as `expect(args.onSubmit).toHaveBeenCalled()` keep working without `mocked()`.
+
+The `csf-factories` automigration wraps mock API calls on args in `mocked()` when it converts CSF 3 stories. For stories already written in CSF Next, `storybook upgrade` runs the `csf-next-mocked-args` automigration, which does the same. Run it later with `npx storybook automigrate csf-next-mocked-args`. TypeScript points at anything it misses with an error such as `Property 'mockResolvedValue' does not exist`.
+
+### CSF Next: every key in meta args must be an arg
+
+Every key in `preview.meta({ args })` must now be an arg of the story: a prop of the component, an arg of the meta's typed `render` function, an arg read by one of the meta's `decorators`, or an arg declared with `preview.type<{ args }>()`. This includes args passed as a variable or a spread. Previously, such keys were often accepted and silently ignored. A meta with neither `component` nor `render` still accepts any args.
+
+Declare args that are not props with `preview.type`:
+
+```diff
+-const meta = preview.meta({
++const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+   component: Button,
+   args: { label: 'Hi', theme: 'dark' },
+ });
+```
+
+For components whose props are a union, meta args can set the props that every member of the union has. Set props that only some members have in the story, where TypeScript checks them together with the rest of that member:
+
+```ts
+// Props: { label: string } & ({ kind: 'link'; href: string } | { kind: 'button'; onClick: () => void })
+const meta = preview.meta({ component: Action, args: { label: 'Go', kind: 'link' } });
+
+export const Link = meta.story({ args: { href: '/' } });
+```
 
 ### Yarn PnP support removed
 
@@ -674,6 +866,21 @@ option exists in both places, keep the nested value because it was authoritative
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
 
+### Test runner support ended
+
+Official support for [`@storybook/test-runner`](https://github.com/storybookjs/test-runner) has ended. The package stays published and accepts Storybook 11 and later as a peer dependency, so existing setups can keep running it at their own risk, but it no longer receives fixes or compatibility updates and prints a warning on every run.
+
+If your Storybook uses a Vite-based framework, we recommend migrating to the Vitest addon by following the [migration guide](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon/migration-guide).
+
+The Vitest addon requires a Vite-based framework. If your Storybook uses Webpack, switch frameworks first:
+
+- `@storybook/nextjs` → `@storybook/nextjs-vite`: run `npx storybook automigrate nextjs-to-nextjs-vite`.
+- `@storybook/angular` → `@storybook/angular-vite`: run `npx storybook automigrate angular-to-angular-vite`.
+- `@storybook/react-webpack5` → `@storybook/react-vite`: follow the [React Vite migration steps](https://storybook.js.org/docs/get-started/frameworks/react-vite#how-do-i-migrate-from-the-react-webpack-framework).
+- Other Webpack-based frameworks: see [migrating from Webpack to Vite](https://storybook.js.org/docs/builders/vite#migrating-from-webpack).
+
+If you cannot switch to a Vite-based framework and Vitest, you can continue using the test runner without official support. Another option is to switch to plain Playwright with [a minimal setup that generates tests from stories](https://gist.github.com/AriPerkkio/99b9eedc7d8f71ff6e6770f9425a4be4).
+
 ### Vitest Addon: requires Vitest 4.0 or higher
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
@@ -682,7 +889,30 @@ If your custom tooling imports `canUpdateVitestWorkspaceFile` from `storybook/in
 
 ### Vitest Addon: `setProjectAnnotations` must not be called in setup files
 
-TODO
+`@storybook/addon-vitest` applies your project annotations itself: your `.storybook/preview` file and the previews of the addons registered in `.storybook/main`. `setProjectAnnotations` replaces whatever was applied before it, so a leftover call in a Vitest setup file silently discards the addon's annotations. Storybook 11 throws instead of running with the wrong annotations:
+
+```text
+SB_ADDON_VITEST_0002 (ProjectAnnotationsAlreadyAppliedError): setProjectAnnotations() was called
+from a Vitest setup file, but @storybook/addon-vitest applies your project annotations itself
+```
+
+Run the automigration to remove the calls it can handle - those that only pass your `.storybook/preview` annotations, or `@storybook/addon-a11y/preview` when that addon is already registered in `.storybook/main`:
+
+```sh
+npx storybook automigrate vitest-setup-file
+```
+
+It rewrites those setup files, deletes the ones that end up empty, and drops their `setupFiles` entries from the Vitest or Vite config that referenced them. It stops with per-file instructions when a call cannot be removed safely, which includes custom annotations, a setup file it cannot parse, a `setupFiles` entry computed at runtime, and a file shared with a Vitest project that has no Storybook plugin.
+
+To migrate a file yourself:
+
+1. If the call only passes your `.storybook/preview` annotations, delete it.
+2. If it passes an addon's annotations, register that addon in the `addons` field of `.storybook/main` and delete the call.
+3. If it passes custom annotations, move them into `.storybook/preview` and delete the call.
+4. If nothing else remains in the file, delete it and remove its entry from `setupFiles` in your Vitest config.
+5. If the file is shared with a Vitest project that uses portable stories directly, list it only in that project's `setupFiles`.
+
+Calling `setProjectAnnotations` outside a Vitest setup file is unaffected. Portable stories in plain Vitest projects, and in Jest or other runners, still need the call.
 
 ### Vite: `publicDir` is handled by Storybook's `staticDirs`
 
@@ -764,6 +994,38 @@ export default config;
 
 Before adding a polyfill, check whether the import can be removed instead. Most browser code does not need Node.js built-ins, and `@storybook/nextjs-vite` does not polyfill them at all.
 
+### `storySort` in the preview replaced by `storySorts` in main
+
+Storybook no longer reads `parameters.options.storySort` from `.storybook/preview.js|ts`.
+Configure story sorting with the `storySorts` array in `.storybook/main.js|ts` instead.
+Each sorter only orders the stories that the sorters before it consider equal, and presets can add their own sorters.
+
+Before:
+
+```ts
+// .storybook/preview.ts
+export default {
+  parameters: {
+    options: {
+      storySort: { order: ['Introduction', 'Components'] },
+    },
+  },
+};
+```
+
+After:
+
+```ts
+// .storybook/main.ts
+export default {
+  stories: ['../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  storySorts: [{ order: ['Introduction', 'Components'] }],
+};
+```
+
+Run `npx storybook automigrate story-sort-to-main` to move statically readable object and array configurations automatically, including local constants used only by that configuration.
+Comparator functions, imported values, and shared or reassigned variables need manual migration: move them and their dependencies to `storySorts` in main, and remove the preview setting.
+
 ### Angular: requires Angular 21 or higher
 
 Storybook has dropped support for Angular versions 18-20. The minimum supported version is now Angular 21.
@@ -824,7 +1086,7 @@ Custom SDK callers must remove the `telemetry` callback from `ToolsCallOptions`.
 
 ### Internal `satisfies` helper removed
 
-The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-higher).
+The `satisfies` function is no longer exported from `storybook/internal/common`. It existed to mimic TypeScript's `satisfies` operator before Storybook required TypeScript 4.9, and Storybook 11 [requires TypeScript 5.9 or higher](#typescript-59-or-6x).
 
 Replace calls with the native operator:
 
@@ -882,11 +1144,152 @@ The `features.legacyDecoratorFileOrder` flag is removed. Storybook always applie
 
 This has been the default since Storybook 7. If you still had the flag set to `true` to restore the pre-7 order, delete it from `.storybook/main.js` and check that preview decorators still work with framework context (for example Next.js `useRouter`) provided by the framework package.
 
+### `experimentalReview` feature flag removed
+
+The `features.experimentalReview` flag is removed, and Storybook no longer reads it.
+Agentic review is now on by default: in the Storybook UI, through `storybook tools`, in the Claude Code and Codex plugins, and in every MCP client connected to `@storybook/addon-mcp`.
+In Storybook 10, MCP clients other than the plugins only got the `review-create` tool with `experimentalReview: true`.
+If you had `experimentalReview: false`, review is now on for your project.
+The only way to turn it off is `features.changeDetection: false`, which also turns off `stories-changed` and the change-detection statuses in the sidebar.
+The Claude Code and Codex plugins and `storybook tools` now tell agents to end visual work with a review instead of preview links.
+
+The `remove-experimental-review` automigration deletes the flag from your main config, whether it is `true` or `false`.
+You can also run it with `storybook automigrate remove-experimental-review`.
+If it cannot edit your main config, for example because `features` contains a spread, remove the flag by hand.
+A typed main config that still sets the flag fails type-checking until it is removed.
+`storybook upgrade --features` no longer accepts `experimentalReview`.
+
 ### `--preview-url` and `--force-build-preview` removed
 
 Storybook 11 removes `--preview-url` and `--force-build-preview`. Those options pointed the canvas iframe at a custom URL and skipped compiling Storybook's own preview. The Angular builder `previewUrl` option is removed for the same reason.
 
 Storybook always builds its preview and always loads `iframe.html`. There is no replacement. If you used `--preview-url` so Storybook could be served from a subdirectory or CDN, configure that host's public path or [`staticDirs`](https://storybook.js.org/docs/configure/images-and-assets#serving-static-files-via-storybook) instead.
+
+### Automigrations for Storybook 10 and earlier removed
+
+`storybook upgrade` and `storybook automigrate` no longer ship the fixes that migrated a project into Storybook 8.1, 8.2, 9.0, or 10.0. A Storybook 10.x project has already applied all of them.
+
+| Removed automigration          | Migrated                                                          |
+| ------------------------------ | ----------------------------------------------------------------- |
+| `initial-globals`              | preview `globals` to `initialGlobals`                             |
+| `remove-docs-autodocs`         | main `docs.autodocs` to the `autodocs` tag                        |
+| `addon-a11y-parameters`        | `a11y.element` to `a11y.context`                                  |
+| `addon-experimental-test`      | `@storybook/experimental-addon-test` to `@storybook/addon-vitest` |
+| `addon-globals-api`            | viewport and backgrounds parameters to globals                    |
+| `addon-mdx-gfm-remove`         | removed `@storybook/addon-mdx-gfm`                                |
+| `addon-storysource-code-panel` | storysource to `docs.codePanel`                                   |
+| `consolidated-imports`         | consolidated `@storybook/*` packages                              |
+| `remove-addon-interactions`    | removed `@storybook/addon-interactions`                           |
+| `remove-essentials`            | essentials addons moved into core                                 |
+| `renderer-to-framework`        | renderer imports to framework imports                             |
+| `rnstorybook-config`           | React Native `.storybook` to `.rnstorybook`                       |
+| `fix-faux-esm-require`         | `require` and `__dirname` in an ESM main config                   |
+| `migrate-addon-console`        | `@storybook/addon-console` to `spyOn` in the preview              |
+
+If your project is still on Storybook 9 or earlier, upgrade to Storybook 10 first so these migrations run, then upgrade to 11:
+
+```sh
+npx storybook@^10 upgrade
+npx storybook@latest upgrade
+```
+
+Upgrading straight to 11 leaves that configuration in place, and you have to apply every migration in the table above by hand.
+
+The `--renderer` flag of `storybook automigrate` is also removed. Only the removed fixes read it, so it now fails as an unknown option; drop it from any script that passes it.
+
+### Web Components: server-side docgen suffixes event, slot and part argType keys
+
+With `features.experimentalDocgenServer`, `@storybook/web-components-vite` builds argTypes from the Custom Elements Manifest on the Storybook server.
+Events, slots and CSS shadow parts are keyed with their category as a suffix, the same keys `@wc-toolkit/storybook-helpers` uses:
+
+| Manifest item       | Runtime docgen key | Server docgen key |
+| ------------------- | ------------------ | ----------------- |
+| event `my-change`   | `my-change`        | `my-change-event` |
+| slot `actions`      | `actions`          | `actions-slot`    |
+| CSS part `label`    | `label`            | `label-part`      |
+
+Attributes, properties and CSS custom properties keep their names.
+Methods, CSS states and the default slot are new rows, keyed `<name>-method`, `<name>-state` and `default-slot`.
+
+`argTypes` you wrote against the runtime keys no longer reach those rows.
+`argTypes` are merged by key, so the old key adds a separate row without a category instead of changing the documented one.
+The Controls table still shows the raw name, so the suffix is not visible there.
+Add the suffix to the key:
+
+```ts
+// Before
+argTypes: { 'my-change': { table: { disable: true } } },
+
+// After
+argTypes: { 'my-change-event': { table: { disable: true } } },
+```
+
+Controls writes args under the same keys.
+A custom `render` that reads a slot, part or state arg by its raw name no longer follows its Control; read the suffixed key instead:
+
+```ts
+// Before
+render: (args) => html`<my-card>${unsafeHTML(args.actions)}</my-card>`,
+
+// After
+render: (args) => html`<my-card>${unsafeHTML(args['actions-slot'])}</my-card>`,
+```
+
+### Web Components: the default render binds args by key
+
+With `features.experimentalDocgenServer`, the default web components render, used by stories without a `render` function, binds each arg by its key and by what the element declares, instead of assigning every arg as a property.
+It never reads argTypes or waits for docgen, so a story renders the same with or without the manifest, and in Vitest.
+
+| Arg key                                                     | Binding                                                      |
+| ----------------------------------------------------------- | ------------------------------------------------------------ |
+| `--name`                                                    | CSS custom property, set inline                              |
+| a property of the element                                   | property                                                     |
+| observed by the element but not a property, primitive value | attribute; `true` sets it empty, `false` leaves it out       |
+| `<name>-event`, function value                              | event listener for `<name>`                                  |
+| `<name>-slot`, `default-slot`                               | HTML appended with `slot="<name>"`, or into the default slot |
+| `<name>-part`, `<name>-state`                               | `::part(<name>)` / `:state(<name>)` rule scoped to the story |
+| anything else                                               | property                                                     |
+
+Except for properties, `undefined`, `null` and `''` leave an arg unbound.
+
+An element registered after the story renders, for example by an autoloader or a lazy import, cannot be inspected, so its plain keys fall back to properties; suffixed keys still bind.
+
+The default render does not log events on its own.
+Pass a function for each event you want in the Actions panel, which also lets a `play` function assert it:
+
+```ts
+import { fn } from 'storybook/test';
+
+export const Default = {
+  args: {
+    heading: 'Hello',
+    'footer-slot': '<button>Ok</button>',
+    'demo-select-event': fn(),
+  },
+};
+```
+
+Keys the element only observes as attributes are set with `setAttribute`, so the element receives the string form and converts it as it would from HTML.
+
+The default render now returns a `DocumentFragment` with the element as its last child, so scoped part and state rules can come first.
+A decorator that calls element methods on the story result must read the element from the fragment:
+
+```ts
+// Before
+(storyFn) => {
+  const element = storyFn();
+  element.setAttribute('theme', 'dark');
+  return element;
+},
+
+// After
+(storyFn) => {
+  const result = storyFn();
+  const element = result instanceof DocumentFragment ? result.lastElementChild : result;
+  element?.setAttribute('theme', 'dark');
+  return result;
+},
+```
 
 ## From version 10.5.x to 10.6.0
 
@@ -1337,7 +1740,7 @@ The underlying implementation was switched from Popper.js to react-aria. Due to 
 
 #### WithTooltipPure and WithTooltipState are deprecated
 
-Instead, use `WithTooltipNew` in Storybook 10, or `WithTooltip` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
+Instead, use `WithTooltip` in Storybook 10, or `TooltipProvider` in Storybook 11 or newer. For a controlled tooltip, use the `onVisibleChange` and `visible` props. For an uncontrolled tooltip with a default open state, use the `defaultVisible` prop.
 
 #### Link isButton is deprecated
 
@@ -3906,7 +4309,7 @@ The new CLI commands remove the following flags:
 
 | flag     | migration                                                                                     |
 | -------- | --------------------------------------------------------------------------------------------- |
-| --modern | No migration needed. [All ESM code is modern in SB7](#modern-esm--ie11-support-discontinued). |
+| --modern | No migration needed. [All ESM code is modern in SB7](#modern-browser-support). |
 
 #### New Framework API
 

@@ -1,6 +1,5 @@
 {
   "label": {
-    "defaultValue": undefined,
     "description": "Accessible label.",
     "name": "label",
     "table": {
@@ -16,9 +15,6 @@
     },
   },
   "optional": {
-    "defaultValue": {
-      "summary": "false",
-    },
     "description": "Whether the field may be left empty.",
     "name": "optional",
     "table": {
@@ -36,7 +32,6 @@
     },
   },
   "value": {
-    "defaultValue": undefined,
     "description": "The current value.",
     "name": "value",
     "table": {

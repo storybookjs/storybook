@@ -44,6 +44,21 @@ describe('TelemetryService', () => {
       });
     });
 
+    it('should track the skills step', async () => {
+      await telemetryService.trackSkills({
+        result: 'failed',
+        source: 'ai-feature',
+        exitCode: 1,
+      });
+
+      expect(telemetry).toHaveBeenCalledWith('init-step', {
+        step: 'skills',
+        result: 'failed',
+        source: 'ai-feature',
+        exitCode: 1,
+      });
+    });
+
     it('should track init event', async () => {
       const data = {
         projectType: ProjectType.REACT,

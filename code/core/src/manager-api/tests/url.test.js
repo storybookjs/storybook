@@ -138,6 +138,7 @@ describe('initial state', () => {
             tabs: '0',
             path: '/story/button--primary',
             // genuinely custom params that must survive
+            tab: 'my-addon',
             collection: '2',
             tags: 'a11y',
           }).toString(),
@@ -149,7 +150,7 @@ describe('initial state', () => {
 
       // Layout params (full/panel/nav/...) are consumed by the manager and must not leak into the
       // params forwarded to the preview iframe; only genuinely custom params remain.
-      expect(customQueryParams).toEqual({ collection: '2', tags: 'a11y' });
+      expect(customQueryParams).toEqual({ tab: 'my-addon', collection: '2', tags: 'a11y' });
     });
   });
 });

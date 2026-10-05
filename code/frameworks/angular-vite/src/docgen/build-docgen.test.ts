@@ -20,7 +20,10 @@ beforeEach(async () => {
   const realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
   // memfs supplies the story files the tests write; every other module the resolver reaches is a
   // fixture on disk.
-  vi.mocked(readFileSync).mockImplementation(((path: Parameters<typeof readFileSync>[0], ...rest) =>
+  vi.mocked(readFileSync).mockImplementation(((
+    path: Parameters<typeof readFileSync>[0],
+    ...rest
+  ) =>
     vol.existsSync(path as string)
       ? (memfs.fs.readFileSync as typeof readFileSync)(path, ...rest)
       : realFs.readFileSync(path, ...rest)) as typeof readFileSync);

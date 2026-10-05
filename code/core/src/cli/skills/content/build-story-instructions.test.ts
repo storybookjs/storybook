@@ -132,15 +132,39 @@ describe('buildStoryInstructions review-aware link guidance', () => {
 });
 
 describe('buildStoryInstructions framework handling', () => {
-  it('should handle Vue framework', () => {
+  it.each(['cli', 'mcp'] as const)(
+    'scopes framework guidance for the %s transport',
+    (transport) => {
+      for (const framework of [
+        '@storybook/vue3-vite',
+        '@storybook/angular-vite',
+        '@storybook/angular',
+        '@custom/framework',
+      ]) {
+        const instructions = buildStoryInstructions({
+          ...baseInputs,
+          transport,
+          framework,
+        });
+
+        expect(instructions).toContain(`Use the configured framework (\`${framework}\`)`);
+        expect(instructions).not.toMatch(/react|jsx|tsx|\{\{/i);
+      }
+    }
+  );
+
+  it('limits the native config directory note to the native renderer', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
       transport: 'mcp',
-      framework: '@storybook/vue3-vite',
+      framework: '@custom/native-framework',
+      renderer: '@storybook/react-native',
     });
 
-    expect(instructions).toContain('@storybook/vue3-vite');
-    expect(instructions).toContain('@storybook/vue3');
+    expect(instructions).toContain('React Native uses `.rnstorybook` directory');
+    expect(buildStoryInstructions({ ...baseInputs, transport: 'mcp' })).not.toContain(
+      '.rnstorybook'
+    );
   });
 });
 

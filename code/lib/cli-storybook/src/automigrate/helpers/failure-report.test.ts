@@ -1,4 +1,5 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
+import { posix, relative, win32 } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -14,6 +15,10 @@ import type { Fix } from '../types.ts';
 import { REPORT_FILE_NAME, reportFileFailures } from './failure-report.ts';
 
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('node:path', async (importOriginal) => {
+  const path = await importOriginal<typeof import('node:path')>();
+  return { ...path, relative: vi.fn(path.relative) };
+});
 vi.mock('storybook/internal/common', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
@@ -58,6 +63,7 @@ describe('file failures', () => {
     vi.mocked(readFile).mockRestore();
     vi.mocked(writeFile).mockRestore();
     vi.mocked(rm).mockRestore();
+    vi.mocked(relative).mockRestore();
   });
 
   it('migrates every other file and reports the failed ones in the summary file', async () => {
@@ -190,21 +196,46 @@ describe('file failures', () => {
     `);
   });
 
-  it('shows paths inside the project relative to its root, in the reason too', async () => {
+  it.each([
+    { platform: 'POSIX', relativePath: posix.relative },
+    { platform: 'Windows', relativePath: win32.relative },
+  ])(
+    'shows paths inside the project relative to its root, in the reason too ($platform)',
+    async ({ relativePath }) => {
+      vi.mocked(relative).mockImplementation(relativePath);
+      await reportFileFailures(
+        [
+          {
+            fixId: 'rename-legacy',
+            file: stories[1],
+            kind: 'story',
+            message: `EACCES: permission denied, open '${stories[1]}'`,
+          },
+        ],
+        ['rename-legacy']
+      );
+
+      expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
+        "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
+      );
+    }
+  );
+
+  it('makes paths with backslash separators relative in the reason', async () => {
     await reportFileFailures(
       [
         {
           fixId: 'rename-legacy',
           file: stories[1],
           kind: 'story',
-          message: `EACCES: permission denied, open '${stories[1]}'`,
+          message: "EACCES: permission denied, open '/project\\src\\B.stories.ts'",
         },
       ],
       ['rename-legacy']
     );
 
     expect(fs.readFileSync(`/project/${REPORT_FILE_NAME}`, 'utf8')).toContain(
-      "| `src/B.stories.ts` | EACCES: permission denied, open 'src/B.stories.ts' |"
+      "| `src/B.stories.ts` | EACCES: permission denied, open 'src\\B.stories.ts' |"
     );
   });
 });

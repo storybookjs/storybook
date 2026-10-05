@@ -1,5 +1,5 @@
 import { readFile, rm, writeFile } from 'node:fs/promises';
-import { join, relative, sep } from 'node:path';
+import { join, relative } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -34,7 +34,7 @@ const renderSections = (failures: FixFileFailure[], root: string) =>
       '| ---- | ------ |',
       ...fixFailures.map(
         ({ file, message }) =>
-          `| \`${cell(relative(root, file))}\` | ${cell(message.replaceAll(`${root}${sep}`, ''))} |`
+          `| \`${cell(relative(root, file).replaceAll('\\', '/'))}\` | ${cell(message.replaceAll(`${root}\\`, '').replaceAll(`${root.replaceAll('\\', '/')}/`, ''))} |`
       ),
     ].join('\n')
   );

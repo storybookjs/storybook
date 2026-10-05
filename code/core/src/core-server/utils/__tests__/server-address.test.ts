@@ -13,23 +13,20 @@ const mockedNetworkAddress: NetworkInterfaceInfoIPv4 = {
   cidr: '192.168.0.5/24',
 };
 
-vi.mock(
-  'node:os',
-  async (importOriginal): Promise<typeof os & { default: typeof os }> => ({
-    ...(await importOriginal()),
-    // We have to mock both the default export and named exports here for whatever reason
-    ['default' as never]: {
-      networkInterfaces: vi.fn(() => ({
-        eth0: [mockedNetworkAddress],
-      })),
-      release: vi.fn(() => '10.0.26100'),
-    },
+vi.mock('node:os', async (importOriginal): Promise<typeof os & { default: typeof os }> => ({
+  ...(await importOriginal()),
+  // We have to mock both the default export and named exports here for whatever reason
+  ['default' as never]: {
     networkInterfaces: vi.fn(() => ({
       eth0: [mockedNetworkAddress],
     })),
     release: vi.fn(() => '10.0.26100'),
-  })
-);
+  },
+  networkInterfaces: vi.fn(() => ({
+    eth0: [mockedNetworkAddress],
+  })),
+  release: vi.fn(() => '10.0.26100'),
+}));
 const mockedOs = vi.mocked(os);
 
 describe('getServerAddresses', () => {

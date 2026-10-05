@@ -120,8 +120,11 @@ This error indicates that the `template` prop was passed, but it was not correct
 
 ### SB_SVELTE_CSF_PARSER_EXTRACT_SVELTE_0009
 
-Storybook stories indexer parser threw an unrecognized error.
-If you see this error, [please report it on the issue tracker on GitHub](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml).
+The indexer could not parse a stories file, and the error is not one of the Svelte CSF errors on this page. An example is a failure in a preprocessor or in the Svelte compiler.
+
+The message names the stories file and includes the original error. Run Storybook with `--loglevel debug` to also see the stack of the original error. Tools can read the original error from the `cause` property.
+
+Read the original error first. It often points to a problem in the stories file or in the Svelte config. If it doesn't, [please report it on the issue tracker on GitHub](https://github.com/storybookjs/storybook/issues/new?template=bug_report.yml), and include the full message.
 
 ## `PARSER_EXTRACT_COMPILED`
 

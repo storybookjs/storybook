@@ -26,7 +26,7 @@ export const createIndexer = (): Indexer => ({
         throw error;
       }
 
-      throw new IndexerParseError({ cause: error });
+      throw new IndexerParseError(filename, { cause: error });
     }
   },
 });

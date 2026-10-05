@@ -89,6 +89,9 @@ the fields to change and provide migration-specific error guidance.
   toolsets, as addon-vitest does for `test`.
 - Register services and toolsets from the same `services` preset hook and behind the same feature
   gate. Missing or duplicate registrations fail loudly.
+- The tools CLI applies `services` too, so subscriptions that execute commands start from
+  `experimental_devServer`, not at registration. See "Server Registration Flow" in the open-service
+  README.
 - The tools CLI consumes `storybook/internal/tools` (`createTools`). Default mode is
   attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
   failure. `--attach` requires attachment; `--no-attach` forces local. When several running

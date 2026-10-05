@@ -63,8 +63,6 @@ export function registerReviewService({ getIndex }: RegisterReviewServiceOptions
   });
 }
 
-// Not part of registration: the attached tools CLI registers the same services, and its first synced
-// graphRevision would look like a file change.
 export function subscribeReviewToModuleGraphChanges(): void {
   const review = getService<ReviewService>('core/review', { internal: true });
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });

@@ -111,8 +111,9 @@ and synchronization; **toolsets** are the public agent surface for CLI and MCP a
 - `description` — `string`, or a function of `ctx` when the prose differs per transport
 - `input` — the input schema
 - `output` — optional; published as the MCP `outputSchema`, and `structuredContent` is
-  narrowed to it. An outcome's `data` may carry more than this declares; only the declared shape
-  reaches the wire
+  narrowed to it. Some clients (Claude Code) hand the model only `structuredContent` when a tool
+  publishes it and drop the text, so the declared shape must carry everything the Markdown says,
+  including what the agent should do next (an `instructions` field)
 - `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
   effects and the usage report
 

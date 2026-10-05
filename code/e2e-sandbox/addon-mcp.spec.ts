@@ -328,6 +328,7 @@ test.describe('addon-mcp', () => {
                 title: 'Example/Button',
               },
             ],
+            instructions: expect.stringContaining('in-app browser'),
           },
         });
       });

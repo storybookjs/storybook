@@ -22,8 +22,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./entry-preview": "./dist/entry-preview.js",
@@ -34,8 +34,8 @@
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./preview": {
-      "types": "./dist/preview.d.ts",
       "code": "./src/preview.tsx",
+      "types": "./dist/preview.d.ts",
       "default": "./dist/preview.js"
     }
   },

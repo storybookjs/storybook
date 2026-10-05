@@ -114,7 +114,7 @@
     "react-dom": "^18.2.0",
     "react-popper-tooltip": "^4.4.2",
     "slash": "^5.0.0",
-    "sort-package-json": "^3.5.0",
+    "sort-package-json": "^4.0.0",
     "storybook": "workspace:^",
     "storybook-addon-pseudo-states": "workspace:*",
     "ts-dedent": "^2.0.0",

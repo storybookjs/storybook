@@ -26,8 +26,8 @@
   "type": "module",
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./builders/build-storybook": "./dist/builders/build-storybook/index.js",
@@ -38,15 +38,15 @@
     "./client/preview-prod": "./dist/client/preview-prod.js",
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./node": {
-      "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
+      "types": "./dist/node/index.d.ts",
       "default": "./dist/node/index.js"
     },
     "./package.json": "./package.json",
     "./preset": "./dist/preset.js",
     "./vitest": {
-      "types": "./dist/node/vitest.d.ts",
       "code": "./src/node/vitest.ts",
+      "types": "./dist/node/vitest.d.ts",
       "default": "./dist/node/vitest.js"
     }
   },

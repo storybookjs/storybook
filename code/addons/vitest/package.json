@@ -39,13 +39,13 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
       "code": "./src/index.ts",
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     },
     "./constants": {
-      "types": "./dist/constants.d.ts",
       "code": "./src/constants.ts",
+      "types": "./dist/constants.d.ts",
       "default": "./dist/constants.js"
     },
     "./internal/coverage-reporter": "./dist/node/coverage-reporter.js",
@@ -60,8 +60,8 @@
     "./preset": "./dist/preset.js",
     "./vitest": "./dist/node/vitest.js",
     "./vitest-plugin": {
-      "types": "./dist/vitest-plugin/index.d.ts",
       "code": "./src/vitest-plugin/index.ts",
+      "types": "./dist/vitest-plugin/index.d.ts",
       "default": "./dist/vitest-plugin/index.js"
     }
   },

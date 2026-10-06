@@ -99,6 +99,13 @@ jobs:
             echo "No PR for the eval gate thread (ok for next/schedule-style runs)."
             exit 0
           fi
+          labels="$(gh pr view "$pr" --repo "$GITHUB_REPOSITORY" --json labels --jq '[.labels[].name] | tojson')"
+          echo "labels=$labels" >> "$GITHUB_OUTPUT"
+          if ! jq -e 'any(. == "agent-eval:eval")' <<< "$labels" > /dev/null; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "PR #$pr does not have agent-eval:eval, so its gate thread is left alone."
+            exit 0
+          fi
           echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
 
       # The result step compares this with the live PR head, so a run that finishes after a new
@@ -113,7 +120,7 @@ jobs:
       - name: Resolve eval conditions
         id: conditions
         env:
-          PR_LABELS: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          PR_LABELS: ${{ steps.gate_pr.outputs.labels || toJSON(github.event.pull_request.labels.*.name) }}
           DISPATCH_INPUTS: ${{ toJSON(inputs) }}
         run: node agent-eval/scripts/resolve-conditions.ts --labels "$PR_LABELS" --inputs "$DISPATCH_INPUTS"
 

@@ -1,8 +1,7 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { Status, StatusesByStoryIdAndTypeId } from '../../shared/status-store/index.ts';
-
-const STATUS_CHANNEL_EVENT = 'UNIVERSAL_STORE:storybook/status';
+import { Channel } from '../../channels/main.ts';
+import type { Status } from '../../shared/status-store/index.ts';
 
 const modified: Status = {
   storyId: 'button--primary',
@@ -11,70 +10,42 @@ const modified: Status = {
   title: 'Modified',
   description: '',
 };
-const leaderState: StatusesByStoryIdAndTypeId = {
-  [modified.storyId]: { [modified.typeId]: modified },
-};
+const modifiedStatuses = { [modified.storyId]: { [modified.typeId]: modified } };
 
-async function prepareRealm({ attached }: { attached: boolean }) {
+// The status store and the UniversalStore preparation are module singletons, so each call loads a
+// fresh realm; two realms sharing a channel stand in for the dev server and the attached CLI.
+async function loadRealm(channel: Channel, { attached }: { attached: boolean }) {
+  vi.resetModules();
   vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', attached ? 'true' : '');
   const { UniversalStore } = await import('../../shared/universal-store/index.ts');
-  const { Channel } = await import('../../channels/main.ts');
-  const channel = new Channel({});
   UniversalStore.__prepare(
     channel,
     attached ? UniversalStore.Environment.UNKNOWN : UniversalStore.Environment.SERVER
   );
-  return { UniversalStore, channel };
+  return import('./status.ts');
 }
 
 describe('getSyncedStatuses', () => {
-  beforeEach(() => {
-    // The status store and the UniversalStore preparation are module singletons.
-    vi.resetModules();
-  });
-
   afterEach(() => {
     vi.unstubAllEnvs();
     vi.useRealTimers();
   });
 
-  it('returns the leader state to a follower that reads before the leader has answered', async () => {
-    const { UniversalStore, channel } = await prepareRealm({ attached: true });
-    channel.on(STATUS_CHANNEL_EVENT, ({ event }: { event: { type: string } }) => {
-      if (event.type !== UniversalStore.InternalEventType.EXISTING_STATE_REQUEST) {
-        return;
-      }
-      setTimeout(() => {
-        channel.emit(STATUS_CHANNEL_EVENT, {
-          event: {
-            type: UniversalStore.InternalEventType.EXISTING_STATE_RESPONSE,
-            payload: leaderState,
-          },
-          eventInfo: {
-            actor: {
-              id: 'dev-server',
-              type: UniversalStore.ActorType.LEADER,
-              environment: UniversalStore.Environment.SERVER,
-            },
-          },
-        });
-      }, 0);
-    });
-    const { fullStatusStore, getSyncedStatuses } = await import('./status.ts');
+  it('returns the leader state to a follower whose leader answers asynchronously', async () => {
+    const channel = new Channel({ async: true });
+    const devServer = await loadRealm(channel, { attached: false });
+    devServer.getStatusStoreByTypeId(modified.typeId).set([modified]);
+    const attachedTools = await loadRealm(channel, { attached: true });
 
-    const synced = getSyncedStatuses();
-
-    expect(fullStatusStore.getAll()).toEqual({});
-    await expect(synced).resolves.toEqual(leaderState);
+    await expect(attachedTools.getSyncedStatuses()).resolves.toEqual(modifiedStatuses);
   });
 
   it('rejects instead of returning an empty state when no leader answers', async () => {
     vi.useFakeTimers();
-    await prepareRealm({ attached: true });
+    const attachedTools = await loadRealm(new Channel({}), { attached: true });
     const { UniversalStoreFollowerTimeoutError } = await import('../../manager-errors.ts');
-    const { getSyncedStatuses } = await import('./status.ts');
 
-    const rejection = expect(getSyncedStatuses()).rejects.toBeInstanceOf(
+    const rejection = expect(attachedTools.getSyncedStatuses()).rejects.toBeInstanceOf(
       UniversalStoreFollowerTimeoutError
     );
     await vi.advanceTimersByTimeAsync(1000);
@@ -82,11 +53,10 @@ describe('getSyncedStatuses', () => {
     await rejection;
   });
 
-  it('returns the statuses of a leader without waiting on anyone', async () => {
-    await prepareRealm({ attached: false });
-    const { getStatusStoreByTypeId, getSyncedStatuses } = await import('./status.ts');
-    getStatusStoreByTypeId(modified.typeId).set([modified]);
+  it('returns the statuses of a leader', async () => {
+    const devServer = await loadRealm(new Channel({}), { attached: false });
+    devServer.getStatusStoreByTypeId(modified.typeId).set([modified]);
 
-    await expect(getSyncedStatuses()).resolves.toEqual(leaderState);
+    await expect(devServer.getSyncedStatuses()).resolves.toEqual(modifiedStatuses);
   });
 });

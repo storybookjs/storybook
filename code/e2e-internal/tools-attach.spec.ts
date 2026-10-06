@@ -112,17 +112,22 @@ test.describe('storybook tools attach', () => {
       !runsAgainstDevServer,
       'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
-    const storyFile = join(process.cwd(), 'core/template/stories/basics.stories.ts');
+    // Covers the polling budget plus one CLI run that started just inside it, so a timeout cannot
+    // skip the restore below.
+    test.setTimeout(150_000);
+    const storyFile = join(process.cwd(), 'core/template/stories/names.stories.ts');
     const original = await readFile(storyFile, 'utf8');
     try {
       await writeFile(storyFile, `${original}\n// tools-attach e2e\n`);
 
       // Change detection picks the edit up asynchronously, after the file watcher and a git diff.
       await expect(async () => {
-        const changed = await runTools(['stories', 'changed']);
+        const changed = await runTools(['stories', 'changed', '--json']);
         expect(changed.exitCode, changed.output).toBe(0);
         expect(changed.output).not.toContain('Falling back');
-        expect(changed.output).toContain('core-basics--basic');
+        expect(changed.output).toMatch(
+          /"storyId": "core-names--prefix",\s+"statusValue": "status-value:modified"/
+        );
       }).toPass({ timeout: 60_000 });
     } finally {
       await writeFile(storyFile, original);

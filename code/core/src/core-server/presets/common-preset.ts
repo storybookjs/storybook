@@ -55,7 +55,7 @@ import { reviewToolset } from '../../shared/open-service/toolsets/review/definit
 import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
 import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
-import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { getStatusStoreByTypeId, universalStatusStore } from '../stores/status.ts';
 import { applyServicesPresetOnce } from '../utils/apply-services-preset-once.ts';
 import { getPreviewBuilder } from '../utils/get-builders.ts';
 import { getRefsFromConfig } from '../utils/get-refs-from-config.ts';
@@ -413,7 +413,12 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         getChangedFiles: () => gitDiffProvider.getChangedFiles(),
       },
       changeStatuses: {
-        getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
+        getAll: async () => {
+          const store = getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID);
+          // An attached tools CLI is a follower, which starts empty until the dev server answers.
+          await universalStatusStore.untilReady();
+          return store.getAll();
+        },
       },
       reviewEnabled,
     })

@@ -37,7 +37,7 @@ function registerTestToolsetThrowing(error: Error) {
       description: 'stub',
       methods: {
         run: {
-          input: v.object({}),
+          input: v.strictObject({}),
           title: 'Storybook Tests',
           description: () => {
             throw error;
@@ -165,7 +165,7 @@ describe('test-run over the registry', () => {
         description: 'stub',
         methods: {
           run: {
-            input: v.object({}),
+            input: v.strictObject({}),
             title: 'Storybook Tests',
             description: 'run',
             handler: async () => ({

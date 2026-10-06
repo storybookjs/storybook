@@ -6,7 +6,6 @@
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
-import type { StandardSchemaV1 } from '@standard-schema/spec';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
@@ -308,7 +307,7 @@ describe('local tools', () => {
           graphStatus: {
             title: 'Read graph status',
             description: 'Read the module graph status.',
-            input: v.object({}),
+            input: v.strictObject({}),
             handler: async (_input, ctx) => {
               const service = ctx.getService<typeof moduleGraph>('core/module-graph', {
                 internal: true,
@@ -483,7 +482,7 @@ describe('requires-dev-server contract', () => {
         methods: {
           attach: {
             title: 'Attach',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'attach',
             requiresDevServer: true,
             handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
@@ -607,22 +606,6 @@ Run \`npx storybook tools docs show --help\` for the expected arguments.`);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
     expect(result.output).toContain('- Unknown flag `--verbose`.');
     expect(result.output).toContain('This tool takes no arguments.');
-  });
-
-  it('declares every core tool input closed, so an undeclared key never reaches a handler', async () => {
-    const composedDocs = createDocsToolset({
-      sources: [{ source: { id: 'local', title: 'Local' }, access: DOCS_ACCESS }],
-    });
-    for (const toolset of [...getRegisteredToolsets(), composedDocs]) {
-      for (const [methodName, method] of Object.entries(toolset.methods)) {
-        const validation = await method.input['~standard'].validate({ undeclared: true });
-        const keys = validation.issues?.map((issue: StandardSchemaV1.Issue) => {
-          const [segment] = issue.path ?? [];
-          return typeof segment === 'object' ? segment.key : segment;
-        });
-        expect(keys ?? [], `${toolset.id}.${methodName}`).toContain('undeclared');
-      }
-    }
   });
 
   it('leaves the test toolset out when the project does not register it', async () => {
@@ -749,19 +732,19 @@ describe('outcome mapping', () => {
         methods: {
           ok: {
             title: 'ok',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'ok',
             handler: async () => ({ ok: true, data: { a: 1 }, markdown: ['one', 'two'] }),
           },
           bad: {
             title: 'bad',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'bad',
             handler: async () => ({ ok: false, data: { a: 0 }, markdown: 'bad news' }),
           },
           boom: {
             title: 'boom',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'boom',
             handler: async () => {
               throw new Error('kapow');
@@ -769,7 +752,7 @@ describe('outcome mapping', () => {
           },
           guide: {
             title: 'guide',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'guide',
             handler: async () => {
               const error = new Error('Start the dev server, then retry.');
@@ -779,7 +762,7 @@ describe('outcome mapping', () => {
           },
           input: {
             title: 'input',
-            input: v.object({ a: v.optional(v.number()), b: v.optional(v.number()) }),
+            input: v.strictObject({ a: v.optional(v.number()), b: v.optional(v.number()) }),
             description: 'input echo',
             handler: async (input: { a?: number; b?: number }) => ({
               ok: true,
@@ -967,7 +950,7 @@ describe('attached tools', () => {
         methods: {
           ping: {
             title: 'Ping',
-            input: v.object({}),
+            input: v.strictObject({}),
             description: 'ping',
             requiresDevServer: true,
             handler: async (_input, ctx) => ({

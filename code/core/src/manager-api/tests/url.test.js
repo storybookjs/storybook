@@ -642,12 +642,31 @@ describe('getStoryHrefs', () => {
       fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
     });
     store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/design-system/';
 
     const origin = api.getStoryHrefs('test--story', { base: 'origin' });
     expect(origin.previewHref).toContain('http://localhost:6006/design-system/iframe.html');
 
     const network = api.getStoryHrefs('test--story', { base: 'network' });
     expect(network.previewHref).toContain('http://192.168.1.1:6006/iframe.html');
+  });
+
+  it('resolves absolute origin URLs against a custom <base href> (#34259)', () => {
+    const { api, state } = initURL({
+      store,
+      provider: { channel: new EventEmitter() },
+      state: { location: { pathname: '/storybook', search: '' } },
+      navigate: vi.fn(),
+      fullAPI: { getCurrentStoryData: () => ({ id: 'test--story' }) },
+    });
+    store.setState(state);
+    global.document.baseURI = 'http://localhost:6006/Orchard.Storybook/';
+
+    const { managerHref, previewHref } = api.getStoryHrefs('test--story', { base: 'origin' });
+    expect(managerHref).toEqual('http://localhost:6006/storybook?path=/story/test--story');
+    expect(previewHref).toEqual(
+      'http://localhost:6006/Orchard.Storybook/iframe.html?id=test--story&viewMode=story'
+    );
   });
 
   it('stays interactive by default (no freeze contract)', () => {

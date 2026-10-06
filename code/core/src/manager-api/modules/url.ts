@@ -271,7 +271,8 @@ export const init: ModuleFn<SubAPI, SubState> = (moduleArgs) => {
       const networkAddress = global.STORYBOOK_NETWORK_ADDRESS ?? originAddress;
       const managerBase =
         base === 'origin' ? originAddress : base === 'network' ? networkAddress : pathname;
-      const previewBaseUrl = base ? managerBase : global.document?.baseURI || originAddress;
+      const previewBaseUrl =
+        base === 'network' ? networkAddress : global.document?.baseURI || originAddress;
       const previewBase = refId
         ? refs[refId].url + '/iframe.html'
         : resolveIframeUrl(previewBaseUrl, { absolute: Boolean(base) });

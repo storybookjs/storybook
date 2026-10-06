@@ -55,10 +55,15 @@ function discoverSection(inputs: StoriesSkillInputs): string {
     inputs.docsEnabled && `${ref('docs.list')} --withStoryIds true   # every story id`,
   ].filter(Boolean);
   if (commands.length === 0) {
-    return '';
+    return `## Find the stories
+
+This project has no command that lists story ids. Select a story by its file and export instead: \`--stories '[{"absoluteStoryPath":"/abs/path/Button.stories.tsx","exportName":"Primary"}]'\`.`;
   }
-  const sharedFiles = inputs.moduleGraphSupported
-    ? ' A shared file (design token, theme, util, hook) has no stories of its own: pass the components that use it to `find-by-component`.'
+  const before = inputs.reviewEnabled ? 'before every review' : 'before you share links';
+  const fallback = inputs.moduleGraphSupported
+    ? inputs.changeDetectionEnabled
+      ? ' When \`stories changed\` leaves out a file you touched, pass that file to \`find-by-component\`; for a shared file (design token, theme, util, hook), which has no stories of its own, pass the components that use it.'
+      : ' A shared file (design token, theme, util, hook) has no stories of its own: pass the components that use it to \`find-by-component\`.'
     : '';
   return `## Find the stories
 
@@ -66,7 +71,7 @@ function discoverSection(inputs: StoriesSkillInputs): string {
 ${commands.join('\n')}
 \`\`\`
 
-Run one of these before every review, also when a test run already listed the stories you wrote: they add the stories of other components that your change affects. Story ids come only from these commands. Never build one from a file name, a title or memory.${sharedFiles} When nothing is found, the component has no stories yet: say so, or write them.`;
+Run one of these ${before}, also when you already know the ids of the stories you wrote: they add the stories of other components that your change affects. Story ids come only from these commands. Never build one from a file name, a title or memory.${fallback} When none of them finds a story for a component, it has no stories yet: say so, or write them.`;
 }
 
 function reviewSection(): string {
@@ -84,7 +89,7 @@ ${ref('review.create')} --input '{
 }'
 \`\`\`
 
-Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into one to five collections, from the changed component up to the pages that show it, and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, and say that instead.
+Publish a review after every change the user can see, and again after each later change. It needs a running Storybook. Group the stories into two to five collections, from the changed component up to the pages that show it (one is enough when a single component is affected), and include every story you created. When the user asks to see or browse components or stories and no code changed, publish the same review with \`"changedFiles": []\`. Skip the review only when nothing visible changed, and say that instead.
 
 Then do both things the command prints, every time: open the review in the in-app browser with a browser tool, and end your answer with the review section it gives you. Do not list separate story links next to it.`;
 }
@@ -110,7 +115,7 @@ export function buildStoriesSkill(inputs: StoriesSkillInputs): string {
   return [
     `# Storybook workflow
 
-Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. Each command prints what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
+Follow this for every change to how the UI looks (components, stories, styles, themes, tokens) and for requests to show components or stories. Some commands print what to do next; follow that too. Add \`--help\` to a command only when a call fails.`,
     inputs.docsEnabled && docsSection(),
     writeSection(inputs.framework),
     inputs.testSupported && testSection(inputs.a11yEnabled),

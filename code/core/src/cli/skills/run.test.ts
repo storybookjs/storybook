@@ -108,7 +108,7 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
-  it('stories assembles CLI-transport server instructions using the CLI review gate', async () => {
+  it('stories prints the workflow with CLI commands', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
     expect(result.exitCode).toBe(0);

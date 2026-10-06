@@ -1,4 +1,5 @@
 import type { IncomingMessage } from 'node:http';
+import type { Duplex } from 'node:stream';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
 import {
@@ -16,7 +17,13 @@ import { UniversalStore } from '../../shared/universal-store/index.ts';
 import { type HostValidationOptions, isValidHost } from './getHostValidationMiddleware.ts';
 import { isValidToken } from './validate-token.ts';
 
-type Server = NonNullable<NonNullable<ConstructorParameters<typeof WebSocketServer>[0]>['server']>;
+/** Anything that emits Node's `upgrade` event: an `http.Server`, or an emitter that forwards one. */
+export type UpgradeEmitter = {
+  on(
+    event: 'upgrade',
+    listener: (request: IncomingMessage, socket: Duplex, head: Buffer) => void
+  ): unknown;
+};
 
 type ServerChannelTransportOptions = HostValidationOptions & {
   skipValidation?: boolean;
@@ -45,12 +52,12 @@ export class ServerChannelTransport {
     this.socket.close(() => process.exit(0));
   };
 
-  constructor(server: Server, options: ServerChannelTransportOptions) {
+  constructor(server: UpgradeEmitter, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
     server.on('upgrade', (request: IncomingMessage, socket, head) => {
       try {
-        const url = request.url && new URL(request.url, options.localAddress);
+        const url = request.url && new URL(request.url, options.localAddress ?? 'http://localhost');
         if (!url || url.pathname !== SERVER_CHANNEL_PATH) {
           return;
         }
@@ -121,7 +128,7 @@ export class ServerChannelTransport {
   }
 }
 
-export function getServerChannel(server: Server, options: ServerChannelTransportOptions) {
+export function getServerChannel(server: UpgradeEmitter, options: ServerChannelTransportOptions) {
   const transports = [new ServerChannelTransport(server, options)];
 
   const channel = new Channel({ transports, async: true });

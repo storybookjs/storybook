@@ -5,7 +5,11 @@ import { SB_VIRTUAL_FILES } from './virtual-file-names.ts';
 
 export type PreviewHtml = string | undefined;
 
-export async function transformIframeHtml(html: string, options: Options) {
+export async function transformIframeHtml(
+  html: string,
+  options: Options,
+  base = '/'
+): Promise<string> {
   const { configType, features, presets } = options;
   const build = await presets.apply('build');
   const frameworkOptions = await presets.apply<Record<string, any> | null>('frameworkOptions');
@@ -52,7 +56,7 @@ export async function transformIframeHtml(html: string, options: Options) {
   if (configType === 'DEVELOPMENT') {
     return transformedHtml.replace(
       'virtual:/@storybook/builder-vite/vite-app.js',
-      `/@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
+      `${base}@id/__x00__${SB_VIRTUAL_FILES.VIRTUAL_APP_FILE}`
     );
   }
 
